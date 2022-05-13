@@ -9,7 +9,7 @@ import scala.collection.mutable
 class CLIParserImpl extends CLIParser {
 
   def parse(args: Array[String]): Either[ParserError, RawAppArgs] = {
-    var state: CLIParserState = new CLIParserState.Initial()
+    var state: CLIParserState = new CLIParserState.Initial
     val processed = mutable.ArrayBuffer[String]()
     args.foreach {
       arg =>

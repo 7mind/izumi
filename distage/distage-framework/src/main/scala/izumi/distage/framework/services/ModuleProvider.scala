@@ -80,7 +80,7 @@ object ModuleProvider {
           .add[ResourceRewriter]
       }
 
-      val graphvizDumpModule = if (options.addGraphVizDump) new GraphDumpBootstrapModule() else BootstrapModule.empty
+      val graphvizDumpModule = if (options.addGraphVizDump) new GraphDumpBootstrapModule else BootstrapModule.empty
 
       val appConfigModule: BootstrapModule = AppConfigModule(config).morph[BootstrapModule]
 

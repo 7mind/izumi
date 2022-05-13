@@ -78,10 +78,10 @@ class GraphPreparations(
         val noDependencies = dependees.filter(_._2.forall(_.isEmpty)).keySet
 
         val depmatrix = IncidenceMatrix(dependees.map { case (prev, succs) => (prev, succs.flatten) })
-        val reachable = new Tracer[DIKey]().trace(depmatrix, Set.empty, noDependencies)
+        val reachable = new Tracer[DIKey].trace(depmatrix, Set.empty, noDependencies)
 
         val allKeys = allOps.map(_._1.key).toSet
-        (allKeys -- reachable) ++ noDependencies
+        allKeys -- reachable ++ noDependencies
     }
     effective
   }

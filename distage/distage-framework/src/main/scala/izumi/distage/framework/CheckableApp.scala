@@ -146,7 +146,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
       }
 
       chosenConfigResource match {
-        case Some((classLoader, resourceName)) =>
+        case Some(classLoader, resourceName) =>
           make[ConfigLoader].fromValue(specificResourceConfigLoader(classLoader, resourceName))
         case None =>
         // keep original ConfigLoader

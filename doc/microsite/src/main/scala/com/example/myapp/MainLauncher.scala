@@ -7,7 +7,7 @@ import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.functional.Identity
 
-object MainLauncher extends RoleAppMain.LauncherIdentity() {
+object MainLauncher extends RoleAppMain.LauncherIdentity {
   override protected def pluginConfig: PluginConfig = PluginConfig.const(new PluginDef with RoleModuleDef {
     makeRole[ExampleRole]
   })

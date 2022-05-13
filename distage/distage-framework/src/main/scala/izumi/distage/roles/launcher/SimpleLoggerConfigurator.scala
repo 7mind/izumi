@@ -24,7 +24,7 @@ class SimpleLoggerConfigurator(
     val logconf = readConfig(config)
 
     val renderingPolicy = if (logconf.json.contains(true) || json) {
-      new LogstageCirceRenderingPolicy()
+      new LogstageCirceRenderingPolicy
     } else {
       val options = logconf.options.getOrElse(RenderingOptions.default)
       new StringRenderingPolicy(options, None)

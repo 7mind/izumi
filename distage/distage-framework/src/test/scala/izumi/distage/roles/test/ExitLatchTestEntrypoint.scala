@@ -14,7 +14,7 @@ class ExitLatchEntrypointBase extends RoleAppMain.LauncherBIO2[zio.IO] {
   override protected def requiredRoles(argv: RoleAppMain.ArgV): Vector[RawRoleParams] = Vector(RawRoleParams(ExitAfterSleepRole.id))
 
   override protected def pluginConfig: PluginConfig = {
-    PluginConfig.const(new TestPluginZIO())
+    PluginConfig.const(new TestPluginZIO)
   }
 
   override protected def earlyFailureHandler(args: RoleAppMain.ArgV): AppFailureHandler = {

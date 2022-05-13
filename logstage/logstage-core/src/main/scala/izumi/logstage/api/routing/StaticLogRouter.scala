@@ -63,5 +63,5 @@ class StaticLogRouter extends LogRouter {
 }
 
 object StaticLogRouter {
-  final val instance = new StaticLogRouter()
+  final val instance = new StaticLogRouter
 }

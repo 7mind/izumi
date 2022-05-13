@@ -184,8 +184,8 @@ object CatsConversions {
       fb: F[Throwable, B],
     ): F[Throwable, Either[(A, Fiber[F[Throwable, _], B]), (Fiber[F[Throwable, _], A], B)]] = {
       F.map(F.racePair(fa, fb)) {
-        case Left((a, f)) => Left((a, f.toCats(F)))
-        case Right((f, b)) => Right((f.toCats(F), b))
+        case Left(a, f) => Left((a, f.toCats(F)))
+        case Right(f, b) => Right((f.toCats(F), b))
       }
     }
     @inline override final def race[A, B](fa: F[Throwable, A], fb: F[Throwable, B]): F[Throwable, Either[A, B]] = {

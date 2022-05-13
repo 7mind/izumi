@@ -38,7 +38,7 @@ class ImagePanel(image: BufferedImage, name: Option[String]) extends JPanel {
     })
   }
 
-  private val menu = new PopupMenu()
+  private val menu = new PopupMenu
 
   class PopClickListener extends MouseAdapter {
     override def mousePressed(e: MouseEvent): Unit = mouseReleased(e)

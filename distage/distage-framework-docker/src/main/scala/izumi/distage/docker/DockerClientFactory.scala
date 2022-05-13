@@ -13,7 +13,7 @@ object DockerClientFactory {
     (_, rawClientConfig) =>
       DockerClientImpl.getInstance(
         rawClientConfig,
-        new ZerodepDockerHttpClient.Builder()
+        new ZerodepDockerHttpClient.Builder
           .dockerHost(rawClientConfig.getDockerHost)
           .sslConfig(rawClientConfig.getSSLConfig)
           .build(),

@@ -112,7 +112,7 @@ class JsonFlattener {
         return Left(List(UnpackFailure.UnexpectedType(tpe.substring(1), path)))
       }
 
-      val buf = new ArrayBuffer[PathElement]()
+      val buf = new ArrayBuffer[PathElement]
       var inEscape = false
       var start = 0
 

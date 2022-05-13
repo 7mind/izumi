@@ -233,7 +233,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     ](implicit val beep: Beep[A]
     ) extends BopTrait[A]
 
-    case class BeepDependency[A]()(implicit val beep: Beep[A])
+    case class BeepDependency[A](implicit val beep: Beep[A])
     case class BeepDependency1[A](i: Int)(implicit val beep: Beep[A])
 
     trait BopFactory[A] extends BopTrait[A] {

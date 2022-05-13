@@ -108,7 +108,7 @@ object LogstageCirceWriter {
   }
 
   def write[T](codec: LogstageCodec[T], value: T): Json = {
-    val writer = new LogstageCirceWriter()
+    val writer = new LogstageCirceWriter
     codec.write(writer, value)
     writer.translate()
   }

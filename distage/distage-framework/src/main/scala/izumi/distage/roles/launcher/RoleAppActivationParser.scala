@@ -38,7 +38,7 @@ object RoleAppActivationParser {
         }.niceList()
 
       activationInfo.availableChoices.find(_._1.name == axisName) match {
-        case Some((base, members)) =>
+        case Some(base, members) =>
           members.find(_.value == choiceName) match {
             case Some(member) =>
               Some(base -> member)

@@ -150,7 +150,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
           .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
           .flatMap {
             _ =>
-              throw new RuntimeException()
+              throw new RuntimeException
           }
           .use((_: Unit) => ())
       }
@@ -164,7 +164,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
           .make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
           .flatMap {
             _ =>
-              throw new RuntimeException()
+              throw new RuntimeException
           }
           .use((_: Unit) => Suspend2(()))
           .unsafeRun()
@@ -187,7 +187,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
                 .makeSimple(ops1 += YStart)(_ => ops1 += YStop)
                 .flatMap {
                   _ =>
-                    Lifecycle.makeSimple[Unit](throw new RuntimeException())((_: Unit) => ops1 += ZStop)
+                    Lifecycle.makeSimple[Unit](throw new RuntimeException)((_: Unit) => ops1 += ZStop)
                 }
           }
           .use(_ => ())
@@ -206,7 +206,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
                 .make(Suspend2(ops2 += YStart))(_ => Suspend2(ops2 += YStop).void)
                 .flatMap {
                   _ =>
-                    Lifecycle.make(Suspend2[Unit](throw new RuntimeException()))((_: Unit) => Suspend2(ops2 += ZStop).void)
+                    Lifecycle.make(Suspend2[Unit](throw new RuntimeException))((_: Unit) => Suspend2(ops2 += ZStop).void)
                 }
           }
           .use(_ => Suspend2(()))
@@ -222,7 +222,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val ops1 = mutable.Queue.empty[Ops]
       Try {
         Lifecycle
-          .makeSimple[Unit](throw new Throwable())((_: Unit) => ops1 += XStop)
+          .makeSimple[Unit](throw new Throwable)((_: Unit) => ops1 += XStop)
           .catchAll(_ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop)).use(_ => ())
       }
       assert(ops1 == Seq(YStart, YStop))
@@ -233,7 +233,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
           .make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
           .flatMap {
             _ =>
-              throw new RuntimeException()
+              throw new RuntimeException
           }
           .catchAll(_ => Lifecycle.make(Suspend2[Unit](ops2 += YStart))(_ => Suspend2(ops2 += YStop).void))
           .use((_: Unit) => Suspend2(()))
@@ -249,7 +249,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val ops2 = mutable.Queue.empty[Ops]
 
       def redeemTest(err: Boolean) = {
-        def action(q: mutable.Queue[Ops]): Unit = if (err) throw new Throwable() else q += RStart
+        def action(q: mutable.Queue[Ops]): Unit = if (err) throw new Throwable else q += RStart
 
         Try {
           Lifecycle
@@ -457,7 +457,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
 
           res
         })
-      new XImpl().acquire.get
+      new XImpl.acquire.get
     }
 
     "obtain QuasiApplicative for BIO Free/FreeError/FreePanic" in {

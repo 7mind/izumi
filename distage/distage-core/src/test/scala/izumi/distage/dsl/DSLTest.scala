@@ -38,7 +38,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
           .add(new Impl1)
         many[JustTrait]
           .named("named.set")
-          .add(new Impl2())
+          .add(new Impl2)
         many[JustTrait]
           .named("named.set")
           .add[Impl3]
@@ -163,7 +163,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
 
       val mod3_2 = Module.empty
 
-      val mod3 = (mod3_1 ++ mod3_2) :+ Bindings.binding[NotInContext]
+      val mod3 = mod3_1 ++ mod3_2 :+ Bindings.binding[NotInContext]
 
       val mod4: ModuleBase = Module.make {
         Set(

@@ -177,7 +177,7 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
   implicit def optionalCatsBoundedSemilatticeForModuleBase[T <: ModuleBase, K[_]](implicit T: ModuleMake[T], @unused K: `cats.kernel.BoundedSemilattice`[K]): K[T] =
     new BoundedSemilattice[T] {
       def empty: T = T.empty
-      def combine(x: T, y: T): T = (x ++ y)(T)
+      def combine(x: T, y: T): T = x ++ y (T)
     }.asInstanceOf[K[T]]
 
 }

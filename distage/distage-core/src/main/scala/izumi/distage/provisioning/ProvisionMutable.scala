@@ -77,19 +77,19 @@ final class ProvisionMutable[F[_]: TagK](
     result match {
       case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, this.imports.keySet, instance, s"import")
-        this.imports += (target -> instance)
+        this.imports += target -> instance
 
       case NewObjectOp.NewInstance(target, _, instance) =>
         verifier.verify(target, this.instances.keySet, instance, "instance")
-        this.instances += (target -> instance)
+        this.instances += target -> instance
 
       case NewObjectOp.UseInstance(target, instance) =>
         verifier.verify(target, this.instances.keySet, instance, "reference")
-        this.instances += (target -> instance)
+        this.instances += target -> instance
 
       case r @ NewObjectOp.NewResource(target, _, instance, _) =>
         verifier.verify(target, this.instances.keySet, instance, "resource")
-        this.instances += (target -> instance)
+        this.instances += target -> instance
         val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
         this.finalizers prepend Finalizer[F](target, finalizer)
 

@@ -14,7 +14,7 @@ class AdoptedAutocloseablesCasePlugin extends PluginDef {
   many[LogSink].add[BrokenSink]
   many[LogSink].add[BrokenSink2]
   many[LogSink].add {
-    new BrokenSink()
+    new BrokenSink
   }
 }
 

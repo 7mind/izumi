@@ -16,7 +16,7 @@ class PngWindow(image: BufferedImage, onClose: () => Unit = () => (), title: Opt
     this.setSize(image.getWidth, image.getHeight)
   }
 
-  this.addWindowListener(new WindowAdapter() {
+  this.addWindowListener(new WindowAdapter {
     override def windowClosing(e: WindowEvent): Unit = {
       onClose()
     }

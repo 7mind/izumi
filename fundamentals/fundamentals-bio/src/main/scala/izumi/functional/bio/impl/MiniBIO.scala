@@ -35,7 +35,7 @@ sealed trait MiniBIO[+E, +A] {
     final class Catcher[E0, A0, E1, B](
       val recover: Exit.Failure[E0] => MiniBIO[E1, B],
       f: A0 => MiniBIO[E1, B],
-    ) extends (A0 => MiniBIO[E1, B]) {
+    ) extends A0 => MiniBIO[E1, B] {
       override def apply(a: A0): MiniBIO[E1, B] = f(a)
     }
 

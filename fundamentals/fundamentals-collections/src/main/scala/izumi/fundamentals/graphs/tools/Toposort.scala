@@ -33,7 +33,7 @@ object Toposort {
         }
 
         maybeNext match {
-          case Right((breakAt, next)) =>
+          case Right(breakAt, next) =>
             cycleBreaking(next, done ++ breakAt, break)
 
           case Left(e) =>

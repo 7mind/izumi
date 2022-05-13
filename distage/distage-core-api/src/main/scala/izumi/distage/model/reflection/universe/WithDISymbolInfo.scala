@@ -62,7 +62,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
           underlying = underlying,
           typeSignatureInDefiningClass = underlying.typeSignature,
           finalResultType = underlying.typeSignature,
-          isByName = (underlying.isTerm && underlying.asTerm.isByNameParam) || ReflectionUtil.isByName(u)(underlying.typeSignature),
+          isByName = underlying.isTerm && underlying.asTerm.isByNameParam || ReflectionUtil.isByName(u)(underlying.typeSignature),
           wasGeneric = underlying.typeSignature.typeSymbol.isParameter,
           annotations = AnnotationTools.getAllAnnotations(u: u.type)(underlying).distinct,
         )

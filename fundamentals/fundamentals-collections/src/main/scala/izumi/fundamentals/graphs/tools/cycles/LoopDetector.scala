@@ -26,7 +26,7 @@ object LoopDetector {
 
   object Impl extends LoopDetector {
     def findCyclesForNode[T](node: T, graph: IncidenceMatrix[T]): Option[Cycles[T]] = {
-      val loops = new mutable.HashSet[Loop[T]]()
+      val loops = new mutable.HashSet[Loop[T]]
       traceCycles(graph, loops)(node, Seq.empty, Set.empty)
       loops.toList match {
         case Nil =>
@@ -57,7 +57,7 @@ object LoopDetector {
       val untested = mutable.HashMap.from(graph.links)
 
       while (untested.nonEmpty) {
-        val seen = new mutable.HashSet[T]()
+        val seen = new mutable.HashSet[T]
         detectLoops(untested, seen, List(untested.head._1)) match {
           case Some(inLoop) =>
             return Some(inLoop)

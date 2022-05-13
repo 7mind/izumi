@@ -61,8 +61,8 @@ object ResourceCases {
     class ZFaultyResource(y: Y) extends Lifecycle.Basic[Suspend2[Throwable, _], Z] {
       y.discard()
 
-      override def acquire: Suspend2[Throwable, Z] = throw new RuntimeException()
-      override def release(resource: Z): Suspend2[Throwable, Unit] = throw new RuntimeException()
+      override def acquire: Suspend2[Throwable, Z] = throw new RuntimeException
+      override def release(resource: Z): Suspend2[Throwable, Unit] = throw new RuntimeException
     }
   }
 
@@ -132,7 +132,7 @@ object ResourceCases {
   }
 
   object Ref {
-    def apply[F[_]]: Apply[F] = new Apply[F]()
+    def apply[F[_]]: Apply[F] = new Apply[F]
 
     final class Apply[F[_]](private val dummy: Boolean = false) extends AnyVal {
       def apply[A](a: A)(implicit F: QuasiIO[F]): F[Ref[F, A]] = {

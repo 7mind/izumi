@@ -2,7 +2,7 @@ package izumi.fundamentals.collections
 
 trait Loops {
   def findCyclesFor[T](node: T, graph: T => Option[Set[T]]): Seq[Seq[T]] = {
-    val loops = new scala.collection.mutable.HashSet[Seq[T]]()
+    val loops = new scala.collection.mutable.HashSet[Seq[T]]
     traceCycles(graph, loops)(node, Seq.empty, Set.empty)
     loops.toSeq
   }

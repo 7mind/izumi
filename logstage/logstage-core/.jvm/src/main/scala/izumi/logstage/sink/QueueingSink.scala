@@ -16,7 +16,7 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
 
   import QueueingSink._
 
-  private val queue = new ConcurrentLinkedQueue[Log.Entry]()
+  private val queue = new ConcurrentLinkedQueue[Log.Entry]
   private val maxBatchSize = 100
   private val stop = new AtomicBoolean(false)
 

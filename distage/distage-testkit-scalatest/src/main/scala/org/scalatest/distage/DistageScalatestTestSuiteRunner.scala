@@ -44,7 +44,7 @@ object ScalatestInitWorkaround {
     def doScan[F[_]](instance: DistageScalatestTestSuiteRunner[F]): Unit = {
       if (classpathScanned.compareAndSet(false, true)) {
         val classLoader = instance.getClass.getClassLoader
-        val scan = new ClassGraph()
+        val scan = new ClassGraph
           .enableClassInfo()
           .addClassLoader(classLoader)
           .scan()

@@ -183,7 +183,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
           checkConfig = LiteralBoolean(false),
         ),
       )
-    new b().planCheck.assertAgainAtRuntime()
+    new b.planCheck.assertAgainAtRuntime()
 
     assertTypeError(
       """

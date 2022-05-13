@@ -107,7 +107,7 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
     r1: ZIO[R, E, A],
     r2: ZIO[R, E, B],
   ): ZIO[R, E, Either[(A, Fiber3[ZIO, E, B]), (Fiber3[ZIO, E, A], B)]] = {
-    (r1.interruptible.overrideForkScope(ZScope.global) raceWith r2.interruptible.overrideForkScope(ZScope.global))(
+    r1.interruptible.overrideForkScope(ZScope.global) raceWith r2.interruptible.overrideForkScope(ZScope.global) (
       { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(lv => Left((lv, Fiber2.fromZIO(f)))) },
       { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(rv => Right((Fiber2.fromZIO(f), rv))) },
     ).resetForkScope

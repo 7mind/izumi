@@ -183,7 +183,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends AnyWordSpec with GivenWhenThen {
 
       withFileLogger(withoutRotation(policy, fileSize = fileSize, fileService = svc, broken = true)) {
         (sink, logger) =>
-          (0 until fileSize) foreach {
+          0 until fileSize foreach {
             i => logger.info(s"dummy $i")
           }
           assert(sink.asInstanceOf[FileSinkBrokenImpl[T]].recoveredMessages.lengthCompare(2 * fileSize) == 0)
@@ -221,11 +221,11 @@ object LoggingFileSinkTest {
     softLimit: Boolean,
   ): FileSink[F] = {
 
-    val cfg = (if (softLimit) {
-                 FileSinkConfig.soft(_: Int)
-               } else {
-                 FileSinkConfig.inBytes(_: Int)
-               })(fileSize)
+    val cfg = if (softLimit) {
+      FileSinkConfig.soft(_: Int)
+    } else {
+      FileSinkConfig.inBytes(_: Int)
+    }(fileSize)
 
     if (broken) {
       new FileSinkBrokenImpl(renderingPolicy, fileService, r, cfg)

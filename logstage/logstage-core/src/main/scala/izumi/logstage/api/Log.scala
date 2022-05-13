@@ -183,7 +183,7 @@ object Log {
         val (thatHeads, thatTail) = that.template.parts.splitAt(1)
         val thatHead = thatHeads.head
 
-        val parts = (thisInit :+ (thisTail + thatHead)) ++ thatTail
+        val parts = (thisInit :+ thisTail + thatHead) ++ thatTail
         Message(StringContext(parts: _*), args ++ that.args)
       }
     }

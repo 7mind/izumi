@@ -168,10 +168,10 @@ object RetryPolicy {
           state match {
             case Some(State(startMillis, lastRun)) =>
               val nowMillis = now.toInstant.toEpochMilli
-              val runningBehind = nowMillis > (lastRun + intervalMillis)
+              val runningBehind = nowMillis > lastRun + intervalMillis
               val boundary =
                 if (period.length == 0) period
-                else FiniteDuration(intervalMillis - ((nowMillis - startMillis) % intervalMillis), TimeUnit.MILLISECONDS)
+                else FiniteDuration(intervalMillis - (nowMillis - startMillis) % intervalMillis, TimeUnit.MILLISECONDS)
 
               val sleepTime = if (boundary.length == 0) period else boundary
               val nextRun = if (runningBehind) now else now.plusNanos(sleepTime.toNanos)

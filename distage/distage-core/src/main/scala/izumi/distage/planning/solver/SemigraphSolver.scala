@@ -160,9 +160,9 @@ object SemigraphSolver {
       nxt match {
         case Left(value) =>
           Left(value)
-        case Right((nextResult, nextDeps)) if nextDeps.isEmpty =>
+        case Right(nextResult, nextDeps) if nextDeps.isEmpty =>
           Right(currentResult ++ nextResult)
-        case Right((nextResult, nextDeps)) =>
+        case Right(nextResult, nextDeps) =>
           traceGrouped(activations, weak)(nextDeps.toSet.diff(reachable), reachable ++ roots, predecessors, currentResult ++ nextResult)
       }
     }

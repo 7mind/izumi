@@ -19,7 +19,7 @@ final case class DockerContainer[+Tag](
   availablePorts: VerifiedContainerConnectivity,
 ) {
   override def toString: String = {
-    val out = new StringBuilder()
+    val out = new StringBuilder
     out.append(s"$name/${containerConfig.image}@${connectivity.dockerHost.getOrElse("localhost")}")
     availablePorts match {
       case VerifiedContainerConnectivity.HasAvailablePorts(availablePorts) =>

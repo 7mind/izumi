@@ -122,7 +122,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     var counter = 0
     class CountInstantiations extends ByNameSelfReference(instance1) { counter += 1 }
-    instance.mkByNameSelfReferenceByName(new CountInstantiations())
+    instance.mkByNameSelfReferenceByName(new CountInstantiations)
     assert(counter == 0)
   }
 

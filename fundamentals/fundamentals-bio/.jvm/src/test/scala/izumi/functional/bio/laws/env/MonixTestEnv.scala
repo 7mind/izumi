@@ -314,8 +314,8 @@ trait ArbitraryInstancesBase0 extends EqThrowable with TestUtils {
               }
             case Some(Success(Left(a))) =>
               y.value match {
-                case Some(Success(Left(b))) => (a.isInstanceOf[Throwable] && b.isInstanceOf[Throwable]) || E.eqv(a, b)
-                case Some(Failure(ex)) => a.isInstanceOf[Throwable] && (a.getClass == ex.getClass)
+                case Some(Success(Left(b))) => a.isInstanceOf[Throwable] && b.isInstanceOf[Throwable] || E.eqv(a, b)
+                case Some(Failure(ex)) => a.isInstanceOf[Throwable] && a.getClass == ex.getClass
                 case _ => false
               }
             case Some(Failure(ex)) =>
@@ -326,7 +326,7 @@ trait ArbitraryInstancesBase0 extends EqThrowable with TestUtils {
                   // yielding non-terminating futures and tasks from a type
                   // theory point of view, so we simply consider them all equal
                   true
-                case Some(Success(Left(b))) => b.isInstanceOf[Throwable] && (b.getClass == ex.getClass)
+                case Some(Success(Left(b))) => b.isInstanceOf[Throwable] && b.getClass == ex.getClass
                 case _ =>
                   false
               }
@@ -396,7 +396,7 @@ trait TestUtils {
     synchronized {
       // Silencing System.err
       val oldErr = System.err
-      val outStream = new ByteArrayOutputStream()
+      val outStream = new ByteArrayOutputStream
       val fakeErr = new PrintStream(outStream)
       System.setErr(fakeErr)
       try {

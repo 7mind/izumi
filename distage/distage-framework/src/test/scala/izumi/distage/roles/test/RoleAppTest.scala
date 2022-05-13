@@ -55,7 +55,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
   "Role Launcher" should {
     "be able to start roles" in {
-      val probe = new XXX_TestWhiteboxProbe()
+      val probe = new XXX_TestWhiteboxProbe
 
       new TestEntrypointBase {
         override protected def pluginConfig: PluginConfig = super.pluginConfig overriddenBy probe
@@ -75,9 +75,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "start roles regression test" in {
-      val probe = new XXX_TestWhiteboxProbe()
+      val probe = new XXX_TestWhiteboxProbe
 
-      new TestEntrypointBase() {
+      new TestEntrypointBase {
         override protected def pluginConfig: PluginConfig = {
           PluginConfig.const(
             Seq(
@@ -157,7 +157,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
-      val probe = new XXX_TestWhiteboxProbe()
+      val probe = new XXX_TestWhiteboxProbe
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
@@ -191,7 +191,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "integration checks are discovered and ran from resource bindings" in {
-      val probe = new XXX_TestWhiteboxProbe()
+      val probe = new XXX_TestWhiteboxProbe
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {

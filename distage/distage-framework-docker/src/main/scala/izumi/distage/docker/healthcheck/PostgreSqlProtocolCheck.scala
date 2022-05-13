@@ -20,7 +20,7 @@ final class PostgreSqlProtocolCheck(
       portStatus.availablePorts.firstOption(port) match {
         case Some(availablePort) if portStatus.allTCPPortsAccessible =>
           val startupMessage = genStartupMessage()
-          val socket = new Socket()
+          val socket = new Socket
           try {
             socket.connect(new InetSocketAddress(availablePort.host.address, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
             logger.info(s"Checking PostgreSQL protocol on $port for $container. ${(startupMessage: Iterable[Byte]).toHex -> "Startup message"}.")

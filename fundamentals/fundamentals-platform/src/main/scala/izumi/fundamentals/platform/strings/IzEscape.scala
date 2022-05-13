@@ -4,7 +4,7 @@ class IzEscape(_toEscape: Set[Char], escapeChar: Char) {
   private val toEscape = _toEscape + escapeChar
 
   def escape(string: String): String = {
-    val out = new StringBuilder()
+    val out = new StringBuilder
 
     for (i <- string.indices) {
       val c = string.charAt(i)
@@ -20,7 +20,7 @@ class IzEscape(_toEscape: Set[Char], escapeChar: Char) {
   }
 
   def unescape(string: String): String = {
-    val out = new StringBuilder()
+    val out = new StringBuilder
 
     var inEscape = false
 

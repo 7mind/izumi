@@ -130,7 +130,7 @@ open class ContainerResource[F[_], Tag](
                   F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts for $container: $failure"))
 
                 case HealthCheckResult.UnavailableWithMeta(unavailablePorts, unverifiedPorts) =>
-                  val sb = new StringBuilder()
+                  val sb = new StringBuilder
                   sb.append(s"Health checks failed after $maxAttempts attempts: $container\n")
                   if (unverifiedPorts.nonEmpty) {
                     sb.append(s"Unchecked ports:\n")
@@ -246,7 +246,7 @@ open class ContainerResource[F[_], Tag](
         }
 
         candidate match {
-          case Some((c, cInspection, existingPorts)) =>
+          case Some(c, cInspection, existingPorts) =>
             val unverified = DockerContainer[Tag](
               id = ContainerId(c.getId),
               name = cInspection.getName,

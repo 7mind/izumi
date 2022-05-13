@@ -22,7 +22,7 @@ object Quirks {
   @inline final class LazyDiscarder[U >: Unit](private val dummy: Boolean = false) extends AnyVal {
     @inline def forget: U = ()
   }
-  @inline implicit final def LazyDiscarder[T](@unused t: => T): LazyDiscarder[Unit] = new LazyDiscarder[Unit]()
+  @inline implicit final def LazyDiscarder[T](@unused t: => T): LazyDiscarder[Unit] = new LazyDiscarder[Unit]
 
   @inline final def forget(@unused trash: LazyDiscarder[?]*): Unit = ()
 

@@ -70,8 +70,8 @@ object BootstrapLocator {
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(loopBreaker)
     val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
     val resolver = new PlanSolver.Impl(
-      new SemigraphSolverImpl[DIKey, Int, InstantiationOp](),
-      new GraphPreparations(new BindingTranslator.Impl()),
+      new SemigraphSolverImpl[DIKey, Int, InstantiationOp],
+      new GraphPreparations(new BindingTranslator.Impl),
     )
 
     new PlannerDefaultImpl(

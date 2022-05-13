@@ -134,7 +134,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
       many[JustTrait]
         .named("named.set")
-        .add(new Impl2())
+        .add(new Impl2)
 
       many[JustTrait]
         .named("named.set")

@@ -81,11 +81,10 @@ object ReflectionUtil {
   }
 
   def isSelfStrong(tpe: Universe#Type): Boolean = {
-    !(tpe.typeSymbol.isParameter || (
-      tpe.isInstanceOf[Universe#TypeRefApi] &&
-      tpe.asInstanceOf[Universe#TypeRefApi].pre.isInstanceOf[Universe#ThisTypeApi] &&
-      tpe.typeSymbol.isAbstract && !tpe.typeSymbol.isClass && isNotDealiasedFurther(tpe)
-    )) ||
+    !(tpe.typeSymbol.isParameter ||
+    tpe.isInstanceOf[Universe#TypeRefApi] &&
+    tpe.asInstanceOf[Universe#TypeRefApi].pre.isInstanceOf[Universe#ThisTypeApi] &&
+    tpe.typeSymbol.isAbstract && !tpe.typeSymbol.isClass && isNotDealiasedFurther(tpe)) ||
     tpe.typeParams.exists {
       t =>
         t == tpe.typeSymbol ||

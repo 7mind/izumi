@@ -48,7 +48,7 @@ object StaticPluginLoader {
       val loadedPlugins = if (pluginPath == "") {
         LoadedPlugins.empty
       } else {
-        new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
+        new PluginLoaderDefaultImpl.load(PluginConfig.packages(Seq(pluginPath)))
       }
 
       val quoted: List[Tree] = instantiatePluginsInCode(c)(loadedPlugins.result)

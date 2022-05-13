@@ -16,7 +16,7 @@ object RandomGraph {
     assert(maxEdges > 0)
     val ordered = makeShuffledNodes(nodes, random)
 
-    val out = new mutable.HashMap[N, Set[N]]()
+    val out = new mutable.HashMap[N, Set[N]]
     for ((n, idx) <- ordered.zipWithIndex) {
 
       val links = if (idx > 0) {
@@ -43,7 +43,7 @@ object RandomGraph {
     assert(maxEdges > 0)
     val ordered = makeShuffledNodes(nodes, random)
 
-    val out = new mutable.HashMap[N, Set[N]]()
+    val out = new mutable.HashMap[N, Set[N]]
     for ((n, idx) <- ordered.zipWithIndex) {
 
       val links = if (idx > 0) {

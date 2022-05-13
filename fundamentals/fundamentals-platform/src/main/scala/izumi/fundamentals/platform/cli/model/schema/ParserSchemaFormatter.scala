@@ -8,7 +8,7 @@ object ParserSchemaFormatter {
   private val withColors = IzPlatform.terminalColorsEnabled
 
   def makeDocs(schema: ParserSchema): String = {
-    val sb = new StringBuilder()
+    val sb = new StringBuilder
 
     val maindoc = formatParser(schema.globalArgsSchema.parserDef, schema.globalArgsSchema.doc, schema.globalArgsSchema.notes, 2, 0)
     if (maindoc.nonEmpty) {
@@ -21,7 +21,7 @@ object ParserSchemaFormatter {
   }
 
   private[this] def formatRoleHelp(rb: RoleParserSchema): String = {
-    val sb = new StringBuilder()
+    val sb = new StringBuilder
     if (withColors) {
       sb.append(Console.GREEN)
       sb.append(Console.BOLD)

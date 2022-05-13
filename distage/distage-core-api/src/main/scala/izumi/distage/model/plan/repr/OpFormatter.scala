@@ -170,7 +170,7 @@ object OpFormatter {
     }
 
     private def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
-      val sb = new StringBuilder()
+      val sb = new StringBuilder
       sb.append(s"${formatOpName(opName)}${styled(opFormat._1.toString, c.GREEN)}$impl${c.GREEN}${styled(opFormat._2.toString, c.GREEN)} ${delim._1}")
       if (depRepr.nonEmpty) {
         sb.append("\n")

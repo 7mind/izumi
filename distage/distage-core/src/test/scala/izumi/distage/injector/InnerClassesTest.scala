@@ -115,7 +115,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   }
 
   "can handle inner path-dependent injections (macros can)" in {
-    new InnerPathDepTest().testCase
+    new InnerPathDepTest.testCase
   }
 
   "can handle class local path-dependent injections (macros can)" in {

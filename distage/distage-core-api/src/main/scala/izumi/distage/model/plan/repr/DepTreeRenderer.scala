@@ -27,7 +27,7 @@ class DepTreeRenderer(node: DepNode, index: Map[DIKey, ExecutableOp]) {
       case node: CircularReference =>
         s"$prefix⥀ ${node.level}: ${renderKey(node.key)}\n"
       case node: DepNode =>
-        val sb = new mutable.StringBuilder()
+        val sb = new mutable.StringBuilder
         val symbol = if (node.graph.kind == DependencyKind.Depends) {
           "⮑"
         } else {

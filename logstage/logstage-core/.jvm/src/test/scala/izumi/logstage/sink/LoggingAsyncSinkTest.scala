@@ -6,7 +6,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class LoggingAsyncSinkTest extends AnyWordSpec {
   "Log macro" should {
     "support async sinks" in {
-      val testSink = new TestSink()
+      val testSink = new TestSink
       val asyncConsoleSinkJson = new QueueingSink(testSink)
       try {
         new ExampleService(IzLogger(IzLogger.Level.Trace, asyncConsoleSinkJson)).triggerManyMessages()

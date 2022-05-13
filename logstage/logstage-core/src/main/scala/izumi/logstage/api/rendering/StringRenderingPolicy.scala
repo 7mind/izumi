@@ -54,7 +54,7 @@ object StringRenderingPolicy {
       new Styler.Colored(
         Console.BLACK_B,
         Seq(
-          new Styler.AdaptivePad(Seq(new Extractor.SourcePosition()), 8, PadType.Left, ' ')
+          new Styler.AdaptivePad(Seq(new Extractor.SourcePosition), 8, PadType.Left, ' ')
         ),
       ),
       Extractor.Space,
@@ -62,7 +62,7 @@ object StringRenderingPolicy {
       new Styler.Trim(
         Seq(
           new Styler.Compact(
-            Seq(new Extractor.LoggerName()),
+            Seq(new Extractor.LoggerName),
             3,
           )
         ),
@@ -72,18 +72,18 @@ object StringRenderingPolicy {
       ),
       Extractor.Space,
       new Extractor.Constant("["),
-      new Styler.AdaptivePad(Seq(new Extractor.ThreadId()), 1, PadType.Left, ' '),
+      new Styler.AdaptivePad(Seq(new Extractor.ThreadId), 1, PadType.Left, ' '),
       new Extractor.Constant(":"),
       new Styler.AdaptivePad(
-        Seq(new rendering.logunits.Styler.Trim(Seq(new rendering.logunits.Extractor.ThreadName()), 20, TrimType.Center, Some("…"))),
+        Seq(new rendering.logunits.Styler.Trim(Seq(new rendering.logunits.Extractor.ThreadName), 20, TrimType.Center, Some("…"))),
         4,
         PadType.Right,
         ' ',
       ),
       new Extractor.Constant("]"),
       Extractor.Space,
-      new Styler.TrailingSpace(Seq(new Extractor.LoggerContext())),
-      new Extractor.Message(),
+      new Styler.TrailingSpace(Seq(new Extractor.LoggerContext)),
+      new Extractor.Message,
     )
   )
 

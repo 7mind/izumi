@@ -47,12 +47,12 @@ class PluginLoaderDefaultImpl extends PluginLoader {
 }
 
 object PluginLoaderDefaultImpl {
-  def apply(): PluginLoaderDefaultImpl = new PluginLoaderDefaultImpl()
+  def apply(): PluginLoaderDefaultImpl = new PluginLoaderDefaultImpl
 
-  private lazy val cache = new SyncCache[String, Seq[PluginBase]]()
+  private lazy val cache = new SyncCache[String, Seq[PluginBase]]
 
   def doLoad[T](base: String, whitelistClasses: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
-    val scanResult = new ClassGraph()
+    val scanResult = new ClassGraph
       .acceptPackages(enabledPackages: _*)
       .acceptClasses(whitelistClasses :+ base: _*)
       .rejectPackages(disabledPackages: _*)

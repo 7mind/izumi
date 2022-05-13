@@ -107,8 +107,8 @@ class AsyncMonix extends Async2[IO] {
 
   override final def racePair[R, E, A, B](fa: IO[E, A], fb: IO[E, B]): IO[E, Either[(A, Fiber2[IO, E, B]), (Fiber2[IO, E, A], B)]] = {
     IO.racePair(fa, fb).map {
-      case Left((a, fiberB)) => Left((a, Fiber2.fromMonix(fiberB)))
-      case Right((fiberA, b)) => Right((Fiber2.fromMonix(fiberA), b))
+      case Left(a, fiberB) => Left((a, Fiber2.fromMonix(fiberB)))
+      case Right(fiberA, b) => Right((Fiber2.fromMonix(fiberA), b))
     }
   }
 

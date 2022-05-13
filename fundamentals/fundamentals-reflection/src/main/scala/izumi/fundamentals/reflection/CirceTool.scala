@@ -12,7 +12,7 @@ class CirceToolMacro(val c: blackbox.Context) {
   import c.universe._
 
   @inline def make[T: c.WeakTypeTag](): c.Expr[Unit] = {
-    val all = new mutable.HashSet[Type]()
+    val all = new mutable.HashSet[Type]
     val base = weakTypeOf[T]
     processType(base, all)
 

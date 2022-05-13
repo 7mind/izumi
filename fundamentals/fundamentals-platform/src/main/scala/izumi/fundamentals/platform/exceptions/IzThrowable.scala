@@ -22,7 +22,7 @@ final class IzThrowable(private val t: Throwable) extends AnyVal {
   }
 
   def allCauses: Seq[Throwable] = {
-    val ret = new ArrayBuffer[Throwable]()
+    val ret = new ArrayBuffer[Throwable]
     var currentThrowable = t
     while (currentThrowable != null) {
       ret.append(currentThrowable)

@@ -14,7 +14,7 @@ trait RoleDescriptorBase {
   def parserSchema: RoleParserSchema
 }
 
-abstract class RoleDescriptor()(implicit currentArtifact: IzArtifactMaterializer) extends RoleDescriptorBase {
+abstract class RoleDescriptor(implicit currentArtifact: IzArtifactMaterializer) extends RoleDescriptorBase {
   def artifact: Option[IzArtifact] = Some(currentArtifact.get)
   def parserSchema: RoleParserSchema = RoleParserSchema(id, ParserDef.Empty, None, None, freeArgsAllowed = false)
 

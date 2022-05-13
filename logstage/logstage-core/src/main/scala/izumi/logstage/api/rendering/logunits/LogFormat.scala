@@ -31,8 +31,8 @@ object LogFormat {
     def formatMessage(entry: Log.Entry, options: RenderingOptions): RenderedMessage = {
       val withColors = options.colored
       val hideKeys = options.hideKeys
-      val templateBuilder = new StringBuilder()
-      val messageBuilder = new StringBuilder()
+      val templateBuilder = new StringBuilder
+      val messageBuilder = new StringBuilder
 
       val staticParts = entry.message.template.parts
       val head = staticParts.head

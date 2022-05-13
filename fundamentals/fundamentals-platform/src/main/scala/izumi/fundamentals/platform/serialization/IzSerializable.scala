@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 
 final class IzSerializable(private val s: Serializable) extends AnyVal {
   def toByteBuffer: ByteBuffer = {
-    val byteArrayOutputStream = new ByteArrayOutputStream()
+    val byteArrayOutputStream = new ByteArrayOutputStream
     val objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)
     objectOutputStream.writeObject(s)
     ByteBuffer.wrap(byteArrayOutputStream.toByteArray)

@@ -7,8 +7,8 @@ import izumi.distage.testkit.services.scalatest.dstest.SafeWrappedTestReporter.W
 import scala.collection.mutable
 
 class SafeTestReporter(underlying: TestReporter) extends TestReporter {
-  private val delayedReports = new mutable.LinkedHashMap[TestMeta, mutable.Queue[WrappedTestReport]]()
-  private val runningSuites = new mutable.HashMap[String, TestMeta]()
+  private val delayedReports = new mutable.LinkedHashMap[TestMeta, mutable.Queue[WrappedTestReport]]
+  private val runningSuites = new mutable.HashMap[String, TestMeta]
 
   override def onFailure(f: Throwable): Unit = synchronized {
     endAll()

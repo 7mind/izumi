@@ -77,7 +77,7 @@ final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVa
       case Some(LoadablePathReference(jarPath, _)) =>
         Files.walkFileTree(
           jarPath,
-          new SimpleFileVisitor[Path]() {
+          new SimpleFileVisitor[Path] {
             private var currentTarget: Path = _
 
             override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
@@ -114,7 +114,7 @@ final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVa
 
         Files.walkFileTree(
           jarPath,
-          new SimpleFileVisitor[Path]() {
+          new SimpleFileVisitor[Path] {
             override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
               FileVisitResult.CONTINUE
             }

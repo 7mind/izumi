@@ -17,7 +17,7 @@ trait IzTimeSafe {
 
   // formatters with 3 decimal positions for nanos
   final lazy val ISO_LOCAL_DATE_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
+    new DateTimeFormatterBuilder.parseCaseInsensitive
       .append(ISO_LOCAL_DATE)
       .appendLiteral('T')
       .append(ISO_LOCAL_TIME_3NANO)
@@ -29,7 +29,7 @@ trait IzTimeSafe {
   }
 
   final lazy val ISO_LOCAL_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder()
+    new DateTimeFormatterBuilder
       .appendValue(HOUR_OF_DAY, 2)
       .appendLiteral(':')
       .appendValue(MINUTE_OF_HOUR, 2)
@@ -42,14 +42,14 @@ trait IzTimeSafe {
   }
 
   final lazy val ISO_OFFSET_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
+    new DateTimeFormatterBuilder.parseCaseInsensitive
       .append(ISO_LOCAL_TIME_3NANO)
       .appendOffsetId
       .toFormatter()
   }
 
   final val ISO_DATE_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
+    new DateTimeFormatterBuilder.parseCaseInsensitive
       .append(ISO_LOCAL_DATE_TIME_3NANO)
       .appendOffsetId
       .optionalStart
@@ -65,7 +65,7 @@ trait IzTimeSafe {
   }
 
   final val ISO_TIME_3NANO = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
+    new DateTimeFormatterBuilder.parseCaseInsensitive
       .append(ISO_LOCAL_TIME_3NANO)
       .optionalStart
       .appendOffsetId
@@ -97,7 +97,7 @@ trait IzTime extends IzTimeSafe {
   def isoNow: String = utcNow.isoFormat
 
   final lazy val ISO_ZONED_DATE_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder()
+    new DateTimeFormatterBuilder
       .append(ISO_OFFSET_DATE_TIME_3NANO)
       .optionalStart
       .appendLiteral('[')
@@ -108,7 +108,7 @@ trait IzTime extends IzTimeSafe {
   }
 
   final lazy val ISO_OFFSET_DATE_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
+    new DateTimeFormatterBuilder.parseCaseInsensitive
       .append(ISO_LOCAL_DATE_TIME_3NANO)
       .parseLenient
       .appendOffsetId

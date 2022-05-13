@@ -43,7 +43,7 @@ class LogSinkLegacySlf4jImpl(
     }
   }
 
-  private val markerFactory = new BasicMarkerFactory()
+  private val markerFactory = new BasicMarkerFactory
 
   private def log(logger: (Marker, String, Throwable) => Unit, message: Log.Entry): Unit = {
     val throwable = message.firstThrowable
@@ -52,7 +52,7 @@ class LogSinkLegacySlf4jImpl(
     logger(markers, asString, throwable.orNull)
   }
 
-  private val loggers = new ConcurrentHashMap[String, slf4j.Logger]()
+  private val loggers = new ConcurrentHashMap[String, slf4j.Logger]
 
   private def getSlf4jLogger(e: Log.Entry): slf4j.Logger = {
     val loggerId = e.context.static.id.id

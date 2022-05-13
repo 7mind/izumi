@@ -19,7 +19,7 @@ object ProxyDispatcher {
     }
   }
 
-  class ByNameDispatcher(val key: DIKey) extends AtomicProxyDispatcher with (() => Any) {
+  class ByNameDispatcher(val key: DIKey) extends AtomicProxyDispatcher with () => Any {
     override def apply(): Any = {
       Option(reference.get()) match {
         case Some(value) =>

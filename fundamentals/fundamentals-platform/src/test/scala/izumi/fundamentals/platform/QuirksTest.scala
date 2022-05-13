@@ -5,7 +5,7 @@ import izumi.fundamentals.platform.language.unused
 import org.scalatest.wordspec.AnyWordSpec
 
 class QuirksTest extends AnyWordSpec {
-  def boom: Int = throw new RuntimeException()
+  def boom: Int = throw new RuntimeException
 
   "Discarder" should {
     "forget values effectlessly" in {

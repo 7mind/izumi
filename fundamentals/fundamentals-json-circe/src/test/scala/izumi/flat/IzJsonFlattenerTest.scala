@@ -21,8 +21,8 @@ class IzJsonFlattenerTest extends AnyWordSpec {
   }
 
   private def check(original: Json): Assertion = {
-    val flattened = new JsonFlattener().flatten(original)
-    val inflated = new JsonFlattener().inflate(flattened)
+    val flattened = new JsonFlattener.flatten(original)
+    val inflated = new JsonFlattener.inflate(flattened)
     assert(inflated.contains(original))
   }
 }

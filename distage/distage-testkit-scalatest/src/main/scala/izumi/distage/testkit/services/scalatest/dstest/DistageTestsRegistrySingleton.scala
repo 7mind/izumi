@@ -16,11 +16,11 @@ object DistageTestsRegistrySingleton {
 
   protected[this] type Fake[T]
   private[this] object Fake
-  private[this] val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
-  private[this] val statuses = new mutable.HashMap[SafeType, Option[mutable.HashMap[String, StatefulStatus]]]()
-  private[this] val suiteReporters = new mutable.HashMap[String, Either[mutable.ArrayBuffer[SuiteReporter => Unit], SuiteReporter]]()
-  private[this] val runTracker = new ConcurrentHashMap[SafeType, Fake.type]()
-  private[this] val knownSuites = new ConcurrentHashMap[(SafeType, String), Fake.type]()
+  private[this] val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]
+  private[this] val statuses = new mutable.HashMap[SafeType, Option[mutable.HashMap[String, StatefulStatus]]]
+  private[this] val suiteReporters = new mutable.HashMap[String, Either[mutable.ArrayBuffer[SuiteReporter => Unit], SuiteReporter]]
+  private[this] val runTracker = new ConcurrentHashMap[SafeType, Fake.type]
+  private[this] val knownSuites = new ConcurrentHashMap[(SafeType, String), Fake.type]
   private[this] val registrationOpen = new AtomicBoolean(true)
 
   def disableRegistration(): Unit = {

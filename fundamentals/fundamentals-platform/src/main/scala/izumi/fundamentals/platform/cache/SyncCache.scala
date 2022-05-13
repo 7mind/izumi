@@ -5,7 +5,7 @@ import izumi.fundamentals.platform.language.Quirks._
 import scala.collection.mutable
 
 class SyncCache[K, V] {
-  private[this] val cache = new mutable.HashMap[K, V]()
+  private[this] val cache = new mutable.HashMap[K, V]
 
   def enumerate(): Seq[(K, V)] = synchronize {
     cache.toSeq

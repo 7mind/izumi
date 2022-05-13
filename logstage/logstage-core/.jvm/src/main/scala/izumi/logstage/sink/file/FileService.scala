@@ -12,7 +12,7 @@ import scala.util.Try
 
 trait FileService[File <: LogFile] {
 
-  val storage: concurrent.Map[FileIdentity, File] = new ConcurrentHashMap[FileIdentity, File]().asScala
+  val storage: concurrent.Map[FileIdentity, File] = new ConcurrentHashMap[FileIdentity, File].asScala
 
   def path: String
 

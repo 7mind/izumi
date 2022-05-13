@@ -24,7 +24,7 @@ class CglibProxyProvider extends ProxyProvider {
     val clazz = proxyContext.runtimeClass
 
     // Enhancer.setSuperclass is side-effectful, so we had to copypaste
-    val enhancer = new Enhancer()
+    val enhancer = new Enhancer
 
     if (clazz.isInterface) {
       enhancer.setInterfaces(Array[Class[?]](clazz, classOf[DistageProxy]))

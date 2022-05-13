@@ -48,10 +48,10 @@ object UUIDGen {
 
   private val MAX_CLOCK_SEQ_AND_NODE: Long = 0x7F7F7F7F7F7F7F7FL
 
-  private val secureRandom: SecureRandom = new SecureRandom()
+  private val secureRandom: SecureRandom = new SecureRandom
 
   // placement of this singleton is important.  It needs to be instantiated *AFTER* the other statics.
-  private val instance: UUIDGen = new UUIDGen()
+  private val instance: UUIDGen = new UUIDGen
 
   /**
     * Creates a type 1 UUID (time-based UUID).
@@ -82,7 +82,7 @@ object UUIDGen {
     */
   def getTimeUUIDFromMicros(whenInMicros: Long): UUID = {
     val whenInMillis: Long = whenInMicros / 1000
-    val nanos: Long = (whenInMicros - (whenInMillis * 1000)) * 10
+    val nanos: Long = (whenInMicros - whenInMillis * 1000) * 10
     getTimeUUID(whenInMillis, nanos)
   }
 
@@ -100,7 +100,7 @@ object UUIDGen {
     */
   def getRandomTimeUUIDFromMicros(whenInMicros: Long): UUID = {
     val whenInMillis: Long = whenInMicros / 1000
-    val nanos: Long = (whenInMicros - (whenInMillis * 1000)) * 10
+    val nanos: Long = (whenInMicros - whenInMillis * 1000) * 10
     new UUID(createTime(fromUnixTimestamp(whenInMillis, nanos)), secureRandom.nextLong())
   }
 
@@ -124,8 +124,8 @@ object UUIDGen {
     val least: Long = uuid.getLeastSignificantBits
     val b: Array[Byte] = Array.ofDim[Byte](16)
     for (i <- 0.until(8)) {
-      b(i) = (most >>> ((7 - i) * 8)).toByte
-      b(8 + i) = (least >>> ((7 - i) * 8)).toByte
+      b(i) = (most >>> (7 - i) * 8).toByte
+      b(8 + i) = (least >>> (7 - i) * 8).toByte
     }
     b
   }
@@ -172,14 +172,14 @@ object UUIDGen {
     * @return milliseconds since Unix epoch
     */
   def unixTimestamp(uuid: UUID): Long =
-    (uuid.timestamp() / 10000) + START_EPOCH
+    uuid.timestamp() / 10000 + START_EPOCH
 
   /**
     * @param uuid
     * @return microseconds since Unix epoch
     */
   def microsTimestamp(uuid: UUID): Long =
-    (uuid.timestamp() / 10) + START_EPOCH * 1000
+    uuid.timestamp() / 10 + START_EPOCH * 1000
 
   /**
     * @param timestamp milliseconds since Unix epoch
@@ -189,7 +189,7 @@ object UUIDGen {
     fromUnixTimestamp(timestamp, 0L)
 
   private def fromUnixTimestamp(timestamp: Long, nanos: Long): Long =
-    ((timestamp - START_EPOCH) * 10000) + nanos
+    (timestamp - START_EPOCH) * 10000 + nanos
 
   /**
     * Converts a milliseconds-since-epoch timestamp into the 16 byte representation
@@ -223,7 +223,7 @@ object UUIDGen {
     * @return a type 1 UUID represented as a byte[]
     */
   def getTimeUUIDBytes(timeMillis: Long, nanos: Int): Array[Byte] = {
-    if (nanos >= 10000) throw new IllegalArgumentException()
+    if (nanos >= 10000) throw new IllegalArgumentException
     createTimeUUIDBytes(instance.createTimeUnsafe(timeMillis, nanos))
   }
 
@@ -245,7 +245,7 @@ object UUIDGen {
   def getAdjustedTimestamp(uuid: UUID): Long = {
     if (uuid.version() != 1)
       throw new IllegalArgumentException("incompatible with uuid version: " + uuid.version())
-    (uuid.timestamp() / 10000) + START_EPOCH
+    uuid.timestamp() / 10000 + START_EPOCH
   }
 
   private def makeClockSeqAndNode(): Long = {
@@ -271,7 +271,7 @@ object UUIDGen {
   }
 
   def getAllLocalAddresses(): Collection[InetAddress] = {
-    val localAddresses: Set[InetAddress] = new HashSet[InetAddress]()
+    val localAddresses: Set[InetAddress] = new HashSet[InetAddress]
     val nets: Enumeration[NetworkInterface] =
       NetworkInterface.getNetworkInterfaces
     if (nets != null) {
@@ -321,7 +321,7 @@ object UUIDGen {
 /**
   * The goods are here: www.ietf.org/rfc/rfc4122.txt.
   */
-class UUIDGen protected () {
+class UUIDGen protected {
 
   private var lastNanos: Long = _
 
@@ -347,7 +347,7 @@ class UUIDGen protected () {
   private def createTimeUnsafe(when: Long): Long = createTimeUnsafe(when, 0)
 
   private def createTimeUnsafe(when: Long, nanos: Int): Long = {
-    val nanosSince: Long = ((when - START_EPOCH) * 10000) + nanos
+    val nanosSince: Long = (when - START_EPOCH) * 10000 + nanos
     createTime(nanosSince)
   }
 

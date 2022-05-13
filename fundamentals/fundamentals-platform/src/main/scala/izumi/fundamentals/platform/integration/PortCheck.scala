@@ -61,7 +61,7 @@ class PortCheck(timeout: FiniteDuration) {
     try {
       val evaluatedAddress = address
       try {
-        val socket = new Socket()
+        val socket = new Socket
         try {
           socket.connect(evaluatedAddress, timeout.toMillis.toInt)
           ResourceCheck.Success()

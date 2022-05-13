@@ -25,8 +25,8 @@ private[bio] object __VersionSpecificDurationConvertersCompat {
       try {
         val secondsAsNanos = Math.multiplyExact(originalSeconds, 1000000000)
         val totalNanos = secondsAsNanos + originalNanos
-        if ((totalNanos < 0 && secondsAsNanos < 0) || (totalNanos > 0 && secondsAsNanos > 0)) FiniteDuration(totalNanos, TimeUnit.NANOSECONDS)
-        else throw new ArithmeticException()
+        if (totalNanos < 0 && secondsAsNanos < 0 || totalNanos > 0 && secondsAsNanos > 0) FiniteDuration(totalNanos, TimeUnit.NANOSECONDS)
+        else throw new ArithmeticException
       } catch {
         case _: ArithmeticException => throw new IllegalArgumentException(s"Java duration $duration cannot be expressed as a Scala duration")
       }

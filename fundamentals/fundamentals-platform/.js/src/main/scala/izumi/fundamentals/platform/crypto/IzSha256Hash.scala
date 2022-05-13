@@ -44,6 +44,6 @@ object IzSha256Hash {
     impl
   }
 
-  object Global extends IzSha256Hash(() => new crypto.ScalaJSSHA256.GlobalSHA256())
-  object Imported extends IzSha256Hash(() => new platform.crypto.ScalaJSSHA256.ImportedSHA256())
+  object Global extends IzSha256Hash(() => new crypto.ScalaJSSHA256.GlobalSHA256)
+  object Imported extends IzSha256Hash(() => new platform.crypto.ScalaJSSHA256.ImportedSHA256)
 }

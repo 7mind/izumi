@@ -55,7 +55,7 @@ object CircularCases {
 
       def bad() = {
         if (Random.nextInt(10) < 100) {
-          throw new RuntimeException()
+          throw new RuntimeException
         }
       }
 
@@ -67,7 +67,7 @@ object CircularCases {
 
       def bad() = {
         if (Random.nextInt(10) < 100) {
-          throw new RuntimeException()
+          throw new RuntimeException
         }
       }
 

@@ -12,7 +12,7 @@ class Slf4jAdapterTest extends AnyWordSpec {
 
   "slf4j logger adaper" should {
     "pass logs to LogStage" in {
-      val sink = new TestSink()
+      val sink = new TestSink
       val router = ConfigurableLogRouter(IzLogger.Level.Trace, sink)
 
       StaticLogRouter.instance.setup(router)
@@ -27,7 +27,7 @@ class Slf4jAdapterTest extends AnyWordSpec {
       logger.debug("Debug message: {}", 1)
       logger.info("Debug message: {}, {}", 1, 2)
       logger.warn("Debug message: {}", Integer.valueOf(1), Integer.valueOf(1), Integer.valueOf(1), Integer.valueOf(1))
-      logger.error("Debug message: {}", new RuntimeException())
+      logger.error("Debug message: {}", new RuntimeException)
 
       assert(sink.fetch().size == 6)
     }

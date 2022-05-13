@@ -19,7 +19,7 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
   }
 
   // this should be efficient but may take some memory. Most likely we should use prefix tree here
-  private[this] val configCache = new mutable.HashMap[String, LoggerPathConfig]()
+  private[this] val configCache = new mutable.HashMap[String, LoggerPathConfig]
 
   private[this] def findConfig(id: String): LoggerPathConfig = {
     val parts = id.split('.')

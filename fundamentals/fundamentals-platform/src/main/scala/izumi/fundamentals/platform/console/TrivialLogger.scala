@@ -98,7 +98,7 @@ object TrivialLogger {
     new TrivialLoggerImpl(config, classTag[T].runtimeClass.getSimpleName, logMessages, logErrors, loggerLevel = 0)
   }
 
-  private[this] val enabled = new mutable.HashMap[String, Boolean]()
+  private[this] val enabled = new mutable.HashMap[String, Boolean]
 
   @nowarn("msg=return statement uses an exception")
   private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {

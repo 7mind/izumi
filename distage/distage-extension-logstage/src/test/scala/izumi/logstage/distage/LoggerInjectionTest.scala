@@ -23,7 +23,7 @@ class ExampleApp(log: IzLogger, service: ExampleService) {
 class LoggerInjectionTest extends AnyWordSpec {
   "Logging module for distage" should {
     "inject loggers" in {
-      val testSink = new TestSink()
+      val testSink = new TestSink
       val router = ConfigurableLogRouter(IzLogger.Level.Trace, testSink)
 
       val definition = PlannerInput.everything(new ModuleDef {

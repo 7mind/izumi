@@ -46,15 +46,15 @@ class IzStringTest extends AnyWordSpec {
     }
 
     "support splitFirst" in {
-      assert("=1=2".splitFirst('=') == ("" -> "1=2"))
-      assert("1=".splitFirst('=') == ("1" -> ""))
-      assert("key=value=xxx".splitFirst('=') == ("key" -> "value=xxx"))
+      assert("=1=2".splitFirst('=') == "" -> "1=2")
+      assert("1=".splitFirst('=') == "1" -> "")
+      assert("key=value=xxx".splitFirst('=') == "key" -> "value=xxx")
     }
 
     "support splitLast" in {
-      assert("=1=2".splitLast('=') == ("=1" -> "2"))
-      assert("1=".splitLast('=') == ("1" -> ""))
-      assert("key=value=xxx".splitLast('=') == ("key=value" -> "xxx"))
+      assert("=1=2".splitLast('=') == "=1" -> "2")
+      assert("1=".splitLast('=') == "1" -> "")
+      assert("key=value=xxx".splitLast('=') == "key=value" -> "xxx")
     }
 
   }

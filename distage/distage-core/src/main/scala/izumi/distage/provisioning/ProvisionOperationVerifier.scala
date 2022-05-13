@@ -26,7 +26,7 @@ object ProvisionOperationVerifier {
         case _ =>
           value match {
             case d: ByNameDispatcher =>
-              val dispatcherTypeCompatible = d.key.tpe == target.tpe || (d.key.tpe <:< target.tpe)
+              val dispatcherTypeCompatible = d.key.tpe == target.tpe || d.key.tpe <:< target.tpe
 
               if (!dispatcherTypeCompatible) {
                 throw new IncompatibleTypesException(s"Dispatcher contains incompatible key: ${target.tpe}, found: ${d.key.tpe}", target.tpe, d.key.tpe)
