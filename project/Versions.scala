@@ -10,7 +10,7 @@ object V {
   val scalatest = "3.2.11"
 
   val cats = "2.7.0"
-  val cats_effect = "2.5.4"
+  val cats_effect = "2.5.5"
 
   val discipline = "1.4.0"
   val discipline_scalatest = "2.0.0"
