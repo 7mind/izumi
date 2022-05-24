@@ -1,9 +1,9 @@
 package izumi.distage.model.effect
 
-import izumi.distage.model.effect.QuasiIORunner.CatsImpl
+import izumi.distage.model.effect.QuasiIORunner.{CatsDispatcherImpl, CatsIOImpl}
 import izumi.functional.bio.UnsafeRun2
+import izumi.fundamentals.orphans.{`cats.effect.IO`, `cats.effect.std.Dispatcher`, `cats.effect.unsafe.IORuntime`}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.orphans.`cats.effect.std.Dispatcher`
 
 /**
   * An `unsafeRun` for `F`. Required for `distage-framework` apps and `distage-testkit` tests,
@@ -31,17 +31,30 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
     override def run[A](f: => F[Throwable, A]): A = UnsafeRun2[F].unsafeRun(f)
   }
 
-  final class CatsImpl[F[_]](implicit dispatcher: cats.effect.std.Dispatcher[F]) extends QuasiIORunner[F] {
+  final class CatsIOImpl(implicit ioRuntime: cats.effect.unsafe.IORuntime) extends QuasiIORunner[cats.effect.IO] {
+    override def run[A](f: => cats.effect.IO[A]): A = f.unsafeRunSync()(ioRuntime)
+  }
+
+  final class CatsDispatcherImpl[F[_]](implicit dispatcher: cats.effect.std.Dispatcher[F]) extends QuasiIORunner[F] {
     override def run[A](f: => F[A]): A = dispatcher.unsafeRunSync(f)
   }
 
 }
 
-private[effect] sealed trait LowPriorityQuasiIORunnerInstances {
+private[effect] sealed trait LowPriorityQuasiIORunnerInstances extends LowPriorityQuasiIORunnerInstances1 {
 
-  implicit def fromCats[F[_], Dispatcher[_[_]]: `cats.effect.std.Dispatcher`](implicit dispatcher: Dispatcher[F]): QuasiIORunner[F] =
-    new CatsImpl[F]()(dispatcher.asInstanceOf[cats.effect.std.Dispatcher[F]])
+  implicit def fromCatsDispatcher[F[_], Dispatcher[_[_]]: `cats.effect.std.Dispatcher`](implicit dispatcher: Dispatcher[F]): QuasiIORunner[F] =
+    new CatsDispatcherImpl[F]()(dispatcher.asInstanceOf[cats.effect.std.Dispatcher[F]])
 
-  def fromCats[F[_]](dispatcher: cats.effect.std.Dispatcher[F]): QuasiIORunner[F] = new CatsImpl[F]()(dispatcher)
+  def mkFromCatsDispatcher[F[_]](dispatcher: cats.effect.std.Dispatcher[F]): QuasiIORunner[F] = new CatsDispatcherImpl[F]()(dispatcher)
+
+}
+
+private[effect] sealed trait LowPriorityQuasiIORunnerInstances1 {
+
+  implicit def fromCatsIORuntime[IO[_]: `cats.effect.IO`, IORuntime: `cats.effect.unsafe.IORuntime`](implicit ioRuntime: IORuntime): QuasiIORunner[IO] =
+    new CatsIOImpl()(ioRuntime.asInstanceOf[cats.effect.unsafe.IORuntime]).asInstanceOf[QuasiIORunner[IO]]
+
+  def mkFromCatsIORuntime(ioRuntime: cats.effect.unsafe.IORuntime): QuasiIORunner[cats.effect.IO] = new CatsIOImpl()(ioRuntime)
 
 }

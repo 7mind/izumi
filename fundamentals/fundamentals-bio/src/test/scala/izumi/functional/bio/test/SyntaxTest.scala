@@ -388,7 +388,7 @@ class SyntaxTest extends AnyWordSpec {
   "FR: Local/Ask summoners examples" in {
     import izumi.functional.bio.{Arrow3, Ask3, Bifunctor3, F, Local3, Monad3, MonadAsk3, Profunctor3, Temporal3}
 
-    def x[FR[-_, +_, +_]: Monad3: Ask3] = {
+    def x[FR[-_, +_, +_]: Monad3: Ask3]: FR[Int, Nothing, Boolean] = {
       F.unit *> F.ask[Int].map {
         _: Int =>
           true
@@ -433,8 +433,8 @@ class SyntaxTest extends AnyWordSpec {
             4
         }(_ => 1)
     }
-    def profunctorOnly[FR[-_, +_, +_]: Profunctor3]: FR[String, Throwable, Int] = {
-      F.contramap(??? : FR[Unit, Throwable, Int]) {
+    def profunctorOnly[FR[-_, +_, +_]: Profunctor3](f: FR[Unit, Throwable, Int]): FR[String, Throwable, Int] = {
+      F.contramap(f) {
         _: Int =>
           ()
       }.dimap {
@@ -443,8 +443,8 @@ class SyntaxTest extends AnyWordSpec {
         }(_ => 1)
         .map(_ + 2)
     }
-    def bifunctorOnly[FR[-_, +_, +_]: Bifunctor3]: FR[Unit, Int, Int] = {
-      F.leftMap(??? : FR[Unit, Int, Int]) {
+    def bifunctorOnly[FR[-_, +_, +_]: Bifunctor3](f: FR[Unit, Int, Int]): FR[Unit, Int, Int] = {
+      F.leftMap(f) {
         _: Int =>
           ()
       }.bimap(
@@ -473,17 +473,17 @@ class SyntaxTest extends AnyWordSpec {
       }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
     }
 
-    lazy val _ = (
+    val _ = (
       x[zio.ZIO],
       onlyMonadAsk[zio.ZIO],
       onlyMonadAskAccess[zio.ZIO],
       onlyAsk[zio.ZIO],
       y[zio.ZIO],
       arrowAsk[zio.ZIO],
-      profunctorOnly[zio.ZIO],
+      profunctorOnly[zio.ZIO](zio.ZIO.succeed(1)),
       Temporal2PlusLocal[zio.ZIO],
       biomonadPlusLocal[zio.ZIO],
-      bifunctorOnly[zio.ZIO],
+      bifunctorOnly[zio.ZIO](zio.ZIO.succeed(1)),
     )
   }
 

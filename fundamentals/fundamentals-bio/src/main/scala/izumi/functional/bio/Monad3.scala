@@ -1,16 +1,19 @@
 package izumi.functional.bio
 
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 
 trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
   def flatMap[R, E, A, B](r: F[R, E, A])(f: A => F[R, E, B]): F[R, E, B]
   def flatten[R, E, A](r: F[R, E, F[R, E, A]]): F[R, E, A] = flatMap(r)(identity)
 
-  def tailRecM[R, E, A, B](a: A)(f: A => F[R, E, Either[A, B]]): F[R, E, B] =
-    flatMap(f(a)) {
-      case Left(next) => tailRecM(next)(f)
+  def tailRecM[R, E, A, B](a: A)(f: A => F[R, E, Either[A, B]]): F[R, E, B] = {
+    def loop(a: A): F[R, E, B] = flatMap(f(a)) {
+      case Left(next) => loop(next)
       case Right(res) => pure(res)
     }
+
+    flatMap[R, E, Unit, B](unit)(_ => loop(a)) // https://github.com/zio/interop-cats/pull/460
+  }
 
   def tap[R, E, A](r: F[R, E, A], f: A => F[R, E, Unit]): F[R, E, A] = flatMap(r)(a => as(f(a))(a))
 
@@ -41,7 +44,7 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
     * Execute an action repeatedly until its result fails to satisfy the given predicate
     * and return that result, discarding all others.
     */
-  @inline def iterateWhile[R, E, A](r: F[R, E, A])(p: A => Boolean): F[R, E, A] = {
+  def iterateWhile[R, E, A](r: F[R, E, A])(p: A => Boolean): F[R, E, A] = {
     flatMap(r)(i => iterateWhileF(i)(_ => r)(p))
   }
 
@@ -49,7 +52,7 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
     * Execute an action repeatedly until its result satisfies the given predicate
     * and return that result, discarding all others.
     */
-  @inline def iterateUntil[R, E, A](r: F[R, E, A])(p: A => Boolean): F[R, E, A] = {
+  def iterateUntil[R, E, A](r: F[R, E, A])(p: A => Boolean): F[R, E, A] = {
     flatMap(r)(i => iterateUntilF(i)(_ => r)(p))
   }
 
@@ -57,7 +60,7 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
     * Apply an effectful function iteratively until its result fails
     * to satisfy the given predicate and return that result.
     */
-  @inline def iterateWhileF[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] = {
+  def iterateWhileF[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] = {
     tailRecM(init) {
       a =>
         if (p(a)) {
@@ -72,7 +75,7 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
     * Apply an effectful function iteratively until its result satisfies
     * the given predicate and return that result.
     */
-  @inline def iterateUntilF[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] = {
+  def iterateUntilF[R, E, A](init: A)(f: A => F[R, E, A])(p: A => Boolean): F[R, E, A] = {
     iterateWhileF(init)(f)(!p(_))
   }
 

@@ -7,7 +7,7 @@ import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.DeferredInit
 import izumi.distage.model.reflection.MirrorProvider
 import izumi.distage.model.reflection.SafeType
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 
 abstract class ProxyStrategyDefaultImplPlatformSpecific(
   @unused proxyProvider: ProxyProvider,

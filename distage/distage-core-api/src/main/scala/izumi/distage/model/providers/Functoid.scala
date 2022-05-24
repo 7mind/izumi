@@ -5,14 +5,15 @@ import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.macros.FunctoidMacro
 import izumi.distage.model.reflection.LinkedParameter
 import izumi.distage.model.reflection.Provider.ProviderType
-import izumi.distage.model.reflection._
-import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.model.reflection.*
+import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.reflect.Tag
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.language.experimental.macros
 import scala.language.implicitConversions
+import scala.annotation.unused
 
 /**
   * A function that receives its arguments from DI object graph, including named instances via [[izumi.distage.model.definition.Id]] annotation.

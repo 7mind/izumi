@@ -1,18 +1,21 @@
 package izumi.distage.compat
 
 import cats.arrow.FunctionK
-import cats.effect.unsafe.IORuntime
+import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
 import cats.effect.{IO, Resource, Sync}
 import distage.*
 import izumi.distage.compat.CatsResourcesTest.*
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{ImplDef, Lifecycle, ModuleDef}
+import izumi.distage.model.definition.{Id, ImplDef, Lifecycle, ModuleDef}
+import izumi.distage.model.exceptions.interpretation.{ProvisioningException, ProxyProviderFailingImplCalledException}
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
+
+import scala.annotation.unused
+import scala.concurrent.ExecutionContext
 
 object CatsResourcesTest {
   class Res { var initialized: Boolean = false }
@@ -48,6 +51,42 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
         objects =>
           objects.get[MyApp].run
       }.unsafeRunSync()(IORuntime.global)
+  }
+
+  // this would be an ok test to fix by-name cycle support someday
+  "progression test: cats.Resource mdoc example doesn't work with cyclic IORuntime without proxies" in {
+    val dbResource = Resource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
+    val mqResource = Resource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
+
+    val module = new ModuleDef {
+      make[DBConnection].fromResource(dbResource)
+      make[MessageQueueConnection].fromResource(mqResource)
+      make[MyApp]
+
+      make[IORuntime].from {
+        (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
+          IORuntime(cpuPool, blockingPool, scheduler, () => (), ioRuntimeConfig)
+      }
+      make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
+      final class CreateCPUPool(ioRuntime: => IORuntime)
+        extends Lifecycle.Of[Identity, ExecutionContext]({
+          val coresOr2 = java.lang.Runtime.getRuntime.availableProcessors() max 2
+          Lifecycle
+            .makeSimple(
+              acquire = IORuntime.createDefaultComputeThreadPool(ioRuntime, threads = coresOr2)
+            )(release = _._2.apply()).map(_._1)
+        })
+    }
+
+    val exception = intercept[ProvisioningException] {
+      Injector
+        .NoProxies[IO]()
+        .produce(module, Roots.Everything).use {
+          objects =>
+            objects.get[MyApp].run
+        }.unsafeRunSync()(IORuntime.global)
+    }
+    assert(exception.getMessage.contains(classOf[ProxyProviderFailingImplCalledException].getSimpleName))
   }
 
   "Lifecycle API should be compatible with provider and instance bindings of type cats.effect.Resource" in {

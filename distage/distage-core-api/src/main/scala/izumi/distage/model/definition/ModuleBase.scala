@@ -5,7 +5,7 @@ import cats.kernel.{BoundedSemilattice, PartialOrder}
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.orphans.{`cats.kernel.BoundedSemilattice`, `cats.kernel.PartialOrder with cats.kernel.Hash`}
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 
 trait ModuleBase {
   def bindings: Set[Binding]

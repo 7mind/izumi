@@ -5,7 +5,8 @@ import izumi.fundamentals.platform.functional.Identity3
 
 object BioIdentity3 extends BioIdentity3
 
-class BioIdentity3 extends Monad3[Identity3] {
+open class BioIdentity3 extends Monad3[Identity3] {
+
   override def pure[A](a: A): Identity3[Any, Nothing, A] = {
     a
   }

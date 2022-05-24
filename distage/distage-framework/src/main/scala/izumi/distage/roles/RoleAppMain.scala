@@ -15,7 +15,7 @@ import izumi.functional.bio.{Async2, Async3}
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.logstage.distage.{LogIO2Module, LogIO3Module}
 import izumi.reflect.{TagK, TagK3, TagKK}

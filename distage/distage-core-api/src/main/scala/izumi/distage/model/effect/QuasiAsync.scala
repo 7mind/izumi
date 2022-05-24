@@ -1,6 +1,5 @@
 package izumi.distage.model.effect
 
-import cats.Parallel
 import izumi.functional.bio.{Async2, F, Temporal2}
 import izumi.fundamentals.orphans.`cats.effect.kernel.Async`
 import izumi.fundamentals.platform.functional.Identity
@@ -131,28 +130,27 @@ private[effect] sealed trait LowPriorityQuasiAsyncInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[F[_], Async[_[_]]: `cats.effect.kernel.Async`](implicit F0: Async[F]): QuasiAsync[F] = {
+  implicit final def fromCats[F[_], Async[_[_]]: `cats.effect.kernel.Async`](implicit F0: Async[F]): QuasiAsync[F] = new QuasiAsync[F] {
     val F: cats.effect.kernel.Async[F] = F0.asInstanceOf[cats.effect.kernel.Async[F]]
-    implicit lazy val P: cats.Parallel[F] = cats.effect.kernel.instances.spawn.parallelForGenSpawn(F)
-    new QuasiAsync[F] {
-      override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
-        F.async_(effect)
-      }
-      override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
-        Parallel.parTraverse_(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
-      }
-      override def sleep(duration: FiniteDuration): F[Unit] = {
-        F.sleep(duration)
-      }
-      override def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
-        Parallel.parTraverse(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
-      }
-      override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
-        F.parTraverseN(n)(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList)
-      }
-      override def parTraverseN_[A, B](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
-        F.void(parTraverseN(n)(l)(f))
-      }
+    implicit val P: cats.Parallel[F] = cats.effect.kernel.instances.spawn.parallelForGenSpawn(F)
+
+    override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
+      F.async_(effect)
+    }
+    override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
+      cats.Parallel.parTraverse_(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
+    }
+    override def sleep(duration: FiniteDuration): F[Unit] = {
+      F.sleep(duration)
+    }
+    override def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
+      cats.Parallel.parTraverse(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
+    }
+    override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
+      F.parTraverseN(n)(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList)
+    }
+    override def parTraverseN_[A, B](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
+      F.void(parTraverseN(n)(l)(f))
     }
   }
 }

@@ -2,12 +2,13 @@ package izumi.functional.bio.retry
 
 import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.{Clock3, F, Functor2, IO2, Monad2, Primitives2, Temporal3, TemporalInstances, UnsafeRun2}
+import izumi.functional.bio.{Clock3, Error2, F, Functor2, IO2, Monad2, Primitives2, Ref2, Temporal2, Temporal3, TemporalInstances, UnsafeRun2}
+import org.scalatest.Assertion
 import org.scalatest.wordspec.AnyWordSpec
 import zio.ZIO
 import zio.internal.Platform
 
-import java.time.ZonedDateTime
+import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.concurrent.duration.*
@@ -17,11 +18,19 @@ class SchedulerTest extends AnyWordSpec {
 //  private val monixRunner: UnsafeRun2[bio.IO] = UnsafeRun2.createMonixBIO(Scheduler.global, bio.IO.defaultOptions)
 //  private val monixScheduler: Scheduler2[bio.IO] = new SchedulerMonix(implicitly[cats.effect.kernel.Clock[bio.UIO]])
 
-  private val zioTestClock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
-  private val zioTestClock1: Clock3[ZIO] = Clock3[ZIO]
-  private val zioTemporal: Temporal3[ZIO] = TemporalInstances.Temporal3Zio(zioTestClock1)
-  private val zioScheduler: Scheduler2[zio.IO] = SchedulerInstances.SchedulerFromZio(zioTestClock)
+  private val zioClock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
+  private val zioTemporal: Temporal3[ZIO] = TemporalInstances.Temporal3Zio(Clock3[ZIO], zioClock)
+  private val zioScheduler: Scheduler2[zio.IO] = SchedulerInstances.SchedulerFromTemporal(zioTemporal)
   private val zioRunner: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO(Platform.default)
+
+  private object implicits {
+    implicit val zioTemporalImplicit: Temporal3[ZIO] = zioTemporal
+    implicit val zioSchedulerImplicit: Scheduler2[zio.IO] = zioScheduler
+  }
+
+  def toZonedDateTime(epochMillis: Long): ZonedDateTime = {
+    ZonedDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneOffset.UTC)
+  }
 
   "Scheduler" should {
 
@@ -206,7 +215,7 @@ class SchedulerTest extends AnyWordSpec {
 
     "fail if no more retries left" in {
 
-      def test[F[+_, +_]: IO2](runner: UnsafeRun2[F], scheduler: Scheduler2[F])(policy: RetryPolicy[F, Any, Any]) = {
+      def test[F[+_, +_]: IO2](runner: UnsafeRun2[F], scheduler: Scheduler2[F])(policy: RetryPolicy[F, Any, Any]): Assertion = {
         var isSucceed = false
         val test = scheduler.retry(F.fail(new RuntimeException("Crap!")))(policy).catchAll {
           _ =>
@@ -222,12 +231,46 @@ class SchedulerTest extends AnyWordSpec {
 //      test(monixRunner, monixScheduler)(RetryPolicy.recurs(2))
     }
 
-    "retry effect after fail/get fallback value if no more retries left" in {
-      def testZio(maxRetries: Int, expected: Int) = {
-        val eff = (counter: zio.Ref[Int]) => counter.updateAndGet(_ + 1).flatMap(v => if (v < 3) zio.IO.fail(new RuntimeException("Crap!")) else zio.IO.unit)
+    "retryOrElse more than once both with Scheduler and Temporal" in {
+      def test[F[+_, +_]: Temporal2: Primitives2: Scheduler2](): F[String, (Int, Int)] = {
         for {
-          counter <- zio.Ref.make(0)
-          _ <- zioScheduler.retryOrElse(eff(counter))(RetryPolicy.recurs(maxRetries))(_ => counter.set(-1))
+          schedulerRetries <- for {
+            schedulerCounter <- F.mkRef(0)
+            _ <- F.retryOrElse {
+              for {
+                counter <- schedulerCounter.update(_ + 1)
+                _ <- F.when(counter < 10)(F.fail("error"))
+              } yield ()
+            }(RetryPolicy.forever)(_ => F.fail("unreachable"))
+            count <- schedulerCounter.get
+          } yield count
+
+          temporalRetries <- for {
+            temporalCounter <- F.mkRef(0)
+            _ <- F.retryOrElseUntil {
+              for {
+                counter <- temporalCounter.update(_ + 1)
+                _ <- F.when(counter < 10)(F.fail("error"))
+              } yield ()
+            }(1.minute, _ => F.fail("unreachable"))
+            count <- temporalCounter.get
+          } yield count
+
+        } yield (schedulerRetries, temporalRetries)
+      }
+
+      import implicits.*
+
+      val zioRetries = zioRunner.unsafeRun(test[zio.IO]())
+      assert(zioRetries == ((10, 10)))
+    }
+
+    "retry effect after fail/get fallback value if no more retries left" in {
+      def test[F[+_, +_]: Error2: Primitives2: Scheduler2](maxRetries: Int, expected: Int): F[Nothing, Unit] = {
+        val eff = (counter: Ref2[F, Int]) => counter.update(_ + 1).flatMap(v => if (v < 3) F.fail(new RuntimeException("Crap!")) else F.unit)
+        for {
+          counter <- F.mkRef(0)
+          _ <- F.retryOrElse(eff(counter))(RetryPolicy.recurs(maxRetries))(_ => counter.set(-1))
           res <- counter.get
           _ = assert(res == expected)
         } yield ()
@@ -244,10 +287,12 @@ class SchedulerTest extends AnyWordSpec {
 //        } yield ()
 //      }
 
+      import implicits.*
+
       zioRunner.unsafeRun {
         for {
-          _ <- testZio(2, 3)
-          _ <- testZio(1, -1)
+          _ <- test[zio.IO](2, 3)
+          _ <- test[zio.IO](1, -1)
         } yield ()
       }
 
@@ -333,7 +378,7 @@ class SchedulerTest extends AnyWordSpec {
             }
           } yield res).flatten
         }
-      }.provide(zioTestClock)
+      }.provide(zioClock)
 
       loop((), policy.action, Vector.empty[FiniteDuration], n)
     }
@@ -364,4 +409,5 @@ class SchedulerTest extends AnyWordSpec {
 //      loop((), policy.action, Vector.empty[FiniteDuration], n)
 //    }
   }
+
 }

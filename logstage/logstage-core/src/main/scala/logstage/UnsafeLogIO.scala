@@ -1,11 +1,12 @@
 package logstage
 
 import izumi.functional.bio.{SyncSafe1, SyncSafe2, SyncSafe3}
-import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{Entry, LoggerId}
 import izumi.logstage.api.logger.AbstractLogger
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
+import scala.annotation.unused
 import scala.language.implicitConversions
 
 trait UnsafeLogIO[F[_]] extends LogCreateIO[F] {

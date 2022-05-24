@@ -1,18 +1,18 @@
 package izumi.functional.bio.impl
 
-import java.util.concurrent.CompletionStage
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.data.{Morphism3, RestoreInterruption3}
 import izumi.functional.bio.{Async3, Exit, Fiber2, Fiber3, Local3, __PlatformSpecific}
 import zio.internal.ZIOSucceedNow
 import zio.{NeedsEnv, ZIO, ZScope}
 
+import java.util.concurrent.CompletionStage
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object AsyncZio extends AsyncZio
 
-class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
+open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def InnerF: this.type = this
 
   @inline override final def unit: ZIO[Any, Nothing, Unit] = ZIO.unit
@@ -23,6 +23,7 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
 
   @inline override final def fail[E](v: => E): ZIO[Any, E, Nothing] = ZIO.fail(v)
   @inline override final def terminate(v: => Throwable): ZIO[Any, Nothing, Nothing] = ZIO.die(v)
+  @inline override final def halt[E](exit: Exit.Failure[E]): ZIO[Any, E, Nothing] = ZIO.halt(ZIOExit.causeFromExit(exit))
 
   @inline override final def fromEither[E, A](effect: => Either[E, A]): ZIO[Any, E, A] = ZIO.fromEither(effect)
   @inline override final def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): ZIO[Any, E, A] = ZIO.fromEither(effect.toRight(errorOnNone))
@@ -164,17 +165,29 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def choice[RL, RR, E, A](f: ZIO[RL, E, A], g: ZIO[RR, E, A]): ZIO[Either[RL, RR], E, A] = (f +++ g).map(_.merge)
   @inline override final def choose[RL, RR, E, AL, AR](f: ZIO[RL, E, AL], g: ZIO[RR, E, AR]): ZIO[Either[RL, RR], E, Either[AL, AR]] = f +++ g
 
-  override def halt[E, A](exit: Exit.Failure[E]): ZIO[Any, E, Nothing] = ???
-  override def sendInterruptToSelf: ZIO[Any, Nothing, Unit] = ???
-  override def uninterruptibleExcept[R, E, A](r: Morphism3[ZIO, ZIO] => ZIO[R, E, A]): ZIO[R, E, A] = ???
-  override def bracketExcept[R, E, A, B](
+  // see https://github.com/zio/interop-cats/issues/503 - this implementation is broken, but a working implementation
+  // must be supported at the level of ZIO runtime
+  @inline override final def sendInterruptToSelf: ZIO[Any, Nothing, Unit] = ZIO.interrupt
+  @inline override final def currentEC: ZIO[Any, Nothing, ExecutionContext] = ZIO.executor.map(_.asEC)
+  @inline override final def onEC[R, E, A](ec: ExecutionContext)(f: ZIO[R, E, A]): ZIO[R, E, A] = f.on(ec)
+
+  @inline override final def uninterruptibleExcept[R, E, A](r: Morphism3[ZIO, ZIO] => ZIO[R, E, A]): ZIO[R, E, A] = {
+    ZIO.uninterruptibleMask {
+      restore =>
+        val restoreMorphism: Morphism3[ZIO, ZIO] = Morphism3(restore(_))
+        r(restoreMorphism)
+    }
+  }
+
+  @inline override final def bracketExcept[R, E, A, B](
     acquire: RestoreInterruption3[ZIO] => ZIO[R, E, A]
   )(release: (A, Exit[E, B]) => ZIO[R, Nothing, Unit]
   )(use: A => ZIO[R, E, B]
   ): ZIO[R, E, B] = {
     ZIO.uninterruptibleMask[R, E, B] {
       restore =>
-        acquire(Morphism3(restore(_))).flatMap {
+        val restoreMorphism: Morphism3[ZIO, ZIO] = Morphism3(restore(_))
+        acquire(restoreMorphism).flatMap {
           a =>
             ZIO
               .effectSuspendTotal(restore(use(a)))
@@ -191,5 +204,5 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
         }
     }
   }
-  override def currentEC: ZIO[Any, Nothing, ExecutionContext] = ZIO.executor.map(_.asEC)
+
 }

@@ -115,6 +115,17 @@ object `cats.effect.std.Dispatcher` {
   @inline implicit final def get: `cats.effect.std.Dispatcher`[cats.effect.std.Dispatcher] = null
 }
 
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `cats.effect.unsafe.IORuntime`[R]
+object `cats.effect.unsafe.IORuntime` {
+  @inline implicit final def get: `cats.effect.unsafe.IORuntime`[cats.effect.unsafe.IORuntime] = null
+}
+
 //final abstract class `cats.effect.kernel.ConcurrentEffect`[K[_[_]]]
 //object `cats.effect.kernel.ConcurrentEffect` {
 //  @inline implicit final def get: `cats.effect.kernel.ConcurrentEffect`[cats.effect.kernel.ConcurrentEffect] = null

@@ -6,7 +6,8 @@ import scala.util.Try
 
 object BioEither extends BioEither
 
-class BioEither extends Error2[Either] {
+open class BioEither extends Error2[Either] {
+
   @inline override def pure[A](a: A): Either[Nothing, A] = Right(a)
   @inline override def map[R, E, A, B](r: Either[E, A])(f: A => B): Either[E, B] = r.map(f)
 

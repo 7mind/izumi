@@ -2,7 +2,7 @@ package izumi.distage.model.definition
 
 import cats.Applicative
 import cats.effect.kernel
-import cats.effect.kernel.{GenConcurrent, Outcome, Resource, Sync}
+import cats.effect.kernel.{GenConcurrent, Resource, Sync}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, fromCats, fromZIO, mapImpl, redeemImpl, wrapAcquireImpl, wrapReleaseImpl}
@@ -13,7 +13,8 @@ import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, Local3}
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
-import izumi.fundamentals.platform.language.unused
+
+import scala.annotation.unused
 import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
 import zio.*
 import zio.ZManaged.ReleaseMap
@@ -460,68 +461,34 @@ object Lifecycle extends LifecycleInstances {
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
   def fromCats[F[_], A](@unused resource: Resource[F, A])(implicit F: Sync[F]): Lifecycle.FromCats[F, A] = {
     new FromCats[F, A] {
-      override def acquire: F[kernel.Ref[F, List[Outcome[F, Throwable, Any] => F[Unit]]]] = {
-        kernel.Ref.of[F, List[Outcome[F, Throwable, Any] => F[Unit]]](Nil)(kernel.Ref.Make.syncInstance(F))
+      override def acquire: F[kernel.Ref[F, List[F[Unit]]]] = {
+        kernel.Ref.of[F, List[F[Unit]]](Nil)(kernel.Ref.Make.syncInstance(F))
       }
 
-      override def release(finalizersRef: kernel.Ref[F, List[Outcome[F, Throwable, Any] => F[Unit]]]): F[Unit] = {
-        releaseExit(finalizersRef, Outcome.succeeded(F.pure(())))
+      override def release(finalizersRef: kernel.Ref[F, List[F[Unit]]]): F[Unit] = {
+        F.flatMap(finalizersRef.get)(cats.instances.list.catsStdInstancesForList.sequence_(_))
       }
 
-      override def extract[B >: A](finalizersRef: kernel.Ref[F, List[Outcome[F, Throwable, Any] => F[Unit]]]): Left[F[B], Nothing] = {
+      override def extract[B >: A](finalizersRef: kernel.Ref[F, List[F[Unit]]]): Left[F[B], Nothing] = {
         Left(F.widen(allocatedTo(finalizersRef)))
       }
 
-      // FIXME: `Lifecycle.release` should have an `exit` parameter
-      private[this] def releaseExit(
-        finalizersRef: kernel.Ref[F, List[Outcome[F, Throwable, Any] => F[Unit]]],
-        outcome: Outcome[F, Throwable, Any],
-      ): F[Unit] = {
-        F.flatMap(finalizersRef.get)(cats.instances.list.catsStdInstancesForList.traverse_(_)(_.apply(outcome)))
-      }
-
-      // Copy of [[cats.effect.Resource#allocated]] but inserts finalizers mutably into a list as soon as they're available.
-      // This is required to _preserve interruptible sections_ in `Resource` that `allocated` does not preserve naturally,
-      // or rather, that it doesn't preserve in absence of a `.continual` operation.
-      // That is, because code like `resource.allocated.flatMap(_ => ...)` is unsafe because `.flatMap` may be interrupted,
-      // dropping the finalizers on the floor and leaking all the resources.
       private[this] def allocatedTo(
-        finalizers: kernel.Ref[F, List[Outcome[F, Throwable, Any] => F[Unit]]]
+        finalizers: kernel.Ref[F, List[F[Unit]]]
       ): F[A] = {
-        ???
-
-//        // Indirection for calling `loop` needed because `loop` must be @tailrec
-//        def continue(current: Resource[F, Any], stack: List[Any => Resource[F, Any]]): F[Any] =
-//          loop(current, stack)
-//
-//        // Interpreter that knows how to evaluate a Resource data structure;
-//        // Maintains its own stack for dealing with Bind chains
-//        @tailrec def loop(current: Resource[F, Any], stack: List[Any => Resource[F, Any]]): F[Any] =
-//          current match {
-//            case a: Allocate[F, Any] =>
-//              F.bracketCase(F.flatMap(a.resource) {
-//                case (a, rel) => F.as(finalizers.update(rel :: _), a)
-//              }) {
-//                a =>
-//                  stack match {
-//                    case Nil =>
-//                      F.pure(a)
-//                    case l =>
-//                      continue(l.head(a), l.tail)
-//                  }
-//              } {
-//                case (_, ExitCase.Completed) =>
-//                  F.unit
-//                case (_, exitCase) =>
-//                  releaseExit(finalizers, exitCase)
-//              }
-//            case b: Bind[F, _, Any] =>
-//              loop(b.source, b.fs.asInstanceOf[Any => Resource[F, Any]] :: stack)
-//            case s: Suspend[F, Any] =>
-//              F.flatMap(s.resource)(continue(_, stack))
-//          }
-//
-//        F.map(loop(resource, Nil))(_.asInstanceOf[A])
+        // Because we have `.uninterruptibleMask` now it's safe to use CE Resource's native `allocated` method.
+        // However, note that while CE Resource can express `bracketCase`, when using [[cats.effect.Resource#allocated]]
+        // the ability to pass an `Outcome` to the finalizer is lost.
+        // Moreover, Lifecycle itself has no ability to express `bracketCase` because `release` does not have
+        // an `exit: Exit[E, A]` parameter.
+        // FIXME: `Lifecycle.release` should have an `exit` parameter
+        F.uncancelable(
+          restore =>
+            F.flatMap(restore(resource.allocated)) {
+              case (a, finalizer) =>
+                F.as(finalizers.update(finalizer :: _), a)
+            }
+        )
       }
     }
   }
@@ -809,7 +776,7 @@ object Lifecycle extends LifecycleInstances {
   }
 
   trait FromCats[F[_], A] extends Lifecycle[F, A] {
-    override final type InnerResource = kernel.Ref[F, List[Outcome[F, Throwable, Any] => F[Unit]]]
+    override final type InnerResource = kernel.Ref[F, List[F[Unit]]]
   }
 
   trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, _], A] {

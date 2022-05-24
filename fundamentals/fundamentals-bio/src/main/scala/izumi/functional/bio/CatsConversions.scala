@@ -1,19 +1,18 @@
 package izumi.functional.bio
 
 import cats.data.State
-import cats.effect.Fiber
+import cats.effect.{Async, Fiber}
 import cats.effect.kernel.Sync.Type
-import cats.effect.kernel.{Cont, Outcome, Poll, Unique}
-import cats.{Applicative, Eval, ~>}
+import cats.effect.kernel.{Cont, Outcome, Poll, Resource, Unique}
+import cats.{Applicative, Eval, Traverse, ~>}
 import izumi.functional.bio.CatsConversions.*
 import izumi.functional.bio.Exit.CatsExit
 import izumi.functional.bio.SpecificityHelper.*
 import izumi.functional.bio.data.RestoreInterruption2
-import izumi.fundamentals.platform.language.unused
 
+import scala.annotation.{nowarn, unused}
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS, NANOSECONDS}
-import scala.concurrent.{ExecutionContext, TimeoutException}
-import scala.util.Either
+import scala.concurrent.{ExecutionContext, Future, TimeoutException}
 
 /**
   * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
@@ -84,16 +83,11 @@ trait CatsConversions9 extends CatsConversions10 {
     F: Async2[F],
     T: Temporal2[F],
     Fork: Fork2[F],
+    Primitives: Primitives2[F],
     BlockingIO: BlockingIO2[F],
     Clock: Clock2[F],
-    Primitives: Primitives2[F],
   ): cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] & S12 = {
-    class BIOTemporalImpl(override val F: Async2[F], override val InnerF: Temporal2[F], override val Fork: Fork2[F], override val Primitives: Primitives2[F])
-      extends BIOCatsSync[F](F, BlockingIO, Clock)
-      with BIOCatsTemporal[F] {
-      override def unique: F[Throwable, Unique.Token] = super[BIOCatsSync].unique
-    }
-    new BIOTemporalImpl(F, T, Fork, Primitives)
+    new BIOCatsTemporalImpl(F, T, Fork, Primitives, BlockingIO, Clock)
   }
 }
 trait CatsConversions10 {
@@ -219,7 +213,7 @@ object CatsConversions {
     }
 
     @inline override final def canceled: F[Throwable, Unit] = {
-      F.sendInterruptToSelf
+      F.sendInterruptToSelf: @nowarn("msg=incorrect")
     }
 
     @inline override final def onCancel[A](fa: F[Throwable, A], fin: F[Throwable, Unit]): F[Throwable, A] = {
@@ -253,11 +247,11 @@ object CatsConversions {
     val F: Applicative2[F]
     val Clock: Clock2[F]
 
-    override def monotonic: F[E, FiniteDuration] = {
+    override final def monotonic: F[E, FiniteDuration] = {
       F.map(Clock.monotonicNano)(FiniteDuration(_, NANOSECONDS))
     }
 
-    override def realTime: F[E, FiniteDuration] = {
+    override final def realTime: F[E, FiniteDuration] = {
       F.map(Clock.epoch)(FiniteDuration(_, MILLISECONDS))
     }
   }
@@ -357,9 +351,16 @@ object CatsConversions {
       F.race(F.map(fa)(Left(_)), F.map(fb)(Right(_)))
     }
 
-//    @inline override final def cancelable[A](k: (Either[Throwable, A] => Unit) => CancelToken[F[Throwable, _]]): F[Throwable, A] = {
-//      F.asyncCancelable(F orTerminate k(_))
-//    }
+    override def background[A](fa: F[Throwable, A]): Resource[F[Throwable, _], F[Throwable, Outcome[F[Throwable, _], Throwable, A]]] = super.background(fa)
+    override def raceOutcome[A, B](
+      fa: F[Throwable, A],
+      fb: F[Throwable, B],
+    ): F[Throwable, Either[Outcome[F[Throwable, _], Throwable, A], Outcome[F[Throwable, _], Throwable, B]]] = super.raceOutcome(fa, fb)
+    override def both[A, B](fa: F[Throwable, A], fb: F[Throwable, B]): F[Throwable, (A, B)] = super.both(fa, fb)
+    override def bothOutcome[A, B](
+      fa: F[Throwable, A],
+      fb: F[Throwable, B],
+    ): F[Throwable, (Outcome[F[Throwable, _], Throwable, A], Outcome[F[Throwable, _], Throwable, B])] = super.bothOutcome(fa, fb)
   }
 
   final class BIOCatsConcurrentImpl[F[+_, +_]](
@@ -378,20 +379,42 @@ object CatsConversions {
     override val Fork: Fork2[F]
     val Primitives: Primitives2[F]
 
-//    @inline override final def async[A](k: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = F.async(k)
-//    @inline override final def asyncF[A](k: (Either[Throwable, A] => Unit) => F[Throwable, Unit]): F[Throwable, A] = F.asyncF(k)
-
-    override def ref[A](a: A): F[Throwable, cats.effect.kernel.Ref[F[Throwable, _], A]] = F.map(Primitives.mkRef(a))(
+    override final def ref[A](a: A): F[Throwable, cats.effect.kernel.Ref[F[Throwable, _], A]] = F.map(Primitives.mkRef(a))(
       ref =>
         new cats.effect.kernel.Ref[F[Throwable, _], A] {
           override def get: F[Throwable, A] = ref.get
           override def set(a: A): F[Throwable, Unit] = ref.set(a)
-          override def update(f: A => A): F[Throwable, Unit] = ref.update_(f)
           override def modify[B](f: A => (A, B)): F[Throwable, B] = ref.modify(f(_).swap)
+          override def update(f: A => A): F[Throwable, Unit] = ref.update_(f)
+          override def tryModify[B](f: A => (A, B)): F[Throwable, Option[B]] = ref.tryModify(f(_).swap)
+          override def tryUpdate(f: A => A): F[Throwable, Boolean] = F.map(ref.tryUpdate(f))(_.isDefined)
 
-          override def access: F[Throwable, (A, A => F[Throwable, Boolean])] = ???
-          override def tryUpdate(f: A => A): F[Throwable, Boolean] = ???
-          override def tryModify[B](f: A => (A, B)): F[Throwable, Option[B]] = ???
+          override def access: F[Throwable, (A, A => F[Throwable, Boolean])] = {
+            F.flatMap(Primitives.mkRef(false)) {
+              used =>
+                F.map(ref.get) {
+                  initialValue =>
+                    val setter = (newValue: A) =>
+                      F.flatMap(used.modify(old => (old, true)))(
+                        alreadyUsed =>
+                          if (alreadyUsed) {
+                            F.pure(false)
+                          } else {
+                            ref.modify(
+                              oldValue =>
+                                // setter only valid if no other modification has occurred concurrently
+                                if (oldValue.asInstanceOf[AnyRef] eq initialValue.asInstanceOf[AnyRef]) {
+                                  (true, newValue)
+                                } else {
+                                  (false, oldValue)
+                                }
+                            )
+                          }
+                      )
+                    (initialValue, setter)
+                }
+            }
+          }
 
           override def tryModifyState[B](state: State[A, B]): F[Throwable, Option[B]] = {
             val f = state.runF.value
@@ -405,7 +428,7 @@ object CatsConversions {
         }
     )
 
-    override def deferred[A]: F[Throwable, cats.effect.kernel.Deferred[F[Throwable, _], A]] = F.map(Primitives.mkPromise[Nothing, A])(
+    override final def deferred[A]: F[Throwable, cats.effect.kernel.Deferred[F[Throwable, _], A]] = F.map(Primitives.mkPromise[Nothing, A])(
       promise =>
         new cats.effect.kernel.Deferred[F[Throwable, _], A] {
           override def get: F[Throwable, A] = promise.await
@@ -413,20 +436,39 @@ object CatsConversions {
           override def complete(a: A): F[Throwable, Boolean] = promise.succeed(a)
         }
     )
+
+    override final def memoize[A](fa: F[Throwable, A]): F[Throwable, F[Throwable, A]] = super.memoize(fa)
+    override final def parReplicateAN[A](n: Int)(replicas: Int, ma: F[Throwable, A]): F[Throwable, List[A]] = super.parReplicateAN(n)(replicas, ma)
+    override final def parSequenceN[T[_], A](n: Int)(tma: T[F[Throwable, A]])(implicit evidence$1: Traverse[T]): F[Throwable, T[A]] = super.parSequenceN(n)(tma)
+    override final def parTraverseN[T[_], A, B](n: Int)(ta: T[A])(f: A => F[Throwable, B])(implicit evidence$2: Traverse[T]): F[Throwable, T[B]] =
+      super.parTraverseN(n)(ta)(f)
   }
 
   trait BIOCatsTemporal[F[+_, +_]] extends cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] with BIOCatsConcurrent[F] {
     val InnerF: Temporal2[F]
 
-    override def sleep(time: FiniteDuration): F[Throwable, Unit] = InnerF.sleep(time)
+    override final def sleep(time: FiniteDuration): F[Throwable, Unit] = InnerF.sleep(time)
 
-    override def delayBy[A](fa: F[Throwable, A], time: FiniteDuration): F[Throwable, A] = super.delayBy(fa, time)
-    override def andWait[A](fa: F[Throwable, A], time: FiniteDuration): F[Throwable, A] = super.andWait(fa, time)
+    override final def delayBy[A](fa: F[Throwable, A], time: FiniteDuration): F[Throwable, A] = super.delayBy(fa, time)
+    override final def andWait[A](fa: F[Throwable, A], time: FiniteDuration): F[Throwable, A] = super.andWait(fa, time)
 
-    override def timeoutTo[A](fa: F[Throwable, A], duration: FiniteDuration, fallback: F[Throwable, A]): F[Throwable, A] = super.timeoutTo(fa, duration, fallback)
-    override def timeout[A](fa: F[Throwable, A], duration: FiniteDuration)(implicit ev: TimeoutException <:< Throwable): F[Throwable, A] = super.timeout(fa, duration)(ev)
-    override def timeoutAndForget[A](fa: F[Throwable, A], duration: FiniteDuration)(implicit ev: TimeoutException <:< Throwable): F[Throwable, A] =
+    override final def timeoutTo[A](fa: F[Throwable, A], duration: FiniteDuration, fallback: F[Throwable, A]): F[Throwable, A] = super.timeoutTo(fa, duration, fallback)
+    override final def timeout[A](fa: F[Throwable, A], duration: FiniteDuration)(implicit ev: TimeoutException <:< Throwable): F[Throwable, A] =
+      super.timeout(fa, duration)(ev)
+    override final def timeoutAndForget[A](fa: F[Throwable, A], duration: FiniteDuration)(implicit ev: TimeoutException <:< Throwable): F[Throwable, A] =
       super.timeoutAndForget(fa, duration)(ev)
+  }
+
+  class BIOCatsTemporalImpl[F[+_, +_]](
+    override val F: Async2[F],
+    override val InnerF: Temporal2[F],
+    override val Fork: Fork2[F],
+    override val Primitives: Primitives2[F],
+    override val BlockingIO: BlockingIO2[F],
+    override val Clock: Clock2[F],
+  ) extends BIOCatsSync[F](F, BlockingIO, Clock)
+    with BIOCatsTemporal[F] {
+    override def unique: F[Throwable, Unique.Token] = super[BIOCatsSync].unique
   }
 
   class BIOCatsAsync[F[+_, +_]](
@@ -444,19 +486,45 @@ object CatsConversions {
     override def never[A]: F[Throwable, A] = super[BIOCatsTemporal].never
     override def unique: F[Throwable, Unique.Token] = super[BIOCatsSync].unique
 
-//    override final def runCancelable[A](fa: F[Throwable, A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[F[Throwable, Unit]] = {
-//      SyncIO[F[Throwable, Unit]] {
-//        UnsafeRun.unsafeRunAsyncInterruptible(fa)(exit => cb(exit.toThrowableEither).unsafeRunAsync(_ => ())).interrupt
-//      }
-//    }
-//
-//    override final def runAsync[A](fa: F[Throwable, A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[Unit] = {
-//      SyncIO {
-//        UnsafeRun.unsafeRunAsync(fa)(exit => cb(exit.toThrowableEither).unsafeRunAsync(_ => ()))
-//      }
-//    }
-    override def evalOn[A](fa: F[Throwable, A], ec: ExecutionContext): F[Throwable, A] = ???
-    override def executionContext: F[Throwable, ExecutionContext] = F.currentEC
-    override def cont[K, R](body: Cont[F[Throwable, *], K, R]): F[Throwable, R] = ???
+    override final def executionContext: F[Throwable, ExecutionContext] = F.currentEC
+    override final def evalOn[A](fa: F[Throwable, A], ec: ExecutionContext): F[Throwable, A] = F.onEC(ec)(fa)
+    override final def startOn[A](fa: F[Throwable, A], ec: ExecutionContext): F[Throwable, Fiber[F[Throwable, _], Throwable, A]] = {
+      F.map(Fork.forkOn(ec)(fa))(_.toCats(F))
+    }
+    override final def async_[A](k: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = F.async(k)
+    override final def fromFuture[A](fut: F[Throwable, Future[A]]): F[Throwable, A] = F.flatMap(fut)(F.fromFuture(_))
+
+    override final def cont[K, R](body: Cont[F[Throwable, _], K, R]): F[Throwable, R] = Async.defaultCont(body)(this)
+
+    override final def evalOnK(ec: ExecutionContext): F[Throwable, _] ~> F[Throwable, _] =
+      super.evalOnK(ec)
+    override final def backgroundOn[A](fa: F[Throwable, A], ec: ExecutionContext): Resource[F[Throwable, _], F[Throwable, Outcome[F[Throwable, _], Throwable, A]]] =
+      super.backgroundOn(fa, ec)
+
+    override final def async[A](k: (Either[Throwable, A] => Unit) => F[Throwable, Option[F[Throwable, Unit]]]): F[Throwable, A] = {
+      F.flatMap(Primitives.mkPromise[Nothing, Option[F[Throwable, Unit]]])(
+        cancelerPromise =>
+          F.guaranteeOnInterrupt(
+            F.asyncF(
+              resume => {
+                F.void(
+                  F.guaranteeCase[Any, Throwable, Option[F[Throwable, Unit]]](
+                    k(resume),
+                    {
+                      case Exit.Success(maybeCanceler) => F.void(cancelerPromise.succeed(maybeCanceler))
+                      case _: Exit.Failure[?] => F.void(cancelerPromise.succeed(None))
+                    },
+                  )
+                )
+              }
+            ),
+            _ =>
+              F.orTerminate {
+                F.flatMap(cancelerPromise.await)(F.traverse_(_)(identity))
+              },
+          )
+      )
+    }
+
   }
 }

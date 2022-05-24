@@ -1,7 +1,7 @@
 package logstage
 
 import izumi.functional.bio.{Error2, MonadAsk3, Panic2, SyncSafe1, SyncSafe2, SyncSafe3}
-import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLogIO}
@@ -10,6 +10,7 @@ import izumi.reflect.Tag
 import logstage.LogIO3Ask.LogIO3AskImpl
 import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
+import scala.annotation.unused
 import scala.language.implicitConversions
 
 trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLogIO[F] {

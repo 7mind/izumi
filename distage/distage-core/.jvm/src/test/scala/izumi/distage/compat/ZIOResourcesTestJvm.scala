@@ -7,7 +7,7 @@ import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Activation, ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.IO2
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec

@@ -1,12 +1,15 @@
 package izumi.distage.modules.support
 
 import cats.Parallel
-import cats.effect.kernel.Async
 import cats.effect.IO
-import cats.effect.unsafe.{IORuntime, IORuntimeConfig}
-import izumi.distage.model.definition.ModuleDef
+import cats.effect.kernel.Async
+import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
+import izumi.distage.model.definition.{Id, Lifecycle, ModuleDef}
+import izumi.distage.model.effect.QuasiIORunner
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
+import izumi.fundamentals.platform.functional.Identity
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
 
 object CatsIOSupportModule extends CatsIOSupportModule
@@ -28,10 +31,39 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
   // QuasiIO & cats-effect instances
   include(AnyCatsEffectSupportModule[IO])
 
+  make[QuasiIORunner[IO]].from(QuasiIORunner.mkFromCatsIORuntime _)
+
   make[Async[IO]].from(IO.asyncForIO)
   make[Parallel[IO]].from(IO.parallelForIO)
 
-  make[IORuntimeConfig].fromValue(IORuntimeConfig())
-  make[IORuntime].from(IORuntime.apply _)
-  make[ExecutionContext].named("cpu").from((_: IORuntime).compute)
+  make[IORuntimeConfig].from(IORuntimeConfig())
+  // by-name cycles don't work reliably at all, so unfortunately, manual cycle breaking:
+  make[(IORuntime, ExecutionContext)].fromResource {
+    (blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
+      val cpuRef = new AtomicReference[ExecutionContext](null)
+      lazy val ioRuntime: IORuntime = IORuntime(cpuRef.get(), blockingPool, scheduler, () => (), ioRuntimeConfig)
+      createCPUPool(ioRuntime).map {
+        ec =>
+          cpuRef.set(ec)
+          (ioRuntime, ec)
+      }
+  }
+  make[IORuntime].from((_: (IORuntime, ExecutionContext))._1)
+  make[ExecutionContext].named("cpu").from((_: (IORuntime, ExecutionContext))._2)
+
+  make[Scheduler].fromResource {
+    Lifecycle
+      .makeSimple(
+        acquire = Scheduler.createDefaultScheduler()
+      )(release = _._2.apply()).map(_._1)
+  }
+
+  protected[this] def createCPUPool(ioRuntime: => IORuntime): Lifecycle[Identity, ExecutionContext] = {
+    val coresOr2 = java.lang.Runtime.getRuntime.availableProcessors() max 2
+    Lifecycle
+      .makeSimple(
+        acquire = IORuntime.createDefaultComputeThreadPool(ioRuntime, threads = coresOr2)
+//      )(release = _._2.apply()).map(_._1)
+      )(release = _ => ()).map(_._1) // FIXME ignore finalizer due to upstream bug https://github.com/typelevel/cats-effect/issues/3006
+  }
 }

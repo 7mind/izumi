@@ -6,6 +6,7 @@ import izumi.fundamentals.platform.functional.Identity
 
 import java.time.temporal.ChronoUnit
 import java.time.{LocalDateTime, OffsetDateTime, ZoneId, ZonedDateTime}
+import scala.annotation.unused
 import scala.language.implicitConversions
 
 trait Clock1[F[_]] extends DivergenceHelper {
@@ -29,21 +30,27 @@ object Clock1 extends LowPriorityClockInstances {
   def fromImpure[F[_]: SyncSafe1](impureClock: Clock1[Identity]): Clock1[F] = fromImpureClock(impureClock, SyncSafe1[F])
 
   object Standard extends Clock1[Identity] {
+
     override def epoch: Long = {
       System.currentTimeMillis()
     }
+
     override def monotonicNano: Long = {
       System.nanoTime()
     }
+
     override def now(accuracy: ClockAccuracy): ZonedDateTime = {
       ClockAccuracy.applyAccuracy(ZonedDateTime.now(TZ_UTC), accuracy)
     }
+
     override def nowLocal(accuracy: ClockAccuracy): LocalDateTime = {
       now(accuracy).toLocalDateTime
     }
+
     override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = {
       now(accuracy).toOffsetDateTime
     }
+
     private[this] final val TZ_UTC: ZoneId = ZoneId.of("UTC")
   }
 
@@ -101,8 +108,8 @@ object Clock1 extends LowPriorityClockInstances {
     Divergent(F.asInstanceOf[C[FR[R0, E, _]]])
   }
 
-  @inline implicit final def covarianceConversion[F[_], G[_]](clock: Clock1[F])(implicit ev: F[?] <:< G[?]): Clock1[G] = {
-    val _ = ev; clock.asInstanceOf[Clock1[G]]
+  @inline implicit final def covarianceConversion[F[_], G[_]](clock: Clock1[F])(implicit @unused ev: F[?] <:< G[?]): Clock1[G] = {
+    clock.asInstanceOf[Clock1[G]]
   }
 }
 

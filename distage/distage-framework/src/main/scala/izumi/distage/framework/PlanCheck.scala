@@ -14,7 +14,7 @@ import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.language.Quirks.discard
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
 import scala.annotation.tailrec

@@ -3,8 +3,11 @@ package izumi.functional.bio
 import izumi.functional.bio.PredefinedHelper.Predefined
 import zio.ZIO
 
+import scala.concurrent.ExecutionContext
+
 trait Fork3[F[-_, +_, +_]] extends RootBifunctor[F] with ForkInstances {
   def fork[R, E, A](f: F[R, E, A]): F[R, Nothing, Fiber3[F, E, A]]
+  def forkOn[R, E, A](ec: ExecutionContext)(f: F[R, E, A]): F[R, Nothing, Fiber3[F, E, A]]
 }
 
 private[bio] sealed trait ForkInstances

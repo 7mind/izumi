@@ -5,7 +5,7 @@ import zio._
 
 object PrimitivesMZio extends PrimitivesMZio
 
-class PrimitivesMZio extends PrimitivesM2[IO] {
+open class PrimitivesMZio extends PrimitivesM2[IO] {
   override def mkRefM[A](a: A): IO[Nothing, RefM2[IO, A]] = {
     RefM.make(a).map(RefM2.fromZIO)
   }

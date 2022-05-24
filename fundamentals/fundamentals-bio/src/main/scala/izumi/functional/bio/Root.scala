@@ -7,7 +7,7 @@ import izumi.functional.bio.SpecificityHelper.*
 import izumi.functional.bio.impl.{AsyncZio, BioEither, BioIdentity3}
 import izumi.functional.bio.retry.Scheduler3
 import izumi.fundamentals.platform.functional.{Identity2, Identity3}
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import zio.ZIO
 
 import scala.language.implicitConversions

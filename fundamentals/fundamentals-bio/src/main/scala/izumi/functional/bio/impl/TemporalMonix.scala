@@ -8,6 +8,12 @@
 //
 //class TemporalMonix(clock: Clock[UIO]) extends AsyncMonix with Temporal2[IO] {
 //  @inline override def sleep(duration: Duration): IO[Nothing, Unit] = IO.sleep(FiniteDuration(duration.length, duration.unit))
+//
+//
+//  @inline override def timeout[R, E, A](duration: Duration)(r: IO[E, A]): IO[E, Option[A]] = {
+//    r.timeout(FiniteDuration(duration.length, duration.unit))
+//  }
+//
 //  @inline override def retryOrElse[R, E, A, E2](r: IO[E, A])(duration: FiniteDuration, orElse: => IO[E2, A]): IO[E2, A] = {
 //    def loop(maxTime: FiniteDuration): IO[E2, A] = {
 //      r.redeemCauseWith(
@@ -22,9 +28,5 @@
 //
 //    clock.monotonic
 //      .flatMap(now => loop(maxTime = now + duration))
-//  }
-//
-//  @inline override def timeout[R, E, A](duration: Duration)(r: IO[E, A]): IO[E, Option[A]] = {
-//    r.timeout(FiniteDuration(duration.length, duration.unit))
 //  }
 //}

@@ -8,7 +8,7 @@ import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
 import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import izumi.reflect.{TagK, TagK3, TagKK}
 
 /**
@@ -139,15 +139,17 @@ sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[F[_], Async[_[_]]: `cats.effect.kernel.Async`, Parallel[_[_]]: `cats.Parallel`](
+  implicit final def fromCats[F[_], Async[_[_]]: `cats.effect.kernel.Async`, Parallel[_[_]]: `cats.Parallel`, Dispatcher[_[_]]: `cats.effect.std.Dispatcher`](
     implicit
     F0: Async[F],
     P0: Parallel[F],
+    D0: Dispatcher[F],
     tagK: TagK[F],
   ): DefaultModule[F] = {
     val F = F0.asInstanceOf[cats.effect.kernel.Async[F]]
     val P = P0.asInstanceOf[cats.Parallel[F]]
-    DefaultModule(AnyCatsEffectSupportModule.withImplicits[F](tagK, F, P))
+    val D = D0.asInstanceOf[cats.effect.std.Dispatcher[F]]
+    DefaultModule(AnyCatsEffectSupportModule.withImplicits[F](tagK, F, P, D))
   }
 }
 

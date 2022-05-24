@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
 import cats.effect.kernel.Outcome
-import zio.{Cause, FiberFailure}
+import zio.Cause
 
 sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
@@ -35,9 +35,9 @@ object Exit {
       override def map[E1](f: Nothing => E1): Trace[E1] = this
     }
 
-    final case class ZIOTrace[+E](cause: Cause[E]) extends Trace[E] {
+    final case class ZIOTrace[+E](cause: zio.Cause[E]) extends Trace[E] {
       override def asString: String = cause.prettyPrint
-      override def toThrowable: Throwable = FiberFailure(cause)
+      override def toThrowable: Throwable = zio.FiberFailure(cause)
       override def unsafeAttachTrace(conv: E => Throwable): Throwable = cause.squashTraceWith {
         case t: Throwable => t
         case e => conv(e)
@@ -102,7 +102,7 @@ object Exit {
         toExit(cause)
     }
 
-    def toExit[E](result: Cause[E]): Exit.Failure[E] = {
+    def toExit[E](result: zio.Cause[E]): Exit.Failure[E] = {
       result.failureOrCause match {
         case Left(err) =>
           Error(err, Trace.ZIOTrace(result))
@@ -112,9 +112,34 @@ object Exit {
           val exceptions = cause.defects
           val compound = exceptions match {
             case e :: Nil => e
-            case _ => FiberFailure(cause)
+            case _ => zio.FiberFailure(cause)
           }
           Termination(compound, exceptions, Trace.ZIOTrace(cause))
+      }
+    }
+
+    def fromExit[E, A](exit: Exit[E, A]): zio.Exit[E, A] = exit match {
+      case Success(value) =>
+        zio.Exit.Success(value)
+      case failure: Failure[E] =>
+        zio.Exit.Failure(causeFromExit(failure))
+    }
+
+    def causeFromExit[E](failure: Failure[E]): Cause[E] = {
+      failure.trace match {
+        case Trace.ZIOTrace(cause) =>
+          cause
+        case _ =>
+          failure match {
+            case Error(error, _) =>
+              zio.Cause.fail(error)
+            case Termination(_, headException :: tailExceptions, _) =>
+              tailExceptions.foldLeft(zio.Cause.die(headException))(_ ++ zio.Cause.die(_))
+            case Termination(compoundException, _, _) =>
+              zio.Cause.die(compoundException)
+            case Interruption(_, _) =>
+              zio.Cause.interrupt(zio.Fiber.Id.None)
+          }
       }
     }
   }
