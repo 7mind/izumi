@@ -1,15 +1,17 @@
 package izumi.functional.bio.laws.env
 
 import cats.Eq
+import cats.effect.testkit.TestInstances
 
 import scala.concurrent.ExecutionException
 
-trait EqThrowable {
-  implicit lazy val equalityThrowable: Eq[Throwable] = new Eq[Throwable] {
+trait EqThrowable { this: TestInstances =>
+  implicit override lazy val eqThrowable: Eq[Throwable] = new Eq[Throwable] {
     override def eqv(x: Throwable, y: Throwable): Boolean = {
       val ex1 = extractEx(x)
       val ex2 = extractEx(y)
-      ex1.getClass == ex2.getClass && ex1.getMessage == ex2.getMessage
+      val result = ex1.getClass == ex2.getClass && ex1.getMessage == ex2.getMessage
+      result
     }
 
     // Unwraps exceptions that got caught by Future's implementation

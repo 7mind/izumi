@@ -25,6 +25,7 @@ trait BlockingIO3[F[-_, +_, +_]] extends BlockingIOInstances with DivergenceHelp
     * THIS IS USUALLY UNSAFE unless calling well-written libraries that specifically handle [[java.lang.InterruptedException]]
     */
   def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A]
+
 }
 object BlockingIO3 {
   def apply[F[-_, +_, +_]: BlockingIO3]: BlockingIO3[F] = implicitly

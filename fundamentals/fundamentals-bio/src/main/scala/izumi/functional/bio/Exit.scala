@@ -91,7 +91,7 @@ object Exit {
     override def leftMap[E1](f: Nothing => E1): this.type = this
   }
   object Interruption {
-    def apply(trace: Trace[Nothing]): Interruption = Interruption(new InterruptedException(trace.asString), trace)
+    def apply(trace: Trace[Nothing]): Interruption = Interruption(trace.toThrowable, trace)
   }
 
   object ZIOExit {
@@ -169,6 +169,9 @@ object Exit {
 //  }
 
   object CatsExit {
+    def exitToOutcomeThrowable[F[+_, +_], A](exit: Exit[Throwable, A])(implicit F: Applicative2[F]): Outcome[F[Throwable, +_], Throwable, A] = {
+      toOutcomeThrowable(F.pure, exit)
+    }
     def toOutcomeThrowable[F[_], A](pure: A => F[A], exit: Exit[Throwable, A]): Outcome[F, Throwable, A] = exit match {
       case Exit.Success(b) => Outcome.succeeded(pure(b))
       case Exit.Interruption(_, _) => Outcome.canceled

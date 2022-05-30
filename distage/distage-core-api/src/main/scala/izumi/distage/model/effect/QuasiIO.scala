@@ -266,7 +266,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
             exitCase match {
               case Outcome.Succeeded(_) => release(a, None)
               case Outcome.Errored(e) => release(a, Some(e))
-              case Outcome.Canceled() => release(a, Some(new InterruptedException))
+              case Outcome.Canceled() => release(a, Some(new InterruptedException("cats.effect.kernel.Outcome.Canceled()")))
             }
         })
       }
@@ -277,7 +277,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances {
         F.guaranteeCase(F.defer(fa)) {
           case Outcome.Succeeded(_) => F.unit
           case Outcome.Errored(e) => cleanupOnFailure(e)
-          case Outcome.Canceled() => cleanupOnFailure(new InterruptedException)
+          case Outcome.Canceled() => cleanupOnFailure(new InterruptedException("cats.effect.kernel.Outcome.Canceled()"))
         }
       }
       override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)

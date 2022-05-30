@@ -722,6 +722,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
       "org.typelevel" %% "cats-effect-laws" % V.cats_effect % Test,
+      "org.typelevel" %% "cats-effect-testkit" % V.cats_effect % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "discipline-core" % V.discipline % Test,
       "org.typelevel" %% "discipline-scalatest" % V.discipline_scalatest % Test,

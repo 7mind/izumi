@@ -4,7 +4,7 @@ import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.data.{Morphism3, RestoreInterruption3}
 import izumi.functional.bio.{Async3, Exit, Fiber2, Fiber3, Local3, __PlatformSpecific}
 import zio.internal.ZIOSucceedNow
-import zio.{NeedsEnv, ZIO, ZScope}
+import zio.{NeedsEnv, ZIO}
 
 import java.util.concurrent.CompletionStage
 import scala.concurrent.{ExecutionContext, Future}
@@ -99,18 +99,17 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
 
   @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
     r1.interruptible
-      .overrideForkScope(ZScope.global)
-      .raceFirst(r2.interruptible.overrideForkScope(ZScope.global))
+      .raceFirst(r2.interruptible)
       .resetForkScope
   }
 
-  @inline override final def racePair[R, E, A, B](
+  @inline override final def racePairUnsafe[R, E, A, B](
     r1: ZIO[R, E, A],
     r2: ZIO[R, E, B],
-  ): ZIO[R, E, Either[(A, Fiber3[ZIO, E, B]), (Fiber3[ZIO, E, A], B)]] = {
-    (r1.interruptible.overrideForkScope(ZScope.global) raceWith r2.interruptible.overrideForkScope(ZScope.global))(
-      { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(lv => Left((lv, Fiber2.fromZIO(f)))) },
-      { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(rv => Right((Fiber2.fromZIO(f), rv))) },
+  ): ZIO[R, E, Either[(Exit[E, A], Fiber3[ZIO, E, B]), (Fiber3[ZIO, E, A], Exit[E, B])]] = {
+    (r1.interruptible raceWith r2.interruptible)(
+      { case (l, f) => ZIOSucceedNow(Left((ZIOExit.toExit(l), Fiber2.fromZIO(f)))) },
+      { case (r, f) => ZIOSucceedNow(Right((Fiber2.fromZIO(f), ZIOExit.toExit(r)))) },
     ).resetForkScope
   }
 

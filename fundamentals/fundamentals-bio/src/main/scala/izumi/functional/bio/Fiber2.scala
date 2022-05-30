@@ -28,7 +28,7 @@ object Fiber2 {
   implicit final class ToCats[F[+_, +_], A](private val bioFiber: Fiber2[F, Throwable, A]) extends AnyVal {
     def toCats(implicit F: Applicative2[F]): cats.effect.Fiber[F[Throwable, _], Throwable, A] = new cats.effect.Fiber[F[Throwable, _], Throwable, A] {
       override def cancel: F[Nothing, Unit] = F.void(bioFiber.interrupt)
-      override def join: F[Nothing, Outcome[F[Throwable, _], Throwable, A]] = bioFiber.observe.map(CatsExit.toOutcomeThrowable(F.pure, _))
+      override def join: F[Nothing, Outcome[F[Throwable, _], Throwable, A]] = bioFiber.observe.map(CatsExit.exitToOutcomeThrowable(_))
     }
   }
 }

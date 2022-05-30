@@ -18,7 +18,7 @@ trait Clock1[F[_]] extends DivergenceHelper {
   def nowLocal(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): F[LocalDateTime]
   def nowOffset(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): F[OffsetDateTime]
 
-  /** Should return an increasing measure of time, in nanoseconds */
+  /** Should return a never decreasing measure of time, in nanoseconds */
   def monotonicNano: F[Long]
 
   @inline final def widen[G[x] >: F[x]]: Clock1[G] = this

@@ -30,8 +30,6 @@ class CatsEffectInstancesModule[F[_]: TagK] extends ModuleDef {
   make[GenConcurrent[F, Throwable]].using[Async[F]]
   make[GenTemporal[F, Throwable]].using[Async[F]]
   make[Sync[F]].using[Async[F]]
-  // FIXME cats LiftIO
-//  make[LiftIO[F]].using[Async[F]]
 }
 
 object CatsEffectInstancesModule {

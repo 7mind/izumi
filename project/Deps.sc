@@ -67,6 +67,7 @@ object Izumi {
       cats_effect,
     )
     final val cats_effect_laws = Library("org.typelevel", "cats-effect-laws", V.cats_effect, LibraryType.Auto) in Scope.Test.all
+    final val cats_effect_testkit = Library("org.typelevel", "cats-effect-testkit", V.cats_effect, LibraryType.Auto) in Scope.Test.all
 
     final val circe_core = Library("io.circe", "circe-core", V.circe, LibraryType.Auto)
     final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
@@ -74,7 +75,7 @@ object Izumi {
     final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
 
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
-    final val discipline_scaltest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
+    final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
     final val magnolia = Library("com.propensive", "magnolia", V.magnolia, LibraryType.Auto)
@@ -391,7 +392,8 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.bio,
-        libs = allMonadsOptional ++ Seq(cats_effect_laws, scalatest, discipline, discipline_scaltest) ++
+        libs = allMonadsOptional ++
+          Seq(cats_effect_laws, cats_effect_testkit, scalatest, discipline, discipline_scalatest) ++
           Seq(zio_interop_cats in Scope.Test.all) ++
           Seq(scala_java_time in Scope.Test.js),
         depends = Seq(

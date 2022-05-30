@@ -162,9 +162,9 @@ object Syntax2 {
       */
     @inline final def sandboxToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
       F.leftMap(F.sandbox(r))(_.toThrowable)
-
     /** Convert Throwable typed error into a defect */
     @inline final def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
+    @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
   }
 
   class IOOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: IO2[F]) extends PanicOps(r) {
@@ -181,10 +181,9 @@ object Syntax2 {
   final class ConcurrentOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Concurrent2[F])
     extends ParallelOps(r)(F) {
     @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
-    @inline final def racePair[E1 >: E, A1 >: A](
+    @inline final def racePairUnsafe[E1 >: E, A1 >: A](
       that: F[E1, A1]
-    ): F[E1, Either[(A, Fiber2[F, E1, A1]), (Fiber2[F, E1, A], A1)]] = F.racePair(r, that)
-    @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
+    ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
   class AsyncOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Async2[F]) extends IOOps(r) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
@@ -193,10 +192,9 @@ object Syntax2 {
     @inline final def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
 
     @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
-    @inline final def racePair[E1 >: E, A1 >: A](
+    @inline final def racePairUnsafe[E1 >: E, A1 >: A](
       that: F[E1, A1]
-    ): F[E1, Either[(A, Fiber2[F, E1, A1]), (Fiber2[F, E1, A], A1)]] = F.racePair(r, that)
-    @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
+    ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
 
   final class TemporalOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Temporal2[F]) {

@@ -13,5 +13,5 @@ class MiniBIOLawsTest extends CatsLawsTestBase with MiniBIOEnv {
     }
   }
 
-//  checkAll("MiniBIO sync", syncTests.sync[Int, Int, Int])
+  checkAll("MiniBIO sync", syncTests.sync[Int, Int, Int])
 }
