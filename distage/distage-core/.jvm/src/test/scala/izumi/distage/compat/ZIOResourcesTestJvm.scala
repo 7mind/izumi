@@ -1,18 +1,17 @@
 package izumi.distage.compat
 
-import cats.effect.Bracket
-import distage.{TagKK, _}
-import izumi.distage.compat.ZIOResourcesTestJvm._
+import cats.arrow.FunctionK
+import distage.{TagKK, *}
+import izumi.distage.compat.ZIOResourcesTestJvm.*
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Activation, ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.IO2
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
-import zio.Runtime.default.unsafeRun
-import zio._
+import zio.*
 
 object ZIOResourcesTestJvm {
   class Res { var initialized = false }
@@ -26,6 +25,8 @@ object ZIOResourcesTestJvm {
   }
 }
 final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
+
+  def unsafeRun[E, A](eff: => ZIO[ZEnv, E, A]): A = zio.Runtime.default.unsafeRun(eff)
 
   "ZManaged" should {
     "ZManaged works" in {
@@ -70,7 +71,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
           assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
-          assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
+          assert(!fn.diKeys.exists(_.toString.contains("cats.effect")))
         case _ =>
           fail()
       }
@@ -104,7 +105,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       unsafeRun {
-        import izumi.functional.bio.catz.BIOToBracket
+        import izumi.functional.bio.catz.BIOToMonadCancel
         ctxResource.toCats
           .use(assert1)
           .flatMap((assert2 _).tupled)
@@ -177,7 +178,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
           assert(implDef.implType == SafeType.get[Res1])
           assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
-          assert(!(fn.diKeys contains DIKey.get[Bracket[Task, Throwable]]))
+          assert(!fn.diKeys.exists(_.toString.contains("cats.effect")))
         case _ =>
           fail()
       }
@@ -211,7 +212,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       unsafeRun {
-        import izumi.functional.bio.catz.BIOToBracket
+        import izumi.functional.bio.catz.BIOToMonadCancel
         ctxResource.toCats
           .use(assert1)
           .flatMap((assert2 _).tupled)
@@ -262,15 +263,14 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
 
       When("Even `ZManaged -> Resource -> Lifecycle` chain is still interruptible")
       unsafeRun {
-        import zio.interop.catz._
+        import zio.interop.catz.*
         Lifecycle
-          .fromCats[Task, Fiber[Nothing, Unit]](
+          .fromCats[ZIO[ZEnv, Throwable, _], Fiber[Nothing, Unit]](
             ZManaged
               .fromEffect(ZIO.never)
               .onExit((_: zio.Exit[Throwable, Unit]) => ZIO.effectTotal(Then("Resource interrupted")))
-              .fork
-              .toResourceZIO
-          ).use((_: Fiber[Nothing, Unit]).interrupt.unit)
+              .fork.toResourceZIO.mapK(FunctionK.id[Task].widen[ZIO[ZEnv, Throwable, _]])
+          ).use((_: Fiber[Throwable, Unit]).interrupt.unit)
       }
     }
 

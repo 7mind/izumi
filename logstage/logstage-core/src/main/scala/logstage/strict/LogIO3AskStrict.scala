@@ -27,7 +27,7 @@ object LogIO3AskStrict {
     *   new Service[ZIO](LogIO3AskStrict.make)
     * }}}
     */
-  @inline def make[F[-_, +_, +_]: MonadAsk3](implicit t: Tag[LogIO3Strict[F]]): LogIO3AskStrict[F] = new LogIO3AskStrictImpl[F](_.get)
+  @inline def make[F[-_, +_, +_]: MonadAsk3](implicit t: Tag[LogIO3Strict[F]]): LogIO3AskStrict[F] = new LogIO3AskStrictImpl[F](_.get[LogIO3Strict[F]])
 
   /**
     * Lets you carry LogIO3 capability in environment

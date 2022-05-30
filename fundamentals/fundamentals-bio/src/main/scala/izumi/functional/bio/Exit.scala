@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
-import zio.{Cause, FiberFailure}
-import monix.bio
+import cats.effect.kernel.Outcome
+import zio.Cause
 
 sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
@@ -35,9 +35,9 @@ object Exit {
       override def map[E1](f: Nothing => E1): Trace[E1] = this
     }
 
-    final case class ZIOTrace[+E](cause: Cause[E]) extends Trace[E] {
+    final case class ZIOTrace[+E](cause: zio.Cause[E]) extends Trace[E] {
       override def asString: String = cause.prettyPrint
-      override def toThrowable: Throwable = FiberFailure(cause)
+      override def toThrowable: Throwable = zio.FiberFailure(cause)
       override def unsafeAttachTrace(conv: E => Throwable): Throwable = cause.squashTraceWith {
         case t: Throwable => t
         case e => conv(e)
@@ -91,18 +91,18 @@ object Exit {
     override def leftMap[E1](f: Nothing => E1): this.type = this
   }
   object Interruption {
-    def apply(trace: Trace[Nothing]): Interruption = Interruption(new InterruptedException(trace.asString), trace)
+    def apply(trace: Trace[Nothing]): Interruption = Interruption(trace.toThrowable, trace)
   }
 
   object ZIOExit {
-    @inline def toExit[E, A](result: zio.Exit[E, A]): Exit[E, A] = result match {
+    def toExit[E, A](result: zio.Exit[E, A]): Exit[E, A] = result match {
       case zio.Exit.Success(v) =>
         Success(v)
       case zio.Exit.Failure(cause) =>
         toExit(cause)
     }
 
-    @inline def toExit[E](result: Cause[E]): Exit.Failure[E] = {
+    def toExit[E](result: zio.Cause[E]): Exit.Failure[E] = {
       result.failureOrCause match {
         case Left(err) =>
           Error(err, Trace.ZIOTrace(result))
@@ -112,38 +112,75 @@ object Exit {
           val exceptions = cause.defects
           val compound = exceptions match {
             case e :: Nil => e
-            case _ => FiberFailure(cause)
+            case _ => zio.FiberFailure(cause)
           }
           Termination(compound, exceptions, Trace.ZIOTrace(cause))
       }
     }
+
+    def fromExit[E, A](exit: Exit[E, A]): zio.Exit[E, A] = exit match {
+      case Success(value) =>
+        zio.Exit.Success(value)
+      case failure: Failure[E] =>
+        zio.Exit.Failure(causeFromExit(failure))
+    }
+
+    def causeFromExit[E](failure: Failure[E]): Cause[E] = {
+      failure.trace match {
+        case Trace.ZIOTrace(cause) =>
+          cause
+        case _ =>
+          failure match {
+            case Error(error, _) =>
+              zio.Cause.fail(error)
+            case Termination(_, headException :: tailExceptions, _) =>
+              tailExceptions.foldLeft(zio.Cause.die(headException))(_ ++ zio.Cause.die(_))
+            case Termination(compoundException, _, _) =>
+              zio.Cause.die(compoundException)
+            case Interruption(_, _) =>
+              zio.Cause.interrupt(zio.Fiber.Id.None)
+          }
+      }
+    }
   }
 
-  object MonixExit {
-    @inline def toExit[E, A](exit: Either[Option[bio.Cause[E]], A]): Exit[E, A] = {
-      exit match {
-        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.empty)
-        case Left(Some(error)) => toExit(error)
-        case Right(value) => Success(value)
-      }
-    }
+//  object MonixExit {
+//    def toExit[E, A](exit: Either[Option[bio.Cause[E]], A]): Exit[E, A] = {
+//      exit match {
+//        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.empty)
+//        case Left(Some(error)) => toExit(error)
+//        case Right(value) => Success(value)
+//      }
+//    }
+//
+//    def toExit[E, A](exit: Either[bio.Cause[E], A])(implicit d: DummyImplicit): Exit[E, A] = {
+//      exit match {
+//        case Left(error) => toExit(error)
+//        case Right(value) => Success(value)
+//      }
+//    }
+//
+//    def toExit[E](cause: bio.Cause[E]): Exit.Failure[E] = {
+//      cause match {
+//        case bio.Cause.Error(value) => Exit.Error(value, Trace.empty)
+//        case bio.Cause.Termination(value) => Exit.Termination(value, Trace.empty)
+//      }
+//    }
+//  }
 
-    @inline def toExit[E, A](exit: Either[bio.Cause[E], A])(implicit d: DummyImplicit): Exit[E, A] = {
-      exit match {
-        case Left(error) => toExit(error)
-        case Right(value) => Success(value)
-      }
+  object CatsExit {
+    def exitToOutcomeThrowable[F[+_, +_], A](exit: Exit[Throwable, A])(implicit F: Applicative2[F]): Outcome[F[Throwable, +_], Throwable, A] = {
+      toOutcomeThrowable(F.pure, exit)
     }
-
-    @inline def toExit[E](cause: bio.Cause[E]): Exit.Failure[E] = {
-      cause match {
-        case bio.Cause.Error(value) => Exit.Error(value, Trace.empty)
-        case bio.Cause.Termination(value) => Exit.Termination(value, Trace.empty)
-      }
+    def toOutcomeThrowable[F[_], A](pure: A => F[A], exit: Exit[Throwable, A]): Outcome[F, Throwable, A] = exit match {
+      case Exit.Success(b) => Outcome.succeeded(pure(b))
+      case Exit.Interruption(_, _) => Outcome.canceled
+      case error @ Error(_, _) => Outcome.errored(error.toThrowable)
+      case termination @ Termination(_, _, _) => Outcome.errored(termination.toThrowable)
     }
   }
 
-  implicit lazy val ExitInstances: Monad2[Exit] with Bifunctor2[Exit] = new Monad2[Exit] with Bifunctor2[Exit] {
+  implicit lazy val ExitInstances: Monad2[Exit] & Bifunctor2[Exit] = new Monad2[Exit] with Bifunctor2[Exit] {
     override final val InnerF: Functor2[Exit] = this
     override final def pure[A](a: A): Exit[Nothing, A] = Exit.Success(a)
     override final def map[R, E, A, B](r: Exit[E, A])(f: A => B): Exit[E, B] = r.map(f)

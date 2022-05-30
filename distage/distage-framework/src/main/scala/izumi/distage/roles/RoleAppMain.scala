@@ -1,6 +1,6 @@
 package izumi.distage.roles
 
-import cats.effect.LiftIO
+import cats.effect.kernel.Async
 import distage.Injector
 import izumi.distage.framework.services.ModuleProvider
 import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleCheckableApp}
@@ -9,18 +9,16 @@ import izumi.distage.modules.{DefaultModule, DefaultModule2, DefaultModule3}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{ArgV, RequiredRoles}
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
-import izumi.distage.roles.launcher.AppShutdownStrategy._
+import izumi.distage.roles.launcher.AppShutdownStrategy.*
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.bio.{Async2, Async3}
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.logstage.distage.{LogIO2Module, LogIO3Module}
 import izumi.reflect.{TagK, TagK3, TagKK}
-
-import scala.concurrent.ExecutionContext
 
 /**
   * Create a launcher for role-based applications by extending this in a top-level object
@@ -159,11 +157,8 @@ object RoleAppMain {
     }
   }
 
-  abstract class LauncherCats[F[_]: TagK: LiftIO: DefaultModule](
-    shutdownExecutionContext: ExecutionContext = ExecutionContext.global
-  )(implicit artifact: IzArtifactMaterializer
-  ) extends RoleAppMain[F] {
-    override protected def shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(shutdownExecutionContext)
+  abstract class LauncherCats[F[_]: TagK: Async: DefaultModule](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F] {
+    override protected def shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy
   }
 
   abstract class LauncherIdentity(implicit artifact: IzArtifactMaterializer) extends RoleAppMain[Identity] {

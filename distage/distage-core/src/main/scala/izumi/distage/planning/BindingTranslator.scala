@@ -24,7 +24,7 @@ object BindingTranslator {
   class Impl extends BindingTranslator {
     def computeProvisioning(binding: Binding): NextOps = {
       binding match {
-        case singleton: SingletonBinding[_] =>
+        case singleton: SingletonBinding[?] =>
           NextOps(
             sets = Map.empty,
             provisions = provisionSingleton(singleton),
@@ -44,7 +44,7 @@ object BindingTranslator {
             provisions = next.provisions,
           )
 
-        case set: EmptySetBinding[_] =>
+        case set: EmptySetBinding[?] =>
           val newSet = CreateSet(set.key, Set.empty, OperationOrigin.UserBinding(binding))
 
           NextOps(

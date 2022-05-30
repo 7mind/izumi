@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 
 trait Functor3[F[-_, +_, +_]] extends RootBifunctor[F] {
   def map[R, E, A, B](r: F[R, E, A])(f: A => B): F[R, E, B]

@@ -1,8 +1,10 @@
 package izumi.logstage.api.logger
 
-import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{CustomContext, Entry, Level, Message}
 import logstage.UnsafeLogIO
+
+import scala.annotation.unused
 
 trait AbstractLogIO[F[_]] extends UnsafeLogIO[F] {
   type Self[f[_]] <: AbstractLogIO[f]

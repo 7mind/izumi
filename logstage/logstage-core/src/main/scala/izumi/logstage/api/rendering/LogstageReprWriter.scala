@@ -1,7 +1,7 @@
 package izumi.logstage.api.rendering
 
 import izumi.fundamentals.platform.language.Quirks.Discarder
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import izumi.logstage.api.rendering.LogstageReprWriter.Token
 
 class LogstageReprWriter(@unused colored: Boolean) extends ExtendedLogstageWriter[String] {

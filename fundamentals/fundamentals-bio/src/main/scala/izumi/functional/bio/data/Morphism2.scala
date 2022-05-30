@@ -9,18 +9,11 @@ import scala.language.implicitConversions
   * BIO does not work without `-Xsource:2.13` or `-Xsource:3` option on 2.12.
   */
 object Morphism2 {
-  private[data] type Morphism2[-F[_, _], +G[_, _]]
-  implicit final class Ops[-F[_, _], +G[_, _]](private val self: Morphism2[F, G]) extends AnyVal {
-    @inline def apply[E, A](f: F[E, A]): G[E, A] = self.asInstanceOf[F[E, A] => G[E, A]](f)
-
-    @inline def compose[F1[_, _]](f: Morphism2[F1, F]): Morphism2[F1, G] = Morphism2(g => apply(f(g)))
-    @inline def andThen[H[_, _]](f: Morphism2[G, H]): Morphism2[F, H] = f.compose(self)
-  }
+  private[data] type Morphism2[-F[_, _], +G[_, _]] = Morphism3[Lambda[(R, E, A) => F[E, A]], Lambda[(R, E, A) => G[E, A]]]
 
   @inline def apply[F[_, _], G[_, _]](polyFunction: F[UnknownE, UnknownA] => G[UnknownE, UnknownA]): Morphism2[F, G] = polyFunction.asInstanceOf[Morphism2[F, G]]
 
-  /** If requested implicitly, an identity morphism is always available */
-  @inline implicit def identity[F[_, _]]: Morphism2[F, F] = (Predef.identity[Any] _).asInstanceOf[Morphism2[F, F]]
+  @inline def identity[F[_, _]]: Morphism2[F, F] = Morphism3.identity2
 
   /**
     * When it's more convenient to write a polymorphic function using a class or kind-projector's lambda syntax:
@@ -39,9 +32,6 @@ object Morphism2 {
     @inline implicit def asMorphism[F[_, _], G[_, _]](functionKKInstance: Morphism2.Instance[F, G]): Morphism2[F, G] =
       Morphism2(functionKKInstance.apply)
   }
-
-  implicit def conversion3To2[F[_, _, _], G[_, _, _], R](f: Morphism3[F, G]): Morphism2[F[R, _, _], G[R, _, _]] = f.asInstanceOf[Morphism2[F[R, _, _], G[R, _, _]]]
-  implicit def Convert3To2[F[_, _, _], G[_, _, _], R](implicit f: Morphism3[F, G]): Morphism2[F[R, _, _], G[R, _, _]] = f.asInstanceOf[Morphism2[F[R, _, _], G[R, _, _]]]
 
   private[Morphism2] type UnknownE
   private[Morphism2] type UnknownA

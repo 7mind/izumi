@@ -30,7 +30,7 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   protected[this] implicit val liftableBasicDIKey: Liftable[DIKey.BasicKey] = {
     Liftable[DIKey.BasicKey] {
       case t: DIKey.TypeKey => q"${liftableTypeKey(t)}"
-      case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
+      case i: DIKey.IdKey[?] => q"${liftableIdKey(i)}"
     }
   }
 

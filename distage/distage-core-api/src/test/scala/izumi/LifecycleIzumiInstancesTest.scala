@@ -15,7 +15,7 @@ class LifecycleIzumiInstancesTest extends AnyWordSpec {
     }
 
     t2[zio.IO]
-    t2[monix.bio.IO]
+//    t2[monix.bio.IO]
 
     t3[zio.ZIO]
   }

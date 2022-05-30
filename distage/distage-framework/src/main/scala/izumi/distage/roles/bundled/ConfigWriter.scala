@@ -13,7 +13,7 @@ import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.Value
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter

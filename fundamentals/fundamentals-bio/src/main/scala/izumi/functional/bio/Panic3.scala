@@ -1,12 +1,103 @@
 package izumi.functional.bio
 
 import cats.~>
+import izumi.functional.bio.data.RestoreInterruption3
 
 trait Panic3[F[-_, +_, +_]] extends Bracket3[F] with PanicSyntax {
   def terminate(v: => Throwable): F[Any, Nothing, Nothing]
+  def halt[E](exit: Exit.Failure[E]): F[Any, E, Nothing]
+
   def sandbox[R, E, A](r: F[R, E, A]): F[R, Exit.Failure[E], A]
 
-  @inline final def orTerminate[R, A](r: F[R, Throwable, A]): F[R, Nothing, A] = catchAll(r)(terminate(_))
+  /**
+    * Signal interruption to this fiber.
+    *
+    * This is _NOT_ the same as
+    *
+    * {{{
+    *   F.halt(Exit.Interrupted(Trace.empty))
+    * }}}
+    *
+    * The code above exits with `Exit.Interrupted` failure *unconditionally*,
+    * whereas [[sendInterruptToSelf]] will not exit when in an uninterruptible
+    * region. Example:
+    *
+    * {{{
+    *   F.uninterruptible {
+    *     F.halt(Exit.Interrupted(Trace.empty)) *>
+    *     F.sync(println("Hello!")) // interrupted above. Hello _not_ printed
+    *   }
+    * }}}
+    *
+    * But with `sendInterruptToSelf`:
+    *
+    * {{{
+    *   F.uninterruptible {
+    *     F.sendInterruptToSelf *>
+    *     F.sync(println("Hello!")) // Hello IS printed.
+    *   } *> F.sync(println("Impossible")) // interrupted immediately after `uninterruptible` block ends. Impossible _not_ printed
+    * }}}
+    *
+    * @note
+    *   The above semantic doesn't work right now under ZIO. This method, and ZIO's compatibility with cats-effect 3,
+    *   are both broken in at least ZIO 1.0 and until further notice. This method is tagged deprecated to avoid its use
+    *   until the problem is resolved.
+    *
+    * @see
+    *   - [[https://github.com/zio/interop-cats/issues/503]] - Implementing this method requires new APIs in ZIO itself, until
+    *     the linked issue is resolved, this method is broken.
+    */
+  @deprecated(
+    "This method behaves incorrectly until https://github.com/zio/interop-cats/issues/503 is resolved. Use `F.halt(Exit.Interrupted(Trace.empty))` in case you only need to exit with interrupted status",
+    "24.05.2022",
+  )
+  def sendInterruptToSelf: F[Any, Nothing, Unit]
+
+  def uninterruptible[R, E, A](r: F[R, E, A]): F[R, E, A] = {
+    uninterruptibleExcept(_ => r)
+  }
+
+  /**
+    * Designate the effect uninterruptible, with exception of regions
+    * in it that are specifically marked to restore previous interruptibility
+    * status using the provided `RestoreInterruption` function
+    *
+    * @example
+    *
+    * {{{
+    *   F.uninterruptibleExcept {
+    *     restoreInterruption =>
+    *       val workLoop = {
+    *         importantWorkThatMustNotBeInterrupted() *>
+    *         log.info("Taking a break for a second, you can interrupt me while I wait!") *>
+    *         restoreInterruption.apply {
+    *           F.sleep(1.second)
+    *            .guaranteeOnInterrupt(_ => log.info("Got interrupted!"))
+    *         } *>
+    *         log.info("No interruptions, going back to work!") *>
+    *         workLoop
+    *       }
+    *
+    *       workLoop
+    *   }
+    * }}}
+    *
+    * @note
+    *
+    * Interruptibility status will be restored to what it was in the outer region,
+    * so if the outer region was also uninterruptible, the provided `RestoreInterruption`
+    * will have no effect. e.g. the expression
+    * `F.uninterruptible { F.uninterruptibleExcept { restore => restore(F.sleep(1.second)) }`
+    * is fully uninterruptible throughout
+    */
+  def uninterruptibleExcept[R, E, A](r: RestoreInterruption3[F] => F[R, E, A]): F[R, E, A]
+
+  /** Like [[bracketCase]], but `acquire` can contain marked interruptible regions as in [[uninterruptibleExcept]] */
+  def bracketExcept[R, E, A, B](acquire: RestoreInterruption3[F] => F[R, E, A])(release: (A, Exit[E, B]) => F[R, Nothing, Unit])(use: A => F[R, E, B]): F[R, E, B]
+
+  @inline final def orTerminate[R, A](r: F[R, Throwable, A]): F[R, Nothing, A] = {
+    catchAll(r)(terminate(_))
+  }
 }
 
 private[bio] sealed trait PanicSyntax

@@ -15,7 +15,7 @@ sealed abstract class Free[+S[_, _], +E, +A] {
     foldMap[S1, Free[T, +_, +_]](Morphism2(Free Suspend f(_)))
   }
 
-  @inline def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Monad2[G]): G[E, A] = {
+  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Monad2[G]): G[E, A] = {
     this match {
       case Free.Pure(a) => G.pure(a)
       case Free.Suspend(a) => transform.apply(a)

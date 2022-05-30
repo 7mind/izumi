@@ -5,8 +5,6 @@ import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory,
 
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.UnsafeRun2.InterruptAction
-import monix.bio
-import monix.execution.Scheduler
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
 import zio.{Cause, IO, Runtime, Supervisor, ZIO}
@@ -42,7 +40,7 @@ object UnsafeRun2 {
     Executors.newScheduledThreadPool(1, new NamedThreadFactory("zio-timer", true))
   }
 
-  def createMonixBIO(s: Scheduler, opts: monix.bio.IO.Options): UnsafeRun2[monix.bio.IO] = new MonixBIORunner(s, opts)
+//  def createMonixBIO(s: Scheduler, opts: monix.bio.IO.Options): UnsafeRun2[monix.bio.IO] = new MonixBIORunner(s, opts)
 
   /**
     * @param interrupt May semantically block until the target computation either finishes completely or finishes running
@@ -50,35 +48,35 @@ object UnsafeRun2 {
     */
   final case class InterruptAction[F[_, _]](interrupt: F[Nothing, Unit]) extends AnyVal
 
-  class MonixBIORunner(val s: Scheduler, val opts: monix.bio.IO.Options) extends UnsafeRun2[monix.bio.IO] {
-    override def unsafeRun[E, A](io: => bio.IO[E, A]): A = {
-      io.leftMap(TypedError(_)).runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
-    }
-    override def unsafeRunSync[E, A](io: => bio.IO[E, A]): Exit[E, A] = {
-      io.sandboxExit.runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
-    }
-    override def unsafeRunAsync[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): Unit = {
-      io.runAsyncOpt(exit => callback(Exit.MonixExit.toExit(exit)))(s, opts); ()
-    }
-    override def unsafeRunAsyncAsFuture[E, A](io: => bio.IO[E, A]): Future[Exit[E, A]] = {
-      val p = scala.concurrent.Promise[Exit[E, A]]()
-      unsafeRunAsync(io)(p.success)
-      p.future
-    }
-    override def unsafeRunAsyncInterruptible[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[bio.IO] = {
-      val canceler = io.runAsyncOptF {
-        case Left(e) => callback(Exit.MonixExit.toExit(e))
-        case Right(value) => callback(Exit.Success(value))
-      }(s, opts)
-      InterruptAction(canceler)
-    }
-
-    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => bio.IO[E, A]): (Future[Exit[E, A]], InterruptAction[bio.IO]) = {
-      val p = scala.concurrent.Promise[Exit[E, A]]()
-      val canceler = unsafeRunAsyncInterruptible(io)(p.success)
-      (p.future, canceler)
-    }
-  }
+//  class MonixBIORunner(val s: Scheduler, val opts: monix.bio.IO.Options) extends UnsafeRun2[monix.bio.IO] {
+//    override def unsafeRun[E, A](io: => bio.IO[E, A]): A = {
+//      io.leftMap(TypedError(_)).runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
+//    }
+//    override def unsafeRunSync[E, A](io: => bio.IO[E, A]): Exit[E, A] = {
+//      io.sandboxExit.runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
+//    }
+//    override def unsafeRunAsync[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): Unit = {
+//      io.runAsyncOpt(exit => callback(Exit.MonixExit.toExit(exit)))(s, opts); ()
+//    }
+//    override def unsafeRunAsyncAsFuture[E, A](io: => bio.IO[E, A]): Future[Exit[E, A]] = {
+//      val p = scala.concurrent.Promise[Exit[E, A]]()
+//      unsafeRunAsync(io)(p.success)
+//      p.future
+//    }
+//    override def unsafeRunAsyncInterruptible[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[bio.IO] = {
+//      val canceler = io.runAsyncOptF {
+//        case Left(e) => callback(Exit.MonixExit.toExit(e))
+//        case Right(value) => callback(Exit.Success(value))
+//      }(s, opts)
+//      InterruptAction(canceler)
+//    }
+//
+//    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => bio.IO[E, A]): (Future[Exit[E, A]], InterruptAction[bio.IO]) = {
+//      val p = scala.concurrent.Promise[Exit[E, A]]()
+//      val canceler = unsafeRunAsyncInterruptible(io)(p.success)
+//      (p.future, canceler)
+//    }
+//  }
 
   sealed trait FailureHandler
   object FailureHandler {
@@ -97,7 +95,7 @@ object UnsafeRun2 {
         case Exit.Success(value) =>
           value
 
-        case failure: Exit.Failure[_] =>
+        case failure: Exit.Failure[?] =>
           throw failure.trace.unsafeAttachTrace(TypedError(_))
       }
     }

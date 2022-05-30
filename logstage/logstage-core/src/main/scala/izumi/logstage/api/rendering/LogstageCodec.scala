@@ -1,6 +1,6 @@
 package izumi.logstage.api.rendering
 
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 
 trait LogstageCodec[-T] {

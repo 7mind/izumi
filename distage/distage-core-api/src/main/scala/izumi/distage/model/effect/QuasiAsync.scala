@@ -1,17 +1,14 @@
 package izumi.distage.model.effect
 
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{Executors, ThreadFactory}
-
-import cats.Parallel
-import cats.effect.{Concurrent, Timer}
 import izumi.functional.bio.{Async2, F, Temporal2}
-import izumi.fundamentals.orphans.{`cats.Parallel`, `cats.effect.Concurrent`, `cats.effect.Timer`}
+import izumi.fundamentals.orphans.`cats.effect.kernel.Async`
 import izumi.fundamentals.platform.functional.Identity
 
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{Executors, ThreadFactory}
+import scala.collection.compat.*
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.collection.compat._
 
 /**
   * Parallel & async operations for `F` required by `distage-*` libraries.
@@ -81,7 +78,7 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   }
 
   implicit def fromBIO[F[+_, +_]: Async2: Temporal2]: QuasiAsync[F[Throwable, _]] = {
-    import scala.collection.compat._
+    import scala.collection.compat.*
     new QuasiAsync[F[Throwable, _]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
         F.async(effect)
@@ -133,31 +130,27 @@ private[effect] sealed trait LowPriorityQuasiAsyncInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[F[_], P[_[_]]: `cats.Parallel`, T[_[_]]: `cats.effect.Timer`, C[_[_]]: `cats.effect.Concurrent`](
-    implicit
-    P: P[F],
-    T: T[F],
-    C: C[F],
-  ): QuasiAsync[F] = {
-    new QuasiAsync[F] {
-      override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
-        C.asInstanceOf[Concurrent[F]].async(effect)
-      }
-      override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
-        Parallel.parTraverse_(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P.asInstanceOf[Parallel[F]])
-      }
-      override def sleep(duration: FiniteDuration): F[Unit] = {
-        T.asInstanceOf[Timer[F]].sleep(duration)
-      }
-      override def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
-        Parallel.parTraverse(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P.asInstanceOf[Parallel[F]])
-      }
-      override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
-        Concurrent.parTraverseN(n.toLong)(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, C.asInstanceOf[Concurrent[F]], P.asInstanceOf[Parallel[F]])
-      }
-      override def parTraverseN_[A, B](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
-        C.asInstanceOf[Concurrent[F]].void(parTraverseN(n)(l)(f))
-      }
+  implicit final def fromCats[F[_], Async[_[_]]: `cats.effect.kernel.Async`](implicit F0: Async[F]): QuasiAsync[F] = new QuasiAsync[F] {
+    val F: cats.effect.kernel.Async[F] = F0.asInstanceOf[cats.effect.kernel.Async[F]]
+    implicit val P: cats.Parallel[F] = cats.effect.kernel.instances.spawn.parallelForGenSpawn(F)
+
+    override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
+      F.async_(effect)
+    }
+    override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
+      cats.Parallel.parTraverse_(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
+    }
+    override def sleep(duration: FiniteDuration): F[Unit] = {
+      F.sleep(duration)
+    }
+    override def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
+      cats.Parallel.parTraverse(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
+    }
+    override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
+      F.parTraverseN(n)(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList)
+    }
+    override def parTraverseN_[A, B](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
+      F.void(parTraverseN(n)(l)(f))
     }
   }
 }

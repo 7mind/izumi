@@ -2,7 +2,7 @@ package izumi.functional.bio
 
 import java.util.concurrent.CompletionStage
 
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import zio.IO
 
 private[bio] object __PlatformSpecific {

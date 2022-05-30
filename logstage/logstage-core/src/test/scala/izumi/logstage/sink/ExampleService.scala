@@ -1,6 +1,6 @@
 package izumi.logstage.sink
 
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.SyncSafe1
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.rendering.LogstageCodec
@@ -109,7 +109,7 @@ class ExampleService(logger: IzLogger) {
     }
 
     val logStrict: LogIOStrict[Function0] = LogIOStrict.fromLogger(logger)
-    import Assertions._
+    import Assertions.*
 
     val exc = intercept[TestFailedException] {
       assertCompiles("""logStrict.crit(s"Suspended message: clap your hands! ${NoInstance(1)}")""")
@@ -150,7 +150,7 @@ class ExampleService(logger: IzLogger) {
     exception
   }
 
-  implicit val thunkSyncSafe: SyncSafe[Function0] = new SyncSafe[Function0] {
+  implicit val thunkSyncSafe: SyncSafe1[Function0] = new SyncSafe1[Function0] {
     override def syncSafe[A](unexceptionalEff: => A): () => A = () => unexceptionalEff
   }
 }

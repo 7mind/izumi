@@ -70,7 +70,7 @@ object `cats.Parallel` {
 
 final abstract class `cats.kernel.PartialOrder with cats.kernel.Hash`[K[_]]
 object `cats.kernel.PartialOrder with cats.kernel.Hash` {
-  type PartialOrderHashType[T] = cats.kernel.PartialOrder[T] with cats.kernel.Hash[T]
+  type PartialOrderHashType[T] = cats.kernel.PartialOrder[T] & cats.kernel.Hash[T]
   @inline implicit final def get[K[_]](
     implicit @unused guard: `cats.kernel.BoundedSemilattice`[K]
   ): `cats.kernel.PartialOrder with cats.kernel.Hash`[PartialOrderHashType] = null
@@ -84,19 +84,24 @@ object `cats.kernel.PartialOrder with cats.kernel.Hash` {
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
   */
-final abstract class `cats.effect.Sync`[R[_[_]]]
-object `cats.effect.Sync` {
-  @inline implicit final def get: `cats.effect.Sync`[cats.effect.Sync] = null
+final abstract class `cats.effect.kernel.Sync`[R[_[_]]]
+object `cats.effect.kernel.Sync` {
+  @inline implicit final def get: `cats.effect.kernel.Sync`[cats.effect.kernel.Sync] = null
 }
 
-final abstract class `cats.effect.Bracket`[R[_[_], E]]
-object `cats.effect.Bracket` {
-  @inline implicit final def get: `cats.effect.Bracket`[cats.effect.Bracket] = null
+final abstract class `cats.effect.kernel.Async`[R[_[_]]]
+object `cats.effect.kernel.Async` {
+  @inline implicit final def get: `cats.effect.kernel.Async`[cats.effect.kernel.Async] = null
 }
 
-final abstract class `cats.effect.Concurrent`[K[_[_]]]
-object `cats.effect.Concurrent` {
-  @inline implicit final def get: `cats.effect.Concurrent`[cats.effect.Concurrent] = null
+final abstract class `cats.effect.kernel.MonadCancel`[R[_[_], E]]
+object `cats.effect.kernel.MonadCancel` {
+  @inline implicit final def get: `cats.effect.kernel.MonadCancel`[cats.effect.kernel.MonadCancel] = null
+}
+
+final abstract class `cats.effect.kernel.Concurrent`[K[_[_]]]
+object `cats.effect.kernel.Concurrent` {
+  @inline implicit final def get: `cats.effect.kernel.Concurrent`[cats.effect.kernel.Concurrent] = null
 }
 
 /**
@@ -105,25 +110,36 @@ object `cats.effect.Concurrent` {
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
   */
-final abstract class `cats.effect.Effect`[R[_[_]]]
-object `cats.effect.Effect` {
-  @inline implicit final def get: `cats.effect.Effect`[cats.effect.Effect] = null
+final abstract class `cats.effect.std.Dispatcher`[R[_[_]]]
+object `cats.effect.std.Dispatcher` {
+  @inline implicit final def get: `cats.effect.std.Dispatcher`[cats.effect.std.Dispatcher] = null
 }
 
-final abstract class `cats.effect.ConcurrentEffect`[K[_[_]]]
-object `cats.effect.ConcurrentEffect` {
-  @inline implicit final def get: `cats.effect.ConcurrentEffect`[cats.effect.ConcurrentEffect] = null
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `cats.effect.unsafe.IORuntime`[R]
+object `cats.effect.unsafe.IORuntime` {
+  @inline implicit final def get: `cats.effect.unsafe.IORuntime`[cats.effect.unsafe.IORuntime] = null
 }
 
-final abstract class `cats.effect.Timer`[K[_[_]]]
-object `cats.effect.Timer` {
-  @inline implicit final def get: `cats.effect.Timer`[cats.effect.Timer] = null
-}
+//final abstract class `cats.effect.kernel.ConcurrentEffect`[K[_[_]]]
+//object `cats.effect.kernel.ConcurrentEffect` {
+//  @inline implicit final def get: `cats.effect.kernel.ConcurrentEffect`[cats.effect.kernel.ConcurrentEffect] = null
+//}
 
-final abstract class `cats.effect.ContextShift`[K[_[_]]]
-object `cats.effect.ContextShift` {
-  @inline implicit final def get: `cats.effect.ContextShift`[cats.effect.ContextShift] = null
-}
+//final abstract class `cats.effect.kernel.Clock`[K[_[_]]]
+//object `cats.effect.kernel.Clock` {
+//  @inline implicit final def get: `cats.effect.kernel.Clock`[cats.effect.kernel.Clock] = null
+//}
+
+//final abstract class `cats.effect.ContextShift`[K[_[_]]]
+//object `cats.effect.ContextShift` {
+//  @inline implicit final def get: `cats.effect.ContextShift`[cats.effect.ContextShift] = null
+//}
 
 final abstract class `cats.effect.IO`[K[_]]
 object `cats.effect.IO` {
@@ -144,16 +160,16 @@ object `zio.interop.ZManagedSyntax` {
   @inline implicit final def get: `zio.interop.ZManagedSyntax`[zio.interop.ZManagedSyntax] = null
 }
 
-// monix-bio
-
-final abstract class `monix.bio.IO`[K[_, _]]
-object `monix.bio.IO` {
-  @inline implicit final def get: `monix.bio.IO`[monix.bio.IO] = null
-}
-
-// monix
-
-final abstract class `monix.eval.Task`[K[_]]
-object `monix.eval.Task` {
-  @inline implicit final def get: `monix.eval.Task`[monix.eval.Task] = null
-}
+//// monix-bio
+//
+//final abstract class `monix.bio.IO`[K[_, _]]
+//object `monix.bio.IO` {
+//  @inline implicit final def get: `monix.bio.IO`[monix.bio.IO] = null
+//}
+//
+//// monix
+//
+//final abstract class `monix.eval.Task`[K[_]]
+//object `monix.eval.Task` {
+//  @inline implicit final def get: `monix.eval.Task`[monix.eval.Task] = null
+//}

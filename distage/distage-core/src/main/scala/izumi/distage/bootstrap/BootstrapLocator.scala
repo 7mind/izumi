@@ -159,7 +159,9 @@ object BootstrapLocator {
   }
 
   lazy val selfReflectionKeys: Set[DIKey] = {
-    // passing nulls to prevent key list getting out of sync
-    selfReflectionModule(null, null.asInstanceOf[Activation]).keys
+    // passing nulls as values to prevent key list getting out of sync
+    val reflectModule = selfReflectionModule(null, null.asInstanceOf[Activation])
+    val onlyKeys = reflectModule.keys
+    onlyKeys
   }
 }

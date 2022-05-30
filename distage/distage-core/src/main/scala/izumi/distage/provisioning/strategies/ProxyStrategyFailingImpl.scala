@@ -5,7 +5,7 @@ import izumi.distage.model.exceptions.interpretation.{ProvisionerIssue, ProxyPro
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.strategies.ProxyStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import izumi.reflect.TagK
 
 class ProxyStrategyFailingImpl extends ProxyStrategy {

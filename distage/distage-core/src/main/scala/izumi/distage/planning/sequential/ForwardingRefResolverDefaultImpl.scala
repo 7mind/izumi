@@ -59,7 +59,8 @@ class ForwardingRefResolverDefaultImpl(
           assert(originalOp != null)
           assert(originalOp.target == dependee)
 
-          val onlyByNameUsages = allUsagesAreByName(plan.meta.nodes, dependee, plan.successors.links(dependee))
+          val allUsers = plan.successors.links(dependee)
+          val onlyByNameUsages = allUsagesAreByName(plan.meta.nodes, dependee, allUsers)
           val byNameAllowed = onlyByNameUsages
 
           val badDeps = dependencies.intersect(predcessors.keySet)
@@ -69,7 +70,6 @@ class ForwardingRefResolverDefaultImpl(
           val loops = LoopDetector.Impl.findCyclesForNode(dependee, plan.predecessors)
 
           val loopUsers = loops.toList.flatMap(_.loops.flatMap(_.loop)).toSet
-          val allUsers = plan.successors.links(dependee)
           val toRewrite = allUsers -- loopUsers - dependee
 
           toRewrite.foreach {

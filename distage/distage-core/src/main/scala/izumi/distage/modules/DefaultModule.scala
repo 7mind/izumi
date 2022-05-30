@@ -8,7 +8,7 @@ import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
 import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
 import izumi.fundamentals.orphans._
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import izumi.reflect.{TagK, TagK3, TagKK}
 
 /**
@@ -79,29 +79,29 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
     DefaultModule(ZIOSupportModule)
   }
 
-  /**
-    * This instance uses 'no more orphans' trick to provide an Optional instance
-    * only IFF you have monix-bio as a dependency without REQUIRING a monix-bio dependency.
-    *
-    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-    *
-    * @see [[izumi.distage.modules.support.MonixBIOSupportModule]]
-    */
-  implicit final def forMonixBIO[BIO[_, _]: `monix.bio.IO`]: DefaultModule2[BIO] = {
-    DefaultModule(MonixBIOSupportModule)
-  }
-
-  /**
-    * This instance uses 'no more orphans' trick to provide an Optional instance
-    * only IFF you have monix as a dependency without REQUIRING a monix dependency.
-    *
-    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-    *
-    * @see [[izumi.distage.modules.support.MonixSupportModule]]
-    */
-  implicit final def forMonix[Task[_]: `monix.eval.Task`]: DefaultModule[Task] = {
-    DefaultModule(MonixSupportModule)
-  }
+//  /**
+//    * This instance uses 'no more orphans' trick to provide an Optional instance
+//    * only IFF you have monix-bio as a dependency without REQUIRING a monix-bio dependency.
+//    *
+//    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+//    *
+//    * @see [[izumi.distage.modules.support.MonixBIOSupportModule]]
+//    */
+//  implicit final def forMonixBIO[BIO[_, _]: `monix.bio.IO`]: DefaultModule2[BIO] = {
+//    DefaultModule(MonixBIOSupportModule)
+//  }
+//
+//  /**
+//    * This instance uses 'no more orphans' trick to provide an Optional instance
+//    * only IFF you have monix as a dependency without REQUIRING a monix dependency.
+//    *
+//    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+//    *
+//    * @see [[izumi.distage.modules.support.MonixSupportModule]]
+//    */
+//  implicit final def forMonix[Task[_]: `monix.eval.Task`]: DefaultModule[Task] = {
+//    DefaultModule(MonixSupportModule)
+//  }
 
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
@@ -139,23 +139,17 @@ sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[
-    F[_]: TagK,
-    ConcurrentEffect[_[_]]: `cats.effect.ConcurrentEffect`,
-    Timer[_[_]]: `cats.effect.Timer`,
-    Parallel[_[_]]: `cats.Parallel`,
-    ContextShift[_[_]]: `cats.effect.ContextShift`,
-  ](implicit
-    F0: ConcurrentEffect[F],
-    T0: Timer[F],
+  implicit final def fromCats[F[_], Async[_[_]]: `cats.effect.kernel.Async`, Parallel[_[_]]: `cats.Parallel`, Dispatcher[_[_]]: `cats.effect.std.Dispatcher`](
+    implicit
+    F0: Async[F],
     P0: Parallel[F],
-    C0: ContextShift[F],
+    D0: Dispatcher[F],
+    tagK: TagK[F],
   ): DefaultModule[F] = {
-    implicit val F: cats.effect.ConcurrentEffect[F] = F0.asInstanceOf[cats.effect.ConcurrentEffect[F]]
-    implicit val T: cats.effect.Timer[F] = T0.asInstanceOf[cats.effect.Timer[F]]
-    implicit val P: cats.Parallel[F] = P0.asInstanceOf[cats.Parallel[F]]
-    implicit val C: cats.effect.ContextShift[F] = C0.asInstanceOf[cats.effect.ContextShift[F]]
-    DefaultModule(AnyCatsEffectSupportModule.withImplicits[F])
+    val F = F0.asInstanceOf[cats.effect.kernel.Async[F]]
+    val P = P0.asInstanceOf[cats.Parallel[F]]
+    val D = D0.asInstanceOf[cats.effect.std.Dispatcher[F]]
+    DefaultModule(AnyCatsEffectSupportModule.withImplicits[F](tagK, F, P, D))
   }
 }
 

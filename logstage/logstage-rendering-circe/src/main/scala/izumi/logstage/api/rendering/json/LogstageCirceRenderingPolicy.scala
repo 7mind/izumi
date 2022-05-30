@@ -110,7 +110,7 @@ class LogstageCirceRenderingPolicy(
 
   protected def repr(parameter: RenderedParameter): Json = {
     val mapStruct: PartialFunction[Any, Json] = {
-      case a: Iterable[_] =>
+      case a: Iterable[?] =>
         val params = a.map {
           v =>
             mapListElement.apply(v)

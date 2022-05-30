@@ -7,7 +7,8 @@ import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
-class RetryPolicy[F[+_, +_], -A, +B](val action: RetryFunction[F, A, B]) {
+final class RetryPolicy[F[+_, +_], -A, +B](val action: RetryFunction[F, A, B]) {
+
   def &&[A1 <: A, B1](policy: RetryPolicy[F, A1, B1])(implicit F: Applicative2[F]): RetryPolicy[F, A1, (B, B1)] = {
     def combined(left: RetryFunction[F, A, B], right: RetryFunction[F, A1, B1]): RetryFunction[F, A1, (B, B1)] =
       (now: ZonedDateTime, in: A1) =>
