@@ -1,11 +1,11 @@
 package izumi.fundamentals.platform.cli.model.schema
 
+import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.cli.model.schema.ParserDef.ArgDef
-import izumi.fundamentals.platform.jvm.IzJvm
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 
 object ParserSchemaFormatter {
-  private val withColors = IzJvm.terminalColorsEnabled
+  private val withColors = IzPlatform.terminalColorsEnabled
 
   def makeDocs(schema: ParserSchema): String = {
     val sb = new StringBuilder()

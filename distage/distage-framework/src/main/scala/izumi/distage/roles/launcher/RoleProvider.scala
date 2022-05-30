@@ -1,6 +1,6 @@
 package izumi.distage.roles.launcher
 
-import distage.{Id, _}
+import distage.{Id, *}
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.Binding.ImplBinding
 import izumi.distage.model.reflection.SafeType
@@ -9,8 +9,8 @@ import izumi.distage.roles.model.definition.RoleTag
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
+import izumi.fundamentals.platform.{IzPlatform, ScalaPlatform}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import izumi.fundamentals.platform.jvm.IzJvm
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
@@ -31,7 +31,7 @@ object RoleProvider {
   ) extends RoleProvider {
 
     protected[this] val isIgnoredMismatchedEffect: Boolean = sysPropIgnoreMismatchedEffect || ignoreMismatchedEffect
-    protected[this] val isReflectionEnabled: Boolean = reflectionEnabled && syspropRolesReflection && !IzJvm.isGraalNativeImage()
+    protected[this] val isReflectionEnabled: Boolean = reflectionEnabled && syspropRolesReflection && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage
 
     def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo = {
       val rolesInfo = getInfo(
