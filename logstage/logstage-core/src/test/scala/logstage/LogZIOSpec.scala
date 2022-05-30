@@ -6,6 +6,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import zio.*
 import logstage.LogZIO.log
 
+import scala.annotation.nowarn
+
 class LogZIOSpec extends AnyWordSpec {
   private val runtime = Runtime.default
 
@@ -115,6 +117,22 @@ class LogZIOSpec extends AnyWordSpec {
         )
       )
     }
+
+    "doc example works" in {
+      import logstage.LogIO3Ask.log
+      import zio.{Has, ZIO}
+
+      def fn[F[-_, +_, +_]: LogIO3Ask]: F[Has[LogIO3[F]], Nothing, Unit] = {
+        log.info(s"I'm logging with ${log}stage!"): @nowarn
+      }
+
+      val logger = LogIO3.fromLogger(IzLogger())
+
+      zio.Runtime.default.unsafeRun {
+        fn[ZIO].provide(Has(logger))
+      }
+    }
+
   }
 
   private def withTestSink[U](thunk: RIO[LogZIO, U]): TestSink = {

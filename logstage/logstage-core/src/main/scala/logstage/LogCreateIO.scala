@@ -14,7 +14,7 @@ trait LogCreateIO[F[_]] {
   def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): LogCreateIO[G] = this.asInstanceOf[LogCreateIO[G]]
 }
 
-object LogCreateIO {
+object LogCreateIO extends LowPriorityLogCreateIOInstances {
   @inline def apply[F[_]: LogCreateIO]: LogCreateIO[F] = implicitly
 
   implicit def logCreateIOSyncSafeInstance[F[_]: SyncSafe1]: LogCreateIO[F] = new LogCreateIOSyncSafeInstance[F](SyncSafe1[F])
@@ -29,6 +29,10 @@ object LogCreateIO {
     }
   }
 
+  implicit def covarianceConversion[G[_], F[_]](log: LogCreateIO[F])(implicit ev: F[?] <:< G[?]): LogCreateIO[G] = log.widen
+}
+
+sealed trait LowPriorityLogCreateIOInstances {
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make LogIO covariant, because covariant implicits
@@ -40,7 +44,6 @@ object LogCreateIO {
     */
   implicit def limitedCovariance2[F[+_, _], E](implicit log: LogCreateIO2[F]): LogCreateIO[F[E, _]] = log.widen
   implicit def limitedCovariance3[F[-_, +_, _], R, E](implicit log: LogCreateIO3[F]): LogCreateIO[F[R, E, _]] = log.widen
-  implicit def covarianceConversion[G[_], F[_]](log: LogCreateIO[F])(implicit ev: F[?] <:< G[?]): LogCreateIO[G] = log.widen
 }
 
 object LogCreateIO2 {

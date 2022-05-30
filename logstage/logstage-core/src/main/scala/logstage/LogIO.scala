@@ -21,7 +21,7 @@ trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with 
   override def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): LogIO[G] = this.asInstanceOf[LogIO[G]]
 }
 
-object LogIO {
+object LogIO extends LowPriorityLogIOInstances {
   @inline def apply[F[_]](implicit l: LogIO[F]): l.type = l
 
   /**
@@ -55,17 +55,6 @@ object LogIO {
 
   implicit def fromBIOMonadAsk[F[-_, +_, +_]: MonadAsk3](implicit t: Tag[LogIO3[F]]): LogIO3Ask[F] = new LogIO3AskImpl[F](_.get[LogIO3[F]](implicitly, t))
 
-  /**
-    * Emulate covariance. We're forced to employ these because
-    * we can't make LogIO covariant, because covariant implicits
-    * are broken (see scalac bug)
-    *
-    * Safe because `F` appears only in a covariant position
-    *
-    * @see https://github.com/scala/bug/issues/11427
-    */
-  implicit def limitedCovariance2[F[+_, _], E](implicit log: LogIO2[F]): LogIO[F[E, _]] = log.widen
-  implicit def limitedCovariance3[F[-_, +_, _], R, E](implicit log: LogIO3[F]): LogIO[F[R, E, _]] = log.widen
   implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[?] <:< G[?]): LogIO[G] = log.widen
 
   implicit final class LogIO2Syntax[F[+_, +_]](private val log: LogIO2[F]) extends AnyVal {
@@ -88,6 +77,20 @@ object LogIO {
     }
   }
 
+}
+
+sealed trait LowPriorityLogIOInstances {
+  /**
+    * Emulate covariance. We're forced to employ these because
+    * we can't make LogIO covariant, because covariant implicits
+    * are broken (see scalac bug)
+    *
+    * Safe because `F` appears only in a covariant position
+    *
+    * @see https://github.com/scala/bug/issues/11427
+    */
+  implicit def limitedCovariance2[F[+_, _], E](implicit log: LogIO2[F]): LogIO[F[E, _]] = log.widen
+  implicit def limitedCovariance3[F[-_, +_, _], R, E](implicit log: LogIO3[F]): LogIO[F[R, E, _]] = log.widen
 }
 
 object LogIO2 {

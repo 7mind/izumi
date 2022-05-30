@@ -145,7 +145,7 @@ val logger = IzLogger()
 
 val log = LogIO.fromLogger[IO](logger)
 
-log.info(s"Hey! I'm logging with ${log}stage!").unsafeRunSync()
+log.info(s"Hey! I'm logging with ${log}stage!").unsafeRunSync()(cats.effect.unsafe.IORuntime.global)
 ```
 
 ```

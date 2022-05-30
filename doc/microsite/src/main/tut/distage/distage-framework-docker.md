@@ -122,7 +122,7 @@ def minimalExample = {
   }
 }
 
-minimalExample.unsafeRunSync()
+minimalExample.unsafeRunSync()(cats.effect.unsafe.IORuntime.global)
 ```
 
 If the `DockerSupportModule` is not included in an application then a get of a Docker container
@@ -246,7 +246,7 @@ Consider the example application below. This application is written to depend on
 `PostgresServerConfig`.
 
 ```scala mdoc:silent
-import cats.effect.{Async, ContextShift}
+import cats.effect.Async
 import doobie.Transactor
 import doobie.syntax.connectionio._
 import doobie.syntax.string._
@@ -277,14 +277,14 @@ final case class PostgresServerConfig(
 
 object TransactorFromConfigModule extends ModuleDef {
   make[Transactor[IO]].from {
-    (config: PostgresServerConfig, async: Async[IO], contextShift: ContextShift[IO]) =>
+    (config: PostgresServerConfig, async: Async[IO]) =>
 
       Transactor.fromDriverManager[IO](
         driver = "org.postgresql.Driver",
         url    = s"jdbc:postgresql://${config.host}:${config.port}/${config.database}",
         user   = config.username,
         pass   = config.password,
-      )(async, contextShift)
+      )(async)
   }
 }
 ```
@@ -367,7 +367,7 @@ def postgresDockerIntegrationExample = {
   }
 }
 
-postgresDockerIntegrationExample.unsafeRunSync()
+postgresDockerIntegrationExample.unsafeRunSync()(cats.effect.unsafe.IORuntime.global)
 ```
 
 ### Docker Container Environment

@@ -18,7 +18,7 @@ trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] wit
   override def widen[G[_]](implicit ev: F[?] <:< G[?]): LogIOStrict[G] = this.asInstanceOf[LogIOStrict[G]]
 }
 
-object LogIOStrict {
+object LogIOStrict extends LowPriorityLogIOStrictInstances {
   @inline def apply[F[_]: LogIOStrict]: LogIOStrict[F] = implicitly
 
   /**
@@ -50,6 +50,10 @@ object LogIOStrict {
     }
   }
 
+  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[?] <:< G[?]): LogIOStrict[G] = log.widen
+}
+
+sealed trait LowPriorityLogIOStrictInstances {
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make LogIOStrict covariant, because covariant implicits
@@ -61,7 +65,6 @@ object LogIOStrict {
     */
   implicit def limitedCovariance2[F[+_, _], E](implicit log: LogIO2Strict[F]): LogIOStrict[F[E, _]] = log.asInstanceOf[LogIOStrict[F[E, _]]]
   implicit def limitedCovariance3[F[-_, +_, _], R, E](implicit log: LogIO3Strict[F]): LogIOStrict[F[R, E, _]] = log.widen
-  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[?] <:< G[?]): LogIOStrict[G] = log.widen
 }
 
 object LogIO2Strict {

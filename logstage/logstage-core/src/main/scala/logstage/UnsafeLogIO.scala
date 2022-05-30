@@ -22,7 +22,7 @@ trait UnsafeLogIO[F[_]] extends LogCreateIO[F] {
   override def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): UnsafeLogIO[G] = this.asInstanceOf[UnsafeLogIO[G]]
 }
 
-object UnsafeLogIO {
+object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
   def apply[F[_]: UnsafeLogIO]: UnsafeLogIO[F] = implicitly
 
   def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F])
@@ -41,6 +41,10 @@ object UnsafeLogIO {
     }
   }
 
+  implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit ev: F[?] <:< G[?]): UnsafeLogIO[G] = log.widen
+}
+
+sealed trait LowPriorityUnsafeLogIOInstances {
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make LogIO covariant, because covariant implicits
@@ -52,7 +56,6 @@ object UnsafeLogIO {
     */
   implicit def limitedCovariance2[F[+_, _], E](implicit log: UnsafeLogIO2[F]): UnsafeLogIO[F[E, _]] = log.widen
   implicit def limitedCovariance3[F[-_, +_, _], R, E](implicit log: UnsafeLogIO3[F]): UnsafeLogIO[F[R, E, _]] = log.widen
-  implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit ev: F[?] <:< G[?]): UnsafeLogIO[G] = log.widen
 }
 
 object UnsafeLogIO2 {
