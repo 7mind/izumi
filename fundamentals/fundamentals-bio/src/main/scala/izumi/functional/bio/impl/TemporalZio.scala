@@ -1,28 +1,23 @@
 package izumi.functional.bio.impl
 
-import izumi.functional.bio.Temporal3
-import zio.clock.Clock
+import izumi.functional.bio.{Clock3, Temporal3}
+import zio.ZIO
 import zio.duration.Duration.fromScala
-import zio.{Schedule, ZIO}
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 
-class TemporalZio(clock: Clock) extends AsyncZio with Temporal3[ZIO] {
+open class TemporalZio(
+  override val clock: Clock3[ZIO],
+  protected val zioClock: zio.clock.Clock,
+) extends AsyncZio
+  with Temporal3[ZIO] {
+
   @inline override final def sleep(duration: Duration): ZIO[Any, Nothing, Unit] = {
-    ZIO.sleep(fromScala(duration)).provide(clock)
+    ZIO.sleep(fromScala(duration)).provide(zioClock)
   }
-
-  @inline override final def retryOrElse[R, E, A, E2](r: ZIO[R, E, A])(duration: FiniteDuration, orElse: => ZIO[R, E2, A]): ZIO[R, E2, A] =
-    ZIO.accessM {
-      env =>
-        val zioDuration = Schedule.duration(fromScala(duration))
-
-        r.provide(env)
-          .retryOrElse(zioDuration, (_: Any, _: Any) => orElse.provide(env))
-          .provide(clock)
-    }
 
   @inline override final def timeout[R, E, A](duration: Duration)(r: ZIO[R, E, A]): ZIO[R, E, Option[A]] = {
-    ZIO.accessM[R](e => race(r.provide(e).map(Some(_)).interruptible, sleep(duration).as(None).interruptible))
+    ZIO.accessM[R](env => race(r.provide(env).map(Some(_)).interruptible, sleep(duration).as(None).interruptible))
   }
+
 }

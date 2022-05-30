@@ -3,7 +3,7 @@ package izumi.distage.fixtures
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 
 @ExposedTestScope
 object ProviderCases {

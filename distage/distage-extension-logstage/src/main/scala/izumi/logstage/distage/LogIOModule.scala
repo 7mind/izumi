@@ -1,7 +1,7 @@
 package izumi.logstage.distage
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.SyncSafe1
 import izumi.logstage.api.IzLogger
 import izumi.reflect.{TagK, TagK3, TagKK}
 import logstage.{LogCreateIO, LogIO, LogRouter, UnsafeLogIO}
@@ -13,7 +13,7 @@ import logstage.{LogCreateIO, LogIO, LogRouter, UnsafeLogIO}
   */
 class LogIOModule[F[_]: TagK] extends ModuleDef {
   make[LogIO[F]]
-    .from(LogIO.fromLogger[F](_: IzLogger)(_: SyncSafe[F]))
+    .from(LogIO.fromLogger[F](_: IzLogger)(_: SyncSafe1[F]))
     .aliased[UnsafeLogIO[F]]
     .aliased[LogCreateIO[F]]
 }

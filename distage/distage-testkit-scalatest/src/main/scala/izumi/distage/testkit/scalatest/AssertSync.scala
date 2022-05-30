@@ -1,6 +1,6 @@
 package izumi.distage.testkit.scalatest
 
-import cats.effect.Sync
+import cats.effect.kernel.Sync
 import izumi.distage.testkit.scalatest.AssertSync.AssertSyncMacro
 import org.scalactic.{Prettifier, source}
 import org.scalatest.Assertion
@@ -9,7 +9,7 @@ import org.scalatest.distage.DistageAssertionsMacro
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-/** scalatest assertion macro for any [[cats.effect.Sync]] */
+/** scalatest assertion macro for any [[cats.effect.kernel.Sync]] */
 trait AssertSync[F[_]] {
   final def assertIO(arg: Boolean)(implicit Sync: Sync[F], prettifier: Prettifier, pos: source.Position): F[Assertion] = macro AssertSyncMacro.impl[F]
 }

@@ -462,7 +462,7 @@ def module = new ModuleDef {
 Will produce the following output:
 
 ```scala mdoc:to-string
-import distage.DIKey
+import cats.effect.unsafe.implicits.global
 
 val objectGraphResource = {
   Injector[IO]()
@@ -610,11 +610,11 @@ def polymorphicHelloWorld[F[_]: TagK: QuasiIO: DefaultModule]: F[Unit] = {
 
 val catsEffectHello = polymorphicHelloWorld[cats.effect.IO]
 
-val monixHello = polymorphicHelloWorld[monix.eval.Task]
+//val monixHello = polymorphicHelloWorld[monix.eval.Task]
 
 val zioHello = polymorphicHelloWorld[zio.IO[Throwable, _]]
 
-val monixBioHello = polymorphicHelloWorld[monix.bio.IO[Throwable, _]]
+//val monixBioHello = polymorphicHelloWorld[monix.bio.IO[Throwable, _]]
 ```
 
 See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) implicit for implementation details. For details on
@@ -1333,7 +1333,7 @@ First, the program we want to write:
 import cats.Monad
 import cats.effect.{Sync, IO}
 import cats.syntax.all._
-import distage.{Roots, Module, ModuleDef, Injector, Tag, TagK, TagKK}
+import distage.{Roots, ModuleDef, Injector, Tag, TagK, TagKK}
 
 trait Validation[F[_]] {
   def minSize(s: String, n: Int): F[Boolean]
@@ -1400,6 +1400,8 @@ val objectsLifecycle = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
 
 // run
 
+import cats.effect.unsafe.implicits.global
+
 objectsLifecycle.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
 ```
 
@@ -1409,7 +1411,10 @@ The program module is polymorphic over effect type. It can be instantiated by a 
 
 ```scala mdoc:to-string
 import zio.interop.catz._
-import zio.Task
+import zio.Runtime
+import zio.{Task, ZEnv}
+
+implicit val runtime: Runtime[ZEnv] = Runtime.global
 
 val ZIOProgram = ProgramModule[Task] ++ SyncInterpreters[Task]
 ```

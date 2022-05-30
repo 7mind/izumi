@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 
 trait Bifunctor3[F[-_, +_, +_]] extends RootBifunctor[F] {
   def InnerF: Functor3[F]

@@ -1,18 +1,18 @@
 package izumi.functional.bio.impl
 
-import java.util.concurrent.CompletionStage
-
 import izumi.functional.bio.Exit.ZIOExit
+import izumi.functional.bio.data.{Morphism3, RestoreInterruption3}
 import izumi.functional.bio.{Async3, Exit, Fiber2, Fiber3, Local3, __PlatformSpecific}
 import zio.internal.ZIOSucceedNow
-import zio.{NeedsEnv, ZIO, ZScope}
+import zio.{NeedsEnv, ZIO}
 
+import java.util.concurrent.CompletionStage
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object AsyncZio extends AsyncZio
 
-class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
+open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def InnerF: this.type = this
 
   @inline override final def unit: ZIO[Any, Nothing, Unit] = ZIO.unit
@@ -23,6 +23,7 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
 
   @inline override final def fail[E](v: => E): ZIO[Any, E, Nothing] = ZIO.fail(v)
   @inline override final def terminate(v: => Throwable): ZIO[Any, Nothing, Nothing] = ZIO.die(v)
+  @inline override final def halt[E](exit: Exit.Failure[E]): ZIO[Any, E, Nothing] = ZIO.halt(ZIOExit.causeFromExit(exit))
 
   @inline override final def fromEither[E, A](effect: => Either[E, A]): ZIO[Any, E, A] = ZIO.fromEither(effect)
   @inline override final def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): ZIO[Any, E, A] = ZIO.fromEither(effect.toRight(errorOnNone))
@@ -98,18 +99,17 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
 
   @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
     r1.interruptible
-      .overrideForkScope(ZScope.global)
-      .raceFirst(r2.interruptible.overrideForkScope(ZScope.global))
+      .raceFirst(r2.interruptible)
       .resetForkScope
   }
 
-  @inline override final def racePair[R, E, A, B](
+  @inline override final def racePairUnsafe[R, E, A, B](
     r1: ZIO[R, E, A],
     r2: ZIO[R, E, B],
-  ): ZIO[R, E, Either[(A, Fiber3[ZIO, E, B]), (Fiber3[ZIO, E, A], B)]] = {
-    (r1.interruptible.overrideForkScope(ZScope.global) raceWith r2.interruptible.overrideForkScope(ZScope.global))(
-      { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(lv => Left((lv, Fiber2.fromZIO(f)))) },
-      { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), ZIOSucceedNow).map(rv => Right((Fiber2.fromZIO(f), rv))) },
+  ): ZIO[R, E, Either[(Exit[E, A], Fiber3[ZIO, E, B]), (Fiber3[ZIO, E, A], Exit[E, B])]] = {
+    (r1.interruptible raceWith r2.interruptible)(
+      { case (l, f) => ZIOSucceedNow(Left((ZIOExit.toExit(l), Fiber2.fromZIO(f)))) },
+      { case (r, f) => ZIOSucceedNow(Right((Fiber2.fromZIO(f), ZIOExit.toExit(r)))) },
     ).resetForkScope
   }
 
@@ -163,4 +163,45 @@ class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
 
   @inline override final def choice[RL, RR, E, A](f: ZIO[RL, E, A], g: ZIO[RR, E, A]): ZIO[Either[RL, RR], E, A] = (f +++ g).map(_.merge)
   @inline override final def choose[RL, RR, E, AL, AR](f: ZIO[RL, E, AL], g: ZIO[RR, E, AR]): ZIO[Either[RL, RR], E, Either[AL, AR]] = f +++ g
+
+  // see https://github.com/zio/interop-cats/issues/503 - this implementation is broken, but a working implementation
+  // must be supported at the level of ZIO runtime
+  @inline override final def sendInterruptToSelf: ZIO[Any, Nothing, Unit] = ZIO.interrupt
+  @inline override final def currentEC: ZIO[Any, Nothing, ExecutionContext] = ZIO.executor.map(_.asEC)
+  @inline override final def onEC[R, E, A](ec: ExecutionContext)(f: ZIO[R, E, A]): ZIO[R, E, A] = f.on(ec)
+
+  @inline override final def uninterruptibleExcept[R, E, A](r: Morphism3[ZIO, ZIO] => ZIO[R, E, A]): ZIO[R, E, A] = {
+    ZIO.uninterruptibleMask {
+      restore =>
+        val restoreMorphism: Morphism3[ZIO, ZIO] = Morphism3(restore(_))
+        r(restoreMorphism)
+    }
+  }
+
+  @inline override final def bracketExcept[R, E, A, B](
+    acquire: RestoreInterruption3[ZIO] => ZIO[R, E, A]
+  )(release: (A, Exit[E, B]) => ZIO[R, Nothing, Unit]
+  )(use: A => ZIO[R, E, B]
+  ): ZIO[R, E, B] = {
+    ZIO.uninterruptibleMask[R, E, B] {
+      restore =>
+        val restoreMorphism: Morphism3[ZIO, ZIO] = Morphism3(restore(_))
+        acquire(restoreMorphism).flatMap {
+          a =>
+            ZIO
+              .effectSuspendTotal(restore(use(a)))
+              .run
+              .flatMap {
+                e =>
+                  ZIO
+                    .effectSuspendTotal(release(a, Exit.ZIOExit.toExit(e)))
+                    .foldCauseM(
+                      cause2 => ZIO.halt(e.fold(_ ++ cause2, _ => cause2)),
+                      _ => ZIO.done(e),
+                    )
+              }
+        }
+    }
+  }
+
 }

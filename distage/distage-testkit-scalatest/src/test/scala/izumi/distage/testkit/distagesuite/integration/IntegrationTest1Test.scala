@@ -59,9 +59,9 @@ abstract class MyDisabledTestF[F0[_]: QuasiIO: TagK: DefaultModule, F[x] <: F0[x
 }
 
 final class MyDisabledTestFCats extends MyDisabledTestF[cats.effect.IO, cats.effect.IO]
-final class MyDisabledTestFMonixTask extends MyDisabledTestF[monix.eval.Task, monix.eval.Task]
-final class MyDisabledTestFMonixBIOUIO extends MyDisabledTestF[monix.bio.Task, monix.bio.UIO]
-final class MyDisabledTestFMonixBIOTask extends MyDisabledTestF[monix.bio.Task, monix.bio.Task]
+//final class MyDisabledTestFMonixTask extends MyDisabledTestF[monix.eval.Task, monix.eval.Task]
+//final class MyDisabledTestFMonixBIOUIO extends MyDisabledTestF[monix.bio.Task, monix.bio.UIO]
+//final class MyDisabledTestFMonixBIOTask extends MyDisabledTestF[monix.bio.Task, monix.bio.Task]
 final class MyDisabledTestFZioUIO extends MyDisabledTestF[zio.Task, zio.UIO]
 final class MyDisabledTestFZioTask extends MyDisabledTestF[zio.Task, zio.Task]
 
@@ -86,6 +86,6 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit F: Ap
   }
 }
 
-final class MyDisabledTestF2MonixBIO extends MyDisabledTestF2[monix.bio.IO]
+//final class MyDisabledTestF2MonixBIO extends MyDisabledTestF2[monix.bio.IO]
 final class MyDisabledTestF2ZioIO extends MyDisabledTestF2[zio.IO]
 //final class MyDisabledTestF2ZIOZIOZEnv extends MyDisabledTestF2[zio.ZIO[zio.ZEnv, +_, +_]]

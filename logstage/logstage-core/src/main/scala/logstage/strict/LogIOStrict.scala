@@ -1,9 +1,8 @@
 package logstage.strict
 
-import izumi.functional.bio.{SyncSafe2, SyncSafe3}
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.{SyncSafe1, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log._
+import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroStrictLogIO, EncodingAwareAbstractLogIO, LogIORaw}
 import izumi.logstage.api.rendering.StrictEncoded
 import logstage.Level
@@ -19,7 +18,7 @@ trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] wit
   override def widen[G[_]](implicit ev: F[?] <:< G[?]): LogIOStrict[G] = this.asInstanceOf[LogIOStrict[G]]
 }
 
-object LogIOStrict {
+object LogIOStrict extends LowPriorityLogIOStrictInstances {
   @inline def apply[F[_]: LogIOStrict]: LogIOStrict[F] = implicitly
 
   /**
@@ -35,8 +34,8 @@ object LogIOStrict {
     */
   @inline def log[F[_]](implicit l: LogIOStrict[F]): l.type = l
 
-  def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): LogIOStrict[F] = {
-    new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe[F]) with LogIOStrict[F] {
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): LogIOStrict[F] = {
+    new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F]) with LogIOStrict[F] {
       override def log(entry: Entry): F[Unit] = {
         F.syncSafe(logger.log(entry))
       }
@@ -51,6 +50,10 @@ object LogIOStrict {
     }
   }
 
+  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[?] <:< G[?]): LogIOStrict[G] = log.widen
+}
+
+sealed trait LowPriorityLogIOStrictInstances {
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make LogIOStrict covariant, because covariant implicits
@@ -60,8 +63,8 @@ object LogIOStrict {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogIO2Strict[F]): LogIOStrict[F[E, _]] = log.asInstanceOf[LogIOStrict[F[E, _]]]
-  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[?] <:< G[?]): LogIOStrict[G] = log.widen
+  implicit def limitedCovariance2[F[+_, _], E](implicit log: LogIO2Strict[F]): LogIOStrict[F[E, _]] = log.asInstanceOf[LogIOStrict[F[E, _]]]
+  implicit def limitedCovariance3[F[-_, +_, _], R, E](implicit log: LogIO3Strict[F]): LogIOStrict[F[R, E, _]] = log.widen
 }
 
 object LogIO2Strict {

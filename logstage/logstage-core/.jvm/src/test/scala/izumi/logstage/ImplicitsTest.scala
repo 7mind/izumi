@@ -1,10 +1,10 @@
 package izumi.logstage
 
-import cats.effect.Sync
-import izumi.functional.bio.{IO2, SyncSafe2}
+import cats.effect.kernel.Sync
+import izumi.functional.bio.{IO2, SyncSafe1, SyncSafe2}
 import izumi.fundamentals.platform.language.IzScala
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.ImplicitsTest.Suspend2
 import izumi.logstage.api.IzLogger
 import logstage.{LogIO, LogIO2}
@@ -48,14 +48,29 @@ class ImplicitsTest extends AnyWordSpec {
     logBIO[zio.IO]
   }
 
+  "create LogIO2 from SyncSafe" in {
+    val log: LogIO2[Suspend2] = LogIO2.fromLogger(IzLogger())
+    log.discard()
+
+    def logIO[F[+_, +_]: SyncSafe2]: LogIO2[F] = LogIO.fromLogger(IzLogger())
+
+    logIO[Suspend2]
+
+    def logBIO[F[+_, +_]: SyncSafe2]: LogIO2[F] = LogIO2.fromLogger(IzLogger())
+
+    logBIO[Suspend2]
+  }
+
   "LogIO2 to LogIO covariance works when partially annotated" in {
     implicit val log0: LogIO2[Suspend2] = LogIO2.fromLogger[Suspend2](IzLogger())
 
     for {
       _ <- logIO()
       _ <- logThrowable[Suspend2]()
+      _ <- syncSafeLogThrowable[Suspend2]()
       _ <- logIO()(log0)
       _ <- logThrowable[Suspend2]()(log0)
+      _ <- syncSafeLogThrowable[Suspend2]()(Suspend2.syncSafeInstance)
       _ <- expectThrowable[Suspend2](log0.info(""))
     } yield ()
   }
@@ -78,6 +93,8 @@ class ImplicitsTest extends AnyWordSpec {
   def logIO[F[_]: LogIO](): F[Unit] = LogIO[F].info("abc")
 
   def logThrowable[F[+_, _]]()(implicit f: LogIO[F[Throwable, _]]): F[Throwable, Unit] = f.info("cba")
+
+  def syncSafeLogThrowable[F[+_, _]]()(implicit f: SyncSafe1[F[Throwable, _]]): F[Throwable, Unit] = LogIO.fromLogger(IzLogger()).info("cba")
 
   def expectThrowable[F[+_, _]](f: F[Throwable, Unit]): F[Throwable, Unit] = f
 

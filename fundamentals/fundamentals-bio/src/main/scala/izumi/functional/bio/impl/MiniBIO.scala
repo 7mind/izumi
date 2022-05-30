@@ -1,6 +1,7 @@
 package izumi.functional.bio.impl
 
 import izumi.functional.bio.Exit.Trace
+import izumi.functional.bio.data.{Morphism2, RestoreInterruption2}
 import izumi.functional.bio.impl.MiniBIO.Fail
 import izumi.functional.bio.{BlockingIO2, Exit, IO2}
 
@@ -9,7 +10,7 @@ import scala.language.implicitConversions
 
 /**
   * A lightweight dependency-less implementation of the [[izumi.functional.bio.IO2]] interface,
-  * analogous in purpose with [[cats.effect.SyncIO]]
+  * analogous in purpose with [[cats.effect.kernel.SyncIO]]
   *
   * Sync-only, not interruptible, not async.
   * For internal use. Prefer ZIO or cats-bio in production.
@@ -19,8 +20,8 @@ import scala.language.implicitConversions
   * in a synchronous environment.
   *
   * {{{
-  *   final class MyBIOClock[F[+_, +_]: BIO]() {
-  *     val nanoTime: F[Nothing, Long] = BIO(System.nanoTime())
+  *   final class MyBIOClock[F[+_, +_]: IO2]() {
+  *     val nanoTime: F[Nothing, Long] = IO2(System.nanoTime())
   *   }
   *
   *   import MiniBIO.autoRun._
@@ -70,7 +71,7 @@ sealed trait MiniBIO[+E, +A] {
                 exit
             }
 
-          case failure: Exit.Failure[_] =>
+          case failure: Exit.Failure[?] =>
             runner(Fail.halt(failure), stack)
         }
       case MiniBIO.Fail(e) =>
@@ -120,6 +121,8 @@ object MiniBIO {
     override def flatMap[R, E, A, B](r: MiniBIO[E, A])(f: A => MiniBIO[E, B]): MiniBIO[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.empty))
     override def terminate(v: => Throwable): MiniBIO[Nothing, Nothing] = Fail.terminate(v)
+    override def halt[E](exit: Exit.Failure[E]): MiniBIO[E, Nothing] = Fail(() => exit)
+    override def sendInterruptToSelf: MiniBIO[Nothing, Unit] = unit
 
     override def syncThrowable[A](effect: => A): MiniBIO[Throwable, A] = Sync {
       () =>
@@ -172,5 +175,12 @@ object MiniBIO {
     override def syncBlocking[A](f: => A): MiniBIO[Throwable, A] = sync(f)
 
     override def syncInterruptibleBlocking[A](f: => A): MiniBIO[Throwable, A] = sync(f)
+    override def uninterruptible[R, E, A](r: MiniBIO[E, A]): MiniBIO[E, A] = r
+    override def uninterruptibleExcept[R, E, A](r: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]): MiniBIO[E, A] = r(Morphism2(identity(_)))
+    override def bracketExcept[R, E, A, B](
+      acquire: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]
+    )(release: (A, Exit[E, B]) => MiniBIO[Nothing, Unit]
+    )(use: A => MiniBIO[E, B]
+    ): MiniBIO[E, B] = bracketCase(acquire(Morphism2(identity(_))))(release)(use)
   }
 }

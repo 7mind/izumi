@@ -1,11 +1,10 @@
 package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.effect._
+import izumi.distage.model.effect.*
 import izumi.distage.modules.typeclass.BIO2InstancesModule
 import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Applicative2, Async2, Clock2, Entropy2, Fork2, IO2, Primitives2, PrimitivesM2, SyncSafe2, Temporal2, UnsafeRun2}
-import izumi.functional.mono.{Clock, Entropy, SyncSafe}
+import izumi.functional.bio.{Applicative2, Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagKK
 
@@ -35,14 +34,20 @@ class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
     QuasiAsync.fromBIO(_: Async2[F], _: Temporal2[F])
   }
   make[SyncSafe2[F]].from {
-    SyncSafe.fromBIO(_: IO2[F])
+    SyncSafe1.fromBIO(_: IO2[F])
   }
-  make[SyncSafe[F[Throwable, _]]].from((_: SyncSafe2[F]).widen[F[Throwable, _]])
-  make[Clock2[F]].aliased[Clock[F[Throwable, _]]].from {
-    Clock.fromImpure(_: Clock[Identity])(_: SyncSafe2[F])
+  make[SyncSafe1[F[Throwable, _]]].from((_: SyncSafe2[F]).widen[F[Throwable, _]])
+  make[Clock2[F]].from {
+    Clock1.fromImpure(_: Clock1[Identity])(_: SyncSafe2[F])
   }
-  make[Entropy2[F]].aliased[Entropy[F[Throwable, _]]].from {
-    Entropy.fromImpure(_: Entropy[Identity])(_: SyncSafe2[F])
+  make[Entropy2[F]].from {
+    Entropy1.fromImpure(_: Entropy1[Identity])(_: SyncSafe2[F])
+  }
+  make[Clock1[F[Throwable, _]]].from {
+    Clock1.covarianceConversion[F[Nothing, _], F[Throwable, _]](_: Clock2[F])
+  }
+  make[Entropy1[F[Throwable, _]]].from {
+    Entropy1.covarianceConversion[F[Nothing, _], F[Throwable, _]](_: Entropy2[F])
   }
 }
 

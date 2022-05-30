@@ -6,7 +6,7 @@ import zio.stm.TSemaphore
 
 object PrimitivesZio extends PrimitivesZio
 
-class PrimitivesZio extends Primitives2[IO] {
+open class PrimitivesZio extends Primitives2[IO] {
   override def mkRef[A](a: A): IO[Nothing, Ref2[IO, A]] = {
     Ref.make(a).map(Ref2.fromZIO)
   }

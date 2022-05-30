@@ -3,8 +3,9 @@ package izumi.functional.bio.syntax
 import cats.data.Kleisli
 import izumi.functional.bio.syntax.Syntax3.ImplicitPuns
 import izumi.functional.bio.{Applicative3, ApplicativeError3, Arrow3, ArrowChoice3, Ask3, Async3, Bifunctor3, Bracket3, Concurrent3, Error3, Exit, Fiber3, Fork3, Functor3, Guarantee3, IO3, Local3, Monad3, MonadAsk3, Panic3, Parallel3, Profunctor3, Temporal3, WithFilter}
-import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
 
+import scala.annotation.unused
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
@@ -197,6 +198,8 @@ object Syntax3 {
     @inline final def bracketOnFailure[R1 <: R, E1 >: E, B](cleanupOnFailure: (A, Exit.Failure[E1]) => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] =
       F.bracketOnFailure(r: FR[R1, E1, A])(cleanupOnFailure)(use)
     @inline final def guaranteeOnFailure[R1 <: R](cleanupOnFailure: Exit.Failure[E] => FR[R1, Nothing, Unit]): FR[R1, E, A] = F.guaranteeOnFailure(r, cleanupOnFailure)
+    @inline final def guaranteeOnInterrupt[R1 <: R](cleanupOnInterruption: Exit.Interruption => FR[R1, Nothing, Unit]): FR[R1, E, A] =
+      F.guaranteeOnInterrupt(r, cleanupOnInterruption)
   }
 
   class PanicOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR]) extends BracketOps(r) {
@@ -211,7 +214,7 @@ object Syntax3 {
       *   F.pure(1)
       *     .map(_ => ???)
       *     .sandboxThrowable
-      *     .catchAll(_ => BIO(println("Caught error!")))
+      *     .catchAll(_ => IO3(println("Caught error!")))
       * }}}
       */
     @inline final def sandboxToThrowable(implicit ev: E <:< Throwable): FR[R, Throwable, A] =
@@ -219,6 +222,7 @@ object Syntax3 {
 
     /** Convert Throwable typed error into a defect */
     @inline final def orTerminate(implicit ev: E <:< Throwable): FR[R, Nothing, A] = F.catchAll(r)(F.terminate(_))
+    @inline final def uninterruptible: FR[R, E, A] = F.uninterruptible(r)
   }
 
   class IOOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: IO3[FR]) extends PanicOps(r) {
@@ -236,9 +240,10 @@ object Syntax3 {
   class ConcurrentOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Concurrent3[FR])
     extends ParallelOps(r) {
     @inline final def race[R1 <: R, E1 >: E, A1 >: A](that: FR[R1, E1, A1]): FR[R1, E1, A1] = F.race(r, that)
-    @inline final def racePair[R1 <: R, E1 >: E, A1 >: A](that: FR[R1, E1, A1]): FR[R1, E1, Either[(A, Fiber3[FR, E1, A1]), (Fiber3[FR, E1, A], A1)]] =
-      F.racePair(r, that)
-    @inline final def uninterruptible: FR[R, E, A] = F.uninterruptible(r)
+    @inline final def racePairUnsafe[R1 <: R, E1 >: E, A1 >: A](
+      that: FR[R1, E1, A1]
+    ): FR[R1, E1, Either[(Exit[E1, A], Fiber3[FR, E1, A1]), (Fiber3[FR, E1, A], Exit[E1, A1])]] =
+      F.racePairUnsafe(r, that)
   }
 
   class AsyncOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Async3[FR]) extends IOOps(r) {
@@ -248,14 +253,15 @@ object Syntax3 {
     @inline final def zipParRight[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, B] = F.zipParRight(r, that)
 
     @inline final def race[R1 <: R, E1 >: E, A1 >: A](that: FR[R1, E1, A1]): FR[R1, E1, A1] = F.race(r, that)
-    @inline final def racePair[R1 <: R, E1 >: E, A1 >: A](that: FR[R1, E1, A1]): FR[R1, E1, Either[(A, Fiber3[FR, E1, A1]), (Fiber3[FR, E1, A], A1)]] =
-      F.racePair(r, that)
-    @inline final def uninterruptible: FR[R, E, A] = F.uninterruptible(r)
+    @inline final def racePairUnsafe[R1 <: R, E1 >: E, A1 >: A](
+      that: FR[R1, E1, A1]
+    ): FR[R1, E1, Either[(Exit[E1, A], Fiber3[FR, E1, A1]), (Fiber3[FR, E1, A], Exit[E1, A1])]] =
+      F.racePairUnsafe(r, that)
   }
 
   final class TemporalOps[FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Temporal3[FR]) {
-    @inline final def retryOrElse[R1 <: R, A2 >: A, E2](duration: FiniteDuration, orElse: => FR[R1, E2, A2]): FR[R1, E2, A2] =
-      F.retryOrElse[R1, E, A2, E2](r)(duration, orElse)
+    @inline final def retryOrElse[R1 <: R, A2 >: A, E2](duration: FiniteDuration, orElse: E => FR[R1, E2, A2]): FR[R1, E2, A2] =
+      F.retryOrElseUntil[R1, E, A2, E2](r)(duration, orElse)
     @inline final def repeatUntil[E1 >: E, A2](tooManyAttemptsError: => E1, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): FR[R, E1, A2] =
       F.repeatUntil[R, E1, A2](new FunctorOps(r)(F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
 

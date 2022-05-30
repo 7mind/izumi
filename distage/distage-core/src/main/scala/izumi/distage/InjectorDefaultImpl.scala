@@ -122,8 +122,10 @@ object InjectorDefaultImpl {
   }
 
   private[this] lazy val selfReflectionKeys: Set[DIKey] = {
-    // passing nulls to prevent key list getting out of sync
-    selfReflectionModule(null, null, null, null.asInstanceOf[Activation], null).keys
+    // passing nulls as values to prevent key list getting out of sync
+    val reflectModule = selfReflectionModule(null, null, null, null.asInstanceOf[Activation], null)
+    val onlyKeys = reflectModule.keys
+    onlyKeys
   }
 
   lazy val providedKeys: Set[DIKey] = {

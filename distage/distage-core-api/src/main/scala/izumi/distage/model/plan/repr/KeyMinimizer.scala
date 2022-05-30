@@ -107,7 +107,7 @@ class KeyMinimizer(
       case k: DIKey.TypeKey =>
         extract(k.tpe)
 
-      case k: DIKey.IdKey[_] =>
+      case k: DIKey.IdKey[?] =>
         extract(k.tpe)
 
       case p: DIKey.ProxyControllerKey =>

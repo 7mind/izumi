@@ -1,7 +1,7 @@
 package izumi.distage.plugins
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 
 /**
   * Use it to define Plugins using [[izumi.distage.model.definition.dsl.ModuleDefDSL]] syntax

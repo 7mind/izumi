@@ -16,6 +16,9 @@ trait Async3[F[-_, +_, +_]] extends Concurrent3[F] with IO3[F] {
   def fromFuture[A](mkFuture: ExecutionContext => Future[A]): F[Any, Throwable, A]
   def fromFutureJava[A](javaFuture: => CompletionStage[A]): F[Any, Throwable, A]
 
+  def currentEC: F[Any, Nothing, ExecutionContext]
+  def onEC[R, E, A](ec: ExecutionContext)(f: F[R, E, A]): F[R, E, A]
+
   // defaults
   override def never: F[Any, Nothing, Nothing] = async(_ => ())
 

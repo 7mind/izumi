@@ -1,9 +1,10 @@
 package logstage
 
-import izumi.functional.mono.SyncSafe
-import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
+import izumi.functional.bio.SyncSafe1
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{Context, CustomContext, Entry, Message}
 
+import scala.annotation.unused
 import scala.language.implicitConversions
 
 trait LogCreateIO[F[_]] {
@@ -13,12 +14,12 @@ trait LogCreateIO[F[_]] {
   def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): LogCreateIO[G] = this.asInstanceOf[LogCreateIO[G]]
 }
 
-object LogCreateIO {
+object LogCreateIO extends LowPriorityLogCreateIOInstances {
   @inline def apply[F[_]: LogCreateIO]: LogCreateIO[F] = implicitly
 
-  implicit def logCreateIOSyncSafeInstance[F[_]: SyncSafe]: LogCreateIO[F] = new LogCreateIOSyncSafeInstance[F](SyncSafe[F])
+  implicit def logCreateIOSyncSafeInstance[F[_]: SyncSafe1]: LogCreateIO[F] = new LogCreateIOSyncSafeInstance[F](SyncSafe1[F])
 
-  class LogCreateIOSyncSafeInstance[F[_]](protected val F: SyncSafe[F]) extends LogCreateIO[F] {
+  class LogCreateIOSyncSafeInstance[F[_]](protected val F: SyncSafe1[F]) extends LogCreateIO[F] {
     override def createEntry(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): F[Entry] = {
       F.syncSafe(Entry.create(logLevel, message)(pos))
     }
@@ -28,6 +29,10 @@ object LogCreateIO {
     }
   }
 
+  implicit def covarianceConversion[G[_], F[_]](log: LogCreateIO[F])(implicit ev: F[?] <:< G[?]): LogCreateIO[G] = log.widen
+}
+
+sealed trait LowPriorityLogCreateIOInstances {
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make LogIO covariant, because covariant implicits
@@ -37,8 +42,8 @@ object LogCreateIO {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit log: LogCreateIO2[F]): LogCreateIO[F[E, _]] = log.widen
-  implicit def covarianceConversion[G[_], F[_]](log: LogCreateIO[F])(implicit ev: F[?] <:< G[?]): LogCreateIO[G] = log.widen
+  implicit def limitedCovariance2[F[+_, _], E](implicit log: LogCreateIO2[F]): LogCreateIO[F[E, _]] = log.widen
+  implicit def limitedCovariance3[F[-_, +_, _], R, E](implicit log: LogCreateIO3[F]): LogCreateIO[F[R, E, _]] = log.widen
 }
 
 object LogCreateIO2 {

@@ -1,19 +1,24 @@
 package izumi.distage.compat
 
 import cats.arrow.FunctionK
-import cats.effect.{Bracket, IO, Resource, Sync}
-import distage._
-import izumi.distage.compat.CatsResourcesTest._
+import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
+import cats.effect.{IO, Resource, Sync}
+import distage.*
+import izumi.distage.compat.CatsResourcesTestJvm.*
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{ImplDef, Lifecycle, ModuleDef}
+import izumi.distage.model.definition.{Id, ImplDef, Lifecycle, ModuleDef}
+import izumi.distage.model.exceptions.interpretation.{ProvisioningException, ProxyProviderFailingImplCalledException}
 import izumi.distage.model.plan.Roots
+import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
-object CatsResourcesTest {
+import scala.annotation.unused
+import scala.concurrent.ExecutionContext
+
+object CatsResourcesTestJvm {
   class Res { var initialized: Boolean = false }
   class Res1 extends Res
 
@@ -25,10 +30,16 @@ object CatsResourcesTest {
   }
 }
 
-final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
+final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with CatsIOPlatformDependentTest {
+
+  private def createCPUPool(ioRuntime: IORuntime): Lifecycle[Identity, ExecutionContext] = {
+    new CatsIOPlatformDependentSupportModule {
+      val res = createCPUPool(ioRuntime)
+    }.res
+  }
 
   "`No More Orphans` type provider is accessible" in {
-    def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.Sync`](): Unit = ()
+    def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.kernel.Sync`](): Unit = ()
     y()
   }
 
@@ -39,15 +50,50 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
       make[MessageQueueConnection].fromResource(mqResource)
-      addImplicit[Bracket[IO, Throwable]]
       make[MyApp]
     }
 
-    Injector[IO]()
-      .produce(module, Roots.Everything).use {
-        objects =>
-          objects.get[MyApp].run
-      }.unsafeRunSync()
+    catsIOUnsafeRunSync {
+      Injector[IO]()
+        .produce(module, Roots.Everything).use {
+          objects =>
+            objects.get[MyApp].run
+        }
+    }
+  }
+
+  // this would be an ok test to fix by-name cycle support someday
+  "progression test: cats.Resource mdoc example doesn't work with cyclic IORuntime without proxies" in {
+    val dbResource = Resource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
+    val mqResource = Resource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
+
+    val module = new ModuleDef {
+      make[DBConnection].fromResource(dbResource)
+      make[MessageQueueConnection].fromResource(mqResource)
+      make[MyApp]
+
+      make[IORuntime].from {
+        (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
+          IORuntime(cpuPool, blockingPool, scheduler, () => (), ioRuntimeConfig)
+      }
+      make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
+      final class CreateCPUPool(ioRuntime: => IORuntime)
+        extends Lifecycle.Of[Identity, ExecutionContext](
+          createCPUPool(ioRuntime)
+        )
+    }
+
+    val exception = intercept[ProvisioningException] {
+      catsIOUnsafeRunSync {
+        Injector
+          .NoProxies[IO]()
+          .produce(module, Roots.Everything).use {
+            objects =>
+              objects.get[MyApp].run
+          }
+      }
+    }
+    assert(exception.getMessage.contains(classOf[ProxyProviderFailingImplCalledException].getSimpleName))
   }
 
   "Lifecycle API should be compatible with provider and instance bindings of type cats.effect.Resource" in {
@@ -97,23 +143,25 @@ final class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
 
     val ctxResource = produceSync[IO]
 
-    ctxResource
-      .use(assert1)
-      .flatMap((assert2 _).tupled)
-      .unsafeRunSync()
+    catsIOUnsafeRunSync {
+      ctxResource
+        .use(assert1)
+        .flatMap((assert2 _).tupled)
+    }
 
-    ctxResource
-      .mapK(FunctionK.id[IO])
-      .toCats
-      .mapK(FunctionK.id[IO])
-      .use(assert1)
-      .flatMap((assert2 _).tupled)
-      .unsafeRunSync()
+    catsIOUnsafeRunSync {
+      ctxResource
+        .mapK(FunctionK.id[IO])
+        .toCats
+        .mapK(FunctionK.id[IO])
+        .use(assert1)
+        .flatMap((assert2 _).tupled)
+    }
   }
 
   "cats instances for Lifecycle" in {
     def failImplicit[A](implicit a: A = null): A = a
-    def request[F[_]: cats.effect.Sync] = {
+    def request[F[_]: cats.effect.kernel.Sync] = {
       val F = cats.Functor[Lifecycle[F, _]]
       val M = cats.Monad[Lifecycle[F, _]]
       val m = cats.Monoid[Lifecycle[F, Int]]

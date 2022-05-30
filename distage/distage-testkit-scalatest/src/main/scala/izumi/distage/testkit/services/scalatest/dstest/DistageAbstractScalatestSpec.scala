@@ -5,17 +5,19 @@ import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.providers.Functoid
 import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.services.dstest.*
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
-import izumi.distage.testkit.services.dstest._
-import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec._
+import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.*
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.functional.bio.Local3
-import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer}
 import izumi.reflect.TagK3
 import org.scalactic.source
 import org.scalatest.Assertion
 import org.scalatest.distage.TestCancellation
 import org.scalatest.verbs.{CanVerb, MustVerb, ShouldVerb, StringVerbBlockRegistration}
+
+import scala.annotation.unused
 
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)

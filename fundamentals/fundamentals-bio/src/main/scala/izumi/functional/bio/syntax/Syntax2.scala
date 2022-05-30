@@ -1,9 +1,10 @@
 package izumi.functional.bio.syntax
 
-import izumi.functional.bio._
+import izumi.functional.bio.*
 import izumi.functional.bio.syntax.Syntax2.ImplicitPuns
-import izumi.fundamentals.platform.language.{SourceFilePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
 
+import scala.annotation.unused
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
@@ -141,6 +142,7 @@ object Syntax2 {
     @inline final def bracketOnFailure[E1 >: E, B](cleanupOnFailure: (A, Exit.Failure[E1]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] =
       F.bracketOnFailure(r: F[E1, A])(cleanupOnFailure)(use)
     @inline final def guaranteeOnFailure(cleanupOnFailure: Exit.Failure[E] => F[Nothing, Unit]): F[E, A] = F.guaranteeOnFailure(r, cleanupOnFailure)
+    @inline final def guaranteeOnInterrupt(cleanupOnInterruption: Exit.Interruption => F[Nothing, Unit]): F[E, A] = F.guaranteeOnInterrupt(r, cleanupOnInterruption)
   }
 
   class PanicOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Panic2[F]) extends BracketOps(r) {
@@ -160,9 +162,9 @@ object Syntax2 {
       */
     @inline final def sandboxToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
       F.leftMap(F.sandbox(r))(_.toThrowable)
-
     /** Convert Throwable typed error into a defect */
     @inline final def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
+    @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
   }
 
   class IOOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: IO2[F]) extends PanicOps(r) {
@@ -179,10 +181,9 @@ object Syntax2 {
   final class ConcurrentOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Concurrent2[F])
     extends ParallelOps(r)(F) {
     @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
-    @inline final def racePair[E1 >: E, A1 >: A](
+    @inline final def racePairUnsafe[E1 >: E, A1 >: A](
       that: F[E1, A1]
-    ): F[E1, Either[(A, Fiber2[F, E1, A1]), (Fiber2[F, E1, A], A1)]] = F.racePair(r, that)
-    @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
+    ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
   class AsyncOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Async2[F]) extends IOOps(r) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
@@ -191,14 +192,13 @@ object Syntax2 {
     @inline final def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
 
     @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
-    @inline final def racePair[E1 >: E, A1 >: A](
+    @inline final def racePairUnsafe[E1 >: E, A1 >: A](
       that: F[E1, A1]
-    ): F[E1, Either[(A, Fiber2[F, E1, A1]), (Fiber2[F, E1, A], A1)]] = F.racePair(r, that)
-    @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
+    ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
 
   final class TemporalOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Temporal2[F]) {
-    @inline final def retryOrElse[A2 >: A, E2](duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2] = F.retryOrElse[Any, E, A2, E2](r)(duration, orElse)
+    @inline final def retryOrElse[A2 >: A, E2](duration: FiniteDuration, orElse: E => F[E2, A2]): F[E2, A2] = F.retryOrElseUntil[Any, E, A2, E2](r)(duration, orElse)
     @inline final def repeatUntil[E2 >: E, A2](tooManyAttemptsError: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
       F.repeatUntil[Any, E2, A2](new FunctorOps(r)(F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
 

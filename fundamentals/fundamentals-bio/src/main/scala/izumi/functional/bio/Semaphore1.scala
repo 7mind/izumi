@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import cats.effect.concurrent.Semaphore
+import cats.effect.std.Semaphore
 import izumi.functional.bio.data.~>
 import zio.ZIO
 import zio.stm.{USTM, ZSTM}
