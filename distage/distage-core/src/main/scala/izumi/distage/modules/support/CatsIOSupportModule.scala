@@ -7,7 +7,6 @@ import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
 import izumi.distage.model.definition.{Id, Lifecycle, ModuleDef}
 import izumi.distage.model.effect.QuasiIORunner
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
-import izumi.fundamentals.platform.functional.Identity
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
@@ -56,14 +55,5 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
       .makeSimple(
         acquire = Scheduler.createDefaultScheduler()
       )(release = _._2.apply()).map(_._1)
-  }
-
-  protected[this] def createCPUPool(ioRuntime: => IORuntime): Lifecycle[Identity, ExecutionContext] = {
-    val coresOr2 = java.lang.Runtime.getRuntime.availableProcessors() max 2
-    Lifecycle
-      .makeSimple(
-        acquire = IORuntime.createDefaultComputeThreadPool(ioRuntime, threads = coresOr2)
-//      )(release = _._2.apply()).map(_._1)
-      )(release = _ => ()).map(_._1) // FIXME ignore finalizer due to upstream bug https://github.com/typelevel/cats-effect/issues/3006
   }
 }

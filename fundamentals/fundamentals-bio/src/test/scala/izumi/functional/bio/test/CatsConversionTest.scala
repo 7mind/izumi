@@ -1,18 +1,16 @@
 package izumi.functional.bio.test
 
-import cats.{Defer, Parallel}
 import cats.effect.kernel.*
 import cats.effect.{Ref, kernel}
+import cats.{Defer, Parallel}
 import izumi.functional.bio.catz.*
-import izumi.functional.bio.{BlockingIO2, BlockingIO3, BlockingIOInstances, F, IO2}
+import izumi.functional.bio.{BlockingIO2, F, IO2}
 import org.scalatest.wordspec.AnyWordSpec
-import zio.ZIO
 
-class CatsConversionTest extends AnyWordSpec {
+class CatsConversionTest extends AnyWordSpec with PlatformDependentTestBase {
 
   class X[F[+_, +_]: IO2](val ref: kernel.Ref[F[Throwable, _], Int])
 
-  implicit val blockingIO2: BlockingIO3[ZIO] = BlockingIOInstances.BlockingZIOFromBlocking(zio.blocking.Blocking.Service.live)
   implicit val clock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
 
   "pickup conversion to Sync" in {
