@@ -113,20 +113,19 @@ object AppShutdownStrategy {
 
       val f = primaryLatch.future
 
-      F.fromFuture(F.flatMap(F.executionContext) {
-        ec =>
+      F.flatMap(
+        F.fromFuture(F.pure(f))
+      ) {
+        _ =>
           F.delay {
-            f.map {
-              _ =>
-                try {
-                  Runtime.getRuntime.removeShutdownHook(shutdownHook)
-                } catch {
-                  case _: IllegalStateException =>
-                }
-                logger.info("Going to shut down...")
-            }(ec)
+            try {
+              Runtime.getRuntime.removeShutdownHook(shutdownHook)
+            } catch {
+              case _: Throwable =>
+            }
+            logger.info("Going to shut down...")
           }
-      })
+      }
     }
 
     def releaseAwaitLatch(): Unit = {
@@ -150,19 +149,13 @@ object AppShutdownStrategy {
       logger.info("Waiting on latch...")
       Runtime.getRuntime.addShutdownHook(shutdownHook)
 
-      val f = primaryLatch.future
-
-      F.fromFuture {
-        ec =>
-          f.map {
-            _ =>
-              try {
-                Runtime.getRuntime.removeShutdownHook(shutdownHook)
-              } catch {
-                case _: IllegalStateException =>
-              }
-              logger.info("Going to shut down...")
-          }(ec)
+      F.fromFuture(_ => primaryLatch.future) *> F.sync {
+        try {
+          Runtime.getRuntime.removeShutdownHook(shutdownHook)
+        } catch {
+          case _: Throwable =>
+        }
+        logger.info("Going to shut down...")
       }
     }
 
