@@ -1,4 +1,4 @@
-package izumi.distage.provisioning.strategies.bytebuddyproxy
+package izumi.distage.model.provisioning.proxies
 
 trait DistageProxy {
   def _distageProxyReference: AnyRef

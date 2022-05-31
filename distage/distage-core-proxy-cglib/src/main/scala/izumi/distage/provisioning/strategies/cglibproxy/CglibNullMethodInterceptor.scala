@@ -1,4 +1,4 @@
-package izumi.distage.provisioning.strategies.cglib
+package izumi.distage.provisioning.strategies.cglibproxy
 
 import izumi.distage.model.exceptions.interpretation.MissingRefException
 

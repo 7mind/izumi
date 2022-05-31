@@ -11,7 +11,9 @@ object GcCases {
 
     class Circular1(val c2: Circular2)
 
-    class Circular2(val c1: Circular1, val c4: Circular4)
+    class Circular2(val c1: Circular1, val c4: Circular4) {
+      def test: Int = 1
+    }
 
     class Circular3(val c4: Circular4)
 

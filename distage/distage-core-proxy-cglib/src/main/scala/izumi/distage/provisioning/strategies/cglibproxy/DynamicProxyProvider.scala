@@ -1,7 +1,7 @@
-package izumi.distage.provisioning.strategies.cglib
+package izumi.distage.provisioning.strategies.cglibproxy
 
 import izumi.distage.model.exceptions.interpretation.ProxyInstantiationException
-import izumi.distage.model.provisioning.proxies.ProxyProvider
+import izumi.distage.model.provisioning.proxies.{DistageProxy, ProxyProvider}
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyParams.{Empty, Params}
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
 import izumi.distage.model.reflection.DIKey

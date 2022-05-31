@@ -1,7 +1,8 @@
-package izumi.distage.provisioning.strategies.cglib
+package izumi.distage.provisioning.strategies.cglibproxy
+
+import izumi.distage.model.provisioning.proxies.DistageProxy
 
 import java.lang.reflect.Method
-
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.AtomicProxyDispatcher
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
