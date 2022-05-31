@@ -1,15 +1,16 @@
-package izumi.distage.provisioning.strategies.bytebuddyproxy
+package izumi.distage.provisioning.strategies.dynamicproxy
 
 import izumi.distage.model.exceptions.interpretation.ProxyInstantiationException
-import izumi.distage.model.provisioning.proxies.{DistageProxy, ProxyProvider}
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyParams.{Empty, Params}
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
+import izumi.distage.model.provisioning.proxies.{DistageProxy, ProxyProvider}
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.platform.exceptions.IzThrowable.*
+import izumi.distage.provisioning.strategies.bytebuddyproxy.{ByteBuddyAtomicRefDispatcher, ByteBuddyNullMethodInterceptor}
 import net.bytebuddy.ByteBuddy
 import net.bytebuddy.dynamic.scaffold.TypeValidation
 import net.bytebuddy.implementation.InvocationHandlerAdapter
 import net.bytebuddy.matcher.ElementMatchers
+import izumi.fundamentals.platform.exceptions.IzThrowable.*
 
 import java.lang.reflect.InvocationHandler
 

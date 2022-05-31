@@ -1,11 +1,11 @@
-package izumi.distage.provisioning.strategies.cglibproxy
+package izumi.distage.provisioning.strategies.dynamicproxy
 
 import izumi.distage.model.exceptions.interpretation.ProxyInstantiationException
-import izumi.distage.model.provisioning.proxies.{DistageProxy, ProxyProvider}
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyParams.{Empty, Params}
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
+import izumi.distage.model.provisioning.proxies.{DistageProxy, ProxyProvider}
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.platform.exceptions.IzThrowable.*
+import izumi.distage.provisioning.strategies.cglibproxy.{CglibAtomicRefDispatcher, CglibNullMethodInterceptor}
 import net.sf.cglib.proxy.{Callback, Enhancer}
 
 object DynamicProxyProvider extends ProxyProvider {

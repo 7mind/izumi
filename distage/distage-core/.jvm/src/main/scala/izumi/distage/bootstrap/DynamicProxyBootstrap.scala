@@ -6,9 +6,8 @@ import izumi.fundamentals.reflection.TypeUtil
 import scala.util.Try
 
 object DynamicProxyBootstrap {
+  val dynProxyProviderName = "izumi.distage.provisioning.strategies.dynamicproxy.DynamicProxyProvider$"
 
-//  val dynProxyProviderName = "izumi.distage.provisioning.strategies.cglib.DynamicProxyProvider$"
-  val dynProxyProviderName = "izumi.distage.provisioning.strategies.bytebuddyproxy.DynamicProxyProvider$"
   val DynamicProxyProvider: ProxyProvider =
     Try(TypeUtil.instantiateObject[ProxyProvider](Class.forName(dynProxyProviderName))).toOption match {
       case Some(value) =>
