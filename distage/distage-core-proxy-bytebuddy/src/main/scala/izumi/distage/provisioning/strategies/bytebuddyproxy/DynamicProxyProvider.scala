@@ -1,4 +1,4 @@
-package izumi.distage.provisioning.strategies.cglib
+package izumi.distage.provisioning.strategies.bytebuddyproxy
 
 import izumi.distage.model.exceptions.interpretation.ProxyInstantiationException
 import izumi.distage.model.provisioning.proxies.ProxyProvider
@@ -6,7 +6,10 @@ import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyParams.{Empty
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
-import net.sf.cglib.proxy.{Callback, Enhancer}
+import net.bytebuddy.ByteBuddy
+import net.bytebuddy.implementation.InvocationHandlerAdapter
+
+import java.lang.reflect.InvocationHandler
 
 object DynamicProxyProvider extends ProxyProvider {
 
@@ -20,29 +23,24 @@ object DynamicProxyProvider extends ProxyProvider {
     DeferredInit(realDispatcher, realProxy)
   }
 
-  private def mkDynamic(dispatcher: Callback, proxyContext: ProxyContext): AnyRef = {
-    val clazz = proxyContext.runtimeClass
+  private def mkDynamic(dispatcher: InvocationHandler, proxyContext: ProxyContext): AnyRef = {
+    val clazz = proxyContext.runtimeClass.asInstanceOf[Class[AnyRef]]
 
-    // Enhancer.setSuperclass is side-effectful, so we had to copypaste
-    val enhancer = new Enhancer()
-
-    if (clazz.isInterface) {
-      enhancer.setInterfaces(Array[Class[?]](clazz, classOf[DistageProxy]))
-    } else if (clazz == classOf[Any]) {
-      enhancer.setInterfaces(Array(classOf[DistageProxy]))
-    } else {
-      enhancer.setSuperclass(clazz)
-      enhancer.setInterfaces(Array(classOf[DistageProxy]))
-    }
-
-    enhancer.setCallback(dispatcher)
+    val constructedProxyClass: Class[AnyRef] = new ByteBuddy()
+      .subclass(clazz)
+      .implement(classOf[DistageProxy])
+      .intercept(InvocationHandlerAdapter.of(dispatcher))
+      .make()
+      .load(clazz.getClassLoader)
+      .getLoaded.asInstanceOf[Class[AnyRef]]
 
     try {
       proxyContext.params match {
         case Empty =>
-          enhancer.create()
+          constructedProxyClass.getDeclaredConstructor().newInstance()
         case Params(types, values) =>
-          enhancer.create(types, values.asInstanceOf[Array[Object]])
+          val c = constructedProxyClass.getDeclaredConstructor(types: _*)
+          c.newInstance(values: _*)
       }
     } catch {
       case f: Throwable =>

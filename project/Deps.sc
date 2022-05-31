@@ -29,6 +29,7 @@ object Izumi {
     val slf4j = Version.VExpr("V.slf4j")
     val typesafe_config = Version.VExpr("V.typesafe_config")
     val cglib_nodep = Version.VExpr("V.cglib_nodep")
+    val bytebuddy = Version.VExpr("V.bytebuddy")
     val scala_java_time = Version.VExpr("V.scala_java_time")
     val scalamock = Version.VExpr("V.scalamock")
     val docker_java = Version.VExpr("V.docker_java")
@@ -102,6 +103,7 @@ object Izumi {
     final val scala_reflect = Library("org.scala-lang", "scala-reflect", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
 
     final val cglib_nodep = Library("cglib", "cglib-nodep", V.cglib_nodep, LibraryType.Invariant) in Scope.Compile.jvm
+    final val bytebuddy = Library("net.bytebuddy", "byte-buddy", V.bytebuddy, LibraryType.Invariant) in Scope.Compile.jvm
 
     final val projector = Library("org.typelevel", "kind-projector", V.kind_projector, LibraryType.Invariant)
       .more(LibSetting.Raw("cross CrossVersion.full"))
@@ -292,6 +294,7 @@ object Izumi {
 
       final lazy val coreApi = ArtifactId("distage-core-api")
       final lazy val proxyCglib = ArtifactId("distage-core-proxy-cglib")
+      final lazy val proxyBytebuddy = ArtifactId("distage-core-proxy-bytebuddy")
       final lazy val core = ArtifactId("distage-core")
       final lazy val config = ArtifactId("distage-extension-config")
       final lazy val plugins = ArtifactId("distage-extension-plugins")
@@ -453,8 +456,14 @@ object Izumi {
         depends = Seq(Projects.fundamentals.reflection, Projects.fundamentals.bio).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        name = Projects.distage.proxyCglib,
+        name = Projects.distage.proxyCglib, // cglib doesn't work on modern java and is deprecated
         libs = Seq(cglib_nodep),
+        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
+        platforms = Targets.jvm,
+      ),
+      Artifact(
+        name = Projects.distage.proxyBytebuddy,
+        libs = Seq(bytebuddy),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
@@ -466,7 +475,7 @@ object Izumi {
           scala_java_time in Scope.Test.js,
           javaXInject in Scope.Test.all,
         ),
-        depends = Seq(Projects.distage.coreApi in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
+        depends = Seq(Projects.distage.coreApi in Scope.Compile.all, Projects.distage.proxyBytebuddy in Scope.Test.jvm),
       ),
       Artifact(
         name = Projects.distage.config,
