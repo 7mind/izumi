@@ -68,7 +68,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
       make[ByNameSelfReference]
     })
 
-    val injector = mkNoCglibInjector()
+    val injector = mkNoProxiesInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
@@ -84,7 +84,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
       make[TraitSelfReference]
     })
 
-    val injector = mkNoCglibInjector()
+    val injector = mkNoProxiesInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
@@ -103,7 +103,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
       make[FactorySelfReference]
     })
 
-    val injector = mkNoCglibInjector()
+    val injector = mkNoProxiesInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
@@ -170,7 +170,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
       make[Int].from(1)
     })
 
-    val injector = mkNoCglibInjector()
+    val injector = mkNoProxiesInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 

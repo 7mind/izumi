@@ -5,11 +5,9 @@ import izumi.distage.fixtures.CircularCases.*
 import izumi.distage.fixtures.InnerClassCases.{InnerClassStablePathsCase, InnerClassUnstablePathsCase}
 import izumi.distage.fixtures.ResourceCases.{CircularResourceCase, Ref, Suspend2}
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
-import izumi.distage.model.exceptions.interpretation.ProvisioningException
+import izumi.distage.model.exceptions.interpretation.{ProvisioningException, ProxyInstantiationException}
 import izumi.distage.model.plan.Roots
-import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import izumi.fundamentals.platform.functional.Identity
-import net.sf.cglib.core.CodeGenerationException
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.immutable.Queue
@@ -19,7 +17,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
   "CircularDependenciesTest" should {
 
     "support circular dependencies" in {
-      import CircularCase1._
+      import CircularCase1.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Circular2]
@@ -36,7 +34,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "support circular dependencies with final class implementations" in {
-      import CircularCase1._
+      import CircularCase1.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Circular2].from[Circular2Impl]
@@ -53,7 +51,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "support circular dependencies in providers" in {
-      import CircularCase1._
+      import CircularCase1.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Circular2].from {
@@ -78,7 +76,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "Supports self-referencing circulars" in {
-      import CircularCase3._
+      import CircularCase3.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[SelfReference]
@@ -94,7 +92,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "Support self-referencing provider" in {
-      import CircularCase3._
+      import CircularCase3.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[SelfReference].from {
@@ -113,7 +111,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "support proxy circular dependencies involving a primitive type" in {
-      import CircularCase8._
+      import CircularCase8.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Circular2]
@@ -137,7 +135,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "support circular dependencies that use another object in their constructor that isn't involved in a cycle" in {
-      import CircularCase9._
+      import CircularCase9.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Circular2]
@@ -162,7 +160,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "support fully generic circular dependencies" in {
-      import CircularCase5._
+      import CircularCase5.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[GenericCircular[Dependency]]
@@ -180,7 +178,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "support named circular dependencies" in {
-      import CircularCase4._
+      import CircularCase4.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[IdTypeCircular]
@@ -201,7 +199,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "support type refinements in circular dependencies" in {
-      import CircularCase6._
+      import CircularCase6.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Dependency { def dep: RefinedCircular }].from[RealDependency]
@@ -219,7 +217,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "support simple by-name forward ref when there are non-by-name references" in {
-      import CircularCase10._
+      import CircularCase10.*
 
       val definition = PlannerInput(
         new ModuleDef {
@@ -242,7 +240,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "Regression test 1: isolated cycles causing spooky action at a distance" in {
-      import CircularCase7._
+      import CircularCase7.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         // cycle
@@ -290,8 +288,8 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
 
     "progression test: can't find proper constructor for circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
       val res = intercept[ProvisioningException] {
-        import InnerClassStablePathsCase._
-        import StableObjectInheritingTrait._
+        import InnerClassStablePathsCase.*
+        import StableObjectInheritingTrait.*
 
         val definition = PlannerInput.everything(new ModuleDef {
           make[Circular1]
@@ -309,7 +307,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     "progression test: cglib proxies can't resolve circular path-dependent dependencies (we don't take prefix type into account when calling constructor for generated lambdas and end up choosing the wrong constructor...)" in {
       // the value prefix probably has to be stored inside the Provider to fix this
       val exc = intercept[ProvisioningException] {
-        import InnerClassUnstablePathsCase._
+        import InnerClassUnstablePathsCase.*
         val testProviderModule = new TestModule
 
         val definition = PlannerInput.everything(new ModuleDef {
@@ -322,9 +320,9 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
 
         assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
       }
-      assert(exc.getSuppressed.head.isInstanceOf[CgLibInstantiationOpException])
-      assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])
-      assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NoSuchMethodException])
+      assert(exc.getSuppressed.head.isInstanceOf[ProxyInstantiationException])
+//      assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])
+//      assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NoSuchMethodException])
     }
 
   }
@@ -332,7 +330,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
   "ResourceEffectBindingsTest" should {
 
     "Support self-referencing circular effects" in {
-      import izumi.distage.fixtures.CircularCases.CircularCase3._
+      import izumi.distage.fixtures.CircularCases.CircularCase3.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Ref[Fn, Boolean]].fromEffect(Ref[Fn](false))
@@ -353,7 +351,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
     }
 
     "Support mutually-referent circular resources" in {
-      import CircularResourceCase._
+      import CircularResourceCase.*
       import ResourceEffectBindingsTest.Fn
 
       val definition = PlannerInput(

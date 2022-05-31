@@ -34,7 +34,7 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
     "handle by-name circular dependencies with sets through refs/2" in {
       import GcCases.InjectorCase13._
 
-      val injector = mkNoCglibInjector()
+      val injector = mkNoProxiesInjector()
       val plan = injector.plan(
         PlannerInput(
           new ModuleDef {

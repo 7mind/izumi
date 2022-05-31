@@ -154,7 +154,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[ByNameCircular2]
     })
 
-    val context = mkNoCglibInjector().produce(definition).unsafeGet()
+    val context = mkNoProxiesInjector().produce(definition).unsafeGet()
 
     assert(context.get[ByNameCircular1] != null)
     assert(context.get[ByNameCircular1].circular2 eq context.get[ByNameCircular2])

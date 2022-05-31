@@ -8,7 +8,7 @@ import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiation
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import net.sf.cglib.proxy.{Callback, Enhancer}
 
-class CglibProxyProvider extends ProxyProvider {
+object DynamicProxyProvider extends ProxyProvider {
 
   override def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit = {
     val nullDispatcher = new CglibNullMethodInterceptor(deferredKey)
