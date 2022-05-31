@@ -28,7 +28,6 @@ object Izumi {
     val classgraph = Version.VExpr("V.classgraph")
     val slf4j = Version.VExpr("V.slf4j")
     val typesafe_config = Version.VExpr("V.typesafe_config")
-    val cglib_nodep = Version.VExpr("V.cglib_nodep")
     val bytebuddy = Version.VExpr("V.bytebuddy")
     val scala_java_time = Version.VExpr("V.scala_java_time")
     val scalamock = Version.VExpr("V.scalamock")
@@ -102,7 +101,6 @@ object Izumi {
     final val scala_library = Library("org.scala-lang", "scala-library", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala_reflect = Library("org.scala-lang", "scala-reflect", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
 
-    final val cglib_nodep = Library("cglib", "cglib-nodep", V.cglib_nodep, LibraryType.Invariant) in Scope.Compile.jvm
     final val bytebuddy = Library("net.bytebuddy", "byte-buddy", V.bytebuddy, LibraryType.Invariant) in Scope.Compile.jvm
 
     final val projector = Library("org.typelevel", "kind-projector", V.kind_projector, LibraryType.Invariant)
@@ -293,7 +291,6 @@ object Izumi {
       final val basePath = Seq("distage")
 
       final lazy val coreApi = ArtifactId("distage-core-api")
-      final lazy val proxyCglib = ArtifactId("distage-core-proxy-cglib")
       final lazy val proxyBytebuddy = ArtifactId("distage-core-proxy-bytebuddy")
       final lazy val core = ArtifactId("distage-core")
       final lazy val config = ArtifactId("distage-extension-config")
@@ -454,12 +451,6 @@ object Izumi {
         name = Projects.distage.coreApi,
         libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.fundamentals.reflection, Projects.fundamentals.bio).map(_ in Scope.Compile.all),
-      ),
-      Artifact(
-        name = Projects.distage.proxyCglib, // cglib doesn't work on modern java and is deprecated
-        libs = Seq(cglib_nodep),
-        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.proxyBytebuddy,

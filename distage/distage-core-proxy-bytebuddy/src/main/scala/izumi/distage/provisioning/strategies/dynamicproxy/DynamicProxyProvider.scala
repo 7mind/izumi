@@ -9,8 +9,9 @@ import izumi.distage.provisioning.strategies.bytebuddyproxy.{ByteBuddyAtomicRefD
 import net.bytebuddy.ByteBuddy
 import net.bytebuddy.dynamic.scaffold.TypeValidation
 import net.bytebuddy.implementation.InvocationHandlerAdapter
-import net.bytebuddy.matcher.ElementMatchers
+import net.bytebuddy.matcher.{ElementMatcher, ElementMatchers}
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
+import net.bytebuddy.description.method.MethodDescription
 
 import java.lang.reflect.InvocationHandler
 
@@ -32,7 +33,7 @@ object DynamicProxyProvider extends ProxyProvider {
     val constructedProxyClass: Class[AnyRef] = new ByteBuddy()
       .`with`(TypeValidation.DISABLED)
       .subclass(clazz)
-      .method(ElementMatchers.isMethod)
+      .method(ElementMatchers.isMethod.asInstanceOf[ElementMatcher[MethodDescription]])
       .intercept(InvocationHandlerAdapter.of(dispatcher))
       .implement(classOf[DistageProxy])
       .make()
@@ -45,7 +46,7 @@ object DynamicProxyProvider extends ProxyProvider {
           constructedProxyClass.getDeclaredConstructor().newInstance()
         case Params(types, values) =>
           val c = constructedProxyClass.getDeclaredConstructor(types: _*)
-          c.newInstance(values: _*)
+          c.newInstance(values.map(_.asInstanceOf[AnyRef]): _*)
       }
     } catch {
       case f: Throwable =>

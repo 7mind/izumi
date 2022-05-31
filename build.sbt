@@ -1374,135 +1374,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-proxy-cglib"))
-  .dependsOn(
-    `distage-core-api` % "test->compile;compile->compile"
-  )
-  .settings(
-    libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "cglib" % "cglib-nodep" % V.cglib_nodep
-    )
-  )
-  .settings(
-    crossScalaVersions := Seq(
-      "2.13.8",
-      "2.12.15"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    organization := "io.7mind.izumi",
-    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
-    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
-      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
-    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
-    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
-    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
-      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
-    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Test / testOptions += Tests.Argument("-oDF"),
-    scalacOptions += "-Wconf:any:error",
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.15") => Seq(
-        "-target:jvm-1.8",
-        "-explaintypes",
-        "-Xsource:3",
-        "-P:kind-projector:underscore-placeholders",
-        "-Ypartial-unification",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
-      )
-      case (_, "2.13.8") => Seq(
-        "-target:jvm-1.8",
-        "-explaintypes",
-        "-Xsource:3",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:after",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions += "-Wconf:cat=deprecation:warning",
-    scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
-    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.15") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (false, "2.13.8") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } }
-  )
-  .disablePlugins(AssemblyPlugin)
-
 lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-proxy-bytebuddy"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile"
@@ -3418,7 +3289,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `fundamentals-orphans` % "test->compile;compile->compile",
     `fundamentals-literals` % "test->compile;compile->compile",
     `distage-core-api` % "test->compile;compile->compile",
-    `distage-core-proxy-cglib` % "test->compile;compile->compile",
     `distage-core-proxy-bytebuddy` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
     `distage-extension-config` % "test->compile;compile->compile",
@@ -3811,7 +3681,6 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `distage-core-api`,
-    `distage-core-proxy-cglib`,
     `distage-core-proxy-bytebuddy`,
     `distage-core`,
     `distage-extension-config`,
@@ -3836,7 +3705,6 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `distage-core-api`,
-    `distage-core-proxy-cglib`,
     `distage-core-proxy-bytebuddy`,
     `distage-core`,
     `distage-extension-config`,
