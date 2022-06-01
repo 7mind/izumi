@@ -1,6 +1,6 @@
 package izumi.distage.bootstrap
 
-import izumi.distage.bootstrap.CglibBootstrap.CglibProxyProvider
+import izumi.distage.bootstrap.DynamicProxyBootstrap.DynamicProxyProvider
 import izumi.distage.model.*
 import izumi.distage.model.definition.*
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
@@ -138,8 +138,8 @@ object BootstrapLocator {
 
     make[BindingTranslator].from[BindingTranslator.Impl]
 
-    make[ProxyProvider].tagged(Cycles.Proxy).from[CglibProxyProvider]
-    make[ProxyProvider].from[ProxyProviderFailingImpl]
+    make[ProxyProvider].tagged(Cycles.Proxy).fromValue(DynamicProxyProvider)
+    make[ProxyProvider].fromValue(ProxyProviderFailingImpl)
 
     make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]

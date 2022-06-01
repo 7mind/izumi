@@ -137,8 +137,12 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
       """)
 
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
-    intercept[NoClassDefFoundError] {
+    intercept[Throwable] {
       QuasiIO.fromCats[Option, Lifecycle[_[_], Int]](null, null)
+    } match {
+      case _: NoClassDefFoundError =>
+      case _: NullPointerException =>
+        fail("NPE has been thrown, seems like cats are in the classpath (running under IDEA?)")
     }
 
     And("Methods that mention cats types only in generics will error on call")

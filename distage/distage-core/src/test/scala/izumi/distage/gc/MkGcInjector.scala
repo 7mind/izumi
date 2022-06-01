@@ -16,7 +16,7 @@ trait MkGcInjector {
     Injector(Seq(AutoSetModule().register[AutoCloseable]) ++ more: _*)
   }
 
-  def mkNoCglibInjector(): Injector[Identity] = {
+  def mkNoProxiesInjector(): Injector[Identity] = {
     Injector.NoProxies(AutoSetModule().register[AutoCloseable])
   }
 }

@@ -1374,7 +1374,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-proxy-cglib"))
+lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-proxy-bytebuddy"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile"
   )
@@ -1383,7 +1383,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "cglib" % "cglib-nodep" % V.cglib_nodep
+      "net.bytebuddy" % "byte-buddy" % V.bytebuddy
     )
   )
   .settings(
@@ -1506,7 +1506,7 @@ lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-prox
 lazy val `distage-core` = project.in(file("distage/distage-core"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
-    `distage-core-proxy-cglib` % "test->compile;compile->compile"
+    `distage-core-proxy-bytebuddy` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -3289,7 +3289,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `fundamentals-orphans` % "test->compile;compile->compile",
     `fundamentals-literals` % "test->compile;compile->compile",
     `distage-core-api` % "test->compile;compile->compile",
-    `distage-core-proxy-cglib` % "test->compile;compile->compile",
+    `distage-core-proxy-bytebuddy` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
     `distage-extension-config` % "test->compile;compile->compile",
     `distage-extension-plugins` % "test->compile;compile->compile",
@@ -3681,7 +3681,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `distage-core-api`,
-    `distage-core-proxy-cglib`,
+    `distage-core-proxy-bytebuddy`,
     `distage-core`,
     `distage-extension-config`,
     `distage-extension-plugins`,
@@ -3705,7 +3705,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `distage-core-api`,
-    `distage-core-proxy-cglib`,
+    `distage-core-proxy-bytebuddy`,
     `distage-core`,
     `distage-extension-config`,
     `distage-extension-plugins`,

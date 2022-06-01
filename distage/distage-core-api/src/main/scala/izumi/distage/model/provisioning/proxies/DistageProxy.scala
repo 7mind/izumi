@@ -1,4 +1,4 @@
-package izumi.distage.provisioning.strategies.cglib
+package izumi.distage.model.provisioning.proxies
 
 trait DistageProxy {
   def _distageProxyReference: AnyRef

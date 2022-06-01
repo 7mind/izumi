@@ -10,7 +10,7 @@ trait ProxyProvider {
 }
 
 object ProxyProvider {
-  class ProxyProviderFailingImpl extends ProxyProvider {
+  object ProxyProviderFailingImpl extends ProxyProvider {
     override def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit = {
       throw new ProxyProviderFailingImplCalledException(s"ProxyProviderFailingImpl can't create cycle-breaking proxies, failed op: ${proxyContext.op}", this)
     }

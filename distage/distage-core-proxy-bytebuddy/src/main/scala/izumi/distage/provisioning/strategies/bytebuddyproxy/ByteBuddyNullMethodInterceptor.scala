@@ -1,16 +1,15 @@
-package izumi.distage.provisioning.strategies.cglib
+package izumi.distage.provisioning.strategies.bytebuddyproxy
 
 import izumi.distage.model.exceptions.interpretation.MissingRefException
-
-import java.lang.reflect.Method
 import izumi.distage.model.reflection.DIKey
-import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
+
+import java.lang.reflect.{InvocationHandler, Method}
 
 // we use this to be able to display something for uninitialized proxies
-private[distage] class CglibNullMethodInterceptor(
+private[distage] class ByteBuddyNullMethodInterceptor(
   key: DIKey
-) extends MethodInterceptor {
-  override def intercept(o: Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
+) extends InvocationHandler {
+  override def invoke(o: Any, method: Method, objects: Array[AnyRef]): AnyRef = {
     if (method.getName == "toString" && method.getParameterCount == 0) {
       s"__UninitializedProxy__:$key"
     } else {

@@ -36,7 +36,7 @@ object V {
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val cglib_nodep = "3.3.0"
+  val bytebuddy = "1.12.10"
   val docker_java = "3.2.13"
 
   // microsite-only

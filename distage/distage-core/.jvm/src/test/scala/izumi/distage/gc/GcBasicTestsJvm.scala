@@ -4,6 +4,7 @@ import distage.DIKey
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, ModuleDef}
 import izumi.distage.model.plan.Roots
+import izumi.distage.model.provisioning.proxies.DistageProxy
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.immutable
@@ -30,10 +31,20 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val result = injector.produce(plan).unsafeGet()
       assert(result.find[Trash].isEmpty)
-      assert(result.get[Circular1].c2 != null)
-      assert(result.get[Circular2].c1 != null)
-      assert(result.get[Circular1].c2.isInstanceOf[Circular2])
-      assert(result.get[Circular2].c1.isInstanceOf[Circular1])
+      val c1 = result.get[Circular1]
+      val c2 = result.get[Circular2]
+
+      assert(c1.c2 != null)
+      assert(c2.c1 != null)
+
+      assert(c2.test == 1)
+
+      assert(c1.c2.isInstanceOf[Circular2])
+      assert(c2.c1.isInstanceOf[Circular1])
+
+      assert(c2.isInstanceOf[DistageProxy] || c1.isInstanceOf[DistageProxy])
+      val p = List(c1, c2).collect { case p: DistageProxy => p }
+      assert(p.forall(_._distageProxyReference != null))
     }
 
     "keep by-name loops alive" in {
