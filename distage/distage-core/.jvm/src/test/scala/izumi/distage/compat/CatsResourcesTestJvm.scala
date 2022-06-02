@@ -8,6 +8,7 @@ import izumi.distage.compat.CatsResourcesTestJvm.*
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Id, ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
+import izumi.distage.model.provisioning.proxies.DistageProxy
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.GivenWhenThen
@@ -90,6 +91,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       Injector[IO]()
         .produce(module, Roots.Everything).use {
           objects =>
+            assert(!objects.get[ExecutionContext]("cpu").isInstanceOf[DistageProxy])
             objects.get[MyApp].run
         }
     }
@@ -125,6 +127,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       Injector[IO]()
         .produce(module, Roots.Everything).use {
           objects =>
+            assert(objects.get[ExecutionContext]("cpu").isInstanceOf[DistageProxy])
             objects.get[MyApp].run
         }
     }
