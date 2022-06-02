@@ -108,8 +108,6 @@ object BootstrapLocator {
 
     make[MirrorProvider].fromValue(mirrorProvider)
 
-    make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
-
     make[PlanSolver].from[PlanSolver.Impl]
     make[GraphPreparations]
 
