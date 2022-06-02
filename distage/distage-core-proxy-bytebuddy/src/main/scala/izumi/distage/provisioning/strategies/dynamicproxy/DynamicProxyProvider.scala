@@ -6,12 +6,12 @@ import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, Pro
 import izumi.distage.model.provisioning.proxies.{DistageProxy, ProxyProvider}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.provisioning.strategies.bytebuddyproxy.{ByteBuddyAtomicRefDispatcher, ByteBuddyNullMethodInterceptor}
+import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import net.bytebuddy.ByteBuddy
+import net.bytebuddy.description.method.MethodDescription
 import net.bytebuddy.dynamic.scaffold.TypeValidation
 import net.bytebuddy.implementation.InvocationHandlerAdapter
 import net.bytebuddy.matcher.{ElementMatcher, ElementMatchers}
-import izumi.fundamentals.platform.exceptions.IzThrowable.*
-import net.bytebuddy.description.method.MethodDescription
 
 import java.lang.reflect.InvocationHandler
 
@@ -30,6 +30,8 @@ object DynamicProxyProvider extends ProxyProvider {
   private def mkDynamic(dispatcher: InvocationHandler, proxyContext: ProxyContext): AnyRef = {
     val clazz = proxyContext.runtimeClass.asInstanceOf[Class[AnyRef]]
 
+    val cl = this.getClass.getClassLoader
+
     val constructedProxyClass: Class[AnyRef] = new ByteBuddy()
       .`with`(TypeValidation.DISABLED)
       .subclass(clazz)
@@ -37,7 +39,7 @@ object DynamicProxyProvider extends ProxyProvider {
       .intercept(InvocationHandlerAdapter.of(dispatcher))
       .implement(classOf[DistageProxy])
       .make()
-      .load(clazz.getClassLoader)
+      .load(cl)
       .getLoaded.asInstanceOf[Class[AnyRef]]
 
     try {

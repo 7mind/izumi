@@ -239,8 +239,6 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
       val component = context.get[ComponentWithByNameFwdRef]
       assert(holder.componentFwdRef eq component)
       assert(component.get eq holder)
-      println(root.holder.getClass)
-      println(holder.getClass)
       assert(root.holder eq holder)
     }
 
