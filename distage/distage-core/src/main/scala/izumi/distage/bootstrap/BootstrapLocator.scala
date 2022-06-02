@@ -59,16 +59,15 @@ object BootstrapLocator {
 
   private[this] final val mirrorProvider = MirrorProvider.Impl
   private[this] final val fullStackTraces = izumi.distage.DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
-  private[this] final val analyzer = new PlanAnalyzerDefaultImpl
 
   private final val bootstrapPlanner: Planner = {
     val bootstrapObserver = new PlanningObserverAggregate(Set.empty)
 
     val mp = mirrorProvider
     val hook = new PlanningHookAggregate(Set.empty)
-    val loopBreaker = new FwdrefLoopBreaker.FwdrefLoopBreakerDefaultImpl(mp, analyzer)
+    val loopBreaker = new FwdrefLoopBreaker.FwdrefLoopBreakerDefaultImpl(mp)
     val forwardingRefResolver = new ForwardingRefResolverDefaultImpl(loopBreaker)
-    val sanityChecker = new SanityCheckerDefaultImpl(analyzer)
+    val sanityChecker = new SanityCheckerDefaultImpl()
     val resolver = new PlanSolver.Impl(
       new SemigraphSolverImpl[DIKey, Int, InstantiationOp](),
       new GraphPreparations(new BindingTranslator.Impl()),

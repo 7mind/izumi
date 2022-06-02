@@ -21,8 +21,10 @@ object DIError {
   object LoopResolutionError {
     final case class BUG_NotALoopMember(op: ExecutableOp) extends LoopResolutionError
     final case class BUG_UnableToFindLoop(predcessors: Map[DIKey, Set[DIKey]]) extends LoopResolutionError
-    final case class BUG_BestLoopResolutionIsNotSupported(op: ExecutableOp.SemiplanOp) extends LoopResolutionError
-    final case class BestLoopResolutionCannotBeProxied(op: InstantiationOp) extends LoopResolutionError
+
+    //    final case class BUG_BestLoopResolutionIsNotSupported(op: ExecutableOp.SemiplanOp) extends LoopResolutionError
+    //    final case class BestLoopResolutionCannotBeProxied(op: InstantiationOp) extends LoopResolutionError
+    final case class NoAppropriateResolutionFound(candidates: Vector[DIKey]) extends LoopResolutionError
   }
 
   final case class ConflictResolutionFailed(error: ConflictResolutionError[DIKey, InstantiationOp]) extends DIError
@@ -141,10 +143,8 @@ object DIError {
     case LoopResolutionError.BUG_UnableToFindLoop(predcessors) =>
       s"BUG: Failed to break circular dependencies, loop detector failed on matrix $predcessors which is expected to contain a loop"
 
-    case LoopResolutionError.BUG_BestLoopResolutionIsNotSupported(op) =>
-      s"BUG: Failed to break circular dependencies, best candidate ${op.target} is not a proxyable operation: $op"
+    case LoopResolutionError.NoAppropriateResolutionFound(candidates) =>
+      s"Failed to break circular dependencies, can't find proxyable candidate among ${candidates.mkString(",")}"
 
-    case LoopResolutionError.BestLoopResolutionCannotBeProxied(op) =>
-      s"Failed to break circular dependencies, best candidate ${op.target} is not proxyable (final?): $op"
   }
 }

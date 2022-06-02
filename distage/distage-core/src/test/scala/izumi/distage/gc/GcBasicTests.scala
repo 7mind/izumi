@@ -28,7 +28,7 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
         )
       }
 
-      assert(exc.errors.size == 1 && exc.errors.head.isInstanceOf[LoopResolutionError.BestLoopResolutionCannotBeProxied])
+      assert(exc.errors.size == 1 && exc.errors.head.isInstanceOf[LoopResolutionError.NoAppropriateResolutionFound])
     }
 
     "handle by-name circular dependencies with sets through refs/2" in {

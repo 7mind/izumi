@@ -234,9 +234,14 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
       val injector = mkInjector()
       val context = injector.produce(definition).unsafeGet()
 
-      assert(context.get[ComponentHolder].componentFwdRef eq context.get[ComponentWithByNameFwdRef])
-      assert(context.get[ComponentWithByNameFwdRef].get eq context.get[ComponentHolder])
-      assert(context.get[Root].holder eq context.get[ComponentHolder])
+      val root = context.get[Root]
+      val holder = context.get[ComponentHolder]
+      val component = context.get[ComponentWithByNameFwdRef]
+      assert(holder.componentFwdRef eq component)
+      assert(component.get eq holder)
+      println(root.holder.getClass)
+      println(holder.getClass)
+      assert(root.holder eq holder)
     }
 
     "Regression test 1: isolated cycles causing spooky action at a distance" in {

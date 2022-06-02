@@ -4,14 +4,12 @@ import distage.Roots
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
-import izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
+import izumi.distage.model.planning.SanityChecker
 import izumi.distage.model.reflection.DIKey
-import izumi.functional.IzEither._
+import izumi.functional.IzEither.*
 import izumi.fundamentals.graphs.DG
 
-class SanityCheckerDefaultImpl(
-  protected val planAnalyzer: PlanAnalyzer
-) extends SanityChecker {
+class SanityCheckerDefaultImpl() extends SanityChecker {
 
   override def verifyPlan(plan: DG[DIKey, ExecutableOp], roots: Roots): Either[List[DIError.VerificationError], Unit] = {
     val inconsistentKeys = plan.meta.nodes.filter { case (k, op) => k != op.target }
