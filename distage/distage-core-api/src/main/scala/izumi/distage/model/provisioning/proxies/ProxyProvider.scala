@@ -10,11 +10,15 @@ trait ProxyProvider {
 }
 
 object ProxyProvider {
-  object ProxyProviderFailingImpl extends ProxyProvider {
+  class ProxyProviderFailingImpl(msg: ProxyContext => String) extends ProxyProvider {
     override def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit = {
-      throw new ProxyProviderFailingImplCalledException(s"ProxyProviderFailingImpl can't create cycle-breaking proxies, failed op: ${proxyContext.op}", this)
+      throw new ProxyProviderFailingImplCalledException(msg(proxyContext), this)
     }
   }
+  object ProxyProviderFailingImpl
+    extends ProxyProviderFailingImpl({
+      proxyContext => s"ProxyProviderFailingImpl used: creation of cycle-breaking proxies is disabled, failed op: ${proxyContext.op}"
+    })
 
   final case class ProxyContext(runtimeClass: Class[?], op: ExecutableOp, params: ProxyParams)
 

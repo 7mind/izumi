@@ -1506,7 +1506,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
 lazy val `distage-core` = project.in(file("distage/distage-core"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
-    `distage-core-proxy-bytebuddy` % "test->compile"
+    `distage-core-proxy-bytebuddy` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(

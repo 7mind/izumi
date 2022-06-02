@@ -466,7 +466,7 @@ object Izumi {
           scala_java_time in Scope.Test.js,
           javaXInject in Scope.Test.all,
         ),
-        depends = Seq(Projects.distage.coreApi in Scope.Compile.all, Projects.distage.proxyBytebuddy in Scope.Test.jvm),
+        depends = Seq(Projects.distage.coreApi in Scope.Compile.all, Projects.distage.proxyBytebuddy in Scope.Compile.jvm),
       ),
       Artifact(
         name = Projects.distage.config,
