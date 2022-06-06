@@ -112,10 +112,13 @@ sealed trait RootInstancesLowPriority9 extends RootInstancesLowPriority10 {
 
 sealed trait RootInstancesLowPriority10 extends RootInstancesLowPriority11 {
   @inline implicit final def BIOIdentity2: Predefined.Of[Monad2[Identity2]] = BioIdentity3.asInstanceOf[Predefined.Of[Monad2[Identity2]]]
+}
+
+sealed trait RootInstancesLowPriority11 extends RootInstancesLowPriority12 {
   @inline implicit final def BIOIdentity3: Predefined.Of[Monad3[Identity3]] = Predefined(BioIdentity3)
 }
 
-sealed trait RootInstancesLowPriority11 {
+sealed trait RootInstancesLowPriority12 {
   @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: RootBifunctor[f], FR[-_, +_, +_], R0](
     implicit BifunctorPlus: C[FR] { type Divergence = Nondivergent }
   ): Divergent.Of[C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]]] = {

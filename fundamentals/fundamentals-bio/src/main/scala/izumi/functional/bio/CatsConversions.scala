@@ -68,7 +68,7 @@ trait CatsConversions7 extends CatsConversions8 {
   ): cats.effect.kernel.GenSpawn[F[Throwable, _], Throwable] & S9 = new BIOCatsSpawnImpl[F](F, Fork)
 }
 trait CatsConversions8 extends CatsConversions9 {
-  @inline final def BIOToConcurrent[F[+_, +_]](
+  @inline implicit final def BIOToConcurrent[F[+_, +_]](
     implicit @unused ev: Functor2[F],
     F: Async2[F],
     Fork: Fork2[F],
@@ -86,9 +86,8 @@ trait CatsConversions10 extends CatsConversions11 {
     Fork: Fork2[F],
     Primitives: Primitives2[F],
     BlockingIO: BlockingIO2[F],
-    Clock: Clock2[F],
   ): cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] & S11 = {
-    new BIOCatsTemporalImpl(F, T, Fork, Primitives, BlockingIO, Clock)
+    new BIOCatsTemporalImpl(F, T, Fork, Primitives, BlockingIO, T.clock)
   }
 }
 trait CatsConversions11 {
@@ -98,9 +97,8 @@ trait CatsConversions11 {
     T: Temporal2[F],
     Fork: Fork2[F],
     BlockingIO: BlockingIO2[F],
-    Clock: Clock2[F],
     Primitives: Primitives2[F],
-  ): cats.effect.kernel.Async[F[Throwable, _]] & S12 = new BIOCatsAsync[F](F, T, Fork, BlockingIO, Clock, Primitives)
+  ): cats.effect.kernel.Async[F[Throwable, _]] & S12 = new BIOCatsAsync[F](F, T, Fork, BlockingIO, T.clock, Primitives)
 }
 
 object CatsConversions {
