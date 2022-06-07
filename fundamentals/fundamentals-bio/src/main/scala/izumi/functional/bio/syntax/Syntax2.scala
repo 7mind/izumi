@@ -203,7 +203,7 @@ object Syntax2 {
       F.repeatUntil[Any, E2, A2](new FunctorOps(r)(F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
 
     @inline final def timeout(duration: Duration): F[E, Option[A]] = F.timeout(duration)(r)
-    @inline final def timeoutFail[E1 >: E](e: E1)(duration: Duration): F[E1, A] = F.timeoutFail(duration)(e, r)
+    @inline final def timeoutFail[E1 >: E](e: => E1)(duration: Duration): F[E1, A] = F.timeoutFail(duration)(e, r)
   }
 
   final class ForkOps[F[+_, +_], +E, +A](private val r: F[E, A])(implicit private val F: Fork2[F]) {

@@ -33,7 +33,7 @@ trait Temporal3[F[-_, +_, +_]] extends RootBifunctor[F] with TemporalInstances {
     )(now => loop(maxTime = now.plus(duration.toMillis, ChronoUnit.MILLIS)))
   }
 
-  @inline final def timeoutFail[R, E, A](duration: Duration)(e: E, r: F[R, E, A]): F[R, E, A] = {
+  @inline final def timeoutFail[R, E, A](duration: Duration)(e: => E, r: F[R, E, A]): F[R, E, A] = {
     InnerF.flatMap(timeout(duration)(r))(_.fold[F[R, E, A]](InnerF.fail(e))(InnerF.pure))
   }
 

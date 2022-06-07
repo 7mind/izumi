@@ -8,7 +8,7 @@ import izumi.distage.model.effect.QuasiIO
 import izumi.distage.modules.{DefaultModule, DefaultModule2}
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.{Spec1, Spec2}
-import izumi.functional.bio.catz._
+import izumi.functional.bio.catz.*
 import izumi.functional.bio.{Applicative2, ApplicativeError2, F}
 import izumi.fundamentals.platform.integration.ResourceCheck
 import zio.{Task, UIO}
