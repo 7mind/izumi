@@ -1,7 +1,6 @@
 package izumi.functional.bio
 
 import cats.effect.kernel.Outcome
-import zio.Cause
 
 sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
@@ -84,14 +83,14 @@ object Exit {
     def apply(exception: Throwable, trace: Trace[Nothing]): Termination = new Termination(exception, List(exception), trace)
   }
 
-  final case class Interruption(compoundException: Throwable, trace: Trace[Nothing]) extends Exit.Failure[Nothing] {
+  final case class Interruption(compoundException: Throwable, otherExceptions: List[Throwable], trace: Trace[Nothing]) extends Exit.Failure[Nothing] {
     override def toEither: Left[List[Throwable], Nothing] = Left(List(compoundException))
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
     override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
     override def leftMap[E1](f: Nothing => E1): this.type = this
   }
   object Interruption {
-    def apply(trace: Trace[Nothing]): Interruption = Interruption(trace.toThrowable, trace)
+    def apply(otherExceptions: List[Throwable], trace: Trace[Nothing]): Interruption = new Interruption(trace.toThrowable, otherExceptions, trace)
   }
 
   object ZIOExit {
@@ -107,7 +106,8 @@ object Exit {
         case Left(err) =>
           Error(err, Trace.ZIOTrace(result))
         case Right(cause) if cause.interrupted =>
-          Interruption(Trace.ZIOTrace(cause))
+          val trace = Trace.ZIOTrace(cause)
+          Interruption(cause.defects, trace)
         case Right(cause) =>
           val exceptions = cause.defects
           val compound = exceptions match {
@@ -125,7 +125,7 @@ object Exit {
         zio.Exit.Failure(causeFromExit(failure))
     }
 
-    def causeFromExit[E](failure: Failure[E]): Cause[E] = {
+    def causeFromExit[E](failure: Failure[E]): zio.Cause[E] = {
       failure.trace match {
         case Trace.ZIOTrace(cause) =>
           cause
@@ -133,15 +133,46 @@ object Exit {
           failure match {
             case Error(error, _) =>
               zio.Cause.fail(error)
+
             case Termination(_, headException :: tailExceptions, _) =>
               tailExceptions.foldLeft(zio.Cause.die(headException))(_ ++ zio.Cause.die(_))
             case Termination(compoundException, _, _) =>
               zio.Cause.die(compoundException)
-            case Interruption(_, _) =>
+
+            case Interruption(_, headException :: tailExceptions, _) =>
+              zio.Cause.interrupt(zio.Fiber.Id.None) ++ tailExceptions.foldLeft(zio.Cause.die(headException))(_ ++ zio.Cause.die(_))
+            case Interruption(_, _, _) =>
               zio.Cause.interrupt(zio.Fiber.Id.None)
           }
       }
     }
+
+    def remapIgnoreChildFiberInterruptions[E](parentId: zio.Fiber.Id, result: zio.Cause[E]): zio.Cause[E] = {
+      result
+        .fold(
+          empty = zio.Cause.empty,
+          failCase = zio.Cause.Fail(_),
+          dieCase = zio.Cause.Die(_),
+          interruptCase = {
+            id =>
+              if (id == parentId) {
+                zio.Cause.die(new ZIOChildFiberInterrupted(id))
+              } else {
+                zio.Cause.Interrupt(id)
+              }
+          },
+        )(
+          thenCase = zio.Cause.Then(_, _),
+          bothCase = zio.Cause.Both(_, _),
+          tracedCase = zio.Cause.Traced(_, _),
+        )
+    }
+
+    final class ZIOChildFiberInterrupted(interruptorId: zio.Fiber.Id)
+      extends RuntimeException(
+        s"A child fiber was interrupted by an interrupt produced by parent fiber #${interruptorId.seqNumber} during a `parTraverse` or `zipWithPar` operation"
+      )
+
   }
 
 //  object MonixExit {
@@ -174,7 +205,7 @@ object Exit {
     }
     def toOutcomeThrowable[F[_], A](pure: A => F[A], exit: Exit[Throwable, A]): Outcome[F, Throwable, A] = exit match {
       case Exit.Success(b) => Outcome.succeeded(pure(b))
-      case Exit.Interruption(_, _) => Outcome.canceled
+      case Exit.Interruption(_, _, _) => Outcome.canceled
       case error @ Error(_, _) => Outcome.errored(error.toThrowable)
       case termination @ Termination(_, _, _) => Outcome.errored(termination.toThrowable)
     }

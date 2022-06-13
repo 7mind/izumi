@@ -114,7 +114,7 @@ object ModuleProvider {
         FailureHandler.Custom {
           case Exit.Error(error, trace) =>
             logger.warn(s"Fiber errored out due to unhandled $error $trace")
-          case Exit.Interruption(interrupt, trace) =>
+          case Exit.Interruption(interrupt, _, trace) =>
             logger.trace(s"Fiber interrupted with $interrupt $trace")
           case Exit.Termination(defect, _, trace) =>
             logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")
