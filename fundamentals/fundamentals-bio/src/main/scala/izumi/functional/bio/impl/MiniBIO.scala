@@ -136,8 +136,8 @@ object MiniBIO {
       Redeem[E, A, E2, B](
         r,
         {
-          case e @ Exit.Interruption(_, _) => Fail.halt(e)
-          case e @ Exit.Termination(_, _, _) => Fail.halt(e)
+          case e: Exit.Interruption => Fail.halt(e)
+          case e: Exit.Termination => Fail.halt(e)
           case Exit.Error(e, _) => err(e)
         },
         succ,
@@ -147,7 +147,7 @@ object MiniBIO {
     override def catchAll[R, E, A, E2](r: MiniBIO[E, A])(f: E => MiniBIO[E2, A]): MiniBIO[E2, A] = redeem(r)(f, pure)
 
     override def bracketCase[R, E, A, B](acquire: MiniBIO[E, A])(release: (A, Exit[E, B]) => MiniBIO[Nothing, Unit])(use: A => MiniBIO[E, B]): MiniBIO[E, B] = {
-      // does not propagate error in release in case `use` fails, propagates only error from `use`
+      // does not propagate error raised in release if `use` failed, in that case only error from `use` is preserved
       flatMap(acquire)(
         a =>
           Redeem[E, B, E, B](

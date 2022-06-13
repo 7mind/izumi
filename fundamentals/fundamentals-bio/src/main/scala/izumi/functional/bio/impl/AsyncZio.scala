@@ -97,22 +97,6 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def yieldNow: ZIO[Any, Nothing, Unit] = ZIO.yieldNow
   @inline override final def never: ZIO[Any, Nothing, Nothing] = ZIO.never
 
-  @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
-    r1.interruptible
-      .raceFirst(r2.interruptible)
-      .resetForkScope
-  }
-
-  @inline override final def racePairUnsafe[R, E, A, B](
-    r1: ZIO[R, E, A],
-    r2: ZIO[R, E, B],
-  ): ZIO[R, E, Either[(Exit[E, A], Fiber3[ZIO, E, B]), (Fiber3[ZIO, E, A], Exit[E, B])]] = {
-    (r1.interruptible raceWith r2.interruptible)(
-      { case (l, f) => ZIOSucceedNow(Left((ZIOExit.toExit(l), Fiber2.fromZIO(f)))) },
-      { case (r, f) => ZIOSucceedNow(Right((Fiber2.fromZIO(f), ZIOExit.toExit(r)))) },
-    ).resetForkScope
-  }
-
   @inline override final def async[E, A](register: (Either[E, A] => Unit) => Unit): ZIO[Any, E, A] = {
     ZIO.effectAsync(cb => register(cb apply _.fold(ZIO.fail(_), ZIOSucceedNow)))
   }
@@ -136,17 +120,64 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
 
   @inline override final def uninterruptible[R, E, A](r: ZIO[R, E, A]): ZIO[R, E, A] = r.uninterruptible
 
-  @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] =
-    ZIO.foreachParN(maxConcurrent)(l.toList)(f(_).interruptible)
-  @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] =
-    ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
-  @inline override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachPar(l.toList)(f(_).interruptible)
-  @inline override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f(_).interruptible)
+  @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
+    r1.interruptible
+      .raceFirst(r2.interruptible)
+      .resetForkScope
+  }
 
-  @inline override final def zipWithPar[R, E, A, B, C](fa: ZIO[R, E, A], fb: ZIO[R, E, B])(f: (A, B) => C): ZIO[R, E, C] = fa.zipWithPar(fb)(f)
-  @inline override final def zipPar[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, (A, B)] = fa <&> fb
-  @inline override final def zipParLeft[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, A] = fa <& fb
-  @inline override final def zipParRight[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, B] = fa &> fb
+  @inline override final def racePairUnsafe[R, E, A, B](
+    r1: ZIO[R, E, A],
+    r2: ZIO[R, E, B],
+  ): ZIO[R, E, Either[(Exit[E, A], Fiber3[ZIO, E, B]), (Fiber3[ZIO, E, A], Exit[E, B])]] = {
+    (r1.interruptible raceWith r2.interruptible)(
+      { case (l, f) => ZIOSucceedNow(Left((ZIOExit.toExit(l), Fiber2.fromZIO(f)))) },
+      { case (r, f) => ZIOSucceedNow(Right((Fiber2.fromZIO(f), ZIOExit.toExit(r)))) },
+    ).resetForkScope
+  }
+
+  @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
+    remapExitIgnoreChildFiberInterruptions {
+      ZIO.foreachParN(maxConcurrent)(l.toList)(f(_).interruptible)
+    }
+  }
+
+  @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
+    remapExitIgnoreChildFiberInterruptions {
+      ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
+    }
+  }
+  @inline override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
+    remapExitIgnoreChildFiberInterruptions {
+      ZIO.foreachPar(l.toList)(f(_).interruptible)
+    }
+  }
+  @inline override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
+    remapExitIgnoreChildFiberInterruptions {
+      ZIO.foreachPar_(l)(f(_).interruptible)
+    }
+  }
+
+  @inline override final def zipWithPar[R, E, A, B, C](fa: ZIO[R, E, A], fb: ZIO[R, E, B])(f: (A, B) => C): ZIO[R, E, C] = {
+    remapExitIgnoreChildFiberInterruptions {
+      fa.zipWithPar(fb)(f)
+    }
+  }
+  @inline override final def zipPar[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, (A, B)] = {
+    remapExitIgnoreChildFiberInterruptions {
+      fa <&> fb
+    }
+  }
+  @inline override final def zipParLeft[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, A] = {
+    remapExitIgnoreChildFiberInterruptions {
+      fa <& fb
+    }
+  }
+  @inline override final def zipParRight[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, B] = {
+    remapExitIgnoreChildFiberInterruptions {
+      fa &> fb
+    }
+  }
 
   @inline override final def ask[R]: ZIO[R, Nothing, R] = ZIO.environment
   @inline override final def askWith[R, A](f: R => A): ZIO[R, Nothing, A] = ZIO.access(f)
@@ -202,6 +233,16 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
               }
         }
     }
+  }
+
+  /**
+    * Workaround for ZIO incoherently interpreting child interruptions in race/parTraverse/zipWithPar,
+    * classifying them as overall interruption.
+    *
+    * @see [[https://github.com/zio/zio/issues/6911]]
+    */
+  private[this] def remapExitIgnoreChildFiberInterruptions[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = {
+    ZIO.fiberId.flatMap(parentId => f.mapErrorCause(ZIOExit.remapIgnoreChildFiberInterruptions(parentId, _)))
   }
 
 }

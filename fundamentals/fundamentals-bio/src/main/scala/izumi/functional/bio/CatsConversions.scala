@@ -202,7 +202,7 @@ object CatsConversions {
     @inline override final def forceR[A, B](fa: F[Throwable, A])(fb: F[Throwable, B]): F[Throwable, B] = {
       F.redeem(F.sandbox(fa))(
         {
-          case exit @ Exit.Interruption(_, _) => F.halt(exit)
+          case exit: Exit.Interruption => F.halt(exit)
           case _ => fb
         },
         _ => fb,
