@@ -3444,7 +3444,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
               }},
     previewFixedPort := Some(9999),
     git.remoteRepo := "git@github.com:7mind/izumi-microsite.git",
-    Compile / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
     mdocIn := baseDirectory.value / "src/main/tut",
     Paradox / sourceDirectory := mdocOut.value,
     mdocExtraArguments ++= Seq(

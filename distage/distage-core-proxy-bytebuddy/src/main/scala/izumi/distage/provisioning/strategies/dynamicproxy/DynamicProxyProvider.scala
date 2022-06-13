@@ -30,17 +30,36 @@ object DynamicProxyProvider extends ProxyProvider {
   private def mkDynamic(dispatcher: InvocationHandler, proxyContext: ProxyContext): AnyRef = {
     val clazz = proxyContext.runtimeClass.asInstanceOf[Class[AnyRef]]
 
-    val cl = this.getClass.getClassLoader
-
-    val constructedProxyClass: Class[AnyRef] = new ByteBuddy()
+    val builder = new ByteBuddy()
       .`with`(TypeValidation.DISABLED)
       .subclass(clazz)
       .method(ElementMatchers.isMethod.asInstanceOf[ElementMatcher[MethodDescription]])
       .intercept(InvocationHandlerAdapter.of(dispatcher))
       .implement(classOf[DistageProxy])
       .make()
-      .load(cl)
-      .getLoaded.asInstanceOf[Class[AnyRef]]
+
+    val constructedProxyClass: Class[AnyRef] = {
+      (try {
+        builder.load(this.getClass.getClassLoader) // works with sbt layered classloader
+      } catch {
+        case t1: java.lang.NoClassDefFoundError =>
+          try {
+            builder.load(clazz.getClassLoader) // works in some other cases (mdoc)
+          } catch {
+            case t2: Throwable =>
+              throw new ProxyInstantiationException(
+                s"Failed to load proxy class with ByteBuddy " +
+                s"class=${proxyContext.runtimeClass}, params=${proxyContext.params}\n\n" +
+                s"exception 1(DynamicProxyProvider classLoader)=${t1.stackTrace}\n\n" +
+                s"exception 2(classloader of class)=${t2.stackTrace}",
+                clazz,
+                proxyContext.params,
+                proxyContext.op,
+                t2,
+              )
+          }
+      }).getLoaded.asInstanceOf[Class[AnyRef]]
+    }
 
     try {
       proxyContext.params match {
@@ -53,7 +72,7 @@ object DynamicProxyProvider extends ProxyProvider {
     } catch {
       case f: Throwable =>
         throw new ProxyInstantiationException(
-          s"Failed to instantiate class with CGLib, make sure you don't dereference proxied parameters in constructors: " +
+          s"Failed to instantiate class with ByteBuddy, make sure you don't dereference proxied parameters in constructors: " +
           s"class=${proxyContext.runtimeClass}, params=${proxyContext.params}, exception=${f.stackTrace}",
           clazz,
           proxyContext.params,

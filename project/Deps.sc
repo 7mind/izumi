@@ -618,7 +618,6 @@ object Izumi {
           }}""".raw,
           "previewFixedPort" := "Some(9999)".raw,
           "git.remoteRepo" := "git@github.com:7mind/izumi-microsite.git",
-          "classLoaderLayeringStrategy" in SettingScope.Raw("Compile") := "ClassLoaderLayeringStrategy.Flat".raw,
           "mdocIn" := """baseDirectory.value / "src/main/tut"""".raw,
           "sourceDirectory" in SettingScope.Raw("Paradox") := "mdocOut.value".raw,
           "mdocExtraArguments" ++= Seq(" --no-link-hygiene"),
