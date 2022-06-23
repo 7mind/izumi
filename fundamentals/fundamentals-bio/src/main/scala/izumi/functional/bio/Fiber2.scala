@@ -11,10 +11,10 @@ trait Fiber2[+F[+_, +_], +E, +A] {
 }
 
 object Fiber2 {
-  @inline def fromZIO[E, A](f: zio.Fiber[E, A]): Fiber2[IO, E, A] =
+  @inline def fromZIO[E, A](confirmExternalInterrupt: IO[Nothing, Boolean])(f: zio.Fiber[E, A]): Fiber2[IO, E, A] =
     new Fiber2[IO, E, A] {
       override val join: IO[E, A] = f.join
-      override val observe: IO[Nothing, Exit[E, A]] = f.await.map(ZIOExit.toExit[E, A])
+      override val observe: IO[Nothing, Exit[E, A]] = f.await.flatMap(confirmExternalInterrupt map ZIOExit.toExit[E, A](_))
       override val interrupt: IO[Nothing, Unit] = f.interrupt.void
     }
 
@@ -27,7 +27,7 @@ object Fiber2 {
 
   implicit final class ToCats[F[+_, +_], A](private val bioFiber: Fiber2[F, Throwable, A]) extends AnyVal {
     def toCats(implicit F: Applicative2[F]): cats.effect.Fiber[F[Throwable, _], Throwable, A] = new cats.effect.Fiber[F[Throwable, _], Throwable, A] {
-      override def cancel: F[Nothing, Unit] = F.void(bioFiber.interrupt)
+      override def cancel: F[Nothing, Unit] = bioFiber.interrupt
       override def join: F[Nothing, Outcome[F[Throwable, _], Throwable, A]] = bioFiber.observe.map(CatsExit.exitToOutcomeThrowable(_))
     }
   }

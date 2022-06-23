@@ -2,7 +2,6 @@ package izumi.functional.bio.data
 
 import izumi.functional.bio.{Exit, Panic2}
 
-import scala.annotation.nowarn
 import scala.util.Try
 
 sealed abstract class FreePanic[+S[_, _], +E, +A] {
@@ -48,11 +47,10 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
       case FreePanic.Suspend(a) => transform(a)
       case FreePanic.Fail(fail) => G.fail(fail())
       case FreePanic.Terminate(termination) => G.terminate(termination())
-      case FreePanic.Halt(exit) => G.halt(exit)
       case s: FreePanic.SelfInterrupt[S] =>
         @inline def selfInterrupt[e, a](s: FreePanic[S, e, a] & FreePanic.SelfInterrupt[S]): G[e, a] = {
           s match {
-            case FreePanic.SelfInterrupt() => G.sendInterruptToSelf: @nowarn("msg=incorrect")
+            case FreePanic.SelfInterrupt() => G.sendInterruptToSelf
           }
         }
         selfInterrupt(s)
@@ -102,7 +100,6 @@ object FreePanic {
   @inline def lift[S[_, _], E, A](s: S[E, A]): FreePanic[S, E, A] = Suspend(s)
   @inline def fail[S[_, _], E](e: => E): FreePanic[S, E, Nothing] = Fail(() => e)
   @inline def terminate[S[_, _]](e: => Throwable): FreePanic[S, Nothing, Nothing] = Terminate(() => e)
-  @inline def halt[S[_, _], E](exit: Exit.Failure[E]): FreePanic[S, E, Nothing] = Halt(exit)
   @inline def sendInterruptToSelf[S[_, _]]: FreePanic[S, Nothing, Unit] = SelfInterrupt()
 
   @inline def uninterruptible[S[_, _], E, A](s: FreePanic[S, E, A]): FreePanic[S, E, A] = Uninterruptible(s)
@@ -146,9 +143,6 @@ object FreePanic {
   }
   final case class SelfInterrupt[S[_, _]]() extends FreePanic[S, Nothing, Unit] {
     override def toString: String = "SelfInterrupt"
-  }
-  final case class Halt[S[_, _], E](exit: Exit.Failure[E]) extends FreePanic[S, E, Nothing] {
-    override def toString: String = s"Halt:[$exit]"
   }
   final case class CapturedRestoreInterruption[S[_, _], G[+_, +_], E, A](restoreInterruption2: RestoreInterruption2[G], sub: FreePanic[S, E, A])
     extends FreePanic[S, E, A] {
@@ -221,7 +215,6 @@ object FreePanic {
 
     @inline override final def fail[E](v: => E): FreePanic[S, E, Nothing] = FreePanic.fail(v)
     @inline override final def terminate(v: => Throwable): FreePanic[S, Nothing, Nothing] = FreePanic.terminate(v)
-    @inline override final def halt[E](exit: Exit.Failure[E]): FreePanic[S, E, Nothing] = FreePanic.halt(exit)
     @inline override final def sendInterruptToSelf: FreePanic[S, Nothing, Unit] = FreePanic.sendInterruptToSelf
 
     @inline override final def fromEither[E, V](effect: => Either[E, V]): FreePanic[S, E, V] = FreePanic.unit *> {

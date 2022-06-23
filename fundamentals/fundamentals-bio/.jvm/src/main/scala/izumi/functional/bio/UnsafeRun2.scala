@@ -1,8 +1,7 @@
 package izumi.functional.bio
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory, ThreadPoolExecutor}
-
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.UnsafeRun2.InterruptAction
 import zio.internal.tracing.TracingConfig
@@ -101,12 +100,18 @@ object UnsafeRun2 {
     }
 
     override def unsafeRunAsync[E, A](io: => IO[E, A])(callback: Exit[E, A] => Unit): Unit = {
-      runtime.unsafeRunAsync[E, A](io)(exitResult => callback(ZIOExit.toExit(exitResult)))
+      val interrupted = new AtomicBoolean(true)
+      runtime.unsafeRunAsync[E, A] {
+        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.effectTotal(interrupted.set(false)))
+      }(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))
     }
 
     override def unsafeRunSync[E, A](io: => IO[E, A]): Exit[E, A] = {
-      val result = runtime.unsafeRunSync(io)
-      ZIOExit.toExit(result)
+      val interrupted = new AtomicBoolean(true)
+      val result = runtime.unsafeRunSync {
+        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.effectTotal(interrupted.set(false)))
+      }
+      ZIOExit.toExit(result)(interrupted.get())
     }
 
     override def unsafeRunAsyncAsFuture[E, A](io: => IO[E, A]): Future[Exit[E, A]] = {
@@ -116,23 +121,14 @@ object UnsafeRun2 {
     }
 
     override def unsafeRunAsyncInterruptible[E, A](io: => IO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[IO] = {
-      val canceler = runtime.unsafeRun {
-        ZIO.descriptor
-          .bracketExit(
-            release = (descriptor, exit: zio.Exit[E, A]) =>
-              ZIO.effectTotal {
-                exit match {
-                  case zio.Exit.Failure(cause) if !cause.interruptors.forall(_ == descriptor.id) => ()
-                  case _ => callback(Exit.ZIOExit.toExit(exit))
-                }
-              },
-            use = _ => io,
-          )
-          .interruptible
-          .forkDaemon
-          .map(_.interrupt.unit)
-      }
-      InterruptAction(canceler)
+      val interrupted = new AtomicBoolean(true)
+
+      val canceler = runtime.unsafeRunAsyncCancelable {
+        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.effectTotal(interrupted.set(false)))
+      }(exit => callback(ZIOExit.toExit(exit)(interrupted.get())))
+
+      val cancelerEffect = ZIO.effectTotal { val _: zio.Exit[E, A] = canceler(zio.Fiber.Id.None) }
+      InterruptAction(cancelerEffect)
     }
 
     override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => IO[E, A]): (Future[Exit[E, A]], InterruptAction[IO]) = {
@@ -163,11 +159,13 @@ object UnsafeRun2 {
           }
 
         case FailureHandler.Custom(f) =>
-          f(ZIOExit.toExit(cause))
+          f(ZIOExit.toExit(cause)(outerInterruptionConfirmed = true))
       }
     }
 
-    override def fatal(t: Throwable): Boolean = t.isInstanceOf[VirtualMachineError]
+    override def fatal(t: Throwable): Boolean = {
+      t.isInstanceOf[VirtualMachineError]
+    }
 
     override def reportFatal(t: Throwable): Nothing = {
       t.printStackTrace()

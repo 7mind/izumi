@@ -5,7 +5,6 @@ import izumi.functional.bio.data.RestoreInterruption3
 
 trait Panic3[F[-_, +_, +_]] extends Bracket3[F] with PanicSyntax {
   def terminate(v: => Throwable): F[Any, Nothing, Nothing]
-  def halt[E](exit: Exit.Failure[E]): F[Any, E, Nothing]
 
   def sandbox[R, E, A](r: F[R, E, A]): F[R, Exit.Failure[E], A]
 
@@ -38,19 +37,10 @@ trait Panic3[F[-_, +_, +_]] extends Bracket3[F] with PanicSyntax {
     *   } *> F.sync(println("Impossible")) // interrupted immediately after `uninterruptible` block ends. Impossible _not_ printed
     * }}}
     *
-    * @note
-    *   The above semantic doesn't work right now under ZIO. This method, and ZIO's compatibility with cats-effect 3,
-    *   are both broken in at least ZIO 1.0 and until further notice. This method is tagged deprecated to avoid its use
-    *   until the problem is resolved.
-    *
     * @see
-    *   - [[https://github.com/zio/interop-cats/issues/503]] - Implementing this method requires new APIs in ZIO itself, until
-    *     the linked issue is resolved, this method is broken.
+    *   - [[https://github.com/zio/interop-cats/issues/503]] - History of supporting this method in ZIO
+    *   - [[https://github.com/zio/zio/issues/6911]] - related issue
     */
-  @deprecated(
-    "This method behaves incorrectly until https://github.com/zio/interop-cats/issues/503 is resolved. Use `F.halt(Exit.Interrupted(Trace.empty))` in case you only need to exit with interrupted status",
-    "24.05.2022",
-  )
   def sendInterruptToSelf: F[Any, Nothing, Unit]
 
   def uninterruptible[R, E, A](r: F[R, E, A]): F[R, E, A] = {

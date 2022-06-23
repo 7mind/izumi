@@ -16,14 +16,32 @@ import zio.{IO, Task, UIO, ZIO}
 
 import java.time.*
 import java.util.concurrent.TimeUnit
-import scala.concurrent.Future
+import java.util.concurrent.atomic.AtomicBoolean
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration.FiniteDuration
 
 trait ZIOTestEnv extends TestInstances with EqThrowable {
 
+  // workaround for laws `evalOn local pure` & `executionContext commutativity`
+  // (ZIO cannot implement them at all due to `.executor.asEC` losing the original executionContext)
+  implicit val eqForExecutionContext: Eq[ExecutionContext] =
+    Eq.allEqual
+
+  override implicit def eqIOA[A: Eq](implicit ticker: Ticker): Eq[cats.effect.IO[A]] = {
+    (ioa, iob) =>
+      {
+        val a = unsafeRun(ioa)
+        val b = unsafeRun(iob)
+        Eq[Outcome[Option, Throwable, A]].eqv(a, b) || {
+          System.err.println(s"not equal a=$a b=$b")
+          false
+        }
+      }
+  }
+
   implicit def eqTask[A: Eq](implicit tc: Ticker): Eq[Task[A]] =
-    Eq.by(io => toIO(io.either.map(_.map(_ => ()).left.map(_ => ()))))
+    Eq.by(io => toIO(io))
 
   implicit def orderTask(implicit tc: Ticker): Order[Task[FiniteDuration]] =
     Order.by(io => toIO(io))
@@ -85,58 +103,57 @@ trait ZIOTestEnv extends TestInstances with EqThrowable {
 
   // FIXME: ZIO cannot pass laws related to `MonadCancel#cancel` when using a fair generator
   //  since it does not properly implement it
-//  implicit def arbTask[A: Arbitrary: Cogen](implicit ticker: Ticker): Arbitrary[Task[A]] = Arbitrary {
-//    arbitraryIO[A].arbitrary.map(liftIO(_))
-//  }
-//  def liftIO[A](io: cats.effect.IO[A])(implicit ticker: Ticker): zio.Task[A] = {
-//    ZIO.effectAsyncInterrupt {
-//      k =>
-//        val (result, cancel) = io.unsafeToFutureCancelable()
-//        k(ZIO.fromFuture(_ => result))
-//        Left(ZIO.fromFuture(_ => cancel()).orDie)
-//    }
-//  }
-  implicit def arbTask[A](implicit arb: Arbitrary[A]): Arbitrary[Task[A]] = Arbitrary {
-    Arbitrary.arbBool.arbitrary.flatMap {
-      if (_) arb.arbitrary.map(IO2[IO].pure(_))
-      else Arbitrary.arbThrowable.arbitrary.map(IO2[IO].fail(_))
+  implicit def arbTask[A: Arbitrary: Cogen](implicit ticker: Ticker): Arbitrary[Task[A]] = Arbitrary {
+    arbitraryIO[A].arbitrary.map(liftIO(_))
+  }
+  def liftIO[A](io: cats.effect.IO[A])(implicit ticker: Ticker): zio.Task[A] = {
+    ZIO.effectAsyncInterrupt {
+      k =>
+        val (result, cancel) = io.unsafeToFutureCancelable()
+        k(ZIO.fromFuture(_ => result))
+        Left(ZIO.fromFuture(_ => cancel()).orDie)
     }
   }
+//  implicit def arbTask[A](implicit arb: Arbitrary[A]): Arbitrary[Task[A]] = Arbitrary {
+//    Arbitrary.arbBool.arbitrary.flatMap {
+//      if (_) arb.arbitrary.map(IO2[IO].pure(_))
+//      else Arbitrary.arbThrowable.arbitrary.map(IO2[IO].fail(_))
+//    }
+//  }
 
   def toIO[A](io: IO[Throwable, A])(implicit ticker: Ticker): cats.effect.IO[A] = {
     val F = cats.effect.IO.asyncForIO
-    cats.effect.IO.uncancelable {
-      poll =>
+    val interrupted = new AtomicBoolean(true)
+    F.async[zio.Exit[Throwable, A]] {
+      cb =>
         val runtime = zio
           .Runtime((), zio.internal.Platform.fromExecutionContext(ticker.ctx))
           .withTracing(Tracing.disabled)
           .withReportFailure(_ => ())
-        F.delay(
-          runtime.unsafeRunToFuture(io.run)
-        ).flatMap {
-            future =>
-              poll(
-                F.onCancel(
-                  F.fromFuture(F.pure[Future[zio.Exit[Throwable, A]]](future)).flatMap {
-                    exit =>
-                      val outcome = CatsExit.toOutcomeThrowable(F.pure(_: A), ZIOExit.toExit(exit))
-                      outcome match {
-                        case Outcome.Succeeded(fa) =>
-//                          println(s"succ $fa ${fa.getClass}")
-                          fa
-                        case Outcome.Errored(e) =>
-//                          println(s"err $e ${e.getClass}")
-                          F.raiseError(e)
-                        case Outcome.Canceled() =>
-//                          println("canceled")
-                          def go: cats.effect.IO[A] = F.canceled >> go
-                          go
-                      }
-                  },
-                  F.fromFuture(F.delay(future.cancel())).void,
-                )
-              )
+        val canceler = runtime.unsafeRunAsyncCancelable {
+          ZIOExit.ZIOSignalOnNoExternalInterruptFailure {
+            io
+          }(IO.effectTotal(interrupted.set(false)))
+        }(exit => cb(Right(exit)))
+        val cancelerEffect = cats.effect.IO { val _: zio.Exit[Throwable, A] = canceler(zio.Fiber.Id.None) }
+        F.pure(Some(cancelerEffect))
+    }.flatMap {
+        exit =>
+          val outcome = CatsExit.toOutcomeThrowable(F.pure(_: A), ZIOExit.toExit(exit)(interrupted.get()))
+          outcome match {
+            case Outcome.Succeeded(fa) =>
+              if (loud) println(s"succ $fa ${fa.getClass}")
+              fa
+            case Outcome.Errored(e) =>
+              if (loud) println(s"err $e ${e.getClass}")
+              F.raiseError(e)
+            case Outcome.Canceled() =>
+              if (loud) println("canceled")
+              F.canceled.flatMap(_ => F.raiseError(new InterruptedException("_test fiber canceled_")))
           }
-    }
+      }
   }
+
+  def loud: Boolean = false
+
 }

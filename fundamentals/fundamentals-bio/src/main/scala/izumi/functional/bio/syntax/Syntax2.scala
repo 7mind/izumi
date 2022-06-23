@@ -143,6 +143,10 @@ object Syntax2 {
       F.bracketOnFailure(r: F[E1, A])(cleanupOnFailure)(use)
     @inline final def guaranteeOnFailure(cleanupOnFailure: Exit.Failure[E] => F[Nothing, Unit]): F[E, A] = F.guaranteeOnFailure(r, cleanupOnFailure)
     @inline final def guaranteeOnInterrupt(cleanupOnInterruption: Exit.Interruption => F[Nothing, Unit]): F[E, A] = F.guaranteeOnInterrupt(r, cleanupOnInterruption)
+    @inline final def guaranteeExceptOnInterrupt(
+      cleanupOnNonInterruption: Either[Exit.Termination, Either[Exit.Error[E], Exit.Success[A]]] => F[Nothing, Unit]
+    ): F[E, A] =
+      F.guaranteeExceptOnInterrupt(r, cleanupOnNonInterruption)
   }
 
   class PanicOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Panic2[F]) extends BracketOps(r) {
