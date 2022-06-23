@@ -1,8 +1,8 @@
 package izumi.functional.bio
 
 import cats.data.State
-import cats.effect.kernel.Sync.Type
 import cats.effect.kernel.*
+import cats.effect.kernel.Sync.Type
 import cats.effect.{Async, Fiber}
 import cats.{Applicative, Eval, Traverse, ~>}
 import izumi.functional.bio.CatsConversions.*
@@ -10,7 +10,7 @@ import izumi.functional.bio.Exit.CatsExit
 import izumi.functional.bio.SpecificityHelper.*
 import izumi.functional.bio.data.RestoreInterruption2
 
-import scala.annotation.{nowarn, unused}
+import scala.annotation.unused
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS, NANOSECONDS}
 import scala.concurrent.{ExecutionContext, Future, TimeoutException}
 
@@ -202,7 +202,8 @@ object CatsConversions {
     @inline override final def forceR[A, B](fa: F[Throwable, A])(fb: F[Throwable, B]): F[Throwable, B] = {
       F.redeem(F.sandbox(fa))(
         {
-          case exit: Exit.Interruption => F.halt(exit)
+          case exit: Exit.Interruption =>
+            F.terminate(new RuntimeException(s"Bad state: Interrupted in forceR, F.sandbox shouldn't be able to catch interruption. exit=$exit", exit.compoundException))
           case _ => fb
         },
         _ => fb,
@@ -214,7 +215,7 @@ object CatsConversions {
     }
 
     @inline override final def canceled: F[Throwable, Unit] = {
-      F.sendInterruptToSelf: @nowarn("msg=incorrect")
+      F.sendInterruptToSelf
     }
 
     @inline override final def guarantee[A](fa: F[Throwable, A], fin: F[Throwable, Unit]): F[Throwable, A] = {
@@ -491,6 +492,7 @@ object CatsConversions {
 
     override final def executionContext: F[Throwable, ExecutionContext] = F.currentEC
     override final def evalOn[A](fa: F[Throwable, A], ec: ExecutionContext): F[Throwable, A] = F.onEC(ec)(fa)
+
     override final def startOn[A](fa: F[Throwable, A], ec: ExecutionContext): F[Throwable, Fiber[F[Throwable, _], Throwable, A]] = {
       F.map(Fork.forkOn(ec)(fa))(_.toCats(F))
     }
@@ -505,27 +507,16 @@ object CatsConversions {
       super.backgroundOn(fa, ec)
 
     override final def async[A](k: (Either[Throwable, A] => Unit) => F[Throwable, Option[F[Throwable, Unit]]]): F[Throwable, A] = {
-      F.flatMap(Primitives.mkPromise[Nothing, Option[F[Throwable, Unit]]])(
-        cancelerPromise =>
-          F.guaranteeOnInterrupt(
-            F.asyncF(
-              resume => {
-                F.void(
-                  F.guaranteeCase[Any, Throwable, Option[F[Throwable, Unit]]](
-                    k(resume),
-                    {
-                      case Exit.Success(maybeCanceler) => F.void(cancelerPromise.succeed(maybeCanceler))
-                      case _: Exit.Failure[?] => F.void(cancelerPromise.succeed(None))
-                    },
-                  )
-                )
-              }
-            ),
-            _ =>
-              F.orTerminate {
-                F.flatMap(cancelerPromise.await)(F.traverse_(_)(identity))
-              },
-          )
+      val p = scala.concurrent.Promise[Either[Throwable, A]]()
+      def get: F[Throwable, A] = {
+        F.flatMap(F.fromFuture(p.future))(F.fromEither(_))
+      }
+      F.uninterruptibleExcept(
+        restore =>
+          F.flatMap(k { e => p.trySuccess(e); () }) {
+            case Some(canceler) => F.guaranteeOnInterrupt(restore(get), _ => F.orTerminate(canceler))
+            case None => restore(get)
+          }
       )
     }
 

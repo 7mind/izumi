@@ -200,6 +200,10 @@ object Syntax3 {
     @inline final def guaranteeOnFailure[R1 <: R](cleanupOnFailure: Exit.Failure[E] => FR[R1, Nothing, Unit]): FR[R1, E, A] = F.guaranteeOnFailure(r, cleanupOnFailure)
     @inline final def guaranteeOnInterrupt[R1 <: R](cleanupOnInterruption: Exit.Interruption => FR[R1, Nothing, Unit]): FR[R1, E, A] =
       F.guaranteeOnInterrupt(r, cleanupOnInterruption)
+    @inline final def guaranteeExceptOnInterrupt[R1 <: R](
+      cleanupOnNonInterruption: Either[Exit.Termination, Either[Exit.Error[E], Exit.Success[A]]] => FR[R1, Nothing, Unit]
+    ): FR[R1, E, A] =
+      F.guaranteeExceptOnInterrupt(r, cleanupOnNonInterruption)
   }
 
   class PanicOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR]) extends BracketOps(r) {
@@ -354,23 +358,6 @@ object Syntax3 {
     @inline final def Guarantee3[FR[-_, +_, +_]: Guarantee3]: Guarantee3[FR] = implicitly
   }
   trait ImplicitPuns10 extends ImplicitPuns11 {
-    @inline implicit final def Monad3[FR[-_, +_, +_]: Monad3, R, E, A](self: FR[R, E, A]): MonadOps[FR, R, E, A] = new MonadOps[FR, R, E, A](self)
-    @inline final def Monad3[FR[-_, +_, +_]: Monad3]: Monad3[FR] = implicitly
-  }
-  trait ImplicitPuns11 extends ImplicitPuns12 {
-    @inline implicit final def Applicative3[FR[-_, +_, +_]: Applicative3, R, E, A](self: FR[R, E, A]): ApplicativeOps[FR, R, E, A] = new ApplicativeOps[FR, R, E, A](self)
-    @inline final def Applicative3[FR[-_, +_, +_]: Applicative3]: Applicative3[FR] = implicitly
-  }
-  trait ImplicitPuns12 extends ImplicitPuns13 {
-    @inline implicit final def Bifunctor3[FR[-_, +_, +_]: Bifunctor3, R, E, A](self: FR[R, E, A]): BifunctorOps[FR, R, E, A] = new BifunctorOps[FR, R, E, A](self)
-    @inline implicit final def Bifunctor3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
-    @inline final def Bifunctor3[FR[-_, +_, +_]: Bifunctor3]: Bifunctor3[FR] = implicitly
-  }
-  trait ImplicitPuns13 extends ImplicitPuns14 {
-    @inline implicit final def Functor3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
-    @inline final def Functor3[FR[-_, +_, +_]: Functor3]: Functor3[FR] = implicitly
-  }
-  trait ImplicitPuns14 extends ImplicitPuns15 {
     // Note, as long as these auxilary conversions to Monad/Applicative/Functor syntaxes etc.
     // have the same output type as Monad3/etc conversions above, they will avoid the specificity rule
     // and _will not_ clash (because the outputs are equal, not <:<).
@@ -382,28 +369,45 @@ object Syntax3 {
       new LocalOpsKleisliSyntax[FR, R, E, A](self)
     @inline final def Local3[FR[-_, +_, +_]: Local3]: Local3[FR] = implicitly
   }
-  trait ImplicitPuns15 extends ImplicitPuns16 {
+  trait ImplicitPuns11 extends ImplicitPuns12 {
     @inline implicit final def MonadAsk3[FR[-_, +_, +_]: Monad3, R, E, A](self: FR[R, E, A]): MonadOps[FR, R, E, A] = new MonadOps[FR, R, E, A](self)
     @inline final def MonadAsk3[FR[-_, +_, +_]: MonadAsk3]: MonadAsk3[FR] = implicitly
   }
-  trait ImplicitPuns16 extends ImplicitPuns17 {
+  trait ImplicitPuns12 extends ImplicitPuns13 {
     @inline implicit final def Ask3[FR[-_, +_, +_]: Applicative3, R, E, A](self: FR[R, E, A]): ApplicativeOps[FR, R, E, A] = new ApplicativeOps[FR, R, E, A](self)
     @inline final def Ask3[FR[-_, +_, +_]: Ask3]: Ask3[FR] = implicitly
   }
-  trait ImplicitPuns17 extends ImplicitPuns18 {
+  trait ImplicitPuns13 extends ImplicitPuns14 {
     @inline implicit final def ArrowChoice3[FR[-_, +_, +_]: ArrowChoice3, R, E, A](self: FR[R, E, A]): ArrowChoiceOps[FR, R, E, A] = new ArrowChoiceOps[FR, R, E, A](self)
     @inline implicit final def ArrowChoice3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def ArrowChoice3[FR[-_, +_, +_]: ArrowChoice3]: ArrowChoice3[FR] = implicitly
   }
-  trait ImplicitPuns18 extends ImplicitPuns19 {
+  trait ImplicitPuns14 extends ImplicitPuns15 {
     @inline implicit final def Arrow3[FR[-_, +_, +_]: Arrow3, R, E, A](self: FR[R, E, A]): ArrowOps[FR, R, E, A] = new ArrowOps[FR, R, E, A](self)
     @inline implicit final def Arrow3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def Arrow3[FR[-_, +_, +_]: Arrow3]: Arrow3[FR] = implicitly
   }
-  trait ImplicitPuns19 {
+  trait ImplicitPuns15 extends ImplicitPuns16 {
     @inline implicit final def Profunctor3[FR[-_, +_, +_]: Profunctor3, R, E, A](self: FR[R, E, A]): ProfunctorOps[FR, R, E, A] = new ProfunctorOps[FR, R, E, A](self)
     @inline implicit final def Profunctor3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
     @inline final def Profunctor3[FR[-_, +_, +_]: Profunctor3]: Profunctor3[FR] = implicitly
+  }
+  trait ImplicitPuns16 extends ImplicitPuns17 {
+    @inline implicit final def Monad3[FR[-_, +_, +_]: Monad3, R, E, A](self: FR[R, E, A]): MonadOps[FR, R, E, A] = new MonadOps[FR, R, E, A](self)
+    @inline final def Monad3[FR[-_, +_, +_]: Monad3]: Monad3[FR] = implicitly
+  }
+  trait ImplicitPuns17 extends ImplicitPuns18 {
+    @inline implicit final def Applicative3[FR[-_, +_, +_]: Applicative3, R, E, A](self: FR[R, E, A]): ApplicativeOps[FR, R, E, A] = new ApplicativeOps[FR, R, E, A](self)
+    @inline final def Applicative3[FR[-_, +_, +_]: Applicative3]: Applicative3[FR] = implicitly
+  }
+  trait ImplicitPuns18 extends ImplicitPuns19 {
+    @inline implicit final def Bifunctor3[FR[-_, +_, +_]: Bifunctor3, R, E, A](self: FR[R, E, A]): BifunctorOps[FR, R, E, A] = new BifunctorOps[FR, R, E, A](self)
+    @inline implicit final def Bifunctor3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
+    @inline final def Bifunctor3[FR[-_, +_, +_]: Bifunctor3]: Bifunctor3[FR] = implicitly
+  }
+  trait ImplicitPuns19 {
+    @inline implicit final def Functor3[FR[-_, +_, +_]: Functor3, R, E, A](self: FR[R, E, A]): FunctorOps[FR, R, E, A] = new FunctorOps[FR, R, E, A](self)
+    @inline final def Functor3[FR[-_, +_, +_]: Functor3]: Functor3[FR] = implicitly
   }
 
 }

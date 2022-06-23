@@ -1,6 +1,8 @@
 package izumi.functional.bio
 
 import cats.effect.kernel.Outcome
+import zio.ZIO
+import zio.internal.ZIOSucceedNow
 
 sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
@@ -94,20 +96,22 @@ object Exit {
   }
 
   object ZIOExit {
-    def toExit[E, A](result: zio.Exit[E, A]): Exit[E, A] = result match {
+    def toExit[E, A](result: zio.Exit[E, A])(outerInterruptionConfirmed: Boolean): Exit[E, A] = result match {
       case zio.Exit.Success(v) =>
         Success(v)
       case zio.Exit.Failure(cause) =>
-        toExit(cause)
+        toExit(cause)(outerInterruptionConfirmed)
     }
 
-    def toExit[E](result: zio.Cause[E]): Exit.Failure[E] = {
+    def toExit[E](result: zio.Cause[E])(outerInterruptionConfirmed: Boolean): Exit.Failure[E] = {
       result.failureOrCause match {
         case Left(err) =>
           Error(err, Trace.ZIOTrace(result))
-        case Right(cause) if cause.interrupted =>
+
+        case Right(cause) if cause.interrupted && outerInterruptionConfirmed =>
           val trace = Trace.ZIOTrace(cause)
           Interruption(cause.defects, trace)
+
         case Right(cause) =>
           val exceptions = cause.defects
           val compound = exceptions match {
@@ -147,31 +151,26 @@ object Exit {
       }
     }
 
-    def remapIgnoreChildFiberInterruptions[E](parentId: zio.Fiber.Id, result: zio.Cause[E]): zio.Cause[E] = {
-      result
-        .fold(
-          empty = zio.Cause.empty,
-          failCase = zio.Cause.Fail(_),
-          dieCase = zio.Cause.Die(_),
-          interruptCase = {
-            id =>
-              if (id == parentId) {
-                zio.Cause.die(new ZIOChildFiberInterrupted(id))
-              } else {
-                zio.Cause.Interrupt(id)
-              }
-          },
-        )(
-          thenCase = zio.Cause.Then(_, _),
-          bothCase = zio.Cause.Both(_, _),
-          tracedCase = zio.Cause.Traced(_, _),
-        )
+    def ZIOSignalOnNoExternalInterruptFailure[R, E, A](f: ZIO[R, E, A])(signalOnNonInterrupt: => ZIO[R, Nothing, Any]): ZIO[R, E, A] = {
+      f.onExit {
+        case zio.Exit.Success(_) =>
+          ZIO.unit
+        case zio.Exit.Failure(_) =>
+          // we don't check if cause is interrupted
+          // because we can get an invalid state Cause.empty
+          // due to this line https://github.com/zio/zio/blob/22921ee5ac0d2e03531f8b37dfc0d5793a467af8/core/shared/src/main/scala/zio/internal/FiberContext.scala#L415=
+          // if the last error was an uninterruptible typed error
+          withIsInterruptedF(confirmedInterrupt => if (confirmedInterrupt) ZIO.unit else signalOnNonInterrupt)
+      }
     }
 
-    final class ZIOChildFiberInterrupted(interruptorId: zio.Fiber.Id)
-      extends RuntimeException(
-        s"A child fiber was interrupted by an interrupt produced by parent fiber #${interruptorId.seqNumber} during a `parTraverse` or `zipWithPar` operation"
-      )
+    def withIsInterrupted[R, E, A](f: Boolean => A): ZIO[R, E, A] = {
+      withIsInterruptedF(b => ZIOSucceedNow(f(b)))
+    }
+
+    def withIsInterruptedF[R, E, A](f: Boolean => ZIO[R, E, A]): ZIO[R, E, A] = {
+      ZIO.descriptorWith(desc => f(desc.interrupters.nonEmpty))
+    }
 
   }
 

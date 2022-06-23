@@ -2,6 +2,7 @@ package izumi.functional.bio.test
 
 import izumi.functional.bio.{Async2, Exit, F}
 import org.scalatest.wordspec.AnyWordSpec
+import zio.ZIO
 
 class ZIOWorkaroundsTest extends AnyWordSpec {
 
@@ -18,7 +19,6 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       )(identity).sandboxExit.map {
           case Exit.Termination(exc, _, _) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
           case other =>
             fail(s"Unexpected status: $other")
         }
@@ -33,7 +33,6 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       )(identity).sandboxExit.map {
           case Exit.Termination(exc, _, _) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
           case other =>
             fail(s"Unexpected status: $other")
         }
@@ -48,7 +47,6 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       )(identity).sandboxExit.map {
           case Exit.Termination(exc, _, _) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
           case other =>
             fail(s"Unexpected status: $other")
         }
@@ -63,7 +61,6 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       )(identity).sandboxExit.map {
           case Exit.Termination(exc, _, _) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
           case other =>
             fail(s"Unexpected status: $other")
         }
@@ -76,7 +73,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       ).sandboxExit.map {
           case Exit.Termination(exc, _, _) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(!exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
+            assert(!exc.getMessage.contains("interrupt"))
           case other =>
             fail(s"Unexpected status: $other")
         }
@@ -89,7 +86,6 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       ).map {
           case Right((_, Exit.Termination(exc, _, _))) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(!exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
           case other =>
             fail(s"Unexpected status: $other")
         }
@@ -102,7 +98,6 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       )((_, _) => ()).sandboxExit.map {
           case Exit.Termination(exc, _, _) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
           case other =>
             fail(s"Unexpected status: $other")
         }
@@ -115,7 +110,6 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       ).sandboxExit.map {
           case Exit.Termination(exc, _, _) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
           case other =>
             fail(s"Unexpected status: $other")
         }
@@ -128,7 +122,6 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       ).sandboxExit.map {
           case Exit.Termination(exc, _, _) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
           case other =>
             fail(s"Unexpected status: $other")
         }
@@ -141,10 +134,40 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
       ).sandboxExit.map {
           case Exit.Termination(exc, _, _) =>
             assert(exc.getMessage.contains("testexception"))
-            assert(exc.getMessage.contains("during a `parTraverse` or `zipWithPar` operation"))
           case other =>
             fail(s"Unexpected status: $other")
         }
+    }
+
+    "guaranteeExceptOnInterrupt works correctly" in silentRuntime.unsafeRun {
+      for {
+        succRes <- F.mkRef(Option.empty[Boolean])
+        failRes <- F.mkRef(Option.empty[Boolean])
+        terminateRes <- F.mkRef(Option.empty[Boolean])
+        innerInterruptRes <- F.mkRef(Option.empty[Boolean])
+        parTraverseRes <- F.mkRef(Option.empty[Boolean])
+        outerInterruptRes1 <- F.mkRef(Option.empty[Boolean])
+        outerInterruptRes2 <- F.mkRef(Option.empty[Boolean])
+
+        _ <- F.pure("x").guaranteeExceptOnInterrupt(_ => succRes.set(Some(true))).sandboxExit
+        _ <- F.fail("x").guaranteeExceptOnInterrupt(_ => failRes.set(Some(true))).sandboxExit
+        _ <- F.terminate(new RuntimeException("x")).guaranteeExceptOnInterrupt(_ => terminateRes.set(Some(true))).sandboxExit
+        _ <- ZIO.interrupt.guaranteeExceptOnInterrupt(_ => innerInterruptRes.set(Some(true))).sandboxExit
+        _ <-
+          F.parTraverse_(
+            List(
+              F.parTraverse(
+                List(
+                  F.unit.forever,
+                  F.terminate(new RuntimeException("testexception")),
+                )
+              )(identity).guaranteeExceptOnInterrupt(_ => parTraverseRes.set(Some(true))),
+              ZIO.unit.forever.guaranteeExceptOnInterrupt(_ => outerInterruptRes1.set(Some(true))).guaranteeOnInterrupt(_ => outerInterruptRes2.set(Some(true))),
+            )
+          )(identity).sandboxExit
+
+        results <- F.traverse(List(succRes, failRes, terminateRes, innerInterruptRes, parTraverseRes, outerInterruptRes1, outerInterruptRes2))(_.get)
+      } yield assert(results == List(Some(true), Some(true), Some(true), Some(true), Some(true), None, Some(true)))
     }
 
   }

@@ -121,7 +121,6 @@ object MiniBIO {
     override def flatMap[R, E, A, B](r: MiniBIO[E, A])(f: A => MiniBIO[E, B]): MiniBIO[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.empty))
     override def terminate(v: => Throwable): MiniBIO[Nothing, Nothing] = Fail.terminate(v)
-    override def halt[E](exit: Exit.Failure[E]): MiniBIO[E, Nothing] = Fail(() => exit)
     override def sendInterruptToSelf: MiniBIO[Nothing, Unit] = unit
 
     override def syncThrowable[A](effect: => A): MiniBIO[Throwable, A] = Sync {

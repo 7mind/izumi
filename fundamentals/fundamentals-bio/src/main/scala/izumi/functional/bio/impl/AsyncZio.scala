@@ -3,10 +3,12 @@ package izumi.functional.bio.impl
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.data.{Morphism3, RestoreInterruption3}
 import izumi.functional.bio.{Async3, Exit, Fiber2, Fiber3, Local3, __PlatformSpecific}
+import zio._izumicompat_.__ZIOFiberContext.FiberContext
 import zio.internal.ZIOSucceedNow
-import zio.{NeedsEnv, ZIO}
+import zio.{Fiber, NeedsEnv, ZIO}
 
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -23,7 +25,6 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
 
   @inline override final def fail[E](v: => E): ZIO[Any, E, Nothing] = ZIO.fail(v)
   @inline override final def terminate(v: => Throwable): ZIO[Any, Nothing, Nothing] = ZIO.die(v)
-  @inline override final def halt[E](exit: Exit.Failure[E]): ZIO[Any, E, Nothing] = ZIO.halt(ZIOExit.causeFromExit(exit))
 
   @inline override final def fromEither[E, A](effect: => Either[E, A]): ZIO[Any, E, A] = ZIO.fromEither(effect)
   @inline override final def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): ZIO[Any, E, A] = ZIO.fromEither(effect.toRight(errorOnNone))
@@ -81,10 +82,10 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   )(release: (A, Exit[E, B]) => ZIO[R, Nothing, Unit]
   )(use: A => ZIO[R, E, B]
   ): ZIO[R, E, B] = {
-    ZIO.bracketExit[R, E, A, B](acquire, (a, exit) => release(a, ZIOExit.toExit(exit)), use)
+    ZIO.bracketExit[R, E, A, B](acquire, (a, exit) => ZIOExit.withIsInterruptedF(i => release(a, ZIOExit.toExit(exit)(i))), use)
   }
   @inline override final def guaranteeCase[R, E, A](f: ZIO[R, E, A], cleanup: Exit[E, A] => ZIO[R, Nothing, Unit]): ZIO[R, E, A] = {
-    f.onExit(cleanup apply ZIOExit.toExit(_))
+    f.onExit(exit => ZIOExit.withIsInterruptedF(cleanup apply ZIOExit.toExit(exit)(_)))
   }
 
   @inline override final def traverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreach(l.toList)(f)
@@ -92,7 +93,9 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def traverse_[R, E, A](l: Iterable[A])(f: A => ZIO[R, E, Unit]): ZIO[R, E, Unit] = ZIO.foreach_(l)(f)
   @inline override final def sequence_[R, E](l: Iterable[ZIO[R, E, Unit]]): ZIO[R, E, Unit] = ZIO.foreach_(l)(identity)
 
-  @inline override final def sandbox[R, E, A](r: ZIO[R, E, A]): ZIO[R, Exit.Failure[E], A] = r.sandbox.mapError(ZIOExit.toExit[E])
+  @inline override final def sandbox[R, E, A](r: ZIO[R, E, A]): ZIO[R, Exit.Failure[E], A] = {
+    r.sandbox.flatMapError(ZIOExit withIsInterrupted ZIOExit.toExit(_))
+  }
 
   @inline override final def yieldNow: ZIO[Any, Nothing, Unit] = ZIO.yieldNow
   @inline override final def never: ZIO[Any, Nothing, Nothing] = ZIO.never
@@ -121,62 +124,48 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def uninterruptible[R, E, A](r: ZIO[R, E, A]): ZIO[R, E, A] = r.uninterruptible
 
   @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
-    r1.interruptible
-      .raceFirst(r2.interruptible)
-      .resetForkScope
+    r1.interruptible.raceFirst(r2.interruptible)
   }
 
   @inline override final def racePairUnsafe[R, E, A, B](
     r1: ZIO[R, E, A],
     r2: ZIO[R, E, B],
   ): ZIO[R, E, Either[(Exit[E, A], Fiber3[ZIO, E, B]), (Fiber3[ZIO, E, A], Exit[E, B])]] = {
-    (r1.interruptible raceWith r2.interruptible)(
-      { case (l, f) => ZIOSucceedNow(Left((ZIOExit.toExit(l), Fiber2.fromZIO(f)))) },
-      { case (r, f) => ZIOSucceedNow(Right((Fiber2.fromZIO(f), ZIOExit.toExit(r)))) },
-    ).resetForkScope
+    val interrupted1 = new AtomicBoolean(true)
+    val interrupted2 = new AtomicBoolean(true)
+    (ZIOExit.ZIOSignalOnNoExternalInterruptFailure(r1.interruptible)(sync(interrupted1.set(false)))
+    raceWith
+    ZIOExit.ZIOSignalOnNoExternalInterruptFailure(r2.interruptible)(sync(interrupted2.set(false))))(
+      { case (l, f) => ZIOSucceedNow(Left((ZIOExit.toExit(l)(interrupted1.get()), Fiber2.fromZIO(sync(interrupted2.get()))(f)))) },
+      { case (r, f) => ZIOSucceedNow(Right((Fiber2.fromZIO(sync(interrupted1.get()))(f), ZIOExit.toExit(r)(interrupted2.get())))) },
+    )
   }
 
   @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
-    remapExitIgnoreChildFiberInterruptions {
-      ZIO.foreachParN(maxConcurrent)(l.toList)(f(_).interruptible)
-    }
+    ZIO.foreachParN(maxConcurrent)(l.toList)(f(_).interruptible)
   }
 
   @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
-    remapExitIgnoreChildFiberInterruptions {
-      ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
-    }
+    ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
   }
   @inline override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
-    remapExitIgnoreChildFiberInterruptions {
-      ZIO.foreachPar(l.toList)(f(_).interruptible)
-    }
+    ZIO.foreachPar(l.toList)(f(_).interruptible)
   }
   @inline override final def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
-    remapExitIgnoreChildFiberInterruptions {
-      ZIO.foreachPar_(l)(f(_).interruptible)
-    }
+    ZIO.foreachPar_(l)(f(_).interruptible)
   }
 
   @inline override final def zipWithPar[R, E, A, B, C](fa: ZIO[R, E, A], fb: ZIO[R, E, B])(f: (A, B) => C): ZIO[R, E, C] = {
-    remapExitIgnoreChildFiberInterruptions {
-      fa.zipWithPar(fb)(f)
-    }
+    fa.zipWithPar(fb)(f)
   }
   @inline override final def zipPar[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, (A, B)] = {
-    remapExitIgnoreChildFiberInterruptions {
-      fa <&> fb
-    }
+    fa <&> fb
   }
   @inline override final def zipParLeft[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, A] = {
-    remapExitIgnoreChildFiberInterruptions {
-      fa <& fb
-    }
+    fa <& fb
   }
   @inline override final def zipParRight[R, E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, B] = {
-    remapExitIgnoreChildFiberInterruptions {
-      fa &> fb
-    }
+    fa &> fb
   }
 
   @inline override final def ask[R]: ZIO[R, Nothing, R] = ZIO.environment
@@ -195,9 +184,39 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def choice[RL, RR, E, A](f: ZIO[RL, E, A], g: ZIO[RR, E, A]): ZIO[Either[RL, RR], E, A] = (f +++ g).map(_.merge)
   @inline override final def choose[RL, RR, E, AL, AR](f: ZIO[RL, E, AL], g: ZIO[RR, E, AR]): ZIO[Either[RL, RR], E, Either[AL, AR]] = f +++ g
 
-  // see https://github.com/zio/interop-cats/issues/503 - this implementation is broken, but a working implementation
-  // must be supported at the level of ZIO runtime
-  @inline override final def sendInterruptToSelf: ZIO[Any, Nothing, Unit] = ZIO.interrupt
+  @inline override final def sendInterruptToSelf: ZIO[Any, Nothing, Unit] = {
+    def loopUntilInterrupted: ZIO[Any, Nothing, Unit] =
+      ZIO.descriptorWith(d => if (d.interrupters.isEmpty) ZIO.yieldNow *> loopUntilInterrupted else ZIO.unit)
+
+    val maxRetries = 10
+
+    def getThisFiber(retries: Int): ZIO[Any, Nothing, FiberContext[Any, Any]] =
+      ZIO.yieldNow *> // ZIO.yieldNow is necessary to avoid empty result in some cases (unsafeRunToFuture)
+      ZIO.effectSuspendTotal {
+        Fiber.unsafeCurrentFiber() match {
+          case Some(fiber) =>
+            ZIOSucceedNow(fiber.asInstanceOf[FiberContext[Any, Any]])
+          case None =>
+            if (retries < maxRetries)
+              getThisFiber(retries + 1)
+            else
+              ZIO.effectTotal(
+                throw new IllegalStateException(
+                  "Impossible state: current Fiber not found in `zio.Fiber.unsafeCurrentFiber`"
+                )
+              )
+        }
+      }
+
+    ZIO.effectSuspendTotal {
+      for {
+        thisFiber <- getThisFiber(0)
+        _ <- thisFiber.interruptAs(thisFiber.id).forkDaemon
+        _ <- loopUntilInterrupted
+      } yield ()
+    }
+  }
+
   @inline override final def currentEC: ZIO[Any, Nothing, ExecutionContext] = ZIO.executor.map(_.asEC)
   @inline override final def onEC[R, E, A](ec: ExecutionContext)(f: ZIO[R, E, A]): ZIO[R, E, A] = f.on(ec)
 
@@ -224,8 +243,8 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
               .run
               .flatMap {
                 e =>
-                  ZIO
-                    .effectSuspendTotal(release(a, Exit.ZIOExit.toExit(e)))
+                  ZIOExit
+                    .withIsInterruptedF(i => release(a, Exit.ZIOExit.toExit(e)(i)))
                     .foldCauseM(
                       cause2 => ZIO.halt(e.fold(_ ++ cause2, _ => cause2)),
                       _ => ZIO.done(e),
@@ -233,16 +252,6 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
               }
         }
     }
-  }
-
-  /**
-    * Workaround for ZIO incoherently interpreting child interruptions in race/parTraverse/zipWithPar,
-    * classifying them as overall interruption.
-    *
-    * @see [[https://github.com/zio/zio/issues/6911]]
-    */
-  private[this] def remapExitIgnoreChildFiberInterruptions[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = {
-    ZIO.fiberId.flatMap(parentId => f.mapErrorCause(ZIOExit.remapIgnoreChildFiberInterruptions(parentId, _)))
   }
 
 }
