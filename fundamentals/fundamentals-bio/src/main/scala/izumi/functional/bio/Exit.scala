@@ -165,7 +165,7 @@ object Exit {
     }
 
     def withIsInterrupted[R, E, A](f: Boolean => A): ZIO[R, E, A] = {
-      withIsInterruptedF(b => ZIOSucceedNow(f(b)))
+      withIsInterruptedF[R, E, A](b => ZIOSucceedNow(f(b)))
     }
 
     def withIsInterruptedF[R, E, A](f: Boolean => ZIO[R, E, A]): ZIO[R, E, A] = {
