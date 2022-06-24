@@ -224,6 +224,7 @@ object CatsConversions {
     @inline override final def guaranteeCase[A](fa: F[Throwable, A])(fin: Outcome[F[Throwable, _], Throwable, A] => F[Throwable, Unit]): F[Throwable, A] = {
       F.guaranteeCase(fa, (exit: Exit[Throwable, A]) => F.orTerminate(fin(CatsExit.exitToOutcomeThrowable(exit)(F))))
     }
+
     @inline override final def onCancel[A](fa: F[Throwable, A], fin: F[Throwable, Unit]): F[Throwable, A] = {
       F.guaranteeOnInterrupt(fa, _ => F.orTerminate(fin))
     }
@@ -506,19 +507,20 @@ object CatsConversions {
     override final def backgroundOn[A](fa: F[Throwable, A], ec: ExecutionContext): Resource[F[Throwable, _], F[Throwable, Outcome[F[Throwable, _], Throwable, A]]] =
       super.backgroundOn(fa, ec)
 
-    override final def async[A](k: (Either[Throwable, A] => Unit) => F[Throwable, Option[F[Throwable, Unit]]]): F[Throwable, A] = {
-      val p = scala.concurrent.Promise[Either[Throwable, A]]()
-      def get: F[Throwable, A] = {
-        F.flatMap(F.fromFuture(p.future))(F.fromEither(_))
+    override final def async[A](k: (Either[Throwable, A] => Unit) => F[Throwable, Option[F[Throwable, Unit]]]): F[Throwable, A] =
+      F.suspend {
+        val p = scala.concurrent.Promise[Either[Throwable, A]]()
+        def get: F[Throwable, A] = {
+          F.flatMap(F.fromFuture(p.future))(F.fromEither(_))
+        }
+        F.uninterruptibleExcept(
+          restore =>
+            F.flatMap(k { e => p.trySuccess(e); () }) {
+              case Some(canceler) => F.guaranteeOnInterrupt(restore(get), _ => F.orTerminate(canceler))
+              case None => restore(get)
+            }
+        )
       }
-      F.uninterruptibleExcept(
-        restore =>
-          F.flatMap(k { e => p.trySuccess(e); () }) {
-            case Some(canceler) => F.guaranteeOnInterrupt(restore(get), _ => F.orTerminate(canceler))
-            case None => restore(get)
-          }
-      )
-    }
 
   }
 
