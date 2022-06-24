@@ -108,7 +108,13 @@ object Exit {
         case Left(err) =>
           Error(err, Trace.ZIOTrace(result))
 
-        case Right(cause) if cause.interrupted && outerInterruptionConfirmed =>
+        case Right(cause)
+            if (
+              cause.interrupted
+              // deem empty cause to be interruption as well, due to occasional invalid ZIO states
+              // caused by this line https://github.com/zio/zio/blob/22921ee5ac0d2e03531f8b37dfc0d5793a467af8/core/shared/src/main/scala/zio/internal/FiberContext.scala#L415=
+                || cause.isEmpty
+            ) && outerInterruptionConfirmed =>
           val trace = Trace.ZIOTrace(cause)
           Interruption(cause.defects, trace)
 
