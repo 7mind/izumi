@@ -9,14 +9,16 @@ import java.util.UUID
 import scala.annotation.nowarn
 import scala.collection.compat.*
 import scala.collection.generic.CanBuildFrom
-import scala.util.Random
 import scala.language.implicitConversions
+import scala.util.Random
 
 trait Entropy1[F[_]] extends DivergenceHelper {
   def nextBoolean(): F[Boolean]
   def nextInt(): F[Int]
+  /** @return 0 to `max` */
   def nextInt(max: Int): F[Int]
   def nextLong(): F[Long]
+  /** @return 0L to `max` */
   def nextLong(max: Long): F[Long]
   /** @return 0.0f to 1.0f */
   def nextFloat(): F[Float]
@@ -79,8 +81,11 @@ object Entropy1 extends LowPriorityEntropyInstances {
     override def nextInt(): Int = random.nextInt()
     override def nextInt(max: Int): Int = random.nextInt(max)
     override def nextLong(): Long = random.nextLong()
-    override def nextLong(max: Long): Long = random.self.nextLong() % max
-    override def nextPrintableChar(): Identity[Char] = random.nextPrintableChar()
+    override def nextLong(max: Long): Long = {
+      if (max <= 0) throw new IllegalArgumentException("bound must be positive")
+      math.abs(random.nextLong()) % max
+    }
+    override def nextPrintableChar(): Char = random.nextPrintableChar()
     override def nextString(length: Int): String = random.nextString(length)
     override def nextBytes(length: Int): Array[Byte] = {
       val bytes = new Array[Byte](0 max length)
@@ -88,7 +93,7 @@ object Entropy1 extends LowPriorityEntropyInstances {
       bytes
     }
     override def writeRandomBytes(bytes: Array[Byte]): Unit = random.nextBytes(bytes)
-    override def setSeed(seed: Long): Identity[Unit] = random.setSeed(seed)
+    override def setSeed(seed: Long): Unit = random.setSeed(seed)
   }
 
   @inline implicit final def impureEntropy: Entropy1[Identity] = Standard
