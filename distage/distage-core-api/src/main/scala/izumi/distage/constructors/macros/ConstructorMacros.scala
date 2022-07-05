@@ -67,12 +67,10 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
 
     generateProvider[T, ProviderType.Trait.type](classParameters :+ traitParameters) {
       argss =>
-        q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${
-            val methodDefs = methods.zip(argss.last).map {
-              case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
-            }
-            mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, methodDefs)
-          })"
+        q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${val methodDefs = methods.zip(argss.last).map {
+            case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
+          }
+          mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, methodDefs) })"
     }
   }
 

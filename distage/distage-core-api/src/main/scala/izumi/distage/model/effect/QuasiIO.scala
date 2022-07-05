@@ -64,7 +64,7 @@ trait QuasiIO[F[_]] extends QuasiApplicative[F] {
     * the left throwable should be DISCARDED after calling the callback.
     * (e.g. in case of `ZIO`, the callback will mutate the throwable and attach a ZIO Trace to it.)
     */
-  def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, (() => Throwable)) => F[A]): F[A]
+  def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, () => Throwable) => F[A]): F[A]
 
   def redeem[A, B](action: => F[A])(failure: Throwable => F[B], success: A => F[B]): F[B]
 
@@ -136,7 +136,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       try { fa }
       catch { case t: Throwable => recover(t) }
     }
-    override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: (Throwable, (() => Throwable)) => Identity[A]): Identity[A] = {
+    override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: (Throwable, () => Throwable) => Identity[A]): Identity[A] = {
       definitelyRecover(action)(e => recoverCause(e, () => e))
     }
     override def redeem[A, B](action: => Identity[A])(failure: Throwable => Identity[B], success: A => Identity[B]): Identity[B] = {
