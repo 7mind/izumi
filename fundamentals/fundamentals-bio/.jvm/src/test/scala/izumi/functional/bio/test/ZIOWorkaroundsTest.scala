@@ -153,16 +153,18 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         _ <- F.fail("x").guaranteeExceptOnInterrupt(_ => failRes.set(Some(true))).sandboxExit
         _ <- F.terminate(new RuntimeException("x")).guaranteeExceptOnInterrupt(_ => terminateRes.set(Some(true))).sandboxExit
         _ <- ZIO.interrupt.guaranteeExceptOnInterrupt(_ => innerInterruptRes.set(Some(true))).sandboxExit
+        l <- F.mkLatch
         _ <-
           F.parTraverse_(
             List(
               F.parTraverse(
                 List(
                   F.unit.forever,
-                  F.terminate(new RuntimeException("testexception")),
+                  l.await *> F.terminate(new RuntimeException("testexception")),
                 )
               )(identity).guaranteeExceptOnInterrupt(_ => parTraverseRes.set(Some(true))),
-              ZIO.unit.forever.guaranteeExceptOnInterrupt(_ => outerInterruptRes1.set(Some(true))).guaranteeOnInterrupt(_ => outerInterruptRes2.set(Some(true))),
+              (l.succeed(()) *> ZIO.unit.forever)
+                .guaranteeExceptOnInterrupt(_ => outerInterruptRes1.set(Some(true))).guaranteeOnInterrupt(_ => outerInterruptRes2.set(Some(true))),
             )
           )(identity).sandboxExit
 

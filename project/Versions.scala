@@ -3,17 +3,17 @@ object V {
   val izumi_reflect = "2.0.8"
 
   // foundation
-  val collection_compat = "2.7.0"
+  val collection_compat = "2.8.0"
 
   val kind_projector = "0.13.2"
 
   val scalatest = "3.2.12"
 
-  val cats = "2.7.0"
+  val cats = "2.8.0"
   val cats_effect = "3.3.13"
 
   val discipline = "1.5.1"
-  val discipline_scalatest = "2.1.5"
+  val discipline_scalatest = "2.2.0"
 
   val zio = "1.0.14"
   val zio_interop_cats = "3.2.9.1"
@@ -31,12 +31,12 @@ object V {
   val scala_java_time = "2.3.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.147"
+  val classgraph = "4.8.149"
   val slf4j = "1.7.36"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.12.10"
+  val bytebuddy = "1.12.12"
   val docker_java = "3.2.13"
 
   // microsite-only
