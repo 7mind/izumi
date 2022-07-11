@@ -529,6 +529,12 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
+        settings = Seq(
+          // Ignore scala-xml version conflict between scoverage where scalatest requires scala-xml v2
+          // and scoverage requires scala-xml v1 on Scala 2.12,
+          // introduced when updating scoverage to 2.0.0 https://github.com/7mind/izumi/pull/1754
+          "libraryDependencySchemes" += """"org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always""".raw
+        ),
       ),
     ),
     pathPrefix = Projects.distage.basePath,

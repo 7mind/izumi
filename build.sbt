@@ -2744,7 +2744,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } }
+    } },
+    libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
   )
   .disablePlugins(AssemblyPlugin)
 
