@@ -10,13 +10,13 @@ object V {
   val scalatest = "3.2.12"
 
   val cats = "2.8.0"
-  val cats_effect = "3.3.12"
+  val cats_effect = "3.3.13"
 
   val discipline = "1.5.1"
   val discipline_scalatest = "2.2.0"
 
   val zio = "1.0.14"
-  val zio_interop_cats = "3.2.9.1"
+  val zio_interop_cats = "13.0.0.0"
 
   val monix = "3.4.0"
   val monix_bio = "1.2.0"
@@ -25,7 +25,7 @@ object V {
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.17.1"
   val magnolia = "0.17.0"
-  val jawn = "1.3.2"
+  val jawn = "1.4.0"
 
   // good to drop - scala
   val scala_java_time = "2.3.0"
