@@ -35,6 +35,10 @@ final case class Plan(
       this.plan.predecessors == that.plan.predecessors
     case _ => false
   }
+
+  override def toString: String = {
+    this.render()
+  }
 }
 
 object Plan {
