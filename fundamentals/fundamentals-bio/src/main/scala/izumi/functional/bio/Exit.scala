@@ -45,6 +45,18 @@ object Exit {
       }
       override def map[E1](f: E => E1): Trace[E1] = ZIOTrace(cause.map(f))
     }
+
+    final case class CatsTrace(exception: Throwable) extends Trace[Nothing] {
+      override def asString: String = {
+        import java.io.{PrintWriter, StringWriter}
+        val sw = new StringWriter
+        exception.printStackTrace(new PrintWriter(sw))
+        sw.toString
+      }
+      override def toThrowable: Throwable = exception
+      override def unsafeAttachTrace(conv: Nothing => Throwable): Throwable = toThrowable
+      override def map[E1](f: Nothing => E1): Trace[E1] = this
+    }
   }
 
   final case class Success[+A](value: A) extends Exit[Nothing, A] {
