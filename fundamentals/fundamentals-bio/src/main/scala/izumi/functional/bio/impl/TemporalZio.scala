@@ -17,7 +17,7 @@ open class TemporalZio(
   }
 
   @inline override final def timeout[R, E, A](duration: Duration)(r: ZIO[R, E, A]): ZIO[R, E, Option[A]] = {
-    ZIO.accessM[R](env => race(r.provide(env).map(Some(_)).interruptible, sleep(duration).as(None).interruptible))
+    race(r.map(Some(_)).interruptible, this.sleep(duration).as(None).interruptible)
   }
 
 }
