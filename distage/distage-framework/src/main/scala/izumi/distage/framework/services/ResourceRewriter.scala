@@ -1,18 +1,17 @@
 package izumi.distage.framework.services
 
-import java.util.concurrent.{ExecutorService, TimeUnit}
-
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
+import izumi.distage.model.definition.*
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.Lifecycle.makeSimple
 import izumi.distage.model.definition.ImplDef.DirectImplDef
-import izumi.distage.model.definition._
+import izumi.distage.model.definition.Lifecycle.makeSimple
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
-import izumi.reflect.Tag
 import izumi.logstage.api.IzLogger
+
+import java.util.concurrent.{ExecutorService, TimeUnit}
 
 /**
   * Rewrites bindings implemented with `_ <: AutoCloseable` into resource bindings that automatically close the implementation closeable.
@@ -37,27 +36,33 @@ class ResourceRewriter(
   rules: RewriteRules,
 ) extends PlanningHook {
 
-  import ResourceRewriter._
-  import RewriteResult._
+  import ResourceRewriter.*
+  import RewriteResult.*
 
   override def hookDefinition(definition: ModuleBase): ModuleBase = {
     if (rules.applyRewrites) {
+      // this is a planning hotspot so, we microoptimize here
+      val acTag = SafeType.get[AutoCloseable]
+      val acResTag = SafeType.get[Lifecycle[Identity, AutoCloseable]]
+      val esTag = SafeType.get[ExecutorService]
+      val esResTag = SafeType.get[Lifecycle[Identity, ExecutorService]]
+
       definition
-        .flatMap(rewrite[AutoCloseable](fromAutoCloseable(logger, _)))
-        .flatMap(rewrite[ExecutorService](fromExecutorService(logger, _)))
+        .flatMap(rewrite[AutoCloseable](acTag, acResTag)(fromAutoCloseable(logger, _)))
+        .flatMap(rewrite[ExecutorService](esTag, esResTag)(fromExecutorService(logger, _)))
     } else definition
   }
 
-  private def rewrite[TGT: Tag](convert: TGT => Lifecycle[Identity, TGT])(b: Binding): Seq[Binding] = {
-    val tgt = SafeType.get[TGT]
-    val resourceType = SafeType.get[Lifecycle[Identity, TGT]]
+  private def rewrite[TGT](tgt: SafeType, resourceType: SafeType)(convert: TGT => Lifecycle[Identity, TGT])(b: Binding): Seq[Binding] = {
+//    val tgt = SafeType.get[TGT]
+//    val resourceType = SafeType.get[Lifecycle[Identity, TGT]]
     b match {
       case implBinding: Binding.ImplBinding =>
         implBinding match {
           case binding: Binding.SingletonBinding[?] =>
             rewriteImpl(convert, binding.key, binding.origin, binding.implementation, tgt, resourceType) match {
               case ReplaceImpl(newImpl) =>
-                logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
+                logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${tgt -> "type"}")
                 Seq(finish(binding, newImpl))
               case DontChange =>
                 Seq(binding)
@@ -66,7 +71,7 @@ class ResourceRewriter(
           case binding: Binding.SetElementBinding =>
             rewriteImpl(convert, binding.key, binding.origin, binding.implementation, tgt, resourceType) match {
               case ReplaceImpl(newImpl) =>
-                logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
+                logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${tgt -> "type"}")
                 Seq(finish(binding, newImpl))
               case RewriteResult.DontChange =>
                 Seq(binding)
@@ -78,7 +83,7 @@ class ResourceRewriter(
     }
   }
 
-  private def rewriteImpl[TGT: Tag](
+  private def rewriteImpl[TGT](
     convert: TGT => Lifecycle[Identity, TGT],
     key: DIKey,
     origin: SourceFilePosition,
@@ -89,7 +94,8 @@ class ResourceRewriter(
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
         val implType = implDef.implType
-        if (implType <:< tgt) {
+        if (tgt.cls.isAssignableFrom(implType.cls) && // performance optimization
+          implType <:< tgt) {
           implDef match {
             case _: ImplDef.ReferenceImpl =>
               DontChange
@@ -110,7 +116,8 @@ class ResourceRewriter(
       case implDef: ImplDef.RecursiveImplDef =>
         implDef match {
           case _: ImplDef.EffectImpl =>
-            if (implDef.implType <:< tgt) {
+            if (tgt.cls.isAssignableFrom(implDef.implType.cls) // performance optimization
+              && implDef.implType <:< tgt) {
               logger.error(
                 s"Effect entity $key defined at $origin is ${tgt -> "type"}, but it will NOT be finalized!!! You must explicitly wrap it into resource using Lifecycle.fromAutoCloseable/fromExecutorService"
               )
@@ -143,7 +150,7 @@ object ResourceRewriter {
     case object DontChange extends RewriteResult
   }
 
-  final case class RewriteRules(applyRewrites: Boolean = true)
+  final case class RewriteRules(applyRewrites: Boolean = false)
 
   /** Like [[Lifecycle.fromAutoCloseable]], but with added logging */
   def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): Lifecycle[Identity, A] = {
