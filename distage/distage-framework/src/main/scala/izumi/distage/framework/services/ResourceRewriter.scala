@@ -54,8 +54,6 @@ class ResourceRewriter(
   }
 
   private def rewrite[TGT](tgt: SafeType, resourceType: SafeType)(convert: TGT => Lifecycle[Identity, TGT])(b: Binding): Seq[Binding] = {
-//    val tgt = SafeType.get[TGT]
-//    val resourceType = SafeType.get[Lifecycle[Identity, TGT]]
     b match {
       case implBinding: Binding.ImplBinding =>
         implBinding match {
