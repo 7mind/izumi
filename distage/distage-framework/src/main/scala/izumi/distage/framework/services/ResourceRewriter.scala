@@ -154,7 +154,9 @@ object ResourceRewriter {
     case object DontChange extends RewriteResult
   }
 
-  final case class RewriteRules(applyRewrites: Boolean = false)
+  final case class RewriteRules(
+    applyRewrites: Boolean = true
+  )
 
   /** Like [[Lifecycle.fromAutoCloseable]], but with added logging */
   def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): Lifecycle[Identity, A] = {
