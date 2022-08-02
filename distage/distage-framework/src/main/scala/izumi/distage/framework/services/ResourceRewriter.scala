@@ -81,6 +81,14 @@ class ResourceRewriter(
     }
   }
 
+  @inline private[this] def quickSubtypeCheck(tgt: SafeType, implType: SafeType): Boolean = {
+    if (tgt.hasPreciseClass && implType.hasPreciseClass) {
+      tgt.cls.isAssignableFrom(implType.cls)
+    } else {
+      implType <:< tgt
+    }
+  }
+
   private def rewriteImpl[TGT](
     convert: TGT => Lifecycle[Identity, TGT],
     key: DIKey,
@@ -92,8 +100,7 @@ class ResourceRewriter(
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
         val implType = implDef.implType
-        if (tgt.cls.isAssignableFrom(implType.cls) && // performance optimization
-          implType <:< tgt) {
+        if (quickSubtypeCheck(tgt, implType)) {
           implDef match {
             case _: ImplDef.ReferenceImpl =>
               DontChange
@@ -114,8 +121,7 @@ class ResourceRewriter(
       case implDef: ImplDef.RecursiveImplDef =>
         implDef match {
           case _: ImplDef.EffectImpl =>
-            if (tgt.cls.isAssignableFrom(implDef.implType.cls) // performance optimization
-              && implDef.implType <:< tgt) {
+            if (quickSubtypeCheck(tgt, implDef.implType)) {
               logger.error(
                 s"Effect entity $key defined at $origin is ${tgt -> "type"}, but it will NOT be finalized!!! You must explicitly wrap it into resource using Lifecycle.fromAutoCloseable/fromExecutorService"
               )
