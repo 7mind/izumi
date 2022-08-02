@@ -21,6 +21,7 @@ import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
+import izumi.logstage.api.logger.LogSink
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.io.File
@@ -64,12 +65,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         Array(
           "-ll",
           logLevel,
-          ":" + AdoptedAutocloseablesCase.id,
+          ":" + AdaptedAutocloseablesCase.id,
           ":" + TestRole00.id,
         )
       )
 
-      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
+      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse.filter(!_.isInstanceOf[LogSink]))
+      assert(probe.resources.getStartedCloseables() != probe.resources.getClosedCloseables().reverse)
       assert(
         probe.resources.getCheckedResources().toSet == Set[IntegrationCheck[IO]](probe.locator.get[IntegrationResource0[IO]], probe.locator.get[IntegrationResource1[IO]])
       )
@@ -85,7 +87,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               new ResourcesPluginBase {}.morph[PluginBase],
               new ConflictPlugin,
               new TestPluginCatsIO,
-              new AdoptedAutocloseablesCasePlugin,
+              new AdaptedAutocloseablesCasePlugin,
               probe,
               new PluginDef {
                 make[TestResource[IO]].from[IntegrationResource0[IO]]
@@ -100,12 +102,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
           Array(
             "-ll",
             logLevel,
-            ":" + AdoptedAutocloseablesCase.id,
+            ":" + AdaptedAutocloseablesCase.id,
             ":" + TestRole00.id,
           )
         )
 
-      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
+      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse.filter(!_.isInstanceOf[LogSink]))
+      assert(probe.resources.getStartedCloseables() != probe.resources.getClosedCloseables())
       assert(probe.resources.getCheckedResources().toSet.size == 2)
       assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](probe.locator.get[TestResource[IO]], probe.locator.get[IntegrationResource1[IO]]))
     }
