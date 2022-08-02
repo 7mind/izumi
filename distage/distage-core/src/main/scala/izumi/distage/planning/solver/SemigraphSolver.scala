@@ -1,17 +1,18 @@
 package izumi.distage.planning.solver
 
 import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
-import izumi.distage.model.definition.conflicts.{ConflictResolutionError, _}
+import izumi.distage.model.definition.conflicts.{ConflictResolutionError, *}
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
-import izumi.distage.planning.solver.SemigraphSolver._
-import izumi.functional.IzEither._
+import izumi.distage.planning.solver.SemigraphSolver.*
+import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.ImmutableMultiMap
-import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
 import scala.annotation.{nowarn, tailrec}
+import scala.collection.mutable
 
 /**
   * Combined Garbage Collector, Conflict Resolver and Mutation Resolver
@@ -98,7 +99,7 @@ object SemigraphSolver {
       for {
         _ <- nonAmbigiousActivations(activations)
         activationChoices = ActivationChoices(activations)
-        onlyCorrect <- traceGrouped(activationChoices, weak)(roots, roots, predecessors, Map.empty)
+        onlyCorrect <- traceGrouped(activationChoices, weak)(roots, roots, predecessors, mutable.HashMap.empty)
       } yield {
 
         val nonAmbiguous = onlyCorrect.filterNot(_._1.isMutator).map { case (k, _) => (k.key, k.axis) }
@@ -127,7 +128,7 @@ object SemigraphSolver {
     )(roots: Set[N],
       reachable: Set[N],
       predecessors: SemiEdgeSeq[Annotated[N], N, V],
-      currentResult: Map[Annotated[N], Node[N, V]],
+      currentResult: mutable.HashMap[Annotated[N], Node[N, V]],
     ): Either[List[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
       val out: Either[List[ConflictResolutionError[N, V]], Seq[Iterable[(Annotated[N], Node[N, V])]]] = roots.toSeq.flatMap {
         root =>
@@ -161,9 +162,11 @@ object SemigraphSolver {
         case Left(value) =>
           Left(value)
         case Right((nextResult, nextDeps)) if nextDeps.isEmpty =>
-          Right(currentResult ++ nextResult)
+          currentResult ++= nextResult
+          Right(currentResult.toMap)
         case Right((nextResult, nextDeps)) =>
-          traceGrouped(activations, weak)(nextDeps.toSet.diff(reachable), reachable ++ roots, predecessors, currentResult ++ nextResult)
+          currentResult ++= nextResult
+          traceGrouped(activations, weak)(nextDeps.toSet.diff(reachable), reachable ++ roots, predecessors, currentResult)
       }
     }
 
