@@ -15,6 +15,7 @@ class LogstageModule(router: LogRouter, setupStaticLogRouter: Boolean) extends B
     .aliased[RoutingLogger]
     .aliased[AbstractLogger]
 
+  import izumi.distage.model.definition.dsl.ModuleDefDSL.BadType.nsub
   make[LogRouter].fromValue(router)
   make[CustomContext].fromValue(CustomContext.empty)
 }

@@ -11,6 +11,7 @@ import izumi.logstage.api.logger.LogSink
 
 class AdoptedAutocloseablesCasePlugin extends PluginDef {
   make[AdoptedAutocloseablesCase]
+  import izumi.distage.model.definition.dsl.ModuleDefDSL.BadType.nsub
   many[LogSink].add[BrokenSink]
   many[LogSink].add[BrokenSink2]
   many[LogSink].add {

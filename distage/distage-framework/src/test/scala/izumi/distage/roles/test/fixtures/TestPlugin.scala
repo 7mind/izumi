@@ -48,7 +48,10 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   make[TestRole00Resource[F]]
   make[TestRole00ResourceIntegrationCheck[F]]
 
-  make[NotCloseable].from[InheritedCloseable]
+  locally {
+    import izumi.distage.model.definition.dsl.ModuleDefDSL.BadType.nsub
+    make[NotCloseable].from[InheritedCloseable]
+  }
   make[ConfigWriter[F]]
   make[Help[F]]
 

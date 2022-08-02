@@ -133,7 +133,10 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
     ) =>
       EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
   }
-  make[LogRouter].from((_: IzLogger).router)
+  locally {
+    import izumi.distage.model.definition.dsl.ModuleDefDSL.BadType.nsub
+    make[LogRouter].from((_: IzLogger).router)
+  }
 
   make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
   make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)

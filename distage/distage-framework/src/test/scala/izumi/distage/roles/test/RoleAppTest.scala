@@ -88,6 +88,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               new AdoptedAutocloseablesCasePlugin,
               probe,
               new PluginDef {
+                import izumi.distage.model.definition.dsl.ModuleDefDSL.BadType.nsub
                 make[TestResource[IO]].from[IntegrationResource0[IO]]
                 many[TestResource[IO]]
                   .ref[TestResource[IO]]
@@ -162,6 +163,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
+        import izumi.distage.model.definition.dsl.ModuleDefDSL.BadType.nsub
         make[TestResource[IO]].from[IntegrationResource0[IO]]
         many[TestResource[IO]]
           .ref[TestResource[IO]]
