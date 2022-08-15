@@ -1,12 +1,12 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.{Clock1, Clock2, Clock3, Entropy1, Entropy2, Entropy3, SyncSafe1, SyncSafe2, SyncSafe3}
+import izumi.functional.bio.{BlockingIO2, Clock1, Clock2, Clock3, Entropy1, Entropy2, Entropy3, SyncSafe1, SyncSafe2, SyncSafe3}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.nowarn
 import scala.annotation.unchecked.uncheckedVariance
 
-final class ArityConversionTest extends AnyWordSpec {
+final class ArityConversionTest extends AnyWordSpec with PlatformDependentTestBase {
 
   "arity conversions" should {
 
@@ -113,6 +113,14 @@ final class ArityConversionTest extends AnyWordSpec {
       assert(implicitly[Entropy1[EitherX[Nothing, _]]] != null)
       assert(implicitly[Entropy1[EitherX[Int, _]]] != null)
       assert(implicitly[Entropy1[EitherX[Any, _]]] != null)
+    }
+
+    "work for BlockingIO3" in {
+      assert(implicitly[BlockingIO2[zio.IO]] != null)
+
+      assert(implicitly[BlockingIO2[zio.ZIO[Any, +_, +_]]] != null)
+      assert(implicitly[BlockingIO2[zio.ZIO[Int, +_, +_]]] != null)
+      assert(implicitly[BlockingIO2[zio.ZIO[Nothing, +_, +_]]] != null)
     }
 
   }
