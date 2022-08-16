@@ -6,5 +6,7 @@ trait NodeShow[T] {
 
 object NodeShow {
   implicit def IntNodeShow: NodeShow[Int] = _.toString
-  implicit def StringNodeShow: NodeShow[String] = identity
+  implicit def StringNodeShow: NodeShow[String] = new NodeShow[String] {
+    override def show(t: String): String = t
+  }
 }
