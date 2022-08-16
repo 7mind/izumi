@@ -3869,7 +3869,7 @@ lazy val `izumi` = (project in file("."))
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
     ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.92" % Provided
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.95" % Provided
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
