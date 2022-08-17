@@ -398,6 +398,18 @@ object Izumi {
         platforms = Targets.cross3,
       ),
       Artifact(
+        name = Projects.fundamentals.language,
+        libs = Seq(
+          scala_reflect
+        ),
+        depends = Seq(
+          Projects.fundamentals.literals
+        ),
+        settings = crossScalaSources,
+        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
+        platforms = Targets.cross3,
+      ),
+      Artifact(
         name = Projects.fundamentals.platform,
         libs = Seq(
           scala_reflect
@@ -410,7 +422,7 @@ object Izumi {
           "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
         ),
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
-        platforms = Targets.cross,
+        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.jsonCirce,
@@ -425,18 +437,7 @@ object Izumi {
         depends = Seq(Projects.fundamentals.platform),
         platforms = Targets.cross,
       ),
-      Artifact(
-        name = Projects.fundamentals.language,
-        libs = Seq(
-          scala_reflect
-        ),
-        depends = Seq(
-          Projects.fundamentals.literals
-        ),
-        settings = crossScalaSources,
-        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
-        platforms = Targets.cross3,
-      ),
+
       Artifact(
         name = Projects.fundamentals.reflection,
         libs = Seq(izumi_reflect in Scope.Compile.all, scala_reflect),
