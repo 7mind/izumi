@@ -72,7 +72,7 @@ object Izumi {
     final val circe_core = Library("io.circe", "circe-core", V.circe, LibraryType.Auto)
     final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
     final val circe_literal = Library("io.circe", "circe-literal", V.circe, LibraryType.Auto)
-    final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto) in Scope.Provided.all.scalaVersion(
+    final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
       ScalaVersionScope.AllScala2
     )
 

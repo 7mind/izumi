@@ -1,14 +1,10 @@
 package izumi.fundamentals.platform.language
 
-import izumi.fundamentals.platform.language.IzScala.ScalaRelease
-
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 object ScalaReleaseMacro {
-    def scalaRelease: IzScala.ScalaRelease = macro scalaReleaseMacro
-
-    def scalaReleaseMacro(c: blackbox.Context): c.Expr[IzScala.ScalaRelease] = {
+    def scalaReleaseMacro(c: blackbox.Context): c.Expr[ScalaRelease] = {
       import c.universe.*
 
       ScalaRelease.parse(scala.util.Properties.versionNumberString) match {
@@ -26,3 +22,7 @@ object ScalaReleaseMacro {
     }
 
   }
+
+object IzScala {
+  def scalaRelease: ScalaRelease = macro ScalaReleaseMacro.scalaReleaseMacro
+}

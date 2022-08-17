@@ -8,7 +8,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.TypedRef
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.IzScala.ScalaRelease
+import izumi.fundamentals.platform.language.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
