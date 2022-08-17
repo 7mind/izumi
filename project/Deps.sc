@@ -435,6 +435,7 @@ object Izumi {
         ),
         settings = crossScalaSources,
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
+        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.reflection,

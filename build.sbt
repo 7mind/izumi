@@ -996,6 +996,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -1003,6 +1004,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
