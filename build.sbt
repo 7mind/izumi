@@ -554,6 +554,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
   )
   .jvmSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -561,6 +562,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
   )
   .jsSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),

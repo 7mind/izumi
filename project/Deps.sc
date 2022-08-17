@@ -395,7 +395,7 @@ object Izumi {
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq.empty,
-        platforms = Targets.cross,
+        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.platform,
