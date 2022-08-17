@@ -448,6 +448,7 @@ object Izumi {
           Projects.fundamentals.functional,
         ),
         settings = crossScalaSources,
+        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.bio,
