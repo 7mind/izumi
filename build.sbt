@@ -888,12 +888,12 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "io.circe" %%% "circe-core" % V.circe,
-      "io.circe" %%% "circe-derivation" % V.circe_derivation,
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %%% "circe-literal" % V.circe % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "io.circe" %%% "circe-derivation" % V.circe_derivation % Provided,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     ) else Seq.empty }
   )
@@ -1001,6 +1001,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jvmSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -1008,6 +1009,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jsSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
