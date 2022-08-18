@@ -3,7 +3,7 @@ package izumi.logstage
 import cats.effect.kernel.Sync
 import izumi.functional.bio.{IO2, SyncSafe1, SyncSafe2}
 import izumi.fundamentals.platform.language.IzScala
-import izumi.fundamentals.platform.language.IzScala.ScalaRelease
+import izumi.fundamentals.platform.language.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.ImplicitsTest.Suspend2
 import izumi.logstage.api.IzLogger

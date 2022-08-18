@@ -1,13 +1,13 @@
 object V {
   // izumi
-  val izumi_reflect = "2.0.8"
+  val izumi_reflect = "2.1.5"
 
   // foundation
-  val collection_compat = "2.8.0"
+  val collection_compat = "2.8.1"
 
   val kind_projector = "0.13.2"
 
-  val scalatest = "3.2.12"
+  val scalatest = "3.2.13"
 
   val cats = "2.8.0"
   val cats_effect = "3.3.14"
@@ -16,7 +16,7 @@ object V {
   val discipline_scalatest = "2.2.0"
 
   val zio = "1.0.14"
-  val zio_interop_cats = "13.0.0.0"
+  val zio_interop_cats = "13.0.0.1"
 
   val monix = "3.4.0"
   val monix_bio = "1.2.0"
@@ -36,7 +36,7 @@ object V {
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.12.12"
+  val bytebuddy = "1.12.13"
   val docker_java = "3.2.13"
 
   // microsite-only

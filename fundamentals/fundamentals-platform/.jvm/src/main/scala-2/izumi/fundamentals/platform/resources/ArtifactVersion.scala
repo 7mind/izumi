@@ -1,10 +1,9 @@
 package izumi.fundamentals.platform.resources
 
-import java.time.{Instant, LocalDateTime}
-
 import izumi.fundamentals.platform.time.IzTime
-import izumi.fundamentals.platform.time.IzTime._
+import izumi.fundamentals.platform.time.IzTime.*
 
+import java.time.{Instant, LocalDateTime}
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
@@ -67,7 +66,7 @@ object IzArtifactMaterializer {
 
 object IzArtifactMaterializerMacro {
   def make(c: blackbox.Context): c.Expr[IzArtifactMaterializer] = {
-    import c.universe._
+    import c.universe.*
 
     c.Expr[IzArtifactMaterializer] {
       q"""{

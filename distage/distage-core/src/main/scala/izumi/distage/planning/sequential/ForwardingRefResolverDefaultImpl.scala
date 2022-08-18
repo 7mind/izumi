@@ -20,13 +20,17 @@ object ForwardingRefResolverDefaultImpl {
     val updatedPlan = mutable.HashMap.empty[DIKey, ExecutableOp]
     val updatedPredcessors = mutable.HashMap.empty[DIKey, mutable.HashSet[DIKey]]
     val replacements = mutable.HashMap.empty[DIKey, mutable.HashSet[(DIKey, DIKey)]]
+    val knownLoops = mutable.HashMap.empty[DIKey, Set[DIKey]]
 
     def register(dependee: DIKey, deps: Set[DIKey]): Unit = {
       updatedPredcessors.getOrElseUpdate(dependee, mutable.HashSet.empty) ++= deps
       ()
     }
 
-    def processLoopResolution(predcessors: Map[DIKey, Set[DIKey]], resolution: BreakAt): Unit = {
+    def processLoopResolution(
+      unprocessedPredecessors: Map[DIKey, Set[DIKey]],
+      resolution: BreakAt,
+    ): Unit = {
       /*
       Our goal is to introduce two operations, MakeProxy and InitProxy.
       All the usages outside of the referential loop will reference InitProxy by its synthetic key, thus we will maintain proper ordering
@@ -38,13 +42,39 @@ object ForwardingRefResolverDefaultImpl {
       assert(originalOp != null)
       assert(originalOp.target == dependee)
 
-      val badDeps = dependencies.intersect(predcessors.keySet)
+      val badDeps = dependencies.intersect(unprocessedPredecessors.keySet)
       val op = ProxyOp.MakeProxy(originalOp.asInstanceOf[InstantiationOp], badDeps, originalOp.origin, byNameAllowed = resolution.byNameOnly)
       val initOpKey = DIKey.ProxyInitKey(op.target)
 
-      val loops = LoopDetector.Impl.findCyclesForNode(dependee, plan.predecessors)
+      // this is a performance optimization which is equivalent to the following lines:
+      //
+      //      val loops = LoopDetector.Impl.findCyclesForNode(dependee, plan.predecessors)
+      //      val loopUsers = loops.toList.flatMap(_.loops.flatMap(_.loop)).toSet
+      //
+      // There is another idea on how to handle the loops:
+      //
+      //      val loops = LoopDetector.Impl.findCyclesForNode(dependee, IncidenceMatrix(unprocessedPredecessors))
+      //      val loopUsers = loops.toList.flatMap(_.loops.flatMap(_.loop)).toSet
+      //
+      // though it changes the way we handle nested loops
+      //
+      // So, now we cache first (thus broadest) loop trace though we always rely on unprocessed dependencies only,
+      // which is lot more performant but equivalent to the previous logic
+      //
+      // TODO: it may be a good idea to explore more options here
 
-      val loopUsers = loops.toList.flatMap(_.loops.flatMap(_.loop)).toSet
+      val loopUsers = knownLoops.get(dependee) match {
+        case Some(value) =>
+          value
+        case None =>
+          val loop = LoopDetector.Impl.findCyclesForNode(dependee, IncidenceMatrix(unprocessedPredecessors)).toList.flatMap(_.loops.flatMap(_.loop)).toSet
+          loop.foreach {
+            k =>
+              knownLoops.put(k, loop)
+          }
+          loop
+      }
+
       import CycleTools.*
       val toRewrite = plan.allDirectUsers(dependee) -- loopUsers - dependee
 

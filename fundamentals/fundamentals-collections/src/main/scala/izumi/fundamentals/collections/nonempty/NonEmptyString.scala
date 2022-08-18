@@ -1219,7 +1219,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param that the <code>Seq</code> slice to look for in this <code>NonEmptyString</code>
     * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a prefix, <code>false</code> otherwise.
     */
-  def startsWith(that: Seq[Char]): Boolean = theString.startsWith(that)
+  def startsWith(that: Seq[Char]): Boolean = wrapString(theString).startsWith(that)
 
   /**
     * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Seq</code> at the given index.
@@ -1228,7 +1228,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param offset the index at which this <code>NonEmptyString</code> is searched.
     * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a slice at the index <code>offset</code>, <code>false</code> otherwise.
     */
-  def startsWith(that: Seq[Char], offset: Int): Boolean = theString.startsWith(that, offset)
+  def startsWith(that: Seq[Char], offset: Int): Boolean = wrapString(theString).startsWith(that, offset)
 
   /**
     * Indicates whether this <code>NonEmptyString</code> starts with the given <code>Vector</code>.
@@ -1236,7 +1236,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param that the <code>Vector</code> to test
     * @return <code>true</code> if this collection has <code>that</code> as a prefix, <code>false</code> otherwise.
     */
-  def startsWith(that: Vector[Char]): Boolean = theString.startsWith(that)
+  def startsWith(that: Vector[Char]): Boolean = wrapString(theString).startsWith(that)
 
   /**
     * Indicates whether this <code>NonEmptyString</code> starts with the given <code>NonEmptyString</code>.
@@ -1253,7 +1253,7 @@ final class NonEmptyString private (val theString: String) extends AnyVal {
     * @param offset the index at which this <code>NonEmptyString</code> is searched.
     * @return <code>true</code> if this <code>NonEmptyString</code> has <code>that</code> as a slice at the index <code>offset</code>, <code>false</code> otherwise.
     */
-  def startsWith(that: Vector[Char], offset: Int): Boolean = theString.startsWith(that, offset)
+  def startsWith(that: Vector[Char], offset: Int): Boolean = wrapString(theString).startsWith(that, offset)
 
   /**
     * Indicates whether this <code>NonEmptyString</code> starts with the given <code>NonEmptyString</code> at the given index.

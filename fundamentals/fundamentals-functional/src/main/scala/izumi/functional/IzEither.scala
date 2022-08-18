@@ -32,7 +32,7 @@ object IzEither extends IzEither {
       val iterator = col.iterator
       while (iterator.hasNext) {
         f(iterator.next()) match {
-          case Left(e) => bad ++= e
+          case Left(e) => bad ++= ev(e)
           case Right(v) => good += v
         }
       }
@@ -52,7 +52,7 @@ object IzEither extends IzEither {
       val iterator = col.iterator
       while (iterator.hasNext) {
         f(iterator.next()) match {
-          case Left(e) => bad ++= e
+          case Left(e) => bad ++= ev(e)
           case _ =>
         }
       }
@@ -88,7 +88,7 @@ object IzEither extends IzEither {
       val iterator = col.iterator
       while (iterator.hasNext) {
         f(iterator.next()) match {
-          case Left(e) => bad ++= e
+          case Left(e) => bad ++= ev(e)
           case Right(v) => good ++= v
         }
       }
@@ -111,7 +111,7 @@ object IzEither extends IzEither {
       val iterator = col.iterator
       while (iterator.hasNext) {
         iterator.next() match {
-          case Left(e) => bad ++= e
+          case Left(e) => bad ++= ev(e)
           case Right(v) => good += v
         }
       }
@@ -131,7 +131,7 @@ object IzEither extends IzEither {
       val iterator = col.iterator
       while (iterator.hasNext) {
         iterator.next() match {
-          case Left(e) => bad ++= e
+          case Left(e) => bad ++= ev(e)
           case _ =>
         }
       }
@@ -155,7 +155,7 @@ object IzEither extends IzEither {
       val iterator = result.iterator
       while (iterator.hasNext) {
         iterator.next() match {
-          case Left(e) => bad ++= e
+          case Left(e) => bad ++= ev(e)
           case Right(v) => good ++= v
         }
       }
