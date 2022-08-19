@@ -7,7 +7,11 @@ object IzPlatform extends AbstractIzPlatform {
     ScalaPlatform.JVM
   }
 
-  def isHeadless: Boolean = java.awt.GraphicsEnvironment.isHeadless
+  def isHeadless: Boolean = {
+    val maybeDisplay = Option(System.getenv("DISPLAY"))
+    val maybeXdgSession = Option(System.getenv("XDG_SESSION_TYPE"))
+    maybeDisplay.isDefined || maybeXdgSession.isDefined
+  }
 
   def hasColorfulTerminal: Boolean = {
     val maybeTerm = Option(System.getenv("TERM"))
@@ -15,7 +19,7 @@ object IzPlatform extends AbstractIzPlatform {
   }
 
   def terminalColorsEnabled: Boolean = {
-    import izumi.fundamentals.platform.basics.IzBoolean._
+    import izumi.fundamentals.platform.basics.IzBoolean.*
 
     all(
       !isHeadless
