@@ -77,7 +77,7 @@ object Syntax3 {
   }
 
   class ApplicativeOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Applicative3[FR])
-    extends FunctorOps(r) {
+    extends FunctorOps(r)(F) {
 
     /** execute two operations in order, return result of second operation */
     @inline final def *>[R1 <: R, E1 >: E, B](f0: => FR[R1, E1, B]): FR[R1, E1, B] = F.*>(r, f0)
@@ -95,12 +95,12 @@ object Syntax3 {
   }
 
   class GuaranteeOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Guarantee3[FR])
-    extends ApplicativeOps(r) {
+    extends ApplicativeOps(r)(F) {
     @inline final def guarantee[R1 <: R](cleanup: FR[R1, Nothing, Unit]): FR[R1, E, A] = F.guarantee(r, cleanup)
   }
 
   final class MonadOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Monad3[FR])
-    extends ApplicativeOps(r) {
+    extends ApplicativeOps(r)(F) {
     @inline final def flatMap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, B]): FR[R1, E1, B] = F.flatMap[R1, E1, A, B](r)(f0)
     @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, Unit]): FR[R1, E1, A] = F.tap(r, f0)
 
@@ -116,7 +116,7 @@ object Syntax3 {
   class ApplicativeErrorOps[FR[-_, +_, +_], -R, +E, +A](
     override protected[this] val r: FR[R, E, A]
   )(implicit override protected[this] val F: ApplicativeError3[FR]
-  ) extends GuaranteeOps(r) {
+  ) extends GuaranteeOps(r)(F) {
     @inline final def leftMap[E2](f: E => E2): FR[R, E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): FR[R, E2, B] = F.bimap(r)(f, g)
 
@@ -128,7 +128,7 @@ object Syntax3 {
   }
 
   class ErrorOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Error3[FR])
-    extends ApplicativeErrorOps(r) {
+    extends ApplicativeErrorOps(r)(F) {
     // duplicated from MonadOps
     @inline final def flatMap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, B]): FR[R1, E1, B] = F.flatMap[R1, E1, A, B](r)(f0)
     @inline final def tap[R1 <: R, E1 >: E, B](f0: A => FR[R1, E1, Unit]): FR[R1, E1, A] = F.tap(r, f0)
@@ -187,7 +187,8 @@ object Syntax3 {
       F.withFilter[R, E1, A](r)(predicate)
   }
 
-  class BracketOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Bracket3[FR]) extends ErrorOps(r) {
+  class BracketOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Bracket3[FR])
+    extends ErrorOps(r)(F) {
     @inline final def bracket[R1 <: R, E1 >: E, B](release: A => FR[R1, Nothing, Unit])(use: A => FR[R1, E1, B]): FR[R1, E1, B] =
       F.bracket(r: FR[R1, E1, A])(release)(use)
 
@@ -206,7 +207,7 @@ object Syntax3 {
       F.guaranteeExceptOnInterrupt(r, cleanupOnNonInterruption)
   }
 
-  class PanicOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR]) extends BracketOps(r) {
+  class PanicOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR]) extends BracketOps(r)(F) {
     @inline final def sandbox: FR[R, Exit.Failure[E], A] = F.sandbox(r)
     @inline final def sandboxExit: FR[R, Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
 
@@ -229,7 +230,7 @@ object Syntax3 {
     @inline final def uninterruptible: FR[R, E, A] = F.uninterruptible(r)
   }
 
-  class IOOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: IO3[FR]) extends PanicOps(r) {
+  class IOOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: IO3[FR]) extends PanicOps(r)(F) {
     @inline final def bracketAuto[R1 <: R, E1 >: E, B](use: A => FR[R1, E1, B])(implicit ev: A <:< AutoCloseable): FR[R1, E1, B] =
       F.bracket(r: FR[R1, E1, A])(c => F.sync(c.close()))(use)
   }
@@ -242,7 +243,7 @@ object Syntax3 {
   }
 
   class ConcurrentOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Concurrent3[FR])
-    extends ParallelOps(r) {
+    extends ParallelOps(r)(F) {
     @inline final def race[R1 <: R, E1 >: E, A1 >: A](that: FR[R1, E1, A1]): FR[R1, E1, A1] = F.race(r, that)
     @inline final def racePairUnsafe[R1 <: R, E1 >: E, A1 >: A](
       that: FR[R1, E1, A1]
@@ -250,7 +251,7 @@ object Syntax3 {
       F.racePairUnsafe(r, that)
   }
 
-  class AsyncOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Async3[FR]) extends IOOps(r) {
+  class AsyncOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Async3[FR]) extends IOOps(r)(F) {
     @inline final def zipWithPar[R1 <: R, E1 >: E, B, C](that: FR[R1, E1, B])(f: (A, B) => C): FR[R1, E1, C] = F.zipWithPar(r, that)(f)
     @inline final def zipPar[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, (A, B)] = F.zipPar(r, that)
     @inline final def zipParLeft[R1 <: R, E1 >: E, B](that: FR[R1, E1, B]): FR[R1, E1, A] = F.zipParLeft(r, that)
@@ -281,19 +282,20 @@ object Syntax3 {
     @inline final def dimap[R1, A1](f: R1 => R)(g: A => A1): FR[R1, E, A1] = F.dimap(r)(f)(g)
   }
 
-  class ArrowOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Arrow3[FR]) extends ProfunctorOps(r) {
+  class ArrowOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Arrow3[FR])
+    extends ProfunctorOps(r)(F) {
     @inline final def andThen[E1 >: E, A1](g: FR[A, E1, A1]): FR[R, E1, A1] = F.andThen(r, g)
     @inline final def compose[E1 >: E, R1](g: FR[R1, E1, R]): FR[R1, E1, A] = F.andThen(g, r)
   }
 
   class ArrowChoiceOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: ArrowChoice3[FR])
-    extends ArrowOps(r) {
+    extends ArrowOps(r)(F) {
     @inline final def choice[R1 <: R, E1 >: E, A1 >: A, R2](g: FR[R2, E1, A1]): FR[Either[R1, R2], E1, A1] = F.choice(r, g)
     @inline final def choose[R1 <: R, E1 >: E, R2, A1](g: FR[R2, E1, A1]): FR[Either[R1, R2], E1, Either[A, A1]] = F.choose(r, g)
   }
 
   final class LocalOps[FR[-_, +_, +_], -R, +E, +A](protected[this] override val r: FR[R, E, A])(implicit override protected[this] val F: Local3[FR])
-    extends ArrowChoiceOps(r) {
+    extends ArrowChoiceOps(r)(F) {
     @inline final def provide(env: => R): FR[Any, E, A] = F.provide(r)(env)
     @inline final def contramap[R0 <: R](f: R0 => R): FR[R0, E, A] = F.contramap(r)(f)
   }
