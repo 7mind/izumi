@@ -79,8 +79,12 @@ object Izumi {
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
-    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
-    final val magnolia = Library("com.propensive", "magnolia", V.magnolia, LibraryType.Auto)
+    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
+      ScalaVersionScope.AllScala2
+    )
+    final val magnolia = Library("com.propensive", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
+      ScalaVersionScope.AllScala2
+    )
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
@@ -263,6 +267,7 @@ object Izumi {
           SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq[Const](
             "-Wunused:-synthetics"
           ),
+          SettingKey(Some(scala300), None) := Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
@@ -439,7 +444,6 @@ object Izumi {
         depends = Seq(Projects.fundamentals.platform),
         platforms = Targets.cross3,
       ),
-
       Artifact(
         name = Projects.fundamentals.reflection,
         libs = Seq(izumi_reflect in Scope.Compile.all, scala_reflect),
@@ -461,9 +465,6 @@ object Izumi {
           Projects.fundamentals.orphans,
         ),
         platforms = Targets.cross,
-        settings = Seq(
-          "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent"
-        ),
       ),
     ),
     pathPrefix = Projects.fundamentals.basePath,
@@ -503,7 +504,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_magnolia, magnolia).map(_ in Scope.Compile.all) ++ Seq(scala_reflect),
+        libs = Seq(pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
@@ -555,7 +556,7 @@ object Izumi {
       Artifact(
         name = Projects.distage.testkitScalatest,
         libs = allMonadsOptional ++ Seq(
-          scalamock in Scope.Test.all,
+          scalamock in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
           scalatest.dependency in Scope.Compile.all,
         ),
         depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
