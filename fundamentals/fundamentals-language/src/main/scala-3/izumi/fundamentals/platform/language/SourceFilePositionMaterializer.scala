@@ -8,12 +8,22 @@ object SourceFilePositionMaterializer {
   inline def sourcePosition(implicit ev: SourceFilePositionMaterializer): SourceFilePosition = ev.get
   inline implicit def materialize: SourceFilePositionMaterializer = ${ doMaterialize }
 
-  private def doMaterialize(using Quotes): Expr[SourceFilePositionMaterializer] = new SourceFilePositionMaterializerMacro().getSourceFilePosition()
+  private def doMaterialize(using Quotes): Expr[SourceFilePositionMaterializer] = new SourceFilePositionMaterializerMacro().getSourceFilePositionMat()
 
-  private final class SourceFilePositionMaterializerMacro(using qctx: Quotes) {
+  private[language] final class SourceFilePositionMaterializerMacro(using qctx: Quotes) {
     import qctx.reflect._
 
-    def getSourceFilePosition(): Expr[SourceFilePositionMaterializer] = ???
-  }
+    def getSourceFilePositionMat(): Expr[SourceFilePositionMaterializer] = {
+      val pos = getSourceFilePosition()
+      '{SourceFilePositionMaterializer( ${ pos } )}
+    }
 
+    def getSourceFilePosition(): Expr[SourceFilePosition] = {
+      val pos = Position.ofMacroExpansion
+      val name = pos.sourceFile.name
+      val line = pos.startLine + 1
+
+      '{SourceFilePosition( ${Expr(name)}, ${Expr(line)} )}
+    }
+  }
 }
