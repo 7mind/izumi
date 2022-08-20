@@ -9,7 +9,7 @@ import scala.language.implicitConversions
   * BIO does not work without `-Xsource:2.13` or `-Xsource:3` option on 2.12.
   */
 object Morphism1 {
-  private[data] type Morphism1[-F[_], +G[_]] = Morphism3[Lambda[(R, E, A) => F[A]], Lambda[(R, E, A) => G[A]]]
+  private[data] type Morphism1[-F[_], +G[_]] = Morphism3[λ[(R, E, A) => F[A]], λ[(R, E, A) => G[A]]]
 
   @inline def apply[F[_], G[_]](polyFunction: F[UnknownA] => G[UnknownA]): Morphism1[F, G] = polyFunction.asInstanceOf[Morphism1[F, G]]
 

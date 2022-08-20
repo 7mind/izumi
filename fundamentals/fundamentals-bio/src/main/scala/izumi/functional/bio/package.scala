@@ -126,22 +126,22 @@ package object bio extends Syntax3 with Syntax2 {
     */
   @inline override final def F[FR[-_, +_, +_]](implicit FR: Functor3[FR]): FR.type = FR
 
-  type Functor2[F[+_, +_]] = Functor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Bifunctor2[F[+_, +_]] = Bifunctor3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Applicative2[F[+_, +_]] = Applicative3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Guarantee2[F[+_, +_]] = Guarantee3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type ApplicativeError2[F[+_, +_]] = ApplicativeError3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Monad2[F[+_, +_]] = Monad3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Error2[F[+_, +_]] = Error3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Bracket2[F[+_, +_]] = Bracket3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Panic2[F[+_, +_]] = Panic3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type IO2[F[+_, +_]] = IO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Parallel2[F[+_, +_]] = Parallel3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Concurrent2[F[+_, +_]] = Concurrent3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Async2[F[+_, +_]] = Async3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-  type Temporal2[F[+_, +_]] = Temporal3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Functor2[F[+_, +_]] = Functor3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Bifunctor2[F[+_, +_]] = Bifunctor3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Applicative2[F[+_, +_]] = Applicative3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Guarantee2[F[+_, +_]] = Guarantee3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type ApplicativeError2[F[+_, +_]] = ApplicativeError3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Monad2[F[+_, +_]] = Monad3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Error2[F[+_, +_]] = Error3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Bracket2[F[+_, +_]] = Bracket3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Panic2[F[+_, +_]] = Panic3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type IO2[F[+_, +_]] = IO3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Parallel2[F[+_, +_]] = Parallel3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Concurrent2[F[+_, +_]] = Concurrent3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Async2[F[+_, +_]] = Async3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Temporal2[F[+_, +_]] = Temporal3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
 
-  type Fork2[F[+_, +_]] = Fork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type Fork2[F[+_, +_]] = Fork3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
 
   type Primitives3[F[-_, +_, +_]] = Primitives2[F[Any, +_, +_]]
   object Primitives3 {
@@ -153,7 +153,7 @@ package object bio extends Syntax3 with Syntax2 {
     @inline def apply[F[-_, +_, +_]: PrimitivesM3]: PrimitivesM3[F] = implicitly
   }
 
-  type BlockingIO2[F[+_, +_]] = BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+  type BlockingIO2[F[+_, +_]] = BlockingIO3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
   object BlockingIO2 {
     @inline def apply[F[+_, +_]: BlockingIO2]: BlockingIO2[F] = implicitly
   }
@@ -224,7 +224,7 @@ package object bio extends Syntax3 with Syntax2 {
 
   @inline private[bio] final def cast3To2[C[_[-_, +_, +_]], FR[-_, +_, +_], R](
     instance: C[FR]
-  ): C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]] = {
-    instance.asInstanceOf[C[Lambda[(`-R0`, `+E`, `+A`) => FR[R, E, A]]]]
+  ): C[λ[(`-R0`, `+E`, `+A`) => FR[R, E, A]]] = {
+    instance.asInstanceOf[C[λ[(`-R0`, `+E`, `+A`) => FR[R, E, A]]]]
   }
 }

@@ -6,7 +6,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.uuid.UUIDGen
 
 import java.util.UUID
-import scala.annotation.nowarn
+import scala.annotation.{nowarn, unused}
 import scala.collection.compat.*
 import scala.collection.generic.CanBuildFrom
 import scala.language.implicitConversions
@@ -119,8 +119,8 @@ object Entropy1 extends LowPriorityEntropyInstances {
     Divergent(F.asInstanceOf[C[FR[R0, E, _]]])
   }
 
-  @inline implicit final def covarianceConversion[F[_], G[_]](entropy: Entropy1[F])(implicit ev: F[?] <:< G[?]): Entropy1[G] = {
-    val _ = ev; entropy.asInstanceOf[Entropy1[G]]
+  @inline implicit final def covarianceConversion[F[_], G[_]](entropy: Entropy1[F])(implicit @unused ev: F[Unit] <:< G[Unit]): Entropy1[G] = {
+    entropy.asInstanceOf[Entropy1[G]]
   }
 
 }

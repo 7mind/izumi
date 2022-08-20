@@ -58,7 +58,7 @@ trait Syntax3 extends ImplicitPuns {
 
 object Syntax3 {
 
-  class FunctorOps[+FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Functor3[FR]) {
+  class FunctorOps[FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Functor3[FR]) {
     @inline final def map[B](f: A => B): FR[R, E, B] = F.map(r)(f)
 
     @inline final def as[B](b: => B): FR[R, E, B] = F.map(r)(_ => b)
@@ -68,7 +68,7 @@ object Syntax3 {
     @inline final def fromOptionOr[B](valueOnNone: => B)(implicit ev: A <:< Option[B]): FR[R, E, B] = F.fromOptionOr(valueOnNone, widen)
   }
 
-  final class BifunctorOps[+FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Bifunctor3[FR]) {
+  final class BifunctorOps[FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Bifunctor3[FR]) {
     @inline final def leftMap[E2](f: E => E2): FR[R, E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): FR[R, E2, B] = F.bimap(r)(f, g)
 
@@ -278,7 +278,7 @@ object Syntax3 {
     @inline final def fork: FR[R, Nothing, Fiber3[FR, E, A]] = F.fork(r)
   }
 
-  class ProfunctorOps[+FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Profunctor3[FR]) {
+  class ProfunctorOps[FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Profunctor3[FR]) {
     @inline final def dimap[R1, A1](f: R1 => R)(g: A => A1): FR[R1, E, A1] = F.dimap(r)(f)(g)
   }
 

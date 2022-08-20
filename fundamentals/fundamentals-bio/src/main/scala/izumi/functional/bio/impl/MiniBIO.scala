@@ -5,7 +5,7 @@ import izumi.functional.bio.data.{Morphism2, RestoreInterruption2}
 import izumi.functional.bio.impl.MiniBIO.Fail
 import izumi.functional.bio.{BlockingIO2, Exit, IO2}
 
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 import scala.language.implicitConversions
 
 /**
@@ -40,13 +40,15 @@ sealed trait MiniBIO[+E, +A] {
       override def apply(a: A0): MiniBIO[E1, B] = f(a)
     }
 
+    // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
+    @nowarn("msg=pattern case: MiniBIO.FlatMap")
     @tailrec def runner(op: MiniBIO[Any, Any], stack: List[Any => MiniBIO[Any, Any]]): Exit[Any, Any] = op match {
 
       case MiniBIO.FlatMap(io, f) =>
-        runner(io, f :: stack)
+        runner(io, f.asInstanceOf[Any => MiniBIO[Any, Any]] :: stack)
 
       case MiniBIO.Redeem(io, err, succ) =>
-        runner(io, new Catcher(err, succ) :: stack)
+        runner(io, new Catcher(err, succ).asInstanceOf[Any => MiniBIO[Any, Any]] :: stack)
 
       case MiniBIO.Sync(a) =>
         val exit =

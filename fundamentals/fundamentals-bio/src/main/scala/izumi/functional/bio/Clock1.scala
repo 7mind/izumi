@@ -108,7 +108,7 @@ object Clock1 extends LowPriorityClockInstances {
     Divergent(F.asInstanceOf[C[FR[R0, E, _]]])
   }
 
-  @inline implicit final def covarianceConversion[F[_], G[_]](clock: Clock1[F])(implicit @unused ev: F[?] <:< G[?]): Clock1[G] = {
+  @inline implicit final def covarianceConversion[F[_], G[_]](clock: Clock1[F])(implicit @unused ev: F[Unit] <:< G[Unit]): Clock1[G] = {
     clock.asInstanceOf[Clock1[G]]
   }
 }
