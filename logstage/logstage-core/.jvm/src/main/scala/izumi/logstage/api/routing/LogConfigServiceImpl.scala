@@ -22,7 +22,7 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
   private[this] val configCache = new ConcurrentHashMap[String, LoggerPathConfig](1024)
 
   private[this] val findConfig: java.util.function.Function[String, LoggerPathConfig] = {
-    id: String =>
+    (id: String) =>
       val parts = id.split('.')
 
       // this generates a list of all the prefixes, right to left (com.mycompany.lib.Class, com.mycompany.lib, ...)

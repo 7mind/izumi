@@ -27,7 +27,7 @@ trait Provision[+F[_]] {
   @nowarn("msg=Unused import")
   def enumerate: immutable.Seq[IdentifiedRef] = {
     import scala.collection.compat.*
-    instances.map(IdentifiedRef.tupled).to(scala.collection.immutable.Seq)
+    instances.map { case (k, v) => IdentifiedRef(k, v) }.to(scala.collection.immutable.Seq)
   }
   def index: immutable.Map[DIKey, Any] = {
     enumerate.map(i => i.key -> i.value).toMap

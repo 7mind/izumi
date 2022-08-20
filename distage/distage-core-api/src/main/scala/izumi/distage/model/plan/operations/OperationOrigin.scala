@@ -48,5 +48,5 @@ object OperationOrigin {
   }
 
   final case class SyntheticBinding(binding: Binding) extends Defined with Synthetic
-  final case object Unknown extends Synthetic
+  case object Unknown extends Synthetic
 }

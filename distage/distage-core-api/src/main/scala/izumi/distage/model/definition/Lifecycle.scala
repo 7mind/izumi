@@ -508,7 +508,7 @@ object Lifecycle extends LifecycleInstances {
         override def acquire: H[InnerResource] = f(resource.acquire)
         override def release(res: InnerResource): H[Unit] = f(resource.release(res))
         override def extract[B >: A](res: InnerResource): Either[H[B], B] = resource.extract(res).left.map {
-          fa: F[A] => f(fa.asInstanceOf[G[B]])
+          (fa: F[A]) => f(fa.asInstanceOf[G[B]])
         }
       }
     }
@@ -681,7 +681,7 @@ object Lifecycle extends LifecycleInstances {
     * @note `acquire` is performed interruptibly, unlike in [[Make]]
     */
   open class LiftF[+F[_]: QuasiApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean = false) extends NoCloseBase[F, A] {
-    def this(acquire: => F[A]) = this(() => acquire)
+    def this(acquire: => F[A]) = this(() => acquire, false)
 
     override final type InnerResource = Unit
     override final def acquire: F[Unit] = QuasiApplicative[F].unit
@@ -913,12 +913,12 @@ object Lifecycle extends LifecycleInstances {
       }
       override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = Left {
         bracketAppendFinalizer(finalizers)(self) {
-          inner1: self.InnerResource =>
+          (inner1: self.InnerResource) =>
             F.suspendF {
               self.extract(inner1).fold(_.map(f), F pure f(_)).flatMap {
-                that: Lifecycle[F, B] =>
+                (that: Lifecycle[F, B]) =>
                   bracketAppendFinalizer(finalizers)(that) {
-                    inner2: that.InnerResource =>
+                    (inner2: that.InnerResource) =>
                       that.extract[C](inner2).fold(identity, F.pure)
                   }
               }

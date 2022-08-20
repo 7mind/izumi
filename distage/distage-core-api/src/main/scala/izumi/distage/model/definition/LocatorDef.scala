@@ -80,7 +80,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
         )
     }
 
-    map.toMap -> map.iterator.map(IdentifiedRef.tupled).toList
+    map.toMap -> map.iterator.map { case (k, v) => IdentifiedRef(k, v) }.toList
   }
 }
 
