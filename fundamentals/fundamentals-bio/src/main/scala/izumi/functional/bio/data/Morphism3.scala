@@ -18,7 +18,9 @@ object Morphism3 extends LowPriorityMorphismInstances {
   }
 
   implicit final class SyntaxToCats[F[_], G[_]](private val self: Morphism1[F, G]) extends AnyVal {
-    @inline def toCats: cats.arrow.FunctionK[F, G] = Lambda[cats.arrow.FunctionK[F, G]](self(_))
+    @inline def toCats: cats.arrow.FunctionK[F, G] = new cats.arrow.FunctionK[F, G] {
+      override def apply[A](fa: F[A]): G[A] = self(fa)
+    }
   }
 
   @inline def apply[F[_, _, _], G[_, _, _]](polyFunction: F[UnknownR, UnknownE, UnknownA] => G[UnknownR, UnknownE, UnknownA]): Morphism3[F, G] = {
@@ -53,14 +55,10 @@ object Morphism3 extends LowPriorityMorphismInstances {
   implicit def conversion3To2[F[_, _, _], G[_, _, _], R](f: Morphism3[F, G]): Morphism2[F[R, _, _], G[R, _, _]] = f.asInstanceOf[Morphism2[F[R, _, _], G[R, _, _]]]
 
   implicit def conversion2To1[F[_, _], G[_, _], E](f: Morphism2[F, G]): Morphism1[F[E, _], G[E, _]] = f.asInstanceOf[Morphism1[F[E, _], G[E, _]]]
-  implicit def conversion2To1Nothing[F[_, _], G[_, _]](f: Morphism2[F, G]): Morphism1[F[Nothing, _], G[Nothing, _]] =
-    f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]] // workaround for inference issues with `E=Nothing`
 
   implicit def Convert3To2[F[_, _, _], G[_, _, _], R](implicit f: Morphism3[F, G]): Morphism2[F[R, _, _], G[R, _, _]] = f.asInstanceOf[Morphism2[F[R, _, _], G[R, _, _]]]
 
   implicit def Convert2To1[F[_, _], G[_, _], E](implicit f: Morphism2[F, G]): Morphism1[F[E, _], G[E, _]] = f.asInstanceOf[Morphism1[F[E, _], G[E, _]]]
-  implicit def Convert2To1Nothing[F[_, _], G[_, _]](implicit f: Morphism2[F, G]): Morphism1[F[Nothing, _], G[Nothing, _]] =
-    f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]] // workaround for inference issues with `E=Nothing`
 
   private[Morphism3] type UnknownR
   private[Morphism3] type UnknownE
@@ -69,6 +67,11 @@ object Morphism3 extends LowPriorityMorphismInstances {
 
 sealed trait LowPriorityMorphismInstances extends LowPriorityMorphismInstances1 {
   @inline implicit def identity2[F[_, _]]: Morphism2[F, F] = Morphism3.identity
+
+  implicit def conversion2To1Nothing[F[_, _], G[_, _]](f: Morphism2[F, G]): Morphism1[F[Nothing, _], G[Nothing, _]] =
+    f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]] // workaround for inference issues with `E=Nothing` on Scala 2
+  implicit def Convert2To1Nothing[F[_, _], G[_, _]](implicit f: Morphism2[F, G]): Morphism1[F[Nothing, _], G[Nothing, _]] =
+    f.asInstanceOf[Morphism1[F[Nothing, _], G[Nothing, _]]] // workaround for inference issues with `E=Nothing` on Scala 2
 }
 
 sealed trait LowPriorityMorphismInstances1 {

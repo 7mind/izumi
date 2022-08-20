@@ -12,7 +12,7 @@ trait Syntax2 extends ImplicitPuns
 
 object Syntax2 {
 
-  class FunctorOps[+F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Functor2[F]) {
+  class FunctorOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Functor2[F]) {
     @inline final def map[B](f: A => B): F[E, B] = F.map(r)(f)
 
     @inline final def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
@@ -22,7 +22,7 @@ object Syntax2 {
     @inline final def fromOptionOr[B](valueOnNone: => B)(implicit ev: A <:< Option[B]): F[E, B] = F.fromOptionOr(valueOnNone, widen)
   }
 
-  final class BifunctorOps[+F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Bifunctor2[F]) {
+  final class BifunctorOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Bifunctor2[F]) {
     @inline final def leftMap[E2](f: E => E2): F[E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 

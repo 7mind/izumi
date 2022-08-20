@@ -1,7 +1,6 @@
 package izumi.functional.bio
 
 import cats.data.Kleisli
-import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.PredefinedHelper.{NotPredefined, Predefined}
 import izumi.functional.bio.SpecificityHelper.*
 import izumi.functional.bio.impl.{AsyncZio, BioEither, BioIdentity3}
@@ -75,7 +74,7 @@ sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
 sealed trait RootInstancesLowPriority4 extends RootInstancesLowPriority5 {
   @inline implicit final def ConvertFromAsk[FR[-_, +_, +_]](implicit Ask: NotPredefined.Of[Ask3[FR]]): Predefined.Of[Applicative3[FR] & S5] = Predefined(S5(Ask.InnerF))
 
-  @inline implicit final def AttachTemporal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Temporal: Temporal3[FR]): Temporal.type = Temporal
+  @inline implicit final def AttachTemporal[FR[-_, +_, +_], R](@unused self: Functor3[FR])(implicit Temporal: Temporal3[FR]): Temporal3[FR] = Temporal
 }
 
 sealed trait RootInstancesLowPriority5 extends RootInstancesLowPriority6 {
@@ -114,14 +113,6 @@ sealed trait RootInstancesLowPriority10 extends RootInstancesLowPriority11 {
   @inline implicit final def BIOIdentity2: Predefined.Of[Monad2[Identity2]] = BioIdentity3.asInstanceOf[Predefined.Of[Monad2[Identity2]]]
 }
 
-sealed trait RootInstancesLowPriority11 extends RootInstancesLowPriority12 {
+sealed trait RootInstancesLowPriority11 extends RootInstancesLowPriorityVersionSpecific {
   @inline implicit final def BIOIdentity3: Predefined.Of[Monad3[Identity3]] = Predefined(BioIdentity3)
-}
-
-sealed trait RootInstancesLowPriority12 {
-  @inline implicit final def Convert3To2[C[f[-_, +_, +_]] <: RootBifunctor[f], FR[-_, +_, +_], R0](
-    implicit BifunctorPlus: C[FR] { type Divergence = Nondivergent }
-  ): Divergent.Of[C[Lambda[(`-R`, `+E`, `+A`) => FR[R0, E, A]]]] = {
-    Divergent(cast3To2[C, FR, R0](BifunctorPlus))
-  }
 }

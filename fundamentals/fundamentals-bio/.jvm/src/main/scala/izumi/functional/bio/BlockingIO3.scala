@@ -1,7 +1,6 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.BlockingIOInstances.ZIOWithBlocking
-import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.functional.bio.PredefinedHelper.Predefined
 import zio.ZIO
 import zio.blocking.Blocking
@@ -71,7 +70,7 @@ sealed trait LowPriorityBlockingIOInstances extends LowPriorityBlockingIOInstanc
   }
 }
 
-sealed trait LowPriorityBlockingIOInstances1 extends LowPriorityBlockingIOInstances2 {
+sealed trait LowPriorityBlockingIOInstances1 extends BlockingIOLowPriorityVersionSpecific {
 
   implicit final def blockingZIOFromHasBlockingEnvironment3: Predefined.Of[BlockingIO3[ZIOWithBlocking]] = {
     Predefined(new BlockingIO3[ZIOWithBlocking] {
@@ -79,16 +78,6 @@ sealed trait LowPriorityBlockingIOInstances1 extends LowPriorityBlockingIOInstan
       override def syncBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlocking(f)
       override def syncInterruptibleBlocking[A](f: => A): ZIO[Blocking, Throwable, A] = zio.blocking.effectBlockingInterrupt(f)
     })
-  }
-
-}
-
-sealed trait LowPriorityBlockingIOInstances2 {
-
-  @inline implicit final def blockingConvert3To2[C[f[-_, +_, +_]] <: BlockingIO3[f], FR[-_, +_, +_], R](
-    implicit BlockingIO3: C[FR] { type Divergence = Nondivergent }
-  ): Divergent.Of[BlockingIO2[FR[R, +_, +_]]] = {
-    Divergent(BlockingIO3.asInstanceOf[BlockingIO2[FR[R, +_, +_]]])
   }
 
 }

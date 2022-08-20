@@ -230,7 +230,9 @@ object CatsConversions {
     }
 
     @inline protected[this] final def toPoll(restoreInterruption: RestoreInterruption2[F]): Poll[F[Throwable, _]] = {
-      Lambda[Poll[F[Throwable, _]]](restoreInterruption(_))
+      new Poll[F[Throwable, _]] {
+        override def apply[A](fa: F[Throwable, A]): F[Throwable, A] = restoreInterruption(fa)
+      }
     }
 
   }

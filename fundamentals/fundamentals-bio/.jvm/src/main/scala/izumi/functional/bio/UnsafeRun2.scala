@@ -8,6 +8,7 @@ import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
 import zio.{Cause, IO, Runtime, Supervisor, ZIO}
 
+import scala.annotation.nowarn
 import scala.concurrent.Future
 
 trait UnsafeRun2[F[_, _]] {
@@ -176,6 +177,7 @@ object UnsafeRun2 {
 
   final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
 
+    @nowarn("msg=deprecated")
     private val parentGroup =
       Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
 
