@@ -95,7 +95,7 @@ trait ZIOTestEnv extends TestInstances with EqThrowable {
 
   implicit def cogenTask[A: Cogen](implicit ticker: Ticker): Cogen[IO[Throwable, A]] = {
     Cogen[cats.effect.IO[Outcome[cats.effect.IO, Throwable, A]]].contramap {
-      io: IO[Throwable, A] =>
+      (io: IO[Throwable, A]) =>
         toIO(io.sandboxExit.map(exit => CatsExit.exitToOutcomeThrowable[IO, A](exit)))
           .map(_.mapK(Morphism1[IO[Throwable, +_], cats.effect.IO](toIO(_)).toCats))
     }
