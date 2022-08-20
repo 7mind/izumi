@@ -94,6 +94,14 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -101,6 +109,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -232,6 +241,14 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -239,6 +256,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -388,6 +406,14 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -395,6 +421,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -528,6 +555,14 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -535,6 +570,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -667,6 +703,14 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -674,6 +718,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -828,6 +873,14 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -835,6 +888,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -975,6 +1029,14 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -982,6 +1044,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1116,6 +1179,14 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -1123,6 +1194,7 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform).cross
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1285,6 +1357,14 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -1292,6 +1372,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1307,8 +1388,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    scalacOptions += "-Wconf:msg=package.object.inheritance:silent"
+    } }
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -1437,6 +1517,14 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -1444,6 +1532,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1579,6 +1668,14 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -1586,6 +1683,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1702,6 +1800,14 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -1709,6 +1815,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1763,12 +1870,12 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
-      "com.propensive" %% "magnolia" % V.magnolia
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
+      "com.propensive" %% "magnolia" % V.magnolia,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     ) else Seq.empty }
   )
@@ -1855,6 +1962,14 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -1862,6 +1977,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2002,6 +2118,14 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -2009,6 +2133,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2122,6 +2247,14 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -2129,6 +2262,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2264,6 +2398,14 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -2271,6 +2413,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2399,6 +2542,14 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -2406,6 +2557,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2551,6 +2703,14 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -2558,6 +2718,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2673,6 +2834,14 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -2680,6 +2849,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2714,11 +2884,11 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "org.scalamock" %% "scalamock" % V.scalamock % Test,
       "org.scalatest" %% "scalatest" % V.scalatest
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scalamock" %% "scalamock" % V.scalamock % Test
     ) else Seq.empty }
   )
   .settings(
@@ -2804,6 +2974,14 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -2811,6 +2989,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2928,6 +3107,14 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -2935,6 +3122,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3074,6 +3262,14 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -3081,6 +3277,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3216,6 +3413,14 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -3223,6 +3428,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3343,6 +3549,14 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -3350,6 +3564,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3495,6 +3710,14 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -3502,6 +3725,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3676,6 +3900,14 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain",
+        "-deprecation",
+        "-feature",
+        "-Wconf:any:warning"
+      )
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
@@ -3683,6 +3915,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     scalacOptions += "-Wconf:msg=nowarn:silent",
     scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
