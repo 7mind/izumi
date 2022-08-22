@@ -15,15 +15,13 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
 
 import scala.annotation.unused
-import izumi.reflect.{Tag, TagK, TagK3, TagMacro}
+import izumi.reflect.{Tag, TagK, TagK3}
 import zio.*
 import zio.ZManaged.ReleaseMap
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ExecutorService, TimeUnit}
-import scala.language.experimental.macros
 import scala.language.implicitConversions
-import scala.reflect.macros.blackbox
 
 /**
   * `Lifecycle` is a class that describes the effectful allocation of a resource and its finalizer.
@@ -1135,49 +1133,6 @@ private[definition] object AdaptFunctoidImpl {
 
 }
 
-trait LifecycleTagImpl[R] {
-  type F[_]
-  type A
-  implicit def tagFull: Tag[R]
-  implicit def tagK: TagK[F]
-  implicit def tagA: Tag[A]
-}
-object LifecycleTagImpl extends LifecycleTagLowPriority {
-  @inline def apply[A: LifecycleTagImpl]: LifecycleTagImpl[A] = implicitly
-
-  implicit def resourceTag[R <: Lifecycle[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: LifecycleTagImpl[R with Lifecycle[F0, A0]] { type F[X] = F0[X]; type A = A0 } = {
-    new LifecycleTagImpl[R] {
-      type F[X] = F0[X]
-      type A = A0
-      val tagK: TagK[F0] = TagK[F0]
-      val tagA: Tag[A0] = Tag[A0]
-      val tagFull: Tag[R] = Tag[R]
-    }
-  }
-}
-sealed trait LifecycleTagLowPriority {
-  /**
-    * The `resourceTag` implicit above works perfectly fine, this macro here is exclusively
-    * a workaround for highlighting in Intellij IDEA
-    *
-    * (it's also used to display error trace from TagK's @implicitNotFound)
-    *
-    * TODO: report to IJ bug tracker
-    */
-  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any]]: LifecycleTagImpl[R] =
-    macro LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
-}
-
-object LifecycleTagMacro {
-  def fakeResourceTagMacroIntellijWorkaroundImpl[R <: Lifecycle[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[Nothing] = {
-    val tagMacro = new TagMacro(c)
-    tagMacro.makeTagImpl[R] // run the macro AGAIN, to get a fresh error message
-    val tagTrace = tagMacro.getImplicitError()
-
-    c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
-  }
-}
-
 private[definition] trait TrifunctorHasLifecycleTagImpl[R0, T] {
   type F[-RR, +EE, +AA]
   type R
@@ -1237,8 +1192,4 @@ sealed trait TrifunctorHasLifecycleTagLowPriority extends TrifunctorHasLifecycle
     type A = A0
     type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v] @v
   } = TrifunctorHasLifecycleTagImpl.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
-}
-sealed trait TrifunctorHasLifecycleTagLowPriority1 {
-  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any], T]: TrifunctorHasLifecycleTagImpl[R, T] =
-    macro LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
 }

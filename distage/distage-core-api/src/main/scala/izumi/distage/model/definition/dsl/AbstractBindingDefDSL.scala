@@ -1,6 +1,5 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.constructors.macros.AnyConstructorMacro
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
@@ -15,9 +14,8 @@ import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFil
 import izumi.reflect.Tag
 
 import scala.collection.mutable
-import scala.language.experimental.macros
 
-trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
+trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] {
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
   protected[this] def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
@@ -33,8 +31,6 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] {
     mutableState += bindingRef
     bindingRef
   }
-
-  final protected[this] def make[T]: BindDSL[T] = macro AnyConstructorMacro.make[BindDSL, T]
 
   /**
     * Set bindings are useful for implementing event listeners, plugins, hooks, http routes, etc.

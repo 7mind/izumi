@@ -18,7 +18,6 @@ trait StaticDIUniverse extends DIUniverse { self =>
 
 object StaticDIUniverse {
   type Aux[U] = StaticDIUniverse { val u: U }
-
   def apply(c: blackbox.Context): StaticDIUniverse.Aux[c.universe.type] = {
     new StaticDIUniverse { self =>
       override val u: c.universe.type = c.universe

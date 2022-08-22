@@ -381,7 +381,6 @@ object Izumi {
         libs = Seq.empty,
         depends = Seq.empty,
         settings = Seq.empty,
-        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.collections,
@@ -390,7 +389,6 @@ object Izumi {
           Projects.fundamentals.functional
         ),
         settings = crossScalaSources,
-        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.literals,
@@ -398,13 +396,11 @@ object Izumi {
           scala_reflect
         ),
         depends = Seq.empty,
-        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq.empty,
-        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.language,
@@ -416,7 +412,6 @@ object Izumi {
         ),
         settings = crossScalaSources,
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
-        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.platform,
@@ -431,7 +426,6 @@ object Izumi {
           "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
         ),
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
-        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.jsonCirce,
@@ -444,7 +438,6 @@ object Izumi {
           circe_literal in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
-        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.reflection,
@@ -454,7 +447,6 @@ object Izumi {
           Projects.fundamentals.functional,
         ),
         settings = crossScalaSources,
-        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.fundamentals.bio,
@@ -466,7 +458,6 @@ object Izumi {
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,
         ),
-        platforms = Targets.cross3,
       ),
     ),
     pathPrefix = Projects.fundamentals.basePath,
@@ -487,6 +478,7 @@ object Izumi {
         name = Projects.distage.coreApi,
         libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect),
         depends = Seq(Projects.fundamentals.reflection, Projects.fundamentals.bio).map(_ in Scope.Compile.all),
+        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.distage.proxyBytebuddy,
