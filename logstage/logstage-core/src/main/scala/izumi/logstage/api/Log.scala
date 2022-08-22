@@ -1,12 +1,8 @@
 package izumi.logstage.api
 
-import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, SourceFilePosition}
 import izumi.logstage.api.rendering.{AnyEncoded, LogstageCodec}
-import izumi.logstage.macros.{LogMessageMacro, LogMessageMacroStrict}
-
-import scala.language.experimental.macros
-import scala.language.implicitConversions
 
 object Log {
 
@@ -189,9 +185,7 @@ object Log {
     }
     def +(that: Message): Message = ++(that)
   }
-  object Message {
-    /** Construct [[Message]] from a string interpolation */
-    implicit def apply(message: String): Message = macro LogMessageMacro.logMessageMacro
+  object Message extends MessageMat {
 
     def raw(message: String): Message = Message(StringContext(message), Nil)
 
@@ -199,9 +193,6 @@ object Log {
   }
 
   object StrictMessage {
-    /** Construct [[Message]] from a string interpolation */
-    implicit def apply(message: String): Message = macro LogMessageMacroStrict.logMessageMacro
-
     def empty: Message = Message.empty
   }
 }

@@ -11,7 +11,7 @@ trait LogCreateIO[F[_]] {
   def createEntry(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): F[Entry]
   def createContext(logLevel: Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): F[Context]
 
-  def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): LogCreateIO[G] = this.asInstanceOf[LogCreateIO[G]]
+  def widen[G[_]](implicit @unused ev: F[AnyRef] <:< G[AnyRef]): LogCreateIO[G] = this.asInstanceOf[LogCreateIO[G]]
 }
 
 object LogCreateIO extends LowPriorityLogCreateIOInstances {
@@ -29,7 +29,7 @@ object LogCreateIO extends LowPriorityLogCreateIOInstances {
     }
   }
 
-  implicit def covarianceConversion[G[_], F[_]](log: LogCreateIO[F])(implicit ev: F[?] <:< G[?]): LogCreateIO[G] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: LogCreateIO[F])(implicit ev: F[AnyRef] <:< G[AnyRef]): LogCreateIO[G] = log.widen
 }
 
 sealed trait LowPriorityLogCreateIOInstances {

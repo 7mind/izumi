@@ -139,7 +139,8 @@ object LogstageCirceRenderingTest {
 
   case class WithCustomDerivedCodec(a: Int, b: String, c: List[Map[String, String]], d: Boolean)
   object WithCustomDerivedCodec {
-    implicit val JsonCodec: Codec.AsObject[WithCustomDerivedCodec] = io.circe.derivation.deriveCodec[WithCustomDerivedCodec]
+
+    implicit val JsonCodec: Codec.AsObject[WithCustomDerivedCodec] = io.circe.generic.semiauto.deriveCodec[WithCustomDerivedCodec]
     implicit val LsCodec: LogstageCodec[WithCustomDerivedCodec] = logstage.circe.fromCirce[WithCustomDerivedCodec]
   }
 

@@ -72,6 +72,7 @@ object Izumi {
     final val circe_core = Library("io.circe", "circe-core", V.circe, LibraryType.Auto)
     final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
     final val circe_literal = Library("io.circe", "circe-literal", V.circe, LibraryType.Auto)
+    final val circe_generic = Library("io.circe", "circe-generic", V.circe, LibraryType.Auto)
     final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
       ScalaVersionScope.AllScala2
     )
@@ -267,7 +268,7 @@ object Izumi {
           SettingKey(Some(scala213), None) := Defaults.Scala213Options ++ Seq[Const](
             "-Wunused:-synthetics"
           ),
-          SettingKey(Some(scala300), None) := Defaults.Scala3Options,
+          SettingKey(Some(scala300), None) := Defaults.Scala3Options.filterNot(c => Set[Const](Const.CString("-deprecation"), Const.CString("-feature")).contains(c)),
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
@@ -465,12 +466,12 @@ object Izumi {
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,
         ),
-        platforms = Targets.cross,
+        platforms = Targets.cross3,
       ),
     ),
     pathPrefix = Projects.fundamentals.basePath,
     groups = Groups.fundamentals,
-    defaultPlatforms = Targets.cross,
+    defaultPlatforms = Targets.cross3,
   )
 
   final val allCatsOptional = cats_all.map(_ in Scope.Optional.all)
@@ -593,6 +594,7 @@ object Izumi {
           jawn in Scope.Test.all,
           circe_parser in Scope.Test.all,
           circe_literal in Scope.Test.all,
+          circe_generic in Scope.Test.all,
           zio_core in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
@@ -617,7 +619,7 @@ object Izumi {
     ),
     pathPrefix = Projects.logstage.basePath,
     groups = Groups.logstage,
-    defaultPlatforms = Targets.cross,
+    defaultPlatforms = Targets.cross3,
   )
 
   val all = Seq(fundamentals, distage, logstage)

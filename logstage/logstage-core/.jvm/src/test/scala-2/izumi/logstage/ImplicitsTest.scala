@@ -2,15 +2,15 @@ package izumi.logstage
 
 import cats.effect.kernel.Sync
 import izumi.functional.bio.{IO2, SyncSafe1, SyncSafe2}
-import izumi.fundamentals.platform.language.IzScala
-import izumi.fundamentals.platform.language.ScalaRelease
 import izumi.fundamentals.platform.language.Quirks.*
+import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import izumi.logstage.ImplicitsTest.Suspend2
 import izumi.logstage.api.IzLogger
 import logstage.{LogIO, LogIO2}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
+// TODO: scala3
 class ImplicitsTest extends AnyWordSpec {
 
   "create LogIO from IO and Sync" in {

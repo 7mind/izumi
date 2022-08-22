@@ -680,7 +680,7 @@ object Lifecycle extends LifecycleInstances {
     *
     * @note `acquire` is performed interruptibly, unlike in [[Make]]
     */
-  open class LiftF[+F[_]: QuasiApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean = false) extends NoCloseBase[F, A] {
+  open class LiftF[+F[_]: QuasiApplicative, A] private[this] (acquire0: () => F[A], @unused dummy: Boolean) extends NoCloseBase[F, A] {
     def this(acquire: => F[A]) = this(() => acquire, false)
 
     override final type InnerResource = Unit

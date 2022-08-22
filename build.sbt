@@ -98,8 +98,6 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -245,8 +243,6 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -410,8 +406,6 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -559,8 +553,6 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -707,8 +699,6 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -877,8 +867,6 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -1033,8 +1021,6 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -1183,8 +1169,6 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -1361,8 +1345,6 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -1392,6 +1374,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .jvmSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -1399,6 +1382,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .jsSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -1521,8 +1505,6 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -1672,8 +1654,6 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -1804,8 +1784,6 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -1966,8 +1944,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -2122,8 +2098,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -2251,8 +2225,6 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -2402,8 +2374,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -2546,8 +2516,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -2707,8 +2675,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -2838,8 +2804,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -2978,8 +2942,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -3111,8 +3073,6 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -3142,6 +3102,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   )
   .jvmSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3149,6 +3110,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   )
   .jsSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3178,6 +3140,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %%% "circe-parser" % V.circe % Test,
       "io.circe" %%% "circe-literal" % V.circe % Test,
+      "io.circe" %%% "circe-generic" % V.circe % Test,
       "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -3266,8 +3229,6 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -3297,6 +3258,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jvmSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3304,6 +3266,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jsSettings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3417,8 +3380,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -3553,8 +3514,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -3714,8 +3673,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
@@ -3904,8 +3861,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain",
-        "-deprecation",
-        "-feature",
         "-Wconf:any:warning"
       )
       case (_, _) => Seq.empty
