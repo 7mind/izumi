@@ -29,7 +29,9 @@ object PlanInterpreter {
     def filter(finalizers: collection.Seq[Finalizer[F]]): collection.Seq[Finalizer[F]]
   }
   object FinalizerFilter {
-    def all[F[_]]: FinalizerFilter[F] = identity
+    def all[F[_]]: FinalizerFilter[F] = new FinalizerFilter[F] {
+      override def filter(finalizers: collection.Seq[Finalizer[F]]): collection.Seq[Finalizer[F]] = finalizers
+    }
   }
 
   final case class Finalizer[+F[_]](key: DIKey, effect: () => F[Unit], fType: SafeType)

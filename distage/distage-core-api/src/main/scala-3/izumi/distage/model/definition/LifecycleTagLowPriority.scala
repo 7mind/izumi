@@ -1,7 +1,9 @@
 package izumi.distage.model.definition
 
+import izumi.distage.model.definition.dsl.AnyKindShim
 
-trait LifecycleTagLowPriority {
+
+trait LifecycleTagLowPriority extends AnyKindShim {
   /**
     * The `resourceTag` implicit above works perfectly fine, this macro here is exclusively
     * a workaround for highlighting in Intellij IDEA
@@ -10,9 +12,9 @@ trait LifecycleTagLowPriority {
     *
     * TODO: report to IJ bug tracker
     */
-  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[AnyKind, Any]]: LifecycleTagImpl[R] = ???
+  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[LifecycleF, Any]]: LifecycleTagImpl[R] = ???
 }
 
-trait TrifunctorHasLifecycleTagLowPriority1 {
-  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[AnyKind, Any], T]: TrifunctorHasLifecycleTagImpl[R, T] = ???
+trait TrifunctorHasLifecycleTagLowPriority1 extends AnyKindShim {
+  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[LifecycleF, Any], T]: TrifunctorHasLifecycleTagImpl[R, T] = ???
 }
