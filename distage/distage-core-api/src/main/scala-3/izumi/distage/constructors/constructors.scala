@@ -128,7 +128,7 @@ object AnyConstructorOptionalMakeDSL {
   }
 
   def errorConstructor[T](tpe: String, nonWhitelistedMethods: List[String]): AnyConstructorOptionalMakeDSL.Impl[T] = {
-    AnyConstructorOptionalMakeDSL[T](Functoid.lift(throwError(tpe, nonWhitelistedMethods)))
+    AnyConstructorOptionalMakeDSL[T](Functoid.lift[Nothing](throwError(tpe, nonWhitelistedMethods)))
   }
 
   def throwError(tpe: String, nonWhitelistedMethods: List[String]): Nothing = {
