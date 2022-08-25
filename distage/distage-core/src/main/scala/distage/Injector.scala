@@ -52,7 +52,7 @@ object Injector extends InjectorFactory {
   ): Injector[F] = {
     bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides)
   }
-
+  
   /**
     * Create a default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
     *
