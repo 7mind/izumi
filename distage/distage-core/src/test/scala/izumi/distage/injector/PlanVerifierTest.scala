@@ -321,7 +321,9 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(
-      result.issues.contains(NonEmptySet(DuplicateActivations(DIKey[Fork1], NonEmptyMap(Set.empty -> NonEmptySet.unsafeFrom(definition.bindings.map(UserBinding))))))
+      result.issues.contains(
+        NonEmptySet(DuplicateActivations(DIKey[Fork1], NonEmptyMap(Set.empty -> NonEmptySet.unsafeFrom(definition.bindings.map(UserBinding.apply)))))
+      )
     )
   }
 

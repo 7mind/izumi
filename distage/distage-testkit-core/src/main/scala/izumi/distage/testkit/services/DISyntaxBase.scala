@@ -12,7 +12,7 @@ trait DISyntaxBase[F[_]] {
 
   protected final def takeAny(function: Functoid[Any], pos: SourceFilePosition): Unit = {
     val f: Functoid[F[Any]] = function.flatAp {
-      F: QuasiIO[F] => (a: Any) =>
+      (F: QuasiIO[F]) => (a: Any) =>
         F.pure(a)
     }
 

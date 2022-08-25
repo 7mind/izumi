@@ -31,7 +31,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         new ModuleDef {
           make[Int].named("2").from(2)
           make[Int].fromEffect[Identity, Int] {
-            i: Int @Id("2") => 10 + i
+            (i: Int @Id("2")) => 10 + i
           }
         },
         Activation.empty,
@@ -50,7 +50,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         new ModuleDef {
           make[Int].named("2").from(2)
           make[Int].fromEffect {
-            i: Int @Id("2") => Suspend2(10 + i)
+            (i: Int @Id("2")) => Suspend2(10 + i)
           }
         },
         Activation.empty,
@@ -92,7 +92,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         new ModuleDef {
           make[Int].named("2").from(2)
           make[Int].fromEffect[Identity, Int] {
-            i: Int @Id("2") => 10 + i
+            (i: Int @Id("2")) => 10 + i
           }
         },
         Activation.empty,
@@ -119,7 +119,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
             ref.update(_ ++ set).void
         }
         make[Unit].named("1").fromEffect {
-          ref: Ref[Fn, Set[Char]] =>
+          (ref: Ref[Fn, Set[Char]]) =>
             ref.update(_ + 'z').void
         }
         make[Unit].named("2").fromEffect {

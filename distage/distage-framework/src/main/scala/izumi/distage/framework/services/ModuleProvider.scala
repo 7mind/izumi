@@ -110,7 +110,7 @@ object ModuleProvider {
 
   object LogstageFailureHandlerModule extends ModuleDef {
     make[FailureHandler].from {
-      logger: IzLogger =>
+      (logger: IzLogger) =>
         FailureHandler.Custom {
           case Exit.Error(error, trace) =>
             logger.warn(s"Fiber errored out due to unhandled $error $trace")

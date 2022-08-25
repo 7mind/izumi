@@ -62,7 +62,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         make[Res].named("instance").fromResource(resResource)
 
         make[Res].named("provider").fromResource {
-          _: Res @Id("instance") =>
+          (_: Res @Id("instance")) =>
             resResource
         }
       }
@@ -169,7 +169,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         make[Res].named("instance").fromResource(resResource)
 
         make[Res].named("provider").fromResource {
-          _: Res @Id("instance") =>
+          (_: Res @Id("instance")) =>
             resResource
         }
       }

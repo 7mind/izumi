@@ -77,7 +77,7 @@ abstract class RoleAppMain[F[_]](
     val argv = ArgV(args)
     try {
       Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
-        appResource: AppResource[F] =>
+        (appResource: AppResource[F]) =>
           appResource.runApp()
       }
     } catch {

@@ -678,7 +678,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
         assert(definition.bindings.size == 4)
       }
       Injector().produceRun(definition) {
-        s: Set[Int] =>
+        (s: Set[Int]) =>
           intercept[TestFailedException] {
             assert(s == Set(1, 2, 3))
           }

@@ -55,10 +55,10 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Circular2].from {
-          c: Circular1 => new Circular2(c)
+          (c: Circular1) => new Circular2(c)
         }
         make[Circular1].from {
-          c: Circular2 =>
+          (c: Circular2) =>
             val a = new Circular1 {
               override val arg: Circular2 = c
             }
@@ -96,7 +96,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[SelfReference].from {
-          self: SelfReference =>
+          (self: SelfReference) =>
             new SelfReference(self)
         }
       })

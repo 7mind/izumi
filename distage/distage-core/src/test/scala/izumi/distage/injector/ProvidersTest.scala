@@ -48,7 +48,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestDependency].named("classdeftypeann1")
       make[TestClass].from {
-        t: TestDependency @Id("classdeftypeann1") => new TestClass(t)
+        (t: TestDependency @Id("classdeftypeann1")) => new TestClass(t)
       }
     })
 

@@ -56,7 +56,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       val definition = new ModuleDef {
         make[Dep].from[DepA]
         make[TestClass2[Dep]].fromHas {
-          value: Dep => ZIO(TestClass2(value))
+          (value: Dep) => ZIO(TestClass2(value))
         }
         make[TestClass2[Dep]].named("noargs").fromHas(ZIO(TestClass2(new DepA: Dep)))
       }
@@ -95,7 +95,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       val definition = new ModuleDef {
         make[Dep].from[DepA]
         make[TestClass2[Dep]].fromHas(ZIO.accessM {
-          value: Has[Dep] =>
+          (value: Has[Dep]) =>
             ZIO(TestClass2(value.get))
         })
       }
@@ -114,10 +114,10 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       import TypesCase1._
 
       val ctorA = ZIO.accessM {
-        value: Has[Dep @Id("A")] => ZIO(TestClass2(value.get))
+        (value: Has[Dep @Id("A")]) => ZIO(TestClass2(value.get))
       }
       val ctorB = ZIO.accessM {
-        value: Has[Dep @Id("B")] => ZIO(TestClass2(value.get))
+        (value: Has[Dep @Id("B")]) => ZIO(TestClass2(value.get))
       }
 
       val definition = PlannerInput.everything(new ModuleDef {
@@ -167,7 +167,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
           d2 <- ZManaged.access[Has[Dependency2]](_.get)
         } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
         make[Trait1].fromHas {
-          d1: Dependency1 =>
+          (d1: Dependency1) =>
             ZLayer.succeed(new Trait1 { val dep1 = d1 })
         }
 

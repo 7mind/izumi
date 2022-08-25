@@ -183,7 +183,7 @@ object TestConfig {
       this ++ PriorAxisDIKeys(Map(MaxLevel -> that))
     }
     def ++[A](elem: (Int, A))(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys = {
-      addToLevel(elem._1, elem._2)
+      addToLevel(elem._1, toAxisDIKeys(elem._2))
     }
 
     def +(key: DIKey): PriorAxisDIKeys = addToLevel(MaxLevel, Set(key))
@@ -205,7 +205,7 @@ object TestConfig {
       PriorAxisDIKeys(map.map { case (i, v) => i -> AxisDIKeys.fromSet(v) })
 
     @inline implicit def fromAxisDIKeys[A](set: A)(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys =
-      PriorAxisDIKeys(Map(MaxLevel -> set))
+      PriorAxisDIKeys(Map(MaxLevel -> toAxisDIKeys(set)))
 
     @nowarn("msg=Unused import")
     @inline implicit def fromPriorAxisDIKeys[A](map: Map[Int, A])(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys = {

@@ -347,10 +347,10 @@ class BasicTest extends AnyWordSpec with MkInjector {
       many[Int].add(5)
 
       many[Int].add {
-        i: Int => i - 1
+        (i: Int) => i - 1
       } // 6
       many[Int].addSet { // 7, 8, 9
-        i: Int =>
+        (i: Int) =>
           Set(i, i + 1, i + 2)
       }
     })

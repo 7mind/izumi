@@ -19,7 +19,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
       make[TestServiceTrait[F]]
       make[Int].named("TestService").from(getResult)
       make[F[String]].from {
-        res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!")
+        (res: Int @Id("TestService")) => Pointed[F].point(s"Hello $res!")
       }
       make[Either[String, Boolean]].from(Right(true))
 
@@ -29,7 +29,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
       make[F[Any]].from(Pointed[F].point(1: Any))
 
       make[Either[String, F[Int]]].from {
-        fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]])
+        (fAnyInt: F[Any]) => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]])
       }
       make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
     }

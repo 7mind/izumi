@@ -100,7 +100,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[ConfigLoader.ConfigLocation].from(ConfigLoader.ConfigLocation.Default)
   make[ConfigLoader.Args].from(ConfigLoader.Args.makeConfigLoaderArgs _)
   make[AppConfig].from {
-    configLoader: ConfigLoader =>
+    (configLoader: ConfigLoader) =>
       configLoader.loadConfig()
   }
 
@@ -160,7 +160,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       provider.loadRoles[F](appModule)(tagK)
   }
   make[Set[DIKey]].named("distage.roles.roots").from {
-    rolesInfo: RolesInfo =>
+    (rolesInfo: RolesInfo) =>
       rolesInfo.requiredComponents
   }
 
@@ -173,12 +173,12 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[RoleAppActivationParser].from[RoleAppActivationParser.Impl]
   make[ActivationParser].from[ActivationParser.Impl]
   make[Activation].named("roleapp").from {
-    parser: ActivationParser =>
+    (parser: ActivationParser) =>
       parser.parseActivation()
   }
 
   make[PlanningOptions].from {
-    parameters: RawAppArgs =>
+    (parameters: RawAppArgs) =>
       PlanningOptions(
         addGraphVizDump = parameters.globalParameters.hasFlag(RoleAppMain.Options.dumpContext)
       )
@@ -223,7 +223,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[FinalizerFilters[F]].fromValue(FinalizerFilters.all[F])
   make[AppResourceProvider[F]].from[AppResourceProvider.Impl[F]]
   make[AppResource[F]].from {
-    transformer: AppResourceProvider[F] =>
+    (transformer: AppResourceProvider[F]) =>
       transformer.makeAppResource
   }
 }

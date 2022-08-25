@@ -32,7 +32,7 @@ class FunctoidTest extends AnyWordSpec {
 
     "produce correct DI keys for anonymous inline lambda" in {
       val fn = Functoid {
-        x: Int @Id("inlinetypeann") => x
+        (x: Int @Id("inlinetypeann")) => x
       }.get
 
       assert(fn.diKeys contains DIKey.get[Int].named("inlinetypeann"))
@@ -40,7 +40,7 @@ class FunctoidTest extends AnyWordSpec {
 
     "produce correct DI keys for anonymous inline lambda with annotation parameter passed by name" in {
       val fn = Functoid {
-        x: Int @Id(name = "inlinetypeann") => x
+        (x: Int @Id(name = "inlinetypeann")) => x
       }.get
 
       assert(fn.diKeys contains DIKey.get[Int].named("inlinetypeann"))
@@ -198,7 +198,7 @@ class FunctoidTest extends AnyWordSpec {
       def locgenfn[T](@Id("x") t: T): Option[T] = Option(t)
 
       val fn = Functoid.apply {
-        x: Int => locgenfn(x)
+        (x: Int) => locgenfn(x)
       }.get
 
       assert(fn.diKeys contains DIKey.get[Int].named("x"))
