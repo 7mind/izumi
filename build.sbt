@@ -110,8 +110,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -249,8 +248,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -406,8 +404,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -547,8 +544,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -687,8 +683,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -848,8 +843,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -992,8 +986,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -1134,8 +1127,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -1304,8 +1296,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -1453,8 +1444,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -1593,8 +1583,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -1733,8 +1722,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -1879,8 +1867,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -2023,8 +2010,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -2070,6 +2056,148 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         case _ => Seq.empty
       }
     }
+  )
+  .disablePlugins(AssemblyPlugin)
+
+lazy val `distage-extension-logstage` = project.in(file("distage/distage-extension-logstage"))
+  .dependsOn(
+    `distage-extension-config` % "test->compile;compile->compile",
+    `distage-core-api` % "test->compile;compile->compile",
+    `distage-core` % "test->compile",
+    `logstage-core` % "test->test;compile->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+    ) else Seq.empty }
+  )
+  .settings(
+    crossScalaVersions := Seq(
+      "3.1.3",
+      "2.13.8",
+      "2.12.16"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    organization := "io.7mind.izumi",
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Test / testOptions += Tests.Argument("-oDF"),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.12.16") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Ypartial-unification",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Xlint:adapted-args",
+        "-Xlint:by-name-right-associative",
+        "-Xlint:constant",
+        "-Xlint:delayedinit-select",
+        "-Xlint:doc-detached",
+        "-Xlint:inaccessible",
+        "-Xlint:infer-any",
+        "-Xlint:missing-interpolator",
+        "-Xlint:nullary-override",
+        "-Xlint:nullary-unit",
+        "-Xlint:option-implicit",
+        "-Xlint:package-object-classes",
+        "-Xlint:poly-implicit-overload",
+        "-Xlint:private-shadow",
+        "-Xlint:stars-align",
+        "-Xlint:type-parameter-shadow",
+        "-Xlint:unsound-match",
+        "-opt-warnings:_",
+        "-Ywarn-extra-implicit",
+        "-Ywarn-unused:_",
+        "-Ywarn-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-inaccessible",
+        "-Ywarn-infer-any",
+        "-Ywarn-nullary-override",
+        "-Ywarn-nullary-unit",
+        "-Ywarn-numeric-widen",
+        "-Ywarn-unused-import",
+        "-Ywarn-value-discard",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:any:error"
+      )
+      case (_, "2.13.8") => Seq(
+        "-target:jvm-1.8",
+        "-explaintypes",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:any:error"
+      )
+      case (_, "3.1.3") => Seq(
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.12.16") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (false, "2.13.8") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } }
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2187,151 +2315,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions += "-Wconf:cat=deprecation:warning",
-    scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
-    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.16") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (false, "2.13.8") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } }
-  )
-  .disablePlugins(AssemblyPlugin)
-
-lazy val `distage-extension-logstage` = project.in(file("distage/distage-extension-logstage"))
-  .dependsOn(
-    `distage-extension-config` % "test->compile;compile->compile",
-    `distage-core-api` % "test->compile;compile->compile",
-    `distage-core` % "test->compile",
-    `logstage-core` % "test->test;compile->compile"
-  )
-  .settings(
-    libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
-  )
-  .settings(
-    crossScalaVersions := Seq(
-      "3.1.3",
-      "2.13.8",
-      "2.12.16"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    organization := "io.7mind.izumi",
-    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
-    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
-      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
-    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
-    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
-    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
-      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
-    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Test / testOptions += Tests.Argument("-oDF"),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.16") => Seq(
-        "-target:jvm-1.8",
-        "-explaintypes",
-        "-Xsource:3",
-        "-P:kind-projector:underscore-placeholders",
-        "-Ypartial-unification",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
-      )
-      case (_, "2.13.8") => Seq(
-        "-target:jvm-1.8",
-        "-explaintypes",
-        "-Xsource:3",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:after",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
-      )
-      case (_, "3.1.3") => Seq(
-        "-Ykind-projector:underscores",
-        "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -2482,8 +2466,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -2651,8 +2634,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -2790,8 +2772,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -2938,8 +2919,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -3084,8 +3064,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -3229,8 +3208,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -3369,8 +3347,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -3513,8 +3490,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -3559,8 +3535,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `distage-framework-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
     `distage-extension-config` % "test->compile;compile->compile",
-    `distage-extension-plugins` % "test->compile;compile->compile",
     `distage-extension-logstage` % "test->compile;compile->compile",
+    `distage-extension-plugins` % "test->compile;compile->compile",
     `distage-framework` % "test->compile;compile->compile",
     `distage-framework-docker` % "test->compile;compile->compile",
     `distage-testkit-core` % "test->compile;compile->compile",
@@ -3588,6 +3564,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3681,8 +3658,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -3708,6 +3684,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       )
       case (_, _) => Seq.empty
     } },
+    SettingKey[Boolean]("ide-skip-project") := true,
     scalacOptions -= "-Wconf:any:error",
     scalacOptions -= "-Xsource:3",
     Compile / sbt.Keys.doc / scalacOptions += "-Xsource:3",
@@ -3878,8 +3855,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
         "-no-indent",
-        "-explain",
-        "-Wconf:any:warning"
+        "-explain"
       )
       case (_, _) => Seq.empty
     } },
@@ -3914,6 +3890,7 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3936,6 +3913,7 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3958,6 +3936,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3970,8 +3949,8 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     `distage-framework-api`,
     `distage-core`,
     `distage-extension-config`,
-    `distage-extension-plugins`,
     `distage-extension-logstage`,
+    `distage-extension-plugins`,
     `distage-framework`,
     `distage-framework-docker`,
     `distage-testkit-core`,
@@ -3982,6 +3961,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3994,8 +3974,8 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     `distage-framework-api`,
     `distage-core`,
     `distage-extension-config`,
-    `distage-extension-plugins`,
     `distage-extension-logstage`,
+    `distage-extension-plugins`,
     `distage-framework`,
     `distage-framework-docker`,
     `distage-testkit-core`,
@@ -4006,6 +3986,7 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4023,6 +4004,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4040,6 +4022,7 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4054,6 +4037,7 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4090,6 +4074,7 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4136,7 +4121,7 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-head-commit=${com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "2.13.8",
+    scalaVersion := "3.1.3",
     ThisBuild / organization := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",
@@ -4154,7 +4139,7 @@ lazy val `izumi` = (project in file("."))
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
     ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.95" % Provided
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.96" % Provided
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(

@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.95`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.96`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -271,7 +271,7 @@ object Izumi {
             "-Wunused:-synthetics",
             "-Wconf:any:error",
           ),
-          SettingKey(Some(scala300), None) := Defaults.Scala3Options.filterNot(c => Set[Const](Const.CString("-deprecation"), Const.CString("-feature")).contains(c)),
+          SettingKey(Some(scala300), None) := Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
@@ -629,6 +629,8 @@ object Izumi {
         libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
+          // ignore microsite in IDEA
+          """SettingKey[Boolean]("ide-skip-project")""" := true,
           "scalacOptions" -= "-Wconf:any:error",
           //  Disable `-Xsource:3` in docs due to mdoc failures:
           //
