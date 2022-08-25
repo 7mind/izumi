@@ -33,7 +33,7 @@ class Bootloader(
   def boot(config: BootConfig): BootstrappedApp = {
     val activation = config.activation(input.activation)
     val bootstrap = config.bootstrap(bootstrapModule)
-    val injector = injectorFactory[Identity](
+    val injector = injectorFactory(
       bootstrapActivation = config.bootstrapActivation(bootstrapActivation),
       overrides = Seq(bootstrap),
     )(
