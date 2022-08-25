@@ -29,7 +29,7 @@ private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
 
   make[zio.blocking.Blocking].from(Has(_: Blocking.Service))
   make[zio.blocking.Blocking.Service].from {
-    blockingPool: ThreadPoolExecutor @Id("zio.io") =>
+    (blockingPool: ThreadPoolExecutor @Id("zio.io")) =>
       new Blocking.Service {
         override val blockingExecutor: Executor = Executor.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
       }

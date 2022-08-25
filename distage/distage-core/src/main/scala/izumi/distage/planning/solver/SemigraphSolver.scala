@@ -3,7 +3,6 @@ package izumi.distage.planning.solver
 import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
 import izumi.distage.model.definition.conflicts.{ConflictResolutionError, *}
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
-import izumi.distage.planning.solver.SemigraphSolver.*
 import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections.*
@@ -25,6 +24,8 @@ import scala.collection.mutable
   * Map of predecessors is a map where key is a dependant and value is a set of all its direct dependencies
   */
 trait SemigraphSolver[N, I, V] {
+  import izumi.distage.planning.solver.SemigraphSolver.*
+
   def resolve(
     predecessors: SemiEdgeSeq[Annotated[N], N, V],
     roots: Set[N],
@@ -329,7 +330,7 @@ object SemigraphSolver {
               first = m
 
               val rewritten = predecessors.links(m).deps.map {
-                ld: N =>
+                (ld: N) =>
                   if (ld == target) {
                     replacement
                   } else {

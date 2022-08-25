@@ -178,7 +178,7 @@ object PlanSolver {
 
                 throw new BadSetAxis(message, value)
               case Right(value) =>
-                val goodMembers = value.filter(_._2).map(_._1)
+                val goodMembers = value.view.filter(_._2).map(_._1).toSet
                 val result = firstOp.copy(members = goodMembers)
                 (Annotated(setKey, None, Set.empty), Node(result.members, result: InstantiationOp))
             }

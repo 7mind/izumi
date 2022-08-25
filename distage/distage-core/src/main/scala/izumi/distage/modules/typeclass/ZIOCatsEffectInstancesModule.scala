@@ -19,7 +19,7 @@ trait ZIOCatsEffectInstancesModule extends ModuleDef {
   include(CatsEffectInstancesModule[Task])
 
   make[Async[Task]].from {
-    r: Runtime[ZEnv] =>
+    (r: Runtime[ZEnv]) =>
       zio.interop.catz.asyncRuntimeInstance[Any](r)
   }
   make[Parallel[Task]].from {

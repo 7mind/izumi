@@ -80,7 +80,7 @@ object PureconfigInstances extends PureconfigInstances {
   }
 
   private[config] final lazy val configMemorySizeDecoder: Exported[ConfigReader[ConfigMemorySize]] = Exported {
-    cur: ConfigCursor =>
+    (cur: ConfigCursor) =>
       cur.asConfigValue.flatMap {
         cv =>
           try Right(cv.atKey("m").getMemorySize("m"))

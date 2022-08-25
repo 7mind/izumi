@@ -486,7 +486,13 @@ object Izumi {
         name = Projects.distage.proxyBytebuddy,
         libs = Seq(bytebuddy),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
+        platforms = Targets.jvm3,
+      ),
+      Artifact(
+        name = Projects.distage.frameworkApi,
+        libs = Seq(scala_reflect),
+        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
+        platforms = Targets.jvm3,
       ),
       Artifact(
         name = Projects.distage.core,
@@ -497,13 +503,14 @@ object Izumi {
           javaXInject in Scope.Test.all,
         ),
         depends = Seq(Projects.distage.coreApi in Scope.Compile.all, Projects.distage.proxyBytebuddy in Scope.Compile.jvm),
+        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.distage.config,
         libs = Seq(pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
-        platforms = Targets.jvm,
+        platforms = Targets.jvm3,
         settings = crossScalaSources,
       ),
       Artifact(
@@ -512,7 +519,7 @@ object Izumi {
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
-        platforms = Targets.jvm,
+        platforms = Targets.jvm3,
       ),
       Artifact(
         name = Projects.distage.extensionLogstage,
@@ -520,12 +527,7 @@ object Izumi {
         depends = Seq(Projects.distage.config, Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-      ),
-      Artifact(
-        name = Projects.distage.frameworkApi,
-        libs = Seq(scala_reflect),
-        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
+        platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.distage.framework,
@@ -533,7 +535,7 @@ object Izumi {
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm,
+        platforms = Targets.jvm3,
         settings = crossScalaSources,
       ),
       Artifact(
@@ -541,13 +543,13 @@ object Izumi {
         libs = allMonadsTest ++ Seq(docker_java_core, docker_java_transport_zerodep).map(_ in Scope.Compile.jvm),
         depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.testkitScalatest in Scope.Test.all),
-        platforms = Targets.jvm,
+        platforms = Targets.jvm3,
       ),
       Artifact(
         name = Projects.distage.testkitCore,
         libs = Nil,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
+        platforms = Targets.jvm3,
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
@@ -558,7 +560,7 @@ object Izumi {
         depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm,
+        platforms = Targets.jvm3,
         settings = Seq(
           // Ignore scala-xml version conflict between scoverage where scalatest requires scala-xml v2
           // and scoverage requires scala-xml v1 on Scala 2.12,
@@ -568,7 +570,7 @@ object Izumi {
       ),
     ),
     pathPrefix = Projects.distage.basePath,
-    defaultPlatforms = Targets.cross,
+    defaultPlatforms = Targets.cross3,
     groups = Groups.distage,
   )
 
@@ -597,7 +599,7 @@ object Izumi {
         name = Projects.logstage.adapterSlf4j,
         libs = Seq(slf4j_api),
         depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm,
+        platforms = Targets.jvm3,
         settings = Seq(
           "compileOrder" in SettingScope.Compile := "CompileOrder.Mixed".raw,
           "compileOrder" in SettingScope.Test := "CompileOrder.Mixed".raw,
@@ -608,7 +610,7 @@ object Izumi {
         name = Projects.logstage.sinkSlf4j,
         libs = Seq(slf4j_api, slf4j_simple),
         depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm,
+        platforms = Targets.jvm3,
       ),
     ),
     pathPrefix = Projects.logstage.basePath,

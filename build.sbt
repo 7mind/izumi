@@ -1499,6 +1499,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -1644,6 +1645,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -1786,6 +1788,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -1949,6 +1952,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -2091,6 +2095,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -2230,6 +2235,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -2381,6 +2387,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -2549,6 +2556,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -2687,6 +2695,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -2834,6 +2843,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3264,6 +3274,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3407,6 +3418,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
