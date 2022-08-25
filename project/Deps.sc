@@ -80,6 +80,7 @@ object Izumi {
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
+    final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto) in Scope.Compile.all
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
       ScalaVersionScope.AllScala2
     )
@@ -494,7 +495,7 @@ object Izumi {
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
         platforms = Targets.jvm3,
       ),
-      Artifact(
+      Artifact( // broken on 3
         name = Projects.distage.core,
         libs = allMonadsOptional ++ Seq(
           zio_interop_cats in Scope.Optional.all
@@ -507,19 +508,11 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
+        libs = Seq(pureconfig_core, pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm3,
         settings = crossScalaSources,
-      ),
-      Artifact(
-        name = Projects.distage.plugins,
-        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect),
-        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
-          Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
-        platforms = Targets.jvm3,
       ),
       Artifact(
         name = Projects.distage.extensionLogstage,
@@ -528,6 +521,14 @@ object Izumi {
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.cross3,
+      ),
+      Artifact(
+        name = Projects.distage.plugins,
+        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect),
+        depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
+          Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
+        platforms = Targets.jvm3,
       ),
       Artifact(
         name = Projects.distage.framework,

@@ -32,7 +32,7 @@ object ForcedRecompilationToken {
     var cachedTypedTree: Universe#Tree = null
 
     def whiteboxMaterializeImpl(c: whitebox.Context): c.Tree = {
-      import c.universe._
+      import c.universe.*
 
       UniqueRecompilationTokenMacro.synchronized {
         if (cachedTypedTree eq null) {

@@ -1,8 +1,8 @@
 package izumi.distage.config.codec
 
 import com.typesafe.config.{ConfigMemorySize, ConfigValue}
+import pureconfig.*
 import pureconfig.ConfigReader.Result
-import pureconfig._
 import pureconfig.error.{CannotConvert, ConfigReaderFailures, ThrowableFailure}
 import pureconfig.generic.error.{InvalidCoproductOption, NoValidCoproductOptionFound}
 import pureconfig.generic.{CoproductHint, ProductHint}
@@ -74,7 +74,7 @@ object PureconfigInstances extends PureconfigInstances {
       } yield res
     }
     override def to(cv: ConfigValue, name: String): ConfigValue = {
-      import pureconfig.syntax._
+      import pureconfig.syntax.*
       Map(name -> cv).toConfig
     }
   }

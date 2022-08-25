@@ -1,9 +1,6 @@
 package izumi.distage.plugins
 
-import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
 import izumi.fundamentals.platform.language.SourcePackageMaterializer
-
-import scala.language.experimental.macros
 
 /** @see [[https://izumi.7mind.io/distage/distage-framework#plugins Plugins]] */
 final case class PluginConfig(
@@ -30,7 +27,7 @@ final case class PluginConfig(
   def debug(debug: Boolean): PluginConfig = copy(debug = debug)
 }
 
-object PluginConfig {
+object PluginConfig extends PluginConfigStatic {
   /** Scan the specified package at runtime for classes and objects that inherit [[PluginBase]] */
   def cached(pluginsPackage: String): PluginConfig = PluginConfig(pluginsPackage :: Nil, Nil, cachePackages = cacheEnabled, debug = false, Nil, Nil)
 
@@ -44,22 +41,6 @@ object PluginConfig {
   def packages(pluginsPackage: String): PluginConfig = PluginConfig(pluginsPackage :: Nil, Nil, cachePackages = false, debug = false, Nil, Nil)
   def packages(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = false, debug = false, Nil, Nil)
   def packagesThisPkg(implicit pkg: SourcePackageMaterializer): PluginConfig = packages(pkg.get.pkg)
-
-  /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
-    *
-    * WARN: may interact badly with incremental compilation
-    * WARN: will _not_ find plugins defined in the current module, only those defined in dependency modules
-    *       (similarly to how you cannot call Scala macros defined in the current module)
-    */
-  def compileTime(pluginsPackage: String): PluginConfig = macro StaticPluginLoaderMacro.scanCompileTimeConfig
-
-  /** Scan the the current source file's package *at compile-time* for classes and objects that inherit [[PluginBase]]
-    *
-    * WARN: may interact badly with incremental compilation
-    * WARN: will _not_ find plugins defined in the current module, only those defined in dependency modules
-    *       (similarly to how you cannot call Scala macros defined in the current module)
-    */
-  def compileTimeThisPkg: PluginConfig = macro StaticPluginLoaderMacro.scanCompileTimeConfigThisPkg
 
   /** Create a [[PluginConfig]] that simply returns the specified plugins */
   def const(plugins: Seq[PluginBase]): PluginConfig = PluginConfig(Nil, Nil, cachePackages = false, debug = false, plugins, Nil)

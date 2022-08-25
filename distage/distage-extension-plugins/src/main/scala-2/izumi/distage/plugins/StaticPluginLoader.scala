@@ -1,12 +1,10 @@
 package izumi.distage.plugins
 
-import scala.language.experimental.macros
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
 import izumi.fundamentals.platform.language.SourcePackageMaterializer.SourcePackageMaterializerMacro
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.macros.blackbox
-import scala.reflect.runtime.{universe => ru}
 
 /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
   *
@@ -43,7 +41,7 @@ object StaticPluginLoader {
     }
 
     def scanCompileTimeImpl(c: blackbox.Context)(pluginPath: String): c.Expr[List[PluginBase]] = {
-      import c.universe._
+      import c.universe.*
 
       val loadedPlugins = if (pluginPath == "") {
         LoadedPlugins.empty
@@ -57,7 +55,7 @@ object StaticPluginLoader {
     }
 
     def instantiatePluginsInCode(c: blackbox.Context)(loadedPlugins: Seq[PluginBase]): List[c.Tree] = {
-      import c.universe._
+      import c.universe.*
       val runtimeMirror = ru.runtimeMirror(this.getClass.getClassLoader)
       loadedPlugins.map {
         plugin =>
