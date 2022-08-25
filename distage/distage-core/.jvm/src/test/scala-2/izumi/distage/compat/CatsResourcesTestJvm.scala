@@ -33,9 +33,10 @@ object CatsResourcesTestJvm {
 final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with CatsIOPlatformDependentTest {
 
   private def createCPUPool(ioRuntime: => IORuntime): Lifecycle[Identity, ExecutionContext] = {
-    new CatsIOPlatformDependentSupportModule {
-      val res = createCPUPool(ioRuntime)
-    }.res
+    final class HackyReuse extends CatsIOPlatformDependentSupportModule {
+      val res: Lifecycle[Identity, ExecutionContext] = this.createCPUPool(ioRuntime)
+    }
+    new HackyReuse().res
   }
 
   "`No More Orphans` type provider is accessible" in {
@@ -144,7 +145,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       make[Res].named("instance").fromResource(resResource)
 
       make[Res].named("provider").fromResource {
-        _: Res @Id("instance") =>
+        (_: Res @Id("instance")) =>
           resResource
       }
     }
@@ -229,7 +230,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       )
     )
     assert(res.getMessage contains "implicit")
-    assert(res.getMessage contains "AdaptFunctoid.Aux")
+    assert(res.getMessage contains "AdaptFunctoid")
   }
 
 }
