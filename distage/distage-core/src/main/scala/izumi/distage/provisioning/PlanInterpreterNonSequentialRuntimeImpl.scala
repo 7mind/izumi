@@ -117,12 +117,12 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     } yield res
   }
 
-  private def failEarly[F[_]: TagK](
+  private def failEarly[F[_]: TagK, A](
     ctx: ProvisionMutable[F],
     initial: TraversalState,
     issues: Iterable[ProvisionerIssue],
   )(implicit F: QuasiIO[F]
-  ): F[Left[FailedProvision[F], Nothing]] = {
+  ): F[Either[FailedProvision[F], A]] = {
     val failures = issues.map {
       issue =>
         TimedFinalResult.Failure(
