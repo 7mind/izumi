@@ -109,7 +109,7 @@ object ConfigLoader {
 
     def loadConfig(): AppConfig = {
       val commonReferenceConfigs = configLocation.defaultBaseConfigs.flatMap(configLocation.forBase)
-      val commonExplicitConfigs = configArgs.global.map(ConfigSource.File).toList
+      val commonExplicitConfigs = configArgs.global.map(ConfigSource.File.apply).toList
 
       val (roleReferenceConfigs, roleExplicitConfigs) = (configArgs.role: Iterable[(String, Option[File])]).partitionMap {
         case (role, None) => Left(configLocation.forRole(role))

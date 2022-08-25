@@ -52,7 +52,7 @@ abstract class CoreCheckableApp[F[_]](implicit val tagK: TagK[F]) extends Checka
   override final type AppEffectType[A] = F[A]
 }
 
-abstract class CoreCheckableAppSimple[F[_]: TagK: DefaultModule] extends CoreCheckableApp {
+abstract class CoreCheckableAppSimple[F[_]: TagK: DefaultModule] extends CoreCheckableApp[F] {
   def module: ModuleBase
   def roots: Roots
 
