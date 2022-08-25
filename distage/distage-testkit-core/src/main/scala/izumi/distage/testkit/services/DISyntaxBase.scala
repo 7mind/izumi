@@ -8,7 +8,7 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 trait DISyntaxBase[F[_]] {
   implicit def tagMonoIO: TagK[F]
 
-  protected def takeIO(function: Functoid[F[?]], pos: SourceFilePosition): Unit
+  protected def takeIO(function: Functoid[F[Any]], pos: SourceFilePosition): Unit
 
   protected final def takeAny(function: Functoid[Any], pos: SourceFilePosition): Unit = {
     val f: Functoid[F[Any]] = function.flatAp {
@@ -19,7 +19,7 @@ trait DISyntaxBase[F[_]] {
     takeIO(f, pos)
   }
 
-  protected final def takeFunIO[T: Tag](function: T => F[?], pos: SourceFilePosition): Unit = {
+  protected final def takeFunIO[T: Tag](function: T => F[Any], pos: SourceFilePosition): Unit = {
     takeIO(function, pos)
   }
 
