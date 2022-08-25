@@ -1,10 +1,12 @@
 package izumi.distage.plugins
 
+import scala.language.experimental.macros
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
 import izumi.fundamentals.platform.language.SourcePackageMaterializer.SourcePackageMaterializerMacro
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.macros.blackbox
+import scala.reflect.runtime.{universe => ru}
 
 /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
   *

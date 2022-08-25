@@ -1,10 +1,5 @@
 package izumi.distage.plugins
 
-import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
-import izumi.fundamentals.platform.language.SourcePackageMaterializer.SourcePackageMaterializerMacro
-import izumi.fundamentals.reflection.ReflectionUtil
-
-
 /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
   *
   * WARN: may interact badly with incremental compilation

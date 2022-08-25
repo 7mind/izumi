@@ -130,7 +130,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         )
       )
       assert(res.getMessage contains "implicit")
-      assert(res.getMessage contains "AdaptFunctoid.Aux")
+      assert(res.getMessage contains "AdaptFunctoid")
     }
 
   }
@@ -237,7 +237,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         )
       )
       assert(res.getMessage contains "implicit")
-      assert(res.getMessage contains "AdaptFunctoid.Aux")
+      assert(res.getMessage contains "AdaptFunctoid")
     }
 
     "Lifecycle.fromZIO(ZManaged.fork) is interruptible (https://github.com/7mind/izumi/issues/1138)" in {
