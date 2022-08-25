@@ -20,7 +20,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
   type HasX[B] = Has[B]
   type HasIntBool = HasInt with HasX[Boolean]
 
-  def trait1(d1: Dependency1) = new Trait1 { override protected def dep1: Dependency1 = d1 }
+  def trait1(d1: Dependency1) = new Trait1 { override def dep1: Dependency1 = d1 }
 
   def getDep1[F[-_, +_, +_]: Ask3]: F[Has[Dependency1], Nothing, Dependency1] =
     F.askWith((_: Has[Dependency1]).get)
@@ -286,7 +286,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       val plan = injector.plan(definition)
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
-      assert(context.get[TestTrait].anyValDep != null)
+      assert(context.get[TestTrait].anyValDep ne null)
       // AnyVal reboxing happened
       assert(context.get[TestTrait].anyValDep ne context.get[AnyValDep].asInstanceOf[AnyRef])
       assert(context.get[TestTrait].anyValDep.d eq context.get[Dep])

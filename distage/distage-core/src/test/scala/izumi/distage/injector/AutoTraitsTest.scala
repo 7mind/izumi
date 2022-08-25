@@ -223,7 +223,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    assert(context.get[TestTrait].anyValDep != null)
+    assert(context.get[TestTrait].anyValDep ne null)
     // AnyVal reboxing happened
     assert(context.get[TestTrait].anyValDep ne context.get[AnyValDep].asInstanceOf[AnyRef])
     assert(context.get[TestTrait].anyValDep.d eq context.get[Dep])

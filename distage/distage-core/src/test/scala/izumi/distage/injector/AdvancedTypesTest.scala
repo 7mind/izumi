@@ -151,7 +151,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
 
     class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag: AnyConstructor] extends ModuleDef {
       make[Dep]
-      make[T { def dep2: Dep }].from(() => null: T { def dep2: Dep })
+      make[T { def dep2: Dep }].from(() => null.asInstanceOf[T { def dep2: Dep }])
       make[T { def dep: Dep }].from[G]
     }
 

@@ -27,11 +27,11 @@ object TraitCases {
     class Dependency3
 
     trait Trait1 {
-      protected def dep1: Dependency1
+      def dep1: Dependency1
     }
 
     trait Trait2 extends Trait1 {
-      override protected def dep1: Dependency1
+      override def dep1: Dependency1
 
       def dep2: Dependency2
     }

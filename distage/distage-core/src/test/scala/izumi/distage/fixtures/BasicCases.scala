@@ -183,6 +183,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     type Address = String @Id(address)
 
     final case class ServerConfig(port: Port, address: Address)
+    object ServerConfig extends ((Port, Address) => ServerConfig)
 
     type ComponentSpecial[F[_]] = Component[F] @Id("special")
     final case class Component[F[_]](s: F[String])
