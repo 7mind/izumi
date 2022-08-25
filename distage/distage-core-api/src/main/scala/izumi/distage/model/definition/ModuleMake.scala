@@ -1,6 +1,8 @@
 package izumi.distage.model.definition
 
-trait ModuleMake[T <: ModuleBase] extends ModuleMake.Aux[T, T]
+import scala.annotation.unchecked.uncheckedVariance
+
+trait ModuleMake[+T <: ModuleBase] extends ModuleMake.Aux[T @uncheckedVariance, T]
 
 object ModuleMake {
   def apply[T <: ModuleBase: ModuleMake]: ModuleMake[T] = implicitly

@@ -356,7 +356,7 @@ trait QuasiFunctor[F[_]] {
 object QuasiFunctor extends LowPriorityQuasiFunctorInstances {
   @inline def apply[F[_]: QuasiFunctor]: QuasiFunctor[F] = implicitly
 
-  @inline implicit def quasiFunctorIdentity: QuasiApplicative[Identity] = QuasiIOIdentity
+  @inline implicit def quasiFunctorIdentity: QuasiFunctor[Identity] = QuasiIOIdentity
 
   implicit def fromBIO[F[+_, +_], E](implicit F: Functor2[F]): QuasiFunctor[F[E, _]] = {
     new QuasiFunctor[F[E, _]] {
