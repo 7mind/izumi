@@ -31,7 +31,10 @@ class MyDisabledTestZIO extends Spec1[Task] {
   )
 
   "My component" should {
-    "this test should be skipped" in { _: TestEnableDisable => Task.fail(new Throwable("Test was not skipped!")).unit }
+    "this test should be skipped" in {
+      (_: TestEnableDisable) =>
+        Task.fail(new Throwable("Test was not skipped!")).unit
+    }
   }
 }
 
@@ -54,7 +57,10 @@ abstract class MyDisabledTestF[F0[_]: QuasiIO: TagK: DefaultModule, F[x] <: F0[x
   }
 
   "My component" should {
-    "this test should be skipped" in { _: TestEnableDisable => F.map[Unit, Unit](F.unit)(_ => throw new Throwable("Test was not skipped!")) }
+    "this test should be skipped" in {
+      (_: TestEnableDisable) =>
+        F.map[Unit, Unit](F.unit)(_ => throw new Throwable("Test was not skipped!"))
+    }
   }
 }
 
@@ -82,7 +88,10 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit F: Ap
   }
 
   "My component" should {
-    "this test should be skipped" in { _: TestEnableDisable => F.fail(new Throwable("Test was not skipped!")).void }
+    "this test should be skipped" in {
+      (_: TestEnableDisable) =>
+        F.fail(new Throwable("Test was not skipped!")).void
+    }
   }
 }
 

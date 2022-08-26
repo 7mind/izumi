@@ -20,7 +20,7 @@ final class ScalaMockCompatTest extends Spec1[Identity] with MockFactory {
 
   "mockfactory" should {
     "be compatible" in {
-      testMock: TestClass =>
+      (testMock: TestClass) =>
         (() => testMock.method).expects().returning("hello")
         assert(testMock.method == "hello")
     }
