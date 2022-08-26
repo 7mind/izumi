@@ -1,7 +1,6 @@
 package com.github.pshirshov.test.plugins
 
 import com.github.pshirshov.test.sneaky.SneakyPlugin
-import izumi.distage.plugins.ForcedRecompilationToken
 import izumi.fundamentals.platform.build.ExposedTestScope
 
 @ExposedTestScope

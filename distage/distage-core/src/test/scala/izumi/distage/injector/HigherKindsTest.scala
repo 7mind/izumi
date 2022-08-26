@@ -1,7 +1,7 @@
 package izumi.distage.injector
 
-import distage._
-import izumi.distage.fixtures.HigherKindCases._
+import distage.*
+import izumi.distage.fixtures.HigherKindCases.*
 import izumi.distage.model.PlannerInput
 import izumi.reflect.macrortti.LTag
 import org.scalatest.wordspec.AnyWordSpec
@@ -9,7 +9,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class HigherKindsTest extends AnyWordSpec with MkInjector {
 
   "support tagless final style module definitions" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
       addImplicit[Pointed[F]]
@@ -91,7 +91,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "Support [A, F[_]] type shape" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     abstract class Parent[C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
       make[TestProvider[C, R]]
@@ -101,7 +101,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "Support [A, A, F[_]] type shape" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     abstract class Parent[A: Tag, C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
       make[TestProvider0[A, C, R]]
@@ -111,7 +111,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "support [A, F[_], G[_]] type shape" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     abstract class Parent[A: Tag, F[_]: TagK, R[_]: TagK: Pointed] extends ModuleDef {
       make[TestProvider1[A, F, R]]
@@ -121,7 +121,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "support [F[_], G[_], A] type shape" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     abstract class Parent[F[_]: TagK, R[_]: TagK: Pointed, A: Tag] extends ModuleDef {
       make[TestProvider2[F, R, A]]
@@ -131,7 +131,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "TagKK works" in {
-    import izumi.distage.fixtures.HigherKindCases.HigherKindsCase2._
+    import izumi.distage.fixtures.HigherKindCases.HigherKindsCase2.*
 
     class Definition[F[+_, +_]: TagKK: TestCovariantTC, G[_]: TagK, A: Tag](v: F[String, Int]) extends ModuleDef {
       make[TestCovariantTC[F]]

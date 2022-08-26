@@ -50,7 +50,7 @@ object HigherKindCases {
     class TestServiceClass[F[_]: Pointed](@Id("TestService") getResult: Int) extends TestTrait {
       override type R[_] = F[Any]
 
-      override def get: F[Int] = {
+      override def get: R[Int] = {
         Pointed[F].point(getResult)
       }
     }

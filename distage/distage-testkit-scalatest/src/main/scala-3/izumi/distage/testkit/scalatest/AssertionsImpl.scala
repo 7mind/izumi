@@ -11,11 +11,11 @@ trait AssertCIOImpl { this: AssertCIO =>
 }
 
 trait AssertIO2Impl[F[+_, +_]] { this: AssertIO2[F] =>
-  def assertIO(arg: Boolean)(implicit IO2: IO2[F], prettifier: Prettifier, pos: source.Position): F[Nothing, Assertion] = ???
+  final def assertIO(arg: Boolean)(implicit IO2: IO2[F], prettifier: Prettifier, pos: source.Position): F[Nothing, Assertion] = ???
 }
 
 trait AssertIO2StaticImpl {
-  def assertIO[F[+_, +_]](arg: Boolean)(implicit IO2: IO2[F], prettifier: Prettifier, pos: source.Position): F[Nothing, Assertion] = ???
+  final def assertIO[F[+_, +_]](arg: Boolean)(implicit IO2: IO2[F], prettifier: Prettifier, pos: source.Position): F[Nothing, Assertion] = ???
 }
 
 trait AssertIO3Impl[F[-_, +_, +_]] { this: AssertIO3[F] =>

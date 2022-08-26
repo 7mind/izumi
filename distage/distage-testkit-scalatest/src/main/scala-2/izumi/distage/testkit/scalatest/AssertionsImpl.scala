@@ -1,26 +1,24 @@
 package izumi.distage.testkit.scalatest
 
-import cats.effect.IO
 import cats.effect.kernel.Sync
 import izumi.functional.bio.{IO2, IO3}
 import org.scalactic.source.Position
 import org.scalactic.{Prettifier, source}
 import org.scalatest.Assertion
 import org.scalatest.distage.DistageAssertionsMacro
-import zio.IO
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 trait AssertCIOImpl { this: AssertCIO =>
-  final def assertIO(arg: Boolean)(implicit prettifier: Prettifier, pos: Position): IO[Assertion] = macro AssertCIOImpl.AssertCIOMacro.impl
+  final def assertIO(arg: Boolean)(implicit prettifier: Prettifier, pos: Position): cats.effect.IO[Assertion] = macro AssertCIOImpl.AssertCIOMacro.impl
 }
 
 object AssertCIOImpl {
   object AssertCIOMacro {
-    def impl(c: blackbox.Context)(arg: c.Expr[Boolean])(prettifier: c.Expr[Prettifier], pos: c.Expr[Position]): c.Expr[IO[Assertion]] = {
+    def impl(c: blackbox.Context)(arg: c.Expr[Boolean])(prettifier: c.Expr[Prettifier], pos: c.Expr[Position]): c.Expr[cats.effect.IO[Assertion]] = {
       import c.universe.*
-      c.Expr[IO[Assertion]](q"_root_.cats.effect.IO.delay(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
+      c.Expr[cats.effect.IO[Assertion]](q"_root_.cats.effect.IO.delay(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
     }
   }
 }
@@ -33,18 +31,16 @@ trait AssertIO2StaticImpl {
   def assertIO[F[+_, +_]](arg: Boolean)(implicit IO2: IO2[F], prettifier: Prettifier, pos: source.Position): F[Nothing, Assertion] = macro AssertIO2Macro.impl[F]
 }
 
-object AssertIO2Impl {
-  object AssertIO2Macro {
-    def impl[F[+_, +_]](
-      c: blackbox.Context
-    )(arg: c.Expr[Boolean]
-    )(IO2: c.Expr[IO2[F]],
-      prettifier: c.Expr[Prettifier],
-      pos: c.Expr[org.scalactic.source.Position],
-    ): c.Expr[F[Nothing, Assertion]] = {
-      import c.universe.*
-      c.Expr[F[Nothing, Assertion]](q"$IO2.sync(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
-    }
+object AssertIO2Macro {
+  def impl[F[+_, +_]](
+                       c: blackbox.Context
+                     )(arg: c.Expr[Boolean]
+                     )(IO2: c.Expr[IO2[F]],
+                       prettifier: c.Expr[Prettifier],
+                       pos: c.Expr[org.scalactic.source.Position],
+                     ): c.Expr[F[Nothing, Assertion]] = {
+    import c.universe.*
+    c.Expr[F[Nothing, Assertion]](q"$IO2.sync(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
   }
 }
 
@@ -97,12 +93,12 @@ object AssertSyncMacro {
 }
 
 trait AssertZIOImpl { this: AssertZIO =>
-  final def assertIO(arg: Boolean)(implicit prettifier: Prettifier, pos: Position): IO[Nothing, Assertion] = macro AssertZIOMacro.impl
+  final def assertIO(arg: Boolean)(implicit prettifier: Prettifier, pos: Position): zio.IO[Nothing, Assertion] = macro AssertZIOMacro.impl
 }
 
 object AssertZIOMacro {
-  def impl(c: blackbox.Context)(arg: c.Expr[Boolean])(prettifier: c.Expr[Prettifier], pos: c.Expr[Position]): c.Expr[IO[Nothing, Assertion]] = {
+  def impl(c: blackbox.Context)(arg: c.Expr[Boolean])(prettifier: c.Expr[Prettifier], pos: c.Expr[Position]): c.Expr[zio.IO[Nothing, Assertion]] = {
     import c.universe._
-    c.Expr[IO[Nothing, Assertion]](q"_root_.zio.IO.effectTotal(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
+    c.Expr[zio.IO[Nothing, Assertion]](q"_root_.zio.IO.effectTotal(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
   }
 }
