@@ -321,7 +321,10 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
 
         val context = mkInjector().produce(definition).unsafeGet()
 
-        assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
+        assert(
+          context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) ==
+          testProviderModule.TestClass(testProviderModule.TestDependency(), testProviderModule)
+        )
       }
       assert(exc.getSuppressed.head.isInstanceOf[ProxyInstantiationException])
 //      assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])

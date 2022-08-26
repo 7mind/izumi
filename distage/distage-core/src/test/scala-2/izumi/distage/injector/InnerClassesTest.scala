@@ -1,7 +1,7 @@
 package izumi.distage.injector
 
 import izumi.distage.constructors.FactoryConstructor
-import izumi.distage.fixtures.InnerClassCases._
+import izumi.distage.fixtures.InnerClassCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, ModuleDef}
 import org.scalatest.wordspec.AnyWordSpec
@@ -15,7 +15,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[StableObjectInheritingTrait1.TestDependency]
     })
 
-    val context = mkInjector().produce(definition).unsafeGet()
+    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
 
     assert(context.get[StableObjectInheritingTrait.TestDependency] == StableObjectInheritingTrait.TestDependency())
     assert(context.get[StableObjectInheritingTrait1.TestDependency] == StableObjectInheritingTrait1.TestDependency())
@@ -31,7 +31,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[TestClass]
     })
 
-    val context = mkInjector().produce(definition).unsafeGet()
+    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
 
     assert(context.get[TestClass] == TestClass(TestDependency()))
   }
@@ -44,14 +44,14 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
-      make[testProviderModule.TestClass]
+      make[testProviderModule.TestClass[testProviderModule.type]]
     })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
+    assert(context.get[testProviderModule.TestClass[testProviderModule.type]].a.isInstanceOf[testProviderModule.TestDependency])
   }
 
   "can handle function local path-dependent injections" in {
@@ -61,17 +61,18 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       val testProviderModule = new TestModule
 
       val definition = PlannerInput.everything(new ModuleDef {
-//        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-        make[testProviderModule.TestClass]
+        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+        make[testProviderModule.TestClass[testProviderModule.type]]
         make[testProviderModule.TestDependency]
       })
 
-      val injector = mkInjector()
+      val injector = mkNoCyclesInjector()
       val plan = injector.plan(definition)
 
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
+      assert(context.get[testProviderModule.TestClass[testProviderModule.type]].a.isInstanceOf[testProviderModule.TestDependency])
+      assert(context.get[testProviderModule.TestClass[testProviderModule.type]].t == testProviderModule)
     }
 
     someFunction()
@@ -102,35 +103,37 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     val testProviderModule = new TestModule
 
     val definition = PlannerInput.everything(new ModuleDef {
-//      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
-      make[testProviderModule.TestClass]
+      make[testProviderModule.TestClass[testProviderModule.type]]
     })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    assert(context.get[testProviderModule.TestClass].aValue.isInstanceOf[testProviderModule.TestDependency])
+    assert(context.get[testProviderModule.TestClass[testProviderModule.type]].aValue.isInstanceOf[testProviderModule.TestDependency])
+    assert(context.get[testProviderModule.TestClass[testProviderModule.type]].t == testProviderModule)
   }
 
-  "can handle inner path-dependent injections (macros can)" in {
+  "can handle inner path-dependent injections" in {
     new InnerPathDepTest().testCase
   }
 
-  "can handle class local path-dependent injections (macros can)" in {
+  "can handle class local path-dependent injections" in {
     val definition = PlannerInput.everything(new ModuleDef {
       make[TopLevelPathDepTest.type].from[TopLevelPathDepTest.type](TopLevelPathDepTest: TopLevelPathDepTest.type)
-      make[TopLevelPathDepTest.TestClass]
+      make[TopLevelPathDepTest.TestClass[TopLevelPathDepTest.type]]
       make[TopLevelPathDepTest.TestDependency]
     })
 
-    val injector = mkInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
 
     val context = injector.produce(plan).unsafeGet()
 
-    assert(context.get[TopLevelPathDepTest.TestClass].a != null)
+    assert(context.get[TopLevelPathDepTest.TestClass[TopLevelPathDepTest.type]].a != null)
+    assert(context.get[TopLevelPathDepTest.TestClass[TopLevelPathDepTest.type]].t == TopLevelPathDepTest)
   }
 
   "Can handle factories inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't)" in {
@@ -175,15 +178,19 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     )
 
     val context = mkInjector().produce(definition).unsafeGet()
-    assert(context.instances.size == 2)
+    assert(context.instances.size == 3)
 
-    assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
+    assert(
+      context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) ==
+      testProviderModule.TestClass(testProviderModule.TestDependency(), testProviderModule)
+    )
   }
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {
     private val definition = PlannerInput.everything(new ModuleDef {
       make[InnerPathDepTest.this.type].from[InnerPathDepTest.this.type](InnerPathDepTest.this: InnerPathDepTest.this.type)
-      make[TestClass]
+      make[InnerPathDepTest.type].from[InnerPathDepTest.type]
+      make[TestClass[InnerPathDepTest.this.type]]
       make[TestDependency]
     })
 
@@ -192,9 +199,11 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       val plan = injector.plan(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[TestClass].a != null)
+      assert(context.get[TestClass[InnerPathDepTest.this.type]].a != null)
+      assert(context.get[InnerPathDepTest.this.type] ne context.get[InnerPathDepTest.type])
     }
   }
+  object InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule
 
   object TopLevelPathDepTest extends InnerClassUnstablePathsCase.TestModule
 

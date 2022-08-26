@@ -48,7 +48,7 @@ object HigherKindCases {
 
     // TODO: @Id(this)
     class TestServiceClass[F[_]: Pointed](@Id("TestService") getResult: Int) extends TestTrait {
-      override type R[_] = F[Any]
+      override type R[A] = F[A]
 
       override def get: R[Int] = {
         Pointed[F].point(getResult)
