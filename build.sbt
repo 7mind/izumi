@@ -3564,7 +3564,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3890,7 +3889,6 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3913,7 +3911,6 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3936,7 +3933,6 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3961,7 +3957,6 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -3986,7 +3981,6 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4004,7 +3998,6 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4022,7 +4015,6 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4037,7 +4029,6 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4074,7 +4065,6 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
-      "3.1.3",
       "2.13.8",
       "2.12.16"
     ),
@@ -4121,7 +4111,7 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-head-commit=${com.typesafe.sbt.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "3.1.3",
+    scalaVersion := "2.13.8",
     ThisBuild / organization := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",
