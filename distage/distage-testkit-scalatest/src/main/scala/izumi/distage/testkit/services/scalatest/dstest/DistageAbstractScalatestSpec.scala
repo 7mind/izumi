@@ -22,9 +22,9 @@ import scala.annotation.unused
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
 
-  override def registerTest(function: Functoid[F[?]], env: TestEnvironment, pos: SourceFilePosition, id: TestId): Unit = {
+  override def registerTest[A](function: Functoid[F[A]], env: TestEnvironment, pos: SourceFilePosition, id: TestId): Unit = {
     if (firstRegistration) {
-      DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
+      DistageTestsRegistrySingleton.register[F](DistageTest(function.asInstanceOf[Functoid[F[Any]]], env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
     }
   }
 }
@@ -84,7 +84,7 @@ object DistageAbstractScalatestSpec {
       takeFunIO(cancel, pos.get)
     }
 
-    private def cancel(F: QuasiIO[F]): F[Nothing] = {
+    private def cancel[A](F: QuasiIO[F]): F[A] = {
       F.maybeSuspend(cancelNow())
     }
 
@@ -120,7 +120,7 @@ object DistageAbstractScalatestSpec {
       takeIO(() => value, pos.get)
     }
 
-    override protected def takeIO(function: Functoid[F[?]], pos: SourceFilePosition): Unit = {
+    override protected def takeIO[A](function: Functoid[F[A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
         suiteName,
@@ -159,7 +159,7 @@ object DistageAbstractScalatestSpec {
       takeBIO(() => value, pos.get)
     }
 
-    override protected def takeIO(fAsThrowable: Functoid[F[Throwable, ?]], pos: SourceFilePosition): Unit = {
+    override protected def takeIO[A](fAsThrowable: Functoid[F[Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
         suiteName,
@@ -224,7 +224,7 @@ object DistageAbstractScalatestSpec {
       takeBIO(() => value, pos.get)
     }
 
-    override protected def takeIO(fAsThrowable: Functoid[F[Any, Throwable, ?]], pos: SourceFilePosition): Unit = {
+    override protected def takeIO[A](fAsThrowable: Functoid[F[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
         suiteName,
