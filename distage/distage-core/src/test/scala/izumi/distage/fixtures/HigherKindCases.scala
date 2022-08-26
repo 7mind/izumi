@@ -48,7 +48,7 @@ object HigherKindCases {
 
     // TODO: @Id(this)
     class TestServiceClass[F[_]: Pointed](@Id("TestService") getResult: Int) extends TestTrait {
-      override type R[_] = F[?]
+      override type R[_] = F[Any]
 
       override def get: F[Int] = {
         Pointed[F].point(getResult)
@@ -56,13 +56,13 @@ object HigherKindCases {
     }
 
     trait TestServiceTrait[F[_]] extends TestTrait {
-      override type R[_] = F[?]
+      override type R[_] = F[Any]
 
       implicit protected val pointed: Pointed[F]
 
       protected val getResult: Int @Id("TestService")
 
-      override def get: F[?] = Pointed[F].point(getResult * 2)
+      override def get: F[Any] = Pointed[F].point(getResult * 2)
     }
 
     class TestProvider[A, F[_]: Pointed]
