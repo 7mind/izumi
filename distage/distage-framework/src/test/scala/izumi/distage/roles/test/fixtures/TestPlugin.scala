@@ -61,13 +61,13 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
 
   makeConfig[IntegrationOnlyCfg2]("integrationOnlyCfg2")
   modify[IntegrationOnlyCfg2] {
-    conf: IntegrationOnlyCfg2 =>
+    (conf: IntegrationOnlyCfg2) =>
       IntegrationOnlyCfg2(conf.value + ":updated")
   }
 
   makeConfig[TestServiceConf2]("testservice2")
   modify[TestServiceConf2] {
-    conf: TestServiceConf2 =>
+    (conf: TestServiceConf2) =>
       TestServiceConf2(conf.strval + ":updated")
   }
   makeConfig[ListConf]("listconf")

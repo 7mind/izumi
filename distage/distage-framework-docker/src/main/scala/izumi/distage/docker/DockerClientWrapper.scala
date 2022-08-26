@@ -141,7 +141,7 @@ object DockerClientWrapper {
             .exec()
         }
         _ <- F.traverse_(containers.asScala) {
-          c: Container =>
+          (c: Container) =>
             // destroy all containers that should not be reused or that exited (to not accumulate containers that could be pruned)
             val notReused = Option(c.getLabels.get(DockerConst.Labels.reuseLabel)).forall(_.asBoolean().contains(false))
             val removalReason = if (notReused) {

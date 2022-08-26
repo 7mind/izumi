@@ -46,7 +46,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     make[XXX_ResourceEffectsRecorder[IO]].fromValue(resources)
     make[XXX_LocatorLeak].from {
-      locatorRef: LocatorRef =>
+      (locatorRef: LocatorRef) =>
         locator0 = locatorRef
         XXX_LocatorLeak(locator0)
     }
@@ -200,7 +200,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
         make[TestResource[IO]].fromResource {
-          r: IntegrationResource1[IO] =>
+          (r: IntegrationResource1[IO]) =>
             Lifecycle.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
         }
         many[TestResource[IO]]

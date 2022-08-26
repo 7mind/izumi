@@ -96,7 +96,7 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
       .make[F]
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
       .modifyConfig {
-        (postgresContainer: PostgresFlyWayDocker.Container @Id("postgres-flyway-proxy"), cfg: PostgresFlyWayDocker.Cfg) => config =>
+        (postgresContainer: PostgresFlyWayDocker.Container @Id("postgres-flyway-proxy"), cfg: PostgresFlyWayDocker.Cfg) => (config: PostgresFlyWayDocker.FlyWay.Config) =>
           PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg)(config)
       }
   }

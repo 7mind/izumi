@@ -55,7 +55,7 @@ import scala.language.implicitConversions
   *   }
   * }}}
   */
-abstract class Spec3[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3[FR], implicit val tagBIO: TagKK[FR[Any, _, _]])
+abstract class Spec3[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3[FR], val tagBIO: TagKK[FR[Any, _, _]])
   extends DistageScalatestTestSuiteRunner[FR[Any, Throwable, _]]
   with DistageAbstractScalatestSpec[FR[Any, Throwable, _]] {
 

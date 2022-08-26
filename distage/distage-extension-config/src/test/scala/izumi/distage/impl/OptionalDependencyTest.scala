@@ -136,9 +136,10 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
          y()
       """)
 
+    type LC[F[_]] = Lifecycle[F, Int]
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
     intercept[Throwable] {
-      QuasiIO.fromCats[Option, Lifecycle[_[_], Int]](null, null)
+      QuasiIO.fromCats[Option, LC](null, null)
     } match {
       case _: NoClassDefFoundError =>
       case _: NullPointerException =>

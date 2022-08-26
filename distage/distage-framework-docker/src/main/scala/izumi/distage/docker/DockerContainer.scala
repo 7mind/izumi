@@ -119,7 +119,7 @@ object DockerContainer {
     ): Functoid[ContainerResource[F, T]] = {
       discard(tag1, tag3)
       modifyConfig {
-        original: DockerContainer[T2] => old: Docker.ContainerConfig[T] =>
+        (original: DockerContainer[T2]) => (old: Docker.ContainerConfig[T]) =>
           val mapping = ports.map {
             case (port, envvar) =>
               (envvar, s"${original.hostName}:$port")
@@ -146,7 +146,7 @@ object DockerContainer {
     ): Functoid[ContainerResource[F, T]] = {
       discard(tag1, tag3)
       modifyConfig {
-        net: ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
+        (net: ContainerNetwork[T2]) => (old: Docker.ContainerConfig[T]) =>
           old.copy(networks = old.networks + net)
       }
     }

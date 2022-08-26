@@ -139,24 +139,24 @@ object DistageAbstractScalatestSpec {
     reg: TestRegistration[F[Throwable, _]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F],
-    implicit override val tagMonoIO: TagK[F[Throwable, _]],
+    override val tagMonoIO: TagK[F[Throwable, _]],
   ) extends DISyntaxBIOBase[F]
     with LowPriorityIdentityOverloads[F[Throwable, _]] {
 
-    def in(function: Functoid[F[?, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(function, pos.get)
+    def in(function: Functoid[F[Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(function.asInstanceOf[Functoid[F[Any, Any]]], pos.get)
     }
 
-    def in(function: Functoid[F[?, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(function, pos.get)
+    def in(function: Functoid[F[Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(function.asInstanceOf[Functoid[F[Any, Any]]], pos.get)
     }
 
-    def in(value: => F[?, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(() => value, pos.get)
+    def in(value: => F[Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(() => value.asInstanceOf[F[Any, Any]], pos.get)
     }
 
-    def in(value: => F[?, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(() => value, pos.get)
+    def in(value: => F[Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(() => value.asInstanceOf[F[Any, Any]], pos.get)
     }
 
     override protected def takeIO[A](fAsThrowable: Functoid[F[Throwable, A]], pos: SourceFilePosition): Unit = {
@@ -178,50 +178,50 @@ object DistageAbstractScalatestSpec {
     reg: TestRegistration[F[Any, Throwable, _]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F[Any, _, _]],
-    implicit override val tagMonoIO: TagK[F[Any, Throwable, _]],
+    override val tagMonoIO: TagK[F[Any, Throwable, _]],
   ) extends DISyntaxBIOBase[F[Any, +_, +_]]
     with LowPriorityIdentityOverloads[F[Any, Throwable, _]] {
 
-    def in[R: HasConstructor](function: Functoid[F[R, ?, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    def in[R: HasConstructor](function: Functoid[F[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(
         function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((eff, r), f) => f.provide(eff)(r)
+          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Unit]])(r)
         },
         pos.get,
       )
     }
 
-    def in[R: HasConstructor](function: Functoid[F[R, ?, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+    def in[R: HasConstructor](function: Functoid[F[R, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(
         function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((eff, r), f) => f.provide(eff)(r)
+          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Assertion]])(r)
         },
         pos.get,
       )
     }
 
-    def in[R: HasConstructor](value: => F[R, ?, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
+    def in[R: HasConstructor](value: => F[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
     }
 
-    def in[R: HasConstructor](value: => F[R, ?, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
+    def in[R: HasConstructor](value: => F[R, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
     }
 
-    def in(function: Functoid[F[Any, ?, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(function, pos.get)
+    def in(function: Functoid[F[Any, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(function.asInstanceOf[Functoid[F[Any, Any, Any]]], pos.get)
     }
 
-    def in(function: Functoid[F[Any, ?, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(function, pos.get)
+    def in(function: Functoid[F[Any, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(function.asInstanceOf[Functoid[F[Any, Any, Assertion]]], pos.get)
     }
 
-    def in(value: => F[Any, ?, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(() => value, pos.get)
+    def in(value: => F[Any, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(() => value.asInstanceOf[F[Any, Any, Any]], pos.get)
     }
 
-    def in(value: => F[Any, ?, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(() => value, pos.get)
+    def in(value: => F[Any, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(() => value.asInstanceOf[F[Any, Any, Any]], pos.get)
     }
 
     override protected def takeIO[A](fAsThrowable: Functoid[F[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
