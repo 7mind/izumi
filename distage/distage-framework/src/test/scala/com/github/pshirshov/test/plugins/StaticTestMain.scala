@@ -33,7 +33,7 @@ class StaticTestMainLogIO2[F[+_, +_]: TagKK: Async2: DefaultModule2] extends Rol
     PluginConfig
       .cached("com.github.pshirshov.test.plugins")
       .++(staticTestMainPlugin[F[Throwable, _], F[Throwable, _]])
-      .++(new PluginDef {
+      .++(new PluginDef() {
         modify[StaticTestRole[F[Throwable, _]]]
           .addDependency[LogIO2[F]]
       })

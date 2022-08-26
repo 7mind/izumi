@@ -3,6 +3,7 @@ package com.github.pshirshov.test.plugins
 import com.github.pshirshov.test.sneaky.SneakyPlugin
 import distage.Axis
 import izumi.distage.config.ConfigModuleDef
+import izumi.distage.plugins.ForcedRecompilationToken
 import izumi.fundamentals.platform.build.ExposedTestScope
 
 object Test extends Axis {
@@ -11,7 +12,7 @@ object Test extends Axis {
 }
 
 @ExposedTestScope
-class StaticTestPlugin extends SneakyPlugin with ConfigModuleDef {
+class StaticTestPlugin extends SneakyPlugin() with ConfigModuleDef {
   make[TestDep].tagged(Test.X).from[TestDep1]
   make[TestDep].tagged(Test.Y).from[TestDep2]
   make[TestService]

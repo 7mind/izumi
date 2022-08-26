@@ -24,4 +24,4 @@ import scala.annotation.unused
   * @see [[https://izumi.7mind.io/distage/distage-framework#plugins Plugins]]
   * @see [[https://izumi.7mind.io/distage/distage-framework#compile-time-checks Compile-time checks]]
   */
-abstract class PluginDef[T](implicit @unused recompilationToken: ForcedRecompilationToken[T]) extends PluginBase with ModuleDef
+abstract class PluginDef[T]()(implicit @unused recompilationToken: ForcedRecompilationToken[T]) extends PluginBase with ModuleDef

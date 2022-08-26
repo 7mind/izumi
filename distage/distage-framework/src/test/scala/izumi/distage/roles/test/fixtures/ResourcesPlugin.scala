@@ -10,7 +10,7 @@ import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.ResourcesPlugin._
 import izumi.fundamentals.platform.functional.Identity
 
-class ConflictPlugin extends PluginDef {
+class ConflictPlugin extends PluginDef() {
   make[Conflict].tagged(Mode.Prod).from[Conflict1]
   make[Conflict].tagged(Mode.Test).from[Conflict2]
   make[Conflict].from[Conflict3]
@@ -49,7 +49,7 @@ trait ResourcesPluginBase extends ModuleDef {
     .ref[JustResource3[IO]]
 }
 
-class ResourcesPlugin extends PluginDef with ResourcesPluginBase {
+class ResourcesPlugin extends PluginDef() with ResourcesPluginBase {
   make[XXX_ResourceEffectsRecorder[IO]]
 
   make[IntegrationResource0[IO]]

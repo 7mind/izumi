@@ -19,7 +19,7 @@ object MockAppCatsIOPlugin extends MockAppPlugin[CIO]
 object MockAppZioPlugin extends MockAppPlugin[Task]
 object MockAppIdPlugin extends MockAppPlugin[Identity]
 
-abstract class MockAppPlugin[F[_]: TagK] extends PluginDef {
+abstract class MockAppPlugin[F[_]: TagK] extends PluginDef() {
   make[MockPostgresDriver[F]]
   make[MockUserRepository[F]]
   make[MockPostgresCheck[F]]

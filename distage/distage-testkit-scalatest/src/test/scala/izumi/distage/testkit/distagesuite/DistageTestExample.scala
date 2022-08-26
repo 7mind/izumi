@@ -35,7 +35,7 @@ class DistageTestExampleBIO extends Spec2[zio.IO] with DistageMemoizeExample[Tas
 
   "distage test runner" should {
     "support bifunctor" in {
-      service: MockUserRepository[Task] =>
+      (service: MockUserRepository[Task]) =>
         for {
           _ <- Task(assert(service != null))
         } yield ()
@@ -61,7 +61,7 @@ class DistageTestExampleBIOEnv extends Spec3[ZIO] with DistageMemoizeExample[Tas
     }
 
     "support mixing parameters & env" in {
-      cached: MockCachedUserService[Task] =>
+      (cached: MockCachedUserService[Task]) =>
         for {
           service <- service
           _ <- assertIO(cached != null)
@@ -94,7 +94,7 @@ object DistageTestExampleBase {
 abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
-    pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef {
+    pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef() {
       make[SetCounter]
 
       make[SetElement1]
@@ -177,7 +177,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
     }
 
     "test 1" in {
-      service: MockUserRepository[F] =>
+      (service: MockUserRepository[F]) =>
         for {
           _ <- F.maybeSuspend(assert(service != null))
           _ <- F.maybeSuspend(println("test2"))
@@ -185,7 +185,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
     }
 
     "test 2" in {
-      service: MockCachedUserService[F] =>
+      (service: MockCachedUserService[F]) =>
         for {
           _ <- F.maybeSuspend(XXX_Whitebox_memoizedMockCache.compareAndSet(null, service.cache))
           _ <- F.maybeSuspend(assert(service != null))
@@ -195,7 +195,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
     }
 
     "test 3" in {
-      service: MockCachedUserService[F] =>
+      (service: MockCachedUserService[F]) =>
         F.maybeSuspend {
           XXX_Whitebox_memoizedMockCache.compareAndSet(null, service.cache)
           assert(service != null)
@@ -204,17 +204,17 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
     }
 
     "test 4 (should be ignored)" in {
-      _: ApplePaymentProvider[F] =>
+      (_: ApplePaymentProvider[F]) =>
         assert(false)
     }
 
     "test 5 (should be ignored)" skip {
-      _: MockCachedUserService[F] =>
+      (_: MockCachedUserService[F]) =>
         assert(false)
     }
 
     "test 6 (should be ignored due to `assume`)" in {
-      _: MockCachedUserService[F] =>
+      (_: MockCachedUserService[F]) =>
         assume(false, "xxx")
     }
   }
@@ -229,7 +229,7 @@ final class DistageTestExampleZIO2 extends DistageTestExampleBase[Task]
 abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
   "distage test" should {
     "sleep" in {
-      _: MockUserRepository[F] =>
+      (_: MockUserRepository[F]) =>
         for {
           _ <- F.maybeSuspend(Thread.sleep(100))
         } yield ()
@@ -288,7 +288,7 @@ final class OverloadingTestIdentity extends OverloadingTest[Identity]
 
 abstract class ActivationTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
   "resolve bindings for the same key via activation axis" in {
-    activeComponent: ActiveComponent =>
+    (activeComponent: ActiveComponent) =>
       assert(activeComponent == TestActiveComponent)
   }
 }
@@ -307,7 +307,7 @@ abstract class ForcedRootTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[
   )
 
   "forced root was attached and the acquire effect has been executed" in {
-    locatorRef: LocatorRef =>
+    (locatorRef: LocatorRef) =>
       assert(locatorRef.get.get[ForcedRootProbe].started)
   }
 }

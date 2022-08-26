@@ -10,7 +10,7 @@ object BootstrapFixture3 {
 
   final case class BasicConfig(a: Boolean, b: Int)
 
-  object BootstrapPlugin extends BootstrapPluginDef with ConfigModuleDef {
+  object BootstrapPlugin extends BootstrapPluginDef() with ConfigModuleDef {
     makeConfig[BasicConfig]("basicConfig")
     make[BootstrapComponent]
   }

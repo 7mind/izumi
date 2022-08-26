@@ -39,7 +39,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     "testservice.systemPropList.1" -> "222",
   )
 
-  class XXX_TestWhiteboxProbe extends PluginDef {
+  class XXX_TestWhiteboxProbe extends PluginDef() {
     val resources = new XXX_ResourceEffectsRecorder[IO]
     private var locator0: LocatorRef = null
     lazy val locator: Locator = locator0.get
@@ -89,7 +89,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               new TestPluginCatsIO,
               new AdaptedAutocloseablesCasePlugin,
               probe,
-              new PluginDef {
+              new PluginDef() {
                 make[TestResource[IO]].from[IntegrationResource0[IO]]
                 many[TestResource[IO]]
                   .ref[TestResource[IO]]

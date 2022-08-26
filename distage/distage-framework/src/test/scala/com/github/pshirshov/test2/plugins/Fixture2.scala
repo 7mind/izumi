@@ -14,7 +14,7 @@ object Fixture2 {
     override protected def pluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test2.plugins")
   }
 
-  final class TestPlugin extends PluginDef with RoleModuleDef {
+  final class TestPlugin extends PluginDef() with RoleModuleDef {
     make[Dep].tagged(Mode.Prod, Repo.Prod).from[DepGood]
     make[Dep].tagged(Mode.Prod, Repo.Dummy).from[DepGood]
 

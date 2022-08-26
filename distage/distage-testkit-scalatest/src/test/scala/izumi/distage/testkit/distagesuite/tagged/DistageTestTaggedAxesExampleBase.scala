@@ -16,7 +16,7 @@ abstract class DistageTestTaggedAxesExampleBase extends Spec3[ZIO] with AssertZI
       Set(Repo.Prod) -> Set(DIKey[PrdDep]),
       Set(Repo.Dummy) -> Set(DIKey[DummyDep]),
     ),
-    pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
+    pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef() {
       make[PrdDep]
       make[DummyDep]
       make[DepsCounters]
@@ -40,7 +40,7 @@ object DistageTestTaggedAxesExampleBase {
 class DistageTestTaggedAxesExampleDummy extends DistageTestTaggedAxesExampleBase {
   override protected def config: TestConfig = super.config.copy(activation = super.config.activation + (Repo -> Repo.Dummy))
   "forced roots should perform axis choose" in {
-    counter: DepsCounters =>
+    (counter: DepsCounters) =>
       assertIO(counter.dummy.get) *> assertIO(!counter.prod.get)
   }
 }
@@ -48,7 +48,7 @@ class DistageTestTaggedAxesExampleDummy extends DistageTestTaggedAxesExampleBase
 class DistageTestTaggedAxesExampleProd extends DistageTestTaggedAxesExampleBase {
   override protected def config: TestConfig = super.config.copy(activation = super.config.activation + (Repo -> Repo.Prod))
   "forced roots should perform axis choose" in {
-    counter: DepsCounters =>
+    (counter: DepsCounters) =>
       assertIO(counter.prod.get) *> assertIO(!counter.dummy.get)
   }
 }

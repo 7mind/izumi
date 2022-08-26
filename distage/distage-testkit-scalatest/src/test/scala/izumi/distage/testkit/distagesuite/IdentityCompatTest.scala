@@ -9,12 +9,12 @@ final class IdentityCompatTest extends Spec1[Identity] {
   "tests in identity" should {
 
     "start" in {
-      _: QuasiIO[Identity] =>
+      (_: QuasiIO[Identity]) =>
         assert(true)
     }
 
     "skip (should be ignored due to `assume`)" in {
-      _: QuasiIO[Identity] =>
+      (_: QuasiIO[Identity]) =>
         assume(false)
     }
 

@@ -29,7 +29,7 @@ class PgSvcExample(
   }
 }
 
-object DockerPlugin extends PluginDef {
+object DockerPlugin extends PluginDef() {
   include(DockerSupportModule[Task])
   make[DynamoDocker.Container].fromResource {
     DynamoDocker.make[Task]
@@ -43,22 +43,22 @@ object DockerPlugin extends PluginDef {
   include(PostgresFlyWayDockerModule[Task]())
 
   make[AvailablePort].named("mq").tagged(Mode.Test).from {
-    cs: ElasticMQDocker.Container =>
+    (cs: ElasticMQDocker.Container) =>
       cs.availablePorts.first(ElasticMQDocker.primaryPort)
   }
 
   make[AvailablePort].named("cs").tagged(Mode.Test).from {
-    cs: CassandraDocker.Container =>
+    (cs: CassandraDocker.Container) =>
       cs.availablePorts.first(CassandraDocker.primaryPort)
   }
 
   make[AvailablePort].named("kafka").tagged(Mode.Test).from {
-    kafka: KafkaDocker.Container =>
+    (kafka: KafkaDocker.Container) =>
       kafka.availablePorts.first(KafkaDocker.primaryPort)
   }
 
   make[AvailablePort].named("pgfw").tagged(Mode.Test).from {
-    cs: PostgresFlyWayDocker.Container =>
+    (cs: PostgresFlyWayDocker.Container) =>
       cs.availablePorts.first(PostgresFlyWayDocker.primaryPort)
   }
 
@@ -69,17 +69,17 @@ object DockerPlugin extends PluginDef {
 
   // these lines are for test scope
   make[AvailablePort].named("pg").tagged(Mode.Test).from {
-    pg: PostgresDocker.Container =>
+    (pg: PostgresDocker.Container) =>
       pg.availablePorts.first(PostgresDocker.primaryPort)
   }
   make[AvailablePort].named("ddb").tagged(Mode.Test).from {
-    dn: DynamoDocker.Container =>
+    (dn: DynamoDocker.Container) =>
       dn.availablePorts.first(DynamoDocker.primaryPort)
   }
 
   // and this one is for production
   make[AvailablePort].named("pg").tagged(Mode.Prod).from {
-    pgPort: Int @Id("postgres.port") =>
+    (pgPort: Int @Id("postgres.port")) =>
       AvailablePort.local(pgPort)
   }
 
