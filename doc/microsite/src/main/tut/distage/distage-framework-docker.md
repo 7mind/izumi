@@ -491,10 +491,10 @@ class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
   include(DockerSupportModule[F] overriddenBy new ModuleDef {
     make[Docker.ClientConfig].from {
       Docker.ClientConfig(
-        globalReuse      = DockerReusePolicy.ReuseEnabled,
-        useRemote        = true,
-        useRegistry      = true,
-        remote           = Some(
+        globalReuse       = DockerReusePolicy.ReuseEnabled,
+        useRemote         = true,
+        useGlobalRegistry = true,
+        remote            = Some(
           Docker.RemoteDockerConfig(
             host      = "tcp://localhost:2376",
             tlsVerify = true,
@@ -502,13 +502,19 @@ class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
             config    = "/home/user/.docker",
           )
         ),
-        registry = Some(
-          Docker.DockerRegistryConfig(
-            url      = "https://index.docker.io/v1/",
-            username = "dockeruser",
-            password = "ilovedocker",
-            email    = "dockeruser@github.com",
-          )
+        globalRegistry = Some("index.docker.io"), // docker hub default registry
+        registryConfigs = List(
+            Docker.DockerRegistryConfig(
+              registry = "index.docker.io",
+              username = "docker_user",
+              password = "i_love_docker",
+              email    = "dockeruser@github.com",
+            ),
+            Docker.DockerRegistryConfig(
+              registry = "your.registry",
+              username = "my_registry_user",
+              password = "i_love_my_registry",
+            ),
         ),
       )
     }
