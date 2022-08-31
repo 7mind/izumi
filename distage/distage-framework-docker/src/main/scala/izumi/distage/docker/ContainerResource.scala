@@ -8,10 +8,10 @@ import izumi.distage.docker.Docker.*
 import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
-import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
+import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
@@ -270,7 +270,14 @@ open class ContainerResource[F[_], Tag](
 
   protected[this] def runNew(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
-    val baseCmd = rawClient.createContainerCmd(config.image).withLabels(allPortLabels.asJava)
+
+    // use container registry or global registry if `useRegistry` is true
+    val imageRegistry = config.registry.orElse(client.globalRegistry)
+    val registryAuth = imageRegistry.flatMap(client.getRegistryAuth)
+    // render image name with specified registry like registry/repo/image
+    val imageName = renderImageName(imageRegistry)
+
+    val baseCmd = rawClient.createContainerCmd(imageName).withLabels(allPortLabels.asJava)
 
     val volumes = config.mounts.map {
       case Docker.Mount(h, c, true) => new Bind(h, new Volume(c), true)
@@ -284,7 +291,7 @@ open class ContainerResource[F[_], Tag](
 
     for {
       _ <- F.when(config.autoPull) {
-        doPull()
+        doPull(imageName, imageRegistry, registryAuth)
       }
       out <- F.maybeSuspend {
         @nowarn("msg=method.*Bind.*deprecated")
@@ -297,6 +304,7 @@ open class ContainerResource[F[_], Tag](
           .mut(config.entrypoint.nonEmpty)(_.withEntrypoint(config.entrypoint.toList.asJava))
           .mut(config.cwd)(_.withWorkingDir(_))
           .mut(config.user)(_.withUser(_))
+          .mut(registryAuth)(_.withAuthConfig(_))
           .mut(volumes.nonEmpty)(_.withVolumes(volumes.map(_.getVolume).asJava))
           .mut(volumes.nonEmpty)(_.withBinds(volumes.toList.asJava))
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
@@ -344,7 +352,7 @@ open class ContainerResource[F[_], Tag](
     } yield result
   }
 
-  protected[this] def doPull(): F[Unit] = {
+  protected[this] def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
     F.maybeSuspendEither {
       val existingImages = rawClient
         .listImagesCmd().exec()
@@ -357,15 +365,16 @@ open class ContainerResource[F[_], Tag](
         logger.info(s"Skipping pull for `${config.image}`. Image already exists.")
         Right(())
       } else {
-        logger.info(s"Going to pull `${config.image}`...")
+        logger.info(s"Going to pull `$imageName`...")
         // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
         Try {
-          rawClient
-            .pullImageCmd(config.image)
-            .start()
-            .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
+          val pullCmd = Value(rawClient.pullImageCmd(imageName))
+            .mut(registry)(_.withRegistry(_))
+            .mut(registryAuth)(_.withAuthConfig(_))
+            .get
+          pullCmd.start().awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
         } match {
-          case Success(pulled) if pulled => // pulled successfully
+          case Success(true) => // pulled successfully
             Right(())
           case Success(_) => // timed out
             Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None)))
@@ -424,7 +433,20 @@ open class ContainerResource[F[_], Tag](
         )
       )
     }
+  }
 
+  private[this] def renderImageName(registry: Option[String]) = {
+    lazy val renderedRegistry = registry.filterNot(_.contains("index.docker.io")).map(_ + "/").getOrElse("")
+    config.image.split("/").toList match {
+      case repo :: image :: Nil =>
+        s"$renderedRegistry$repo/$image"
+      case image :: Nil =>
+        s"${renderedRegistry}library/$image"
+      case registry :: repo :: image :: Nil =>
+        throw new IllegalArgumentException(s"Use config.regisry instead of manual registry specification: $registry; $repo/$image")
+      case other =>
+        throw new IllegalArgumentException(s"Unknown image name: $other")
+    }
   }
 
 }

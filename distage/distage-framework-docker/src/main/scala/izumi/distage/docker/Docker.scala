@@ -115,6 +115,8 @@ object Docker {
     *
     * @param image    Docker Image to use
     *
+    * @param registry Default Docker registry to use. If not specified will use Docker Hub Registry.
+    *
     * @param ports    Ports to map on the docker container
     *
     * @param networks Docker networks to connect this container to
@@ -158,6 +160,7 @@ object Docker {
     */
   final case class ContainerConfig[+Tag](
     image: String,
+    registry: Option[String] = None,
     ports: Seq[DockerPort],
     name: Option[String] = None,
     env: Map[String, String] = Map.empty,
@@ -194,18 +197,22 @@ object Docker {
     *
     * @param useRemote    Connect to Remote Docker Daemon
     *
-    * @param useRegistry  Connect to specified Docker Registry
+    * @param useGlobalRegistry  Use specified global Docker Registry.
     *
-    * @param registry     Options to connect to custom Docker Registry host,
-    *                     will try to connect to specified registry, instead of the default if [[useRegistry]] is `true`
+    * @param globalRegistry   Registry for global usage if not overriden in ContainerConfig and if useGlobalRegistry is `true`.
+    *
+    * @param registryConfigs  Registry credentials to connect to custom Docker Registry host.
     */
   final case class ClientConfig(
     globalReuse: DockerReusePolicy = ClientConfig.defaultReusePolicy,
     useRemote: Boolean = false,
-    useRegistry: Boolean = false,
+    useGlobalRegistry: Boolean = false,
     remote: Option[RemoteDockerConfig] = None,
-    registry: Option[DockerRegistryConfig] = None,
-  )
+    globalRegistry: Option[String] = None,
+    registryConfigs: List[DockerRegistryConfig] = List.empty,
+  ) {
+    val registryConfigMap: Map[String, DockerRegistryConfig] = registryConfigs.map(c => c.registry -> c).toMap
+  }
 
   object ClientConfig {
     implicit val configReader: ConfigReader[ClientConfig] = PureconfigAutoDerive.derived
@@ -243,10 +250,10 @@ object Docker {
   )
 
   final case class DockerRegistryConfig(
-    url: String,
+    registry: String,
     username: String,
     password: String,
-    email: String,
+    email: Option[String] = None,
   )
 
   final case class Mount(

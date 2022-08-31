@@ -2,23 +2,23 @@ package izumi.distage.docker
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.exception.NotModifiedException
-import com.github.dockerjava.api.model.Container
+import com.github.dockerjava.api.model.{AuthConfig, Container}
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientConfig}
-import izumi.distage.docker.Docker.{ClientConfig, ContainerId}
+import izumi.distage.docker.Docker.{ClientConfig, ContainerId, DockerRegistryConfig}
 import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
-import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.distage.model.effect.QuasiIO.syntax.*
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.functional.Value
-import izumi.fundamentals.platform.exceptions.IzThrowable._
+import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.Discarder
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
 import java.util.UUID
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 class DockerClientWrapper[F[_]](
   val rawClient: DockerClient,
@@ -32,6 +32,15 @@ class DockerClientWrapper[F[_]](
   F: QuasiIO[F]
 ) {
   def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
+
+  def globalRegistry: Option[String] = clientConfig.globalRegistry.filter(_ => clientConfig.useGlobalRegistry)
+
+  def getRegistryAuth(registry: String): Option[AuthConfig] = {
+    clientConfig.registryConfigMap.get(registry).map {
+      case DockerRegistryConfig(_, username, password, email) =>
+        new AuthConfig().withRegistryAddress(registry).withPassword(password).withUsername(username).withEmail(email.orNull)
+    }
+  }
 
   def removeContainer(containerId: ContainerId, context: ContainerDestroyMeta, removalReason: RemovalReason): F[Unit] = {
     F.maybeSuspend {
@@ -91,13 +100,10 @@ object DockerClientWrapper {
     with IntegrationCheck[F] {
 
     private[this] lazy val rawClientConfig: DefaultDockerClientConfig = {
+      /** We do not need to use global registry here since it would be overridden in CMD requests. */
+      val remote = clientConfig.remote.filter(_ => clientConfig.useRemote)
       Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
-        .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))(
-          (b, c) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config)
-        )
-        .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))(
-          (b, c) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email)
-        )
+        .mut(remote)((b, c) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config))
         .get.build()
     }
 
