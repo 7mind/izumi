@@ -508,7 +508,7 @@ class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
               registry = "index.docker.io",
               username = "docker_user",
               password = "i_love_docker",
-              email    = "dockeruser@github.com",
+              email    = Some("dockeruser@github.com"),
             ),
             Docker.DockerRegistryConfig(
               registry = "your.registry",
