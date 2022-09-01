@@ -106,6 +106,9 @@ object Izumi {
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
+    final val scala3_compiler = Library("org.scala-lang", "scala3-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Auto) in Scope.Provided.all.scalaVersion(
+      ScalaVersionScope.AllScala3
+    )
     final val scala_library = Library("org.scala-lang", "scala-library", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala_reflect = Library("org.scala-lang", "scala-reflect", Version.VExpr("scalaVersion.value"), LibraryType.Invariant) in Scope.Provided.all.scalaVersion(
       ScalaVersionScope.AllScala2
@@ -408,7 +411,8 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.language,
         libs = Seq(
-          scala_reflect
+          scala_reflect,
+          scala3_compiler,
         ),
         depends = Seq(
           Projects.fundamentals.literals
