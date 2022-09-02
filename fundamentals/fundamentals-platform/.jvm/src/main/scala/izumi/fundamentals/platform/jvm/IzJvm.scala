@@ -3,10 +3,8 @@ package izumi.fundamentals.platform.jvm
 import izumi.fundamentals.platform.IzPlatform
 
 import java.lang.management.ManagementFactory
-import java.net.{URLClassLoader, URLDecoder}
 import java.nio.file.{Path, Paths}
 import java.time.ZonedDateTime
-import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 
 trait IzJvm {
