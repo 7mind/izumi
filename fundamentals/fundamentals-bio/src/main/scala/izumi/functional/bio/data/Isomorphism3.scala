@@ -10,7 +10,7 @@ object Isomorphism3 {
 
   def apply[F[_, _, _], G[_, _, _]](to: F ~>>> G, from: G ~>>> F): Isomorphism3[F, G] = {
     final case class IsomorphismImpl(to: F ~>>> G, from: G ~>>> F) extends Isomorphism3[F, G]
-    new IsomorphismImpl(to, from)
+    IsomorphismImpl(to, from)
   }
 
   @inline implicit def identity3[F[_, _, _]]: Isomorphism3[F, F] = Isomorphism3(Morphism3.identity, Morphism3.identity)
