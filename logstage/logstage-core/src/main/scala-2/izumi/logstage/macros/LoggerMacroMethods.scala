@@ -81,7 +81,7 @@ object LoggerMacroMethods {
     doLog(c)(message, Level.Crit, EncodingMode.Raw)
   }
 
-  @inline private[this] def doLog(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String], level: Level, mode: EncodingMode): c.Expr[Unit] = {
+  private[this] def doLog(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String], level: Level, mode: EncodingMode): c.Expr[Unit] = {
     val m: c.Expr[Message] = mode.fold(c.universe.reify(Message.raw(message.splice))) {
       strict =>
         new LogMessageMacro0[c.type](c, strict = strict).logMessageMacro(message)

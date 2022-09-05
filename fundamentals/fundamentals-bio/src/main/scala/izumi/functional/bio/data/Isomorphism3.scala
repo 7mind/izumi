@@ -8,9 +8,9 @@ trait Isomorphism3[F[_, _, _], G[_, _, _]] {
 object Isomorphism3 {
   @inline def apply[F[_, _, _], G[_, _, _]](implicit iso: Isomorphism3[F, G]): Isomorphism3[F, G] = iso
 
-  @inline def apply[F[_, _, _], G[_, _, _]](to: F ~>>> G, from: G ~>>> F): Isomorphism3[F, G] = {
+  def apply[F[_, _, _], G[_, _, _]](to: F ~>>> G, from: G ~>>> F): Isomorphism3[F, G] = {
     final case class IsomorphismImpl(to: F ~>>> G, from: G ~>>> F) extends Isomorphism3[F, G]
-    IsomorphismImpl(to, from)
+    new IsomorphismImpl(to, from)
   }
 
   @inline implicit def identity3[F[_, _, _]]: Isomorphism3[F, F] = Isomorphism3(Morphism3.identity, Morphism3.identity)

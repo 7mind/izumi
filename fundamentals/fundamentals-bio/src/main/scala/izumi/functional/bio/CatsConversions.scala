@@ -287,7 +287,7 @@ object CatsConversions {
       F.suspend(thunk)
     }
 
-    @inline override def unique: F[Throwable, Unique.Token] = {
+    override def unique: F[Throwable, Unique.Token] = {
       F.sync(new Unique.Token())
     }
 

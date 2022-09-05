@@ -79,7 +79,7 @@ object LogIOMacroMethods {
     doLog(c)(message, Level.Crit, EncodingMode.Raw)
   }
 
-  @inline private[this] def doLog[F[_]](
+  private[this] def doLog[F[_]](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
   )(message: c.Expr[String],
     level: Level,
