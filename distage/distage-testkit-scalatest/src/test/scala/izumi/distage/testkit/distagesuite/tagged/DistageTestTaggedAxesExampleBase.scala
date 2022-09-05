@@ -16,7 +16,7 @@ abstract class DistageTestTaggedAxesExampleBase extends Spec3[ZIO] with AssertZI
       Set(Repo.Prod) -> Set(DIKey[PrdDep]),
       Set(Repo.Dummy) -> Set(DIKey[DummyDep]),
     ),
-    pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef() {
+    pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
       make[PrdDep]
       make[DummyDep]
       make[DepsCounters]

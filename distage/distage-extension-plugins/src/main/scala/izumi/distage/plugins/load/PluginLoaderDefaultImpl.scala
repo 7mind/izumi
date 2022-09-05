@@ -1,7 +1,7 @@
 package izumi.distage.plugins.load
 
 import io.github.classgraph.ClassGraph
-import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef}
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.fundamentals.platform.cache.SyncCache
 import izumi.fundamentals.reflection.TypeUtil
 
@@ -25,7 +25,7 @@ class PluginLoaderDefaultImpl extends PluginLoader {
     val disabledPackages = config.packagesDisabled
 
     val pluginBase = classOf[PluginBase]
-    val pluginDef = classOf[PluginDef[?]]
+    val pluginDef = classOf[PluginDefType]
     val whitelistedClasses = Seq(pluginDef.getName)
 
     def loadPkgs(pkgs: Seq[String]): Seq[PluginBase] = {

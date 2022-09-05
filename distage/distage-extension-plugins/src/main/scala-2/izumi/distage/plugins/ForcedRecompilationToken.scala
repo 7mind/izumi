@@ -27,6 +27,10 @@ final abstract class ForcedRecompilationToken[T]
 object ForcedRecompilationToken {
   implicit def materialize[T]: ForcedRecompilationToken[T] = macro UniqueRecompilationTokenMacro.whiteboxMaterializeImpl
 
+  object disabled {
+    implicit def disable: ForcedRecompilationToken[Unit] = null
+  }
+
   object UniqueRecompilationTokenMacro {
     final val compilerLaunchId = java.util.UUID.randomUUID().toString
     var cachedTypedTree: Universe#Tree = null
@@ -66,10 +70,6 @@ object ForcedRecompilationToken {
         cachedTypedTree.asInstanceOf[c.Tree]
       }
     }
-  }
-
-  object disabled {
-    implicit def disable: ForcedRecompilationToken[Unit] = null
   }
 
   // an implementation for better days!

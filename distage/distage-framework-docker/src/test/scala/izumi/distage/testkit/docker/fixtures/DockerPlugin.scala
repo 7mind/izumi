@@ -29,7 +29,7 @@ class PgSvcExample(
   }
 }
 
-object DockerPlugin extends PluginDef() {
+object DockerPlugin extends PluginDef {
   include(DockerSupportModule[Task])
   make[DynamoDocker.Container].fromResource {
     DynamoDocker.make[Task]
