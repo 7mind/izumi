@@ -11,7 +11,7 @@ object Test extends Axis {
 }
 
 @ExposedTestScope
-class StaticTestPlugin extends SneakyPlugin() with ConfigModuleDef {
+class StaticTestPlugin extends SneakyPlugin with ConfigModuleDef {
   make[TestDep].tagged(Test.X).from[TestDep1]
   make[TestDep].tagged(Test.Y).from[TestDep2]
   make[TestService]

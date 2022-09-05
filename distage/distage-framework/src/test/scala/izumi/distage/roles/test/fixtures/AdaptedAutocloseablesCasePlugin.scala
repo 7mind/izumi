@@ -9,7 +9,7 @@ import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 
-class AdaptedAutocloseablesCasePlugin extends PluginDef() {
+class AdaptedAutocloseablesCasePlugin extends PluginDef {
   make[AdaptedAutocloseablesCase]
   many[LogSink].add[BrokenSink]
   many[LogSink].add[BrokenSink2]

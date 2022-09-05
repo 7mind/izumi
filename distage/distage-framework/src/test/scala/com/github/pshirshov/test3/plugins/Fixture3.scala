@@ -17,12 +17,12 @@ object Fixture3 {
 
   object TestRoleAppMainFailing extends RoleAppMain.LauncherIdentity {
     override protected def pluginConfig: PluginConfig = PluginConfig.cachedThisPkg
-    override protected def bootstrapPluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test3.bootstrap") overriddenBy new PluginDef() {
+    override protected def bootstrapPluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test3.bootstrap") overriddenBy new PluginDef {
       modify[BootstrapComponent].addDependency[UnsatisfiedDep]
     }
   }
 
-  final class TestPlugin extends PluginDef() with RoleModuleDef {
+  final class TestPlugin extends PluginDef with RoleModuleDef {
     makeRole[Fixture3Role]
   }
 

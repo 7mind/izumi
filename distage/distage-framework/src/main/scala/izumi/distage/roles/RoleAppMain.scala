@@ -62,7 +62,7 @@ abstract class RoleAppMain[F[_]](
     *
     *       {{{
     *       override def pluginConfig: PluginConfig = {
-    *         super.pluginConfig overriddenBy new PluginDef() {
+    *         super.pluginConfig overriddenBy new PluginDef {
     *           make[MyComponentX]]
     *         }
     *       }

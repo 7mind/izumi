@@ -14,7 +14,7 @@ import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, I
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.reflect.TagK
 
-class TestPluginBase[F[_]: TagK] extends PluginDef() with ConfigModuleDef with RoleModuleDef {
+class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with RoleModuleDef {
   tag(Mode.Prod)
 
   include(BundledRolesModule[F] overriddenBy new ModuleDef {
