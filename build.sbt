@@ -40,6 +40,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -80,10 +81,10 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -104,8 +105,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -178,6 +178,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -218,10 +219,10 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -242,8 +243,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -334,6 +334,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -374,10 +375,10 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -398,8 +399,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -474,6 +474,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -514,10 +515,10 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -538,8 +539,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -621,6 +621,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -661,10 +662,10 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -685,8 +686,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -781,6 +781,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -821,10 +822,10 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -845,8 +846,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -924,6 +924,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -964,10 +965,10 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -988,8 +989,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -1065,6 +1065,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1105,10 +1106,10 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1129,8 +1130,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -1234,6 +1234,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1274,10 +1275,10 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1298,8 +1299,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -1382,6 +1382,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1422,10 +1423,10 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1446,8 +1447,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -1521,6 +1521,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1561,10 +1562,10 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1585,8 +1586,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -1660,6 +1660,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1700,10 +1701,10 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1724,8 +1725,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -1805,6 +1805,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1845,10 +1846,10 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1869,8 +1870,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -1948,6 +1948,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -1988,10 +1989,10 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2012,8 +2013,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -2110,6 +2110,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2150,10 +2151,10 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2174,8 +2175,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -2253,6 +2253,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2293,10 +2294,10 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2317,8 +2318,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -2404,6 +2404,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2444,10 +2445,10 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2468,8 +2469,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -2572,6 +2572,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2612,10 +2613,10 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2636,8 +2637,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -2710,6 +2710,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2750,10 +2751,10 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2774,8 +2775,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -2857,6 +2857,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2897,10 +2898,10 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -2921,8 +2922,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -3002,6 +3002,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3042,10 +3043,10 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3066,8 +3067,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -3146,6 +3146,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3186,10 +3187,10 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3210,8 +3211,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -3285,6 +3285,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3325,10 +3326,10 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3349,8 +3350,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -3428,6 +3428,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3468,10 +3469,10 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3492,8 +3493,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -3595,6 +3595,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3635,10 +3636,10 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3659,8 +3660,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
@@ -3792,6 +3792,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.16") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3832,10 +3833,10 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:any:error"
+        "-Ycache-macro-class-loader:last-modified"
       )
       case (_, "2.13.8") => Seq(
+        "-Wconf:any:error",
         "-target:jvm-1.8",
         "-explaintypes",
         "-Xsource:3",
@@ -3856,8 +3857,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wmacros:after",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:any:error"
+        "-Wunused:-synthetics"
       )
       case (_, "3.1.3") => Seq(
         "-Ykind-projector:underscores",
