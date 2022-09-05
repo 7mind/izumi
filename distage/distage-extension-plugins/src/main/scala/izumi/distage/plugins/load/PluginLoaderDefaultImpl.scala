@@ -1,7 +1,7 @@
 package izumi.distage.plugins.load
 
 import io.github.classgraph.ClassGraph
-import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef}
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.fundamentals.platform.cache.SyncCache
 import izumi.fundamentals.reflection.TypeUtil
 
