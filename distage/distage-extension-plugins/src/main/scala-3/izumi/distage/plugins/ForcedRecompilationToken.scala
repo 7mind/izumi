@@ -1,6 +1,7 @@
 package izumi.distage.plugins
 
 import scala.annotation.implicitNotFound
+import scala.quoted.{Expr, Quotes, Type}
 
 /**
   * This macro allows `distage`'s compile-time checks to cooperate with Scala's incremental compilation:
@@ -22,9 +23,25 @@ in which case you'll have to put a dummy implicit in scope, such as by using:
 final abstract class ForcedRecompilationToken[T]
 
 object ForcedRecompilationToken {
-  implicit def materialize[T]: ForcedRecompilationToken[T] = ???
+
+  transparent inline implicit def materialize[T]: ForcedRecompilationToken[T] = ${ UniqueRecompilationTokenMacro.materializeImpl }
 
   object disabled {
     implicit def disable: ForcedRecompilationToken[Unit] = null
   }
+
+  object UniqueRecompilationTokenMacro {
+    final val compilerLaunchId = java.util.UUID.randomUUID().toString
+
+    // TODO: research if caching typed trees optimization is possible and meaningful in Dotty
+    def materializeImpl[T](using quotes: Quotes): Expr[ForcedRecompilationToken[T]] = {
+      import quotes.reflect.*
+      val typeTree = ConstantType(StringConstant("abc"))
+      typeTree.asType.asInstanceOf[Type[T]] match {
+        case given Type[uuid] =>
+          '{ null.asInstanceOf[ForcedRecompilationToken[uuid]] }
+      }
+    }
+  }
+
 }
