@@ -2,8 +2,9 @@ package izumi.distage.injector
 
 import distage.{ModuleDef, With}
 import izumi.distage.constructors.FactoryConstructor
-import izumi.distage.fixtures.FactoryCases._
+import izumi.distage.fixtures.FactoryCases.*
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
@@ -23,7 +24,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
       make[AbstractFactory]
     })
 
-    val injector = mkInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
@@ -50,17 +51,15 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(assistedFactory.x(1).b.isInstanceOf[Dependency])
   }
 
-  "handle generic arguments in cglib factory methods" in {
+  "handle generic arguments in factory methods" in {
     import FactoryCase1._
-
-    FactoryConstructor[GenericAssistedFactory]
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
 
-    val injector = mkInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
@@ -71,7 +70,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(product.c == ConcreteDep())
   }
 
-  "handle named assisted dependencies in cglib factory methods" in {
+  "handle named assisted dependencies in factory methods" in {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
@@ -81,7 +80,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
       make[Dependency].named("veryspecial").from(VerySpecialDep())
     })
 
-    val injector = mkInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
@@ -206,7 +205,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(exc.getMessage.contains("Factory cannot produce factories"))
   }
 
-  "cglib factory always produces new instances" in {
+  "factory always produces new instances" in {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
@@ -215,7 +214,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
       make[Factory]
     })
 
-    val injector = mkInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
@@ -268,6 +267,23 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[AbstractClassFactory].x(5) == AssistedTestClass(context.get[Dependency], 5))
+  }
+
+  "handle assisted dependencies in factory methods" in {
+    import FactoryCase1._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[AssistedFactory]
+      make[Dependency].from(ConcreteDep())
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val instantiated = context.get[AssistedFactory]
+
+    assert(instantiated.x(5).a == 5)
   }
 
 }
