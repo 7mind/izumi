@@ -2,7 +2,6 @@ package izumi.distage.config.codec
 
 import pureconfig.ConfigReader
 
-
 /**
   * Derive `pureconfig.ConfigReader` for A and for its fields recursively with `pureconfig-magnolia`
   *

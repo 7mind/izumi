@@ -12,7 +12,5 @@ object BootstrapModule {
     }
   }
 
-  implicit val BootstrapModuleApi: ModuleMake[BootstrapModule] = new ModuleMake[BootstrapModule] {
-    override def make(bindings: Set[Binding]): BootstrapModule = BootstrapModule.make(bindings)
-  }
+  implicit val BootstrapModuleApi: ModuleMake[BootstrapModule] = BootstrapModule.make
 }

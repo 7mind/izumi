@@ -55,7 +55,7 @@ import scala.annotation.unused
   *   make[Unit].from(constructorMethod _) // Will work correctly: summon "special" Int
   * }}}
   *
-  * Prefer annotating parameter types, not parameters: `class1 X(i: Int @Id("special")) { ... }`
+  * Prefer annotating parameter types, not parameters: `class X(i: Int @Id("special")) { ... }`
   *
   * {{{
   *   final case class X(i: Int @Id("special"))

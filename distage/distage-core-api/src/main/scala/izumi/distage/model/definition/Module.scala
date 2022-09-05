@@ -12,7 +12,5 @@ object Module {
     }
   }
 
-  implicit val moduleApi: ModuleMake[Module] = new ModuleMake[Module] {
-    override def make(bindings: Set[Binding]): Module = Module.make(bindings)
-  }
+  implicit val moduleApi: ModuleMake[Module] = Module.make
 }

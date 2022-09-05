@@ -34,9 +34,7 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
     }
   }
 
-  implicit val moduleBaseApi: ModuleMake[ModuleBase] = new ModuleMake[ModuleBase] {
-    override def make(bindings: Set[Binding]): ModuleBase = ModuleBase.make(bindings)
-  }
+  implicit val moduleBaseApi: ModuleMake[ModuleBase] = ModuleBase.make
 
   implicit final class ModuleDefSeqExt[S <: ModuleBase](private val defs: Iterable[S]) extends AnyVal {
     def merge[T <: ModuleBase](implicit T: ModuleMake.Aux[S, T]): T = {
