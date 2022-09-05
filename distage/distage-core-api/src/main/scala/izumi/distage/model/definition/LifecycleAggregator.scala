@@ -41,7 +41,7 @@ final class LifecycleAggregator[F[+_, +_], E](
 
   def releaseAll()(implicit F: Panic2[F]): F[Nothing, Unit] = {
     for {
-      finalizers <- finalizers.modify(m => F.pure(m, List.empty))
+      finalizers <- finalizers.modify(m => F.pure(m -> List.empty))
       _ <- finalizers.iterator
         .map(_._2)
         .foldLeft(F.unit) {
