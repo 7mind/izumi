@@ -7,12 +7,12 @@ package object plugins extends DistagePlugins {
   override type PluginBase = izumi.distage.plugins.PluginBase
   override val PluginBase: izumi.distage.plugins.PluginBase.type = izumi.distage.plugins.PluginBase
 
-  override type PluginDef[T] = izumi.distage.plugins.PluginDef[T]
+  override type PluginDef = izumi.distage.plugins.PluginDef
 
   override type BootstrapPlugin = izumi.distage.plugins.BootstrapPlugin
   override val BootstrapPlugin: izumi.distage.plugins.BootstrapPlugin.type = izumi.distage.plugins.BootstrapPlugin
 
-  override type BootstrapPluginDef[T] = izumi.distage.plugins.BootstrapPluginDef[T]
+  override type BootstrapPluginDef = izumi.distage.plugins.BootstrapPluginDef
 
   override type PluginLoader = load.PluginLoader
   override val PluginLoader: load.PluginLoader.type = load.PluginLoader
