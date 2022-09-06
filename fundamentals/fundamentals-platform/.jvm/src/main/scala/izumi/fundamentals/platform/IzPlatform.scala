@@ -1,5 +1,7 @@
 package izumi.fundamentals.platform
 
+import izumi.fundamentals.platform.basics.IzBoolean
+
 object IzPlatform extends AbstractIzPlatform {
   def platform: ScalaPlatform = if (isGraalNativeImage) {
     ScalaPlatform.GraalVMNativeImage
@@ -8,14 +10,23 @@ object IzPlatform extends AbstractIzPlatform {
   }
 
   def isHeadless: Boolean = {
+    import izumi.fundamentals.platform.strings.IzString.*
     val maybeDisplay = Option(System.getenv("DISPLAY"))
     val maybeXdgSession = Option(System.getenv("XDG_SESSION_TYPE"))
-    maybeDisplay.isDefined || maybeXdgSession.isDefined
-  }
+    val maybeHasAwtToolkit = Option(System.getProperty("awt.toolkit")).exists(_.nonEmpty)
 
-  def hasColorfulTerminal: Boolean = {
-    val maybeTerm = Option(System.getenv("TERM"))
-    maybeTerm.isDefined
+    val hasNoUI = !IzBoolean.any(
+      maybeDisplay.isDefined,
+      maybeXdgSession.isDefined,
+      maybeHasAwtToolkit,
+    )
+
+    val uiDisabled = System.getProperty("java.awt.headless").asBoolean(false)
+
+    IzBoolean.any(
+      hasNoUI,
+      uiDisabled,
+    )
   }
 
   def terminalColorsEnabled: Boolean = {

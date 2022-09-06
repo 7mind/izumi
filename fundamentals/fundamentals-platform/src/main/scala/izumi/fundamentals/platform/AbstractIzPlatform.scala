@@ -5,8 +5,6 @@ trait AbstractIzPlatform {
 
   def isHeadless: Boolean
 
-  def hasColorfulTerminal: Boolean
-
   def terminalColorsEnabled: Boolean
 
   def isGraalNativeImage: Boolean

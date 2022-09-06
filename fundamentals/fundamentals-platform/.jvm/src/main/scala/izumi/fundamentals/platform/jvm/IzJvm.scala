@@ -15,9 +15,6 @@ trait IzJvm {
   def isHeadless: Boolean = IzPlatform.isHeadless
 
   @deprecated("Use IzPlatform", "28/04/2022")
-  def hasColorfulTerminal: Boolean = IzPlatform.hasColorfulTerminal
-
-  @deprecated("Use IzPlatform", "28/04/2022")
   def terminalColorsEnabled: Boolean = IzPlatform.terminalColorsEnabled
 
   def uptime: Duration = Duration(getUptime, scala.concurrent.duration.MILLISECONDS)
