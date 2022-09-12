@@ -52,7 +52,7 @@ object StringRenderingPolicy {
       ),
       Extractor.Space,
       new Styler.Colored(
-        Console.BLACK_B,
+        Console.BLUE,
         Seq(
           new Styler.AdaptivePad(Seq(new Extractor.SourcePosition()), 8, PadType.Left, ' ')
         ),
