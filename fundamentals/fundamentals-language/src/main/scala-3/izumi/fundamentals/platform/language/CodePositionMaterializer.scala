@@ -10,10 +10,12 @@ final case class CodePositionMaterializer(get: CodePosition) extends AnyVal
 object CodePositionMaterializer {
   inline def apply()(implicit ev: CodePositionMaterializer, dummy: DummyImplicit): CodePositionMaterializer = ev
   inline def codePosition(implicit ev: CodePositionMaterializer): CodePosition = ev.get
+  inline def applicationPointId: String = ${ doapplicationPointId }
 
   inline implicit def materialize: CodePositionMaterializer = ${ doMaterialize }
 
   private def doMaterialize(using Quotes): Expr[CodePositionMaterializer] = new CodePositionMaterializerMacro().getEnclosingPositionMat()
+  private def doapplicationPointId(using Quotes): Expr[String] = new CodePositionMaterializerMacro().getApplicationPointId()
 
 
   private final class CodePositionMaterializerMacro(using val qctx: Quotes) {
