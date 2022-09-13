@@ -9,6 +9,38 @@ import scala.quoted.{Expr, Quotes, Type}
 object LogMessageMacro {
   def message( message: Expr[String])(using qctx: Quotes): Expr[Message] = {
     import qctx.reflect.*
+
+    def matchExpr(message: Expr[String], multiline: Boolean): Expr[Message] = {
+      import qctx.reflect.*
+      message match {
+//        case sc@'{ ($left:Any) + ($right: Any) } =>
+//          report.errorAndAbort(s"Failed to process +: $message")
+
+        case sc@'{ StringContext.apply ($parts: _*).s($args: _*) } =>
+          makeMessage(multiline, parts, makeArgs(args))
+
+        case '{ null } =>
+          val cval = Expr.ofSeq(Seq(Expr("null")))
+          makeMessage(false, '{ Seq("null") }, Seq.empty)
+
+        case o =>
+          matchTerm(o.asTerm, multiline)
+      }
+    }
+
+    @tailrec
+    def unpackPlus(message: Term, parts: List[Term]): List[Term] = {
+      message match {
+        case Ident(i) =>
+          message +: parts
+
+        case Literal(c) =>
+          message +: parts
+
+        case Apply(Select(left, "+"), right :: Nil) =>
+          unpackPlus(left, right +: parts)
+      }
+    }
     @tailrec
     def matchTerm(message: Term, multiline: Boolean): Expr[Message] = {
       message match {
@@ -18,35 +50,23 @@ object LogMessageMacro {
           matchTerm(term, multiline)
         case Block(_, term) =>
           matchTerm(term, multiline)
+        case Apply(Select(left, "+"), right :: Nil) =>
+          val unpacked = unpackPlus(left, List(right))
+          report.errorAndAbort(s"Failed to process +: $message === $unpacked")
         case Apply(Select(_, "stripMargin"), arg :: Nil) =>
           matchExpr(arg.asExprOf[String], multiline = true)
         case Select(Apply(Ident("augmentString"), arg :: Nil), "stripMargin") =>
           matchExpr(arg.asExprOf[String], multiline = true)
         case Literal(c) =>
           val cval = Expr.ofSeq(Seq(Expr(c.toString)))
-          makeMessage(cval , Seq.empty)
+          makeMessage(false, cval , Seq.empty)
         case _ =>
           report.errorAndAbort(s"Failed to process $message")
       }
     }
 
-
-    def matchExpr(message: Expr[String], multiline: Boolean): Expr[Message] = {
-      import qctx.reflect.*
-      message match {
-        case sc@'{ StringContext.apply ($parts: _*).s($args: _*) } =>
-        makeMessage(parts, makeArgs(args))
-
-        case '{ null } =>
-          val cval = Expr.ofSeq(Seq(Expr("null")))
-          makeMessage('{ Seq("null") }, Seq.empty)
-
-        case o =>
-          matchTerm(o.asTerm, multiline)
-      }
-    }
-
-    def makeMessage(parts: Expr[Seq[String]], args: Seq[Expr[LogArg]]): Expr[Message] = {
+    def makeMessage(multiline: Boolean, parts: Expr[Seq[String]], args: Seq[Expr[LogArg]]): Expr[Message] = {
+      // TODO: multiline
       val sc: Expr[StringContext] = '{ StringContext($parts: _*) }
       '{ Message($sc, ${Expr.ofSeq(args)}) }
     }

@@ -75,10 +75,10 @@ class ExampleService(logger: IzLogger) {
     val nullarg: Integer = null
     val exception = makeException("Boom!")
 
-//    logger.warn("[Cornercase] non-interpolated expression: " + 1)
-//    logger.warn("[Cornercase] non-interpolated expression: " + arg1)
-//    logger.warn(arg1 + "[Cornercase] non-interpolated expression: " + arg1)
-//    logger.warn("[Cornercase] non-interpolated expression: " + arg1 + nullarg + exception)
+    logger.warn("[Cornercase] non-interpolated expression: " + 1)
+    logger.warn("[Cornercase] non-interpolated expression: " + arg1)
+    logger.warn(arg1 + "[Cornercase] non-interpolated expression: " + arg1)
+    logger.warn("[Cornercase] non-interpolated expression: " + arg1 + nullarg + exception)
 
     logger.crit(s"[Cornercase] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}")
     logger.crit(s"[Cornercase] null value: $nullarg")
