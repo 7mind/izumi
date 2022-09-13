@@ -32,12 +32,12 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
     }
     object Chunk {
       sealed trait Primary extends Chunk
-      sealed trait AbstractElement extends Chunk
+      final case class Argument(tree: Tree) extends Primary
 
+      sealed trait AbstractElement extends Chunk
       final case class Element(lit: Literal) extends Primary with AbstractElement {
         override def tree: Tree = lit
       }
-      final case class Argument(tree: Tree) extends Primary
       final case class ExprElement(tree: Tree) extends AbstractElement
     }
 
