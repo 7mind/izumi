@@ -11,17 +11,20 @@ object LogMessageMacro {
     import qctx.reflect.*
 
     def matchExpr(message: Expr[String], multiline: Boolean): Expr[Message] = {
-      import qctx.reflect.*
       message match {
-//        case sc@'{ ($left:Any) + ($right: Any) } =>
-//          report.errorAndAbort(s"Failed to process +: $message")
-
         case sc@'{ StringContext.apply ($parts: _*).s($args: _*) } =>
-          makeMessage(multiline, parts, makeArgs(args))
+          import scala.quoted.Varargs
+          val partsSeq = parts match {
+            case Varargs (a) =>
+              a
+            case _ =>
+              report.errorAndAbort (s"String context expected but got: $parts")
+          }
+
+          makeMessage(multiline, partsSeq, makeArgs(args))
 
         case '{ null } =>
-          val cval = Expr.ofSeq(Seq(Expr("null")))
-          makeMessage(false, '{ Seq("null") }, Seq.empty)
+          makeMessage(false, Seq(Expr("null")), Seq.empty)
 
         case o =>
           matchTerm(o.asTerm, multiline)
@@ -86,13 +89,13 @@ object LogMessageMacro {
               a
           }.toSeq
 
-          makeMessage(false, Expr.ofSeq(scParts), args)
+          makeMessage(false, scParts, args)
         case Apply(Select(_, "stripMargin"), arg :: Nil) =>
           matchExpr(arg.asExprOf[String], multiline = true)
         case Select(Apply(Ident("augmentString"), arg :: Nil), "stripMargin") =>
           matchExpr(arg.asExprOf[String], multiline = true)
         case Literal(c) =>
-          val cval = Expr.ofSeq(Seq(Expr(c.value.toString)))
+          val cval = Seq(Expr(c.value.toString))
           makeMessage(false, cval , Seq.empty)
         case _ =>
           report.errorAndAbort(s"Failed to process $message")
@@ -116,9 +119,14 @@ object LogMessageMacro {
       }
     }
 
-    def makeMessage(multiline: Boolean, parts: Expr[Seq[String]], args: Seq[Expr[LogArg]]): Expr[Message] = {
-      // TODO: multiline
-      val sc: Expr[StringContext] = '{ StringContext($parts: _*) }
+    def makeMessage(multiline: Boolean, parts: Seq[Expr[String]], args: Seq[Expr[LogArg]]): Expr[Message] = {
+      val scparts = Expr.ofSeq(if (multiline) {
+        parts.map(s => '{ $s.stripMargin })
+      } else {
+        parts
+      })
+
+      val sc: Expr[StringContext] = '{ StringContext($scparts: _*) }
       '{ Message($sc, ${Expr.ofSeq(args)}) }
     }
 
