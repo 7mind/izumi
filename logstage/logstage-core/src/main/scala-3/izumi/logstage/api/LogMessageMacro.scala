@@ -28,19 +28,7 @@ object LogMessageMacro {
       }
     }
 
-    @tailrec
-    def unpackPlus(message: Term, parts: List[Term]): List[Term] = {
-      message match {
-        case Ident(i) =>
-          message +: parts
 
-        case Literal(c) =>
-          message +: parts
-
-        case Apply(Select(left, "+"), right :: Nil) =>
-          unpackPlus(left, right +: parts)
-      }
-    }
     @tailrec
     def matchTerm(message: Term, multiline: Boolean): Expr[Message] = {
       message match {
@@ -52,16 +40,79 @@ object LogMessageMacro {
           matchTerm(term, multiline)
         case Apply(Select(left, "+"), right :: Nil) =>
           val unpacked = unpackPlus(left, List(right))
-          report.errorAndAbort(s"Failed to process +: $message === $unpacked")
+          assert(unpacked.nonEmpty)
+          val parts = scala.collection.mutable.ArrayBuffer.empty[Either[String, Expr[LogArg]]]
+
+          unpacked.foreach {
+            case Literal(c) =>
+              parts.lastOption match {
+                case Some(value) =>
+                  value match {
+                    case Left(value) =>
+                      parts.remove(parts.size - 1)
+                      parts += Left(value + c.value.toString)
+                    case Right(_) =>
+                      parts += Left(c.value.toString)
+                  }
+                case None =>
+                  parts += Left(c.value.toString)
+              }
+            case chunk@Ident(_) =>
+              val expr = Right(makeArg(chunk.asExprOf[Any]))
+              parts.lastOption match {
+                case Some(value) =>
+                  value match {
+                    case Left(value) =>
+                      parts += expr
+                    case Right(value) =>
+                      parts ++= Seq(Left(""), expr)
+                  }
+                case None =>
+                  parts ++= Seq(Left(""), expr)
+              }
+          }
+
+          assert(parts.nonEmpty)
+          if (parts.last.isRight) {
+            parts += Left("")
+          }
+
+          val scParts = parts.collect {
+            case Left(s) =>
+              Expr(s)
+          }.toSeq
+          val args = parts.collect {
+            case Right(a) =>
+              a
+          }.toSeq
+
+          makeMessage(false, Expr.ofSeq(scParts), args)
         case Apply(Select(_, "stripMargin"), arg :: Nil) =>
           matchExpr(arg.asExprOf[String], multiline = true)
         case Select(Apply(Ident("augmentString"), arg :: Nil), "stripMargin") =>
           matchExpr(arg.asExprOf[String], multiline = true)
         case Literal(c) =>
-          val cval = Expr.ofSeq(Seq(Expr(c.toString)))
+          val cval = Expr.ofSeq(Seq(Expr(c.value.toString)))
           makeMessage(false, cval , Seq.empty)
         case _ =>
           report.errorAndAbort(s"Failed to process $message")
+      }
+    }
+
+    @tailrec
+    def unpackPlus(message: Term, parts: List[Term]): List[Term] = {
+      message match {
+        case Ident(i) =>
+          message +: parts
+
+        case Literal(c) =>
+          message +: parts
+
+        case Apply(Select(left, "+"), right :: Nil) =>
+          unpackPlus(left, right +: parts)
+
+        case _ =>
+          report.errorAndAbort(s"Concatenation is too complex for analysis, use string interpolation instead: ${message.show}")
       }
     }
 
@@ -82,26 +133,52 @@ object LogMessageMacro {
     }
 
     def makeArg(expr: Expr[Any]): Expr[LogArg] = {
-      val hidden: Expr[Boolean] = Expr(false)
-      val codec: Expr[Option[LogstageCodec[Any]]] = Expr(None)
-      val vals: Expr[Seq[String]] = Expr.ofSeq(extractArgName(Seq.empty, expr).map(n => Expr(n)))
-      '{ LogArg($vals, $expr, $hidden, $codec)}
+      val (parts, isHidden) = extractArgName(Seq.empty, expr)
+
+      val codec: Expr[Option[LogstageCodec[Any]]] = expr.asTerm.tpe.asType match {
+        case '[a] =>
+          Expr.summon[LogstageCodec[a]].asInstanceOf[Option[Expr[LogstageCodec[Any]]]] match {
+            case Some(c) =>
+              '{ Some($c) }
+            case None =>
+              Expr(None)
+          }
+      }
+
+      // Expr.summon mysteriously fail here
+//      val codec = Implicits.search(expr.asTerm.tpe) match {
+//        case iss: ImplicitSearchSuccess =>
+//          '{Some(${iss.tree.asExpr.asInstanceOf[Expr[LogstageCodec[Any]]]})}
+//        case isf: ImplicitSearchFailure =>
+//          Expr(None)
+//      }
+
+      val vals: Expr[Seq[String]] = Expr.ofSeq(parts.map(n => Expr(n)))
+      '{ LogArg($vals, $expr, ${ Expr(isHidden) }, $codec)}
     }
 
-    def extractArgName(acc: Seq[String], expr: Expr[Any]): Seq[String] = {
+    def extractArgName(acc: Seq[String], expr: Expr[Any]): (Seq[String], Boolean) = {
+      def nameOf(id: Expr[Any]): Seq[String] = {
+        id.asTerm match {
+          case Literal(c) =>
+            acc :+ c.value.toString
+          case _ =>
+            report.errorAndAbort(s"Log argument name must be a literal: $id")
+        }
+      }
       expr match {
+        case '{ ($expr: Any) -> $id -> null } =>
+          (nameOf(id), true)
+
         case '{ ($expr: Any) -> $id } =>
-          id.asTerm match {
-            case Literal(c) =>
-              acc :+ id.toString
-            case _ =>
-              report.errorAndAbort(s"Not an expected argument id: $id")
-          }
+          (nameOf(id), false)
 
         case o =>
-          extractTermName(acc, o.asTerm)
+          (extractTermName(acc, o.asTerm), false)
       }
     }
+
+
 
     @tailrec
     def extractTermName(acc: Seq[String], term: Term): Seq[String] = {
