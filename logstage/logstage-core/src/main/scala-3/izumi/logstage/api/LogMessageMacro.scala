@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 import scala.quoted.{Expr, Quotes, Type}
 
 object LogMessageMacro {
-  def message( message: Expr[String])(using qctx: Quotes): Expr[Message] = {
+  def message(message: Expr[String], strict: Boolean)(using qctx: Quotes): Expr[Message] = {
     import qctx.reflect.*
 
     def matchExpr(message: Expr[String], multiline: Boolean): Expr[Message] = {
@@ -96,7 +96,7 @@ object LogMessageMacro {
           matchExpr(arg.asExprOf[String], multiline = true)
         case Literal(c) =>
           val cval = Seq(Expr(c.value.toString))
-          makeMessage(false, cval , Seq.empty)
+          makeMessage(multiline, cval , Seq.empty)
         case _ =>
           report.errorAndAbort(s"Failed to process $message")
       }
@@ -141,13 +141,19 @@ object LogMessageMacro {
     }
 
     def makeArg(expr: Expr[Any]): Expr[LogArg] = {
-      val (parts, isHidden) = extractArgName(Seq.empty, expr)
+      val (parts, realExpr, isHidden, codec) = extractArgName(Seq.empty, expr)
+      val vals: Expr[Seq[String]] = Expr.ofSeq(parts.map(n => Expr(n)))
+      '{ LogArg($vals, $realExpr, ${ Expr(isHidden) }, $codec)}
+    }
 
+    def findCodec(expr: Expr[Any]): Expr[Option[LogstageCodec[Any]]] = {
       val codec: Expr[Option[LogstageCodec[Any]]] = expr.asTerm.tpe.asType match {
         case '[a] =>
           Expr.summon[LogstageCodec[a]].asInstanceOf[Option[Expr[LogstageCodec[Any]]]] match {
             case Some(c) =>
-              '{ Some($c) }
+              '{ Some($c.asInstanceOf[LogstageCodec[Any]]) }
+            case None if strict =>
+              report.errorAndAbort(s"Can't find LogstageCodec for ${expr.show} but we are in Strict mode")
             case None =>
               Expr(None)
           }
@@ -156,16 +162,17 @@ object LogMessageMacro {
       // Expr.summon mysteriously fail here
 //      val codec = Implicits.search(expr.asTerm.tpe) match {
 //        case iss: ImplicitSearchSuccess =>
+//          report.warning(s"Found codec for ${expr.asTerm}: ${expr.asTerm.tpe} ==> ${iss.tree.asExpr}")
 //          '{Some(${iss.tree.asExpr.asInstanceOf[Expr[LogstageCodec[Any]]]})}
 //        case isf: ImplicitSearchFailure =>
+//          report.warning(s"Not found codec for ${expr.asTerm}: ${expr.asTerm.tpe}")
 //          Expr(None)
 //      }
 
-      val vals: Expr[Seq[String]] = Expr.ofSeq(parts.map(n => Expr(n)))
-      '{ LogArg($vals, $expr, ${ Expr(isHidden) }, $codec)}
+      codec
     }
 
-    def extractArgName(acc: Seq[String], expr: Expr[Any]): (Seq[String], Boolean) = {
+    def extractArgName(acc: Seq[String], expr: Expr[Any]): (Seq[String], Expr[Any], Boolean, Expr[Option[LogstageCodec[Any]]]) = {
       def nameOf(id: Expr[Any]): Seq[String] = {
         id.asTerm match {
           case Literal(c) =>
@@ -176,13 +183,13 @@ object LogMessageMacro {
       }
       expr match {
         case '{ ($expr: Any) -> $id -> null } =>
-          (nameOf(id), true)
+          (nameOf(id), expr, true, findCodec(expr))
 
         case '{ ($expr: Any) -> $id } =>
-          (nameOf(id), false)
+          (nameOf(id), expr, false, findCodec(expr))
 
         case o =>
-          (extractTermName(acc, o.asTerm), false)
+          (extractTermName(acc, o.asTerm), o, false, findCodec(o))
       }
     }
 

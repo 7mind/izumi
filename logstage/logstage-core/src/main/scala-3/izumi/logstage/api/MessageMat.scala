@@ -5,6 +5,6 @@ import scala.language.implicitConversions
 
 trait MessageMat {
   /** Construct [[Message]] from a string interpolation */
-   transparent inline implicit def apply(inline message: String): Message = ${ LogMessageMacro.message('message) }
+   transparent inline implicit def apply(inline message: String): Message = ${ LogMessageMacro.message('message, false) }
 }
 
