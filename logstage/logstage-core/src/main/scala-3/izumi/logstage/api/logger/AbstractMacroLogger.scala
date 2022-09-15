@@ -20,11 +20,11 @@ trait AbstractMacroLogger { this: AbstractLogger =>
   transparent inline final def info(inline message: String): Unit = log(Log.Level.Info, message)
   transparent inline final def warn(inline message: String): Unit = log(Log.Level.Warn, message)
   transparent inline final def error(inline message: String): Unit = log(Log.Level.Error, message)
-
   transparent inline final def crit(inline message: String): Unit = log(Log.Level.Crit, message)
 
-  transparent inline final def log(level: Log.Level, inline message: String): Unit = {
+  transparent inline final def log(inline level: Log.Level, inline message: String): Unit = {
     if (acceptable(Log.LoggerId(CodePositionMaterializer.applicationPointId), level)) {
+      
       unsafeLog(Log.Entry.create(level, Message(message))(CodePositionMaterializer.materialize))
     }
   }

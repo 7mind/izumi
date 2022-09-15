@@ -1,6 +1,7 @@
 package izumi.fundamentals.platform.language
 
 sealed trait ScalaRelease {
+  def major: Int = parts.headOption.getOrElse(throw new RuntimeException("empty version"))
   def parts: Seq[Int]
 }
 

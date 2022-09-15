@@ -2,6 +2,7 @@ package izumi.logstage.sink
 
 import izumi.functional.bio.SyncSafe1
 import izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.fundamentals.platform.language.IzScala
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.rendering.LogstageCodec
 import izumi.logstage.sink.ExampleService.ExampleDTO
@@ -119,7 +120,12 @@ class ExampleService(logger: IzLogger) {
     val exc = intercept[TestFailedException] {
       assertCompiles("""logStrict.crit(s"Suspended message: clap your hands! ${NoInstance(1)}")""")
     }
-    assert(exc.getMessage() contains "Implicit search failed")
+    if (IzScala.scalaRelease.major == 3) {
+      assert(exc.getMessage() contains "type error")
+    } else {
+      assert(exc.getMessage() contains "Implicit search failed")
+    }
+
     val basic = {
       val instance = YesInstance(1)
       logStrict.crit(s"Suspended message: clap your hands! $instance")

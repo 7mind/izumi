@@ -18,7 +18,7 @@ class BasicLoggingTest extends AnyWordSpec {
 
       val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}")
 
-      val expectation = if (IzScala.scalaRelease.parts.headOption.contains(3)) {
+      val expectation = if (IzScala.scalaRelease.major == 3) {
         // on scala3 we get access to exact raw tree w/o optimizations
         List(
           LogArg(Seq("arg1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
