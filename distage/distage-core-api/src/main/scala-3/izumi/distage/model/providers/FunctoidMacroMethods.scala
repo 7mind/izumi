@@ -1,7 +1,7 @@
 package izumi.distage.model.providers
 
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
-import izumi.distage.model.reflection.{DIKey, LinkedParameter, SafeType, SymbolInfo}
+import izumi.distage.model.reflection.{DIKey, IdContract, LinkedParameter, SafeType, SymbolInfo}
 import izumi.reflect.Tag
 import izumi.distage.model.definition.Id
 
@@ -37,7 +37,6 @@ trait FunctoidMacroMethods {
   inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
   // TODO: FunctionXXL / https://docs.scala-lang.org/scala3/reference/dropped-features/limit22.html
 }
-
 
 object FunctoidMacro {
   import scala.quoted.{Expr, Quotes, Type}
@@ -106,16 +105,13 @@ object FunctoidMacro {
     }
 
     def makeKeyfromRepr(tpe: TypeRepr, id: Option[String]): Expr[DIKey] = {
-      tpe.asType match {
-        case '[a] =>
-          id match {
-            case Some(s) =>
-              '{ DIKey.apply[a](${ Expr(s) })(scala.compiletime.summonInline[Tag[a]]) }
-            case None =>
-              '{ DIKey.apply[a]((scala.compiletime.summonInline[Tag[a]])) }
-          }
-        case _ =>
-          report.errorAndAbort(s"Cannot generate DIKey from ${tpe.show}, probably that's a bug in Functoid macro")
+      val safeTypeT = safeTypeFromRepr(tpe)
+      id match {
+        case Some(str) =>
+          val strExpr = Expr(str)
+          '{ new DIKey.IdKey($safeTypeT, $strExpr, None)(scala.compiletime.summonInline[IdContract[String]]) }
+        case None =>
+          '{ new DIKey.TypeKey($safeTypeT) }
       }
     }
 
