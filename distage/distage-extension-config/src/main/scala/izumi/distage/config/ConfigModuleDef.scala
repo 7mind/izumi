@@ -15,8 +15,12 @@ import scala.language.implicitConversions
 trait ConfigModuleDef extends ModuleDef {
   final def makeConfig[T: Tag: DIConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
     pos.discard() // usage in `make[T]` not detected
-    val parser = ConfigModuleDef.wireConfig[T](path)
-    make[T].tagged(ConfTag(path)(parser)).from(parser)
+    {
+      implicit val tag1: Tag[AppConfig] = implicitly[Tag[AppConfig]]
+//      implicit val tag2: Tag[T] = implicitly[Tag[T]]
+      val parser = ConfigModuleDef.wireConfig[T](path)
+      make[T].tagged(ConfTag(path)(parser)).from(parser)
+    }
   }
   final def makeConfigNamed[T: Tag: DIConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLNamedAfterFrom[T] = {
     pos.discard()
@@ -51,8 +55,8 @@ object ConfigModuleDef {
     }
   }
 
-  def wireConfig[T: Tag: DIConfigReader](path: String): AppConfig => T = {
-    DIConfigReader[T].decodeAppConfig(path)
+  def wireConfig[K: Tag: DIConfigReader](path: String): AppConfig => K = {
+    DIConfigReader[K].decodeAppConfig(path)
   }
   def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): AppConfig => T = {
     DIConfigReader[T].decodeAppConfigWithDefault(path)(default)

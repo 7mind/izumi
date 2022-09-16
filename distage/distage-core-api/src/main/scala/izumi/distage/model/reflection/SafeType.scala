@@ -33,7 +33,6 @@ final case class SafeType private[izumi] (
 
 object SafeType {
   def get[T: Tag]: SafeType = SafeType(Tag[T].tag, Tag[T].closestClass)
-  def fromTag[T](tag: Tag[T]): SafeType = SafeType(tag.tag, tag.closestClass)
   def getK[K[_]: TagK]: SafeType = SafeType(TagK[K].tag, TagK[K].closestClass)
   def unsafeGetWeak[T](implicit weakTag: WeakTag[T]): SafeType = SafeType(weakTag.tag, weakTag.closestClass)
 

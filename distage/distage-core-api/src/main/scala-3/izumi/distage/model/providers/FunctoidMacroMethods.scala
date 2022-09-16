@@ -3,6 +3,7 @@ package izumi.distage.model.providers
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, SafeType, SymbolInfo}
 import izumi.reflect.Tag
+import izumi.distage.model.definition.Id
 
 import scala.annotation.{experimental, tailrec}
 import scala.collection.immutable.List
@@ -34,6 +35,7 @@ trait FunctoidMacroMethods {
   inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
   inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
   inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  // TODO: FunctionXXL / https://docs.scala-lang.org/scala3/reference/dropped-features/limit22.html
 }
 
 
@@ -61,14 +63,14 @@ object FunctoidMacro {
     @tailrec
     def matchTerm[R : Type](srcdef: Expr[Any], fdef: Term): Expr[Functoid[R]] = {
       fdef match {
-        case Block(List(DefDef(name, params :: Nil, ret, _)), Closure(_, _)) =>
+        case Block(List(DefDef(name, params :: Nil, _, _)), Closure(_, _)) =>
           val paramTypes = params.params.map {
             case ValDef(name, tpe, _) =>
               (name, tpe)
             case p =>
               report.errorAndAbort(s"Unexpected parameter ${p.show}")
           }
-          analyzeParams[R](paramTypes, name, ret, fdef)
+          analyzeParams[R](paramTypes, fdef)
 
         case Typed(term, _) =>
           matchTerm(srcdef, term)
@@ -76,29 +78,36 @@ object FunctoidMacro {
           matchTerm(srcdef, term)
         case Block(_, term) =>
           matchTerm(srcdef, term)
-        case idt@Ident(s) =>
-          val allTParams = idt.underlying.tpe.typeArgs.map(a => TypeTree.of(using a.asType))
-          val args = allTParams.init
-          val ret = allTParams.last
-          analyzeParams[R](args.zipWithIndex.map(a => (s"arg_${a._2}", a._1)), s, ret, fdef)
-
-        case _ =>
-          report.errorAndAbort(s"${System.nanoTime()}: failed to process: ${srcdef.show}; ${srcdef.asTerm}")
+        case expr =>
+          val allTParams = expr.underlying.tpe.typeArgs.map(a => TypeTree.of(using a.asType))
+          val args = allTParams match {
+            case Nil => Nil
+            case o => o.init
+          }
+          analyzeParams[R](args.zipWithIndex.map(a => (s"arg_${a._2}", a._1)), fdef)
       }
     }
 
-    def analyzeParams[R : Type](params: List[(String, TypeTree)], clue: String, ret: TypeTree, fdef: Term) = {
+    def analyzeParams[R : Type](params: List[(String, TypeTree)], fdef: Term) = {
       val paramTypes = params.map(_._2)
 
       val paramDefs = params.map {
         case (name, tpe) =>
-          val tag = findTag(name, tpe)
-          val annos = tpe match {
+          val identifier = tpe match {
             case Annotated(_, aterm) =>
-            //report.warning((aterm.show, aterm).toString)
-
+              aterm.asExprOf[Any] match {
+                case '{ new Id($c) } =>
+                c.asTerm match {
+                  case Literal(v) =>
+                    Some(v.value.toString)
+                  case _ =>
+                    report.errorAndAbort (s"distage.Id annotation expects one literal argument but got ${c.show} in tree ${aterm.show}")
+                }
+                case _ =>
+                  None
+              }
             case _ =>
-              List.empty
+              None
           }
 
           '{
@@ -107,25 +116,24 @@ object FunctoidMacro {
               name = $ {
                 Expr(name)
               },
-              finalResultType = SafeType.fromTag($tag),
+              finalResultType = ${safeType(tpe)},
               isByName = false, // TODO:
               wasGeneric = false,
             ),
             ${
-              makeKey(tpe, None)
+              makeKey(tpe, identifier)
             }
           )
           }
       }
 
-      val rett = findTag(clue, ret)
 
       val out = '{
       val rawFn: AnyRef = ${fdef.asExprOf[AnyRef]}
       new Functoid[R](
         new ProviderImpl[R](
           $ {Expr.ofList(paramDefs)},
-          SafeType.fromTag($rett),
+          SafeType.get[R],
           rawFn,
           (args: Seq[Any]) => $ {test(paramTypes, 'rawFn, 'args)},
           ProviderType.Function,
@@ -157,16 +165,10 @@ object FunctoidMacro {
       Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm).toList).asExprOf[Any]
     }
 
-    def findTag(clue: String, tpe: TypeTree): Expr[Tag[Any]] = {
+    def safeType(tpe: TypeTree): Expr[SafeType] = {
       tpe.tpe.asType match {
         case '[a] =>
-          Expr.summon[Tag[a]].asInstanceOf[Option[Expr[Tag[Any]]]] match {
-            case Some(c) =>
-              '{ ${c}.asInstanceOf[Tag[Any]] }
-              //'{ Some($ ) }
-            case None =>
-              report.errorAndAbort (s"Can't find type tag for $clue: ${tpe.show}")
-          }
+          '{ SafeType.get[a] }
       }
     }
 
