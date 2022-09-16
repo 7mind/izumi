@@ -1,6 +1,6 @@
 package izumi.distage.docker.bundled
 
-import distage.{Id, ModuleDef, TagK}
+import distage.{Id, ModuleDef, Tag, TagK}
 import izumi.distage.docker.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
@@ -84,6 +84,8 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
   // Binding of the Postgres container.
   // Here we are going to bind the proxy instance so that we setup postgres DB before flyway,
   // later we'll just return the running container here as the real instance, after FlyWay container has run.
+
+  implicit val t: Tag[izumi.distage.docker.bundled.PostgresFlyWayDocker.Config => izumi.distage.docker.bundled.PostgresFlyWayDocker.Config] = Tag[izumi.distage.docker.bundled.PostgresFlyWayDocker.Config => izumi.distage.docker.bundled.PostgresFlyWayDocker.Config]
   make[PostgresFlyWayDocker.Container].named("postgres-flyway-proxy").fromResource {
     PostgresFlyWayDocker
       .make[F]

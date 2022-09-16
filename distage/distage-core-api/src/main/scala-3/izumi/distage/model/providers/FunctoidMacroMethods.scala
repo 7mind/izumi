@@ -133,7 +133,7 @@ object FunctoidMacro {
       new Functoid[R](
         new ProviderImpl[R](
           $ {Expr.ofList(paramDefs)},
-          SafeType.get[R],
+          SafeType.get[R]((scala.compiletime.summonInline[Tag[R]])),
           rawFn,
           (args: Seq[Any]) => $ {test(paramTypes, 'rawFn, 'args)},
           ProviderType.Function,
@@ -168,7 +168,8 @@ object FunctoidMacro {
     def safeType(tpe: TypeTree): Expr[SafeType] = {
       tpe.tpe.asType match {
         case '[a] =>
-          '{ SafeType.get[a] }
+
+          '{ SafeType.get[a](scala.compiletime.summonInline[Tag[a]]) }
       }
     }
 
@@ -176,8 +177,8 @@ object FunctoidMacro {
       tpe.tpe.asType match {
         case '[a] =>
           id match {
-            case Some(s) => '{ DIKey.apply[a](${ Expr(s) }) }
-            case None =>          '{ DIKey.apply[a] }
+            case Some(s) => '{ DIKey.apply[a](${ Expr(s) })(scala.compiletime.summonInline[Tag[a]]) }
+            case None =>          '{ DIKey.apply[a]((scala.compiletime.summonInline[Tag[a]])) }
           }
       }
     }
