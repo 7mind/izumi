@@ -174,7 +174,7 @@ object FunctoidMacro {
         case ByNameType(u) =>
           safeTypeFromRepr(u)
         case o =>
-          safeTypeFromRepr(tpe.tpe)
+          safeTypeFromRepr(o)
       }
     }
 
@@ -191,7 +191,7 @@ object FunctoidMacro {
         case ByNameType(u) =>
           makeKeyfromRepr(u, id)
         case o =>
-          makeKeyfromRepr(tpe.tpe, id)
+          makeKeyfromRepr(o, id)
       }
     }
 
