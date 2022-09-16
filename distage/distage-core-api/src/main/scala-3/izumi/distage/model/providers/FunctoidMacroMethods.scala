@@ -159,7 +159,7 @@ object FunctoidMacro {
         case '[a] =>
           '{ ${fn.asExprOf[Any]}.asInstanceOf[a] }
         case _ =>
-          report.errorAndAbort(s"This is totally unexpected: ${tref.show} didn't match where is had to")
+          report.errorAndAbort(s"This is totally unexpected: ${tref.show} didn't match where it had to")
       }
 
       Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm).toList).asExprOf[Any]
