@@ -42,9 +42,9 @@ trait FunctoidMacroMethods {
 object FunctoidMacro {
   import scala.quoted.{Expr, Quotes, Type}
 
-  inline def make[R](inline fun: Any): Functoid[R] = ${ X.make[R]('fun) }
+  inline def make[R](inline fun: Any): Functoid[R] = ${ Experimental.make[R]('fun) }
 
-  object X {
+  object Experimental {
     @experimental
     def make[R: Type](fun: Expr[Any])(using qctx: Quotes): Expr[Functoid[R]] = new CodePositionMaterializerMacro().make(fun)
   }
@@ -97,12 +97,12 @@ object FunctoidMacro {
             case Annotated(_, aterm) =>
               aterm.asExprOf[Any] match {
                 case '{ new Id($c) } =>
-                c.asTerm match {
-                  case Literal(v) =>
-                    Some(v.value.toString)
-                  case _ =>
-                    report.errorAndAbort (s"distage.Id annotation expects one literal argument but got ${c.show} in tree ${aterm.show}")
-                }
+                  c.asTerm match {
+                    case Literal(v) =>
+                      Some(v.value.toString)
+                    case _ =>
+                      report.errorAndAbort (s"distage.Id annotation expects one literal argument but got ${c.show} in tree ${aterm.show}")
+                  }
                 case _ =>
                   None
               }
@@ -128,30 +128,24 @@ object FunctoidMacro {
       }
 
 
-      val out = '{
-      val rawFn: AnyRef = ${fdef.asExprOf[AnyRef]}
-      new Functoid[R](
-        new ProviderImpl[R](
-          $ {Expr.ofList(paramDefs)},
-          SafeType.get[R]((scala.compiletime.summonInline[Tag[R]])),
-          rawFn,
-          (args: Seq[Any]) => $ {test(paramTypes, 'rawFn, 'args)},
-          ProviderType.Function,
+      '{
+        val rawFn: AnyRef = ${fdef.asExprOf[AnyRef]}
+        new Functoid[R](
+          new ProviderImpl[R](
+            $ {Expr.ofList(paramDefs)},
+            ${safeType[R]},
+            rawFn,
+            (args: Seq[Any]) => $ {generateCall(paramTypes, 'rawFn, 'args)},
+            ProviderType.Function,
+          )
         )
-      )
       }
-      out
     }
 
-    def test(ptypes: List[TypeTree], fn: Expr[Any], arg: Expr[Seq[Any]]): Expr[Any] = {
+    def generateCall(ptypes: List[TypeTree], fn: Expr[Any], arg: Expr[Seq[Any]]): Expr[Any] = {
       val params = ptypes.zipWithIndex.map{
         case (_, idx) =>
           '{ $arg( ${Expr(idx)} ) }
-
-//          ptype.tpe.asType match {
-//            case '[a] =>
-//              '{ $arg( ${Expr(idx)} ).asInstanceOf[a] }
-//          }
       }
       val argTypes = (0 to ptypes.size).map(_ => TypeRepr.of[Any]).toList
 
@@ -160,28 +154,56 @@ object FunctoidMacro {
       val fnAny = tref.asType match {
         case '[a] =>
           '{ ${fn.asExprOf[Any]}.asInstanceOf[a] }
+        case _ =>
+          report.errorAndAbort(s"This is totally unexpected: ${tref.show} didn't match where is had to")
       }
 
       Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm).toList).asExprOf[Any]
     }
 
-    def safeType(tpe: TypeTree): Expr[SafeType] = {
-      tpe.tpe.asType match {
-        case '[a] =>
+    def safeType[R:Type]: Expr[SafeType] = {
+      '{ SafeType.get[R](scala.compiletime.summonInline[Tag[R]]) }
+    }
 
-          '{ SafeType.get[a](scala.compiletime.summonInline[Tag[a]]) }
+    def safeType(tpe: TypeTree): Expr[SafeType] = {
+      tpe.tpe match {
+        case ByNameType(u) =>
+          safeTypeFromRepr(u)
+        case o =>
+          safeTypeFromRepr(tpe.tpe)
       }
+    }
+
+    def safeTypeFromRepr(tpe: TypeRepr): Expr[SafeType] = {
+        tpe.asType match {
+          case '[a] => '{ SafeType.get[a](using scala.compiletime.summonInline[Tag[a]] ) }
+          case o =>
+            report.errorAndAbort(s"Cannot generate SafeType from ${tpe.show}, probably that's a bug in Functoid macro")
+        }
     }
 
     def makeKey(tpe: TypeTree, id: Option[String]): Expr[DIKey] = {
-      tpe.tpe.asType match {
-        case '[a] =>
-          id match {
-            case Some(s) => '{ DIKey.apply[a](${ Expr(s) })(scala.compiletime.summonInline[Tag[a]]) }
-            case None =>          '{ DIKey.apply[a]((scala.compiletime.summonInline[Tag[a]])) }
-          }
+      tpe.tpe match {
+        case ByNameType(u) =>
+          makeKeyfromRepr(u, id)
+        case o =>
+          makeKeyfromRepr(tpe.tpe, id)
       }
     }
 
+    def makeKeyfromRepr(tpe: TypeRepr, id: Option[String]): Expr[DIKey] = {
+      tpe.asType match {
+        case '[a] =>
+          id match {
+            case Some(s) =>
+              '{ DIKey.apply[a](${ Expr(s) })(scala.compiletime.summonInline[Tag[a]]) }
+            case None =>
+              '{ DIKey.apply[a]((scala.compiletime.summonInline[Tag[a]])) }
+          }
+        case _ =>
+          report.errorAndAbort(s"Cannot generate DIKey from ${tpe.show}, probably that's a bug in Functoid macro")
+      }
+    }
   }
+
 }
