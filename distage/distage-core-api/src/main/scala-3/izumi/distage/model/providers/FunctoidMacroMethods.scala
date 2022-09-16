@@ -122,7 +122,7 @@ object FunctoidMacro {
               },
               finalResultType = ${safeType(tpe)},
               isByName = ${ Expr(isByName) },
-              wasGeneric = false, // TODO:
+              wasGeneric = ${ Expr( tpe.tpe.typeSymbol.isTypeParam ) },
             ),
             ${
               makeKey(tpe, identifier)
