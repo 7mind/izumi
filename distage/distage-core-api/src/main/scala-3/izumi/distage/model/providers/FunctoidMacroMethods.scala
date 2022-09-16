@@ -110,6 +110,10 @@ object FunctoidMacro {
               None
           }
 
+          val isByName = tpe.tpe match {
+            case ByNameType(_) => true
+            case _ => false
+          }
           '{
           LinkedParameter(
             SymbolInfo(
@@ -117,8 +121,8 @@ object FunctoidMacro {
                 Expr(name)
               },
               finalResultType = ${safeType(tpe)},
-              isByName = false, // TODO:
-              wasGeneric = false,
+              isByName = ${ Expr(isByName) },
+              wasGeneric = false, // TODO:
             ),
             ${
               makeKey(tpe, identifier)
