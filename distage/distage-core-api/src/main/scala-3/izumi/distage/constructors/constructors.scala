@@ -5,7 +5,11 @@ import izumi.distage.model.exceptions.macros.{TraitInitializationFailedException
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.SafeType
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
-import izumi.reflect.WeakTag
+import izumi.reflect.{Tag, WeakTag}
+
+import scala.annotation.experimental
+
+import izumi.fundamentals.platform.reflection.ReflectionUtil
 
 /**
   * An implicitly summonable constructor for a type `T`, can generate constructors for:
@@ -46,6 +50,11 @@ sealed trait AnyConstructor[T] extends Any with AnyConstructorOptionalMakeDSL[T]
   * @see [[AnyConstructor]]
   */
 final class ClassConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+object ClassConstructor {
+  def apply[T](implicit ctor: ClassConstructor[T]): Functoid[T] = ctor.provider
+
+  inline implicit def materialize[T]: ClassConstructor[T] = ${ClassConstructorMacro.make[T]}
+}
 
 /**
   * An implicitly summonable constructor for a traits or abstract class `T`
@@ -81,11 +90,7 @@ object AnyConstructor {
   implicit def materialize[T]: AnyConstructor[T] = ???
 }
 
-object ClassConstructor {
-  def apply[T](implicit ctor: ClassConstructor[T]): Functoid[T] = ctor.provider
 
-  implicit def materialize[T]: ClassConstructor[T] = ???
-}
 
 object TraitConstructor {
   def apply[T](implicit ctor: TraitConstructor[T]): Functoid[T] = ctor.provider
