@@ -9,13 +9,13 @@ object ScalaRelease {
   def parse(versionString: String): ScalaRelease = {
     val parts = versionString.split('.').toList
     parts match {
-      case "2" :: "12" :: ParseInt(bugfix) :: Nil =>
+      case "2" :: "12" :: RemoveQualifier(ParseInt(bugfix)) :: Nil =>
         ScalaRelease.`2_12`(bugfix)
-      case "2" :: "13" :: ParseInt(bugfix) :: Nil =>
+      case "2" :: "13" :: RemoveQualifier(ParseInt(bugfix)) :: Nil =>
         ScalaRelease.`2_13`(bugfix)
-      case "3" :: ParseInt(minor) :: ParseInt(bugfix) :: Nil =>
+      case "3" :: ParseInt(minor) :: RemoveQualifier(ParseInt(bugfix)) :: Nil =>
         ScalaRelease.`3`(minor, bugfix)
-      case ParseInt(major) :: ParseInt(minor) :: ParseInt(bugfix) :: Nil =>
+      case ParseInt(major) :: ParseInt(minor) :: RemoveQualifier(ParseInt(bugfix)) :: Nil =>
         ScalaRelease.Unsupported(Seq(major, minor, bugfix))
       case _ =>
         ScalaRelease.Unknown(versionString)
@@ -27,27 +27,32 @@ object ScalaRelease {
       catch { case _: NumberFormatException => None }
     }
   }
+  private[this] object RemoveQualifier {
+    def unapply(str: String): Some[String] = {
+      Some(str.takeWhile(_ != '-'))
+    }
+  }
 
   implicit lazy val ordering: Ordering[ScalaRelease] = {
     import scala.math.Ordering.Implicits.*
     Ordering.fromLessThan(_.parts < _.parts)
   }
 
-  case class `2_12`(bugfix: Int) extends ScalaRelease {
+  final case class `2_12`(bugfix: Int) extends ScalaRelease {
     override def parts: Seq[Int] = Seq(2, 12, bugfix)
   }
 
-  case class `2_13`(bugfix: Int) extends ScalaRelease {
+  final case class `2_13`(bugfix: Int) extends ScalaRelease {
     override def parts: Seq[Int] = Seq(2, 13, bugfix)
   }
 
-  case class `3`(minor: Int, bugfix: Int) extends ScalaRelease {
+  final case class `3`(minor: Int, bugfix: Int) extends ScalaRelease {
     override def parts: Seq[Int] = Seq(3, minor, bugfix)
   }
 
-  case class Unsupported(parts: Seq[Int]) extends ScalaRelease
+  final case class Unsupported(parts: Seq[Int]) extends ScalaRelease
 
-  case class Unknown(verString: String) extends ScalaRelease {
+  final case class Unknown(verString: String) extends ScalaRelease {
     override def parts: Seq[Int] = Seq.empty
   }
 }

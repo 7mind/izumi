@@ -17,8 +17,14 @@ object ScalaReleaseMacro {
       ScalaRelease.parse(dotty.tools.dotc.config.Properties.versionNumberString) match {
         case ScalaRelease.`3`(minor, bugfix) =>
           '{ ScalaRelease.`3`( ${ Expr(minor)}, ${ Expr(bugfix)} )}
-        case o =>
-          report.errorAndAbort(s"Scala 3 expected, but something strange was extracted: $o ")
+        case other =>
+          report.warning(s"Scala 3 expected, but something strange was extracted: $other ")
+          other match {
+            case ScalaRelease.Unsupported(parts) =>
+              '{ ScalaRelease.Unsupported(${ Expr(parts) }) }
+            case ScalaRelease.Unknown(string) =>
+              '{ ScalaRelease.Unknown(${ Expr(string) }) }
+          }
       }
     }
   }
@@ -27,4 +33,3 @@ object ScalaReleaseMacro {
 object IzScala {
   inline def scalaRelease: ScalaRelease = ${ ScalaReleaseMacro.doMaterialize }
 }
-
