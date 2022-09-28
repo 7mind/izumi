@@ -51,7 +51,7 @@ object FunctoidMacro {
   final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q) {
     import qctx.reflect.*
 
-    def makeParams[R : Type](params: List[(String, TypeTree)]): (List[Expr[LinkedParameter]], List[TypeTree]) = {
+    def makeParams[R: Type](params: List[(String, TypeTree)]): (List[Expr[LinkedParameter]], List[TypeTree]) = {
       val paramTypes = params.map(_._2)
 
       val paramDefs = params.map {
@@ -64,7 +64,7 @@ object FunctoidMacro {
                     case Literal(v) =>
                       Some(v.value.toString)
                     case _ =>
-                      report.errorAndAbort (s"distage.Id annotation expects one literal argument but got ${c.show} in tree ${aterm.show}")
+                      report.errorAndAbort(s"distage.Id annotation expects one literal argument but got ${c.show} in tree ${aterm.show}")
                   }
                 case _ =>
                   None
@@ -77,18 +77,19 @@ object FunctoidMacro {
             case ByNameType(_) => true
             case _ => false
           }
+
           '{
-          LinkedParameter(
-            SymbolInfo(
-              name = $ {
-                Expr(name)
-              },
-              finalResultType = ${safeType(tpe)},
-              isByName = ${ Expr(isByName) },
-              wasGeneric = ${ Expr( tpe.tpe.typeSymbol.isTypeParam ) }, // TODO: type members?
-            ),
-            ${makeKey(tpe, identifier)}
-          )
+            LinkedParameter(
+              SymbolInfo(
+                name = $ {
+                  Expr(name)
+                },
+                finalResultType = ${safeType(tpe)},
+                isByName = ${ Expr(isByName) },
+                wasGeneric = ${ Expr( tpe.tpe.typeSymbol.isTypeParam ) }, // TODO: type members?
+              ),
+              ${makeKey(tpe, identifier)}
+            )
           }
       }
 
@@ -104,7 +105,7 @@ object FunctoidMacro {
       }
     }
 
-    def makeKeyfromRepr(tpe: TypeRepr, id: Option[String]): Expr[DIKey] = {
+    private def makeKeyfromRepr(tpe: TypeRepr, id: Option[String]): Expr[DIKey] = {
       val safeTypeT = safeTypeFromRepr(tpe)
       id match {
         case Some(str) =>
@@ -119,7 +120,7 @@ object FunctoidMacro {
       '{SafeType.get[R](scala.compiletime.summonInline[Tag[R]])}
     }
 
-    def safeType(tpe: TypeTree): Expr[SafeType] = {
+    private def safeType(tpe: TypeTree): Expr[SafeType] = {
       tpe.tpe match {
         case ByNameType(u) =>
           safeTypeFromRepr(u)
@@ -128,11 +129,11 @@ object FunctoidMacro {
       }
     }
 
-    def safeTypeFromRepr(tpe: TypeRepr): Expr[SafeType] = {
+    private def safeTypeFromRepr(tpe: TypeRepr): Expr[SafeType] = {
       tpe.asType match {
         case '[a] =>
-          '{SafeType.get[a] (using scala.compiletime.summonInline[Tag[a]] )}
-        case o =>
+          '{SafeType.get[a](using scala.compiletime.summonInline[Tag[a]] )}
+        case _ =>
           report.errorAndAbort(s"Cannot generate SafeType from ${tpe.show}, probably that's a bug in Functoid macro")
       }
     }
@@ -147,32 +148,32 @@ object FunctoidMacro {
 
     def make[R: Type](fun: Expr[Any]): Expr[Functoid[R]] = {
       val out = matchTerm[R](fun.asTerm)
-      report.warning(s"${fun.show} produced ${out.show}")
+      report.warning(s"fun=${fun.show}\n outputType=${Type.show[R]}\n rawOutputType=(${TypeRepr.of[R]})\n produced=${out.show}")
       out
     }
 
     @tailrec
-    def matchTerm[R : Type](fdef: Term): Expr[Functoid[R]] = {
-      fdef match {
+    def matchTerm[R: Type](fun: Term): Expr[Functoid[R]] = {
+      fun match {
         case Block(List(defdef), Closure(_, _)) =>
-          matchStatement[R](defdef, fdef)
+          matchStatement[R](defdef, fun)
         case Typed(term, _) =>
           matchTerm(term)
         case Inlined(_, _, term) =>
           matchTerm(term)
         case Block(_, term) =>
           matchTerm(term)
-        case expr =>
-          val allTParams = expr.underlying.tpe.typeArgs.map(a => TypeTree.of(using a.asType))
+        case _ =>
+          val allTParams = fun.underlying.tpe.typeArgs.map(a => TypeTree.of(using a.asType))
           val args = allTParams match {
             case Nil => Nil
             case o => o.init
           }
-          analyzeParams[R](args.zipWithIndex.map(a => (s"arg_${a._2}", a._1)), fdef)
+          analyzeParams[R](args.zipWithIndex.map(a => (s"arg_${a._2}", a._1)), fun)
       }
     }
 
-    def matchStatement[R: Type](statement: Statement, fdef: Term): Expr[Functoid[R]] = {
+    def matchStatement[R: Type](statement: Statement, fun: Term): Expr[Functoid[R]] = {
       statement match {
         case DefDef(name, params :: Nil, _, _) =>
           val paramTypes = params.params.map {
@@ -181,16 +182,15 @@ object FunctoidMacro {
             case p =>
               report.errorAndAbort(s"Unexpected parameter in $name: ${p.show}")
           }
-          analyzeParams[R](paramTypes, fdef)
+          analyzeParams[R](paramTypes, fun)
       }
     }
 
-
-    def analyzeParams[R : Type](params: List[(String, TypeTree)], fdef: Term) = {
+    def analyzeParams[R: Type](params: List[(String, TypeTree)], fun: Term): Expr[Functoid[R]] = {
       val (paramDefs, paramTypes) = paramsMacro.makeParams[R](params)
 
       '{
-        val rawFn: AnyRef = ${fdef.asExprOf[AnyRef]}
+        val rawFn: AnyRef = ${fun.asExprOf[AnyRef]}
         new Functoid[R](
           new ProviderImpl[R](
             ${Expr.ofList(paramDefs)},
@@ -203,27 +203,23 @@ object FunctoidMacro {
       }
     }
 
-    def generateCall(ptypes: List[TypeTree], fn: Expr[Any], arg: Expr[Seq[Any]]): Expr[Any] = {
+    def generateCall(ptypes: List[TypeTree], rawFn: Expr[Any], args: Expr[Seq[Any]]): Expr[Any] = {
       val params = ptypes.zipWithIndex.map{
         case (_, idx) =>
-          '{ $arg( ${Expr(idx)} ) }
+          '{ $args(${ Expr(idx) }) }
       }
-      val argTypes = (0 to ptypes.size).map(_ => TypeRepr.of[Any]).toList
 
-      val tref = defn.FunctionClass(ptypes.size).typeRef.appliedTo(argTypes)
+      val fnType = defn.FunctionClass(ptypes.size).typeRef.appliedTo((0 to ptypes.size).map(_ => TypeRepr.of[Any]).toList)
 
-      val fnAny = tref.asType match {
+      val fnAny = fnType.asType match {
         case '[a] =>
-          '{ ${fn.asExprOf[Any]}.asInstanceOf[a] }
+          '{ ${rawFn.asExprOf[Any]}.asInstanceOf[a] }
         case _ =>
-          report.errorAndAbort(s"This is totally unexpected: ${tref.show} didn't match where it had to")
+          report.errorAndAbort(s"This is totally unexpected: ${fnType.show} type is higher-kinded type constructor, but expected a proper type")
       }
 
-      Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm).toList).asExprOf[Any]
+      Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm)).asExprOf[Any]
     }
-
-
-
 
   }
 

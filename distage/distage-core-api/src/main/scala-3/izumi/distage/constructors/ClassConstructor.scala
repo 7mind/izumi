@@ -15,7 +15,6 @@ object ClassConstructorMacro {
 
       val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
 
-
       def wrapIntoLambda(paramTypes: List[(String, TypeTree)], consTerm: Term) = {
         val mtpe = MethodType(paramTypes.map(_._1))(_ => paramTypes.map(_._2.tpe), _ => TypeRepr.of[R])
         val lam = Lambda(Symbol.spliceOwner, mtpe, {
