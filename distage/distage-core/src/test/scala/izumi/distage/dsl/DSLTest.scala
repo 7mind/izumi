@@ -379,6 +379,11 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(definition2.bindings.map(_.tags.strings) == Set(Set("tag1", "tag2")))
     }
 
+    "support ClassConstructor" in {
+      class K(a: String) {}
+      ClassConstructor[K].get
+
+    }
     "support binding to multiple interfaces" in {
       import BasicCase6._
 
