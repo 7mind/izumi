@@ -1,15 +1,17 @@
 package izumi.distage.constructors
 
 import izumi.fundamentals.platform.reflection.ReflectionUtil
+import scala.annotation.experimental
 
 object ConstructorUtil {
 
   import scala.quoted.{Expr, Quotes, Type}
 
+  @experimental
   def requireConcreteTypeConstructor[R: Type](macroName: String)(using qctx: Quotes): Unit = {
     import qctx.reflect.*
     val tpe = TypeRepr.of[R]
-    if (!ReflectionUtil.allPartsStrong(tpe)) {
+    if (!ReflectionUtil.allPartsStrong(tpe.typeSymbol.typeRef)) {
       val hint = tpe.dealias.show
       report.errorAndAbort(
         s"""$macroName: Can't generate constructor for ${tpe.show}:

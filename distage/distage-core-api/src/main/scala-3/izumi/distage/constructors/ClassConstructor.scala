@@ -69,6 +69,8 @@ object ClassConstructorMacro {
                   val dd = manyClauses.head.params.map {
                     case TypeDef(name, _) =>
                       name
+                    case _ =>
+                      ???
                   }
                   assert(dd.size == argTypes.size)
                   val types = dd.zip(argTypes).toMap
@@ -79,13 +81,9 @@ object ClassConstructorMacro {
                     case p =>
                       report.errorAndAbort(s"Unexpected parameter: ${p.show}")
                   }
-
-//                  val t = '{ (a: Int) => new scala.Some[scala.Int](1) }
-//                  report.errorAndAbort(s"NUTHING3: ${t.asTerm}")
-
+                  
                   wrapIntoLambda(paramTypes, Select(New(TypeTree.of(using typeRepr.asType)), consSym).appliedToTypeTrees(paramTypes.map(_._2)))
-
-
+                  
                 case _ =>
                   report.errorAndAbort(s"NUTHING2: ${typeRepr};; ${consSym};; ${consSym.tree}")
               }
