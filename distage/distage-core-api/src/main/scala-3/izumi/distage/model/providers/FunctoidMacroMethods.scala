@@ -5,7 +5,7 @@ import izumi.distage.model.reflection.{DIKey, IdContract, LinkedParameter, SafeT
 import izumi.reflect.Tag
 import izumi.distage.model.definition.Id
 
-import scala.annotation.{experimental, tailrec}
+import scala.annotation.tailrec
 import scala.collection.immutable.List
 import scala.language.implicitConversions
 
@@ -41,12 +41,9 @@ trait FunctoidMacroMethods {
 object FunctoidMacro {
   import scala.quoted.{Expr, Quotes, Type}
 
-  inline def make[R](inline fun: Any): Functoid[R] = ${ Experimental.make[R]('fun) }
+  inline def make[R](inline fun: Any): Functoid[R] = ${ make[R]('fun) }
 
-  object Experimental {
-    @experimental
-    def make[R: Type](fun: Expr[Any])(using qctx: Quotes): Expr[Functoid[R]] = new FunctoidMacroImpl[qctx.type]().make(fun)
-  }
+  def make[R: Type](fun: Expr[Any])(using qctx: Quotes): Expr[Functoid[R]] = new FunctoidMacroImpl[qctx.type]().make(fun)
 
   final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q) {
     import qctx.reflect.*
@@ -139,7 +136,6 @@ object FunctoidMacro {
     }
   }
 
-  @experimental
   final class FunctoidMacroImpl[Q <: Quotes](using val qctx: Q) {
 
     import qctx.reflect.*

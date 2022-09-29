@@ -53,7 +53,7 @@ final class ClassConstructor[T](val provider: Functoid[T]) extends AnyVal with A
 object ClassConstructor {
   def apply[T](implicit ctor: ClassConstructor[T]): Functoid[T] = ctor.provider
 
-  inline implicit def materialize[T]: ClassConstructor[T] = ${ClassConstructorMacro.Experimental.make[T]}
+  inline implicit def materialize[T]: ClassConstructor[T] = ${ClassConstructorMacro.make[T]}
 }
 
 /**

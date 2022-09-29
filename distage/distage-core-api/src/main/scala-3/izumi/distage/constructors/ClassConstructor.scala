@@ -2,7 +2,6 @@ package izumi.distage.constructors
 
 import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 
-import scala.annotation.experimental
 import scala.quoted.{Expr, Quotes, Type}
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 
@@ -10,9 +9,7 @@ import scala.collection.immutable.Queue
 
 object ClassConstructorMacro {
 
-  object Experimental {
-    @experimental
-    def make[R: Type](using qctx: Quotes): Expr[ClassConstructor[R]] = try {
+  def make[R: Type](using qctx: Quotes): Expr[ClassConstructor[R]] = try {
       import qctx.reflect.*
 
       val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
@@ -89,8 +86,5 @@ object ClassConstructorMacro {
 
       }
     } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
-
-  }
-
 
 }

@@ -1,13 +1,11 @@
 package izumi.distage.constructors
 
 import izumi.fundamentals.platform.reflection.ReflectionUtil
-import scala.annotation.experimental
 
 object ConstructorUtil {
 
   import scala.quoted.{Expr, Quotes, Type}
 
-  @experimental
   def requireConcreteTypeConstructor[R: Type](macroName: String)(using qctx: Quotes): Unit = {
     import qctx.reflect.*
     val tpe = TypeRepr.of[R]
