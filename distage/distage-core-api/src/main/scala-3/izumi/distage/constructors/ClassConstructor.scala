@@ -3,36 +3,43 @@ package izumi.distage.constructors
 import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 
 import scala.annotation.experimental
+import scala.quoted.{Expr, Quotes, Type}
+import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 
+import scala.collection.immutable.Queue
 
 object ClassConstructorMacro {
-  import scala.quoted.{Expr, Quotes, Type}
 
   object Experimental {
     @experimental
-    def make[R: Type](using qctx: Quotes): Expr[ClassConstructor[R]] = {
+    def make[R: Type](using qctx: Quotes): Expr[ClassConstructor[R]] = try {
       import qctx.reflect.*
 
       val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
 
-      def wrapIntoLambda(paramTypes: List[(String, TypeTree)], consTerm: Term) = {
-        val mtpe = MethodType(paramTypes.map(_._1))(_ => paramTypes.map(_._2.tpe), _ => TypeRepr.of[R])
+      def wrapIntoLambda(paramss: List[List[(String, TypeTree)]], consTerm: Term) = {
+        val params = paramss.flatten
+        val mtpe = MethodType(params.map(_._1))(_ => params.map(_._2.tpe), _ => TypeRepr.of[R])
         val lam = Lambda(Symbol.spliceOwner, mtpe, {
-            case (methSym, args) =>
-              // paramTypes.map(t => Ident(TermRef(TypeTree.ref(Symbol.noSymbol).tpe, t._1))
-              val appl = consTerm.appliedToArgs(args.map(_.asExpr.asTerm))
-              val newCls = Typed(appl, TypeTree.of[R])
-              val trm = Block(List.empty, newCls)
-              trm
+          case (_, args0) =>
+            val (_, argsLists) = paramss.foldLeft((args0, Queue.empty[List[Term]])){
+              case ((args, res), params) =>
+                val (argList, rest) = args.splitAt(params.size)
+                (rest, res :+ (argList: List[Tree]).asInstanceOf[List[Term]])
+            }
+
+            val appl = argsLists.foldLeft(consTerm)(_.appliedToArgs(_))
+            val trm = Typed(appl, TypeTree.of[R])
+            trm
         })
 
-//        report.errorAndAbort(s"CLASSCONSTRUCTOR: ${lam};; ${lam.show}")
+//        report.warning(s"CLASSCONSTRUCTOR: $lam;;\n${lam.show}")
 
         val a = functoidMacro.make[R](lam.asExpr)
 
-//        report.warning(s"CLASSCONSTRUCTOR: ${a.asTerm};; $a, ${a.asTerm.show}")
+//        report.warning(s"CLASSCONSTRUCTOR: ${a.asTerm};;\n$a, ${a.asTerm.show}")
 
-        '{new ClassConstructor[R](${a})}
+        '{ new ClassConstructor[R](${a}) }
       }
 
       Expr.summon[ValueOf[R]] match {
@@ -45,56 +52,43 @@ object ClassConstructorMacro {
 
           typeRepr.classSymbol.map(cs => (cs, cs.primaryConstructor)).filterNot(_._2.isNoSymbol) match {
             case Some(cs, consSym) =>
-              consSym.tree match {
-                case DefDef(_, List(paramClauses), _, _) =>
+//              report.warning(s"Constructor paramsyms: ${consSym.paramSymss} - tpes: (${consSym.paramSymss.map(_.map(s => cs.typeRef.memberType(s)))})")
 
-                  val paramTypes = paramClauses.params.map {
-                    case ValDef(name, tpe, _) =>
-                      (name, tpe)
-                    case p =>
-                      report.errorAndAbort(s"Unexpected parameter: ${p.show}")
-                  }
+              val methodTypeApplied = consSym.owner.typeRef.memberType(consSym).appliedTo(typeRepr.typeArgs)
+              report.warning(s"- method type raw = ${typeRepr.memberType(consSym)}\n- methodType applied = $methodTypeApplied\n")
+//              report.warning(s"- methodType applied paramsyms = ${methodTypeApplied.typeSymbol.paramSymss}\n - tpes: (${methodTypeApplied.typeSymbol.paramSymss.map(_.map(s => methodTypeApplied.memberType(s)))})")
 
-                  wrapIntoLambda(paramTypes, Select(New(TypeIdent(cs)), consSym))
-
-
-                case DefDef(_, manyClauses, _, _) =>
-                  val argTypes = typeRepr match {
-                    case AppliedType(_, args) =>
-                      args.map(repr => TypeTree.of(using repr.asType))
-                    case _ =>
-                      ???
-                  }
-                  val dd = manyClauses.head.params.map {
-                    case TypeDef(name, _) =>
-                      name
-                    case _ =>
-                      ???
-                  }
-                  assert(dd.size == argTypes.size)
-                  val types = dd.zip(argTypes).toMap
-
-                  val paramTypes = manyClauses.last.params.map {
-                    case ValDef(name, tpe, _) =>
-                      (name, types.getOrElse(tpe.symbol.name, tpe))
-                    case p =>
-                      report.errorAndAbort(s"Unexpected parameter: ${p.show}")
-                  }
-                  
-                  wrapIntoLambda(paramTypes, Select(New(TypeTree.of(using typeRepr.asType)), consSym).appliedToTypeTrees(paramTypes.map(_._2)))
-                  
+              val argTypes = typeRepr match {
+                case AppliedType(_, args) =>
+                  args.map(repr => TypeTree.of(using repr.asType))
                 case _ =>
-                  report.errorAndAbort(s"NUTHING2: ${typeRepr};; ${consSym};; ${consSym.tree}")
+                  Nil
               }
 
+              val paramss: List[List[(String, TypeTree)]] = {
+                def getParams(t: TypeRepr): List[List[(String, TypeTree)]] = {
+                  t match {
+                    case MethodType(paramNames, paramTpes, res) =>
+                      paramNames.zip(paramTpes.map(repr => TypeTree.of(using repr.asType))) :: getParams(res)
+                    case _ =>
+                      Nil
+                  }
+                }
+
+                getParams(methodTypeApplied)
+              }
+
+              val ctorTree = Select(New(TypeIdent(cs)), consSym)
+              val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
+
+              wrapIntoLambda(paramss, ctorTreeParameterized)
 
             case None =>
               report.errorAndAbort("NUTHING")
-
           }
 
       }
-    }
+    } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 
   }
 
