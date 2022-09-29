@@ -24,6 +24,8 @@ object ScalaReleaseMacro {
               '{ ScalaRelease.Unsupported(${ Expr(parts) }) }
             case ScalaRelease.Unknown(string) =>
               '{ ScalaRelease.Unknown(${ Expr(string) }) }
+            case ScalaRelease.`2_12`(_) | ScalaRelease.`2_13`(_) | ScalaRelease.`3`(_, _) =>
+              report.errorAndAbort(s"Scala 3 expected, but Scala 2 was extracted: $other ")
           }
       }
     }
