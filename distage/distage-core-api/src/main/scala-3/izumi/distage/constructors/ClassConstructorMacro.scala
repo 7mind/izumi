@@ -14,30 +14,7 @@ object ClassConstructorMacro {
 
       val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
 
-      def wrapIntoLambda(paramss: List[List[(String, TypeTree)]], consTerm: Term) = {
-        val params = paramss.flatten
-        val mtpe = MethodType(params.map(_._1))(_ => params.map(_._2.tpe), _ => TypeRepr.of[R])
-        val lam = Lambda(Symbol.spliceOwner, mtpe, {
-          case (_, args0) =>
-            val (_, argsLists) = paramss.foldLeft((args0, Queue.empty[List[Term]])){
-              case ((args, res), params) =>
-                val (argList, rest) = args.splitAt(params.size)
-                (rest, res :+ (argList: List[Tree]).asInstanceOf[List[Term]])
-            }
 
-            val appl = argsLists.foldLeft(consTerm)(_.appliedToArgs(_))
-            val trm = Typed(appl, TypeTree.of[R])
-            trm
-        })
-
-//        report.warning(s"CLASSCONSTRUCTOR: $lam;;\n${lam.show}")
-
-        val a = functoidMacro.make[R](lam.asExpr)
-
-//        report.warning(s"CLASSCONSTRUCTOR: ${a.asTerm};;\n$a, ${a.asTerm.show}")
-
-        '{ new ClassConstructor[R](${a}) }
-      }
 
       Expr.summon[ValueOf[R]] match {
         case Some(valexpr) =>
@@ -49,11 +26,7 @@ object ClassConstructorMacro {
 
           typeRepr.classSymbol.map(cs => (cs, cs.primaryConstructor)).filterNot(_._2.isNoSymbol) match {
             case Some(cs, consSym) =>
-//              report.warning(s"Constructor paramsyms: ${consSym.paramSymss} - tpes: (${consSym.paramSymss.map(_.map(s => cs.typeRef.memberType(s)))})")
-
               val methodTypeApplied = consSym.owner.typeRef.memberType(consSym).appliedTo(typeRepr.typeArgs)
-              report.warning(s"- method type raw = ${typeRepr.memberType(consSym)}\n- methodType applied = $methodTypeApplied\n")
-//              report.warning(s"- methodType applied paramsyms = ${methodTypeApplied.typeSymbol.paramSymss}\n - tpes: (${methodTypeApplied.typeSymbol.paramSymss.map(_.map(s => methodTypeApplied.memberType(s)))})")
 
               val argTypes = typeRepr match {
                 case AppliedType(_, args) =>
@@ -78,10 +51,11 @@ object ClassConstructorMacro {
               val ctorTree = Select(New(TypeIdent(cs)), consSym)
               val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
 
-              wrapIntoLambda(paramss, ctorTreeParameterized)
-
+              val lamExpr = ConstructorUtil.wrapApplicationIntoLambda[qctx.type, R](paramss, ctorTreeParameterized)
+              val f = functoidMacro.make[R](lamExpr)
+              '{new ClassConstructor[R](${f})}
             case None =>
-              report.errorAndAbort("NUTHING")
+              report.errorAndAbort(s"Cannot find primary constructor in ${typeRepr}")
           }
 
       }

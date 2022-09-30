@@ -19,4 +19,34 @@ object ConstructorUtil {
       )
     }
   }
+
+  def wrapApplicationIntoLambda[Q <: Quotes, R: Type](using qctx: Q)(paramss: List[List[(String, qctx.reflect.TypeTree)]], constructorTerm: qctx.reflect.Term): Expr[Any] = {
+    wrapIntoLambda[Q, R](paramss) {
+      args0 =>
+        import qctx.reflect.*
+        import scala.collection.immutable.Queue
+        val (_, argsLists) = paramss.foldLeft((args0, Queue.empty[List[Term]])) {
+          case ((args, res), params) =>
+            val (argList, rest) = args.splitAt(params.size)
+            (rest, res :+ (argList: List[Tree]).asInstanceOf[List[Term]])
+        }
+
+        val appl = argsLists.foldLeft(constructorTerm)(_.appliedToArgs(_))
+        val trm = Typed(appl, TypeTree.of[R])
+        trm
+    }
+  }
+
+  def wrapIntoLambda[Q <: Quotes, R: Type](using qctx: Q)(paramss: List[List[(String, qctx.reflect.TypeTree)]])(body: List[qctx.reflect.Tree] => qctx.reflect.Tree): Expr[Any] = {
+    import qctx.reflect.*
+    import scala.collection.immutable.Queue
+
+    val params = paramss.flatten
+    val mtpe = MethodType(params.map(_._1))(_ => params.map(_._2.tpe), _ => TypeRepr.of[R])
+    val lam = Lambda(Symbol.spliceOwner, mtpe, {
+      case (_, args0) =>
+        body(args0)
+    })
+    lam.asExpr
+  }
 }

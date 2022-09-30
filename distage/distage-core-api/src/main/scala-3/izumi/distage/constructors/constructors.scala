@@ -87,7 +87,7 @@ final class HasConstructor[T](val provider: Functoid[T]) extends AnyVal with Any
 object AnyConstructor {
   def apply[T](implicit ctor: AnyConstructor[T]): Functoid[T] = ctor.provider
 
-  implicit def materialize[T]: AnyConstructor[T] = ???
+  inline implicit def materialize[T]: AnyConstructor[T] = ???
 }
 
 
@@ -95,7 +95,7 @@ object AnyConstructor {
 object TraitConstructor {
   def apply[T](implicit ctor: TraitConstructor[T]): Functoid[T] = ctor.provider
 
-  implicit def materialize[T]: TraitConstructor[T] = ???
+  inline implicit def materialize[T]: TraitConstructor[T] = ${TraitConstructorMacro.make[T]}
 
   def wrapInitialization[A](init: => A)(implicit weakTag: WeakTag[A]): A = {
     try init
@@ -110,7 +110,7 @@ object TraitConstructor {
 object FactoryConstructor {
   def apply[T](implicit ctor: FactoryConstructor[T]): Functoid[T] = ctor.provider
 
-  implicit def materialize[T]: FactoryConstructor[T] = ???
+  inline implicit def materialize[T]: FactoryConstructor[T] = ???
 }
 
 object HasConstructor {
@@ -118,7 +118,7 @@ object HasConstructor {
 
   val empty: HasConstructor[Any] = new HasConstructor(Functoid.unit)
 
-  implicit def materialize[T]: HasConstructor[T] = ???
+  inline implicit def materialize[T]: HasConstructor[T] = ???
 }
 
 private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any {
@@ -148,5 +148,5 @@ object AnyConstructorOptionalMakeDSL {
     )
   }
 
-  implicit def materialize[T]: AnyConstructorOptionalMakeDSL.Impl[T] = ???
+  inline implicit def materialize[T]: AnyConstructorOptionalMakeDSL.Impl[T] = ???
 }

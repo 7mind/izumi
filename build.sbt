@@ -108,6 +108,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -246,6 +247,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -402,6 +404,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -542,6 +545,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -689,6 +693,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -849,6 +854,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -992,6 +998,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1133,6 +1140,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1302,6 +1310,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1450,6 +1459,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1589,6 +1599,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1728,6 +1739,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1873,6 +1885,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2016,6 +2029,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2178,6 +2192,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2321,6 +2336,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2472,6 +2488,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2640,6 +2657,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2778,6 +2796,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2925,6 +2944,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3070,6 +3090,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3214,6 +3235,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3353,6 +3375,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3496,6 +3519,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3663,6 +3687,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3860,6 +3885,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wunused:-synthetics"
       )
       case (_, "3.2.1-RC2") => Seq(
+        "-Yretain-trees",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"

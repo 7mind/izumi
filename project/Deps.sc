@@ -271,7 +271,7 @@ object Izumi {
           SettingKey(Some(scala213), None) := Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const](
             "-Wunused:-synthetics"
           ),
-          SettingKey(Some(scala300), None) := Defaults.Scala3Options,
+          SettingKey(Some(scala300), None) := Seq[Const]("-Yretain-trees") ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
