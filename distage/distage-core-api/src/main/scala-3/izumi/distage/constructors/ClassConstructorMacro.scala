@@ -28,13 +28,6 @@ object ClassConstructorMacro {
             case Some(cs, consSym) =>
               val methodTypeApplied = consSym.owner.typeRef.memberType(consSym).appliedTo(typeRepr.typeArgs)
 
-              val argTypes = typeRepr match {
-                case AppliedType(_, args) =>
-                  args.map(repr => TypeTree.of(using repr.asType))
-                case _ =>
-                  Nil
-              }
-
               val paramss: List[List[(String, TypeTree)]] = {
                 def getParams(t: TypeRepr): List[List[(String, TypeTree)]] = {
                   t match {
@@ -46,6 +39,13 @@ object ClassConstructorMacro {
                 }
 
                 getParams(methodTypeApplied)
+              }
+
+              val argTypes = typeRepr match {
+                case AppliedType(_, args) =>
+                  args.map(repr => TypeTree.of(using repr.asType))
+                case _ =>
+                  Nil
               }
 
               val ctorTree = Select(New(TypeIdent(cs)), consSym)
