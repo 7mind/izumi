@@ -28,6 +28,6 @@ object ConstructorMacroTest {
 //  TraitConstructor[AClass1]
 //  TraitConstructor[AClass2]
   TraitConstructor[ATrait]
-  TraitConstructor[AnAbstractClass]
+//  TraitConstructor[AnAbstractClass]
 
 }
