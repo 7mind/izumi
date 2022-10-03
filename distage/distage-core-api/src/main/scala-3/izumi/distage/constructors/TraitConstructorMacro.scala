@@ -92,7 +92,7 @@ object TraitConstructorMacro {
 
 
 
-    val lamExpr = ConstructorUtil.wrapIntoLambda[qctx.type, R](List(lamParams)) {
+    val lamExpr = ConstructorUtil.wrapIntoLambda[qctx.type, R](List(lamParams.map({case (n, t) => ("_"+n, t)}))) {
       args0 =>
 
 
@@ -136,9 +136,12 @@ object TraitConstructorMacro {
             val fooSym = cls.declaredMethod(name).head
             val t = tpt.symbol.typeRef
 
-            t.asType match {
-              case '[r] =>
-            DefDef (fooSym, argss => Some ('{${arg.asExprOf[Any]}.asInstanceOf[r]}.asTerm) ) }
+            DefDef (fooSym, argss => Some ('{${arg.asExprOf[Any]}}.asTerm) )
+
+//            t.asType match {
+//              case '[r] =>
+//             DefDef (fooSym, argss => Some ('{${arg.asExprOf[Any]}.asInstanceOf[r]}.asTerm) )
+//            }
         }
 
         val clsDef = ClassDef(cls, parents, body = defs)
