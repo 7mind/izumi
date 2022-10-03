@@ -76,7 +76,7 @@ object RoleProvider {
 
     protected def instantiateRoleBindings(bindings: Set[Binding], roleType: SafeType): Set[RoleBinding] = {
       bindings.collect {
-        case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) && checkRoleType(s.implementation.implType, roleType, log = !sysPropIgnoreMismatchedEffect) =>
+        case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) && checkRoleType(s.implementation.implType, roleType, log = !isIgnoredMismatchedEffect) =>
           mkRoleBinding(s, s.tags.collectFirst { case RoleTag(roleDescriptor) => roleDescriptor }.get)
 
         case s: ImplBinding if isReflectionEnabled && s.implementation.implType <:< roleType =>
