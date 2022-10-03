@@ -4,7 +4,8 @@ import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 
 import scala.annotation.experimental
-import scala.collection.immutable.Queue
+import scala.collection.immutable.{ArraySeq, Queue}
+import scala.collection.mutable
 import scala.quoted.{Expr, Quotes, Type}
 
 object TraitConstructorMacro {
@@ -15,156 +16,172 @@ object TraitConstructorMacro {
 
     val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
 
-    val tpe = TypeRepr.of[R].dealias.simplified
-    val tree = TypeTree.of[R]
+    val resultTpe = TypeRepr.of[R].dealias.simplified
+    val resultTypeTree = TypeTree.of[R]
+    val resultTpeSym = resultTpe.typeSymbol
 
-    val sym = tpe.typeSymbol
-    val ms = sym.methodMembers
-    val isTrait = sym.flags.is(Flags.Trait)
-    val isAbstract = sym.flags.is(Flags.Abstract)
+    val abstractMethods = resultTpeSym.methodMembers
+      .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && m.isDefDef)
 
-//    if (!isTrait && !isAbstract) {
-//      report.errorAndAbort(s"$sym is not an abstract class or a trait")
-//    }
+    val abstractMethodsWithParams = abstractMethods.filter(_.paramSymss.nonEmpty)
 
-    val abstractMethods = ms
-      .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && m.isDefDef)
-      .map(_.tree.asInstanceOf[DefDef])
-
-    val withParams = abstractMethods.filter(_.paramss.nonEmpty)
-
-    if (withParams.nonEmpty) {
-      report.errorAndAbort(s"$sym has abstract methods taking parameters: ${withParams.map(_.symbol.name)}")
+    if (abstractMethodsWithParams.nonEmpty) {
+      report.errorAndAbort(
+        s"""$resultTpeSym has abstract methods taking parameters, expected only parameterless abstract methods:
+           |  ${abstractMethodsWithParams.map(s => s.name -> s.flags.show)}
+           |  [others: ${abstractMethods.map(s => s.name -> s.flags.show)}]""".stripMargin
+      )
     }
 
-    val methodDecls = abstractMethods.map {
-      m =>
-        (m.symbol.name, m.returnTpt)
-    }
-
-    val constructorParams = if (isAbstract) {
-      // TODO: decopypaste
-      val consSym = sym.primaryConstructor
-      val methodTypeApplied = consSym.owner.typeRef.memberType(consSym).appliedTo(tpe.typeArgs)
-
-      val paramss: List[List[(String, TypeTree)]] = {
-        def getParams(t: TypeRepr): List[List[(String, TypeTree)]] = {
-          t match {
-            case MethodType(paramNames, paramTpes, res) =>
-              paramNames.zip(paramTpes.map(repr => TypeTree.of(using repr.asType))) :: getParams(res)
-            case _ =>
-              Nil
-          }
-        }
-
-        getParams(methodTypeApplied)
-      }
-
-      paramss
+    val parentsSymbols = if (!resultTpeSym.flags.is(Flags.Trait)) {
+      List(resultTpeSym)
     } else {
-      List.empty
+      val seen = mutable.HashSet[Symbol](defn.ObjectClass, defn.MatchableClass, defn.AnyRefClass, defn.AnyValClass, defn.AnyClass)
+      val banned = mutable.HashSet[Symbol](defn.ObjectClass, defn.MatchableClass, defn.AnyRefClass, defn.AnyValClass, defn.AnyClass)
+      def go(sym: Symbol): List[Symbol] = {
+        val onlyBases = sym.typeRef.baseClasses
+          .drop(1) // without own type
+          .filterNot(seen)
+
+        if (!sym.flags.is(Flags.Trait)) {
+          // (abstract) class calls the constructors of its bases, so don't call constructors for any of its bases
+          def banAll(s: Symbol): Unit = {
+            val onlyBasesNotBanned = s.typeRef.baseClasses.drop(1).filterNot(banned)
+            seen ++= onlyBasesNotBanned
+            banned ++= onlyBasesNotBanned
+            onlyBasesNotBanned.foreach(banAll)
+          }
+          banAll(sym)
+          List(sym)
+        } else {
+          seen ++= onlyBases
+          val needConstructorCall = onlyBases.filter(
+            s =>
+              !s.flags.is(Flags.Trait) || (
+                s.primaryConstructor.paramSymss.nonEmpty
+                && s.primaryConstructor.paramSymss.exists(_.headOption.exists(!_.isTypeParam))
+              )
+          )
+          needConstructorCall ++ onlyBases.flatMap(go)
+        }
+      }
+      val (classCtors0, traitCtors0) = go(resultTpeSym).filterNot(banned).distinct.partition(!_.flags.is(Flags.Trait))
+      val classCtors = if (classCtors0.isEmpty) List(defn.ObjectClass) else classCtors0
+      val traitCtors =
+        // try to instantiate traits in order from deeper to shallower
+        // (allow traits defined later in the hierarchy to override their base traits)
+        (resultTpeSym :: traitCtors0).reverse
+      classCtors ++ traitCtors
     }
 
-    val lamParams = if (isAbstract) {
-      // TODO:
-      methodDecls ++ constructorParams.flatten
-    }  else {
-      methodDecls
-    }
-
-    val name: String = s"${sym.name}AutoImpl"
-
-
-
+    val methodDecls = abstractMethods.map(m => (m.name, m.owner.typeRef.memberType(m)))
 
     def decls(cls: Symbol): List[Symbol] = methodDecls.map {
-      case(name, tpt) =>
-        val mtype = tpt.symbol.typeRef
+      case (name, mtype) =>
         // for () methods: MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef)
-        Symbol.newMethod(cls,
-          name,
-          mtype,
-          Flags.Method | Flags.Override,
-          Symbol.noSymbol
-        )
+        Symbol.newMethod(cls, name, mtype, Flags.Method | Flags.Override, Symbol.noSymbol)
     }
 
+    val constructorParamLists = parentsSymbols.map {
+      sym =>
+        // TODO: decopypaste
 
-
-
-    val lamExpr = ConstructorUtil.wrapIntoLambda[qctx.type, R](List(lamParams.map({case (n, t) => ("_"+n, t)}))) {
-      args0 =>
-
-
-        val parents0 = if (isAbstract) {
-          List(tree)
-        } else {
-          List(TypeTree.of[Object], tree)
+        val argTypes = resultTpe.baseType(sym) match {
+          case AppliedType(_, args) =>
+            args
+          case _ =>
+            Nil
         }
 
-        val parents = if (isAbstract) {
-          // TODO
-          val consSym = sym.primaryConstructor
-          val ctorTree = Select(New(TypeIdent(tpe.classSymbol.get)), consSym)
+        val methodTypeApplied = sym.typeRef.memberType(sym.primaryConstructor).appliedTo(argTypes)
 
-          val argTypes = tpe match {
-            case AppliedType(_, args) =>
-              args.map(repr => TypeTree.of(using repr.asType))
-            case _ =>
-              Nil
+        val paramLists: List[List[(String, TypeRepr)]] = {
+          def go(t: TypeRepr): List[List[(String, TypeRepr)]] = {
+            t match {
+              case MethodType(paramNames, paramTpes, res) =>
+                paramNames.zip(paramTpes) :: go(res)
+              case _ =>
+                Nil
+            }
           }
-          val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
-
-          val (_, argsLists) = constructorParams.foldLeft((args0.drop(methodDecls.size), Queue.empty[List[Term]])) {
-            case ((args, res), params) =>
-              val (argList, rest) = args.splitAt(params.size)
-              (rest, res :+ (argList: List[Tree]).asInstanceOf[List[Term]])
-          }
-
-
-          val appl = argsLists.foldLeft(ctorTreeParameterized)(_.appliedToArgs(_))
-          List(appl)
-        } else {
-          List(TypeTree.of[Object], tree)
+          go(methodTypeApplied)
         }
 
-//        report.errorAndAbort(s"${parents.map(_.symbol.typeRef)}")
-        val cls = Symbol.newClass(Symbol.spliceOwner, name, parents = parents0.map(_.tpe), (cls: Symbol) => decls(cls), selfType = None)
-
-        val defs = methodDecls.zip(args0).map {
-          case ((name, tpt), arg) =>
-            val fooSym = cls.declaredMethod(name).head
-            val t = tpt.symbol.typeRef
-
-            DefDef (fooSym, argss => Some ('{${arg.asExprOf[Any]}}.asTerm) )
-
-//            t.asType match {
-//              case '[r] =>
-//             DefDef (fooSym, argss => Some ('{${arg.asExprOf[Any]}.asInstanceOf[r]}.asTerm) )
-//            }
-        }
-
-        val clsDef = ClassDef(cls, parents, body = defs)
-        val newCls = Typed(Apply(Select(New(TypeIdent(cls)), cls.primaryConstructor), Nil), TypeTree.of[R])
-        val block = Block(List(clsDef), newCls).asExprOf[R]
-        val constructorTerm = block.asTerm
-        Typed(constructorTerm, TypeTree.of[R])
+        sym -> paramLists
     }
 
-    report.warning(s"""|symbol = ${sym};
-      |tree = ${sym.tree}
-      |pct  = ${sym.primaryConstructor.tree}
-      |pcs  = ${sym.primaryConstructor.tree.show}
-      |defn = ${sym.tree.show}
-      |lam  = ${lamExpr}
-      |lam  = ${lamExpr.asTerm}
-      |lam  = ${lamExpr.show}
-      |""".stripMargin)
+    val flatCtorParams = constructorParamLists.iterator.flatMap(_._2.iterator.flatten).to(ArraySeq)
+    val lamParams = {
+      val byNameMethodArgs = methodDecls.iterator.map((n, t) => (s"_$n", t match { case ByNameType(_) => t; case _ => ByNameType(t) }))
+      (flatCtorParams ++ byNameMethodArgs).map((n, t) => (n, TypeTree.of(using t.asType))).toList
+    }
+
+    val lamExpr = ConstructorUtil.wrapIntoLambda[qctx.type, R](List(lamParams)) {
+      (lamSym, args0) =>
+
+        val (lamOnlyCtorArguments, lamOnlyMethodArguments) = args0.splitAt(flatCtorParams.size)
+
+        val (_, parents) = constructorParamLists.foldLeft((lamOnlyCtorArguments, Queue.empty[Term])) {
+          case ((remainingLamArgs, doneCtors), (sym, ctorParamLists)) =>
+            // TODO decopypaste
+
+            val consSym = sym.primaryConstructor
+            val ctorTree = Select(New(TypeIdent(sym)), consSym)
+
+            val argTypes = resultTpe.baseType(sym) match {
+              case AppliedType(_, args) =>
+                args.map(repr => TypeTree.of(using repr.asType))
+              case _ =>
+                Nil
+            }
+            val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
+
+            val (rem, argsLists) = ctorParamLists.foldLeft((remainingLamArgs, Queue.empty[List[Term]])) {
+              case ((lamArgs, res), params) =>
+                val (argList, rest) = lamArgs.splitAt(params.size)
+                (rest, res :+ argList)
+            }
+
+            val appl = argsLists.foldLeft(ctorTreeParameterized)(_.appliedToArgs(_))
+            (rem, doneCtors :+ appl)
+        }
+
+        val name: String = s"${resultTpeSym.name}AutoImpl"
+        val clsSym = Symbol.newClass(lamSym, name, parents = parentsSymbols.map(_.typeRef), decls = decls, selfType = None)
+
+        val defs = methodDecls.zip(lamOnlyMethodArguments).map {
+          case ((name, _), arg) =>
+            val fooSym = clsSym.declaredMethod(name).head
+
+            DefDef(fooSym, _ => Some(arg))
+        }
+
+        val clsDef = ClassDef(clsSym, parents.toList, body = defs)
+        val newCls = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTypeTree)
+        val block = Block(List(clsDef), newCls)
+        Typed(block, resultTypeTree)
+    }
+
+    report.warning(
+      s"""|symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
+          |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
+          |tree = ${resultTpeSym.tree}
+          |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
+          |pct  = ${resultTpeSym.primaryConstructor.tree}
+          |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
+          |pctt = ${resultTpeSym.typeRef.memberType(resultTpeSym.primaryConstructor)}
+          |pcts = ${resultTpeSym.typeRef.baseClasses
+           .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
+           .mkString("\n")}
+          |defn = ${resultTpeSym.tree.show}
+          |lam  = ${lamExpr.asTerm}
+          |lam  = ${lamExpr.show}
+          |""".stripMargin
+    )
 
     val f = functoidMacro.make[R](lamExpr)
-    '{new TraitConstructor[R](${f})}
+    '{ new TraitConstructor[R](${ f }) }
 
-
-    } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 
 }

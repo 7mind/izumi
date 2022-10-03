@@ -15,14 +15,18 @@ object ConstructorUtil {
         s"""$macroName: Can't generate constructor for ${tpe.show}:
            |Type constructor is an unresolved type parameter `$hint`.
            |Did you forget to put a $macroName context bound on the $hint, such as [$hint: $macroName]?
-           |""".stripMargin,
+           |""".stripMargin
       )
     }
   }
 
-  def wrapApplicationIntoLambda[Q <: Quotes, R: Type](using qctx: Q)(paramss: List[List[(String, qctx.reflect.TypeTree)]], constructorTerm: qctx.reflect.Term): Expr[Any] = {
+  def wrapApplicationIntoLambda[Q <: Quotes, R: Type](
+    using qctx: Q
+  )(paramss: List[List[(String, qctx.reflect.TypeTree)]],
+    constructorTerm: qctx.reflect.Term,
+  ): Expr[Any] = {
     wrapIntoLambda[Q, R](paramss) {
-      args0 =>
+      (_, args0) =>
         import qctx.reflect.*
         import scala.collection.immutable.Queue
         val (_, argsLists) = paramss.foldLeft((args0, Queue.empty[List[Term]])) {
@@ -37,16 +41,24 @@ object ConstructorUtil {
     }
   }
 
-  def wrapIntoLambda[Q <: Quotes, R: Type](using qctx: Q)(paramss: List[List[(String, qctx.reflect.TypeTree)]])(body: List[qctx.reflect.Tree] => qctx.reflect.Tree): Expr[Any] = {
+  def wrapIntoLambda[Q <: Quotes, R: Type](
+    using qctx: Q
+  )(paramss: List[List[(String, qctx.reflect.TypeTree)]]
+  )(body: (qctx.reflect.Symbol, List[qctx.reflect.Term]) => qctx.reflect.Tree
+  ): Expr[Any] = {
     import qctx.reflect.*
     import scala.collection.immutable.Queue
 
     val params = paramss.flatten
     val mtpe = MethodType(params.map(_._1))(_ => params.map(_._2.tpe), _ => TypeRepr.of[R])
-    val lam = Lambda(Symbol.spliceOwner, mtpe, {
-      case (_, args0) =>
-        body(args0)
-    })
+    val lam = Lambda(
+      Symbol.spliceOwner,
+      mtpe,
+      {
+        case (lamSym, args0) =>
+          body(lamSym, args0.asInstanceOf[List[Term]])
+      },
+    )
     lam.asExpr
   }
 }
