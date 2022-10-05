@@ -47,7 +47,7 @@ object TraitConstructorMacro {
     }
 
     val lamParams = {
-      val byNameMethodArgs = methodDecls.iterator.map((n, t) => (s"_$n", t match { case ByNameType(_) => t; case _ => ByNameType(t) }))
+      val byNameMethodArgs = methodDecls.iterator.map((n, t) => (s"_$n", t))
       (flatCtorParams ++ byNameMethodArgs).map((n, t) => (n, TypeTree.of(using t.asType))).toList
     }
 

@@ -23,8 +23,10 @@ object ClassConstructorMacro {
 
         val typeRepr = TypeRepr.of[R].dealias.simplified
 
-        typeRepr.classSymbol.map(cs => (cs, cs.primaryConstructor)).filterNot(_._2.isNoSymbol) match {
-          case Some(cs, consSym) =>
+        typeRepr.classSymbol match {
+          case Some(cs) =>
+            val (ctorTreeParameterized, consSym) = util.buildConstructorApplication(cs, typeRepr)
+
             val methodTypeApplied = consSym.owner.typeRef.memberType(consSym).appliedTo(typeRepr.typeArgs)
 
             val paramss: List[List[(String, TypeTree)]] = {
@@ -40,23 +42,12 @@ object ClassConstructorMacro {
               getParams(methodTypeApplied)
             }
 
-            val argTypes = typeRepr match {
-              case AppliedType(_, args) =>
-                args.map(repr => TypeTree.of(using repr.asType))
-              case _ =>
-                Nil
-            }
-
-            val ctorTree = Select(New(TypeIdent(cs)), consSym)
-            val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
-
             val lamExpr = util.wrapApplicationIntoLambda[R](paramss, ctorTreeParameterized)
             val f = functoidMacro.make[R](lamExpr)
             '{ new ClassConstructor[R](${ f }) }
           case None =>
-            report.errorAndAbort(s"Cannot find primary constructor in $typeRepr")
+            report.errorAndAbort(s"No class symbol defined for $typeRepr")
         }
-
     }
   } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 

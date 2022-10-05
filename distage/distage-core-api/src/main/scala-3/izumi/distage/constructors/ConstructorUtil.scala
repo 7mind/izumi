@@ -41,7 +41,10 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   )(body: (qctx.reflect.Symbol, List[qctx.reflect.Term]) => qctx.reflect.Tree
   ): Expr[Any] = {
     val params = paramss.flatten
-    val mtpe = MethodType(params.map(_._1))(_ => params.map(_._2.tpe), _ => TypeRepr.of[R])
+    val mtpe = MethodType(params.map(_._1))(
+      _ => params.map(_._2.tpe match { case t @ ByNameType(_) => t; case t => ByNameType(t) }),
+      _ => TypeRepr.of[R],
+    )
     val lam = Lambda(
       Symbol.spliceOwner,
       mtpe,
@@ -103,17 +106,11 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   type ParamLists = List[List[(String, qctx.reflect.TypeRepr)]]
 
   def buildConstructorParameters(resultTpe: TypeRepr)(sym: Symbol): (qctx.reflect.Symbol, ParamLists) = {
-    val argTypes = resultTpe.baseType(sym) match {
-      case AppliedType(_, args) =>
-        args
-      case _ =>
-        Nil
-    }
-
+    val argTypes = extractArgs(resultTpe.baseType(sym))
     val methodTypeApplied = sym.typeRef.memberType(sym.primaryConstructor).appliedTo(argTypes)
 
-    val paramLists: List[List[(String, TypeRepr)]] = {
-      def go(t: TypeRepr): List[List[(String, TypeRepr)]] = {
+    val paramLists: ParamLists = {
+      def go(t: TypeRepr): ParamLists = {
         t match {
           case MethodType(paramNames, paramTpes, res) =>
             paramNames.zip(paramTpes) :: go(res)
@@ -128,6 +125,27 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     sym -> paramLists
   }
 
+  def extractArgs(baseType: TypeRepr): List[TypeRepr] = {
+    baseType match {
+      case AppliedType(_, args) =>
+        args
+      case _ =>
+        Nil
+    }
+  }
+
+  def buildConstructorApplication(sym: Symbol, baseType: TypeRepr): (Term, Symbol) = {
+    Some(sym.primaryConstructor).filterNot(_.isNoSymbol) match {
+      case Some(consSym) =>
+        val ctorTree = Select(New(TypeIdent(sym)), consSym)
+        val argTypes = extractArgs(baseType).map(repr => TypeTree.of(using repr.asType))
+        val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
+        (ctorTreeParameterized, consSym)
+      case None =>
+        report.errorAndAbort(s"Cannot find primary constructor in $sym")
+    }
+  }
+
   def buildParentConstructorCallTerms(
     resultTpe: TypeRepr,
     constructorParamLists: List[(qctx.reflect.Symbol, ParamLists)],
@@ -136,19 +154,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     import scala.collection.immutable.Queue
     val (_, parents) = constructorParamLists.foldLeft((contextParameters, Queue.empty[Term])) {
       case ((remainingLamArgs, doneCtors), (sym, ctorParamLists)) =>
-        // TODO decopypaste
-
-        val consSym = sym.primaryConstructor
-        val ctorTree = Select(New(TypeIdent(sym)), consSym)
-
-        val argTypes = resultTpe.baseType(sym) match {
-          case AppliedType(_, args) =>
-            args.map(repr => TypeTree.of(using repr.asType))
-          case _ =>
-            Nil
-        }
-        val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
-
+        val (ctorTreeParameterized, _) = buildConstructorApplication(sym, resultTpe.baseType(sym))
         val (rem, argsLists) = ctorParamLists.foldLeft((remainingLamArgs, Queue.empty[List[Term]])) {
           case ((lamArgs, res), params) =>
             val (argList, rest) = lamArgs.splitAt(params.size)
