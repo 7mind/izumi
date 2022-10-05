@@ -13,12 +13,13 @@ object ClassConstructorMacro {
     import qctx.reflect.*
 
     val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
+    val util = new ConstructorUtil[qctx.type]()
 
     Expr.summon[ValueOf[R]] match {
       case Some(valexpr) =>
         '{ new ClassConstructor[R](Functoid.singleton(${ valexpr.asExprOf[scala.Singleton & R] })) }
       case _ =>
-        ConstructorUtil.requireConcreteTypeConstructor[R]("ClassConstructor")
+        util.requireConcreteTypeConstructor[R]("ClassConstructor")
 
         val typeRepr = TypeRepr.of[R].dealias.simplified
 
@@ -49,7 +50,7 @@ object ClassConstructorMacro {
             val ctorTree = Select(New(TypeIdent(cs)), consSym)
             val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
 
-            val lamExpr = ConstructorUtil.wrapApplicationIntoLambda[qctx.type, R](paramss, ctorTreeParameterized)
+            val lamExpr = util.wrapApplicationIntoLambda[R](paramss, ctorTreeParameterized)
             val f = functoidMacro.make[R](lamExpr)
             '{ new ClassConstructor[R](${ f }) }
           case None =>
