@@ -4,8 +4,7 @@ import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 
 import scala.quoted.{Expr, Quotes, Type}
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
-
-import scala.collection.immutable.Queue
+import scala.collection.immutable.ArraySeq
 
 object ClassConstructorMacro {
 
@@ -25,24 +24,12 @@ object ClassConstructorMacro {
 
         typeRepr.classSymbol match {
           case Some(cs) =>
-            val (ctorTreeParameterized, consSym) = util.buildConstructorApplication(cs, typeRepr)
+            val ctorTreeParameterized = util.buildConstructorApplication(cs, typeRepr)
 
-            val methodTypeApplied = consSym.owner.typeRef.memberType(consSym).appliedTo(typeRepr.typeArgs)
-
-            val paramss: List[List[(String, TypeTree)]] = {
-              def getParams(t: TypeRepr): List[List[(String, TypeTree)]] = {
-                t match {
-                  case MethodType(paramNames, paramTpes, res) =>
-                    paramNames.zip(paramTpes.map(repr => TypeTree.of(using repr.asType))) :: getParams(res)
-                  case _ =>
-                    Nil
-                }
-              }
-
-              getParams(methodTypeApplied)
-            }
-
-            val lamExpr = util.wrapApplicationIntoLambda[R](paramss, ctorTreeParameterized)
+            val constructorParamLists = List(util.buildConstructorParameters(typeRepr)(cs))
+            val flatCtorParams = constructorParamLists.iterator.flatMap(_._2.iterator.flatten).to(ArraySeq)
+            val asTrees = flatCtorParams.map((n, t) => (n, TypeTree.of(using t.asType))).toList
+            val lamExpr = util.wrapApplicationIntoLambda[R](List(asTrees), ctorTreeParameterized)
             val f = functoidMacro.make[R](lamExpr)
             '{ new ClassConstructor[R](${ f }) }
           case None =>

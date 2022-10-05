@@ -134,13 +134,13 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def buildConstructorApplication(sym: Symbol, baseType: TypeRepr): (Term, Symbol) = {
+  def buildConstructorApplication(sym: Symbol, baseType: TypeRepr): Term = {
     Some(sym.primaryConstructor).filterNot(_.isNoSymbol) match {
       case Some(consSym) =>
         val ctorTree = Select(New(TypeIdent(sym)), consSym)
         val argTypes = extractArgs(baseType).map(repr => TypeTree.of(using repr.asType))
         val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
-        (ctorTreeParameterized, consSym)
+        ctorTreeParameterized
       case None =>
         report.errorAndAbort(s"Cannot find primary constructor in $sym")
     }
@@ -154,7 +154,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     import scala.collection.immutable.Queue
     val (_, parents) = constructorParamLists.foldLeft((contextParameters, Queue.empty[Term])) {
       case ((remainingLamArgs, doneCtors), (sym, ctorParamLists)) =>
-        val (ctorTreeParameterized, _) = buildConstructorApplication(sym, resultTpe.baseType(sym))
+        val ctorTreeParameterized = buildConstructorApplication(sym, resultTpe.baseType(sym))
         val (rem, argsLists) = ctorParamLists.foldLeft((remainingLamArgs, Queue.empty[List[Term]])) {
           case ((lamArgs, res), params) =>
             val (argList, rest) = lamArgs.splitAt(params.size)
