@@ -7,6 +7,15 @@ import scala.collection.mutable
 class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   import qctx.reflect.*
 
+  type ParamListRepr = List[(String, qctx.reflect.TypeRepr)]
+  type ParamListsRepr = List[ParamListRepr]
+  type ParamListTree = List[(String, qctx.reflect.TypeTree)]
+  type ParamListsTree = List[ParamListTree]
+
+  implicit class ParamListExt(params: ParamListRepr) {
+    def toTrees: ParamListTree = params.map((n, t) => (n, TypeTree.of(using t.asType))).toList
+  }
+
   def requireConcreteTypeConstructor[R: Type](macroName: String): Unit = {
     val tpe = TypeRepr.of[R]
     if (!ReflectionUtil.allPartsStrong(tpe.typeSymbol.typeRef)) {
@@ -20,7 +29,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def wrapApplicationIntoLambda[R: Type](paramss: List[List[(String, qctx.reflect.TypeTree)]], constructorTerm: qctx.reflect.Term): Expr[Any] = {
+  def wrapApplicationIntoLambda[R: Type](paramss: ParamListsTree, constructorTerm: qctx.reflect.Term): Expr[Any] = {
     wrapIntoLambda[R](paramss) {
       (_, args0) =>
         import scala.collection.immutable.Queue
@@ -37,7 +46,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   }
 
   def wrapIntoLambda[R: Type](
-    paramss: List[List[(String, qctx.reflect.TypeTree)]]
+    paramss: ParamListsTree
   )(body: (qctx.reflect.Symbol, List[qctx.reflect.Term]) => qctx.reflect.Tree
   ): Expr[Any] = {
     val params = paramss.flatten
@@ -103,14 +112,12 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  type ParamLists = List[List[(String, qctx.reflect.TypeRepr)]]
-
-  def buildConstructorParameters(resultTpe: TypeRepr)(sym: Symbol): (qctx.reflect.Symbol, ParamLists) = {
+  def buildConstructorParameters(resultTpe: TypeRepr)(sym: Symbol): (qctx.reflect.Symbol, ParamListsRepr) = {
     val argTypes = extractArgs(resultTpe.baseType(sym))
     val methodTypeApplied = sym.typeRef.memberType(sym.primaryConstructor).appliedTo(argTypes)
 
-    val paramLists: ParamLists = {
-      def go(t: TypeRepr): ParamLists = {
+    val ParamListsRepr: ParamListsRepr = {
+      def go(t: TypeRepr): ParamListsRepr = {
         t match {
           case MethodType(paramNames, paramTpes, res) =>
             paramNames.zip(paramTpes) :: go(res)
@@ -122,7 +129,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
       go(methodTypeApplied)
     }
 
-    sym -> paramLists
+    sym -> ParamListsRepr
   }
 
   def extractArgs(baseType: TypeRepr): List[TypeRepr] = {
@@ -148,14 +155,14 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
 
   def buildParentConstructorCallTerms(
     resultTpe: TypeRepr,
-    constructorParamLists: List[(qctx.reflect.Symbol, ParamLists)],
+    constructorParamListsRepr: List[(qctx.reflect.Symbol, ParamListsRepr)],
     contextParameters: List[Term],
   ): Seq[Term] = {
     import scala.collection.immutable.Queue
-    val (_, parents) = constructorParamLists.foldLeft((contextParameters, Queue.empty[Term])) {
-      case ((remainingLamArgs, doneCtors), (sym, ctorParamLists)) =>
+    val (_, parents) = constructorParamListsRepr.foldLeft((contextParameters, Queue.empty[Term])) {
+      case ((remainingLamArgs, doneCtors), (sym, ctorParamListsRepr)) =>
         val ctorTreeParameterized = buildConstructorApplication(sym, resultTpe.baseType(sym))
-        val (rem, argsLists) = ctorParamLists.foldLeft((remainingLamArgs, Queue.empty[List[Term]])) {
+        val (rem, argsLists) = ctorParamListsRepr.foldLeft((remainingLamArgs, Queue.empty[List[Term]])) {
           case ((lamArgs, res), params) =>
             val (argList, rest) = lamArgs.splitAt(params.size)
             (rest, res :+ argList)

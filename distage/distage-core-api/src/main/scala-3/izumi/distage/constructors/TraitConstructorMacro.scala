@@ -16,6 +16,7 @@ object TraitConstructorMacro {
 
     val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
     val util = new ConstructorUtil[qctx.type]()
+    import util.ParamListExt
 
     val resultTpe = TypeRepr.of[R].dealias.simplified
     val resultTypeTree = TypeTree.of[R]
@@ -36,7 +37,7 @@ object TraitConstructorMacro {
 
     val parentsSymbols = util.findRequiredImplParents(resultTpeSym)
     val constructorParamLists = parentsSymbols.map(util.buildConstructorParameters(resultTpe))
-    val flatCtorParams = constructorParamLists.iterator.flatMap(_._2.iterator.flatten).to(ArraySeq)
+    val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
 
     val methodDecls = abstractMethods.map(m => (m.name, m.owner.typeRef.memberType(m)))
 
@@ -47,8 +48,8 @@ object TraitConstructorMacro {
     }
 
     val lamParams = {
-      val byNameMethodArgs = methodDecls.iterator.map((n, t) => (s"_$n", t))
-      (flatCtorParams ++ byNameMethodArgs).map((n, t) => (n, TypeTree.of(using t.asType))).toList
+      val byNameMethodArgs = methodDecls.map((n, t) => (s"_$n", t))
+      (flatCtorParams ++ byNameMethodArgs).toTrees
     }
 
     val lamExpr = util.wrapIntoLambda[R](List(lamParams)) {

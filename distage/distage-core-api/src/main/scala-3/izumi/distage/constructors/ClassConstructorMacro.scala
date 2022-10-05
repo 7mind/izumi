@@ -13,6 +13,7 @@ object ClassConstructorMacro {
 
     val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
     val util = new ConstructorUtil[qctx.type]()
+    import util.ParamListExt
 
     Expr.summon[ValueOf[R]] match {
       case Some(valexpr) =>
@@ -25,11 +26,10 @@ object ClassConstructorMacro {
         typeRepr.classSymbol match {
           case Some(cs) =>
             val ctorTreeParameterized = util.buildConstructorApplication(cs, typeRepr)
-
             val constructorParamLists = List(util.buildConstructorParameters(typeRepr)(cs))
-            val flatCtorParams = constructorParamLists.iterator.flatMap(_._2.iterator.flatten).to(ArraySeq)
-            val asTrees = flatCtorParams.map((n, t) => (n, TypeTree.of(using t.asType))).toList
-            val lamExpr = util.wrapApplicationIntoLambda[R](List(asTrees), ctorTreeParameterized)
+            val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
+
+            val lamExpr = util.wrapApplicationIntoLambda[R](List(flatCtorParams.toTrees), ctorTreeParameterized)
             val f = functoidMacro.make[R](lamExpr)
             '{ new ClassConstructor[R](${ f }) }
           case None =>
