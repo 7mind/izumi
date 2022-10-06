@@ -48,6 +48,7 @@ object TraitConstructorMacro {
         Symbol.newMethod(cls, name, mtype, Flags.Method | Flags.Override, Symbol.noSymbol)
     }
 
+    // TODO: decopypaste
     val lamParams = {
       val byNameMethodArgs = methodDecls.map((n, t) => (s"_$n", util.ensureByName(util.normalizeType(t))))
       val ctorArgs = flatCtorParams.map((n, t) => (n, util.normalizeType(t)))
