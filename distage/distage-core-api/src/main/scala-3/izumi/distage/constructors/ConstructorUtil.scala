@@ -113,8 +113,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   }
 
   def buildConstructorParameters(resultTpe: TypeRepr)(sym: Symbol): (qctx.reflect.Symbol, ParamListsRepr) = {
-    val argTypes = extractArgs(resultTpe.baseType(sym))
-    val methodTypeApplied = sym.typeRef.memberType(sym.primaryConstructor).appliedTo(argTypes)
+    val methodTypeApplied = sym.typeRef.memberType(sym.primaryConstructor).appliedTo(resultTpe.typeArgs)
 
     val ParamListsRepr: ParamListsRepr = {
       def go(t: TypeRepr): ParamListsRepr = {
@@ -132,21 +131,11 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     sym -> ParamListsRepr
   }
 
-  def extractArgs(baseType: TypeRepr): List[TypeRepr] = {
-    baseType match {
-      case AppliedType(_, args) =>
-        args
-      case _ =>
-        Nil
-    }
-  }
-
   def buildConstructorApplication(sym: Symbol, baseType: TypeRepr): Term = {
     Some(sym.primaryConstructor).filterNot(_.isNoSymbol) match {
       case Some(consSym) =>
         val ctorTree = Select(New(TypeIdent(sym)), consSym)
-        val argTypes = extractArgs(baseType).map(repr => TypeTree.of(using repr.asType))
-        val ctorTreeParameterized = ctorTree.appliedToTypeTrees(argTypes)
+        val ctorTreeParameterized = ctorTree.appliedToTypeTrees(baseType.typeArgs.map(repr => TypeTree.of(using repr.asType)))
         ctorTreeParameterized
       case None =>
         report.errorAndAbort(s"Cannot find primary constructor in $sym")
