@@ -78,14 +78,14 @@ object FunctoidMacro {
           '{
             LinkedParameter(
               SymbolInfo(
-                name = $ {
+                name = ${
                   Expr(name)
                 },
-                finalResultType = ${safeType(tpe)},
+                finalResultType = ${ safeType(tpe) },
                 isByName = ${ Expr(isByName) },
-                wasGeneric = ${ Expr( tpe.tpe.typeSymbol.isTypeParam ) }, // TODO: type members?
+                wasGeneric = ${ Expr(tpe.tpe.typeSymbol.isTypeParam) }, // TODO: type members?
               ),
-              ${makeKey(tpe, identifier)}
+              ${ makeKey(tpe, identifier) },
             )
           }
       }
@@ -114,7 +114,7 @@ object FunctoidMacro {
     }
 
     def safeType[R: Type]: Expr[SafeType] = {
-      '{SafeType.get[R](scala.compiletime.summonInline[Tag[R]])}
+      '{ SafeType.get[R](scala.compiletime.summonInline[Tag[R]]) }
     }
 
     private def safeType(tpe: TypeTree): Expr[SafeType] = {
@@ -129,7 +129,7 @@ object FunctoidMacro {
     private def safeTypeFromRepr(tpe: TypeRepr): Expr[SafeType] = {
       tpe.asType match {
         case '[a] =>
-          '{SafeType.get[a](using scala.compiletime.summonInline[Tag[a]] )}
+          '{ SafeType.get[a](using scala.compiletime.summonInline[Tag[a]]) }
         case _ =>
           report.errorAndAbort(s"Cannot generate SafeType from ${tpe.show}, probably that's a bug in Functoid macro")
       }
@@ -144,7 +144,7 @@ object FunctoidMacro {
 
     def make[R: Type](fun: Expr[Any]): Expr[Functoid[R]] = {
       val out = matchTerm[R](fun.asTerm)
-      report.warning(s"fun=${fun.show}\n outputType=${Type.show[R]}\n rawOutputType=(${TypeRepr.of[R]})\n produced=${out.show}")
+      report.warning(s"fun=${fun.show}\noutputType=${Type.show[R]}\nrawOutputType=(${TypeRepr.of[R]})\nproduced=${out.show}")
       out
     }
 
@@ -186,13 +186,13 @@ object FunctoidMacro {
       val (paramDefs, paramTypes) = paramsMacro.makeParams[R](params)
 
       '{
-        val rawFn: AnyRef = ${fun.asExprOf[AnyRef]}
+        val rawFn: AnyRef = ${ fun.asExprOf[AnyRef] }
         new Functoid[R](
           new ProviderImpl[R](
-            ${Expr.ofList(paramDefs)},
-            ${paramsMacro.safeType[R]},
+            ${ Expr.ofList(paramDefs) },
+            ${ paramsMacro.safeType[R] },
             rawFn,
-            (args: Seq[Any]) => $ {generateCall(paramTypes, 'rawFn, 'args)},
+            (args: Seq[Any]) => ${ generateCall(paramTypes, 'rawFn, 'args) },
             ProviderType.Function,
           )
         )
@@ -200,7 +200,7 @@ object FunctoidMacro {
     }
 
     def generateCall(ptypes: List[TypeTree], rawFn: Expr[Any], args: Expr[Seq[Any]]): Expr[Any] = {
-      val params = ptypes.zipWithIndex.map{
+      val params = ptypes.zipWithIndex.map {
         case (_, idx) =>
           '{ $args(${ Expr(idx) }) }
       }
@@ -209,7 +209,7 @@ object FunctoidMacro {
 
       val fnAny = fnType.asType match {
         case '[a] =>
-          '{ ${rawFn.asExprOf[Any]}.asInstanceOf[a] }
+          '{ ${ rawFn.asExprOf[Any] }.asInstanceOf[a] }
         case _ =>
           report.errorAndAbort(s"This is totally unexpected: ${fnType.show} type is higher-kinded type constructor, but expected a proper type")
       }

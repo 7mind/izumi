@@ -1,6 +1,8 @@
 package izumi.distage.constructors
 
 import izumi.fundamentals.platform.reflection.ReflectionUtil
+
+import scala.annotation.tailrec
 import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable
 
@@ -51,7 +53,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   ): Expr[Any] = {
     val params = paramss.flatten
     val mtpe = MethodType(params.map(_._1))(
-      _ => params.map(_._2.tpe match { case t @ ByNameType(_) => t; case t => ByNameType(t) }),
+      _ => params.map(t => normalizeType(t._2.tpe)),
       _ => TypeRepr.of[R],
     )
     val lam = Lambda(
@@ -63,6 +65,30 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
       },
     )
     lam.asExpr
+  }
+
+  def unpackRefinement(t: TypeRepr): List[(String, MethodType)] = {
+    t match {
+      case Refinement(parent, name, m: MethodType) =>
+        List((name, m)) ++ unpackRefinement(parent)
+      case o =>
+        List.empty
+    }
+  }
+
+  final def ensureByName(tpe: TypeRepr): TypeRepr = {
+    tpe match {
+      case t @ ByNameType(_) => t
+      case t => ByNameType(t)
+    }
+  }
+
+  final def normalizeType(tpe: TypeRepr): TypeRepr = {
+    tpe match {
+      case MethodType(_, _, t) =>
+        normalizeType(t)
+      case t => t
+    }
   }
 
   def findRequiredImplParents(resultTpeSym: Symbol): List[Symbol] = {

@@ -25,6 +25,7 @@ object TraitConstructorMacro {
     val abstractMethods = resultTpeSym.methodMembers
       .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && m.isDefDef)
 
+    // TODO: handle refinements?
     val abstractMethodsWithParams = abstractMethods.filter(_.paramSymss.nonEmpty)
 
     if (abstractMethodsWithParams.nonEmpty) {
@@ -48,8 +49,9 @@ object TraitConstructorMacro {
     }
 
     val lamParams = {
-      val byNameMethodArgs = methodDecls.map((n, t) => (s"_$n", t))
-      (flatCtorParams ++ byNameMethodArgs).toTrees
+      val byNameMethodArgs = methodDecls.map((n, t) => (s"_$n", util.ensureByName(util.normalizeType(t))))
+      val ctorArgs = flatCtorParams.map((n, t) => (n, util.normalizeType(t)))
+      (ctorArgs ++ byNameMethodArgs).toTrees
     }
 
     val lamExpr = util.wrapIntoLambda[R](List(lamParams)) {
@@ -59,7 +61,7 @@ object TraitConstructorMacro {
 
         val parents = util.buildParentConstructorCallTerms(resultTpe, constructorParamLists, lamOnlyCtorArguments)
 
-        val name: String = s"${resultTpeSym.name}AutoImpl"
+        val name: String = s"${resultTpeSym.name}TraitAutoImpl"
         val clsSym = Symbol.newClass(lamSym, name, parents = parentsSymbols.map(_.typeRef), decls = decls, selfType = None)
 
         val defs = methodDecls.zip(lamOnlyMethodArguments).map {
