@@ -1,6 +1,7 @@
 package izumi.distage.injector
 
-import izumi.distage.constructors.{AnyConstructor, TraitConstructor}
+import distage.With
+import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, TraitConstructor}
 import izumi.distage.fixtures.Scala3TraitCases.*
 import izumi.distage.model.reflection.TypedRef
 import org.scalatest.wordspec.AnyWordSpec
@@ -70,6 +71,16 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
 //      with izumi.distage.fixtures.Scala3TraitCases.TraitInheritingAbstractClassAndTraitWithConstructor
     }
 
+    "support factories" in {
+      FactoryConstructor[FactoryTrait1]
+
+      FactoryConstructor[{
+          type U = Object
+          def makeConcreteDep(): T @With[C2]
+          def makeConcreteDep1(): T @With[C2]
+        }
+      ]
+    }
   }
 
 }

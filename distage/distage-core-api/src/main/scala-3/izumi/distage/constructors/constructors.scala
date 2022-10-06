@@ -53,7 +53,7 @@ final class ClassConstructor[T](val provider: Functoid[T]) extends AnyVal with A
 object ClassConstructor {
   def apply[T](implicit ctor: ClassConstructor[T]): Functoid[T] = ctor.provider
 
-  inline implicit def materialize[T]: ClassConstructor[T] = ${ClassConstructorMacro.make[T]}
+  inline implicit def materialize[T]: ClassConstructor[T] = ${ ClassConstructorMacro.make[T] }
 }
 
 /**
@@ -110,7 +110,7 @@ object TraitConstructor {
 object FactoryConstructor {
   def apply[T](implicit ctor: FactoryConstructor[T]): Functoid[T] = ctor.provider
 
-  inline implicit def materialize[T]: FactoryConstructor[T] = ???
+  inline implicit def materialize[T]: FactoryConstructor[T] = ${ FactoryConstructorMacro.make[T] }
 }
 
 object HasConstructor {

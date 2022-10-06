@@ -43,4 +43,13 @@ object Scala3TraitCases {
 
   trait TraitInheritingAbstractClassAndTraitWithConstructor extends TraitWithAbstractClassStackedWithConstructor with StackedTraitWithConstructor
 
+  trait T
+  case class C1() extends T
+  case class C2(c: C1, d: Int) extends T
+
+  trait FactoryTrait1 {
+    def f1: C1
+    def f2(): C1
+    def f3(c: C1): C2
+  }
 }
