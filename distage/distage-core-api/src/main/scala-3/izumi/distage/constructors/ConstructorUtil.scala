@@ -53,7 +53,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   ): Expr[Any] = {
     val params = paramss.flatten
     val mtpe = MethodType(params.map(_._1))(
-      _ => params.map(t => normalizeType(t._2.tpe)),
+      _ => params.map(t => t._2.tpe),
       _ => TypeRepr.of[R],
     )
     val lam = Lambda(
@@ -83,11 +83,45 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  final def normalizeType(tpe: TypeRepr): TypeRepr = {
+  final def dropMethodType(tpe: TypeRepr): TypeRepr = {
     tpe match {
       case MethodType(_, _, t) =>
-        normalizeType(t)
+        t
       case t => t
+    }
+  }
+
+//  final def dropAnno(tpe: TypeRepr): TypeRepr = {
+//    tpe match {
+//      case AnnotatedType(t, _) =>
+//        t
+//      case t => t
+//    }
+//  }
+
+  final def dropWrappers(tpe: TypeRepr): TypeRepr = {
+    tpe match {
+      case ByNameType(t) =>
+        t
+      case MethodType(_, _, t) =>
+        t
+      case t =>
+        t
+    }
+  }
+
+  def readWithAnno(tpe: TypeRepr): Option[TypeRepr] = {
+    import izumi.distage.model.definition.With
+    tpe match {
+      case AnnotatedType(_, aterm) =>
+        aterm.asExprOf[Any] match {
+          case '{ new With[a] } =>
+            Some(TypeRepr.of[a].dealias.simplified)
+          case _ =>
+            None
+        }
+      case _ =>
+        None
     }
   }
 

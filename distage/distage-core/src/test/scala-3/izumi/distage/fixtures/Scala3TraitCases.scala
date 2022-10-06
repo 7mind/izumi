@@ -1,6 +1,7 @@
 package izumi.distage.fixtures
 
 import izumi.distage.constructors.TraitConstructor
+import izumi.distage.model.definition.With
 import izumi.distage.model.reflection.TypedRef
 
 object Scala3TraitCases {
@@ -48,8 +49,8 @@ object Scala3TraitCases {
   case class C2(c: C1, d: Int) extends T
 
   trait FactoryTrait1 {
-    def f1: C1
-    def f2(): C1
-    def f3(c: C1): C2
+    def f1: T @With[C2]
+    def f2(): T @With[C2]
+    def f3(c: C1): T @With[C2]
   }
 }

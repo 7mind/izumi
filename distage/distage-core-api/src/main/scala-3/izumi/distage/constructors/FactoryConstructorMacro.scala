@@ -54,15 +54,25 @@ object FactoryConstructorMacro {
     }
 
     val lamParams = {
-      val ctorArgs = flatCtorParams.map((n, t) => (n, util.normalizeType(t)))
+      val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
 
       val byNameMethodArgs = methodDecls.flatMap {
         (n, t) =>
-          val rett = util.normalizeType(t) // TODO: handle @With
-          val constructorParamLists = util.buildConstructorParameters(rett)(rett.typeSymbol)
-          val flatCtorParams = constructorParamLists._2.flatten // TODO: subtract signature parameters
+          val rett = util.dropWrappers(t)
+          val impltype = util.readWithAnno(rett).getOrElse(rett)
 
-          flatCtorParams.map {
+          val constructorParamLists = util.buildConstructorParameters(impltype)(impltype.typeSymbol)
+          val flatCtorParams = constructorParamLists._2.flatten
+
+          val signatureParams = t match {
+            case MethodType(nn, tt, _) =>
+              nn.zip(tt).toSet
+            case _ =>
+              Set.empty
+          }
+          val sigNames = signatureParams.map(_._1) // TODO: odd mismatches between class Int/Int
+
+          flatCtorParams.filterNot(p => sigNames.contains(p._1)).map {
             case (pn, pt) =>
               (s"_${n}_$pn", util.ensureByName(pt))
           }

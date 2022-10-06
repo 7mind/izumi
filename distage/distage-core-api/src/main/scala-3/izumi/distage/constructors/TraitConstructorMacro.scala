@@ -50,8 +50,8 @@ object TraitConstructorMacro {
 
     // TODO: decopypaste
     val lamParams = {
-      val byNameMethodArgs = methodDecls.map((n, t) => (s"_$n", util.ensureByName(util.normalizeType(t))))
-      val ctorArgs = flatCtorParams.map((n, t) => (n, util.normalizeType(t)))
+      val byNameMethodArgs = methodDecls.map((n, t) => (s"_$n", util.ensureByName(util.dropWrappers(t))))
+      val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
       (ctorArgs ++ byNameMethodArgs).toTrees
     }
 

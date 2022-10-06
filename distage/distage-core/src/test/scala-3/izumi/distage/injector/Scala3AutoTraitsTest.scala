@@ -77,7 +77,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
       FactoryConstructor[{
           type U = Object
           def makeConcreteDep(): T @With[C2]
-          def makeConcreteDep1(): T @With[C2]
+          def makeConcreteDep1(d: Int): T @With[C2]
         }
       ]
     }
