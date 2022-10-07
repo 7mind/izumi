@@ -84,7 +84,7 @@ object FactoryConstructorMacro {
           case (pl, listIdx) =>
             pl.map {
               case (pn, pt) =>
-                sigRevIndex.find((t, _) => t =:= pt) match {
+                sigRevIndex.find((t, _) => util.dropWrappers(t) =:= util.dropWrappers(pt)) match {
                   case Some((t, (n, i))) =>
                     SignatureParameter(pn, pt, i)
 
@@ -163,23 +163,23 @@ object FactoryConstructorMacro {
         Typed(block, resultTypeTree)
     }
 
-    report.warning(
-      s"""|symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
-          |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
-          |tree = ${resultTpeSym.tree}
-          |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
-          |pct  = ${resultTpeSym.primaryConstructor.tree}
-          |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
-          |pctt = ${resultTpeSym.typeRef.memberType(resultTpeSym.primaryConstructor)}
-          |pcts = ${resultTpeSym.typeRef.baseClasses
-           .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
-           .mkString("\n")}
-          |defn = ${resultTpeSym.tree.show}
-          |lam  = ${lamExpr.asTerm}
-          |lam  = ${lamExpr.show}
-          |prms = ${methodDecls.map((n, t) => (s"_$n", t, t.getClass))}
-          |""".stripMargin
-    )
+//    report.warning(
+//      s"""|symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
+//          |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
+//          |tree = ${resultTpeSym.tree}
+//          |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
+//          |pct  = ${resultTpeSym.primaryConstructor.tree}
+//          |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
+//          |pctt = ${resultTpeSym.typeRef.memberType(resultTpeSym.primaryConstructor)}
+//          |pcts = ${resultTpeSym.typeRef.baseClasses
+//           .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
+//           .mkString("\n")}
+//          |defn = ${resultTpeSym.tree.show}
+//          |lam  = ${lamExpr.asTerm}
+//          |lam  = ${lamExpr.show}
+//          |prms = ${methodDecls.map((n, t) => (s"_$n", t, t.getClass))}
+//          |""".stripMargin
+//    )
 
     val f = functoidMacro.make[R](lamExpr)
     '{ new FactoryConstructor[R](${ f }) }
