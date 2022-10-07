@@ -109,6 +109,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -248,6 +249,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -405,6 +407,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -546,6 +549,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -694,6 +698,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -855,6 +860,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -999,6 +1005,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1141,6 +1148,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1311,6 +1319,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1460,6 +1469,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1600,6 +1610,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1740,6 +1751,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -1886,6 +1898,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2030,6 +2043,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2193,6 +2207,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2337,6 +2352,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2489,6 +2505,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2658,6 +2675,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2797,6 +2815,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -2945,6 +2964,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3091,6 +3111,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3236,6 +3257,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3376,6 +3398,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3520,6 +3543,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3688,6 +3712,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
@@ -3886,6 +3911,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       )
       case (_, "3.2.1-RC2") => Seq(
         "-Yretain-trees",
+        "-language:3.2",
         "-Ykind-projector:underscores",
         "-no-indent",
         "-explain"
