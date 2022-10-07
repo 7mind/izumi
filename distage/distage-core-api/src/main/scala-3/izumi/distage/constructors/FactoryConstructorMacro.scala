@@ -77,24 +77,34 @@ object FactoryConstructorMacro {
         util.assertSignatureIsAcceptableForFactory(signatureParams, resultTpe, s"factory method $n")
         util.assertSignatureIsAcceptableForFactory(constructorParamLists._2.flatten, resultTpe, s"implementation constructor ${impltype.show}")
 
-        val sigRevIndex = signatureParams.map(_.swap).toMap
-
-        var flatLocalSigIndex = 0
+        val indexedSigParams = signatureParams.zipWithIndex
+        val sigRevIndex = indexedSigParams.map { case ((n, t), i) => (t, (n, i)) }.toMap
 
         val params = constructorParamLists._2.zipWithIndex.map {
           case (pl, listIdx) =>
             pl.map {
               case (pn, pt) =>
-                if (sigRevIndex.exists((t, _) => t =:= pt)) {
-                  val curIndex = flatLocalSigIndex
-                  flatLocalSigIndex += 1
-                  SignatureParameter(pn, pt, curIndex)
-                } else {
-                  val curIndex = flatLamdaSigIndex
-                  flatLamdaSigIndex += 1
-                  ProvidedParameter(pn, s"_${n}_${listIdx}_$pn", util.ensureByName(pt), curIndex)
+                sigRevIndex.find((t, _) => t =:= pt) match {
+                  case Some((t, (n, i))) =>
+                    SignatureParameter(pn, pt, i)
+
+                  case None =>
+                    val curIndex = flatLamdaSigIndex
+                    flatLamdaSigIndex += 1
+                    ProvidedParameter(pn, s"_${n}_${listIdx}_$pn", util.ensureByName(pt), curIndex)
                 }
             }
+        }
+
+        val consumedSigParams = params.flatten.collect { case p: SignatureParameter => p.flatLocalSigIndex }.toSet
+        val unconsumedParameters = indexedSigParams.filterNot(p => consumedSigParams.contains(p._2))
+
+        if (unconsumedParameters.nonEmpty) {
+          import izumi.fundamentals.platform.strings.IzString.*
+          val explanation = unconsumedParameters.map { case ((n, t), _) => s"$n: ${t.show}" }.niceList()
+          report.errorAndAbort(
+            s"Cannot build factory for ${resultTpe.show}, factory method $n has arguments which were not consumed by implementation constructor ${impltype.show}: $explanation"
+          )
         }
 
         FactoryMethodDecl(n, impltype, constructorParamLists._1, params)
