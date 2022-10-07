@@ -5,7 +5,7 @@ import izumi.distage.model.reflection.{DIKey, IdContract, LinkedParameter, SafeT
 import izumi.reflect.Tag
 import izumi.distage.model.definition.Id
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, targetName}
 import scala.collection.immutable.List
 import scala.language.implicitConversions
 
@@ -35,7 +35,30 @@ trait FunctoidMacroMethods {
   inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
   inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
   inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
-  // TODO: FunctionXXL / https://docs.scala-lang.org/scala3/reference/dropped-features/limit22.html
+
+  // 23 to 32
+  @targetName("apply23")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply24")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply25")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply26")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply27")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply28")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply29")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply30")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply31")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] =
+    make[R](fun)
+  @targetName("apply32")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] =
+    make[R](fun)
 }
 
 object FunctoidMacro {
@@ -144,7 +167,16 @@ object FunctoidMacro {
 
     def make[R: Type](fun: Expr[Any]): Expr[Functoid[R]] = {
       val out = matchTerm[R](fun.asTerm)
-      report.warning(s"fun=${fun.show}\noutputType=${Type.show[R]}\nrawOutputType=(${TypeRepr.of[R]})\nproduced=${out.show}")
+      report.warning(
+        s"""fun=${fun.show}
+           |funType=${fun.asTerm.tpe}
+           |funSym=${fun.asTerm.symbol}
+           |funTypeSym=${fun.asTerm.tpe.typeSymbol}
+           |funTypeSymBases=${fun.asTerm.tpe.baseClasses}
+           |outputType=${Type.show[R]}
+           |rawOutputType=(${TypeRepr.of[R]})
+           |produced=${out.show}""".stripMargin
+      )
       out
     }
 
