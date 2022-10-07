@@ -47,10 +47,12 @@ object Scala3TraitCases {
   trait T
   case class C1() extends T
   case class C2(c: C1, d: Int) extends T
+  case class C3(a1: Int, a2: Long, a3: Object, a4: String)(a5: Double) extends T
 
   trait FactoryTrait1 {
     def f1: T @With[C2]
     def f2(): T @With[C2]
     def f3(c: C1): T @With[C2]
+    def f4(a1: Int)(a2: Long, a5: Double): T @With[C3]
   }
 }

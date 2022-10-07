@@ -42,6 +42,8 @@ object TraitConstructorMacro {
 
     val methodDecls = abstractMethods.map(m => (m.name, m.owner.typeRef.memberType(m)))
 
+    assert(methodDecls.map(_._1).size == methodDecls.size, "BUG: duplicated abstract method names")
+
     def decls(cls: Symbol): List[Symbol] = methodDecls.map {
       case (name, mtype) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
@@ -67,9 +69,10 @@ object TraitConstructorMacro {
 
         val defs = methodDecls.zip(lamOnlyMethodArguments).map {
           case ((name, _), arg) =>
-            val fooSym = clsSym.declaredMethod(name).head
-
-            DefDef(fooSym, _ => Some(arg))
+            val methodSyms = clsSym.declaredMethod(name)
+            assert(methodSyms.size == 1, "BUG: duplicated methods!")
+            val methodSym = methodSyms.head
+            DefDef(methodSym, _ => Some(arg))
         }
 
         val clsDef = ClassDef(clsSym, parents.toList, body = defs)

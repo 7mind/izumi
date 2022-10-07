@@ -17,6 +17,7 @@ object FactoryConstructorMacro {
     val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
     val util = new ConstructorUtil[qctx.type]()
     import util.ParamListExt
+    import util.{ParamListRepr, ParamListsRepr}
 
     val resultTpe = TypeRepr.of[R].dealias.simplified
     val resultTypeTree = TypeTree.of[R]
@@ -53,50 +54,97 @@ object FactoryConstructorMacro {
         Symbol.newMethod(cls, name, mtype, flags, Symbol.noSymbol)
     }
 
-    val lamParams = {
-      val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
+    sealed trait Parameter
+    case class ProvidedParameter(constructorName: String, argName: String, tpe: TypeRepr, flatLamdaSigIndex: Int) extends Parameter
+    case class SignatureParameter(sigName: String, tpe: TypeRepr, flatLocalSigIndex: Int) extends Parameter
 
-      val byNameMethodArgs = methodDecls.flatMap {
-        (n, t) =>
-          val rett = util.dropWrappers(t)
-          val impltype = util.readWithAnno(rett).getOrElse(rett)
+    case class FactoryMethodDecl(
+      name: String,
+      impl: TypeRepr,
+      implSymb: Symbol,
+      params: List[List[Parameter]],
+    )
 
-          val constructorParamLists = util.buildConstructorParameters(impltype)(impltype.typeSymbol)
-          val flatCtorParams = constructorParamLists._2.flatten
+    var flatLamdaSigIndex = 0
+    val factoryMethodData = methodDecls.map {
+      (n, t) =>
+        val signatureParams = util.flattenMethodSignature(t)
+        val rett = util.dropWrappers(util.realReturnType(t))
+        val impltype = util.readWithAnno(rett).getOrElse(rett).dealias.simplified
 
-          val signatureParams = t match {
-            case MethodType(nn, tt, _) =>
-              nn.zip(tt).toSet
-            case _ =>
-              Set.empty
-          }
-          val sigNames = signatureParams.map(_._1) // TODO: odd mismatches between class Int/Int
+        val constructorParamLists = util.buildConstructorParameters(impltype)(impltype.typeSymbol)
 
-          flatCtorParams.filterNot(p => sigNames.contains(p._1)).map {
-            case (pn, pt) =>
-              (s"_${n}_$pn", util.ensureByName(pt))
-          }
-      }
+        util.assertSignatureIsAcceptableForFactory(signatureParams, resultTpe, s"factory method $n")
+        util.assertSignatureIsAcceptableForFactory(constructorParamLists._2.flatten, resultTpe, s"implementation constructor ${impltype.show}")
 
-      (ctorArgs ++ byNameMethodArgs).toTrees
+        val sigRevIndex = signatureParams.map(_.swap).toMap
+
+        var flatLocalSigIndex = 0
+
+        val params = constructorParamLists._2.zipWithIndex.map {
+          case (pl, listIdx) =>
+            pl.map {
+              case (pn, pt) =>
+                if (sigRevIndex.exists((t, _) => t =:= pt)) {
+                  val curIndex = flatLocalSigIndex
+                  flatLocalSigIndex += 1
+                  SignatureParameter(pn, pt, curIndex)
+                } else {
+                  val curIndex = flatLamdaSigIndex
+                  flatLamdaSigIndex += 1
+                  ProvidedParameter(pn, s"_${n}_${listIdx}_$pn", util.ensureByName(pt), curIndex)
+                }
+            }
+        }
+
+        FactoryMethodDecl(n, impltype, constructorParamLists._1, params)
     }
+
+    val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
+    val byNameMethodArgs = factoryMethodData.flatMap(_.params).flatten.collect { case p: ProvidedParameter => (p.argName, p.tpe) }
+    val lamParams = (ctorArgs ++ byNameMethodArgs).toTrees
+    val indexShift = ctorArgs.length
 
     val lamExpr = util.wrapIntoLambda[R](List(lamParams)) {
       (lamSym, args0) =>
 
-        val (lamOnlyCtorArguments, lamOnlyMethodArguments) = args0.splitAt(flatCtorParams.size)
+        val (lamOnlyCtorArguments, _) = args0.splitAt(flatCtorParams.size)
 
         val parents = util.buildParentConstructorCallTerms(resultTpe, constructorParamLists, lamOnlyCtorArguments)
 
         val name: String = s"${resultTpeSym.name}FactoryAutoImpl"
         val clsSym = Symbol.newClass(lamSym, name, parents = parentsSymbols.map(_.typeRef), decls = decls, selfType = None)
 
-        val defs = methodDecls.zip(lamOnlyMethodArguments).map {
-          case ((name, _), arg) =>
-            val fooSym = clsSym.declaredMethod(name).head
+        val defs = factoryMethodData.map {
+          fmd =>
+            val methodSyms = clsSym.declaredMethod(fmd.name)
+            assert(methodSyms.size == 1, "BUG: duplicated methods!")
+            val methodSym = methodSyms.head
 
-            // TODO: generate impl
-            DefDef(fooSym, _ => Some('{ ??? }.asTerm))
+            DefDef(
+              methodSym,
+              sigArgs => {
+
+                val ctorTreeParameterized = util.buildConstructorApplication(fmd.implSymb, fmd.impl)
+                val sigFlat = sigArgs.flatten
+
+                val argsLists: List[List[Term]] = fmd.params.map {
+                  pl =>
+                    pl.map {
+                      case p: ProvidedParameter =>
+                        args0(p.flatLamdaSigIndex + indexShift)
+                      case p: SignatureParameter =>
+                        sigFlat(p.flatLocalSigIndex).asExpr.asTerm
+                    }
+                }
+
+                // TODO: check that there are no unconsumed parameters
+                val appl = argsLists.foldLeft(ctorTreeParameterized)(_.appliedToArgs(_))
+                val trm = Typed(appl, TypeTree.of(using fmd.impl.asType))
+
+                Some(trm)
+              },
+            )
         }
 
         val clsDef = ClassDef(clsSym, parents.toList, body = defs)

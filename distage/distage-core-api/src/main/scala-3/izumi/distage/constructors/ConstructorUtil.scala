@@ -18,6 +18,20 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     def toTrees: ParamListTree = params.map((n, t) => (n, TypeTree.of(using t.asType))).toList
   }
 
+  def assertSignatureIsAcceptableForFactory(signatureParams: ParamListRepr, resultTpe: TypeRepr, clue: String):Unit  = {
+    assert(signatureParams.groupMap(_._1)(_._2).forall(_._2.size == 1), "BUG: duplicated arg names!")
+
+    val sigRevIndex = signatureParams.groupMap(_._2)(_._1)
+    val duplications = sigRevIndex.filter(_._2.size > 1)
+
+    if (duplications.nonEmpty) {
+      import izumi.fundamentals.platform.strings.IzString.*
+      val explanation = duplications.map((t, nn) => s"${t.show}: ${nn.mkString(", ")}").niceList()
+      report.errorAndAbort(s"Cannot build factory for ${resultTpe.show}, $clue contais contradicting arguments: $explanation")
+    }
+
+    sigRevIndex.view.mapValues(_.head).toMap
+  }
   def requireConcreteTypeConstructor[R: Type](macroName: String): Unit = {
     val tpe = TypeRepr.of[R]
     if (!ReflectionUtil.allPartsStrong(tpe.typeSymbol.typeRef)) {
@@ -76,6 +90,24 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
+  def flattenMethodSignature(t: TypeRepr): ParamListRepr = {
+    t match {
+      case MethodType(nn, tt, ret) =>
+        nn.zip(tt) ++ flattenMethodSignature(ret)
+      case _ =>
+        List.empty
+    }
+  }
+
+  @tailrec
+  final def realReturnType(t: TypeRepr): TypeRepr = {
+    t match {
+      case MethodType(_, _, ret) =>
+        realReturnType(ret)
+      case r =>
+        r
+    }
+  }
   final def ensureByName(tpe: TypeRepr): TypeRepr = {
     tpe match {
       case t @ ByNameType(_) => t
