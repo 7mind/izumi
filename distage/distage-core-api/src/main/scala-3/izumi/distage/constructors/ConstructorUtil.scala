@@ -18,7 +18,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     def toTrees: ParamListTree = params.map((n, t) => (n, TypeTree.of(using t.asType))).toList
   }
 
-  def assertSignatureIsAcceptableForFactory(signatureParams: ParamListRepr, resultTpe: TypeRepr, clue: String):Unit  = {
+  def assertSignatureIsAcceptableForFactory(signatureParams: ParamListRepr, resultTpe: TypeRepr, clue: String): Unit = {
     assert(signatureParams.groupMap(_._1)(_._2).forall(_._2.size == 1), "BUG: duplicated arg names!")
 
     val sigRevIndex = signatureParams.groupMap(_._2)(_._1)
@@ -32,8 +32,12 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
 
     sigRevIndex.view.mapValues(_.head).toMap
   }
+
   def requireConcreteTypeConstructor[R: Type](macroName: String): Unit = {
-    val tpe = TypeRepr.of[R]
+    requireConcreteTypeConstructor(TypeRepr.of[R], macroName)
+  }
+
+  def requireConcreteTypeConstructor(tpe: TypeRepr, macroName: String): Unit = {
     if (!ReflectionUtil.allPartsStrong(tpe.typeSymbol.typeRef)) {
       val hint = tpe.dealias.show
       report.errorAndAbort(

@@ -89,7 +89,7 @@ object CircularCases {
     }
 
     trait FactorySelfReference {
-      def self: FactorySelfReference
+//      def self: FactorySelfReference // TODO: commented out to fit into scala3 factoryconstructor restrictions
       def mkByNameSelfReference(inner: ByNameSelfReference): ByNameSelfReference
       def mkByNameSelfReferenceByName(inner: => ByNameSelfReference): ByNameSelfReference
     }

@@ -72,6 +72,12 @@ object FactoryConstructorMacro {
         val rett = util.dropWrappers(util.realReturnType(t))
         val impltype = util.readWithAnno(rett).getOrElse(rett).dealias.simplified
 
+        if (impltype.typeSymbol.flags.is(Flags.Trait) || impltype.typeSymbol.flags.is(Flags.Abstract)) {
+          report.errorAndAbort(
+            s"Cannot build factory for ${resultTpe.show}, factory method $n returns type ${impltype.show} which cannot be constructed with new"
+          )
+        }
+
         val constructorParamLists = util.buildConstructorParameters(impltype)(impltype.typeSymbol)
 
         util.assertSignatureIsAcceptableForFactory(signatureParams, resultTpe, s"factory method $n")
@@ -85,13 +91,18 @@ object FactoryConstructorMacro {
             pl.map {
               case (pn, pt) =>
                 sigRevIndex.find((t, _) => util.dropWrappers(t) =:= util.dropWrappers(pt)) match {
-                  case Some((t, (n, i))) =>
+                  case Some((_, (_, i))) =>
                     SignatureParameter(pn, pt, i)
 
                   case None =>
                     val curIndex = flatLamdaSigIndex
                     flatLamdaSigIndex += 1
-                    ProvidedParameter(pn, s"_${n}_${listIdx}_$pn", util.ensureByName(pt), curIndex)
+                    val newName = if (listIdx > 0) {
+                      s"_${n}_${listIdx}_$pn"
+                    } else {
+                      s"_${n}_$pn"
+                    }
+                    ProvidedParameter(pn, newName, util.ensureByName(pt), curIndex)
                 }
             }
         }
