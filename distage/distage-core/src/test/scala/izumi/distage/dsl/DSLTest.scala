@@ -13,6 +13,8 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.unused
+
 class DSLTest extends AnyWordSpec with MkInjector {
 
   import TestTagOps._
@@ -380,10 +382,10 @@ class DSLTest extends AnyWordSpec with MkInjector {
     }
 
     "support ClassConstructor" in {
-      class K(a: String) {}
+      class K(@unused a: String) {}
       ClassConstructor[K].get
-
     }
+    
     "support binding to multiple interfaces" in {
       import BasicCase6._
 

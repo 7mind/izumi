@@ -1,15 +1,16 @@
 package izumi.distage.impl
 
-import distage._
+import distage.{Id, Tag, TagK}
+import izumi.distage.constructors.ClassConstructor
 import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
 import izumi.distage.fixtures.BasicCases.BasicCase7
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.TypedRef
+import izumi.distage.model.reflection.{DIKey, SafeType, TypedRef}
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.ScalaRelease
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 

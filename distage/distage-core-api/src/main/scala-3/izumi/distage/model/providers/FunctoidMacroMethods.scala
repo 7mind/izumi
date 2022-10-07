@@ -1,16 +1,18 @@
 package izumi.distage.model.providers
 
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
-import izumi.distage.model.reflection.{DIKey, IdContract, LinkedParameter, SafeType, SymbolInfo}
+import izumi.distage.model.reflection.*
+import izumi.distage.constructors.ClassConstructorMacro
 import izumi.reflect.Tag
 import izumi.distage.model.definition.Id
 
 import scala.annotation.{tailrec, targetName}
 import scala.collection.immutable.List
 import scala.language.implicitConversions
+import scala.quoted.{Expr, Quotes, Type}
 
 trait FunctoidMacroMethods {
-  import FunctoidMacro.*
+  import FunctoidMacro.make
 
   inline implicit def apply[R](inline fun: () => R): Functoid[R] = make[R](fun)
   inline implicit def apply[R](inline fun: (?) => R): Functoid[R] = make[R](fun)
@@ -62,14 +64,14 @@ trait FunctoidMacroMethods {
 }
 
 object FunctoidMacro {
-  import scala.quoted.{Expr, Quotes, Type}
+  inline def make[R](inline fun: Any): Functoid[R] = ${ makeImpl[R]('fun) }
 
-  inline def make[R](inline fun: Any): Functoid[R] = ${ make[R]('fun) }
-
-  def make[R: Type](fun: Expr[Any])(using qctx: Quotes): Expr[Functoid[R]] = new FunctoidMacroImpl[qctx.type]().make(fun)
+  def makeImpl[R: Type](fun: Expr[Any])(using qctx: Quotes): Expr[Functoid[R]] = new FunctoidMacroImpl[qctx.type]().make(fun)
 
   final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q) {
     import qctx.reflect.*
+
+    val idAnnotationSym = TypeRepr.of[Id].typeSymbol
 
     def makeParams[R: Type](params: List[(String, TypeTree)]): (List[Expr[LinkedParameter]], List[TypeTree]) = {
       val paramTypes = params.map(_._2)
@@ -77,17 +79,14 @@ object FunctoidMacro {
       val paramDefs = params.map {
         case (name, tpe) =>
           val identifier = tpe match {
-            case Annotated(_, aterm) =>
-              aterm.asExprOf[Any] match {
-                case '{ new Id($c) } =>
-                  c.asTerm match {
-                    case Literal(v) =>
-                      Some(v.value.toString)
-                    case _ =>
-                      report.errorAndAbort(s"distage.Id annotation expects one literal argument but got ${c.show} in tree ${aterm.show}")
+            case Annotated(_, aterm) if aterm.tpe.dealias.simplified.baseClasses.contains(idAnnotationSym) =>
+              aterm match {
+                case Apply(Select(New(_), _), c :: _) =>
+                  c.asExprOf[String].value.orElse {
+                    report.errorAndAbort(s"distage.Id annotation expects one literal argument but got ${c.show} in tree ${aterm.show} ($aterm)")
                   }
                 case _ =>
-                  None
+                  report.errorAndAbort(s"distage.Id annotation expects one literal argument but got malformed tree ${aterm.show} ($aterm)")
               }
             case _ =>
               None
