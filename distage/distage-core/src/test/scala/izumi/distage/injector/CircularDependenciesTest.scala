@@ -38,7 +38,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
       make[Circular1]
       make[Circular2]
       make[Circular5]
-      make[Circular4]
+      makeFactory[Circular4]
     })
 
     val injector = mkInjector()
@@ -100,7 +100,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[ByNameSelfReference]
-      make[FactorySelfReference]
+      makeFactory[FactorySelfReference]
     })
 
     val injector = mkNoProxiesInjector()

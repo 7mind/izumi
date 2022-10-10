@@ -204,7 +204,7 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
   }
 
   def symbolToFactory(reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): u.Wiring.Factory = {
-    reflectionProvider.symbolToWiring(targetType) match {
+    reflectionProvider.symbolToAnyWiring(targetType) match {
       case factory: u.Wiring.Factory => factory
       case wiring => throw new RuntimeException(s"""Tried to create a `FactoryConstructor[$targetType]`, but `$targetType` is not a factory!
                                                    |

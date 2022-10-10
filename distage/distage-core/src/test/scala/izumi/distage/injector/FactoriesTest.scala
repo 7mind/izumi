@@ -16,11 +16,11 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Factory]
+      makeFactory[Factory]
       make[Dependency]
-      make[OverridingFactory]
-      make[AssistedFactory]
-      make[AbstractFactory]
+      makeFactory[OverridingFactory]
+      makeFactory[AssistedFactory]
+      makeFactory[AbstractFactory]
     })
 
     val injector = mkNoCyclesInjector()
@@ -54,7 +54,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[GenericAssistedFactory]
+      makeFactory[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
 
@@ -73,7 +73,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[NamedAssistedFactory]
+      makeFactory[NamedAssistedFactory]
       make[Dependency]
       make[Dependency].named("special").from(SpecialDep())
       make[Dependency].named("veryspecial").from(VerySpecialDep())
@@ -97,7 +97,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[MixedAssistendNonAssisted]
+      makeFactory[MixedAssistendNonAssisted]
       make[Dependency]
     })
 
@@ -118,7 +118,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[AssistedAbstractFactory]
+      makeFactory[AssistedAbstractFactory]
       make[Dependency]
     })
 
@@ -139,7 +139,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[AssistedAbstractFactoryF[Identity]]
+      makeFactory[AssistedAbstractFactoryF[Identity]]
       make[Identity[Dependency]]
     })
 
@@ -210,7 +210,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency]
       make[TestClass]
-      make[Factory]
+      makeFactory[Factory]
     })
 
     val injector = mkNoCyclesInjector()
@@ -230,7 +230,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
       make[Dep1]
       make[Dep2]
       make[TC[Any]].fromValue(TC1)
-      make[ImplicitFactory]
+      makeFactory[ImplicitFactory]
     })
 
     val injector = mkInjector()
@@ -258,7 +258,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency]
       make[TestClass]
-      make[AbstractClassFactory]
+      makeFactory[AbstractClassFactory]
     })
 
     val injector = mkInjector()
@@ -272,7 +272,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[AssistedFactory]
+      makeFactory[AssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
 

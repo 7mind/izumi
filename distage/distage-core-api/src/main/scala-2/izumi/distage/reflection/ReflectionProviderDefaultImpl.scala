@@ -46,7 +46,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def symbolToWiring(tpe: TypeNative): Wiring = {
+  def symbolToAnyWiring(tpe: TypeNative): Wiring = {
     tpe match {
       case FactorySymbol(symbolMethods, dependencyMethods) =>
         val factoryMethods = symbolMethods.map(_.asMethod).map(factoryMethod(tpe))
@@ -58,6 +58,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case _ =>
         mkConstructorWiring(factoryMethod = u.u.NoSymbol, tpe = tpe)
     }
+  }
+
+  override def symbolToWiring(tpe: TypeNative): Wiring = {
+    mkConstructorWiring(factoryMethod = u.u.NoSymbol, tpe = tpe)
+
   }
 
   override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
@@ -104,7 +109,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case AbstractSymbol(t) =>
         Wiring.SingletonWiring.Trait(t, constructorParameterLists(t), traitMethods(t), getPrefix(t))
 
-      case FactorySymbol(_, _) =>
+      case FactorySymbol(mms, _) =>
         throw new UnsupportedWiringException(
           s"""Augmentation failure. Factory cannot produce factories, it's pointless.
              |  * When trying to create an implementation for a factory `${factoryMethod.owner}`
@@ -113,6 +118,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
              |  * Type `$tpe` has been considered a factory because it's an abstract type and contains unimplemented abstract methods with parameters
              |  * Did you forget a `distage.With` annotation on the factory method to specify a non-abstract implementation type?
              |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.
+             |  
+             |  * $mms
              |""".stripMargin,
           SafeType.create(tpe),
         )
@@ -262,7 +269,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   override def isFactory(tpe: TypeNative): Boolean = {
     !tpe.typeSymbol.isFinal && !(tpe.typeSymbol.isClass && tpe.typeSymbol.asClass.isSealed) && {
       val abstracts = tpe.members.filter(_.isAbstract)
-      abstracts.exists(isFactoryMethod) && abstracts.forall(m => isFactoryMethod(m) || isWireableMethod(m))
+      abstracts.nonEmpty && abstracts.forall(m => isFactoryMethod(m))
     }
   }
 
@@ -271,7 +278,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private[this] def isFactoryMethod(decl: SymbNative): Boolean = {
-    decl.isMethod && decl.isAbstract && !decl.isSynthetic && decl.owner != u.u.definitions.AnyClass && decl.asMethod.paramLists.nonEmpty
+    decl.isMethod && decl.isAbstract && !decl.isSynthetic && decl.owner != u.u.definitions.AnyClass
   }
 
   @inline private[this] def findConstructor(tpe: TypeNative): SymbNative = {

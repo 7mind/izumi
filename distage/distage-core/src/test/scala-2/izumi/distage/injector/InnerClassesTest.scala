@@ -140,7 +140,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     import InnerClassStablePathsCase.StableObjectInheritingTrait.{TestClass, TestDependency, TestFactory}
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TestFactory]
+      makeFactory[TestFactory]
     })
 
     val context = mkInjector().produce(definition).unsafeGet()
@@ -172,7 +172,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.target[testProviderModule.TestFactory](
       new ModuleDef {
         make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-        make[testProviderModule.TestFactory]
+        makeFactory[testProviderModule.TestFactory]
       },
       Activation.empty,
     )

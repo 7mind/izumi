@@ -54,7 +54,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
-      make[BopFactory[Int]]
+      makeFactory[BopFactory[Int]]
     })
 
     val context = Injector.Standard().produce(definition).unsafeGet()
