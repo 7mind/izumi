@@ -15,7 +15,7 @@ import izumi.reflect.Tag
 
 import scala.collection.mutable
 
-trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] {
+trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL, BindDSLAfterFrom, SetDSL] {
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
   protected[this] def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
@@ -146,6 +146,11 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
   final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
     _bindDSL[T](ref)
+  }
+
+  final protected[this] def _makeSimple[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
+    val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
+    _bindDSLAfterFrom[T](ref)
   }
 }
 
