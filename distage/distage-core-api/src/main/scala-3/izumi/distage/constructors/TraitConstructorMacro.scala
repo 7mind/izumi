@@ -15,32 +15,20 @@ object TraitConstructorMacro {
     import qctx.reflect.*
 
     val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
+
     val util = new ConstructorUtil[qctx.type]()
     import util.ParamListExt
 
-    val resultTpe = TypeRepr.of[R].dealias.simplified
-    val resultTypeTree = TypeTree.of[R]
-    val resultTpeSym = resultTpe.typeSymbol
+    val context = new ConstructorContext[R, qctx.type](util)
+    import context.*
 
-    val abstractMethods = resultTpeSym.methodMembers
-      .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && m.isDefDef)
-
-    // TODO: handle refinements?
-    val abstractMethodsWithParams = abstractMethods.filter(_.paramSymss.nonEmpty)
-
-    if (abstractMethodsWithParams.nonEmpty) {
+    if (!context.isWireableTrait) {
       report.errorAndAbort(
         s"""$resultTpeSym has abstract methods taking parameters, expected only parameterless abstract methods:
            |  ${abstractMethodsWithParams.map(s => s.name -> s.flags.show)}
            |  [others: ${abstractMethods.map(s => s.name -> s.flags.show)}]""".stripMargin
       )
     }
-
-    val parentsSymbols = util.findRequiredImplParents(resultTpeSym)
-    val constructorParamLists = parentsSymbols.map(util.buildConstructorParameters(resultTpe))
-    val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
-
-    val methodDecls = abstractMethods.map(m => (m.name, m.owner.typeRef.memberType(m)))
 
     assert(methodDecls.map(_._1).size == methodDecls.size, "BUG: duplicated abstract method names")
 

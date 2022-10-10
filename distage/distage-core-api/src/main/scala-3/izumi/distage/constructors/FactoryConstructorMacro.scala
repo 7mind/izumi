@@ -15,32 +15,21 @@ object FactoryConstructorMacro {
     import qctx.reflect.*
 
     val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
+
     val util = new ConstructorUtil[qctx.type]()
     import util.ParamListExt
     import util.{ParamListRepr, ParamListsRepr}
 
-    val resultTpe = TypeRepr.of[R].dealias.simplified
-    val resultTypeTree = TypeTree.of[R]
-    val resultTpeSym = resultTpe.typeSymbol
+    val context = new ConstructorContext[R, qctx.type](util)
+    import context.*
 
-    val refinementMethods = util.unpackRefinement(resultTpe)
-
-    val abstractMethods = resultTpeSym.methodMembers
-      .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && m.isDefDef)
-
-    if (abstractMethods.isEmpty && refinementMethods.isEmpty) {
+    if (!isFactory) {
       report.errorAndAbort(
         s"""$resultTpeSym has no abstract methods so it's not a factory;; ${resultTpeSym.methodMembers};; $resultTypeTree;; ${resultTypeTree.getClass}""".stripMargin
       )
     }
 
-    // TODO: handle refinements
 
-    val parentsSymbols = util.findRequiredImplParents(resultTpeSym)
-    val constructorParamLists = parentsSymbols.map(util.buildConstructorParameters(resultTpe))
-    val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
-
-    val methodDecls = abstractMethods.map(m => (m.name, m.owner.typeRef.memberType(m))) ++ refinementMethods
     val refinementNames = refinementMethods.map(_._1).toSet
 
     def decls(cls: Symbol): List[Symbol] = methodDecls.map {

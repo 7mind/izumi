@@ -5,6 +5,33 @@ import izumi.fundamentals.platform.reflection.ReflectionUtil
 import scala.annotation.tailrec
 import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable
+import izumi.distage.model.providers.FunctoidMacro
+
+class ConstructorContext[R: Type, Q <: Quotes](using val qctx: Q)(val util: ConstructorUtil[qctx.type]) {
+  import qctx.reflect.*
+
+  val resultTpe = TypeRepr.of[R].dealias.simplified
+  val resultTypeTree = TypeTree.of[R]
+  val resultTpeSym = resultTpe.typeSymbol
+
+  val refinementMethods = util.unpackRefinement(resultTpe)
+
+  val abstractMethods = resultTpeSym.methodMembers
+    .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && m.isDefDef)
+
+  // TODO: handle refinements?
+  val abstractMethodsWithParams = abstractMethods.filter(_.paramSymss.nonEmpty)
+
+  val parentsSymbols = util.findRequiredImplParents(resultTpeSym)
+  val constructorParamLists = parentsSymbols.map(util.buildConstructorParameters(resultTpe))
+  val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
+
+  val methodDecls = abstractMethods.map(m => (m.name, m.owner.typeRef.memberType(m))) ++ refinementMethods
+
+  def isFactory: Boolean = abstractMethods.nonEmpty || refinementMethods.nonEmpty
+
+  def isWireableTrait: Boolean = abstractMethodsWithParams.isEmpty
+}
 
 class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   import qctx.reflect.*
