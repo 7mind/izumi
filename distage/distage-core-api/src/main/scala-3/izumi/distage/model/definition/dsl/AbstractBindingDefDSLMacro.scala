@@ -1,5 +1,16 @@
 package izumi.distage.model.definition.dsl
 
-trait AbstractBindingDefDSLMacro[BindDSL[_]] {
+import izumi.distage.constructors.FactoryConstructor
+import izumi.distage.model.definition.Bindings
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonRef
+import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.reflect.Tag
+
+trait AbstractBindingDefDSLMacro[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] { this: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL] =>
+
   final protected[this] def make[T]: BindDSL[T] = ???
+
+  inline final protected[this] def makeFactory[T](implicit tag: Tag[T], pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
+    _makeSimple(FactoryConstructor[T])(tag, pos)
+  }
 }
