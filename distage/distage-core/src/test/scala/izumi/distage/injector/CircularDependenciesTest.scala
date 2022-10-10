@@ -44,11 +44,11 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    assert(plan.plan.successors.links(DIKey.get[Circular1]).size == 3)
-    assert(plan.plan.successors.links(DIKey.ProxyInitKey(DIKey.get[Circular1])).isEmpty)
+    assert(plan.plan.successors.links(DIKey.get[Circular1]).size == 2)
+    assert(!plan.plan.successors.links.contains(DIKey.ProxyInitKey(DIKey.get[Circular1])))
 
-    assert(plan.plan.predecessors.links(DIKey.get[Circular1]).isEmpty)
-    assert(plan.plan.predecessors.links(DIKey.ProxyInitKey(DIKey.get[Circular1])).size == 2)
+    assert(plan.plan.predecessors.links(DIKey.get[Circular1]).size == 1)
+    assert(!plan.plan.predecessors.links.contains(DIKey.ProxyInitKey(DIKey.get[Circular1])))
 
     val context = injector.produce(plan).unsafeGet()
     val c3 = context.get[Circular3]

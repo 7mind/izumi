@@ -89,7 +89,9 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val instantiated = context.get[NamedAssistedFactory]
 
-    assert(instantiated.dep.isVerySpecial)
+    // makeFactory - change of semantics!
+    assert(!instantiated.dep.isVerySpecial)
+
     assert(instantiated.x(5).b.isSpecial)
   }
 
@@ -165,7 +167,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     ]
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[{
+      makeFactory[{
           def makeConcreteDep(): Dependency @With[ConcreteDep]
         }
       ]
@@ -188,7 +190,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
         // FIXME: `make` support? should be compile-time error
         val definition = PlannerInput.everything(new ModuleDef {
-          make[FactoryProducingFactory]
+          makeFactory[FactoryProducingFactory]
           make[Dependency]
         })
 
@@ -246,7 +248,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(instantiated.x(new Dep1).dep3 == Dep3)
 
     val res = intercept[TestFailedException](assertCompiles("""new ModuleDef {
-      make[InvalidImplicitFactory]
+      makeFactory[InvalidImplicitFactory]
     }"""))
     assert(res.getMessage.contains("contains types not required by constructor of the result type"))
     assert(res.getMessage.contains("UnrelatedTC["))

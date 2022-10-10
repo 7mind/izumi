@@ -61,8 +61,10 @@ class ArityTest extends AnyWordSpec with MkInjector {
 
     assert(context.get[BopFactory[Int]].x(5) == BeepDependency1(5)(context.get[Beep[Int]]))
     assert(context.get[BopFactory[Int]].x() == BeepDependency()(context.get[Beep[Int]]))
-    assert(context.get[BopFactory[Int]].beep0 == context.get[Beep[Int]])
-    assert(context.get[BopFactory[Int]].beep29 == context.get[Beep[Int]])
+
+    // makeFactory - change of semantics!
+    assert(context.get[BopFactory[Int]].beep0 != context.get[Beep[Int]])
+    assert(context.get[BopFactory[Int]].beep29 != context.get[Beep[Int]])
   }
 
   "Support types with no parameters" in {

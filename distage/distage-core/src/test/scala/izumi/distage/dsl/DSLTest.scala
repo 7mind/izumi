@@ -385,7 +385,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       class K(@unused a: String) {}
       ClassConstructor[K].get
     }
-    
+
     "support binding to multiple interfaces" in {
       import BasicCase6._
 
@@ -635,10 +635,8 @@ class DSLTest extends AnyWordSpec with MkInjector {
         """
         )
       )
-      assert(res2.getMessage contains "Wiring unsupported: `F[Unit]`")
-      assert(res2.getMessage contains "trying to create an implementation")
-      assert(res2.getMessage contains "`method release`")
-      assert(res2.getMessage contains "`trait Basic`")
+      assert(res2.getMessage contains "couldn't generate a constructor")
+      assert(res2.getMessage contains "It's neither a concrete class, nor a wireable trait or abstract class!")
     }
 
     "define multiple bindings with different axis but the same implementation" in {
