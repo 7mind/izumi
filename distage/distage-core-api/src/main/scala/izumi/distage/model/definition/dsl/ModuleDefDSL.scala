@@ -1,12 +1,12 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.constructors.{AnyConstructor, HasConstructor}
+import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, HasConstructor}
 import izumi.distage.model.definition.Lifecycle.{LifecycleTag, TrifunctorHasLifecycleTag}
-import izumi.distage.model.definition._
+import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, _}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, *}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
@@ -14,7 +14,7 @@ import izumi.functional.bio.Local3
 import izumi.functional.bio.data.Morphism1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK, TagK3}
-import zio._
+import zio.*
 
 import scala.collection.immutable.HashSet
 
@@ -101,7 +101,7 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
 
 object ModuleDefDSL {
 
-  trait MakeDSLBase[T, AfterBind] extends AnyKindShim with AbstractModuleDefDSLMacro[T, AfterBind] {
+  trait MakeDSLBase[T, AfterBind] extends AnyKindShim {
     final def from[I <: T: AnyConstructor]: AfterBind =
       from(AnyConstructor[I])
 
@@ -317,7 +317,10 @@ object ModuleDefDSL {
       bind(ImplDef.ProviderImpl(provider.ret, provider))
     }
 
-    def bind(impl: ImplDef): AfterBind
+    final def fromFactory[I <: T: FactoryConstructor]: AfterBind =
+      from(FactoryConstructor[I])
+
+    protected[this] def bind(impl: ImplDef): AfterBind
     protected[this] def key: DIKey
   }
 
@@ -689,7 +692,7 @@ object ModuleDefDSL {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key))
     }
 
-    override def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
+    override protected[this] def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_, key))
     }
 
@@ -705,7 +708,7 @@ object ModuleDefDSL {
   ) extends MakeDSLMutBase[T, MakeNamedDSL[T]]
     with MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] {
 
-    override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
+    override protected[this] def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
