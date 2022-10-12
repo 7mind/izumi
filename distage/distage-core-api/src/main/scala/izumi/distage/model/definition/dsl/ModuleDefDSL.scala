@@ -304,9 +304,6 @@ object ModuleDefDSL {
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
 
-//    final def fromFactory[I <: T : Tag]: AfterBind =
-//      bind(ImplDef.ProviderImpl(SafeType.get[I], ImplDef.ProviderImpl(SafeType.get[I], instance)))
-
     /**
       * Create a dummy binding that throws an exception with an error message when it's created.
       *

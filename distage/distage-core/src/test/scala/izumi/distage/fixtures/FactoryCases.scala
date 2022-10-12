@@ -130,7 +130,6 @@ object FactoryCases {
     trait IFactory {}
 
     trait IFactoryImpl extends IFactory {
-      def dep(): Dep
     }
   }
 
