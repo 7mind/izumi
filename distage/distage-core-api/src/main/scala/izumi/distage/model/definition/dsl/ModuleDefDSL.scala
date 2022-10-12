@@ -101,7 +101,7 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
 
 object ModuleDefDSL {
 
-  trait MakeDSLBase[T, AfterBind] extends AnyKindShim {
+  trait MakeDSLBase[T, AfterBind] extends AnyKindShim with AbstractModuleDefDSLMacro[T, AfterBind] {
     final def from[I <: T: AnyConstructor]: AfterBind =
       from(AnyConstructor[I])
 
@@ -304,6 +304,9 @@ object ModuleDefDSL {
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
 
+//    final def fromFactory[I <: T : Tag]: AfterBind =
+//      bind(ImplDef.ProviderImpl(SafeType.get[I], ImplDef.ProviderImpl(SafeType.get[I], instance)))
+
     /**
       * Create a dummy binding that throws an exception with an error message when it's created.
       *
@@ -314,7 +317,7 @@ object ModuleDefDSL {
       bind(ImplDef.ProviderImpl(provider.ret, provider))
     }
 
-    protected[this] def bind(impl: ImplDef): AfterBind
+    def bind(impl: ImplDef): AfterBind
     protected[this] def key: DIKey
   }
 
@@ -686,7 +689,7 @@ object ModuleDefDSL {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key))
     }
 
-    override protected[this] def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
+    override def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_, key))
     }
 
@@ -702,7 +705,7 @@ object ModuleDefDSL {
   ) extends MakeDSLMutBase[T, MakeNamedDSL[T]]
     with MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] {
 
-    override protected[this] def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
+    override def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
     }
 
