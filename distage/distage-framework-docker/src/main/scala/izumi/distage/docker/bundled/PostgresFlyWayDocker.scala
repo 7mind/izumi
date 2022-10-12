@@ -1,10 +1,9 @@
 package izumi.distage.docker.bundled
 
-import distage.{Id, ModuleDef, Tag, TagK}
+import distage.{Id, ModuleDef, TagK}
 import izumi.distage.docker.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
-import izumi.distage.model.providers.Functoid
 
 object PostgresFlyWayDocker extends ContainerDef {
   /** @param flyWaySqlPath path to the migrations directory, by default `/sql` in current resource directory if exists */
@@ -91,7 +90,9 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
     PostgresFlyWayDocker
       .make[F]
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
-      .modifyConfig(PostgresFlyWayDocker.applyCfg(cfg): PostgresFlyWayDocker.Config => PostgresFlyWayDocker.Config) // TODO: https://github.com/lampepfl/dotty/issues/16107 / 16108
+      .modifyConfig(
+        PostgresFlyWayDocker.applyCfg(cfg): PostgresFlyWayDocker.Config => PostgresFlyWayDocker.Config
+      ) // TODO: https://github.com/lampepfl/dotty/issues/16107 / 16108
   }
   // FlyWay container binding with modification of container parameters (to pass Postgres container address into config).
   make[PostgresFlyWayDocker.FlyWay.Container].fromResource {
@@ -100,7 +101,9 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
       .modifyConfig {
         (postgresContainer: PostgresFlyWayDocker.Container @Id("postgres-flyway-proxy"), cfg: PostgresFlyWayDocker.Cfg) => (config: PostgresFlyWayDocker.FlyWay.Config) =>
-          PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg)(config): PostgresFlyWayDocker.FlyWay.Config // TODO: https://github.com/lampepfl/dotty/issues/16107 / 16108
+          PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg)(
+            config
+          ): PostgresFlyWayDocker.FlyWay.Config // TODO: https://github.com/lampepfl/dotty/issues/16107 / 16108
       }
   }
   // Binding of the actual Postgres container with the FlyWay container dependency.
