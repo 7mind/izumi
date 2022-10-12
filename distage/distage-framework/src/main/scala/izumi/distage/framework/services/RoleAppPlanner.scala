@@ -54,7 +54,14 @@ object RoleAppPlanner {
           roots = _ => Roots(runtimeGcRoots),
         )
       )
+
       val runtimeKeys = runtimeBsApp.plan.keys
+
+      logger.trace(s"Bootstrap plan:\n${runtimeBsApp.plan.render() -> "bootstrap dump" -> null}")
+
+      logger.trace(s"App module: ${runtimeBsApp.module -> "app module" -> null}")
+      logger.trace(s"Application will use: ${appMainRoots -> "app roots"} and $activation")
+
       val appPlan = runtimeBsApp.injector.plan(PlannerInput(runtimeBsApp.module.drop(runtimeKeys), activation, appMainRoots))
 
       val check = new PlanCircularDependencyCheck(options, logger)
@@ -64,6 +71,9 @@ object RoleAppPlanner {
       logger.info(
         s"Planning finished. ${appPlan.keys.size -> "main ops"} ${runtimeBsApp.plan.keys.size -> "runtime ops"}"
       )
+
+      logger.debug(s"Plan:\n${appPlan.render() -> "plan dump" -> null}")
+
       AppStartupPlans(runtimeBsApp.plan, appPlan, runtimeBsApp.injector)
     }
 

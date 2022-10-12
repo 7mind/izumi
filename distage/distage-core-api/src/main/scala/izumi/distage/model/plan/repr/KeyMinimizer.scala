@@ -53,7 +53,7 @@ class KeyMinimizer(
   private[this] def showKeyData(prefix: String, value: String, idx: Option[Int] = None) = {
     val prefixRepr = styled(s"{$prefix.", c.GREEN)
     val suffixRepr = styled(s"}", c.GREEN)
-    val idxrepr = idx.map(i => styled(i.toString, c.RED)).getOrElse("")
+    val idxrepr = idx.map(i => styled("@μ(" + i.toString + ")", c.RED)).getOrElse("")
 
     s"$prefixRepr$value$suffixRepr$idxrepr"
   }
