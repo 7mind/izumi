@@ -226,6 +226,8 @@ object Izumi {
 //          .root.id.value}")).value.toPath().relativize(baseDirectory.value.toPath)).toFile""".raw
       )
 
+      final val crossScalaSources = Defaults.CrossScalaPlusSources
+
       final val topLevelSettings = Seq()
 
       final val sharedAggSettings = outOfSource ++ Seq(
@@ -264,7 +266,7 @@ object Izumi {
         "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.13" % "${Version.SbtGen.value}" % Provided""".raw,
       )
 
-      final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ Seq(
+      final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options,
@@ -374,8 +376,6 @@ object Izumi {
     "fork" in (SettingScope.Test, Platform.Jvm) := true
   )
 
-  final val crossScalaSources = Defaults.CrossScalaPlusSources
-
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
     artifacts = Seq(
@@ -391,7 +391,7 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.functional
         ),
-        settings = crossScalaSources,
+        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.literals,
@@ -414,7 +414,7 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.literals
         ),
-        settings = crossScalaSources,
+        settings = Seq.empty,
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
@@ -451,7 +451,7 @@ object Izumi {
           Projects.fundamentals.platform,
           Projects.fundamentals.functional,
         ),
-        settings = crossScalaSources,
+        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.bio,
@@ -514,7 +514,7 @@ object Izumi {
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm3,
-        settings = crossScalaSources,
+        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.distage.extensionLogstage,
@@ -539,7 +539,7 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm3,
-        settings = crossScalaSources,
+        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.distage.docker,
