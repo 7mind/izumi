@@ -435,6 +435,7 @@ object Izumi {
         name = Projects.fundamentals.jsonCirce,
         libs = Seq(
           circe_core in Scope.Compile.all,
+          circe_generic in Scope.Compile.all,
           circe_derivation,
           scala_reflect,
         ) ++ Seq(

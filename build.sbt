@@ -901,6 +901,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-generic" % V.circe,
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %% "circe-literal" % V.circe % Test
     ),
