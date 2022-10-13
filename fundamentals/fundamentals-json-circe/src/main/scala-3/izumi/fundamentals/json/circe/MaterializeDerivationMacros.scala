@@ -4,7 +4,6 @@ import io.circe.{Codec, Decoder, Encoder}
 
 import scala.quoted.{Expr, Quotes, Type}
 
-
 final case class DerivationDerivedEncoder[A](value: Encoder.AsObject[A]) extends AnyVal
 object DerivationDerivedEncoder {
   inline implicit def materialize[A]: DerivationDerivedEncoder[A] = ${ doMaterialize }
