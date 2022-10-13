@@ -1,8 +1,8 @@
 package izumi.distage.model.reflection
 
-import java.lang.reflect.Modifier
-
 import izumi.fundamentals.reflection.TypeUtil
+
+import java.lang.reflect.Modifier
 
 trait MirrorProvider {
   def runtimeClass(tpe: SafeType): Option[Class[?]]
