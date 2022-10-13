@@ -27,14 +27,14 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
       val atrait = traitCtor.unsafeApply(Seq(TypedRef.byName(5))).asInstanceOf[ATrait]
 
       assert(atrait.toWireT == 5)
-      assert(traitCtor.unsafeApply(Seq(TypedRef.byName(???))).isInstanceOf[ATrait])
+      assert(traitCtor.unsafeApply(Seq(TypedRef.byName(throw new RuntimeException("shoudln't be invoked")))).isInstanceOf[ATrait])
 
       val abstractClassCtor = TraitConstructor[AnAbstractClass].get
       val anAbstractClass = abstractClassCtor.unsafeApply(Seq(TypedRef(5), TypedRef.byName("abc"))).asInstanceOf[AnAbstractClass]
 
       assert(anAbstractClass.c == 5)
       assert(anAbstractClass.toWireAC == "abc")
-      assert(abstractClassCtor.unsafeApply(Seq(TypedRef(5), TypedRef.byName(???))).isInstanceOf[AnAbstractClass])
+      assert(abstractClassCtor.unsafeApply(Seq(TypedRef(5), TypedRef.byName(throw new RuntimeException("shoudln't be invoked")))).isInstanceOf[AnAbstractClass])
     }
 
     "construct a trait with constructor" in {
@@ -50,7 +50,9 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
 
       assert(traitExtendingAbstractClass.c == 5)
       assert(traitExtendingAbstractClass.toWireAC == "abc")
-      assert(traitAbstractCtor.unsafeApply(Seq(TypedRef(5), TypedRef.byName(???))).isInstanceOf[TraitExtendingAbstractClass])
+      assert(
+        traitAbstractCtor.unsafeApply(Seq(TypedRef(5), TypedRef.byName(throw new RuntimeException("shoudln't be invoked")))).isInstanceOf[TraitExtendingAbstractClass]
+      )
       assert(traitExtendingAbstractClass.isInstanceOf[AnAbstractClass])
     }
 
