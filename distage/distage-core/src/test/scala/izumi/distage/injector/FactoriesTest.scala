@@ -287,7 +287,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(instantiated.x(5).a == 5)
   }
 
-  "support fromFactory" in {
+  "support makeFactory" in {
     import FactoryCase4._
 
     val definition = PlannerInput.everything(new ModuleDef {
@@ -306,6 +306,43 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     assert(factory.asInstanceOf[AnyRef] eq factory1.asInstanceOf[AnyRef])
     assert(factory.dep() ne factory1.dep1())
+  }
+
+  "support make[].fromFactory" in {
+    // this case makes no sense tbh
+    import FactoryCase5._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[IFactory1].fromFactory[IFactoryImpl]
+      make[IFactory].using[IFactory1]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val factory = context.get[IFactory]
+    val factory1 = context.get[IFactory1]
+
+    assert(factory.asInstanceOf[AnyRef] eq factory1.asInstanceOf[AnyRef])
+    assert(factory.dep() ne factory1.dep1())
+  }
+
+  "support make[].fromFactory: narrowing" in {
+    import FactoryCase6._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[IFactory].fromFactory[IFactoryImpl]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val factory = context.get[IFactory]
+
+    assert(factory.dep() ne factory.dep())
+    assert(factory.dep().isInstanceOf[Dep])
   }
 
 }
