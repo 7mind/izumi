@@ -291,15 +291,21 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase4._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[IFactory].fromFactory[IFactoryImpl]
+      makeFactory[IFactoryImpl]
+
+      make[IFactory].using[IFactoryImpl]
+      make[IFactory1].using[IFactoryImpl]
     })
 
     val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val factory = context.get[IFactory].asInstanceOf[IFactoryImpl]
-    assert(factory.dep() ne factory.dep())
+    val factory = context.get[IFactory]
+    val factory1 = context.get[IFactory1]
+
+    assert(factory.asInstanceOf[AnyRef] eq factory1.asInstanceOf[AnyRef])
+    assert(factory.dep() ne factory1.dep1())
   }
 
 }

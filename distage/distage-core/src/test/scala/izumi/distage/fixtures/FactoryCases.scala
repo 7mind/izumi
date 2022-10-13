@@ -127,9 +127,15 @@ object FactoryCases {
 
   object FactoryCase4 {
     case class Dep()
-    trait IFactory {}
+    trait IFactory {
+      def dep(): Dep
+    }
 
-    trait IFactoryImpl extends IFactory {
+    trait IFactory1 {
+      def dep1(): Dep
+    }
+
+    trait IFactoryImpl extends IFactory with IFactory1 {
     }
   }
 
