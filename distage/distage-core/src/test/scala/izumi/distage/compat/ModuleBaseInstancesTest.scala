@@ -25,8 +25,6 @@ final class ModuleBaseInstancesTest extends AnyWordSpec {
 
       val mod3_2 = Module.empty
 
-      def t[K[_]: izumi.fundamentals.orphans.`cats.kernel.BoundedSemilattice`](): K[Int] = ().asInstanceOf
-      t()
       val mod3 = (mod3_1 |+| mod3_2) :+ binding[NotInContext]
 
       val mod4 = Module.make(

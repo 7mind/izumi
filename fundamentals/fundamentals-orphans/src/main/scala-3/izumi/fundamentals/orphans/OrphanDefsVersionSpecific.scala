@@ -31,17 +31,6 @@ object `cats.kernel.Monoid` {
   @inline implicit final def get: `cats.kernel.Monoid`[[A] =>> cats.kernel.Monoid[A]] = null
 }
 
-/**
-  * This instance uses 'no more orphans' trick to provide an Optional instance
-  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
-  *
-  * Optional instance via https://blog.7mind.io/no-more-orphans.html
-  */
-final abstract class `cats.kernel.Semigroup`[S[_]]
-object `cats.kernel.Semigroup` {
-  @inline implicit final def get: `cats.kernel.Semigroup`[[A] =>> cats.kernel.Semigroup[A]] = null
-}
-
 // cats-effect
 
 /**
