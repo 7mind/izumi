@@ -83,7 +83,7 @@ class CirceToolMacro(val c: blackbox.Context) {
 
       // this triggers full typing so  knownDirectSubclasses works
       if (t.toString == "" || t.typeSymbol.toString == "") {
-        ???
+        throw new RuntimeException("bad case")
       }
 
       if (t.typeSymbol.isClass) {
