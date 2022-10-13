@@ -73,7 +73,7 @@ object Izumi {
     final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
     final val circe_literal = Library("io.circe", "circe-literal", V.circe, LibraryType.Auto)
     final val circe_generic = Library("io.circe", "circe-generic", V.circe, LibraryType.Auto)
-    final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
+    final val circe_derivation_scala2 = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
       ScalaVersionScope.AllScala2
     )
 
@@ -435,8 +435,8 @@ object Izumi {
         name = Projects.fundamentals.jsonCirce,
         libs = Seq(
           circe_core in Scope.Compile.all,
-          circe_generic in Scope.Compile.all,
-          circe_derivation,
+          circe_generic in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala3),
+          circe_derivation_scala2,
           scala_reflect,
         ) ++ Seq(
           jawn in Scope.Test.all,

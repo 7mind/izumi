@@ -901,7 +901,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "io.circe" %% "circe-core" % V.circe,
-      "io.circe" %% "circe-generic" % V.circe,
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %% "circe-literal" % V.circe % Test
     ),
@@ -909,7 +908,15 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "io.circe" %% "circe-derivation" % V.circe_derivation,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    ) else Seq.empty },
+    libraryDependencies ++= {
+      val version = scalaVersion.value
+      if (version.startsWith("0.") || version.startsWith("3.")) {
+        Seq(
+          "io.circe" %% "circe-generic" % V.circe
+        )
+      } else Seq.empty
+    }
   )
   .settings(
     crossScalaVersions := Seq(
