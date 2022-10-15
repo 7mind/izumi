@@ -635,8 +635,9 @@ class DSLTest extends AnyWordSpec with MkInjector {
         """
         )
       )
-      assert(res2.getMessage contains "couldn't generate a constructor")
-      assert(res2.getMessage contains "It's neither a concrete class, nor a wireable trait or abstract class!")
+      assert(
+        res2.getMessage contains "AnyConstructor failure: izumi.distage.model.definition.Lifecycle.Basic[F,Int] is a Factory, use makeFactory or fromFactory to wire factories"
+      )
     }
 
     "define multiple bindings with different axis but the same implementation" in {
