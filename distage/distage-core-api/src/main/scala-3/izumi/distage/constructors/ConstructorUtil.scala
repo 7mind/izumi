@@ -12,7 +12,7 @@ class ConstructorContext[R: Type, Q <: Quotes](using val qctx: Q)(val util: Cons
   import qctx.reflect.*
 
   val resultTpe = TypeRepr.of[R].dealias.simplified
-  val resultTypeTree = TypeTree.of[R]
+  val resultTpeTree = TypeTree.of[R]
   val resultTpeSym = resultTpe.typeSymbol
 
   val refinementMethods = util.unpackRefinement(resultTpe)
@@ -44,8 +44,10 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   type ParamListTree = List[(String, qctx.reflect.TypeTree)]
   type ParamListsTree = List[ParamListTree]
 
-  implicit class ParamListExt(params: ParamListRepr) {
-    def toTrees: ParamListTree = params.map((n, t) => (n, TypeTree.of(using t.asType))).toList
+  implicit object ParamListExt {
+    extension (params: ParamListRepr) {
+      def toTrees: ParamListTree = params.map((n, t) => (n, TypeTree.of(using t.asType))).toList
+    }
   }
 
   def assertSignatureIsAcceptableForFactory(signatureParams: ParamListRepr, resultTpe: TypeRepr, clue: String): Unit = {

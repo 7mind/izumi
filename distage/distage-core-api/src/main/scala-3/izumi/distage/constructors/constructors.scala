@@ -90,12 +90,10 @@ object AnyConstructor {
   inline implicit def materialize[T]: AnyConstructor[T] = ???
 }
 
-
-
 object TraitConstructor {
   def apply[T](implicit ctor: TraitConstructor[T]): Functoid[T] = ctor.provider
 
-  inline implicit def materialize[T]: TraitConstructor[T] = ${TraitConstructorMacro.make[T]}
+  inline implicit def materialize[T]: TraitConstructor[T] = ${ TraitConstructorMacro.make[T] }
 
   def wrapInitialization[A](init: => A)(implicit weakTag: WeakTag[A]): A = {
     try init

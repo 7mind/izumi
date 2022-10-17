@@ -27,10 +27,9 @@ object FactoryConstructorMacro {
 
     if (!isFactory) {
       report.errorAndAbort(
-        s"""$resultTpeSym has no abstract methods so it's not a factory;; ${resultTpeSym.methodMembers};; $resultTypeTree;; ${resultTypeTree.getClass}""".stripMargin
+        s"""$resultTpeSym has no abstract methods so it's not a factory;; ${resultTpeSym.methodMembers};; $resultTpeTree;; ${resultTpeTree.getClass}""".stripMargin
       )
     }
-
 
     val refinementNames = refinementMethods.map(_._1).toSet
 
@@ -114,7 +113,7 @@ object FactoryConstructorMacro {
 
     val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
     val byNameMethodArgs = factoryMethodData.flatMap(_.params).flatten.collect { case p: ProvidedParameter => (p.argName, p.tpe) }
-    val lamParams = (ctorArgs ++ byNameMethodArgs).toTrees
+    val lamParams: util.ParamListTree = (ctorArgs ++ byNameMethodArgs).toTrees
     val indexShift = ctorArgs.length
 
     val lamExpr = util.wrapIntoLambda[R](List(lamParams)) {
@@ -160,9 +159,9 @@ object FactoryConstructorMacro {
         }
 
         val clsDef = ClassDef(clsSym, parents.toList, body = defs)
-        val newCls = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTypeTree)
+        val newCls = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
         val block = Block(List(clsDef), newCls)
-        Typed(block, resultTypeTree)
+        Typed(block, resultTpeTree)
     }
 
 //    report.warning(

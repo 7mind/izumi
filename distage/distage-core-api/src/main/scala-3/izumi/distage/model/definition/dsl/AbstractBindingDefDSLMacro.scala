@@ -10,7 +10,4 @@ trait AbstractBindingDefDSLMacro[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] { t
 
   final protected[this] def make[T]: BindDSL[T] = ???
 
-  inline final protected[this] def makeFactory[T](implicit tag: Tag[T], pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
-    _makeSimple(FactoryConstructor[T])(tag, pos)
-  }
 }

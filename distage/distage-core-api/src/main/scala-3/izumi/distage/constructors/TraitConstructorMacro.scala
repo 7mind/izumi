@@ -40,8 +40,8 @@ object TraitConstructorMacro {
 
     // TODO: decopypaste
     val lamParams = {
-      val byNameMethodArgs = methodDecls.map((n, t) => (s"_$n", util.ensureByName(util.dropWrappers(t))))
       val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
+      val byNameMethodArgs = methodDecls.map((n, t) => (s"_$n", util.ensureByName(util.dropWrappers(t))))
       (ctorArgs ++ byNameMethodArgs).toTrees
     }
 
@@ -64,9 +64,9 @@ object TraitConstructorMacro {
         }
 
         val clsDef = ClassDef(clsSym, parents.toList, body = defs)
-        val newCls = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTypeTree)
+        val newCls = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
         val block = Block(List(clsDef), newCls)
-        Typed(block, resultTypeTree)
+        Typed(block, resultTpeTree)
     }
 
     /*
