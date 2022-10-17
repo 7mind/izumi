@@ -79,7 +79,7 @@ object FunctoidMacro {
       val paramDefs = params.map {
         case (name, tpe) =>
           val identifier = tpe match {
-            case Annotated(_, aterm) if aterm.tpe.dealias.simplified.baseClasses.contains(idAnnotationSym) =>
+            case Annotated(_, aterm) if aterm.tpe.baseClasses.contains(idAnnotationSym) =>
               aterm match {
                 case Apply(Select(New(_), _), c :: _) =>
                   c.asExprOf[String].value.orElse {

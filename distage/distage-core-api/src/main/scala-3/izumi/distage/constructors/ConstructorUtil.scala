@@ -1,5 +1,6 @@
 package izumi.distage.constructors
 
+import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.reflection.ReflectionUtil
 
 import scala.annotation.tailrec
@@ -35,6 +36,8 @@ class ConstructorContext[R: Type, Q <: Quotes](using val qctx: Q)(val util: Cons
 
 class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   import qctx.reflect.*
+
+  private val withAnnotationSym = TypeRepr.of[With].typeSymbol
 
   type ParamListRepr = List[(String, qctx.reflect.TypeRepr)]
   type ParamListsRepr = List[ParamListRepr]
@@ -174,14 +177,13 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   }
 
   def readWithAnno(tpe: TypeRepr): Option[TypeRepr] = {
-    import izumi.distage.model.definition.With
     tpe match {
       case AnnotatedType(_, aterm) =>
-        aterm.asExprOf[Any] match {
-          case '{ new With[a] } =>
-            Some(TypeRepr.of[a].dealias.simplified)
+        aterm match {
+          case Apply(TypeApply(Select(New(_), _), c :: _), _) if aterm.tpe.baseClasses.contains(withAnnotationSym) =>
+            Some(c.tpe)
           case _ =>
-            None
+            report.errorAndAbort(s"distage.With annotation expects one type argument but got malformed tree ${aterm.show} ($aterm) : ${aterm.tpe}")
         }
       case _ =>
         None

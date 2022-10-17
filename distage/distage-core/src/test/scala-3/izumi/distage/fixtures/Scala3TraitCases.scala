@@ -50,7 +50,7 @@ object Scala3TraitCases {
   case class C3(a1: Int, a2: Long, a3: Number, a4: String)(a5: Double) extends T
 
   trait FactoryTrait1 {
-    def f1: T @With[C2]
+    def f1: T @distage.With[C2]
     def f2(): T @With[C2]
     def f3(c: C1): T @With[C2]
     def f4(a1: Int)(a2: Long, a5: Double): T @With[C3]
