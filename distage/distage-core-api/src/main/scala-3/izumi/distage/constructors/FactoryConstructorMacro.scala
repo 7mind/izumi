@@ -10,8 +10,10 @@ import scala.quoted.{Expr, Quotes, Type}
 
 object FactoryConstructorMacro {
 
+  def make[R: Type](using qctx: Quotes): Expr[FactoryConstructor[R]] = '{ ??? }
+
   @experimental
-  def make[R: Type](using qctx: Quotes): Expr[FactoryConstructor[R]] = try {
+  def make0[R: Type](using qctx: Quotes): Expr[FactoryConstructor[R]] = try {
     import qctx.reflect.*
 
     val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
