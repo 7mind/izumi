@@ -1,7 +1,5 @@
 package izumi.fundamentals.orphans
 
-import scala.annotation.unused
-
 // FIXME Split instances for F[_]-kind because of a Scala 3 bug https://github.com/lampepfl/dotty/issues/16183
 
 /**
