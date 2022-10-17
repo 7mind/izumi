@@ -9,6 +9,7 @@ trait ReflectionProvider {
   def parameterToAssociation(parameterSymbol: SymbolInfo): Association.Parameter
 
   def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]]
+  def symbolToAnyWiring(tpe: TypeNative): Wiring
   def symbolToWiring(tpe: TypeNative): Wiring
   def zioHasParameters(transformName: String => String)(deepIntersection: List[TypeNative]): List[Association.Parameter]
 

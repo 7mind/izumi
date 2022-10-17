@@ -1248,11 +1248,11 @@ trait ActorFactory {
 }
 ```
 
-And a binding of `ActorFactory` *without* an implementation
+And a binding of `ActorFactory` *without* an implementation.
 
 ```scala mdoc:to-string
 class ActorModule extends ModuleDef {
-  make[ActorFactory]
+  makeFactory[ActorFactory]
 }
 ```
 
@@ -1265,6 +1265,8 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
   }
 }
 ```
+
+Since `distage` version `1.1.0` parameterless methods in factories just produce new instances and you have to bind factories explicitly using `makeFactory` method.
 
 ### @With annotation
 

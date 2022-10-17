@@ -385,7 +385,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
       class K(@unused a: String) {}
       ClassConstructor[K].get
     }
-    
+
     "support binding to multiple interfaces" in {
       import BasicCase6._
 
@@ -635,10 +635,9 @@ class DSLTest extends AnyWordSpec with MkInjector {
         """
         )
       )
-      assert(res2.getMessage contains "Wiring unsupported: `F[Unit]`")
-      assert(res2.getMessage contains "trying to create an implementation")
-      assert(res2.getMessage contains "`method release`")
-      assert(res2.getMessage contains "`trait Basic`")
+      assert(
+        res2.getMessage contains "AnyConstructor failure: izumi.distage.model.definition.Lifecycle.Basic[F,Int] is a Factory, use makeFactory or fromFactory to wire factories"
+      )
     }
 
     "define multiple bindings with different axis but the same implementation" in {

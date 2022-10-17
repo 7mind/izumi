@@ -1,12 +1,12 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.constructors.{AnyConstructor, HasConstructor}
+import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, HasConstructor}
 import izumi.distage.model.definition.Lifecycle.{LifecycleTag, TrifunctorHasLifecycleTag}
-import izumi.distage.model.definition._
+import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, _}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, *}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
@@ -14,7 +14,7 @@ import izumi.functional.bio.Local3
 import izumi.functional.bio.data.Morphism1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK, TagK3}
-import zio._
+import zio.*
 
 import scala.collection.immutable.HashSet
 
@@ -313,6 +313,9 @@ object ModuleDefDSL {
       val provider = Functoid.todoProvider(key)(pos).get
       bind(ImplDef.ProviderImpl(provider.ret, provider))
     }
+
+    final def fromFactory[I <: T: FactoryConstructor]: AfterBind =
+      from(FactoryConstructor[I])
 
     protected[this] def bind(impl: ImplDef): AfterBind
     protected[this] def key: DIKey

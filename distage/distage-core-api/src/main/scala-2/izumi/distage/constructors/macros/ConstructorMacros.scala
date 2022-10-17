@@ -114,14 +114,15 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
 
     val (methodArgListDecls, methodArgList) = {
       @nowarn("msg=outer reference")
-      @tailrec def instantiatedMethod(tpe: Type): MethodTypeApi = {
+      @tailrec def instantiatedMethod(tpe: Type): List[List[Symbol]] = {
         tpe match {
-          case m: MethodTypeApi => m
+          case m: MethodTypeApi => m.paramLists
           case p: PolyTypeApi => instantiatedMethod(p.resultType)
+          case _: NullaryMethodType => List.empty
           case _ => throw new RuntimeException(s"Impossible case, a method type that is neither a `MethodType` nor a `PolyType` - $tpe (class: ${tpe.getClass})")
         }
       }
-      val paramLists = instantiatedMethod(factoryMethod.typeSignatureInDefiningClass).paramLists.map(_.map {
+      val paramLists = instantiatedMethod(factoryMethod.typeSignatureInDefiningClass).map(_.map {
         argSymbol =>
           val tpe = argSymbol.typeSignature
           val name = argSymbol.asTerm.name
@@ -204,7 +205,7 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
   }
 
   def symbolToFactory(reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): u.Wiring.Factory = {
-    reflectionProvider.symbolToWiring(targetType) match {
+    reflectionProvider.symbolToAnyWiring(targetType) match {
       case factory: u.Wiring.Factory => factory
       case wiring => throw new RuntimeException(s"""Tried to create a `FactoryConstructor[$targetType]`, but `$targetType` is not a factory!
                                                    |

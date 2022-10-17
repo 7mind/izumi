@@ -27,6 +27,10 @@ object FactoryConstructorMacro {
     val macroUniverse.Wiring.Factory.WithProductDeps(factoryMethods, classParameters, methods, factoryProductsDeps) = symbolToFactory(reflectionProvider)(targetType)
     val allParameters = classParameters :+ (methods ++ factoryProductsDeps).map(_.asParameter)
 
+    if (factoryMethods.isEmpty) {
+      c.abort(c.enclosingPosition, s"No factory methods found in $targetType")
+    }
+
     val provider: c.Expr[Functoid[T]] = generateProvider[T, ProviderType.Factory.type](allParameters) {
       argss =>
         val dependencyArgMap = allParameters.iterator.flatten.map(_.key).zip(argss.iterator.flatten).toMap
@@ -34,12 +38,9 @@ object FactoryConstructorMacro {
                       |Got argmap: $dependencyArgMap
                       |""".stripMargin)
 
-        val traitMethodDefs = methods.zip(argss.last).map {
-          case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)
-        }
         val producerMethodDefs = factoryMethods.map(generateFactoryMethod(dependencyArgMap)(_))
 
-        mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, traitMethodDefs ++ producerMethodDefs)
+        mkNewAbstractTypeInstanceApplyExpr(targetType, argss.init, producerMethodDefs)
     }
 
     val res = c.Expr[FactoryConstructor[T]](q"{ new ${weakTypeOf[FactoryConstructor[T]]}($provider) }")

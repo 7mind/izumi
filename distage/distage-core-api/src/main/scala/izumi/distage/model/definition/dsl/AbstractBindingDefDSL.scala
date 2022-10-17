@@ -1,11 +1,12 @@
 package izumi.distage.model.definition.dsl
 
+import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SingletonRef, _}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SingletonRef, *}
 import izumi.distage.model.exceptions.dsl.InvalidFunctoidModifier
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey
@@ -148,10 +149,11 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
     _bindDSL[T](ref)
   }
 
-  final protected[this] def _makeSimple[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = {
-    val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
+  final protected[this] def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = {
+    val ref = _registered(new SingletonRef(Bindings.provider[T](FactoryConstructor[T])))
     _bindDSLAfterFrom[T](ref)
   }
+
 }
 
 object AbstractBindingDefDSL {

@@ -16,11 +16,11 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Factory]
+      makeFactory[Factory]
       make[Dependency]
-      make[OverridingFactory]
-      make[AssistedFactory]
-      make[AbstractFactory]
+      makeFactory[OverridingFactory]
+      makeFactory[AssistedFactory]
+      makeFactory[AbstractFactory]
     })
 
     val injector = mkNoCyclesInjector()
@@ -54,7 +54,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[GenericAssistedFactory]
+      makeFactory[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
 
@@ -73,7 +73,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[NamedAssistedFactory]
+      makeFactory[NamedAssistedFactory]
       make[Dependency]
       make[Dependency].named("special").from(SpecialDep())
       make[Dependency].named("veryspecial").from(VerySpecialDep())
@@ -89,7 +89,9 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     val instantiated = context.get[NamedAssistedFactory]
 
-    assert(instantiated.dep.isVerySpecial)
+    // makeFactory - change of semantics!
+    assert(!instantiated.dep.isVerySpecial)
+
     assert(instantiated.x(5).b.isSpecial)
   }
 
@@ -97,7 +99,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[MixedAssistendNonAssisted]
+      makeFactory[MixedAssistendNonAssisted]
       make[Dependency]
     })
 
@@ -118,7 +120,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[AssistedAbstractFactory]
+      makeFactory[AssistedAbstractFactory]
       make[Dependency]
     })
 
@@ -139,7 +141,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[AssistedAbstractFactoryF[Identity]]
+      makeFactory[AssistedAbstractFactoryF[Identity]]
       make[Identity[Dependency]]
     })
 
@@ -165,7 +167,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     ]
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[{
+      makeFactory[{
           def makeConcreteDep(): Dependency @With[ConcreteDep]
         }
       ]
@@ -188,7 +190,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
         // FIXME: `make` support? should be compile-time error
         val definition = PlannerInput.everything(new ModuleDef {
-          make[FactoryProducingFactory]
+          makeFactory[FactoryProducingFactory]
           make[Dependency]
         })
 
@@ -210,7 +212,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency]
       make[TestClass]
-      make[Factory]
+      makeFactory[Factory]
     })
 
     val injector = mkNoCyclesInjector()
@@ -230,7 +232,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
       make[Dep1]
       make[Dep2]
       make[TC[Any]].fromValue(TC1)
-      make[ImplicitFactory]
+      makeFactory[ImplicitFactory]
     })
 
     val injector = mkInjector()
@@ -246,7 +248,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(instantiated.x(new Dep1).dep3 == Dep3)
 
     val res = intercept[TestFailedException](assertCompiles("""new ModuleDef {
-      make[InvalidImplicitFactory]
+      makeFactory[InvalidImplicitFactory]
     }"""))
     assert(res.getMessage.contains("contains types not required by constructor of the result type"))
     assert(res.getMessage.contains("UnrelatedTC["))
@@ -258,7 +260,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency]
       make[TestClass]
-      make[AbstractClassFactory]
+      makeFactory[AbstractClassFactory]
     })
 
     val injector = mkInjector()
@@ -272,7 +274,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     import FactoryCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[AssistedFactory]
+      makeFactory[AssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
 
@@ -283,6 +285,64 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     val instantiated = context.get[AssistedFactory]
 
     assert(instantiated.x(5).a == 5)
+  }
+
+  "support makeFactory" in {
+    import FactoryCase4._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      makeFactory[IFactoryImpl]
+
+      make[IFactory].using[IFactoryImpl]
+      make[IFactory1].using[IFactoryImpl]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val factory = context.get[IFactory]
+    val factory1 = context.get[IFactory1]
+
+    assert(factory.asInstanceOf[AnyRef] eq factory1.asInstanceOf[AnyRef])
+    assert(factory.dep() ne factory1.dep1())
+  }
+
+  "support make[].fromFactory" in {
+    // this case makes no sense tbh
+    import FactoryCase5._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[IFactory1].fromFactory[IFactoryImpl]
+      make[IFactory].using[IFactory1]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val factory = context.get[IFactory]
+    val factory1 = context.get[IFactory1]
+
+    assert(factory.asInstanceOf[AnyRef] eq factory1.asInstanceOf[AnyRef])
+    assert(factory.dep() ne factory1.dep1())
+  }
+
+  "support make[].fromFactory: narrowing" in {
+    import FactoryCase6._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[IFactory].fromFactory[IFactoryImpl]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val factory = context.get[IFactory]
+
+    assert(factory.dep() ne factory.dep())
+    assert(factory.dep().isInstanceOf[Dep])
   }
 
 }
