@@ -248,7 +248,7 @@ object Izumi {
             |(if (!isSnapshot.value) {
             |    sonatypePublishToBundle.value
             |  } else {
-            |    Some(Opts.resolver.sonatypeOssSnapshots)
+            |    Some(Opts.resolver.sonatypeSnapshots)
             |})
             |""".stripMargin.raw,
         "credentials" in SettingScope.Build += """Credentials(Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties")""".raw,
