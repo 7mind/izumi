@@ -7,7 +7,7 @@ object V {
 
   val kind_projector = "0.13.2"
 
-  val scalatest = "3.2.13"
+  val scalatest = "3.2.14"
 
   val cats = "2.8.0"
   val cats_effect = "3.3.14"
