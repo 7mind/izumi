@@ -6,7 +6,7 @@ import cats.effect.kernel.{GenConcurrent, Resource, Sync}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, fromCats, fromZIO, mapImpl, redeemImpl, wrapAcquireImpl, wrapReleaseImpl}
-import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO}
+import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.data.Morphism1
 import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, Local3}
@@ -234,7 +234,8 @@ trait Lifecycle[+F[_], +OuterResource] {
   def extract[B >: OuterResource](resource: InnerResource): Either[F[B], B]
 
   final def map[G[x] >: F[x]: QuasiFunctor, B](f: OuterResource => B): Lifecycle[G, B] = mapImpl[G, OuterResource, B](this)(f)
-  final def flatMap[G[x] >: F[x]: QuasiIO, B](f: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
+  final def flatMap[G[x] >: F[x]: QuasiPrimitives, B](f: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
+  final def flatten[G[x] >: F[x]: QuasiPrimitives, B](implicit ev: OuterResource <:< Lifecycle[G, B]): Lifecycle[G, B] = this.flatMap(ev)
 
   final def catchAll[G[x] >: F[x]: QuasiIO, B >: OuterResource](recover: Throwable => Lifecycle[G, B]): Lifecycle[G, B] =
     redeemImpl[G, OuterResource, B](this)(recover, Lifecycle.pure[G](_))
@@ -244,9 +245,9 @@ trait Lifecycle[+F[_], +OuterResource] {
   final def redeem[G[x] >: F[x]: QuasiIO, B](onFailure: Throwable => Lifecycle[G, B], onSuccess: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] =
     redeemImpl[G, OuterResource, B](this)(onFailure, onSuccess)
 
-  final def evalMap[G[x] >: F[x]: QuasiIO, B](f: OuterResource => G[B]): Lifecycle[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
-  final def evalTap[G[x] >: F[x]: QuasiIO](f: OuterResource => G[Unit]): Lifecycle[G, OuterResource] =
-    evalMap[G, OuterResource](a => QuasiIO[G].map(f(a))(_ => a))
+  final def evalMap[G[x] >: F[x]: QuasiPrimitives, B](f: OuterResource => G[B]): Lifecycle[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
+  final def evalTap[G[x] >: F[x]: QuasiPrimitives](f: OuterResource => G[Unit]): Lifecycle[G, OuterResource] =
+    evalMap[G, OuterResource](a => QuasiFunctor[G].map(f(a))(_ => a))
 
   /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
   final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): Lifecycle[G, OuterResource] =
@@ -320,7 +321,7 @@ object Lifecycle extends LifecycleInstances {
   }
 
   /** @param effect is performed interruptibly, unlike in [[make]] */
-  def suspend[F[_]: QuasiIO, A](effect: => F[Lifecycle[F, A]]): Lifecycle[F, A] = {
+  def suspend[F[_]: QuasiPrimitives, A](effect: => F[Lifecycle[F, A]]): Lifecycle[F, A] = {
     liftF(effect).flatten
   }
 
@@ -349,13 +350,13 @@ object Lifecycle extends LifecycleInstances {
     Lifecycle.make(F.start(f))(_.cancel)
   }
 
-  def traverse[F[_]: QuasiIO, A, B](l: Iterable[A])(f: A => Lifecycle[F, B]): Lifecycle[F, List[B]] = {
+  def traverse[F[_]: QuasiPrimitives, A, B](l: Iterable[A])(f: A => Lifecycle[F, B]): Lifecycle[F, List[B]] = {
     l.foldLeft(pure[F](List.empty[B])) {
       (acc, a) => acc.flatMap(list => f(a).map(r => list ++ List(r)))
     }
   }
 
-  def traverse_[F[_]: QuasiIO, A](l: Iterable[A])(f: A => Lifecycle[F, Unit]): Lifecycle[F, Unit] = {
+  def traverse_[F[_]: QuasiPrimitives, A](l: Iterable[A])(f: A => Lifecycle[F, Unit]): Lifecycle[F, Unit] = {
     l.foldLeft(unit) {
       (acc, a) => acc.flatMap(_ => f(a))
     }
@@ -402,7 +403,7 @@ object Lifecycle extends LifecycleInstances {
   }
 
   implicit final class SyntaxUse[F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    def use[B](use: A => F[B])(implicit F: QuasiIO[F]): F[B] = {
+    def use[B](use: A => F[B])(implicit F: QuasiPrimitives[F]): F[B] = {
       F.bracket(acquire = resource.acquire)(release = resource.release)(
         use = a =>
           F.suspendF(resource.extract(a) match {
@@ -414,12 +415,12 @@ object Lifecycle extends LifecycleInstances {
   }
 
   implicit final class SyntaxUseEffect[F[_], A](private val resource: Lifecycle[F, F[A]]) extends AnyVal {
-    def useEffect(implicit F: QuasiIO[F]): F[A] =
+    def useEffect(implicit F: QuasiPrimitives[F]): F[A] =
       resource.use(identity)
   }
 
   implicit final class SyntaxLocatorRun[F[_]](private val resource: Lifecycle[F, Locator]) extends AnyVal {
-    def run[B](function: Functoid[F[B]])(implicit F: QuasiIO[F]): F[B] =
+    def run[B](function: Functoid[F[B]])(implicit F: QuasiPrimitives[F]): F[B] =
       resource.use(_.run(function))
   }
 
@@ -434,10 +435,6 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  implicit final class SyntaxFlatten[F[_], +A](private val resource: Lifecycle[F, Lifecycle[F, A]]) extends AnyVal {
-    def flatten(implicit F: QuasiIO[F]): Lifecycle[F, A] = resource.flatMap(identity)
-  }
-
   implicit final class SyntaxUnsafeGet[F[_], A](private val resource: Lifecycle[F, A]) extends AnyVal {
     /** Unsafely acquire the resource and throw away the finalizer,
       * this will leak the resource and cause it to never be cleaned up.
@@ -447,7 +444,7 @@ object Lifecycle extends LifecycleInstances {
       *
       * @note will also acquire the resource without an uninterruptible section
       */
-    def unsafeGet()(implicit F: QuasiIO[F]): F[A] = {
+    def unsafeGet()(implicit F: QuasiPrimitives[F]): F[A] = {
       F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
     }
   }
@@ -530,10 +527,11 @@ object Lifecycle extends LifecycleInstances {
             Reservation(
               ZIO.effectSuspendTotal(resource.extract(r).fold(identity, ZIO.succeed(_))),
               _ =>
-                resource.release(r).orDieWith {
-                  case e: Throwable => e
-                  case any => new RuntimeException(s"Lifecycle finalizer: $any")
-                },
+                resource
+                  .release(r).orDieWith {
+                    case e: Throwable => e
+                    case any => new RuntimeException(s"Lifecycle finalizer: $any")
+                  },
             )
         )
       )
@@ -880,23 +878,16 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  @inline private final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: QuasiIO[F]): Lifecycle[F, B] = {
+  @inline private final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: QuasiPrimitives[F]): Lifecycle[F, B] = {
     import QuasiIO.syntax._
     new Lifecycle[F, B] {
-      override type InnerResource = AtomicReference[List[() => F[Unit]]]
+      override type InnerResource = QuasiRef[F, List[() => F[Unit]]]
 
       private[this] def bracketAppendFinalizer[a, b](finalizers: InnerResource)(lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
         F.bracket(
           acquire = lifecycle.acquire.flatMap {
             a =>
-              F.maybeSuspend {
-                // can't use `.updateAndGet` because of Scala.js
-                var oldValue = finalizers.get()
-                while (!finalizers.compareAndSet(oldValue, (() => lifecycle.release(a)) :: oldValue)) {
-                  oldValue = finalizers.get()
-                }
-                a
-              }
+              finalizers.update((() => lifecycle.release(a)) :: _).map(_ => a)
           }
         )(release = _ => F.unit)(
           use = use
@@ -904,10 +895,10 @@ object Lifecycle extends LifecycleInstances {
       }
 
       override def acquire: F[InnerResource] = {
-        F.maybeSuspend(new AtomicReference(Nil))
+        F.mkRef(Nil)
       }
       override def release(finalizers: InnerResource): F[Unit] = {
-        F.suspendF(F.traverse_(finalizers.get())(_.apply()))
+        finalizers.get.flatMap(F.traverse_(_)(_.apply()))
       }
       override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = Left {
         bracketAppendFinalizer(finalizers)(self) {
@@ -926,7 +917,7 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  @inline private final def evalMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => F[B])(implicit F: QuasiIO[F]): Lifecycle[F, B] = {
+  @inline private final def evalMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => F[B])(implicit F: QuasiPrimitives[F]): Lifecycle[F, B] = {
     flatMapImpl(self)(a => Lifecycle.liftF(f(a)))
   }
 
@@ -1004,18 +995,18 @@ object Lifecycle extends LifecycleInstances {
 }
 
 private[definition] sealed trait LifecycleInstances extends LifecycleCatsInstances {
-  implicit final def functor2ForLifecycle[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, +_, +_]] = new Functor2[Lifecycle2[F, +_, +_]] {
+  implicit final def functor2ForLifecycle[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, + _, + _]] = new Functor2[Lifecycle2[F, + _, + _]] {
     override def map[R, E, A, B](r: Lifecycle[F[E, _], A])(f: A => B): Lifecycle[F[E, _], B] = r.map(f)
   }
 
-  implicit final def functor3ForLifecycle[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, -_, +_, +_]] = new Functor3[Lifecycle3[F, -_, +_, +_]] {
+  implicit final def functor3ForLifecycle[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, - _, + _, + _]] = new Functor3[Lifecycle3[F, - _, + _, + _]] {
     override def map[R, E, A, B](r: Lifecycle[F[R, E, _], A])(f: A => B): Lifecycle[F[R, E, _], B] = r.map(f)
   }
 }
 
 private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsInstancesLowPriority {
   implicit final def catsMonadForLifecycle[Monad[_[_]]: `cats.Monad`, F[_]](
-    implicit F: QuasiIO[F]
+    implicit F: QuasiPrimitives[F]
   ): Monad[Lifecycle[F, _]] = {
     new cats.StackSafeMonad[Lifecycle[F, _]] {
       override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F](x)
@@ -1025,7 +1016,7 @@ private[definition] sealed trait LifecycleCatsInstances extends LifecycleCatsIns
 
   implicit final def catsMonoidForLifecycle[Monoid[_]: `cats.kernel.Monoid`, F[_], A](
     implicit
-    F: QuasiIO[F],
+    F: QuasiPrimitives[F],
     A0: Monoid[A],
   ): Monoid[Lifecycle[F, A]] = {
     val A = A0.asInstanceOf[cats.Monoid[A]]

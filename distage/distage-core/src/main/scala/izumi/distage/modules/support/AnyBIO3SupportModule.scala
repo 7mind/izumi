@@ -76,8 +76,10 @@ object AnyBIO3SupportModule extends App with ModuleDef {
         implicitly[PrimitivesM3[F] =:= PrimitivesM2[F[Any, +_, +_]]]
         implicitly[SyncSafe3[F] =:= SyncSafe2[F[Any, +_, +_]]]
         implicitly[QuasiIORunner3[F] =:= QuasiIORunner2[F[Any, +_, +_]]]
-        implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +_, +_]]]
+        implicitly[QuasiFunctor3[F] =:= QuasiFunctor2[F[Any, +_, +_]]]
         implicitly[QuasiApplicative3[F] =:= QuasiApplicative2[F[Any, +_, +_]]]
+        implicitly[QuasiPrimitives3[F] =:= QuasiPrimitives2[F[Any, +_, +_]]]
+        implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +_, +_]]]
         implicitly[QuasiAsync3[F] =:= QuasiAsync2[F[Any, +_, +_]]]
         ()
       }

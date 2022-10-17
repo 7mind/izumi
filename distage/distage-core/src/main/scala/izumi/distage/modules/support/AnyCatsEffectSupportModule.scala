@@ -2,9 +2,9 @@ package izumi.distage.modules.support
 
 import cats.effect.kernel.{Async, Sync}
 import cats.effect.std.Dispatcher
-import cats.{Applicative, Parallel}
+import cats.Parallel
 import distage.{ModuleDef, TagK}
-import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives}
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.bio.{Clock1, Entropy1, SyncSafe1}
 import izumi.fundamentals.platform.functional.Identity
@@ -22,14 +22,15 @@ import izumi.fundamentals.platform.functional.Identity
 class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
   include(CatsEffectInstancesModule[F])
 
-  make[QuasiIO[F]].from {
-    implicit F: Sync[F] => QuasiIO.fromCats
-  }
+  make[QuasiIO[F]]
+    .aliased[QuasiPrimitives[F]]
+    .aliased[QuasiApplicative[F]]
+    .aliased[QuasiFunctor[F]]
+    .from {
+      implicit F: Sync[F] => QuasiIO.fromCats
+    }
   make[QuasiAsync[F]].from {
     implicit F: Async[F] => QuasiAsync.fromCats
-  }
-  make[QuasiApplicative[F]].from {
-    implicit F: Applicative[F] => QuasiApplicative.fromCats
   }
   make[SyncSafe1[F]].from {
     implicit F: Sync[F] => SyncSafe1.fromSync

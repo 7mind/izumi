@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.*
 import izumi.distage.modules.typeclass.BIO2InstancesModule
 import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Applicative2, Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
+import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagKK
 
@@ -24,12 +24,13 @@ class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[QuasiIORunner2[F]]
     .from[QuasiIORunner.BIOImpl[F]]
 
-  make[QuasiIO2[F]].from {
-    QuasiIO.fromBIO(_: IO2[F])
-  }
-  make[QuasiApplicative2[F]].from {
-    QuasiApplicative.fromBIO[F, Throwable](_: Applicative2[F])
-  }
+  make[QuasiIO2[F]]
+    .aliased[QuasiPrimitives2[F]]
+    .aliased[QuasiApplicative2[F]]
+    .aliased[QuasiFunctor2[F]]
+    .from {
+      QuasiIO.fromBIO(_: IO2[F])
+    }
   make[QuasiAsync2[F]].from {
     QuasiAsync.fromBIO(_: Async2[F], _: Temporal2[F])
   }
