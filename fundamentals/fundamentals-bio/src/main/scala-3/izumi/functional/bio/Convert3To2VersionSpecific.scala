@@ -18,8 +18,8 @@ trait BlockingIOLowPriorityVersionSpecific {
     implicit BlockingIO3: C[FR] {
       type Divergence = Nondivergent; type IsPredefined = T // `IsPredefined = T` is required only on Scala 3
     }
-  ): Divergent.Of[BlockingIO2[FR[R, + _, + _]]] { type IsPredefined = T } = {
-    BlockingIO3.asInstanceOf[Divergent.Of[BlockingIO2[FR[R, + _, + _]]] { type IsPredefined = T }]
+  ): Divergent.Of[BlockingIO2[FR[R, +_, +_]]] { type IsPredefined = T } = {
+    BlockingIO3.asInstanceOf[Divergent.Of[BlockingIO2[FR[R, +_, +_]]] { type IsPredefined = T }]
   }
 
 }
