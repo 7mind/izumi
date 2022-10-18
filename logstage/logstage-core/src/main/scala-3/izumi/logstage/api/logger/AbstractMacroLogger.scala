@@ -23,7 +23,7 @@ trait AbstractMacroLogger { this: AbstractLogger =>
   transparent inline final def crit(inline message: String): Unit = log(Log.Level.Crit, message)
 
   transparent inline final def log(inline level: Log.Level, inline message: String): Unit = {
-    if (acceptable(Log.LoggerId(CodePositionMaterializer.applicationPointId), level)) {
+    if (acceptable(Log.LoggerId(CodePositionMaterializer.materializeApplicationPointId), level)) {
       
       unsafeLog(Log.Entry.create(level, Message(message))(CodePositionMaterializer.materialize))
     }

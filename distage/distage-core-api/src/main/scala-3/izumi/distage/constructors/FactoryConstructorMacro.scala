@@ -64,7 +64,7 @@ object FactoryConstructorMacro {
 
         if (impltype.typeSymbol.flags.is(Flags.Trait) || impltype.typeSymbol.flags.is(Flags.Abstract)) {
           report.errorAndAbort(
-            s"Cannot build factory for ${resultTpe.show}, factory method $n returns type ${impltype.show} which cannot be constructed with new"
+            s"Cannot build factory for ${resultTpe.show}, factory method $n returns type ${impltype.show} which cannot be constructed with `new`"
           )
         }
 

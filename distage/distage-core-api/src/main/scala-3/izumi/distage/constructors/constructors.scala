@@ -44,12 +44,19 @@ sealed trait AnyConstructor[T] extends Any with AnyConstructorOptionalMakeDSL[T]
   def provider: Functoid[T]
 }
 
+object AnyConstructor {
+  def apply[T](implicit ctor: AnyConstructor[T]): Functoid[T] = ctor.provider
+
+  inline implicit def materialize[T]: AnyConstructor[T] = ${ AnyConstructorMacro.make[T] }
+}
+
 /**
   * An implicitly summonable constructor for a concrete class `T`
   *
   * @see [[AnyConstructor]]
   */
 final class ClassConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+
 object ClassConstructor {
   def apply[T](implicit ctor: ClassConstructor[T]): Functoid[T] = ctor.provider
 
@@ -64,31 +71,6 @@ object ClassConstructor {
   * @see [[AnyConstructor]]
   */
 final class TraitConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
-
-/**
-  * An implicitly summonable constructor for a "factory-like" trait or abstract class `T`
-  *
-  * @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]]
-  * @see [[izumi.distage.model.definition.impl]] recommended documenting annotation for use with [[FactoryConstructor]]
-  * @see [[AnyConstructor]]
-  */
-final class FactoryConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
-
-/**
-  * An implicitly summonable constructor for a `T <: zio.Has[A] with zio.Has[B] with zio.Has[C]`
-  *
-  * `zio.Has` heterogeneous map values may be used by ZIO or other Reader-like effects
-  *
-  * @see [[https://izumi.7mind.io/distage/basics.html#zio-has-bindings ZIO Has bindings]]
-  * @see [[AnyConstructor]]
-  */
-final class HasConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
-
-object AnyConstructor {
-  def apply[T](implicit ctor: AnyConstructor[T]): Functoid[T] = ctor.provider
-
-  inline implicit def materialize[T]: AnyConstructor[T] = ???
-}
 
 object TraitConstructor {
   def apply[T](implicit ctor: TraitConstructor[T]): Functoid[T] = ctor.provider
@@ -105,11 +87,30 @@ object TraitConstructor {
   }
 }
 
+/**
+  * An implicitly summonable constructor for a "factory-like" trait or abstract class `T`
+  *
+  * @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]]
+  * @see [[izumi.distage.model.definition.impl]] recommended documenting annotation for use with [[FactoryConstructor]]
+  * @see [[AnyConstructor]]
+  */
+final class FactoryConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+
 object FactoryConstructor {
   def apply[T](implicit ctor: FactoryConstructor[T]): Functoid[T] = ctor.provider
 
   inline implicit def materialize[T]: FactoryConstructor[T] = ${ FactoryConstructorMacro.make[T] }
 }
+
+/**
+  * An implicitly summonable constructor for a `T <: zio.Has[A] with zio.Has[B] with zio.Has[C]`
+  *
+  * `zio.Has` heterogeneous map values may be used by ZIO or other Reader-like effects
+  *
+  * @see [[https://izumi.7mind.io/distage/basics.html#zio-has-bindings ZIO Has bindings]]
+  * @see [[AnyConstructor]]
+  */
+final class HasConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
 
 object HasConstructor {
   def apply[T](implicit ctor: HasConstructor[T]): Functoid[T] = ctor.provider
@@ -145,6 +146,4 @@ object AnyConstructorOptionalMakeDSL {
          |""".stripMargin
     )
   }
-
-  inline implicit def materialize[T]: AnyConstructorOptionalMakeDSL.Impl[T] = ???
 }

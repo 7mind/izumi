@@ -4,19 +4,17 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.quoted.{Expr, Quotes, Type}
 
-
 final case class CodePositionMaterializer(get: CodePosition) extends AnyVal
 
 object CodePositionMaterializer {
   inline def apply()(implicit ev: CodePositionMaterializer, dummy: DummyImplicit): CodePositionMaterializer = ev
   inline def codePosition(implicit ev: CodePositionMaterializer): CodePosition = ev.get
-  inline def applicationPointId: String = ${ doapplicationPointId }
 
   inline implicit def materialize: CodePositionMaterializer = ${ doMaterialize }
+  inline def materializeApplicationPointId: String = ${ doApplicationPointId }
 
   private def doMaterialize(using Quotes): Expr[CodePositionMaterializer] = new CodePositionMaterializerMacro().getEnclosingPositionMat()
-  private def doapplicationPointId(using Quotes): Expr[String] = new CodePositionMaterializerMacro().getApplicationPointId()
-
+  private def doApplicationPointId(using Quotes): Expr[String] = new CodePositionMaterializerMacro().getApplicationPointId()
 
   private final class CodePositionMaterializerMacro(using val qctx: Quotes) {
     import qctx.reflect._
@@ -39,16 +37,17 @@ object CodePositionMaterializer {
 
     def getApplicationPointId(): Expr[String] = {
       val st = ownershipChain()
-      val applicationId = st.tail.flatMap {
-        case s if s.isPackageDef =>
-          Some(s.name)
-        case s if s.isValDef =>
-          None
-        case s if goodSymbol(s) =>
-          Some(s.name)
-        case s =>
-          None
-      }
+      val applicationId = st.tail
+        .flatMap {
+          case s if s.isPackageDef =>
+            Some(s.name)
+          case s if s.isValDef =>
+            None
+          case s if goodSymbol(s) =>
+            Some(s.name)
+          case s =>
+            None
+        }
         .map(_.toString.trim)
         .mkString(".")
 
@@ -59,12 +58,12 @@ object CodePositionMaterializer {
       val sourcePos = new SourceFilePositionMaterializer.SourceFilePositionMaterializerMacro().getSourceFilePosition()
       val applicationId = getApplicationPointId()
 
-      '{ CodePosition( ${sourcePos}, ${applicationId}) }
+      '{ CodePosition(${ sourcePos }, ${ applicationId }) }
     }
 
     def getEnclosingPositionMat(): Expr[CodePositionMaterializer] = {
       val pos = getEnclosingPosition()
-      '{ CodePositionMaterializer( ${ pos } )}
+      '{ CodePositionMaterializer(${ pos }) }
     }
 
     private def goodSymbol(s: Symbol): Boolean = {

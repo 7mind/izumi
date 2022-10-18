@@ -69,16 +69,17 @@ object TraitConstructorMacro {
         Typed(block, resultTpeTree)
     }
 
-    /*
+    import Printer.TreeStructure
     report.warning(
-      s"""|symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
+      s"""|tpe = $resultTpe
+          |symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
           |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
           |tree = ${resultTpeSym.tree}
           |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
           |pct  = ${resultTpeSym.primaryConstructor.tree}
           |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
-          |pctt = ${resultTpeSym.typeRef.memberType(resultTpeSym.primaryConstructor)}
-          |pcts = ${resultTpeSym.typeRef.baseClasses
+          |pctt = ${resultTpe.memberType(resultTpeSym.primaryConstructor)}
+          |pcts = ${resultTpe.baseClasses
            .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
            .mkString("\n")}
           |defn = ${resultTpeSym.tree.show}
@@ -86,7 +87,6 @@ object TraitConstructorMacro {
           |lam  = ${lamExpr.show}
           |""".stripMargin
     )
-     */
 
     val f = functoidMacro.make[R](lamExpr)
     '{ new TraitConstructor[R](${ f }) }

@@ -27,7 +27,7 @@ class ConstructorContext[R: Type, Q <: Quotes](using val qctx: Q)(val util: Cons
   val constructorParamLists = parentsSymbols.map(util.buildConstructorParameters(resultTpe))
   val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
 
-  val methodDecls = abstractMethods.map(m => (m.name, m.owner.typeRef.memberType(m))) ++ refinementMethods
+  val methodDecls = abstractMethods.map(m => (m.name, resultTpe.memberType(m))) ++ refinementMethods
 
   def isFactory: Boolean = abstractMethods.nonEmpty || refinementMethods.nonEmpty
 

@@ -18,10 +18,17 @@ object ClassConstructorMacro {
     Expr.summon[ValueOf[R]] match {
       case Some(valexpr) =>
         '{ new ClassConstructor[R](Functoid.singleton(${ valexpr.asExprOf[scala.Singleton & R] })) }
+
       case _ =>
         util.requireConcreteTypeConstructor[R]("ClassConstructor")
 
         val typeRepr = TypeRepr.of[R].dealias.simplified
+
+        if (typeRepr.typeSymbol.flags.is(Flags.Trait) || typeRepr.typeSymbol.flags.is(Flags.Abstract)) {
+          report.errorAndAbort(
+            s"Cannot create ClassConstructor for type ${Type.show[R]} - it's a trait or an abstract class, not a concrete class. It cannot be constructed with `new`"
+          )
+        }
 
         typeRepr.classSymbol match {
           case Some(cs) =>
@@ -31,6 +38,7 @@ object ClassConstructorMacro {
 
             val f = functoidMacro.make[R](lamExpr)
             '{ new ClassConstructor[R](${ f }) }
+
           case None =>
             report.errorAndAbort(s"No class symbol defined for $typeRepr")
         }

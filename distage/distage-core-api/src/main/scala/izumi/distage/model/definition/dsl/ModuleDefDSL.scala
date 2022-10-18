@@ -664,6 +664,7 @@ object ModuleDefDSL {
     * Please update this when adding new methods to [[MakeDSL]]!
     */
   private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set(
+    "make",
     "named",
     "namedByImpl",
     "tagged",
