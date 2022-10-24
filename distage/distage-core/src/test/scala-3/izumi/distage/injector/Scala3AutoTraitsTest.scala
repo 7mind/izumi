@@ -73,6 +73,14 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
 //      with izumi.distage.fixtures.Scala3TraitCases.TraitInheritingAbstractClassAndTraitWithConstructor
     }
 
+    "support trait type with param" in {
+      TraitConstructor[ATraitWithTypeParam2[Int]]
+    }
+
+    "support trait refinement" in {
+      TraitConstructor[ATrait1 { def a: 5 }]
+    }
+
     "support factories" in {
       FactoryConstructor[FactoryTrait1]
 

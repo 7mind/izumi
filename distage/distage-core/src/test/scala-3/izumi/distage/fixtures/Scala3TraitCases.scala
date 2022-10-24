@@ -34,6 +34,10 @@ object Scala3TraitCases {
 
   trait ATraitWithTypeParam[A]
 
+  trait ATraitWithTypeParam2[A] {
+    def a: A
+  }
+
   trait ATraitWithConstructor(val c: Int)
 
   trait StackedTraitWithConstructor(val b: Int) extends ATraitWithConstructor with ATraitWithTypeParam[Int] { this: AbstractClassWithTraitWithConstructor => }

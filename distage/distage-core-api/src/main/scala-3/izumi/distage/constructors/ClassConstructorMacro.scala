@@ -32,8 +32,8 @@ object ClassConstructorMacro {
 
         typeRepr.classSymbol match {
           case Some(cs) =>
-            val ctorTreeParameterized = util.buildConstructorApplication(cs, typeRepr)
-            val constructorParamLists = util.buildConstructorParameters(typeRepr)(cs)._2.map(_.toTrees)
+            val ctorTreeParameterized = util.buildConstructorApplication(typeRepr)
+            val constructorParamLists = util.buildConstructorParameters(typeRepr)._2.map(_.toTrees)
             val lamExpr = util.wrapApplicationIntoLambda[R](constructorParamLists, ctorTreeParameterized)
 
             val f = functoidMacro.make[R](lamExpr)

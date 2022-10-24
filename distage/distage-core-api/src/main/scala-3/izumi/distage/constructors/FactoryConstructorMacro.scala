@@ -27,21 +27,17 @@ object FactoryConstructorMacro {
 
     if (!isFactory) {
       report.errorAndAbort(
-        s"""$resultTpeSym has no abstract methods so it's not a factory;; ${resultTpeSym.methodMembers};; $resultTpeTree;; ${resultTpeTree.getClass}""".stripMargin
+        s"""$resultTpeSym has no abstract methods so it's not a factory;; methods=${resultTpeSym.methodMembers};; tpeTree=$resultTpeTree;; tpeTreeClass=${resultTpeTree.getClass}""".stripMargin
       )
     }
 
     val refinementNames = refinementMethods.map(_._1).toSet
 
     def decls(cls: Symbol): List[Symbol] = methodDecls.map {
-      case (name, mtype) =>
+      case (name, _, mtype) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
-        val flags = if (!refinementNames.contains(name)) {
-          Flags.Method | Flags.Override
-        } else {
-          Flags.Method
-        }
-        Symbol.newMethod(cls, name, mtype, flags, Symbol.noSymbol)
+        val overrideFlag = if (!refinementNames.contains(name)) Flags.Override else Flags.EmptyFlags
+        Symbol.newMethod(cls, name, mtype, overrideFlag | Flags.Method, Symbol.noSymbol)
     }
 
     sealed trait Parameter
@@ -57,7 +53,7 @@ object FactoryConstructorMacro {
 
     var flatLamdaSigIndex = 0
     val factoryMethodData = methodDecls.map {
-      (n, t) =>
+      (n, _, t) =>
         val signatureParams = util.flattenMethodSignature(t)
         val rett = util.dropWrappers(util.realReturnType(t))
         val impltype = util.readWithAnno(rett).getOrElse(rett).dealias.simplified
@@ -68,7 +64,7 @@ object FactoryConstructorMacro {
           )
         }
 
-        val constructorParamLists = util.buildConstructorParameters(impltype)(impltype.typeSymbol)
+        val constructorParamLists = util.buildConstructorParameters(impltype)
 
         util.assertSignatureIsAcceptableForFactory(signatureParams, resultTpe, s"factory method $n")
         util.assertSignatureIsAcceptableForFactory(constructorParamLists._2.flatten, resultTpe, s"implementation constructor ${impltype.show}")
@@ -108,7 +104,7 @@ object FactoryConstructorMacro {
           )
         }
 
-        FactoryMethodDecl(n, impltype, constructorParamLists._1, params)
+        FactoryMethodDecl(n, impltype, impltype.typeSymbol, params)
     }
 
     val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
@@ -124,7 +120,7 @@ object FactoryConstructorMacro {
         val parents = util.buildParentConstructorCallTerms(resultTpe, constructorParamLists, lamOnlyCtorArguments)
 
         val name: String = s"${resultTpeSym.name}FactoryAutoImpl"
-        val clsSym = Symbol.newClass(lamSym, name, parents = parentsSymbols.map(_.typeRef), decls = decls, selfType = None)
+        val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = decls, selfType = None)
 
         val defs = factoryMethodData.map {
           fmd =>
@@ -136,7 +132,7 @@ object FactoryConstructorMacro {
               methodSym,
               sigArgs => {
 
-                val ctorTreeParameterized = util.buildConstructorApplication(fmd.implSymb, fmd.impl)
+                val ctorTreeParameterized = util.buildConstructorApplication(fmd.impl)
                 val sigFlat = sigArgs.flatten
 
                 val argsLists: List[List[Term]] = fmd.params.map {

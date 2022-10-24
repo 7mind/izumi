@@ -26,22 +26,26 @@ object TraitConstructorMacro {
       report.errorAndAbort(
         s"""$resultTpeSym has abstract methods taking parameters, expected only parameterless abstract methods:
            |  ${abstractMethodsWithParams.map(s => s.name -> s.flags.show)}
-           |  [others: ${abstractMethods.map(s => s.name -> s.flags.show)}]""".stripMargin
+           |  [others: ${abstractMembers.map(s => s.name -> s.flags.show)}]""".stripMargin
       )
     }
 
     assert(methodDecls.map(_._1).size == methodDecls.size, "BUG: duplicated abstract method names")
 
     def decls(cls: Symbol): List[Symbol] = methodDecls.map {
-      case (name, mtype) =>
+      case (name, isMethod, mtype) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
-        Symbol.newMethod(cls, name, mtype, Flags.Method | Flags.Override, Symbol.noSymbol)
+        if (isMethod) {
+          Symbol.newMethod(cls, name, mtype, Flags.Method | Flags.Override, Symbol.noSymbol)
+        } else {
+          Symbol.newVal(cls, name, mtype, Flags.Override, Symbol.noSymbol)
+        }
     }
 
     // TODO: decopypaste
     val lamParams = {
       val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
-      val byNameMethodArgs = methodDecls.map((n, t) => (s"_$n", util.ensureByName(util.dropWrappers(t))))
+      val byNameMethodArgs = methodDecls.map((n, _, t) => (s"_$n", util.ensureByName(util.dropWrappers(t))))
       (ctorArgs ++ byNameMethodArgs).toTrees
     }
 
@@ -53,14 +57,18 @@ object TraitConstructorMacro {
         val parents = util.buildParentConstructorCallTerms(resultTpe, constructorParamLists, lamOnlyCtorArguments)
 
         val name: String = s"${resultTpeSym.name}TraitAutoImpl"
-        val clsSym = Symbol.newClass(lamSym, name, parents = parentsSymbols.map(_.typeRef), decls = decls, selfType = None)
+        val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = decls, selfType = None)
 
         val defs = methodDecls.zip(lamOnlyMethodArguments).map {
-          case ((name, _), arg) =>
-            val methodSyms = clsSym.declaredMethod(name)
+          case ((name, isMethod, tpe), arg) =>
+            val methodSyms = if (isMethod) clsSym.declaredMethod(name) else List(clsSym.declaredField(name))
             assert(methodSyms.size == 1, "BUG: duplicated methods!")
             val methodSym = methodSyms.head
-            DefDef(methodSym, _ => Some(arg))
+            if (isMethod) {
+              DefDef(methodSym, _ => Some(arg))
+            } else {
+              ValDef(methodSym, Some(arg))
+            }
         }
 
         val clsDef = ClassDef(clsSym, parents.toList, body = defs)
@@ -74,6 +82,7 @@ object TraitConstructorMacro {
       s"""|tpe = $resultTpe
           |symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
           |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
+          |fields = ${resultTpeSym.fieldMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
           |tree = ${resultTpeSym.tree}
           |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
           |pct  = ${resultTpeSym.primaryConstructor.tree}
