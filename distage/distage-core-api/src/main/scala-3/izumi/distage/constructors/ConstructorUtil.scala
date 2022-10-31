@@ -3,10 +3,12 @@ package izumi.distage.constructors
 import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.reflection.ReflectionUtil
 
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable
-import izumi.distage.model.providers.FunctoidMacro
+import izumi.distage.model.providers.{Functoid, FunctoidMacro}
+import izumi.distage.model.providers.FunctoidMacro.FunctoidParametersMacro
+import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 
 class ConstructorContext[R: Type, Q <: Quotes](using val qctx: Q)(val util: ConstructorUtil[qctx.type]) {
   import qctx.reflect.*
@@ -31,7 +33,7 @@ class ConstructorContext[R: Type, Q <: Quotes](using val qctx: Q)(val util: Cons
 
   val parentsSymbols = util.findRequiredImplParents(resultTpeSym)
   val parentTypesParameterized = parentsSymbols.map(resultTpe.baseType)
-  val constructorParamLists = parentTypesParameterized.map(util.buildConstructorParameters)
+  val constructorParamLists = parentTypesParameterized.map(t => t -> util.buildConstructorParameters(t))
   val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
 
   val methodDecls = abstractMembers.map(m => (m.name, m.flags.is(Flags.Method), resultTpe.memberType(m))) ++ refinementMethods
@@ -44,20 +46,18 @@ class ConstructorContext[R: Type, Q <: Quotes](using val qctx: Q)(val util: Cons
 class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   import qctx.reflect.*
 
-  private val withAnnotationSym = TypeRepr.of[With].typeSymbol
+  private val withAnnotationSym: Symbol = TypeRepr.of[With].typeSymbol
 
-  type ParamListRepr = List[(String, TypeRepr)]
-  type ParamListsRepr = List[ParamListRepr]
-  type ParamListTree = List[(String, TypeTree)]
-  type ParamListsTree = List[ParamListTree]
+  type ParamReprList = List[(String, TypeRepr)]
+  type ParamReprLists = List[ParamReprList]
+  type ParamTreeList = List[(String, TypeTree)]
+  type ParamTreeLists = List[ParamTreeList]
 
-  implicit object ParamListExt {
-    extension (params: ParamListRepr) {
-      def toTrees: ParamListTree = params.map((n, t) => (n, TypeTree.of(using t.asType))).toList
-    }
+  extension (params: ParamReprList) {
+    def toTrees: ParamTreeList = params.map((n, t) => (n, TypeTree.of(using t.asType))).toList
   }
 
-  def assertSignatureIsAcceptableForFactory(signatureParams: ParamListRepr, resultTpe: TypeRepr, clue: String): Unit = {
+  def assertSignatureIsAcceptableForFactory(signatureParams: ParamReprList, resultTpe: TypeRepr, clue: String): Unit = {
     assert(signatureParams.groupMap(_._1)(_._2).forall(_._2.size == 1), "BUG: duplicated arg names!")
 
     val sigRevIndex = signatureParams.groupMap(_._2)(_._1)
@@ -66,7 +66,8 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     if (duplications.nonEmpty) {
       import izumi.fundamentals.platform.strings.IzString.*
       val explanation = duplications.map((t, nn) => s"${t.show}: ${nn.mkString(", ")}").niceList()
-      report.errorAndAbort(s"Cannot build factory for ${resultTpe.show}, $clue contais contradicting arguments: $explanation")
+//      report.errorAndAbort(s"Cannot build factory for ${resultTpe.show}, $clue contais contradicting arguments: $explanation")
+      report.warning(s"Cannot build factory for ${resultTpe.show}, $clue contais contradicting arguments: $explanation")
     }
 
     sigRevIndex.view.mapValues(_.head).toMap
@@ -88,8 +89,8 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def wrapApplicationIntoLambda[R: Type](paramss: ParamListsTree, constructorTerm: Term): Expr[Any] = {
-    wrapIntoLambda[R](paramss) {
+  def wrapApplicationIntoLambda[R: Type](paramss: ParamTreeLists, constructorTerm: Term): Expr[Any] = {
+    wrapIntoLambda[R](paramss.flatten) {
       (_, args0) =>
         import scala.collection.immutable.Queue
         val (_, argsLists) = paramss.foldLeft((args0, Queue.empty[List[Term]])) {
@@ -99,16 +100,14 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
         }
 
         val appl = argsLists.foldLeft(constructorTerm)(_.appliedToArgs(_))
-        val trm = Typed(appl, TypeTree.of[R])
-        trm
+        Typed(appl, TypeTree.of[R])
     }
   }
 
   def wrapIntoLambda[R: Type](
-    paramss: ParamListsTree
+    params: ParamTreeList
   )(body: (Symbol, List[Term]) => Tree
   ): Expr[Any] = {
-    val params = paramss.flatten
     val mtpe = MethodType(params.map(_._1))(
       _ => params.map(t => t._2.tpe),
       _ => TypeRepr.of[R],
@@ -124,18 +123,110 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     lam.asExpr
   }
 
-  def unpackRefinement(t: TypeRepr): List[(String, Boolean, MethodType)] = {
+  def makeFunctoid[R: Type](params: ParamReprList, argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
+    val paramsMacro = new FunctoidParametersMacro[qctx.type]
+
+    val paramDefs = paramsMacro.makeParams[R](params.map((n, t) => (n, None, Right(t))))
+
+    val out = '{
+      new Functoid[R](
+        new ProviderImpl[R](
+          ${ Expr.ofList(paramDefs) },
+          ${ paramsMacro.safeType[R] },
+          ${ argsLambda },
+          ${ providerType },
+        )
+      )
+    }
+
+    report.warning(
+      s"""fun=${argsLambda.show}
+         |funType=${argsLambda.asTerm.tpe}
+         |funSym=${argsLambda.asTerm.symbol}
+         |funTypeSym=${argsLambda.asTerm.tpe.typeSymbol}
+         |funTypeSymBases=${argsLambda.asTerm.tpe.baseClasses}
+         |outputType=${Type.show[R]}
+         |rawOutputType=(${TypeRepr.of[R]})
+         |produced=${out.show}""".stripMargin
+    )
+
+    out
+  }
+
+  def wrapIntoFunctoidRawLambda[R: Type](
+    params: ParamReprList
+  )(body: (Symbol, List[Term]) => Tree
+  ): Expr[Seq[Any] => R] = {
+    val mtpe = MethodType(List("args"))(
+      _ => List(TypeRepr.of[Seq[Any]]),
+      _ => TypeRepr.of[R],
+    )
+    Lambda(
+      Symbol.spliceOwner,
+      mtpe,
+      {
+        case (lamSym, (args: Term) :: Nil) =>
+          val argRefs = params.iterator.zipWithIndex.map {
+            case ((_, paramTpe), idx) =>
+              paramTpe match {
+                case ByNameUnwrappedAsType('[t]) =>
+                  '{ ${ args.asExprOf[Seq[Any]] }.apply(${ Expr(idx) }).asInstanceOf[() => t].apply() }.asTerm
+                case AsType('[t]) =>
+                  '{ ${ args.asExprOf[Seq[Any]] }.apply(${ Expr(idx) }).asInstanceOf[t] }.asTerm
+                case _ =>
+                  report.errorAndAbort(s"Invalid higher-kinded type $paramTpe ${paramTpe.show}")
+              }
+          }.toList
+
+          body(lamSym, argRefs)
+      }: @nowarn("msg=match"),
+    ).asExprOf[Seq[Any] => R]
+  }
+
+  def wrapCtorApplicationIntoFunctoidRawLambda[R: Type](paramss: ParamReprLists, constructorTerm: Term): Expr[Seq[Any] => R] = {
+    wrapIntoFunctoidRawLambda[R](paramss.flatten) {
+      (_, args0) =>
+        import scala.collection.immutable.Queue
+        val (_, argsLists) = paramss.foldLeft((args0, Queue.empty[List[Term]])) {
+          case ((args, res), params) =>
+            val (argList, rest) = args.splitAt(params.size)
+            (rest, res :+ (argList: List[Tree]).asInstanceOf[List[Term]])
+        }
+
+        val appl = argsLists.foldLeft(constructorTerm)(_.appliedToArgs(_))
+        Typed(appl, TypeTree.of[R])
+    }
+  }
+
+  private object ByNameUnwrappedAsType {
+    def unapply(t: TypeRepr): Option[Type[?]] = {
+      t match {
+        case ByNameType(u) => Some(u.asType)
+        case _ => None
+      }
+    }
+  }
+
+  private object AsType {
+    def unapply(t: TypeRepr): Some[Type[?]] = {
+      Some(t.asType)
+    }
+  }
+
+  def unpackRefinement(t: TypeRepr): List[(String, Boolean, MethodOrPoly)] = {
     t match {
-      case Refinement(parent, name, m: MethodType) =>
+      case Refinement(parent, name, m: MethodOrPoly) =>
         List((name, true, m)) ++ unpackRefinement(parent)
       case _ =>
         List.empty
     }
   }
 
-  def flattenMethodSignature(t: TypeRepr): ParamListRepr = {
+  def flattenMethodSignature(t: TypeRepr): ParamReprList = {
     t match {
       case MethodType(nn, tt, ret) =>
+        nn.zip(tt) ++ flattenMethodSignature(ret)
+      case PolyType(nn, tt, ret) =>
         nn.zip(tt) ++ flattenMethodSignature(ret)
       case _ =>
         List.empty
@@ -147,10 +238,13 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     t match {
       case MethodType(_, _, ret) =>
         realReturnType(ret)
+      case PolyType(_, _, ret) =>
+        realReturnType(ret)
       case r =>
         r
     }
   }
+
   final def ensureByName(tpe: TypeRepr): TypeRepr = {
     tpe match {
       case t @ ByNameType(_) => t
@@ -161,6 +255,8 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   @tailrec final def dropMethodType(tpe: TypeRepr): TypeRepr = {
     tpe match {
       case MethodType(_, _, t) =>
+        dropMethodType(t)
+      case PolyType(_, _, t) =>
         dropMethodType(t)
       case t =>
         t
@@ -181,16 +277,27 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
         dropWrappers(t)
       case MethodType(_, _, t) =>
         dropWrappers(t)
+      case PolyType(_, _, t) =>
+        dropWrappers(t)
       case t =>
         t
     }
   }
 
-  def readWithAnno(tpe: TypeRepr): Option[TypeRepr] = {
+  def dropTypeRef(tpe: TypeRepr): TypeRepr = {
     tpe match {
-      case AnnotatedType(_, aterm) =>
+      case t: TypeRef =>
+        t.typeSymbol.owner.typeRef.memberType(t.typeSymbol)
+      case _ =>
+        tpe
+    }
+  }
+
+  def readWithAnnotation(tpe: TypeRepr): Option[TypeRepr] = {
+    tpe match {
+      case AnnotatedType(_, aterm) if aterm.tpe.baseClasses.contains(withAnnotationSym) =>
         aterm match {
-          case Apply(TypeApply(Select(New(_), _), c :: _), _) if aterm.tpe.baseClasses.contains(withAnnotationSym) =>
+          case Apply(TypeApply(Select(New(_), _), c :: _), _) =>
             Some(c.tpe)
           case _ =>
             report.errorAndAbort(s"distage.With annotation expects one type argument but got malformed tree ${aterm.show} ($aterm) : ${aterm.tpe}")
@@ -247,31 +354,32 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def buildConstructorParameters(tpe: TypeRepr): (TypeRepr, ParamListsRepr) = {
-    val methodTypeApplied = tpe.memberType(tpe.typeSymbol.primaryConstructor).appliedTo(tpe.typeArgs)
-
-    val paramListsRepr: ParamListsRepr = {
-      def go(t: TypeRepr): ParamListsRepr = {
-        t match {
-          case MethodType(paramNames, paramTpes, res) =>
-            paramNames.zip(paramTpes) :: go(res)
-          case _ =>
-            Nil
-        }
+  def buildConstructorParameters(tpe: TypeRepr): ParamReprLists = {
+    val ctorMethodTypeApplied =
+      try {
+        tpe.memberType(tpe.typeSymbol.primaryConstructor).appliedTo(tpe.typeArgs)
+      } catch {
+        case t: Throwable =>
+          throw new RuntimeException(s"Got $t in tpe=${tpe.show} prim=${tpe.typeSymbol.primaryConstructor}, pt=${tpe.typeSymbol.primaryConstructor.typeRef}")
       }
 
-      go(methodTypeApplied)
+    def go(t: TypeRepr): ParamReprLists = {
+      t match {
+        case MethodType(paramNames, paramTpes, res) =>
+          paramNames.zip(paramTpes) :: go(res)
+        case _ =>
+          Nil
+      }
     }
 
-    tpe -> paramListsRepr
+    go(ctorMethodTypeApplied)
   }
 
   def buildConstructorApplication(baseType: TypeRepr): Term = {
     Some(baseType.typeSymbol.primaryConstructor).filterNot(_.isNoSymbol) match {
       case Some(consSym) =>
         val ctorTree = Select(New(TypeTree.of(using baseType.asType)), consSym)
-        val ctorTreeParameterized = ctorTree.appliedToTypeTrees(baseType.typeArgs.map(repr => TypeTree.of(using repr.asType)))
-        ctorTreeParameterized
+        ctorTree.appliedToTypeTrees(baseType.typeArgs.map(repr => TypeTree.of(using repr.asType)))
       case None =>
         report.errorAndAbort(s"Cannot find primary constructor in $baseType")
     }
@@ -279,7 +387,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
 
   def buildParentConstructorCallTerms(
     resultTpe: TypeRepr,
-    constructorParamListsRepr: List[(TypeRepr, ParamListsRepr)],
+    constructorParamListsRepr: List[(TypeRepr, ParamReprLists)],
     contextParameters: List[Term],
   ): Seq[Term] = {
     import scala.collection.immutable.Queue

@@ -16,7 +16,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -127,7 +127,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -176,7 +176,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -287,7 +287,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -334,7 +334,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -445,7 +445,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -496,7 +496,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -607,7 +607,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -665,7 +665,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -776,7 +776,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -827,7 +827,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -938,7 +938,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -1000,7 +1000,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -1111,7 +1111,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -1163,7 +1163,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -1274,7 +1274,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -1334,7 +1334,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -1445,7 +1445,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -1504,7 +1504,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -1615,7 +1615,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -1665,7 +1665,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -1776,7 +1776,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -1826,7 +1826,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -1937,7 +1937,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -1993,7 +1993,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -2104,7 +2104,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -2158,7 +2158,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -2269,7 +2269,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -2322,7 +2322,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -2433,7 +2433,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -2487,7 +2487,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -2598,7 +2598,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -2660,7 +2660,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -2771,7 +2771,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -2830,7 +2830,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -2941,7 +2941,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -2990,7 +2990,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -3101,7 +3101,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -3159,7 +3159,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -3270,7 +3270,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -3326,7 +3326,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -3437,7 +3437,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -3492,7 +3492,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -3603,7 +3603,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -3653,7 +3653,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -3764,7 +3764,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -3818,7 +3818,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.2.1-RC2",
+      "3.2.1",
       "2.13.8",
       "2.12.16"
     ),
@@ -3929,7 +3929,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -4118,7 +4118,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",
@@ -4337,7 +4337,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.2.1-RC2") => Seq(
+      case (_, "3.2.1") => Seq(
         "-Yretain-trees",
         "-language:3.2",
         "-Ykind-projector:underscores",

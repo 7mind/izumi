@@ -1,6 +1,6 @@
 package izumi.distage.docker.bundled
 
-import distage.{Id, ModuleDef, TagK}
+import distage.{Functoid, Id, ModuleDef, TagK}
 import izumi.distage.docker.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
@@ -100,10 +100,13 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
       .make[F]
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
       .modifyConfig {
-        (postgresContainer: PostgresFlyWayDocker.Container @Id("postgres-flyway-proxy"), cfg: PostgresFlyWayDocker.Cfg) => (config: PostgresFlyWayDocker.FlyWay.Config) =>
-          PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg)(
-            config
-          ): PostgresFlyWayDocker.FlyWay.Config // TODO: https://github.com/lampepfl/dotty/issues/16107 / 16108
+        Functoid.apply { // TODO: https://github.com/lampepfl/dotty/issues/16108
+          (postgresContainer: PostgresFlyWayDocker.Container @Id("postgres-flyway-proxy"), cfg: PostgresFlyWayDocker.Cfg) =>
+            (config: PostgresFlyWayDocker.FlyWay.Config) =>
+              PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg)(
+                config
+              ): PostgresFlyWayDocker.FlyWay.Config // TODO: https://github.com/lampepfl/dotty/issues/16107 / 16108
+        }
       }
   }
   // Binding of the actual Postgres container with the FlyWay container dependency.

@@ -1,9 +1,11 @@
 package izumi.distage.constructors
 
 import izumi.distage.model.providers.{Functoid, FunctoidMacro}
+import izumi.distage.model.reflection.Provider.ProviderType
 
 import scala.quoted.{Expr, Quotes, Type}
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
+
 import scala.collection.immutable.ArraySeq
 
 object ClassConstructorMacro {
@@ -11,18 +13,20 @@ object ClassConstructorMacro {
   def make[R: Type](using qctx: Quotes): Expr[ClassConstructor[R]] = try {
     import qctx.reflect.*
 
-    val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
     val util = new ConstructorUtil[qctx.type]()
-    import util.ParamListExt
+    import util.toTrees
 
-    Expr.summon[ValueOf[R]] match {
-      case Some(valexpr) =>
-        '{ new ClassConstructor[R](Functoid.singleton(${ valexpr.asExprOf[scala.Singleton & R] })) }
+    val typeRepr = TypeRepr.of[R].dealias.simplified
+
+    util.dropTypeRef(typeRepr) match {
+      case c: ConstantType =>
+        singletonClassConstructor[R](Literal(c.constant))
+
+      case t: TermRef =>
+        singletonClassConstructor[R](Ident(t))
 
       case _ =>
         util.requireConcreteTypeConstructor[R]("ClassConstructor")
-
-        val typeRepr = TypeRepr.of[R].dealias.simplified
 
         if (typeRepr.typeSymbol.flags.is(Flags.Trait) || typeRepr.typeSymbol.flags.is(Flags.Abstract)) {
           report.errorAndAbort(
@@ -31,12 +35,12 @@ object ClassConstructorMacro {
         }
 
         typeRepr.classSymbol match {
-          case Some(cs) =>
+          case Some(_) =>
             val ctorTreeParameterized = util.buildConstructorApplication(typeRepr)
-            val constructorParamLists = util.buildConstructorParameters(typeRepr)._2.map(_.toTrees)
-            val lamExpr = util.wrapApplicationIntoLambda[R](constructorParamLists, ctorTreeParameterized)
+            val paramss = util.buildConstructorParameters(typeRepr)
+            val lamExpr = util.wrapCtorApplicationIntoFunctoidRawLambda[R](paramss, ctorTreeParameterized)
 
-            val f = functoidMacro.make[R](lamExpr)
+            val f = util.makeFunctoid[R](paramss.flatten, lamExpr, '{ ProviderType.Class })
             '{ new ClassConstructor[R](${ f }) }
 
           case None =>
@@ -44,5 +48,13 @@ object ClassConstructorMacro {
         }
     }
   } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+
+  private def singletonClassConstructor[R0](using qctx: Quotes, rtpe0: Type[R0])(tree: qctx.reflect.Tree): Expr[ClassConstructor[R0]] = {
+    type R <: R0 & Singleton
+    (rtpe0: @unchecked) match {
+      case given Type[R] =>
+        '{ new ClassConstructor[R](Functoid.singleton[R](${ tree.asExprOf[R] })) }
+    }
+  }
 
 }

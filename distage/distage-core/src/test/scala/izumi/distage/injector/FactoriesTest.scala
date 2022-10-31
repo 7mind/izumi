@@ -116,7 +116,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(instantiated.nonAssisted(dependency).b eq dependency)
   }
 
-  "handle assisted abstract factories with multiple parameters of the same type" in {
+  "handle assisted abstract factories with multiple parameters of the same type with names matching constructor" in {
     import FactoryCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {

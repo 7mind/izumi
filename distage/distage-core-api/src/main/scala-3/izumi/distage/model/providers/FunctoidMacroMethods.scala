@@ -71,28 +71,44 @@ object FunctoidMacro {
   final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q) {
     import qctx.reflect.*
 
-    val idAnnotationSym = TypeRepr.of[Id].typeSymbol
+    val idAnnotationSym: Symbol = TypeRepr.of[Id].typeSymbol
 
-    def makeParams[R: Type](params: List[(String, TypeTree)]): (List[Expr[LinkedParameter]], List[TypeTree]) = {
-      val paramTypes = params.map(_._2)
+    extension (t: Either[TypeTree, TypeRepr]) {
+      def _tpe: TypeRepr = t match {
+        case Right(t) => t
+        case Left(t) => t.tpe
+      }
+    }
 
-      val paramDefs = params.map {
-        case (name, tpe) =>
-          val identifier = tpe match {
-            case Annotated(_, aterm) if aterm.tpe.baseClasses.contains(idAnnotationSym) =>
-              aterm match {
-                case Apply(Select(New(_), _), c :: _) =>
+    def makeParams[R: Type](params: List[(String, Option[Symbol], Either[TypeTree, TypeRepr])]): List[Expr[LinkedParameter]] = {
+      params.map {
+        case (name, sym, tpe) =>
+          val identifier = (findTypeAnno(tpe, idAnnotationSym), sym.flatMap(findSymbolAnno(_, idAnnotationSym))) match {
+            case (Some(_), Some(_)) =>
+              report.errorAndAbort("conflicting annotations on type and parameter at the same time")
+            case a @ ((Some(_), None) | (None, Some(_))) =>
+              a._1.getOrElse(a._2.getOrElse(throw new RuntimeException("impossible"))) match {
+                case aterm @ Apply(Select(New(_), _), c :: _) =>
                   c.asExprOf[String].value.orElse {
                     report.errorAndAbort(s"distage.Id annotation expects one literal argument but got ${c.show} in tree ${aterm.show} ($aterm)")
                   }
-                case _ =>
+                case aterm =>
                   report.errorAndAbort(s"distage.Id annotation expects one literal argument but got malformed tree ${aterm.show} ($aterm)")
               }
-            case _ =>
+//            case _ if tpe.toString.contains("Annot") =>
+//              given Printer[Tree] = Printer.TreeStructure
+//              report.errorAndAbort(s"Not annotated $tpe show=${tpe.fold(_.show, _.show)} show-dealias=${tpe.fold(_.show, _.dealias.show)} wtf=${tpe match {
+//                  case Right(t @ AnnotatedType(_, term)) => term.show -> findTypeReprAnno(t, idAnnotationSym)
+//                  case Right(t) => s"t=$t"
+//                  case Left(t) => s"tpeRepr=${tpe._tpe} tpeReprShow=${tpe._tpe.show}"
+//                }}")
+            case (None, None) =>
               None
           }
 
-          val isByName = tpe.tpe match {
+          val tpeRepr = tpe._tpe
+
+          val isByName = tpeRepr match {
             case ByNameType(_) => true
             case _ => false
           }
@@ -100,62 +116,96 @@ object FunctoidMacro {
           '{
             LinkedParameter(
               SymbolInfo(
-                name = ${
-                  Expr(name)
-                },
-                finalResultType = ${ safeType(tpe) },
+                name = ${ Expr(name) },
+                finalResultType = ${ safeTypeFromRepr(tpeRepr) },
                 isByName = ${ Expr(isByName) },
-                wasGeneric = ${ Expr(tpe.tpe.typeSymbol.isTypeParam) }, // TODO: type members?
+                wasGeneric = ${ Expr(tpeRepr.typeSymbol.isTypeParam) }, // deem abstract type members as generic? No. Because we don't do that in Scala 2 version.
               ),
-              ${ makeKey(tpe, identifier) },
+              ${ makeKeyFromRepr(tpeRepr, identifier) },
             )
           }
       }
-
-      (paramDefs, paramTypes)
     }
 
-    def makeKey(tpe: TypeTree, id: Option[String]): Expr[DIKey] = {
-      tpe.tpe match {
-        case ByNameType(u) =>
-          makeKeyfromRepr(u, id)
-        case o =>
-          makeKeyfromRepr(o, id)
-      }
+//    def makeKey(tpe: TypeTree, id: Option[String]): Expr[DIKey] = {
+//      makeKeyFromRepr(tpe.tpe, id)
+//    }
+
+    def safeType[R: Type]: Expr[SafeType] = {
+      '{ SafeType.get[R](using scala.compiletime.summonInline[Tag[R]]) }
     }
 
-    private def makeKeyfromRepr(tpe: TypeRepr, id: Option[String]): Expr[DIKey] = {
-      val safeTypeT = safeTypeFromRepr(tpe)
+    private def makeKeyFromRepr(tpe: TypeRepr, id: Option[String]): Expr[DIKey] = {
+      val safeTpe = safeTypeFromRepr(tpe)
       id match {
         case Some(str) =>
           val strExpr = Expr(str)
-          '{ new DIKey.IdKey($safeTypeT, $strExpr, None)(scala.compiletime.summonInline[IdContract[String]]) }
+          '{ new DIKey.IdKey($safeTpe, $strExpr, None)(scala.compiletime.summonInline[IdContract[String]]) }
         case None =>
-          '{ new DIKey.TypeKey($safeTypeT) }
+          '{ new DIKey.TypeKey($safeTpe) }
       }
     }
 
-    def safeType[R: Type]: Expr[SafeType] = {
-      '{ SafeType.get[R](scala.compiletime.summonInline[Tag[R]]) }
-    }
-
-    private def safeType(tpe: TypeTree): Expr[SafeType] = {
-      tpe.tpe match {
-        case ByNameType(u) =>
-          safeTypeFromRepr(u)
-        case o =>
-          safeTypeFromRepr(o)
-      }
-    }
+//    private def safeType(tpe: TypeTree): Expr[SafeType] = {
+//      safeTypeFromRepr(tpe.tpe)
+//    }
 
     private def safeTypeFromRepr(tpe: TypeRepr): Expr[SafeType] = {
-      tpe.asType match {
+      dropByName(tpe).asType match {
         case '[a] =>
           '{ SafeType.get[a](using scala.compiletime.summonInline[Tag[a]]) }
         case _ =>
           report.errorAndAbort(s"Cannot generate SafeType from ${tpe.show}, probably that's a bug in Functoid macro")
       }
     }
+
+    private def dropByName(tpe: TypeRepr): TypeRepr = {
+      tpe match {
+        case ByNameType(u) => u
+        case _ => tpe
+      }
+    }
+
+    def findSymbolAnno(sym: Symbol, annotationSym: Symbol): Option[Term] = {
+      sym.getAnnotation(annotationSym)
+    }
+
+    def findTypeAnno(t0: Either[TypeTree, TypeRepr], sym: Symbol): Option[Term] = {
+      t0 match {
+        case Right(t) =>
+          findTypeReprAnno(t, sym).orElse(findTypeTreeAnno(TypeTree.of(using t.asType), sym))
+        case Left(t) =>
+          findTypeTreeAnno(t, sym).orElse(findTypeReprAnno(t.tpe, sym))
+      }
+    }
+
+    @tailrec private def findTypeReprAnno(t0: TypeRepr, sym: Symbol): Option[Term] = t0 match {
+      case AnnotatedType(_, aterm) if aterm.tpe.baseClasses.headOption.contains(sym) =>
+        Some(aterm)
+      case AnnotatedType(t, _) =>
+        findTypeReprAnno(t, sym)
+      case ByNameType(t) =>
+        findTypeReprAnno(t, sym)
+      case t =>
+        val dealiased = t.dealias.simplified
+        if (t.asInstanceOf[AnyRef] eq dealiased.asInstanceOf[AnyRef]) {
+          None
+        } else {
+          findTypeReprAnno(dealiased, sym)
+        }
+    }
+
+    @tailrec private def findTypeTreeAnno(t: TypeTree, sym: Symbol): Option[Term] = t match {
+      case Annotated(_, aterm) if aterm.tpe.baseClasses.headOption.contains(sym) =>
+        Some(aterm)
+      case Annotated(t, _) =>
+        findTypeTreeAnno(t, sym)
+      case ByName(t) =>
+        findTypeTreeAnno(t, sym)
+      case _ =>
+        None
+    }
+
   }
 
   final class FunctoidMacroImpl[Q <: Quotes](using val qctx: Q) {
@@ -191,12 +241,11 @@ object FunctoidMacro {
         case Block(_, term) =>
           matchTerm(term)
         case _ =>
-          val allTParams = fun.underlying.tpe.typeArgs.map(a => TypeTree.of(using a.asType))
-          val args = allTParams match {
+          val args = fun.underlying.tpe.typeArgs match {
             case Nil => Nil
             case o => o.init
           }
-          analyzeParams[R](args.zipWithIndex.map(a => (s"arg_${a._2}", a._1)), fun)
+          analyzeParams[R](args.iterator.zipWithIndex.map((tpe, idx) => (s"arg_$idx", None, Right(tpe))).toList, fun)
       }
     }
 
@@ -204,8 +253,8 @@ object FunctoidMacro {
       statement match {
         case DefDef(name, params :: Nil, _, _) =>
           val paramTypes = params.params.map {
-            case ValDef(name, tpe, _) =>
-              (name, tpe)
+            case tree @ ValDef(name, tpe, _) =>
+              (name, Some(tree.symbol).filterNot(_.isNoSymbol), Left(tpe))
             case p =>
               report.errorAndAbort(s"Unexpected parameter in $name: ${p.show}")
           }
@@ -213,8 +262,8 @@ object FunctoidMacro {
       }
     }
 
-    def analyzeParams[R: Type](params: List[(String, TypeTree)], fun: Term): Expr[Functoid[R]] = {
-      val (paramDefs, paramTypes) = paramsMacro.makeParams[R](params)
+    def analyzeParams[R: Type](params: List[(String, Option[Symbol], Either[TypeTree, TypeRepr])], fun: Term): Expr[Functoid[R]] = {
+      val paramDefs = paramsMacro.makeParams[R](params)
 
       '{
         val rawFn: AnyRef = ${ fun.asExprOf[AnyRef] }
@@ -223,20 +272,20 @@ object FunctoidMacro {
             ${ Expr.ofList(paramDefs) },
             ${ paramsMacro.safeType[R] },
             rawFn,
-            (args: Seq[Any]) => ${ generateCall(paramTypes, 'rawFn, 'args) },
+            (args: Seq[Any]) => ${ generateCall(params.size, 'rawFn, 'args) },
             ProviderType.Function,
           )
         )
       }
     }
 
-    def generateCall(ptypes: List[TypeTree], rawFn: Expr[Any], args: Expr[Seq[Any]]): Expr[Any] = {
-      val params = ptypes.zipWithIndex.map {
-        case (_, idx) =>
+    def generateCall(argsNum: Int, rawFn: Expr[Any], args: Expr[Seq[Any]]): Expr[Any] = {
+      val params = (0 until argsNum).map {
+        idx =>
           '{ $args(${ Expr(idx) }) }
-      }
+      }.toList
 
-      val fnType = defn.FunctionClass(ptypes.size).typeRef.appliedTo((0 to ptypes.size).map(_ => TypeRepr.of[Any]).toList)
+      val fnType = defn.FunctionClass(argsNum).typeRef.appliedTo((0 to argsNum).map(_ => TypeRepr.of[Any]).toList)
 
       val fnAny = fnType.asType match {
         case '[a] =>

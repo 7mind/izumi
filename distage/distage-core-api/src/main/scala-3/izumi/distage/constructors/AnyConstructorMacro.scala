@@ -23,7 +23,7 @@ object AnyConstructorMacro {
 
     if (AndTypeTypeTest.unapply(tpe0).isDefined || RefinementTypeTest.unapply(tpe0).isDefined) {
       // ignore intersections for now
-      '{ ??? : AnyConstructor[T] }
+      '{ (throw new RuntimeException("unsupported intersection")): AnyConstructor[T] }
     } else if (tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract)) {
       ClassConstructorMacro.make[T]
     } else if ({

@@ -1,6 +1,7 @@
 package izumi.distage.constructors
 
 import izumi.distage.model.providers.{Functoid, FunctoidMacro}
+import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 
 import scala.annotation.experimental
@@ -14,10 +15,8 @@ object TraitConstructorMacro {
   def make[R: Type](using qctx: Quotes): Expr[TraitConstructor[R]] = try {
     import qctx.reflect.*
 
-    val functoidMacro = new FunctoidMacro.FunctoidMacroImpl[qctx.type]()
-
     val util = new ConstructorUtil[qctx.type]()
-    import util.ParamListExt
+    import util.toTrees
 
     val context = new ConstructorContext[R, qctx.type](util)
     import context.*
@@ -46,10 +45,10 @@ object TraitConstructorMacro {
     val lamParams = {
       val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
       val byNameMethodArgs = methodDecls.map((n, _, t) => (s"_$n", util.ensureByName(util.dropWrappers(t))))
-      (ctorArgs ++ byNameMethodArgs).toTrees
+      ctorArgs ++ byNameMethodArgs
     }
 
-    val lamExpr = util.wrapIntoLambda[R](List(lamParams)) {
+    val lamExpr = util.wrapIntoFunctoidRawLambda[R](lamParams) {
       (lamSym, args0) =>
 
         val (lamOnlyCtorArguments, lamOnlyMethodArguments) = args0.splitAt(flatCtorParams.size)
@@ -60,7 +59,7 @@ object TraitConstructorMacro {
         val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = decls, selfType = None)
 
         val defs = methodDecls.zip(lamOnlyMethodArguments).map {
-          case ((name, isMethod, tpe), arg) =>
+          case ((name, isMethod, _), arg) =>
             val methodSyms = if (isMethod) clsSym.declaredMethod(name) else List(clsSym.declaredField(name))
             assert(methodSyms.size == 1, "BUG: duplicated methods!")
             val methodSym = methodSyms.head
@@ -97,7 +96,7 @@ object TraitConstructorMacro {
           |""".stripMargin
     )
 
-    val f = functoidMacro.make[R](lamExpr)
+    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Trait })
     '{ new TraitConstructor[R](${ f }) }
 
   } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }

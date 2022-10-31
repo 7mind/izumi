@@ -23,6 +23,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
 
       assert(aclass2.c == 5)
 
+      // support by-name
       val traitCtor = TraitConstructor[ATrait].get
       val atrait = traitCtor.unsafeApply(Seq(TypedRef.byName(5))).asInstanceOf[ATrait]
 
@@ -65,6 +66,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
       assert(atraitWithCtor.b == 4)
       assert(atraitWithCtor.c == 2)
 
+// generated code:
 //  ((a: scala.Int, c: scala.Int, `a₂`: scala.Int, b: scala.Int) =>
 //    class TraitInheritingAbstractClassAndTraitWithConstructorAutoImpl
 //      extends izumi.distage.fixtures.Scala3TraitCases.AbstractClassWithTraitWithConstructor(a, c)
