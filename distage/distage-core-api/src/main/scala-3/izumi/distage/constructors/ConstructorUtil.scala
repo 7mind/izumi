@@ -89,40 +89,6 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def wrapApplicationIntoLambda[R: Type](paramss: ParamTreeLists, constructorTerm: Term): Expr[Any] = {
-    wrapIntoLambda[R](paramss.flatten) {
-      (_, args0) =>
-        import scala.collection.immutable.Queue
-        val (_, argsLists) = paramss.foldLeft((args0, Queue.empty[List[Term]])) {
-          case ((args, res), params) =>
-            val (argList, rest) = args.splitAt(params.size)
-            (rest, res :+ (argList: List[Tree]).asInstanceOf[List[Term]])
-        }
-
-        val appl = argsLists.foldLeft(constructorTerm)(_.appliedToArgs(_))
-        Typed(appl, TypeTree.of[R])
-    }
-  }
-
-  def wrapIntoLambda[R: Type](
-    params: ParamTreeList
-  )(body: (Symbol, List[Term]) => Tree
-  ): Expr[Any] = {
-    val mtpe = MethodType(params.map(_._1))(
-      _ => params.map(t => t._2.tpe),
-      _ => TypeRepr.of[R],
-    )
-    val lam = Lambda(
-      Symbol.spliceOwner,
-      mtpe,
-      {
-        case (lamSym, args0) =>
-          body(lamSym, args0.asInstanceOf[List[Term]])
-      },
-    )
-    lam.asExpr
-  }
-
   def makeFunctoid[R: Type](params: ParamReprList, argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
     val paramsMacro = new FunctoidParametersMacro[qctx.type]
 

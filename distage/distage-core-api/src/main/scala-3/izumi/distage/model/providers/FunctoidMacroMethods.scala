@@ -180,7 +180,7 @@ object FunctoidMacro {
     }
 
     @tailrec private def findTypeReprAnno(t0: TypeRepr, sym: Symbol): Option[Term] = t0 match {
-      case AnnotatedType(_, aterm) if aterm.tpe.baseClasses.headOption.contains(sym) =>
+      case AnnotatedType(_, aterm) if aterm.tpe.classSymbol.contains(sym) =>
         Some(aterm)
       case AnnotatedType(t, _) =>
         findTypeReprAnno(t, sym)
@@ -196,7 +196,7 @@ object FunctoidMacro {
     }
 
     @tailrec private def findTypeTreeAnno(t: TypeTree, sym: Symbol): Option[Term] = t match {
-      case Annotated(_, aterm) if aterm.tpe.baseClasses.headOption.contains(sym) =>
+      case Annotated(_, aterm) if aterm.tpe.classSymbol.contains(sym) =>
         Some(aterm)
       case Annotated(t, _) =>
         findTypeTreeAnno(t, sym)
