@@ -517,7 +517,10 @@ object CatsConversions {
         }
         F.uninterruptibleExcept(
           restore =>
-            F.flatMap(k { e => p.trySuccess(e); () }) {
+            F.flatMap(k {
+              e =>
+                p.trySuccess(e); ()
+            }) {
               case Some(canceler) => F.guaranteeOnInterrupt(restore(get), _ => F.orTerminate(canceler))
               case None => restore(get)
             }

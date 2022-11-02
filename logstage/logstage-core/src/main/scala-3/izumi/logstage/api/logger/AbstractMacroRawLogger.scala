@@ -4,7 +4,6 @@ import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.Message
 
-
 trait AbstractMacroRawLogger { this: AbstractLogger =>
 
   /**

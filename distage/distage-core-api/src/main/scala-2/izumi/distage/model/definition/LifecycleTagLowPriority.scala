@@ -11,11 +11,11 @@ trait LifecycleTagLowPriority {
     *
     * TODO: report to IJ bug tracker
     */
-  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any]]: LifecycleTagImpl[R] =
-    macro LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any]]: LifecycleTagImpl[R] = macro
+    LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
 }
 
 trait TrifunctorHasLifecycleTagLowPriority1 {
-  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any], T]: TrifunctorHasLifecycleTagImpl[R, T] =
-    macro LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any], T]: TrifunctorHasLifecycleTagImpl[R, T] = macro
+    LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
 }

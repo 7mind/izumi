@@ -38,6 +38,3 @@ abstract class WithCirce[A]()(implicit derivedCodec: DerivationDerivedCodec[A]) 
 
   implicit val codec: Codec.AsObject[A] = derivedCodec.value
 }
-
-
-

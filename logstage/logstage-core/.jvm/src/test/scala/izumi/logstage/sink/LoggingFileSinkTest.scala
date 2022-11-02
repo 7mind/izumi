@@ -225,7 +225,7 @@ object LoggingFileSinkTest {
                  FileSinkConfig.soft(_: Int)
                } else {
                  FileSinkConfig.inBytes(_: Int)
-               })(fileSize)
+               }) (fileSize)
 
     if (broken) {
       new FileSinkBrokenImpl(renderingPolicy, fileService, r, cfg)

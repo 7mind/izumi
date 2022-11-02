@@ -61,8 +61,8 @@ object PlanCheckMaterializer {
     CheckConfig <: Boolean,
     PrintBindings <: Boolean,
     OnlyWarn <: Boolean,
-  ]: PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]] =
-    macro PlanCheckMaterializerMacro.impl[AppMain, Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]
+  ]: PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]] = macro
+    PlanCheckMaterializerMacro.impl[AppMain, Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]
 
   object PlanCheckMaterializerMacro {
     def impl[

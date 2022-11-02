@@ -6,7 +6,7 @@ import scala.quoted.{Expr, Quotes, Type}
 
 object MacroParameters {
   import izumi.fundamentals.platform.language.IzScala
-  
+
   def scalaVersion(): Option[String] = macroSetting("scala-version")
   def scalaCrossVersions(): Option[String] = macroSetting("scala-versions")
 

@@ -1,7 +1,5 @@
 package izumi.fundamentals.platform.language
 
-
-
 import scala.collection.immutable.{AbstractSeq, LinearSeq}
 import scala.quoted.{Expr, Quotes, Type}
 import scala.util.matching.Regex
@@ -16,7 +14,7 @@ object ScalaReleaseMacro {
     def getScalaRelease: Expr[ScalaRelease] = {
       ScalaRelease.parse(dotty.tools.dotc.config.Properties.versionNumberString) match {
         case ScalaRelease.`3`(minor, bugfix) =>
-          '{ ScalaRelease.`3`( ${ Expr(minor)}, ${ Expr(bugfix)} )}
+          '{ ScalaRelease.`3`(${ Expr(minor) }, ${ Expr(bugfix) }) }
         case other =>
           report.warning(s"Scala 3 expected, but something strange was extracted: $other ")
           other match {

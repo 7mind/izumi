@@ -158,7 +158,8 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
       open = true
       new ByteArrayInputStream(Array())
     } {
-      i => open = false; i.close()
+      i =>
+        open = false; i.close()
     }
 
     resource.use {

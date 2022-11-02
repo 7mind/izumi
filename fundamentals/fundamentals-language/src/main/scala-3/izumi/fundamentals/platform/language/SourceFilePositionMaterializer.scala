@@ -15,7 +15,7 @@ object SourceFilePositionMaterializer {
 
     def getSourceFilePositionMat(): Expr[SourceFilePositionMaterializer] = {
       val pos = getSourceFilePosition()
-      '{SourceFilePositionMaterializer( ${ pos } )}
+      '{ SourceFilePositionMaterializer(${ pos }) }
     }
 
     def getSourceFilePosition(): Expr[SourceFilePosition] = {
@@ -23,7 +23,7 @@ object SourceFilePositionMaterializer {
       val name = pos.sourceFile.name
       val line = pos.startLine + 1
 
-      '{SourceFilePosition( ${Expr(name)}, ${Expr(line)} )}
+      '{ SourceFilePosition(${ Expr(name) }, ${ Expr(line) }) }
     }
   }
 }

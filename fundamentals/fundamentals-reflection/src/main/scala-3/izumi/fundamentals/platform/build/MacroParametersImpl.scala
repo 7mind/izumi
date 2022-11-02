@@ -18,13 +18,11 @@ object MacroParametersImpl {
     val k = key.valueOrAbort
     val prefix = s"$k="
 
-
     // CompilationInfo.XmacroSettings
     val out = ReflectiveCall.call[List[String]](CompilationInfo, "XmacroSettings")
 
     val values = out.filter(_.startsWith(prefix)).map(_.stripPrefix(prefix))
 
-    Expr( values )
+    Expr(values)
   }
 }
-

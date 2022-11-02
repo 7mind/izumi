@@ -16,7 +16,7 @@ object BlockingIO3 {
 private[bio] sealed trait BlockingIOInstances
 object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 
-  implicit def fromSyncSafe3[F[-_, +_, +_] : SyncSafe3]: Predefined.Of[BlockingIO3[F]] = Predefined(new BlockingIO3[F] {
+  implicit def fromSyncSafe3[F[-_, +_, +_]: SyncSafe3]: Predefined.Of[BlockingIO3[F]] = Predefined(new BlockingIO3[F] {
     override private[bio] def shiftBlocking[R, E, A](f: F[R, E, A]): F[R, E, A] = f
     override private[bio] def syncBlocking[A](f: => A): F[Any, Throwable, A] = SyncSafe3[F].syncSafe(f)
     override private[bio] def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A] = SyncSafe3[F].syncSafe(f)

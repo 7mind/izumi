@@ -7,9 +7,9 @@ import scala.language.experimental.macros
 object LiteralCompat extends Dynamic {
   transparent inline def selectDynamic(inline literal: String): { type T } = ${ constantType('{ literal }) }
 
-  def constantType(literal: quoted.Expr[String])(using quoted.Quotes): quoted.Expr[ { type T }] = {
+  def constantType(literal: quoted.Expr[String])(using quoted.Quotes): quoted.Expr[{ type T }] = {
     quoted.quotes.reflect.ConstantType(quoted.quotes.reflect.StringConstant(literal.valueOrAbort)).asType match {
-      case '[l] => '{ ().asInstanceOf[ { type T = l }] }
+      case '[l] => '{ ().asInstanceOf[{ type T = l }] }
     }
   }
 }

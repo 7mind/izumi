@@ -15,8 +15,8 @@ trait AssertIO3[F[-_, +_, +_]] {
 }
 
 object AssertIO3 {
-  final def assertIO[F[-_, +_, +_]](arg: Boolean)(implicit IO3: IO3[F], prettifier: Prettifier, pos: source.Position): F[Any, Nothing, Assertion] =
-    macro AssertIO3Macro.impl[F]
+  final def assertIO[F[-_, +_, +_]](arg: Boolean)(implicit IO3: IO3[F], prettifier: Prettifier, pos: source.Position): F[Any, Nothing, Assertion] = macro
+    AssertIO3Macro.impl[F]
 
   object AssertIO3Macro {
     def impl[F[-_, +_, +_]](

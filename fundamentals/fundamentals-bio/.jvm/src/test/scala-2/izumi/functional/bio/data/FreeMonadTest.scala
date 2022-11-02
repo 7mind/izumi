@@ -29,8 +29,12 @@ class FreeMonadTest extends AnyWordSpec {
 
   "Interpret Free and run it via bio" in {
     val runner = UnsafeRun2.createZIO(Platform.default)
-    runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(simpleExecution.foldMap(_): IO[Nothing, Unit])) // type annotation required for Scala 3: https://github.com/lampepfl/dotty/issues/15888
-    runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(nested.foldMap(_): IO[Nothing, Unit])) // type annotation required for Scala 3: https://github.com/lampepfl/dotty/issues/15888
+    runner.unsafeRun(
+      FreeMonadTest.compiler[IO].flatMap(simpleExecution.foldMap(_): IO[Nothing, Unit])
+    ) // type annotation required for Scala 3: https://github.com/lampepfl/dotty/issues/15888
+    runner.unsafeRun(
+      FreeMonadTest.compiler[IO].flatMap(nested.foldMap(_): IO[Nothing, Unit])
+    ) // type annotation required for Scala 3: https://github.com/lampepfl/dotty/issues/15888
   }
 }
 

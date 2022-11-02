@@ -4,7 +4,6 @@ import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.Message
 
-
 trait AbstractMacroLogger { this: AbstractLogger =>
 
   /**
@@ -24,7 +23,7 @@ trait AbstractMacroLogger { this: AbstractLogger =>
 
   transparent inline final def log(inline level: Log.Level, inline message: String): Unit = {
     if (acceptable(Log.LoggerId(CodePositionMaterializer.materializeApplicationPointId), level)) {
-      
+
       unsafeLog(Log.Entry.create(level, Message(message))(CodePositionMaterializer.materialize))
     }
   }

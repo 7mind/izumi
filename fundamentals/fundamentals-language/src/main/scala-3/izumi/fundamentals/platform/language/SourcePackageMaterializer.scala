@@ -14,24 +14,24 @@ object SourcePackageMaterializer {
 
   private def doMaterialize(using Quotes): Expr[SourcePackageMaterializer] = new SourcePackageMaterializerMacro().getSourcePackage()
 
-
   private final class SourcePackageMaterializerMacro(using qctx: Quotes) {
     import qctx.reflect._
 
     def getSourcePackage(): Expr[SourcePackageMaterializer] = {
       val applicationId = getApplicationPointId()
-      '{ SourcePackageMaterializer( SourcePackage( ${applicationId}) ) }
+      '{ SourcePackageMaterializer(SourcePackage(${ applicationId })) }
     }
 
     def getApplicationPointId(): Expr[String] = {
       val st = ownershipChain()
 
-      val applicationId = st.tail.flatMap {
-        case s if s.isPackageDef =>
-          Some(s.name)
-        case _ =>
-          None
-      }
+      val applicationId = st.tail
+        .flatMap {
+          case s if s.isPackageDef =>
+            Some(s.name)
+          case _ =>
+            None
+        }
         .map(_.toString.trim)
         .mkString(".")
 
