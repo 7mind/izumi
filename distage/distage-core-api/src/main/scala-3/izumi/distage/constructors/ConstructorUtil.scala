@@ -92,7 +92,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   def makeFunctoid[R: Type](params: ParamReprList, argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
     val paramsMacro = new FunctoidParametersMacro[qctx.type]
 
-    val paramDefs = paramsMacro.makeParams[R](params.map((n, t) => (n, None, Right(t))))
+    val paramDefs = params.map((n, t) => paramsMacro.makeParam(n, Right(t), None)) // FIXME parameter Id anno
 
     val out = '{
       new Functoid[R](

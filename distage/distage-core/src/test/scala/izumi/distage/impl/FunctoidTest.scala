@@ -137,6 +137,12 @@ class FunctoidTest extends AnyWordSpec {
       assert(fn.diKeys contains DIKey.get[Int].named("defargann2"))
     }
 
+    "do not get confused by a swap lambda method reference with argument annotations" in {
+      val fn = Functoid.apply((x, y) => defargannfn(y, x)).get
+
+      assert(fn.diKeys == Seq(DIKey.get[Int], DIKey.get[String]))
+    }
+
     "handle polymorphic functions" in {
       val fn1 = Functoid.apply(poly[List] _).get
 
@@ -375,8 +381,15 @@ class FunctoidTest extends AnyWordSpec {
     }
 
     "fail on multiple conflicting annotations on the same parameter" in {
-      assertTypeError("Functoid.apply(defconfannfn _)")
-      assertTypeError("Functoid.apply(defconfannfn2 _)")
+      val t1 = intercept[TestFailedException] {
+        assertCompiles("Functoid.apply(defconfannfn _)")
+      }
+      assert(t1.getMessage contains "Multiple DI annotations on symbol")
+
+      val t2 = intercept[TestFailedException] {
+        assertCompiles("Functoid.apply(defconfannfn2 _)")
+      }
+      assert(t2.getMessage contains "Multiple DI annotations on symbol")
     }
 
     "extract Id annotations from higher-kinded type aliases" in {

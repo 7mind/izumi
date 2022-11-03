@@ -53,6 +53,7 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   // Associations
 
+  // converts Association.Parameter to LinkedParameter
   implicit val liftableParameter: Liftable[Association.Parameter] = {
     case Association.Parameter(symbol, key) =>
       q"new $modelReflectionPkg.LinkedParameter($symbol, $key)"

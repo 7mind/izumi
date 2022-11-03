@@ -115,8 +115,8 @@ class FunctoidMacro(val c: blackbox.Context) {
 
     val lambdaParams = lambdaArgs.map(association)
     val methodReferenceParams = body match {
-      case Apply(f, _) =>
-        logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
+      case Apply(f, args) if args.map(_.symbol) == lambdaArgs =>
+        logger.log(s"Matched function body as a method reference - consists of a single call to a function $f with the same arguments as lambda- ${showRaw(body)}")
 
         extractMethodReferenceParams(f.symbol).map(association)
       case _ =>
@@ -128,20 +128,28 @@ class FunctoidMacro(val c: blackbox.Context) {
     logger.log(s"lambda params: $lambdaParams")
     logger.log(s"method ref params: $methodReferenceParams")
 
-    def annotationsOnMethodAreNonEmptyAndASuperset: Boolean = {
-      val annotationsOnLambda = lambdaParams.iterator.map(_.symbol.annotations)
-      val annotationsOnMethod = Predef.wrapRefArray(methodReferenceParams.iterator.map(_.symbol.annotations).toArray)
-
-      annotationsOnMethod.exists(_.nonEmpty) &&
-      annotationsOnLambda.zipAll(annotationsOnMethod.iterator, null, null).forall {
-        case (null, _) => false
-        case (_, null) => false
-        case (left, right) =>
-          left.iterator.zipAll(right.iterator, null, null).forall {
-            case (l, r) => (l eq null) || l == r
-          }
-      }
+    @nowarn("msg=Unused import")
+    val annotationsOnMethodAreNonEmptyAndASuperset: Boolean = {
+      import scala.collection.compat._
+      methodReferenceParams.sizeCompare(lambdaParams) == 0 &&
+      methodReferenceParams.exists(_.symbol.annotations.nonEmpty)
     }
+
+//    // this is somewhat superfluous since normally lambda parameters can't be annotated in source code at all
+//    val annotationsOnMethodAreNonEmptyAndASuperset: Boolean = {
+//      val annotationsOnLambdaParamSymbols = lambdaParams.iterator.map(_.symbol.annotations)
+//      val annotationsOnMethod = Predef.wrapRefArray(methodReferenceParams.iterator.map(_.symbol.annotations).toArray)
+//
+//      annotationsOnMethod.exists(_.nonEmpty) &&
+//      annotationsOnLambdaParamSymbols.zipAll(annotationsOnMethod.iterator, null, null).forall {
+//        case (null, _) => false
+//        case (_, null) => false
+//        case (left, right) =>
+//          left.iterator.zipAll(right.iterator, null, null).forall {
+//            case (l, r) => (l eq null) || l == r
+//          }
+//      }
+//    }
 
     // if method reference has more annotations, get parameters from reference instead
     // to preserve annotations!
