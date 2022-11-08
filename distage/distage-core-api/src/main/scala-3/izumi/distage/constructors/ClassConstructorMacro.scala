@@ -14,7 +14,6 @@ object ClassConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.toTrees
 
     val typeRepr = TypeRepr.of[R].dealias.simplified
 

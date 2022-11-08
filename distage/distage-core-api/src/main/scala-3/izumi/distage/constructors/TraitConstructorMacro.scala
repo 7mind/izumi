@@ -16,9 +16,9 @@ object TraitConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.toTrees
+    import util.ParamRepr
 
-    val context = new ConstructorContext[R, qctx.type](util)
+    val context = new ConstructorContext[R, qctx.type, util.type](util)
     import context.*
 
     if (!context.isWireableTrait) {
@@ -32,7 +32,7 @@ object TraitConstructorMacro {
     assert(methodDecls.map(_._1).size == methodDecls.size, "BUG: duplicated abstract method names")
 
     def decls(cls: Symbol): List[Symbol] = methodDecls.map {
-      case (name, isMethod, mtype) =>
+      case (name, isMethod, _, mtype) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
         if (isMethod) {
           Symbol.newMethod(cls, name, mtype, Flags.Method | Flags.Override, Symbol.noSymbol)
@@ -43,8 +43,8 @@ object TraitConstructorMacro {
 
     // TODO: decopypaste
     val lamParams = {
-      val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
-      val byNameMethodArgs = methodDecls.map((n, _, t) => (s"_$n", util.ensureByName(util.dropWrappers(t))))
+      val ctorArgs = flatCtorParams.map { case ParamRepr(n, s, t) => ParamRepr(n, s, util.returnTypeOfMethod(t)) }
+      val byNameMethodArgs = methodDecls.map { case (n, _, s, t) => ParamRepr(s"_$n", s, util.ensureByName(util.returnTypeOfMethodOrByName(t))) }
       ctorArgs ++ byNameMethodArgs
     }
 
@@ -59,7 +59,7 @@ object TraitConstructorMacro {
         val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = decls, selfType = None)
 
         val defs = methodDecls.zip(lamOnlyMethodArguments).map {
-          case ((name, isMethod, _), arg) =>
+          case ((name, isMethod, _, _), arg) =>
             val methodSyms = if (isMethod) clsSym.declaredMethod(name) else List(clsSym.declaredField(name))
             assert(methodSyms.size == 1, "BUG: duplicated methods!")
             val methodSym = methodSyms.head

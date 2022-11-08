@@ -21,16 +21,19 @@ object AnyConstructorMacro {
     val tpe0 = TypeRepr.of[T].dealias.simplified
     val typeSymbol = tpe0.typeSymbol
 
+    // FIXME remove redundant check across macros
+    val util = new ConstructorUtil[qctx.type]()
+
     if (AndTypeTypeTest.unapply(tpe0).isDefined || RefinementTypeTest.unapply(tpe0).isDefined) {
       // ignore intersections for now
       '{ (throw new RuntimeException("unsupported intersection")): AnyConstructor[T] }
-    } else if (tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract)) {
+    } else if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract)) || {
+        util.dropTypeRef(tpe0) match { case _: ConstantType | _: TermRef => true; case _ => false }
+      }) {
       ClassConstructorMacro.make[T]
     } else if ({
       // FIXME remove redundant check across macros
-      val util = new ConstructorUtil[qctx.type]()
-
-      val context = new ConstructorContext[T, qctx.type](util)
+      val context = new ConstructorContext[T, qctx.type, util.type](util)
       // TODO: check for sealed
       context.isWireableTrait
     }) {

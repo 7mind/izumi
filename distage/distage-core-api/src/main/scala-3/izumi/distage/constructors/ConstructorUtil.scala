@@ -10,7 +10,7 @@ import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 import izumi.distage.model.providers.FunctoidMacro.FunctoidParametersMacro
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 
-class ConstructorContext[R: Type, Q <: Quotes](using val qctx: Q)(val util: ConstructorUtil[qctx.type]) {
+class ConstructorContext[R: Type, Q <: Quotes, U <: ConstructorUtil[Q]](using val qctx: Q)(val util: U & ConstructorUtil[qctx.type]) {
   import qctx.reflect.*
 
   val resultTpe = TypeRepr.of[R].dealias.simplified
@@ -36,7 +36,7 @@ class ConstructorContext[R: Type, Q <: Quotes](using val qctx: Q)(val util: Cons
   val constructorParamLists = parentTypesParameterized.map(t => t -> util.buildConstructorParameters(t))
   val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
 
-  val methodDecls = abstractMembers.map(m => (m.name, m.flags.is(Flags.Method), resultTpe.memberType(m))) ++ refinementMethods
+  val methodDecls = abstractMembers.map(m => (m.name, m.flags.is(Flags.Method), Some(m), resultTpe.memberType(m))) ++ refinementMethods
 
   def isFactory: Boolean = abstractMembers.nonEmpty || refinementMethods.nonEmpty
 
@@ -48,19 +48,15 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
 
   private val withAnnotationSym: Symbol = TypeRepr.of[With].typeSymbol
 
-  type ParamReprList = List[(String, TypeRepr)]
-  type ParamReprLists = List[ParamReprList]
-  type ParamTreeList = List[(String, TypeTree)]
-  type ParamTreeLists = List[ParamTreeList]
+  final case class ParamRepr(name: String, mbSymbol: Option[Symbol], tpe: TypeRepr)
 
-  extension (params: ParamReprList) {
-    def toTrees: ParamTreeList = params.map((n, t) => (n, TypeTree.of(using t.asType))).toList
-  }
+  type ParamReprList = List[ParamRepr]
+  type ParamReprLists = List[ParamReprList]
 
   def assertSignatureIsAcceptableForFactory(signatureParams: ParamReprList, resultTpe: TypeRepr, clue: String): Unit = {
-    assert(signatureParams.groupMap(_._1)(_._2).forall(_._2.size == 1), "BUG: duplicated arg names!")
+    assert(signatureParams.groupMap(_.name)(_.tpe).forall(_._2.size == 1), "BUG: duplicated arg names!")
 
-    val sigRevIndex = signatureParams.groupMap(_._2)(_._1)
+    val sigRevIndex = signatureParams.groupMap(_.tpe)(_.name)
     val duplications = sigRevIndex.filter(_._2.size > 1)
 
     if (duplications.nonEmpty) {
@@ -92,7 +88,9 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   def makeFunctoid[R: Type](params: ParamReprList, argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
     val paramsMacro = new FunctoidParametersMacro[qctx.type]
 
-    val paramDefs = params.map((n, t) => paramsMacro.makeParam(n, Right(t), None)) // FIXME parameter Id anno
+    val paramDefs = params.map {
+      case ParamRepr(n, s, t) => paramsMacro.makeParam(n, Right(t), s)
+    }
 
     val out = '{
       new Functoid[R](
@@ -106,13 +104,15 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
 
     report.warning(
-      s"""fun=${argsLambda.show}
+      s"""ConstructorUtil:fun=${argsLambda.show}
          |funType=${argsLambda.asTerm.tpe}
          |funSym=${argsLambda.asTerm.symbol}
          |funTypeSym=${argsLambda.asTerm.tpe.typeSymbol}
          |funTypeSymBases=${argsLambda.asTerm.tpe.baseClasses}
+         |params=${params.map(p => s"$p:symbol-annos(${p.mbSymbol.map(s => s -> s.annotations)})")}
          |outputType=${Type.show[R]}
          |rawOutputType=(${TypeRepr.of[R]})
+         |providerType=${providerType.show}
          |produced=${out.show}""".stripMargin
     )
 
@@ -133,7 +133,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
       {
         case (lamSym, (args: Term) :: Nil) =>
           val argRefs = params.iterator.zipWithIndex.map {
-            case ((_, paramTpe), idx) =>
+            case (ParamRepr(_, _, paramTpe), idx) =>
               paramTpe match {
                 case ByNameUnwrappedAsType('[t]) =>
                   '{ ${ args.asExprOf[Seq[Any]] }.apply(${ Expr(idx) }).asInstanceOf[() => t].apply() }.asTerm
@@ -179,33 +179,45 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def unpackRefinement(t: TypeRepr): List[(String, Boolean, MethodOrPoly)] = {
+  def unpackRefinement(t: TypeRepr): List[(String, Boolean, Option[Symbol], MethodOrPoly)] = {
     t match {
       case Refinement(parent, name, m: MethodOrPoly) =>
-        List((name, true, m)) ++ unpackRefinement(parent)
+        (name, true, None, m) :: unpackRefinement(parent)
       case _ =>
-        List.empty
+        Nil
     }
   }
 
-  def flattenMethodSignature(t: TypeRepr): ParamReprList = {
-    t match {
-      case MethodType(nn, tt, ret) =>
-        nn.zip(tt) ++ flattenMethodSignature(ret)
-      case PolyType(nn, tt, ret) =>
-        nn.zip(tt) ++ flattenMethodSignature(ret)
-      case _ =>
-        List.empty
+  def extractMethodSignature(t0: TypeRepr, methodSym: Symbol): ParamReprLists = {
+    val paramSymssExcTypes = methodSym.paramSymss.filterNot(_.headOption.exists(_.isTypeParam))
+
+    def go(t: TypeRepr, paramSymss: List[List[Symbol]]): ParamReprLists = {
+      t match {
+        case mtpe @ MethodType(nn, tt, ret) =>
+          nn.iterator
+            .zip(tt)
+            .zipAll(paramSymss match { case h :: _ => h; case _ => List.empty[Symbol] }, null, null.asInstanceOf[Symbol])
+            .map {
+              case (null, _) => null
+              case ((n, t), maybeSymbol) => ParamRepr(n, Option(maybeSymbol), t)
+            }.takeWhile(_ ne null).toList :: go(ret, paramSymss.drop(1))
+        case PolyType(_, _, ret) =>
+          go(ret, paramSymss)
+        case _ =>
+          List.empty
+      }
     }
+
+    go(t0, paramSymssExcTypes)
   }
 
   @tailrec
-  final def realReturnType(t: TypeRepr): TypeRepr = {
+  final def returnTypeOfMethod(t: TypeRepr): TypeRepr = {
     t match {
       case MethodType(_, _, ret) =>
-        realReturnType(ret)
+        returnTypeOfMethod(ret)
       case PolyType(_, _, ret) =>
-        realReturnType(ret)
+        returnTypeOfMethod(ret)
       case r =>
         r
     }
@@ -218,33 +230,14 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  @tailrec final def dropMethodType(tpe: TypeRepr): TypeRepr = {
-    tpe match {
-      case MethodType(_, _, t) =>
-        dropMethodType(t)
-      case PolyType(_, _, t) =>
-        dropMethodType(t)
-      case t =>
-        t
-    }
-  }
-
-//  final def dropAnno(tpe: TypeRepr): TypeRepr = {
-//    tpe match {
-//      case AnnotatedType(t, _) =>
-//        t
-//      case t => t
-//    }
-//  }
-
-  @tailrec final def dropWrappers(tpe: TypeRepr): TypeRepr = {
+  @tailrec final def returnTypeOfMethodOrByName(tpe: TypeRepr): TypeRepr = {
     tpe match {
       case ByNameType(t) =>
-        dropWrappers(t)
+        returnTypeOfMethodOrByName(t)
       case MethodType(_, _, t) =>
-        dropWrappers(t)
+        returnTypeOfMethodOrByName(t)
       case PolyType(_, _, t) =>
-        dropWrappers(t)
+        returnTypeOfMethodOrByName(t)
       case t =>
         t
     }
@@ -329,16 +322,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
           throw new RuntimeException(s"Got $t in tpe=${tpe.show} prim=${tpe.typeSymbol.primaryConstructor}, pt=${tpe.typeSymbol.primaryConstructor.typeRef}")
       }
 
-    def go(t: TypeRepr): ParamReprLists = {
-      t match {
-        case MethodType(paramNames, paramTpes, res) =>
-          paramNames.zip(paramTpes) :: go(res)
-        case _ =>
-          Nil
-      }
-    }
-
-    go(ctorMethodTypeApplied)
+    extractMethodSignature(ctorMethodTypeApplied, tpe.typeSymbol.primaryConstructor)
   }
 
   def buildConstructorApplication(baseType: TypeRepr): Term = {

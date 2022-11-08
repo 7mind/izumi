@@ -17,10 +17,9 @@ object FactoryConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.toTrees
-    import util.{ParamReprList, ParamReprLists, ParamTreeList}
+    import util.{ParamRepr, ParamReprList, ParamReprLists}
 
-    val context = new ConstructorContext[R, qctx.type](util)
+    val context = new ConstructorContext[R, qctx.type, util.type](util)
     import context.*
 
     if (!isFactory) {
@@ -29,18 +28,18 @@ object FactoryConstructorMacro {
       )
     }
 
-    val refinementNames = refinementMethods.map(_._1).toSet
+    val refinementNames = refinementMethods.iterator.map(_._1).toSet
 
     def decls(cls: Symbol): List[Symbol] = methodDecls.map {
-      case (name, _, mtype) =>
+      case (name, _, _, mtype) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
         val overrideFlag = if (!refinementNames.contains(name)) Flags.Override else Flags.EmptyFlags
         Symbol.newMethod(cls, name, mtype, overrideFlag | Flags.Method, Symbol.noSymbol)
     }
 
     sealed trait Parameter
-    final case class ProvidedParameter(constructorName: String, argName: String, tpe: TypeRepr, flatLamdaSigIndex: Int) extends Parameter
-    final case class SignatureParameter(sigName: String, tpe: TypeRepr, flatLocalSigIndex: Int) extends Parameter
+    final case class DependencyParameter(paramName: String, mbParamSymbol: Option[Symbol], paramTpe: TypeRepr, argName: String, flatLambdaSigIndex: Int) extends Parameter
+    final case class MethodParameter(sigName: String, tpe: TypeRepr, flatLocalSigIndex: Int) extends Parameter
 
     final case class FactoryMethodDecl(
       name: String,
@@ -51,35 +50,35 @@ object FactoryConstructorMacro {
 
     var flatLambdaSigIndex = 0
     val factoryMethodData = methodDecls.map {
-      (n, _, t) =>
-        val signatureParams = util.flattenMethodSignature(t)
-        val rett = util.dropWrappers(util.realReturnType(t))
-        val impltype = util.readWithAnnotation(rett).getOrElse(rett).dealias.simplified
+      (n, _, mbSym, t) =>
+        val signatureParams = util.extractMethodSignature(t, mbSym.getOrElse(Symbol.noSymbol)).flatten
+        val rett = util.returnTypeOfMethodOrByName(t)
+        val factoryProductType = util.readWithAnnotation(rett).getOrElse(rett).dealias.simplified
 
-        val isTrait = impltype.typeSymbol.flags.is(Flags.Trait) || impltype.typeSymbol.flags.is(Flags.Abstract)
+        val isTrait = factoryProductType.typeSymbol.flags.is(Flags.Trait) || factoryProductType.typeSymbol.flags.is(Flags.Abstract)
         if (isTrait) {
 //          report.errorAndAbort(
 //            s"Cannot build factory for ${resultTpe.show}, factory method $n returns type ${impltype.show} which cannot be constructed with `new`"
 //          )
-          val msg = s"Cannot build factory for ${resultTpe.show}, factory method $n returns type ${impltype.show} which cannot be constructed with `new`"
+          val msg = s"Cannot build factory for ${resultTpe.show}, factory method $n returns type ${factoryProductType.show} which cannot be constructed with `new`"
           return '{ (throw new RuntimeException(${ Expr(msg) })): FactoryConstructor[R] }
         }
 
-        val constructorParamLists = util.buildConstructorParameters(impltype)
+        val constructorParamLists = util.buildConstructorParameters(factoryProductType)
 
         util.assertSignatureIsAcceptableForFactory(signatureParams, resultTpe, s"factory method $n")
-        util.assertSignatureIsAcceptableForFactory(constructorParamLists.flatten, resultTpe, s"implementation constructor ${impltype.show}")
+        util.assertSignatureIsAcceptableForFactory(constructorParamLists.flatten, resultTpe, s"implementation constructor ${factoryProductType.show}")
 
         val indexedSigParams = signatureParams.zipWithIndex
-        val sigRevIndex = indexedSigParams.map { case ((n, t), i) => (t, (n, i)) }.toMap
+        val sigRevIndex = indexedSigParams.map { case (ParamRepr(n, _, t), idx) => (t, (n, idx)) }.toMap
 
         val params = constructorParamLists.zipWithIndex.map {
           case (pl, listIdx) =>
             pl.map {
-              case (pn, pt) =>
-                sigRevIndex.find((t, _) => util.dropWrappers(t) =:= util.dropWrappers(pt)) match {
-                  case Some((_, (_, i))) =>
-                    SignatureParameter(pn, pt, i)
+              case ParamRepr(pn, s, pt) =>
+                sigRevIndex.find((t, _) => util.returnTypeOfMethodOrByName(t) =:= util.returnTypeOfMethodOrByName(pt)) match {
+                  case Some((_, (_, idx))) =>
+                    MethodParameter(pn, pt, idx)
 
                   case None =>
                     val curIndex = flatLambdaSigIndex
@@ -89,30 +88,30 @@ object FactoryConstructorMacro {
                     } else {
                       s"_${n}_$pn"
                     }
-                    ProvidedParameter(pn, newName, util.ensureByName(pt), curIndex)
+                    DependencyParameter(pn, s, util.ensureByName(pt), newName, curIndex)
                 }
             }
         }
 
-        val consumedSigParams = params.flatten.collect { case p: SignatureParameter => p.flatLocalSigIndex }.toSet
+        val consumedSigParams = params.flatten.collect { case p: MethodParameter => p.flatLocalSigIndex }.toSet
         val unconsumedParameters = indexedSigParams.filterNot(p => consumedSigParams.contains(p._2))
 
         if (unconsumedParameters.nonEmpty) {
           import izumi.fundamentals.platform.strings.IzString.*
-          val explanation = unconsumedParameters.map { case ((n, t), _) => s"$n: ${t.show}" }.niceList()
+          val explanation = unconsumedParameters.map { case (ParamRepr(n, _, t), _) => s"$n: ${t.show}" }.niceList()
 //          report.errorAndAbort(
 //            s"Cannot build factory for ${resultTpe.show}, factory method $n has arguments which were not consumed by implementation constructor ${impltype.show}: $explanation"
 //          )
           val msg =
-            s"Cannot build factory for ${resultTpe.show}, factory method $n has arguments which were not consumed by implementation constructor ${impltype.show}: $explanation"
+            s"Cannot build factory for ${resultTpe.show}, factory method $n has arguments which were not consumed by implementation constructor ${factoryProductType.show}: $explanation"
           return '{ (throw new RuntimeException(${ Expr(msg) })): FactoryConstructor[R] }
         }
 
-        FactoryMethodDecl(n, impltype, impltype.typeSymbol, params)
+        FactoryMethodDecl(n, factoryProductType, factoryProductType.typeSymbol, params)
     }
 
-    val ctorArgs = flatCtorParams.map((n, t) => (n, util.dropMethodType(t)))
-    val byNameMethodArgs = factoryMethodData.flatMap(_.params).flatten.collect { case p: ProvidedParameter => (p.argName, p.tpe) }
+    val ctorArgs = flatCtorParams.map { case ParamRepr(n, s, t) => ParamRepr(n, s, util.returnTypeOfMethodOrByName(t)) }
+    val byNameMethodArgs = factoryMethodData.flatMap(_.params).flatten.collect { case p: DependencyParameter => ParamRepr(p.argName, p.mbParamSymbol, p.paramTpe) }
     val lamParams: ParamReprList = ctorArgs ++ byNameMethodArgs
     val indexShift = ctorArgs.length
 
@@ -150,10 +149,16 @@ object FactoryConstructorMacro {
                 val argsLists: List[List[Term]] = fmd.params.map {
                   pl =>
                     pl.map {
-                      case p: ProvidedParameter =>
-                        args0(p.flatLamdaSigIndex + indexShift)
-                      case p: SignatureParameter =>
-                        sigFlat(p.flatLocalSigIndex).asExpr.asTerm
+                      case p: DependencyParameter =>
+                        args0(p.flatLambdaSigIndex + indexShift)
+                      case p: MethodParameter =>
+                        sigFlat(p.flatLocalSigIndex) match {
+                          case t: Term => t
+                          case o =>
+                            // FIXME support type parameters (GenericAssistedFactory)
+                            return '{ (throw new RuntimeException("FIXME: support type parameters")): FactoryConstructor[R] }
+//                            report.errorAndAbort(s"Impossible, not defdef argument not a term = $o (${o.show}) in $sigArgs (sym sig: ${methodSym.signature})")
+                        }
                     }
                 }
 

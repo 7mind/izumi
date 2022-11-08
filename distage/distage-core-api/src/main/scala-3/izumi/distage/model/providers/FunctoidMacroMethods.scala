@@ -102,7 +102,6 @@ object FunctoidMacro {
         analyzeTypeOfExpr(otherExpr)
     }
 
-    // seems redundant since type annotations are preserved in type of lambda
     private def analyzeLambdaOrMethodRef(name: String, singleParamList: TermParamClause, body: Term): List[Expr[LinkedParameter]] = {
       val methodRefParams = {
         def go(t: Tree): List[Symbol] = t match {
