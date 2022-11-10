@@ -15,6 +15,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class PlanVerifierTest extends AnyWordSpec with MkInjector {
+
   "Verifier handles resources (uniform case, Roots.Everything, https://github.com/7mind/izumi/issues/1476)" in {
     import PlanVerifierCase1._
 
@@ -602,4 +603,18 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
     assert(result.issues.isEmpty)
   }
+
+  "Verifier handles weak sets: named weak references are still weak" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      many[Fork1]
+        .weak[ImplA]
+        .weak[ImplB]("missing")
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork1]], Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
+
 }
