@@ -9,6 +9,7 @@ import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
+import izumi.fundamentals.collections.MutableMultiMap
 import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.gc.Tracer
@@ -23,18 +24,11 @@ class GraphPreparations(
   import scala.collection.compat._
 
   def findWeakSetMembers(
-    sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
-    matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
+    setOps: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
     roots: Set[DIKey],
   ): Set[WeakEdge[DIKey]] = {
-    import izumi.fundamentals.collections.IzCollections._
-
-    val indexed = matrix.links.map {
-      case (successor, node) =>
-        (successor.key, node.meta)
-    }.toMultimapMut
-
-    val setDefs = sets
+    val setDefs = setOps
       .collect {
         case (target, Node(_, s: CreateSet)) =>
           (target, s.members)
@@ -46,12 +40,25 @@ class GraphPreparations(
           .diff(roots)
           .flatMap {
             member =>
-              indexed.get(member).toSeq.flatten.collect {
-                case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
-                  WeakEdge(referenced, member)
-              }
+              getSetElementWeakEdges(execOpIndex, member)
           }
     }.toSet
+  }
+
+  def executableOpIndex(matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp]): MutableMultiMap[DIKey, InstantiationOp] = {
+    import izumi.fundamentals.collections.IzCollections._
+
+    matrix.links.map {
+      case (successor, node) =>
+        (successor.key, node.meta)
+    }.toMultimapMut
+  }
+
+  def getSetElementWeakEdges(execOpIndex: MutableMultiMap[DIKey, InstantiationOp], member: DIKey): Iterator[WeakEdge[DIKey]] = {
+    execOpIndex.getOrElse(member, Nil).iterator.collect {
+      case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
+        WeakEdge(referenced, member)
+    }
   }
 
   def getRoots(input: Roots, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Set[DIKey] = {

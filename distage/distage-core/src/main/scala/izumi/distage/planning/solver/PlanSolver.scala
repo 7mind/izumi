@@ -97,7 +97,7 @@ object PlanSolver {
         preps.getRoots(input.roots, allOps)
 
       val weakSetMembers: Set[WeakEdge[DIKey]] =
-        preps.findWeakSetMembers(sets, matrix, roots)
+        preps.findWeakSetMembers(sets, preps.executableOpIndex(matrix), roots)
 
       Right(Problem(activations, matrix, roots, weakSetMembers))
     }

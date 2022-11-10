@@ -11,14 +11,13 @@ import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.planning.BindingTranslator
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
+import izumi.distage.planning.solver.PlanVerifier.PlanIssue.*
 import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
-import izumi.functional.IzEither._
-import izumi.fundamentals.collections.ImmutableMultiMap
-import izumi.fundamentals.collections.IzCollections._
+import izumi.functional.IzEither.*
+import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
+import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet}
-import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
 import java.util.concurrent.TimeUnit
@@ -69,7 +68,7 @@ class PlanVerifier(
     val justMutators = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
 
     val rootKeys: Set[DIKey] = preps.getRoots(roots, justOps)
-    val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps.toMap, matrix, rootKeys)
+    val execOpIndex: MutableMultiMap[DIKey, InstantiationOp] = preps.executableOpIndex(matrix)
 
     val mutVisited = mutable.HashSet.empty[(DIKey, Set[AxisPoint])]
     val effectType = SafeType.getK[F]
@@ -78,7 +77,7 @@ class PlanVerifier(
     var after = before
     val issues =
       try {
-        trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys, excludedActivations, rootKeys, effectType)
+        trace(allAxis, mutVisited, matrixToTrace, execOpIndex, justMutators, providedKeys, excludedActivations, rootKeys, effectType)
       } finally {
         after = System.currentTimeMillis()
       }
@@ -96,7 +95,7 @@ class PlanVerifier(
     allAxis: Map[String, Set[String]],
     allVisited: mutable.HashSet[(DIKey, Set[AxisPoint])],
     matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
-    weakSetMembers: Set[WeakEdge[DIKey]],
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
     justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
     providedKeys: DIKey => Boolean,
     excludedActivations: Set[NonEmptySet[AxisPoint]],
@@ -179,11 +178,11 @@ class PlanVerifier(
                   } else {
                     Right(())
                   }
-                next <- checkConflicts(allAxis, opsWithMergedSets, weakSetMembers, excludedActivations, effectType)
+                next <- checkConflicts(allAxis, opsWithMergedSets, execOpIndex, excludedActivations, effectType)
               } yield {
                 allVisited.add((key, currentActivation))
 
-                val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac allValid _._2).flatMap(m => depsOf(weakSetMembers)(m._1)).toSeq
+                val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac allValid _._2).flatMap(m => depsOf(execOpIndex)(m._1)).toSeq
 
                 val goNext = next.iterator.map {
                   case (nextActivation, nextDeps) =>
@@ -249,7 +248,7 @@ class PlanVerifier(
   protected[this] def checkConflicts(
     allAxis: Map[String, Set[String]],
     withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
-    weakSetMembers: Set[WeakEdge[DIKey]],
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
     excludedActivations: Set[NonEmptySet[AxisPoint]],
     effectType: SafeType,
   ): Either[List[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
@@ -267,7 +266,7 @@ class PlanVerifier(
       val next = withoutCurrentActivations.iterator.map {
         case (op, activations, _) =>
           // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
-          val deps = depsOf(weakSetMembers)(op)
+          val deps = depsOf(execOpIndex)(op)
           val acts = op match {
             case _: ExecutableOp.CreateSet =>
               Set.empty[AxisPoint]
@@ -280,13 +279,16 @@ class PlanVerifier(
     }
   }
 
-  protected[this] final def depsOf(weakSetMembers: Set[WeakEdge[DIKey]])(op: InstantiationOp): Set[DIKey] = {
+  protected[this] final def depsOf(
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp]
+  )(op: InstantiationOp
+  ): Set[DIKey] = {
     op match {
       case cs: CreateSet =>
         // we completely ignore weak members, they don't make any difference in case they are unreachable through other paths
         val members = cs.members.filter {
           case m: SetElementKey =>
-            !weakSetMembers.contains(WeakEdge(m.reference, m))
+            preps.getSetElementWeakEdges(execOpIndex, m).isEmpty
           case _ =>
             true
         }
