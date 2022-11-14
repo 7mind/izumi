@@ -1,5 +1,6 @@
 package izumi.distage.model.providers
 
+import izumi.distage.constructors.{AnyConstructor, ClassConstructor, FactoryConstructor, HasConstructor, TraitConstructor}
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.LinkedParameter
@@ -91,7 +92,7 @@ final case class Functoid[+A](get: Provider) {
   /**
     * Applicative's `ap` method - can be used to chain transformations like `flatMap`.
     *
-    * Apply a function produced by `that` Provider to the value produced by `this` Provider.
+    * Apply a function produced by `that` Functoid to the value produced by `this` Functoid.
     *
     * Same as
     * {{{
@@ -103,7 +104,7 @@ final case class Functoid[+A](get: Provider) {
   }
 
   /**
-    * Apply a function produced by `this` Provider to the argument produced by `that` Provider.
+    * Apply a function produced by `this` Functoid to the argument produced by `that` Functoid.
     *
     * Same as
     * {{{
@@ -114,7 +115,7 @@ final case class Functoid[+A](get: Provider) {
     map2(that)((f, a) => f.asInstanceOf[B => C](a))
   }
 
-  /** Add `B` as an unused dependency of this Provider */
+  /** Add `B` as an unused dependency of this Functoid */
   def addDependency[B: Tag]: Functoid[A] = addDependency(DIKey[B])
   def addDependency[B: Tag](name: Identifier): Functoid[A] = addDependency(DIKey[B](name))
   def addDependency(key: DIKey): Functoid[A] = addDependencies(key :: Nil)
@@ -174,6 +175,33 @@ object Functoid extends FunctoidMacroMethods {
       )
     )
   }
+
+  /** Derive constructor for a concrete class `A` using [[ClassConstructor]] */
+  def makeClass[A: ClassConstructor]: Functoid[A] = ClassConstructor[A]
+
+  /**
+    * Derive constructor for an abstract class or a trait `A` using [[TraitConstructor]]
+    *
+    * @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]]
+    */
+  def makeTrait[A: TraitConstructor]: Functoid[A] = TraitConstructor[A]
+
+  /**
+    * Derive constructor for a "factory-like" abstract class or a trait `A` using [[FactoryConstructor]]
+    *
+    * @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]]
+    */
+  def makeFactory[A: FactoryConstructor]: Functoid[A] = FactoryConstructor[A]
+
+  /**
+    * Derive constructor for a `zio.Has` value `A` using [[HasConstructor]]
+    *
+    * @see [[https://izumi.7mind.io/distage/basics.html#zio-has-bindings ZIO Has bindings]]
+    */
+  def makeHas[A: HasConstructor]: Functoid[A] = HasConstructor[A]
+
+  /** Derive constructor for a type `A` using [[AnyConstructor]] */
+  def makeAny[A: AnyConstructor]: Functoid[A] = AnyConstructor[A]
 
   def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): Functoid[Nothing] = {
     new Functoid[Nothing](
