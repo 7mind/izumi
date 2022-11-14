@@ -15,8 +15,10 @@ import scala.language.experimental.macros as enableMacros
   *
   *   - concrete classes (using [[ClassConstructor]])
   *   - traits and abstract classes ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]], using [[TraitConstructor]])
-  *   - "factory-like" traits and abstract classes ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]], using [[FactoryConstructor]])
-  *   - `zio.Has` heterogeneous map values for use by ZIO or other Reader-like effects ([[https://izumi.7mind.io/distage/basics.html#zio-has-bindings ZIO Has bindings]], using [[HasConstructor]])
+  *
+  * Since version `1.1.0`, does not generate constructors "factory-like" traits and abstract classes, instead use [[FactoryConstructor]].
+  *
+  * Use [[HasConstructor]] to generate constructors for `zio.Has` values.
   *
   * @example
   * {{{
