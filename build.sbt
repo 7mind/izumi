@@ -4531,7 +4531,7 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Nil,
-    scalaVersion := "2.12.16"
+    scalaVersion := "2.12.17"
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4542,7 +4542,7 @@ lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"
   .settings(
     publish / skip := true,
     crossScalaVersions := Nil,
-    scalaVersion := "2.12.16"
+    scalaVersion := "2.12.17"
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
