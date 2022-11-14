@@ -1227,7 +1227,8 @@ Injector().produceRun(module overriddenBy new ModuleDef {
 
 ## Auto-Factories
 
-`distage` can instantiate 'factory' classes from suitable traits. This feature is especially useful with `Akka`.
+`distage` can derive 'factory' implementations from suitable traits using `makeFactory` method.
+This feature is especially useful with `Akka`.
 All unimplemented methods _with parameters_ in a trait will be filled by factory methods:
 
 Given a class `ActorFactory`:
@@ -1266,7 +1267,7 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 }
 ```
 
-Since `distage` version `1.1.0` parameterless methods in factories just produce new instances and you have to bind factories explicitly using `makeFactory` method.
+Since `distage` version `1.1.0` you have to bind factories explicitly using `makeFactory` and `fromFactory` methods, not implicitly via `make`; parameterless methods in factories now produce new instances instead of summoning a dependency.
 
 ### @With annotation
 
@@ -1295,7 +1296,7 @@ object Actor {
 }
 
 def factoryModule = new ModuleDef {
-  make[Actor.Factory]
+  makeFactory[Actor.Factory]
   make[Actor.Configuration].from(Actor.Configuration(allCaps = false))
 }
 
