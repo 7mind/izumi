@@ -107,6 +107,7 @@ final case class TestConfig(
   logLevel: Log.Level = Log.Level.Info,
   debugOutput: Boolean = false,
   activationStrategy: TestActivationStrategy = TestActivationStrategy.LoadConfig(ignoreUnknown = false, warnUnset = true),
+  unusedValidAxisChoices: Set[AxisChoice] = Set.empty,
 ) {
   def activate(changeActivation: Activation => Activation): TestConfig = {
     this.copy(activation = changeActivation(this.activation))
