@@ -64,7 +64,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       val error = intercept[TestFailedException](
         assertCompiles(
           """new ModuleDef {
-             make[TestClass2[Dep]].fromHas { value: Has[Dep] =>
+             make[TestClass2[Dep]].fromHas { (value: Has[Dep]) =>
                ZIO(TestClass2(value.get)) : ZIO[Int, Throwable, TestClass2[Dep]]
              }
            }"""
@@ -166,6 +166,8 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
           d1 <- ZManaged.access[Has[Dependency1]](_.get)
           d2 <- ZManaged.access[Has[Dependency2]](_.get)
         } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
+//        make[Trait1].fromHas[Any, Nothing, Trait1] {
+        // FIXME: report bug - Dotty infers this as `make[Trait1].fromHas[Any, Any, Trait1]` - awful inference here wtf?
         make[Trait1].fromHas {
           (d1: Dependency1) =>
             ZLayer.succeed(new Trait1 { val dep1 = d1 })

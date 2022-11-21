@@ -17,7 +17,7 @@ object ClassConstructorMacro {
 
     val typeRepr = TypeRepr.of[R].dealias.simplified
 
-    util.dropTypeRef(typeRepr) match {
+    util.dereferenceTypeRef(typeRepr) match {
       case c: ConstantType =>
         singletonClassConstructor[R](Literal(c.constant))
 
@@ -46,7 +46,7 @@ object ClassConstructorMacro {
             report.errorAndAbort(s"No class symbol defined for $typeRepr")
         }
     }
-  } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 
   private def singletonClassConstructor[R0](using qctx: Quotes, rtpe0: Type[R0])(tree: qctx.reflect.Tree): Expr[ClassConstructor[R0]] = {
     type R <: R0 & Singleton

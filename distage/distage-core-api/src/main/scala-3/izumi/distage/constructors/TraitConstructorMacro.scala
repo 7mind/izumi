@@ -99,6 +99,6 @@ object TraitConstructorMacro {
     val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Trait })
     '{ new TraitConstructor[R](${ f }) }
 
-  } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 
 }
