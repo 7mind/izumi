@@ -28,7 +28,7 @@ object AnyConstructorMacro {
       // ignore intersections for now
       '{ (throw new RuntimeException("unsupported intersection")): AnyConstructor[T] }
     } else if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract)) || {
-        util.dropTypeRef(tpe0) match { case _: ConstantType | _: TermRef => true; case _ => false }
+        util.dereferenceTypeRef(tpe0) match { case _: ConstantType | _: TermRef => true; case _ => false }
       }) {
       ClassConstructorMacro.make[T]
     } else if ({
@@ -44,7 +44,7 @@ object AnyConstructorMacro {
            |It's neither a concrete class, nor a wireable trait or abstract class!""".stripMargin
       )
     }
-  } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 
   @experimental
   def makeMethod[T: Type, BT: Type](using qctx: Quotes): Expr[BT] = try {
@@ -65,7 +65,7 @@ object AnyConstructorMacro {
       case None =>
         makeMethodImpl[T, BT](outerClass)
     }
-  } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 
   @experimental
   private def applyMake[T: Type, BT: Type](using qctx: Quotes)(outerClass: qctx.reflect.Symbol)(functoid: Expr[Functoid[T]]): Expr[BT] = {

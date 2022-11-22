@@ -50,10 +50,9 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
 
   final case class ParamRepr(name: String, mbSymbol: Option[Symbol], tpe: TypeRepr)
 
-  type ParamReprList = List[ParamRepr]
-  type ParamReprLists = List[ParamReprList]
+  type ParamReprLists = List[List[ParamRepr]]
 
-  def assertSignatureIsAcceptableForFactory(signatureParams: ParamReprList, resultTpe: TypeRepr, clue: String): Unit = {
+  def assertSignatureIsAcceptableForFactory(signatureParams: List[ParamRepr], resultTpe: TypeRepr, clue: String): Unit = {
     assert(signatureParams.groupMap(_.name)(_.tpe).forall(_._2.size == 1), "BUG: duplicated arg names!")
 
     val sigRevIndex = signatureParams.groupMap(_.tpe)(_.name)
@@ -85,7 +84,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def makeFunctoid[R: Type](params: ParamReprList, argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
+  def makeFunctoid[R: Type](params: List[ParamRepr], argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
     val paramsMacro = new FunctoidParametersMacro[qctx.type]
 
     val paramDefs = params.map {
@@ -120,7 +119,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   }
 
   def wrapIntoFunctoidRawLambda[R: Type](
-    params: ParamReprList
+    params: List[ParamRepr]
   )(body: (Symbol, List[Term]) => Tree
   ): Expr[Seq[Any] => R] = {
     val mtpe = MethodType(List("args"))(
@@ -135,9 +134,9 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
           val argRefs = params.iterator.zipWithIndex.map {
             case (ParamRepr(_, _, paramTpe), idx) =>
               paramTpe match {
-                case ByNameUnwrappedAsType('[t]) =>
+                case ByNameUnwrappedTypeReprAsType('[t]) =>
                   '{ ${ args.asExprOf[Seq[Any]] }.apply(${ Expr(idx) }).asInstanceOf[() => t].apply() }.asTerm
-                case AsType('[t]) =>
+                case TypeReprAsType('[t]) =>
                   '{ ${ args.asExprOf[Seq[Any]] }.apply(${ Expr(idx) }).asInstanceOf[t] }.asTerm
                 case _ =>
                   report.errorAndAbort(s"Invalid higher-kinded type $paramTpe ${paramTpe.show}")
@@ -164,7 +163,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  private object ByNameUnwrappedAsType {
+  private object ByNameUnwrappedTypeReprAsType {
     def unapply(t: TypeRepr): Option[Type[?]] = {
       t match {
         case ByNameType(u) => Some(u.asType)
@@ -173,7 +172,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  private object AsType {
+  object TypeReprAsType {
     def unapply(t: TypeRepr): Some[Type[?]] = {
       Some(t.asType)
     }
@@ -243,7 +242,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def dropTypeRef(tpe: TypeRepr): TypeRepr = {
+  def dereferenceTypeRef(tpe: TypeRepr): TypeRepr = {
     tpe match {
       case t: TypeRef =>
         t.typeSymbol.owner.typeRef.memberType(t.typeSymbol)

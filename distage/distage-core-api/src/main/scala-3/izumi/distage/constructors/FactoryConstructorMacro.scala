@@ -17,7 +17,7 @@ object FactoryConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.{ParamRepr, ParamReprList, ParamReprLists}
+    import util.{ParamRepr, ParamReprLists}
 
     val context = new ConstructorContext[R, qctx.type, util.type](util)
     import context.*
@@ -112,7 +112,7 @@ object FactoryConstructorMacro {
 
     val ctorArgs = flatCtorParams.map { case ParamRepr(n, s, t) => ParamRepr(n, s, util.returnTypeOfMethodOrByName(t)) }
     val byNameMethodArgs = factoryMethodData.flatMap(_.params).flatten.collect { case p: DependencyParameter => ParamRepr(p.argName, p.mbParamSymbol, p.paramTpe) }
-    val lamParams: ParamReprList = ctorArgs ++ byNameMethodArgs
+    val lamParams: List[ParamRepr] = ctorArgs ++ byNameMethodArgs
     val indexShift = ctorArgs.length
 
     val lamExpr = util.wrapIntoFunctoidRawLambda[R](lamParams) {

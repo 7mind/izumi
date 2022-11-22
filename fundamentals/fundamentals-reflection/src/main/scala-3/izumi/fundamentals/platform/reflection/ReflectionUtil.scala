@@ -1,6 +1,7 @@
 package izumi.fundamentals.platform.reflection
 
 import scala.quoted.Quotes
+import scala.collection.mutable
 
 object ReflectionUtil {
 
@@ -26,6 +27,23 @@ object ReflectionUtil {
       case TypeLambda(_, _, body) => allPartsStrong(body)
       case strange => true
     }
+  }
+
+  def intersectionMembers(using q: Quotes)(typeRepr: q.reflect.TypeRepr): List[q.reflect.TypeRepr] = {
+    import q.reflect.*
+
+    val tpes = mutable.HashSet.empty[TypeRepr]
+
+    def go(t0: TypeRepr): Unit = t0.dealias match {
+      case tpe: AndOrType =>
+        go(tpe.left)
+        go(tpe.right)
+      case t =>
+        tpes += t
+    }
+
+    go(typeRepr)
+    tpes.toList
   }
 
 }
