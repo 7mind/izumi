@@ -100,7 +100,12 @@ final case class TestConfig(
   planningOptions: PlanningOptions = PlanningOptions(),
   logLevel: Log.Level = Log.Level.Info,
   debugOutput: Boolean = false,
-)
+) {
+  def activate(changeActivation: Activation => Activation): TestConfig = {
+    this.copy(activation = changeActivation(this.activation))
+  }
+
+}
 object TestConfig {
   def forSuite(clazz: Class[?]): TestConfig = {
     val packageName = clazz.getPackage.getName
