@@ -265,7 +265,7 @@ object AbstractBindingDefDSL {
           val key = DIKey.TypeKey(b.key.tpe).named(contractedId)
           b = b.withTarget(key)
         case SetIdFromImplName() =>
-          b = b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tag.longName.toLowerCase))
+          b = b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tag.longNameWithPrefix.toLowerCase))
         case Modify(functoidModifier) =>
           b.implementation match {
             case ImplDef.ProviderImpl(implType, function) =>
