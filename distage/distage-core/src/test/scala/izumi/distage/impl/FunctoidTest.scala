@@ -7,7 +7,6 @@ import izumi.distage.fixtures.BasicCases.BasicCase7
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType, TypedRef}
-import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import izumi.fundamentals.platform.language.Quirks.*

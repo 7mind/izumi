@@ -5,7 +5,6 @@ import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases.*
 import izumi.distage.fixtures.TypesCases.*
 import izumi.distage.model.PlannerInput
-import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.wordspec.AnyWordSpec
 
