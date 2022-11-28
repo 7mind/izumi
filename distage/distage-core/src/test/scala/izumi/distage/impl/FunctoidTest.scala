@@ -9,7 +9,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType, TypedRef}
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.ScalaRelease
+import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
@@ -333,7 +333,7 @@ class FunctoidTest extends AnyWordSpec {
 
     "Functoid.singleton is correct with constant types" in {
       import Ordering.Implicits._
-      assume(ScalaRelease.parse(MacroParameters.scalaVersion().get) >= ScalaRelease.`2_13`(0))
+      assume(IzScala.scalaRelease >= ScalaRelease.`2_13`(0))
       assertCompiles(
         """
       val fn = Functoid.singleton["xa"]("xa")

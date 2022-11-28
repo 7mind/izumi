@@ -10,6 +10,7 @@ import izumi.distage.model.exceptions.interpretation.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.data.{Free, FreeError, FreePanic}
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
@@ -444,8 +445,14 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         }
       }
 
-      assert(t.message.get contains "<trace>")
-      assert(t.message.get contains "could not find implicit value for TagK[F]")
+      import Ordering.Implicits.*
+      if (IzScala.scalaRelease < ScalaRelease.`3`(0, 0)) { // no Tag trace yet on Scala 3
+        assert(t.message.get contains "<trace>")
+      }
+      assert(
+        (t.message.get contains "could not find implicit value for TagK[F]") ||
+        (t.message.get contains "could not find implicit value for izumi.reflect.Tag[F]")
+      )
     }
 
     "can pass a block with inner method calls into Lifecycle.Of constructor (https://github.com/scala/bug/issues/11969)" in {
