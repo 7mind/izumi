@@ -15,32 +15,38 @@ import scala.quoted.{Expr, Quotes, Type}
 object AnyConstructorMacro {
 
   @experimental
-  def make[T: Type](using qctx: Quotes): Expr[AnyConstructor[T]] = try {
+  def make[R: Type](using qctx: Quotes): Expr[AnyConstructor[R]] = try {
     import qctx.reflect.{*, given}
 
-    val tpe0 = TypeRepr.of[T].dealias.simplified
+    val tpe0 = TypeRepr.of[R].dealias.simplified
     val typeSymbol = tpe0.typeSymbol
 
     // FIXME remove redundant check across macros
     val util = new ConstructorUtil[qctx.type]()
+    util.requireConcreteTypeConstructor(TypeRepr.of[R], "AnyConstructor")
+
+    // FIXME remove redundant check across macros
+    lazy val context = new ConstructorContext[R, qctx.type, util.type](util)
 
     if (AndTypeTypeTest.unapply(tpe0).isDefined || RefinementTypeTest.unapply(tpe0).isDefined) {
       // ignore intersections for now
-      '{ (throw new RuntimeException("unsupported intersection")): AnyConstructor[T] }
+      '{ (throw new RuntimeException("unsupported intersection")): AnyConstructor[R] }
     } else if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract)) || {
         util.dereferenceTypeRef(tpe0) match { case _: ConstantType | _: TermRef => true; case _ => false }
       }) {
-      ClassConstructorMacro.make[T]
+      ClassConstructorMacro.makeImpl[R](util)
     } else if ({
-      // FIXME remove redundant check across macros
-      val context = new ConstructorContext[T, qctx.type, util.type](util)
       // TODO: check for sealed
       context.isWireableTrait
     }) {
-      TraitConstructorMacro.make[T]
+      TraitConstructorMacro.makeImpl[R](util, context)
+    } else if (context.isFactory) {
+      report.errorAndAbort(
+        s"""AnyConstructor failure: ${Type.show[R]} is a Factory, use makeFactory or fromFactory to wire factories.""".stripMargin,
+      )
     } else {
       report.errorAndAbort(
-        s"""AnyConstructor failure: couldn't generate a constructor for ${Type.show[T]}!
+        s"""AnyConstructor failure: couldn't generate a constructor for ${Type.show[R]}!
            |It's neither a concrete class, nor a wireable trait or abstract class!""".stripMargin
       )
     }

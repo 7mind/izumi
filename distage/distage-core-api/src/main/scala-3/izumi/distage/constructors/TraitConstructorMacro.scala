@@ -17,8 +17,17 @@ object TraitConstructorMacro {
 
     val util = new ConstructorUtil[qctx.type]()
     import util.ParamRepr
+    util.requireConcreteTypeConstructor(TypeRepr.of[R], "TraitConstructor")
 
     val context = new ConstructorContext[R, qctx.type, util.type](util)
+
+    makeImpl[R](util, context)
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+
+  @experimental
+  def makeImpl[R: Type](using qctx: Quotes)(util: ConstructorUtil[qctx.type], context: ConstructorContext[R, qctx.type, util.type]): Expr[TraitConstructor[R]] = {
+    import qctx.reflect.*
+    import util.ParamRepr
     import context.*
 
     if (!context.isWireableTrait) {
@@ -98,7 +107,6 @@ object TraitConstructorMacro {
 
     val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Trait })
     '{ new TraitConstructor[R](${ f }) }
-
-  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  }
 
 }

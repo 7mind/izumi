@@ -18,6 +18,7 @@ object FactoryConstructorMacro {
 
     val util = new ConstructorUtil[qctx.type]()
     import util.{ParamRepr, ParamReprLists}
+    util.requireConcreteTypeConstructor(TypeRepr.of[R], "FactoryConstructor")
 
     val context = new ConstructorContext[R, qctx.type, util.type](util)
     import context.*

@@ -68,12 +68,8 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     sigRevIndex.view.mapValues(_.head).toMap
   }
 
-  def requireConcreteTypeConstructor[R: Type](macroName: String): Unit = {
-    requireConcreteTypeConstructor(TypeRepr.of[R], macroName)
-  }
-
   def requireConcreteTypeConstructor(tpe: TypeRepr, macroName: String): Unit = {
-    if (!ReflectionUtil.allPartsStrong(tpe.typeSymbol.typeRef)) {
+    if (!ReflectionUtil.intersectionUnionMembers(tpe).forall(t => ReflectionUtil.allPartsStrong(t.typeSymbol.typeRef))) {
       val hint = tpe.dealias.show
       report.errorAndAbort(
         s"""$macroName: Can't generate constructor for ${tpe.show}:

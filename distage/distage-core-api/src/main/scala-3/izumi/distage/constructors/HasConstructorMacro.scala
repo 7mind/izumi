@@ -17,6 +17,7 @@ object HasConstructorMacro {
 
     val util = new ConstructorUtil[qctx.type]()
     import util.{ParamRepr, TypeReprAsType}
+    util.requireConcreteTypeConstructor(TypeRepr.of[R], "HasConstructor")
 
     val typeRepr = TypeRepr.of[R].dealias.simplified
 
