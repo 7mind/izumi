@@ -42,7 +42,7 @@ object AnyConstructorMacro {
       TraitConstructorMacro.makeImpl[R](util, context)
     } else if (context.isFactory) {
       report.errorAndAbort(
-        s"""AnyConstructor failure: ${Type.show[R]} is a Factory, use makeFactory or fromFactory to wire factories.""".stripMargin,
+        s"""AnyConstructor failure: ${Type.show[R]} is a Factory, use makeFactory or fromFactory to wire factories.""".stripMargin
       )
     } else {
       report.errorAndAbort(
@@ -172,20 +172,20 @@ object AnyConstructorMacro {
     val res = applyMake[T, BT](outerClass)(functoid)
 
     import Printer.TreeStructure
-    report.warning(
-      s"""Splice owner tree: ${Symbol.spliceOwner.tree.show}:${Symbol.spliceOwner.pos} (macro:${Position.ofMacroExpansion})
-         |Splice owner-owner tree: ${Symbol.spliceOwner.owner.tree}:${Symbol.spliceOwner.owner.pos}
-         |Splice outer tree: ${outerowner.tree.show}:${outerowner.pos}
-         |allPos: ${allPos(outerowner.tree)}
-         |stopPos: $stopPos
-         |findPos: ${foundPos.show}
-         |findPosTree: $foundPos
-         |allCalledMethods: $foundMethods
-         |fromLikeMethods: $fromLikeMethods
-         |res: ${res.show}
-         |resTree: ${res.asTerm}
-         |""".stripMargin
-    )
+//    report.warning(
+//      s"""Splice owner tree: ${Symbol.spliceOwner.tree.show}:${Symbol.spliceOwner.pos} (macro:${Position.ofMacroExpansion})
+//         |Splice owner-owner tree: ${Symbol.spliceOwner.owner.tree}:${Symbol.spliceOwner.owner.pos}
+//         |Splice outer tree: ${outerowner.tree.show}:${outerowner.pos}
+//         |allPos: ${allPos(outerowner.tree)}
+//         |stopPos: $stopPos
+//         |findPos: ${foundPos.show}
+//         |findPosTree: $foundPos
+//         |allCalledMethods: $foundMethods
+//         |fromLikeMethods: $fromLikeMethods
+//         |res: ${res.show}
+//         |resTree: ${res.asTerm}
+//         |""".stripMargin
+//    )
 
     res
   }
