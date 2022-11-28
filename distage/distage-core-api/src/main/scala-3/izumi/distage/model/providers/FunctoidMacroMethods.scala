@@ -149,7 +149,12 @@ object FunctoidMacro {
 
     private def analyzeTypeOfExpr(other: Term): List[Expr[LinkedParameter]] = {
       val rawTpe = other.underlying.tpe
-      val functionTpe = rawTpe // TODO .baseType
+      val functionTpe = rawTpe.baseClasses.find(_.fullName.startsWith("scala.Function")) match {
+        case Some(fn) =>
+          rawTpe.baseType(fn)
+        case None =>
+          report.errorAndAbort(s"Could not find scala.Function* base class for ${rawTpe.show} - not a function! baseClasses were: ${rawTpe.baseClasses}")
+      }
 
       functionTpe.typeArgs match {
         case Nil => Nil
