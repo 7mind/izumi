@@ -443,7 +443,10 @@ trait QuasiFunctor[F[_]] {
 object QuasiFunctor extends LowPriorityQuasiFunctorInstances {
   @inline def apply[F[_]: QuasiFunctor]: QuasiFunctor[F] = implicitly
 
-  @inline implicit def quasiFunctorIdentity: QuasiFunctor[Identity] = QuasiIOIdentity
+  @inline implicit def quasiFunctorIdentity: QuasiFunctor[Identity] = {
+    // FIXME: This instance's type is QuasiFunctor not QuasiApplicative to Scala 3 bug https://github.com/lampepfl/dotty/issues/16431
+    QuasiIOIdentity
+  }
 }
 
 private[effect] sealed trait LowPriorityQuasiFunctorInstances extends LowPriorityQuasiFunctorInstances1 {
