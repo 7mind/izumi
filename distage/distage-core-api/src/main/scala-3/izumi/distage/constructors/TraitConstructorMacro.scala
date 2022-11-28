@@ -3,6 +3,7 @@ package izumi.distage.constructors
 import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
+import izumi.reflect.WeakTag
 
 import scala.annotation.experimental
 import scala.collection.immutable.{ArraySeq, Queue}
@@ -80,7 +81,10 @@ object TraitConstructorMacro {
         }
 
         val clsDef = ClassDef(clsSym, parents.toList, body = defs)
-        val newCls = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
+        val newCls = {
+          val applyTree = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
+          '{ TraitConstructor.wrapInitialization[R](${ applyTree.asExprOf[R] })(compiletime.summonInline[WeakTag[R]]) }.asTerm
+        }
         val block = Block(List(clsDef), newCls)
         Typed(block, resultTpeTree)
     }
