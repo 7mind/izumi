@@ -183,7 +183,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def extractMethodSignature(t0: TypeRepr, methodSym: Symbol): ParamReprLists = {
+  def extractMethodTermParamLists(t0: TypeRepr, methodSym: Symbol): ParamReprLists = {
     val paramSymssExcTypes = methodSym.paramSymss.filterNot(_.headOption.exists(_.isTypeParam))
 
     def go(t: TypeRepr, paramSymss: List[List[Symbol]]): ParamReprLists = {
@@ -317,16 +317,16 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
           throw new RuntimeException(s"Got $t in tpe=${tpe.show} prim=${tpe.typeSymbol.primaryConstructor}, pt=${tpe.typeSymbol.primaryConstructor.typeRef}")
       }
 
-    extractMethodSignature(ctorMethodTypeApplied, tpe.typeSymbol.primaryConstructor)
+    extractMethodTermParamLists(ctorMethodTypeApplied, tpe.typeSymbol.primaryConstructor)
   }
 
-  def buildConstructorApplication(baseType: TypeRepr): Term = {
-    Some(baseType.typeSymbol.primaryConstructor).filterNot(_.isNoSymbol) match {
-      case Some(consSym) =>
-        val ctorTree = Select(New(TypeTree.of(using baseType.asType)), consSym)
-        ctorTree.appliedToTypeTrees(baseType.typeArgs.map(repr => TypeTree.of(using repr.asType)))
-      case None =>
-        report.errorAndAbort(s"Cannot find primary constructor in $baseType")
+  def buildConstructorApplication(resultType: TypeRepr): Term = {
+    resultType.typeSymbol.primaryConstructor match {
+      case s if s.isNoSymbol =>
+        report.errorAndAbort(s"Cannot find primary constructor in $resultType")
+      case consSym =>
+        val ctorTree = Select(New(TypeTree.of(using resultType.asType)), consSym)
+        ctorTree.appliedToTypeTrees(resultType.typeArgs.map(tArg => TypeTree.of(using tArg.asType)))
     }
   }
 

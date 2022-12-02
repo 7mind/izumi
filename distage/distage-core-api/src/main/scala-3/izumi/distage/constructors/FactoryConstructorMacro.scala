@@ -40,21 +40,31 @@ object FactoryConstructorMacro {
 
     sealed trait Parameter
     final case class DependencyParameter(paramName: String, mbParamSymbol: Option[Symbol], paramTpe: TypeRepr, argName: String, flatLambdaSigIndex: Int) extends Parameter
-    final case class MethodParameter(sigName: String, tpe: TypeRepr, flatLocalSigIndex: Int) extends Parameter
+    final case class MethodParameter(/*sigName: String, tpe: TypeRepr, */ flatLocalSigIndex: Int) extends Parameter
 
-    final case class FactoryMethodDecl(
-      name: String,
-      impl: TypeRepr,
-      implTypeSym: Symbol,
+    final case class FactoryMethodData(
+//      name: String,
+      getImplType: List[TypeTree] => TypeRepr,
+//      implTypeSym: Symbol,
       params: List[List[Parameter]],
     )
 
     var flatLambdaSigIndex = 0
     val factoryMethodData = methodDecls.map {
-      (n, _, mbSym, t) =>
-        val signatureParams = util.extractMethodSignature(t, mbSym.getOrElse(Symbol.noSymbol)).flatten
-        val rett = util.returnTypeOfMethodOrByName(t)
-        val factoryProductType = util.readWithAnnotation(rett).getOrElse(rett).dealias.simplified
+      (n, _, mbSym, methodType) =>
+        val methodParams = util.extractMethodTermParamLists(methodType, mbSym.getOrElse(Symbol.noSymbol)).flatten
+        val getFactoryProductType = {
+          (args: List[TypeTree]) =>
+            val rett0 = methodType match {
+              case p: PolyType =>
+                p.appliedTo(args.map(_.tpe))
+              case _ =>
+                methodType
+            }
+            val rett = util.returnTypeOfMethodOrByName(rett0)
+            util.readWithAnnotation(rett).getOrElse(rett).dealias.simplified
+        }
+        val factoryProductType = getFactoryProductType(Nil)
 
         val isTrait = factoryProductType.typeSymbol.flags.is(Flags.Trait) || factoryProductType.typeSymbol.flags.is(Flags.Abstract)
         if (isTrait) {
@@ -67,19 +77,19 @@ object FactoryConstructorMacro {
 
         val constructorParamLists = util.buildConstructorParameters(factoryProductType)
 
-        util.assertSignatureIsAcceptableForFactory(signatureParams, resultTpe, s"factory method $n")
+        util.assertSignatureIsAcceptableForFactory(methodParams, resultTpe, s"factory method $n")
         util.assertSignatureIsAcceptableForFactory(constructorParamLists.flatten, resultTpe, s"implementation constructor ${factoryProductType.show}")
 
-        val indexedSigParams = signatureParams.zipWithIndex
+        val indexedSigParams = methodParams.zipWithIndex
         val sigRevIndex = indexedSigParams.map { case (ParamRepr(n, _, t), idx) => (t, (n, idx)) }.toMap
 
         val params = constructorParamLists.zipWithIndex.map {
           case (pl, listIdx) =>
             pl.map {
               case ParamRepr(pn, s, pt) =>
-                sigRevIndex.find((t, _) => util.returnTypeOfMethodOrByName(t) =:= util.returnTypeOfMethodOrByName(pt)) match {
+                sigRevIndex.find((mt, _) => util.returnTypeOfMethodOrByName(mt) =:= util.returnTypeOfMethodOrByName(pt)) match {
                   case Some((_, (_, idx))) =>
-                    MethodParameter(pn, pt, idx)
+                    MethodParameter( /*pn, pt, */ idx)
 
                   case None =>
                     val curIndex = flatLambdaSigIndex
@@ -108,7 +118,7 @@ object FactoryConstructorMacro {
           return '{ (throw new RuntimeException(${ Expr(msg) })): FactoryConstructor[R] }
         }
 
-        FactoryMethodDecl(n, factoryProductType, factoryProductType.typeSymbol, params)
+        FactoryMethodData( /*n,*/ getFactoryProductType, /*factoryProductType.typeSymbol,*/ params)
     }
 
     val ctorArgs = flatCtorParams.map { case ParamRepr(n, s, t) => ParamRepr(n, s, util.returnTypeOfMethodOrByName(t)) }
@@ -139,33 +149,29 @@ object FactoryConstructorMacro {
         )
 
         val defs = factoryMethodData.zip(declSymbols).map {
-          (fmd, methodSym) =>
+          case (FactoryMethodData(getImplType, params), methodSym) =>
             DefDef(
               methodSym,
               sigArgs => {
 
-                val ctorTreeParameterized = util.buildConstructorApplication(fmd.impl)
-                val sigFlat = sigArgs.flatten
+                val (sigFlat, methodTypeArgs) = sigArgs.flatten.partitionMap { case t: Term => Left(t); case t: TypeTree => Right(t) }
+                val implType = getImplType(methodTypeArgs)
+                val ctorTreeParameterized = util.buildConstructorApplication(implType)
 
-                val argsLists: List[List[Term]] = fmd.params.map {
+                val argsLists: List[List[Term]] = params.map {
                   pl =>
                     pl.map {
                       case p: DependencyParameter =>
                         args0(p.flatLambdaSigIndex + indexShift)
                       case p: MethodParameter =>
-                        sigFlat(p.flatLocalSigIndex) match {
-                          case t: Term => t
-                          case o =>
-                            // FIXME support type parameters (GenericAssistedFactory)
-                            return '{ (throw new RuntimeException("FIXME: support type parameters")): FactoryConstructor[R] }
-//                            report.errorAndAbort(s"Impossible, not defdef argument not a term = $o (${o.show}) in $sigArgs (sym sig: ${methodSym.signature})")
-                        }
+                        sigFlat(p.flatLocalSigIndex)
                     }
                 }
 
                 // TODO: check that there are no unconsumed parameters
+
                 val appl = argsLists.foldLeft(ctorTreeParameterized)(_.appliedToArgs(_))
-                val trm = Typed(appl, TypeTree.of(using fmd.impl.asType))
+                val trm = Typed(appl, TypeTree.of(using implType.asType))
 
                 Some(trm)
               },
