@@ -250,7 +250,10 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     val res = intercept[TestFailedException](assertCompiles("""new ModuleDef {
       makeFactory[InvalidImplicitFactory]
     }"""))
-    assert(res.getMessage.contains("contains types not required by constructor of the result type"))
+    assert(
+      res.getMessage.contains("contains types not required by constructor of the result type") ||
+      res.getMessage.contains("has arguments which were not consumed by implementation constructor")
+    )
     assert(res.getMessage.contains("UnrelatedTC["))
   }
 

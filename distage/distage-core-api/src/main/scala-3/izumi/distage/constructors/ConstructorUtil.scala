@@ -53,19 +53,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   type ParamReprLists = List[List[ParamRepr]]
 
   def assertSignatureIsAcceptableForFactory(signatureParams: List[ParamRepr], resultTpe: TypeRepr, clue: String): Unit = {
-    assert(signatureParams.groupMap(_.name)(_.tpe).forall(_._2.size == 1), "BUG: duplicated arg names!")
-
-    val sigRevIndex = signatureParams.groupMap(_.tpe)(_.name)
-    val duplications = sigRevIndex.filter(_._2.size > 1)
-
-    if (duplications.nonEmpty) {
-      import izumi.fundamentals.platform.strings.IzString.*
-      val explanation = duplications.map((t, nn) => s"${t.show}: ${nn.mkString(", ")}").niceList()
-//      report.errorAndAbort(s"Cannot build factory for ${resultTpe.show}, $clue contais contradicting arguments: $explanation")
-      report.warning(s"Cannot build factory for ${resultTpe.show}, $clue contais contradicting arguments: $explanation")
-    }
-
-    sigRevIndex.view.mapValues(_.head).toMap
+    require(signatureParams.groupMap(_.name)(_.tpe).forall(_._2.size == 1), "BUG: duplicated arg names!")
   }
 
   def requireConcreteTypeConstructor(tpe: TypeRepr, macroName: String): Unit = {
