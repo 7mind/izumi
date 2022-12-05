@@ -67,3 +67,8 @@ jobs:
           steps:
             - script: |
                 bash sbtgen.sc --js && bash .build.sh 2.13 secrets publishScala
+        - job: publish3
+          displayName: 'Publish to Maven Central (3)'
+          steps:
+            - script: |
+                bash sbtgen.sc --js && bash .build.sh 3 secrets publishScala

@@ -106,7 +106,7 @@ object Izumi {
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
-    final val scala3_compiler = Library("org.scala-lang", "scala3-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Auto) in Scope.Provided.all.scalaVersion(
+    final val scala3_compiler = Library("org.scala-lang", "scala3-compiler", Version.VExpr("scalaVersion.value"), LibraryType.AutoJvm) in Scope.Provided.all.scalaVersion(
       ScalaVersionScope.AllScala3
     )
     final val scala_library = Library("org.scala-lang", "scala-library", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
@@ -297,6 +297,10 @@ object Izumi {
             "-opt-inline-from:izumi.**",
           ),
           SettingKey.Default := Const.EmptySeq,
+        ),
+        "publishArtifact" in SettingScope.Raw("Compile / packageDoc") := Seq(
+          SettingKey(Some(scala300), None) := false,
+          SettingKey.Default := true,
         ),
       )
 
