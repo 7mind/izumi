@@ -4,7 +4,6 @@ import distage.{ModuleDef, With}
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases.*
 import izumi.distage.model.PlannerInput
-import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -140,6 +139,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   // FIXME: broken due to dotty bug https://github.com/lampepfl/dotty/issues/16468
 //  "handle higher-kinded assisted abstract factories with multiple parameters of the same type" in {
 //    import FactoryCase2._
+//    import izumi.fundamentals.platform.functional.Identity
 //
 //    val definition = PlannerInput.everything(new ModuleDef {
 //      // FIXME: broken due to dotty bug https://github.com/lampepfl/dotty/issues/16468
