@@ -29,7 +29,7 @@ object IzPlatform extends AbstractIzPlatform {
     }
 
     if (hasAwtToolkit) {
-      return true
+      return false
     }
 
     hasNoUIOnLinux
