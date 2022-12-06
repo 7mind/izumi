@@ -1,5 +1,5 @@
 // https://www.scala-js.org/
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.10.1")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % PV.scala_js_version)
 
 // https://github.com/portable-scala/sbt-crossproject
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.2.0")

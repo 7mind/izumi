@@ -43,6 +43,8 @@ object Izumi {
     val sbt_scoverage = Version.VExpr("PV.sbt_scoverage")
     val sbt_pgp = Version.VExpr("PV.sbt_pgp")
     val sbt_assembly = Version.VExpr("PV.sbt_assembly")
+
+    val scala_js_version = Version.VExpr("PV.scala_js_version")
   }
 
   def entrypoint(args: Seq[String]) = {
@@ -52,6 +54,7 @@ object Izumi {
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
     sbtVersion = None,
+    scalaJsVersion = Version.VExpr("PV.scala_js_version"),
   )
 
   object Deps {
