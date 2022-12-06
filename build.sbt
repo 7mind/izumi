@@ -149,7 +149,8 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -320,7 +321,8 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -489,7 +491,8 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -662,7 +665,8 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -842,7 +846,8 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -1016,7 +1021,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -1204,7 +1210,8 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -1378,7 +1385,8 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform).cross
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -1560,7 +1568,8 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -1746,7 +1755,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -1924,7 +1934,8 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2081,7 +2092,8 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2237,7 +2249,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -2427,7 +2440,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2580,7 +2594,8 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -2762,7 +2777,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -2931,7 +2947,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -3097,7 +3114,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -3253,7 +3271,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -3419,6 +3438,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       case (_, "3.2.1") => false
       case (_, _) => true
     } },
+    Test / packageDoc / publishArtifact := false,
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
   )
   .disablePlugins(AssemblyPlugin)
@@ -3575,7 +3595,8 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -3757,7 +3778,8 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -3936,6 +3958,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       case (_, "3.2.1") => false
       case (_, _) => true
     } },
+    Test / packageDoc / publishArtifact := false,
     Compile / compileOrder := CompileOrder.Mixed,
     Test / compileOrder := CompileOrder.Mixed,
     Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
@@ -4096,7 +4119,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
       case (_, "3.2.1") => false
       case (_, _) => true
-    } }
+    } },
+    Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -4282,6 +4306,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       case (_, "3.2.1") => false
       case (_, _) => true
     } },
+    Test / packageDoc / publishArtifact := false,
     SettingKey[Boolean]("ide-skip-project") := true,
     scalacOptions -= "-Wconf:any:error",
     scalacOptions -= "-Xsource:3",
@@ -4497,6 +4522,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       case (_, "3.2.1") => false
       case (_, _) => true
     } },
+    Test / packageDoc / publishArtifact := false,
     sbtPlugin := true,
     withBuildInfo("izumi.sbt.deps", "Izumi")
   )

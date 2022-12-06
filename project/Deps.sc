@@ -305,6 +305,7 @@ object Izumi {
           SettingKey(Some(scala300), None) := false,
           SettingKey.Default := true,
         ),
+        "publishArtifact" in SettingScope.Raw("Test / packageDoc") := false,
       )
 
     }
