@@ -213,6 +213,47 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
   }
 
+  "exclude set elements with unselected unsaturated axis" in {
+    import SetCase1._
+
+    val baseDef = new ModuleDef {
+      many[SetTrait]
+        .add[SetImpl1].tagged(Repo.Prod)
+    }
+
+    val definitionTodo = baseDef ++ new ModuleDef {
+      make[SetTrait].todo.tagged(Repo.Dummy)
+    }
+
+    val instance1 = mkInjector()
+      .produce(PlannerInput(definitionTodo, Activation(Repo.Dummy), Roots(DIKey[Set[SetTrait]])))
+      .unsafeGet()
+      .get[Set[SetTrait]]
+
+    assert(instance1.isEmpty)
+
+    val instance2 = mkInjector()
+      .produce(PlannerInput(definitionTodo, Activation(Repo.Prod), Roots(DIKey[Set[SetTrait]])))
+      .unsafeGet()
+      .get[Set[SetTrait]]
+
+    assert(instance2.size == 1)
+
+    val instance3 = mkInjector()
+      .produce(PlannerInput(baseDef, Activation(Repo.Prod), Roots(DIKey[Set[SetTrait]])))
+      .unsafeGet()
+      .get[Set[SetTrait]]
+
+    assert(instance3.size == 1)
+
+    val instance4 = mkInjector()
+      .produce(PlannerInput(baseDef, Activation(Repo.Dummy), Roots(DIKey[Set[SetTrait]])))
+      .unsafeGet()
+      .get[Set[SetTrait]]
+
+    assert(instance4.isEmpty)
+  }
+
   "work correctly with named Unit" in {
     class X(u: Unit @Id("x")) { val x: Unit = u }
 
