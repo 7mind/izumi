@@ -7,6 +7,7 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
 import izumi.distage.model.plan.Plan
 import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.testkit.TestActivationStrategy
 import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
 import izumi.distage.testkit.services.dstest.TestEnvironment.EnvExecutionParams
@@ -27,6 +28,7 @@ final case class TestEnvironment(
   configOverrides: Option[AppConfig],
   planningOptions: PlanningOptions,
   logLevel: Log.Level,
+  activationStrategy: TestActivationStrategy,
 )(// exclude from `equals` test-runner only parameters that do not affect the memoization plan and
   // that are not used in [[DistageTestRunner.groupEnvs]] grouping to allow merging more envs
   val parallelSuites: ParallelLevel,

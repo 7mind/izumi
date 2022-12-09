@@ -56,6 +56,7 @@ trait DistageTestEnv {
       configOverrides = testConfig.configOverrides,
       planningOptions = testConfig.planningOptions,
       logLevel = testConfig.logLevel,
+      activationStrategy = testConfig.activationStrategy,
     )(
       parallelSuites = testConfig.parallelSuites,
       parallelTests = testConfig.parallelTests,
