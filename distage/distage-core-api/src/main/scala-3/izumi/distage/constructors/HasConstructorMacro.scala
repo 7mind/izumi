@@ -37,20 +37,30 @@ object HasConstructorMacro {
       }
 
       val lamExpr = util.wrapIntoFunctoidRawLambda[R](lamParams) {
-        case (_, allParams) =>
-          allParams.zip(lamParams) match {
+        case (lambdaSym, allParams) =>
+          (allParams.zip(lamParams) match {
             case (headParam, ParamRepr(_, _, TypeReprAsType('[t]))) :: params =>
+              def addAccum[A <: zio.Has[?], B](exprAcc: Typed, arg: Term)(using Type[B]): Typed = {
+                val Typed(term, exprTpe) = exprAcc
+                given Type[A] = exprTpe.tpe.asType.asInstanceOf[Type[A]]
+
+                val addExpr = '{ zio.Has.HasSyntax[A](${ term.asExprOf[A] }).add[B](${ arg.asExprOf[B] })(summonInline[Tag[B]]) }
+                Typed(addExpr.asTerm, TypeTree.of[A & zio.Has[B]])
+              }
+
               params
-                .foldLeft('{ zio.Has.apply[t](${ headParam.asExprOf[t] })(summonInline[Tag[t]]) }) {
+                .foldLeft(
+                  Typed('{ zio.Has.apply[t](${ headParam.asExprOf[t] })(summonInline[Tag[t]]) }.asTerm, TypeTree.of[zio.Has[t]])
+                ) {
                   case (expr, (arg, ParamRepr(_, _, tpe))) =>
                     tpe.asType match {
-                      case '[g] =>
-                        '{ $expr.add(${ arg.asExprOf[g] })(summonInline[Tag[g]]) }
+                      case '[b] =>
+                        addAccum[zio.Has[?], b](expr, arg)
                     }
-                }.asTerm
+                }
             case _ =>
               report.errorAndAbort(s"Impossible happened, empty Has intersection or malformed type ${typeRepr.show} in HasConstructorMacro")
-          }
+          }).changeOwner(lambdaSym)
       }
 
       val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.ZIOHas })

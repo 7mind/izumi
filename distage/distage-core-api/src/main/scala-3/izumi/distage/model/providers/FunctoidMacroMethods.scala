@@ -275,7 +275,7 @@ object FunctoidMacro {
           val strExpr = Expr(str)
           '{ new DIKey.IdKey($safeTpe, $strExpr, None)(scala.compiletime.summonInline[IdContract[String]]) }
         case None =>
-          '{ new DIKey.TypeKey($safeTpe) }
+          '{ new DIKey.TypeKey($safeTpe, None) }
       }
     }
 
