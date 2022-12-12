@@ -294,6 +294,28 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       assert(context.get[TestTrait].anyValDep.d eq context.get[Dep])
     }
 
+    "Scala 3 regression test: support more than 2 dependencies in HasConstructor" in {
+      trait OpenTracingService
+
+      type OpenTracing = Has[OpenTracingService]
+
+      trait SttpBackend[F[_], +P]
+
+      trait MyEndpoints[F[_, _]]
+
+      trait ZioStreams
+      trait WebSockets
+
+      trait MyPublisher
+      trait MyClient
+
+      object MyPlugin extends ModuleDef {
+        make[MyClient].fromHas[OpenTracing with Has[MyPublisher] with Has[SttpBackend[Task, ZioStreams with WebSockets]] with Has[MyEndpoints[IO]], Nothing, MyClient] {
+          ??? : zio.ZIO[OpenTracing with Has[MyPublisher] with Has[SttpBackend[Task, ZioStreams with WebSockets]] with Has[MyEndpoints[IO]], Nothing, MyClient]
+        }
+      }
+    }
+
   }
 
 }
