@@ -4,6 +4,7 @@ import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 import izumi.distage.model.reflection.*
 import izumi.reflect.Tag
 import izumi.distage.model.definition.Id
+import izumi.fundamentals.platform.reflection.ReflectionUtil
 
 import scala.annotation.{tailrec, targetName}
 import scala.collection.immutable.List
@@ -219,27 +220,14 @@ object FunctoidMacro {
       makeParam(name, tpe, annotSym, tpe)
     }
     def makeParam(name: String, tpe: Either[TypeTree, TypeRepr], annotSym: Option[Symbol], annotTpe: Either[TypeTree, TypeRepr]): Expr[LinkedParameter] = {
-      val identifier = (findTypeAnno(annotTpe, idAnnotationSym), annotSym.flatMap(findSymbolAnno(_, idAnnotationSym))) match {
-        case (Some(t), Some(s)) =>
-          report.errorAndAbort(s"Multiple DI annotations on symbol and type at the same time on parameter=$name, typeAnnotation=${t.show} paramAnnotation=${s.show}")
-        case a @ ((Some(_), None) | (None, Some(_))) =>
-          a._1.getOrElse(a._2.getOrElse(throw new RuntimeException("impossible"))) match {
-            case aterm @ Apply(Select(New(_), _), c :: _) =>
-              c.asExprOf[String].value.orElse {
-                report.errorAndAbort(s"distage.Id annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
-              }
-            case aterm =>
-              report.errorAndAbort(s"distage.Id annotation expects one literal String argument but got malformed tree ${aterm.show} ($aterm)")
+      val identifier = ReflectionUtil.readTypeOrSymbolDIAnnotation(idAnnotationSym)(name, annotSym, annotTpe) {
+        case aterm @ Apply(Select(New(_), _), c :: _) =>
+          c.asExprOf[String].value.orElse {
+            report.errorAndAbort(s"distage.Id annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
           }
-//            case _ if annotTpe.toString.contains("Annot") =>
-//              given Printer[Tree] = Printer.TreeStructure
-//              report.errorAndAbort(s"Not annotated $annotTpe show=${annotTpe.fold(_.show, _.show)} show-dealias=${annotTpe.fold(_.show, _.dealias.show)} wtf=${annotTpe match {
-//                  case Right(t @ AnnotatedType(_, term)) => term.show -> findTypeReprAnno(t, idAnnotationSym)
-//                  case Right(t) => s"t=$t"
-//                  case Left(t) => s"annotTpeRepr=${annotTpe._annotTpe} annotTpeReprShow=${annotTpe._annotTpe.show}"
-//                }}")
-        case (None, None) =>
-          None
+        case aterm =>
+          report.errorAndAbort(s"distage.Id annotation expects one literal String argument but got malformed tree ${aterm.show} ($aterm)")
+
       }
 
       val tpeRepr = tpe._tpe
@@ -293,46 +281,6 @@ object FunctoidMacro {
         case ByNameType(u) => u
         case _ => tpe
       }
-    }
-
-    private def findSymbolAnno(sym: Symbol, annotationSym: Symbol): Option[Term] = {
-      sym.getAnnotation(annotationSym)
-    }
-
-    private def findTypeAnno(t0: Either[TypeTree, TypeRepr], sym: Symbol): Option[Term] = {
-      t0 match {
-        case Right(t) =>
-          findTypeReprAnno(t, sym).orElse(findTypeTreeAnno(TypeTree.of(using t.asType), sym))
-        case Left(t) =>
-          findTypeTreeAnno(t, sym).orElse(findTypeReprAnno(t.tpe, sym))
-      }
-    }
-
-    @tailrec private def findTypeReprAnno(t0: TypeRepr, sym: Symbol): Option[Term] = t0 match {
-      case AnnotatedType(_, aterm) if aterm.tpe.classSymbol.contains(sym) =>
-        Some(aterm)
-      case AnnotatedType(t, _) =>
-        findTypeReprAnno(t, sym)
-      case ByNameType(t) =>
-        findTypeReprAnno(t, sym)
-      case t =>
-        val dealiased = t.dealias.simplified
-        if (t.asInstanceOf[AnyRef] eq dealiased.asInstanceOf[AnyRef]) {
-          None
-        } else {
-          findTypeReprAnno(dealiased, sym)
-        }
-    }
-
-    @tailrec private def findTypeTreeAnno(t: TypeTree, sym: Symbol): Option[Term] = t match {
-      case Annotated(_, aterm) if aterm.tpe.classSymbol.contains(sym) =>
-        Some(aterm)
-      case Annotated(t, _) =>
-        findTypeTreeAnno(t, sym)
-      case ByName(t) =>
-        findTypeTreeAnno(t, sym)
-      case _ =>
-        None
     }
 
   }

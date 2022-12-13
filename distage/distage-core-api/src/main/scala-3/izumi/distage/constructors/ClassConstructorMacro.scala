@@ -39,8 +39,8 @@ object ClassConstructorMacro {
 
         typeRepr.classSymbol match {
           case Some(_) =>
-            val ctorTreeParameterized = util.buildConstructorApplication(typeRepr)
-            val paramss = util.buildConstructorParameters(typeRepr)
+            val ctorTreeParameterized = util.buildConstructorTermAppliedToTypeParameters(typeRepr)
+            val paramss = util.extractConstructorParamLists(typeRepr)
             val lamExpr = util.wrapCtorApplicationIntoFunctoidRawLambda[R](paramss, ctorTreeParameterized)
 
             val f = util.makeFunctoid[R](paramss.flatten, lamExpr, '{ ProviderType.Class })

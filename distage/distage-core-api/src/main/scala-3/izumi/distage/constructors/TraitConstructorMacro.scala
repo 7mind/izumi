@@ -41,7 +41,7 @@ object TraitConstructorMacro {
 
     assert(methodDecls.map(_._1).size == methodDecls.size, "BUG: duplicated abstract method names")
 
-    def decls(cls: Symbol): List[Symbol] = methodDecls.map {
+    def generateDecls(cls: Symbol): List[Symbol] = methodDecls.map {
       case (name, isMethod, _, mtype) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
         if (isMethod) {
@@ -53,9 +53,8 @@ object TraitConstructorMacro {
 
     // TODO: decopypaste
     val lamParams = {
-      val ctorArgs = flatCtorParams.map { case ParamRepr(n, s, t) => ParamRepr(n, s, util.returnTypeOfMethod(t)) }
       val byNameMethodArgs = methodDecls.map { case (n, _, s, t) => ParamRepr(s"_$n", s, util.ensureByName(util.returnTypeOfMethodOrByName(t))) }
-      ctorArgs ++ byNameMethodArgs
+      flatCtorParams ++ byNameMethodArgs
     }
 
     val lamExpr = util.wrapIntoFunctoidRawLambda[R](lamParams) {
@@ -63,10 +62,10 @@ object TraitConstructorMacro {
 
         val (lamOnlyCtorArguments, lamOnlyMethodArguments) = args0.splitAt(flatCtorParams.size)
 
-        val parents = util.buildParentConstructorCallTerms(resultTpe, constructorParamLists, lamOnlyCtorArguments)
+        val parents = util.buildParentConstructorCallTerms(constructorParamLists, lamOnlyCtorArguments)
 
         val name: String = s"${resultTpeSym.name}TraitAutoImpl"
-        val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = decls, selfType = None)
+        val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = generateDecls, selfType = None)
 
         val defs = methodDecls.zip(lamOnlyMethodArguments).map {
           case ((name, isMethod, _, _), arg) =>
@@ -81,11 +80,9 @@ object TraitConstructorMacro {
         }
 
         val clsDef = ClassDef(clsSym, parents.toList, body = defs)
-        val newCls = {
-          val applyTree = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
-          '{ TraitConstructor.wrapInitialization[R](${ applyTree.asExprOf[R] })(compiletime.summonInline[WeakTag[R]]) }.asTerm
-        }
-        val block = Block(List(clsDef), newCls)
+        val applyNewTree = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
+        val traitCtorTree = '{ TraitConstructor.wrapInitialization[R](${ applyNewTree.asExprOf[R] })(compiletime.summonInline[WeakTag[R]]) }.asTerm
+        val block = Block(List(clsDef), traitCtorTree)
         Typed(block, resultTpeTree)
     }
 
