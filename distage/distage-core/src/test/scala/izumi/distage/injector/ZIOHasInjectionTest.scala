@@ -314,6 +314,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
           ??? : zio.ZIO[OpenTracing with Has[MyPublisher] with Has[SttpBackend[Task, ZioStreams with WebSockets]] with Has[MyEndpoints[IO]], Nothing, MyClient]
         }
       }
+      val _ = MyPlugin
     }
 
   }
