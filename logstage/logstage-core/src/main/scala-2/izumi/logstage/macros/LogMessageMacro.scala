@@ -170,19 +170,29 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
         val sc = q"""_root_.scala.StringContext($stringContext.parts.map(_.stripMargin): _*)"""
         reifyContext(sc, namedArgs)
 
-      // support .stripMargin in scala 2.13
-      case Select(Apply(_, List(Typed(tree, _))), TermName("stripMargin")) =>
-        processExpr(tree, isMultiline = true)
+      // support .stripMargin in scala 2.13 and 2.13.10
+      case Select(Apply(_, List(arg)), TermName("stripMargin")) =>
+        arg match {
+          case Typed(tree, _) =>
+            processExpr(tree, isMultiline = true)
+          case tree =>
+            processExpr(tree, isMultiline = true)
+        }
 
       case Literal(Constant(s)) =>
         val emptyArgs = reify(List.empty)
         val sc = q"_root_.scala.StringContext(${s.toString})"
         reifyContext(sc, emptyArgs)
 
+      case Typed(tree, _) =>
+        processExpr(tree, isMultiline)
+
       case other =>
         c.warning(
           other.pos,
-          s"""Complex expression found as an input for a logger: ${other.toString()} ; ${showRaw(other)}.
+          s"""Complex expression found as an input for a logger: `${other.toString()}`
+             |
+             |rawTree=`${showRaw(other)}`
              |
              |But Logstage expects you to use string interpolations instead, such as:
              |${nameExtractor.example}

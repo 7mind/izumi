@@ -145,7 +145,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.17")
-  final val scala213 = ScalaVersion("2.13.8")
+  final val scala213 = ScalaVersion("2.13.10")
   final val scala300 = ScalaVersion("3.2.1")
 
   object Groups {
@@ -281,7 +281,6 @@ object Izumi {
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
-        "scalacOptions" -= "-release:8", // FIXME: pending 2.13.10
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
         "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
