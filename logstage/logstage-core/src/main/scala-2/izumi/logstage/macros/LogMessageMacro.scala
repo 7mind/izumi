@@ -12,9 +12,9 @@ final class LogMessageMacroStrict(override val c: blackbox.Context) extends LogM
 class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
   private[this] final val nameExtractor = new ArgumentNameExtractionMacro[c.type](c, strict)
 
-  final def logMessageMacro(message: c.Expr[String]): c.Expr[Message] = {
-    import c.universe._
+  import c.universe._
 
+  final def logMessageMacro(message: c.Expr[String]): c.Expr[Message] = {
     message.tree match {
       case Typed(tree, _) =>
         processExpr(tree, isMultiline = false)
@@ -25,8 +25,6 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
 
   @scala.annotation.tailrec
   private[this] def processExpr(message: c.Tree, isMultiline: Boolean): c.Expr[Message] = {
-    import c.universe._
-
     sealed trait Chunk {
       def tree: Tree
     }
@@ -143,7 +141,16 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
       case PlusExtractor(lst) =>
         val namedArgs = nameExtractor.recoverArgNames(lst.arguments)
         val sc = lst.makeStringContext(isMultiline)
-        reifyContext(sc, namedArgs)
+        createMessageExpr(sc, namedArgs)
+
+      case Literal(Constant(s)) =>
+        val emptyArgs = reify(List.empty)
+        val sc = if (isMultiline) {
+          q"_root_.scala.StringContext(${s.toString}.stripMargin)"
+        } else {
+          q"_root_.scala.StringContext(${s.toString})"
+        }
+        createMessageExpr(sc, emptyArgs)
 
       case Apply(
             Select(stringContext @ Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")),
@@ -152,7 +159,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
         // qq causes a weird warning here
         // case q"scala.StringContext.apply($stringContext).s(..$args)" =>
         val namedArgs = nameExtractor.recoverArgNames(args)
-        reifyContext(stringContext, namedArgs)
+        createMessageExpr(stringContext, namedArgs)
 
       case Select(
             Apply(
@@ -168,7 +175,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
           ) =>
         val namedArgs = nameExtractor.recoverArgNames(args)
         val sc = q"""_root_.scala.StringContext($stringContext.parts.map(_.stripMargin): _*)"""
-        reifyContext(sc, namedArgs)
+        createMessageExpr(sc, namedArgs)
 
       // support .stripMargin in scala 2.13 and 2.13.10
       case Select(Apply(_, List(arg)), TermName("stripMargin")) =>
@@ -179,20 +186,15 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
             processExpr(tree, isMultiline = true)
         }
 
-      case Literal(Constant(s)) =>
-        val emptyArgs = reify(List.empty)
-        val sc = q"_root_.scala.StringContext(${s.toString})"
-        reifyContext(sc, emptyArgs)
-
       case Typed(tree, _) =>
         processExpr(tree, isMultiline)
 
       case other =>
         c.warning(
           other.pos,
-          s"""Complex expression found as an input for a logger: `${other.toString()}`
+          s"""Complex expression found as an input for a logger: ${other.toString()}
              |
-             |rawTree=`${showRaw(other)}`
+             |Tree: ${showRaw(other)}
              |
              |But Logstage expects you to use string interpolations instead, such as:
              |${nameExtractor.example}
@@ -205,12 +207,11 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
           ...
          */
         val sc = q"_root_.scala.StringContext($other)"
-        reifyContext(sc, emptyArgs)
+        createMessageExpr(sc, emptyArgs)
     }
   }
 
-  private[this] def reifyContext(stringContext: c.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
-    import c.universe._
+  private[this] def createMessageExpr(stringContext: c.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
     reify {
       Message(
         c.Expr[StringContext](stringContext).splice,
