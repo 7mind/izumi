@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.resources
 
-import java.io.{FileSystem => _, _}
+import java.io._
 import java.net.{URI, URL}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes

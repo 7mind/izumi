@@ -8,7 +8,6 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Random
 
-@nowarn("msg=[Ee]xpression.*logger")
 class BasicLoggingTest extends AnyWordSpec {
 
   "Argument extraction macro" should {
@@ -16,7 +15,7 @@ class BasicLoggingTest extends AnyWordSpec {
       val arg1 = 1
       val arg2 = "argument 2"
 
-      val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}")
+      val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}"): @nowarn("msg=Constant expression")
 
       val expectation = if (IzScala.scalaRelease.major == 3) {
         // on scala3 we get access to exact raw tree w/o optimizations
@@ -42,7 +41,7 @@ class BasicLoggingTest extends AnyWordSpec {
       assert(message.args == expectation)
       assert(message.template.parts == expectedParts)
 
-      val message1 = Message(s"expression: ${Random.self.nextInt() + 1}")
+      val message1 = Message(s"expression: ${Random.self.nextInt() + 1}"): @nowarn("msg=Expression")
       assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")
       assert(message1.template.parts == List("expression: ", ""))
     }
@@ -98,9 +97,9 @@ class BasicLoggingTest extends AnyWordSpec {
     }
     "allow concatenating Log.Message" should {
       "multiple parts" in {
-        val msg1 = Message(s"begin1${1.1}middle1${1.2}end1")
-        val msg2 = Message(s"begin2 ${2.1} middle2 ${2.2} end2 ")
-        val msg3 = Message(s" begin3${3.1}middle3 ${3.2}end3")
+        val msg1 = Message(s"begin1${1.1}middle1${1.2}end1"): @nowarn("msg=Constant expression")
+        val msg2 = Message(s"begin2 ${2.1} middle2 ${2.2} end2 "): @nowarn("msg=Constant expression")
+        val msg3 = Message(s" begin3${3.1}middle3 ${3.2}end3"): @nowarn("msg=Constant expression")
 
         val msgConcatenated = msg1 + msg2 + msg3
 
@@ -120,7 +119,7 @@ class BasicLoggingTest extends AnyWordSpec {
       }
       "one part" in {
         val msg1 = Message(s"begin1")
-        val msg2 = Message(s"${2}")
+        val msg2 = Message(s"${2}"): @nowarn("msg=Constant expression")
         val msg3 = Message(s"end3")
 
         val msgConcatenated = msg1 + msg2 + msg3
