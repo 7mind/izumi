@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.96`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.98`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -36,6 +36,7 @@ object Izumi {
 
   object PV {
     val sbt_mdoc = Version.VExpr("PV.sbt_mdoc")
+    val sbt_paradox = Version.VExpr("PV.sbt_paradox")
     val sbt_paradox_material_theme = Version.VExpr("PV.sbt_paradox_material_theme")
     val sbt_ghpages = Version.VExpr("PV.sbt_ghpages")
     val sbt_site = Version.VExpr("PV.sbt_site")
@@ -280,6 +281,7 @@ object Izumi {
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
+        "scalacOptions" -= "-release:8", // FIXME: pending 2.13.10
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
         "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
@@ -669,9 +671,9 @@ object Izumi {
             identity
           }}""".raw,
           "previewFixedPort" := "Some(9999)".raw,
-          "git.remoteRepo" := "git@github.com:7mind/izumi-microsite.git",
+          "gitRemoteRepo" := "git@github.com:7mind/izumi-microsite.git",
           "mdocIn" := """baseDirectory.value / "src/main/tut"""".raw,
-          "sourceDirectory" in SettingScope.Raw("Paradox") := "mdocOut.value".raw,
+          "sourceDirectory" in SettingScope.Raw("(Compile / paradox)") := "mdocOut.value".raw,
           "mdocExtraArguments" ++= Seq(" --no-link-hygiene"),
           "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") :=
             """{
@@ -679,13 +681,13 @@ object Izumi {
               .dependsOn(mdoc.toTask(" "))
               .value
           }""".raw,
-          "version" in SettingScope.Raw("Paradox") := "version.value".raw,
-          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox)"),
+          "version" in SettingScope.Raw("(Compile / paradox)") := "version.value".raw,
+          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Compile)"),
           SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
           ),
-          SettingDef.RawSettingDef("""Paradox / paradoxMaterialTheme ~= {
+          SettingDef.RawSettingDef("""Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
             _.withCopyright("7mind.io")
               .withRepository(uri("https://github.com/7mind/izumi"))
             //        .withColor("222", "434343")
@@ -783,7 +785,7 @@ object Izumi {
     sharedAggSettings = Projects.root.sharedAggSettings,
     rootSettings = Projects.root.rootSettings,
     imports = Seq(
-      Import("com.typesafe.sbt.SbtGit.GitKeys._")
+      Import("com.github.sbt.git.SbtGit.GitKeys._")
     ),
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All, ScalaVersionScope.AllScala2), compilerPlugin = true),
@@ -799,7 +801,8 @@ object Izumi {
       SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
       SbtPlugin("com.eed3si9n", "sbt-unidoc", PV.sbt_unidoc),
       SbtPlugin("com.typesafe.sbt", "sbt-site", PV.sbt_site),
-      SbtPlugin("com.typesafe.sbt", "sbt-ghpages", PV.sbt_ghpages),
+      SbtPlugin("com.github.sbt", "sbt-ghpages", PV.sbt_ghpages),
+      SbtPlugin("com.lightbend.paradox", "sbt-paradox", PV.sbt_paradox),
       SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
       SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
     ),
