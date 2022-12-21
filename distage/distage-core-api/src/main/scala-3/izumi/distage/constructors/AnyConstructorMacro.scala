@@ -1,8 +1,6 @@
 package izumi.distage.constructors
 
-import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL, ClassConstructor, ClassConstructorMacro, FactoryConstructor, TraitConstructor, TraitConstructorMacro}
-import izumi.distage.model.definition.{Bindings, ModuleBase}
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonRef
+import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL, ClassConstructorMacro, TraitConstructor, TraitConstructorMacro}
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.CodePositionMaterializer

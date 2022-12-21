@@ -436,7 +436,8 @@ object Lifecycle extends LifecycleInstances {
   }
 
   implicit final class SyntaxUnsafeGet[F[_], A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    /** Unsafely acquire the resource and throw away the finalizer,
+    /**
+      * Unsafely acquire the resource and throw away the finalizer,
       * this will leak the resource and cause it to never be cleaned up.
       *
       * This function only makes sense in code examples or at top-level,
