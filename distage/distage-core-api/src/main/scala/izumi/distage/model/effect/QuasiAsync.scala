@@ -19,8 +19,8 @@ import scala.concurrent.{Await, ExecutionContext, Future, Promise}
   */
 trait QuasiAsync[F[_]] {
   def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A]
-  def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit]
   def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]]
+  def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit]
   def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]]
   def parTraverseN_[A, B](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit]
   def sleep(duration: FiniteDuration): F[Unit]

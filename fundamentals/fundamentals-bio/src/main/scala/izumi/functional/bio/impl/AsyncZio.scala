@@ -144,9 +144,14 @@ open class AsyncZio extends Async3[ZIO] with Local3[ZIO] {
   @inline override final def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
     ZIO.foreachParN(maxConcurrent)(l.toList)(f(_).interruptible)
   }
-
   @inline override final def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
     ZIO.foreachParN_(maxConcurrent)(l)(f(_).interruptible)
+  }
+  @inline override final def parTraverseNCore[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
+    ZIO.effectSuspendTotal(parTraverseN(java.lang.Runtime.getRuntime.availableProcessors() max 2)(l)(f))
+  }
+  @inline override final def parTraverseNCore_[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
+    ZIO.effectSuspendTotal(parTraverseN_(java.lang.Runtime.getRuntime.availableProcessors() max 2)(l)(f))
   }
   @inline override final def parTraverse[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
     ZIO.foreachPar(l.toList)(f(_).interruptible)
