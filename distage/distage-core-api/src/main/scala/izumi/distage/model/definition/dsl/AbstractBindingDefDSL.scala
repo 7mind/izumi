@@ -16,7 +16,7 @@ import izumi.reflect.Tag
 
 import scala.collection.mutable
 
-trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL, BindDSLAfterFrom, SetDSL] {
+trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] { self =>
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
   protected[this] def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
@@ -149,10 +149,61 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
     _bindDSL[T](ref)
   }
 
+  /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
   final protected[this] def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = {
     val ref = _registered(new SingletonRef(Bindings.provider[T](FactoryConstructor[T])))
     _bindDSLAfterFrom[T](ref)
   }
+
+  /**
+    * Use this to create utility functions that add bindings mutably to the current module,
+    * as opposed to creating new modules and [[IncludesDSL.include including]] them.
+    *
+    * Example:
+    *
+    * {{{
+    *   import distage.{AnyConstructor, Tag, ModuleDef}
+    *   import izumi.distage.model.definition.dsl.ModuleDefDSL
+    *
+    *   trait RegisteredComponent
+    *   class RegisteredComponentImpl extends RegisteredComponent
+    *
+    *   def addAndRegister[T <: RegisteredComponent: Tag: AnyConstructor](implicit mutateModule: ModuleDefDSL#MutationContext): Unit = {
+    *     new mutateModule.dsl {
+    *       make[T]
+    *
+    *       many[RegisteredComponent]
+    *         .weak[T]
+    *     }
+    *   }
+    *
+    *   new ModuleDef {
+    *     addAndRegister[RegisteredComponentImpl]
+    *   }
+    * }}}
+    */
+  final class MutationContext {
+    abstract class dsl extends AbstractBindingDefDSLMacro[BindDSL] {
+      final protected[this] def many[T](implicit tag: Tag[Set[T]], pos: CodePositionMaterializer): SetDSL[T] = self.many[T]
+
+      final protected[this] def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): BindDSLAfterFrom[T] = self.addImplicit[T]
+
+      final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = self.todo[T]
+      final protected[this] def modify[T]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = self.modify[T]
+
+      final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = self._make[T](provider)
+
+      final protected[this] def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = self.makeFactory[T]
+
+      /**
+        * Avoid `discarded non-Unit value` warning.
+        *
+        * @see [[izumi.fundamentals.platform.language.Quirks.discard]]
+        */
+      @inline final def discard(): Unit = ()
+    }
+  }
+  final protected[this] implicit lazy val mutationContext: MutationContext = new MutationContext
 
 }
 

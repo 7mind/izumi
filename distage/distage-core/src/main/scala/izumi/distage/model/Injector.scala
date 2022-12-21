@@ -246,6 +246,7 @@ trait Injector[F[_]] extends Planner with Producer {
     *
     * @see [[https://izumi.7mind.io/distage/distage-framework.html#compile-time-checks Compile-Time Checks]]
     *
+    * @return Unit
     * @throws PlanCheckException on found issues
     */
   final def assert(
@@ -272,7 +273,7 @@ trait Injector[F[_]] extends Planner with Producer {
     * @see [[https://izumi.7mind.io/distage/distage-framework.html#compile-time-checks Compile-Time Checks]]
     *
     * @return Set of issues if any.
-    *         Does not throw.
+    * @throws Nothing Does not throw.
     */
   final def verify(
     bindings: ModuleBase,

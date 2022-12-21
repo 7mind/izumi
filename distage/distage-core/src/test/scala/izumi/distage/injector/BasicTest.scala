@@ -8,6 +8,7 @@ import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.conflicts.ConflictResolutionError
+import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.exceptions.planning.{BadMutatorAxis, ConflictResolutionException}
 import izumi.distage.model.exceptions.interpretation.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
@@ -505,6 +506,43 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     val error = intercept[Throwable](mkInjector().produceGet[String](definition).unsafeGet())
     assert(error.getMessage.contains("String"))
+  }
+
+  "Can use mutation contexts" in {
+    trait RegisteredComponent
+    class RegisteredComponentImpl1 extends RegisteredComponent
+    class RegisteredComponentImpl2 extends RegisteredComponent
+
+    def addAndRegister[T <: RegisteredComponent: Tag: AnyConstructor](implicit mutateModule: ModuleDefDSL#MutationContext): Unit = {
+      new mutateModule.dsl {
+        make[T]
+          .named("xyz")
+          .aliased[T]("abc")
+
+        many[RegisteredComponent]
+          .weak[T]("xyz")
+      }.discard()
+    }
+
+    val definition = new ModuleDef {
+      addAndRegister[RegisteredComponentImpl1]
+      addAndRegister[RegisteredComponentImpl2]
+    }
+
+    val locator = mkInjector().produce(definition, Roots.Everything).unsafeGet()
+    val xyz1: RegisteredComponent = locator.get[RegisteredComponentImpl1]("xyz")
+    val xyz2: RegisteredComponent = locator.get[RegisteredComponentImpl2]("xyz")
+
+    assert(xyz1 ne xyz2)
+    assert(xyz1 eq locator.get[RegisteredComponentImpl1]("abc"))
+    assert(xyz2 eq locator.get[RegisteredComponentImpl2]("abc"))
+
+    val set = locator.get[Set[RegisteredComponent]]
+    assert(set.size == 2)
+    assert(set.contains(xyz1))
+    assert(set.contains(xyz2))
+    assert(set.exists(_ != xyz1))
+    assert(set.exists(_ != xyz2))
   }
 
   "stack does not overflow when producing very large dependency chains" in {
