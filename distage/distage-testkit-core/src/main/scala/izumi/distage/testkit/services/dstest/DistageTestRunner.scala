@@ -151,7 +151,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           RawAppArgs.empty,
           config,
           env.activationInfo,
-          Activation.empty,
+          env.activation,
           Activation.empty,
           lateLogger,
           warnUnset,

@@ -311,9 +311,10 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
 
       object MyPlugin extends ModuleDef {
         make[MyClient].fromHas[OpenTracing with Has[MyPublisher] with Has[SttpBackend[Task, ZioStreams with WebSockets]] with Has[MyEndpoints[IO]], Nothing, MyClient] {
-          ??? : zio.ZIO[OpenTracing with Has[MyPublisher] with Has[SttpBackend[Task, ZioStreams with WebSockets]] with Has[MyEndpoints[IO]], Nothing, MyClient]
+          ZIO.succeed(???): ZIO[OpenTracing with Has[MyPublisher] with Has[SttpBackend[Task, ZioStreams with WebSockets]] with Has[MyEndpoints[IO]], Nothing, MyClient]
         }
       }
+      val _ = MyPlugin
     }
 
   }

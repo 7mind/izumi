@@ -1324,7 +1324,7 @@ Advantages of `distage` as a driver for TF compared to implicits:
 
 - easy explicit overrides
 - easy @ref[effectful instantiation](basics.md#effect-bindings) and @ref[resource management](basics.md#resource-bindings-lifecycle)
-- extremely easy & scalable @ref[test](distage-testkit.md#testkit) context setup due to the above
+- extremely easy & scalable @ref[test](distage-testkit.md) context setup due to the above
 - multiple different implementations for a type using disambiguation by `@Id`
 
 For example, let's take [`freestyle`'s tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
