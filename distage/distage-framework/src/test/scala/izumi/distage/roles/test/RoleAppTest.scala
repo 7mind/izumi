@@ -285,7 +285,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     "produce config dumps and support minimization" in {
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
       withProperties(overrides ++ Map(TestPluginCatsIO.versionProperty -> version.version)) {
-        TestEntrypoint.main(Array("-ll", logLevel, ":configwriter", "-t", targetPath))
+        TestEntrypoint.main(Array("-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
       }
 
       val cwCfg = cfg("configwriter", version)

@@ -152,7 +152,6 @@ object FactoryCases {
     trait IFactoryImpl extends IFactory1 {}
   }
 
-
   object FactoryCase6 {
     trait IDep {}
     case class Dep() extends IDep
@@ -160,7 +159,7 @@ object FactoryCases {
     trait IFactory {
       def dep(): IDep
     }
-    
+
     trait IFactoryImpl extends IFactory {
       def dep(): Dep
     }

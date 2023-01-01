@@ -170,7 +170,7 @@ object PlanSolver {
                 val message = value
                   .map {
                     case u: UnconfiguredSetElementAxis =>
-                      s"Set ${u.set} has element ${u.element} with unconfigured axis: ${u.unconfigured.mkString(",")}"
+                      s"Set element references axis ${u.unconfigured.mkString(",")} with undefined values: set ${u.set}, element ${u.element}"
                     case i: InconsistentSetElementAxis =>
                       s"BUG, please report at https://github.com/7mind/izumi/issues: Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}"
 

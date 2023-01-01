@@ -5,8 +5,11 @@ trait Parallel3[F[-_, +_, +_]] extends RootBifunctor[F] {
 
   def parTraverse[R, E, A, B](l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]]
   def parTraverseN[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]]
+  /** [[parTraverseN]] with `maxConcurrent` set to the number of cores, or 2 when on single-core processor */
+  def parTraverseNCore[R, E, A, B](l: Iterable[A])(f: A => F[R, E, B]): F[R, E, List[B]]
   def parTraverse_[R, E, A, B](l: Iterable[A])(f: A => F[R, E, B]): F[R, E, Unit] = InnerF.void(parTraverse(l)(f))
   def parTraverseN_[R, E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[R, E, B]): F[R, E, Unit] = InnerF.void(parTraverseN(maxConcurrent)(l)(f))
+  def parTraverseNCore_[R, E, A, B](l: Iterable[A])(f: A => F[R, E, B]): F[R, E, Unit] = InnerF.void(parTraverseNCore(l)(f))
 
   /**
     * Returns an effect that executes both effects,

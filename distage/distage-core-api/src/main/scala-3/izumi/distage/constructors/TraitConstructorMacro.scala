@@ -3,6 +3,7 @@ package izumi.distage.constructors
 import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
+import izumi.reflect.WeakTag
 
 import scala.annotation.experimental
 import scala.collection.immutable.{ArraySeq, Queue}
@@ -17,8 +18,17 @@ object TraitConstructorMacro {
 
     val util = new ConstructorUtil[qctx.type]()
     import util.ParamRepr
+    util.requireConcreteTypeConstructor(TypeRepr.of[R], "TraitConstructor")
 
     val context = new ConstructorContext[R, qctx.type, util.type](util)
+
+    makeImpl[R](util, context)
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+
+  @experimental
+  def makeImpl[R: Type](using qctx: Quotes)(util: ConstructorUtil[qctx.type], context: ConstructorContext[R, qctx.type, util.type]): Expr[TraitConstructor[R]] = {
+    import qctx.reflect.*
+    import util.ParamRepr
     import context.*
 
     if (!context.isWireableTrait) {
@@ -31,7 +41,7 @@ object TraitConstructorMacro {
 
     assert(methodDecls.map(_._1).size == methodDecls.size, "BUG: duplicated abstract method names")
 
-    def decls(cls: Symbol): List[Symbol] = methodDecls.map {
+    def generateDecls(cls: Symbol): List[Symbol] = methodDecls.map {
       case (name, isMethod, _, mtype) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
         if (isMethod) {
@@ -43,9 +53,8 @@ object TraitConstructorMacro {
 
     // TODO: decopypaste
     val lamParams = {
-      val ctorArgs = flatCtorParams.map { case ParamRepr(n, s, t) => ParamRepr(n, s, util.returnTypeOfMethod(t)) }
       val byNameMethodArgs = methodDecls.map { case (n, _, s, t) => ParamRepr(s"_$n", s, util.ensureByName(util.returnTypeOfMethodOrByName(t))) }
-      ctorArgs ++ byNameMethodArgs
+      flatCtorParams ++ byNameMethodArgs
     }
 
     val lamExpr = util.wrapIntoFunctoidRawLambda[R](lamParams) {
@@ -53,10 +62,10 @@ object TraitConstructorMacro {
 
         val (lamOnlyCtorArguments, lamOnlyMethodArguments) = args0.splitAt(flatCtorParams.size)
 
-        val parents = util.buildParentConstructorCallTerms(resultTpe, constructorParamLists, lamOnlyCtorArguments)
+        val parents = util.buildParentConstructorCallTerms(constructorParamLists, lamOnlyCtorArguments)
 
         val name: String = s"${resultTpeSym.name}TraitAutoImpl"
-        val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = decls, selfType = None)
+        val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = generateDecls, selfType = None)
 
         val defs = methodDecls.zip(lamOnlyMethodArguments).map {
           case ((name, isMethod, _, _), arg) =>
@@ -71,8 +80,9 @@ object TraitConstructorMacro {
         }
 
         val clsDef = ClassDef(clsSym, parents.toList, body = defs)
-        val newCls = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
-        val block = Block(List(clsDef), newCls)
+        val applyNewTree = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
+        val traitCtorTree = '{ TraitConstructor.wrapInitialization[R](${ applyNewTree.asExprOf[R] })(compiletime.summonInline[WeakTag[R]]) }.asTerm
+        val block = Block(List(clsDef), traitCtorTree)
         Typed(block, resultTpeTree)
     }
 
@@ -98,7 +108,6 @@ object TraitConstructorMacro {
 
     val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Trait })
     '{ new TraitConstructor[R](${ f }) }
-
-  } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  }
 
 }

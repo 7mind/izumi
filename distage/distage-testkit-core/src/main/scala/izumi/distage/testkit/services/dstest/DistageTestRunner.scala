@@ -15,7 +15,7 @@ import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.EarlyLoggers
-import izumi.distage.testkit.DebugProperties
+import izumi.distage.testkit.{DebugProperties, TestActivationStrategy}
 import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.services.dstest.DistageTestRunner.*
 import izumi.distage.testkit.services.dstest.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
@@ -35,6 +35,7 @@ import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, FiniteDuration}
+import izumi.distage.roles.launcher.{ActivationParser, RoleAppActivationParser}
 
 class DistageTestRunner[F[_]: TagK: DefaultModule](
   reporter: TestReporter,
@@ -134,10 +135,34 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   ): PackedEnv[F] = {
     // make a config loader for current env with logger
     val config = loadConfig(env, configLoadLogger)
+
     val lateLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, configLoadLogger, config, envExec.logLevel, defaultLogFormatJson = false)
 
+    val fullActivation = env.activationStrategy match {
+      case TestActivationStrategy.IgnoreConfig =>
+        env.activation
+      case TestActivationStrategy.LoadConfig(ignoreUnknown, warnUnset) =>
+        val roleAppActivationParser = new RoleAppActivationParser.Impl(
+          logger = lateLogger,
+          ignoreUnknownActivations = ignoreUnknown,
+        )
+        val activationParser = new ActivationParser.Impl(
+          roleAppActivationParser,
+          RawAppArgs.empty,
+          config,
+          env.activationInfo,
+          env.activation,
+          Activation.empty,
+          lateLogger,
+          warnUnset,
+        )
+        val configActivation = activationParser.parseActivation()
+
+        configActivation ++ env.activation
+    }
+
     // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
-    val moduleProvider = env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, lateLogger.router, env.roles, env.activationInfo, env.activation)
+    val moduleProvider = env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, lateLogger.router, env.roles, env.activationInfo, fullActivation)
 
     val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
     val appModule = {
@@ -153,7 +178,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       // FIXME: We're also removing here & re-injecting later Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
       //  (planner holds activations & the rest is for Bootloader self-introspection)
 
-      val injector = Injector[Identity](bootstrapActivation = env.activation, overrides = Seq(bsModule))
+      val injector = Injector[Identity](bootstrapActivation = fullActivation, overrides = Seq(bsModule))
 
       val injectorEnv = injector.providedEnvironment
 
@@ -165,17 +190,17 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     // runtime plan with `runtimeGcRoots`
-    val runtimePlan = injector.plan(PlannerInput(appModule, env.activation, runtimeGcRoots))
+    val runtimePlan = injector.plan(PlannerInput(appModule, fullActivation, runtimeGcRoots))
     // all keys created in runtimePlan, we filter them out later to not recreate any components already in runtimeLocator
     val runtimeKeys = runtimePlan.keys
 
     // produce plan for each test
     val testPlans = tests.map {
       distageTest =>
-        val forcedRoots = env.forcedRoots.getActiveKeys(env.activation)
+        val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
         val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
-        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, env.activation, testRoots)) else Plan.empty
-        PreparedTest(distageTest, appModule, plan, env.activationInfo, env.activation, planner)
+        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, fullActivation, testRoots)) else Plan.empty
+        PreparedTest(distageTest, appModule, plan, env.activationInfo, fullActivation, planner)
     }
     val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
 
@@ -196,17 +221,17 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       env.memoizationRoots.keys.toList
         .sortBy(_._1).foldLeft((List.empty[Plan], Set.empty[DIKey])) {
           case ((acc, allSharedKeys), (_, keys)) =>
-            val levelRoots = envKeys.intersect(keys.getActiveKeys(env.activation) -- allSharedKeys)
+            val levelRoots = envKeys.intersect(keys.getActiveKeys(fullActivation) -- allSharedKeys)
             val levelModule = strengthenedAppModule.drop(allSharedKeys)
             if (levelRoots.nonEmpty) {
-              val plan = prepareSharedPlan(envKeys, runtimeKeys, levelRoots, env.activation, injector, levelModule)
+              val plan = prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule)
               (acc ++ List(plan), allSharedKeys ++ plan.keys)
             } else {
               acc -> allSharedKeys
             }
         }._1
     } else {
-      prepareSharedPlan(envKeys, runtimeKeys, Set.empty, env.activation, injector, strengthenedAppModule) :: Nil
+      prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, injector, strengthenedAppModule) :: Nil
     }
 
     val envMergeCriteria = EnvMergeCriteria(bsPlanMinusVariableKeys.toVector, bsModuleMinusVariableKeys, runtimePlan)

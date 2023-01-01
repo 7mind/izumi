@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform
 
-import izumi.fundamentals.platform.basics.IzBoolean
 import izumi.fundamentals.platform.jvm.IzJvm
+import izumi.fundamentals.platform.os.{IzOs, OsType}
 
 object IzPlatform extends AbstractIzPlatform {
   def platform: ScalaPlatform = if (isGraalNativeImage) {
@@ -15,24 +15,24 @@ object IzPlatform extends AbstractIzPlatform {
 
   private def _isHeadless: Boolean = {
     import izumi.fundamentals.platform.strings.IzString.*
-    val maybeDisplay = Option(System.getenv("DISPLAY"))
-    val maybeXdgSession = Option(System.getenv("XDG_SESSION_TYPE"))
-    val maybeHasAwtToolkit = Option(System.getProperty("awt.toolkit")).exists(_.nonEmpty)
+    val hasDisplay = Option(System.getenv("DISPLAY")).isDefined
+    val hasXdgSession = Option(System.getenv("XDG_SESSION_TYPE")).isDefined
+    val hasNoUIOnLinux = IzOs.osType == OsType.Linux && !hasDisplay && !hasXdgSession
 
-    val hasNoUI = !IzBoolean.any(
-      maybeDisplay.isDefined,
-      maybeXdgSession.isDefined,
-      maybeHasAwtToolkit,
-    )
+    val hasAwtToolkit = Option(System.getProperty("awt.toolkit")).exists(_.nonEmpty)
 
     val uiDisabled = System.getProperty("java.awt.headless").asBoolean(false)
     val forcedHeadless = PlatformProperties.`izumi.app.forced-headless`.boolValue(false)
 
-    IzBoolean.any(
-      hasNoUI,
-      uiDisabled,
-      forcedHeadless,
-    )
+    if (uiDisabled || forcedHeadless) {
+      return true
+    }
+
+    if (hasAwtToolkit) {
+      return false
+    }
+
+    hasNoUIOnLinux
   }
 
   private def _terminalColorsEnabled: Boolean = {
@@ -52,12 +52,12 @@ object IzPlatform extends AbstractIzPlatform {
     }
 
     // http://jdebp.uk/Softwares/nosh/guide/TerminalCapabilities.html
-    val colorTermIsSet = Option(System.getProperty("COLORTERM")).exists(_.nonEmpty)
+    val colorTermIsSet = Option(System.getenv("COLORTERM")).exists(_.nonEmpty)
     if (colorTermIsSet) {
       return true
     }
 
-    val termIsSet = Option(System.getProperty("TERM")).exists(_.nonEmpty)
+    val termIsSet = Option(System.getenv("TERM")).exists(_.nonEmpty)
     if (termIsSet) {
       return true
     }
@@ -65,7 +65,7 @@ object IzPlatform extends AbstractIzPlatform {
     val isIdea = IzJvm.safeClasspathSeq().exists {
       s =>
         val lower = s.toLowerCase
-        lower.contains("jetbrains") || lower.contains("IntelliJIdea")
+        lower.contains("jetbrains") || lower.contains("intellijidea")
     }
     if (isIdea) {
       return true

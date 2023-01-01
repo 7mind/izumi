@@ -11,11 +11,12 @@ import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, L
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.matchers.should
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.unused
 
-class DSLTest extends AnyWordSpec with MkInjector {
+class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
   import TestTagOps._
 
@@ -629,15 +630,14 @@ class DSLTest extends AnyWordSpec with MkInjector {
       val res2 = intercept[TestFailedException](
         assertCompiles(
           """
-          def definition[F[_]] = new ModuleDef {
+          def definition[F[_]: TagK] = new ModuleDef {
             make[Int].fromResource[Lifecycle.Basic[F, Int]]
           }
         """
         )
       )
-      assert(
-        res2.getMessage contains "AnyConstructor failure: izumi.distage.model.definition.Lifecycle.Basic[F,Int] is a Factory, use makeFactory or fromFactory to wire factories"
-      )
+
+      res2.getMessage should include regex "AnyConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use makeFactory or fromFactory to wire factories"
     }
 
     "define multiple bindings with different axis but the same implementation" in {

@@ -25,7 +25,7 @@ object ActivationParser {
     config: AppConfig,
     activationInfo: ActivationInfo,
     defaultActivations: Activation @Id("default"),
-    requiredActivations: Activation @Id("additional"),
+    additionalActivations: Activation @Id("additional"),
     logger: IzLogger,
     warnUnsetActivations: Boolean @Id("distage.roles.activation.warn-unset"),
   ) extends ActivationParser {
@@ -39,7 +39,11 @@ object ActivationParser {
       } else Iterable.empty
       val configActivations = parser.parseActivation(configChoices, activationInfo)
 
-      val resultActivation = defaultActivations ++ requiredActivations ++ configActivations ++ cmdActivations // commandline choices override values in config
+      val resultActivation = defaultActivations ++
+        additionalActivations ++
+        configActivations ++
+        cmdActivations // commandline choices override values in config
+
       val unsetActivations = activationInfo.availableChoices.keySet diff resultActivation.activeChoices.keySet
       if (unsetActivations.nonEmpty && warnUnsetActivations && syspropWarnUnsetActivations) {
         logger.raw.warn {

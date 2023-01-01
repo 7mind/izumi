@@ -119,7 +119,7 @@ object HasConstructor {
 
   val empty: HasConstructor[Any] = new HasConstructor(Functoid.unit)
 
-  inline implicit def materialize[T]: HasConstructor[T] = ???
+  inline implicit def materialize[T]: HasConstructor[T] = ${ HasConstructorMacro.make[T] }
 }
 
 private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any {

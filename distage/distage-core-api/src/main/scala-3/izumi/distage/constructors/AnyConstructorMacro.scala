@@ -1,8 +1,6 @@
 package izumi.distage.constructors
 
-import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL, ClassConstructor, ClassConstructorMacro, FactoryConstructor, TraitConstructor, TraitConstructorMacro}
-import izumi.distage.model.definition.{Bindings, ModuleBase}
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonRef
+import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL, ClassConstructorMacro, TraitConstructor, TraitConstructorMacro}
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.CodePositionMaterializer
@@ -15,36 +13,42 @@ import scala.quoted.{Expr, Quotes, Type}
 object AnyConstructorMacro {
 
   @experimental
-  def make[T: Type](using qctx: Quotes): Expr[AnyConstructor[T]] = try {
+  def make[R: Type](using qctx: Quotes): Expr[AnyConstructor[R]] = try {
     import qctx.reflect.{*, given}
 
-    val tpe0 = TypeRepr.of[T].dealias.simplified
+    val tpe0 = TypeRepr.of[R].dealias.simplified
     val typeSymbol = tpe0.typeSymbol
 
     // FIXME remove redundant check across macros
     val util = new ConstructorUtil[qctx.type]()
+    util.requireConcreteTypeConstructor(TypeRepr.of[R], "AnyConstructor")
+
+    // FIXME remove redundant check across macros
+    lazy val context = new ConstructorContext[R, qctx.type, util.type](util)
 
     if (AndTypeTypeTest.unapply(tpe0).isDefined || RefinementTypeTest.unapply(tpe0).isDefined) {
       // ignore intersections for now
-      '{ (throw new RuntimeException("unsupported intersection")): AnyConstructor[T] }
+      '{ (throw new RuntimeException("unsupported intersection")): AnyConstructor[R] }
     } else if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract)) || {
-        util.dropTypeRef(tpe0) match { case _: ConstantType | _: TermRef => true; case _ => false }
+        util.dereferenceTypeRef(tpe0) match { case _: ConstantType | _: TermRef => true; case _ => false }
       }) {
-      ClassConstructorMacro.make[T]
+      ClassConstructorMacro.makeImpl[R](util)
     } else if ({
-      // FIXME remove redundant check across macros
-      val context = new ConstructorContext[T, qctx.type, util.type](util)
       // TODO: check for sealed
       context.isWireableTrait
     }) {
-      TraitConstructorMacro.make[T]
+      TraitConstructorMacro.makeImpl[R](util, context)
+    } else if (context.isFactory) {
+      report.errorAndAbort(
+        s"""AnyConstructor failure: ${Type.show[R]} is a Factory, use makeFactory or fromFactory to wire factories.""".stripMargin
+      )
     } else {
       report.errorAndAbort(
-        s"""AnyConstructor failure: couldn't generate a constructor for ${Type.show[T]}!
+        s"""AnyConstructor failure: couldn't generate a constructor for ${Type.show[R]}!
            |It's neither a concrete class, nor a wireable trait or abstract class!""".stripMargin
       )
     }
-  } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 
   @experimental
   def makeMethod[T: Type, BT: Type](using qctx: Quotes): Expr[BT] = try {
@@ -65,7 +69,7 @@ object AnyConstructorMacro {
       case None =>
         makeMethodImpl[T, BT](outerClass)
     }
-  } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 
   @experimental
   private def applyMake[T: Type, BT: Type](using qctx: Quotes)(outerClass: qctx.reflect.Symbol)(functoid: Expr[Functoid[T]]): Expr[BT] = {
@@ -166,20 +170,20 @@ object AnyConstructorMacro {
     val res = applyMake[T, BT](outerClass)(functoid)
 
     import Printer.TreeStructure
-    report.warning(
-      s"""Splice owner tree: ${Symbol.spliceOwner.tree.show}:${Symbol.spliceOwner.pos} (macro:${Position.ofMacroExpansion})
-         |Splice owner-owner tree: ${Symbol.spliceOwner.owner.tree}:${Symbol.spliceOwner.owner.pos}
-         |Splice outer tree: ${outerowner.tree.show}:${outerowner.pos}
-         |allPos: ${allPos(outerowner.tree)}
-         |stopPos: $stopPos
-         |findPos: ${foundPos.show}
-         |findPosTree: $foundPos
-         |allCalledMethods: $foundMethods
-         |fromLikeMethods: $fromLikeMethods
-         |res: ${res.show}
-         |resTree: ${res.asTerm}
-         |""".stripMargin
-    )
+//    report.warning(
+//      s"""Splice owner tree: ${Symbol.spliceOwner.tree.show}:${Symbol.spliceOwner.pos} (macro:${Position.ofMacroExpansion})
+//         |Splice owner-owner tree: ${Symbol.spliceOwner.owner.tree}:${Symbol.spliceOwner.owner.pos}
+//         |Splice outer tree: ${outerowner.tree.show}:${outerowner.pos}
+//         |allPos: ${allPos(outerowner.tree)}
+//         |stopPos: $stopPos
+//         |findPos: ${foundPos.show}
+//         |findPosTree: $foundPos
+//         |allCalledMethods: $foundMethods
+//         |fromLikeMethods: $fromLikeMethods
+//         |res: ${res.show}
+//         |resTree: ${res.asTerm}
+//         |""".stripMargin
+//    )
 
     res
   }

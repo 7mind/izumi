@@ -1,6 +1,6 @@
 object V {
   // izumi
-  val izumi_reflect = "2.2.0"
+  val izumi_reflect = "2.2.3"
 
   // foundation
   val collection_compat = "2.8.1"
@@ -10,12 +10,12 @@ object V {
   val scalatest = "3.2.14"
 
   val cats = "2.8.0"
-  val cats_effect = "3.3.14"
+  val cats_effect = "3.4.3"
 
   val discipline = "1.5.1"
   val discipline_scalatest = "2.2.0"
 
-  val zio = "1.0.14"
+  val zio = "1.0.17"
   val zio_interop_cats = "13.0.0.1"
 
   val monix = "3.4.0"
@@ -31,7 +31,7 @@ object V {
   val scala_java_time = "2.4.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.149"
+  val classgraph = "4.8.153"
   val slf4j = "2.0.3"
   val typesafe_config = "1.4.0"
 

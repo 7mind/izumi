@@ -19,15 +19,15 @@ object HasConstructorMacro {
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("HasConstructor", targetType)
-    val deepIntersection = ReflectionUtil
-      .deepIntersectionTypeMembers[c.universe.type](targetType)
-      .filter(_ ne definitions.AnyTpe)
 
     targetType match {
       case definitions.AnyTpe =>
         c.Expr[HasConstructor[T]](q"_root_.izumi.distage.constructors.HasConstructor.empty")
 
       case _ =>
+        val deepIntersection = ReflectionUtil
+          .deepIntersectionTypeMembers[c.universe.type](targetType)
+          .filter(_ ne definitions.AnyTpe)
         ziohasConstructorAssertion(targetType, deepIntersection)
 
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
