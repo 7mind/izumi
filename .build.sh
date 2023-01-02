@@ -72,7 +72,7 @@ function publishScala {
     return 0
   fi
 
-  if [[ ! -f ~/.sbt/secrets/credentials.sonatype-nexus.properties ]] ; then
+  if [[ ! -f ./.secrets/credentials.sonatype-nexus.properties ]] ; then
     echo "Skipping publish on missing credentials"
     return 0
   fi
