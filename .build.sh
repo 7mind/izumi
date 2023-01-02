@@ -42,7 +42,7 @@ function csbt {
 
 function coverage {
   csbt "'${VERSION_COMMAND}clean'" coverage "'${VERSION_COMMAND}Test/compile'" "'${VERSION_COMMAND}test'" "'${VERSION_COMMAND}coverageReport'" || exit 1
-  bash <(curl -s https://codecov.io/bash) || true # codecov.io may be offline for some reason
+  #bash <(curl -s https://codecov.io/bash) || true # codecov.io may be offline for some reason
 }
 
 # function scripted {
@@ -109,7 +109,7 @@ function init {
     export CI_BUILD_NUMBER=${GITHUB_RUN_ATTEMPT}
     export CI_COMMIT=${GITHUB_SHA}
 
-    export CODECOV_TOKEN=${TOKEN_CODECOV}
+    #export CODECOV_TOKEN=${TOKEN_CODECOV}
     export USERNAME=${USER:-`whoami`}
     export COURSIER_CACHE=${COURSIER_CACHE:-`~/.coursier`}
     export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
