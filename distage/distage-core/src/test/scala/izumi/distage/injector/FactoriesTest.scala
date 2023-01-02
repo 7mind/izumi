@@ -313,6 +313,27 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(factory.dep() ne factory1.dep1())
   }
 
+  "support intersection factory types" in {
+    import FactoryCase4._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      makeFactory[IFactory1 & IFactory]
+
+      make[IFactory].using[IFactory1 & IFactory]
+      make[IFactory1].using[IFactory1 & IFactory]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val factory = context.get[IFactory]
+    val factory1 = context.get[IFactory1]
+
+    assert(factory.asInstanceOf[AnyRef] eq factory1.asInstanceOf[AnyRef])
+    assert(factory.dep() ne factory1.dep1())
+  }
+
   "support make[].fromFactory" in {
     // this case makes no sense tbh
     import FactoryCase5._

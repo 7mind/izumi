@@ -15,26 +15,41 @@ class ConstructorContext[R: Type, Q <: Quotes, U <: ConstructorUtil[Q]](using va
 
   val resultTpe = TypeRepr.of[R].dealias.simplified
   val resultTpeTree = TypeTree.of[R]
-  val resultTpeSym = resultTpe.typeSymbol
+  private val resultTpes = ReflectionUtil.intersectionMembers(resultTpe)
+  val resultTpeSyms = resultTpes.map(_.typeSymbol)
 
-  val refinementMethods = util.unpackRefinement(resultTpe)
+  val refinementMethods = resultTpes.flatMap(util.unpackRefinement)
 
-  val abstractMembers =
-    resultTpeSym.fieldMembers
-      .filter(
-        m =>
-          !m.flags.is(Flags.FieldAccessor) && !m.isLocalDummy && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && !m.flags.is(Flags.Synthetic) && m.isValDef
-      )
-    ++ resultTpeSym.methodMembers
-      .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && !m.flags.is(Flags.Synthetic) && m.isDefDef)
+  val abstractMembers = {
+    val abstractFields = resultTpeSyms.flatMap(
+      _.fieldMembers
+        .filter(
+          m =>
+            !m.flags.is(Flags.FieldAccessor) && !m.isLocalDummy && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && !m.flags.is(Flags.Synthetic) && m.isValDef
+        )
+    )
+    val abstractMethods = resultTpeSyms.flatMap(
+      _.methodMembers
+        .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && !m.flags.is(Flags.Synthetic) && m.isDefDef)
+    )
+    (abstractFields ++ abstractMethods).distinct
+  }
 
   val abstractMethodsWithParams = abstractMembers.filter(m => m.flags.is(Flags.Method) && m.paramSymss.nonEmpty)
 //    val refinementMethodsWithParams = refinementMethods.filter(_._2.paramTypes.nonEmpty)
 
-  val parentsSymbols = util.findRequiredImplParents(resultTpeSym)
-  val parentTypesParameterized = parentsSymbols.map(resultTpe.baseType)
-  val constructorParamLists = parentTypesParameterized.map(t => t -> util.extractConstructorParamLists(t))
-  val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
+  lazy val parentTypesParameterized = {
+    resultTpes
+      .flatMap(
+        resTpe => {
+          util
+            .findRequiredImplParents(resTpe.typeSymbol, resTpe)
+            .map(resTpe baseType _)
+        }
+      ).distinct
+  }
+  lazy val constructorParamLists = parentTypesParameterized.map(t => t -> util.extractConstructorParamLists(t))
+  lazy val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
 
   val methodDecls = abstractMembers.map(m => (m.name, m.flags.is(Flags.Method), Some(m), resultTpe.memberType(m))) ++ refinementMethods
 
@@ -162,7 +177,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
     }
   }
 
-  def unpackRefinement(t: TypeRepr): List[(String, Boolean, Option[Symbol], MethodOrPoly)] = {
+  def unpackRefinement(t: TypeRepr): List[(String, Boolean, None.type, MethodOrPoly)] = {
     t match {
       case Refinement(parent, name, m: MethodOrPoly) =>
         (name, true, None, m) :: unpackRefinement(parent)
@@ -254,8 +269,16 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
     }
   }
 
-  def findRequiredImplParents(resultTpeSym: Symbol): List[Symbol] = {
-    if (!resultTpeSym.flags.is(Flags.Trait)) {
+  def findRequiredImplParents(resultTpeSym: Symbol, resultTpe: TypeRepr): List[Symbol] = {
+    if (!resultTpeSym.flags.is(Flags.Trait) && !(try
+        dereferenceTypeRef(resultTpeSym.typeRef) match {
+          case t: AndOrType => ReflectionUtil.intersectionUnionMembers(t).forall(_.typeSymbol.flags.is(Flags.Trait))
+          case _ => false
+        }
+      catch {
+        case t: Throwable =>
+          throw new RuntimeException(s"Bad symbol ${resultTpeSym.isNoSymbol} $resultTpeSym ($resultTpe | ${resultTpe.show}) ${resultTpeSym.methodMembers} $t")
+      })) {
       List(resultTpeSym)
     } else {
       val banned = mutable.HashSet[Symbol](defn.ObjectClass, defn.MatchableClass, defn.AnyRefClass, defn.AnyValClass, defn.AnyClass)
@@ -469,7 +492,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
 
             val parents = buildParentConstructorCallTerms(ctxTyped.constructorParamLists, lamOnlyCtorArguments)
 
-            val name: String = s"${ctxTyped.resultTpeSym.name}TraitAutoImpl"
+            val name: String = s"${ctxTyped.resultTpeSyms.map(_.name).mkString("With")}TraitAutoImpl"
             val clsSym = {
               def generateDecls(cls: Symbol): List[Symbol] = ctxTyped.methodDecls.map {
                 case (name, isMethod, _, mtype) =>

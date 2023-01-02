@@ -26,10 +26,7 @@ object AnyConstructorMacro {
     // FIXME remove redundant check across macros
     lazy val context = new ConstructorContext[R, qctx.type, util.type](util)
 
-    if (AndTypeTypeTest.unapply(tpe0).isDefined || RefinementTypeTest.unapply(tpe0).isDefined) {
-      // ignore intersections for now
-      '{ (throw new RuntimeException("unsupported intersection")): AnyConstructor[R] }
-    } else if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract)) || {
+    if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract)) || {
         util.dereferenceTypeRef(tpe0) match { case _: ConstantType | _: TermRef => true; case _ => false }
       }) {
       ClassConstructorMacro.makeImpl[R](util)

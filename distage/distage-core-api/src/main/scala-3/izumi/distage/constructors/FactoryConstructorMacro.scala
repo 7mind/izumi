@@ -22,11 +22,11 @@ object FactoryConstructorMacro {
     util.requireConcreteTypeConstructor(TypeRepr.of[R], "FactoryConstructor")
 
     val factoryContext = new ConstructorContext[R, qctx.type, util.type](util)
-    import factoryContext.{resultTpe, resultTpeSym, resultTpeTree}
+    import factoryContext.{resultTpe, resultTpeSyms, resultTpeTree}
 
     if (!factoryContext.isFactory) {
       report.errorAndAbort(
-        s"""$resultTpeSym has no abstract methods so it's not a factory;; methods=${resultTpeSym.methodMembers};; tpeTree=$resultTpeTree;; tpeTreeClass=${resultTpeTree.getClass}""".stripMargin
+        s"""${resultTpeSyms.mkString(" & ")} has no abstract methods so it's not a factory;; methods=${resultTpeSyms.map(s => (s, s.methodMembers))};; tpeTree=$resultTpeTree;; tpeTreeClass=${resultTpeTree.getClass}""".stripMargin
       )
     }
 
@@ -63,7 +63,7 @@ object FactoryConstructorMacro {
 
         val parents = util.buildParentConstructorCallTerms(factoryContext.constructorParamLists, lamOnlyCtorArguments)
 
-        val name: String = s"${resultTpeSym.name}FactoryAutoImpl"
+        val name: String = s"${resultTpeSyms.map(_.name).mkString("With")}FactoryAutoImpl"
         var methodSymbols: List[Symbol] = null
         val clsSym = Symbol.newClass(
           parent = lamSym,

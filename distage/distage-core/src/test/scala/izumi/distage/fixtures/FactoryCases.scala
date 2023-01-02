@@ -135,7 +135,7 @@ object FactoryCases {
       def dep1(): Dep
     }
 
-    trait IFactoryImpl extends IFactory with IFactory1 {}
+    trait IFactoryImpl extends IFactory with IFactory1
   }
 
   object FactoryCase5 {
