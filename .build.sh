@@ -31,36 +31,16 @@ function csbt {
   eval $COMMAND
 }
 
-# function versionate {
-#   if [[ "$CI_BRANCH" != "master" &&  "$CI_BRANCH" != "develop" && ! ( "$CI_TAG" =~ ^v.*$ ) ]] ; then
-#     echo "Setting version suffix to $CI_BRANCH"
-#     csbt "\"addVersionSuffix $CI_BRANCH\""
-#   else
-#     echo "No version suffix required"
-#   fi
-# }
-
 function coverage {
   csbt "'${VERSION_COMMAND}clean'" coverage "'${VERSION_COMMAND}Test/compile'" "'${VERSION_COMMAND}test'" "'${VERSION_COMMAND}coverageReport'" || exit 1
-  #bash <(curl -s https://codecov.io/bash) || true # codecov.io may be offline for some reason
 }
-
-# function scripted {
-#   csbt clean publishLocal '"scripted sbt-izumi-plugins/*"' || exit 1
-# }
 
 function site {
   if [[ "$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ]] ; then
     echo "Publishing site from branch=$CI_BRANCH; tag=$CI_TAG"
-    #mkdir -p ~/.ssh || true
-    #chown -R root:root ~/.ssh || true # For running build inside docker
-    #chmod 600 .secrets/travis-deploy-key
-    #eval "$(ssh-agent -s)"
-    #ssh-add .secrets/travis-deploy-key
-
     csbt +clean "'${VERSION_COMMAND}doc/ghpagesSynchLocal'" "'${VERSION_COMMAND}doc/ghpagesPushSite'" || exit 1
   else
-    echo "Not publishing site, because $CI_BRANCH is not 'develop'"
+    echo "Not publishing site, because $CI_BRANCH is not 'develop' nor a tag"
     csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}doc/makeSite'" || exit 1
   fi
 }
@@ -89,7 +69,7 @@ function publishScala {
     csbt +clean "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" sonatypeBundleRelease || exit 1
   else
     echo "PUBLISH SNAPSHOT"
-    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" || exit 1
+    csbt "'show credentials'" "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" || exit 1
   fi
 }
 

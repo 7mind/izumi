@@ -4780,6 +4780,15 @@ lazy val `izumi` = (project in file("."))
       Seq.empty
     }
     },
+    ThisBuild / credentials ++= 
+    {
+    val credTarget = file(".") / ".secrets" / "credentials.sonatype-nexus.properties"
+    if (credTarget.exists) {
+      Seq(Credentials(credTarget))
+    } else {
+      Seq.empty
+    }
+    },
     ThisBuild / homepage := Some(url("https://izumi.7mind.io")),
     ThisBuild / licenses := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php")),
     ThisBuild / developers := List(
