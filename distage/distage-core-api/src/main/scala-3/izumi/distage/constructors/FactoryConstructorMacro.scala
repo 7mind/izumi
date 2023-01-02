@@ -17,14 +17,14 @@ object FactoryConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.{ParamRepr, ParamReprLists, factoryUtil}
+    import util.{MemberRepr, ParamRepr, ParamReprLists, factoryUtil}
     import factoryUtil.{FactoryProductData, InjectedDependencyParameter, MethodParameter}
     util.requireConcreteTypeConstructor(TypeRepr.of[R], "FactoryConstructor")
 
     val factoryContext = new ConstructorContext[R, qctx.type, util.type](util)
     import factoryContext.{resultTpe, resultTpeSyms, resultTpeTree}
 
-    if (!factoryContext.isFactory) {
+    if (!factoryContext.isFactoryOrTrait) {
       report.errorAndAbort(
         s"""${resultTpeSyms.mkString(" & ")} has no abstract methods so it's not a factory;; methods=${resultTpeSyms.map(s => (s, s.methodMembers))};; tpeTree=$resultTpeTree;; tpeTreeClass=${resultTpeTree.getClass}""".stripMargin
       )
@@ -33,16 +33,16 @@ object FactoryConstructorMacro {
     val refinementNames = factoryContext.refinementMethods.iterator.map(_._1).toSet
 
     def generateDecls(cls: Symbol): List[Symbol] = factoryContext.methodDecls.map {
-      case (name, _, _, mtype) =>
+      case MemberRepr(name, _, _, mtype, isNewMethod) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
-        val overrideFlag = if (!refinementNames.contains(name)) Flags.Override else Flags.EmptyFlags
+        val overrideFlag = if (!isNewMethod) Flags.Override else Flags.EmptyFlags
         Symbol.newMethod(cls, name, mtype, overrideFlag | Flags.Method, Symbol.noSymbol)
     }
 
     var flatLambdaSigIndex = 0 // index of a new dependency to add to the outermost lambda requesting parameters
 
     val factoryProductData = factoryContext.methodDecls.map {
-      (n, _, mbMethodSym, methodType) =>
+      case MemberRepr(n, _, mbMethodSym, methodType, _) =>
         factoryUtil.getFactoryProductData(resultTpe) {
           () =>
             val curIndex = flatLambdaSigIndex

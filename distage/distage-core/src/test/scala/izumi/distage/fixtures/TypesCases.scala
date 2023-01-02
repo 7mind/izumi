@@ -90,4 +90,18 @@ object TypesCases {
     class Dep(val widgetId: WidgetId)
   }
 
+  object TypesCase6 {
+    class Dep
+
+    class Dep2 extends Dep
+
+    trait Trait1 {
+      def dep: Dep
+    }
+
+    trait Trait2 {
+      def dep: Dep2
+    }
+  }
+
 }

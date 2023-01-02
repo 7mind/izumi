@@ -334,6 +334,46 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(factory.dep() ne factory1.dep1())
   }
 
+  "support intersection factory types with implicit overrides" in {
+    import FactoryCase7._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      makeFactory[IFactory1 & IFactory2]
+
+      make[IFactory1].using[IFactory1 & IFactory2]
+      make[IFactory2].using[IFactory1 & IFactory2]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val factory1 = context.get[IFactory1]
+    val factory2 = context.get[IFactory2]
+
+    assert(factory2.asInstanceOf[AnyRef] eq factory1.asInstanceOf[AnyRef])
+    assert(factory2.dep() ne factory1.dep())
+    assert(factory2.dep().isInstanceOf[Dep])
+    assert(factory1.dep().isInstanceOf[Dep])
+  }
+
+  "support refinement factory types with overrides" in {
+    import FactoryCase7._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[IFactory1].fromFactory[IFactory1 { def dep(): Dep }]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val factory1 = context.get[IFactory1]
+
+    assert(factory1.dep() ne factory1.dep())
+    assert(factory1.dep().isInstanceOf[Dep])
+  }
+
   "support make[].fromFactory" in {
     // this case makes no sense tbh
     import FactoryCase5._

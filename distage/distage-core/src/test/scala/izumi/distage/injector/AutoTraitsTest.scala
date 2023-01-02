@@ -3,6 +3,7 @@ package izumi.distage.injector
 import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases.TypesCase3
+import izumi.distage.fixtures.TypesCases.TypesCase6
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.reflection.TypedRef
@@ -191,7 +192,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     assert(instantiated.a == context.get[Int])
   }
 
-  "can instantiate `with` types" in {
+  "can instantiate intersection types" in {
     import TypesCase3._
 
     val definition = PlannerInput.everything(new ModuleDef {
@@ -208,6 +209,25 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
 
     assert(instantiated.dep eq context.get[Dep])
     assert(instantiated.dep2 eq context.get[Dep2])
+  }
+
+  "can instantiate intersection types with implicit overrides" in {
+    import TypesCase6._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Dep]
+      make[Dep2]
+      make[Trait1 with Trait2]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val instantiated = context.get[Trait2 with Trait1]
+
+    assert(instantiated.dep ne context.get[Dep])
+    assert(instantiated.dep eq context.get[Dep2])
   }
 
   "can handle AnyVals" in {
