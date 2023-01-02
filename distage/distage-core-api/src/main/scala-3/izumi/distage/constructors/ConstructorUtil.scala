@@ -33,7 +33,6 @@ class ConstructorContext[R: Type, Q <: Quotes, U <: ConstructorUtil[Q]](using va
         .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && !m.flags.is(Flags.Synthetic) && m.isDefDef)
     )
     (abstractFields ++ abstractMethods).distinct
-      .sortBy(_.name) // sort alphabetically because Dotty order is undefined (does not return in definition order)
   }
 
   val abstractMethodsWithParams = abstractMembers.filter(m => m.flags.is(Flags.Method) && m.paramSymss.nonEmpty)
@@ -54,7 +53,9 @@ class ConstructorContext[R: Type, Q <: Quotes, U <: ConstructorUtil[Q]](using va
 
   val methodDecls = {
     val allMembers = abstractMembers.map(m => util.MemberRepr(m.name, m.flags.is(Flags.Method), Some(m), resultTpe.memberType(m), false)) ++ refinementMethods
-    util.processOverrides(allMembers)
+    util
+      .processOverrides(allMembers)
+      .sortBy(_.name) // sort alphabetically because Dotty order is undefined (does not return in definition order)
   }
 
   def isFactoryOrTrait: Boolean = abstractMembers.nonEmpty || refinementMethods.nonEmpty
