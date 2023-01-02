@@ -74,6 +74,7 @@ jobs:
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.IZUMI_MICROSITE_KEY }}
+          known_hosts: unnecessary
       - name: Build and Test
         env:
           OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
