@@ -42,7 +42,7 @@ jobs:
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos
-#          files: ./**/target/**/cobertura.xml
+          files: cobertura.xml
 #          flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: true
@@ -70,6 +70,10 @@ jobs:
             ~/.cache/coursier
             /usr/local/bin/cs
           key: ${{ runner.os }}-scala
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.IZUMI_MICROSITE_KEY }}
       - name: Build and Test
         env:
           OPENSSL_IV: ${{ secrets.OPENSSL_IV }}

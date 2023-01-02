@@ -123,6 +123,12 @@ function secrets {
         #ln -s .secrets/local.sbt local.sbt
         #mkdir -p ~/.sbt/secrets || true
         #mv .secrets/credentials.sonatype-nexus.properties ~/.sbt/secrets/credentials.sonatype-nexus.properties
+
+        #mkdir -p ~/.ssh || true
+        #chown -R root:root ~/.ssh || true # For running build inside docker
+        #chmod 600 .secrets/travis-deploy-key
+        #eval "$(ssh-agent -s)"
+        #ssh-add .secrets/travis-deploy-key
         echo "Secrets unpacked"
     else
         echo "Skipping secrets"
