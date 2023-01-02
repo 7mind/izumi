@@ -75,13 +75,10 @@ jobs:
         with:
           key: ${{ secrets.IZUMI_MICROSITE_KEY }}
           known_hosts: '' # github.com is already there
-      - name: Build and Test
-        env:
-          OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
-          OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
+      - name: Build and Publish Microsite
         run: |
           bash sbtgen.sc --js 
-          bash .build.sh ${{ matrix.scala }} secrets site
+          bash .build.sh ${{ matrix.scala }} site
   publish:
     runs-on: ubuntu-latest
     strategy:
@@ -111,7 +108,7 @@ jobs:
             sudo curl -Lo /usr/local/bin/cs  https://git.io/coursier-cli-linux
             sudo chmod +x /usr/local/bin/cs
           fi
-      - name: Build and Test
+      - name: Build and Publish to Sonatype
         env:
           OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
           OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
