@@ -104,13 +104,11 @@ function init {
     fi
 
     export CI=true
-    export CI_BRANCH=${BUILD_SOURCEBRANCHNAME}
+    export CI_BRANCH=${GITHUB_REF_NAME}
     export CI_TAG=`git describe --contains | grep v | grep -v '~' | head -n 1 || true`
-    export CI_BUILD_NUMBER=${BUILD_BUILDID}
-    export CI_COMMIT=${BUILD_SOURCEVERSION}
+    export CI_BUILD_NUMBER=${GITHUB_RUN_ATTEMPT}
+    export CI_COMMIT=${GITHUB_SHA}
 
-    export NPM_TOKEN=${TOKEN_NPM}
-    export NUGET_TOKEN=${TOKEN_NUGET}
     export CODECOV_TOKEN=${TOKEN_CODECOV}
     export USERNAME=${USER:-`whoami`}
     export COURSIER_CACHE=${COURSIER_CACHE:-`~/.coursier`}
