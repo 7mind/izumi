@@ -26,7 +26,7 @@ jobs:
             /usr/local/bin/cs
           key: ${{ runner.os }}-scala
       - name: Install Coursier
-        run:
+        run: |
           if [[ ! -f /usr/local/bin/cs ]]; then
             sudo curl -Lo /usr/local/bin/cs  https://git.io/coursier-cli-linux
             cat /usr/local/bin/cs
