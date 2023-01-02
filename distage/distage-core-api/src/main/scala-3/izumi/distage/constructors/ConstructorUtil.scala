@@ -205,7 +205,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
 
   def processOverrides(memberReprs: List[MemberRepr]): List[MemberRepr] = {
     memberReprs
-      .groupBy(_.name)
+      .groupBy(m => (m.name, getMethodArityWithTypeParams(m.tpe)))
       .iterator.flatMap {
         case (_, members) if members.sizeIs > 1 =>
           val mostSpecificMember = members.min(Ordering.fromLessThan[TypeRepr]((t1, t2) => t1 <:< t2 && !(t1 =:= t2)).on(m => returnTypeOfByName(m.tpe)))
@@ -219,14 +219,16 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
   def extractMethodParamLists(methodType: TypeRepr, methodSym: Symbol): ParamReprLists = {
     def go(t: TypeRepr, paramSymss: List[List[Symbol]]): ParamReprLists = {
       t match {
-        case mtpe @ MethodType(nn, tt, ret) =>
-          nn.iterator
-            .zip(tt)
+        case mtpe @ MethodType(names, tpes, ret) =>
+          names.iterator
+            .zip(tpes)
             .zipAll(paramSymss match { case h :: _ => h; case _ => List.empty[Symbol] }, null, null.asInstanceOf[Symbol])
             .map {
               case (null, _) => null
               case ((n, t), maybeSymbol) => ParamRepr(n, Option(maybeSymbol), t)
-            }.takeWhile(_ ne null).toList :: go(ret, paramSymss.drop(1))
+            }
+            .takeWhile(_ ne null)
+            .toList :: go(ret, paramSymss.drop(1))
         case PolyType(_, _, ret) =>
           go(ret, paramSymss)
         case _ =>
@@ -237,6 +239,14 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
     val paramSymssExcTypes = methodSym.paramSymss.filterNot(_.headOption.exists(_.isTypeParam))
 
     go(methodType, paramSymssExcTypes)
+  }
+
+  def getMethodArityWithTypeParams(mtpe: TypeRepr): Int = {
+    mtpe match {
+      case MethodType(names, _, ret) => names.size + getMethodArityWithTypeParams(ret)
+      case PolyType(names, _, ret) => names.size + getMethodArityWithTypeParams(ret)
+      case _ => 0
+    }
   }
 
   @tailrec
