@@ -140,9 +140,9 @@ function secrets {
         echo "Unpacking secrets"
         openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
         tar xvf secrets.tar
-        ln -s .secrets/local.sbt local.sbt
-        mkdir -p ~/.sbt/secrets || true
-        mv .secrets/credentials.sonatype-nexus.properties ~/.sbt/secrets/credentials.sonatype-nexus.properties
+        #ln -s .secrets/local.sbt local.sbt
+        #mkdir -p ~/.sbt/secrets || true
+        #mv .secrets/credentials.sonatype-nexus.properties ~/.sbt/secrets/credentials.sonatype-nexus.properties
         echo "Secrets unpacked"
     else
         echo "Skipping secrets"

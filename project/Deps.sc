@@ -265,6 +265,16 @@ object Izumi {
             |  Seq.empty
             |}
             |}""".stripMargin.raw,
+        "credentials" in SettingScope.Build ++=
+          """
+            |{
+            |val credTarget = file(".") / ".secrets" / "credentials.sonatype-nexus.properties"
+            |if (credTarget.exists) {
+            |  Seq(Credentials(credTarget))
+            |} else {
+            |  Seq.empty
+            |}
+            |}""".stripMargin.raw,
         "homepage" in SettingScope.Build := """Some(url("https://izumi.7mind.io"))""".raw,
         "licenses" in SettingScope.Build := """Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))""".raw,
         "developers" in SettingScope.Build :=
