@@ -29,7 +29,6 @@ jobs:
         run: |
           if [[ ! -f /usr/local/bin/cs ]]; then
             sudo curl -Lo /usr/local/bin/cs  https://git.io/coursier-cli-linux
-            cat /usr/local/bin/cs
             sudo chmod +x /usr/local/bin/cs
           fi
       - name: Build and Test
