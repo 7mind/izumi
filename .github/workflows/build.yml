@@ -20,14 +20,6 @@ jobs:
         with:
           distribution: 'microsoft'
           java-version: ${{ matrix.java }}
-      - uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos
-          files: ./**/target/**/cobertura.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
-          verbose: true # optional (default = false)
       - name: Caches
         uses: actions/cache@v3
         with:
@@ -47,6 +39,14 @@ jobs:
         run: |
           bash sbtgen.sc --js
           bash .build.sh ${{ matrix.scala }} coverage
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos
+          files: ./**/target/**/cobertura.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
+          verbose: true # optional (default = false)
   site:
     runs-on: ubuntu-latest
     strategy:
