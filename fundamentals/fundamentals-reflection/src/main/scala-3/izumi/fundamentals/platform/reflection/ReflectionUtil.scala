@@ -34,7 +34,7 @@ object ReflectionUtil {
   def intersectionMembers(using q: Quotes)(typeRepr: q.reflect.TypeRepr): List[q.reflect.TypeRepr] = {
     import q.reflect.*
 
-    val tpes = mutable.HashSet.empty[TypeRepr]
+    val tpes = mutable.LinkedHashSet.empty[TypeRepr]
 
     def go(t0: TypeRepr): Unit = t0.dealias match {
       case tpe: AndType =>
@@ -51,10 +51,10 @@ object ReflectionUtil {
   def intersectionUnionMembers(using q: Quotes)(typeRepr: q.reflect.TypeRepr): List[q.reflect.TypeRepr] = {
     import q.reflect.*
 
-    val tpes = mutable.HashSet.empty[TypeRepr]
+    val tpes = mutable.LinkedHashSet.empty[TypeRepr]
 
     def go(t0: TypeRepr): Unit = t0.dealias match {
-      case tpe: AndType =>
+      case tpe: AndOrType =>
         go(tpe.left)
         go(tpe.right)
       case t =>

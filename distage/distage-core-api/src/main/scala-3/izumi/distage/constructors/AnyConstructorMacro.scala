@@ -26,19 +26,18 @@ object AnyConstructorMacro {
     // FIXME remove redundant check across macros
     lazy val context = new ConstructorContext[R, qctx.type, util.type](util)
 
-    if (AndTypeTypeTest.unapply(tpe0).isDefined || RefinementTypeTest.unapply(tpe0).isDefined) {
-      // ignore intersections for now
-      '{ (throw new RuntimeException("unsupported intersection")): AnyConstructor[R] }
-    } else if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract)) || {
-        util.dereferenceTypeRef(tpe0) match { case _: ConstantType | _: TermRef => true; case _ => false }
+    val tpeDeref = util.dereferenceTypeRef(tpe0)
+    if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract) && (tpeDeref match {
+        case _: Refinement => false; case _ => true
+      })) || {
+        tpeDeref match { case _: ConstantType | _: TermRef => true; case _ => false }
       }) {
       ClassConstructorMacro.makeImpl[R](util)
     } else if ({
-      // TODO: check for sealed
       context.isWireableTrait
     }) {
       TraitConstructorMacro.makeImpl[R](util, context)
-    } else if (context.isFactory) {
+    } else if (context.isFactoryOrTrait) {
       report.errorAndAbort(
         s"""AnyConstructor failure: ${Type.show[R]} is a Factory, use makeFactory or fromFactory to wire factories.""".stripMargin
       )
@@ -169,7 +168,7 @@ object AnyConstructorMacro {
 
     val res = applyMake[T, BT](outerClass)(functoid)
 
-    import Printer.TreeStructure
+//    given Printer[Tree] = Printer.TreeStructure
 //    report.warning(
 //      s"""Splice owner tree: ${Symbol.spliceOwner.tree.show}:${Symbol.spliceOwner.pos} (macro:${Position.ofMacroExpansion})
 //         |Splice owner-owner tree: ${Symbol.spliceOwner.owner.tree}:${Symbol.spliceOwner.owner.pos}
