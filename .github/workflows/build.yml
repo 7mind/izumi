@@ -74,7 +74,7 @@ jobs:
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.IZUMI_MICROSITE_KEY }}
-          known_hosts: '' # github.com is already there
+          known_hosts: 'unnecessary' # github.com is already there
       - name: Build and Publish Microsite
         run: |
           bash sbtgen.sc --js 
