@@ -52,11 +52,11 @@ function coverage {
 function site {
   if [[ "$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ]] ; then
     echo "Publishing site from branch=$CI_BRANCH; tag=$CI_TAG"
-    mkdir -p ~/.ssh || true
-    chown -R root:root ~/.ssh || true # For running build inside docker
-    chmod 600 .secrets/travis-deploy-key
-    eval "$(ssh-agent -s)"
-    ssh-add .secrets/travis-deploy-key
+    #mkdir -p ~/.ssh || true
+    #chown -R root:root ~/.ssh || true # For running build inside docker
+    #chmod 600 .secrets/travis-deploy-key
+    #eval "$(ssh-agent -s)"
+    #ssh-add .secrets/travis-deploy-key
 
     csbt +clean "'${VERSION_COMMAND}doc/ghpagesSynchLocal'" "'${VERSION_COMMAND}doc/ghpagesPushSite'" || exit 1
   else
