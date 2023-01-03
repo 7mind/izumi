@@ -91,6 +91,7 @@ jobs:
         java: [ '17' ]
         scala: [ '2.13']
     needs: [ 'build', 'test-site', 'checksecret' ]
+    if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
     steps:
       - uses: actions/checkout@v3
       - uses: rlespinasse/github-slug-action@v4
