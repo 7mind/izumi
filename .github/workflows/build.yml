@@ -54,7 +54,6 @@ jobs:
       matrix:
         java: [ '17' ]
         scala: [ '2.13']
-    needs: [ 'build', 'checksecret' ]
     steps:
       - uses: actions/checkout@v3
       - uses: rlespinasse/github-slug-action@v4
@@ -91,7 +90,7 @@ jobs:
       matrix:
         java: [ '17' ]
         scala: [ '2.13']
-    needs: [ 'build', 'checksecret' ]
+    needs: [ 'build', 'test-site', 'checksecret' ]
     steps:
       - uses: actions/checkout@v3
       - uses: rlespinasse/github-slug-action@v4
