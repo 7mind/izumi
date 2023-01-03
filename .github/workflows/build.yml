@@ -1,10 +1,11 @@
 name: Build
 
-on: [push, pull_request]
-
-#  OPENSSL_KEY: $(openssl.key)
-#  OPENSSL_IV: $(openssl.iv)
-#  TOKEN_CODECOV: $(token.codecov)
+on:
+  push:
+    branches: [ "develop" ]
+    tags: [ "v**" ]
+  pull_request:
+    branches: [ "develop" ]
 
 jobs:
   build:
@@ -47,13 +48,50 @@ jobs:
           # TODO: do we need scoverage.xml? If so files: may be just omitted
           # files: cobertura.xml,scoverage.xml
           # flags: unittests
-  site:
+  test-site:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         java: [ '17' ]
         scala: [ '2.13']
-    needs: ['build']
+    needs: [ 'build', 'checksecret' ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: rlespinasse/github-slug-action@v4
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'microsoft'
+          java-version: ${{ matrix.java }}
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.sbt
+            ~/.ivy2/cache
+            ~/.cache/coursier
+            /usr/local/bin/cs
+          key: ${{ runner.os }}-scala
+      - name: Build Microsite
+        run: |
+          bash sbtgen.sc --js 
+          bash .build.sh ${{ matrix.scala }} site-test
+  checksecret:
+    runs-on: ubuntu-latest
+    outputs:
+      HAVE_SECRETS: ${{ steps.checksecret_job.outputs.HAVE_SECRETS }}
+    steps:
+      - id: checksecret_job
+        env:
+          OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
+          OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
+        run: |
+          echo "HAVE_SECRETS=${{ env.OPENSSL_IV != '' && env.OPENSSL_KEY != '' }}" >> $GITHUB_OUTPUT
+  publish-site:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '17' ]
+        scala: [ '2.13']
+    needs: [ 'build', 'checksecret' ]
     steps:
       - uses: actions/checkout@v3
       - uses: rlespinasse/github-slug-action@v4
@@ -73,17 +111,18 @@ jobs:
         with:
           key: ${{ secrets.IZUMI_MICROSITE_KEY }}
           known_hosts: 'unnecessary' # github.com is already there
-      - name: Build and Publish Microsite
+      - name: Publish Microsite
         run: |
           bash sbtgen.sc --js 
-          bash .build.sh ${{ matrix.scala }} site
-  publish:
+          bash .build.sh ${{ matrix.scala }} site-publish
+  publish-artifacts:
     runs-on: ubuntu-latest
+    needs: [ 'build', 'checksecret' ]
+    if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
     strategy:
       matrix:
         java: [ '11' ]
         scala: [ '2.12', '2.13', '3']
-    needs: ['build']
     steps:
       - uses: actions/checkout@v3
       - uses: rlespinasse/github-slug-action@v4

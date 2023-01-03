@@ -35,14 +35,14 @@ function coverage {
   csbt "'${VERSION_COMMAND}clean'" coverage "'${VERSION_COMMAND}Test/compile'" "'${VERSION_COMMAND}test'" "'${VERSION_COMMAND}coverageReport'" || exit 1
 }
 
-function site {
-  if [[ "$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ]] ; then
-    echo "Publishing site from branch=$CI_BRANCH; tag=$CI_TAG"
-    csbt +clean "'${VERSION_COMMAND}doc/ghpagesSynchLocal'" "'${VERSION_COMMAND}doc/ghpagesPushSite'" || exit 1
-  else
+function site-publish {
+  echo "Publishing site from branch=$CI_BRANCH; tag=$CI_TAG"
+  csbt +clean "'${VERSION_COMMAND}doc/ghpagesSynchLocal'" "'${VERSION_COMMAND}doc/ghpagesPushSite'" || exit 1
+}
+
+function site-test {
     echo "Not publishing site, because $CI_BRANCH is not 'develop' nor a tag"
     csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}doc/makeSite'" || exit 1
-  fi
 }
 
 function publishScala {
@@ -186,8 +186,11 @@ case $i in
         sonatypeRelease
     ;;
 
-    site)
-        site
+    site-publish)
+        site-publish
+    ;;
+    site-test)
+        site-test
     ;;
 
     secrets)
