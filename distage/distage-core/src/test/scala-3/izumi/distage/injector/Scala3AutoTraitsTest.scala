@@ -80,7 +80,8 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     "support trait refinement" in {
-      TraitConstructor[ATrait1 { def a: 5 }]
+      assert(TraitConstructor[ATrait1 { def a: 5 }].get.unsafeApply(Seq(TypedRef.byName[5](5))).asInstanceOf[ATrait1].a == 5)
+      assert(TraitConstructor[ATrait1 { val a: 5 }].get.unsafeApply(Seq(TypedRef.byName[5](5))).asInstanceOf[ATrait1].a == 5)
     }
 
     "support factories" in {

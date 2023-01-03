@@ -28,32 +28,35 @@ object TraitConstructorMacro {
   @experimental
   def makeImpl[R: Type](using qctx: Quotes)(util: ConstructorUtil[qctx.type], context: ConstructorContext[R, qctx.type, util.type]): Expr[TraitConstructor[R]] = {
     import qctx.reflect.*
-    import util.ParamRepr
-    import context.*
+    import util.{MemberRepr, ParamRepr}
+    import context.{constructorParamLists, flatCtorParams, methodDecls, parentTypesParameterized, resultTpe, resultTpeSyms, resultTpeTree}
+
+//    val resultTpeSym = resultTpeSyms.head
 
     if (!context.isWireableTrait) {
       report.errorAndAbort(
-        s"""$resultTpeSym has abstract methods taking parameters, expected only parameterless abstract methods:
-           |  ${abstractMethodsWithParams.map(s => s.name -> s.flags.show)}
-           |  [others: ${abstractMembers.map(s => s.name -> s.flags.show)}]""".stripMargin
+        s"""${resultTpeSyms.mkString(" & ")} has abstract methods taking parameters, expected only parameterless abstract methods:
+           |  ${context.abstractMethodsWithParams.map(s => s.name -> s.flags.show)}
+           |[methods without parameters: ${context.abstractMembers.map(s => s.name -> s.flags.show)}]""".stripMargin
       )
     }
 
-    assert(methodDecls.map(_._1).size == methodDecls.size, "BUG: duplicated abstract method names")
-
     def generateDecls(cls: Symbol): List[Symbol] = methodDecls.map {
-      case (name, isMethod, _, mtype) =>
+      case MemberRepr(name, isMethod, _, mtype, isNewMethod) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
+        val overrideFlag = if (!isNewMethod) Flags.Override else Flags.EmptyFlags
         if (isMethod) {
-          Symbol.newMethod(cls, name, mtype, Flags.Method | Flags.Override, Symbol.noSymbol)
+          Symbol.newMethod(cls, name, mtype, Flags.Method | overrideFlag, Symbol.noSymbol)
         } else {
-          Symbol.newVal(cls, name, mtype, Flags.Override, Symbol.noSymbol)
+          Symbol.newVal(cls, name, util.returnTypeOfMethodOrByName(mtype), overrideFlag, Symbol.noSymbol)
         }
     }
 
     // TODO: decopypaste
     val lamParams = {
-      val byNameMethodArgs = methodDecls.map { case (n, _, s, t) => ParamRepr(s"_$n", s, util.ensureByName(util.returnTypeOfMethodOrByName(t))) }
+      val byNameMethodArgs = methodDecls.map {
+        case MemberRepr(n, _, maybeSym, t, _) => ParamRepr(s"_$n", maybeSym, util.ensureByName(util.returnTypeOfMethodOrByName(t)))
+      }
       flatCtorParams ++ byNameMethodArgs
     }
 
@@ -64,11 +67,11 @@ object TraitConstructorMacro {
 
         val parents = util.buildParentConstructorCallTerms(constructorParamLists, lamOnlyCtorArguments)
 
-        val name: String = s"${resultTpeSym.name}TraitAutoImpl"
+        val name: String = s"${resultTpeSyms.map(_.name).mkString("With")}TraitAutoImpl"
         val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = generateDecls, selfType = None)
 
         val defs = methodDecls.zip(lamOnlyMethodArguments).map {
-          case ((name, isMethod, _, _), arg) =>
+          case (MemberRepr(name, isMethod, _, _, _), arg) =>
             val methodSyms = if (isMethod) clsSym.declaredMethod(name) else List(clsSym.declaredField(name))
             assert(methodSyms.size == 1, "BUG: duplicated methods!")
             val methodSym = methodSyms.head
@@ -86,25 +89,30 @@ object TraitConstructorMacro {
         Typed(block, resultTpeTree)
     }
 
-    import Printer.TreeStructure
-    report.warning(
-      s"""|tpe = $resultTpe
-          |symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
-          |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
-          |fields = ${resultTpeSym.fieldMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
-          |tree = ${resultTpeSym.tree}
-          |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
-          |pct  = ${resultTpeSym.primaryConstructor.tree}
-          |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
-          |pctt = ${resultTpe.memberType(resultTpeSym.primaryConstructor)}
-          |pcts = ${resultTpe.baseClasses
-           .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
-           .mkString("\n")}
-          |defn = ${resultTpeSym.tree.show}
-          |lam  = ${lamExpr.asTerm}
-          |lam  = ${lamExpr.show}
-          |""".stripMargin
-    )
+    {
+      given Printer[Tree] = Printer.TreeStructure
+      val resultTpeSym = resultTpeSyms.head
+      report.warning(
+        s"""|tpe = $resultTpe
+            |symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
+            |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
+            |fields = ${resultTpeSym.fieldMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
+            |methodsDecls = $methodDecls
+            |refinementMethods = ${context.refinementMethods}
+            |tree = ${resultTpeSym.tree}
+            |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
+            |pct  = ${resultTpeSym.primaryConstructor.tree}
+            |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
+            |pctt = ${resultTpe.memberType(resultTpeSym.primaryConstructor)}
+            |pcts = ${resultTpe.baseClasses
+             .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
+             .mkString("\n")}
+            |defn = ${resultTpeSym.tree.show}
+            |lam  = ${lamExpr.asTerm}
+            |lam  = ${lamExpr.show}
+            |""".stripMargin
+      )
+    }
 
     val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Trait })
     '{ new TraitConstructor[R](${ f }) }

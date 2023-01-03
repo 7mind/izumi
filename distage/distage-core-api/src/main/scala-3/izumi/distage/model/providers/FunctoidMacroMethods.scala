@@ -208,6 +208,7 @@ object FunctoidMacro {
     import qctx.reflect.*
 
     private val idAnnotationSym: Symbol = TypeRepr.of[Id].typeSymbol
+    private val maybeJavaxNamedAnnotationSym: Option[Symbol] = scala.util.Try(Symbol.requiredClass("javax.inject.Named")).toOption
 
     extension (t: Either[TypeTree, TypeRepr]) {
       private def _tpe: TypeRepr = t match {
@@ -220,14 +221,29 @@ object FunctoidMacro {
       makeParam(name, tpe, annotSym, tpe)
     }
     def makeParam(name: String, tpe: Either[TypeTree, TypeRepr], annotSym: Option[Symbol], annotTpe: Either[TypeTree, TypeRepr]): Expr[LinkedParameter] = {
-      val identifier = ReflectionUtil.readTypeOrSymbolDIAnnotation(idAnnotationSym)(name, annotSym, annotTpe) {
-        case aterm @ Apply(Select(New(_), _), c :: _) =>
-          c.asExprOf[String].value.orElse {
-            report.errorAndAbort(s"distage.Id annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
+      val identifier = {
+        val mbIdIdentifier = ReflectionUtil
+          .readTypeOrSymbolDIAnnotation(idAnnotationSym)(name, annotSym, annotTpe) {
+            case aterm @ Apply(Select(New(_), _), c :: _) =>
+              c.asExprOf[String].value.orElse {
+                report.errorAndAbort(s"distage.Id annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
+              }
+            case aterm =>
+              report.errorAndAbort(s"distage.Id annotation expects one literal String argument but got malformed tree ${aterm.show} ($aterm)")
           }
-        case aterm =>
-          report.errorAndAbort(s"distage.Id annotation expects one literal String argument but got malformed tree ${aterm.show} ($aterm)")
-
+        mbIdIdentifier.orElse {
+          maybeJavaxNamedAnnotationSym.flatMap {
+            namedAnnoSym =>
+              ReflectionUtil.readTypeOrSymbolDIAnnotation(namedAnnoSym)(name, annotSym, annotTpe) {
+                case aterm @ Apply(Select(New(_), _), c :: _) =>
+                  c.asExprOf[String].value.orElse {
+                    report.errorAndAbort(s"javax.inject.Named annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
+                  }
+                case aterm =>
+                  report.errorAndAbort(s"javax.inject.Named annotation expects one literal String argument but got malformed tree ${aterm.show} ($aterm)")
+              }
+          }
+        }
       }
 
       val tpeRepr = tpe._tpe
