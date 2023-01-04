@@ -143,8 +143,8 @@ object AnyConstructorOptionalMakeDSL {
       s"""`make[$tpe]` DSL failure: Called an empty error constructor, because constructor for $tpe WAS NOT generated.
          |Because after `make` there were following method calls in the same expression:${nonWhitelistedMethods.niceList()}
          |
-         |These calls were assumed to be `.from`-like method calls, since they are in the white-list: ${ModuleDefDSL.MakeDSLNoOpMethodsWhitelist}
-         |The assumption is that all non-whitelisted calls will eventually call any of `.from`/`.using`/`.todo` and fill in the constructor.
+         |These calls were assumed to be `.from`-like method calls, since they are not in the allowed list: ${ModuleDefDSL.MakeDSLNoOpMethodsWhitelist}
+         |The assumption is that all not explicitly allowed calls will eventually call any of `.from`/`.using`/`.todo` and fill in the constructor.
          |""".stripMargin
     )
   }

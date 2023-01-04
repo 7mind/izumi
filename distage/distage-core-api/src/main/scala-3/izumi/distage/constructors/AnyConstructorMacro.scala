@@ -116,32 +116,29 @@ object AnyConstructorMacro {
       }.foldOverTree(Nil, t)(Symbol.noSymbol)
     }
 
-    var stopPos = List.empty[(Position, String)]
+//    var stopPos = List.empty[(Position, String)]
 
     extension (biggerPos: Position) {
-      def contains(t: Tree, smallerPos: Position): Boolean = {
-        val res = biggerPos.start <= smallerPos.start
-          && biggerPos.end >= smallerPos.end
-        if !res then stopPos = stopPos :+ (biggerPos, t.show)
-        res
+      def contains(smallerPos: Position): Boolean = {
+        biggerPos.start <= smallerPos.start
+        && biggerPos.end >= smallerPos.end
       }
     }
 
     def allMethodsCalledOnPosition(macroPos: Position, t0: Tree): List[String] = {
       new TreeAccumulator[List[String]] {
-        override def foldTree(x: List[String], tree: Tree)(owner: Symbol): List[String] = {
-          def continueIfContainsPos(t: Tree): List[String] = {
-            if (t.pos.contains(t, macroPos)) {
-              foldOverTree(x, tree)(owner)
-            } else {
-              x
-            }
-          }
-          tree match {
+        override def foldTree(oldX: List[String], tree: Tree)(owner: Symbol): List[String] = {
+          val (t, newX) = tree match {
             case Select(t, name) =>
-              name :: continueIfContainsPos(t)
+              (t, name :: oldX)
             case t =>
-              continueIfContainsPos(t)
+              (t, oldX)
+          }
+          if (t.pos.contains(macroPos)) {
+            foldOverTree(newX, tree)(owner)
+          } else {
+//            stopPos = stopPos :+ (t.pos, t.show)
+            oldX // ignore the last method - presumably the `make`/`makeRole` call itself.
           }
         }
       }.foldOverTree(Nil, t0)(Symbol.noSymbol)
@@ -168,21 +165,23 @@ object AnyConstructorMacro {
 
     val res = applyMake[T, BT](outerClass)(functoid)
 
-//    given Printer[Tree] = Printer.TreeStructure
-//    report.warning(
-//      s"""Splice owner tree: ${Symbol.spliceOwner.tree.show}:${Symbol.spliceOwner.pos} (macro:${Position.ofMacroExpansion})
-//         |Splice owner-owner tree: ${Symbol.spliceOwner.owner.tree}:${Symbol.spliceOwner.owner.pos}
-//         |Splice outer tree: ${outerowner.tree.show}:${outerowner.pos}
-//         |allPos: ${allPos(outerowner.tree)}
-//         |stopPos: $stopPos
-//         |findPos: ${foundPos.show}
-//         |findPosTree: $foundPos
-//         |allCalledMethods: $foundMethods
-//         |fromLikeMethods: $fromLikeMethods
-//         |res: ${res.show}
-//         |resTree: ${res.asTerm}
-//         |""".stripMargin
-//    )
+//    {
+//      given Printer[Tree] = Printer.TreeCode
+//      report.warning(
+//        s"""Splice owner tree: ${Symbol.spliceOwner.tree.show}:${Symbol.spliceOwner.pos} (macro:${Position.ofMacroExpansion})
+//           |Splice owner-owner tree: ${Symbol.spliceOwner.owner.tree}:${Symbol.spliceOwner.owner.pos}
+//           |Splice outer tree: ${outerowner.tree.show}:${outerowner.pos}
+//           |allPos: ${allPos(outerowner.tree)}
+//           |stopPos: $stopPos
+//           |findPos: ${foundPos.show}
+//           |findPosTree: $foundPos
+//           |allCalledMethods: $foundMethods
+//           |fromLikeMethods: $fromLikeMethods
+//           |res: ${res.show}
+//           |resTree: ${res.asTerm}
+//           |""".stripMargin
+//      )
+//    }
 
     res
   }
