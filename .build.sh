@@ -74,7 +74,6 @@ function publishScala {
 }
 
 function init {
-    export USERNAME=${USER:-`whoami`}
     export COURSIER_CACHE=${COURSIER_CACHE:-`~/.coursier`}
     export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
 
