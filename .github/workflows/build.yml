@@ -38,20 +38,9 @@ jobs:
         java: [ '17' ]
         scala: [ '2.13']
     steps:
-      - uses: actions/checkout@v3
-      - uses: rlespinasse/github-slug-action@v4
-      - uses: actions/setup-java@v3
+      - uses: 7mind/github-env@main
         with:
-          distribution: 'microsoft'
           java-version: ${{ matrix.java }}
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.sbt
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            /usr/local/bin/cs
-          key: ${{ runner.os }}-scala
       - name: Build Microsite
         run: |
           bash sbtgen.sc --js 
@@ -76,20 +65,9 @@ jobs:
     needs: [ 'build', 'test-site', 'checksecret' ]
     if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
     steps:
-      - uses: actions/checkout@v3
-      - uses: rlespinasse/github-slug-action@v4
-      - uses: actions/setup-java@v3
+      - uses: 7mind/github-env@main
         with:
-          distribution: 'microsoft'
           java-version: ${{ matrix.java }}
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.sbt
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            /usr/local/bin/cs
-          key: ${{ runner.os }}-scala
       - uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.IZUMI_MICROSITE_KEY }}
@@ -107,26 +85,9 @@ jobs:
         java: [ '11' ]
         scala: [ '2.12', '2.13', '3']
     steps:
-      - uses: actions/checkout@v3
-      - uses: rlespinasse/github-slug-action@v4
-      - uses: actions/setup-java@v3
+      - uses: 7mind/github-env@main
         with:
-          distribution: 'microsoft'
           java-version: ${{ matrix.java }}
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.sbt
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            /usr/local/bin/cs
-          key: ${{ runner.os }}-scala
-      - name: Install Coursier
-        run: |
-          if [[ ! -f /usr/local/bin/cs ]]; then
-            sudo curl -Lo /usr/local/bin/cs  https://git.io/coursier-cli-linux
-            sudo chmod +x /usr/local/bin/cs
-          fi
       - name: Build and Publish to Sonatype
         env:
           OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
