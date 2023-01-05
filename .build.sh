@@ -36,7 +36,7 @@ function coverage {
 }
 
 function site-publish {
-  echo "Publishing site from branch=$CI_BRANCH; tag=$CI_TAG"
+  echo "Publishing site from branch=$CI_BRANCH; tag=$CI_BRANCH_TAG"
   csbt +clean "'${VERSION_COMMAND}doc/ghpagesSynchLocal'" "'${VERSION_COMMAND}doc/ghpagesPushSite'" || exit 1
 }
 
@@ -57,14 +57,14 @@ function publishScala {
     return 0
   fi
 
-  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
+  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_BRANCH_TAG" =~ ^v.*$ ) ]] ; then
     echo "Skipping publish on non-tag / non-develop branch"
     return 0
   fi
 
   echo "PUBLISH SCALA LIBRARIES..."
 
-  if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
+  if [[ "$CI_BRANCH_TAG" =~ ^v.*$ ]] ; then
     echo "PUBLISH RELEASE"
     csbt +clean "'${VERSION_COMMAND}package'" "'${VERSION_COMMAND}publishSigned'" sonatypeBundleRelease || exit 1
   else
@@ -83,18 +83,11 @@ function init {
         export CI_PULL_REQUEST=true
     fi
 
-    export CI=true
-    export CI_BRANCH=${GITHUB_REF_NAME}
-    export CI_TAG=`git describe --contains | grep v | grep -v '~' | head -n 1 || true`
-    export CI_BUILD_NUMBER=${GITHUB_RUN_ATTEMPT}
-    export CI_COMMIT=${GITHUB_SHA}
-
     #export CODECOV_TOKEN=${TOKEN_CODECOV}
     export USERNAME=${USER:-`whoami`}
     export COURSIER_CACHE=${COURSIER_CACHE:-`~/.coursier`}
     export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
 
-    export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
     export SCALA211=$(cat project/Deps.sc | grep 'val scala211 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA212=$(cat project/Deps.sc | grep 'val scala212 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA213=$(cat project/Deps.sc | grep 'val scala213 ' |  sed -r 's/.*\"(.*)\".**/\1/')
@@ -103,7 +96,7 @@ function init {
     printenv
 
     git config --global user.name "$USERNAME"
-    git config --global user.email "$CI_BUILD_NUMBER@$CI_COMMIT"
+    git config --global user.email "$CI_BUILD_UNIQ_SUFFIX@$CI_COMMIT"
     git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
     echo "pwd: `pwd`"
@@ -120,15 +113,6 @@ function secrets {
         echo "Unpacking secrets"
         openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
         tar xvf secrets.tar
-        #ln -s .secrets/local.sbt local.sbt
-        #mkdir -p ~/.sbt/secrets || true
-        #mv .secrets/credentials.sonatype-nexus.properties ~/.sbt/secrets/credentials.sonatype-nexus.properties
-
-        #mkdir -p ~/.ssh || true
-        #chown -R root:root ~/.ssh || true # For running build inside docker
-        #chmod 600 .secrets/travis-deploy-key
-        #eval "$(ssh-agent -s)"
-        #ssh-add .secrets/travis-deploy-key
         echo "Secrets unpacked"
     else
         echo "Skipping secrets"
