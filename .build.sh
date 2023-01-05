@@ -74,16 +74,6 @@ function publishScala {
 }
 
 function init {
-    echo "=== INIT ==="
-    export LC_ALL="C.UTF-8"
-
-    if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
-        export CI_PULL_REQUEST=false
-    else
-        export CI_PULL_REQUEST=true
-    fi
-
-    #export CODECOV_TOKEN=${TOKEN_CODECOV}
     export USERNAME=${USER:-`whoami`}
     export COURSIER_CACHE=${COURSIER_CACHE:-`~/.coursier`}
     export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
@@ -93,19 +83,11 @@ function init {
     export SCALA213=$(cat project/Deps.sc | grep 'val scala213 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA3=$(cat project/Deps.sc | grep 'val scala300 ' |  sed -r 's/.*\"(.*)\".**/\1/')
 
-    printenv
-
     git config --global user.name "$USERNAME"
     git config --global user.email "$CI_BUILD_UNIQ_SUFFIX@$CI_COMMIT"
     git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
-    echo "pwd: `pwd`"
-    echo "Current directory:"
-    ls -la .
-    echo "Home:"
-    ls -la ~
-
-    echo "=== END ==="
+    printenv
 }
 
 function secrets {
