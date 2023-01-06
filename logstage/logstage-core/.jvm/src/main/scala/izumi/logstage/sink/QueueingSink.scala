@@ -65,7 +65,7 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
 
   private def poller(): Runnable = new Runnable {
     override def run(): Unit = {
-      while (!stop.get()) { // it's fine to spin forever, we are running in a daemon thread, it'll exit once the app finishes
+      while (!stop.get()) {
         try {
           // in case queue was empty we sleep a bit (it's a sane heuristic), otherwise it's better to continue working asap
           if (doFlush(maxBatchSize)) {
