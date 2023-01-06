@@ -13,15 +13,21 @@ jobs:
     strategy:
       matrix:
         java: [ '11', '17' ]
-        scala: [ '2.12', '2.13']
+        scala: [ '2.12', '2.13', '3']
     steps:
       - uses: 7mind/github-env@main
         with:
           java-version: ${{ matrix.java }}
       - name: Build and Test
+        continue-on-error: ${{ matrix.scala == '3' }}
         run: |
           bash sbtgen.sc --js
           bash .build.sh ${{ matrix.scala }} coverage
+      - uses: dorny/test-reporter@v1
+        if: success() || failure()    # run this step even if previous step failed
+        with:
+          path: reports/TEST-*.xml    # Path to test results
+          reporter: java-junit
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos
@@ -31,6 +37,7 @@ jobs:
           # TODO: do we need scoverage.xml? If so files: may be just omitted
           # files: cobertura.xml,scoverage.xml
           # flags: unittests
+  # Format of test results
   test-site:
     runs-on: ubuntu-latest
     strategy:
