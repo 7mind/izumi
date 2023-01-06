@@ -16,6 +16,10 @@ sealed trait DIError
 
 object DIError {
 
+  sealed trait PlanningError extends DIError
+  object PlanningError {
+    final case class BUG_UnexpectedMutatorKey(key: DIKey, index: Int) extends PlanningError
+  }
   sealed trait LoopResolutionError extends DIError
 
   object LoopResolutionError {
@@ -46,6 +50,8 @@ object DIError {
   import izumi.fundamentals.platform.strings.IzString.*
 
   def format(activation: Activation)(e: DIError): String = e match {
+    case error: PlanningError =>
+      formatError(error)
     case error: LoopResolutionError =>
       formatError(error)
     case ConflictResolutionFailed(error) =>
@@ -145,6 +151,10 @@ object DIError {
 
     case LoopResolutionError.NoAppropriateResolutionFound(candidates) =>
       s"Failed to break circular dependencies, can't find proxyable candidate among ${candidates.mkString(",")}"
+  }
 
+  def formatError(e: PlanningError): String = e match {
+    case PlanningError.BUG_UnexpectedMutatorKey(k, index) =>
+      s"BUG: Unsupported mutator key $k with index $index"
   }
 }

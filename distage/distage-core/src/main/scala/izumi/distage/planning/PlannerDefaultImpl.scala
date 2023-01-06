@@ -2,10 +2,11 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.conflicts.MutSel
 import izumi.distage.model.definition.errors.DIError
+import izumi.distage.model.definition.errors.DIError.PlanningError.BUG_UnexpectedMutatorKey
 import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError}
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.exceptions.InjectorFailed
-import izumi.distage.model.exceptions.planning.{ConflictResolutionException, DIBugException}
+import izumi.distage.model.exceptions.planning.ConflictResolutionException
 import izumi.distage.model.plan.*
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -38,7 +39,7 @@ class PlannerDefaultImpl(
   override def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], Plan] = {
     for {
       resolved <- resolver.resolveConflicts(input).left.map(e => e.map(ConflictResolutionFailed.apply))
-      plan = preparePlan(resolved)
+      plan <- preparePlan(resolved)
       withImports = addImports(plan, input.roots)
       withoutLoops <- forwardingRefResolver.resolveMatrix(withImports)
       _ <- sanityChecker.verifyPlan(withoutLoops, input.roots)
@@ -68,59 +69,79 @@ class PlannerDefaultImpl(
     }
   }
 
-  private def preparePlan(resolved: DG[MutSel[DIKey], SemigraphSolver.RemappedValue[InstantiationOp, DIKey]]) = {
-    val mappedGraph = resolved.predecessors.links.toSeq.map {
-      case (target, deps) =>
-        val mappedTarget = updateKey(target)
-        val mappedDeps = deps.map(updateKey)
+  private def preparePlan(resolved: DG[MutSel[DIKey], SemigraphSolver.RemappedValue[InstantiationOp, DIKey]]): Either[List[DIError], DG[DIKey, InstantiationOp]] = {
+    import izumi.functional.IzEither.*
 
-        val op = resolved.meta.nodes.get(target).map {
-          op =>
-            val remaps = op.remapped.map {
-              case (original, remapped) =>
-                (original, updateKey(remapped))
+    for {
+      mappedGraph <- resolved.predecessors.links.toSeq.map {
+        case (target, deps) =>
+          for {
+            mappedTarget <- updateKey(target)
+            mappedDeps <- deps.map(updateKey).biAggregate
+            op <- resolved.meta.nodes.get(target).map {
+              op =>
+                for {
+                  remaps <- op.remapped
+                    .map {
+                      case (original, remapped) =>
+                        for {
+                          updated <- updateKey(remapped)
+                        } yield {
+                          (original, updated)
+                        }
+
+                    }.biAggregate.map(_.toMap)
+                } yield {
+                  val mapper = (key: DIKey) => remaps.getOrElse(key, key)
+                  Some(op.meta.replaceKeys(key => Map(op.meta.target -> mappedTarget).getOrElse(key, key), mapper))
+                }
+            } match {
+              case Some(value) =>
+                value
+              case None =>
+                Right(None)
             }
-            val mapper = (key: DIKey) => remaps.getOrElse(key, key)
-            op.meta.replaceKeys(key => Map(op.meta.target -> mappedTarget).getOrElse(key, key), mapper)
-        }
 
-        ((mappedTarget, mappedDeps), op.map(o => (mappedTarget, o)))
+          } yield {
+            ((mappedTarget, mappedDeps), op.map(o => (mappedTarget, o)))
+          }
+      }.biAggregate
+    } yield {
+      val mappedOps = mappedGraph.view.flatMap(_._2).toMap
+      val mappedMatrix = mappedGraph.view.map(_._1).filter { case (k, _) => mappedOps.contains(k) }.toMap
+      val plan = DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps))
+      plan
     }
 
-    val mappedOps = mappedGraph.view.flatMap(_._2).toMap
-
-    val mappedMatrix = mappedGraph.view.map(_._1).filter { case (k, _) => mappedOps.contains(k) }.toMap
-    val plan = DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps))
-    plan
   }
 
   override def rewrite(module: ModuleBase): ModuleBase = {
     hook.hookDefinition(module)
   }
 
-  protected[this] def updateKey(mutSel: MutSel[DIKey]): DIKey = {
+  protected[this] def updateKey(mutSel: MutSel[DIKey]): Either[List[DIError], DIKey] = {
     mutSel.mut match {
       case Some(value) =>
         updateKey(mutSel.key, value)
       case None =>
-        mutSel.key
+        Right(mutSel.key)
     }
   }
 
-  protected[this] def updateKey(key: DIKey, mindex: Int): DIKey = {
+  protected[this] def updateKey(key: DIKey, mindex: Int): Either[List[DIError], DIKey] = {
     key match {
       case DIKey.TypeKey(tpe, _) =>
-        DIKey.TypeKey(tpe, Some(mindex))
+        Right(DIKey.TypeKey(tpe, Some(mindex)))
       case k @ DIKey.IdKey(_, _, _) =>
-        k.withMutatorIndex(Some(mindex))
+        Right(k.withMutatorIndex(Some(mindex)))
       case s: DIKey.SetElementKey =>
-        s.copy(set = updateKey(s.set, mindex))
+        updateKey(s.set, mindex).map(updated => s.copy(set = updated))
       case r: DIKey.ResourceKey =>
-        r.copy(key = updateKey(r.key, mindex))
+        updateKey(r.key, mindex).map(updated => r.copy(key = updated))
       case e: DIKey.EffectKey =>
-        e.copy(key = updateKey(e.key, mindex))
+        updateKey(e.key, mindex).map(updated => e.copy(key = updated))
       case k =>
-        throw new DIBugException(s"Unexpected key mutator: $k, m=$mindex")
+        Left(List(BUG_UnexpectedMutatorKey(k, mindex)))
     }
   }
 
