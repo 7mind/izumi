@@ -108,12 +108,13 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
     var cc: Int = 0
     var entry: Log.Entry = null
 
-    do {
+    while ({
       entry = queue.poll()
       if (entry != null)
         target.flush(entry)
       cc += 1
-    } while (cc <= maxBatch && entry != null)
+      cc <= maxBatch && entry != null
+    }) {}
 
     entry != null
   }

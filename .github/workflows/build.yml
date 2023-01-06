@@ -26,6 +26,7 @@ jobs:
       - uses: dorny/test-reporter@v1
         if: success() || failure()    # run this step even if previous step failed
         with:
+          name: Test reports
           path: reports/TEST-*.xml    # Path to test results
           reporter: java-junit
       - uses: codecov/codecov-action@v3
