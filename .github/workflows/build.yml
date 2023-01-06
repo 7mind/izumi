@@ -37,7 +37,6 @@ jobs:
           # TODO: do we need scoverage.xml? If so files: may be just omitted
           # files: cobertura.xml,scoverage.xml
           # flags: unittests
-  # Format of test results
   test-site:
     runs-on: ubuntu-latest
     strategy:
