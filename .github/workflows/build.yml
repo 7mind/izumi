@@ -27,7 +27,7 @@ jobs:
         if: success() || failure()    # run this step even if previous step failed
         with:
           name: Test reports
-          path: TEST-*.xml
+          path: '**/target/test-reports/TEST-*.xml'
           reporter: java-junit
           fail-on-error: ${{ matrix.scala != '3' }}
       - uses: codecov/codecov-action@v3
