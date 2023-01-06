@@ -27,8 +27,9 @@ jobs:
         if: success() || failure()    # run this step even if previous step failed
         with:
           name: Test reports
-          path: reports/TEST-*.xml    # Path to test results
+          path: TEST-*.xml
           reporter: java-junit
+          fail-on-error: ${{ matrix.scala != '3' }}
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos
