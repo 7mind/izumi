@@ -27,7 +27,7 @@ function scalaall {
 }
 
 function csbt {
-  COMMAND="time sbt -Dsbt.ivy.home=$IVY_CACHE_FOLDER -Divy.home=$IVY_CACHE_FOLDER -Dcoursier.cache=$COURSIER_CACHE -batch -no-colors -v $*"
+  COMMAND="time sbt -batch -no-colors -v $*"
   eval $COMMAND
 }
 
@@ -74,17 +74,10 @@ function publishScala {
 }
 
 function init {
-    export COURSIER_CACHE=${COURSIER_CACHE:-`~/.coursier`}
-    export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
-
     export SCALA211=$(cat project/Deps.sc | grep 'val scala211 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA212=$(cat project/Deps.sc | grep 'val scala212 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA213=$(cat project/Deps.sc | grep 'val scala213 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA3=$(cat project/Deps.sc | grep 'val scala300 ' |  sed -r 's/.*\"(.*)\".**/\1/')
-
-    git config --global user.name "$USERNAME"
-    git config --global user.email "$CI_BUILD_UNIQ_SUFFIX@$CI_COMMIT"
-    git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
     printenv
 }
