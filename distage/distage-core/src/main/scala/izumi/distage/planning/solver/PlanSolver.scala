@@ -12,6 +12,7 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.SemigraphSolver.*
 import izumi.functional.IzEither.*
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
+import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.strings.IzString.*
 
@@ -172,8 +173,7 @@ object PlanSolver {
                     case u: UnconfiguredSetElementAxis =>
                       s"Set element references axis ${u.unconfigured.mkString(",")} with undefined values: set ${u.set}, element ${u.element}"
                     case i: InconsistentSetElementAxis =>
-                      s"BUG, please report at https://github.com/7mind/izumi/issues: Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}"
-
+                      IzumiProject.bugReportPrompt(s"Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}")
                   }.niceList()
 
                 throw new BadSetAxis(message, value)

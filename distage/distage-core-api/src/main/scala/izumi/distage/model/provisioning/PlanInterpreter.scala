@@ -12,6 +12,7 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection.*
+import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.reflect.TagK
@@ -67,11 +68,8 @@ object PlanInterpreter {
               case IntegrationCheckFailure(key, problem) =>
                 s"Integration check failed for $key, exception was:\n${stackTrace(problem)}"
 
-//              case UnexpectedDIException(op, problem) =>
-//                s"DISTAGE BUG: exception while processing $op; please report: https://github.com/7mind/izumi/issues\n${stackTrace(problem)}"
-
               case UnexpectedIntegrationCheckException(key, problem) =>
-                s"DISTAGE BUG: unexpected exception while processing integration check for $key; please report: https://github.com/7mind/izumi/issues\n${stackTrace(problem)}"
+                IzumiProject.bugReportPrompt(s"unexpected exception while processing integration check for $key", stackTrace(problem))
 
               case MissingImport(op) =>
                 MissingInstanceException.format(op.target, op.references)
@@ -92,8 +90,11 @@ object PlanInterpreter {
           s"Plan interpreter failed:\n$messages"
 
         case ProvisioningFailure.BrokenGraph(matrix, _) =>
-          s"DISTAGE BUG: cannot compute next operations to process; please report: https://github.com/7mind/izumi/issues\n${matrix.links
-              .map { case (k, v) => s"$k: $v" }.niceList()}"
+          IzumiProject.bugReportPrompt(
+            "Cannot compute next operations to process",
+            matrix.links
+              .map { case (k, v) => s"$k: $v" }.niceList(),
+          )
 
         case ProvisioningFailure.CantBuildIntegrationSubplan(errors, _) =>
           s"Unable to build integration checks subplan:\n${errors.map(DIError.format(plan.input.activation))}"

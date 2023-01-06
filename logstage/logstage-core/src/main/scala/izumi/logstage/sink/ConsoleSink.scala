@@ -6,7 +6,8 @@ import izumi.logstage.api.rendering.RenderingPolicy
 
 class ConsoleSink(policy: RenderingPolicy) extends LogSink {
   override def flush(e: Log.Entry): Unit = {
-    System.out.println(policy.render(e))
+    val rendered = policy.render(e)
+    System.out.println(rendered)
   }
 
   override def sync(): Unit = {
