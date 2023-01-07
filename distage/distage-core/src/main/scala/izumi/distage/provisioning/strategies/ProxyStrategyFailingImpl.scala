@@ -1,7 +1,7 @@
 package izumi.distage.provisioning.strategies
 
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.strategies.ProxyStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}

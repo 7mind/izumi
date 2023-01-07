@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies.dynamicproxy
 
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyParams.{Empty, Params}
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
 import izumi.distage.model.provisioning.proxies.{DistageProxy, ProxyProvider}

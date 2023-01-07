@@ -3,7 +3,7 @@ package izumi.distage.bootstrap
 import izumi.distage.bootstrap.DynamicProxyBootstrap.DynamicProxyProvider
 import izumi.distage.model.*
 import izumi.distage.model.definition.*
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.*
 import izumi.distage.model.planning.*

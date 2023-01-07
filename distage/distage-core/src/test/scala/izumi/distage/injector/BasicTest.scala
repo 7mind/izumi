@@ -7,8 +7,8 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.definition.StandardAxis.Repo
-import izumi.distage.model.definition.conflicts.ConflictResolutionError
 import izumi.distage.model.definition.dsl.ModuleDefDSL
+import izumi.distage.model.definition.errors.ConflictResolutionError
 import izumi.distage.model.exceptions.planning.{BadMutatorAxis, ConflictResolutionException}
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency

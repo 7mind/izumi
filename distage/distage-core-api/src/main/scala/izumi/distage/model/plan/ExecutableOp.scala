@@ -1,7 +1,7 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.IncompatibleEffectType
+import izumi.distage.model.definition.errors.ProvisionerIssue
+import ProvisionerIssue.IncompatibleEffectType
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.Wiring.SingletonWiring
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin

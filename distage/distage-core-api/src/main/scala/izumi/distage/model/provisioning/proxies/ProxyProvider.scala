@@ -1,6 +1,6 @@
 package izumi.distage.model.provisioning.proxies
 
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
 import izumi.distage.model.reflection.DIKey

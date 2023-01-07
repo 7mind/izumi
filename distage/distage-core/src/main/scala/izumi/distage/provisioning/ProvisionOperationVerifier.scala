@@ -1,11 +1,11 @@
 package izumi.distage.provisioning
 
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.fundamentals.platform.language.Quirks
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.*
+import izumi.distage.model.definition.errors.ProvisionerIssue.*
 
 trait ProvisionOperationVerifier {
   def verify(target: DIKey, prohibited: collection.Set[DIKey], value: Any, clue: String): Either[ProvisionerIssue, Unit]

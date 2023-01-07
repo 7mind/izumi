@@ -1,5 +1,6 @@
-package izumi.distage.model.definition.conflicts
+package izumi.distage.model.definition.errors
 
+import izumi.distage.model.definition.conflicts.{Annotated, MutSel, Node}
 import izumi.distage.model.planning.AxisPoint
 
 sealed trait ConflictResolutionError[N, +V]

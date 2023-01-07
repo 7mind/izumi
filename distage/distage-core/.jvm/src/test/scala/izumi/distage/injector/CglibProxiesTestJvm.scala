@@ -327,10 +327,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
         )
       }
 
-      println(exc)
-      // assert(exc.getSuppressed.head.isInstanceOf[ProxyInstantiationException])
-//      assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])
-//      assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NoSuchMethodException])
+      assert(exc.getMessage.contains("exception=java.lang.NoSuchMethodException"))
     }
 
   }

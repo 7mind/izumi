@@ -3,11 +3,11 @@ package izumi.distage.provisioning
 import distage.{DIKey, Id, Roots, SafeType}
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.definition.Lifecycle
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.IncompatibleEffectTypes
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
+import ProvisionerIssue.IncompatibleEffectTypes
+import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp.*
 import izumi.distage.model.plan.{ExecutableOp, Plan}

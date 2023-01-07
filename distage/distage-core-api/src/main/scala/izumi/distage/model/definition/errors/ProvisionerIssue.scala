@@ -1,4 +1,4 @@
-package izumi.distage.model.exceptions.interpretation
+package izumi.distage.model.definition.errors
 
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp

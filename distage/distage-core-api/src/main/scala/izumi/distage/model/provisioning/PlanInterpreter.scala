@@ -5,8 +5,8 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.*
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.*
+import izumi.distage.model.definition.errors.ProvisionerIssue.*
+import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.*
 import izumi.distage.model.exceptions.runtime.{MissingInstanceException, ProvisioningException}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}

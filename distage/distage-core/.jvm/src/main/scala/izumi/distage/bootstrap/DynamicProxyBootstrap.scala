@@ -1,6 +1,6 @@
 package izumi.distage.bootstrap
 
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProxyFailureCause.CantFindStrategyClass
+import izumi.distage.model.definition.errors.ProvisionerIssue.ProxyFailureCause.CantFindStrategyClass
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyProviderFailingImpl
 import izumi.fundamentals.reflection.TypeUtil
