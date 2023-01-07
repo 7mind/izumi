@@ -6,7 +6,7 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
 import izumi.distage.model.exceptions.interpretation.*
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, ProvisionerExceptionIssue, UnexpectedProvisionResultException, UnsupportedProxyOpException}
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, ProvisionerExceptionIssue, UnexpectedProvisionResultException, UninitializedDependency, UnsupportedProxyOpException}
 import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheckException, UnexpectedStepProvisioningException}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
@@ -85,6 +85,11 @@ object PlanInterpreter {
 
               case UnsupportedProxyOpException(op) =>
                 s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op"
+              case UninitializedDependency(key, parameters) =>
+                IzumiProject.bugReportPrompt(
+                  s" Tried to instantiate class, but some dependences were uninitialized: Class: $key, dependencies: ${parameters.mkString(",")}"
+                )
+
             }
             .niceMultilineList("[!]")
           s"Plan interpreter failed:\n$messages"

@@ -42,7 +42,7 @@ class OperationExecutorImpl(
       F.maybeSuspend(Right(instanceStrategy.getInstance(context, op)))
 
     case op: WiringOp.CallProvider =>
-      F.maybeSuspend(Right(providerStrategy.callProvider(context, op)))
+      providerStrategy.callProvider(context, op)
 
     case op: ProxyOp.MakeProxy =>
       proxyStrategy.makeProxy(context, op)

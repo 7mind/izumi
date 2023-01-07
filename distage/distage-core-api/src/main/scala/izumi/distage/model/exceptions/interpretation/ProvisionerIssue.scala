@@ -4,7 +4,7 @@ import izumi.distage.model.exceptions.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, ProxyOp}
 import izumi.distage.model.provisioning.NewObjectOp
-import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.distage.model.reflection.{DIKey, LinkedParameter, SafeType}
 
 sealed trait ProvisionerIssue {
   def key: DIKey
@@ -49,6 +49,8 @@ object ProvisionerIssue {
 
   final case class MissingProxyAdapterException(key: DIKey, op: ProxyOp) extends ProvisionerIssue
 
+  final case class UninitializedDependency(key: DIKey, parameters: Seq[LinkedParameter]) extends ProvisionerIssue
+  
   final case class UnsupportedProxyOpException(op: ExecutableOp) extends ProvisionerIssue {
     override def key: DIKey = op.target
   }
