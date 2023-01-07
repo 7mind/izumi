@@ -2,7 +2,7 @@ package izumi.distage.impl
 
 import distage.{Activation, DIKey}
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
-import izumi.distage.model.exceptions.MissingInstanceException
+import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.planning.solver.PlanSolver
 import org.scalatest.wordspec.AnyWordSpec
 

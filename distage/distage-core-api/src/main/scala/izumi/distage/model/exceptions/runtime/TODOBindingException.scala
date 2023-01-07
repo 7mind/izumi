@@ -1,5 +1,6 @@
-package izumi.distage.model.exceptions
+package izumi.distage.model.exceptions.runtime
 
+import izumi.distage.model.exceptions.DIException
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 

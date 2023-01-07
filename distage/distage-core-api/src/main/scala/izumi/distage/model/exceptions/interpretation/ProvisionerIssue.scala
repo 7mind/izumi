@@ -1,9 +1,10 @@
 package izumi.distage.model.exceptions.interpretation
 
-import izumi.distage.model.exceptions.IntegrationCheckException
+import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, ProxyOp}
 import izumi.distage.model.provisioning.NewObjectOp
+import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyContext
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, SafeType}
 
 sealed trait ProvisionerIssue {
@@ -79,7 +80,24 @@ object ProvisionerIssue {
     clue: String,
   ) extends ProvisionerIssue
 
-  final case class UnsupportedProxyOpException(op: ExecutableOp) extends ProvisionerIssue {
+  case class ProxyClassloadingFailed(context: ProxyContext, causes: Seq[Throwable]) extends ProvisionerIssue {
+    override def key: DIKey = context.op.target
+  }
+
+  case class ProxyInstantiationFailed(context: ProxyContext, cause: Throwable) extends ProvisionerIssue {
+    override def key: DIKey = context.op.target
+  }
+
+  sealed trait ProxyFailureCause
+  object ProxyFailureCause {
+    case class CantFindStrategyClass(name: String) extends ProxyFailureCause
+    case class ProxiesDisabled() extends ProxyFailureCause
+  }
+  case class ProxyProviderFailingImplCalled(key: DIKey, provider: Any, cause: ProxyFailureCause) extends ProvisionerIssue
+
+  case class ProxyStrategyFailingImplCalled(key: DIKey, strategy: Any) extends ProvisionerIssue
+
+  final case class UnsupportedProxyOp(op: ExecutableOp) extends ProvisionerIssue {
     override def key: DIKey = op.target
   }
 }

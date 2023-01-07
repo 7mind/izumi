@@ -5,14 +5,15 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
-import izumi.distage.model.exceptions.interpretation.*
 import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.*
 import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.*
+import izumi.distage.model.exceptions.runtime.{MissingInstanceException, ProvisioningException}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection.*
 import izumi.fundamentals.platform.IzumiProject
+import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.reflect.TagK
@@ -83,7 +84,7 @@ object PlanInterpreter {
               case MissingProxyAdapter(key, op) =>
                 s"Cannot get dispatcher $key for $op"
 
-              case UnsupportedProxyOpException(op) =>
+              case UnsupportedProxyOp(op) =>
                 s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op"
               case UninitializedDependency(key, parameters) =>
                 IzumiProject.bugReportPrompt(
@@ -109,6 +110,28 @@ object PlanInterpreter {
                 s"Cannot make proxy for $tpe in ${op.target}: $context"
               case NoRuntimeClass(key) =>
                 s"Cannot build proxy for operation $key: runtime class is not available for ${key.tpe}"
+              case ProxyProviderFailingImplCalled(key, value, cause) =>
+                cause match {
+                  case ProxyFailureCause.CantFindStrategyClass(name) =>
+                    s"""DynamicProxyProvider: couldn't create a cycle-breaking proxy - cyclic dependencies support is enabled, but proxy provider class is not on the classpath, couldn't instantiate `$name`.
+                       |
+                       |Please add dependency on `libraryDependencies += "io.7mind.izumi" %% "distage-core-proxy-bytebuddy" % "${MacroParameters
+                        .artifactVersion()}"` to your build.
+                       |
+                       |failed op: $key""".stripMargin
+                  case ProxyFailureCause.ProxiesDisabled() =>
+                    s"ProxyProviderFailingImpl used: creation of cycle-breaking proxies is disabled, key $key, provider $value"
+                }
+              case ProxyStrategyFailingImplCalled(key, value) =>
+                s"ProxyStrategyFailingImpl does not support proxies, key=$key, strategy=$value"
+              case ProxyClassloadingFailed(context, causes) =>
+                s"Failed to load proxy class with ByteBuddy " +
+                s"class=${context.runtimeClass}, params=${context.params}\n\n" +
+                s"exception 1(DynamicProxyProvider classLoader)=${causes.head.stackTrace}\n\n" +
+                s"exception 2(classloader of class)=${causes.last.stackTrace}"
+              case ProxyInstantiationFailed(context, cause) =>
+                s"Failed to instantiate class with ByteBuddy, make sure you don't dereference proxied parameters in constructors: " +
+                s"class=${context.runtimeClass}, params=${context.params}, exception=${cause.stackTrace}"
             }
             .niceMultilineList("[!]")
           s"Plan interpreter failed:\n$messages"

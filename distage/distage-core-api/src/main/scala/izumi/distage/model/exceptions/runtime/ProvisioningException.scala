@@ -1,4 +1,4 @@
-package izumi.distage.model.exceptions.interpretation
+package izumi.distage.model.exceptions.runtime
 
 import izumi.distage.model.exceptions.DIException
 

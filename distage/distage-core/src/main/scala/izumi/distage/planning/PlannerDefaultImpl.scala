@@ -5,8 +5,7 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.errors.DIError.PlanningError.BUG_UnexpectedMutatorKey
 import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError}
 import izumi.distage.model.definition.{Activation, ModuleBase}
-import izumi.distage.model.exceptions.InjectorFailed
-import izumi.distage.model.exceptions.planning.ConflictResolutionException
+import izumi.distage.model.exceptions.planning.{ConflictResolutionException, InjectorFailed}
 import izumi.distage.model.plan.*
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
 import izumi.distage.model.plan.operations.OperationOrigin

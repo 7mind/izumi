@@ -1,7 +1,7 @@
 package izumi.distage.model.provisioning.proxies
 
 import java.util.concurrent.atomic.AtomicReference
-import izumi.distage.model.exceptions.interpretation.{MissingRefException, ProxyAlreadyInitializedException}
+import izumi.distage.model.exceptions.runtime.{MissingRefException, ProxyAlreadyInitializedException}
 import izumi.distage.model.reflection.DIKey
 
 trait ProxyDispatcher {

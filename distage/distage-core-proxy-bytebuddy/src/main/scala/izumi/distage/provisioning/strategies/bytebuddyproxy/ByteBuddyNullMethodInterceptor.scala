@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies.bytebuddyproxy
 
-import izumi.distage.model.exceptions.interpretation.MissingRefException
+import izumi.distage.model.exceptions.runtime.MissingRefException
 import izumi.distage.model.reflection.DIKey
 
 import java.lang.reflect.{InvocationHandler, Method}

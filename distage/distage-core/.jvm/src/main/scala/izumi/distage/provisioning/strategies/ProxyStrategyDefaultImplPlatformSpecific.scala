@@ -56,8 +56,9 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
           }
         }
       proxyContext = ProxyContext(runtimeClass, op, classConstructorParams)
+      proxy <- proxyProvider.makeCycleProxy(op.target, proxyContext)
     } yield {
-      proxyProvider.makeCycleProxy(op.target, proxyContext)
+      proxy
     }
   }
 

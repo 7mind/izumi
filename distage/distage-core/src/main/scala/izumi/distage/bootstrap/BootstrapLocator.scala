@@ -3,6 +3,7 @@ package izumi.distage.bootstrap
 import izumi.distage.bootstrap.DynamicProxyBootstrap.DynamicProxyProvider
 import izumi.distage.model.*
 import izumi.distage.model.definition.*
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.*
 import izumi.distage.model.planning.*
@@ -136,7 +137,7 @@ object BootstrapLocator {
     make[BindingTranslator].from[BindingTranslator.Impl]
 
     make[ProxyProvider].tagged(Cycles.Proxy).fromValue(DynamicProxyProvider)
-    make[ProxyProvider].fromValue(ProxyProviderFailingImpl)
+    make[ProxyProvider].fromValue(new ProxyProviderFailingImpl(ProvisionerIssue.ProxyFailureCause.ProxiesDisabled()))
 
     make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]

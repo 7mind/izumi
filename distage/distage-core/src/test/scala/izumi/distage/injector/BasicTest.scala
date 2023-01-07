@@ -10,7 +10,7 @@ import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.conflicts.ConflictResolutionError
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.exceptions.planning.{BadMutatorAxis, ConflictResolutionException}
-import izumi.distage.model.exceptions.interpretation.ProvisioningException
+import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException

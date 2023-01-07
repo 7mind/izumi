@@ -1,7 +1,8 @@
-package izumi.distage.model.exceptions
+package izumi.distage.model.exceptions.runtime
 
+import izumi.distage.model.exceptions.DIException
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 
 class MissingInstanceException(message: String, val key: DIKey) extends DIException(message)
 

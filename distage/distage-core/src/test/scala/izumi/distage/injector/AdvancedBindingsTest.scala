@@ -3,8 +3,8 @@ package izumi.distage.injector
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.SetCases.SetCase2
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.exceptions.TODOBindingException
 import distage.ModuleDef
+import izumi.distage.model.exceptions.runtime.TODOBindingException
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Try

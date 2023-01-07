@@ -3,7 +3,8 @@ package izumi.distage.planning.solver
 import distage.TagK
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
-import izumi.distage.model.exceptions.{MissingInstanceException, PlanVerificationException}
+import izumi.distage.model.exceptions.PlanVerificationException
+import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}

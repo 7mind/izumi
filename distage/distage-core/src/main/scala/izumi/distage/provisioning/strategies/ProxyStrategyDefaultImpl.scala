@@ -3,7 +3,7 @@ package izumi.distage.provisioning.strategies
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{MissingProxyAdapter, UnexpectedProvisionResult, UnsupportedProxyOpException}
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{MissingProxyAdapter, UnexpectedProvisionResult, UnsupportedProxyOp}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyProvider.DeferredInit
@@ -135,9 +135,9 @@ class ProxyStrategyDefaultImpl(
       case op: MonadicOp.ExecuteEffect =>
         Right(op.target.tpe)
       case op: WiringOp.UseInstance =>
-        Left(UnsupportedProxyOpException(op))
+        Left(UnsupportedProxyOp(op))
       case op: WiringOp.ReferenceKey =>
-        Left(UnsupportedProxyOpException(op))
+        Left(UnsupportedProxyOp(op))
     }
   }
 

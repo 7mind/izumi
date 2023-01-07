@@ -6,7 +6,7 @@ import izumi.distage.fixtures.ResourceCases.*
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiApplicative
-import izumi.distage.model.exceptions.interpretation.ProvisioningException
+import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.data.{Free, FreeError, FreePanic}
 import izumi.fundamentals.platform.functional.Identity

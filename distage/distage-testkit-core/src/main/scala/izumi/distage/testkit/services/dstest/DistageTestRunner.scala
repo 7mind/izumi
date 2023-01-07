@@ -8,8 +8,7 @@ import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.model.exceptions.IntegrationCheckException
-import izumi.distage.model.exceptions.interpretation.ProvisioningException
+import izumi.distage.model.exceptions.runtime.{IntegrationCheckException, ProvisioningException}
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
