@@ -35,7 +35,7 @@ jobs:
           fail-on-error: ${{ matrix.scala != '3' }}
       - uses: codecov/codecov-action@v3
         with:
-          token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos
+          # token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos
           verbose: true # optional (default = false)
           fail_ci_if_error: ${{ matrix.scala != '3' }}
           files: cobertura.xml
