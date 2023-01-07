@@ -36,7 +36,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
                   f.associations
                     .map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a))
                     .biAggregate
-                    .map(_.toArray)
+                    .map(_.toArray: Array[(Class[?], Any)])
                     .left
                     .map(
                       missing =>
@@ -46,7 +46,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
                   // otherwise fill everything with nulls
                   Right(
                     runtimeClass.getConstructors.head.getParameterTypes
-                      .map(clazz => clazz -> TypeUtil.defaultValue(clazz))
+                      .map(clazz => clazz -> TypeUtil.defaultValue(clazz)): Array[(Class[?], Any)]
                   )
               }
             }
