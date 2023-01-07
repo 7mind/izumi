@@ -47,7 +47,7 @@ class ProxyStrategyDefaultImpl(
                 } else {
                   Right(())
                 }
-              proxy <- makeCogenProxy[F](context, tpe, makeProxy)
+              proxy <- makeCogenProxy(context, tpe, makeProxy)
             } yield {
               proxy
             }

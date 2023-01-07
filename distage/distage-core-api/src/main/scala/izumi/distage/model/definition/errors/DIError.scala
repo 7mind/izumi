@@ -103,9 +103,9 @@ object DIError {
       case SetAxisProblem(problems) =>
         problems
           .map {
-            case u: UnconfiguredSetElementAxis =>
+            case u: SetAxisIssue.UnconfiguredSetElementAxis =>
               s"Set element references axis ${u.unconfigured.mkString(",")} with undefined values: set ${u.set}, element ${u.element}"
-            case i: InconsistentSetElementAxis =>
+            case i: SetAxisIssue.InconsistentSetElementAxis =>
               IzumiProject.bugReportPrompt(s"Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}")
           }.niceList()
     }

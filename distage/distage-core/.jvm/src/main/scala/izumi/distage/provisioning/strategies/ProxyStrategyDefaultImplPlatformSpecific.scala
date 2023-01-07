@@ -9,14 +9,13 @@ import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, Pro
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, MirrorProvider, SafeType}
 import izumi.fundamentals.reflection.TypeUtil
-import izumi.reflect.TagK
 
 abstract class ProxyStrategyDefaultImplPlatformSpecific(
   proxyProvider: ProxyProvider,
   mirrorProvider: MirrorProvider,
 ) {
 
-  protected def makeCogenProxy[F[_]: TagK](
+  protected def makeCogenProxy(
     context: ProvisioningKeyProvider,
     tpe: SafeType,
     op: ProxyOp.MakeProxy,
