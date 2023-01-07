@@ -6,8 +6,8 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
 import izumi.distage.model.exceptions.interpretation.*
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{IncompatibleEffectType, IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, MissingRef, ProvisionerExceptionIssue, UnexpectedProvisionResultException, UninitializedDependency, UnsupportedProxyOpException}
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheckException, UnexpectedStepProvisioningException}
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.*
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.*
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
@@ -58,7 +58,7 @@ object PlanInterpreter {
           }
           val messages = failures
             .map {
-              case UnexpectedStepProvisioningException(op, problem) =>
+              case UnexpectedStepProvisioning(op, problem) =>
                 val excName = problem match {
                   case di: DIException => di.getClass.getSimpleName
                   case o => o.getClass.getName
@@ -68,19 +68,19 @@ object PlanInterpreter {
               case IntegrationCheckFailure(key, problem) =>
                 s"Integration check failed for $key, exception was:\n${stackTrace(problem)}"
 
-              case UnexpectedIntegrationCheckException(key, problem) =>
+              case UnexpectedIntegrationCheck(key, problem) =>
                 IzumiProject.bugReportPrompt(s"unexpected exception while processing integration check for $key", stackTrace(problem))
 
               case MissingImport(op) =>
                 MissingInstanceException.format(op.target, op.references)
 
-              case IncompatibleEffectTypesException(op, provisionerEffectType, actionEffectType) =>
-                IncompatibleEffectTypesException.format(op, provisionerEffectType, actionEffectType)
+              case IncompatibleEffectTypes(op, provisionerEffectType, actionEffectType) =>
+                IncompatibleEffectTypes.format(op, provisionerEffectType, actionEffectType)
 
-              case UnexpectedProvisionResultException(key, results) =>
+              case UnexpectedProvisionResult(key, results) =>
                 s"Unexpected operation result for $key: $results, expected a single NewInstance!"
 
-              case MissingProxyAdapterException(key, op) =>
+              case MissingProxyAdapter(key, op) =>
                 s"Cannot get dispatcher $key for $op"
 
               case UnsupportedProxyOpException(op) =>
@@ -95,6 +95,16 @@ object PlanInterpreter {
                 )
               case MissingRef(key, context, missing) =>
                 s"Failed to fetch keys while working on $key: ${missing.mkString(",")}, context: $context"
+              case DuplicateInstances(key) =>
+                s"Cannot continue, key is already in the object graph: $key"
+
+              case IncompatibleTypes(key, expected, got) =>
+                s"Dispatcher contains incompatible key: $key with type ${expected.tag}, found: $got"
+
+              case IncompatibleRuntimeClass(key, got, clue) =>
+                s"Instance of type `$got` supposed to be assigned to incompatible key $key. Context: $clue"
+              case MissingInstance(key) =>
+                s"Cannot find $key in the object graph"
             }
             .niceMultilineList("[!]")
           s"Plan interpreter failed:\n$messages"

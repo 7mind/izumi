@@ -15,23 +15,23 @@ object ProvisionerIssue {
     def problem: Throwable
   }
   object ProvisionerExceptionIssue {
-    final case class UnexpectedStepProvisioningException(op: ExecutableOp, problem: Throwable) extends ProvisionerExceptionIssue {
+    final case class UnexpectedStepProvisioning(op: ExecutableOp, problem: Throwable) extends ProvisionerExceptionIssue {
       override def key: DIKey = op.target
     }
 
     final case class IntegrationCheckFailure(key: DIKey, problem: IntegrationCheckException) extends ProvisionerExceptionIssue
 
-    final case class UnexpectedIntegrationCheckException(key: DIKey, problem: Throwable) extends ProvisionerExceptionIssue
+    final case class UnexpectedIntegrationCheck(key: DIKey, problem: Throwable) extends ProvisionerExceptionIssue
   }
 
   final case class MissingImport(op: ImportDependency) extends ProvisionerIssue {
     override def key: DIKey = op.target
   }
 
-  final case class IncompatibleEffectTypesException(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends ProvisionerIssue {
+  final case class IncompatibleEffectTypes(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends ProvisionerIssue {
     override def key: DIKey = op.target
   }
-  object IncompatibleEffectTypesException {
+  object IncompatibleEffectTypes {
     def format(op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType): String = {
       s"""Incompatible effect types when trying to execute operation:
          |
@@ -45,15 +45,31 @@ object ProvisionerIssue {
     }
   }
 
-  final case class UnexpectedProvisionResultException(key: DIKey, results: Seq[NewObjectOp]) extends ProvisionerIssue
+  final case class UnexpectedProvisionResult(key: DIKey, results: Seq[NewObjectOp]) extends ProvisionerIssue
 
-  final case class MissingProxyAdapterException(key: DIKey, op: ProxyOp) extends ProvisionerIssue
+  final case class MissingProxyAdapter(key: DIKey, op: ProxyOp) extends ProvisionerIssue
 
   final case class UninitializedDependency(key: DIKey, parameters: Seq[LinkedParameter]) extends ProvisionerIssue
 
   final case class IncompatibleEffectType(key: DIKey, effect: SafeType) extends ProvisionerIssue
 
   final case class MissingRef(key: DIKey, context: String, missing: Set[DIKey]) extends ProvisionerIssue
+
+  final case class DuplicateInstances(key: DIKey) extends ProvisionerIssue
+  
+  final case class MissingInstance(key: DIKey) extends ProvisionerIssue
+
+  final case class IncompatibleTypes(
+    key: DIKey,
+    expected: SafeType,
+    got: SafeType,
+  ) extends ProvisionerIssue
+
+  final case class IncompatibleRuntimeClass(
+    key: DIKey,
+    got: Class[?],
+    clue: String,
+  ) extends ProvisionerIssue
 
   final case class UnsupportedProxyOpException(op: ExecutableOp) extends ProvisionerIssue {
     override def key: DIKey = op.target

@@ -3,6 +3,7 @@ package izumi.distage.provisioning
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
@@ -73,29 +74,44 @@ final class ProvisionMutable[F[_]: TagK](
     toImmutable.narrow(allRequiredKeys)
   }
 
-  def addResult(verifier: ProvisionOperationVerifier, result: NewObjectOp): Unit = {
-    result match {
+  def addResult(verifier: ProvisionOperationVerifier, result: NewObjectOp): Option[ProvisionerIssue] = {
+    (result match {
       case NewObjectOp.NewImport(target, instance) =>
-        verifier.verify(target, this.imports.keySet, instance, s"import")
-        this.imports += (target -> instance)
+        verifier.verify(target, this.imports.keySet, instance, s"import").map {
+          _ =>
+            this.imports += (target -> instance)
+            ()
+        }
 
       case NewObjectOp.NewInstance(target, _, instance) =>
-        verifier.verify(target, this.instances.keySet, instance, "instance")
-        this.instances += (target -> instance)
+        verifier.verify(target, this.instances.keySet, instance, "instance").map {
+          _ =>
+            this.instances += (target -> instance)
+            ()
+        }
 
       case NewObjectOp.UseInstance(target, instance) =>
-        verifier.verify(target, this.instances.keySet, instance, "reference")
-        this.instances += (target -> instance)
+        verifier.verify(target, this.instances.keySet, instance, "reference").map {
+          _ =>
+            this.instances += (target -> instance)
+            ()
+        }
 
       case r @ NewObjectOp.NewResource(target, _, instance, _) =>
-        verifier.verify(target, this.instances.keySet, instance, "resource")
-        this.instances += (target -> instance)
-        val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-        this.finalizers prepend Finalizer[F](target, finalizer)
+        verifier.verify(target, this.instances.keySet, instance, "resource").map {
+          _ =>
+            this.instances += (target -> instance)
+            val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
+            this.finalizers prepend Finalizer[F](target, finalizer)
+            ()
+        }
 
       case r @ NewObjectOp.NewFinalizer(target, _) =>
-        val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
-        this.finalizers prepend Finalizer[F](target, finalizer)
-    }
+        Right {
+          val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
+          this.finalizers prepend Finalizer[F](target, finalizer)
+          ()
+        }
+    }).swap.toOption
   }
 }
