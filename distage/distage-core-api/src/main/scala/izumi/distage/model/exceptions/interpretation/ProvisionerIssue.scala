@@ -56,8 +56,16 @@ object ProvisionerIssue {
   final case class MissingRef(key: DIKey, context: String, missing: Set[DIKey]) extends ProvisionerIssue
 
   final case class DuplicateInstances(key: DIKey) extends ProvisionerIssue
-  
+
   final case class MissingInstance(key: DIKey) extends ProvisionerIssue
+
+  final case class UnsupportedOp(tpe: SafeType, op: ExecutableOp, context: String) extends ProvisionerIssue {
+    override def key: DIKey = op.target
+  }
+
+  final case class NoRuntimeClass(
+    key: DIKey
+  ) extends ProvisionerIssue
 
   final case class IncompatibleTypes(
     key: DIKey,

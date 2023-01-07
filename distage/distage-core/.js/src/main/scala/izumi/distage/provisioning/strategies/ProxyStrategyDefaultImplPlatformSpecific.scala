@@ -1,6 +1,5 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.interpretation.UnsupportedOpException
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider
@@ -14,12 +13,17 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
   @unused mirrorProvider: MirrorProvider,
 ) {
 
-  protected def makeCogenProxy(@unused context: ProvisioningKeyProvider, tpe: SafeType, op: ProxyOp.MakeProxy): DeferredInit = {
-    failCogenProxy(tpe, op)
+  protected def makeCogenProxy[F[_] : TagK](
+                                             context: ProvisioningKeyProvider,
+                                             tpe: SafeType,
+                                             op: ProxyOp.MakeProxy,
+                                           )(implicit F: QuasiIO[F]
+                                           ): F[Either[ProvisionerIssue, DeferredInit]] = {
+    F.pure(failCogenProxy(tpe, op))
   }
 
-  protected def failCogenProxy(tpe: SafeType, op: ProxyOp.MakeProxy): Nothing = {
-    throw new UnsupportedOpException(s"Cglib proxies are not supported on Scala.js, check documentation & try using by-name parameters! $tpe", op)
-  }
+  protected def failCogenProxy(tpe: SafeType, op: ProxyOp.MakeProxy): Left[ProvisionerIssue, Unit] = {
+    Left(ProvisionerIssue.UnsupportedOp(tpe, op, "cglib proxies are not supported on Scala.js, check documentation & try using by-name parameters!"))
 
+  }
 }

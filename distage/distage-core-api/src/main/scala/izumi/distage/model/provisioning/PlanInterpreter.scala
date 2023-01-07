@@ -105,6 +105,10 @@ object PlanInterpreter {
                 s"Instance of type `$got` supposed to be assigned to incompatible key $key. Context: $clue"
               case MissingInstance(key) =>
                 s"Cannot find $key in the object graph"
+              case UnsupportedOp(tpe, op, context) =>
+                s"Cannot make proxy for $tpe in ${op.target}: $context"
+              case NoRuntimeClass(key) =>
+                s"Cannot build proxy for operation $key: runtime class is not available for ${key.tpe}"
             }
             .niceMultilineList("[!]")
           s"Plan interpreter failed:\n$messages"

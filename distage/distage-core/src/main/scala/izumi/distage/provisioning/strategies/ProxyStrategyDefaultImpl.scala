@@ -41,11 +41,15 @@ class ProxyStrategyDefaultImpl(
           } else {
             for {
               tpe <- proxyTargetType(makeProxy)
+              _ <-
+                if (!mirrorProvider.canBeProxied(tpe)) {
+                  failCogenProxy(tpe, makeProxy)
+                } else {
+                  Right(())
+                }
+              proxy <- makeCogenProxy[F](context, tpe, makeProxy)
             } yield {
-              if (!mirrorProvider.canBeProxied(tpe)) {
-                failCogenProxy(tpe, makeProxy)
-              }
-              makeCogenProxy(context, tpe, makeProxy)
+              proxy
             }
           }
       } yield {

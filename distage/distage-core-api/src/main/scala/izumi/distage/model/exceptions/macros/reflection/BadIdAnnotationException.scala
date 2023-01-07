@@ -1,4 +1,4 @@
-package izumi.distage.model.exceptions.reflection
+package izumi.distage.model.exceptions.macros.reflection
 
 import izumi.distage.model.exceptions.DIException
 

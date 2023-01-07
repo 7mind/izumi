@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.interpretation.{MissingRefException, NoRuntimeClassException, UnsupportedOpException}
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 import izumi.distage.model.plan.Wiring
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
@@ -9,43 +9,67 @@ import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, Pro
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, MirrorProvider, SafeType}
 import izumi.fundamentals.reflection.TypeUtil
+import izumi.reflect.TagK
 
 abstract class ProxyStrategyDefaultImplPlatformSpecific(
   proxyProvider: ProxyProvider,
   mirrorProvider: MirrorProvider,
 ) {
 
-  protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, op: ProxyOp.MakeProxy): DeferredInit = {
-    val runtimeClass = mirrorProvider.runtimeClass(tpe).getOrElse(throw new NoRuntimeClassException(op.target))
-
-    val classConstructorParams = if (noArgsConstructor(tpe)) {
-      ProxyParams.Empty
-    } else {
-      val allArgsAsNull: Array[(Class[?], Any)] = {
-        op.op match {
-          case WiringOp.CallProvider(_, f: Wiring.SingletonWiring.Function, _) if f.provider.providerType eq ProviderType.Class =>
-            // for class constructors, try to fetch known dependencies from the object graph
-            f.associations.map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a)).toArray
-          case _ =>
-            // otherwise fill everything with nulls
-            runtimeClass.getConstructors.head.getParameterTypes
-              .map(clazz => clazz -> TypeUtil.defaultValue(clazz))
+  protected def makeCogenProxy[F[_]: TagK](
+    context: ProvisioningKeyProvider,
+    tpe: SafeType,
+    op: ProxyOp.MakeProxy,
+  ): Either[ProvisionerIssue, DeferredInit] = {
+    for {
+      runtimeClass <- mirrorProvider.runtimeClass(tpe).toRight(ProvisionerIssue.NoRuntimeClass(op.target))
+      classConstructorParams <-
+        if (noArgsConstructor(tpe)) {
+          Right(ProxyParams.Empty)
+        } else {
+          for {
+            allArgsAsNull <- {
+              op.op match {
+                case WiringOp.CallProvider(_, f: Wiring.SingletonWiring.Function, _) if f.provider.providerType eq ProviderType.Class =>
+                  // for class constructors, try to fetch known dependencies from the object graph
+                  import izumi.functional.IzEither.*
+                  f.associations
+                    .map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a))
+                    .biAggregate
+                    .map(_.toArray)
+                    .left
+                    .map(
+                      missing =>
+                        ProvisionerIssue.MissingRef(op.target, "Proxy precondition failed: non-forwarding key expected to be in context but wasn't", missing.toSet)
+                    )
+                case _ =>
+                  // otherwise fill everything with nulls
+                  Right(
+                    runtimeClass.getConstructors.head.getParameterTypes
+                      .map(clazz => clazz -> TypeUtil.defaultValue(clazz))
+                  )
+              }
+            }
+          } yield {
+            val (argClasses, argValues) = allArgsAsNull.unzip
+            ProxyParams.Params(argClasses, argValues)
+          }
         }
-      }
-      val (argClasses, argValues) = allArgsAsNull.unzip
-      ProxyParams.Params(argClasses, argValues)
+      proxyContext = ProxyContext(runtimeClass, op, classConstructorParams)
+    } yield {
+      proxyProvider.makeCycleProxy(op.target, proxyContext)
     }
-
-    val proxyContext = ProxyContext(runtimeClass, op, classConstructorParams)
-
-    proxyProvider.makeCycleProxy(op.target, proxyContext)
   }
 
-  protected def failCogenProxy(tpe: SafeType, op: ProxyOp.MakeProxy): Nothing = {
-    throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", op)
+  protected def failCogenProxy(tpe: SafeType, op: ProxyOp.MakeProxy): Left[ProvisionerIssue, Unit] = {
+    Left(ProvisionerIssue.UnsupportedOp(tpe, op, "tried to make proxy of non-proxyable (final?) class"))
   }
 
-  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: LinkedParameter): (Class[?], Any) = {
+  private def fetchNonforwardRefParamWithClass(
+    context: ProvisioningKeyProvider,
+    forwardRefs: Set[DIKey],
+    param: LinkedParameter,
+  ): Either[List[DIKey], (Class[?], Any)] = {
     val clazz: Class[?] = if (param.isByName) {
       classOf[Function0[?]]
     } else if (param.wasGeneric) {
@@ -64,20 +88,19 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
         key
     }
 
-    val value = param match {
+    param match {
       case param if forwardRefs.contains(realKey) || forwardRefs.contains(declaredKey) =>
         // substitute forward references by `null`
-        TypeUtil.defaultValue(param.key.tpe.cls)
+        Right((clazz, TypeUtil.defaultValue(param.key.tpe.cls)))
       case param =>
         context.fetchKey(declaredKey, param.isByName) match {
           case Some(v) =>
-            v.asInstanceOf[Any]
+            Right((clazz, v.asInstanceOf[Any]))
+
           case None =>
-            throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${param.key}", Set(param.key), None)
+            Left(List(param.key))
         }
     }
-
-    (clazz, value)
   }
 
   private def noArgsConstructor(tpe: SafeType): Boolean = {
