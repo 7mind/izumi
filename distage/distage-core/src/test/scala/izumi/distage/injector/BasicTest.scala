@@ -9,7 +9,7 @@ import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.definition.errors.ConflictResolutionError
-import izumi.distage.model.exceptions.planning.{BadMutatorAxis, ConflictResolutionException}
+import izumi.distage.model.exceptions.planning.ConflictResolutionException
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.fundamentals.platform.functional.Identity
@@ -494,7 +494,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
       Activation.empty,
     )
 
-    intercept[BadMutatorAxis] {
+    intercept[ConflictResolutionException] {
       mkInjector().produce(definition).unsafeGet()
     }
   }

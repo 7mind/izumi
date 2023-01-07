@@ -6,7 +6,7 @@ import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Activation, Axis, BootstrapModuleDef, ModuleDef}
-import izumi.distage.model.exceptions.planning.{BadSetAxis, ConflictResolutionException}
+import izumi.distage.model.exceptions.planning.ConflictResolutionException
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
@@ -186,7 +186,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .add[SetImpl5]
     }
 
-    intercept[BadSetAxis] {
+    intercept[ConflictResolutionException] {
       mkInjector()
         .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
         .unsafeGet()
@@ -205,7 +205,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .add[SetImpl5]
     }
 
-    intercept[BadSetAxis] {
+    intercept[ConflictResolutionException] {
       mkInjector()
         .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
         .unsafeGet()

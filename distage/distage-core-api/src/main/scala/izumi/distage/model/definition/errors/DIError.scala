@@ -4,13 +4,14 @@ import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.{Activation, Binding}
 import izumi.distage.model.definition.conflicts.MutSel
-import ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
+import ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, SetAxisProblem, UnconfiguredAxisInMutators, UnsolvedConflicts}
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.graphs.DG
+import izumi.fundamentals.platform.IzumiProject
 
 sealed trait DIError
 
@@ -91,6 +92,21 @@ object DIError {
                  |   Reason: Unsolved conflicts.
                  |
                  |   Candidates left: ${axisBinds.niceList().shift(4)}""".stripMargin
+          }.niceList()
+      case UnconfiguredAxisInMutators(problems) =>
+        val message = problems
+          .map {
+            e =>
+              s"Mutator for ${e.mutator} defined at ${e.pos} with unconfigured axis: ${e.unconfigured.mkString(",")}"
+          }.niceList()
+        s"Mutators with unconfigured axis: $message"
+      case SetAxisProblem(problems) =>
+        problems
+          .map {
+            case u: UnconfiguredSetElementAxis =>
+              s"Set element references axis ${u.unconfigured.mkString(",")} with undefined values: set ${u.set}, element ${u.element}"
+            case i: InconsistentSetElementAxis =>
+              IzumiProject.bugReportPrompt(s"Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}")
           }.niceList()
     }
   }
