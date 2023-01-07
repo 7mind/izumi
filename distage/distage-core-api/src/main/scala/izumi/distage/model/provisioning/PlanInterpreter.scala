@@ -6,7 +6,7 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.exceptions.*
 import izumi.distage.model.exceptions.interpretation.*
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, ProvisionerExceptionIssue, UnexpectedProvisionResultException, UninitializedDependency, UnsupportedProxyOpException}
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{IncompatibleEffectType, IncompatibleEffectTypesException, MissingImport, MissingProxyAdapterException, MissingRef, ProvisionerExceptionIssue, UnexpectedProvisionResultException, UninitializedDependency, UnsupportedProxyOpException}
 import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheckException, UnexpectedStepProvisioningException}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
@@ -89,7 +89,12 @@ object PlanInterpreter {
                 IzumiProject.bugReportPrompt(
                   s" Tried to instantiate class, but some dependences were uninitialized: Class: $key, dependencies: ${parameters.mkString(",")}"
                 )
-
+              case IncompatibleEffectType(key, effect) =>
+                IzumiProject.bugReportPrompt(
+                  s"Incompatible effect type in operation $key: $effect !<:< ${SafeType.identityEffectType}; this had to be handled before"
+                )
+              case MissingRef(key, context, missing) =>
+                s"Failed to fetch keys while working on $key: ${missing.mkString(",")}, context: $context"
             }
             .niceMultilineList("[!]")
           s"Plan interpreter failed:\n$messages"

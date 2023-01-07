@@ -1,6 +1,7 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.exceptions.planning.DIBugException
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
+import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.IncompatibleEffectType
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.Wiring.SingletonWiring
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
@@ -89,11 +90,11 @@ object ExecutableOp {
         isEffect && !(actionEffectType <:< provisionerEffectType[F])
       }
 
-      @inline def throwOnIncompatibleEffectType[F[_]: TagK](): Unit = {
+      @inline def throwOnIncompatibleEffectType[F[_]: TagK](): Either[ProvisionerIssue, Unit] = {
         if (isIncompatibleEffectType[F]) {
-          throw new DIBugException(
-            s"Incompatible effect type in operation ${op.target}: $actionEffectType !<:< ${SafeType.identityEffectType}; this had to be handled before"
-          )
+          Left(IncompatibleEffectType(op.target, actionEffectType))
+        } else {
+          Right(())
         }
       }
     }

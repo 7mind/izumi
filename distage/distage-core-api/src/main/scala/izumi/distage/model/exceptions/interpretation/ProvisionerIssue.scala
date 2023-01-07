@@ -50,7 +50,11 @@ object ProvisionerIssue {
   final case class MissingProxyAdapterException(key: DIKey, op: ProxyOp) extends ProvisionerIssue
 
   final case class UninitializedDependency(key: DIKey, parameters: Seq[LinkedParameter]) extends ProvisionerIssue
-  
+
+  final case class IncompatibleEffectType(key: DIKey, effect: SafeType) extends ProvisionerIssue
+
+  final case class MissingRef(key: DIKey, context: String, missing: Set[DIKey]) extends ProvisionerIssue
+
   final case class UnsupportedProxyOpException(op: ExecutableOp) extends ProvisionerIssue {
     override def key: DIKey = op.target
   }

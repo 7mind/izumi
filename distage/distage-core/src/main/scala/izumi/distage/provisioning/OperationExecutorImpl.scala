@@ -51,10 +51,10 @@ class OperationExecutorImpl(
       proxyStrategy.initProxy(context, this, op)
 
     case op: MonadicOp.ExecuteEffect =>
-      F.map(effectStrategy.executeEffect[F](context, op))(Right(_))
+      effectStrategy.executeEffect[F](context, op)
 
     case op: MonadicOp.AllocateResource =>
-      F.map(resourceStrategy.allocateResource[F](context, op))(Right(_))
+      resourceStrategy.allocateResource[F](context, op)
   }
 
 }
