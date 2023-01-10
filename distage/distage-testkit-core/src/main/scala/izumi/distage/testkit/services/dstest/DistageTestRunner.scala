@@ -257,7 +257,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
           // producing and verifying runtime plan
           assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
-          planChecker.verify(runtimePlan)
+          planChecker.showProxyWarnings(runtimePlan)
           memoizationInjector.produceCustomF[Identity](runtimePlan).use {
             runtimeLocator =>
               val runner = runtimeLocator.get[QuasiIORunner[F]]
@@ -289,7 +289,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     F: QuasiIO[F]
   ): F[Unit] = {
     // shared plan
-    planCheck.verify(plan)
+    planCheck.showProxyWarnings(plan)
     Injector.inherit(parentLocator).produceCustomF[F](plan).use {
       mainSharedLocator =>
         use(mainSharedLocator)
@@ -393,7 +393,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
          |Test plan: $newTestPlan""".stripMargin
     )
 
-    planChecker.verify(newTestPlan)
+    planChecker.showProxyWarnings(newTestPlan)
 
     proceedIndividual(test, newTestPlan, mainSharedLocator)
 

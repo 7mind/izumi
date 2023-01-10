@@ -1,11 +1,10 @@
 package izumi.distage.planning
 
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.MutSel
 import izumi.distage.model.definition.errors.DIError
+import izumi.distage.model.definition.errors.DIError.ConflictResolutionFailed
 import izumi.distage.model.definition.errors.DIError.PlanningError.BUG_UnexpectedMutatorKey
-import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError}
-import izumi.distage.model.definition.{Activation, ModuleBase}
-import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.*
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -49,23 +48,15 @@ class PlannerDefaultImpl(
   }
 
   override def planUnsafe(input: PlannerInput): Plan = {
-    plan(input) match {
-      case Left(errors) =>
-        throwOnError(input.activation, errors)
-
-      case Right(resolved) =>
-        resolved
-    }
+    val interpreter = new DIFailureInterpreter(input.activation)
+    import interpreter.DIResultExt
+    plan(input).getOrThrow
   }
 
   override def planNoRewriteUnsafe(input: PlannerInput): Plan = {
-    planNoRewrite(input) match {
-      case Left(errors) =>
-        throwOnError(input.activation, errors)
-
-      case Right(resolved) =>
-        resolved
-    }
+    val interpreter = new DIFailureInterpreter(input.activation)
+    import interpreter.DIResultExt
+    planNoRewrite(input).getOrThrow
   }
 
   private def preparePlan(resolved: DG[MutSel[DIKey], SemigraphSolver.RemappedValue[InstantiationOp, DIKey]]): Either[List[DIError], DG[DIKey, InstantiationOp]] = {
@@ -181,47 +172,6 @@ class PlannerDefaultImpl(
     val fullMeta = GraphMeta(plan.meta.nodes ++ imports ++ missingRootsImports)
 
     DG.fromPred(IncidenceMatrix(plan.predecessors.links ++ allImports), fullMeta)
-  }
-
-  // TODO: we need to completely get rid of exceptions, this is just some transitional stuff
-  protected[this] def throwOnError(activation: Activation, issues: List[DIError]): Nothing = {
-    val conflicts = issues.collect { case c: ConflictResolutionFailed => c }
-    if (conflicts.nonEmpty) {
-      throwOnConflict(activation, conflicts)
-    }
-    import izumi.fundamentals.platform.strings.IzString.*
-
-    val loops = issues.collect { case e: LoopResolutionError => DIError.formatError(e) }.niceList()
-    if (loops.nonEmpty) {
-      throw new InjectorFailed(
-        s"""Injector failed unexpectedly. List of issues: $loops
-       """.stripMargin,
-        issues,
-      )
-    }
-
-    val inconsistencies = issues.collect { case e: DIError.VerificationError => DIError.formatError(e) }.niceList()
-    if (inconsistencies.nonEmpty) {
-      throw new InjectorFailed(
-        s"""Injector failed unexpectedly. List of issues: $loops
-       """.stripMargin,
-        issues,
-      )
-    }
-
-    throw new InjectorFailed("BUG: Injector failed and is unable to provide any diagnostics", List.empty)
-  }
-  protected[this] def throwOnConflict(activation: Activation, issues: List[ConflictResolutionFailed]): Nothing = {
-    val rawIssues = issues.map(_.error)
-    val issueRepr = rawIssues.map(DIError.formatConflict(activation)).mkString("\n", "\n", "")
-
-    throw new InjectorFailed(
-      s"""Found multiple instances for a key. There must be exactly one binding for each DIKey. List of issues:$issueRepr
-         |
-         |You can use named instances: `make[X].named("id")` syntax and `distage.Id` annotation to disambiguate between multiple instances of the same type.
-       """.stripMargin,
-      rawIssues.map(DIError.ConflictResolutionFailed.apply),
-    )
   }
 
 }
