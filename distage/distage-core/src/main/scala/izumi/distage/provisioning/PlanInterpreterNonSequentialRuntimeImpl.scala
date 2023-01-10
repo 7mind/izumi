@@ -148,7 +148,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
         case Some(integrationChecks) =>
           F.maybeSuspend {
             planner
-              .planSafe(ctx.plan.input.copy(roots = Roots.Of(integrationChecks)))
+              .plan(ctx.plan.input.copy(roots = Roots.Of(integrationChecks)))
               .left.map(errs => ctx.makeFailure(state, fullStackTraces, ProvisioningFailure.CantBuildIntegrationSubplan(errs, state.status())))
           }
         case None =>

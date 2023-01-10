@@ -5,7 +5,7 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.errors.DIError.PlanningError.BUG_UnexpectedMutatorKey
 import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError}
 import izumi.distage.model.definition.{Activation, ModuleBase}
-import izumi.distage.model.exceptions.planning.{ConflictResolutionException, InjectorFailed}
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.*
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -30,12 +30,12 @@ class PlannerDefaultImpl(
 
   import scala.collection.compat.*
 
-  override def planSafe(input: PlannerInput): Either[List[DIError], Plan] = {
-    planNoRewriteSafe(input.copy(bindings = rewrite(input.bindings)))
+  override def plan(input: PlannerInput): Either[List[DIError], Plan] = {
+    planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
 
   }
 
-  override def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], Plan] = {
+  override def planNoRewrite(input: PlannerInput): Either[List[DIError], Plan] = {
     for {
       resolved <- resolver.resolveConflicts(input).left.map(e => e.map(ConflictResolutionFailed.apply))
       plan <- preparePlan(resolved)
@@ -48,8 +48,8 @@ class PlannerDefaultImpl(
     }
   }
 
-  override def plan(input: PlannerInput): Plan = {
-    planSafe(input) match {
+  override def planUnsafe(input: PlannerInput): Plan = {
+    plan(input) match {
       case Left(errors) =>
         throwOnError(input.activation, errors)
 
@@ -58,8 +58,8 @@ class PlannerDefaultImpl(
     }
   }
 
-  override def planNoRewrite(input: PlannerInput): Plan = {
-    planNoRewriteSafe(input) match {
+  override def planNoRewriteUnsafe(input: PlannerInput): Plan = {
+    planNoRewrite(input) match {
       case Left(errors) =>
         throwOnError(input.activation, errors)
 
@@ -215,12 +215,12 @@ class PlannerDefaultImpl(
     val rawIssues = issues.map(_.error)
     val issueRepr = rawIssues.map(DIError.formatConflict(activation)).mkString("\n", "\n", "")
 
-    throw new ConflictResolutionException(
+    throw new InjectorFailed(
       s"""Found multiple instances for a key. There must be exactly one binding for each DIKey. List of issues:$issueRepr
          |
          |You can use named instances: `make[X].named("id")` syntax and `distage.Id` annotation to disambiguate between multiple instances of the same type.
        """.stripMargin,
-      rawIssues,
+      rawIssues.map(DIError.ConflictResolutionFailed.apply),
     )
   }
 

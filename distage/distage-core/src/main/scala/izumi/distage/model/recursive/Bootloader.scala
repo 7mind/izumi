@@ -43,7 +43,7 @@ class Bootloader(
     )
     val module = config.appModule(input.bindings)
     val roots = config.roots(input.roots)
-    val plan = injector.plan(PlannerInput(module, activation, roots))
+    val plan = injector.planUnsafe(PlannerInput(module, activation, roots))
     BootstrappedApp(injector, module, plan)
   }
 }

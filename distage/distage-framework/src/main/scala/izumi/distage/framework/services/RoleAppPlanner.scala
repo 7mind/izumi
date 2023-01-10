@@ -62,7 +62,7 @@ object RoleAppPlanner {
       logger.trace(s"App module: ${runtimeBsApp.module -> "app module" -> null}")
       logger.trace(s"Application will use: ${appMainRoots -> "app roots"} and $activation")
 
-      val appPlan = runtimeBsApp.injector.plan(PlannerInput(runtimeBsApp.module.drop(runtimeKeys), activation, appMainRoots))
+      val appPlan = runtimeBsApp.injector.planUnsafe(PlannerInput(runtimeBsApp.module.drop(runtimeKeys), activation, appMainRoots))
 
       val check = new PlanCircularDependencyCheck(options, logger)
       check.verify(runtimeBsApp.plan)

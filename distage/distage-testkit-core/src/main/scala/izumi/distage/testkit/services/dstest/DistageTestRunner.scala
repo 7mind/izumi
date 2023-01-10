@@ -119,7 +119,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   ) = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
     if (sharedKeys.nonEmpty) {
-      injector.plan(PlannerInput(appModule, activation, sharedKeys))
+      injector.planUnsafe(PlannerInput(appModule, activation, sharedKeys))
     } else {
       Plan.empty
     }
@@ -189,7 +189,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     // runtime plan with `runtimeGcRoots`
-    val runtimePlan = injector.plan(PlannerInput(appModule, fullActivation, runtimeGcRoots))
+    val runtimePlan = injector.planUnsafe(PlannerInput(appModule, fullActivation, runtimeGcRoots))
     // all keys created in runtimePlan, we filter them out later to not recreate any components already in runtimeLocator
     val runtimeKeys = runtimePlan.keys
 
@@ -198,7 +198,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       distageTest =>
         val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
         val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
-        val plan = if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, fullActivation, testRoots)) else Plan.empty
+        val plan = if (testRoots.nonEmpty) injector.planUnsafe(PlannerInput(appModule, fullActivation, testRoots)) else Plan.empty
         PreparedTest(distageTest, appModule, plan, env.activationInfo, fullActivation, planner)
     }
     val envKeys = testPlans.flatMap(_.testPlan.keys).toSet
@@ -381,7 +381,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     val newAppModule = appModule.drop(allSharedKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
     val newTestPlan = if (newRoots.nonEmpty) {
-      testInjector.plan(PlannerInput(newAppModule, activation, newRoots))
+      testInjector.planUnsafe(PlannerInput(newAppModule, activation, newRoots))
     } else {
       Plan.empty
     }

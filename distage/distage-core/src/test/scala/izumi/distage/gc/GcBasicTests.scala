@@ -16,7 +16,7 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val exc = intercept[InjectorFailed] {
-        injector.plan(
+        injector.planUnsafe(
           PlannerInput(
             new ModuleDef {
               make[Circular1]
@@ -35,7 +35,7 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase13._
 
       val injector = mkNoProxiesInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[Circular1]

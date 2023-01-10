@@ -40,7 +40,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       )
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[Int] == 12)
@@ -59,7 +59,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       )
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
 
@@ -79,7 +79,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val context = injector.produceCustomF[Suspend2[Nothing, _]](plan).unsafeGet().unsafeRun()
 
@@ -101,7 +101,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       )
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
       val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Int] == 12)
@@ -130,7 +130,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
       val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Set[Char]] == "ab".toSet)
@@ -298,7 +298,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val instance = injector.produce(plan).use {
         context =>
@@ -318,7 +318,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val instance = injector
         .produceCustomF[Suspend2[Throwable, _]](plan).use {
@@ -341,7 +341,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val resource = injector.produceCustomF[Suspend2[Throwable, _]](plan)
 
@@ -378,7 +378,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val resource = injector.produceDetailedCustomF[Suspend2[Throwable, _]](plan)
 
@@ -413,7 +413,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val resource = injector
         .produceDetailedCustomF[Suspend2[Throwable, _]](plan)

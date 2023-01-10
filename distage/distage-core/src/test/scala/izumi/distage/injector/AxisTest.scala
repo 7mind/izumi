@@ -6,7 +6,7 @@ import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Activation, Axis, BootstrapModuleDef, ModuleDef}
-import izumi.distage.model.exceptions.planning.ConflictResolutionException
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
@@ -106,7 +106,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector()
         .produceGet[JustTrait](definition, Activation())
         .unsafeGet()
@@ -122,7 +122,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector()
         .produceGet[JustTrait](definition, Activation(Mode -> Mode.Prod))
         .unsafeGet()
@@ -137,7 +137,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod, Mode.Prod).from[Impl1]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector()
         .produceGet[JustTrait](definition, Activation(Mode -> Mode.Prod))
         .unsafeGet()
@@ -186,7 +186,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .add[SetImpl5]
     }
 
-    intercept[ConflictResolutionException] {
+    intercept[InjectorFailed] {
       mkInjector()
         .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
         .unsafeGet()
@@ -205,7 +205,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .add[SetImpl5]
     }
 
-    intercept[ConflictResolutionException] {
+    intercept[InjectorFailed] {
       mkInjector()
         .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
         .unsafeGet()
@@ -298,7 +298,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       == Green
     )
 
-    assertThrows[ConflictResolutionException](Injector().produceRun(DefaultsModule, Activation.empty)(println(_: Color)))
+    assertThrows[InjectorFailed](Injector().produceRun(DefaultsModule, Activation.empty)(println(_: Color)))
 
     def SpecificityModule = new ModuleDef {
       make[Color].tagged(Mode.Test).from(Blue)
@@ -326,7 +326,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       == Blue
     )
 
-    assertThrows[ConflictResolutionException](Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))(identity(_: Color)))
+    assertThrows[InjectorFailed](Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))(identity(_: Color)))
   }
 
 }

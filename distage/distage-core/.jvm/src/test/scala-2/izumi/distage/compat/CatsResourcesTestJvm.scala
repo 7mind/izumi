@@ -160,7 +160,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
     }
 
     val injector = Injector[Identity]()
-    val plan = injector.plan(PlannerInput.everything(definition ++ new ModuleDef {
+    val plan = injector.planUnsafe(PlannerInput.everything(definition ++ new ModuleDef {
       addImplicit[Sync[IO]]
     }))
 
