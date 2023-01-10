@@ -112,13 +112,14 @@ object TrivialLogger {
       var idx = 0
       var out = false
       var current = parts.head
+      val tail = parts.tail
 
-      while (idx < parts.tail.length) {
+      while (idx < tail.length) {
         out = cond(current)
         if (out) {
           idx = Int.MaxValue
         } else {
-          val p = parts.tail(idx)
+          val p = tail(idx)
           current = s"$current.$p"
           idx = idx + 1
 
