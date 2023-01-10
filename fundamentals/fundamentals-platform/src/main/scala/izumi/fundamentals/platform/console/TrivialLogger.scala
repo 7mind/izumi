@@ -122,7 +122,6 @@ object TrivialLogger {
           val p = tail(idx)
           current = s"$current.$p"
           idx = idx + 1
-
         }
       }
 
