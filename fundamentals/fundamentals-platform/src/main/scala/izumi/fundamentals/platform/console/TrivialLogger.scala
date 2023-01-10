@@ -102,23 +102,32 @@ object TrivialLogger {
 
   @nowarn("msg=return statement uses an exception")
   private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
-    config.forceLog || enabled.getOrElseUpdate(
-      sysProperty, {
-        val parts = sysProperty.split('.')
-        var current = parts.head
-        def cond: Boolean = {
-          System.getProperty(current).asBoolean().getOrElse(default)
+    def check(): Boolean = {
+      val parts = sysProperty.split('.')
+
+      def cond(path: String): Boolean = {
+        System.getProperty(path).asBoolean().getOrElse(default)
+      }
+
+      var idx = 0
+      var out = false
+      var current = parts.head
+
+      while (idx < parts.tail.length) {
+        out = cond(current)
+        if (out) {
+          idx = Int.MaxValue
+        } else {
+          val p = parts.tail(idx)
+          current = s"$current.$p"
+          idx = idx + 1
+
         }
-        parts.tail.foreach {
-          p =>
-            if (cond) {
-              return true
-            } else {
-              current = s"$current.$p"
-            }
-        }
-        return cond
-      },
-    )
+      }
+
+      out
+    }
+
+    config.forceLog || enabled.getOrElseUpdate(sysProperty, check())
   }
 }
