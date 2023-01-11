@@ -1,6 +1,5 @@
-package izumi.distage.planning
+package izumi.distage.model.definition.errors
 
-import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError}
 import izumi.distage.model.exceptions.planning.InjectorFailed
 

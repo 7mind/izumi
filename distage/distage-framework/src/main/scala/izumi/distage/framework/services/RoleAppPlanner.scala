@@ -9,7 +9,6 @@ import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.recursive.{BootConfig, Bootloader, BootstrappedApp}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
-import izumi.distage.planning.DIFailureInterpreter
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
@@ -36,9 +35,6 @@ object RoleAppPlanner {
   )(implicit
     defaultModule: DefaultModule[F]
   ) extends RoleAppPlanner { self =>
-
-    private[this] val interpreter = new DIFailureInterpreter()
-    import interpreter.DIResultExt
 
     private[this] val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[QuasiIORunner[F]],

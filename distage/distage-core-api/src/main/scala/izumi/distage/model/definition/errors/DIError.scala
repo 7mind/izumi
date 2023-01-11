@@ -17,6 +17,18 @@ import izumi.fundamentals.platform.IzumiProject
 sealed trait DIError
 
 object DIError {
+  implicit class DIResultExt[A](private val result: Either[List[DIError], A]) extends AnyVal {
+    def getOrThrow: A = {
+      result match {
+        case Left(errors) =>
+          val i = new DIFailureInterpreter()
+          i.throwOnError(errors)
+
+        case Right(resolved) =>
+          resolved
+      }
+    }
+  }
 
   sealed trait PlanningError extends DIError
   object PlanningError {
