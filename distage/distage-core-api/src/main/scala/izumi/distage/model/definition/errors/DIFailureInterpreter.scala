@@ -5,18 +5,6 @@ import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, 
 import izumi.distage.model.exceptions.planning.InjectorFailed
 
 class DIFailureInterpreter() {
-  implicit class DIResultExt[A](result: Either[List[DIError], A]) {
-    def getOrThrow: A = {
-      result match {
-        case Left(errors) =>
-          throwOnError(errors)
-
-        case Right(resolved) =>
-          resolved
-      }
-    }
-  }
-
   // TODO: we need to completely get rid of exceptions, this is just some transitional stuff
   def throwOnError(issues: List[DIError]): Nothing = {
     val conflicts = issues.collect { case c: ConflictResolutionFailed => c }
