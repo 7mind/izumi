@@ -48,13 +48,13 @@ class PlannerDefaultImpl(
   }
 
   override def planUnsafe(input: PlannerInput): Plan = {
-    val interpreter = new DIFailureInterpreter(input.activation)
+    val interpreter = new DIFailureInterpreter()
     import interpreter.DIResultExt
     plan(input).getOrThrow
   }
 
   override def planNoRewriteUnsafe(input: PlannerInput): Plan = {
-    val interpreter = new DIFailureInterpreter(input.activation)
+    val interpreter = new DIFailureInterpreter()
     import interpreter.DIResultExt
     planNoRewrite(input).getOrThrow
   }

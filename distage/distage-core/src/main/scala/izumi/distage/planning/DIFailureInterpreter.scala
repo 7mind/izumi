@@ -1,11 +1,10 @@
 package izumi.distage.planning
 
-import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError}
 import izumi.distage.model.exceptions.planning.InjectorFailed
 
-class DIFailureInterpreter(activation: Activation) {
+class DIFailureInterpreter() {
   implicit class DIResultExt[A](result: Either[List[DIError], A]) {
     def getOrThrow: A = {
       result match {
@@ -49,7 +48,7 @@ class DIFailureInterpreter(activation: Activation) {
 
   protected[this] def throwOnConflict(issues: List[ConflictResolutionFailed]): Nothing = {
     val rawIssues = issues.map(_.error)
-    val issueRepr = rawIssues.map(DIError.formatConflict(activation)).mkString("\n", "\n", "")
+    val issueRepr = rawIssues.map(DIError.formatConflict).mkString("\n", "\n", "")
 
     throw new InjectorFailed(
       s"""Found multiple instances for a key. There must be exactly one binding for each DIKey. List of issues:$issueRepr

@@ -144,7 +144,7 @@ object PlanInterpreter {
           )
 
         case ProvisioningFailure.CantBuildIntegrationSubplan(errors, _) =>
-          s"Unable to build integration checks subplan:\n${errors.map(DIError.format(plan.input.activation))}"
+          s"Unable to build integration checks subplan:\n${errors.map(DIError.format)}"
       }
 
       val ccFailed = failure.status.collect { case (key, _: OpStatus.Failure) => key }.toSet.size

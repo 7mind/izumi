@@ -37,6 +37,9 @@ object RoleAppPlanner {
     defaultModule: DefaultModule[F]
   ) extends RoleAppPlanner { self =>
 
+    private[this] val interpreter = new DIFailureInterpreter()
+    import interpreter.DIResultExt
+
     private[this] val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[QuasiIORunner[F]],
       DIKey.get[QuasiIO[F]],
@@ -48,8 +51,6 @@ object RoleAppPlanner {
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
-      val interpreter = new DIFailureInterpreter(activation)
-      import interpreter.DIResultExt
 
       logger.trace(s"Application will use: ${appMainRoots -> "app roots"} and $activation")
 
