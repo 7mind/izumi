@@ -354,7 +354,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData))) {
           _ =>
             groupedConfiguredTraverse_(preparedTests)(_.test.environment.parallelTests) {
-              proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, strengthenedKeys)
+              test => proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, strengthenedKeys)(test).getOrThrow // TODO: remove
             }
         }
     }
@@ -367,7 +367,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     groupStrengthenedKeys: Set[DIKey],
   )(preparedTest: PreparedTest[F]
   )(implicit F: QuasiIO[F]
-  ): F[Unit] = {
+  ): Either[List[DIError], F[Unit]] = {
     val PreparedTest(test, appModule, testPlan, activationInfo, activation, planner) = preparedTest
 
     val locatorWithOverriddenPlannerAndActivationInfo: LocatorDef = new LocatorDef {
@@ -396,23 +396,25 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     val newAppModule = appModule.drop(allSharedKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
-    val newTestPlan = if (newRoots.nonEmpty) {
-      testInjector.plan(PlannerInput(newAppModule, activation, newRoots)).getOrThrow
-    } else {
-      Plan.empty
+    for {
+      newTestPlan <-
+        if (newRoots.nonEmpty) {
+          testInjector.plan(PlannerInput(newAppModule, activation, newRoots))
+        } else {
+          Right(Plan.empty)
+        }
+    } yield {
+      val testLogger = testRunnerLogger("testId" -> test.meta.id)
+      testLogger.log(testkitDebugMessagesLogLevel(test.environment.debugOutput))(
+        s"""Running test...
+           |
+           |Test plan: $newTestPlan""".stripMargin
+      )
+
+      planChecker.showProxyWarnings(newTestPlan)
+
+      proceedIndividual(test, newTestPlan, mainSharedLocator)
     }
-
-    val testLogger = testRunnerLogger("testId" -> test.meta.id)
-    testLogger.log(testkitDebugMessagesLogLevel(test.environment.debugOutput))(
-      s"""Running test...
-         |
-         |Test plan: $newTestPlan""".stripMargin
-    )
-
-    planChecker.showProxyWarnings(newTestPlan)
-
-    proceedIndividual(test, newTestPlan, mainSharedLocator)
-
   }
 
   protected def proceedIndividual(test: DistageTest[F], testPlan: Plan, parent: Locator)(implicit F: QuasiIO[F]): F[Unit] = {
