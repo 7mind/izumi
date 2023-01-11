@@ -123,7 +123,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Boolean].named("distage.roles.activation.ignore-unknown").fromValue(false)
   make[Boolean].named("distage.roles.activation.warn-unset").fromValue(true)
 
-  make[IzLogger].from {
+  make[LogRouter].fromResource {
     (
       parameters: RawAppArgs,
       earlyLogger: IzLogger @Id("early"),
@@ -131,9 +131,13 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       defaultLogLevel: Log.Level @Id("early"),
       defaultLogFormatJson: Boolean @Id("distage.roles.logs.json"),
     ) =>
-      EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
+      Lifecycle.fromAutoCloseable(EarlyLoggers.makeLateLogRouter(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson))
   }
-  make[LogRouter].from((_: IzLogger).router)
+
+  make[IzLogger].from {
+    (router: LogRouter) =>
+      IzLogger(router)("phase" -> "late")
+  }
 
   make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
   make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)

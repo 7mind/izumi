@@ -140,127 +140,132 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   ): Either[List[DIError], PackedEnv[F]] = {
     // make a config loader for current env with logger
     val config = loadConfig(env, configLoadLogger)
+    val router = EarlyLoggers.makeLateLogRouter(RawAppArgs.empty, configLoadLogger, config, envExec.logLevel, defaultLogFormatJson = false)
 
-    val lateLogger = EarlyLoggers.makeLateLogger(RawAppArgs.empty, configLoadLogger, config, envExec.logLevel, defaultLogFormatJson = false)
+    try {
+      val lateLogger = IzLogger(router)
 
-    val fullActivation = env.activationStrategy match {
-      case TestActivationStrategy.IgnoreConfig =>
-        env.activation
-      case TestActivationStrategy.LoadConfig(ignoreUnknown, warnUnset) =>
-        val roleAppActivationParser = new RoleAppActivationParser.Impl(
-          logger = lateLogger,
-          ignoreUnknownActivations = ignoreUnknown,
-        )
-        val activationParser = new ActivationParser.Impl(
-          roleAppActivationParser,
-          RawAppArgs.empty,
-          config,
-          env.activationInfo,
-          env.activation,
-          Activation.empty,
-          lateLogger,
-          warnUnset,
-        )
-        val configActivation = activationParser.parseActivation()
+      val fullActivation = env.activationStrategy match {
+        case TestActivationStrategy.IgnoreConfig =>
+          env.activation
+        case TestActivationStrategy.LoadConfig(ignoreUnknown, warnUnset) =>
+          val roleAppActivationParser = new RoleAppActivationParser.Impl(
+            logger = lateLogger,
+            ignoreUnknownActivations = ignoreUnknown,
+          )
+          val activationParser = new ActivationParser.Impl(
+            roleAppActivationParser,
+            RawAppArgs.empty,
+            config,
+            env.activationInfo,
+            env.activation,
+            Activation.empty,
+            lateLogger,
+            warnUnset,
+          )
+          val configActivation = activationParser.parseActivation()
 
-        configActivation ++ env.activation
-    }
-
-    // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
-    val moduleProvider = env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, lateLogger.router, env.roles, env.activationInfo, fullActivation)
-
-    val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
-    val appModule = {
-      // add default module manually, instead of passing it to Injector, to be able to split it later into runtime/non-runtime manually
-      IdentitySupportModule ++ DefaultModule[F] overriddenBy
-      moduleProvider.appModules().merge overriddenBy env.appModule
-    }
-
-    val (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector, planner) = {
-      // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
-      //  becoming becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
-
-      // FIXME: We're also removing here & re-injecting later Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
-      //  (planner holds activations & the rest is for Bootloader self-introspection)
-
-      val injector = Injector[Identity](bootstrapActivation = fullActivation, overrides = Seq(bsModule))
-
-      val injectorEnv = injector.providedEnvironment
-
-      val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.stepsUnordered.filterNot(variableBsKeys contains _.target)
-      val bsModuleMinusVariableKeys = injectorEnv.bootstrapModule.drop(variableBsKeys)
-      val planner = injectorEnv.planner
-
-      (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector, planner)
-    }
-
-    for {
-      // runtime plan with `runtimeGcRoots`
-      runtimePlan <- injector.plan(PlannerInput(appModule, fullActivation, runtimeGcRoots))
-      // all keys created in runtimePlan, we filter them out later to not recreate any components already in runtimeLocator
-      runtimeKeys = runtimePlan.keys
-
-      // produce plan for each test
-      testPlans <- tests.map {
-        distageTest =>
-          val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
-          val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
-          for {
-            plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, fullActivation, testRoots)) else Right(Plan.empty)
-          } yield {
-            PreparedTest(distageTest, appModule, plan, env.activationInfo, fullActivation, planner)
-          }
-      }.biAggregate
-      envKeys = testPlans.flatMap(_.testPlan.keys).toSet
-
-      // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
-      // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized
-      // weak sets behave as usual
-      (strengthenedKeys, strengthenedAppModule) = appModule.drop(runtimeKeys).foldLeftWith(List.empty[DIKey]) {
-        case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && (envKeys(key) || envKeys(r.key)) =>
-          (key :: acc) -> b.copy(implementation = r.copy(weak = false))
-        case (acc, b) =>
-          acc -> b
+          configActivation ++ env.activation
       }
 
-      orderedPlans <-
-        if (env.memoizationRoots.keys.nonEmpty) {
-          // we need to create plans for each level of memoization
-          // every duplicated key will be removed
-          // every empty memoization level (after keys filtering) will be removed
+      // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
+      val moduleProvider = env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, lateLogger.router, env.roles, env.activationInfo, fullActivation)
 
-          env.memoizationRoots.keys.toList
-            .sortBy(_._1)
-            .biFoldLeft((List.empty[Plan], Set.empty[DIKey])) {
-              case ((acc, allSharedKeys), (_, keys)) =>
-                val levelRoots = envKeys.intersect(keys.getActiveKeys(fullActivation) -- allSharedKeys)
-                val levelModule = strengthenedAppModule.drop(allSharedKeys)
-                if (levelRoots.nonEmpty) {
-                  for {
-                    plan <- prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule)
-                  } yield {
-                    ((acc ++ List(plan), allSharedKeys ++ plan.keys))
-                  }
-                } else {
-                  Right((acc, allSharedKeys))
-                }
-            }.map(_._1)
-        } else {
-          prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, injector, strengthenedAppModule).map(p => List(p))
+      val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
+      val appModule = {
+        // add default module manually, instead of passing it to Injector, to be able to split it later into runtime/non-runtime manually
+        IdentitySupportModule ++ DefaultModule[F] overriddenBy
+        moduleProvider.appModules().merge overriddenBy env.appModule
+      }
+
+      val (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector, planner) = {
+        // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
+        //  becoming becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
+
+        // FIXME: We're also removing here & re-injecting later Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
+        //  (planner holds activations & the rest is for Bootloader self-introspection)
+
+        val injector = Injector[Identity](bootstrapActivation = fullActivation, overrides = Seq(bsModule))
+
+        val injectorEnv = injector.providedEnvironment
+
+        val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.stepsUnordered.filterNot(variableBsKeys contains _.target)
+        val bsModuleMinusVariableKeys = injectorEnv.bootstrapModule.drop(variableBsKeys)
+        val planner = injectorEnv.planner
+
+        (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector, planner)
+      }
+
+      for {
+        // runtime plan with `runtimeGcRoots`
+        runtimePlan <- injector.plan(PlannerInput(appModule, fullActivation, runtimeGcRoots))
+        // all keys created in runtimePlan, we filter them out later to not recreate any components already in runtimeLocator
+        runtimeKeys = runtimePlan.keys
+
+        // produce plan for each test
+        testPlans <- tests.map {
+          distageTest =>
+            val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
+            val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
+            for {
+              plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, fullActivation, testRoots)) else Right(Plan.empty)
+            } yield {
+              PreparedTest(distageTest, appModule, plan, env.activationInfo, fullActivation, planner)
+            }
+        }.biAggregate
+        envKeys = testPlans.flatMap(_.testPlan.keys).toSet
+
+        // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
+        // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized
+        // weak sets behave as usual
+        (strengthenedKeys, strengthenedAppModule) = appModule.drop(runtimeKeys).foldLeftWith(List.empty[DIKey]) {
+          case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && (envKeys(key) || envKeys(r.key)) =>
+            (key :: acc) -> b.copy(implementation = r.copy(weak = false))
+          case (acc, b) =>
+            acc -> b
         }
-    } yield {
-      val envMergeCriteria = EnvMergeCriteria(bsPlanMinusVariableKeys.toVector, bsModuleMinusVariableKeys, runtimePlan)
 
-      val memoEnvHashCode = envMergeCriteria.hashCode()
-      val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
-      val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
-      if (strengthenedKeys.nonEmpty) {
-        integrationLogger.log(testkitDebugMessagesLogLevel(env.debugOutput))(
-          s"Strengthened weak components: $strengthenedKeys"
-        )
+        orderedPlans <-
+          if (env.memoizationRoots.keys.nonEmpty) {
+            // we need to create plans for each level of memoization
+            // every duplicated key will be removed
+            // every empty memoization level (after keys filtering) will be removed
+
+            env.memoizationRoots.keys.toList
+              .sortBy(_._1)
+              .biFoldLeft((List.empty[Plan], Set.empty[DIKey])) {
+                case ((acc, allSharedKeys), (_, keys)) =>
+                  val levelRoots = envKeys.intersect(keys.getActiveKeys(fullActivation) -- allSharedKeys)
+                  val levelModule = strengthenedAppModule.drop(allSharedKeys)
+                  if (levelRoots.nonEmpty) {
+                    for {
+                      plan <- prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule)
+                    } yield {
+                      ((acc ++ List(plan), allSharedKeys ++ plan.keys))
+                    }
+                  } else {
+                    Right((acc, allSharedKeys))
+                  }
+              }.map(_._1)
+          } else {
+            prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, injector, strengthenedAppModule).map(p => List(p))
+          }
+      } yield {
+        val envMergeCriteria = EnvMergeCriteria(bsPlanMinusVariableKeys.toVector, bsModuleMinusVariableKeys, runtimePlan)
+
+        val memoEnvHashCode = envMergeCriteria.hashCode()
+        val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
+        val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
+        if (strengthenedKeys.nonEmpty) {
+          integrationLogger.log(testkitDebugMessagesLogLevel(env.debugOutput))(
+            s"Strengthened weak components: $strengthenedKeys"
+          )
+        }
+
+        PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet)
       }
-
-      PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet)
+    } finally {
+      router.close()
     }
   }
 
