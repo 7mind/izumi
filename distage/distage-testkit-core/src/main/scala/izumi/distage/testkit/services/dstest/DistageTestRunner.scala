@@ -228,22 +228,23 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           // we need to create plans for each level of memoization
           // every duplicated key will be removed
           // every empty memoization level (after keys filtering) will be removed
-          Right(
-            env.memoizationRoots.keys.toList
-              .sortBy(_._1)
-              .foldLeft((List.empty[Plan], Set.empty[DIKey])) {
-                case ((acc, allSharedKeys), (_, keys)) =>
-                  val levelRoots = envKeys.intersect(keys.getActiveKeys(fullActivation) -- allSharedKeys)
-                  val levelModule = strengthenedAppModule.drop(allSharedKeys)
-                  if (levelRoots.nonEmpty) {
-                    val plan = prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule).getOrThrow // TODO: remove
-                    ((acc ++ List(plan), allSharedKeys ++ plan.keys))
-                  } else {
-                    acc -> allSharedKeys
-                  }
-              }._1
-          )
 
+          env.memoizationRoots.keys.toList
+            .sortBy(_._1)
+            .biFoldLeft((List.empty[Plan], Set.empty[DIKey])) {
+              case ((acc, allSharedKeys), (_, keys)) =>
+                val levelRoots = envKeys.intersect(keys.getActiveKeys(fullActivation) -- allSharedKeys)
+                val levelModule = strengthenedAppModule.drop(allSharedKeys)
+                if (levelRoots.nonEmpty) {
+                  for {
+                    plan <- prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule)
+                  } yield {
+                    ((acc ++ List(plan), allSharedKeys ++ plan.keys))
+                  }
+                } else {
+                  Right((acc, allSharedKeys))
+                }
+            }.map(_._1)
         } else {
           prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, injector, strengthenedAppModule).map(p => List(p))
         }
