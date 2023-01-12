@@ -128,7 +128,7 @@ import distage.{Activation, Injector, Roots}
 
 val injector = Injector[RIO[Console, _]]()
 
-val plan = injector.plan(HelloByeModule, Activation.empty, Roots.target[HelloByeApp])
+val plan = injector.plan(HelloByeModule, Activation.empty, Roots.target[HelloByeApp]).getOrThrow()
 ```
 
 The series of steps must be executed to produce the object graph.

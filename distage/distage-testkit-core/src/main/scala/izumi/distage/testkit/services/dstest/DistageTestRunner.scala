@@ -45,7 +45,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   def run(tests: Seq[DistageTest[F]]): Unit = {
     try {
       val start = IzTime.utcNow
-      val envs = groupTests(tests).getOrThrow
+      val envs = groupTests(tests).getOrThrow()
       val end = IzTime.utcNow
       logEnvironmentsInfo(envs, ChronoUnit.MILLIS.between(start, end))
       groupAndSortByParallelLevel(envs)(_._1.envExec.parallelEnvs).foreach {
@@ -360,7 +360,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData))) {
           _ =>
             groupedConfiguredTraverse_(preparedTests)(_.test.environment.parallelTests) {
-              test => proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, strengthenedKeys)(test).getOrThrow // TODO: remove
+              test => proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, strengthenedKeys)(test).getOrThrow() // TODO: remove getOrThrow
             }
         }
     }

@@ -79,7 +79,7 @@ object RoleAppPlanner {
         AppStartupPlans(bootstrapped.plan, appPlan, bootstrapped.injector)
       }
 
-      out.getOrThrow
+      out.getOrThrow()
     }
 
   }

@@ -18,7 +18,7 @@ sealed trait DIError
 
 object DIError {
   implicit class DIResultExt[A](private val result: Either[List[DIError], A]) extends AnyVal {
-    def getOrThrow: A = {
+    def getOrThrow(): A = {
       result match {
         case Left(errors) =>
           val i = new DIFailureInterpreter()

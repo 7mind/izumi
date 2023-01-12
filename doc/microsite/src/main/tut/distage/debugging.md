@@ -45,7 +45,7 @@ and line numbers so your IDE can show you where the binding was defined!
 ```scala mdoc:to-string
 import distage.PlannerInput
 
-val plan = Injector().plan(goodModule, Roots.target[A])
+val plan = Injector().plan(goodModule, Roots.target[A]).getOrThrow()
 
 println(plan.render())
 ```
