@@ -13,7 +13,10 @@ import izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl, 
 import izumi.logstage.api.{IzLogger, Log}
 import izumi.logstage.sink.{ConsoleSink, QueueingSink}
 
+import java.lang.ref.SoftReference
+import java.util.concurrent.ConcurrentHashMap
 import scala.util.Try
+
 
 class SimpleLoggerConfigurator(
   exceptionLogger: IzLogger
@@ -23,31 +26,48 @@ class SimpleLoggerConfigurator(
   def makeLogRouter(config: Config, root: Log.Level, json: Boolean): LogRouter = {
     val logconf = readConfig(config)
 
-    val renderingPolicy = if (logconf.json.contains(true) || json) {
-      new LogstageCirceRenderingPolicy()
-    } else {
-      val options = logconf.options.getOrElse(RenderingOptions.default)
-      new StringRenderingPolicy(options, None)
-    }
+    val isJson = logconf.json.contains(true) || json
+    val options = logconf.options.getOrElse(RenderingOptions.default)
 
-    val queueingSink = new QueueingSink(new ConsoleSink(renderingPolicy))
-    val sinks = Seq(queueingSink)
+    // loggers are difficult to memoize due to the very special way we need to initialize them
+    // this is a very dirty workaround and a better solution needs to be found. 
+    // Probably we need to rewrite whole test runner to make things better
+    SimpleLoggerConfigurator.routerCache
+      .compute(
+        SimpleLoggerConfigurator.RouterCacheKey(isJson, options),
+        (key, value) => {
 
-    val levels = logconf.levels.flatMap {
-      case (stringLevel, pack) =>
-        val level = Log.Level.parseLetter(stringLevel)
-        pack.map(_ -> LoggerPathConfig(level, sinks))
-    }
+          if (value == null || value.get() == null) {
+            val renderingPolicy = if (key.isJson) {
+              new LogstageCirceRenderingPolicy()
+            } else {
+              new StringRenderingPolicy(key.options, None)
+            }
 
-    // TODO: here we may read log configuration from config file
-    val result = new ConfigurableLogRouter(
-      new LogConfigServiceImpl(
-        LoggerConfig(LoggerPathConfig(root, sinks), levels)
-      )
-    )
-    queueingSink.start()
-    StaticLogRouter.instance.setup(result)
-    result
+            val queueingSink = new QueueingSink(new ConsoleSink(renderingPolicy))
+            val sinks = Seq(queueingSink)
+
+            val levels = logconf.levels.flatMap {
+              case (stringLevel, pack) =>
+                val level = Log.Level.parseLetter(stringLevel)
+                pack.map(_ -> LoggerPathConfig(level, sinks))
+            }
+
+            // TODO: here we may read log configuration from config file
+            val result = new ConfigurableLogRouter(
+              new LogConfigServiceImpl(
+                LoggerConfig(LoggerPathConfig(root, sinks), levels)
+              )
+            )
+            queueingSink.start()
+            StaticLogRouter.instance.setup(result)
+            new SoftReference[LogRouter](result)
+          } else {
+            value
+          }
+        },
+      ).get()
+
   }
 
   private[this] def readConfig(config: Config): SinksConfig = {
@@ -79,4 +99,8 @@ object SimpleLoggerConfigurator {
   object SinksConfig {
     implicit val configReader: DIConfigReader[SinksConfig] = DIConfigReader.derived
   }
+
+  case class RouterCacheKey(isJson: Boolean, options: RenderingOptions)
+
+  val routerCache = new ConcurrentHashMap[RouterCacheKey, SoftReference[LogRouter]]()
 }
