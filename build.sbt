@@ -2234,8 +2234,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
-      "com.propensive" %% "magnolia" % V.magnolia,
+      "com.github.pureconfig" %% "pureconfig-generic-base" % V.pureconfig,
+      "com.softwaremill.magnolia1_2" %% "magnolia" % V.magnolia,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     ) else Seq.empty }
   )
