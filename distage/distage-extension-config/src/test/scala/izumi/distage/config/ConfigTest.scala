@@ -45,7 +45,7 @@ final class ConfigTest extends AnyWordSpec {
 
     "resolve config maps" in {
       val injector = Injector()
-      val plan = injector.plan(mkConfigModule("map-test.conf")(TestConfigReaders.mapDefinition))
+      val plan = injector.planUnsafe(mkConfigModule("map-test.conf")(TestConfigReaders.mapDefinition))
 
       val context = injector.produce(plan).unsafeGet()
 
@@ -65,7 +65,7 @@ final class ConfigTest extends AnyWordSpec {
 
     "resolve config lists" in {
       val injector = Injector()
-      val plan = injector.plan(mkConfigModule("list-test.conf")(TestConfigReaders.listDefinition))
+      val plan = injector.planUnsafe(mkConfigModule("list-test.conf")(TestConfigReaders.listDefinition))
 
       val context = injector.produce(plan).unsafeGet()
 
@@ -83,7 +83,7 @@ final class ConfigTest extends AnyWordSpec {
 
     "resolve config options" in {
       val injector = Injector()
-      val plan = injector.plan(mkConfigModule("opt-test.conf")(TestConfigReaders.optDefinition))
+      val plan = injector.planUnsafe(mkConfigModule("opt-test.conf")(TestConfigReaders.optDefinition))
 
       val context = injector.produce(plan).unsafeGet()
 
@@ -112,7 +112,7 @@ final class ConfigTest extends AnyWordSpec {
 
     "resolve config options (missing field)" in {
       val injector = Injector()
-      val plan = injector.plan(mkConfigModule("opt-test-missing.conf")(TestConfigReaders.optDefinition))
+      val plan = injector.planUnsafe(mkConfigModule("opt-test-missing.conf")(TestConfigReaders.optDefinition))
 
       val context = injector.produce(plan).unsafeGet()
 

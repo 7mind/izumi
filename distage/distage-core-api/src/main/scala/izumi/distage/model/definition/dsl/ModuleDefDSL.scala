@@ -314,8 +314,9 @@ object ModuleDefDSL {
       bind(ImplDef.ProviderImpl(provider.ret, provider))
     }
 
-    final def fromFactory[I <: T: FactoryConstructor]: AfterBind =
-      from(FactoryConstructor[I])
+    final def fromFactory[I <: T: FactoryConstructor]: AfterBind = {
+      from[I](FactoryConstructor[I])
+    }
 
     protected[this] def bind(impl: ImplDef): AfterBind
     protected[this] def key: DIKey
@@ -334,6 +335,9 @@ object ModuleDefDSL {
 
     final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
+
+    final def addFactory[I <: T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+      add[I](FactoryConstructor[I])
 
     /**
       * Bind by reference to another bound key
@@ -664,7 +668,6 @@ object ModuleDefDSL {
     * Please update this when adding new methods to [[MakeDSL]]!
     */
   private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set(
-    "make",
     "named",
     "namedByImpl",
     "tagged",

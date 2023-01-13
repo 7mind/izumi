@@ -4,20 +4,20 @@ import izumi.distage.InjectorFactory
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.framework.services.*
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
-import izumi.distage.framework.services._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition._
+import izumi.distage.model.definition.*
 import izumi.distage.model.recursive.{Bootloader, LocatorRef}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
-import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{ArgV, RequiredRoles}
+import izumi.distage.roles.launcher.*
 import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
-import izumi.distage.roles.launcher._
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
@@ -123,7 +123,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Boolean].named("distage.roles.activation.ignore-unknown").fromValue(false)
   make[Boolean].named("distage.roles.activation.warn-unset").fromValue(true)
 
-  make[IzLogger].from {
+  make[LogRouter].fromResource {
     (
       parameters: RawAppArgs,
       earlyLogger: IzLogger @Id("early"),
@@ -131,9 +131,13 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       defaultLogLevel: Log.Level @Id("early"),
       defaultLogFormatJson: Boolean @Id("distage.roles.logs.json"),
     ) =>
-      EarlyLoggers.makeLateLogger(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson)
+      Lifecycle.fromAutoCloseable(EarlyLoggers.makeLateLogRouter(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson))
   }
-  make[LogRouter].from((_: IzLogger).router)
+
+  make[IzLogger].from {
+    (router: LogRouter) =>
+      IzLogger(router)("phase" -> "late")
+  }
 
   make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
   make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)

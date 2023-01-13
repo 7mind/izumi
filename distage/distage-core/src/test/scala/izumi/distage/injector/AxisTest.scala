@@ -6,7 +6,7 @@ import izumi.distage.fixtures.SetCases.SetCase1
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Activation, Axis, BootstrapModuleDef, ModuleDef}
-import izumi.distage.model.exceptions.planning.{BadSetAxis, ConflictResolutionException}
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
@@ -106,7 +106,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector()
         .produceGet[JustTrait](definition, Activation())
         .unsafeGet()
@@ -122,7 +122,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector()
         .produceGet[JustTrait](definition, Activation(Mode -> Mode.Prod))
         .unsafeGet()
@@ -137,7 +137,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod, Mode.Prod).from[Impl1]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector()
         .produceGet[JustTrait](definition, Activation(Mode -> Mode.Prod))
         .unsafeGet()
@@ -186,7 +186,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .add[SetImpl5]
     }
 
-    intercept[BadSetAxis] {
+    intercept[InjectorFailed] {
       mkInjector()
         .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
         .unsafeGet()
@@ -205,12 +205,53 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .add[SetImpl5]
     }
 
-    intercept[BadSetAxis] {
+    intercept[InjectorFailed] {
       mkInjector()
         .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
         .unsafeGet()
         .get[Set[SetTrait]]
     }
+  }
+
+  "exclude set elements with unselected unsaturated axis" in {
+    import SetCase1._
+
+    val baseDef = new ModuleDef {
+      many[SetTrait]
+        .add[SetImpl1].tagged(Repo.Prod)
+    }
+
+    val definitionTodo = baseDef ++ new ModuleDef {
+      make[SetTrait].todo.tagged(Repo.Dummy)
+    }
+
+    val instance1 = mkInjector()
+      .produce(PlannerInput(definitionTodo, Activation(Repo.Dummy), Roots(DIKey[Set[SetTrait]])))
+      .unsafeGet()
+      .get[Set[SetTrait]]
+
+    assert(instance1.isEmpty)
+
+    val instance2 = mkInjector()
+      .produce(PlannerInput(definitionTodo, Activation(Repo.Prod), Roots(DIKey[Set[SetTrait]])))
+      .unsafeGet()
+      .get[Set[SetTrait]]
+
+    assert(instance2.size == 1)
+
+    val instance3 = mkInjector()
+      .produce(PlannerInput(baseDef, Activation(Repo.Prod), Roots(DIKey[Set[SetTrait]])))
+      .unsafeGet()
+      .get[Set[SetTrait]]
+
+    assert(instance3.size == 1)
+
+    val instance4 = mkInjector()
+      .produce(PlannerInput(baseDef, Activation(Repo.Dummy), Roots(DIKey[Set[SetTrait]])))
+      .unsafeGet()
+      .get[Set[SetTrait]]
+
+    assert(instance4.isEmpty)
   }
 
   "work correctly with named Unit" in {
@@ -257,7 +298,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       == Green
     )
 
-    assertThrows[ConflictResolutionException](Injector().produceRun(DefaultsModule, Activation.empty)(println(_: Color)))
+    assertThrows[InjectorFailed](Injector().produceRun(DefaultsModule, Activation.empty)(println(_: Color)))
 
     def SpecificityModule = new ModuleDef {
       make[Color].tagged(Mode.Test).from(Blue)
@@ -285,7 +326,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       == Blue
     )
 
-    assertThrows[ConflictResolutionException](Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))(identity(_: Color)))
+    assertThrows[InjectorFailed](Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))(identity(_: Color)))
   }
 
 }

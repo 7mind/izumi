@@ -1,7 +1,7 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.definition.{Identifier, ModuleBase}
-import izumi.distage.model.exceptions.planning.DIBugException
+import izumi.distage.model.exceptions.runtime.ToposortFailed
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
@@ -70,10 +70,13 @@ object Plan {
     /** Original [[ModuleBase bindings]] of this plan */
     def definitionOriginal: ModuleBase = plan.input.bindings
 
+    /**
+      * This is only used by plan formatter
+      */
     def toposort: Seq[DIKey] = {
       Toposort.cycleBreaking(plan.plan.predecessors, ToposortLoopBreaker.breakOn[DIKey](_.headOption)) match {
         case Left(value) =>
-          throw new DIBugException(s"BUG: toposort failed during plan rendering: $value")
+          throw new ToposortFailed(value)
         case Right(value) =>
           value
       }

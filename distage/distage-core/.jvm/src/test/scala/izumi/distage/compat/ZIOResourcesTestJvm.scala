@@ -77,7 +77,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.everything(definition, Activation.empty))
+      val plan = injector.planUnsafe(PlannerInput.everything(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {
@@ -184,7 +184,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       val injector = Injector()
-      val plan = injector.plan(PlannerInput.everything(definition, Activation.empty))
+      val plan = injector.planUnsafe(PlannerInput.everything(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
         IO {

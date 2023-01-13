@@ -2,7 +2,7 @@ package izumi.distage
 
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Identifier
-import izumi.distage.model.exceptions.MissingInstanceException
+import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.model.reflection._
 import izumi.reflect.Tag
 

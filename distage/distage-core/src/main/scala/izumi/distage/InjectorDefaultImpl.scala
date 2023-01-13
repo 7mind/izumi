@@ -33,20 +33,20 @@ final class InjectorDefaultImpl[F[_]](
   // passed-through into `Bootloader`
   private[this] val bsModule: BootstrapModule = bootstrapLocator.get[BootstrapModule]
 
-  override def plan(input: PlannerInput): Plan = {
+  override def planUnsafe(input: PlannerInput): Plan = {
+    planner.planUnsafe(addSelfInfo(input))
+  }
+
+  override def planNoRewriteUnsafe(input: PlannerInput): Plan = {
+    planner.planNoRewriteUnsafe(addSelfInfo(input))
+  }
+
+  override def plan(input: PlannerInput): Either[List[DIError], Plan] = {
     planner.plan(addSelfInfo(input))
   }
 
-  override def planNoRewrite(input: PlannerInput): Plan = {
+  override def planNoRewrite(input: PlannerInput): Either[List[DIError], Plan] = {
     planner.planNoRewrite(addSelfInfo(input))
-  }
-
-  override def planSafe(input: PlannerInput): Either[List[DIError], Plan] = {
-    planner.planSafe(addSelfInfo(input))
-  }
-
-  override def planNoRewriteSafe(input: PlannerInput): Either[List[DIError], Plan] = {
-    planner.planNoRewriteSafe(addSelfInfo(input))
   }
 
   override def rewrite(module: ModuleBase): ModuleBase = {

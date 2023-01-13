@@ -1,12 +1,11 @@
 package izumi.distage.injector
 
-import distage._
+import distage.*
 import izumi.distage.constructors.AnyConstructor
-import izumi.distage.fixtures.TraitCases._
-import izumi.distage.fixtures.TypesCases._
+import izumi.distage.fixtures.TraitCases.*
+import izumi.distage.fixtures.TypesCases.*
 import izumi.distage.model.PlannerInput
-import izumi.fundamentals.platform.build.MacroParameters
-import izumi.fundamentals.platform.language.ScalaRelease
+import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.Ordering.Implicits.infixOrderingOps
@@ -25,7 +24,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[List[Dep]]("As").forall(_.isInstanceOf[DepA]))
@@ -43,7 +42,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestClass2[TypeAliasDepA]].inner.isInstanceOf[TypeAliasDepA])
@@ -58,7 +57,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestTrait].dep.isInstanceOf[TypeAliasDepA])
@@ -73,7 +72,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Dependency1]
@@ -92,7 +91,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait2 with Trait1]
@@ -112,7 +111,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated1 = context.get[Trait1 { def dep: Dep2 }]
@@ -137,7 +136,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(PlannerInput.everything(new Definition[Dep2]))
+    val plan = injector.planUnsafe(PlannerInput.everything(new Definition[Dep2]))
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait1[Dep, Dep2]]
@@ -158,7 +157,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new Definition[Trait1, Trait1])
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait1 { def dep: Dep }]
@@ -179,7 +178,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new Definition[Trait3[Dep], Trait3[Dep], Trait5[Dep]])
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait3[Dep] with Trait1]
@@ -205,7 +204,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new Definition[Dep, Trait4])
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[Trait3[Dep] with Trait4]
 
@@ -242,7 +241,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   }
 
   "support constant types in class strategy" in {
-    assume(ScalaRelease.parse(MacroParameters.scalaVersion().get) >= ScalaRelease.`2_13`(0))
+    assume(IzScala.scalaRelease >= ScalaRelease.`2_13`(0))
     assertCompiles(
       """
         new ModuleDef {

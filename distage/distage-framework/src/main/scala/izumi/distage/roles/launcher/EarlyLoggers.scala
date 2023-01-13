@@ -4,6 +4,7 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.roles.RoleAppMain
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams}
 import izumi.logstage.api.Log.Level
+import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
 
 object EarlyLoggers {
@@ -13,12 +14,10 @@ object EarlyLoggers {
     IzLogger(rootLogLevel)("phase" -> "early")
   }
 
-  def makeLateLogger(parameters: RawAppArgs, earlyLogger: IzLogger, config: AppConfig, defaultLogLevel: Log.Level, defaultLogFormatJson: Boolean): IzLogger = {
+  def makeLateLogRouter(parameters: RawAppArgs, earlyLogger: IzLogger, config: AppConfig, defaultLogLevel: Log.Level, defaultLogFormatJson: Boolean): LogRouter = {
     val rootLogLevel = getRootLogLevel(parameters.globalParameters, defaultLogLevel)
     val logJson = getLogFormatJson(parameters.globalParameters, defaultLogFormatJson)
-    val router = new SimpleLoggerConfigurator(earlyLogger).makeLogRouter(config.config, rootLogLevel, logJson)
-
-    IzLogger(router)("phase" -> "late")
+    new SimpleLoggerConfigurator(earlyLogger).makeLogRouter(config.config, rootLogLevel, logJson)
   }
 
   private def getRootLogLevel(parameters: RawEntrypointParams, defaultLogLevel: Log.Level): Level = {

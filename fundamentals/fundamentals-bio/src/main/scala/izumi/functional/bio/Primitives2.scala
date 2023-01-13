@@ -20,13 +20,11 @@ object Primitives2 {
       override def mkSemaphore(permits: Long): G[Nothing, Semaphore2[G]] = fg(self.mkSemaphore(permits)).map(_.mapK(fg: Morphism1[F[Nothing, _], G[Nothing, _]]))
     }
   }
+
+  @inline def PrimitivesFromCatsPrimitives[F[+_, +_]: Async2: Fork2]: Primitives2[F] = new PrimitivesFromBIOAndCats[F]
 }
 
 private[bio] sealed trait PrimitivesInstances
-object PrimitivesInstances extends PrimitivesLowPriorityInstances {
+object PrimitivesInstances {
   @inline implicit def PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: Primitives3[F] = impl.PrimitivesZio.asInstanceOf[Primitives3[F]]
-}
-
-sealed trait PrimitivesLowPriorityInstances {
-  @inline implicit def PrimitivesFromCatsPrimitives[F[+_, +_]: Async2: Fork2]: Primitives2[F] = new PrimitivesFromBIOAndCats[F]
 }

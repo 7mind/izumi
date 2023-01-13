@@ -15,66 +15,71 @@ class ConstructorContext[R: Type, Q <: Quotes, U <: ConstructorUtil[Q]](using va
 
   val resultTpe = TypeRepr.of[R].dealias.simplified
   val resultTpeTree = TypeTree.of[R]
-  val resultTpeSym = resultTpe.typeSymbol
+  private val resultTpes = ReflectionUtil.intersectionMembers(resultTpe)
+  val resultTpeSyms = resultTpes.map(_.typeSymbol)
 
-  val refinementMethods = util.unpackRefinement(resultTpe)
+  val refinementMethods = resultTpes.flatMap(util.unpackRefinement)
 
-  val abstractMembers =
-    resultTpeSym.fieldMembers
-      .filter(
-        m =>
-          !m.flags.is(Flags.FieldAccessor) && !m.isLocalDummy && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && !m.flags.is(Flags.Synthetic) && m.isValDef
-      )
-    ++ resultTpeSym.methodMembers
-      .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && !m.flags.is(Flags.Synthetic) && m.isDefDef)
+  val abstractMembers = {
+    val abstractFields = resultTpeSyms.flatMap(
+      _.fieldMembers
+        .filter(
+          m =>
+            !m.flags.is(Flags.FieldAccessor) && !m.isLocalDummy && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && !m.flags.is(Flags.Synthetic) && m.isValDef
+        )
+    )
+    val abstractMethods = resultTpeSyms.flatMap(
+      _.methodMembers
+        .filter(m => m.flags.is(Flags.Method) && m.flags.is(Flags.Deferred) && !m.flags.is(Flags.Artifact) && !m.flags.is(Flags.Synthetic) && m.isDefDef)
+    )
+    (abstractFields ++ abstractMethods).distinct
+  }
 
   val abstractMethodsWithParams = abstractMembers.filter(m => m.flags.is(Flags.Method) && m.paramSymss.nonEmpty)
 //    val refinementMethodsWithParams = refinementMethods.filter(_._2.paramTypes.nonEmpty)
 
-  val parentsSymbols = util.findRequiredImplParents(resultTpeSym)
-  val parentTypesParameterized = parentsSymbols.map(resultTpe.baseType)
-  val constructorParamLists = parentTypesParameterized.map(t => t -> util.buildConstructorParameters(t))
-  val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
+  lazy val parentTypesParameterized = {
+    resultTpes
+      .flatMap(
+        resTpe => {
+          util
+            .findRequiredImplParents(resTpe.typeSymbol, resTpe)
+            .map(resTpe baseType _)
+        }
+      ).distinct
+  }
+  lazy val constructorParamLists = parentTypesParameterized.map(t => t -> util.extractConstructorParamLists(t))
+  lazy val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
 
-  val methodDecls = abstractMembers.map(m => (m.name, m.flags.is(Flags.Method), Some(m), resultTpe.memberType(m))) ++ refinementMethods
+  val methodDecls = {
+    val allMembers = abstractMembers.map(m => util.MemberRepr(m.name, m.flags.is(Flags.Method), Some(m), resultTpe.memberType(m), false)) ++ refinementMethods
+    util
+      .processOverrides(allMembers)
+      .sortBy(_.name) // sort alphabetically because Dotty order is undefined (does not return in definition order)
+  }
 
-  def isFactory: Boolean = abstractMembers.nonEmpty || refinementMethods.nonEmpty
+  def isFactoryOrTrait: Boolean = abstractMembers.nonEmpty || refinementMethods.nonEmpty
 
-  def isWireableTrait: Boolean = abstractMethodsWithParams.isEmpty
+  def isWireableTrait: Boolean = abstractMethodsWithParams.isEmpty && !resultTpeSyms.exists(_.flags.is(Flags.Sealed))
 }
 
-class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
+class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
   import qctx.reflect.*
 
   private val withAnnotationSym: Symbol = TypeRepr.of[With].typeSymbol
 
   final case class ParamRepr(name: String, mbSymbol: Option[Symbol], tpe: TypeRepr)
 
-  type ParamReprList = List[ParamRepr]
-  type ParamReprLists = List[ParamReprList]
+  type ParamReprLists = List[List[ParamRepr]]
 
-  def assertSignatureIsAcceptableForFactory(signatureParams: ParamReprList, resultTpe: TypeRepr, clue: String): Unit = {
-    assert(signatureParams.groupMap(_.name)(_.tpe).forall(_._2.size == 1), "BUG: duplicated arg names!")
+  final case class MemberRepr(name: String, isMethod: Boolean, mbSymbol: Option[Symbol], tpe: TypeRepr, isNewMethod: Boolean)
 
-    val sigRevIndex = signatureParams.groupMap(_.tpe)(_.name)
-    val duplications = sigRevIndex.filter(_._2.size > 1)
-
-    if (duplications.nonEmpty) {
-      import izumi.fundamentals.platform.strings.IzString.*
-      val explanation = duplications.map((t, nn) => s"${t.show}: ${nn.mkString(", ")}").niceList()
-//      report.errorAndAbort(s"Cannot build factory for ${resultTpe.show}, $clue contais contradicting arguments: $explanation")
-      report.warning(s"Cannot build factory for ${resultTpe.show}, $clue contais contradicting arguments: $explanation")
-    }
-
-    sigRevIndex.view.mapValues(_.head).toMap
-  }
-
-  def requireConcreteTypeConstructor[R: Type](macroName: String): Unit = {
-    requireConcreteTypeConstructor(TypeRepr.of[R], macroName)
+  def assertSignatureIsAcceptableForFactory(signatureParams: List[ParamRepr], resultTpe: TypeRepr, clue: String): Unit = {
+    require(signatureParams.groupMap(_.name)(_.tpe).forall(_._2.size == 1), "BUG: duplicated arg names!")
   }
 
   def requireConcreteTypeConstructor(tpe: TypeRepr, macroName: String): Unit = {
-    if (!ReflectionUtil.allPartsStrong(tpe.typeSymbol.typeRef)) {
+    if (!ReflectionUtil.intersectionUnionMembers(tpe).forall(t => ReflectionUtil.allPartsStrong(t.typeSymbol.typeRef))) {
       val hint = tpe.dealias.show
       report.errorAndAbort(
         s"""$macroName: Can't generate constructor for ${tpe.show}:
@@ -85,7 +90,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def makeFunctoid[R: Type](params: ParamReprList, argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
+  def makeFunctoid[R: Type](params: List[ParamRepr], argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
     val paramsMacro = new FunctoidParametersMacro[qctx.type]
 
     val paramDefs = params.map {
@@ -120,7 +125,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
   }
 
   def wrapIntoFunctoidRawLambda[R: Type](
-    params: ParamReprList
+    params: List[ParamRepr]
   )(body: (Symbol, List[Term]) => Tree
   ): Expr[Seq[Any] => R] = {
     val mtpe = MethodType(List("args"))(
@@ -135,9 +140,9 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
           val argRefs = params.iterator.zipWithIndex.map {
             case (ParamRepr(_, _, paramTpe), idx) =>
               paramTpe match {
-                case ByNameUnwrappedAsType('[t]) =>
+                case ByNameUnwrappedTypeReprAsType('[t]) =>
                   '{ ${ args.asExprOf[Seq[Any]] }.apply(${ Expr(idx) }).asInstanceOf[() => t].apply() }.asTerm
-                case AsType('[t]) =>
+                case TypeReprAsType('[t]) =>
                   '{ ${ args.asExprOf[Seq[Any]] }.apply(${ Expr(idx) }).asInstanceOf[t] }.asTerm
                 case _ =>
                   report.errorAndAbort(s"Invalid higher-kinded type $paramTpe ${paramTpe.show}")
@@ -155,8 +160,8 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
         import scala.collection.immutable.Queue
         val (_, argsLists) = paramss.foldLeft((args0, Queue.empty[List[Term]])) {
           case ((args, res), params) =>
-            val (argList, rest) = args.splitAt(params.size)
-            (rest, res :+ (argList: List[Tree]).asInstanceOf[List[Term]])
+            val (argList, restArgs) = args.splitAt(params.size)
+            (restArgs, res :+ argList)
         }
 
         val appl = argsLists.foldLeft(constructorTerm)(_.appliedToArgs(_))
@@ -164,7 +169,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  private object ByNameUnwrappedAsType {
+  private object ByNameUnwrappedTypeReprAsType {
     def unapply(t: TypeRepr): Option[Type[?]] = {
       t match {
         case ByNameType(u) => Some(u.asType)
@@ -173,34 +178,58 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  private object AsType {
+  object TypeReprAsType {
     def unapply(t: TypeRepr): Some[Type[?]] = {
       Some(t.asType)
     }
   }
 
-  def unpackRefinement(t: TypeRepr): List[(String, Boolean, Option[Symbol], MethodOrPoly)] = {
+  def unpackRefinement(t: TypeRepr): List[MemberRepr] = {
     t match {
-      case Refinement(parent, name, m: MethodOrPoly) =>
-        (name, true, None, m) :: unpackRefinement(parent)
+      // type "meanings" taken from scala3-compiler `scala.quoted.runtime.impl.printers.SourceCode` class
+      case Refinement(parent, name, methodType) =>
+        methodType match {
+          case _: TypeBounds =>
+            // type
+            unpackRefinement(parent)
+          case _: ByNameType | _: MethodType | _: TypeLambda =>
+            // def
+            MemberRepr(name, isMethod = true, None, methodType, isNewMethod = true) :: unpackRefinement(parent)
+          case _ =>
+            // val
+            MemberRepr(name, isMethod = false, None, methodType, isNewMethod = true) :: unpackRefinement(parent)
+        }
       case _ =>
         Nil
     }
   }
 
-  def extractMethodSignature(t0: TypeRepr, methodSym: Symbol): ParamReprLists = {
-    val paramSymssExcTypes = methodSym.paramSymss.filterNot(_.headOption.exists(_.isTypeParam))
+  def processOverrides(memberReprs: List[MemberRepr]): List[MemberRepr] = {
+    memberReprs
+      .groupBy(m => (m.name, getMethodArityWithTypeParams(m.tpe)))
+      .iterator.flatMap {
+        case (_, members) if members.sizeIs > 1 =>
+          val mostSpecificMember = members.min(Ordering.fromLessThan[TypeRepr]((t1, t2) => t1 <:< t2 && !(t1 =:= t2)).on(m => returnTypeOfByName(m.tpe)))
+          val isVal = members.exists(!_.isMethod)
+          List(mostSpecificMember.copy(isMethod = !isVal, isNewMethod = false))
+        case (_, members) =>
+          members
+      }.toList
+  }
 
+  def extractMethodParamLists(methodType: TypeRepr, methodSym: Symbol): ParamReprLists = {
     def go(t: TypeRepr, paramSymss: List[List[Symbol]]): ParamReprLists = {
       t match {
-        case mtpe @ MethodType(nn, tt, ret) =>
-          nn.iterator
-            .zip(tt)
+        case mtpe @ MethodType(names, tpes, ret) =>
+          names.iterator
+            .zip(tpes)
             .zipAll(paramSymss match { case h :: _ => h; case _ => List.empty[Symbol] }, null, null.asInstanceOf[Symbol])
             .map {
               case (null, _) => null
               case ((n, t), maybeSymbol) => ParamRepr(n, Option(maybeSymbol), t)
-            }.takeWhile(_ ne null).toList :: go(ret, paramSymss.drop(1))
+            }
+            .takeWhile(_ ne null)
+            .toList :: go(ret, paramSymss.drop(1))
         case PolyType(_, _, ret) =>
           go(ret, paramSymss)
         case _ =>
@@ -208,7 +237,17 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
       }
     }
 
-    go(t0, paramSymssExcTypes)
+    val paramSymssExcTypes = methodSym.paramSymss.filterNot(_.headOption.exists(_.isTypeParam))
+
+    go(methodType, paramSymssExcTypes)
+  }
+
+  def getMethodArityWithTypeParams(mtpe: TypeRepr): Int = {
+    mtpe match {
+      case MethodType(names, _, ret) => names.size + getMethodArityWithTypeParams(ret)
+      case PolyType(names, _, ret) => names.size + getMethodArityWithTypeParams(ret)
+      case _ => 0
+    }
   }
 
   @tailrec
@@ -243,7 +282,17 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def dropTypeRef(tpe: TypeRepr): TypeRepr = {
+  // FIXME duplicates FunctoidMacro.FunctoidParametersMacro#dropByName
+  @tailrec final def returnTypeOfByName(tpe: TypeRepr): TypeRepr = {
+    tpe match {
+      case ByNameType(t) =>
+        returnTypeOfByName(t)
+      case t =>
+        t
+    }
+  }
+
+  def dereferenceTypeRef(tpe: TypeRepr): TypeRepr = {
     tpe match {
       case t: TypeRef =>
         t.typeSymbol.owner.typeRef.memberType(t.typeSymbol)
@@ -252,22 +301,25 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def readWithAnnotation(tpe: TypeRepr): Option[TypeRepr] = {
-    tpe match {
-      case AnnotatedType(_, aterm) if aterm.tpe.baseClasses.contains(withAnnotationSym) =>
-        aterm match {
-          case Apply(TypeApply(Select(New(_), _), c :: _), _) =>
-            Some(c.tpe)
-          case _ =>
-            report.errorAndAbort(s"distage.With annotation expects one type argument but got malformed tree ${aterm.show} ($aterm) : ${aterm.tpe}")
-        }
-      case _ =>
-        None
+  def readWithAnnotation(name: String, annotSym: Option[Symbol], tpe: TypeRepr): Option[TypeRepr] = {
+    ReflectionUtil.readTypeOrSymbolDIAnnotation(withAnnotationSym)(name, annotSym, Right(tpe)) {
+      case Apply(TypeApply(Select(New(_), _), c :: _), _) =>
+        Some(c.tpe)
+      case aterm =>
+        report.errorAndAbort(s"distage.With annotation expects one type argument but got malformed tree ${aterm.show} ($aterm) : ${aterm.tpe}")
     }
   }
 
-  def findRequiredImplParents(resultTpeSym: Symbol): List[Symbol] = {
-    if (!resultTpeSym.flags.is(Flags.Trait)) {
+  def findRequiredImplParents(resultTpeSym: Symbol, resultTpe: TypeRepr): List[Symbol] = {
+    if (!resultTpeSym.flags.is(Flags.Trait) && !(try
+        dereferenceTypeRef(resultTpeSym.typeRef) match {
+          case t: AndOrType => ReflectionUtil.intersectionUnionMembers(t).forall(_.typeSymbol.flags.is(Flags.Trait))
+          case _ => false
+        }
+      catch {
+        case t: Throwable =>
+          throw new RuntimeException(s"Bad symbol ${resultTpeSym.isNoSymbol} $resultTpeSym ($resultTpe | ${resultTpe.show}) ${resultTpeSym.methodMembers} $t")
+      })) {
       List(resultTpeSym)
     } else {
       val banned = mutable.HashSet[Symbol](defn.ObjectClass, defn.MatchableClass, defn.AnyRefClass, defn.AnyValClass, defn.AnyClass)
@@ -313,7 +365,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
   }
 
-  def buildConstructorParameters(tpe: TypeRepr): ParamReprLists = {
+  def extractConstructorParamLists(tpe: TypeRepr): ParamReprLists = {
     val ctorMethodTypeApplied =
       try {
         tpe.memberType(tpe.typeSymbol.primaryConstructor).appliedTo(tpe.typeArgs)
@@ -322,28 +374,27 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
           throw new RuntimeException(s"Got $t in tpe=${tpe.show} prim=${tpe.typeSymbol.primaryConstructor}, pt=${tpe.typeSymbol.primaryConstructor.typeRef}")
       }
 
-    extractMethodSignature(ctorMethodTypeApplied, tpe.typeSymbol.primaryConstructor)
+    extractMethodParamLists(ctorMethodTypeApplied, tpe.typeSymbol.primaryConstructor)
   }
 
-  def buildConstructorApplication(baseType: TypeRepr): Term = {
-    Some(baseType.typeSymbol.primaryConstructor).filterNot(_.isNoSymbol) match {
-      case Some(consSym) =>
-        val ctorTree = Select(New(TypeTree.of(using baseType.asType)), consSym)
-        ctorTree.appliedToTypeTrees(baseType.typeArgs.map(repr => TypeTree.of(using repr.asType)))
-      case None =>
-        report.errorAndAbort(s"Cannot find primary constructor in $baseType")
+  def buildConstructorTermAppliedToTypeParameters(resultType: TypeRepr): Term = {
+    resultType.typeSymbol.primaryConstructor match {
+      case s if s.isNoSymbol =>
+        report.errorAndAbort(s"Cannot find primary constructor in $resultType")
+      case consSym =>
+        val ctorTree = Select(New(TypeTree.of(using resultType.asType)), consSym)
+        ctorTree.appliedToTypeTrees(resultType.typeArgs.map(tArg => TypeTree.of(using tArg.asType)))
     }
   }
 
   def buildParentConstructorCallTerms(
-    resultTpe: TypeRepr,
     constructorParamListsRepr: List[(TypeRepr, ParamReprLists)],
-    contextParameters: List[Term],
+    outerLamArgs: List[Term],
   ): Seq[Term] = {
     import scala.collection.immutable.Queue
-    val (_, parents) = constructorParamListsRepr.foldLeft((contextParameters, Queue.empty[Term])) {
+    val (_, parents) = constructorParamListsRepr.foldLeft((outerLamArgs, Queue.empty[Term])) {
       case ((remainingLamArgs, doneCtors), (parentType, ctorParamListsRepr)) =>
-        val ctorTreeParameterized = buildConstructorApplication(parentType)
+        val ctorTreeParameterized = buildConstructorTermAppliedToTypeParameters(parentType)
         val (rem, argsLists) = ctorParamListsRepr.foldLeft((remainingLamArgs, Queue.empty[List[Term]])) {
           case ((lamArgs, res), params) =>
             val (argList, rest) = lamArgs.splitAt(params.size)
@@ -355,5 +406,220 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) {
     }
 
     parents
+  }
+
+  // FIXME: move back to FactoryConstructor
+  object factoryUtil {
+
+    sealed trait FactoryProductParameter
+    final case class InjectedDependencyParameter(
+      depByNameParamRepr: ParamRepr,
+      flatOutermostLambdaSigIndex: Int,
+    ) extends FactoryProductParameter
+    final case class MethodParameter(/*sigName: String, tpe: TypeRepr, */ flatLocalSigIndex: Int) extends FactoryProductParameter
+
+    final case class FactoryProductData(
+//      name: String,
+      getFactoryProductType: List[TypeTree] => TypeRepr,
+//      implTypeSym: Symbol,
+//      dependencies: List[InjectedDependencyParameter],
+      byNameDependencies: List[ParamRepr],
+      hackyTraitImpl: Option[(List[TypeTree], List[Term], Symbol, List[Term], Int) => Term],
+      factoryProductParameterLists: List[List[FactoryProductParameter]],
+    )
+
+    @annotation.experimental
+    def getFactoryProductData(
+      resultTpe: TypeRepr
+    )(flatLambdaSigIndexGetAndIncrement: () => Int
+    )(methodName: String,
+      mbMethodSym: Option[Symbol],
+      methodType: TypeRepr,
+    ): FactoryProductData = {
+      val getFactoryProductType = {
+        (methodTypeArgs: List[TypeTree]) =>
+          val rett0 = methodType match {
+            case p: PolyType =>
+              p.appliedTo(methodTypeArgs.map(_.tpe))
+            case _ =>
+              methodType
+          }
+          val rett = returnTypeOfMethodOrByName(rett0)
+          readWithAnnotation(methodName, mbMethodSym, rett).getOrElse(rett).dealias.simplified
+      }
+      val factoryProductType = getFactoryProductType(Nil)
+
+      val isTrait = factoryProductType.typeSymbol.flags.is(Flags.Trait) || factoryProductType.typeSymbol.flags.is(Flags.Abstract)
+
+      val ctxUntyped = new ConstructorContext[Any, qctx.type, self.type & ConstructorUtil[qctx.type]](using qctx)(
+        self.asInstanceOf[self.type & ConstructorUtil[qctx.type]]
+      )(factoryProductType.asType.asInstanceOf[Type[Any]])
+
+      val factoryProductCtorParamLists = {
+        if (isTrait) {
+          // TODO: decopypaste
+          val byNameMethodArgs = ctxUntyped.methodDecls.map {
+            case MemberRepr(n, _, s, t, _) => ParamRepr(n, s, t)
+          } // become byName later if they're InjectedDependencyParameter
+          ctxUntyped.constructorParamLists.flatMap(_._2) :+ byNameMethodArgs
+        } else {
+          extractConstructorParamLists(factoryProductType)
+        }
+      }
+      assertSignatureIsAcceptableForFactory(factoryProductCtorParamLists.flatten, resultTpe, s"implementation constructor ${factoryProductType.show}")
+
+      val methodParams = extractMethodParamLists(methodType, mbMethodSym.getOrElse(Symbol.noSymbol)).flatten
+      assertSignatureIsAcceptableForFactory(methodParams, resultTpe, s"factory method $methodName")
+
+      val indexedMethodParams = methodParams.zipWithIndex
+      val methodParamIndex = indexedMethodParams.map { case (ParamRepr(n, _, t), idx) => (t, (n, idx)) }
+
+      val factoryProductParams = factoryProductCtorParamLists.zipWithIndex.map {
+        case (params, paramListIdx) =>
+          params.map {
+            case ParamRepr(paramName, symbol, paramType) =>
+              methodParamIndex.filter((t, _) => returnTypeOfMethodOrByName(t) =:= returnTypeOfMethodOrByName(paramType)) match {
+                case (_, (_, idx)) :: Nil =>
+                  MethodParameter( /*paramName, paramType, */ idx)
+
+                case Nil =>
+                  val curIndex = flatLambdaSigIndexGetAndIncrement()
+                  val newName = if (paramListIdx > 0) {
+                    s"_${methodName}_${paramListIdx}_$paramName"
+                  } else {
+                    s"_${methodName}_$paramName"
+                  }
+                  InjectedDependencyParameter(ParamRepr(newName, symbol, ensureByName(paramType)), curIndex)
+
+                case multiple =>
+                  val (_, (_, idx)) = multiple
+                    .find { case (_, (n, _)) => n == paramName }
+                    .getOrElse(
+                      report.errorAndAbort(
+                        s"""Couldn't disambiguate between multiple arguments with the same type available for parameter $paramName: ${paramType.show} of ${factoryProductType.show} constructor
+                           |Expected one of the arguments to be named `$paramName` or for the type to be unique among factory method arguments""".stripMargin
+                      )
+                    )
+                  MethodParameter(idx)
+              }
+          }
+      }
+
+      val consumedSigParams = factoryProductParams.flatten.collect { case p: MethodParameter => p.flatLocalSigIndex }.toSet
+      val unconsumedParameters = indexedMethodParams.filterNot(p => consumedSigParams.contains(p._2))
+
+      if (unconsumedParameters.nonEmpty) {
+        import izumi.fundamentals.platform.strings.IzString.*
+        val explanation = unconsumedParameters.map { case (ParamRepr(n, _, t), _) => s"$n: ${t.show}" }.niceList()
+        report.errorAndAbort(
+          s"Cannot build factory for ${resultTpe.show}, factory method $methodName has arguments which were not consumed by implementation constructor ${factoryProductType.show}: $explanation"
+        )
+      }
+
+      val hackySecretTraitImpl = if (isTrait) {
+        Some(
+          (typeArgs: List[TypeTree], outermostLambdaArgs: List[Term], lamSym: Symbol, thisMethodArgs: List[Term], indexShift: Int) => {
+            val ctxTyped = new ConstructorContext[Any, qctx.type, self.type & ConstructorUtil[qctx.type]](using qctx)(
+              self.asInstanceOf[self.type & ConstructorUtil[qctx.type]]
+            )(getFactoryProductType(typeArgs).asType.asInstanceOf[Type[Any]])
+
+            // FIXME TraitConstructor copypaste
+            val (lamOnlyCtorArguments, lamOnlyMethodArguments) = factoryProductParams.flatten
+              .map {
+                case p: InjectedDependencyParameter =>
+                  outermostLambdaArgs(p.flatOutermostLambdaSigIndex + indexShift)
+                case p: MethodParameter =>
+                  thisMethodArgs(p.flatLocalSigIndex)
+              }
+              .splitAt(ctxTyped.flatCtorParams.size)
+
+            val parents = buildParentConstructorCallTerms(ctxTyped.constructorParamLists, lamOnlyCtorArguments)
+
+            val name: String = s"${ctxTyped.resultTpeSyms.map(_.name).mkString("With")}TraitAutoImpl"
+            val clsSym = {
+              def generateDecls(cls: Symbol): List[Symbol] = ctxTyped.methodDecls.map {
+                case MemberRepr(name, isMethod, _, mtype, _) =>
+                  // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
+                  if (isMethod) {
+                    Symbol.newMethod(cls, name, mtype, Flags.Method | Flags.Override, Symbol.noSymbol)
+                  } else {
+                    Symbol.newVal(cls, name, mtype, Flags.Override, Symbol.noSymbol)
+                  }
+              }
+              Symbol.newClass(lamSym, name, parents = ctxTyped.parentTypesParameterized, decls = generateDecls, selfType = None)
+            }
+
+            val defs = ctxTyped.methodDecls.zip(lamOnlyMethodArguments).map {
+              case (MemberRepr(name, isMethod, _, _, _), arg) =>
+                val methodSyms = if (isMethod) clsSym.declaredMethod(name) else List(clsSym.declaredField(name))
+                assert(methodSyms.size == 1, "BUG: duplicated methods!")
+                val methodSym = methodSyms.head
+                if (isMethod) {
+                  DefDef(methodSym, _ => Some(arg))
+                } else {
+                  ValDef(methodSym, Some(arg))
+                }
+            }
+
+            val clsDef = ClassDef(clsSym, parents.toList, body = defs)
+            val applyNewTree = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), ctxTyped.resultTpeTree)
+            val block = Block(List(clsDef), applyNewTree)
+            Typed(block, ctxTyped.resultTpeTree)
+          }
+        )
+      } else {
+        None
+      }
+
+      FactoryProductData(
+        getFactoryProductType,
+        factoryProductParams.flatten.collect { case p: InjectedDependencyParameter => p.depByNameParamRepr },
+        hackySecretTraitImpl,
+        factoryProductParams,
+      )
+    }
+
+    def implementFactoryMethod(
+      outermostLambdaArgs: List[Term],
+      factoryProductData: FactoryProductData,
+      methodSym: Symbol,
+      indexShift: Int,
+    ): DefDef = {
+      val FactoryProductData(getFactoryProductType, _, hackySecretTraitImpl, factoryProductParameterLists) = factoryProductData
+      DefDef(
+        methodSym,
+        thisMethodArgs0 => {
+          val (thisMethodArgs, thisMethodTypeArgs) = thisMethodArgs0.flatten.partitionMap { case t: Term => Left(t); case t: TypeTree => Right(t) }
+
+          Some(hackySecretTraitImpl match {
+            case Some(hackyHacky) =>
+              hackyHacky(
+                thisMethodTypeArgs,
+                outermostLambdaArgs,
+                methodSym,
+                thisMethodArgs,
+                indexShift,
+              )
+            case None =>
+              val factoryProductType = getFactoryProductType(thisMethodTypeArgs)
+
+              val ctorTreeParameterized = buildConstructorTermAppliedToTypeParameters(factoryProductType)
+
+              val argsLists: List[List[Term]] = factoryProductParameterLists.map(_.map {
+                case p: InjectedDependencyParameter =>
+                  outermostLambdaArgs(p.flatOutermostLambdaSigIndex + indexShift)
+                case p: MethodParameter =>
+                  thisMethodArgs(p.flatLocalSigIndex)
+              })
+
+              // TODO: check that there are no unconsumed parameters
+
+              val appl = argsLists.foldLeft(ctorTreeParameterized)(_.appliedToArgs(_))
+              Typed(appl, TypeTree.of(using factoryProductType.asType))
+          })
+        },
+      )
+    }
+
   }
 }

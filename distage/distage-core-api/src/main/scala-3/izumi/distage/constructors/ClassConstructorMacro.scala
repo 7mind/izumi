@@ -14,10 +14,16 @@ object ClassConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
+    util.requireConcreteTypeConstructor(TypeRepr.of[R], "ClassConstructor")
+
+    makeImpl[R](util)
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+
+  def makeImpl[R: Type](using qctx: Quotes)(util: ConstructorUtil[qctx.type]): Expr[ClassConstructor[R]] = {
+    import qctx.reflect.*
 
     val typeRepr = TypeRepr.of[R].dealias.simplified
-
-    util.dropTypeRef(typeRepr) match {
+    util.dereferenceTypeRef(typeRepr) match {
       case c: ConstantType =>
         singletonClassConstructor[R](Literal(c.constant))
 
@@ -25,8 +31,6 @@ object ClassConstructorMacro {
         singletonClassConstructor[R](Ident(t))
 
       case _ =>
-        util.requireConcreteTypeConstructor[R]("ClassConstructor")
-
         if (typeRepr.typeSymbol.flags.is(Flags.Trait) || typeRepr.typeSymbol.flags.is(Flags.Abstract)) {
           report.errorAndAbort(
             s"Cannot create ClassConstructor for type ${Type.show[R]} - it's a trait or an abstract class, not a concrete class. It cannot be constructed with `new`"
@@ -35,8 +39,8 @@ object ClassConstructorMacro {
 
         typeRepr.classSymbol match {
           case Some(_) =>
-            val ctorTreeParameterized = util.buildConstructorApplication(typeRepr)
-            val paramss = util.buildConstructorParameters(typeRepr)
+            val ctorTreeParameterized = util.buildConstructorTermAppliedToTypeParameters(typeRepr)
+            val paramss = util.extractConstructorParamLists(typeRepr)
             val lamExpr = util.wrapCtorApplicationIntoFunctoidRawLambda[R](paramss, ctorTreeParameterized)
 
             val f = util.makeFunctoid[R](paramss.flatten, lamExpr, '{ ProviderType.Class })
@@ -46,7 +50,7 @@ object ClassConstructorMacro {
             report.errorAndAbort(s"No class symbol defined for $typeRepr")
         }
     }
-  } catch { case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  }
 
   private def singletonClassConstructor[R0](using qctx: Quotes, rtpe0: Type[R0])(tree: qctx.reflect.Tree): Expr[ClassConstructor[R0]] = {
     type R <: R0 & Singleton

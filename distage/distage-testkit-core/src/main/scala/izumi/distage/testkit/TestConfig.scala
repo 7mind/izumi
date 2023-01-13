@@ -14,6 +14,12 @@ import scala.annotation.nowarn
 import scala.collection.compat.immutable.ArraySeq
 import scala.language.implicitConversions
 
+sealed trait TestActivationStrategy
+object TestActivationStrategy {
+  case object IgnoreConfig extends TestActivationStrategy
+  case class LoadConfig(ignoreUnknown: Boolean, warnUnset: Boolean) extends TestActivationStrategy
+}
+
 /**
   * General options:
   *
@@ -100,7 +106,13 @@ final case class TestConfig(
   planningOptions: PlanningOptions = PlanningOptions(),
   logLevel: Log.Level = Log.Level.Info,
   debugOutput: Boolean = false,
-)
+  activationStrategy: TestActivationStrategy = TestActivationStrategy.LoadConfig(ignoreUnknown = false, warnUnset = true),
+) {
+  def activate(changeActivation: Activation => Activation): TestConfig = {
+    this.copy(activation = changeActivation(this.activation))
+  }
+
+}
 object TestConfig {
   def forSuite(clazz: Class[?]): TestConfig = {
     val packageName = clazz.getPackage.getName

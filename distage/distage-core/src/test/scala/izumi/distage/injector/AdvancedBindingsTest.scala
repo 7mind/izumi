@@ -3,8 +3,8 @@ package izumi.distage.injector
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.SetCases.SetCase2
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.exceptions.TODOBindingException
 import distage.ModuleDef
+import izumi.distage.model.exceptions.runtime.TODOBindingException
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Try
@@ -26,9 +26,9 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
       make[TestDependency0].named("fug").todo
     })
 
-    val plan1 = injector.plan(def1)
-    val plan2 = injector.plan(def2)
-    val plan3 = injector.plan(def3)
+    val plan1 = injector.planUnsafe(def1)
+    val plan2 = injector.planUnsafe(def2)
+    val plan3 = injector.planUnsafe(def3)
 
     assert(Try(injector.produce(plan1).unsafeGet()).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
     assert(Try(injector.produce(plan2).unsafeGet()).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
@@ -46,7 +46,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
 
     val context = injector.produce(plan).unsafeGet()
     val svc = context.get[Service1]

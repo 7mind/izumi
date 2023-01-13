@@ -31,7 +31,7 @@ object RoleAppActivationParser {
     }
 
     protected def validateAxisChoice(activationInfo: ActivationInfo)(axisName: String, choiceName: String): Option[(Axis, Axis.AxisChoice)] = {
-      def options: String = activationInfo.availableChoices
+      def choices: String = activationInfo.availableChoices
         .map {
           case (axis, members) =>
             s"$axis:${members.niceList().shift(2)}"
@@ -43,8 +43,8 @@ object RoleAppActivationParser {
             case Some(member) =>
               Some(base -> member)
             case None =>
-              logger.warn(s"Unknown choice: $choiceName")
-              logger.warn(s"Available $options")
+              logger.warn(s"Unknown choice on axis $axisName: $choiceName")
+              logger.warn(s"All available $choices")
               if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
                 None
               } else {
@@ -56,7 +56,7 @@ object RoleAppActivationParser {
 
         case None =>
           logger.warn(s"Unknown axis: $axisName")
-          logger.warn(s"Available $options")
+          logger.warn(s"All available $choices")
           if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
             None
           } else {

@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.96`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.97`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -36,6 +36,7 @@ object Izumi {
 
   object PV {
     val sbt_mdoc = Version.VExpr("PV.sbt_mdoc")
+    val sbt_paradox = Version.VExpr("PV.sbt_paradox")
     val sbt_paradox_material_theme = Version.VExpr("PV.sbt_paradox_material_theme")
     val sbt_ghpages = Version.VExpr("PV.sbt_ghpages")
     val sbt_site = Version.VExpr("PV.sbt_site")
@@ -43,6 +44,8 @@ object Izumi {
     val sbt_scoverage = Version.VExpr("PV.sbt_scoverage")
     val sbt_pgp = Version.VExpr("PV.sbt_pgp")
     val sbt_assembly = Version.VExpr("PV.sbt_assembly")
+
+    val scala_js_version = Version.VExpr("PV.scala_js_version")
   }
 
   def entrypoint(args: Seq[String]) = {
@@ -52,6 +55,7 @@ object Izumi {
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
     sbtVersion = None,
+    scalaJsVersion = Version.VExpr("PV.scala_js_version"),
   )
 
   object Deps {
@@ -81,10 +85,10 @@ object Izumi {
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
     final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto) in Scope.Compile.all
-    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
+    final val pureconfig_generic_base = Library("com.github.pureconfig", "pureconfig-generic-base", V.pureconfig, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
       ScalaVersionScope.AllScala2
     )
-    final val magnolia = Library("com.propensive", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
+    final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
       ScalaVersionScope.AllScala2
     )
 
@@ -106,7 +110,7 @@ object Izumi {
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
-    final val scala3_compiler = Library("org.scala-lang", "scala3-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Auto) in Scope.Provided.all.scalaVersion(
+    final val scala3_compiler = Library("org.scala-lang", "scala3-compiler", Version.VExpr("scalaVersion.value"), LibraryType.AutoJvm) in Scope.Provided.all.scalaVersion(
       ScalaVersionScope.AllScala3
     )
     final val scala_library = Library("org.scala-lang", "scala-library", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
@@ -140,8 +144,8 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.16")
-  final val scala213 = ScalaVersion("2.13.8")
+  final val scala212 = ScalaVersion("2.12.17")
+  final val scala213 = ScalaVersion("2.13.10")
   final val scala300 = ScalaVersion("3.2.1")
 
   object Groups {
@@ -251,7 +255,26 @@ object Izumi {
             |    Some(Opts.resolver.sonatypeSnapshots)
             |})
             |""".stripMargin.raw,
-        "credentials" in SettingScope.Build += """Credentials(Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties")""".raw,
+        "credentials" in SettingScope.Build ++=
+          """
+            |{
+            |val credTarget = Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties"
+            |if (credTarget.exists) {
+            |  Seq(Credentials(credTarget))
+            |} else {
+            |  Seq.empty
+            |}
+            |}""".stripMargin.raw,
+        "credentials" in SettingScope.Build ++=
+          """
+            |{
+            |val credTarget = file(".") / ".secrets" / "credentials.sonatype-nexus.properties"
+            |if (credTarget.exists) {
+            |  Seq(Credentials(credTarget))
+            |} else {
+            |  Seq.empty
+            |}
+            |}""".stripMargin.raw,
         "homepage" in SettingScope.Build := """Some(url("https://izumi.7mind.io"))""".raw,
         "licenses" in SettingScope.Build := """Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))""".raw,
         "developers" in SettingScope.Build :=
@@ -298,6 +321,11 @@ object Izumi {
           ),
           SettingKey.Default := Const.EmptySeq,
         ),
+        "publishArtifact" in SettingScope.Raw("Compile / packageDoc") := Seq(
+          SettingKey(Some(scala300), None) := false,
+          SettingKey.Default := true,
+        ),
+        "publishArtifact" in SettingScope.Raw("Test / packageDoc") := false,
       )
 
     }
@@ -510,7 +538,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_core, pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
+        libs = Seq(pureconfig_core, pureconfig_generic_base, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm3,
@@ -661,9 +689,9 @@ object Izumi {
             identity
           }}""".raw,
           "previewFixedPort" := "Some(9999)".raw,
-          "git.remoteRepo" := "git@github.com:7mind/izumi-microsite.git",
+          "gitRemoteRepo" := "git@github.com:7mind/izumi-microsite.git",
           "mdocIn" := """baseDirectory.value / "src/main/tut"""".raw,
-          "sourceDirectory" in SettingScope.Raw("Paradox") := "mdocOut.value".raw,
+          "sourceDirectory" in SettingScope.Raw("(Compile / paradox)") := "mdocOut.value".raw,
           "mdocExtraArguments" ++= Seq(" --no-link-hygiene"),
           "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") :=
             """{
@@ -671,13 +699,13 @@ object Izumi {
               .dependsOn(mdoc.toTask(" "))
               .value
           }""".raw,
-          "version" in SettingScope.Raw("Paradox") := "version.value".raw,
-          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox)"),
+          "version" in SettingScope.Raw("(Compile / paradox)") := "version.value".raw,
+          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Compile)"),
           SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
           ),
-          SettingDef.RawSettingDef("""Paradox / paradoxMaterialTheme ~= {
+          SettingDef.RawSettingDef("""Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
             _.withCopyright("7mind.io")
               .withRepository(uri("https://github.com/7mind/izumi"))
             //        .withColor("222", "434343")
@@ -775,7 +803,7 @@ object Izumi {
     sharedAggSettings = Projects.root.sharedAggSettings,
     rootSettings = Projects.root.rootSettings,
     imports = Seq(
-      Import("com.typesafe.sbt.SbtGit.GitKeys._")
+      Import("com.github.sbt.git.SbtGit.GitKeys._")
     ),
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All, ScalaVersionScope.AllScala2), compilerPlugin = true),
@@ -791,7 +819,8 @@ object Izumi {
       SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
       SbtPlugin("com.eed3si9n", "sbt-unidoc", PV.sbt_unidoc),
       SbtPlugin("com.typesafe.sbt", "sbt-site", PV.sbt_site),
-      SbtPlugin("com.typesafe.sbt", "sbt-ghpages", PV.sbt_ghpages),
+      SbtPlugin("com.github.sbt", "sbt-ghpages", PV.sbt_ghpages),
+      SbtPlugin("com.lightbend.paradox", "sbt-paradox", PV.sbt_paradox),
       SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
       SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
     ),

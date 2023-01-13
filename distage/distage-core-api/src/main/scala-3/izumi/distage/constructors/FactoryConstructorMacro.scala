@@ -17,158 +17,70 @@ object FactoryConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.{ParamRepr, ParamReprList, ParamReprLists}
+    import util.{MemberRepr, ParamRepr, ParamReprLists, factoryUtil}
+    import factoryUtil.{FactoryProductData, InjectedDependencyParameter, MethodParameter}
+    util.requireConcreteTypeConstructor(TypeRepr.of[R], "FactoryConstructor")
 
-    val context = new ConstructorContext[R, qctx.type, util.type](util)
-    import context.*
+    val factoryContext = new ConstructorContext[R, qctx.type, util.type](util)
+    import factoryContext.{resultTpe, resultTpeSyms, resultTpeTree}
 
-    if (!isFactory) {
+    if (!factoryContext.isFactoryOrTrait) {
       report.errorAndAbort(
-        s"""$resultTpeSym has no abstract methods so it's not a factory;; methods=${resultTpeSym.methodMembers};; tpeTree=$resultTpeTree;; tpeTreeClass=${resultTpeTree.getClass}""".stripMargin
+        s"""${resultTpeSyms.mkString(" & ")} has no abstract methods so it's not a factory;; methods=${resultTpeSyms.map(s => (s, s.methodMembers))};; tpeTree=$resultTpeTree;; tpeTreeClass=${resultTpeTree.getClass}""".stripMargin
       )
     }
 
-    val refinementNames = refinementMethods.iterator.map(_._1).toSet
+    val refinementNames = factoryContext.refinementMethods.iterator.map(_._1).toSet
 
-    def decls(cls: Symbol): List[Symbol] = methodDecls.map {
-      case (name, _, _, mtype) =>
+    def generateDecls(cls: Symbol): List[Symbol] = factoryContext.methodDecls.map {
+      case MemberRepr(name, _, _, mtype, isNewMethod) =>
         // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
-        val overrideFlag = if (!refinementNames.contains(name)) Flags.Override else Flags.EmptyFlags
+        val overrideFlag = if (!isNewMethod) Flags.Override else Flags.EmptyFlags
         Symbol.newMethod(cls, name, mtype, overrideFlag | Flags.Method, Symbol.noSymbol)
     }
 
-    sealed trait Parameter
-    final case class DependencyParameter(paramName: String, mbParamSymbol: Option[Symbol], paramTpe: TypeRepr, argName: String, flatLambdaSigIndex: Int) extends Parameter
-    final case class MethodParameter(sigName: String, tpe: TypeRepr, flatLocalSigIndex: Int) extends Parameter
+    var flatLambdaSigIndex = 0 // index of a new dependency to add to the outermost lambda requesting parameters
 
-    final case class FactoryMethodDecl(
-      name: String,
-      impl: TypeRepr,
-      implTypeSym: Symbol,
-      params: List[List[Parameter]],
-    )
-
-    var flatLambdaSigIndex = 0
-    val factoryMethodData = methodDecls.map {
-      (n, _, mbSym, t) =>
-        val signatureParams = util.extractMethodSignature(t, mbSym.getOrElse(Symbol.noSymbol)).flatten
-        val rett = util.returnTypeOfMethodOrByName(t)
-        val factoryProductType = util.readWithAnnotation(rett).getOrElse(rett).dealias.simplified
-
-        val isTrait = factoryProductType.typeSymbol.flags.is(Flags.Trait) || factoryProductType.typeSymbol.flags.is(Flags.Abstract)
-        if (isTrait) {
-//          report.errorAndAbort(
-//            s"Cannot build factory for ${resultTpe.show}, factory method $n returns type ${impltype.show} which cannot be constructed with `new`"
-//          )
-          val msg = s"Cannot build factory for ${resultTpe.show}, factory method $n returns type ${factoryProductType.show} which cannot be constructed with `new`"
-          return '{ (throw new RuntimeException(${ Expr(msg) })): FactoryConstructor[R] }
-        }
-
-        val constructorParamLists = util.buildConstructorParameters(factoryProductType)
-
-        util.assertSignatureIsAcceptableForFactory(signatureParams, resultTpe, s"factory method $n")
-        util.assertSignatureIsAcceptableForFactory(constructorParamLists.flatten, resultTpe, s"implementation constructor ${factoryProductType.show}")
-
-        val indexedSigParams = signatureParams.zipWithIndex
-        val sigRevIndex = indexedSigParams.map { case (ParamRepr(n, _, t), idx) => (t, (n, idx)) }.toMap
-
-        val params = constructorParamLists.zipWithIndex.map {
-          case (pl, listIdx) =>
-            pl.map {
-              case ParamRepr(pn, s, pt) =>
-                sigRevIndex.find((t, _) => util.returnTypeOfMethodOrByName(t) =:= util.returnTypeOfMethodOrByName(pt)) match {
-                  case Some((_, (_, idx))) =>
-                    MethodParameter(pn, pt, idx)
-
-                  case None =>
-                    val curIndex = flatLambdaSigIndex
-                    flatLambdaSigIndex += 1
-                    val newName = if (listIdx > 0) {
-                      s"_${n}_${listIdx}_$pn"
-                    } else {
-                      s"_${n}_$pn"
-                    }
-                    DependencyParameter(pn, s, util.ensureByName(pt), newName, curIndex)
-                }
-            }
-        }
-
-        val consumedSigParams = params.flatten.collect { case p: MethodParameter => p.flatLocalSigIndex }.toSet
-        val unconsumedParameters = indexedSigParams.filterNot(p => consumedSigParams.contains(p._2))
-
-        if (unconsumedParameters.nonEmpty) {
-          import izumi.fundamentals.platform.strings.IzString.*
-          val explanation = unconsumedParameters.map { case (ParamRepr(n, _, t), _) => s"$n: ${t.show}" }.niceList()
-//          report.errorAndAbort(
-//            s"Cannot build factory for ${resultTpe.show}, factory method $n has arguments which were not consumed by implementation constructor ${impltype.show}: $explanation"
-//          )
-          val msg =
-            s"Cannot build factory for ${resultTpe.show}, factory method $n has arguments which were not consumed by implementation constructor ${factoryProductType.show}: $explanation"
-          return '{ (throw new RuntimeException(${ Expr(msg) })): FactoryConstructor[R] }
-        }
-
-        FactoryMethodDecl(n, factoryProductType, factoryProductType.typeSymbol, params)
+    val factoryProductData = factoryContext.methodDecls.map {
+      case MemberRepr(n, _, mbMethodSym, methodType, _) =>
+        factoryUtil.getFactoryProductData(resultTpe) {
+          () =>
+            val curIndex = flatLambdaSigIndex
+            flatLambdaSigIndex += 1
+            curIndex
+        }(n, mbMethodSym, methodType)
     }
 
-    val ctorArgs = flatCtorParams.map { case ParamRepr(n, s, t) => ParamRepr(n, s, util.returnTypeOfMethodOrByName(t)) }
-    val byNameMethodArgs = factoryMethodData.flatMap(_.params).flatten.collect { case p: DependencyParameter => ParamRepr(p.argName, p.mbParamSymbol, p.paramTpe) }
-    val lamParams: ParamReprList = ctorArgs ++ byNameMethodArgs
+    val ctorArgs = factoryContext.flatCtorParams
+    val byNameMethodArgs = factoryProductData.flatMap(_.byNameDependencies)
+    val lamParams: List[ParamRepr] = ctorArgs ++ byNameMethodArgs
     val indexShift = ctorArgs.length
 
     val lamExpr = util.wrapIntoFunctoidRawLambda[R](lamParams) {
-      (lamSym, args0) =>
+      (lamSym, lambdaArgs) =>
 
-        val (lamOnlyCtorArguments, _) = args0.splitAt(flatCtorParams.size)
+        val (lamOnlyCtorArguments, _) = lambdaArgs.splitAt(factoryContext.flatCtorParams.size)
 
-        val parents = util.buildParentConstructorCallTerms(resultTpe, constructorParamLists, lamOnlyCtorArguments)
+        val parents = util.buildParentConstructorCallTerms(factoryContext.constructorParamLists, lamOnlyCtorArguments)
 
-        val name: String = s"${resultTpeSym.name}FactoryAutoImpl"
-        var declSymbols: List[Symbol] = null
+        val name: String = s"${resultTpeSyms.map(_.name).mkString("With")}FactoryAutoImpl"
+        var methodSymbols: List[Symbol] = null
         val clsSym = Symbol.newClass(
-          lamSym,
-          name,
-          parents = parentTypesParameterized,
+          parent = lamSym,
+          name = name,
+          parents = factoryContext.parentTypesParameterized,
           decls = {
             s =>
-              val methods = decls(s)
-              declSymbols = methods
+              val methods = generateDecls(s)
+              methodSymbols = methods
               methods
           },
           selfType = None,
         )
 
-        val defs = factoryMethodData.zip(declSymbols).map {
-          (fmd, methodSym) =>
-            DefDef(
-              methodSym,
-              sigArgs => {
-
-                val ctorTreeParameterized = util.buildConstructorApplication(fmd.impl)
-                val sigFlat = sigArgs.flatten
-
-                val argsLists: List[List[Term]] = fmd.params.map {
-                  pl =>
-                    pl.map {
-                      case p: DependencyParameter =>
-                        args0(p.flatLambdaSigIndex + indexShift)
-                      case p: MethodParameter =>
-                        sigFlat(p.flatLocalSigIndex) match {
-                          case t: Term => t
-                          case o =>
-                            // FIXME support type parameters (GenericAssistedFactory)
-                            return '{ (throw new RuntimeException("FIXME: support type parameters")): FactoryConstructor[R] }
-//                            report.errorAndAbort(s"Impossible, not defdef argument not a term = $o (${o.show}) in $sigArgs (sym sig: ${methodSym.signature})")
-                        }
-                    }
-                }
-
-                // TODO: check that there are no unconsumed parameters
-                val appl = argsLists.foldLeft(ctorTreeParameterized)(_.appliedToArgs(_))
-                val trm = Typed(appl, TypeTree.of(using fmd.impl.asType))
-
-                Some(trm)
-              },
-            )
+        val defs = factoryProductData.zip(methodSymbols).map {
+          case (factoryProductData, methodSym) =>
+            factoryUtil.implementFactoryMethod(lambdaArgs, factoryProductData, methodSym, indexShift)
         }
 
         val clsDef = ClassDef(clsSym, parents.toList, body = defs)
@@ -198,6 +110,7 @@ object FactoryConstructorMacro {
     val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Factory })
     '{ new FactoryConstructor[R](${ f }) }
 
-  } catch { case NonFatal(t) => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case NonFatal(t) => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+//  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 
 }
