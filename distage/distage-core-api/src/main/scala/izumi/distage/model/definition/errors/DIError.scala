@@ -5,6 +5,7 @@ import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.MutSel
 import izumi.distage.model.definition.errors.ConflictResolutionError.*
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -18,15 +19,19 @@ sealed trait DIError
 
 object DIError {
   implicit class DIResultExt[A](private val result: Either[List[DIError], A]) extends AnyVal {
-    def getOrThrow(): A = {
+    def cumulateErrors: Either[InjectorFailed, A] = {
       result match {
         case Left(errors) =>
           val i = new DIFailureInterpreter()
-          i.throwOnError(errors)
+          Left(i.asError(errors))
 
         case Right(resolved) =>
-          resolved
+          Right(resolved)
       }
+    }
+    def getOrThrow(): A = cumulateErrors match {
+      case Left(value) => throw value
+      case Right(value) => value
     }
   }
 
