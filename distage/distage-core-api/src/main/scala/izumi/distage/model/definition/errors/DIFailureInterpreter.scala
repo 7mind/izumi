@@ -10,31 +10,20 @@ class DIFailureInterpreter() {
   }
 
   def asError(issues: List[DIError]): InjectorFailed = {
-    val conflicts = issues.collect { case c: ConflictResolutionFailed => c }
+    import izumi.fundamentals.platform.strings.IzString.*
+    lazy val conflicts = issues.collect { case c: ConflictResolutionFailed => c }
+    lazy val loops = issues.collect { case e: LoopResolutionError => DIError.formatError(e) }.niceList()
+    lazy val inconsistencies = issues.collect { case e: DIError.VerificationError => DIError.formatError(e) }.niceList()
+
     if (conflicts.nonEmpty) {
       conflictError(conflicts)
+    } else if (loops.nonEmpty) {
+      new InjectorFailed(s"Injector failed unexpectedly. List of issues: $loops", issues)
+    } else if (inconsistencies.nonEmpty) {
+      new InjectorFailed(s"Injector failed unexpectedly. List of issues: $loops", issues)
+    } else {
+      new InjectorFailed("BUG: Injector failed and is unable to provide any diagnostics", List.empty)
     }
-    import izumi.fundamentals.platform.strings.IzString.*
-
-    val loops = issues.collect { case e: LoopResolutionError => DIError.formatError(e) }.niceList()
-    if (loops.nonEmpty) {
-      new InjectorFailed(
-        s"""Injector failed unexpectedly. List of issues: $loops
-       """.stripMargin,
-        issues,
-      )
-    }
-
-    val inconsistencies = issues.collect { case e: DIError.VerificationError => DIError.formatError(e) }.niceList()
-    if (inconsistencies.nonEmpty) {
-      new InjectorFailed(
-        s"""Injector failed unexpectedly. List of issues: $loops
-       """.stripMargin,
-        issues,
-      )
-    }
-
-    new InjectorFailed("BUG: Injector failed and is unable to provide any diagnostics", List.empty)
   }
 
   protected[this] def conflictError(issues: List[ConflictResolutionFailed]): InjectorFailed = {
