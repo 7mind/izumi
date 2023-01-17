@@ -184,12 +184,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       moduleProvider.appModules().merge overriddenBy env.appModule
     }
 
-    val (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector, planner) = {
+    val (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector) = {
       // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
       //  becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
-
-      // FIXME: We're also removing here & re-injecting later Planner, Activations & BootstrapModule (in 0.11.0 activation won't be set via bsModules & won't be stored in Planner)
-      //  (planner holds activations & the rest is for Bootloader self-introspection)
 
       val injector = Injector[Identity](bootstrapActivation = fullActivation, overrides = Seq(bsModule))
 
@@ -197,9 +194,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
       val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.stepsUnordered.filterNot(variableBsKeys contains _.target)
       val bsModuleMinusVariableKeys = injectorEnv.bootstrapModule.drop(variableBsKeys)
-      val planner = injectorEnv.planner
 
-      (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector, planner)
+      (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector)
     }
 
     for {
@@ -216,7 +212,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           for {
             plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, fullActivation, testRoots)) else Right(Plan.empty)
           } yield {
-            PreparedTest(distageTest, appModule, plan, env.activationInfo, fullActivation, planner)
+            PreparedTest(distageTest, appModule, plan, fullActivation)
           }
       }.biAggregate
       envKeys = testPlans.flatMap(_.testPlan.keys).toSet
@@ -360,29 +356,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   )(preparedTest: PreparedTest[F]
   )(implicit F: QuasiIO[F]
   ): F[Unit] = {
-    val PreparedTest(test, appModule, testPlan, activationInfo, activation, planner) = preparedTest
+    val PreparedTest(test, appModule, testPlan, activation) = preparedTest
 
-    val locatorWithOverriddenPlannerAndActivationInfo: LocatorDef = new LocatorDef {
-      // we override ActivationInfo <s>(& Activation)</s> because the test can have _different_ activation from the memoized part
-      // FIXME: Activation will be part of PlannerInput in 0.11.0 & perhaps ActivationInfo should be derived from Bootloader/PlannerInput as well instead of injected externally
-      make[Planner].fromValue(planner)
-      make[ActivationInfo].fromValue(activationInfo)
-      make[BootstrapModule].fromValue {
-        new BootstrapModuleDef {
-          include(mainSharedLocator.get[BootstrapModule].drop {
-            Set(
-              DIKey[BootstrapModule],
-              DIKey[ActivationInfo],
-            )
-          })
-          make[BootstrapModule].from(() => this)
-          make[ActivationInfo].fromValue(activationInfo)
-        }
-      }
-      override val parent: Option[Locator] = Some(mainSharedLocator)
-    }
-
-    val testInjector = Injector.inherit(locatorWithOverriddenPlannerAndActivationInfo)
+    val testInjector = Injector.inherit(mainSharedLocator)
 
     val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
     val newAppModule = appModule.drop(allSharedKeys)
@@ -411,10 +387,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def proceedIndividual(test: DistageTest[F], testPlan: Plan, injector: Injector[F])(implicit F: QuasiIO[F]): F[Unit] = {
+  protected def proceedIndividual(test: DistageTest[F], testPlan: Plan, testInjector: Injector[F])(implicit F: QuasiIO[F]): F[Unit] = {
     withTestsRecoverCause(None, Seq(test)) {
-      if ((DistageTestRunner.enableDebugOutput || test.environment.debugOutput) && testPlan.keys.nonEmpty) reporter.testInfo(test.meta, s"Test plan info: $testPlan")
-      injector.produceCustomF[F](testPlan).use {
+      if ((DistageTestRunner.enableDebugOutput || test.environment.debugOutput) && testPlan.keys.nonEmpty) {
+        reporter.testInfo(test.meta, s"Test plan info: $testPlan")
+      }
+      testInjector.produceCustomF[F](testPlan).use {
         testLocator =>
           F.suspendF {
             val before = System.nanoTime()
