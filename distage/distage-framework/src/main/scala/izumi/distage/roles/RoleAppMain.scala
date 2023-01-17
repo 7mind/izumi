@@ -4,7 +4,7 @@ import cats.effect.kernel.Async
 import distage.Injector
 import izumi.distage.framework.services.ModuleProvider
 import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleCheckableApp}
-import izumi.distage.model.definition.{Module, ModuleDef}
+import izumi.distage.model.definition.{Axis, Module, ModuleDef}
 import izumi.distage.modules.{DefaultModule, DefaultModule2, DefaultModule3}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.{ArgV, RequiredRoles}
@@ -15,6 +15,7 @@ import izumi.functional.bio.{Async2, Async3}
 import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
+
 import scala.annotation.unused
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.logstage.distage.{LogIO2Module, LogIO3Module}
@@ -50,6 +51,7 @@ abstract class RoleAppMain[F[_]](
 
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
+  protected def unusedValidAxisChoices: Set[Axis.AxisChoice] = Set.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
 
   /**
@@ -129,6 +131,7 @@ abstract class RoleAppMain[F[_]](
       pluginConfig = pluginConfig,
       bootstrapPluginConfig = bootstrapPluginConfig,
       appArtifact = artifact.get,
+      unusedValidAxisChoices,
     )
   }
 

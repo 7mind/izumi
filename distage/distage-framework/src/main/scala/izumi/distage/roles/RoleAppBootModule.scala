@@ -52,6 +52,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   pluginConfig: PluginConfig,
   bootstrapPluginConfig: PluginConfig,
   appArtifact: IzArtifact,
+  unusedValidAxisChoices: Set[Axis.AxisChoice],
 ) extends ModuleDef {
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
@@ -168,6 +169,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       rolesInfo.requiredComponents
   }
 
+  make[Set[Axis.AxisChoice]].fromValue(unusedValidAxisChoices)
   make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.Impl]
   make[ActivationInfo].from {
     (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>
