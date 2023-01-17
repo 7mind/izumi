@@ -585,7 +585,7 @@ object DistageTestRunner {
       (groups.iterator.flatMap(_.preparedTests) ++ children.iterator.flatMap(_._2.getAllTests)).toSeq
     }
 
-]    def addGroup(group: MemoizationLevelGroup[F]): Unit = {
+    def addGroup(group: MemoizationLevelGroup[F]): Unit = {
       groups.synchronized(groups.append(group))
       ()
     }
