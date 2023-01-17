@@ -19,7 +19,7 @@ sealed trait DIError
 
 object DIError {
   implicit class DIResultExt[A](private val result: Either[List[DIError], A]) extends AnyVal {
-    def cumulateErrors: Either[InjectorFailed, A] = {
+    def aggregateErrors: Either[InjectorFailed, A] = {
       result match {
         case Left(errors) =>
           val i = new DIFailureInterpreter()
@@ -29,7 +29,7 @@ object DIError {
           Right(resolved)
       }
     }
-    def getOrThrow(): A = cumulateErrors match {
+    def getOrThrow(): A = aggregateErrors match {
       case Left(value) => throw value
       case Right(value) => value
     }

@@ -364,7 +364,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     val newAppModule = appModule.drop(allSharedKeys)
     val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
     val maybeNewTestPlan = if (newRoots.nonEmpty) {
-      testInjector.plan(PlannerInput(newAppModule, activation, newRoots)).cumulateErrors
+      testInjector.plan(PlannerInput(newAppModule, activation, newRoots)).aggregateErrors
     } else {
       Right(Plan.empty)
     }
