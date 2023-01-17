@@ -585,8 +585,8 @@ object DistageTestRunner {
       (groups.iterator.flatMap(_.preparedTests) ++ children.iterator.flatMap(_._2.getAllTests)).toSeq
     }
 
-    def addGroups(tests: Seq[MemoizationLevelGroup[F]]): Unit = {
-      groups.synchronized(groups.addAll(tests))
+]    def addGroup(group: MemoizationLevelGroup[F]): Unit = {
+      groups.synchronized(groups.append(group))
       ()
     }
 
@@ -626,13 +626,13 @@ object DistageTestRunner {
       }
     }
 
-    @tailrec private def append(path: List[Plan], levelTests: MemoizationLevelGroup[F]): Unit = {
+    @tailrec private def addGroupByPath(path: List[Plan], levelTests: MemoizationLevelGroup[F]): Unit = {
       path match {
         case Nil =>
-          addGroups(Seq(levelTests))
+          addGroup(levelTests)
         case node :: tail =>
           val childTree = children.synchronized(children.getOrElseUpdate(node, new MemoizationTree[F](node)))
-          childTree.append(tail, levelTests)
+          childTree.addGroupByPath(tail, levelTests)
       }
     }
 
@@ -679,7 +679,7 @@ object DistageTestRunner {
       iterator.foreach {
         env =>
           val plans = env.memoizationPlanTree.filter(_.plan.meta.nodes.nonEmpty)
-          tree.append(plans, MemoizationLevelGroup(env.preparedTests, env.strengthenedKeys))
+          tree.addGroupByPath(plans, MemoizationLevelGroup(env.preparedTests, env.strengthenedKeys))
       }
       tree
     }
