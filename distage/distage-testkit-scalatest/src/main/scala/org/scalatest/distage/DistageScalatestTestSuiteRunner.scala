@@ -1,18 +1,18 @@
 package org.scalatest.distage
 
 import java.util.concurrent.atomic.AtomicBoolean
-
 import distage.TagK
 import io.github.classgraph.ClassGraph
 import izumi.distage.modules.DefaultModule
+import izumi.distage.roles.launcher.LateLoggerFactoryCachingImpl
 import izumi.distage.testkit.DebugProperties
-import izumi.distage.testkit.services.dstest.DistageTestRunner._
+import izumi.distage.testkit.services.dstest.DistageTestRunner.*
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner}
 import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest._
+import org.scalatest.*
 import org.scalatest.exceptions.TestCanceledException
 
 import scala.collection.immutable.TreeSet
@@ -191,13 +191,16 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         }
     }
 
+    // TODO: we may even share logger across F implementations, but that would be harder to do in a nice manner because there is no lifecycle in scalatest
+    val cache = LateLoggerFactoryCachingImpl.makeCache()
     try {
       if (toRun.nonEmpty) {
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
-        val runner = new DistageTestRunner[F](testReporter, _.isInstanceOf[TestCanceledException])
+        val runner = new DistageTestRunner[F](testReporter, _.isInstanceOf[TestCanceledException], cache)
         runner.run(toRun)
       }
     } finally {
+      cache.close()
       DistageTestsRegistrySingleton.completeStatuses[F]()
     }
   }
