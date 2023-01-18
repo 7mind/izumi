@@ -181,11 +181,11 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     }
 
     assertThrows[InjectorFailed] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D))
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D)).unsafeGet()
     }
 
     assertThrows[InjectorFailed] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B))
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B)).unsafeGet()
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -239,11 +239,11 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     }
 
     assertThrows[InjectorFailed] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D))
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D)).unsafeGet()
     }
 
     assertThrows[InjectorFailed] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B))
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B)).unsafeGet()
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
