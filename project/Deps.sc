@@ -282,6 +282,10 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
+//        workaround for:
+//        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
+//          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
+        "libraryDependencySchemes" in SettingScope.Build += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
