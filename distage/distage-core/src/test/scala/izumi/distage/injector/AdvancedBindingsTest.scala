@@ -1,9 +1,9 @@
 package izumi.distage.injector
 
 import izumi.distage.fixtures.BasicCases.BasicCase1
-import izumi.distage.fixtures.SetCases.SetCase2
+import izumi.distage.fixtures.SetCases.{SetCase2, SetCase4}
 import izumi.distage.model.PlannerInput
-import distage.ModuleDef
+import distage.{Injector, ModuleDef}
 import izumi.distage.model.exceptions.runtime.TODOBindingException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -33,6 +33,30 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
     assert(Try(injector.produce(plan1).unsafeGet()).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
     assert(Try(injector.produce(plan2).unsafeGet()).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
     assert(Try(injector.produce(plan3).unsafeGet()).toEither.left.exists(_.getSuppressed.head.isInstanceOf[TODOBindingException]))
+  }
+
+  "Sets are being extended when injector inheritance happens (https://github.com/7mind/izumi/issues/330)" in {
+    import SetCase4._
+
+    val definitionParent = PlannerInput.everything(new ModuleDef {
+      many[Service]
+        .add[Service1]
+    })
+    val definitionSub = PlannerInput.everything(new ModuleDef {
+      many[Service]
+        .add[Service2]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definitionParent)
+    val context = injector.produce(plan).unsafeGet()
+
+    val subInjector = Injector.inherit(context)
+    val planSub = subInjector.planUnsafe(definitionSub)
+    val contextSub = subInjector.produce(planSub).unsafeGet()
+
+    val set = contextSub.get[Set[Service]]
+    assert(set.size == 2)
   }
 
   "Set element references are the same as their referees" in {
