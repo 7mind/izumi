@@ -282,11 +282,6 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-
-        // scala-steward workaround
-        // add sbtgen version to sbt build to allow scala-steward to find it and update it in .sc files
-        // https://github.com/scala-steward-org/scala-steward/issues/696#issuecomment-545800968
-        "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.13" % "${Version.SbtGen.value}" % Provided""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
@@ -742,6 +737,10 @@ object Izumi {
               }
             }"""
           ),
+          // scala-steward workaround
+          // add sbtgen version to sbt build to allow scala-steward to find it and update it in .sc files
+          // https://github.com/scala-steward-org/scala-steward/issues/696#issuecomment-545800968
+          "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.13" % "${Version.SbtGen.value}"""".raw,
         ),
         plugins = Plugins(
           enabled = Seq(

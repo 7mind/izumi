@@ -4365,7 +4365,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                       (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
                       (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
                   }
-                }
+                },
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.97"
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
@@ -4794,8 +4795,7 @@ lazy val `izumi` = (project in file("."))
     ThisBuild / developers := List(
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
-    ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.97" % Provided
+    ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
