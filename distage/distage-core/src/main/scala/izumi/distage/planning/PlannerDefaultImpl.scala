@@ -47,14 +47,6 @@ class PlannerDefaultImpl(
     }
   }
 
-  override def planUnsafe(input: PlannerInput): Plan = {
-    plan(input).getOrThrow()
-  }
-
-  override def planNoRewriteUnsafe(input: PlannerInput): Plan = {
-    planNoRewrite(input).getOrThrow()
-  }
-
   private def preparePlan(resolved: DG[MutSel[DIKey], SemigraphSolver.RemappedValue[InstantiationOp, DIKey]]): Either[List[DIError], DG[DIKey, InstantiationOp]] = {
     import izumi.functional.IzEither.*
 

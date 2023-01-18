@@ -173,7 +173,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuas
       override final def mkRef[A](a: A): F[E, QuasiRef[F[E, _], A]] = super[QuasiPrimitivesFromBIO].mkRef(a)
 
       override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
-      override def maybeSuspendEither[A](eff: => Either[E, A]): F[E, A] = F.syncThrowable(eff).flatMap(F.fromEither(_))
+      override def maybeSuspendEither[A](eff: => Either[E, A]): F[E, A] = F.fromEither(eff)
       override def definitelyRecover[A](action: => F[E, A])(recover: E => F[E, A]): F[E, A] = {
         F.suspend(action).sandbox.catchAll(recover apply _.toThrowable)
       }

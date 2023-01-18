@@ -23,14 +23,22 @@ trait Planner {
     plan(bindings, Activation.empty, roots)
 
   @deprecated("Use .plan(input).getOrThrow", "1.1.0")
-  def planUnsafe(input: PlannerInput): Plan
+  final def planUnsafe(input: PlannerInput): Plan = {
+    plan(input).getOrThrow()
+  }
 
   @deprecated("Use .planNoRewrite(input).getOrThrow", "1.1.0")
-  def planNoRewriteUnsafe(input: PlannerInput): Plan
+  final def planNoRewriteUnsafe(input: PlannerInput): Plan = {
+    planNoRewrite(input).getOrThrow()
+  }
 
-  @inline final def planUnsafe(bindings: ModuleBase, activation: Activation, roots: Roots): Plan =
+  @deprecated("Use .plan(bindings, activation, roots).getOrThrow", "1.1.0")
+  @inline final def planUnsafe(bindings: ModuleBase, activation: Activation, roots: Roots): Plan = {
     planUnsafe(PlannerInput(bindings, activation, roots))
+  }
 
-  @inline final def planUnsafe(bindings: ModuleBase, roots: Roots): Plan =
-    planUnsafe(bindings, Activation.empty, roots)
+  @deprecated("Use .plan(bindings, roots).getOrThrow", "1.1.0")
+  @inline final def planUnsafe(bindings: ModuleBase, roots: Roots): Plan = {
+    planUnsafe(PlannerInput(bindings, Activation.empty, roots))
+  }
 }

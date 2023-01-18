@@ -13,6 +13,7 @@ trait ApplicativeError3[F[-_, +_, +_]] extends Guarantee3[F] with Bifunctor3[F] 
   /** execute second operation only if the first one fails */
   def orElse[R, E, A, E2](r: F[R, E, A], f: => F[R, E2, A]): F[R, E2, A]
 
+  // from* ops must suspend `effect`
   def fromEither[E, V](effect: => Either[E, V]): F[Any, E, V]
   def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): F[Any, E, A]
   def fromTry[A](effect: => Try[A]): F[Any, Throwable, A]
