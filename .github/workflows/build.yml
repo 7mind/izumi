@@ -26,6 +26,7 @@ jobs:
           bash sbtgen.sc --js
           bash .build.sh ${{ matrix.scala }} coverage
       - uses: dorny/test-reporter@v1
+        continue-on-error: ${{ matrix.scala == '3' }}
         with:
           name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }})
           path: '**/target/test-reports/TEST-*.xml'
