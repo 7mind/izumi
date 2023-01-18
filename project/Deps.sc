@@ -286,6 +286,7 @@ object Izumi {
 //        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
 //          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
         "libraryDependencySchemes" in SettingScope.Build += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
+        "libraryDependencySchemes" in SettingScope.Build += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
