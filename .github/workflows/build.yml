@@ -26,13 +26,10 @@ jobs:
           bash sbtgen.sc --js
           bash .build.sh ${{ matrix.scala }} coverage
       - uses: dorny/test-reporter@v1
-        if: success() || failure()
-        continue-on-error: ${{ matrix.scala == '3' }}
         with:
           name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }})
           path: '**/target/test-reports/TEST-*.xml'
           reporter: java-junit
-          fail-on-error: ${{ matrix.scala != '3' }}
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos but works unreliable without it
