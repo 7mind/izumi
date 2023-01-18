@@ -10,10 +10,11 @@ import izumi.fundamentals.collections.OrderedSetShim
 import izumi.reflect.TagK
 
 class SetStrategyDefaultImpl extends SetStrategy {
+  private val scalaCollectionSetType = SafeType.get[collection.Set[?]]
+
   def makeSet[F[_]: TagK](context: ProvisioningKeyProvider, op: CreateSet)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     import izumi.functional.IzEither.*
     // target is guaranteed to be a Set
-    val scalaCollectionSetType = SafeType.get[collection.Set[?]]
 
     F.pure(for {
       keyType <- op.target.tpe.tag.typeArgs.headOption.toRight(ProvisionerIssue.IncompatibleTypes(op.target, scalaCollectionSetType, op.target.tpe))
@@ -37,7 +38,8 @@ class SetStrategyDefaultImpl extends SetStrategy {
             Left(List(m))
         }.biFlatAggregate.left.map(missing => ProvisionerIssue.MissingRef(op.target, "set element", missing.toSet))
     } yield {
-      val asSet = new OrderedSetShim[Any](newSet.distinct)
+      val parentSet = context.importKey(op.target).map(_.asInstanceOf[Iterable[Any]]).toSeq.flatten
+      val asSet = new OrderedSetShim[Any]((parentSet ++ newSet).distinct)
       Seq(NewObjectOp.NewInstance(op.target, op.instanceType, asSet))
     })
 
