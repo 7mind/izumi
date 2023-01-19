@@ -48,7 +48,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[testProviderModule.TestClass[testProviderModule.type]].a.isInstanceOf[testProviderModule.TestDependency])
@@ -67,7 +67,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       })
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val context = injector.produce(plan).unsafeGet()
 
@@ -109,7 +109,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[testProviderModule.TestClass[testProviderModule.type]].aValue.isInstanceOf[testProviderModule.TestDependency])
@@ -128,7 +128,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
 
     val context = injector.produce(plan).unsafeGet()
 
@@ -196,7 +196,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     def testCase = {
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[TestClass[InnerPathDepTest.this.type]].a != null)

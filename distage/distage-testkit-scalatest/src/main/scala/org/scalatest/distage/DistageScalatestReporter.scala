@@ -1,6 +1,6 @@
 package org.scalatest.distage
 
-import izumi.distage.model.exceptions.IntegrationCheckException
+import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{SuiteData, TestMeta, TestReporter, TestStatus}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
 import izumi.fundamentals.platform.strings.IzString._

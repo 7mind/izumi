@@ -1,6 +1,6 @@
 package izumi.distage.model.reflection.universe
 
-import izumi.distage.model.exceptions.reflection.AnnotationConflictException
+import izumi.distage.model.exceptions.macros.reflection.AnnotationConflictException
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
 trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>

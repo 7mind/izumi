@@ -2,7 +2,8 @@ package izumi.distage.reflection
 
 import izumi.distage.model.definition.{Id, With}
 import izumi.distage.model.exceptions.macros.UnsupportedDefinitionException
-import izumi.distage.model.exceptions.reflection.{BadIdAnnotationException, UnsupportedWiringException}
+import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
+import izumi.distage.model.exceptions.reflection.UnsupportedWiringException
 import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.DIUniverse
 import izumi.fundamentals.reflection.{JSRAnnotationTools, ReflectionUtil}

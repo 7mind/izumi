@@ -1,21 +1,44 @@
 package izumi.distage.model.definition.errors
 
 import izumi.distage.model.definition.Axis.AxisChoice
+import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.BindingTag.AxisTag
-import izumi.distage.model.definition.{Activation, Binding}
-import izumi.distage.model.definition.conflicts.{ConflictResolutionError, MutSel}
-import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.conflicts.MutSel
+import izumi.distage.model.definition.errors.ConflictResolutionError.*
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.KeyMinimizer
+import izumi.distage.model.planning.ActivationChoices
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.graphs.DG
+import izumi.fundamentals.platform.IzumiProject
 
 sealed trait DIError
 
 object DIError {
+  implicit class DIResultExt[A](private val result: Either[List[DIError], A]) extends AnyVal {
+    def aggregateErrors: Either[InjectorFailed, A] = {
+      result match {
+        case Left(errors) =>
+          val i = new DIFailureInterpreter()
+          Left(i.asError(errors))
 
+        case Right(resolved) =>
+          Right(resolved)
+      }
+    }
+    def getOrThrow(): A = aggregateErrors match {
+      case Left(value) => throw value
+      case Right(value) => value
+    }
+  }
+
+  sealed trait PlanningError extends DIError
+  object PlanningError {
+    final case class BUG_UnexpectedMutatorKey(key: DIKey, index: Int) extends PlanningError
+  }
   sealed trait LoopResolutionError extends DIError
 
   object LoopResolutionError {
@@ -45,15 +68,17 @@ object DIError {
 
   import izumi.fundamentals.platform.strings.IzString.*
 
-  def format(activation: Activation)(e: DIError): String = e match {
+  def format(e: DIError): String = e match {
+    case error: PlanningError =>
+      formatError(error)
     case error: LoopResolutionError =>
       formatError(error)
     case ConflictResolutionFailed(error) =>
-      formatConflict(activation)(error)
+      formatConflict(error)
     case error: VerificationError =>
       formatError(error)
   }
-  def formatConflict(activation: Activation)(conflictResolutionError: ConflictResolutionError[DIKey, InstantiationOp]): String = {
+  def formatConflict(conflictResolutionError: ConflictResolutionError[DIKey, InstantiationOp]): String = {
     conflictResolutionError match {
       case ConflictingAxisChoices(issues) =>
         val printedActivationSelections = issues.map {
@@ -63,13 +88,13 @@ object DIError {
            |
            |${printedActivationSelections.niceList().shift(4)}""".stripMargin
 
-      case ConflictingDefs(defs) =>
+      case ConflictingDefs(defs, activations) =>
         defs
           .map {
             case (k, nodes) =>
               conflictingAxisTagsHint(
                 key = k,
-                activeChoices = activation.activeChoices.values.toSet,
+                activeChoices = activations,
                 ops = nodes.map(_._2.meta.origin.value),
               )
           }.niceList()
@@ -86,11 +111,26 @@ object DIError {
                  |
                  |   Candidates left: ${axisBinds.niceList().shift(4)}""".stripMargin
           }.niceList()
+      case UnconfiguredAxisInMutators(problems) =>
+        val message = problems
+          .map {
+            e =>
+              s"Mutator for ${e.mutator} defined at ${e.pos} with unconfigured axis: ${e.unconfigured.mkString(",")}"
+          }.niceList()
+        s"Mutators with unconfigured axis: $message"
+      case SetAxisProblem(problems) =>
+        problems
+          .map {
+            case u: SetAxisIssue.UnconfiguredSetElementAxis =>
+              s"Set element references axis ${u.unconfigured.mkString(",")} with undefined values: set ${u.set}, element ${u.element}"
+            case i: SetAxisIssue.InconsistentSetElementAxis =>
+              IzumiProject.bugReportPrompt(s"Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}")
+          }.niceList()
     }
   }
   protected[this] def conflictingAxisTagsHint(
     key: MutSel[DIKey],
-    activeChoices: Set[AxisChoice],
+    activeChoices: ActivationChoices,
     ops: Set[OperationOrigin],
   ): String = {
     val keyMinimizer = KeyMinimizer(
@@ -99,7 +139,7 @@ object DIError {
       colors = false,
     )
     val axisValuesInBindings = ops.iterator.collect { case d: OperationOrigin.Defined => d.binding.tags }.flatten.collect { case AxisTag(t) => t }.toSet
-    val alreadyActiveTags = activeChoices.intersect(axisValuesInBindings)
+    val alreadyActiveTags = activeChoices.activationChoices.values.toSet.intersect(axisValuesInBindings.map(_.toAxisPoint))
     val candidates = ops.iterator
       .map {
         op =>
@@ -118,6 +158,7 @@ object DIError {
        |
        |   Candidates left:$candidates""".stripMargin
   }
+
   def formatError(e: VerificationError): String = e match {
     case VerificationError.BUG_PlanIndexIsBroken(badIndex) =>
       s"BUG: plan index keys are inconsistent with operations: $badIndex"
@@ -145,6 +186,10 @@ object DIError {
 
     case LoopResolutionError.NoAppropriateResolutionFound(candidates) =>
       s"Failed to break circular dependencies, can't find proxyable candidate among ${candidates.mkString(",")}"
+  }
 
+  def formatError(e: PlanningError): String = e match {
+    case PlanningError.BUG_UnexpectedMutatorKey(k, index) =>
+      s"BUG: Unsupported mutator key $k with index $index"
   }
 }

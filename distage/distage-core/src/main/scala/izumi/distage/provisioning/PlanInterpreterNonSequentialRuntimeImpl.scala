@@ -3,13 +3,13 @@ package izumi.distage.provisioning
 import distage.{DIKey, Id, Roots, SafeType}
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.definition.Lifecycle
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.IntegrationCheckException
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.IncompatibleEffectTypesException
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheckException}
-import izumi.distage.model.plan.ExecutableOp.{MonadicOp, *}
+import ProvisionerIssue.IncompatibleEffectTypes
+import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
+import izumi.distage.model.exceptions.runtime.IntegrationCheckException
+import izumi.distage.model.plan.ExecutableOp.*
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
@@ -148,7 +148,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
         case Some(integrationChecks) =>
           F.maybeSuspend {
             planner
-              .planSafe(ctx.plan.input.copy(roots = Roots.Of(integrationChecks)))
+              .plan(ctx.plan.input.copy(roots = Roots.Of(integrationChecks)))
               .left.map(errs => ctx.makeFailure(state, fullStackTraces, ProvisioningFailure.CantBuildIntegrationSubplan(errs, state.status())))
           }
         case None =>
@@ -214,7 +214,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
               case failure @ Some(_) =>
                 F.pure(failure)
             }
-          )(err => F.pure(Some(UnexpectedIntegrationCheckException(result.key, err))))
+          )(err => F.pure(Some(UnexpectedIntegrationCheck(result.key, err))))
       }
     } yield {
       res.flatten match {
@@ -262,11 +262,11 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   private[this] def verifyEffectType[F[_]: TagK](
     ops: Iterable[ExecutableOp]
   )(implicit F: QuasiIO[F]
-  ): F[Either[Iterable[IncompatibleEffectTypesException], Unit]] = {
+  ): F[Either[Iterable[IncompatibleEffectTypes], Unit]] = {
     val monadicOps = ops.collect { case m: MonadicOp => m }
     val badOps = monadicOps
       .filter(_.isIncompatibleEffectType[F])
-      .map(op => IncompatibleEffectTypesException(op, op.provisionerEffectType[F], op.actionEffectType))
+      .map(op => IncompatibleEffectTypes(op, op.provisionerEffectType[F], op.actionEffectType))
 
     if (badOps.isEmpty) {
       F.pure(Right(()))

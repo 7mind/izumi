@@ -35,7 +35,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     }
 
     val listInjector = mkInjector()
-    val listPlan = listInjector.plan(PlannerInput.everything(Definition[List](5)))
+    val listPlan = listInjector.planUnsafe(PlannerInput.everything(Definition[List](5)))
     val listContext = listInjector.produce(listPlan).unsafeGet()
 
     assert(listContext.get[TestTrait].get == List(5))
@@ -48,7 +48,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
     val optionTInjector = mkInjector()
-    val optionTPlan = optionTInjector.plan(PlannerInput.everything(Definition[OptionT[List, _]](5)))
+    val optionTPlan = optionTInjector.planUnsafe(PlannerInput.everything(Definition[OptionT[List, _]](5)))
     val optionTContext = optionTInjector.produce(optionTPlan).unsafeGet()
 
     assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
@@ -57,7 +57,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
     val eitherInjector = mkInjector()
-    val eitherPlan = eitherInjector.plan(PlannerInput.everything(Definition[Either[String, _]](5)))
+    val eitherPlan = eitherInjector.planUnsafe(PlannerInput.everything(Definition[Either[String, _]](5)))
 
     val eitherContext = eitherInjector.produce(eitherPlan).unsafeGet()
 
@@ -71,7 +71,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     )
 
     val idInjector = mkInjector()
-    val idPlan = idInjector.plan(PlannerInput.everything(Definition[id](5)))
+    val idPlan = idInjector.planUnsafe(PlannerInput.everything(Definition[id](5)))
     val idContext = idInjector.produce(idPlan).unsafeGet()
 
     assert(idContext.get[TestTrait].get == 5)

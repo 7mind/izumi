@@ -11,7 +11,7 @@ trait ActivationChoicesExtractor {
 
 object ActivationChoicesExtractor {
 
-  class Impl extends ActivationChoicesExtractor {
+  class Impl(additionalAxisValues: Set[Axis.AxisChoice]) extends ActivationChoicesExtractor {
     def findAvailableChoices(module: ModuleBase): ActivationInfo = {
       findAvailableChoicesDetailed(module) match {
         case Left(badAxis) =>
@@ -27,7 +27,7 @@ object ActivationChoicesExtractor {
 
     /** @return Either conflicting axis names or a set of axis choices present in the bindings */
     def findAvailableChoicesDetailed(module: ModuleBase): Either[Map[String, Set[Axis]], ActivationInfo] = {
-      val allChoices = module.bindings.flatMap(_.tags).collect { case BindingTag.AxisTag(axisValue) => axisValue }
+      val allChoices = module.bindings.flatMap(_.tags).collect { case BindingTag.AxisTag(axisValue) => axisValue } ++ additionalAxisValues
       val allAxis = allChoices.map(_.axis).groupBy(_.name)
       val badAxis = allAxis.filter(_._2.size > 1)
       if (badAxis.isEmpty) Right(ActivationInfo(allChoices.groupBy(_.axis))) else Left(badAxis)

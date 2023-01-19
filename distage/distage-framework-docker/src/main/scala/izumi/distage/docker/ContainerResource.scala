@@ -11,7 +11,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult,
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.effect.QuasiIO.syntax.*
 import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
-import izumi.distage.model.exceptions.IntegrationCheckException
+import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*

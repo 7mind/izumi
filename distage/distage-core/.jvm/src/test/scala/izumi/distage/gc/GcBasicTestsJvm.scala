@@ -15,7 +15,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase1._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -51,7 +51,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase2._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[MkS3Client].from[Impl]
@@ -71,7 +71,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase3._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             many[IntegrationComponent].add[S3Component]
@@ -97,7 +97,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase4._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[MkS3Client]
@@ -120,7 +120,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase5._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -144,7 +144,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase9._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[T1].from[Circular1]
@@ -164,7 +164,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase6._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[Circular1].from {
@@ -204,7 +204,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase7._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -226,7 +226,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase11._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -247,7 +247,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase12._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -268,7 +268,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase12._
 
       val injector = mkInjector()
-      val plan = injector.plan(
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[Circular1]

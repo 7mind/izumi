@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.MissingImport
+import izumi.distage.model.definition.errors.ProvisionerIssue.MissingImport
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.provisioning.strategies.ImportStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}

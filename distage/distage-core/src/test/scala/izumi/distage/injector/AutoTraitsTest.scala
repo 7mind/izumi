@@ -36,7 +36,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.everything(definition))
+    val plan = injector.planUnsafe(PlannerInput.everything(definition))
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTrait]
@@ -53,7 +53,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.everything(definition))
+    val plan = injector.planUnsafe(PlannerInput.everything(definition))
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTrait]("named-trait")
@@ -74,7 +74,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.everything(definition))
+    val plan = injector.planUnsafe(PlannerInput.everything(definition))
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated1 = context.get[Trait1]
@@ -100,7 +100,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(PlannerInput.everything(definition))
+    val plan = injector.planUnsafe(PlannerInput.everything(definition))
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated3 = context.get[Trait2]
@@ -116,7 +116,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
 
     val context = injector.produce(plan).unsafeGet()
     assert(context.get[ATraitWithAField].field == 1)
@@ -133,7 +133,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[Trait]
@@ -155,7 +155,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
 
     val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTrait]
@@ -172,7 +172,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestTraitAny { def dep: Dep }]
 
@@ -202,7 +202,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait2 with Trait1]
@@ -221,7 +221,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkNoCyclesInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait2 with Trait1]
@@ -240,7 +240,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestTrait].anyValDep ne null)
@@ -259,7 +259,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val dependency1 = context.get[Dependency1]

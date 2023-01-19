@@ -3,7 +3,7 @@ package izumi.distage.injector
 import distage.{Activation, DIKey, Injector, Lifecycle, Roots}
 import izumi.distage.fixtures.PlanVerifierCases.*
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.exceptions.planning.ConflictResolutionException
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.UserBinding
 import izumi.distage.model.planning.AxisPoint
@@ -180,12 +180,12 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork1].tagged(Axis2.D).from[ImplA]
     }
 
-    assertThrows[ConflictResolutionException] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D))
+    assertThrows[InjectorFailed] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D)).unsafeGet()
     }
 
-    assertThrows[ConflictResolutionException] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B))
+    assertThrows[InjectorFailed] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B)).unsafeGet()
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -211,7 +211,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork2].tagged(Axis2.D).from[ImplD2]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.D)).unsafeGet()
     }
 
@@ -238,12 +238,12 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork1].tagged(Axis1.B, Axis2.D).from[ImplA]
     }
 
-    assertThrows[ConflictResolutionException] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D))
+    assertThrows[InjectorFailed] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D)).unsafeGet()
     }
 
-    assertThrows[ConflictResolutionException] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B))
+    assertThrows[InjectorFailed] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B)).unsafeGet()
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -272,7 +272,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         .isInstanceOf[ImplA2]
     )
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A)).unsafeGet()
     }
 
@@ -296,7 +296,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         .isInstanceOf[ImplA3]
     )
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation.empty).unsafeGet()
     }
 
@@ -340,7 +340,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork2].tagged(Axis2.D).from[ImplD]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A)).unsafeGet()
     }
 
@@ -350,7 +350,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance2 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.C)).unsafeGet()
     assert(instance2.isInstanceOf[ImplA2])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.B)).unsafeGet()
     }
 
@@ -376,7 +376,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork1].tagged(Axis1.B).from[ImplA6]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A)).unsafeGet()
     }
 
@@ -386,7 +386,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance1 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.D, Axis3.F)).unsafeGet()
     assert(instance1.isInstanceOf[ImplA5])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.C)).unsafeGet()
     }
 
@@ -447,7 +447,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork2].tagged(Axis2.C).from[ImplC]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A)).unsafeGet()
     }
 
@@ -457,7 +457,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance1 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.D, Axis3.F)).unsafeGet()
     assert(instance1.isInstanceOf[ImplA5])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.C)).unsafeGet()
     }
 
@@ -467,14 +467,14 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance3 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.C, Axis3.F)).unsafeGet()
     assert(instance3.isInstanceOf[ImplA4])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.B)).unsafeGet()
     }
 
     val instance4 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.D)).unsafeGet()
     assert(instance4.isInstanceOf[ImplA6])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.C)).unsafeGet()
     }
 

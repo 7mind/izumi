@@ -2234,8 +2234,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
-      "com.propensive" %% "magnolia" % V.magnolia,
+      "com.github.pureconfig" %% "pureconfig-generic-base" % V.pureconfig,
+      "com.softwaremill.magnolia1_2" %% "magnolia" % V.magnolia,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     ) else Seq.empty }
   )
@@ -4365,7 +4365,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                       (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
                       (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
                   }
-                }
+                },
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.97"
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
@@ -4795,7 +4796,8 @@ lazy val `izumi` = (project in file("."))
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
     ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.97" % Provided
+    ThisBuild / libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
+    ThisBuild / libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(

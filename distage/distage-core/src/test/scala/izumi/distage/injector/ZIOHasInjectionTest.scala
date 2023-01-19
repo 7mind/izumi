@@ -74,7 +74,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       assert(error.getMessage contains "Int")
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(PlannerInput.everything(definition))
+      val plan = injector.planUnsafe(PlannerInput.everything(definition))
 
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
@@ -101,7 +101,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       }
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(PlannerInput.everything(definition))
+      val plan = injector.planUnsafe(PlannerInput.everything(definition))
 
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
       val instantiated = context.get[TestClass2[Dep]]
@@ -128,7 +128,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
@@ -184,7 +184,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       })
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
       val instantiated = context.get[Trait3 { def dep1: Dependency1 }]
@@ -243,7 +243,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       })
 
       val injector = mkNoCyclesInjector()
-      val plan = injector.plan(definition[ZIO])
+      val plan = injector.planUnsafe(definition[ZIO])
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
       val instantiated = context.get[Trait3 { def dep1: Dependency1 }]
@@ -285,7 +285,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector {
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
       val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
 
       assert(context.get[TestTrait].anyValDep ne null)

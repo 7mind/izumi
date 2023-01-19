@@ -85,10 +85,10 @@ object Izumi {
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
     final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto) in Scope.Compile.all
-    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
+    final val pureconfig_generic_base = Library("com.github.pureconfig", "pureconfig-generic-base", V.pureconfig, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
       ScalaVersionScope.AllScala2
     )
-    final val magnolia = Library("com.propensive", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
+    final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
       ScalaVersionScope.AllScala2
     )
 
@@ -282,11 +282,11 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-
-        // scala-steward workaround
-        // add sbtgen version to sbt build to allow scala-steward to find it and update it in .sc files
-        // https://github.com/scala-steward-org/scala-steward/issues/696#issuecomment-545800968
-        "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.13" % "${Version.SbtGen.value}" % Provided""".raw,
+//        workaround for:
+//        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
+//          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
+        "libraryDependencySchemes" in SettingScope.Build += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
+        "libraryDependencySchemes" in SettingScope.Build += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
@@ -538,7 +538,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_core, pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
+        libs = Seq(pureconfig_core, pureconfig_generic_base, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.jvm3,
@@ -742,6 +742,10 @@ object Izumi {
               }
             }"""
           ),
+          // scala-steward workaround
+          // add sbtgen version to sbt build to allow scala-steward to find it and update it in .sc files
+          // https://github.com/scala-steward-org/scala-steward/issues/696#issuecomment-545800968
+          "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.13" % "${Version.SbtGen.value}"""".raw,
         ),
         plugins = Plugins(
           enabled = Seq(

@@ -1,9 +1,9 @@
 package izumi.distage.provisioning.strategies
 
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.effect.QuasiIO
 import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.{MissingProxyAdapterException, UnexpectedProvisionResultException, UnsupportedProxyOpException}
+import ProvisionerIssue.{MissingProxyAdapter, UnexpectedProvisionResult, UnsupportedProxyOp}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyProvider.DeferredInit
@@ -41,11 +41,15 @@ class ProxyStrategyDefaultImpl(
           } else {
             for {
               tpe <- proxyTargetType(makeProxy)
+              _ <-
+                if (!mirrorProvider.canBeProxied(tpe)) {
+                  failCogenProxy(tpe, makeProxy)
+                } else {
+                  Right(())
+                }
+              proxy <- makeCogenProxy(context, tpe, makeProxy)
             } yield {
-              if (!mirrorProvider.canBeProxied(tpe)) {
-                failCogenProxy(tpe, makeProxy)
-              }
-              makeCogenProxy(context, tpe, makeProxy)
+              proxy
             }
           }
       } yield {
@@ -110,12 +114,12 @@ class ProxyStrategyDefaultImpl(
                     )
 
                 case r =>
-                  F.pure(Left(UnexpectedProvisionResultException(key, r)))
+                  F.pure(Left(UnexpectedProvisionResult(key, r)))
               }
           }
 
       case _ =>
-        F.pure(Left(MissingProxyAdapterException(key, initProxy)))
+        F.pure(Left(MissingProxyAdapter(key, initProxy)))
     }
   }
 
@@ -131,9 +135,9 @@ class ProxyStrategyDefaultImpl(
       case op: MonadicOp.ExecuteEffect =>
         Right(op.target.tpe)
       case op: WiringOp.UseInstance =>
-        Left(UnsupportedProxyOpException(op))
+        Left(UnsupportedProxyOp(op))
       case op: WiringOp.ReferenceKey =>
-        Left(UnsupportedProxyOpException(op))
+        Left(UnsupportedProxyOp(op))
     }
   }
 

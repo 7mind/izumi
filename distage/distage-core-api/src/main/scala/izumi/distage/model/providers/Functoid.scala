@@ -2,7 +2,7 @@ package izumi.distage.model.providers
 
 import izumi.distage.constructors.{AnyConstructor, ClassConstructor, FactoryConstructor, HasConstructor, TraitConstructor}
 import izumi.distage.model.definition.Identifier
-import izumi.distage.model.exceptions.TODOBindingException
+import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.distage.model.reflection.LinkedParameter
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.*

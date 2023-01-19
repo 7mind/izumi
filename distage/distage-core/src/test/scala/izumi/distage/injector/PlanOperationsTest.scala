@@ -33,7 +33,7 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
       primary ++ sub,
     )
 
-    val srcPlan = injector.plan(definition)
+    val srcPlan = injector.planUnsafe(definition)
 
     def verifySingleImport(key: DIKey): Unit = {
       val plan = srcPlan.replaceWithImports(Set(key))

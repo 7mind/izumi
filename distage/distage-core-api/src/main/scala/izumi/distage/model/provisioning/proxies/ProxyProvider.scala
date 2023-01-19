@@ -1,24 +1,26 @@
 package izumi.distage.model.provisioning.proxies
 
-import izumi.distage.model.exceptions.interpretation.ProxyProviderFailingImplCalledException
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
 import izumi.distage.model.reflection.DIKey
 
 trait ProxyProvider {
-  def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit
+  def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): Either[ProvisionerIssue, DeferredInit]
 }
 
 object ProxyProvider {
-  class ProxyProviderFailingImpl(msg: ProxyContext => String) extends ProxyProvider {
-    override def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit = {
-      throw new ProxyProviderFailingImplCalledException(msg(proxyContext), this)
+  class ProxyProviderFailingImpl(cause: ProvisionerIssue.ProxyFailureCause) extends ProxyProvider {
+    def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): Either[ProvisionerIssue, DeferredInit] = {
+      Left(
+        ProvisionerIssue.ProxyProviderFailingImplCalled(
+          deferredKey,
+          this,
+          cause,
+        )
+      )
     }
   }
-  object ProxyProviderFailingImpl
-    extends ProxyProviderFailingImpl({
-      proxyContext => s"ProxyProviderFailingImpl used: creation of cycle-breaking proxies is disabled, failed op: ${proxyContext.op}"
-    })
 
   final case class ProxyContext(runtimeClass: Class[?], op: ExecutableOp, params: ProxyParams)
 

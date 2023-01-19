@@ -1,7 +1,8 @@
 package izumi.distage.planning.solver
 
-import izumi.distage.model.definition.conflicts.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
-import izumi.distage.model.definition.conflicts.{ConflictResolutionError, *}
+import izumi.distage.model.definition.errors.ConflictResolutionError.{ConflictingAxisChoices, ConflictingDefs, UnsolvedConflicts}
+import izumi.distage.model.definition.conflicts.*
+import izumi.distage.model.definition.errors.ConflictResolutionError
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.ImmutableMultiMap
@@ -193,7 +194,7 @@ object SemigraphSolver {
                 if (activations.allConfigured(head._1.axis)) {
                   Right(Map(head))
                 } else {
-                  Left(List(conflictingDefsError(conflict)))
+                  Left(List(conflictingDefsError(activations, conflict)))
                 }
               case _ =>
                 chooseMostSpecificInConflict(activations, conflict)
@@ -235,12 +236,12 @@ object SemigraphSolver {
       if (allAreComparableAndStrictlyLess && mostSpecificAxis.nonEmpty && activations.allConfigured(mostSpecificAxis)) {
         Right(Map(mostSpecific))
       } else {
-        Left(List(conflictingDefsError(conflict)))
+        Left(List(conflictingDefsError(activations, conflict)))
       }
     }
 
-    protected def conflictingDefsError(conflict: NonEmptyList[(Annotated[N], Node[N, V])]): ConflictingDefs[N, V] = {
-      ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap)
+    protected def conflictingDefsError(activations: ActivationChoices, conflict: NonEmptyList[(Annotated[N], Node[N, V])]): ConflictingDefs[N, V] = {
+      ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap, activations)
     }
 
     private def resolveMutations(predecessors: SemiIncidenceMatrix[MutSel[N], N, V]): Either[List[Nothing], Result] = {

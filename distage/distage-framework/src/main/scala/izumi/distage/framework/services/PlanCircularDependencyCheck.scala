@@ -8,7 +8,7 @@ class PlanCircularDependencyCheck(
   options: PlanningOptions,
   logger: IzLogger,
 ) {
-  def verify(plan: Plan): Unit = {
+  def showProxyWarnings(plan: Plan): Unit = {
     if (options.warnOnCircularDeps) {
       val allProxies = plan.stepsUnordered.collect {
         case s: ExecutableOp.ProxyOp.MakeProxy if !s.byNameAllowed => s

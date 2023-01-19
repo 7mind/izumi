@@ -44,7 +44,7 @@ trait IO3[F[-_, +_, +_]] extends Panic3[F] {
     case Right(v) => pure(v): F[Any, E, A]
   }
   override def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): F[Any, E, A] = {
-    flatMap(sync(effect))(e => fromEither(e.toRight(errorOnNone)))
+    flatMap(sync(effect))(opt => opt.fold(fail(errorOnNone): F[Any, E, A])(pure))
   }
   override def fromTry[A](effect: => Try[A]): F[Any, Throwable, A] = {
     syncThrowable(effect.get)

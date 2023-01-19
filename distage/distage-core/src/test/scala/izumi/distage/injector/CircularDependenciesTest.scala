@@ -5,8 +5,8 @@ import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.CircularCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.exceptions.interpretation.ProvisioningException
 import izumi.distage.model.exceptions.macros.TraitInitializationFailedException
+import izumi.distage.model.exceptions.runtime.ProvisioningException
 import org.scalatest.wordspec.AnyWordSpec
 
 class CircularDependenciesTest extends AnyWordSpec with MkInjector {
@@ -20,7 +20,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
 
     val exc = intercept[ProvisioningException] {
       injector.produce(plan).unsafeGet()
@@ -42,7 +42,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
 
     assert(plan.plan.successors.links(DIKey.get[Circular1]).size == 2)
     assert(!plan.plan.successors.links.contains(DIKey.ProxyInitKey(DIKey.get[Circular1])))
@@ -69,7 +69,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkNoProxiesInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instance = context.get[ByNameSelfReference]
@@ -85,7 +85,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkNoProxiesInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instance = context.get[TraitSelfReference]
@@ -104,7 +104,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkNoProxiesInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instance = context.get[FactorySelfReference]
@@ -171,7 +171,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkNoProxiesInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[Circular1] != null)

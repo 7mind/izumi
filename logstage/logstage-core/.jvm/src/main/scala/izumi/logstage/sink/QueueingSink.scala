@@ -1,21 +1,18 @@
 package izumi.logstage.sink
 
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicBoolean
-
+import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.console.TrivialLogger.Config
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.DebugProperties
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 
-import scala.concurrent.duration._
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
+import scala.concurrent.duration.*
 
 class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) extends LogSink {
-
-  import QueueingSink._
-
   private val queue = new ConcurrentLinkedQueue[Log.Entry]()
   private val maxBatchSize = 100
   private val stop = new AtomicBoolean(false)
@@ -51,20 +48,27 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
         case _: IllegalStateException =>
       }
 
-      while (!queue.isEmpty) {
-        doFlush(NullStep)
+      try {
+        pollingThread.join()
+      } catch {
+        case _: InterruptedException =>
+          fallback.log(IzumiProject.bugReportPrompt("LogStage shutdown hook had been interrupted"))
       }
+
       target.sync()
+
+      if (!queue.isEmpty) {
+        fallback.log(IzumiProject.bugReportPrompt("LogStage queue wasn't empty and the end of the polling thread"))
+      }
     }
   }
 
   private def poller(): Runnable = new Runnable {
     override def run(): Unit = {
-      while (!stop.get()) { // it's fine to spin forever, we are running in a daemon thread, it'll exit once the app finishes
+      while (!stop.get()) {
         try {
-          val step = new CountingStep(maxBatchSize)
           // in case queue was empty we sleep a bit (it's a sane heuristic), otherwise it's better to continue working asap
-          if (doFlush(step) == null) {
+          if (doFlush(maxBatchSize)) {
             Thread.sleep(sleepTime.toMillis)
           } else {
             Thread.`yield`()
@@ -74,8 +78,12 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
             stopPolling()
 
           case e: Throwable => // bad case!
-            fallback.log("Logger polling failed", e)
+            fallback.log(IzumiProject.bugReportPrompt("LogStage polling loop failed"), e)
         }
+      }
+
+      while (!queue.isEmpty) {
+        doFlush(Int.MaxValue)
       }
     }
   }
@@ -93,40 +101,21 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
     }
   }
 
-  private def doFlush(step: Step): Log.Entry = {
-    var entry = queue.poll()
+  /**
+    * @return true if any messages were processed
+    */
+  private def doFlush(maxBatch: Int): Boolean = {
+    var cc: Int = 0
+    var entry: Log.Entry = null
 
-    while (entry != null && step.continue) {
-      target.flush(entry)
+    while ({
       entry = queue.poll()
-      step.onStep()
-    }
+      if (entry != null)
+        target.flush(entry)
+      cc += 1
+      cc <= maxBatch && entry != null
+    }) {}
 
-    entry
+    entry != null
   }
-
-}
-
-object QueueingSink {
-
-  trait Step {
-    def continue: Boolean
-
-    def onStep(): Unit
-  }
-
-  class CountingStep(max: Int) extends Step {
-    var counter: Int = 0
-
-    override def continue: Boolean = counter <= max
-
-    override def onStep(): Unit = counter += 1
-  }
-
-  object NullStep extends Step {
-    override def continue: Boolean = true
-
-    override def onStep(): Unit = {}
-  }
-
 }

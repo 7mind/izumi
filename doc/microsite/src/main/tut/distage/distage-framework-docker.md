@@ -126,7 +126,7 @@ minimalExample.unsafeRunSync()(cats.effect.unsafe.IORuntime.global)
 ```
 
 If the `DockerSupportModule` is not included in an application then a get of a Docker container
-dependent resource will fail with a `izumi.distage.model.exceptions.interpretation.ProvisioningException`.
+dependent resource will fail with a `izumi.distage.model.exceptions.runtime.ProvisioningException`.
 
 ### Config API
 
@@ -606,7 +606,7 @@ docker rm -f $(docker ps -q -a -f 'label=distage.type')
 ### Troubleshooting
 
 ```
-// izumi.distage.model.exceptions.interpretation.ProvisioningException: Provisioner stopped after 1 instances, 2/14 operations failed:
+// izumi.distage.model.exceptions.runtime.ProvisioningException: Provisioner stopped after 1 instances, 2/14 operations failed:
 //  - {type.izumi.distage.docker.DockerClientWrapper[=λ %0 → IO[+0]]} (distage-framework-docker.md:40), MissingInstanceException: Instance is not available in the object graph: {type.izumi.distage.docker.DockerClientWrapper[=λ %0 → IO[+0]]}.
 ```
 
