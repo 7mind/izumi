@@ -27,6 +27,8 @@ import izumi.logstage.api.{IzLogger, Log}
 import izumi.reflect.TagK
 
 /**
+  * This module is only used by the application launcher, but NOT by distage-testkit
+  *
   * Application flow:
   * 1. Parse commandline parameters
   * 2. Create "early logger" (console sink & configurable log level)
@@ -52,6 +54,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   pluginConfig: PluginConfig,
   bootstrapPluginConfig: PluginConfig,
   appArtifact: IzArtifact,
+  unusedValidAxisChoices: Set[Axis.AxisChoice],
 ) extends ModuleDef {
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
@@ -82,14 +85,32 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   many[LibraryReference]
 
+  make[CLILoggerOptionsReader].from[CLILoggerOptionsReader.CLILoggerOptionsReaderImpl]
+  make[CLILoggerOptions].from {
+    reader: CLILoggerOptionsReader =>
+      reader.read()
+  }
+  make[EarlyLoggerFactory].from[EarlyLoggerFactory.EarlyLoggerFactoryImpl]
+  make[LateLoggerFactory].from[LateLoggerFactory.LateLoggerFactoryImpl]
+
   make[Log.Level].named("early").fromValue(Log.Level.Info)
-  make[StartupBanner].from[StartupBanner.Impl]
   make[IzLogger].named("early").from {
-    (parameters: RawAppArgs, defaultLogLevel: Log.Level @Id("early"), banner: StartupBanner) =>
-      val logger = EarlyLoggers.makeEarlyLogger(parameters, defaultLogLevel)
+    (factory: EarlyLoggerFactory, banner: StartupBanner) =>
+      val logger = factory.makeEarlyLogger()
       banner.showBanner(logger)
       logger
   }
+  make[LogRouter].fromResource {
+    (factory: LateLoggerFactory) =>
+      Lifecycle.fromAutoCloseable(factory.makeLateLogRouter())
+  }
+
+  make[IzLogger].from {
+    (router: LogRouter) =>
+      IzLogger(router)("phase" -> "late")
+  }
+
+  make[StartupBanner].from[StartupBanner.Impl]
 
   make[PluginLoader]
     .named("bootstrap")
@@ -123,22 +144,6 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Boolean].named("distage.roles.activation.ignore-unknown").fromValue(false)
   make[Boolean].named("distage.roles.activation.warn-unset").fromValue(true)
 
-  make[LogRouter].fromResource {
-    (
-      parameters: RawAppArgs,
-      earlyLogger: IzLogger @Id("early"),
-      config: AppConfig,
-      defaultLogLevel: Log.Level @Id("early"),
-      defaultLogFormatJson: Boolean @Id("distage.roles.logs.json"),
-    ) =>
-      Lifecycle.fromAutoCloseable(EarlyLoggers.makeLateLogRouter(parameters, earlyLogger, config, defaultLogLevel, defaultLogFormatJson))
-  }
-
-  make[IzLogger].from {
-    (router: LogRouter) =>
-      IzLogger(router)("phase" -> "late")
-  }
-
   make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
   make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)
 
@@ -168,6 +173,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       rolesInfo.requiredComponents
   }
 
+  make[Set[Axis.AxisChoice]].fromValue(unusedValidAxisChoices)
   make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.Impl]
   make[ActivationInfo].from {
     (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>

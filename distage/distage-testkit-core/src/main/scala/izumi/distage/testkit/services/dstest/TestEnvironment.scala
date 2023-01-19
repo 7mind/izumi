@@ -63,9 +63,7 @@ object TestEnvironment {
     test: DistageTest[F],
     appModule: Module,
     testPlan: Plan,
-    activationInfo: ActivationInfo,
     activation: Activation,
-    planner: Planner, // 0.11.0: remove
   )
 
 }
