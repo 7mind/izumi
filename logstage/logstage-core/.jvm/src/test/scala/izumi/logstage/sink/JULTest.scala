@@ -1,6 +1,7 @@
-package izumi.logstage.api
+package izumi.logstage.sink
 
 import izumi.logstage.adapter.jul.LogstageJulLogger
+import izumi.logstage.api.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.util.logging.{Level, Logger}
