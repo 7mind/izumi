@@ -6,6 +6,15 @@ import logstage.LogRouter
 import java.util.logging.{LogManager, LogRecord}
 import scala.collection.compat.immutable.ArraySeq
 
+/**
+  * If you don't like our JUL adapter, you still might use our SLF4J adapter with `jul-to-slf4j`
+  *
+  * Don't forget do do something like
+  * {{{
+  * SLF4JBridgeHandler.removeHandlersForRootLogger()
+  * SLF4JBridgeHandler.install()
+  * }}}
+  */
 class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler {
   override def publish(record: LogRecord): Unit = {
     val level = toLevel(record)
