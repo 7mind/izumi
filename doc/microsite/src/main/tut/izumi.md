@@ -79,8 +79,9 @@ Example projects:
 Support Chats:
 
 * [Izumi on Gitter](https://gitter.im/7mind/izumi)
-* [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
+* [Izumi User Group [RU] on Telegram](https://t.me/scala_any/708)
 * [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
+* [Discussions on Github](https://github.com/7mind/izumi/discussions)
 
 Videos:
 
