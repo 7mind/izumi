@@ -3,6 +3,7 @@ package izumi.distage.roles.launcher
 import com.typesafe.config.Config
 import distage.Id
 import distage.config.{AppConfig, DIConfigReader}
+import izumi.logstage.adapter.jul.LogstageJulLogger
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.Level.Warn
 import izumi.logstage.api.Log.Message
@@ -39,6 +40,7 @@ object LateLoggerFactory {
     levels: Map[String, List[String]],
     options: Option[RenderingOptions],
     json: Option[Boolean],
+    jul: Option[Boolean],
   )
 
   object SinksConfig {
@@ -54,6 +56,7 @@ object LateLoggerFactory {
       val logconf = readConfig(config.config)
       val isJson = cliOptions.json || logconf.json.contains(true)
       val options = logconf.options.getOrElse(RenderingOptions.default)
+      val jul = logconf.jul.getOrElse(true)
 
       val levels = logconf.levels.flatMap {
         case (stringLevel, packageList) =>
@@ -68,7 +71,16 @@ object LateLoggerFactory {
       }
 
       val fullConfig = DeclarativeLoggerConfig(format, options, levels, cliOptions.level)
-      createRouter(fullConfig)
+      val router = createRouter(fullConfig)
+
+      StaticLogRouter.instance.setup(router)
+
+      if (jul) {
+        val julAdapter = new LogstageJulLogger(router)
+        julAdapter.installOnly()
+      }
+
+      router
     }
 
     protected def createRouter(config: DeclarativeLoggerConfig): ConfigurableLogRouter = {
@@ -97,7 +109,7 @@ object LateLoggerFactory {
         )
       )
       queueingSink.start()
-      StaticLogRouter.instance.setup(router)
+
       router
     }
 
@@ -113,7 +125,7 @@ object LateLoggerFactory {
         } match {
         case Left(errMessage) =>
           earlyLogger.log(Warn)(errMessage)
-          SinksConfig(Map.empty, None, None)
+          SinksConfig(Map.empty, None, None, None)
 
         case Right(value) =>
           value
