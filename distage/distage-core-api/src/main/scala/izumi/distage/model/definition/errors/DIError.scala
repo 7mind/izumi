@@ -13,7 +13,6 @@ import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.planning.ActivationChoices
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.graphs.DG
-import izumi.fundamentals.platform.IzumiProject
 
 sealed trait DIError
 
@@ -124,7 +123,7 @@ object DIError {
             case u: SetAxisIssue.UnconfiguredSetElementAxis =>
               s"Set element references axis ${u.unconfigured.mkString(",")} with undefined values: set ${u.set}, element ${u.element}"
             case i: SetAxisIssue.InconsistentSetElementAxis =>
-              IzumiProject.bugReportPrompt(s"Set ${i.set} has element with multiple axis sets: ${i.element}, unexpected axis sets: ${i.problems}")
+              s"Set ${i.set} has an element which is defined multiple times with valid activations: ${i.element}, unexpected axis sets: ${i.problems}"
           }.niceList()
     }
   }

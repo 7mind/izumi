@@ -68,5 +68,4 @@ object SetCases {
 
     class Service2 extends Service
   }
-
 }

@@ -137,6 +137,13 @@ object PlanSolver {
         .mapValues(_.map(_._2).toList)
         .toMap
 
+      def handleSetWithSingleActivationSet(firstOp: CreateSet, memberKey: DIKey, ac: ActivationChoices, activations: Set[AxisPoint]) = {
+        isProperlyActivatedSetElement(ac, activations) {
+          unconfigured =>
+            Left(List(SetAxisIssue.UnconfiguredSetElementAxis(firstOp.target, memberKey, firstOp.origin.value, unconfigured)))
+        }.map(out => (memberKey, out))
+      }
+
       for {
         sets <- setMembersUnsafe.map {
           case (setKey, (firstOp, membersUnsafe)) =>
@@ -144,13 +151,25 @@ object PlanSolver {
               .map {
                 memberKey =>
                   reverseOpIndex.get(memberKey) match {
-                    case Some(value :: Nil) =>
-                      isProperlyActivatedSetElement(ac, value) {
-                        unconfigured =>
-                          Left(List(SetAxisIssue.UnconfiguredSetElementAxis(firstOp.target, memberKey, firstOp.origin.value, unconfigured)))
-                      }.map(out => (memberKey, out))
                     case Some(other) =>
-                      Left(List(SetAxisIssue.InconsistentSetElementAxis(firstOp.target, memberKey, other)))
+                      for {
+                        configuredElements <- other.map {
+                          v =>
+                            handleSetWithSingleActivationSet(firstOp, memberKey, ac, v)
+                              .map(isActivated => (v, isActivated))
+                        }.biAggregate
+                        out <- configuredElements.filter(_._2._2) match {
+                          case only :: Nil =>
+                            Right(only._2)
+                          case Nil =>
+                            Right((memberKey, false))
+                          case valid =>
+                            Left(List(SetAxisIssue.InconsistentSetElementAxis(firstOp.target, memberKey, valid.map(_._1))))
+                        }
+                      } yield {
+                        out
+                      }
+
                     case None =>
                       Right((memberKey, true))
                   }

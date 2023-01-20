@@ -2,7 +2,7 @@ package izumi.distage.injector
 
 import distage.{DIKey, Id, Injector, Module}
 import izumi.distage.fixtures.BasicCases.*
-import izumi.distage.fixtures.SetCases.SetCase1
+import izumi.distage.fixtures.SetCases.{SetCase1, SetCase2}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Activation, Axis, BootstrapModuleDef, ModuleDef}
@@ -211,6 +211,55 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .unsafeGet()
         .get[Set[SetTrait]]
     }
+  }
+
+  "#1439: (case 2) properly handle indentical set element bindings tagged with contradictive axis" in {
+    import SetCase2._
+
+    val definition = new ModuleDef {
+      many[Service]
+        .add[Service1].tagged(Repo.Prod)
+        .add[Service1].tagged(Repo.Dummy)
+    }
+
+    val set = mkInjector()
+      .produce(PlannerInput(definition, Activation(Repo.Dummy), Roots(DIKey[Set[Service]])))
+      .unsafeGet()
+      .get[Set[Service]]
+    assert(set.size == 1)
+  }
+
+  "#1439: (case 1) fail on indentical set element bindings one of which tagged with active axis" in {
+    import SetCase2._
+
+    val definition = new ModuleDef {
+      many[Service]
+        .add[Service1]
+        .add[Service1].tagged(Repo.Dummy)
+    }
+
+    intercept[InjectorFailed] {
+      mkInjector()
+        .produce(PlannerInput(definition, Activation(Repo.Dummy), Roots(DIKey[Set[Service]])))
+        .unsafeGet()
+        .get[Set[Service]]
+    }
+  }
+
+  "#1439: (case 1) do not fail on indentical set element bindings one of which tagged with inactive axis" in {
+    import SetCase2._
+
+    val definition = new ModuleDef {
+      many[Service]
+        .add[Service1]
+        .add[Service1].tagged(Repo.Prod)
+    }
+
+    val set = mkInjector()
+      .produce(PlannerInput(definition, Activation(Repo.Dummy), Roots(DIKey[Set[Service]])))
+      .unsafeGet()
+      .get[Set[Service]]
+    assert(set.size == 1)
   }
 
   "exclude set elements with unselected unsaturated axis" in {
