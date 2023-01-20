@@ -49,7 +49,7 @@ object BootstrapLocator {
 
     val plan =
       BootstrapLocator.bootstrapPlanner
-        .planUnsafe(bindings, bootstrapActivation, Roots.Everything)
+        .plan(bindings, bootstrapActivation, Roots.Everything).getOrThrow()
 
     val resource =
       BootstrapLocator.bootstrapProducer
