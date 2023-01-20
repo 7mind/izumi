@@ -32,13 +32,6 @@ object CatsResourcesTestJvm {
 
 final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with CatsIOPlatformDependentTest {
 
-  private def createCPUPool(ioRuntime: => IORuntime): Lifecycle[Identity, ExecutionContext] = {
-    final class HackyReuse extends CatsIOPlatformDependentSupportModule {
-      val res: Lifecycle[Identity, ExecutionContext] = this.createCPUPool(ioRuntime)
-    }
-    new HackyReuse().res
-  }
-
   "`No More Orphans` type provider is accessible" in {
     def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.kernel.Sync`](): Unit = ()
     y()
@@ -82,9 +75,9 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       }
       make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
 
-      final class CreateCPUPool(ioRuntime: => IORuntime)
+      final class CreateCPUPool(@unused ioRuntime: => IORuntime)
         extends Lifecycle.Of[Identity, ExecutionContext](
-          createCPUPool(ioRuntime)
+          CatsIOPlatformDependentSupportModule.createCPUPool
         )
     }
 
@@ -117,10 +110,10 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       }
       make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
 
-      // DIFFERENCE: !!!
-      final class CreateCPUPool(ioRuntime: IORuntime)
+      // DIFFERENCE: not by-name
+      final class CreateCPUPool(@unused ioRuntime: IORuntime)
         extends Lifecycle.Of[Identity, ExecutionContext](
-          createCPUPool(ioRuntime)
+          CatsIOPlatformDependentSupportModule.createCPUPool
         )
     }
 

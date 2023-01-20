@@ -41,7 +41,7 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
     (blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
       val cpuRef = new AtomicReference[ExecutionContext](null)
       lazy val ioRuntime: IORuntime = IORuntime(cpuRef.get(), blockingPool, scheduler, () => (), ioRuntimeConfig)
-      createCPUPool(ioRuntime).map {
+      CatsIOPlatformDependentSupportModule.createCPUPool.map {
         ec =>
           cpuRef.set(ec)
           (ioRuntime, ec)

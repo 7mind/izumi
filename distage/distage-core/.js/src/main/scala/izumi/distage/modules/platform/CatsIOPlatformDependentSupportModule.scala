@@ -9,8 +9,10 @@ import scala.concurrent.ExecutionContext
 
 private[distage] trait CatsIOPlatformDependentSupportModule extends ModuleDef {
   make[ExecutionContext].named("io").using[ExecutionContext]("cpu")
+}
 
-  protected[this] def createCPUPool(@unused ioRuntime: => IORuntime): Lifecycle[Identity, ExecutionContext] = {
+object CatsIOPlatformDependentSupportModule {
+  private[distage] def createCPUPool: Lifecycle[Identity, ExecutionContext] = {
     Lifecycle.pure(IORuntime.defaultComputeExecutionContext)
   }
 }
