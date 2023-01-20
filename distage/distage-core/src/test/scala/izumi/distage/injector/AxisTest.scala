@@ -233,7 +233,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
   }
 
-  "#1439: properly handle indentical set element bindings tagged with contradictive axis" in {
+  "#1439: (case 2) properly handle indentical set element bindings tagged with contradictive axis" in {
     import SetCase2._
 
     val definition = new ModuleDef {
@@ -243,7 +243,40 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val set = mkInjector()
-      .produce(PlannerInput(definition, Activation(Repo.Prod), Roots(DIKey[Set[Service]])))
+      .produce(PlannerInput(definition, Activation(Repo.Dummy), Roots(DIKey[Set[Service]])))
+      .unsafeGet()
+      .get[Set[Service]]
+    assert(set.size == 1)
+  }
+
+  "#1439: (case 1) fail on indentical set element bindings one of which tagged with active axis" in {
+    import SetCase2._
+
+    val definition = new ModuleDef {
+      many[Service]
+        .add[Service1]
+        .add[Service1].tagged(Repo.Dummy)
+    }
+
+    intercept[InjectorFailed] {
+      mkInjector()
+        .produce(PlannerInput(definition, Activation(Repo.Dummy), Roots(DIKey[Set[Service]])))
+        .unsafeGet()
+        .get[Set[Service]]
+    }
+  }
+
+  "#1439: (case 1) do not fail on indentical set element bindings one of which tagged with inactive axis" in {
+    import SetCase2._
+
+    val definition = new ModuleDef {
+      many[Service]
+        .add[Service1]
+        .add[Service1].tagged(Repo.Prod)
+    }
+
+    val set = mkInjector()
+      .produce(PlannerInput(definition, Activation(Repo.Dummy), Roots(DIKey[Set[Service]])))
       .unsafeGet()
       .get[Set[Service]]
     assert(set.size == 1)
