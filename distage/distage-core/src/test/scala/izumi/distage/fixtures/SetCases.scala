@@ -68,10 +68,4 @@ object SetCases {
 
     class Service2 extends Service
   }
-
-  object SetCase5 {
-    trait PonvScenario
-
-    trait LogMessages extends PonvScenario
-  }
 }

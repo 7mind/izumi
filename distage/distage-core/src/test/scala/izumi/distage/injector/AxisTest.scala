@@ -177,26 +177,6 @@ class AxisTest extends AnyWordSpec with MkInjector {
     assert(instance.exists(_.isInstanceOf[SetImpl5]))
   }
 
-  /**
-    * "Identical set bindings tagged with contradictive axis points should be treated independently" in {
-    * import SetCase5._
-    *
-    * val a = new ModuleDef {
-    * make[LogMessages[IO]]
-    * many[PonvScenario[IO]].ref[LogMessages[IO]].tagged(Mode.Prod)
-    * }
-    * val b = new ModuleDef {
-    * many[PonvScenario[IO]].ref[LogMessages[IO]].tagged(Mode.Test)
-    * }
-    * val program = a ++ b
-    * import cats.effect.unsafe.implicits.global
-    * Injector[IO]()
-    * .produceRun(program, Activation(Mode -> Mode.Test)) {
-    * x: Set[PonvScenario[IO]] => IO(assert(x.size == 1))
-    * }.unsafeRunSync()
-    * }
-    */
-
   "#1221: throw on elements with at least one undefined axis when element is unique" in {
     import SetCase1._
 
