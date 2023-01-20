@@ -75,7 +75,7 @@ object LateLoggerFactory {
 
       StaticLogRouter.instance.setup(router)
 
-      if (jul) {
+      if (jul) { // TODO: here we leak the adapter, it will never be closed
         val julAdapter = new LogstageJulLogger(router)
         julAdapter.installOnly()
       }
