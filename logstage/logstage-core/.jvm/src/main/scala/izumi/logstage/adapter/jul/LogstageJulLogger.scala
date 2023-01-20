@@ -25,7 +25,7 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler {
 
   def toLevel(record: LogRecord): Log.Level = {
     val level = record.getLevel.intValue()
-    import java.util.logging.Level._
+    import java.util.logging.Level.*
     if (level >= SEVERE.intValue()) {
       Log.Level.Crit
     } else if (level >= WARNING.intValue()) {
