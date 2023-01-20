@@ -1,9 +1,9 @@
 package izumi.distage.injector
 
+import distage.{Injector, ModuleDef}
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.SetCases.{SetCase2, SetCase4}
 import izumi.distage.model.PlannerInput
-import distage.{Injector, ModuleDef}
 import izumi.distage.model.exceptions.runtime.TODOBindingException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -12,7 +12,7 @@ import scala.util.Try
 class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
 
   "Support TODO bindings" in {
-    import BasicCase1._
+    import BasicCase1.*
 
     val injector = mkInjector()
 
@@ -36,7 +36,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
   }
 
   "Sets are being extended when injector inheritance happens (https://github.com/7mind/izumi/issues/330)" in {
-    import SetCase4._
+    import SetCase4.*
 
     val definitionParent = PlannerInput.everything(new ModuleDef {
       many[Service]
@@ -60,7 +60,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
   }
 
   "Set element references are the same as their referees" in {
-    import SetCase2._
+    import SetCase2.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Service1]
@@ -77,5 +77,4 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
     val set = context.get[Set[Service]]
     assert(set.head eq svc)
   }
-
 }

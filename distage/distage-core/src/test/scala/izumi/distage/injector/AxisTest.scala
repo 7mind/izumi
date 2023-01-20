@@ -2,7 +2,7 @@ package izumi.distage.injector
 
 import distage.{DIKey, Id, Injector, Module}
 import izumi.distage.fixtures.BasicCases.*
-import izumi.distage.fixtures.SetCases.SetCase1
+import izumi.distage.fixtures.SetCases.{SetCase1, SetCase2}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Activation, Axis, BootstrapModuleDef, ModuleDef}
@@ -177,6 +177,26 @@ class AxisTest extends AnyWordSpec with MkInjector {
     assert(instance.exists(_.isInstanceOf[SetImpl5]))
   }
 
+  /**
+    * "Identical set bindings tagged with contradictive axis points should be treated independently" in {
+    * import SetCase5._
+    *
+    * val a = new ModuleDef {
+    * make[LogMessages[IO]]
+    * many[PonvScenario[IO]].ref[LogMessages[IO]].tagged(Mode.Prod)
+    * }
+    * val b = new ModuleDef {
+    * many[PonvScenario[IO]].ref[LogMessages[IO]].tagged(Mode.Test)
+    * }
+    * val program = a ++ b
+    * import cats.effect.unsafe.implicits.global
+    * Injector[IO]()
+    * .produceRun(program, Activation(Mode -> Mode.Test)) {
+    * x: Set[PonvScenario[IO]] => IO(assert(x.size == 1))
+    * }.unsafeRunSync()
+    * }
+    */
+
   "#1221: throw on elements with at least one undefined axis when element is unique" in {
     import SetCase1._
 
@@ -211,6 +231,22 @@ class AxisTest extends AnyWordSpec with MkInjector {
         .unsafeGet()
         .get[Set[SetTrait]]
     }
+  }
+
+  "#1439: properly handle indentical set element bindings tagged with contradictive axis" in {
+    import SetCase2._
+
+    val definition = new ModuleDef {
+      many[Service]
+        .add[Service1].tagged(Repo.Prod)
+        .add[Service1].tagged(Repo.Dummy)
+    }
+
+    val set = mkInjector()
+      .produce(PlannerInput(definition, Activation(Repo.Prod), Roots(DIKey[Set[Service]])))
+      .unsafeGet()
+      .get[Set[Service]]
+    assert(set.size == 1)
   }
 
   "exclude set elements with unselected unsaturated axis" in {
