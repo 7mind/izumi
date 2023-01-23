@@ -182,11 +182,11 @@ object LogMessageMacro {
         }
       }
       expr match {
-        case '{ ($expr: Any) -> null} =>
-          (extractTermName(acc, expr.asTerm), expr, true, findCodec(expr))
-
         case '{ ($expr: Any) -> $id -> null } =>
           (nameOf(id), expr, true, findCodec(expr))
+
+        case '{ ($expr: Any) -> null } =>
+          (extractTermName(acc, expr.asTerm), expr, true, findCodec(expr))
 
         case '{ ($expr: Any) -> $id } =>
           (nameOf(id), expr, false, findCodec(expr))
