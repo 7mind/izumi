@@ -3,7 +3,7 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log
 import logstage.LogRouter
 
-import java.util.logging.{LogManager, LogRecord}
+import java.util.logging.{LogManager, LogRecord, Logger}
 import scala.collection.compat.immutable.ArraySeq
 
 /**
@@ -15,7 +15,7 @@ import scala.collection.compat.immutable.ArraySeq
   * SLF4JBridgeHandler.install()
   * }}}
   */
-class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler {
+class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler with AutoCloseable {
   override def publish(record: LogRecord): Unit = {
     val level = toLevel(record)
     if (router.acceptable(Log.LoggerId(record.getLoggerName), level)) {
@@ -84,27 +84,37 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler {
   }
 
   def install(): Unit = {
-    LogManager.getLogManager.getLogger("").addHandler(this)
+    rootRef().addHandler(this)
   }
 
   def installOnly(): Unit = {
-    val rootLogger = LogManager.getLogManager.getLogger("")
-    rootLogger.synchronized {
-      val handlers = rootLogger.getHandlers
-      for (handler <- handlers) {
-        rootLogger.removeHandler(handler)
-      }
-    }
+    uninstallAll()
     install()
   }
 
+  def uninstallAll(): Unit = {
+    forEachHandler {
+      case (root, handler) =>
+        root.removeHandler(handler)
+    }
+  }
+
   def uninstall(): Unit = {
-    val rootLogger = LogManager.getLogManager.getLogger("")
+    forEachHandler {
+      case (root, handler) =>
+        if (handler.isInstanceOf[LogstageJulLogger]) root.removeHandler(handler)
+    }
+  }
+
+  private[this] def forEachHandler(action: (Logger, java.util.logging.Handler) => Unit): Unit = {
+    val rootLogger = rootRef()
     rootLogger.synchronized {
       val handlers = rootLogger.getHandlers
       for (handler <- handlers) {
-        if (handler.isInstanceOf[LogstageJulLogger]) rootLogger.removeHandler(handler)
+        action(rootLogger, handler)
       }
     }
   }
+
+  private[this] def rootRef(): Logger = LogManager.getLogManager.getLogger("")
 }

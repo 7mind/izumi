@@ -1,8 +1,10 @@
 package izumi.distage.roles.launcher
 
 import com.typesafe.config.Config
-import distage.Id
+import distage.{Id, Lifecycle}
 import distage.config.{AppConfig, DIConfigReader}
+import izumi.distage.roles.launcher.LateLoggerFactory.DistageAppLogging
+import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.adapter.jul.LogstageJulLogger
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.Level.Warn
@@ -17,7 +19,8 @@ import logstage.{ConfigurableLogRouter, ConsoleSink, IzLogger, QueueingSink}
 import scala.util.Try
 
 trait LateLoggerFactory {
-  def makeLateLogRouter(): LogRouter
+  def makeLateLogRouter(onClose: List[AutoCloseable] => Unit): Lifecycle[Identity, DistageAppLogging]
+  def makeLateLogRouter(): Lifecycle[Identity, DistageAppLogging]
 }
 
 object LateLoggerFactory {
@@ -43,6 +46,11 @@ object LateLoggerFactory {
     jul: Option[Boolean],
   )
 
+  case class DistageAppLogging(
+    router: LogRouter,
+    closeables: List[AutoCloseable],
+  )
+
   object SinksConfig {
     implicit val configReader: DIConfigReader[SinksConfig] = DIConfigReader.derived
   }
@@ -52,7 +60,9 @@ object LateLoggerFactory {
     cliOptions: CLILoggerOptions,
     earlyLogger: IzLogger @Id("early"),
   ) extends LateLoggerFactory {
-    final def makeLateLogRouter(): LogRouter = {
+    final def makeLateLogRouter(): Lifecycle[Identity, DistageAppLogging] = makeLateLogRouter(_.foreach(_.close()))
+
+    final def makeLateLogRouter(onClose: List[AutoCloseable] => Unit): Lifecycle[Identity, DistageAppLogging] = {
       val logconf = readConfig(config.config)
       val isJson = cliOptions.json || logconf.json.contains(true)
       val options = logconf.options.getOrElse(RenderingOptions.default)
@@ -73,14 +83,16 @@ object LateLoggerFactory {
       val fullConfig = DeclarativeLoggerConfig(format, options, levels, cliOptions.level)
       val router = createRouter(fullConfig)
 
-      StaticLogRouter.instance.setup(router)
-
-      if (jul) { // TODO: here we leak the adapter, it will never be closed
-        val julAdapter = new LogstageJulLogger(router)
-        julAdapter.installOnly()
-      }
-
-      router
+      Lifecycle.make[Identity, DistageAppLogging] {
+        StaticLogRouter.instance.setup(router)
+        if (jul) {
+          val julAdapter = new LogstageJulLogger(router)
+          julAdapter.installOnly()
+          DistageAppLogging(router, List(julAdapter, router))
+        } else {
+          DistageAppLogging(router, List(router))
+        }
+      }(loggers => onClose(loggers.closeables))
     }
 
     protected def createRouter(config: DeclarativeLoggerConfig): ConfigurableLogRouter = {
