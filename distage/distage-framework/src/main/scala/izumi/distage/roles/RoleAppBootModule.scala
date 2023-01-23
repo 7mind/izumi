@@ -87,7 +87,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   make[CLILoggerOptionsReader].from[CLILoggerOptionsReader.CLILoggerOptionsReaderImpl]
   make[CLILoggerOptions].from {
-    reader: CLILoggerOptionsReader =>
+    (reader: CLILoggerOptionsReader) =>
       reader.read()
   }
   make[EarlyLoggerFactory].from[EarlyLoggerFactory.EarlyLoggerFactoryImpl]

@@ -492,7 +492,7 @@ object ModuleDefDSL {
         * Adds a dependency on `Local3[F]`
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
+        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       def fromHas[R1 <: Lifecycle[LifecycleF, T]: AnyConstructor](implicit tag: TrifunctorHasLifecycleTag[R1, T]): AfterBind = {
         import tag._
@@ -524,7 +524,7 @@ object ModuleDefDSL {
         * Adds a dependency on `Local3[F]`
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
+        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: Lifecycle[F[R, E, _], I]): AfterBind = {
         dsl.fromResource[Lifecycle[F[Any, E, _], I]](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
@@ -536,7 +536,7 @@ object ModuleDefDSL {
         * Adds a dependency on `Local3[F]`
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
+        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
         function: Functoid[Lifecycle[F[R, E, _], I]]
