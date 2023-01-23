@@ -4,7 +4,7 @@ import distage.Id
 import distage.config.AppConfig
 import logstage.{ConfigurableLogRouter, IzLogger}
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque}
 
 class LateLoggerFactoryCachingImpl(
   config: AppConfig,
@@ -20,14 +20,17 @@ class LateLoggerFactoryCachingImpl(
 
 object LateLoggerFactoryCachingImpl {
   def makeCache(): Cache = {
-    Cache(new ConcurrentHashMap[LateLoggerFactory.DeclarativeLoggerConfig, ConfigurableLogRouter])
+    Cache(new ConcurrentHashMap[LateLoggerFactory.DeclarativeLoggerConfig, ConfigurableLogRouter], new ConcurrentLinkedDeque[AutoCloseable])
   }
 
-  case class Cache(cache: ConcurrentHashMap[LateLoggerFactory.DeclarativeLoggerConfig, ConfigurableLogRouter]) extends AutoCloseable {
+  case class Cache(
+    cache: ConcurrentHashMap[LateLoggerFactory.DeclarativeLoggerConfig, ConfigurableLogRouter],
+    closeables: ConcurrentLinkedDeque[AutoCloseable],
+  ) extends AutoCloseable {
     override def close(): Unit = {
       import scala.jdk.CollectionConverters.*
-      cache.asScala.foreach(println)
-      cache.asScala.values.foreach(_.close())
+      closeables.asScala.foreach(_.close())
+      closeables.clear()
       cache.clear()
     }
   }

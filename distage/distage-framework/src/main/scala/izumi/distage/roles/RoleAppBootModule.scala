@@ -17,6 +17,7 @@ import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrate
 import izumi.distage.roles.RoleAppMain.{ArgV, RequiredRoles}
 import izumi.distage.roles.launcher.*
 import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
+import izumi.distage.roles.launcher.LateLoggerFactory.DistageAppLogging
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -100,9 +101,13 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       banner.showBanner(logger)
       logger
   }
-  make[LogRouter].fromResource {
+  make[DistageAppLogging].fromResource {
     (factory: LateLoggerFactory) =>
-      Lifecycle.fromAutoCloseable(factory.makeLateLogRouter())
+      factory.makeLateLogRouter()
+  }
+  make[LogRouter].from {
+    (logging: DistageAppLogging) =>
+      logging.router
   }
 
   make[IzLogger].from {
