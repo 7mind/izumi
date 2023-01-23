@@ -1,6 +1,6 @@
 package izumi.distage.config.codec
 
-import com.typesafe.config.{ConfigMemorySize, ConfigValue}
+import com.typesafe.config.ConfigValue
 import pureconfig.*
 import pureconfig.ConfigReader.Result
 import pureconfig.error.{CannotConvert, ConfigReaderFailures, ThrowableFailure}
@@ -35,9 +35,6 @@ trait PureconfigInstances {
     * }}}
     */
   @inline implicit final def forceCirceLikeCoproductHint[T]: CoproductHint[T] = PureconfigInstances.circeLikeCoproductHint.asInstanceOf[CoproductHint[T]]
-
-  // use `Exported` so that if user imports their own instances, user instances will have higher priority
-  @inline implicit final def memorySizeDecoder: Exported[ConfigReader[ConfigMemorySize]] = PureconfigInstances.configMemorySizeDecoder
 
 }
 
@@ -77,18 +74,6 @@ object PureconfigInstances extends PureconfigInstances {
       import pureconfig.syntax.*
       Map(name -> cv).toConfig
     }
-  }
-
-  private[config] final lazy val configMemorySizeDecoder: Exported[ConfigReader[ConfigMemorySize]] = Exported {
-    (cur: ConfigCursor) =>
-      cur.asConfigValue.flatMap {
-        cv =>
-          try Right(cv.atKey("m").getMemorySize("m"))
-          catch {
-            case NonFatal(ex) =>
-              Result.fail(error.ConvertFailure(CannotConvert(cv.toString, classTag[ConfigMemorySize].toString, ex.toString), cur))
-          }
-      }
   }
 
 }
