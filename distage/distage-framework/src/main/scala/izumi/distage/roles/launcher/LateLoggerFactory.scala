@@ -23,9 +23,8 @@ object LateLoggerFactory {
   sealed trait LoggerFormat
 
   object LoggerFormat {
-    final case object Json extends LoggerFormat
-
-    final case object Text extends LoggerFormat
+    case object Json extends LoggerFormat
+    case object Text extends LoggerFormat
   }
 
   case class DeclarativeLoggerConfig(

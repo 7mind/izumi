@@ -12,13 +12,13 @@ object LogMessageMacro {
 
     def matchExpr(message: Expr[String], multiline: Boolean): Expr[Message] = {
       message match {
-        case sc@'{ StringContext.apply ($parts: _*).s($args: _*) } =>
+        case sc @ '{ StringContext.apply($parts: _*).s($args: _*) } =>
           import scala.quoted.Varargs
           val partsSeq = parts match {
-            case Varargs (a) =>
+            case Varargs(a) =>
               a
             case _ =>
-              report.errorAndAbort (s"String context expected but got: $parts")
+              report.errorAndAbort(s"String context expected but got: $parts")
           }
 
           makeMessage(multiline, partsSeq, makeArgs(args))
@@ -30,7 +30,6 @@ object LogMessageMacro {
           matchTerm(o.asTerm, multiline)
       }
     }
-
 
     @tailrec
     def matchTerm(message: Term, multiline: Boolean): Expr[Message] = {
@@ -60,7 +59,7 @@ object LogMessageMacro {
                 case None =>
                   parts += Left(c.value.toString)
               }
-            case chunk@Ident(_) =>
+            case chunk @ Ident(_) =>
               val expr = Right(makeArg(chunk.asExprOf[Any]))
               parts.lastOption match {
                 case Some(value) =>
@@ -96,7 +95,7 @@ object LogMessageMacro {
           matchExpr(arg.asExprOf[String], multiline = true)
         case Literal(c) =>
           val cval = Seq(Expr(c.value.toString))
-          makeMessage(multiline, cval , Seq.empty)
+          makeMessage(multiline, cval, Seq.empty)
         case _ =>
           report.errorAndAbort(s"Failed to process $message")
       }
@@ -127,7 +126,7 @@ object LogMessageMacro {
       })
 
       val sc: Expr[StringContext] = '{ StringContext($scparts: _*) }
-      '{ Message($sc, ${Expr.ofSeq(args)}) }
+      '{ Message($sc, ${ Expr.ofSeq(args) }) }
     }
 
     def makeArgs(args: Expr[Seq[Any]]): Seq[Expr[LogArg]] = {
@@ -143,7 +142,7 @@ object LogMessageMacro {
     def makeArg(expr: Expr[Any]): Expr[LogArg] = {
       val (parts, realExpr, isHidden, codec) = extractArgName(Seq.empty, expr)
       val vals: Expr[Seq[String]] = Expr.ofSeq(parts.map(n => Expr(n)))
-      '{ LogArg($vals, $realExpr, ${ Expr(isHidden) }, $codec)}
+      '{ LogArg($vals, $realExpr, ${ Expr(isHidden) }, $codec) }
     }
 
     def findCodec(expr: Expr[Any]): Expr[Option[LogstageCodec[Any]]] = {
@@ -196,8 +195,6 @@ object LogMessageMacro {
       }
     }
 
-
-
     @tailrec
     def extractTermName(acc: Seq[String], term: Term): Seq[String] = {
       term match {
@@ -219,7 +216,7 @@ object LogMessageMacro {
         case Select(e, s) => // ${x.value}
           extractTermName(s +: acc, e)
 
-        case Apply(Select(e,s), Nil) => // ${x.getSomething}
+        case Apply(Select(e, s), Nil) => // ${x.getSomething}
           extractTermName(s +: acc, e)
 
         case Apply(Select(e, _), Ident(s) :: Nil) => // ${Predef.ops(x).getSomething}

@@ -269,16 +269,16 @@ abstract class OverloadingTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1
   "test overloading of `in`" in {
     () =>
       // `in` with Unit return type is ok
-      assertCompiles(""" "test" in { println(""); () }  """)
+      assertCompiles(""" "test" in { println(""); QuasiIO[F].pure(()) }  """)
       // `in` with Assertion return type is ok
-      assertCompiles(""" "test" in { assert(1 + 1 == 2) }  """)
+      assertCompiles(""" "test" in { QuasiIO[F].pure(assert(1 + 1 == 2)) }  """)
       // `in` with any other return type is not ok
       val res = intercept[TestFailedException](
         assertCompiles(
-          """ "test" in { println(""); 1 + 1 }  """
+          """ "test" in { println(""); QuasiIO[F].pure(1 + 1) }  """
         )
       )
-      assert(res.getMessage() contains "overloaded method")
+      assert(res.getMessage() contains "overloaded")
   }
 }
 
