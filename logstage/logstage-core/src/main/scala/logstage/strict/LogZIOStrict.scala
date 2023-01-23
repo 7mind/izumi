@@ -2,9 +2,9 @@ package logstage.strict
 
 import izumi.functional.bio.{SyncSafe1, SyncSafe2}
 import izumi.logstage.api.Log.CustomContext
-import izumi.logstage.api.logger.AbstractLogger
+import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF}
 import logstage.strict.LogIO3AskStrict.LogIO3AskStrictImpl
-import logstage.strict.LogstageCatsStrict.WrappedLogIOStrict
+import logstage.strict.LogstageCatsStrict.{WrappedLogIOStrict, WrappedLogIOStrictF}
 import zio.{IO, ZIO}
 
 object LogZIOStrict {
@@ -40,6 +40,14 @@ object LogZIOStrict {
     }
   }
 
+  def withFiberIdStrict(logger: AbstractLoggerF[IO[Nothing, _]]): LogIO2Strict[IO] = {
+    new WrappedLogIOStrictF[IO[Nothing, _]](logger)(SyncSafe2[IO]) {
+      override def withCustomContext(context: CustomContext): LogIOStrict[IO[Nothing, _]] = {
+        withFiberIdStrict(logger.withCustomContext(context))
+      }
+    }
+  }
+
   def withDynamicContextStrict[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIOStrict[ZIO[R, Nothing, _]] = {
     new WrappedLogIOStrict[ZIO[R, Nothing, _]](logger)(SyncSafe1[ZIO[R, Nothing, _]]) {
       override def withCustomContext(context: CustomContext): LogIOStrict[ZIO[R, Nothing, _]] = {
@@ -48,6 +56,14 @@ object LogZIOStrict {
 
       override protected[this] def wrap[A](f: AbstractLogger => A): ZIO[R, Nothing, A] = {
         dynamic.flatMap(ctx => IO.effectTotal(f(logger.withCustomContext(ctx))))
+      }
+    }
+  }
+
+  def withDynamicContextStrict[R](logger: AbstractLoggerF[ZIO[R, Nothing, _]])(dynamic: ZIO[R, Nothing, CustomContext]): LogIOStrict[ZIO[R, Nothing, _]] = {
+    new WrappedLogIOStrictF[ZIO[R, Nothing, _]](logger)(SyncSafe1[ZIO[R, Nothing, _]]) {
+      override def withCustomContext(context: CustomContext): LogIOStrict[ZIO[R, Nothing, _]] = {
+        withDynamicContextStrict(logger.withCustomContext(context))(dynamic)
       }
     }
   }
