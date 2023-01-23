@@ -1,11 +1,12 @@
 package logstage
 
 import izumi.functional.bio.{SyncSafe1, SyncSafe2}
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.CustomContext
-import izumi.logstage.api.logger.AbstractLogger
+import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF}
 import izumi.logstage.api.rendering.AnyEncoded
 import izumi.reflect.Tag
-import logstage.LogstageCats.WrappedLogIO
+import logstage.LogstageCats.{WrappedLogIO, WrappedLogIOF}
 import zio.{IO, ZIO}
 
 object LogZIO {
@@ -50,6 +51,32 @@ object LogZIO {
       override protected[this] def wrap[A](f: AbstractLogger => A): ZIO[R, Nothing, A] = {
         dynamic.flatMap(ctx => IO.effectTotal(f(logger.withCustomContext(ctx))))
       }
+    }
+  }
+
+  def withFiberId(logger: AbstractLoggerF[IO[Nothing, _]]): LogIO2[IO] = {
+    new WrappedLogIOF[IO[Nothing, _]](logger)(SyncSafe2[IO]) {
+      override def withCustomContext(context: CustomContext): LogIO2[IO] = {
+        withFiberId(logger.withCustomContext(context))
+      }
+
+      override def log(entry: Log.Entry): IO[Nothing, Unit] = logger.log(entry)
+
+      override def log(logLevel: _root_.izumi.logstage.api.Log.Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): IO[Nothing, Unit] =
+        logger.log(logLevel)(messageThunk)
+    }
+  }
+
+  def withDynamicContext[R](logger: AbstractLoggerF[ZIO[R, Nothing, _]])(dynamic: ZIO[R, Nothing, CustomContext]): LogIO2[ZIO[R, _, _]] = {
+    new WrappedLogIOF[ZIO[R, Nothing, _]](logger)(SyncSafe1[ZIO[R, Nothing, _]]) {
+      override def withCustomContext(context: CustomContext): LogIO[ZIO[R, Nothing, _]] = {
+        withDynamicContext(logger.withCustomContext(context))(dynamic)
+      }
+
+      override def log(entry: Log.Entry): ZIO[R, Nothing, Unit] = logger.log(entry)
+
+      override def log(logLevel: _root_.izumi.logstage.api.Log.Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): ZIO[R, Nothing, Unit] =
+        logger.log(logLevel)(messageThunk)
     }
   }
 

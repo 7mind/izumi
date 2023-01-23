@@ -15,11 +15,11 @@ trait AbstractLoggerF[F[_]] {
   /** Check if `loggerId` is not blacklisted and `logLevel` is above the configured threshold */
   def acceptable(loggerId: LoggerId, logLevel: Log.Level): F[Boolean]
 
-  def withCustomContext(context: CustomContext): F[Self]
+  def withCustomContext(context: CustomContext): Self
 
   @inline def ifAcceptable(loggerId: LoggerId, logLevel: Log.Level)(action: => F[Unit])(implicit pos: CodePositionMaterializer): F[Unit]
 
-  @inline final def apply(context: CustomContext): F[Self] = withCustomContext(context)
+  @inline final def apply(context: CustomContext): Self = withCustomContext(context)
 
   @inline final def acceptable(logLevel: Log.Level)(implicit pos: CodePositionMaterializer): F[Boolean] = {
     acceptable(LoggerId(pos.get.applicationPointId), logLevel)
@@ -47,8 +47,6 @@ trait AbstractLogger extends AbstractLoggerF[Identity] {
   def unsafeLog(entry: Log.Entry): Unit
 
   def acceptable(loggerId: LoggerId, logLevel: Log.Level): Boolean
-
-  def withCustomContext(context: CustomContext): Self
 
   @inline final def ifAcceptable(loggerId: LoggerId, logLevel: Log.Level)(action: => Unit)(implicit pos: CodePositionMaterializer): Unit = {
     if (acceptable(loggerId, logLevel)) {
