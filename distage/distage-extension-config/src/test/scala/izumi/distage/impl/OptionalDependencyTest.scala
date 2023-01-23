@@ -57,7 +57,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
   "Using Lifecycle & QuasiIO objects succeeds event if there's no cats/zio/monix on the classpath" in {
     When("There's no cats/zio/monix on classpath")
     assertCompiles("import scala._")
-    assertDoesNotCompile("import cats._")
+    assertDoesNotCompile("import cats.kernel.Eq")
     assertDoesNotCompile("import zio.ZIO")
     assertDoesNotCompile("import monix._")
 
