@@ -3,12 +3,9 @@ package izumi.distage.config.codec
 import com.typesafe.config.ConfigValue
 import pureconfig.*
 import pureconfig.ConfigReader.Result
-import pureconfig.error.{CannotConvert, ConfigReaderFailures, ThrowableFailure}
+import pureconfig.error.{ConfigReaderFailures, ThrowableFailure}
 import pureconfig.generic.error.{InvalidCoproductOption, NoValidCoproductOptionFound}
 import pureconfig.generic.{CoproductHint, ProductHint}
-
-import scala.reflect.classTag
-import scala.util.control.NonFatal
 
 trait PureconfigInstances {
 
