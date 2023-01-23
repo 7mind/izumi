@@ -14,11 +14,11 @@ object EarlyLoggerFactory {
   ) extends EarlyLoggerFactory {
     override def makeEarlyLogger(): IzLogger = {
       val sink = if (cliOptions.json) {
-        ConsoleSink.ColoredConsoleSink
-      } else {
         new ConsoleSink(new LogstageCirceRenderingPolicy())
+      } else {
+        ConsoleSink.ColoredConsoleSink
       }
-      
+
       IzLogger(cliOptions.level, sink)("phase" -> "early")
     }
   }
