@@ -13,7 +13,7 @@ class OrderedSetShim[A](val ordered: Seq[A]) extends Set[A] {
 
   override def equals(that: Any): Boolean = {
     that match {
-      case shim: OrderedSetShim[_] =>
+      case shim: OrderedSetShim[?] =>
         shim.ordered == this.ordered
       case _ => false
     }
