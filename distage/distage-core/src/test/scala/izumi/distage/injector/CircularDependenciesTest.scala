@@ -202,4 +202,46 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     assert(context.get[ErasedCircular[Dependency]].dep eq context.get[PhantomDependency[Dependency]])
     assert(context.get[PhantomDependency[Dependency]] eq context.get[ErasedCircular[Dependency]].dep)
   }
+
+  "support proxies in sets (non-immediate case) https://github.com/7mind/izumi/issues/482" in {
+    import CircularCase11._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[T1].from[Circular1Impl]
+      make[T2].from[Circular2Impl]
+
+      many[Service]
+        .ref[T1]
+        .ref[T2]
+    })
+
+    val injector = mkInjector()
+    val context = injector.produce(definition).unsafeGet()
+
+    // in fact we won't even try to add the proxy into the set, it'll be done later
+    val set = context.get[Set[Service]]
+    assert(set != null)
+    assert(set.size == 2)
+  }
+
+  "support proxies in sets (immediate case) https://github.com/7mind/izumi/issues/482" in {
+    import CircularCase12._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[T1].from[Circular1Impl]
+      make[T2].from[Circular2Impl]
+
+      many[Service]
+        .ref[T1]
+        .ref[T2]
+    })
+
+    val injector = mkInjector()
+    val context = injector.produce(definition).unsafeGet()
+
+    val set = context.get[Set[Service]]
+
+    assert(set.forall(_.arg.size == 2))
+    assert(set.size == 2)
+  }
 }
