@@ -3,7 +3,7 @@ package logstage
 import izumi.functional.bio.{SyncSafe1, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{Entry, LoggerId}
-import izumi.logstage.api.logger.AbstractLogger
+import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF}
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
 import scala.annotation.unused
@@ -27,6 +27,8 @@ object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
 
   def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F])
 
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLoggerF[F]): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstanceF[F](logger)(SyncSafe1[F])
+
   class UnsafeLogIOSyncSafeInstance[F[_]](logger: AbstractLogger)(F: SyncSafe1[F]) extends LogCreateIOSyncSafeInstance[F](F) with UnsafeLogIO[F] {
     override def unsafeLog(entry: Entry): F[Unit] = {
       F.syncSafe(logger.unsafeLog(entry))
@@ -38,6 +40,20 @@ object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
 
     override def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): F[Boolean] = {
       F.syncSafe(logger.acceptable(logLevel))
+    }
+  }
+
+  class UnsafeLogIOSyncSafeInstanceF[F[_]](logger: AbstractLoggerF[F])(F: SyncSafe1[F]) extends LogCreateIOSyncSafeInstance[F](F) with UnsafeLogIO[F] {
+    override def unsafeLog(entry: Entry): F[Unit] = {
+      logger.unsafeLog(entry)
+    }
+
+    override def acceptable(loggerId: LoggerId, logLevel: Level): F[Boolean] = {
+      logger.acceptable(loggerId, logLevel)
+    }
+
+    override def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): F[Boolean] = {
+      logger.acceptable(logLevel)
     }
   }
 
@@ -62,10 +78,14 @@ object UnsafeLogIO2 {
   @inline def apply[F[_, _]: UnsafeLogIO2]: UnsafeLogIO2[F] = implicitly
 
   @inline def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLogger): UnsafeLogIO2[F] = UnsafeLogIO.fromLogger(logger)
+
+  @inline def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLoggerF[F[Nothing, _]]): UnsafeLogIO2[F] = UnsafeLogIO.fromLogger(logger)
 }
 
 object UnsafeLogIO3 {
   @inline def apply[F[_, _, _]: UnsafeLogIO3]: UnsafeLogIO3[F] = implicitly
 
   @inline def fromLogger[F[_, _, _]: SyncSafe3](logger: AbstractLogger): UnsafeLogIO3[F] = UnsafeLogIO.fromLogger(logger)
+
+  @inline def fromLogger[F[_, _, _]: SyncSafe3](logger: AbstractLoggerF[F[Any, Nothing, _]]): UnsafeLogIO3[F] = UnsafeLogIO.fromLogger(logger)
 }

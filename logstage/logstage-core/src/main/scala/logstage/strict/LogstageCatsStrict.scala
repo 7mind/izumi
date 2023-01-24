@@ -5,8 +5,8 @@ import cats.syntax.flatMap.*
 import izumi.functional.bio.SyncSafe1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{CustomContext, Entry, Level, Message}
-import izumi.logstage.api.logger.AbstractLogger
-import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
+import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF}
+import logstage.UnsafeLogIO.{UnsafeLogIOSyncSafeInstance, UnsafeLogIOSyncSafeInstanceF}
 
 object LogstageCatsStrict {
 
@@ -22,6 +22,14 @@ object LogstageCatsStrict {
     }
   }
 
+  def withDynamicContextStrict[F[_]: Monad: SyncSafe1](logger: AbstractLoggerF[F])(dynamic: F[CustomContext]): LogIOStrict[F] = {
+    new WrappedLogIOStrictF[F](logger)(SyncSafe1[F]) {
+      override def withCustomContext(context: CustomContext): LogIOStrict[F] = {
+        withDynamicContextStrict(logger.withCustomContext(context))(dynamic)
+      }
+    }
+  }
+
   private[logstage] abstract class WrappedLogIOStrict[F[_]](
     logger: AbstractLogger
   )(F: SyncSafe1[F]
@@ -33,5 +41,18 @@ object LogstageCatsStrict {
     override final def unsafeLog(entry: Entry): F[Unit] = wrap(_.unsafeLog(entry))
     override final def log(entry: Entry): F[Unit] = wrap(_.log(entry))
     override final def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = wrap(_.log(logLevel)(messageThunk))
+  }
+
+  private[logstage] abstract class WrappedLogIOStrictF[F[_]](
+    logger: AbstractLoggerF[F]
+  )(F: SyncSafe1[F]
+  ) extends UnsafeLogIOSyncSafeInstanceF[F](logger)(F)
+    with LogIOStrict[F] {
+
+    override final def unsafeLog(entry: Entry): F[Unit] = logger.unsafeLog(entry)
+
+    override final def log(entry: Entry): F[Unit] = logger.log(entry)
+
+    override final def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = logger.log(logLevel)(messageThunk)
   }
 }

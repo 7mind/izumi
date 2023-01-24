@@ -4,11 +4,11 @@ import izumi.functional.bio.{Error2, MonadAsk3, Panic2, SyncSafe1, SyncSafe2, Sy
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger
-import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLogIO}
+import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF, AbstractMacroLogIO}
 import izumi.logstage.api.rendering.{AnyEncoded, RenderingPolicy}
 import izumi.reflect.Tag
 import logstage.LogIO3Ask.LogIO3AskImpl
-import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
+import logstage.UnsafeLogIO.{UnsafeLogIOSyncSafeInstance, UnsafeLogIOSyncSafeInstanceF}
 
 import scala.annotation.unused
 import scala.language.implicitConversions
@@ -36,6 +36,22 @@ object LogIO extends LowPriorityLogIOInstances {
     * }}}
     */
   @inline def log[F[_]](implicit l: LogIO[F]): l.type = l
+
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLoggerF[F]): LogIO[F] = {
+    new UnsafeLogIOSyncSafeInstanceF[F](logger)(SyncSafe1[F]) with LogIO[F] {
+      override def log(entry: Entry): F[Unit] = {
+        logger.log(entry)
+      }
+
+      override def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+        logger.log(logLevel)(messageThunk)
+      }
+
+      override def withCustomContext(context: CustomContext): LogIO[F] = {
+        fromLogger[F](logger.withCustomContext(context))
+      }
+    }
+  }
 
   def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): LogIO[F] = {
     new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F]) with LogIO[F] {
