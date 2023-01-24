@@ -366,3 +366,32 @@ val myLogger = IzLogger()
 // configure SLF4j to use the same router that `myLogger` uses
 StaticLogRouter.instance.setup(myLogger.router)
 ```
+
+JUL (`java.util.logging`) support
+---------------------------------
+
+There are two ways to integrate JUL framework with LogStage.
+
+LogStage implements JUL log handler. Due to the global mutable nature of JUL framework,
+to configure JUL logging you'll have to mutate a global singleton holding the root of the JUL logging hierarch `java.util.logging.Logger`.
+
+This might be done the following way:
+
+```scala
+val logger = IzLogger()
+val router: LogRouter = logger.router
+val bridge = new LogstageJulLogger(router)
+bridge.installOnly()
+```
+
+`LogstageJulLogger#installOnly()` method wipes all the logging handlers associated with the root logger and installs LogStage
+as the only logging handler.
+
+Alternatively, you may use [`jul-to-slf4j`](https://search.maven.org/artifact/org.slf4j/jul-to-slf4j) adapter for `slf4j`.
+
+You might need to do the following in order for the adapter to properly initialize:
+
+```scala
+SLF4JBridgeHandler.removeHandlersForRootLogger()
+SLF4JBridgeHandler.install()
+```

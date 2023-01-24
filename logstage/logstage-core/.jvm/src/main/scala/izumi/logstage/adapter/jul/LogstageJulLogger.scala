@@ -3,7 +3,7 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log
 import logstage.LogRouter
 
-import java.util.logging.{LogManager, LogRecord, Logger}
+import java.util.logging.{Handler, LogManager, LogRecord, Logger}
 import scala.collection.compat.immutable.ArraySeq
 
 /**
@@ -15,7 +15,7 @@ import scala.collection.compat.immutable.ArraySeq
   * SLF4JBridgeHandler.install()
   * }}}
   */
-class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler with AutoCloseable {
+class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler with JULTools with AutoCloseable {
   override def publish(record: LogRecord): Unit = {
     val level = toLevel(record)
     if (router.acceptable(Log.LoggerId(record.getLoggerName), level)) {
@@ -83,38 +83,60 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler wit
     uninstall()
   }
 
+  override protected def handler(): Handler = this
+}
+
+trait JULTools {
+
+  protected def handler(): Handler
+
   def install(): Unit = {
-    rootRef().addHandler(this)
+    install(rootRef())
+  }
+
+  def install(logger: Logger): Unit = {
+    logger.addHandler(handler())
   }
 
   def installOnly(): Unit = {
-    uninstallAll()
-    install()
+    installOnly(rootRef())
+  }
+
+  def installOnly(logger: Logger): Unit = {
+    uninstallAll(logger)
+    install(logger)
   }
 
   def uninstallAll(): Unit = {
-    forEachHandler {
-      case (root, handler) =>
-        root.removeHandler(handler)
+    uninstallAll(rootRef())
+  }
+
+  def uninstallAll(logger: Logger): Unit = {
+    forEachHandler(logger) {
+      case (l, handler) =>
+        l.removeHandler(handler)
     }
   }
 
   def uninstall(): Unit = {
-    forEachHandler {
-      case (root, handler) =>
-        if (handler.isInstanceOf[LogstageJulLogger]) root.removeHandler(handler)
+    uninstall(rootRef())
+  }
+
+  def uninstall(logger: Logger): Unit = {
+    forEachHandler(logger) {
+      case (l, handler) =>
+        if (handler.isInstanceOf[LogstageJulLogger]) l.removeHandler(handler)
     }
   }
 
-  private[this] def forEachHandler(action: (Logger, java.util.logging.Handler) => Unit): Unit = {
-    val rootLogger = rootRef()
-    rootLogger.synchronized {
-      val handlers = rootLogger.getHandlers
+  def rootRef(): Logger = LogManager.getLogManager.getLogger("")
+
+  private[this] def forEachHandler(logger: Logger)(action: (Logger, java.util.logging.Handler) => Unit): Unit = {
+    logger.synchronized {
+      val handlers = logger.getHandlers
       for (handler <- handlers) {
-        action(rootLogger, handler)
+        action(logger, handler)
       }
     }
   }
-
-  private[this] def rootRef(): Logger = LogManager.getLogManager.getLogger("")
 }
