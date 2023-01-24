@@ -280,4 +280,19 @@ object CircularCases {
 
   }
 
+  object CircularCase13 {
+
+    trait Service {
+      def arg: Set[Service]
+    }
+
+    trait T1 extends Service
+
+    trait T2 extends Service
+
+    final case class Circular1Impl(val arg: Set[Service]) extends Service with T1
+
+    final case class Circular2Impl(val arg: Set[Service]) extends Service with T2
+
+  }
 }

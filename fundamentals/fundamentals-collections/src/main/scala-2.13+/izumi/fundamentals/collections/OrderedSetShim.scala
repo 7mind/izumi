@@ -1,6 +1,6 @@
 package izumi.fundamentals.collections
 
-class OrderedSetShim[A](ordered: Seq[A]) extends Set[A] {
+class OrderedSetShim[A](val ordered: Seq[A]) extends Set[A] {
   private lazy val realSet: Set[A] = ordered.toSet
 
   override def incl(elem: A): Set[A] = realSet.incl(elem)
@@ -10,4 +10,14 @@ class OrderedSetShim[A](ordered: Seq[A]) extends Set[A] {
   override def contains(elem: A): Boolean = realSet.contains(elem)
 
   override def iterator: Iterator[A] = ordered.iterator
+
+  override def equals(that: Any): Boolean = {
+    that match {
+      case shim: OrderedSetShim[_] =>
+        shim.ordered == this.ordered
+      case _ => false
+    }
+  }
+
+  override def hashCode(): Int = ordered.hashCode()
 }
