@@ -87,7 +87,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
           PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", config = "check-test-bad.conf", onlyWarn = false))
           """
         )
-      ).getMessage contains "UnparseableConfigBinding"
+      ).getMessage contains "cannot parse configuration"
     )
     assertCompiles(
       """
@@ -131,7 +131,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
           PlanCheck.assertAppCompileTime(Fixture3.TestRoleAppMain, PlanCheckConfig(config = "common-reference.conf"))
           """
         )
-      ).getMessage contains "UnparseableConfigBinding"
+      ).getMessage contains "cannot parse configuration"
     )
     val err = intercept[PlanCheckException] {
       PlanCheck.runtime.assertApp(Fixture3.TestRoleAppMain, PlanCheckConfig(config = "common-reference.conf"))
@@ -283,7 +283,8 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     val err = intercept[TestFailedException](assertCompiles("""
       PlanCheck.assertAppCompileTime(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false)).assertAtRuntime()
       """))
-    assert(err.getMessage.contains("IncompatibleEffectType"))
+
+    assert(err.getMessage.contains("injector uses effect λ %0 → 0 but binding uses incompatible effect λ %0 → cats.effect.IO[+0]"))
   }
 
   "StaticTestMainLogIO2 check passes with a LogIO2 dependency" in {

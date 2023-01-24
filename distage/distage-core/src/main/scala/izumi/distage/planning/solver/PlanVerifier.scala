@@ -19,6 +19,7 @@ import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet}
+import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
 import java.util.concurrent.TimeUnit
@@ -488,5 +489,42 @@ object PlanVerifier {
     final case class InconsistentSetMembers(key: DIKey, ops: NonEmptyList[OperationOrigin]) extends PlanIssue
 
     final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
+
+    implicit class PlanIssueOps(private val issue: PlanIssue) extends AnyVal {
+      def render: String = {
+
+        issue match {
+          case i: UnsaturatedAxis =>
+            s"${i.key}: axis ${i.axis} has no bindings for choices ${i.missingAxisValues.mkString(", ")}"
+
+          case i: ConflictingAxisChoices =>
+            val bad = i.bad.toSeq.map { case (a, p) => s"$a -> ${p.mkString(",")}" }
+            s"${i.key}: binding has conflicting axis tags ${bad.mkString("; ")} ${i.op.toSourceFilePosition}"
+
+          case i: DuplicateActivations =>
+            val bad = i.ops.toSeq.map { case (a, o) => s"${a.mkString(",")} -> ${o.map(_.toSourceFilePosition).mkString(",")}" }
+            s"${i.key}: conflicting bindings for identical axis choices in ${bad.mkString("; ")}"
+          case i: UnsolvableConflict =>
+            val bad = i.ops.toSeq.map { case (o, p) => s"${o.toSourceFilePosition} -> ${p.mkString(",")}" }
+            s"${i.key}: it's not possible to disambiguate conflicting bindings using any combination of activations in ${bad.mkString("; ")}"
+          case i: InconsistentSetMembers =>
+            IzumiProject.bugReportPrompt(s"${i.key}: non-unique keys for set members in ${i.ops.map(_.toSourceFilePosition).mkString(",")}")
+          case i: ShadowedActivation =>
+            val shadowed = i.shadowingBindings.toSeq.map { case (a, o) => s"${a.mkString(",")} -> ${o.toSourceFilePosition}" }
+            val activation = i.activation.mkString(",")
+            val allPossibleChoices = i.allPossibleAxisChoices.map { case (a, c) => s"$a -> ${c.mkString(",")}" }
+            s"${i.key} binding is completely shadowed by other bindings and will never be used. Shadowed: ${shadowed.mkString("; ")}; activation: $activation; possible choices: ${allPossibleChoices
+                .mkString("; ")}; ${i.op.toSourceFilePosition}"
+          case i: UnparseableConfigBinding =>
+            import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
+            s"${i.key}: cannot parse configuration ${i.op.toSourceFilePosition}: ${i.exception.stackTrace}"
+          case i: IncompatibleEffectType =>
+            val origin = i.op.origin.value.toSourceFilePosition
+            s"${i.key}: injector uses effect ${i.provisionerEffectType} but binding uses incompatible effect ${i.actionEffectType} $origin"
+          case i: MissingImport =>
+            i.toString
+        }
+      }
+    }
   }
 }

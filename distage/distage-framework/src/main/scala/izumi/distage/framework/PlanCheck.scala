@@ -12,12 +12,11 @@ import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.console.TrivialLogger
-import izumi.fundamentals.platform.exceptions.IzThrowable._
+import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.language.Quirks.discard
-import scala.annotation.unused
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, unused}
 
 /**
   * API for performing compile-time and runtime checks of correctness for `distage` applications.
@@ -142,7 +141,7 @@ object PlanCheck {
 
       def returnPlanCheckError(cause: Either[Throwable, PlanVerifierResult.Incorrect]): PlanCheckResult.Incorrect = {
         val visitedKeys = cause.fold(_ => Set.empty[DIKey], _.visitedKeys)
-        val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNonEmptySet.niceList())
+        val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNonEmptySet.map(_.render).niceList())
         val message = {
           val configStr = if (checkConfig) {
             s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
