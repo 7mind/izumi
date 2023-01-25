@@ -10,14 +10,4 @@ class OrderedSetShim[A](val ordered: Seq[A]) extends Set[A] {
   override def contains(elem: A): Boolean = realSet.contains(elem)
 
   override def iterator: Iterator[A] = ordered.iterator
-
-  override def equals(that: Any): Boolean = {
-    that match {
-      case shim: OrderedSetShim[?] =>
-        shim.ordered == this.ordered
-      case _ => false
-    }
-  }
-
-  override def hashCode(): Int = ordered.hashCode()
 }
