@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.UnsafeRun2.InterruptAction
+import scala.concurrent.ExecutionContext
 
 /** Scala.js does not support UnsafeRun */
 trait UnsafeRun2[F[_, _]] {
@@ -22,4 +23,9 @@ object UnsafeRun2 {
     *                  its finalizers, depending on the underlying effect type.
     */
   final case class InterruptAction[F[_, _]](interrupt: F[Nothing, Unit]) extends AnyVal
+
+  object NamedThreadFactory {
+    final lazy val QuasiAsyncIdentityPool: ExecutionContext = ExecutionContext.Implicits.global
+    final def QuasiAsyncIdentityThreadFactory(max: Int): ExecutionContext = ExecutionContext.Implicits.global
+  }
 }

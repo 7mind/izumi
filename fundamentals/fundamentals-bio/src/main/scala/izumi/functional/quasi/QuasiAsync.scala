@@ -1,6 +1,6 @@
 package izumi.functional.quasi
 
-import izumi.functional.bio.{Async2, F, Temporal2}
+import izumi.functional.bio.{Async2, F, Temporal2, UnsafeRun2}
 import izumi.fundamentals.orphans.`cats.effect.kernel.Async`
 import izumi.fundamentals.platform.functional.Identity
 
@@ -35,10 +35,7 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = {
     new QuasiAsync[Identity] {
       final val maxAwaitTime = FiniteDuration(1L, "minute")
-      final val QuasiAsyncIdentityThreadFactory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
-      final val QuasiAsyncIdentityPool = ExecutionContext.fromExecutorService {
-        Executors.newCachedThreadPool(QuasiAsyncIdentityThreadFactory)
-      }
+      final val QuasiAsyncIdentityPool = izumi.functional.bio.UnsafeRun2.NamedThreadFactory.QuasiAsyncIdentityPool
 
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
         val promise = Promise[A]()
@@ -61,9 +58,7 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
       }
 
       override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-        val limitedAsyncPool = ExecutionContext.fromExecutorService {
-          Executors.newFixedThreadPool(n, QuasiAsyncIdentityThreadFactory)
-        }
+        val limitedAsyncPool = UnsafeRun2.QuasiAsyncIdentityThreadFactory(n)
         parTraverseIdentity(limitedAsyncPool)(l)(f)
       }
 
