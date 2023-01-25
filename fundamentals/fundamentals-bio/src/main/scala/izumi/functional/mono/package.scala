@@ -1,6 +1,7 @@
 package izumi.functional
 
 import izumi.functional.bio.{Clock1, Entropy1, SyncSafe1}
+import izumi.functional.lifecycle.Lifecycle
 
 package object mono {
 
@@ -24,4 +25,6 @@ package object mono {
   @deprecated("Renamed to izumi.functional.bio.SyncSafe1")
   lazy val SyncSafe: SyncSafe1.type = SyncSafe1
 
+  type Lifecycle2[+F[+_, +_], +E, +A] = Lifecycle[F[E, _], A]
+  type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = Lifecycle[F[R, E, _], A]
 }

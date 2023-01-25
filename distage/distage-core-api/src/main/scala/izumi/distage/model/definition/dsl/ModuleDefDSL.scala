@@ -1,12 +1,12 @@
 package izumi.distage.model.definition.dsl
 
 import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, HasConstructor}
-import izumi.distage.model.definition.Lifecycle.{LifecycleTag, TrifunctorHasLifecycleTag}
+import LifecycleAdapters.{LifecycleTag, TrifunctorHasLifecycleTag}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, *}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
@@ -282,7 +282,7 @@ object ModuleDefDSL {
 
     final def fromResource[R0, R <: Lifecycle[LifecycleF, T]](
       function: Functoid[R0]
-    )(implicit adapt: Lifecycle.AdaptFunctoid.Aux[R0, R],
+    )(implicit adapt: LifecycleAdapters.AdaptFunctoid.Aux[R0, R],
       tag: LifecycleTag[R],
     ): AfterBind = {
       import tag._
@@ -403,7 +403,7 @@ object ModuleDefDSL {
 
     final def addResource[R0, R <: Lifecycle[LifecycleF, T]](
       function: Functoid[R0]
-    )(implicit adapt: Lifecycle.AdaptFunctoid.Aux[R0, R],
+    )(implicit adapt: LifecycleAdapters.AdaptFunctoid.Aux[R0, R],
       tag: LifecycleTag[R],
       pos: CodePositionMaterializer,
     ): AfterAdd = {

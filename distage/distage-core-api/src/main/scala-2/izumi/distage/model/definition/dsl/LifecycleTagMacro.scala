@@ -1,5 +1,6 @@
-package izumi.distage.model.definition
+package izumi.distage.model.definition.dsl
 
+import izumi.distage.model.definition.Lifecycle
 import izumi.reflect.TagMacro
 
 import scala.reflect.macros.blackbox

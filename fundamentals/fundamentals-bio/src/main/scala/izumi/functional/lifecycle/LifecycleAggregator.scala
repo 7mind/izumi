@@ -1,4 +1,4 @@
-package izumi.distage.model.definition
+package izumi.functional.lifecycle
 
 import izumi.functional.bio.{Applicative2, F, IO2, Panic2, Primitives2, RefM2, TypedError}
 
