@@ -6,7 +6,7 @@ import cats.effect.kernel.{GenConcurrent, Resource, Sync}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle.{evalMapImpl, flatMapImpl, fromCats, fromZIO, mapImpl, redeemImpl, wrapAcquireImpl, wrapReleaseImpl}
-import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
+import izumi.functional.quasi.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.data.Morphism1
 import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3, Local3}

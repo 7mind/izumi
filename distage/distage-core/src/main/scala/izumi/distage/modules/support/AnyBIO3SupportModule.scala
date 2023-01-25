@@ -1,7 +1,7 @@
 package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.effect._
+import izumi.functional.quasi._
 import izumi.distage.modules.typeclass.BIO3InstancesModule
 import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
 import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, PrimitivesM2, PrimitivesM3, SyncSafe2, SyncSafe3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
@@ -14,7 +14,7 @@ import scala.annotation.unchecked.{uncheckedVariance => v}
   *
   * For all `F[-_, +_, +_]` with available `make[Async3[F]]`, `make[Temporal3[F]]` and `make[UnsafeRun3[F]]` bindings.
   *
-  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[-_, +_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[-_, +_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds [[izumi.functional.bio]] typeclass instances for `F[-_, +_, +_]`
   *
   * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]` & `make[UnsafeRun3[F]]`

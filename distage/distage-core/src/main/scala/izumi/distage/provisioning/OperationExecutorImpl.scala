@@ -1,7 +1,7 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import ProvisionerIssue.ProvisionerExceptionIssue.UnexpectedStepProvisioning
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, NonImportOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.strategies.*

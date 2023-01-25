@@ -7,8 +7,8 @@ import izumi.distage.framework.services.PlanCircularDependencyCheck
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.definition.errors.DIError
-import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.exceptions.runtime.{IntegrationCheckException, ProvisioningException}
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.plan.{ExecutableOp, Plan}

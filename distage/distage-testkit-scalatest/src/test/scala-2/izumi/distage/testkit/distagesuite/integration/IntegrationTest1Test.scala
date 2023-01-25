@@ -4,7 +4,7 @@ import cats.Applicative
 import distage.{TagK, TagKK}
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.modules.{DefaultModule, DefaultModule2}
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.{Spec1, Spec2}

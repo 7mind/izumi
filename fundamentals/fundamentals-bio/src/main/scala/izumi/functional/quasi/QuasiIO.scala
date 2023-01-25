@@ -1,7 +1,7 @@
-package izumi.distage.model.effect
+package izumi.functional.quasi
 
 import cats.effect.kernel.Outcome
-import izumi.distage.model.effect.QuasiIO.QuasiIOIdentity
+import izumi.functional.quasi.QuasiIO.QuasiIOIdentity
 import izumi.functional.bio.data.Morphism1
 import izumi.functional.bio.{Applicative2, Exit, Functor2, IO2, TypedError}
 import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.Functor`, `cats.effect.kernel.Sync`}
@@ -29,6 +29,9 @@ import scala.util.{Failure, Success, Try}
   *
   * @see [[izumi.distage.modules.DefaultModule]] - `DefaultModule` makes instances of `QuasiIO` for cats-effect, ZIO,
   *      monix, monix-bio, `Identity` and others available for summoning in your wiring automatically
+  *
+  * TODO: we want to get rid of this by providing Identity implementations for relevant BIO typeclasses
+  * See https://github.com/7mind/izumi/issues/787
   */
 trait QuasiIO[F[_]] extends QuasiPrimitives[F] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
@@ -95,7 +98,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
 
   @inline implicit def quasiIOIdentity: QuasiIO[Identity] = QuasiIOIdentity
 
-  private[effect] object QuasiIOIdentity extends QuasiIO[Identity] {
+  private[quasi] object QuasiIOIdentity extends QuasiIO[Identity] {
     override def pure[A](a: A): Identity[A] = a
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
     override def map2[A, B, C](fa: Identity[A], fb: => Identity[B])(f: (A, B) => C): Identity[C] = f(fa, fb)
@@ -164,7 +167,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
 
 }
 
-private[effect] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuasiIOInstances1 {
+private[quasi] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuasiIOInstances1 {
 
   implicit def fromBIO[F[+_, +_]](implicit F: IO2[F]): QuasiIO[F[Throwable, _]] = {
     type E = Throwable
@@ -201,7 +204,7 @@ private[effect] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuas
 
 }
 
-private[effect] sealed trait LowPriorityQuasiIOInstances1 {
+private[quasi] sealed trait LowPriorityQuasiIOInstances1 {
 
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
@@ -297,11 +300,11 @@ object QuasiPrimitives extends LowPriorityQuasiPrimitivesInstances {
   @inline implicit def quasiPrimitivesIdentity: QuasiPrimitives[Identity] = QuasiIOIdentity
 }
 
-private[effect] sealed trait LowPriorityQuasiPrimitivesInstances extends LowPriorityQuasiPrimitivesInstances1 {
+private[quasi] sealed trait LowPriorityQuasiPrimitivesInstances extends LowPriorityQuasiPrimitivesInstances1 {
   implicit def fromBIO[F[+_, +_], E](implicit F: IO2[F]): QuasiPrimitives[F[E, _]] = new QuasiPrimitivesFromBIO[F, E]
 }
 
-private[effect] sealed trait LowPriorityQuasiPrimitivesInstances1 {
+private[quasi] sealed trait LowPriorityQuasiPrimitivesInstances1 {
 
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
@@ -315,7 +318,7 @@ private[effect] sealed trait LowPriorityQuasiPrimitivesInstances1 {
 
 }
 
-private[effect] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](implicit F: IO2[F]) extends QuasiPrimitives[F[E, _]] {
+private[quasi] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](implicit F: IO2[F]) extends QuasiPrimitives[F[E, _]] {
   override def suspendF[A](f: => F[E, A]): F[E, A] = F.sync(f).flatten
 
   override final def pure[A](a: A): F[E, A] = F.pure(a)
@@ -348,7 +351,7 @@ private[effect] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](implicit F: IO
   override final def traverse_[A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = F.traverse_(l)(f)
 }
 
-private[effect] sealed class QuasiPrimitivesFromCats[F[_]](F: cats.effect.kernel.Sync[F]) extends QuasiPrimitives[F] {
+private[quasi] sealed class QuasiPrimitivesFromCats[F[_]](F: cats.effect.kernel.Sync[F]) extends QuasiPrimitives[F] {
   override def suspendF[A](effAction: => F[A]): F[A] = F.defer(effAction)
 
   override final def pure[A](a: A): F[A] = F.pure(a)
@@ -398,7 +401,7 @@ object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {
   @inline implicit def quasiApplicativeIdentity: QuasiApplicative[Identity] = QuasiIOIdentity
 }
 
-private[effect] sealed trait LowPriorityQuasiApplicativeInstances extends LowPriorityQuasiApplicativeInstances1 {
+private[quasi] sealed trait LowPriorityQuasiApplicativeInstances extends LowPriorityQuasiApplicativeInstances1 {
   implicit def fromBIO[F[+_, +_], E](implicit F: Applicative2[F]): QuasiApplicative[F[E, _]] = {
     new QuasiApplicative[F[E, _]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
@@ -410,7 +413,7 @@ private[effect] sealed trait LowPriorityQuasiApplicativeInstances extends LowPri
   }
 }
 
-private[effect] sealed trait LowPriorityQuasiApplicativeInstances1 {
+private[quasi] sealed trait LowPriorityQuasiApplicativeInstances1 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.
@@ -449,7 +452,7 @@ object QuasiFunctor extends LowPriorityQuasiFunctorInstances {
   }
 }
 
-private[effect] sealed trait LowPriorityQuasiFunctorInstances extends LowPriorityQuasiFunctorInstances1 {
+private[quasi] sealed trait LowPriorityQuasiFunctorInstances extends LowPriorityQuasiFunctorInstances1 {
   implicit def fromBIO[F[+_, +_], E](implicit F: Functor2[F]): QuasiFunctor[F[E, _]] = {
     new QuasiFunctor[F[E, _]] {
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
@@ -457,7 +460,7 @@ private[effect] sealed trait LowPriorityQuasiFunctorInstances extends LowPriorit
   }
 }
 
-private[effect] sealed trait LowPriorityQuasiFunctorInstances1 {
+private[quasi] sealed trait LowPriorityQuasiFunctorInstances1 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.

@@ -1,6 +1,6 @@
-package izumi.distage.model
+package izumi.functional
 
-package object effect {
+package object quasi {
   type QuasiFunctor2[F[_, _]] = QuasiFunctor[F[Throwable, _]]
   type QuasiFunctor3[F[_, _, _]] = QuasiFunctor[F[Any, Throwable, _]]
 

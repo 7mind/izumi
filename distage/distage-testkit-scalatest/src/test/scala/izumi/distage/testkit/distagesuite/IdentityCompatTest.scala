@@ -1,6 +1,6 @@
 package izumi.distage.testkit.distagesuite
 
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.testkit.scalatest.Spec1
 import izumi.fundamentals.platform.functional.Identity
 

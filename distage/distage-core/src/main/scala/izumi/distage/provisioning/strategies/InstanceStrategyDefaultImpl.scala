@@ -1,7 +1,7 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import ProvisionerIssue.MissingInstance
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.provisioning.strategies.InstanceStrategy

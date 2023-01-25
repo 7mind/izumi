@@ -596,7 +596,7 @@ Example usage:
 ```scala mdoc:reset:to-string
 import cats.effect.{IO, Sync}
 import distage.{Activation, DefaultModule, Injector, Module, TagK}
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 
 def polymorphicHelloWorld[F[_]: TagK: QuasiIO: DefaultModule]: F[Unit] = {
   Injector[F]().produceRun(

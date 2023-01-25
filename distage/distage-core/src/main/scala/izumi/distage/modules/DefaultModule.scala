@@ -1,7 +1,7 @@
 package izumi.distage.modules
 
 import izumi.distage.model.definition.{Module, ModuleDef}
-import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives}
+import izumi.functional.quasi.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives}
 import izumi.distage.modules.support.*
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
 import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
@@ -18,7 +18,7 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   * Automatically provides default runtime environments & typeclasses instances for effect types.
   * All the defaults are overrideable via [[izumi.distage.model.definition.ModuleDef]]
   *
-  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
   *  - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
   *
@@ -31,7 +31,7 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   *   - Any `F[_]` with `cats-effect` instances
   *   - Any `F[+_, +_]` with [[izumi.functional.bio]] instances
   *   - Any `F[-_, +_, +_]` with [[izumi.functional.bio]] instances
-  *   - Any `F[_]` with [[izumi.distage.model.effect.QuasiIO]] instances
+  *   - Any `F[_]` with [[izumi.functional.quasi.QuasiIO]] instances
   */
 final case class DefaultModule[F[_]](module: Module) extends AnyVal {
   @inline def to[G[_]]: DefaultModule[G] = new DefaultModule[G](module)

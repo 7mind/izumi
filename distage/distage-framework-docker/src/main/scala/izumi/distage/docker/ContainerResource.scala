@@ -9,8 +9,8 @@ import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalRe
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.functional.Value
 import izumi.fundamentals.collections.nonempty.NonEmptyList

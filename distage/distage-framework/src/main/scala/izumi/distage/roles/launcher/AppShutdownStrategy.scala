@@ -2,7 +2,7 @@ package izumi.distage.roles.launcher
 
 import cats.effect.kernel.Async
 import izumi.distage.framework.DebugProperties
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.functional.bio.{Async2, F}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity

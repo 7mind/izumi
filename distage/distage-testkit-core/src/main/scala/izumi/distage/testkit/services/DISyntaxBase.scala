@@ -1,7 +1,7 @@
 package izumi.distage.testkit.services
 
 import distage.{Tag, TagK}
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.SourceFilePosition
 

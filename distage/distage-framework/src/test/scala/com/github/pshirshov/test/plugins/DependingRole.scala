@@ -1,6 +1,6 @@
 package com.github.pshirshov.test.plugins
 
-import izumi.distage.model.effect.QuasiApplicative
+import izumi.functional.quasi.QuasiApplicative
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 

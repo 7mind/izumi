@@ -7,8 +7,8 @@ import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientConfig
 import izumi.distage.docker.Docker.{ClientConfig, ContainerId, DockerRegistryConfig}
 import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax.*
+import izumi.functional.quasi.QuasiIO
+import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.functional.Value
 import izumi.fundamentals.platform.exceptions.IzThrowable.*

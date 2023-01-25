@@ -3,8 +3,8 @@ package izumi.distage.fixtures
 import java.util.concurrent.atomic.AtomicReference
 
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.functional.quasi.QuasiIO
+import izumi.functional.quasi.QuasiIO.syntax._
 import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.immutable.Queue
