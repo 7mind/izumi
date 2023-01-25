@@ -1,7 +1,7 @@
 package izumi.fundamentals.collections
 
-class OrderedSetShim[A](ordered: Seq[A]) extends Set[A] {
-  private val realSet: Set[A] = ordered.toSet
+class OrderedSetShim[A](val ordered: Seq[A]) extends Set[A] {
+  private lazy val realSet: Set[A] = ordered.toSet
 
   override def incl(elem: A): Set[A] = realSet.incl(elem)
 

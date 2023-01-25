@@ -39,7 +39,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
         }.biFlatAggregate.left.map(missing => ProvisionerIssue.MissingRef(op.target, "set element", missing.toSet))
     } yield {
       val parentSet = context.importKey(op.target).map(_.asInstanceOf[Iterable[Any]]).toSeq.flatten
-      val asSet = new OrderedSetShim[Any]((parentSet ++ newSet).distinct)
+      val asSet = new OrderedSetShim[Any](parentSet ++ newSet) // duplicates are FINE here, the shim will deduplicate!
       Seq(NewObjectOp.NewInstance(op.target, op.instanceType, asSet))
     })
 
