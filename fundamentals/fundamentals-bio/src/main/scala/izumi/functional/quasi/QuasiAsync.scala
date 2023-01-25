@@ -33,7 +33,7 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = {
     new QuasiAsync[Identity] {
       final val maxAwaitTime = FiniteDuration(1L, "minute")
-      final val QuasiAsyncIdentityPool = izumi.functional.bio.UnsafeRun2.NamedThreadFactory.QuasiAsyncIdentityPool
+      final val QuasiAsyncIdentityPool = UnsafeRun2.NamedThreadFactory.QuasiAsyncIdentityPool
 
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
         val promise = Promise[A]()
