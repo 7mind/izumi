@@ -4,11 +4,9 @@ import izumi.functional.bio.{Async2, F, Temporal2, UnsafeRun2}
 import izumi.fundamentals.orphans.`cats.effect.kernel.Async`
 import izumi.fundamentals.platform.functional.Identity
 
-import java.util.concurrent.Executors
 import scala.collection.compat.*
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import izumi.functional.bio.UnsafeRun2.NamedThreadFactory
 
 /**
   * Parallel & async operations for `F` required by `distage-*` libraries.
@@ -58,7 +56,7 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
       }
 
       override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-        val limitedAsyncPool = UnsafeRun2.QuasiAsyncIdentityThreadFactory(n)
+        val limitedAsyncPool = UnsafeRun2.NamedThreadFactory.QuasiAsyncIdentityThreadFactory(n)
         parTraverseIdentity(limitedAsyncPool)(l)(f)
       }
 
