@@ -1,4 +1,6 @@
-package izumi.distage.model.definition
+package izumi.distage.model.definition.dsl
+
+import izumi.distage.model.definition.Lifecycle
 
 import scala.language.experimental.macros
 
@@ -11,11 +13,11 @@ trait LifecycleTagLowPriority {
     *
     * TODO: report to IJ bug tracker
     */
-  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any]]: LifecycleTagImpl[R] =
+  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any]]: LifecycleAdapters.Impl.LifecycleTagImpl[R] =
     macro LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
 }
 
 trait TrifunctorHasLifecycleTagLowPriority1 {
-  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any], T]: TrifunctorHasLifecycleTagImpl[R, T] =
+  implicit final def fakeResourceTagMacroIntellijWorkaround[R <: Lifecycle[Any, Any], T]: LifecycleAdapters.Impl.TrifunctorHasLifecycleTagImpl[R, T] =
     macro LifecycleTagMacro.fakeResourceTagMacroIntellijWorkaroundImpl[R]
 }
