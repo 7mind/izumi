@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.Id
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ConfigurableComponent, ExtractConfigPath, WriteReference}

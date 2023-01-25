@@ -1,7 +1,7 @@
 package izumi.distage.roles.bundled
 
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.roles.bundled.ConfigWriter.Options
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}

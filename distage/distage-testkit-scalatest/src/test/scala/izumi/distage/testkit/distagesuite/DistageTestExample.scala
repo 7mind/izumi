@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import cats.effect.{IO => CIO}
 import distage._
 import distage.plugins.PluginDef
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.functional.quasi.QuasiIO
+import izumi.functional.quasi.QuasiIO.syntax._
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.DistageTestExampleBase._

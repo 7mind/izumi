@@ -2,7 +2,7 @@ package com.github.pshirshov.test.plugins
 
 import com.github.pshirshov.test.plugins.StaticTestMain.staticTestMainPlugin
 import distage.{ClassConstructor, TagK}
-import izumi.distage.model.effect.QuasiApplicative
+import izumi.functional.quasi.QuasiApplicative
 import izumi.distage.modules.DefaultModule2
 import izumi.distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.roles.RoleAppMain

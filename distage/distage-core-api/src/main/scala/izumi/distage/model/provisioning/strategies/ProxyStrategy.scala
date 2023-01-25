@@ -1,7 +1,7 @@
 package izumi.distage.model.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import izumi.reflect.TagK

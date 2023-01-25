@@ -1,7 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.fundamentals.platform.functional.Identity

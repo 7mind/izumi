@@ -4,7 +4,7 @@ import distage.{Injector, PlannerInput}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
-import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.recursive.{BootConfig, Bootloader, BootstrappedApp}
 import izumi.distage.model.reflection.DIKey

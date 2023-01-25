@@ -3,7 +3,7 @@ package izumi.distage.impl
 import java.io.ByteArrayInputStream
 import distage.Lifecycle
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.effect.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives}
+import izumi.functional.quasi.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives}
 import izumi.distage.modules.DefaultModule
 import izumi.functional.bio.{Applicative2, ApplicativeError2, Arrow3, ArrowChoice3, Ask3, Async2, Bifunctor2, Bracket2, Concurrent2, Error2, F, Fork2, Functor2, Guarantee2, IO2, IO3, Local3, Monad2, MonadAsk3, Panic2, Parallel2, Primitives2, PrimitivesM2, Profunctor3, Ref3, Temporal2}
 import izumi.fundamentals.platform.functional.{Identity, Identity2, Identity3}

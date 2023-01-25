@@ -1,14 +1,14 @@
-package izumi.distage.model.effect
+package izumi.functional.quasi
 
 import izumi.functional.bio.{Async2, F, Temporal2}
 import izumi.fundamentals.orphans.`cats.effect.kernel.Async`
 import izumi.fundamentals.platform.functional.Identity
 
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{Executors, ThreadFactory}
+import java.util.concurrent.Executors
 import scala.collection.compat.*
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import izumi.functional.bio.UnsafeRun2.NamedThreadFactory
 
 /**
   * Parallel & async operations for `F` required by `distage-*` libraries.
@@ -16,6 +16,9 @@ import scala.concurrent.{Await, ExecutionContext, Future, Promise}
   *
   * Internal use class, as with [[QuasiIO]], it's only public so that you can define your own instances,
   * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
+  *
+  * TODO: we want to get rid of this by providing Identity implementations for Parallel3, Async3 and Temporal3
+  * See https://github.com/7mind/izumi/issues/787
   */
 trait QuasiAsync[F[_]] {
   def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A]
@@ -100,30 +103,9 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
       }
     }
   }
-
-  private[distage] final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
-    private val parentGroup =
-      Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
-
-    private val threadGroup = new ThreadGroup(parentGroup, name)
-    private val threadCount = new AtomicInteger(1)
-    private val threadHash = Integer.toUnsignedString(this.hashCode())
-
-    override def newThread(r: Runnable): Thread = {
-      val newThreadNumber = threadCount.getAndIncrement()
-
-      val thread = new Thread(threadGroup, r)
-      thread.setName(s"$name-$newThreadNumber-$threadHash")
-      thread.setDaemon(daemon)
-
-      thread
-    }
-
-  }
-
 }
 
-private[effect] sealed trait LowPriorityQuasiAsyncInstances {
+private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.

@@ -1,4 +1,4 @@
-package izumi.distage.model.effect
+package izumi.functional.quasi
 
 import scala.annotation.unused
 

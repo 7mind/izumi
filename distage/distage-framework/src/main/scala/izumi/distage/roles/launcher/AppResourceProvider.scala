@@ -5,8 +5,8 @@ import izumi.distage.InjectorFactory
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.effect.{QuasiIO, QuasiIORunner}
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.fundamentals.platform.functional.Identity

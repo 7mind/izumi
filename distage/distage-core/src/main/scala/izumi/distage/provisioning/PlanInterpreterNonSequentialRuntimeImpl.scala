@@ -4,8 +4,8 @@ import distage.{DIKey, Id, Roots, SafeType}
 import izumi.distage.LocatorDefaultImpl
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax.*
+import izumi.functional.quasi.QuasiIO
+import izumi.functional.quasi.QuasiIO.syntax.*
 import ProvisionerIssue.IncompatibleEffectTypes
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException

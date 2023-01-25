@@ -3,8 +3,8 @@ package izumi.distage.testkit.distagesuite.parallel
 import java.util.concurrent.atomic.AtomicInteger
 import cats.effect.IO as CIO
 import distage.{DIKey, TagK}
-import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
-import izumi.distage.model.effect.QuasiIO.syntax.*
+import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig

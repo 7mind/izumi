@@ -3,7 +3,7 @@ package izumi.distage.model.provisioning
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.errors.DIError
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.exceptions.*
 import izumi.distage.model.definition.errors.ProvisionerIssue.*
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.*

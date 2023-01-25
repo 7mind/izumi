@@ -3,8 +3,8 @@ package izumi.distage.docker
 import java.io.File
 import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock, OverlappingFileLockException}
 import java.nio.file.StandardOpenOption
-import izumi.distage.model.effect.QuasiIO.syntax.*
-import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.logstage.api.IzLogger
 
 import scala.concurrent.duration.*

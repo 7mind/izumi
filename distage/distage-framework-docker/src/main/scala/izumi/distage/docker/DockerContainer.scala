@@ -3,7 +3,7 @@ package izumi.distage.docker
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.Docker._
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
-import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger

@@ -2,7 +2,7 @@ package izumi.distage.roles.test.fixtures
 
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.{Id, Lifecycle}
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters

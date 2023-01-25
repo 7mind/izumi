@@ -2,7 +2,7 @@ package izumi.distage.testkit.services.scalatest.dstest
 
 import distage.{TagK, TagKK}
 import izumi.distage.constructors.HasConstructor
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.providers.Functoid
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.*
