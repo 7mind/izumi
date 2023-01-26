@@ -1,5 +1,6 @@
 package izumi.distage.model.definition.errors
 
+import izumi.distage.model.definition.Binding
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, ProxyOp}
@@ -25,7 +26,7 @@ object ProvisionerIssue {
     final case class UnexpectedIntegrationCheck(key: DIKey, problem: Throwable) extends ProvisionerExceptionIssue
   }
 
-  final case class MissingImport(op: ImportDependency) extends ProvisionerIssue {
+  final case class MissingImport(op: ImportDependency, similarSame: Set[Binding], similarSub: Set[Binding]) extends ProvisionerIssue {
     override def key: DIKey = op.target
   }
 

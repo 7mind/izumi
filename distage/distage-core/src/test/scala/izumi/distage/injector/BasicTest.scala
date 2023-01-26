@@ -17,7 +17,6 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class BasicTest extends AnyWordSpec with MkInjector {
-
   "maintain correct operation order" in {
     import BasicCase1.*
     val definition = PlannerInput(
@@ -560,4 +559,28 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(instance == max)
   }
 
+  "provide reasonable hints for missing dependencies" in {
+    import BasicCase9.*
+    val definition = PlannerInput(
+      new ModuleDef {
+        make[Out]
+        make[Dep1]
+        make[T2].named("wrong").from[Dep2]
+      },
+      Activation.empty,
+      DIKey[Out],
+    )
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    assert(plan.stepsUnordered.exists(_.isInstanceOf[ImportDependency]))
+
+    val exc = intercept[ProvisioningException] {
+      injector.produce(plan).unsafeGet()
+    }
+
+    assert(exc.getMessage.contains("related subtypes"))
+    assert(exc.getMessage.contains("same type"))
+    println(exc.getMessage)
+  }
 }

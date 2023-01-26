@@ -1,7 +1,7 @@
 package izumi.distage.planning.solver
 
 import distage.TagK
-import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
 import izumi.distage.model.exceptions.PlanVerificationException
 import izumi.distage.model.exceptions.runtime.MissingInstanceException
@@ -15,6 +15,7 @@ import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue.*
 import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
+import izumi.distage.provisioning.strategies.ImportStrategyDefaultImpl
 import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
 import izumi.fundamentals.collections.IzCollections.*
@@ -79,7 +80,7 @@ class PlanVerifier(
     var after = before
     val issues =
       try {
-        trace(allAxis, mutVisited, matrixToTrace, execOpIndex, justMutators, providedKeys, excludedActivations, rootKeys, effectType)
+        trace(allAxis, mutVisited, matrixToTrace, execOpIndex, justMutators, providedKeys, excludedActivations, rootKeys, effectType, bindings)
       } finally {
         after = System.currentTimeMillis()
       }
@@ -103,6 +104,7 @@ class PlanVerifier(
     excludedActivations: Set[NonEmptySet[AxisPoint]],
     rootKeys: Set[DIKey],
     effectType: SafeType,
+    bindings: ModuleBase,
   ): Set[PlanIssue] = {
 
     @inline def go(visited: Set[DIKey], current: Set[(DIKey, DIKey)], currentActivation: Set[AxisPoint]): RecursionResult = RecursionResult(current.iterator.map {
@@ -111,7 +113,9 @@ class PlanVerifier(
           Right(Iterator.empty)
         } else {
           @inline def reportMissing[A](key: DIKey, dependee: DIKey): Left[List[MissingImport], Nothing] = {
-            Left(List(MissingImport(key, dependee, allImportingBindings(matrix, currentActivation)(key, dependee))))
+            val origins = allImportingBindings(matrix, currentActivation)(key, dependee)
+            val similarBindings = ImportStrategyDefaultImpl.findSimilarImports(bindings, key)
+            Left(List(MissingImport(key, dependee, origins, similarBindings.similarSame, similarBindings.similarSub)))
           }
 
           @inline def reportMissingIfNotProvided[A](key: DIKey, dependee: DIKey)(orElse: => Either[List[PlanIssue], A]): Either[List[PlanIssue], A] = {
@@ -451,10 +455,10 @@ object PlanVerifier {
     def key: DIKey
   }
   object PlanIssue {
-    final case class MissingImport(key: DIKey, dependee: DIKey, origins: Set[OperationOrigin]) extends PlanIssue {
+    final case class MissingImport(key: DIKey, dependee: DIKey, origins: Set[OperationOrigin], similarSame: Set[Binding], similarSub: Set[Binding]) extends PlanIssue {
       override def toString: String = {
         // FIXME: reuse formatting from conflictingAxisTagsHint [show multiple origins with different axes]
-        MissingInstanceException.format(key, Set(dependee))
+        MissingInstanceException.format(key, Set(dependee), similarSame, similarSub)
       }
     }
 
