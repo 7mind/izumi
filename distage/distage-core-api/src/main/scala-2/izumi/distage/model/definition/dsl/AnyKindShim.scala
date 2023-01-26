@@ -4,4 +4,4 @@ trait AnyKindShim {
   type LifecycleF[_] = Any
 }
 
-object AnyKindShim extends AnyKindShim {}
+object AnyKindShim extends AnyKindShim

@@ -109,7 +109,7 @@ class ForwardingRefResolverDefaultImpl(
     * but still there are some expensive ideas of the further improvement
     * ( see https://github.com/7mind/izumi/issues/1219 )
     *
-    * There is no reason to touch this code unless we uncover some other soundess problems
+    * There is no reason to touch this code unless we uncover some other soundness problems
     */
   override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
     val context = new FwdRefResolutionContext(plan)

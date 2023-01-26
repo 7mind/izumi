@@ -124,7 +124,7 @@ final case class Functoid[+A](get: Provider) {
   @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.cls, get.ret.tag)
 }
 
-object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters{
+object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters {
 
   implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
     def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.getRetTag)
@@ -237,11 +237,9 @@ object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters{
     )
   }
 
-
-
 }
 
-trait FunctoidLifecycleAdapters {
+private[providers] trait FunctoidLifecycleAdapters {
 
   import cats.effect.kernel.{Resource, Sync}
   import izumi.reflect.{Tag, TagK}
@@ -267,10 +265,10 @@ trait FunctoidLifecycleAdapters {
     *       dependency on `Sync[F]` for your corresponding `F` type
     *       (`Sync[F]` instance will generally be provided automatically via [[izumi.distage.modules.DefaultModule]])
     */
-  implicit final def providerFromCats[F[_] : TagK, A](
-                                                       resource: => Resource[F, A]
-                                                     )(implicit tag: Tag[Lifecycle.FromCats[F, A]]
-                                                     ): Functoid[Lifecycle.FromCats[F, A]] = {
+  implicit final def providerFromCats[F[_]: TagK, A](
+    resource: => Resource[F, A]
+  )(implicit tag: Tag[Lifecycle.FromCats[F, A]]
+  ): Functoid[Lifecycle.FromCats[F, A]] = {
     Functoid.identity[Sync[F]].map {
       implicit sync: Sync[F] =>
         Lifecycle.fromCats(resource)(sync)
@@ -281,9 +279,9 @@ trait FunctoidLifecycleAdapters {
     * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
     */
   implicit final def providerFromZIO[R, E, A](
-                                               managed: => ZManaged[R, E, A]
-                                             )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
-                                             ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
+    managed: => ZManaged[R, E, A]
+  )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
+  ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
     Functoid.lift(Lifecycle.fromZIO(managed))
   }
 
@@ -292,9 +290,9 @@ trait FunctoidLifecycleAdapters {
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
   implicit final def providerFromZIONothing[R, A](
-                                                   managed: => ZManaged[R, Nothing, A]
-                                                 )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
-                                                 ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
+    managed: => ZManaged[R, Nothing, A]
+  )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
+  ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
     Functoid.lift(Lifecycle.fromZIO(managed))
   }
 
@@ -302,9 +300,9 @@ trait FunctoidLifecycleAdapters {
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
   implicit final def providerFromZLayerHas1[R, E, A: Tag](
-                                                           layer: => ZLayer[R, E, Has[A]]
-                                                         )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
-                                                         ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
+    layer: => ZLayer[R, E, Has[A]]
+  )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
+  ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
     Functoid.lift(Lifecycle.fromZIO(layer.build.map(_.get[A])))
   }
 
@@ -313,9 +311,10 @@ trait FunctoidLifecycleAdapters {
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
   implicit final def providerFromZLayerNothingHas1[R, A: Tag](
-                                                               layer: => ZLayer[R, Nothing, Has[A]]
-                                                             )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
-                                                             ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
+    layer: => ZLayer[R, Nothing, Has[A]]
+  )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
+  ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
     Functoid.lift(Lifecycle.fromZIO(layer.build.map(_.get[A])))
   }
+
 }
