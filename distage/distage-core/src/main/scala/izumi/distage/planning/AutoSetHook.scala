@@ -4,8 +4,8 @@ import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, Set
 import izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.DIKey.{SetElementKey, SetKeyMeta}
-import izumi.distage.model.reflection._
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.distage.model.reflection.*
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 import izumi.reflect.Tag
 
 /**
@@ -15,7 +15,7 @@ import izumi.reflect.Tag
   * Usage:
   *
   * {{{
-  *   val collectCloseables = new AutoSetHook[AutoCloseable, AutoCloseable]
+  *   val collectCloseables = AutoSetHook[AutoCloseable]
   *
   *   val injector = Injector(new BootstrapModuleDef {
   *     many[PlanningHook]
@@ -49,7 +49,7 @@ import izumi.reflect.Tag
   * *after* garbage collection is done, as such they can't contain garbage by construction
   * and they cannot be designated as GC root keys.
   */
-class AutoSetHook[INSTANCE: Tag, BINDING: Tag](filter: Binding.ImplBinding => Boolean)(implicit pos: CodePositionMaterializer) extends PlanningHook {
+class AutoSetHook[INSTANCE: Tag, BINDING: Tag](includeOnly: Binding.ImplBinding => Boolean, pos: CodePosition) extends PlanningHook {
   protected val instanceType: SafeType = SafeType.get[INSTANCE]
   protected val setElementType: SafeType = SafeType.get[BINDING]
   protected val setKey: DIKey = DIKey.get[Set[BINDING]]
@@ -57,26 +57,26 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](filter: Binding.ImplBinding => Bo
   override def hookDefinition(definition: ModuleBase): ModuleBase = {
     val setMembers: Set[Binding.ImplBinding] = definition.bindings
       .flatMap {
-      case i: ImplBinding =>
-        i.implementation match {
-          case implDef: ImplDef.DirectImplDef =>
-            val implType = implDef.implType
-            if (implType <:< setElementType) {
-              Some(i)
-            } else {
-              None
-            }
+        case i: ImplBinding =>
+          i.implementation match {
+            case implDef: ImplDef.DirectImplDef =>
+              val implType = implDef.implType
+              if (implType <:< setElementType) {
+                Some(i)
+              } else {
+                None
+              }
 
-          case implDef: ImplDef.RecursiveImplDef =>
-            if (implDef.implType <:< setElementType) {
-              Some(i)
-            } else {
-              None
-            }
-        }
-      case _: EmptySetBinding[?] =>
-        None
-    }.filter(filter)
+            case implDef: ImplDef.RecursiveImplDef =>
+              if (implDef.implType <:< setElementType) {
+                Some(i)
+              } else {
+                None
+              }
+          }
+        case _: EmptySetBinding[?] =>
+          None
+      }.filter(includeOnly)
 
     if (setMembers.isEmpty) {
       definition
@@ -104,9 +104,23 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](filter: Binding.ImplBinding => Bo
           }
       }
 
-      val ops: Set[Binding] = Set(EmptySetBinding(setKey, Set.empty, pos.get.position))
+      val ops: Set[Binding] = Set(EmptySetBinding(setKey, Set.empty, pos.position))
       definition ++ ModuleBase.make(ops ++ elementOps)
     }
 
+  }
+}
+
+object AutoSetHook {
+  def apply[INSTANCE: Tag, BINDING: Tag](includeOnly: Binding.ImplBinding => Boolean)(implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, BINDING] = {
+    new AutoSetHook[INSTANCE, BINDING](includeOnly, pos.get)
+  }
+
+  def apply[INSTANCE: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, INSTANCE] = {
+    new AutoSetHook(_ => true, pos.get)
+  }
+
+  def apply[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, BINDING] = {
+    new AutoSetHook[INSTANCE, BINDING](_ => true, pos.get)
   }
 }
