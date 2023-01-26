@@ -2,6 +2,7 @@ package izumi.distage.injector
 
 import distage.{Activation, DIKey, Injector, Lifecycle, Roots}
 import izumi.distage.fixtures.PlanVerifierCases.*
+import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -167,7 +168,13 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(result.verificationFailed)
     assert(result.issues.size == 1)
-    assert(result.issues.fromNonEmptySet == Set(MissingImport(DIKey[Fork2], DIKey[Fork1], Set(implBOrigin))))
+//    val issues = result.issues.toList.flatMap(_.toList)
+//    assert(issues.size == 1)
+//
+//    val imports = issues.collect {case m: MissingImport => m}
+//    assert(imports.size == 1)
+//    assert(imports.head.key == )
+    assert(result.issues.fromNonEmptySet == Set(MissingImport(DIKey[Fork2], DIKey[Fork1], Set(implBOrigin), Set.empty, Set.empty)))
   }
 
   "Verifier flags conflicting activations" in {
@@ -510,13 +517,22 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result1 = PlanVerifier().verify[Identity](definition, Roots.target[X], Injector.providedKeys(), Set.empty)
     assert(result1.issues.fromNonEmptySet.map(_.getClass) == Set(classOf[MissingImport], classOf[UnsaturatedAxis]))
+    val brokenBinding = definition.bindings.filter(b => b.isInstanceOf[SetElementBinding])
     assert(
       result1.issues.fromNonEmptySet == Set(
-        MissingImport(DIKey[ExternalDep], DIKey[X], result1.issues.fromNonEmptySet.collect { case MissingImport(_, d, origins) if d == DIKey[X] => origins }.flatten),
         MissingImport(
           DIKey[ExternalDep],
-          result1.issues.get.collectFirst { case MissingImport(_, d, _) if d.isInstanceOf[DIKey.SetElementKey] => d }.get,
-          result1.issues.fromNonEmptySet.collect { case MissingImport(_, d, origins) if d.isInstanceOf[DIKey.SetElementKey] => origins }.flatten,
+          DIKey[X],
+          result1.issues.fromNonEmptySet.collect { case MissingImport(_, d, origins, _, _) if d == DIKey[X] => origins }.flatten,
+          brokenBinding,
+          Set.empty,
+        ),
+        MissingImport(
+          DIKey[ExternalDep],
+          result1.issues.get.collectFirst { case MissingImport(_, d, _, _, _) if d.isInstanceOf[DIKey.SetElementKey] => d }.get,
+          result1.issues.fromNonEmptySet.collect { case MissingImport(_, d, origins, _, _) if d.isInstanceOf[DIKey.SetElementKey] => origins }.flatten,
+          brokenBinding,
+          Set.empty,
         ),
         UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a"))),
       )

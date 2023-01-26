@@ -107,8 +107,8 @@ object PlanInterpreter {
                 case UnexpectedIntegrationCheck(key, problem) =>
                   IzumiProject.bugReportPrompt(s"unexpected exception while processing integration check for $key", stackTrace(problem))
 
-                case MissingImport(op) =>
-                  MissingInstanceException.format(op.target, op.references)
+                case MissingImport(op, similarSame, similarSub) =>
+                  MissingInstanceException.format(op.target, op.references, similarSame, similarSub)
 
                 case IncompatibleEffectTypes(op, provisionerEffectType, actionEffectType) =>
                   IncompatibleEffectTypes.format(op, provisionerEffectType, actionEffectType)

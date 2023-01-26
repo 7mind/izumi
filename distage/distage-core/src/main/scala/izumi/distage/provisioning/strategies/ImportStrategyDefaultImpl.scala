@@ -1,17 +1,39 @@
 package izumi.distage.provisioning.strategies
 
+import distage.{DIKey, ModuleBase}
+import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.errors.ProvisionerIssue.MissingImport
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.strategies.ImportStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 
 class ImportStrategyDefaultImpl extends ImportStrategy {
-  override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Either[MissingImport, Seq[NewObjectOp]] = {
+  override def importDependency(context: ProvisioningKeyProvider, plan: Plan, op: ImportDependency): Either[MissingImport, Seq[NewObjectOp]] = {
     context.importKey(op.target) match {
       case Some(v) =>
         Right(Seq(NewObjectOp.NewImport(op.target, v)))
       case _ =>
-        Left(MissingImport(op))
+        val similar = ImportStrategyDefaultImpl.findSimilarImports(plan.input.bindings, op.target)
+        Left(MissingImport(op, similar.similarSame, similar.similarSub))
     }
+  }
+
+}
+
+object ImportStrategyDefaultImpl {
+  case class SimilarBindings(similarSame: Set[Binding], similarSub: Set[Binding])
+
+  def findSimilarImports(bindings: ModuleBase, target: DIKey): SimilarBindings = {
+    def isSimilarSameTypeBinding(to: DIKey)(binding: Binding): Boolean = {
+      to.tpe =:= binding.key.tpe
+    }
+
+    def isSimilarSubTypeBinding(to: DIKey)(binding: Binding): Boolean = {
+      !(to.tpe =:= binding.key.tpe) && (binding.key.tpe <:< to.tpe)
+    }
+    val similarSame = bindings.bindings.filter(isSimilarSameTypeBinding(target))
+    val similarSub = bindings.bindings.filter(isSimilarSubTypeBinding(target))
+    SimilarBindings(similarSame, similarSub)
   }
 }

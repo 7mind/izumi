@@ -247,4 +247,13 @@ Forest fire, climbin' higher, real life, it can wait""")
     abstract class NoArgAbstractClass
   }
 
+  object BasicCase9 {
+    trait T1
+    class Dep1() extends T1
+    trait T2
+    class Dep2() extends T2
+
+    class Out(val dep1: T1, val dep2: T2)
+  }
+
 }
