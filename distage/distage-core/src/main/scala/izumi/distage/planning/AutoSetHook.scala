@@ -49,13 +49,14 @@ import izumi.reflect.Tag
   * *after* garbage collection is done, as such they can't contain garbage by construction
   * and they cannot be designated as GC root keys.
   */
-class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMaterializer) extends PlanningHook {
+class AutoSetHook[INSTANCE: Tag, BINDING: Tag](filter: Binding.ImplBinding => Boolean)(implicit pos: CodePositionMaterializer) extends PlanningHook {
   protected val instanceType: SafeType = SafeType.get[INSTANCE]
   protected val setElementType: SafeType = SafeType.get[BINDING]
   protected val setKey: DIKey = DIKey.get[Set[BINDING]]
 
   override def hookDefinition(definition: ModuleBase): ModuleBase = {
-    val setMembers: Set[Binding.ImplBinding] = definition.bindings.flatMap {
+    val setMembers: Set[Binding.ImplBinding] = definition.bindings
+      .flatMap {
       case i: ImplBinding =>
         i.implementation match {
           case implDef: ImplDef.DirectImplDef =>
@@ -75,8 +76,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMateria
         }
       case _: EmptySetBinding[?] =>
         None
-
-    }
+    }.filter(filter)
 
     if (setMembers.isEmpty) {
       definition

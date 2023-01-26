@@ -31,7 +31,8 @@ final class ConfigWriter[F[_]](
   roleInfo: RolesInfo,
   roleAppPlanner: RoleAppPlanner,
   F: QuasiIO[F],
-) extends RoleTask[F] {
+) extends RoleTask[F]
+  with BundledTask {
 
   // fixme: always include `activation` section in configs (Used in RoleAppLauncherImpl#configActivationSection, but not seen in config bindings, since it's not read by DI)
   //  should've been unnecessary after https://github.com/7mind/izumi/issues/779

@@ -8,8 +8,12 @@ import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, Id, Module, ModuleDef}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.recursive.LocatorRef
+import izumi.distage.model.reflection.SafeType
+import izumi.distage.planning.AutoSetModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
+import izumi.distage.roles.bundled.BundledService
 import izumi.distage.roles.launcher.AppShutdownInitiator
+import izumi.distage.roles.model.{RoleService, RoleTask}
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.functional.bio.Exit
 import izumi.functional.bio.UnsafeRun2.FailureHandler
@@ -90,6 +94,8 @@ object ModuleProvider {
         loggerModule,
         graphvizDumpModule,
         appConfigModule, // make config available for bootstrap plugins
+        AutoSetModule("all-custom-roles").registerOnly[RoleService[F]](b => !(b.key.tpe <:< SafeType.get[BundledService])),
+        AutoSetModule("all-custom-tasks").registerOnly[RoleTask[F]](b => !(b.key.tpe <:< SafeType.get[BundledService])),
       )
     }
 
