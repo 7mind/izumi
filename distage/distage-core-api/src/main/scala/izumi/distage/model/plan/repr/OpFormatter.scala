@@ -90,6 +90,17 @@ object OpFormatter {
           val hint = styled(hintBase, c.CYAN)
           formatDefn(target, pos, s"${formatOpName("import")} ${formatKey(target)} $hint")
 
+        case ref: AddRecursiveLocatorRef =>
+          val pos = formatBindingPosition(ref.origin)
+          val hintBase = if (ref.references.nonEmpty) {
+            s"// required for ${ref.references.map(formatKey).mkString(" and ")}"
+          } else { // this should never happen actually
+            " // no dependees"
+          }
+
+          val hint = styled(hintBase, c.CYAN)
+          formatDefn(ref.target, pos, s"${formatOpName("locator")} ${formatKey(ref.target)} $hint")
+
         case p: ProxyOp =>
           p match {
             case MakeProxy(proxied, forwardRefs, origin, byNameAllowed) =>

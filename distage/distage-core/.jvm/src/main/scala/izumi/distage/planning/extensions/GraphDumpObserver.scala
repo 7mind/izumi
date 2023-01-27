@@ -151,6 +151,9 @@ final class GraphDumpObserver() extends PlanningObserver {
       case ExecutableOp.ImportDependency(_, _, _) =>
         "import"
 
+      case ExecutableOp.AddRecursiveLocatorRef(_, _) =>
+        "locator"
+
       case op: ExecutableOp.ProxyOp =>
         op match {
           case ProxyOp.MakeProxy(_, _, _, byNameAllowed) =>

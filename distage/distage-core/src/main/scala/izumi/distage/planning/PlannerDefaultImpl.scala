@@ -6,7 +6,7 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.errors.DIError.ConflictResolutionFailed
 import izumi.distage.model.definition.errors.DIError.PlanningError.BUG_UnexpectedMutatorKey
 import izumi.distage.model.plan.*
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
+import izumi.distage.model.plan.ExecutableOp.{InstantiationOp, SemiplanOp}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.planning.*
@@ -132,7 +132,7 @@ class PlannerDefaultImpl(
         case (missing, refs) =>
           val maybeFirstOrigin = refs.headOption.flatMap(key => plan.meta.nodes.get(key)).map(_.origin.value.toSynthetic)
           val origin = EqualizedOperationOrigin(maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
-          (missing, ImportDependency(missing, refs, origin))
+          (missing, ExecutableOp.createImport(missing, refs, origin))
       }
       .toMap
 
@@ -143,7 +143,7 @@ class PlannerDefaultImpl(
           .diff(imports.keySet)
           .map {
             root =>
-              (root, ImportDependency(root, Set.empty, OperationOrigin.Unknown))
+              (root, ExecutableOp.createImport(root, Set.empty, OperationOrigin.Unknown))
           }
           .toVector
       case Roots.Everything =>

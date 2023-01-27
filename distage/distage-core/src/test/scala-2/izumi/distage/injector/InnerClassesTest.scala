@@ -178,7 +178,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     )
 
     val context = mkInjector().produce(definition).unsafeGet()
-    assert(context.instances.size == 3)
+    assert(context.instances.size == 2)
 
     assert(
       context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) ==

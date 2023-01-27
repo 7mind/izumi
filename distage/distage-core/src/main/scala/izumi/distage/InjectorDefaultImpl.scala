@@ -1,14 +1,14 @@
 package izumi.distage
 
-import izumi.distage.model._
+import izumi.distage.model.*
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle, Module, ModuleBase, ModuleDef}
-import izumi.functional.quasi.QuasiIO
-import izumi.distage.model.plan.Plan
+import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
-import izumi.distage.model.recursive.{Bootloader, LocatorRef}
+import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
+import izumi.functional.quasi.QuasiIO
 import izumi.reflect.TagK
 
 /**
@@ -122,6 +122,6 @@ object InjectorDefaultImpl {
 
   lazy val providedKeys: Set[DIKey] = {
     selfReflectionKeys +
-    DIKey[LocatorRef] // magic import, always available
+    ExecutableOp.AddRecursiveLocatorRef.magicLocatorKey // magic import, always available WHEN REQUESTED
   }
 }

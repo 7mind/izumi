@@ -179,7 +179,9 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       before <- F.maybeSuspend(System.nanoTime())
       res <- op match {
         case op: ImportDependency =>
-          F.pure(importStrategy.importDependency(context.asContext(), context.plan,  op))
+          F.pure(importStrategy.importDependency(context.asContext(), context.plan, op))
+        case _: AddRecursiveLocatorRef =>
+          F.pure(Right(context.locatorInstance()))
         case op: NonImportOp =>
           operationExecutor.execute(context.asContext(), op)
       }
