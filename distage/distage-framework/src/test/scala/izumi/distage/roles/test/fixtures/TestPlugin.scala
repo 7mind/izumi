@@ -3,11 +3,11 @@ package izumi.distage.roles.test.fixtures
 import cats.effect.IO
 import izumi.distage.config.ConfigModuleDef
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.definition.StandardAxis._
+import izumi.distage.model.definition.StandardAxis.*
 import izumi.distage.plugins.PluginDef
-import izumi.distage.roles.bundled.{BundledRolesModule, ConfigWriter, Help}
+import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
-import izumi.distage.roles.test.fixtures.Fixture._
+import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.TestPluginCatsIO.{InheritedCloseable, NotCloseable}
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, IntegrationOnlyCfg2, SetElementOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
@@ -37,7 +37,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   makeRole[TestRole00[F]]
   makeRole[ExitAfterSleepRole[F]]
 
-  make[TestRole01[F]]
+  makeRole[TestRole01[F]]
   makeRole[TestRole02[F]]
   makeRole[TestRole03[F]]
   makeRole[TestRole04[F]]
@@ -49,8 +49,8 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   make[TestRole00ResourceIntegrationCheck[F]]
 
   make[NotCloseable].from[InheritedCloseable]
-  make[ConfigWriter[F]]
-  make[Help[F]]
+//  makeRole[ConfigWriter[F]]
+//  makeRole[Help[F]]
 
   make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
   make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)

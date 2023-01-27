@@ -280,7 +280,7 @@ class C(val b: B) extends PrintResource("C")
 
 def bootstrapModule = new BootstrapModuleDef {
   many[PlanningHook]
-    .add(new AutoSetHook[PrintResource, PrintResource])
+    .add(AutoSetHook[PrintResource])
 }
 
 def appModule = new ModuleDef {
