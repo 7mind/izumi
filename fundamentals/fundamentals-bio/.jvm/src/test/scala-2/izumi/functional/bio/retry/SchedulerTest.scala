@@ -22,7 +22,7 @@ class SchedulerTest extends AnyWordSpec {
   private val zioClock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
   private val zioTemporal: Temporal3[ZIO] = TemporalInstances.Temporal3Zio(Clock3[ZIO], zioClock)
   private val zioScheduler: Scheduler2[zio.IO] = SchedulerInstances.SchedulerFromTemporal(zioTemporal)
-  private val zioRunner: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO(Platform.default)
+  private val zioRunner: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO[Any](Platform.default, ())
 
   private object implicits {
     implicit val zioTemporalImplicit: Temporal3[ZIO] = zioTemporal

@@ -1,24 +1,23 @@
 package izumi.distage.testkit.distagesuite
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-
-import cats.effect.{IO => CIO}
-import distage._
+import cats.effect.IO as CIO
+import distage.*
 import distage.plugins.PluginDef
 import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax._
+import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.distagesuite.DistageTestExampleBase._
-import izumi.distage.testkit.distagesuite.fixtures._
+import izumi.distage.testkit.distagesuite.DistageTestExampleBase.*
+import izumi.distage.testkit.distagesuite.fixtures.*
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, Spec3}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.functional.bio.ApplicativeError2
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
-import zio.{Has, Task, ZIO}
+import zio.{Has, Task, ZEnv, ZIO}
 
 trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
   override protected def config: TestConfig = {
@@ -224,7 +223,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
 final class DistageTestExampleId extends DistageTestExampleBase[Identity]
 final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
-final class DistageTestExampleZIO2 extends DistageTestExampleBase[Task]
+final class DistageTestExampleZIOZEnv extends DistageTestExampleBase[ZIO[ZEnv, Throwable, +_]]
 
 abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
   "distage test" should {

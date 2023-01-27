@@ -1,11 +1,9 @@
 package izumi.distage.modules.platform
 
-import java.util.concurrent.{Executors, ThreadPoolExecutor}
-
-import distage.Id
-import izumi.distage.model.definition.{Lifecycle, ModuleDef}
+import izumi.distage.model.definition.{Id, Lifecycle, ModuleDef}
 import izumi.functional.bio.UnsafeRun2.{FailureHandler, ZIORunner}
-import izumi.functional.bio.{BlockingIO2, BlockingIO3, BlockingIOInstances, UnsafeRun2, UnsafeRun3}
+import izumi.functional.bio.{BlockingIO2, BlockingIO3, BlockingIOInstances, UnsafeRun2}
+import izumi.reflect.Tag
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
@@ -13,18 +11,19 @@ import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform}
 import zio.random.Random
 import zio.system.System
-import zio.{Has, IO, Runtime, ZEnv, ZIO}
+import zio.{Has, Runtime, ZEnv, ZIO}
 
+import java.util.concurrent.{Executors, ThreadPoolExecutor}
 import scala.concurrent.ExecutionContext
 
-private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
+private[modules] abstract class ZIOPlatformDependentSupportModule[R: Tag] extends ModuleDef {
   make[ZEnv].from(Has.allOf(_: Clock.Service, _: Console.Service, _: System.Service, _: Random.Service, _: Blocking.Service))
 
-  make[UnsafeRun3[ZIO]].using[ZIORunner]
+  make[UnsafeRun2[ZIO[R, _, _]]].using[ZIORunner[R]]
 
   make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIOFromBlocking(_: zio.blocking.Blocking.Service))
-  make[BlockingIO2[IO]].from {
-    implicit B: BlockingIO3[ZIO] => BlockingIO2[IO]
+  make[BlockingIO2[ZIO[R, +_, +_]]].from {
+    implicit B: BlockingIO3[ZIO] => BlockingIO2[ZIO[R, +_, +_]]
   }
 
   make[zio.blocking.Blocking].from(Has(_: Blocking.Service))
@@ -35,18 +34,19 @@ private[modules] trait ZIOPlatformDependentSupportModule extends ModuleDef {
       }
   }
 
-  make[ZIORunner].from {
-    (cpuPool: ThreadPoolExecutor @Id("zio.cpu"), handler: FailureHandler, tracingConfig: TracingConfig) =>
+  make[ZIORunner[R]].from {
+    (cpuPool: ThreadPoolExecutor @Id("zio.cpu"), handler: FailureHandler, tracingConfig: TracingConfig, initialEnv: R @Id("zio-initial-env")) =>
       UnsafeRun2.createZIO(
         cpuPool = cpuPool,
         handler = handler,
         tracingConfig = tracingConfig,
+        initialEnv = initialEnv,
       )
   }
   make[TracingConfig].fromValue(TracingConfig.enabled)
   make[FailureHandler].fromValue(FailureHandler.Default)
-  make[Runtime[Any]].from((_: ZIORunner).runtime)
-  make[Platform].from((_: Runtime[Any]).platform)
+  make[Runtime[R]].from((_: ZIORunner[R]).runtime)
+  make[Platform].from((_: Runtime[R]).platform)
 
   make[ThreadPoolExecutor].named("zio.cpu").fromResource {
     () =>

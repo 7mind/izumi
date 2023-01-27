@@ -10,7 +10,7 @@ import izumi.fundamentals.orphans.*
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.annotation.unused
-import izumi.reflect.{TagK, TagK3, TagKK}
+import izumi.reflect.{Tag, TagK, TagK3, TagKK}
 
 /**
   * Implicitly available effect type support for `distage` resources, effects, roles & tests.
@@ -62,8 +62,9 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     implicit
     @unused ensureInteropCatsOnClasspath: `zio.interop.ZManagedSyntax`[K],
     @unused l: `zio.ZIO`[ZIO],
+    tagR: Tag[R],
   ): DefaultModule2[ZIO[R, _, _]] = {
-    DefaultModule(ZIOSupportModule ++ ZIOCatsEffectInstancesModule)
+    DefaultModule(ZIOSupportModule[R] ++ ZIOCatsEffectInstancesModule[R])
   }
 }
 
@@ -76,8 +77,8 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
     *
     * @see [[izumi.distage.modules.support.ZIOSupportModule]]
     */
-  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, _, _]] = {
-    DefaultModule(ZIOSupportModule)
+  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R: Tag]: DefaultModule2[ZIO[R, _, _]] = {
+    DefaultModule(ZIOSupportModule[R])
   }
 
 //  /**
@@ -126,10 +127,8 @@ sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModul
 
 sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModulesInstances5 {
   /** @see [[izumi.distage.modules.support.AnyBIO3SupportModule]] */
-  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: Scheduler3](
-    implicit tagBIO: TagKK[F[Any, +_, +_]]
-  ): DefaultModule3[F] = {
-    DefaultModule(AnyBIO3SupportModule.withImplicits[F])
+  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: Scheduler3]: DefaultModule3[F] = {
+    DefaultModule(AnyBIO3SupportModule.withImplicits[F, Any])
   }
 }
 

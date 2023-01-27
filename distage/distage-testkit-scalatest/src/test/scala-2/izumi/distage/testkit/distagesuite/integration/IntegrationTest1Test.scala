@@ -97,4 +97,4 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit F: Ap
 
 //final class MyDisabledTestF2MonixBIO extends MyDisabledTestF2[monix.bio.IO]
 final class MyDisabledTestF2ZioIO extends MyDisabledTestF2[zio.IO]
-//final class MyDisabledTestF2ZIOZIOZEnv extends MyDisabledTestF2[zio.ZIO[zio.ZEnv, +_, +_]]
+final class MyDisabledTestF2ZIOZIOZEnv extends MyDisabledTestF2[zio.ZIO[zio.ZEnv, +_, +_]]

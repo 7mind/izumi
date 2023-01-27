@@ -1,13 +1,11 @@
 package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.functional.quasi._
 import izumi.distage.modules.typeclass.BIO3InstancesModule
 import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
 import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, PrimitivesM2, PrimitivesM3, SyncSafe2, SyncSafe3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
-import izumi.reflect.{TagK3, TagKK}
-
-import scala.annotation.unchecked.{uncheckedVariance => v}
+import izumi.functional.quasi.*
+import izumi.reflect.{Tag, TagK3}
 
 /**
   * Any `BIO` effect type support for `distage` resources, effects, roles & tests.
@@ -19,32 +17,25 @@ import scala.annotation.unchecked.{uncheckedVariance => v}
   *
   * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]` & `make[UnsafeRun3[F]]`
   */
-class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +_, +_]]) extends ModuleDef {
+class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3, R: Tag] extends ModuleDef {
   // QuasiIO & bifunctor bio instances
-  include(AnyBIO2SupportModule[F[Any, +_, +_]])
+  include(AnyBIO2SupportModule[F[R, +_, +_]])
   // trifunctor bio instances
   include(BIO3InstancesModule[F])
-  addConverted3To2[F[Any, +_, +_]]
 
-  // workaround for
-  // - https://github.com/zio/izumi-reflect/issues/82
-  // - https://github.com/zio/izumi-reflect/issues/83
-  def addConverted3To2[G[+e, +a] >: F[Any, e @v, a @v] <: F[Any, e @v, a @v]: TagKK]: Unit = {
-    make[Async2[G]].from {
-      implicit F: Async3[F] => Async2[F[Any, +_, +_]]
-    }
-    make[Temporal2[G]].from {
-      implicit F: Temporal3[F] => Temporal2[F[Any, +_, +_]]
-    }
-    make[Fork2[G]].from {
-      implicit Fork: Fork3[F] => Fork2[F[Any, +_, +_]]
-    }
-    ()
+  make[Async2[F[R, +_, +_]]].from {
+    implicit F: Async3[F] => Async2[F[R, +_, +_]]
+  }
+  make[Temporal2[F[R, +_, +_]]].from {
+    implicit F: Temporal3[F] => Temporal2[F[R, +_, +_]]
+  }
+  make[Fork2[F[R, +_, +_]]].from {
+    implicit Fork: Fork3[F] => Fork2[F[R, +_, +_]]
   }
 }
 
 object AnyBIO3SupportModule extends App with ModuleDef {
-  @inline def apply[F[-_, +_, +_]: TagK3](implicit tagBIO: TagKK[F[Any, +_, +_]]): AnyBIO3SupportModule[F] = new AnyBIO3SupportModule
+  @inline def apply[F[-_, +_, +_]: TagK3, R: Tag]: AnyBIO3SupportModule[F, R] = new AnyBIO3SupportModule[F, R]
 
   /**
     * Make [[AnyBIO3SupportModule]], binding the required dependencies in place to values from implicit scope
@@ -52,11 +43,9 @@ object AnyBIO3SupportModule extends App with ModuleDef {
     * `make[Fork3[F]]` and `make[Primitives3[F]]` are not required by [[AnyBIO3SupportModule]]
     * but are added for completeness
     */
-  def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: PrimitivesM3: Scheduler3](
-    implicit tagBIO: TagKK[F[Any, +_, +_]]
-  ): ModuleDef =
+  def withImplicits[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: PrimitivesM3: Scheduler3, R: Tag]: ModuleDef =
     new ModuleDef {
-      include(AnyBIO3SupportModule[F])
+      include(AnyBIO3SupportModule[F, R])
 
       addImplicit[Async3[F]]
       addImplicit[Temporal3[F]]
