@@ -5,7 +5,7 @@ import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.fundamentals.platform.cache.SyncCache
 import izumi.fundamentals.reflection.TypeUtil
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.chaining.scalaUtilChainingOps
 
 class PluginLoaderDefaultImpl extends PluginLoader {
