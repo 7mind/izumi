@@ -1,8 +1,9 @@
 package izumi.distage.planning
 
-import izumi.distage.model.definition.{Binding, BootstrapModuleDef}
-import izumi.reflect.Tag
+import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.model.planning.PlanningHook
+import izumi.distage.planning.AutoSetHook.AutoSetHookFilter
+import izumi.reflect.Tag
 
 /**
   * Auto-Sets collect all bindings with static types of _implementations_
@@ -13,18 +14,18 @@ import izumi.distage.model.planning.PlanningHook
   */
 abstract class AutoSetModule(name: Option[String]) extends BootstrapModuleDef {
   def register[T: Tag]: AutoSetModule = {
-    registerOnly[T]((_: Binding.ImplBinding) => true)
+    registerOnly[T](AutoSetHookFilter.empty)
   }
 
-  def registerOnly[T: Tag](filter: Binding.ImplBinding => Boolean): AutoSetModule = {
+  def registerOnly[T: Tag](filter: AutoSetHookFilter): AutoSetModule = {
     name match {
       case Some(value) =>
         many[T].named(value)
-        many[PlanningHook].named(value).add(AutoSetHook[T, T](filter))
+        many[PlanningHook].named(value).addValue(AutoSetHook[T, T](filter))
 
       case None =>
         many[T]
-        many[PlanningHook].add(AutoSetHook[T, T](filter))
+        many[PlanningHook].addValue(AutoSetHook[T, T](filter))
 
     }
     this
