@@ -1,12 +1,14 @@
 package izumi.distage.modules.support
 
-import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.platform.ZIOPlatformDependentSupportModule
-import izumi.functional.bio._
+import izumi.functional.bio.*
 import izumi.functional.bio.retry.Scheduler3
+import izumi.reflect.Tag
 import zio.{Has, IO, ZEnv, ZIO}
 
-object ZIOSupportModule extends ZIOSupportModule
+object ZIOSupportModule {
+  def apply[R: Tag]: ZIOSupportModule[R] = new ZIOSupportModule[R]
+}
 
 /**
   * `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
@@ -28,8 +30,11 @@ object ZIOSupportModule extends ZIOSupportModule
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
-trait ZIOSupportModule extends ModuleDef with ZIOPlatformDependentSupportModule {
-  include(AnyBIO3SupportModule[ZIO])
+class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
+  include(AnyBIO3SupportModule[ZIO, R])
+
+  make[Any].named("zio-initial-env").fromValue(()) // assume default environment is `Any` or `ZEnv`, otherwise let the error message guide the user here.
+  make[ZEnv].named("zio-initial-env").using[ZEnv]
 
   addImplicit[Async3[ZIO]]
   make[Temporal3[ZIO]].from {

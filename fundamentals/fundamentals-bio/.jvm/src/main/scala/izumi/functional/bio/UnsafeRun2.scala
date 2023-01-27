@@ -1,13 +1,13 @@
 package izumi.functional.bio
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory, ThreadPoolExecutor}
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.UnsafeRun2.InterruptAction
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, Tracing}
-import zio.{Cause, IO, Runtime, Supervisor, ZIO}
+import zio.{Cause, Runtime, Supervisor, ZIO}
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.{Executors, ThreadFactory, ThreadPoolExecutor}
 import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,19 +25,16 @@ trait UnsafeRun2[F[_, _]] {
 object UnsafeRun2 {
   def apply[F[_, _]: UnsafeRun2]: UnsafeRun2[F] = implicitly
 
-  def createZIO(platform: Platform): ZIORunner = new ZIORunner(platform)
+  def createZIO[R](platform: Platform, initialEnv: R): ZIORunner[R] = new ZIORunner[R](platform, initialEnv)
 
-  def createZIO(
+  def createZIO[R](
     cpuPool: ThreadPoolExecutor,
     handler: FailureHandler = FailureHandler.Default,
     yieldEveryNFlatMaps: Int = 1024,
     tracingConfig: TracingConfig = TracingConfig.enabled,
-  ): ZIORunner = {
-    new ZIORunner(new ZIOPlatform(cpuPool, handler, yieldEveryNFlatMaps, tracingConfig))
-  }
-
-  def newZioTimerPool(): ScheduledExecutorService = {
-    Executors.newScheduledThreadPool(1, new NamedThreadFactory("zio-timer", true))
+    initialEnv: R = (): Any,
+  ): ZIORunner[R] = {
+    new ZIORunner(new ZIOPlatform(cpuPool, handler, yieldEveryNFlatMaps, tracingConfig), initialEnv)
   }
 
 //  def createMonixBIO(s: Scheduler, opts: monix.bio.IO.Options): UnsafeRun2[monix.bio.IO] = new MonixBIORunner(s, opts)
@@ -84,13 +81,14 @@ object UnsafeRun2 {
     final case class Custom(handler: Exit.Failure[Any] => Unit) extends FailureHandler
   }
 
-  class ZIORunner(
-    val platform: Platform
-  ) extends UnsafeRun2[IO] {
+  class ZIORunner[R](
+    val platform: Platform,
+    val initialEnv: R,
+  ) extends UnsafeRun2[ZIO[R, +_, +_]] {
 
-    val runtime: Runtime[Unit] = Runtime((), platform)
+    val runtime: Runtime[R] = Runtime(initialEnv, platform)
 
-    override def unsafeRun[E, A](io: => IO[E, A]): A = {
+    override def unsafeRun[E, A](io: => ZIO[R, E, A]): A = {
       unsafeRunSync(io) match {
         case Exit.Success(value) =>
           value
@@ -100,14 +98,14 @@ object UnsafeRun2 {
       }
     }
 
-    override def unsafeRunAsync[E, A](io: => IO[E, A])(callback: Exit[E, A] => Unit): Unit = {
+    override def unsafeRunAsync[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): Unit = {
       val interrupted = new AtomicBoolean(true)
       runtime.unsafeRunAsync[E, A] {
         ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.effectTotal(interrupted.set(false)))
       }(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))
     }
 
-    override def unsafeRunSync[E, A](io: => IO[E, A]): Exit[E, A] = {
+    override def unsafeRunSync[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
       val interrupted = new AtomicBoolean(true)
       val result = runtime.unsafeRunSync {
         ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.effectTotal(interrupted.set(false)))
@@ -115,13 +113,13 @@ object UnsafeRun2 {
       ZIOExit.toExit(result)(interrupted.get())
     }
 
-    override def unsafeRunAsyncAsFuture[E, A](io: => IO[E, A]): Future[Exit[E, A]] = {
+    override def unsafeRunAsyncAsFuture[E, A](io: => ZIO[R, E, A]): Future[Exit[E, A]] = {
       val p = scala.concurrent.Promise[Exit[E, A]]()
       unsafeRunAsync(io)(p.success)
       p.future
     }
 
-    override def unsafeRunAsyncInterruptible[E, A](io: => IO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[IO] = {
+    override def unsafeRunAsyncInterruptible[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): InterruptAction[ZIO[R, +_, +_]] = {
       val interrupted = new AtomicBoolean(true)
 
       val canceler = runtime.unsafeRunAsyncCancelable {
@@ -132,7 +130,7 @@ object UnsafeRun2 {
       InterruptAction(cancelerEffect)
     }
 
-    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => IO[E, A]): (Future[Exit[E, A]], InterruptAction[IO]) = {
+    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => ZIO[R, E, A]): (Future[Exit[E, A]], InterruptAction[ZIO[R, +_, +_]]) = {
       val p = scala.concurrent.Promise[Exit[E, A]]()
       val canceler = unsafeRunAsyncInterruptible(io)(p.success)
       (p.future, canceler)
