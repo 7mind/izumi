@@ -8,7 +8,6 @@ import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
-import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.model.{Locator, PlannerInput}
 import izumi.functional.Renderable
@@ -97,7 +96,7 @@ object Plan {
           val dependees = plan.plan.successors.links(k)
           val dependeesWithoutKeys = dependees.diff(keys)
           if (dependeesWithoutKeys.nonEmpty || plan.plan.noSuccessors.contains(k)) {
-            Seq((k, ImportDependency(k, dependeesWithoutKeys, plan.plan.meta.nodes(k).origin.value.toSynthetic)))
+            Seq((k, ExecutableOp.createImport(k, dependeesWithoutKeys, plan.plan.meta.nodes(k).origin.value.toSynthetic)))
           } else {
             Seq.empty
           }
@@ -148,9 +147,8 @@ object Plan {
       * @see [[distage.Injector#assert]] for a check you can use in tests
       */
     def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
-      val locatorRefKey = DIKey[LocatorRef]
       val nonMagicImports = plan.stepsUnordered.iterator.collect {
-        case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
+        case i: ImportDependency if !ignoredImports(i.target) => i
       }.toList
       NonEmptyList.from(nonMagicImports)
     }

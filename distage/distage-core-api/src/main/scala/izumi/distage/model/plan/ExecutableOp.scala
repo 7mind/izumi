@@ -6,6 +6,7 @@ import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.Wiring.SingletonWiring
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.plan.repr.{DIRendering, KeyFormatter, OpFormatter, TypeFormatter}
+import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey.ProxyInitKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.reflect.TagK
@@ -25,7 +26,25 @@ sealed abstract class ExecutableOp extends Product {
 object ExecutableOp {
 
   sealed trait SemiplanOp extends ExecutableOp
-  final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: EqualizedOperationOrigin) extends SemiplanOp
+  sealed trait ImportOp extends SemiplanOp
+
+  final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: EqualizedOperationOrigin) extends ImportOp
+
+  final case class AddRecursiveLocatorRef(references: Set[DIKey], origin: EqualizedOperationOrigin) extends ImportOp {
+    override def target: DIKey = AddRecursiveLocatorRef.magicLocatorKey
+  }
+
+  object AddRecursiveLocatorRef {
+    final val magicLocatorKey = DIKey.get[LocatorRef]
+  }
+
+  def createImport(target: DIKey, references: Set[DIKey], origin: EqualizedOperationOrigin): ImportOp = {
+    if (target == AddRecursiveLocatorRef.magicLocatorKey) {
+      AddRecursiveLocatorRef(references, origin)
+    } else {
+      ImportDependency(target, references, origin)
+    }
+  }
 
   sealed trait NonImportOp extends ExecutableOp
   sealed trait InstantiationOp extends SemiplanOp with NonImportOp {
@@ -111,7 +130,6 @@ object ExecutableOp {
 
   implicit final class ExecutableOpExt(private val op: ExecutableOp) extends AnyVal {
     @inline def instanceType: SafeType = opInstanceType(op)
-
   }
 
   @tailrec
@@ -123,7 +141,7 @@ object ExecutableOp {
         m.instanceTpe
       case p: MakeProxy =>
         opInstanceType(p.op)
-      case i @ (_: InitProxy | _: ImportDependency | _: CreateSet) =>
+      case i @ (_: InitProxy | _: ImportOp | _: CreateSet) =>
         i.target.tpe
     }
   }

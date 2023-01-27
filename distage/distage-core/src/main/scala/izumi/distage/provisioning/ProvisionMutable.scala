@@ -14,7 +14,6 @@ import izumi.reflect.TagK
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.mutable
-import scala.concurrent.duration.FiniteDuration
 
 final class ProvisionMutable[F[_]: TagK](
   val plan: Plan,
@@ -24,7 +23,10 @@ final class ProvisionMutable[F[_]: TagK](
   private val temporaryLocator = new LocatorDefaultImpl(plan, Option(parentContext), LocatorMeta.empty, this)
 
   private val locatorRef = new LocatorRef(new AtomicReference(Left(temporaryLocator)))
-  type OperationMetadata = FiniteDuration
+
+  def locatorInstance(): Seq[NewObjectOp] = {
+    Seq(NewObjectOp.NewImport(DIKey.get[LocatorRef], locatorRef))
+  }
 
   def makeFailure(state: TraversalState, fullStackTraces: Boolean): FailedProvision[F] = {
     val diag = if (state.failures.isEmpty) {
@@ -56,9 +58,7 @@ final class ProvisionMutable[F[_]: TagK](
     finalLocator
   }
 
-  override val instances: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any](
-    DIKey.get[LocatorRef] -> locatorRef
-  )
+  override val instances: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap.empty[DIKey, Any]
   override val imports: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any]()
   override val finalizers: mutable.ListBuffer[Finalizer[F]] = mutable.ListBuffer[Finalizer[F]]()
 
