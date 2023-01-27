@@ -2,7 +2,7 @@ package izumi.distage.planning
 
 import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.planning.AutoSetHook.AutoSetHookFilter
+import izumi.distage.planning.AutoSetHook.InclusionPredicate
 import izumi.reflect.Tag
 
 /**
@@ -14,18 +14,18 @@ import izumi.reflect.Tag
   */
 abstract class AutoSetModule(name: Option[String]) extends BootstrapModuleDef {
   def register[T: Tag]: AutoSetModule = {
-    registerOnly[T](AutoSetHookFilter.empty)
+    registerOnly[T](InclusionPredicate.IncludeAny)
   }
 
-  def registerOnly[T: Tag](filter: AutoSetHookFilter): AutoSetModule = {
+  def registerOnly[T: Tag](filter: InclusionPredicate): AutoSetModule = {
     name match {
       case Some(value) =>
         many[T].named(value)
-        many[PlanningHook].named(value).addValue(AutoSetHook[T, T](filter))
+        many[PlanningHook].named(value).addValue(AutoSetHook[T](filter))
 
       case None =>
         many[T]
-        many[PlanningHook].addValue(AutoSetHook[T, T](filter))
+        many[PlanningHook].addValue(AutoSetHook[T](filter))
 
     }
     this

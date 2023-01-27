@@ -581,6 +581,5 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
     assert(exc.getMessage.contains("related subtypes"))
     assert(exc.getMessage.contains("same type"))
-    println(exc.getMessage)
   }
 }

@@ -9,7 +9,7 @@ import izumi.distage.model.definition.{Binding, BootstrapModule, BootstrapModule
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.SafeType
-import izumi.distage.planning.AutoSetHook.AutoSetHookFilter
+import izumi.distage.planning.AutoSetHook.InclusionPredicate
 import izumi.distage.planning.AutoSetModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.bundled.BundledService
@@ -56,7 +56,7 @@ trait ModuleProvider { self =>
 
 object ModuleProvider {
 
-  private object AutoSetFilterBundledService extends AutoSetHookFilter {
+  private object AutoSetFilterBundledService extends InclusionPredicate {
     override def filter(b: Binding.ImplBinding): Boolean = {
       !(b.key.tpe <:< SafeType.get[BundledService])
     }

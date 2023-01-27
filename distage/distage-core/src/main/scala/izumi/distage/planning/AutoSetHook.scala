@@ -5,13 +5,15 @@ import izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.*
 import izumi.distage.model.reflection.DIKey.{SetElementKey, SetKeyMeta}
-import izumi.distage.planning.AutoSetHook.AutoSetHookFilter
+import izumi.distage.planning.AutoSetHook.InclusionPredicate
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 import izumi.reflect.Tag
 
 /**
   * A hook that will collect all implementations with types that are {{{_ <: T}}} into a `Set[T]` set binding
-  * available for summoning
+  * available for summoning.
+  *
+  * This class is not intended to be used directly, there is a convenience helper, [[AutoSetModule]].
   *
   * Usage:
   *
@@ -45,54 +47,17 @@ import izumi.reflect.Tag
   *     closeables.reverse.foreach(_.close())
   *   }
   * }}}
-  *
-  * Auto-Sets are NOT subject to Garbage Collection, they are assembled
-  * *after* garbage collection is done, as such they can't contain garbage by construction
-  * and they cannot be designated as GC root keys.
   */
-class AutoSetHook[INSTANCE: Tag, BINDING: Tag](protected val includeOnly: AutoSetHookFilter, protected val pos: CodePosition) extends PlanningHook {
+case class AutoSetHook[INSTANCE: Tag, BINDING: Tag](includeOnly: InclusionPredicate, pos: CodePosition) extends PlanningHook {
   protected val instanceType: SafeType = SafeType.get[INSTANCE]
   protected val setElementType: SafeType = SafeType.get[BINDING]
   protected val setKey: DIKey = DIKey.get[Set[BINDING]]
 
-  override def equals(obj: Any): Boolean = obj match {
-    case a: AutoSetHook[_, _] =>
-      a.instanceType == instanceType &&
-      a.setElementType == setElementType &&
-      a.setKey == setKey &&
-      a.includeOnly == includeOnly &&
-      a.pos == pos
-    case _ => false
-  }
-
-  override def hashCode(): Int = (includeOnly, pos, instanceType, setElementType, setKey).hashCode()
-
   override def hookDefinition(definition: ModuleBase): ModuleBase = {
-    val setMembers: Set[Binding.ImplBinding] = definition.bindings
-      .flatMap {
-        case i: ImplBinding =>
-          i.implementation match {
-            case implDef: ImplDef.DirectImplDef =>
-              val implType = implDef.implType
-              if (implType <:< setElementType) {
-                Some(i)
-              } else {
-                None
-              }
+    val setMembers = findMatchingBindings(definition)
 
-            case implDef: ImplDef.RecursiveImplDef =>
-              if (implDef.implType <:< setElementType) {
-                Some(i)
-              } else {
-                None
-              }
-          }
-        case _: EmptySetBinding[?] =>
-          None
-      }.filter(includeOnly.filter)
-
-    if (setMembers.isEmpty) {
-      definition
+    val elements = if (setMembers.isEmpty) {
+      Set.empty[Binding]
     } else {
       val elementOps: Set[Binding] = setMembers.flatMap {
         b =>
@@ -117,31 +82,65 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](protected val includeOnly: AutoSe
           }
       }
 
-      val ops: Set[Binding] = Set(EmptySetBinding(setKey, Set.empty, pos.position))
-      definition ++ ModuleBase.make(ops ++ elementOps)
+      elementOps
     }
 
+    val declareSet = definition ++ ModuleBase.make(Set(EmptySetBinding(setKey, Set.empty, pos.position)))
+    declareSet ++ ModuleBase.make(elements)
+  }
+
+  private def findMatchingBindings(definition: ModuleBase): Set[ImplBinding] = {
+    definition.bindings
+      .flatMap {
+        case i: ImplBinding =>
+          i.implementation match {
+            case implDef: ImplDef.DirectImplDef =>
+              val implType = implDef.implType
+              if (implType <:< setElementType) {
+                Some(i)
+              } else {
+                None
+              }
+
+            case implDef: ImplDef.RecursiveImplDef =>
+              if (implDef.implType <:< setElementType) {
+                Some(i)
+              } else {
+                None
+              }
+          }
+        case _: EmptySetBinding[?] =>
+          None
+      }
+      .filter(includeOnly.filter)
   }
 }
 
 object AutoSetHook {
-  trait AutoSetHookFilter {
+  trait InclusionPredicate {
     def filter(b: Binding.ImplBinding): Boolean
   }
-  object AutoSetHookFilter {
-    object empty extends AutoSetHookFilter {
+
+  object InclusionPredicate {
+    object IncludeAny extends InclusionPredicate {
       override def filter(b: ImplBinding): Boolean = true
     }
   }
-  def apply[INSTANCE: Tag, BINDING: Tag](includeOnly: AutoSetHookFilter)(implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, BINDING] = {
+
+  def apply[INSTANCE: Tag, BINDING: Tag](includeOnly: InclusionPredicate)(implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, BINDING] = {
     new AutoSetHook[INSTANCE, BINDING](includeOnly, pos.get)
   }
 
-  def apply[INSTANCE: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, INSTANCE] = {
-    new AutoSetHook(AutoSetHookFilter.empty, pos.get)
+  def apply[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, BINDING] = {
+    new AutoSetHook[INSTANCE, BINDING](InclusionPredicate.IncludeAny, pos.get)
   }
 
-  def apply[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, BINDING] = {
-    new AutoSetHook[INSTANCE, BINDING](AutoSetHookFilter.empty, pos.get)
+  def apply[INSTANCE: Tag](includeOnly: InclusionPredicate)(implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, INSTANCE] = {
+    new AutoSetHook(includeOnly, pos.get)
   }
+
+  def apply[INSTANCE: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, INSTANCE] = {
+    new AutoSetHook(InclusionPredicate.IncludeAny, pos.get)
+  }
+
 }
