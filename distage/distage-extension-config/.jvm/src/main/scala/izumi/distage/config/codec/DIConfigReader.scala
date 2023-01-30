@@ -1,15 +1,12 @@
 package izumi.distage.config.codec
 
 import com.typesafe.config.ConfigException.Missing
-import com.typesafe.config.{Config, ConfigValue}
-import izumi.distage.config.model.AppConfig
+import com.typesafe.config.ConfigValue
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.reflect.Tag
-import pureconfig.ConfigReader
-import pureconfig.error.ConfigReaderException
 
-import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
+import izumi.distage.config.DistageConfigImpl
 
 /**
   * Config reader that uses a [[pureconfig.ConfigReader pureconfig.ConfigReader]] implicit instance for a type
@@ -55,25 +52,20 @@ import scala.util.{Failure, Success, Try}
   *   }
   * }}}
   */
-trait DIConfigReader[A] {
-  def decodeConfigValue(configValue: ConfigValue): Try[A]
+trait DIConfigReader[A] extends AbstractDIConfigReader[A] {
+  protected def decodeConfigValue(configValue: ConfigValue): Try[A]
 
-  final def map[B](f: A => B): DIConfigReader[B] = decodeConfigValue(_).map(f)
-  final def flatMap[B](f: A => DIConfigReader[B]): DIConfigReader[B] = cv => decodeConfigValue(cv).flatMap(f(_).decodeConfigValue(cv))
+  final def decodeConfig(config: DistageConfigImpl): Try[A] = decodeConfigValue(config.root())
 
-  final def decodeAppConfig(path: String)(implicit tag: Tag[A]): AppConfig => A = {
-    appConfig => decodeConfig(path)(appConfig.config)
-  }
-
-  final def decodeConfig(path: String)(config: Config)(implicit tag: Tag[A]): A = {
+  final def decodeConfig(path: String)(config: DistageConfigImpl)(implicit tag: Tag[A]): A = {
     unpackResult(config, path)(decodeConfigValue(config.getValue(path)))
   }
 
-  final def decodeAppConfigWithDefault(path: String)(default: => A)(implicit tag: Tag[A]): AppConfig => A = {
-    appConfig => decodeConfigWithDefault(path)(default)(appConfig.config)
-  }
+  final def map[B](f: A => B): DIConfigReader[B] = decodeConfigValue(_).map(f)
 
-  final def decodeConfigWithDefault(path: String)(default: => A)(config: Config)(implicit tag: Tag[A]): A = {
+  final def flatMap[B](f: A => DIConfigReader[B]): DIConfigReader[B] = cv => decodeConfigValue(cv).flatMap(f(_).decodeConfigValue(cv))
+
+  final def decodeConfigWithDefault(path: String)(default: => A)(config: DistageConfigImpl)(implicit tag: Tag[A]): A = {
     try {
       val cv = config.getValue(path)
       unpackResult(config, path)(decodeConfigValue(cv))
@@ -82,7 +74,7 @@ trait DIConfigReader[A] {
     }
   }
 
-  private[this] def unpackResult[T: Tag](config: Config, path: String)(t: => Try[T]): T = {
+  private[this] def unpackResult[T: Tag](config: DistageConfigImpl, path: String)(t: => Try[T]): T = {
     Try(t).flatten match {
       case Failure(exception) =>
         throw new DIConfigReadException(
@@ -100,23 +92,7 @@ trait DIConfigReader[A] {
   }
 }
 
-object DIConfigReader extends LowPriorityDIConfigReaderInstances {
+object DIConfigReader extends LowPriorityDIConfigReaderInstances2 {
   @inline def apply[T: DIConfigReader]: DIConfigReader[T] = implicitly
 
-  def derived[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] =
-    DIConfigReader.deriveFromPureconfigConfigReader[T](implicitly, dec.value)
-
-  implicit def deriveFromPureconfigConfigReader[T: ClassTag](implicit dec: ConfigReader[T]): DIConfigReader[T] = {
-    cv =>
-      dec.from(cv) match {
-        case Left(errs) => Failure(ConfigReaderException[T](errs))
-        case Right(value) => Success(value)
-      }
-  }
-}
-
-sealed trait LowPriorityDIConfigReaderInstances {
-  implicit final def deriveFromPureconfigAutoDerive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] = {
-    DIConfigReader.deriveFromPureconfigConfigReader(implicitly, dec.value)
-  }
 }

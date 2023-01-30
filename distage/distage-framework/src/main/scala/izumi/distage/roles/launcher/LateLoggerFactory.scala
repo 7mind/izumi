@@ -1,6 +1,5 @@
 package izumi.distage.roles.launcher
 
-import com.typesafe.config.Config
 import distage.{Id, Lifecycle}
 import distage.config.{AppConfig, DIConfigReader}
 import izumi.distage.roles.launcher.LateLoggerFactory.DistageAppLogging
@@ -62,7 +61,7 @@ object LateLoggerFactory {
     final def makeLateLogRouter(): Lifecycle[Identity, DistageAppLogging] = makeLateLogRouter(_.foreach(_.close()))
 
     final def makeLateLogRouter(onClose: List[AutoCloseable] => Unit): Lifecycle[Identity, DistageAppLogging] = {
-      val logconf = readConfig(config.config)
+      val logconf = readConfig(config)
       val isJson = cliOptions.json || logconf.json.contains(true)
       val options = logconf.options.getOrElse(RenderingOptions.default)
       val jul = logconf.jul.getOrElse(true)
@@ -124,12 +123,12 @@ object LateLoggerFactory {
       router
     }
 
-    private[this] def readConfig(config: Config): SinksConfig = {
-      Try(config.getConfig("logger")).toEither.left
+    private[this] def readConfig(config: AppConfig): SinksConfig = {
+      Try(config.config.getConfig("logger")).toEither.left
         .map(_ => Message("No `logger` section in config. Using defaults."))
         .flatMap {
           config =>
-            SinksConfig.configReader.decodeConfigValue(config.root).toEither.left.map {
+            SinksConfig.configReader.decodeConfig(config).toEither.left.map {
               exception =>
                 Message(s"Failed to parse `logger` config section into ${classOf[SinksConfig] -> "type"}. Using defaults. $exception")
             }
