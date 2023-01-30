@@ -108,18 +108,18 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       )
     }
 
-    report.warning(
-      s"""ConstructorUtil:fun=${argsLambda.show}
-         |funType=${argsLambda.asTerm.tpe}
-         |funSym=${argsLambda.asTerm.symbol}
-         |funTypeSym=${argsLambda.asTerm.tpe.typeSymbol}
-         |funTypeSymBases=${argsLambda.asTerm.tpe.baseClasses}
-         |params=${params.map(p => s"$p:symbol-annos(${p.mbSymbol.map(s => s -> s.annotations)})")}
-         |outputType=${Type.show[R]}
-         |rawOutputType=(${TypeRepr.of[R]})
-         |providerType=${providerType.show}
-         |produced=${out.show}""".stripMargin
-    )
+//    report.warning(
+//      s"""ConstructorUtil:fun=${argsLambda.show}
+//         |funType=${argsLambda.asTerm.tpe}
+//         |funSym=${argsLambda.asTerm.symbol}
+//         |funTypeSym=${argsLambda.asTerm.tpe.typeSymbol}
+//         |funTypeSymBases=${argsLambda.asTerm.tpe.baseClasses}
+//         |params=${params.map(p => s"$p:symbol-annos(${p.mbSymbol.map(s => s -> s.annotations)})")}
+//         |outputType=${Type.show[R]}
+//         |rawOutputType=(${TypeRepr.of[R]})
+//         |providerType=${providerType.show}
+//         |produced=${out.show}""".stripMargin
+//    )
 
     out
   }

@@ -92,26 +92,27 @@ object TraitConstructorMacro {
     {
       given Printer[Tree] = Printer.TreeStructure
       val resultTpeSym = resultTpeSyms.head
-      report.warning(
-        s"""|tpe = $resultTpe
-            |symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
-            |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
-            |fields = ${resultTpeSym.fieldMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
-            |methodsDecls = $methodDecls
-            |refinementMethods = ${context.refinementMethods}
-            |tree = ${resultTpeSym.tree}
-            |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
-            |pct  = ${resultTpeSym.primaryConstructor.tree}
-            |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
-            |pctt = ${resultTpe.memberType(resultTpeSym.primaryConstructor)}
-            |pcts = ${resultTpe.baseClasses
-             .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
-             .mkString("\n")}
-            |defn = ${resultTpeSym.tree.show}
-            |lam  = ${lamExpr.asTerm}
-            |lam  = ${lamExpr.show}
-            |""".stripMargin
-      )
+      
+//      report.warning(
+//        s"""|tpe = $resultTpe
+//            |symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
+//            |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
+//            |fields = ${resultTpeSym.fieldMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
+//            |methodsDecls = $methodDecls
+//            |refinementMethods = ${context.refinementMethods}
+//            |tree = ${resultTpeSym.tree}
+//            |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
+//            |pct  = ${resultTpeSym.primaryConstructor.tree}
+//            |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
+//            |pctt = ${resultTpe.memberType(resultTpeSym.primaryConstructor)}
+//            |pcts = ${resultTpe.baseClasses
+//             .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
+//             .mkString("\n")}
+//            |defn = ${resultTpeSym.tree.show}
+//            |lam  = ${lamExpr.asTerm}
+//            |lam  = ${lamExpr.show}
+//            |""".stripMargin
+//      )
     }
 
     val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Trait })

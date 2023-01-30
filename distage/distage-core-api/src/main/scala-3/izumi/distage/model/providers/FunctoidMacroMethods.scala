@@ -77,16 +77,18 @@ object FunctoidMacro {
     def make[R: Type](fun: Expr[AnyRef]): Expr[Functoid[R]] = {
       val parameters = analyze(fun.asTerm)
       val out = generateFunctoid[R](parameters, fun)
-      report.warning(
-        s"""fun=${fun.show}
-           |funType=${fun.asTerm.tpe}
-           |funSym=${fun.asTerm.symbol}
-           |funTypeSym=${fun.asTerm.tpe.typeSymbol}
-           |funTypeSymBases=${fun.asTerm.tpe.baseClasses}
-           |outputType=${Type.show[R]}
-           |rawOutputType=(${TypeRepr.of[R]})
-           |produced=${out.show}""".stripMargin
-      )
+      
+//      report.warning(
+//        s"""fun=${fun.show}
+//           |funType=${fun.asTerm.tpe}
+//           |funSym=${fun.asTerm.symbol}
+//           |funTypeSym=${fun.asTerm.tpe.typeSymbol}
+//           |funTypeSymBases=${fun.asTerm.tpe.baseClasses}
+//           |outputType=${Type.show[R]}
+//           |rawOutputType=(${TypeRepr.of[R]})
+//           |produced=${out.show}""".stripMargin
+//      )
+      
       out
     }
 
