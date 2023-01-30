@@ -17,8 +17,9 @@ import logstage.{ConfigurableLogRouter, ConsoleSink, IzLogger, QueueingSink}
 
 import scala.util.Try
 
-trait LateLoggerFactory {
+trait LateLoggerFactory  {
   def makeLateLogRouter(onClose: List[AutoCloseable] => Unit): Lifecycle[Identity, DistageAppLogging]
+
   def makeLateLogRouter(): Lifecycle[Identity, DistageAppLogging]
 }
 

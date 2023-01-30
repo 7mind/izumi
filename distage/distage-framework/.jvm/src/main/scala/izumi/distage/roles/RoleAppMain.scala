@@ -125,13 +125,14 @@ abstract class RoleAppMain[F[_]](
   /** @see [[izumi.distage.roles.RoleAppBootModule]] for initial values */
   def roleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = {
     new RoleAppBootModule[F](
-      args = argv,
-      requiredRoles = additionalRoles,
       shutdownStrategy = shutdownStrategy,
       pluginConfig = pluginConfig,
       bootstrapPluginConfig = bootstrapPluginConfig,
       appArtifact = artifact.get,
       unusedValidAxisChoices,
+    ) ++ new RoleAppBootArgsModule(
+      args = argv,
+      requiredRoles = additionalRoles,
     )
   }
 

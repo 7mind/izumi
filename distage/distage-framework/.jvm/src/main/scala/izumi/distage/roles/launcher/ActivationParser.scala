@@ -8,12 +8,12 @@ import izumi.distage.roles.{DebugProperties, RoleAppMain}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
 
+
 /**
   * Note, besides replacing this class, activation parsing strategy can also be changed by using bootstrap modules or plugins
   * and adding an override for `make[Activation].named("roleapp")` to [[izumi.distage.roles.RoleAppMain#appModuleOverrides]]
   */
-trait ActivationParser {
-  def parseActivation(): Activation
+trait ActivationParser extends AbstractActivationParser {
 }
 
 object ActivationParser {

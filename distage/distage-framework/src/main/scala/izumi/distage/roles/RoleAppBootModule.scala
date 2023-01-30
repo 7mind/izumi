@@ -1,8 +1,6 @@
 package izumi.distage.roles
 
 import izumi.distage.InjectorFactory
-import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.*
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
@@ -14,17 +12,14 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
-import izumi.distage.roles.RoleAppMain.{ArgV, RequiredRoles}
 import izumi.distage.roles.launcher.*
 import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
-import izumi.distage.roles.launcher.LateLoggerFactory.DistageAppLogging
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
 import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.logger.LogRouter
-import izumi.logstage.api.{IzLogger, Log}
+import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
 /**
@@ -49,19 +44,17 @@ import izumi.reflect.TagK
   * 16. Shutdown executors
   */
 class RoleAppBootModule[F[_]: TagK: DefaultModule](
-  args: ArgV,
-  requiredRoles: RequiredRoles,
   shutdownStrategy: AppShutdownStrategy[F],
   pluginConfig: PluginConfig,
   bootstrapPluginConfig: PluginConfig,
   appArtifact: IzArtifact,
   unusedValidAxisChoices: Set[Axis.AxisChoice],
 ) extends ModuleDef {
+  include(new RoleAppBootConfigModule[F]())
+  include(new RoleAppBootLoggerModule[F]())
+
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
-
-  make[ArgV].fromValue(args)
-  make[RequiredRoles].fromValue(requiredRoles)
 
   make[AppShutdownInitiator].using[AppShutdownStrategy[F]]
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
@@ -72,43 +65,8 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   make[CLIParser].from[CLIParserImpl]
   make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
-  make[AppArgsInterceptor].from[AppArgsInterceptor.Impl]
-
-  make[RawAppArgs].from {
-    (parser: CLIParser, args: ArgV, handler: ParserFailureHandler, interceptor: AppArgsInterceptor, additionalRoles: RequiredRoles) =>
-      parser.parse(args.args) match {
-        case Left(error) =>
-          handler.onParserError(error)
-        case Right(args) =>
-          interceptor.rolesToLaunch(args, additionalRoles)
-      }
-  }
 
   many[LibraryReference]
-
-  make[CLILoggerOptionsReader].from[CLILoggerOptionsReader.CLILoggerOptionsReaderImpl]
-  make[CLILoggerOptions].from {
-    (reader: CLILoggerOptionsReader) =>
-      reader.read()
-  }
-  make[EarlyLoggerFactory].from[EarlyLoggerFactory.EarlyLoggerFactoryImpl]
-  make[LateLoggerFactory].from[LateLoggerFactory.LateLoggerFactoryImpl]
-
-  make[Log.Level].named("early").fromValue(Log.Level.Info)
-  make[IzLogger].named("early").from {
-    (factory: EarlyLoggerFactory, banner: StartupBanner) =>
-      val logger = factory.makeEarlyLogger()
-      banner.showBanner(logger)
-      logger
-  }
-  make[DistageAppLogging].fromResource {
-    (factory: LateLoggerFactory) =>
-      factory.makeLateLogRouter()
-  }
-  make[LogRouter].from {
-    (logging: DistageAppLogging) =>
-      logging.router
-  }
 
   make[IzLogger].from {
     (router: LogRouter) =>
@@ -121,14 +79,6 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
     .named("bootstrap")
     .aliased[PluginLoader]("main")
     .from[PluginLoaderDefaultImpl]
-
-  make[ConfigLoader].from[ConfigLoader.LocalFSImpl]
-  make[ConfigLoader.ConfigLocation].from(ConfigLoader.ConfigLocation.Default)
-  make[ConfigLoader.Args].from(ConfigLoader.Args.makeConfigLoaderArgs _)
-  make[AppConfig].from {
-    (configLoader: ConfigLoader) =>
-      configLoader.loadConfig()
-  }
 
   make[LoadedPlugins].named("bootstrap").from {
     (loader: PluginLoader @Id("bootstrap"), config: PluginConfig @Id("bootstrap")) =>
@@ -183,20 +133,6 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[ActivationInfo].from {
     (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>
       activationExtractor.findAvailableChoices(appModule)
-  }
-
-  make[RoleAppActivationParser].from[RoleAppActivationParser.Impl]
-  make[ActivationParser].from[ActivationParser.Impl]
-  make[Activation].named("roleapp").from {
-    (parser: ActivationParser) =>
-      parser.parseActivation()
-  }
-
-  make[PlanningOptions].from {
-    (parameters: RawAppArgs) =>
-      PlanningOptions(
-        addGraphVizDump = parameters.globalParameters.hasFlag(RoleAppMain.Options.dumpContext)
-      )
   }
 
   make[Option[LocatorRef]].named("roleapp").from(Some(_: LocatorRef))
