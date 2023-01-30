@@ -1,7 +1,5 @@
 package izumi.distage.framework.services
 
-import java.io.{File, FileNotFoundException}
-
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigLoaderException, ConfigSource, ResourceConfigKind}
@@ -12,11 +10,14 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
-import scala.jdk.CollectionConverters._
+import java.io.{File, FileNotFoundException}
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
+
+
 
 /**
   * Default config resources:
@@ -50,16 +51,14 @@ import scala.util.{Failure, Success, Try}
   * @see [[ConfigLoader.ConfigLocation]]
   * @see [[ConfigLoader.LocalFSImpl]]
   */
-trait ConfigLoader {
-  def loadConfig(): AppConfig
+trait ConfigLoader extends AbstractConfigLoader {
 
-  final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(loadConfig())
 }
 
 object ConfigLoader {
   def empty: ConfigLoader = () => AppConfig(ConfigFactory.empty())
 
-  import scala.collection.compat._
+  import scala.collection.compat.*
 
   trait ConfigLocation {
     def forRole(roleName: String): Seq[ConfigSource] = ConfigLocation.defaultConfigReferences(roleName)

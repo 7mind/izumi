@@ -1,14 +1,15 @@
 package izumi.distage.roles.bundled
 
 import izumi.distage.framework.model.ActivationInfo
-import izumi.functional.quasi.QuasiIO
 import izumi.distage.roles.bundled.ConfigWriter.Options
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import izumi.fundamentals.platform.cli.model.schema._
+import izumi.fundamentals.platform.cli.model.schema.*
+import izumi.fundamentals.platform.strings.IzString.*
+
 import scala.annotation.unused
-import izumi.fundamentals.platform.strings.IzString._
 
 class Help[F[_]](
   roleInfo: RolesInfo,
