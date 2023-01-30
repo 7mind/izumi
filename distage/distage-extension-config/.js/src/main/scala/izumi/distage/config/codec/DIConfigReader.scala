@@ -27,4 +27,6 @@ object DIConfigReader {
 
   def derived[T: ClassTag]: DIConfigReader[T] = ???
 
+  implicit final def todo[T: ClassTag]: DIConfigReader[T] = ???
+
 }
