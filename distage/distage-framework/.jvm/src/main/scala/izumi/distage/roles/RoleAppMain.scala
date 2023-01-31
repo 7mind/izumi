@@ -59,6 +59,8 @@ abstract class RoleAppMain[F[_]](
     *
     * @see [[izumi.distage.roles.RoleAppBootModule]] for initial values of [[roleAppBootModule]]
     *
+    * @note Bootstrap Injector will always run under Identity, other effects (cats.effect.IO, zio.IO) are not available at this stage.
+    *
     * @note The components added here are visible during the creation of the app, but *not inside* the app,
     *       to override components *inside* the app, use `pluginConfig` & [[izumi.distage.plugins.PluginConfig#overriddenBy]]:
     *
@@ -80,7 +82,7 @@ abstract class RoleAppMain[F[_]](
     try {
       Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
         (appResource: AppResource[F]) =>
-          appResource.runApp()
+          appResource.resource.use(_.run())
       }
     } catch {
       case t: Throwable =>

@@ -1,16 +1,41 @@
 package izumi.functional.quasi
 
-import scala.annotation.unused
+import cats.effect.IO
+import izumi.functional.bio.{Exit, UnsafeRun2}
+import izumi.fundamentals.platform.functional.Identity
 
-/** Scala.js does not support running effects synchronously */
-trait QuasiIORunner[F[_]]
-object QuasiIORunner {
+import scala.concurrent.Future
+
+/**
+  * Scala.js does not support running effects synchronously so only async interface is available
+  */
+trait QuasiIORunner[F[_]] {
+  def runFuture[A](f: => F[A]): Future[A]
+
+}
+object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
   @inline def apply[F[_]](implicit ev: QuasiIORunner[F]): QuasiIORunner[F] = ev
 
-  def mkFromCatsDispatcher[F[_]](@unused dispatcher: cats.effect.std.Dispatcher[F]): QuasiIORunner[F] = forAny[F]
-  def mkFromCatsIORuntime(@unused ioRuntime: cats.effect.unsafe.IORuntime): QuasiIORunner[cats.effect.IO] = forAny[cats.effect.IO]
+  implicit object IdentityImpl extends QuasiIORunner[Identity] {
+    override def runFuture[A](f: => Identity[A]): Future[A] = Future.successful(f)
+  }
 
-  class BIOImpl[F[_, _]] extends QuasiIORunner[F[Throwable, _]]
+  final class BIOImpl[F[_, _]: UnsafeRun2] extends QuasiIORunner[F[Throwable, _]] {
+    import scala.concurrent.ExecutionContext.Implicits.global
 
-  implicit def forAny[F[_]]: QuasiIORunner[F] = new QuasiIORunner[F] {}
+    override def runFuture[A](f: => F[Throwable, A]): Future[A] = UnsafeRun2[F].unsafeRunFuture(f).flatMap {
+      case Exit.Success(value) =>
+        Future.successful(value)
+      case failure: Exit.Failure[Throwable] @unchecked =>
+        Future.failed(failure.toThrowable(t => t))
+    }
+  }
+
+  final class CatsIOImpl(implicit ioRuntime: cats.effect.unsafe.IORuntime) extends QuasiIORunner[cats.effect.IO] {
+    override def runFuture[A](f: => IO[A]): Future[A] = f.unsafeToFuture()
+  }
+
+  final class CatsDispatcherImpl[F[_]](implicit dispatcher: cats.effect.std.Dispatcher[F]) extends QuasiIORunner[F] {
+    override def runFuture[A](f: => F[A]): Future[A] = dispatcher.unsafeToFuture(f)
+  }
 }

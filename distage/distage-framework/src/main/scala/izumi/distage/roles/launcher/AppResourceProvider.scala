@@ -17,9 +17,7 @@ trait AppResourceProvider[F[_]] {
 
 object AppResourceProvider {
 
-  final case class AppResource[F[_]](resource: Lifecycle[Identity, PreparedApp[F]]) extends AnyVal {
-    def runApp(): Unit = resource.use(_.run())
-  }
+  final case class AppResource[F[_]](resource: Lifecycle[Identity, PreparedApp[F]]) extends AnyVal
 
   final case class FinalizerFilters[F[_]](
     filterF: FinalizerFilter[F],

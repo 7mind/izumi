@@ -45,36 +45,6 @@ object UnsafeRun2 {
     */
   final case class InterruptAction[F[_, _]](interrupt: F[Nothing, Unit]) extends AnyVal
 
-//  class MonixBIORunner(val s: Scheduler, val opts: monix.bio.IO.Options) extends UnsafeRun2[monix.bio.IO] {
-//    override def unsafeRun[E, A](io: => bio.IO[E, A]): A = {
-//      io.leftMap(TypedError(_)).runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
-//    }
-//    override def unsafeRunSync[E, A](io: => bio.IO[E, A]): Exit[E, A] = {
-//      io.sandboxExit.runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
-//    }
-//    override def unsafeRunAsync[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): Unit = {
-//      io.runAsyncOpt(exit => callback(Exit.MonixExit.toExit(exit)))(s, opts); ()
-//    }
-//    override def unsafeRunAsyncAsFuture[E, A](io: => bio.IO[E, A]): Future[Exit[E, A]] = {
-//      val p = scala.concurrent.Promise[Exit[E, A]]()
-//      unsafeRunAsync(io)(p.success)
-//      p.future
-//    }
-//    override def unsafeRunAsyncInterruptible[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[bio.IO] = {
-//      val canceler = io.runAsyncOptF {
-//        case Left(e) => callback(Exit.MonixExit.toExit(e))
-//        case Right(value) => callback(Exit.Success(value))
-//      }(s, opts)
-//      InterruptAction(canceler)
-//    }
-//
-//    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => bio.IO[E, A]): (Future[Exit[E, A]], InterruptAction[bio.IO]) = {
-//      val p = scala.concurrent.Promise[Exit[E, A]]()
-//      val canceler = unsafeRunAsyncInterruptible(io)(p.success)
-//      (p.future, canceler)
-//    }
-//  }
-
   sealed trait FailureHandler
   object FailureHandler {
     case object Default extends FailureHandler
@@ -173,8 +143,39 @@ object UnsafeRun2 {
 
   }
 
-  final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
 
+  //  class MonixBIORunner(val s: Scheduler, val opts: monix.bio.IO.Options) extends UnsafeRun2[monix.bio.IO] {
+  //    override def unsafeRun[E, A](io: => bio.IO[E, A]): A = {
+  //      io.leftMap(TypedError(_)).runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
+  //    }
+  //    override def unsafeRunSync[E, A](io: => bio.IO[E, A]): Exit[E, A] = {
+  //      io.sandboxExit.runSyncUnsafeOpt()(s, opts, implicitly, implicitly)
+  //    }
+  //    override def unsafeRunAsync[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): Unit = {
+  //      io.runAsyncOpt(exit => callback(Exit.MonixExit.toExit(exit)))(s, opts); ()
+  //    }
+  //    override def unsafeRunAsyncAsFuture[E, A](io: => bio.IO[E, A]): Future[Exit[E, A]] = {
+  //      val p = scala.concurrent.Promise[Exit[E, A]]()
+  //      unsafeRunAsync(io)(p.success)
+  //      p.future
+  //    }
+  //    override def unsafeRunAsyncInterruptible[E, A](io: => bio.IO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[bio.IO] = {
+  //      val canceler = io.runAsyncOptF {
+  //        case Left(e) => callback(Exit.MonixExit.toExit(e))
+  //        case Right(value) => callback(Exit.Success(value))
+  //      }(s, opts)
+  //      InterruptAction(canceler)
+  //    }
+  //
+  //    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => bio.IO[E, A]): (Future[Exit[E, A]], InterruptAction[bio.IO]) = {
+  //      val p = scala.concurrent.Promise[Exit[E, A]]()
+  //      val canceler = unsafeRunAsyncInterruptible(io)(p.success)
+  //      (p.future, canceler)
+  //    }
+  //  }
+
+
+  final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
     @nowarn("msg=deprecated")
     private val parentGroup =
       Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
