@@ -23,6 +23,7 @@ jobs:
           echo "HAVE_SECRETS=${{ env.OPENSSL_IV != '' && env.OPENSSL_KEY != '' }}" >> $GITHUB_OUTPUT
   build:
     runs-on: ubuntu-latest
+    needs: [ 'checksecret' ]
     strategy:
       matrix:
         java: [ '11', '17' ]
