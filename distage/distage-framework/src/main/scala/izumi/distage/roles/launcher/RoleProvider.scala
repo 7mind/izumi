@@ -15,6 +15,8 @@ import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
 
+import scala.annotation.unused
+
 trait RoleProvider {
   def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo
 }
@@ -82,7 +84,7 @@ object RoleProvider {
       }
     }
 
-    protected def handleMissingStaticMetadata(roleType: SafeType, s: ImplBinding): RoleBinding = {
+    protected def handleMissingStaticMetadata(@unused roleType: SafeType, s: ImplBinding): RoleBinding = {
       logger.crit(s"${s.key -> "role"} defined ${s.origin -> "at"} has no RoleDescriptor, companion reflection is disabled")
       throw new DIAppBootstrapException(s"role=${s.key} defined at=${s.origin} has no RoleDescriptor, companion reflection is disabled")
     }
