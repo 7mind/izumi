@@ -1,6 +1,6 @@
--Xmx3G
+-Xmx4G
 -XX:ReservedCodeCacheSize=256M
--XX:MaxMetaspaceSize=2560M
+-XX:MaxMetaspaceSize=512M
 
 -XX:+OmitStackTraceInFastThrow
 -XX:SoftRefLRUPolicyMSPerMB=50
