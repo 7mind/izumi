@@ -13,10 +13,10 @@ object ZIOCatsEffectInstancesModule {
 /**
   * Adds `cats-effect` typeclass instances for ZIO
   *
-  * Depends on `zio.Runtime[Any]` and `ThreadPoolExecutor @Id("zio.io")` (both can be found in [[izumi.distage.modules.support.ZIOSupportModule]])
+  * Depends on `zio.Runtime[Any]` and `ThreadPoolExecutor @Id("io")` (both can be found in [[izumi.distage.modules.support.ZIOSupportModule]])
   *
   * Will also add the following components:
-  *   - [[cats.effect.Blocker]] by using `ThreadPoolExecutor @Id("zio.io")`
+  *   - [[cats.effect.Blocker]] by using `ThreadPoolExecutor @Id("io")`
   */
 class ZIOCatsEffectInstancesModule[R: Tag] extends ModuleDef {
   include(CatsEffectInstancesModule[ZIO[R, Throwable, +_]])

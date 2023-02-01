@@ -17,9 +17,9 @@ object ZIOSupportModule {
   *  - Adds [[izumi.functional.bio]] typeclass instances for ZIO
   *
   * Will also add the following components:
-  *   - `ThreadPoolExecutor @Id("zio.cpu")` for CPU-bound tasks (will be used for all tasks by default by [[zio.Runtime]])
-  *   - `ThreadPoolExecutor @Id("zio.io")` and blocking IO tasks (tasks can be scheduled to it via [[izumi.functional.bio.BlockingIO]] or [[zio.blocking.blocking]])
-  *   - `ExecutionContext @Id("zio.cpu")` & `ExecutionContext @Id("zio.io")` respectively
+  *   - `ThreadPoolExecutor @Id("cpu")` for CPU-bound tasks (will be used for all tasks by default by [[zio.Runtime]])
+  *   - `ThreadPoolExecutor @Id("io")` and blocking IO tasks (tasks can be scheduled to it via [[izumi.functional.bio.BlockingIO]] or [[zio.blocking.blocking]])
+  *   - `ExecutionContext @Id("cpu")` & `ExecutionContext @Id("io")` respectively
   *   - [[zio.internal.tracing.TracingConfig]] will be set to [[zio.internal.tracing.TracingConfig.enabled]] by default
   *   - Standard ZIO services: [[zio.console.Console]], [[zio.clock.Clock]], [[zio.system.System]], [[zio.random.Random]] and corresponding `.Service` types
   *

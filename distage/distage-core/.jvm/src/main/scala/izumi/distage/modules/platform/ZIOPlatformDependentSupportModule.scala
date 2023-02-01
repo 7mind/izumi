@@ -28,14 +28,14 @@ private[modules] abstract class ZIOPlatformDependentSupportModule[R: Tag] extend
 
   make[zio.blocking.Blocking].from(Has(_: Blocking.Service))
   make[zio.blocking.Blocking.Service].from {
-    (blockingPool: ThreadPoolExecutor @Id("zio.io")) =>
+    (blockingPool: ThreadPoolExecutor @Id("io")) =>
       new Blocking.Service {
         override val blockingExecutor: Executor = Executor.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
       }
   }
 
   make[ZIORunner[R]].from {
-    (cpuPool: ThreadPoolExecutor @Id("zio.cpu"), handler: FailureHandler, tracingConfig: TracingConfig, initialEnv: R @Id("zio-initial-env")) =>
+    (cpuPool: ThreadPoolExecutor @Id("cpu"), handler: FailureHandler, tracingConfig: TracingConfig, initialEnv: R @Id("zio-initial-env")) =>
       UnsafeRun2.createZIO(
         cpuPool = cpuPool,
         handler = handler,
@@ -48,19 +48,16 @@ private[modules] abstract class ZIOPlatformDependentSupportModule[R: Tag] extend
   make[Runtime[R]].from((_: ZIORunner[R]).runtime)
   make[Platform].from((_: Runtime[R]).platform)
 
-  make[ThreadPoolExecutor].named("zio.cpu").fromResource {
+  make[ThreadPoolExecutor].named("cpu").fromResource {
     () =>
       val coresOr2 = java.lang.Runtime.getRuntime.availableProcessors() max 2
       Lifecycle.fromExecutorService(Executors.newFixedThreadPool(coresOr2).asInstanceOf[ThreadPoolExecutor])
   }
-  make[ThreadPoolExecutor].named("zio.io").fromResource {
+  make[ThreadPoolExecutor].named("io").fromResource {
     () =>
       Lifecycle.fromExecutorService(Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
   }
 
-  make[ExecutionContext].named("zio.cpu").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.cpu")))
-  make[ExecutionContext].named("zio.io").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.io")))
-
-  make[ExecutionContext].named("cpu").using[ExecutionContext]("zio.cpu")
-  make[ExecutionContext].named("io").using[ExecutionContext]("zio.io")
+  make[ExecutionContext].named("cpu").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("cpu")))
+  make[ExecutionContext].named("io").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("io")))
 }

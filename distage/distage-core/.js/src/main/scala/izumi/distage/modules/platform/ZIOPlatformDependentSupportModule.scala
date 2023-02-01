@@ -21,5 +21,5 @@ private[modules] abstract class ZIOPlatformDependentSupportModule[R: Tag] extend
   make[Runtime[R]].from((initialEnv: R @Id("zio-initial-env")) => zio.Runtime.default.map(_ => initialEnv))
   make[Platform].from((_: Runtime[R]).platform)
 
-  make[ExecutionContext].named("zio.cpu").from((_: Platform).executor.asEC)
+  make[ExecutionContext].named("cpu").from((_: Platform).executor.asEC)
 }
