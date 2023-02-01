@@ -10,6 +10,17 @@ on:
     branches: [ "develop" ]
 
 jobs:
+  checksecret:
+    runs-on: ubuntu-latest
+    outputs:
+      HAVE_SECRETS: ${{ steps.checksecret_job.outputs.HAVE_SECRETS }}
+    steps:
+      - id: checksecret_job
+        env:
+          OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
+          OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
+        run: |
+          echo "HAVE_SECRETS=${{ env.OPENSSL_IV != '' && env.OPENSSL_KEY != '' }}" >> $GITHUB_OUTPUT
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -26,7 +37,7 @@ jobs:
           bash sbtgen.sc --js
           bash .build.sh ${{ matrix.scala }} coverage
       - uses: dorny/test-reporter@v1
-        if: success() || failure()
+        if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         continue-on-error: ${{ matrix.scala == '3' }}
         with:
           name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }})
@@ -34,6 +45,7 @@ jobs:
           reporter: java-junit
           fail-on-error: ${{ matrix.scala != '3' }}
       - uses: codecov/codecov-action@v3
+        if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
         with:
           token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos but works unreliable without it
           verbose: true # optional (default = false)
@@ -56,17 +68,6 @@ jobs:
         run: |
           bash sbtgen.sc --js 
           bash .build.sh ${{ matrix.scala }} site-test
-  checksecret:
-    runs-on: ubuntu-latest
-    outputs:
-      HAVE_SECRETS: ${{ steps.checksecret_job.outputs.HAVE_SECRETS }}
-    steps:
-      - id: checksecret_job
-        env:
-          OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
-          OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
-        run: |
-          echo "HAVE_SECRETS=${{ env.OPENSSL_IV != '' && env.OPENSSL_KEY != '' }}" >> $GITHUB_OUTPUT
   publish-site:
     runs-on: ubuntu-latest
     strategy:
