@@ -1,15 +1,15 @@
-package izumi.distage.roles.test
+package izumi.distage.roles
 
 import distage.Injector
-import izumi.distage.model.definition.{Axis, Module}
+import izumi.distage.framework.config.PlanningOptions
+import izumi.distage.model.definition.{Activation, Axis, Module, ModuleDef}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.roles.RoleAppBootModule
+import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
-import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
-import izumi.distage.roles.test.RoleAppMain.ArgV
+import izumi.distage.roles.launcher.AppShutdownStrategy
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.raw.{RawRoleParams, RequiredRoles}
+import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawRoleParams, RequiredRoles}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.reflect.TagK
@@ -60,22 +60,26 @@ abstract class RoleAppMain[F[_]](
   }
 
   /** @see [[izumi.distage.roles.RoleAppBootModule]] for initial values */
-  def roleAppBootModule(@unused argv: ArgV, @unused additionalRoles: RequiredRoles): Module = {
+  def roleAppBootModule(@unused argv: ArgV, additionalRoles: RequiredRoles): Module = {
     new RoleAppBootModule[F](
       shutdownStrategy = shutdownStrategy,
       pluginConfig = pluginConfig,
       bootstrapPluginConfig = bootstrapPluginConfig,
       appArtifact = artifact.get,
       unusedValidAxisChoices,
-    ) /*++ new RoleAppBootArgsModule(
-      args = argv,
-      requiredRoles = additionalRoles,
-    )*/
+    ) ++ new ModuleDef {
+      make[RawAppArgs].fromValue(RawAppArgs(RawEntrypointParams.empty, additionalRoles.requiredRoles))
+      make[PlanningOptions].fromValue(planningOptions())
+      make[Activation].named("roleapp").fromValue(activation())
+    }
   }
 
-  protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
-    AppFailureHandler.NullHandler
-  }
+  def planningOptions(): PlanningOptions = PlanningOptions()
+
+  def activation(): Activation = Activation.empty
+//  protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
+//    AppFailureHandler.NullHandler
+//  }
 
 }
 

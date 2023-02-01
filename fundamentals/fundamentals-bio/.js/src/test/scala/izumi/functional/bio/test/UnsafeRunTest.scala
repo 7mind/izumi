@@ -12,7 +12,7 @@ class UnsafeRunTest extends AsyncWordSpec {
 
       r.unsafeRunFuture(zio.IO.foreachPar(List(1, 2, 3))(a => zio.IO(a * 2))).map {
         case Exit.Success(value) =>
-          assert(value == (2, 4, 6))
+          assert(value == List(2, 4, 6))
         case _: Exit.Failure[?] =>
           fail()
       }

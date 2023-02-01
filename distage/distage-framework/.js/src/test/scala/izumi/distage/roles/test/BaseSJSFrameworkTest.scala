@@ -1,33 +1,18 @@
 package izumi.distage.roles.test
 
-import distage.ModuleDef
-import izumi.distage.model.definition.Module
 import izumi.distage.plugins.{PluginConfig, PluginDef}
+import izumi.distage.roles.RoleAppMain
+import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.model.definition.RoleModuleDef
-import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.distage.roles.test.RoleAppMain.ArgV
+import izumi.distage.roles.test.fixtures.TestTask00
 import izumi.functional.bio.UnsafeRun2
-import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawRoleParams}
-import izumi.logstage.api.IzLogger
+import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
 import org.scalatest.wordspec.AsyncWordSpec
 import zio.internal.Platform
 
 import scala.concurrent.ExecutionContext
 
-class TestTask00[F[_]: QuasiIO](logger: IzLogger) extends RoleTask[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
-    QuasiIO[F].maybeSuspend {
-      logger.info(s"[TestTask00] Entrypoint invoked!: $roleParameters, $freeArgs")
-    }
-  }
-}
-
-object TestTask00 extends RoleDescriptor {
-  override final val id = "testtask00"
-}
-
-class BaseFrameworkTest extends AsyncWordSpec {
+class BaseSJSFrameworkTest extends AsyncWordSpec {
   "distage-framework" should {
     "run on cats.effect.IO" in {
 
@@ -41,9 +26,7 @@ class BaseFrameworkTest extends AsyncWordSpec {
           )
         )
 
-        override protected def roleAppBootOverrides(argv: ArgV): Module = new ModuleDef {
-          make[RawAppArgs].fromValue(RawAppArgs(RawEntrypointParams.empty, Vector(RawRoleParams("testtask00"))))
-        }
+        override protected def requiredRoles(argv: ArgV): Vector[RawRoleParams] = Vector(RawRoleParams("testtask00"))
       }
       for {
         _ <- main.main()
@@ -61,7 +44,7 @@ class BaseFrameworkTest extends AsyncWordSpec {
           Seq(
             new PluginDef with RoleModuleDef {
               makeRole[TestTask00[zio.Task]]
-              make[ExecutionContext].named("zio.cpu").from(executionContext)
+              make[ExecutionContext].named("cpu").from(executionContext)
 
               make[UnsafeRun2[zio.IO]].fromValue(r)
               make[Platform].fromValue(platform)
@@ -70,9 +53,7 @@ class BaseFrameworkTest extends AsyncWordSpec {
           )
         )
 
-        override protected def roleAppBootOverrides(argv: ArgV): Module = new ModuleDef {
-          make[RawAppArgs].fromValue(RawAppArgs(RawEntrypointParams.empty, Vector(RawRoleParams("testtask00"))))
-        }
+        override protected def requiredRoles(argv: ArgV): Vector[RawRoleParams] = Vector(RawRoleParams("testtask00"))
       }
       for {
         _ <- main.main()

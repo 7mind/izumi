@@ -2,7 +2,7 @@ package izumi.distage.framework.services
 
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
-import izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef}
+import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 

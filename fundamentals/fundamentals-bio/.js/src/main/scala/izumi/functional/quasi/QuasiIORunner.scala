@@ -4,7 +4,7 @@ import cats.effect.IO
 import izumi.functional.bio.{Exit, UnsafeRun2}
 import izumi.fundamentals.platform.functional.Identity
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Scala.js does not support running effects synchronously so only async interface is available
@@ -20,9 +20,7 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
     override def runFuture[A](f: => Identity[A]): Future[A] = Future.successful(f)
   }
 
-  final class BIOImpl[F[_, _]: UnsafeRun2] extends QuasiIORunner[F[Throwable, _]] {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
+  final class BIOImpl[F[_, _]: UnsafeRun2](implicit val ec: ExecutionContext) extends QuasiIORunner[F[Throwable, _]] {
     override def runFuture[A](f: => F[Throwable, A]): Future[A] = UnsafeRun2[F].unsafeRunFuture(f).flatMap {
       case Exit.Success(value) =>
         Future.successful(value)
