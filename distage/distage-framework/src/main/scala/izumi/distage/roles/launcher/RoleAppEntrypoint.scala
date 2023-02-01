@@ -40,8 +40,6 @@ object RoleAppEntrypoint {
               Seq.empty
             case Some(value: RoleService[F]) =>
               Seq(value -> r)
-            case Some(v) =>
-              throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
             case None =>
               throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
           }
@@ -89,8 +87,6 @@ object RoleAppEntrypoint {
               Seq(value -> r)
             case Some(_: RoleService[F]) =>
               Seq.empty
-            case Some(v) =>
-              throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
             case None =>
               throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
           }

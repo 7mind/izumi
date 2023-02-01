@@ -1,3 +1,5 @@
+# details on github runners: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+
 -Xmx3500M
 -XX:ReservedCodeCacheSize=256M
 -XX:MaxMetaspaceSize=1024M
@@ -7,15 +9,7 @@
 -Dsun.io.useCanonCaches=false
 -server
 
-#-Xshare:on
-
-#-Xshare:dump
-#-Xlog:class+load=info
-
 -XX:+UseG1GC
-
-# Enable ZGC
-#-XX:+UnlockExperimentalVMOptions
 #-XX:+UseZGC
 
 # Enable Graal JIT
@@ -31,3 +25,7 @@
 # These seem to cause sbt import slowdown :\
 #-XX:MaxInlineSize=270
 #-XX:MaxTrivialSize=12
+
+#-Xshare:on
+#-Xshare:dump
+#-Xlog:class+load=info

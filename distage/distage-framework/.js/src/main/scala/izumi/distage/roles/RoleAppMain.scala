@@ -40,7 +40,7 @@ abstract class RoleAppMain[F[_]](
     try {
       Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
         (appResource: AppResource[F]) =>
-          appResource.resource.use(_.run())
+          appResource.resource.use(r => r.run(): Identity[Future[Unit]])
       }
     } catch {
       case t: Throwable =>

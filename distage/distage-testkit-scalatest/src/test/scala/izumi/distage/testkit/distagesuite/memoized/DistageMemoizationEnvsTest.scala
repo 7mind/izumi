@@ -48,16 +48,16 @@ abstract class DistageMemoizationEnvsTest extends Spec3[ZIO] with AssertZIO {
         ),
         pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
           make[MemoizedInstance].from {
-            MemoizationEnv.makeInstance(MemoizationEnv.memoizedInstance)(MemoizationEnv.MemoizedInstance)
+            MemoizationEnv.makeInstance(MemoizationEnv.memoizedInstance)(MemoizationEnv.MemoizedInstance.apply)
           }
           make[MemoizedLevel1].from {
-            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel1)(MemoizationEnv.MemoizedLevel1)
+            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel1)(MemoizationEnv.MemoizedLevel1.apply)
           }
           make[MemoizedLevel2].from {
-            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel2)(MemoizationEnv.MemoizedLevel2)
+            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel2)(MemoizationEnv.MemoizedLevel2.apply)
           }
           make[MemoizedLevel3].from {
-            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel3)(MemoizationEnv.MemoizedLevel3)
+            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel3)(MemoizationEnv.MemoizedLevel3.apply)
           }
           make[TestInstance].from(TestInstance(UUID.randomUUID()))
         },
