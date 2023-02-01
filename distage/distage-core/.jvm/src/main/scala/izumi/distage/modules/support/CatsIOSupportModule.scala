@@ -5,8 +5,8 @@ import cats.effect.IO
 import cats.effect.kernel.Async
 import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
 import izumi.distage.model.definition.{Id, Lifecycle, ModuleDef}
-import izumi.functional.quasi.QuasiIORunner
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
+import izumi.functional.quasi.QuasiIORunner
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext

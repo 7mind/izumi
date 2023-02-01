@@ -44,6 +44,7 @@ class Bootloader(
     )
     val module = config.appModule(input.bindings)
     val roots = config.roots(input.roots)
+
     for {
       plan <- injector.plan(PlannerInput(module, activation, roots))
     } yield {

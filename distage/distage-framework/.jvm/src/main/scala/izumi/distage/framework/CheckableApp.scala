@@ -135,7 +135,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
             namePredicateRoleProvider(!excluded(_))
 
           case RoleSelection.OnlySelected(selection) =>
-            @impl trait SelectedRoleProvider extends RoleProvider.Impl {
+            @impl trait SelectedRoleProvider extends RoleProvider.ReflectiveImpl {
               override protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
                 requiredRoles.discard()
                 super.getInfo(bindings, selection, roleType)
@@ -154,7 +154,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
 
       private[this] def namePredicateRoleProvider(f: String => Boolean): Functoid[RoleProvider] = {
         // use Auto-Traits feature to override just the few specific methods of a class succinctly
-        @impl trait NamePredicateRoleProvider extends RoleProvider.Impl {
+        @impl trait NamePredicateRoleProvider extends RoleProvider.ReflectiveImpl {
           override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
             f(b.descriptor.id)
           }

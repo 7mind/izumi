@@ -2,9 +2,9 @@ package izumi.distage.roles
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
-import izumi.distage.roles.RoleAppMain.{ArgV, RequiredRoles}
+import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppArgsInterceptor
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RequiredRoles}
 import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 import izumi.reflect.TagK
 import izumi.distage.framework.config.PlanningOptions

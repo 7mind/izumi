@@ -1,5 +1,6 @@
 package izumi.distage.roles
 
+import distage.plugins.{PluginLoader, PluginLoaderDefaultImpl}
 import izumi.distage.InjectorFactory
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.*
@@ -10,7 +11,7 @@ import izumi.distage.model.recursive.{Bootloader, LocatorRef}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl}
+import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.launcher.*
 import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
@@ -18,8 +19,8 @@ import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
 import izumi.fundamentals.platform.resources.IzArtifact
-import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.IzLogger
+import izumi.logstage.api.logger.LogRouter
 import izumi.reflect.TagK
 
 /**
@@ -50,8 +51,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   appArtifact: IzArtifact,
   unusedValidAxisChoices: Set[Axis.AxisChoice],
 ) extends ModuleDef {
-  include(new RoleAppBootConfigModule[F]())
-  include(new RoleAppBootLoggerModule[F]())
+  include(new RoleAppBootPlatformModule[F]())
 
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
@@ -60,21 +60,6 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
   make[PluginConfig].named("main").fromValue(pluginConfig)
   make[PluginConfig].named("bootstrap").fromValue(bootstrapPluginConfig)
-
-  make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
-
-  make[CLIParser].from[CLIParserImpl]
-  make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
-
-  many[LibraryReference]
-
-  make[IzLogger].from {
-    (router: LogRouter) =>
-      IzLogger(router)("phase" -> "late")
-  }
-
-  make[StartupBanner].from[StartupBanner.Impl]
-
   make[PluginLoader]
     .named("bootstrap")
     .aliased[PluginLoader]("main")
@@ -89,6 +74,20 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
     (loader: PluginLoader @Id("main"), config: PluginConfig @Id("main")) =>
       loader.load(config)
   }
+
+  make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
+
+  make[CLIParser].from[CLIParserImpl]
+  make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
+
+  many[LibraryReference]
+
+  make[IzLogger].from {
+    (router: LogRouter) =>
+      IzLogger(router)("phase" -> "late")
+  }
+
+  make[StartupBanner].from[StartupBanner.Impl]
 
   make[Activation].named("default").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
@@ -118,7 +117,6 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[ModuleBase].named("main").from((_: ValidatedModulePair).appModule)
   make[ModuleBase].named("bootstrap").from((_: ValidatedModulePair).bootstrapAutoModule)
 
-  make[RoleProvider].from[RoleProvider.Impl]
   make[RolesInfo].from {
     (provider: RoleProvider, appModule: ModuleBase @Id("main"), tagK: TagK[F]) =>
       provider.loadRoles[F](appModule)(tagK)

@@ -7,12 +7,12 @@ import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleChec
 import izumi.distage.model.definition.{Axis, Module, ModuleDef}
 import izumi.distage.modules.{DefaultModule, DefaultModule2, DefaultModule3}
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.roles.RoleAppMain.{ArgV, RequiredRoles}
+import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.AppShutdownStrategy.*
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.bio.{Async2, Async3}
-import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
+import izumi.fundamentals.platform.cli.model.raw.{RawRoleParams, RequiredRoles}
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 
@@ -132,7 +132,7 @@ abstract class RoleAppMain[F[_]](
       bootstrapPluginConfig = bootstrapPluginConfig,
       appArtifact = artifact.get,
       unusedValidAxisChoices,
-    ) ++ new RoleAppBootArgsModule(
+    ) ++ new RoleAppBootArgsModule[F](
       args = argv,
       requiredRoles = additionalRoles,
     )
@@ -175,8 +175,6 @@ object RoleAppMain {
   object ArgV {
     def empty: ArgV = ArgV(Array.empty)
   }
-
-  final case class RequiredRoles(requiredRoles: Vector[RawRoleParams])
 
   object Options extends ParserDef {
     final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")

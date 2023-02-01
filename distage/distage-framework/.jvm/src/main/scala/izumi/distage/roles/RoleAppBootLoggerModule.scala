@@ -30,3 +30,5 @@ class RoleAppBootLoggerModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
   }
 
 }
+
+

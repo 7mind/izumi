@@ -47,7 +47,6 @@ object RoleAppPlanner {
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
-
       logger.trace(s"Application will use: ${appMainRoots -> "app roots"} and $activation")
 
       // TODO: why .module doesn't work within for-comprehension?..
@@ -64,10 +63,12 @@ object RoleAppPlanner {
             roots = _ => Roots(runtimeGcRoots),
           )
         )
+
         runtimeKeys = bootstrapped.plan.keys
         _ <- log(bootstrapped)
         appPlan <- bootstrapped.injector.plan(PlannerInput(bootstrapped.module.drop(runtimeKeys), activation, appMainRoots))
       } yield {
+
         val check = new PlanCircularDependencyCheck(options, logger)
 
         check.showProxyWarnings(bootstrapped.plan)
