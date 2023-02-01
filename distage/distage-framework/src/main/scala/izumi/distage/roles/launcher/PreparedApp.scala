@@ -8,8 +8,8 @@ final case class PreparedApp[F[_]](
   appResource: Lifecycle[F, Locator],
   runner: QuasiIORunner[F],
   effect: QuasiIO[F],
-) {
-  def run(): Unit = {
-    runner.run(appResource.use(_ => effect.unit)(effect))
-  }
-}
+)
+
+
+
+object PreparedApp extends PreparedAppSyntax {}

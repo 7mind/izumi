@@ -4,14 +4,11 @@ import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.model.definition.{Binding, BootstrapModule, BootstrapModuleDef, Id, Module, ModuleDef}
-import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.SafeType
 import izumi.distage.planning.AutoSetHook.InclusionPredicate
 import izumi.distage.planning.AutoSetModule
-import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.bundled.BundledService
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
@@ -84,22 +81,14 @@ object ModuleProvider {
 
       val loggerModule = new LogstageModule(logRouter, true)
 
-      val resourceRewriter = new BootstrapModuleDef {
-        make[RewriteRules]
-          .fromValue(options.rewriteRules)
-        many[PlanningHook]
-          .add[ResourceRewriter]
-      }
-
-      val graphvizDumpModule = if (options.addGraphVizDump) new GraphDumpBootstrapModule() else BootstrapModule.empty
+      val platformModule = new BootstrapPlatformModule(options)
 
       val appConfigModule: BootstrapModule = AppConfigModule(config).morph[BootstrapModule]
 
       Seq(
         roleInfoModule,
-        resourceRewriter,
+        platformModule,
         loggerModule,
-        graphvizDumpModule,
         appConfigModule, // make config available for bootstrap plugins
         AutoSetModule("all-custom-roles").registerOnly[RoleService[F]](AutoSetFilterBundledService),
         AutoSetModule("all-custom-tasks").registerOnly[RoleTask[F]](AutoSetFilterBundledService),

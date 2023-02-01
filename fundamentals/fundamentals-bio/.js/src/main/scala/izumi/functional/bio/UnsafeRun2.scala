@@ -1,29 +1,45 @@
 package izumi.functional.bio
 
-import izumi.functional.bio.UnsafeRun2.InterruptAction
-import scala.concurrent.ExecutionContext
-import scala.annotation.unused
+import zio.internal.Platform
+import zio.{Runtime, ZIO}
 
-/** Scala.js does not support UnsafeRun */
+import scala.annotation.unused
+import scala.concurrent.{ExecutionContext, Future}
+
+/**
+  * Scala.js does not support running effects synchronously so only async interface is available
+  */
 trait UnsafeRun2[F[_, _]] {
+  def unsafeRunFuture[E, A](io: => F[E, A]): Future[Exit[E, A]]
   def unsafeRunAsync[E, A](io: => F[E, A])(callback: Exit[E, A] => Unit): Unit
-  def unsafeRunAsyncInterruptible[E, A](io: => F[E, A])(callback: Exit[E, A] => Unit): InterruptAction[F]
 }
 
 object UnsafeRun2 {
   @inline def apply[F[_, _]](implicit ev: UnsafeRun2[F]): UnsafeRun2[F] = ev
+
+  def createZIO[R](platform: Platform, initialEnv: R): ZIORunner[R] =
+    new ZIORunner[R](platform, initialEnv)
+
+  class ZIORunner[R](
+    val platform: Platform,
+    val initialEnv: R,
+  ) extends UnsafeRun2[ZIO[R, +_, +_]] {
+    val runtime: Runtime[R] = Runtime(initialEnv, platform)
+
+    override def unsafeRunFuture[E, A](io: => ZIO[R, E, A]): Future[Exit[E, A]] = {
+      runtime.unsafeRunToFuture(io.run).map(ze => Exit.ZIOExit.toExit(ze)(outerInterruptionConfirmed = false))(platform.executor.asEC)
+    }
+
+    override def unsafeRunAsync[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): Unit = {
+      runtime.unsafeRunAsync(io)(ze => callback(Exit.ZIOExit.toExit(ze)(outerInterruptionConfirmed = false)))
+    }
+  }
 
   sealed trait FailureHandler
   object FailureHandler {
     case object Default extends FailureHandler
     final case class Custom(handler: Exit.Failure[Any] => Unit) extends FailureHandler
   }
-
-  /**
-    * @param interrupt May semantically block until the target computation either finishes completely or finishes running
-    *                  its finalizers, depending on the underlying effect type.
-    */
-  final case class InterruptAction[F[_, _]](interrupt: F[Nothing, Unit]) extends AnyVal
 
   object NamedThreadFactory {
     final lazy val QuasiAsyncIdentityPool: ExecutionContext = ExecutionContext.Implicits.global

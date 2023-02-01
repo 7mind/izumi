@@ -8,6 +8,8 @@ import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, 
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagKK
 
+import scala.concurrent.ExecutionContext
+
 /**
   * Any `BIO` effect type support for `distage` resources, effects, roles & tests.
   *
@@ -23,6 +25,7 @@ class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
 
   make[QuasiIORunner2[F]]
     .from[QuasiIORunner.BIOImpl[F]]
+    .annotateParameter[ExecutionContext]("cpu")
 
   make[QuasiIO2[F]]
     .aliased[QuasiPrimitives2[F]]

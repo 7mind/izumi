@@ -1,14 +1,14 @@
 package izumi.distage.config
 
 import izumi.distage.config.ConfigModuleDef.FromConfig
-import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLNamedAfterFrom, MakeDSLUnnamedAfterFrom}
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.reflect.Tag
+import izumi.distage.config.codec.DIConfigReader
 
 import scala.language.implicitConversions
 
