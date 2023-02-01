@@ -21,7 +21,7 @@ jobs:
           OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
         run: |
           echo "HAVE_SECRETS=${{ env.OPENSSL_IV != '' && env.OPENSSL_KEY != '' }}" >> $GITHUB_OUTPUT
-  build:
+  build-jvm:
     runs-on: ubuntu-latest
     needs: [ 'checksecret' ]
     strategy:
@@ -35,13 +35,13 @@ jobs:
       - name: Build and Test
         continue-on-error: ${{ matrix.scala == '3' }}
         run: |
-          bash sbtgen.sc --js
+          bash sbtgen.sc
           bash .build.sh ${{ matrix.scala }} coverage
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         continue-on-error: ${{ matrix.scala == '3' }}
         with:
-          name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }})
+          name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }}, JVM)
           path: '**/target/test-reports/TEST-*.xml'
           reporter: java-junit
           fail-on-error: ${{ matrix.scala != '3' }}
@@ -55,6 +55,30 @@ jobs:
           # TODO: do we need scoverage.xml? If so files: may be just omitted
           # files: cobertura.xml,scoverage.xml
           # flags: unittests
+  build-js:
+    runs-on: ubuntu-latest
+    needs: [ 'checksecret' ]
+    strategy:
+      matrix:
+        java: [ '11', '17' ]
+        scala: [ '2.12', '2.13', '3' ]
+    steps:
+      - uses: 7mind/github-env@main
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Build and Test
+        continue-on-error: ${{ matrix.scala == '3' }}
+        run: |
+          bash sbtgen.sc --nojvm --js
+          bash .build.sh ${{ matrix.scala }} coverage
+      - uses: dorny/test-reporter@v1
+        if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
+        continue-on-error: ${{ matrix.scala == '3' }}
+        with:
+          name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }}, JS)
+          path: '**/target/test-reports/TEST-*.xml'
+          reporter: java-junit
+          fail-on-error: ${{ matrix.scala != '3' }}
   test-site:
     runs-on: ubuntu-latest
     strategy:
@@ -75,7 +99,7 @@ jobs:
       matrix:
         java: [ '17' ]
         scala: [ '2.13']
-    needs: [ 'build', 'test-site', 'checksecret' ]
+    needs: [ 'build-jvm', 'build-js', 'test-site', 'checksecret' ]
     if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
     steps:
       - uses: 7mind/github-env@main
@@ -91,7 +115,7 @@ jobs:
           bash .build.sh ${{ matrix.scala }} site-publish
   publish-artifacts:
     runs-on: ubuntu-latest
-    needs: [ 'build', 'checksecret' ]
+    needs: [ 'build-jvm', 'build-js', 'checksecret' ]
     if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
     strategy:
       matrix:
