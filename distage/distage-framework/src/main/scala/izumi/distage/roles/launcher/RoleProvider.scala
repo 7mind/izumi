@@ -42,7 +42,7 @@ object RoleProvider {
     }
 
     protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
-      val availableRoleBindings = instantiateRoleBindings(bindings, roleType)
+      val availableRoleBindings = findRoleBindings(bindings, roleType)
       val requiredRoleBindings = availableRoleBindings.filter(isRoleEnabled(requiredRoles))
 
       val roleNames = availableRoleBindings.map(_.descriptor.id)
@@ -72,12 +72,12 @@ object RoleProvider {
       rolesInfo
     }
 
-    protected def instantiateRoleBindings(bindings: Set[Binding], roleType: SafeType): Set[RoleBinding] = {
+    protected def findRoleBindings(bindings: Set[Binding], roleType: SafeType): Set[RoleBinding] = {
       bindings.collect {
         case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) && checkRoleType(s.implementation.implType, roleType, log = !isIgnoredMismatchedEffect) =>
           mkRoleBinding(s, s.tags.collectFirst { case RoleTag(roleDescriptor) => roleDescriptor }.get)
 
-        case s: ImplBinding =>
+        case s: ImplBinding if s.implementation.implType <:< roleType =>
           handleMissingStaticMetadata(roleType, s)
       }
     }
@@ -114,7 +114,7 @@ object RoleProvider {
     protected[this] val isReflectionEnabled: Boolean = reflectionEnabled && syspropRolesReflection && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage
 
     override protected def handleMissingStaticMetadata(roleType: SafeType, s: ImplBinding): RoleBinding = {
-      if (isReflectionEnabled && s.implementation.implType <:< roleType) {
+      if (isReflectionEnabled) {
         reflectCompanionBinding(s)
       } else {
         super.handleMissingStaticMetadata(roleType, s)
@@ -155,7 +155,6 @@ object RoleProvider {
           None
       }
     }
-
   }
 
 }

@@ -3,13 +3,10 @@ package izumi.distage.modules.support
 import cats.Parallel
 import cats.effect.IO
 import cats.effect.kernel.Async
-import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
-import izumi.distage.model.definition.{Id, Lifecycle, ModuleDef}
+import cats.effect.unsafe.{IORuntimeConfig, Scheduler}
+import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
 import izumi.functional.quasi.QuasiIORunner
-
-import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.ExecutionContext
 
 object CatsIOSupportModule extends CatsIOSupportModule
 
@@ -36,19 +33,6 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
   make[Parallel[IO]].from(IO.parallelForIO)
 
   make[IORuntimeConfig].from(IORuntimeConfig())
-  // by-name cycles don't work reliably at all, so unfortunately, manual cycle breaking:
-  make[(IORuntime, ExecutionContext)].fromResource {
-    (blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
-      val cpuRef = new AtomicReference[ExecutionContext](null)
-      lazy val ioRuntime: IORuntime = IORuntime(cpuRef.get(), blockingPool, scheduler, () => (), ioRuntimeConfig)
-      CatsIOPlatformDependentSupportModule.createCPUPool.map {
-        ec =>
-          cpuRef.set(ec)
-          (ioRuntime, ec)
-      }
-  }
-  make[IORuntime].from((_: (IORuntime, ExecutionContext))._1)
-  make[ExecutionContext].named("cpu").from((_: (IORuntime, ExecutionContext))._2)
 
   make[Scheduler].fromResource {
     Lifecycle
