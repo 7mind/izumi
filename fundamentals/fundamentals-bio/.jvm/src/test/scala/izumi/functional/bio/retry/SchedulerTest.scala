@@ -388,9 +388,10 @@ class SchedulerTest extends AnyWordSpec {
             now <- F.clock.now(ClockAccuracy.MILLIS)
             dec <- makeDecision(now, in)
             res = dec match {
-              case ControllerDecision.Stop(_) => F.pure(acc)
-              case ControllerDecision.Repeat(_, interval, next) =>
-                val sleepTime = toFiniteDuration(java.time.Duration.between(now, interval))
+              case _: ControllerDecision.Stop[B] @unchecked => F.pure(acc)
+              case repeat: ControllerDecision.Repeat[F, Any, B] @unchecked =>
+                val next = repeat.action
+                val sleepTime = toFiniteDuration(java.time.Duration.between(now, repeat.interval))
                 F.sleep(sleepTime) *> eff *> loop((), next, acc :+ sleepTime, iter - 1)
             }
           } yield res).flatten
