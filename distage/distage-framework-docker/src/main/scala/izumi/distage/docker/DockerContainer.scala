@@ -4,7 +4,6 @@ import distage.Tag
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
-import izumi.distage.docker.model.Docker
 import izumi.distage.docker.model.Docker.*
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
@@ -13,12 +12,12 @@ import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.IzLogger
 
-final case class DockerContainer[+Tag](
+final case class DockerContainer[+T](
   id: ContainerId,
   name: String,
   hostName: String,
   labels: Map[String, String],
-  containerConfig: ContainerConfig[Tag],
+  containerConfig: ContainerConfig[T],
   clientConfig: ClientConfig,
   connectivity: ReportedContainerConnectivity,
   availablePorts: VerifiedContainerConnectivity,

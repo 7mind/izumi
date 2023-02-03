@@ -3,7 +3,6 @@ package izumi.distage.docker
 import distage.TagK
 import izumi.distage.docker.DockerContainer.DependencyTag
 import izumi.distage.docker.impl.ContainerResource
-import izumi.distage.docker.model.Docker
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
