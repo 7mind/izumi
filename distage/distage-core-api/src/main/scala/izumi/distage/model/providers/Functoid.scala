@@ -121,6 +121,16 @@ final case class Functoid[+A](get: Provider) {
   def addDependency(key: DIKey): Functoid[A] = addDependencies(key :: Nil)
   def addDependencies(keys: Iterable[DIKey]): Functoid[A] = copy[A](get = get.addUnused(keys))
 
+  def annotateParameter[P: Tag](name: Identifier): Functoid[A] = {
+    val paramTpe = SafeType.get[P]
+    val newProvider = this.get.replaceKeys {
+      case DIKey.TypeKey(tpe, m) if tpe == paramTpe =>
+        DIKey.IdKey(paramTpe, name.id, m)(name.idContract)
+      case k => k
+    }
+    Functoid(newProvider)
+  }
+
   @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.cls, get.ret.tag)
 }
 

@@ -1,8 +1,9 @@
-package izumi.distage.docker
+package izumi.distage.docker.impl
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.core.{DockerClientConfig, DockerClientImpl}
 import com.github.dockerjava.zerodep.ZerodepDockerHttpClient
+import izumi.distage.docker.model.Docker
 
 trait DockerClientFactory {
   def makeClient(clientConfig: Docker.ClientConfig, rawClientConfig: DockerClientConfig): DockerClient

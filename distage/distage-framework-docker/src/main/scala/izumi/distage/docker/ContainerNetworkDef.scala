@@ -2,7 +2,8 @@ package izumi.distage.docker
 
 import java.util.UUID
 import izumi.distage.docker.ContainerNetworkDef.{ContainerNetwork, ContainerNetworkConfig}
-import izumi.distage.docker.Docker.DockerReusePolicy
+import izumi.distage.docker.model.Docker.DockerReusePolicy
+import izumi.distage.docker.impl.{DockerClientWrapper, FileLockMutex}
 import izumi.distage.model.definition.Lifecycle
 import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException

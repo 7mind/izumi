@@ -2,7 +2,8 @@ package izumi.distage.docker.modules
 
 import distage.TagK
 import izumi.distage.config.ConfigModuleDef
-import izumi.distage.docker.{Docker, DockerClientFactory, DockerClientWrapper}
+import izumi.distage.docker.impl.{DockerClientFactory, DockerClientWrapper}
+import izumi.distage.docker.model.Docker
 import izumi.distage.model.definition.ModuleDef
 
 class DockerSupportModule[F[_]: TagK] extends ModuleDef {
@@ -17,5 +18,9 @@ object DockerSupportModule {
 
   final val config = new ConfigModuleDef {
     makeConfigWithDefault[Docker.ClientConfig]("docker")(Docker.ClientConfig())
+  }
+
+  final val defaultConfig = new ConfigModuleDef {
+    make[Docker.ClientConfig].fromValue(Docker.ClientConfig())
   }
 }

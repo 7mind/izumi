@@ -1,7 +1,7 @@
 package izumi.distage.testkit.docker.fixtures
 
 import distage.config.ConfigModuleDef
-import izumi.distage.docker.Docker.AvailablePort
+import izumi.distage.docker.model.Docker.AvailablePort
 import izumi.distage.docker.bundled.*
 import izumi.distage.docker.modules.DockerSupportModule
 import izumi.distage.model.definition.Id

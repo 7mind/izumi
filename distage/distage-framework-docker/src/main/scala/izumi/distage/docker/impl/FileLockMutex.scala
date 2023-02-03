@@ -1,12 +1,12 @@
-package izumi.distage.docker
+package izumi.distage.docker.impl
 
-import java.io.File
-import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock, OverlappingFileLockException}
-import java.nio.file.StandardOpenOption
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.logstage.api.IzLogger
 
+import java.io.File
+import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock, OverlappingFileLockException}
+import java.nio.file.StandardOpenOption
 import scala.concurrent.duration.*
 
 object FileLockMutex {
