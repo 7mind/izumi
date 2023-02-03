@@ -3,7 +3,6 @@ package izumi.distage.docker.model
 import izumi.distage.config.codec.{DIConfigReader, PureconfigAutoDerive}
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
-import izumi.distage.docker.impl.ContainerResource
 import izumi.distage.docker.model.Docker.ClientConfig.parseReusePolicy
 import izumi.distage.docker.{DebugProperties, DockerConst}
 import izumi.fundamentals.collections.nonempty.NonEmptyList

@@ -794,16 +794,7 @@ object ModuleDefDSL {
     }
 
     private[this] final def annotateParameterOp[P: Tag](name: Identifier): Modify[T] = {
-      Modify[T] {
-        old =>
-          val paramTpe = SafeType.get[P]
-          val newProvider = old.get.replaceKeys {
-            case DIKey.TypeKey(tpe, m) if tpe == paramTpe =>
-              DIKey.IdKey(paramTpe, name.id, m)(name.idContract)
-            case k => k
-          }
-          Functoid(newProvider)
-      }
+      Modify[T](_.annotateParameter[P](name))
     }
   }
 

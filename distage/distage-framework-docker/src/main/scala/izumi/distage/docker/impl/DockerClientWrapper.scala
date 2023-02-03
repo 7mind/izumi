@@ -87,6 +87,7 @@ object DockerClientWrapper {
   sealed trait RemovalReason
   object RemovalReason {
     case object NotReused extends RemovalReason
+    case object LostDependencies extends RemovalReason
     case object NotReusedAndYetWasNotCleanedUpEarlierByItsFinalizer extends RemovalReason
     case object AlreadyExited extends RemovalReason
   }

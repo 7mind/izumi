@@ -1,9 +1,10 @@
 package izumi.distage.docker
 
-import distage.TagK
+import distage.{SafeType, TagK}
 import izumi.distage.docker.impl.ContainerResource
 import izumi.distage.docker.model.Docker
 import izumi.distage.model.definition.Lifecycle
+import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.Quirks.*
 
@@ -40,9 +41,16 @@ trait ContainerDef {
     *   docker rm -f $(docker ps -q -a -f 'label=distage.type')
     * }}}
     */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = {
+  final def make[F[_]: TagK](
+    implicit tag: distage.Tag[Tag],
+    mutateModule: ModuleDefDSL#MutationContext,
+  ): Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = {
     tag.discard()
-    DockerContainer.resource[F](this)
+    new mutateModule.dsl {
+      many[DockerContainer[Any]].named(SafeType.get[DockerContainer[Tag]])
+    }
+    val f: Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = DockerContainer.resource[F](this)
+    f.annotateParameter[Set[DockerContainer[Any]]](SafeType.get[DockerContainer[Tag]])
   }
 
   final def copy(config: Config): ContainerDef.Aux[self.Tag] = {

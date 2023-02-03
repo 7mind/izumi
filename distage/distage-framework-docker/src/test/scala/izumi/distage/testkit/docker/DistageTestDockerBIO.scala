@@ -42,7 +42,6 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
     }
 
   }
-
 }
 
 final class DistageTestDockerBIOFirstEnv1 extends DistageTestDockerBIO

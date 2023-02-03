@@ -11,6 +11,8 @@ object DockerConst {
 
     final val portPrefix = "distage.port"
     final val networkDriverPrefix = "distage.driver"
+
+    final val dependencies = "distage.dependencies"
   }
 
   object State {

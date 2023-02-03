@@ -3,12 +3,12 @@ package izumi.distage.docker.impl
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model.*
-import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.docker.impl.ContainerResource.PortDecl
 import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
 import izumi.distage.docker.model.Docker
+import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
@@ -32,6 +32,7 @@ open class ContainerResource[F[_], Tag](
   val config: Docker.ContainerConfig[Tag],
   val client: DockerClientWrapper[F],
   val logger: IzLogger,
+  val deps: Set[DockerContainer[Any]],
 )(implicit
   val F: QuasiIO[F],
   val P: QuasiAsync[F],
@@ -41,7 +42,8 @@ open class ContainerResource[F[_], Tag](
 
   protected[this] val stableLabels: Map[String, String] = {
     val reuseLabel = Map(
-      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString
+      DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
+      DockerConst.Labels.dependencies -> deps.map(_.id.name).toList.sorted.mkString(";"),
     )
     reuseLabel ++ client.labels ++ config.userTags
   }
@@ -57,10 +59,11 @@ open class ContainerResource[F[_], Tag](
     config: Docker.ContainerConfig[Tag] = config,
     client: DockerClientWrapper[F] = client,
     logger: IzLogger = logger,
+    deps: Set[DockerContainer[Any]] = deps,
   )(implicit F: QuasiIO[F] = F,
     P: QuasiAsync[F] = P,
   ): ContainerResource[F, Tag] = {
-    new ContainerResource[F, Tag](config, client, logger)(F, P)
+    new ContainerResource[F, Tag](config, client, logger, deps)(F, P)
   }
 
   override def acquire: F[DockerContainer[Tag]] = F.suspendF {
@@ -171,6 +174,24 @@ open class ContainerResource[F[_], Tag](
         }
   }
 
+  private def lostDependencies(inspection: InspectContainerResponse): Boolean = {
+    Option(inspection.getConfig.getLabels.get(DockerConst.Labels.dependencies)).filterNot(_.isEmpty).map(_.split(';')) match {
+      case Some(value) =>
+        !value.forall {
+          id =>
+            Try(rawClient.inspectContainerCmd(id).exec()) match {
+              case Failure(exception) =>
+                logger.info(s"Failed to inspect dependency $id: $exception")
+                false
+              case Success(inspection) =>
+                inspection.getState.getRunning
+            }
+        }
+      case None =>
+        false
+    }
+  }
+
   protected[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     val retryWait = 200.millis
     val maxAttempts = (config.pullTimeout / retryWait).toInt
@@ -181,73 +202,10 @@ open class ContainerResource[F[_], Tag](
       retryWait = retryWait,
       maxAttempts = maxAttempts,
     ) {
-      F.suspendF {
-        val containers = {
-          /*
-           * We will filter out containers by "running" status if container exposes any ports to be mapped
-           * and by "exited" status also if there are no exposed ports.
-           * We don't need to consider "exited" containers with exposed ports, because they will always fail port check.
-           *
-           * Filtering containers like this allows us to reuse "oneshot" containers that were started and exited eventually.
-           * When reusing containers we usually assume that a container runs as a daemon, but if a container exited successfully
-           * we can't understand whether that container's run belonged to one of the previous test runs, or to the current one.
-           * So containers that exit will be reused only in the scope of the current test run.
-           */
-          val exitedOpt = if (ports.isEmpty) List(DockerConst.State.exited) else Nil
-          val statusFilter = DockerConst.State.running :: exitedOpt
-          // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-          try {
-            rawClient
-              .listContainersCmd()
-              .withAncestorFilter(List(config.image).asJava)
-              .withStatusFilter(statusFilter.asJava)
-              .withLabelFilter(config.userTags.asJava)
-              .exec().asScala.toList
-              .sortBy(_.getId)
-          } catch {
-            case c: Throwable =>
-              throw new IntegrationCheckException(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c)))
-          }
-        }
-        val candidate = {
-          val portSet = ports.map(_.port).toSet
-          val candidates = containers.flatMap {
-            c =>
-              val id = c.getId
-              val cInspection = rawClient.inspectContainerCmd(id).exec()
-              val cNetworks = cInspection.getNetworkSettings.getNetworks.asScala.keys.toList
-              val missingNetworks = config.networks.filterNot(n => cNetworks.contains(n.name))
-              val name = cInspection.getName
-              mapContainerPorts(cInspection) match {
-                case Left(value) =>
-                  logger.info(s"Container $name:$id is missing required ports $value so will not be reused")
-                  Seq.empty
-                case _ if missingNetworks.nonEmpty =>
-                  logger.info(s"Container $name:$id is missing required networks $missingNetworks so will not be reused")
-                  Seq.empty
-                case Right(value) =>
-                  Seq((c, cInspection, value))
-              }
-          }
-          if (portSet.nonEmpty) {
-            // here we are checking if all ports was successfully mapped
-            candidates.find {
-              case (_, _, eports) => portSet.diff(eports.dockerPorts.keySet).isEmpty
-            }
-          } else {
-            // or if container has no ports we will check that there is exists container that belongs at least to this test run (or exists container that actually still runs)
-            candidates.find(_._2.getState.getRunning).orElse {
-              candidates.find {
-                case (_, inspection, _) =>
-                  val hasLabelsFromSameJvm = (stableLabels.toSet -- client.labelsUnique -- inspection.getConfig.getLabels.asScala.toSet).isEmpty
-                  val hasGoodExitCode = inspection.getState.getExitCodeLong == 0L
-                  hasLabelsFromSameJvm && hasGoodExitCode
-              }
-            }
-          }
-        }
-
-        candidate match {
+      for {
+        matchingImageContainers <- findMatchingImages(ports)
+        candidate <- findAcceptableCandidate(ports, matchingImageContainers)
+        result <- candidate match {
           case Some((c, cInspection, existingPorts)) =>
             val unverified = DockerContainer[Tag](
               id = ContainerId(c.getId),
@@ -266,6 +224,100 @@ open class ContainerResource[F[_], Tag](
             logger.info(s"No existing container found for ${config.image}, will run new...")
             runNew(ports)
         }
+      } yield {
+        result
+      }
+    }
+  }
+
+  private def findAcceptableCandidate(
+    ports: Seq[PortDecl],
+    matchingImageContainers: List[Container],
+  ): F[Option[(Container, InspectContainerResponse, ReportedContainerConnectivity)]] = {
+
+    for {
+      portSet <- F.maybeSuspend(ports.map(_.port).toSet)
+      candidatesNested <- F.traverse {
+        matchingImageContainers
+          .flatMap {
+            c =>
+              val id = c.getId
+              val cInspection = rawClient.inspectContainerCmd(id).exec()
+              val cNetworks = cInspection.getNetworkSettings.getNetworks.asScala.keys.toList
+              val missingNetworks = config.networks.filterNot(n => cNetworks.contains(n.name))
+              val name = cInspection.getName
+              mapContainerPorts(cInspection) match {
+                case Left(value) =>
+                  logger.info(s"Container $name:$id is missing required ports $value so will not be reused")
+                  Seq.empty
+                case _ if missingNetworks.nonEmpty =>
+                  logger.info(s"Container $name:$id is missing required networks $missingNetworks so will not be reused")
+                  Seq.empty
+
+                case Right(value) =>
+                  Seq((c, cInspection, value))
+              }
+          }
+      } {
+        case (c, inspection, _) if lostDependencies(inspection) =>
+          logger.info(s"Container ${inspection.getName}:${c.getId} lost dependent containers and will be destroyed")
+          for {
+            _ <- client.removeContainer(ContainerId(c.getId), ContainerDestroyMeta.RawContainer(c), RemovalReason.LostDependencies)
+          } yield {
+            Seq.empty[(Container, InspectContainerResponse, ReportedContainerConnectivity)]
+          }
+        case c =>
+          F.maybeSuspend(Seq(c))
+      }
+      candidates = candidatesNested.flatten
+    } yield {
+      if (portSet.nonEmpty) {
+        // here we are checking if all ports was successfully mapped
+        candidates.find {
+          case (_, _, eports) => portSet.diff(eports.dockerPorts.keySet).isEmpty
+        }
+      } else {
+        // or if container has no ports we will check that there exists a container that belongs at least to this test run (or exists container that actually still runs)
+        candidates.find(_._2.getState.getRunning).orElse {
+          candidates.find {
+            case (_, inspection, _) =>
+              val hasLabelsFromSameJvm = (stableLabels.toSet -- client.labelsUnique -- inspection.getConfig.getLabels.asScala.toSet).isEmpty
+              val hasGoodExitCode = inspection.getState.getExitCodeLong == 0L
+              hasLabelsFromSameJvm && hasGoodExitCode
+          }
+        }
+      }
+    }
+  }
+
+  private def findMatchingImages(ports: Seq[PortDecl]) = {
+
+    /*
+     * We will filter out containers by "running" status if container exposes any ports to be mapped
+     * and by "exited" status also if there are no exposed ports.
+     * We don't need to consider "exited" containers with exposed ports, because they will always fail port check.
+     *
+     * Filtering containers like this allows us to reuse "oneshot" containers that were started and exited eventually.
+     * When reusing containers we usually assume that a container runs as a daemon, but if a container exited successfully
+     * we can't understand whether that container's run belonged to one of the previous test runs, or to the current one.
+     * So containers that exit will be reused only in the scope of the current test run.
+     */
+
+    F.maybeSuspend {
+      val exitedOpt = if (ports.isEmpty) List(DockerConst.State.exited) else Nil
+      val statusFilter = DockerConst.State.running :: exitedOpt
+      // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
+      try {
+        rawClient
+          .listContainersCmd()
+          .withAncestorFilter(List(config.image).asJava)
+          .withStatusFilter(statusFilter.asJava)
+          .withLabelFilter(config.userTags.asJava)
+          .exec().asScala.toList
+          .sortBy(_.getId)
+      } catch {
+        case c: Throwable =>
+          throw new IntegrationCheckException(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c)))
       }
     }
   }
