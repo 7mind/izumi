@@ -19,4 +19,8 @@ object DockerSupportModule {
   final val config = new ConfigModuleDef {
     makeConfigWithDefault[Docker.ClientConfig]("docker")(Docker.ClientConfig())
   }
+
+  final val defaultConfig = new ConfigModuleDef {
+    make[Docker.ClientConfig].fromValue(Docker.ClientConfig())
+  }
 }

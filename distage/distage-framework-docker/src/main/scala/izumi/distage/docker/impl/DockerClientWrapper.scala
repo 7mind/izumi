@@ -82,6 +82,8 @@ object DockerClientWrapper {
     final case class RawContainer(container: Container) extends ContainerDestroyMeta {
       override def toString: String = container.toString
     }
+
+    final case object NoMeta extends ContainerDestroyMeta
   }
 
   sealed trait RemovalReason

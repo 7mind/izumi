@@ -1,36 +1,55 @@
 package izumi.distage.testkit.docker
 
-import distage.DIKey
-import izumi.distage.docker.model.Docker.AvailablePort
-import izumi.distage.model.definition.Id
-import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.TestConfig.ParallelLevel
-import izumi.distage.testkit.docker.fixtures.PgSvcExample
-import izumi.distage.testkit.scalatest.Spec2
-import izumi.logstage.api.Log
-import logstage.LogIO2
-import zio.IO
+import distage.*
+import izumi.distage.docker.bundled.{KafkaDocker, KafkaDockerModule, ZookeeperDocker, ZookeeperDockerModule}
+import izumi.distage.docker.impl.DockerClientWrapper
+import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
+import izumi.distage.docker.model.Docker.ContainerId
+import izumi.distage.docker.modules.DockerSupportModule
+import izumi.fundamentals.platform.functional.Identity
+import logstage.IzLogger
+import org.scalatest.wordspec.AnyWordSpec
 
-abstract class ContainerDependenciesTest extends Spec2[IO] {
+final class ContainerDependenciesTest extends AnyWordSpec {
+  "distage-docker should re-create containers with failed dependencies, https://github.com/7mind/izumi/issues/1366" in {
+    val defn = PlannerInput(
+      new ModuleDef {
+        include(KafkaDockerModule[Identity])
+        include(ZookeeperDockerModule[Identity])
+        include(DockerSupportModule[Identity] overriddenBy DockerSupportModule.defaultConfig)
+        make[IzLogger].fromValue(IzLogger())
+      },
+      Activation.empty,
+      DIKey.get[KafkaDocker.Container],
+      DIKey.get[ZookeeperDocker.Container],
+      DIKey.get[ZookeeperDocker.Container],
+      DIKey.get[DockerClientWrapper[Identity]],
+    )
 
-  override protected def config: TestConfig = super.config.copy(
-    memoizationRoots = Set(DIKey[PgSvcExample]),
-    parallelTests = ParallelLevel.Unlimited,
-    parallelEnvs = ParallelLevel.Unlimited,
-    logLevel = Log.Level.Info,
-  )
-
-  "distage test runner should start only one container for reusable" should {
-
-    "support docker resources" in {
-      // TODO: additionally check flyway outcome with doobie
-      (kafka: AvailablePort @Id("kafka"), log: LogIO2[IO]) =>
-        for {
-          _ <- log.info(s"Kafka port: $kafka")
-        } yield ()
+    def runContainers() = {
+      Injector()
+        .produce(defn).run[(ContainerId, ContainerId)] {
+          (kafka: KafkaDocker.Container, zk: ZookeeperDocker.Container) =>
+            (kafka.id, zk.id)
+        }
     }
 
+    val (k1, zk1) = runContainers()
+    val (k11, zk11) = runContainers()
+
+    assert(k11 == k1)
+    assert(zk11 == zk1)
+
+    Injector()
+      .produce(defn).run {
+        (client: DockerClientWrapper[Identity]) =>
+          client.removeContainer(zk1, ContainerDestroyMeta.NoMeta, RemovalReason.AlreadyExited)
+          ()
+      }
+
+    val (k2, zk2) = runContainers()
+
+    assert(k1 != k2)
+    assert(zk1 != zk2)
   }
 }
-
-final class ContainerDependenciesTestImpl extends ContainerDependenciesTest
