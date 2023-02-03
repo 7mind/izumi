@@ -2,7 +2,7 @@ package izumi.functional.bio.test
 
 import izumi.functional.bio.data.{Morphism1, Morphism2, Morphism3}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, Scheduler3}
-import izumi.fundamentals.platform.language.IzScala
+import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration.*
@@ -288,31 +288,41 @@ class SyntaxTest extends AnyWordSpec {
         """)
       }
       for {
-        (1, 2) <- F.pure((2, 1))
+        case (1, 2) <- F.pure((2, 1))
       } yield ()
     }
     def y[F[+_, +_]: Error2]: F[Any, Unit] = {
       for {
-        (1, 2) <- F.pure((2, 1))
+        case (1, 2) <- F.pure((2, 1))
       } yield ()
     }
     def z[F[+_, +_]: Error2]: F[String, Unit] = {
+      // Scala 3 Workaround
       import izumi.functional.bio.WithFilter.WithFilterString
+      // Scala 3 Workaround
+
       for {
-        (1, 2) <- F.pure((2, 1)).widen[Any].widenError[String]
+        case (1, 2) <- F.pure((2, 1)).widen[Any].widenError[String]
       } yield ()
     }
     def xx[F[+_, +_]: Error2]: F[Unit, Unit] = {
+      // Scala 3 Workaround
       import izumi.functional.bio.WithFilter.WithFilterUnit
+      // Scala 3 Workaround
+
       for {
-        (1, 2) <- F.pure((2, 1)).widen[Any].widenError[Unit]
+        case (1, 2) <- F.pure((2, 1)).widen[Any].widenError[Unit]
       } yield ()
     }
     def yy[F[+_, +_]: Error2]: F[Option[Throwable], Unit] = {
+      // Scala 3 Workaround
       import izumi.functional.bio.WithFilter
       implicit val withFilterScala3Workaround: WithFilter[Option[Throwable]] = WithFilter.WithFilterOption(WithFilter.WithFilterNoSuchElementException)
+      val _ = withFilterScala3Workaround
+      // Scala 3 Workaround
+
       for {
-        (1, 2) <- F.pure((2, 1)).widen[Any].widenError[Option[Throwable]]
+        case (1, 2) <- F.pure((2, 1)).widen[Any].widenError[Option[Throwable]]
       } yield ()
     }
     x[zio.IO]
@@ -665,6 +675,48 @@ class SyntaxTest extends AnyWordSpec {
     implicitly[Morphism1[List, List]]
     implicitly[Morphism2[Either, Either]]
     implicitly[Morphism3[zio.ZIO, zio.ZIO]]
+  }
+
+  "BIO.clock/entropy are callable" in {
+    import izumi.functional.bio.{F, Functor2, Temporal2, Clock2, Entropy2}
+
+    def x[F[+_, +_]: Temporal2] = {
+      F.clock.now()
+    }
+
+    def y[F[+_, +_]: Functor2: Clock2] = {
+      F.clock.now()
+    }
+
+    def z[F[+_, +_]: Functor2: Entropy2] = {
+      F.entropy.nextInt()
+    }
+
+    x[zio.IO]
+    y[zio.IO]
+    z[zio.IO]
+    F.clock.now()
+  }
+
+  "BIO3.clock/entropy are callable" in {
+    import izumi.functional.bio.{F, Functor3, Temporal3, Clock3, Entropy3}
+
+    def x[F[-_, +_, +_]: Temporal3] = {
+      F.clock.now()
+    }
+
+    def y[F[-_, +_, +_]: Functor3: Clock3] = {
+      F.clock.now()
+    }
+
+    def z[F[-_, +_, +_]: Functor3: Entropy3] = {
+      F.entropy.nextInt()
+    }
+
+    x[zio.ZIO]
+    y[zio.ZIO]
+    z[zio.ZIO]
+    F.entropy.nextInt()
   }
 
 }

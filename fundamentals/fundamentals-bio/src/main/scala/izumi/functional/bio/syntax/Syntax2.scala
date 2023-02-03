@@ -65,7 +65,7 @@ object Syntax2 {
 
   final class MonadOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Monad2[F]) extends ApplicativeOps(r)(F) {
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E1, A, B](r)(f0)
-    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
+    @inline final def tap[E1 >: E](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
 
@@ -78,7 +78,7 @@ object Syntax2 {
   class ErrorOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Error2[F]) extends ApplicativeErrorOps(r)(F) {
     // duplicated from MonadOps
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E1, A, B](r)(f0)
-    @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
+    @inline final def tap[E1 >: E](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
 
@@ -120,7 +120,7 @@ object Syntax2 {
       *   } yield ()
       * }}}
       *
-      * Use [[widenError]] to for pattern matching with non-Throwable errors:
+      * Use [[widenError]] for pattern matching with non-Throwable errors:
       *
       * {{{
       *   val f = for {
@@ -129,7 +129,7 @@ object Syntax2 {
       *   // f: F[Option[Unit], Unit] = F.fail(Some(())
       * }}}
       */
-    @inline final def withFilter[E1 >: E](predicate: A => Boolean)(implicit filter: WithFilter[E1], pos: SourceFilePositionMaterializer): F[E1, A] =
+    @inline final def withFilter[A1 >: A, E1 >: E](predicate: A => Boolean)(implicit filter: WithFilter[E1], pos: SourceFilePositionMaterializer): F[E1, A] =
       F.withFilter[Any, E1, A](r)(predicate)
   }
 
