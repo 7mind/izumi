@@ -26,11 +26,11 @@ final class ContainerDependenciesTest extends AnyWordSpec {
       DIKey.get[DockerClientWrapper[Identity]],
     )
 
-    def runContainers() = {
+    def runContainers(): (ContainerId, ContainerId) = {
       Injector()
-        .produce(defn).run[(ContainerId, ContainerId)] {
+        .produce(defn).run {
           (kafka: KafkaDocker.Container, zk: ZookeeperDocker.Container) =>
-            (kafka.id, zk.id)
+            (kafka.id, zk.id): Identity[(ContainerId, ContainerId)]
         }
     }
 
