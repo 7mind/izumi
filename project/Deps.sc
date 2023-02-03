@@ -321,10 +321,6 @@ object Izumi {
           ),
           SettingKey.Default := Const.EmptySeq,
         ),
-        "publishArtifact" in SettingScope.Raw("Compile / packageDoc") := Seq(
-          SettingKey(Some(scala300), None) := false,
-          SettingKey.Default := true,
-        ),
         "publishArtifact" in SettingScope.Raw("Test / packageDoc") := false,
       )
 
@@ -432,6 +428,12 @@ object Izumi {
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq.empty,
+        settings = Seq(
+          ("sources" in SettingScope.Raw("Compile / doc")) := Seq(
+            SettingKey(Some(scala300), None) := Const.EmptySeq,
+            SettingKey.Default := "(Compile / doc / sources).value".raw,
+          )
+        ),
       ),
       Artifact(
         name = Projects.fundamentals.language,

@@ -164,10 +164,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -330,10 +326,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -493,10 +485,6 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false
   )
@@ -662,11 +650,11 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
-    Test / packageDoc / publishArtifact := false
+    Test / packageDoc / publishArtifact := false,
+    Compile / doc / sources := { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "3.2.2") => Seq.empty
+      case (_, _) => (Compile / doc / sources).value
+    } }
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -837,10 +825,6 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -1004,10 +988,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false
   )
@@ -1184,10 +1164,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -1352,10 +1328,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false
   )
@@ -1530,10 +1502,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -1706,10 +1674,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -1873,10 +1837,6 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -2039,10 +1999,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false
   )
@@ -2213,10 +2169,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -2384,10 +2336,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -2553,10 +2501,6 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false
   )
@@ -2724,10 +2668,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false
   )
@@ -2904,10 +2844,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -3080,10 +3016,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -3245,10 +3177,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false
   )
@@ -3421,10 +3349,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false,
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
   )
@@ -3594,10 +3518,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -3766,10 +3686,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false
   )
   .disablePlugins(AssemblyPlugin)
@@ -3932,10 +3848,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false,
     Compile / compileOrder := CompileOrder.Mixed,
@@ -4103,10 +4015,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false
   )
@@ -4298,10 +4206,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
-    } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
     } },
     Test / packageDoc / publishArtifact := false,
     SettingKey[Boolean]("ide-skip-project") := true,
@@ -4525,10 +4429,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       )
       case (_, _) => Seq.empty
     } },
-    Compile / packageDoc / publishArtifact := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.2.2") => false
-      case (_, _) => true
-    } },
     Test / packageDoc / publishArtifact := false,
     sbtPlugin := true,
     withBuildInfo("izumi.sbt.deps", "Izumi")
@@ -4661,7 +4561,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
     `logstage-sink-slf4j`
   )
 
-lazy val `doc` = (project in file(".agg/doc-doc"))
+lazy val `docs` = (project in file(".agg/doc-docs"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
@@ -4675,7 +4575,7 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
     `microsite`
   )
 
-lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
+lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Seq(
