@@ -1,5 +1,6 @@
 package izumi.distage.docker
 
+import distage.Tag
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
@@ -7,7 +8,7 @@ import izumi.distage.docker.model.Docker
 import izumi.distage.docker.model.Docker.*
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.SafeType
+import izumi.distage.model.reflection.{IdContract, SafeType}
 import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.IzLogger
@@ -38,6 +39,15 @@ final case class DockerContainer[+Tag](
 }
 
 object DockerContainer {
+  case class DependencyTag(tpe: SafeType)
+
+  object DependencyTag {
+    def get[T](implicit tag: Tag[DockerContainer[T]]): DependencyTag = DependencyTag(SafeType.get[DockerContainer[T]])
+
+    implicit def tagIdContract: IdContract[DependencyTag] = new IdContract[DependencyTag] {
+      override def repr(v: DependencyTag): String = s"container:${v.tpe}"
+    }
+  }
   def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, Set[DockerContainer[Any]], QuasiIO[F], QuasiAsync[F]) => ContainerResource[F, conf.Tag] = {
     new ContainerResource[F, conf.Tag](conf.config, _, _, _)(_, _)
   }
@@ -90,7 +100,7 @@ object DockerContainer {
       addContainerDependency[containerDecl.Tag]
       self
         .addDependency[DockerContainer[containerDecl.Tag]]
-        .annotateParameter[Set[DockerContainer[Any]]](SafeType.get[DockerContainer[containerDecl.Tag]])
+        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[DockerContainer[containerDecl.Tag]])
     }
 
     def dependOnContainer[T2](
@@ -101,7 +111,7 @@ object DockerContainer {
       addContainerDependency[T2]
       self
         .addDependency[DockerContainer[T2]]
-        .annotateParameter[Set[DockerContainer[Any]]](SafeType.get[DockerContainer[T2]])
+        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[DockerContainer[T2]])
     }
 
     /**
@@ -183,7 +193,7 @@ object DockerContainer {
     ): Unit = {
       new mutateModule.dsl {
         many[DockerContainer[Any]]
-          .named(SafeType.get[DockerContainer[T]])
+          .named(DependencyTag.get[DockerContainer[T]])
           .ref[DockerContainer[T2]]
       }
       ()

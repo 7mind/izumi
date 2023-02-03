@@ -11,8 +11,6 @@ object IdContract {
 
   implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = new IdContractImpl[S]
 
-  implicit def tagIdContract: IdContract[SafeType] = new IdContractImpl[SafeType]
-
   final class IdContractImpl[T] extends IdContract[T] {
     override def repr(value: T): String = value.toString
   }

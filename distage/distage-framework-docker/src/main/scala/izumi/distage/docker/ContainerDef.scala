@@ -1,6 +1,7 @@
 package izumi.distage.docker
 
-import distage.{SafeType, TagK}
+import distage.TagK
+import izumi.distage.docker.DockerContainer.DependencyTag
 import izumi.distage.docker.impl.ContainerResource
 import izumi.distage.docker.model.Docker
 import izumi.distage.model.definition.Lifecycle
@@ -47,10 +48,10 @@ trait ContainerDef {
   ): Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = {
     tag.discard()
     new mutateModule.dsl {
-      many[DockerContainer[Any]].named(SafeType.get[DockerContainer[Tag]])
+      many[DockerContainer[Any]].named(DependencyTag.get[DockerContainer[Tag]])
     }
     val f: Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = DockerContainer.resource[F](this)
-    f.annotateParameter[Set[DockerContainer[Any]]](SafeType.get[DockerContainer[Tag]])
+    f.annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[DockerContainer[Tag]])
   }
 
   final def copy(config: Config): ContainerDef.Aux[self.Tag] = {
