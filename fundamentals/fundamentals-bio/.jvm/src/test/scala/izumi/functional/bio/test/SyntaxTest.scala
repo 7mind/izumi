@@ -2,6 +2,7 @@ package izumi.functional.bio.test
 
 import izumi.functional.bio.data.{Morphism1, Morphism2, Morphism3}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2, Scheduler3}
+import izumi.fundamentals.platform.language.IzScala
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.duration.*
@@ -277,13 +278,15 @@ class SyntaxTest extends AnyWordSpec {
     import izumi.functional.bio.{Error2, F}
 
     def x[F[+_, +_]: Error2]: F[NoSuchElementException, Unit] = {
-      assertDoesNotCompile(
-        """
+      IzScala.scalaRelease match {
+        case _: ScalaRelease.`3` =>
+        case _ =>
+          assertDoesNotCompile("""
         for {
           (1, 2) <- F.pure(Option((2, 1)))
         } yield ()
-        """
-      )
+        """)
+      }
       for {
         (1, 2) <- F.pure((2, 1))
       } yield ()
@@ -294,18 +297,22 @@ class SyntaxTest extends AnyWordSpec {
       } yield ()
     }
     def z[F[+_, +_]: Error2]: F[String, Unit] = {
+      import izumi.functional.bio.WithFilter.WithFilterString
       for {
-        (1, 2) <- F.pure((2, 1)).widenError[String]
+        (1, 2) <- F.pure((2, 1)).widen[Any].widenError[String]
       } yield ()
     }
     def xx[F[+_, +_]: Error2]: F[Unit, Unit] = {
+      import izumi.functional.bio.WithFilter.WithFilterUnit
       for {
-        (1, 2) <- F.pure((2, 1)).widenError[Unit]
+        (1, 2) <- F.pure((2, 1)).widen[Any].widenError[Unit]
       } yield ()
     }
     def yy[F[+_, +_]: Error2]: F[Option[Throwable], Unit] = {
+      import izumi.functional.bio.WithFilter
+      implicit val withFilterScala3Workaround: WithFilter[Option[Throwable]] = WithFilter.WithFilterOption(WithFilter.WithFilterNoSuchElementException)
       for {
-        (1, 2) <- F.pure((2, 1)).widenError[Option[Throwable]]
+        (1, 2) <- F.pure((2, 1)).widen[Any].widenError[Option[Throwable]]
       } yield ()
     }
     x[zio.IO]
@@ -390,66 +397,66 @@ class SyntaxTest extends AnyWordSpec {
 
     def x[FR[-_, +_, +_]: Monad3: Ask3]: FR[Int, Nothing, Boolean] = {
       F.unit *> F.ask[Int].map {
-        _: Int =>
+        (_: Int) =>
           true
       } *>
       F.unit *> F.askWith {
-        _: Int =>
+        (_: Int) =>
           true
       }
     }
     def onlyMonadAsk[FR[-_, +_, +_]: MonadAsk3]: FR[Int, Nothing, Unit] = {
       F.unit <* F.askWith {
-        _: Int =>
+        (_: Int) =>
           true
       }
     }
     def onlyMonadAskAccess[FR[-_, +_, +_]: MonadAsk3]: FR[Int, Nothing, Unit] = {
       F.unit <* F.access {
-        _: Int =>
+        (_: Int) =>
           F.unit
       }
     }
     def onlyAsk[FR[-_, +_, +_]: Ask3]: FR[Int, Nothing, Unit] = {
       F.askWith {
-        _: Int =>
+        (_: Int) =>
           true
       } *> F.unit
     }
     def y[FR[-_, +_, +_]: Local3]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
         F.askWith {
-          _: Int =>
+          (_: Int) =>
             ()
         }.toKleisli
       }.provide(4)
     }
     def arrowAsk[FR[-_, +_, +_]: Arrow3: Ask3]: FR[String, Throwable, Int] = {
       F.askWith {
-        _: Int =>
+        (_: Int) =>
           ()
       }.dimap {
-          _: String =>
+          (_: String) =>
             4
         }(_ => 1)
     }
     def profunctorOnly[FR[-_, +_, +_]: Profunctor3](f: FR[Unit, Throwable, Int]): FR[String, Throwable, Int] = {
       F.contramap(f) {
-        _: Int =>
+        (_: Int) =>
           ()
       }.dimap {
-          _: String =>
+          (_: String) =>
             4
         }(_ => 1)
         .map(_ + 2)
     }
     def bifunctorOnly[FR[-_, +_, +_]: Bifunctor3](f: FR[Unit, Int, Int]): FR[Unit, Int, Int] = {
       F.leftMap(f) {
-        _: Int =>
+        (_: Int) =>
           ()
       }.bimap(
           {
-            _: Unit =>
+            (_: Unit) =>
               4
           },
           _ => 1,
@@ -459,7 +466,7 @@ class SyntaxTest extends AnyWordSpec {
     def Temporal2PlusLocal[FR[-_, +_, +_]: Temporal3: Local3]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
         F.askWith {
-          _: Int =>
+          (_: Int) =>
             ()
         }.toKleisli
       }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
@@ -467,7 +474,7 @@ class SyntaxTest extends AnyWordSpec {
     def biomonadPlusLocal[FR[-_, +_, +_]: Monad3: Bifunctor3: Local3]: FR[Any, Throwable, Unit] = {
       F.fromKleisli {
         F.askWith {
-          _: Int =>
+          (_: Int) =>
             ()
         }.toKleisli
       }.provide(4).flatMap(_ => F.unit).widenError[Throwable].leftMap(identity)
