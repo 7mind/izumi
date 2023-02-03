@@ -1,9 +1,11 @@
-package izumi.distage.docker
+package izumi.distage.docker.model
 
 import izumi.distage.config.codec.{DIConfigReader, PureconfigAutoDerive}
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
-import izumi.distage.docker.Docker.ClientConfig.parseReusePolicy
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
+import izumi.distage.docker.impl.ContainerResource
+import izumi.distage.docker.model.Docker.ClientConfig.parseReusePolicy
+import izumi.distage.docker.{DebugProperties, DockerConst}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.PortCheck.HostPortPair
 import pureconfig.ConfigReader
@@ -111,7 +113,7 @@ object Docker {
 
   /**
     * Parameters that define the behavior of this docker container,
-    * Will be interpreted by [[izumi.distage.docker.ContainerResource]]
+    * Will be interpreted by [[ContainerResource]]
     *
     * @param image    Docker Image to use
     *

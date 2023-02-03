@@ -1,7 +1,7 @@
 package izumi.distage.testkit.docker
 
-import izumi.distage.docker.ContainerResource
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
+import izumi.distage.docker.impl.ContainerResource
 import izumi.distage.testkit.docker.fixtures.ExitCodeCheckContainer
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec2}
 import zio.IO

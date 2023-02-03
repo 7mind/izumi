@@ -1,18 +1,20 @@
-package izumi.distage.docker
+package izumi.distage.docker.impl
 
 import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model.*
-import izumi.distage.docker.ContainerResource.PortDecl
-import izumi.distage.docker.Docker.*
-import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
+import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
+import izumi.distage.docker.impl.ContainerResource.PortDecl
+import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
+import izumi.distage.docker.model.Docker
+import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.functional.Value
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.integration.ResourceCheck

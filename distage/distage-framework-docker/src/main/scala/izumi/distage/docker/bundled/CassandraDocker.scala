@@ -1,7 +1,7 @@
 package izumi.distage.docker.bundled
 
 import izumi.distage.docker.ContainerDef
-import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
 

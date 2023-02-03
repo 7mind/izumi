@@ -1,9 +1,11 @@
 package izumi.distage.docker
 
 import distage.TagK
+import izumi.distage.docker.impl.ContainerResource
+import izumi.distage.docker.model.Docker
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.providers.Functoid
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 
 trait ContainerDef {
   // `ContainerDef`s must be top-level objects, otherwise `.Container` and `.Config` won't be referencable in ModuleDef

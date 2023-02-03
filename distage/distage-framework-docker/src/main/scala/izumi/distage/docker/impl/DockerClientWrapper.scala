@@ -1,16 +1,17 @@
-package izumi.distage.docker
+package izumi.distage.docker.impl
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.exception.NotModifiedException
 import com.github.dockerjava.api.model.{AuthConfig, Container}
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientConfig}
-import izumi.distage.docker.Docker.{ClientConfig, ContainerId, DockerRegistryConfig}
-import izumi.distage.docker.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
+import izumi.distage.docker.model.Docker.{ClientConfig, ContainerId, DockerRegistryConfig}
+import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
+import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.functional.Value
+import izumi.functional.quasi.QuasiIO
+import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.Discarder

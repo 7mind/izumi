@@ -2,9 +2,10 @@ package izumi.distage.testkit.docker.fixtures
 
 import java.util.UUID
 import distage.{ModuleDef, TagK}
-import izumi.distage.docker.{ContainerDef, ContainerResource}
-import izumi.distage.docker.Docker.{DockerReusePolicy, Mount}
+import izumi.distage.docker.ContainerDef
+import izumi.distage.docker.model.Docker.{DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
+import izumi.distage.docker.impl.ContainerResource
 import izumi.distage.model.definition.Lifecycle
 
 object ReusedOneshotContainer extends ContainerDef {

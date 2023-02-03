@@ -2,7 +2,7 @@ package izumi.distage.testkit.docker
 
 import distage.ModuleDef
 import izumi.distage.docker.ContainerDef
-import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.docker.DockerUserLabelsTest.*

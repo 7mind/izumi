@@ -1,7 +1,7 @@
 package izumi.distage.docker.bundled
 
 import distage.{Functoid, Id, ModuleDef, TagK}
-import izumi.distage.docker.Docker.{DockerPort, DockerReusePolicy, Mount}
+import izumi.distage.docker.model.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
 
