@@ -381,7 +381,7 @@ object Izumi {
     }
 
     object docs {
-      final val id = ArtifactId("doc")
+      final val id = ArtifactId("docs")
       final val basePath = Seq("doc")
 
       final lazy val microsite = ArtifactId("microsite")
