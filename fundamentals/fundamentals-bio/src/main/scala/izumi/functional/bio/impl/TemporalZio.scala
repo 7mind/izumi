@@ -13,7 +13,7 @@ open class TemporalZio(
   with Temporal3[ZIO] {
 
   @inline override final def sleep(duration: Duration): ZIO[Any, Nothing, Unit] = {
-    ZIO.sleep(fromScala(duration)).provide(zioClock)
+    zioClock.get.sleep(fromScala(duration))
   }
 
   @inline override final def timeout[R, E, A](duration: Duration)(r: ZIO[R, E, A]): ZIO[R, E, Option[A]] = {

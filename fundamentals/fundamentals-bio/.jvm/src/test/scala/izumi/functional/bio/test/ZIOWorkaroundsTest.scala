@@ -1,6 +1,6 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.{Async2, Exit, F}
+import izumi.functional.bio.*
 import org.scalatest.wordspec.AnyWordSpec
 import zio.ZIO
 

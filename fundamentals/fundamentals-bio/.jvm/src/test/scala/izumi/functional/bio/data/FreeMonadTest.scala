@@ -1,14 +1,14 @@
 package izumi.functional.bio.data
 
-import java.util.concurrent.atomic.AtomicReference
-
 import izumi.functional.bio.{F, IO2, UnsafeRun2}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.IO
 import zio.internal.Platform
 
+import java.util.concurrent.atomic.AtomicReference
+
 class FreeMonadTest extends AnyWordSpec {
-  import FreeMonadTest._
+  import FreeMonadTest.*
   val syntax = new TestFreeSyntax[IO]
   val simpleExecution: FreePanic[TestFreeChoice, Nothing, Unit] = {
     for {
