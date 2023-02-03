@@ -7,7 +7,7 @@ import izumi.distage.config.ConfigModuleDef
 import izumi.distage.docker.impl.DockerClientWrapper.DockerIntegrationCheck
 import izumi.distage.docker.impl.{DockerClientFactory, DockerClientWrapper}
 import izumi.distage.docker.model.Docker
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.functional.Value
 
 class DockerSupportModule[F[_]: TagK](configModule: ModuleBase) extends ModuleDef {
@@ -25,9 +25,9 @@ class DockerSupportModule[F[_]: TagK](configModule: ModuleBase) extends ModuleDe
         .get.build()
   }
 
-  make[DockerClient].from {
+  make[DockerClient].fromResource {
     (clientConfig: Docker.ClientConfig, rawClientConfig: DefaultDockerClientConfig, clientFactory: DockerClientFactory) =>
-      clientFactory.makeClient(clientConfig, rawClientConfig)
+      Lifecycle.fromAutoCloseable(clientFactory.makeClient(clientConfig, rawClientConfig))
   }
 
   make[DockerIntegrationCheck[F]]
