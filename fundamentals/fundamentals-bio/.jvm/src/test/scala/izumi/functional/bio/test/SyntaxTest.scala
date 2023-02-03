@@ -719,4 +719,19 @@ class SyntaxTest extends AnyWordSpec {
     F.entropy.nextInt()
   }
 
+  "Use F.mkRef magic method even without a Functor2[F] instance in scope by using accursed power" in {
+    import izumi.functional.bio.{MoreCursedF, Monad3, Primitives3, Ref3}
+
+    def x[F[-_, +_, +_]: Primitives3]: F[Any, Nothing, Ref3[F, Int]] = {
+      MoreCursedF.mkRef(1)
+    }
+
+    def y[F[-_, +_, +_]: Monad3: Primitives3]: F[Any, Nothing, Int] = {
+      MoreCursedF.mkRef(1).flatMap(_.get).map(_ + 1)
+    }
+
+    x[zio.ZIO]
+    y[zio.ZIO]
+  }
+
 }

@@ -1,7 +1,11 @@
 package izumi.functional
 
+import izumi.functional.bio.PredefinedHelper.NotPredefined
 import izumi.functional.bio.data.Isomorphism2
 import izumi.functional.bio.syntax.{Syntax2, Syntax3}
+
+import scala.annotation.unused
+import scala.language.implicitConversions
 
 /**
   *  Current hierarchy (use http://www.nomnoml.com/ to render, rendered: https://izumi.7mind.io/bio/media/bio-relationship-hierarchy.svg)
@@ -125,6 +129,16 @@ package object bio extends Syntax3 with Syntax2 {
     * }}}
     */
   @inline override final def F[FR[-_, +_, +_]](implicit FR: Functor3[FR]): FR.type = FR
+
+  @inline final def MoreCursedF[FR[-_, +_, +_]](implicit FR: NotPredefined.Of[Functor3[FR]] = CursedPower.cursedManifestation): FR.type = FR
+
+  object CursedPower {
+    type CursedPower <: Functor3[Nothing]
+    val cursedManifestation: CursedPower = null.asInstanceOf[CursedPower]
+
+    implicit final def CursedAttachPrimitives3[FR[-_, +_, +_]](@unused bearerOfTheCurse: CursedPower)(implicit Primitives: Primitives3[FR]): Primitives.type =
+      Primitives
+  }
 
   type Functor2[F[+_, +_]] = Functor3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
   type Bifunctor2[F[+_, +_]] = Bifunctor3[λ[(`-R`, `+E`, `+A`) => F[E, A]]]
