@@ -48,10 +48,10 @@ trait ContainerDef {
   ): Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = {
     tag.discard()
     new mutateModule.dsl {
-      many[DockerContainer[Any]].named(DependencyTag.get[DockerContainer[Tag]])
+      many[DockerContainer[Any]].named(DependencyTag.get[Tag])
     }
     val f: Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = DockerContainer.resource[F](this)
-    f.annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[DockerContainer[Tag]])
+    f.annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[Tag])
   }
 
   final def copy(config: Config): ContainerDef.Aux[self.Tag] = {

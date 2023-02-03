@@ -100,7 +100,7 @@ object DockerContainer {
       addContainerDependency[containerDecl.Tag]
       self
         .addDependency[DockerContainer[containerDecl.Tag]]
-        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[DockerContainer[containerDecl.Tag]])
+        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[containerDecl.Tag])
     }
 
     def dependOnContainer[T2](
@@ -111,7 +111,7 @@ object DockerContainer {
       addContainerDependency[T2]
       self
         .addDependency[DockerContainer[T2]]
-        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[DockerContainer[T2]])
+        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[T2])
     }
 
     /**
@@ -193,7 +193,7 @@ object DockerContainer {
     ): Unit = {
       new mutateModule.dsl {
         many[DockerContainer[Any]]
-          .named(DependencyTag.get[DockerContainer[T]])
+          .named(DependencyTag.get[T])
           .ref[DockerContainer[T2]]
       }
       ()
