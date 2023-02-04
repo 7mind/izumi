@@ -37,12 +37,12 @@ function coverage {
 
 function site-publish {
   echo "Publishing site from branch=$CI_BRANCH; tag=$CI_BRANCH_TAG"
-  csbt +clean "'${VERSION_COMMAND}doc/ghpagesSynchLocal'" "'${VERSION_COMMAND}doc/ghpagesPushSite'" || exit 1
+  csbt +clean "'${VERSION_COMMAND}docs/ghpagesSynchLocal'" "'${VERSION_COMMAND}docs/ghpagesPushSite'" || exit 1
 }
 
 function site-test {
     echo "Not publishing site, because $CI_BRANCH is not 'develop' nor a tag"
-    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}doc/makeSite'" || exit 1
+    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}docs/makeSite'" || exit 1
 }
 
 function publishScala {
