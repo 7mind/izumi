@@ -7,7 +7,10 @@ import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finali
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
-/** Executes instructions in [[izumi.distage.model.plan.Plan]] to produce a [[izumi.distage.model.Locator]] */
+/** Executes instructions in [[izumi.distage.model.plan.Plan]] to produce a [[izumi.distage.model.Locator]]
+  *
+  * @throws izumi.distage.model.exceptions.runtime.ProvisioningException produce* methods raise this exception in `F` effect type on failure
+  */
 trait Producer {
   private[distage] def produceDetailedFX[F[_]: TagK: QuasiIO](plan: Plan, filter: FinalizerFilter[F]): Lifecycle[F, Either[FailedProvision[F], Locator]]
   private[distage] final def produceFX[F[_]: TagK: QuasiIO](plan: Plan, filter: FinalizerFilter[F]): Lifecycle[F, Locator] = {

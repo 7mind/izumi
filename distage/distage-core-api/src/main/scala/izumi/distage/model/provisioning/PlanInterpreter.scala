@@ -51,6 +51,7 @@ object PlanInterpreter {
     meta: FailedProvisionMeta,
     fullStackTraces: Boolean,
   ) {
+    /** @throws ProvisioningException in `F` effect type */
     def throwException[A]()(implicit F: QuasiIO[F]): F[A] = {
       import FailedProvision.ProvisioningFailureOps
       val repr = failure.render(fullStackTraces)
@@ -81,6 +82,7 @@ object PlanInterpreter {
 
   object FailedProvision {
     implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision[F], Locator]) extends AnyVal {
+      /** @throws ProvisioningException in `F` effect type */
       def throwOnFailure()(implicit F: QuasiIO[F]): F[Locator] = p.fold(_.throwException(), F.pure)
     }
 

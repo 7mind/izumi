@@ -6,8 +6,8 @@ import izumi.distage.docker.impl.DockerClientWrapper
 import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, DockerIntegrationCheck, RemovalReason}
 import izumi.distage.docker.model.Docker.ContainerId
 import izumi.distage.docker.modules.DockerSupportModule
+import izumi.distage.model.exceptions.runtime.ProvisioningIntegrationException
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.integration.ResourceCheck
 import logstage.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -20,11 +20,14 @@ final class ContainerDependenciesTest extends AnyWordSpec {
       make[IzLogger].fromValue(IzLogger())
     }
 
-    Injector()
-      .produceRun(module) {
-        (check: DockerIntegrationCheck[Identity]) =>
-          assume(check.resourcesAvailable() == ResourceCheck.Success())
-      }
+    try {
+      Injector()
+        .produceGet[DockerIntegrationCheck[Identity]](module)
+        .use(_ => ())
+    } catch {
+      case ProvisioningIntegrationException(_) =>
+        assume(false)
+    }
 
     def runContainers(): (ContainerId, ContainerId) = {
       Injector()
