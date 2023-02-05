@@ -48,9 +48,13 @@ import izumi.reflect.Tag
   *   }
   * }}}
   */
-case class AutoSetHook[BINDING: Tag](includeOnly: InclusionPredicate, pos: CodePosition) extends PlanningHook {
+case class AutoSetHook[BINDING: Tag] private (includeOnly: InclusionPredicate, name: Option[String], weak: Boolean, pos: CodePosition) extends PlanningHook {
   protected val setElementType: SafeType = SafeType.get[BINDING]
-  protected val setKey: DIKey = DIKey.get[Set[BINDING]]
+
+  protected val setKey: DIKey = name match {
+    case Some(value) => DIKey.get[Set[BINDING]].named(value)
+    case None => DIKey.get[Set[BINDING]]
+  }
 
   override def hookDefinition(definition: ModuleBase): ModuleBase = {
     val setMembers = findMatchingBindings(definition)
@@ -74,7 +78,7 @@ case class AutoSetHook[BINDING: Tag](includeOnly: InclusionPredicate, pos: CodeP
 
           if (!isAutosetElement) {
             val implType = b.implementation.implType
-            val impl: ImplDef = ImplDef.ReferenceImpl(implType, b.key, weak = true)
+            val impl: ImplDef = ImplDef.ReferenceImpl(implType, b.key, weak = weak)
             Seq(SetElementBinding(SetElementKey(setKey, b.key, SetKeyMeta.WithAutoset(setKey)), impl, b.tags, b.origin))
           } else {
             Seq.empty
@@ -127,12 +131,12 @@ object AutoSetHook {
     }
   }
 
-  def apply[T: Tag](includeOnly: InclusionPredicate)(implicit pos: CodePositionMaterializer): AutoSetHook[T] = {
-    new AutoSetHook[T](includeOnly, pos.get)
+  def apply[T: Tag](
+    includeOnly: InclusionPredicate = InclusionPredicate.IncludeAny,
+    name: Option[String] = None,
+    weak: Boolean = true,
+  )(implicit pos: CodePositionMaterializer
+  ): AutoSetHook[T] = {
+    new AutoSetHook[T](includeOnly, name, weak, pos.get)
   }
-
-  def apply[T: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[T] = {
-    new AutoSetHook[T](InclusionPredicate.IncludeAny, pos.get)
-  }
-
 }
