@@ -1007,8 +1007,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "io.circe" %% "circe-derivation" % V.circe_derivation,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
+      "io.circe" %% "circe-derivation" % V.circe_derivation % Test
     ) else Seq.empty },
     libraryDependencies ++= {
       val version = scalaVersion.value
@@ -1164,7 +1164,9 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
-    Test / packageDoc / publishArtifact := false
+    Test / packageDoc / publishArtifact := false,
+    Compile / libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
+    Compile / libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always
   )
   .disablePlugins(AssemblyPlugin)
 
@@ -3524,13 +3526,13 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
 
 lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-rendering-circe"))
   .dependsOn(
-    `fundamentals-json-circe` % "test->compile;compile->compile",
     `logstage-core` % "test->test;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "io.circe" %% "circe-core" % V.circe,
       "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %% "circe-parser" % V.circe % Test,
       "io.circe" %% "circe-literal" % V.circe % Test,
@@ -4057,7 +4059,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
       "org.tpolecat" %% "doobie-core" % V.doobie,
-      "org.tpolecat" %% "doobie-postgres" % V.doobie
+      "org.tpolecat" %% "doobie-postgres" % V.doobie,
+      "io.circe" %% "circe-generic" % V.circe
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -4695,9 +4698,7 @@ lazy val `izumi` = (project in file("."))
     ThisBuild / developers := List(
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
-    ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    ThisBuild / libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
-    ThisBuild / libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always
+    ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
