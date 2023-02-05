@@ -7,8 +7,8 @@ import izumi.functional.IzEither.EitherBiAggregate
 import scala.annotation.switch
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
-import JsonFlattener._
-import PathElement._
+import JsonFlattener.*
+import PathElement.*
 import izumi.fundamentals.platform.strings.IzEscape
 
 class JsonFlattener {

@@ -323,14 +323,14 @@ Example:
 
 ```scala mdoc:reset:to-string
 import io.circe.Codec
-import io.circe.derivation
+import io.circe.generic.semiauto
 import logstage.LogstageCodec
 import logstage.circe.LogstageCirceCodec
 
 final case class KV(key: String, value: Int)
 
 object KV {
-  implicit val circeCodec: Codec[KV] = derivation.deriveCodec[KV]
+  implicit val circeCodec: Codec[KV] = semiauto.deriveCodec[KV]
   implicit val logstageCodec: LogstageCodec[KV] = LogstageCirceCodec.derived[KV]
 }
 ```

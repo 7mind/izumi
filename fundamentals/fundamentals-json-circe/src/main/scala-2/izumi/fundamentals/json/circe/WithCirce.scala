@@ -3,6 +3,9 @@ package izumi.fundamentals.json.circe
 import io.circe.Codec
 
 /**
+  * Requires library dependency on `"io.circe" %% "circe-derivation" % "0.13.0-M5"`
+  * or later (NOT brought in as a dependency automatically)
+  *
   * Provides circe codecs for case classes and sealed traits
   *
   * {{{
@@ -38,6 +41,3 @@ abstract class WithCirce[A]()(implicit derivedCodec: DerivationDerivedCodec[A]) 
 
   implicit val codec: Codec.AsObject[A] = derivedCodec.value
 }
-
-
-

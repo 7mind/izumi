@@ -9,7 +9,7 @@ import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.definition.errors.DIError
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.model.exceptions.runtime.{IntegrationCheckException, ProvisioningException}
+import izumi.distage.model.exceptions.runtime.ProvisioningIntegrationException
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
@@ -580,12 +580,6 @@ object DistageTestRunner {
     def endSuite(id: SuiteData): Unit
     def testStatus(test: TestMeta, testStatus: TestStatus): Unit
     def testInfo(test: TestMeta, message: String): Unit
-  }
-
-  object ProvisioningIntegrationException {
-    def unapply(arg: ProvisioningException): Option[NonEmptyList[ResourceCheck.Failure]] = {
-      NonEmptyList.from(arg.getSuppressed.iterator.collect { case i: IntegrationCheckException => i.failures.toList }.flatten.toList)
-    }
   }
 
   /**

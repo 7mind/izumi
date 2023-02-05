@@ -51,6 +51,10 @@ abstract class RoleAppMain[F[_]](
 
   protected def pluginConfig: PluginConfig
   protected def bootstrapPluginConfig: PluginConfig = PluginConfig.empty
+  /**
+    * Allow to set these axis choices in config even if they're not used in the application
+    * Normally, an axis choice specified in config, but never used would be deemed an error.
+    */
   protected def unusedValidAxisChoices: Set[Axis.AxisChoice] = Set.empty
   protected def shutdownStrategy: AppShutdownStrategy[F]
 

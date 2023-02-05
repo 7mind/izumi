@@ -126,7 +126,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       rolesInfo.requiredComponents
   }
 
-  make[Set[Axis.AxisChoice]].fromValue(unusedValidAxisChoices)
+  make[Set[Axis.AxisChoice]].named("unused-valid-axis-choices").fromValue(unusedValidAxisChoices)
   make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.Impl]
   make[ActivationInfo].from {
     (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>
