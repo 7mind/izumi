@@ -26,7 +26,6 @@ abstract class AutoSetModule(name: Option[String]) extends BootstrapModuleDef {
       case None =>
         many[T]
         many[PlanningHook].addValue(AutoSetHook[T](filter))
-
     }
     this
   }
