@@ -1,4 +1,4 @@
-package izumi.fundamentals.reflection
+package izumi.fundamentals.json.circe
 
 import scala.collection.mutable
 import scala.language.experimental.macros
@@ -9,7 +9,7 @@ object CirceTool {
 }
 
 class CirceToolMacro(val c: blackbox.Context) {
-  import c.universe._
+  import c.universe.*
 
   @inline def make[T: c.WeakTypeTag](): c.Expr[Unit] = {
     val all = new mutable.HashSet[Type]()

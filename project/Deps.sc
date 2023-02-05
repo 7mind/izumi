@@ -77,9 +77,7 @@ object Izumi {
     final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
     final val circe_literal = Library("io.circe", "circe-literal", V.circe, LibraryType.Auto)
     final val circe_generic = Library("io.circe", "circe-generic", V.circe, LibraryType.Auto)
-    final val circe_derivation_scala2 = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
-      ScalaVersionScope.AllScala2
-    )
+    final val circe_derivation_scala2 = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
 
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
@@ -282,11 +280,6 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-//        workaround for:
-//        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
-//          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
-        "libraryDependencySchemes" in SettingScope.Build += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
-        "libraryDependencySchemes" in SettingScope.Build += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
@@ -341,6 +334,7 @@ object Izumi {
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
       final val reflection = ArtifactId("fundamentals-reflection")
       final val jsonCirce = ArtifactId("fundamentals-json-circe")
+      final val jsonCirceLegacy = ArtifactId("fundamentals-json-circe-legacy")
 
       final lazy val basics = Seq(
         platform,
@@ -464,15 +458,22 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.jsonCirce,
         libs = Seq(
+          scala_reflect,
           circe_core in Scope.Compile.all,
           circe_generic in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala3),
-          circe_derivation_scala2,
-          scala_reflect,
         ) ++ Seq(
+          circe_derivation_scala2 in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
           jawn in Scope.Test.all,
           circe_literal in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
+        settings = Seq(
+          //        workaround for:
+          //        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
+          //          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
+          "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
+          "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
+        ),
       ),
       Artifact(
         name = Projects.fundamentals.reflection,
@@ -620,13 +621,14 @@ object Izumi {
       Artifact(
         name = Projects.logstage.renderingCirce,
         libs = Seq(
+          circe_core in Scope.Compile.all,
           jawn in Scope.Test.all,
           circe_parser in Scope.Test.all,
           circe_literal in Scope.Test.all,
           circe_generic in Scope.Test.all,
           zio_core in Scope.Test.all,
         ),
-        depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,
@@ -658,7 +660,9 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all),
+        libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all) ++ Seq(
+          circe_generic in Scope.Compile.all
+        ),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           // ignore microsite in IDEA
