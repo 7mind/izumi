@@ -1,7 +1,7 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding}
-import izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
+import izumi.distage.model.definition.{Binding, Identifier, ImplDef, ModuleBase}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.*
 import izumi.distage.model.reflection.DIKey.{SetElementKey, SetKeyMeta}
@@ -18,7 +18,7 @@ import izumi.reflect.Tag
   * Usage:
   *
   * {{{
-  *   val collectCloseables = AutoSetHook[AutoCloseable]
+  *   val collectCloseables = AutoSetHook[AutoCloseable]("closeables")
   *
   *   val injector = Injector(new BootstrapModuleDef {
   *     many[PlanningHook]
@@ -39,7 +39,7 @@ import izumi.reflect.Tag
   * {{{
   *   val locator = injector.produce(modules)
   *
-  *   val closeables = locator.get[Set[AutoCloseable]]
+  *   val closeables = locator.get[Set[AutoCloseable]]("closeables")
   *   try { locator.get[App].runMain() } finally {
   *     // reverse closeables list, Auto-Sets preserve order, in the order of *initialization*
   *     // Therefore resources should closed in the *opposite order*
@@ -48,7 +48,7 @@ import izumi.reflect.Tag
   *   }
   * }}}
   */
-case class AutoSetHook[BINDING: Tag] private (includeOnly: InclusionPredicate, name: Option[String], weak: Boolean, pos: CodePosition) extends PlanningHook {
+final case class AutoSetHook[BINDING: Tag] private (includeOnly: InclusionPredicate, name: Option[Identifier], weak: Boolean, pos: CodePosition) extends PlanningHook {
   protected val setElementType: SafeType = SafeType.get[BINDING]
 
   protected val setKey: DIKey = name match {
@@ -131,12 +131,21 @@ object AutoSetHook {
     }
   }
 
+  def apply[T: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[T] = {
+    new AutoSetHook[T](InclusionPredicate.IncludeAny, None, true, pos.get)
+  }
+
+  def apply[T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AutoSetHook[T] = {
+    new AutoSetHook[T](InclusionPredicate.IncludeAny, Some(name), true, pos.get)
+  }
+
   def apply[T: Tag](
     includeOnly: InclusionPredicate = InclusionPredicate.IncludeAny,
-    name: Option[String] = None,
+    name: Identifier = null,
     weak: Boolean = true,
   )(implicit pos: CodePositionMaterializer
   ): AutoSetHook[T] = {
-    new AutoSetHook[T](includeOnly, name, weak, pos.get)
+    new AutoSetHook[T](includeOnly, Option(name), weak, pos.get)
   }
+
 }
