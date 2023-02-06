@@ -20,6 +20,13 @@ abstract class Identifier {
   type Id
   def id: Id
   def idContract: IdContract[Id]
+
+  override def hashCode(): Int = id.hashCode()
+
+  override def equals(obj: Any): Boolean = obj match {
+    case i: Identifier => i.id == this.id
+    case _ => false
+  }
 }
 
 object Identifier {
