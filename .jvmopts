@@ -1,8 +1,6 @@
-# details on github runners: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-
--Xmx3500M
+-Xmx6G
 -XX:ReservedCodeCacheSize=256M
--XX:MaxMetaspaceSize=1024M
+-XX:MaxMetaspaceSize=2G
 
 -XX:+OmitStackTraceInFastThrow
 -XX:SoftRefLRUPolicyMSPerMB=50

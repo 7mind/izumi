@@ -80,17 +80,9 @@ function init {
     export SCALA3=$(cat project/Deps.sc | grep 'val scala300 ' |  sed -r 's/.*\"(.*)\".**/\1/')
 
     printenv
-}
 
-function secrets {
-    if [[ "$CI_PULL_REQUEST" == "false"  ]] ; then
-        echo "Unpacking secrets"
-        openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
-        tar xvf secrets.tar
-        echo "Secrets unpacked"
-    else
-        echo "Skipping secrets"
-    fi
+    rm -f .jvmopts
+    cp .jvmopts.github .jvmopts
 }
 
 init
@@ -123,36 +115,20 @@ case $i in
         scalaall
     ;;
 
-    # versionate)
-    #     versionate
-    # ;;
-
     coverage)
         coverage
     ;;
-
-    # scripted)
-    #     scripted
-    # ;;
-
 
     publishScala)
         publishScala
     ;;
 
-    sonatypeRelease)
-        sonatypeRelease
-    ;;
-
     site-publish)
         site-publish
     ;;
+
     site-test)
         site-test
-    ;;
-
-    secrets)
-        secrets
     ;;
 
     *)
