@@ -73,6 +73,17 @@ function publishScala {
   fi
 }
 
+function secrets {
+    if [[ "$CI_PULL_REQUEST" == "false"  ]] ; then
+        echo "Unpacking secrets"
+        openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
+        tar xvf secrets.tar
+        echo "Secrets unpacked"
+    else
+        echo "Skipping secrets"
+    fi
+}
+
 function init {
     export SCALA211=$(cat project/Deps.sc | grep 'val scala211 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA212=$(cat project/Deps.sc | grep 'val scala212 ' |  sed -r 's/.*\"(.*)\".**/\1/')
@@ -131,6 +142,10 @@ case $i in
         site-test
     ;;
 
+    secrets)
+        secrets
+    ;;
+  
     *)
         echo "Unknown option"
         exit 1
