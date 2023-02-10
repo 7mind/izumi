@@ -48,7 +48,7 @@ import izumi.reflect.Tag
   *   }
   * }}}
   */
-final case class AutoSetHook[BINDING: Tag] (includeOnly: InclusionPredicate, name: Option[Identifier], weak: Boolean, pos: CodePosition) extends PlanningHook {
+final case class AutoSetHook[BINDING: Tag](includeOnly: InclusionPredicate, name: Option[Identifier], weak: Boolean, pos: CodePosition) extends PlanningHook {
   protected val setElementType: SafeType = SafeType.get[BINDING]
 
   protected val setKey: DIKey = name match {
@@ -95,7 +95,7 @@ final case class AutoSetHook[BINDING: Tag] (includeOnly: InclusionPredicate, nam
   private def findMatchingBindings(definition: ModuleBase): Set[ImplBinding] = {
     definition.bindings
       .filter {
-        case sb: Binding.SingletonBinding[_] if sb.isMutator => false
+        case sb: Binding.SingletonBinding[?] if sb.isMutator => false
         case _ => true
       }
       .flatMap {
