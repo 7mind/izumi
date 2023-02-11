@@ -64,9 +64,10 @@ Development
 Documentation
 -------------
 
-* @scaladoc[Scaladoc](izumi.index)
 * [Documentation](https://izumi.7mind.io/)
 * SNAPSHOT [Documentation](https://izumi.7mind.io/latest/snapshot/)
+* @scaladoc[Scaladoc](izumi.index)
+
 
 Further reading
 ---------------
@@ -115,9 +116,11 @@ YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/p
 
 @@@ index
 
-* [distage](distage/00_distage.md)
-* [LogStage](logstage/00_logstage.md)
+* [Glossary](glossary.md)
+* [Izumi Guidelines](guidelines.md)
 * [BIO](bio/00_bio.md)
+* [LogStage](logstage/00_logstage.md)
+* [DIStage](distage/00_distage.md)
 * [Idealingua](idealingua/00_idealingua.md)
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)

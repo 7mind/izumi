@@ -1,9 +1,6 @@
 ---
 out: index.html
 ---
-
-@@toc { depth=2 }
-
 # LogStage
 
 LogStage is a zero-cost structural logging framework for Scala & Scala.js

@@ -2,7 +2,7 @@
 out: index.html
 ---
 
-# distage: Staged Dependency Injection
+# DIStage
 
 ```scala mdoc:reset:invisible:to-string
 System.setProperty(izumi.fundamentals.platform.PlatformProperties.`izumi.app.disable-terminal-colors`.name, "true")
