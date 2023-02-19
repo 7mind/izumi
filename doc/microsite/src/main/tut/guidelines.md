@@ -174,6 +174,6 @@ Integration points
 Inheritance
 -----------
 
-1. There is very limited use of `class` inheritance. Usually one `class` shouldn't inherit from another.
+1. There is very limited use of `class` inheritance. Usually one `class` shouldn't inherit from another. Make classes `final` by default. If you intend to use class inheritance, mark them as `open`, but do not leave them unmarked.
 2. `abstract` classes might be useful but, generally, you should avoid having them too
 
