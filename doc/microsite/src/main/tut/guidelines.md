@@ -1,7 +1,7 @@
 ---
 out: guidelines.html
 ---
-Izumi Code Guidelines
+Izumi Framework Best Practices
 =====================
 
 General workflow
