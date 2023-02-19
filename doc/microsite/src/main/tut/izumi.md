@@ -117,7 +117,7 @@ YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/p
 @@@ index
 
 * [Glossary](glossary.md)
-* [Izumi Guidelines](guidelines.md)
+* [Izumi Best Practices](guidelines.md)
 * [BIO](bio/00_bio.md)
 * [LogStage](logstage/00_logstage.md)
 * [DIStage](distage/00_distage.md)
