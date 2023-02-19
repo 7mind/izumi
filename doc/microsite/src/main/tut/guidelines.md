@@ -91,7 +91,7 @@ BIO, TF and error encoding
 ### Error propagation
 
 If one component uses another, it either should propagate its errors or handle them.
-This makes things somehow inconvenient, especially on Scala 2 which has no support for union types.
+This makes things somewhat inconvenient, especially on Scala 2 which has no support for union types.
 
 Essentially, on Scala 2 there is no perfect solution for error propagation.
 
