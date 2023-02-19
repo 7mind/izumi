@@ -7,6 +7,7 @@
 .agg
 .vscode
 package-lock.json
+.fleet
 
 # we cannot exclude build.sbt - scala steward wouldn't work without it
 #build.sbt
