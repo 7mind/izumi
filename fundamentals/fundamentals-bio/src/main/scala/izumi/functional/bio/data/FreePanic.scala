@@ -74,8 +74,8 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
         G.uninterruptible(sub.foldMap(transform))
       case s: FreePanic.BracketCase[S, E, ?, A] @unchecked =>
         s.acquire.foldMap[S1, G](transform).bracketCase[E, A]((a, e: Exit[E, A]) => s.release(a, e).foldMap[S1, G](transform))(a => s.use(a).foldMap[S1, G](transform))
-      case FreePanic.UninterruptibleExcept(sub) =>
-        G.uninterruptibleExcept((r: RestoreInterruption2[G]) => sub(FreePanic.CapturedRestoreInterruption.captureRestore(r)).foldMap(transform))
+      case s: FreePanic.UninterruptibleExcept[S, E, A] @unchecked =>
+        G.uninterruptibleExcept((r: RestoreInterruption2[G]) => s.sub(FreePanic.CapturedRestoreInterruption.captureRestore(r)).foldMap(transform))
       case s: FreePanic.BracketExcept[S, E, ?, A] @unchecked =>
         G.bracketExcept(r => s.acquire(FreePanic.CapturedRestoreInterruption.captureRestore(r)).foldMap(transform))(
           (a, e: Exit[E, A]) => s.release(a, e).foldMap(transform)
