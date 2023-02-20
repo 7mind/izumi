@@ -24,9 +24,12 @@ When we start working on a new component, generally we follow these steps:
    3. Keep the stub implementation inside of the companion object of the component interface
 4. Add distage bindings for the component and its implementation
 5. Create a stub of an abstract test suite for the interface
-5. Work on the test and the implementation (the fake or the business code) simultaneously until you have them functional
+   1. Evaluate your tests in terms of [Constructive Test Taxonomy](https://blog.7mind.io/constructive-test-taxonomy.html)
+   2. Stick to the best/cheapest test kinds (in CTT terms) which would work for your purpose
+   3. Try to stick to Blackbox-Contractual tests when you can
+6 Work on the test and the implementation (the fake or the business code) simultaneously until you have them functional
    1. It's not very good but acceptable to use impure mutable fields in dummies instead of `Ref`s.
-6. If the component is an integration point, start working on a real implementation
+7. If the component is an integration point, start working on a real implementation
    1. Add integration checks and their bindings
    2. Add docker definitions and their bindings for managed scene if that's possible
 
