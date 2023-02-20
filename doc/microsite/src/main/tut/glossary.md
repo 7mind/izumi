@@ -23,6 +23,7 @@ Izumi introduces many concepts which are not common in other frameworks and libr
 * **scene**, *also* **environment**  – a full set of application integration points which are required to be available for an application or a test suite to run.
 * **managed scene** – a **scene** which an application or a test suite may provision and clean up automatically. Usually *managed scenes* would be created by setting up transient docker containers.
 * **provided scene** – a **scene** which an application or a test suite expects to be pre-provisioned an readily available when it starts.
+* **constructive test taxonomy** – an improved test taxonomy, proposed by 7mind. Constructive Test Taxonomy replaces outdated "unit-functional-integration" classification with multi-dimensional weighted space and forms a reasonable mental framework helping to approach testing in more structured and rational manner. More details might be found [here](https://blog.7mind.io/constructive-test-taxonomy.html).
 
 Izumi-overloaded terms
 ----------------------
