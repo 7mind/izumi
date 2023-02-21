@@ -15,10 +15,10 @@ import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, LateLoggerFactoryCachingImpl, RoleAppActivationParser}
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.TestConfig.ParallelLevel
-import izumi.distage.testkit.model.{DistageTest, SuiteData, TestActivationStrategy, TestStatus}
+import izumi.distage.testkit.model.{DistageTest, SuiteData, TestActivationStrategy, TestEnvironment, TestStatus}
 import izumi.distage.testkit.runner.DistageTestRunner.*
 import izumi.distage.testkit.runner.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
-import izumi.distage.testkit.runner.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
+import izumi.distage.testkit.model.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*

@@ -2,7 +2,6 @@ package izumi.distage.testkit.model
 
 import distage.Functoid
 import TestConfig.ParallelLevel
-import izumi.distage.testkit.runner.TestEnvironment
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.SourceFilePosition

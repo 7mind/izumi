@@ -3,10 +3,9 @@ package izumi.distage.testkit.services.scalatest.dstest
 import distage.{TagK, TagKK}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.providers.Functoid
-import izumi.distage.testkit.model.{DistageTest, TestConfig, TestId, TestMeta}
-import izumi.distage.testkit.runner.{DistageTestEnv, TestEnvironment}
+import izumi.distage.testkit.model.{DistageTest, TestConfig, TestEnvironment, TestId, TestMeta}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.*
-import izumi.distage.testkit.spec.{AbstractDistageSpec, DISyntaxBIOBase, DISyntaxBase, TestRegistration}
+import izumi.distage.testkit.spec.{AbstractDistageSpec, DISyntaxBIOBase, DISyntaxBase, DistageTestEnv, TestRegistration}
 import izumi.functional.bio.Local3
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer}
