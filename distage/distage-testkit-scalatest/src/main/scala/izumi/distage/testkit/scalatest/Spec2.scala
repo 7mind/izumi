@@ -1,7 +1,7 @@
 package izumi.distage.testkit.scalatest
 
 import distage.{DefaultModule2, TagKK}
-import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.DSWordSpecStringWrapper2
 import izumi.logstage.distage.LogIO2Module

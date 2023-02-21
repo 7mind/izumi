@@ -1,4 +1,4 @@
-package izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.spec
 
 import distage.TagK
 import izumi.distage.modules.DefaultModule

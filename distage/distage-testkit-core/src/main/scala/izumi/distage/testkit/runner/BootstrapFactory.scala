@@ -1,4 +1,4 @@
-package izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.runner
 
 import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions

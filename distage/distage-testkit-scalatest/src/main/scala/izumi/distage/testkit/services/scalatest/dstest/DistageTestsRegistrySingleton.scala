@@ -3,7 +3,7 @@ package izumi.distage.testkit.services.scalatest.dstest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import izumi.distage.model.reflection.SafeType
-import izumi.distage.testkit.services.dstest.model.DistageTest
+import izumi.distage.testkit.model.DistageTest
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.reflect.TagK
 import org.scalatest.{Reporter, StatefulStatus, Tracker}

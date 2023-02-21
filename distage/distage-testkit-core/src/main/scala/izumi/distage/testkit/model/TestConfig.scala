@@ -1,24 +1,18 @@
-package izumi.distage.testkit
+package izumi.distage.testkit.model
 
-import distage._
+import distage.*
 import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.TestConfig.PriorAxisDIKeys.MaxLevel
-import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
-import izumi.distage.testkit.services.dstest.BootstrapFactory
+import izumi.distage.testkit.model.TestConfig.PriorAxisDIKeys.MaxLevel
+import izumi.distage.testkit.model.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
+import izumi.distage.testkit.runner.BootstrapFactory
 import izumi.logstage.api.Log
 
 import scala.annotation.nowarn
 import scala.collection.compat.immutable.ArraySeq
 import scala.language.implicitConversions
-
-sealed trait TestActivationStrategy
-object TestActivationStrategy {
-  case object IgnoreConfig extends TestActivationStrategy
-  case class LoadConfig(ignoreUnknown: Boolean, warnUnset: Boolean) extends TestActivationStrategy
-}
 
 /**
   * General options:
@@ -222,7 +216,7 @@ object TestConfig {
 
     @nowarn("msg=Unused import")
     @inline implicit def fromPriorAxisDIKeys[A](map: Map[Int, A])(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys = {
-      import scala.collection.compat._
+      import scala.collection.compat.*
       PriorAxisDIKeys(map.view.mapValues(toAxisDIKeys).toMap)
     }
   }

@@ -1,4 +1,4 @@
-package izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.runner
 
 import distage.*
 import izumi.distage.config.model.AppConfig
@@ -13,19 +13,18 @@ import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, LateLoggerFactoryCachingImpl, RoleAppActivationParser}
-import izumi.distage.testkit.TestConfig.ParallelLevel
-import izumi.distage.testkit.services.dstest.DistageTestRunner.*
-import izumi.distage.testkit.services.dstest.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
-import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
-import izumi.distage.testkit.services.dstest.model.{DistageTest, SuiteData, TestMeta}
-import izumi.distage.testkit.{DebugProperties, TestActivationStrategy}
+import izumi.distage.testkit.DebugProperties
+import izumi.distage.testkit.model.TestConfig.ParallelLevel
+import izumi.distage.testkit.model.{DistageTest, SuiteData, TestActivationStrategy, TestStatus}
+import izumi.distage.testkit.runner.DistageTestRunner.*
+import izumi.distage.testkit.runner.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
+import izumi.distage.testkit.runner.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
+import izumi.distage.testkit.runner.api.TestReporter
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.time.IzTime
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
@@ -537,6 +536,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
 }
 
+
+
 object DistageTestRunner {
   final case class EnvMergeCriteria(
     bsPlanMinusActivations: Vector[ExecutableOp],
@@ -552,28 +553,6 @@ object DistageTestRunner {
     highestDebugOutputInTests: Boolean,
     strengthenedKeys: Set[DIKey],
   )
-
-  sealed trait TestStatus
-  object TestStatus {
-    case object Running extends TestStatus
-
-    sealed trait Done extends TestStatus
-    final case class Ignored(checks: NonEmptyList[ResourceCheck.Failure]) extends Done
-
-    sealed trait Finished extends Done
-    final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
-    final case class Succeed(duration: FiniteDuration) extends Finished
-    final case class Failed(t: Throwable, duration: FiniteDuration) extends Finished
-  }
-
-  trait TestReporter {
-    def onFailure(f: Throwable): Unit
-    def endAll(): Unit
-    def beginSuite(id: SuiteData): Unit
-    def endSuite(id: SuiteData): Unit
-    def testStatus(test: TestMeta, testStatus: TestStatus): Unit
-    def testInfo(test: TestMeta, message: String): Unit
-  }
 
   /**
     * Structure for creation, storage and traversing over memoization levels.

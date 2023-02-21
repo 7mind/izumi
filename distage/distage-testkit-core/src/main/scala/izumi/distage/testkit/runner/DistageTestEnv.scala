@@ -1,4 +1,4 @@
-package izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.runner
 
 import distage.plugins.PluginLoader
 import izumi.distage.framework.model.ActivationInfo
@@ -7,7 +7,8 @@ import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.testkit.{DebugProperties, TestConfig}
+import izumi.distage.testkit.DebugProperties
+import izumi.distage.testkit.model.TestConfig
 import izumi.fundamentals.platform.cache.SyncCache
 
 trait DistageTestEnv {

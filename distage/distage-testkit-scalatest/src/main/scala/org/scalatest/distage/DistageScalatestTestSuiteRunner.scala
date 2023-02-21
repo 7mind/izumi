@@ -1,21 +1,22 @@
 package org.scalatest.distage
 
-import java.util.concurrent.atomic.AtomicBoolean
 import distage.TagK
 import io.github.classgraph.ClassGraph
 import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.launcher.LateLoggerFactoryCachingImpl
 import izumi.distage.testkit.DebugProperties
-import izumi.distage.testkit.services.dstest.DistageTestRunner.*
-import izumi.distage.testkit.services.dstest.model.DistageTest
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner}
-import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
+import izumi.distage.testkit.model.DistageTest
+import izumi.distage.testkit.runner.DistageTestRunner
+import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
+import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
+import izumi.distage.testkit.spec.AbstractDistageSpec
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.*
 import org.scalatest.exceptions.TestCanceledException
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.immutable.TreeSet
 import scala.util.Try
 
@@ -36,7 +37,7 @@ object ScalatestInitWorkaround {
     private val classpathScanned = new AtomicBoolean(false)
     private val latch = new java.util.concurrent.CountDownLatch(1)
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
 
     def awaitTestsLoaded(): Unit = {
       latch.await()

@@ -1,7 +1,8 @@
-package izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.spec
 
 import izumi.distage.model.providers.Functoid
-import izumi.distage.testkit.services.dstest.model.TestId
+import izumi.distage.testkit.model.TestId
+import izumi.distage.testkit.runner.TestEnvironment
 import izumi.fundamentals.platform.language.SourceFilePosition
 
 trait TestRegistration[F[_]] {

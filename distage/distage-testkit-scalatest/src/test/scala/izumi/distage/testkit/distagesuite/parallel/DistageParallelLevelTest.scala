@@ -7,9 +7,9 @@ import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.TestConfig.ParallelLevel
+import izumi.distage.testkit.model.TestConfig.ParallelLevel
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstance
+import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec1
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.Log

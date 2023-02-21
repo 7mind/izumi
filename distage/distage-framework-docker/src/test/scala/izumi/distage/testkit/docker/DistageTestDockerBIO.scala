@@ -2,9 +2,9 @@ package izumi.distage.testkit.docker
 
 import distage.DIKey
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.TestConfig.ParallelLevel
+import izumi.distage.testkit.model.TestConfig.ParallelLevel
 import izumi.distage.testkit.docker.fixtures.{PgSvcExample, ReuseCheckContainer}
+import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec2
 import izumi.logstage.api.Log
 import logstage.LogIO2

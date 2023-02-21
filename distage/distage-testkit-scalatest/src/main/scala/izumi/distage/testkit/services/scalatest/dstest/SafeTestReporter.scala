@@ -1,8 +1,7 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import izumi.distage.testkit.services.dstest.DistageTestRunner.TestStatus.Done
-import izumi.distage.testkit.services.dstest.DistageTestRunner.{TestReporter, TestStatus}
-import izumi.distage.testkit.services.dstest.model.{SuiteData, TestMeta}
+import izumi.distage.testkit.model.{SuiteData, TestMeta, TestStatus}
+import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.SafeWrappedTestReporter.WrappedTestReport
 
 import scala.collection.mutable
@@ -45,7 +44,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     (runningSuites.get(test.id.suiteId), testReport) match {
       // if the current test locked this suite, and its execution is done
       // then we will report all tests that were finished at this point for this suite
-      case (Some(t), WrappedTestReport.Status(_: Done)) if t == test =>
+      case (Some(t), WrappedTestReport.Status(_: TestStatus.Done)) if t == test =>
         runningSuites.remove(test.id.suiteId)
         putDelayedReport(test, testReport)
         finish(_.id.suiteId == test.id.suiteId)
@@ -69,7 +68,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     // report all tests by predicate if they were finished
     val toReport = delayedReports.toList.collect {
       case (t, delayed) if predicate(t) && delayed.exists {
-            case WrappedTestReport.Status(_: Done) => true
+            case WrappedTestReport.Status(_: TestStatus.Done) => true
             case _ => false
           } =>
         (t, delayed)

@@ -1,8 +1,8 @@
-package izumi.distage.testkit.services
+package izumi.distage.testkit.spec
 
 import distage.{Tag, TagK}
-import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.providers.Functoid
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.SourceFilePosition
 
 trait DISyntaxBase[F[_]] {
