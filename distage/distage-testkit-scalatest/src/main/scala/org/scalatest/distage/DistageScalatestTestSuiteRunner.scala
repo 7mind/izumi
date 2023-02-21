@@ -3,11 +3,11 @@ package org.scalatest.distage
 import distage.TagK
 import io.github.classgraph.ClassGraph
 import izumi.distage.modules.DefaultModule
-import izumi.distage.roles.launcher.LateLoggerFactoryCachingImpl
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.DistageTest
 import izumi.distage.testkit.runner.DistageTestRunner
 import izumi.distage.testkit.runner.api.TestReporter
+import izumi.distage.testkit.runner.services.{LateLoggerFactoryCachingImpl, ReporterBracket, TestkitLogging}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
 import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
 import izumi.distage.testkit.spec.AbstractDistageSpec
@@ -198,7 +198,13 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     try {
       if (toRun.nonEmpty) {
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
-        val runner = new DistageTestRunner[F](testReporter, _.isInstanceOf[TestCanceledException], cache)
+        val runner = new DistageTestRunner[F](
+          testReporter,
+          _.isInstanceOf[TestCanceledException],
+          cache,
+          new ReporterBracket[F](testReporter),
+          new TestkitLogging(),
+        )
         runner.run(toRun)
       }
     } finally {

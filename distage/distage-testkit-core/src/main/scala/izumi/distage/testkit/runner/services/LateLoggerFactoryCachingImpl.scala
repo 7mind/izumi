@@ -1,11 +1,15 @@
-package izumi.distage.roles.launcher
+package izumi.distage.testkit.runner.services
 
 import distage.Id
 import distage.config.AppConfig
+import izumi.distage.roles.launcher.{CLILoggerOptions, LateLoggerFactory}
 import logstage.{ConfigurableLogRouter, IzLogger}
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque}
 
+/**
+  * This is a dirty solution which allows us to share identical logger routers between multiple tests
+  */
 class LateLoggerFactoryCachingImpl(
   config: AppConfig,
   cliOptions: CLILoggerOptions,

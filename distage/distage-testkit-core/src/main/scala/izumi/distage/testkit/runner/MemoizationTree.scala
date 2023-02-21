@@ -1,0 +1,132 @@
+package izumi.distage.testkit.runner
+
+import distage.Lifecycle
+import izumi.distage.model.plan.Plan
+import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
+import izumi.distage.model.reflection.DIKey
+import izumi.distage.testkit.runner.TestPlanner.{PackedEnv, PreparedTest}
+import izumi.distage.testkit.runner.MemoizationTree.MemoizationLevelGroup
+import izumi.functional.quasi.QuasiIO
+
+import scala.annotation.tailrec
+import scala.collection.concurrent.TrieMap
+import scala.collection.mutable.ArrayBuffer
+import izumi.functional.IzEither.*
+
+/**
+  * Structure for creation, storage and traversing over memoization levels.
+  * To support the memoization level we should create a memoization tree first, where every node will contain a unique part of the memoization plan.
+  * For better performance we are going to use mutable structures. Mutate this tree only in case when you KNOW what you doing.
+  * Every change in tree structure may lead to test failed across all childs of the corrupted node.
+  */
+final class MemoizationTree[F[_]](val plan: Plan) {
+  private[this] val children = TrieMap.empty[Plan, MemoizationTree[F]]
+  private[this] val groups = ArrayBuffer.empty[MemoizationLevelGroup[F]]
+
+  def getGroups: List[MemoizationLevelGroup[F]] = groups.toList
+
+  def getAllTests: Seq[PreparedTest[F]] = {
+    (groups.iterator.flatMap(_.preparedTests) ++ children.iterator.flatMap(_._2.getAllTests)).toSeq
+  }
+
+  def addGroup(group: MemoizationLevelGroup[F]): Unit = {
+    groups.synchronized(groups.append(group))
+    ()
+  }
+
+  def add(memoizationTree: MemoizationTree[F]): Unit = {
+    children.synchronized(children.put(memoizationTree.plan, memoizationTree))
+    ()
+  }
+
+  /** Remap tree with function (mapedParentNode, thisNode) => thisNodeMaped */
+  @inline def stateMap[A, E](initialState: A)(m: (A, MemoizationTree[F]) => Either[List[E], (A, MemoizationTree[F])]): Either[List[E], MemoizationTree[F]] = {
+    m(initialState, this).flatMap {
+      case (state, tree) =>
+        children.toList
+          .biMapAggregate {
+            case (_, children) =>
+              children.stateMap(state)(m).map(tree.add)
+          }.map(_ => tree)
+    }
+  }
+
+  @inline override def toString: String = render()
+
+  def stateTraverseLifecycle[State](
+    initialState: State
+  )(func: (State, MemoizationTree[F]) => Lifecycle[F, State]
+  )(recover: MemoizationTree[F] => F[Unit] => F[Unit]
+  )(implicit F: QuasiIO[F]
+  ): F[Unit] = {
+    recover(this) {
+      func(initialState, this).use {
+        nextState =>
+          F.traverse_(children) {
+            case (_, tree) =>
+              tree.stateTraverseLifecycle(nextState)(func)(recover)
+          }
+      }
+    }
+  }
+
+  @tailrec private def addGroupByPath(path: List[Plan], levelTests: MemoizationLevelGroup[F]): Unit = {
+    path match {
+      case Nil =>
+        addGroup(levelTests)
+      case node :: tail =>
+        val childTree = children.synchronized(children.getOrElseUpdate(node, new MemoizationTree[F](node)))
+        childTree.addGroupByPath(tail, levelTests)
+    }
+  }
+
+  private def render(level: Int = 0, suitePad: String = "", levelPad: String = ""): String = {
+    val memoizationRoots = plan.keys
+    val levelInfo = if (plan.keys.nonEmpty) {
+      val minimizer = KeyMinimizer(memoizationRoots, DIRendering.colorsEnabled)
+      memoizationRoots.iterator.map(minimizer.renderKey).mkString("[ ", ", ", " ]")
+    } else {
+      "ø"
+    }
+    val currentLevelPad = {
+      val emptyStep = if (suitePad.isEmpty) "" else s"\n${suitePad.dropRight(5)}║"
+      s"$emptyStep\n$levelPad╗ LEVEL = $level;\n$suitePad║ MEMOIZATION ROOTS: $levelInfo"
+    }
+
+    val str = {
+      val testIds = groups.toList.flatMap(_.preparedTests.map(_.test.meta.id.suiteName)).distinct.sorted.map(t => s"$suitePad╠══* $t")
+
+      if (testIds.nonEmpty) s"$currentLevelPad\n${testIds.mkString("\n")}" else currentLevelPad
+    }
+
+    val updatedLevelPad: String = levelPad.replaceAll("╠════$", "║    ").replaceAll("╚════$", "     ")
+
+    children.toList.zipWithIndex.foldLeft(str) {
+      case (acc, ((_, nextTree), i)) =>
+        val isLastChild = children.size == i + 1
+        val nextSuitePad = suitePad + (if (isLastChild) "     " else "║    ")
+        val nextLevelPad = level match {
+          case 0 if isLastChild => "╚════"
+          case _ if isLastChild => s"$updatedLevelPad╚════"
+          case _ => s"$updatedLevelPad╠════"
+        }
+        val nextChildStr = nextTree.render(level + 1, nextSuitePad, nextLevelPad)
+        s"$acc$nextChildStr"
+    }
+  }
+}
+
+object MemoizationTree {
+  final case class MemoizationLevelGroup[F[_]](preparedTests: Iterable[PreparedTest[F]], strengthenedKeys: Set[DIKey])
+
+  def apply[F[_]](iterator: Iterable[PackedEnv[F]]): MemoizationTree[F] = {
+    val tree = new MemoizationTree[F](Plan.empty)
+    // usually, we have a small amount of levels, so parallel executions make only worse here
+    iterator.foreach {
+      env =>
+        val plans = env.memoizationPlanTree.filter(_.plan.meta.nodes.nonEmpty)
+        tree.addGroupByPath(plans, MemoizationLevelGroup(env.preparedTests, env.strengthenedKeys))
+    }
+    tree
+  }
+}
