@@ -1,7 +1,8 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
 import izumi.distage.testkit.services.dstest.DistageTestRunner.TestStatus.Done
-import izumi.distage.testkit.services.dstest.DistageTestRunner.{SuiteData, TestMeta, TestReporter, TestStatus}
+import izumi.distage.testkit.services.dstest.DistageTestRunner.{TestReporter, TestStatus}
+import izumi.distage.testkit.services.dstest.model.{SuiteData, TestMeta}
 import izumi.distage.testkit.services.scalatest.dstest.SafeWrappedTestReporter.WrappedTestReport
 
 import scala.collection.mutable

@@ -1,6 +1,6 @@
 package izumi.distage.testkit.services.dstest
 
-import distage._
+import distage.*
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
@@ -9,8 +9,8 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.TestActivationStrategy
 import izumi.distage.testkit.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
-import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
 import izumi.distage.testkit.services.dstest.TestEnvironment.EnvExecutionParams
+import izumi.distage.testkit.services.dstest.model.DistageTest
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.{IzLogger, Log}
 

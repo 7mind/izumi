@@ -7,8 +7,6 @@ import izumi.distage.framework.services.PlanCircularDependencyCheck
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.definition.errors.DIError
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.exceptions.runtime.ProvisioningIntegrationException
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.plan.{ExecutableOp, Plan}
@@ -19,13 +17,15 @@ import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.services.dstest.DistageTestRunner.*
 import izumi.distage.testkit.services.dstest.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
 import izumi.distage.testkit.services.dstest.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
+import izumi.distage.testkit.services.dstest.model.{DistageTest, SuiteData, TestMeta}
 import izumi.distage.testkit.{DebugProperties, TestActivationStrategy}
 import izumi.functional.IzEither.*
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.fundamentals.platform.time.IzTime
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.{IzLogger, Log}
@@ -139,7 +139,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     earlyLogger: IzLogger,
   )(withRouter: LogRouter => A
   ) = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
 
     new LateLoggerFactoryCachingImpl(
       config,
@@ -552,13 +552,6 @@ object DistageTestRunner {
     highestDebugOutputInTests: Boolean,
     strengthenedKeys: Set[DIKey],
   )
-
-  final case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String) {
-    override def toString: String = s"$suiteName: $name"
-  }
-  final case class DistageTest[F[_]](test: Functoid[F[Any]], environment: TestEnvironment, meta: TestMeta)
-  final case class TestMeta(id: TestId, pos: SourceFilePosition, uid: Long)
-  final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String, parallelLevel: ParallelLevel)
 
   sealed trait TestStatus
   object TestStatus {

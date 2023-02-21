@@ -6,7 +6,7 @@ import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.providers.Functoid
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.*
-import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
+import izumi.distage.testkit.services.dstest.model.{DistageTest, TestId, TestMeta}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.*
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.functional.bio.Local3

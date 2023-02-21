@@ -7,6 +7,7 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.launcher.LateLoggerFactoryCachingImpl
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.dstest.DistageTestRunner.*
+import izumi.distage.testkit.services.dstest.model.DistageTest
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner}
 import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
