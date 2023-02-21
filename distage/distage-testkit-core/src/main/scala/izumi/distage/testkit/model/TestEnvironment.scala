@@ -5,14 +5,19 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.model.definition.Activation
-import izumi.distage.model.plan.Plan
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.model.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
-import izumi.distage.testkit.runner.BootstrapFactory
-import izumi.fundamentals.platform.functional.Identity
-import izumi.logstage.api.{IzLogger, Log}
+import izumi.distage.testkit.runner.services.BootstrapFactory
+import izumi.logstage.api.Log
 
+/**
+  * [[TestConfig]] allows the user to define test settings.
+  *
+  * These settings should be turned into [[TestEnvironment]] before they can be handled by the test runner.
+  *
+  * This process happens automatically and the user is not expected to directly interact with [[TestEnvironment]]
+  */
 final case class TestEnvironment(
   bsModule: ModuleBase,
   appModule: ModuleBase,
@@ -49,20 +54,4 @@ object TestEnvironment {
     planningOptions: PlanningOptions,
     logLevel: Log.Level,
   )
-
-  final case class MemoizationEnv(
-    envExec: EnvExecutionParams,
-    integrationLogger: IzLogger,
-    runtimePlan: Plan,
-    memoizationInjector: Injector[Identity],
-    highestDebugOutputInTests: Boolean,
-  )
-
-  final case class PreparedTest[F[_]](
-    test: DistageTest[F],
-    appModule: Module,
-    testPlan: Plan,
-    activation: Activation,
-  )
-
 }

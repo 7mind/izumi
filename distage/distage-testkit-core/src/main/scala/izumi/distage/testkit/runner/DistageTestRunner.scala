@@ -16,10 +16,11 @@ import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, LateLog
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.TestConfig.ParallelLevel
 import izumi.distage.testkit.model.{DistageTest, SuiteData, TestActivationStrategy, TestEnvironment, TestStatus}
-import izumi.distage.testkit.runner.DistageTestRunner.*
+import izumi.distage.testkit.runner.DistageTestRunner.{MemoizationEnv, PreparedTest, *}
 import izumi.distage.testkit.runner.DistageTestRunner.MemoizationTree.MemoizationLevelGroup
-import izumi.distage.testkit.model.TestEnvironment.{EnvExecutionParams, MemoizationEnv, PreparedTest}
+import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
 import izumi.distage.testkit.runner.api.TestReporter
+import izumi.distage.testkit.runner.services.BootstrapFactory
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
@@ -536,9 +537,22 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
 }
 
-
-
 object DistageTestRunner {
+  final case class MemoizationEnv(
+    envExec: EnvExecutionParams,
+    integrationLogger: IzLogger,
+    runtimePlan: Plan,
+    memoizationInjector: Injector[Identity],
+    highestDebugOutputInTests: Boolean,
+  )
+
+  final case class PreparedTest[F[_]](
+    test: DistageTest[F],
+    appModule: Module,
+    testPlan: Plan,
+    activation: Activation,
+  )
+
   final case class EnvMergeCriteria(
     bsPlanMinusActivations: Vector[ExecutableOp],
     bsModuleMinusActivations: BootstrapModule,

@@ -7,7 +7,7 @@ import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.model.TestConfig.PriorAxisDIKeys.MaxLevel
 import izumi.distage.testkit.model.TestConfig.{AxisDIKeys, ParallelLevel, PriorAxisDIKeys}
-import izumi.distage.testkit.runner.BootstrapFactory
+import izumi.distage.testkit.runner.services.BootstrapFactory
 import izumi.logstage.api.Log
 
 import scala.annotation.nowarn
@@ -15,6 +15,8 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.language.implicitConversions
 
 /**
+  * User-defined test settings
+  *
   * General options:
   *
   * @param pluginConfig          Source of module definitions from which to build object graphs for each test.
