@@ -46,7 +46,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  def proceedEnv(env: MemoizationEnv, testsTree: MemoizationTree[F], runtimeGcRoots: Set[DIKey]): Unit = {
+  protected def proceedEnv(env: MemoizationEnv, testsTree: MemoizationTree[F], runtimeGcRoots: Set[DIKey]): Unit = {
     val MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, _) = env
     val allEnvTests = testsTree.getAllTests.map(_.test)
     integrationLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
