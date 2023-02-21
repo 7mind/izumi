@@ -14,8 +14,6 @@ import izumi.logstage.api.logger.LogRouter
 import izumi.reflect.TagK
 
 trait BootstrapFactory {
-  def makeConfigLocation(configBaseName: String): ConfigLocation
-  def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader
   def makeModuleProvider[F[_]: TagK](
     options: PlanningOptions,
     config: AppConfig,
@@ -24,11 +22,15 @@ trait BootstrapFactory {
     activationInfo: ActivationInfo,
     activation: Activation,
   ): ModuleProvider
+
+  def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader
+
+  protected def makeConfigLocation(configBaseName: String): ConfigLocation
 }
 
 object BootstrapFactory {
   object Impl extends BootstrapFactory {
-    override def makeConfigLocation(configBaseName: String): ConfigLocation = {
+    override protected def makeConfigLocation(configBaseName: String): ConfigLocation = {
       ConfigLocation.Default
     }
 
