@@ -81,7 +81,7 @@ final class MemoizationTree[F[_]](val plan: Plan) {
     }
 
     val str = {
-      val testIds = groups.toList.flatMap(_.preparedTests.map(_.test.meta.id.suiteName)).distinct.sorted.map(t => s"$suitePad╠══* $t")
+      val testIds = groups.toList.flatMap(_.preparedTests.map(_.test.meta.id.suite.suiteName)).distinct.sorted.map(t => s"$suitePad╠══* $t")
 
       if (testIds.nonEmpty) s"$currentLevelPad\n${testIds.mkString("\n")}" else currentLevelPad
     }

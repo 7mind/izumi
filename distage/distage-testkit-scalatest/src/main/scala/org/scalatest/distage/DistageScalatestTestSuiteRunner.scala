@@ -4,7 +4,7 @@ import distage.TagK
 import io.github.classgraph.ClassGraph
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.DebugProperties
-import izumi.distage.testkit.model.DistageTest
+import izumi.distage.testkit.model.{DistageTest, SuiteId}
 import izumi.distage.testkit.runner.{DistageTestRunner, TestPlanner}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.services.{ReporterBracket, TestConfigLoader, TestkitLogging}
@@ -130,7 +130,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   }
 
   override def testNames: Set[String] = {
-    val testsInThisTestClass = DistageTestsRegistrySingleton.registeredTests[F].filter(_.meta.id.suiteId == suiteId)
+    val testsInThisTestClass = DistageTestsRegistrySingleton.registeredTests[F].filter(_.meta.id.suite.suiteId == SuiteId(suiteId))
     TreeSet[String](testsInThisTestClass.map(_.meta.id.name): _*)
   }
 
@@ -180,7 +180,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         testsInThisRuntime.filter {
           test =>
             val tags: Map[String, Set[String]] = Map.empty
-            val (filterTest, ignoreTest) = args.filter.apply(test.meta.id.name, tags, test.meta.id.suiteId)
+            val (filterTest, ignoreTest) = args.filter.apply(test.meta.id.name, tags, test.meta.id.suite.suiteId.suiteId)
             val isTestOk = !filterTest && !ignoreTest
             isTestOk
         }

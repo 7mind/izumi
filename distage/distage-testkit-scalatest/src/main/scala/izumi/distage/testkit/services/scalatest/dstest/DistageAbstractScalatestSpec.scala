@@ -3,7 +3,7 @@ package izumi.distage.testkit.services.scalatest.dstest
 import distage.{TagK, TagKK}
 import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.providers.Functoid
-import izumi.distage.testkit.model.{DistageTest, TestConfig, TestEnvironment, TestId, TestMeta}
+import izumi.distage.testkit.model.{DistageTest, SuiteId, SuiteMeta, TestConfig, TestEnvironment, TestId, TestMeta}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.*
 import izumi.distage.testkit.spec.{AbstractDistageSpec, DISyntaxBIOBase, DISyntaxBase, DistageTestEnv, TestRegistration}
 import izumi.functional.bio.Local3
@@ -121,9 +121,7 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](function: Functoid[F[A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
-        suiteId,
+        SuiteMeta(SuiteId(suiteName), suiteId, suiteId),
       )
       reg.registerTest(function, env, pos, id)
     }
@@ -160,9 +158,7 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
-        suiteId,
+        SuiteMeta(SuiteId(suiteName), suiteId, suiteId),
       )
       reg.registerTest(fAsThrowable, env, pos, id)
     }
@@ -225,9 +221,7 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
-        suiteId,
+        SuiteMeta(SuiteId(suiteName), suiteId, suiteId),
       )
       reg.registerTest(fAsThrowable, env, pos, id)
     }

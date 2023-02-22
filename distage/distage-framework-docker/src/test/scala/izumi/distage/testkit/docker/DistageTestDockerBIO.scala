@@ -2,7 +2,7 @@ package izumi.distage.testkit.docker
 
 import distage.DIKey
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.testkit.model.TestConfig.ParallelLevel
+import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.docker.fixtures.{PgSvcExample, ReuseCheckContainer}
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec2
@@ -15,8 +15,8 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
 
   override protected def config: TestConfig = super.config.copy(
     memoizationRoots = Set(DIKey[PgSvcExample]),
-    parallelTests = ParallelLevel.Unlimited,
-    parallelEnvs = ParallelLevel.Unlimited,
+    parallelTests = Parallelism.Unlimited,
+    parallelEnvs = Parallelism.Unlimited,
     logLevel = Log.Level.Info,
   )
 

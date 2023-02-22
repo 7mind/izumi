@@ -1,6 +1,6 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import izumi.distage.testkit.model.{SuiteData, TestMeta, TestStatus}
+import izumi.distage.testkit.model.{SuiteId, SuiteMeta, TestMeta, TestStatus}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.SafeWrappedTestReporter.WrappedTestReport
 
@@ -8,7 +8,7 @@ import scala.collection.mutable
 
 class SafeTestReporter(underlying: TestReporter) extends TestReporter {
   private val delayedReports = new mutable.LinkedHashMap[TestMeta, mutable.Queue[WrappedTestReport]]()
-  private val runningSuites = new mutable.HashMap[String, TestMeta]()
+  private val runningSuites = new mutable.HashMap[SuiteId, TestMeta]()
 
   override def onFailure(f: Throwable): Unit = synchronized {
     endScope()
@@ -20,10 +20,10 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     underlying.endScope()
   }
 
-  override def beginSuite(id: SuiteData): Unit = {}
+  override def beginSuite(id: SuiteMeta): Unit = {}
 
-  override def endSuite(id: SuiteData): Unit = {
-    finish(_.id.suiteId == id.suiteId)
+  override def endSuite(id: SuiteMeta): Unit = {
+    finish(_.id.suite.suiteId == id.suiteId)
   }
 
   override def testInfo(test: TestMeta, message: String): Unit = synchronized {
@@ -41,16 +41,16 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
   }
 
   private[this] def delayReport(test: TestMeta, testReport: WrappedTestReport): Unit = synchronized {
-    (runningSuites.get(test.id.suiteId), testReport) match {
+    (runningSuites.get(test.id.suite.suiteId), testReport) match {
       // if the current test locked this suite, and its execution is done
       // then we will report all tests that were finished at this point for this suite
       case (Some(t), WrappedTestReport.Status(_: TestStatus.Done)) if t == test =>
-        runningSuites.remove(test.id.suiteId)
+        runningSuites.remove(test.id.suite.suiteId)
         putDelayedReport(test, testReport)
-        finish(_.id.suiteId == test.id.suiteId)
+        finish(_.id.suite.suiteId == test.id.suite.suiteId)
       // if suite lock was not acquired then we should lock this suite with the current test meta
       case (None, _) =>
-        runningSuites.put(test.id.suiteId, test)
+        runningSuites.put(test.id.suite.suiteId, test)
         putDelayedReport(test, testReport)
       case _ =>
         putDelayedReport(test, testReport)
@@ -77,8 +77,8 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
     // lock suite with another test if it's already running
     delayedReports.toList.foreach {
-      case (t, delayed) if predicate(t) && !runningSuites.contains(t.id.suiteId) && delayed.contains(WrappedTestReport.Status(TestStatus.Running)) =>
-        runningSuites(t.id.suiteId) = t
+      case (t, delayed) if predicate(t) && !runningSuites.contains(t.id.suite.suiteId) && delayed.contains(WrappedTestReport.Status(TestStatus.Running)) =>
+        runningSuites(t.id.suite.suiteId) = t
       case _ =>
     }
   }

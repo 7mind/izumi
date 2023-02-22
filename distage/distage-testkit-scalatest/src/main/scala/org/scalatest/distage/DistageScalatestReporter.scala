@@ -1,7 +1,7 @@
 package org.scalatest.distage
 
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
-import izumi.distage.testkit.model.{SuiteData, TestMeta, TestStatus}
+import izumi.distage.testkit.model.{SuiteId, SuiteMeta, TestMeta, TestStatus}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
 import org.scalatest.Suite.{getIndentedTextForInfo, getIndentedTextForTest}
@@ -17,24 +17,24 @@ class DistageScalatestReporter extends TestReporter {
 
   override def endScope(): Unit = {}
 
-  override def beginSuite(id: SuiteData): Unit = {
+  override def beginSuite(id: SuiteMeta): Unit = {
     doReport(id.suiteId)(
       SuiteStarting(
         _,
         id.suiteName,
-        id.suiteId,
+        id.suiteId.suiteId,
         Some(id.suiteClassName),
         formatter = Some(IndentedText(id.suiteName + ":", id.suiteName, 0)),
       )
     )
   }
 
-  override def endSuite(id: SuiteData): Unit = {
+  override def endSuite(id: SuiteMeta): Unit = {
     doReport(id.suiteId)(
       SuiteCompleted(
         _,
         id.suiteName,
-        id.suiteId,
+        id.suiteId.suiteId,
         Some(id.suiteClassName),
         formatter = Some(IndentedText(id.suiteName + ":", id.suiteName, 0)),
         duration = None,
@@ -43,16 +43,16 @@ class DistageScalatestReporter extends TestReporter {
   }
 
   override def testInfo(test: TestMeta, message: String): Unit = {
-    val suiteName1 = test.id.suiteName
-    val suiteId1 = test.id.suiteId
-    val suiteClassName1 = test.id.suiteClassName
+    val suiteName1 = test.id.suite.suiteName
+    val suiteId1 = test.id.suite.suiteId
+    val suiteClassName1 = test.id.suite.suiteClassName
     val testName = test.id.name
     val formatter = Some(getIndentedTextForInfo(s"- $testName", 1, includeIcon = false, infoIsInsideATest = true))
     doReport(suiteId1)(
       InfoProvided(
         _,
         s"Test: ${test.id} \n$message",
-        Some(NameInfo(suiteName1, suiteId1, Some(suiteClassName1), Some(testName))),
+        Some(NameInfo(suiteName1, suiteId1.suiteId, Some(suiteClassName1), Some(testName))),
         location = Some(LineInFile(test.pos.line, test.pos.file, None)),
         formatter = formatter,
       )
@@ -60,9 +60,9 @@ class DistageScalatestReporter extends TestReporter {
   }
 
   override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = {
-    val suiteName1 = test.id.suiteName
-    val suiteId1 = test.id.suiteId
-    val suiteClassName1 = test.id.suiteClassName
+    val suiteName1 = test.id.suite.suiteName
+    val suiteId1 = test.id.suite.suiteId
+    val suiteClassName1 = test.id.suite.suiteClassName
     val testName = test.id.name
 
     val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
@@ -73,7 +73,7 @@ class DistageScalatestReporter extends TestReporter {
           TestStarting(
             _,
             suiteName1,
-            suiteId1,
+            suiteId1.suiteId,
             Some(suiteClassName1),
             testName,
             testName,
@@ -86,7 +86,7 @@ class DistageScalatestReporter extends TestReporter {
           TestSucceeded(
             _,
             suiteName1,
-            suiteId1,
+            suiteId1.suiteId,
             Some(suiteClassName1),
             testName,
             testName,
@@ -102,7 +102,7 @@ class DistageScalatestReporter extends TestReporter {
             _,
             Option(t.getMessage).getOrElse("null"),
             suiteName1,
-            suiteId1,
+            suiteId1.suiteId,
             Some(suiteClassName1),
             testName,
             testName,
@@ -120,7 +120,7 @@ class DistageScalatestReporter extends TestReporter {
             _,
             s"cancelled: $clue",
             suiteName1,
-            suiteId1,
+            suiteId1.suiteId,
             Some(suiteClassName1),
             testName,
             testName,
@@ -136,7 +136,7 @@ class DistageScalatestReporter extends TestReporter {
             _,
             s"ignored: ${checks.toList.niceList()}",
             suiteName1,
-            suiteId1,
+            suiteId1.suiteId,
             Some(suiteClassName1),
             testName,
             testName,
@@ -149,8 +149,8 @@ class DistageScalatestReporter extends TestReporter {
     }
   }
 
-  @inline private[this] def doReport(suiteId: String)(f: Ordinal => Event): Unit = {
-    DistageTestsRegistrySingleton.runReport(suiteId)(sr => sr.reporter(f(sr.tracker.nextOrdinal())))
+  @inline private[this] def doReport(suiteId: SuiteId)(f: Ordinal => Event): Unit = {
+    DistageTestsRegistrySingleton.runReport(suiteId.suiteId)(sr => sr.reporter(f(sr.tracker.nextOrdinal())))
   }
 
 }

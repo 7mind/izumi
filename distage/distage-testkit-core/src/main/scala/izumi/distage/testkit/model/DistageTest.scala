@@ -1,23 +1,28 @@
 package izumi.distage.testkit.model
 
 import distage.Functoid
-import TestConfig.ParallelLevel
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.SourceFilePosition
 
 import scala.concurrent.duration.FiniteDuration
 
-final case class DistageTest[F[_]](test: Functoid[F[Any]], environment: TestEnvironment, meta: TestMeta)
+final case class DistageTest[F[_]](
+  test: Functoid[F[Any]],
+  environment: TestEnvironment,
+  meta: TestMeta,
+)
 
-final case class TestId(path: Seq[String], suiteName: String, suiteId: String, suiteClassName: String) {
+final case class TestId(path: Seq[String], suite: SuiteMeta) {
   lazy val name: String = path.mkString(" ")
-  override def toString: String = s"$suiteName: $name"
+  override def toString: String = s"${suite.suiteName}: $name"
 }
 
 final case class TestMeta(id: TestId, pos: SourceFilePosition, uid: Long)
 
-final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String, parallelLevel: ParallelLevel)
+final case class SuiteId(suiteId: String) extends AnyVal
+
+final case class SuiteMeta(suiteId: SuiteId, suiteName: String, suiteClassName: String)
 
 sealed trait TestStatus
 

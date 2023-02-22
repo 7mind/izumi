@@ -6,7 +6,7 @@ import izumi.distage.model.exceptions.runtime.ProvisioningIntegrationException
 import izumi.distage.model.plan.Plan
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
-import izumi.distage.testkit.model.TestConfig.ParallelLevel
+import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.MemoizationTree.TestGroup
 import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
@@ -20,6 +20,10 @@ import izumi.logstage.api.{IzLogger, Log}
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
+
+object DistageTestRunner {
+  case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism, strengthenedKeys: Set[DIKey])
+}
 
 class DistageTestRunner[F[_]: TagK: DefaultModule](
   reporter: TestReporter,
@@ -116,21 +120,21 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           preparedTest =>
             val testId = preparedTest.test.meta.id
             val parallelLevel = preparedTest.test.environment.parallelSuites
-            SuiteData(testId.suiteName, testId.suiteId, testId.suiteClassName, parallelLevel) -> strengthenedKeys
+            DistageTestRunner.SuiteData(testId.suite.suiteId, testId.suite, parallelLevel, strengthenedKeys)
         }
     }
     // now we are ready to run each individual test
     // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
     // we assume that individual tests within a suite can't have different values of `parallelSuites`
     // (because of structure & that difference even if happens wouldn't be actionable at the level of suites anyway)
-    configuredParTraverse(testsBySuite)(_._1._1.parallelLevel) {
-      case ((suiteData, strengthenedKeys), preparedTests) =>
+    configuredParTraverse(testsBySuite)(_._1.suiteParallelism) {
+      case (suiteData, preparedTests) =>
         F.bracket(
-          acquire = F.maybeSuspend(reporter.beginSuite(suiteData))
-        )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData))) {
+          acquire = F.maybeSuspend(reporter.beginSuite(suiteData.meta))
+        )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, strengthenedKeys)(test)
+              test => proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys)(test)
             }
         }
     }
@@ -229,20 +233,20 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
   protected def configuredParTraverse[F1[_], A](
     l: Iterable[A]
-  )(getParallelismGroup: A => ParallelLevel
+  )(getParallelismGroup: A => Parallelism
   )(f: A => F1[Unit]
   )(implicit
     F: QuasiIO[F1],
     P: QuasiAsync[F1],
   ): F1[Unit] = {
     val sorted = l.groupBy(getParallelismGroup).toList.sortBy {
-      case (ParallelLevel.Unlimited, _) => 1
-      case (ParallelLevel.Fixed(_), _) => 2
-      case (ParallelLevel.Sequential, _) => 3
+      case (Parallelism.Unlimited, _) => 1
+      case (Parallelism.Fixed(_), _) => 2
+      case (Parallelism.Sequential, _) => 3
     }
     F.traverse_(sorted) {
-      case (ParallelLevel.Fixed(n), l) if l.size > 1 => P.parTraverseN_(n)(l)(f)
-      case (ParallelLevel.Unlimited, l) if l.size > 1 => P.parTraverse_(l)(f)
+      case (Parallelism.Fixed(n), l) if l.size > 1 => P.parTraverseN_(n)(l)(f)
+      case (Parallelism.Unlimited, l) if l.size > 1 => P.parTraverse_(l)(f)
       case (_, l) => F.traverse_(l)(f)
     }
   }
@@ -265,7 +269,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     envs.foreach {
       case (PreparedTestEnv(_, _, runtimePlan, _, debugOutput), testTree) =>
-        val suites = testTree.getAllTests.map(_.test.meta.id.suiteClassName).toList.distinct
+        val suites = testTree.getAllTests.map(_.test.meta.id.suite.suiteClassName).toList.distinct
         testRunnerLogger.info(
           s"Memoization environment with ${suites.size -> "suites"} ${testTree.getAllTests.size -> "tests"} ${testTree -> "suitesMemoizationTree"}"
         )
