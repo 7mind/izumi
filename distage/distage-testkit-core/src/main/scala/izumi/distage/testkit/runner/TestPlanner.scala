@@ -27,11 +27,26 @@ import scala.util.Try
 
 object TestPlanner {
 
+  final case class PackedEnv[F[_]](
+    envMergeCriteria: PackedEnvMergeCriteria,
+    preparedTests: Seq[PreparedTest[F]],
+    memoizationPlanTree: List[Plan],
+    anyMemoizationInjector: Injector[Identity],
+    anyIntegrationLogger: IzLogger,
+    highestDebugOutputInTests: Boolean,
+    strengthenedKeys: Set[DIKey],
+  )
   final case class PreparedTest[F[_]](
     test: DistageTest[F],
     appModule: Module,
     testPlan: Plan,
     activation: Activation,
+  )
+
+  final case class PackedEnvMergeCriteria(
+    bsPlanMinusActivations: Vector[ExecutableOp],
+    bsModuleMinusActivations: BootstrapModule,
+    runtimePlan: Plan,
   )
 
   final case class PreparedTestEnv(
@@ -42,30 +57,15 @@ object TestPlanner {
     highestDebugOutputInTests: Boolean,
   )
 
-  final case class EnvMergeCriteria(
-    bsPlanMinusActivations: Vector[ExecutableOp],
-    bsModuleMinusActivations: BootstrapModule,
-    runtimePlan: Plan,
-  )
-
-  final case class PackedEnv[F[_]](
-    envMergeCriteria: EnvMergeCriteria,
-    preparedTests: Seq[PreparedTest[F]],
-    memoizationPlanTree: List[Plan],
-    anyMemoizationInjector: Injector[Identity],
-    anyIntegrationLogger: IzLogger,
-    highestDebugOutputInTests: Boolean,
-    strengthenedKeys: Set[DIKey],
-  )
-
   sealed trait PlanningFailure
   object PlanningFailure {
     case class Exception(throwable: Throwable) extends PlanningFailure
     case class DIErrors(errors: List[DIError]) extends PlanningFailure
   }
 
+  case class PlannedTestEnvs[F[_]](envs: Map[PreparedTestEnv, MemoizationTree[F]])
   final case class PlannedTests[F[_]](
-    good: Map[PreparedTestEnv, Seq[MemoizationTree[F]]], // in fact there should always be just one element
+    good: Seq[PlannedTestEnvs[F]], // in fact there should always be just one element
     bad: Seq[(Seq[DistageTest[F]], PlanningFailure)],
   )
 }
@@ -88,7 +88,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     * [[TestEnvironment.MemoizationEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
   def groupTests(distageTests: Seq[DistageTest[F]]): PlannedTests[F] = {
-    val out: Seq[(Map[PreparedTestEnv, MemoizationTree[F]], Seq[(Seq[DistageTest[F]], PlanningFailure)])] = distageTests
+    val out = distageTests
       .groupBy(_.environment.getExecParams)
       .view
       .mapValues(_.groupBy(_.environment))
@@ -120,7 +120,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
           // so this saves a lot of reallocation of memoized resources
           val goodTrees: Map[PreparedTestEnv, MemoizationTree[F]] = good.groupBy(_.envMergeCriteria).map {
-            case (EnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
+            case (PackedEnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
               val integrationLogger = packedEnv.head.anyIntegrationLogger
               val memoizationInjector = packedEnv.head.anyMemoizationInjector
               val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
@@ -134,10 +134,10 @@ class TestPlanner[F[_]: TagK: DefaultModule](
               ((tests, problem))
           }
 
-          (goodTrees, bad)
+          (PlannedTestEnvs(goodTrees), bad)
       }
 
-    val good = out.flatMap(_._1.toSeq).groupBy(_._1).view.mapValues(_.map(_._2)).toMap
+    val good = out.map(_._1)
     val bad = out.flatMap(_._2)
 
     PlannedTests(good, bad)
@@ -281,7 +281,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, injector, strengthenedAppModule).map(p => List(p))
         }
     } yield {
-      val envMergeCriteria = EnvMergeCriteria(bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, runtimePlan)
+      val envMergeCriteria = PackedEnvMergeCriteria(bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, runtimePlan)
 
       val memoEnvHashCode = envMergeCriteria.hashCode()
       val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)

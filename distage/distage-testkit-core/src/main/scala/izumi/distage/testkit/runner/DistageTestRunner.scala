@@ -36,16 +36,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       val planningTime = FiniteDuration(ChronoUnit.NANOS.between(start, end), TimeUnit.NANOSECONDS)
 
       reportFailedPlanning(envs.bad)
-
-      val toRun = envs.good.flatMap {
-        case (env, trees) =>
-          // TODO: there should be just one element (probably)
-          trees.map {
-            tree =>
-              (env, tree)
-          }
-      }
-
+      // TODO: there shouldn't be a case with more than one tree per env, maybe we should assert/fail instead
+      val toRun = envs.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
       logEnvironmentsInfo(toRun, planningTime)
       runTests(toRun, planner.runtimeGcRoots)
 
