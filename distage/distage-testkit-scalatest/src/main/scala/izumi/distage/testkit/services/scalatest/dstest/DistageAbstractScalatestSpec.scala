@@ -38,7 +38,8 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
   protected[this] def makeTestEnv(): TestEnvironment = loadEnvironment(config)
 
   protected[this] def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
-  protected[this] def distageSuiteId: String = this.getClass.getName
+
+  protected[this] def distageSuiteId: SuiteId = SuiteId(this.getClass.getName)
 
   protected implicit val subjectRegistrationFunction1: StringVerbBlockRegistration = new StringVerbBlockRegistration {
     override def apply(left: String, verb: String, @unused pos: source.Position, f: () => Unit): Unit = {
@@ -95,7 +96,7 @@ object DistageAbstractScalatestSpec {
   class DSWordSpecStringWrapper[F[_]](
     context: Option[SuiteContext],
     suiteName: String,
-    suiteId: String,
+    suiteId: SuiteId,
     testname: Seq[String],
     reg: TestRegistration[F],
     env: TestEnvironment,
@@ -122,16 +123,16 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](function: Functoid[F[A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        SuiteId(suiteId),
+        suiteId,
       )
-      reg.registerTest(function, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId))
+      reg.registerTest(function, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
     }
   }
 
   class DSWordSpecStringWrapper2[F[+_, +_]](
     context: Option[SuiteContext],
     suiteName: String,
-    suiteId: String,
+    suiteId: SuiteId,
     testname: Seq[String],
     reg: TestRegistration[F[Throwable, _]],
     env: TestEnvironment,
@@ -159,16 +160,16 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        SuiteId(suiteId),
+        suiteId,
       )
-      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId))
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
     }
   }
 
   class DSWordSpecStringWrapper3[F[-_, +_, +_]: TagK3](
     context: Option[SuiteContext],
     suiteName: String,
-    suiteId: String,
+    suiteId: SuiteId,
     testname: Seq[String],
     reg: TestRegistration[F[Any, Throwable, _]],
     env: TestEnvironment,
@@ -222,9 +223,9 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        SuiteId(suiteId),
+        suiteId,
       )
-      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId))
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
     }
   }
 
