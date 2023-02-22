@@ -5,9 +5,9 @@ import io.github.classgraph.ClassGraph
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.DistageTest
-import izumi.distage.testkit.runner.DistageTestRunner
+import izumi.distage.testkit.runner.{DistageTestRunner, TestPlanner}
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.{ReporterBracket, TestkitLogging}
+import izumi.distage.testkit.runner.services.{ReporterBracket, TestConfigLoader, TestkitLogging}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
 import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
 import izumi.distage.testkit.spec.AbstractDistageSpec
@@ -193,21 +193,20 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         }
     }
 
-    // TODO: we may even share logger across F implementations, but that would be harder to do in a nice manner because there is no lifecycle in scalatest
-//    val cache = LateLoggerFactoryCachingImpl.makeCache()
     try {
       if (toRun.nonEmpty) {
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
+        val logging = new TestkitLogging()
         val runner = new DistageTestRunner[F](
           testReporter,
           _.isInstanceOf[TestCanceledException],
           new ReporterBracket[F](testReporter),
-          new TestkitLogging(),
+          logging,
+          new TestPlanner[F](logging, new TestConfigLoader.TestConfigLoaderImpl()),
         )
         runner.run(toRun)
       }
     } finally {
-//      cache.close()
       DistageTestsRegistrySingleton.completeStatuses[F]()
     }
   }

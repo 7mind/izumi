@@ -285,13 +285,13 @@ class TestPlanner[F[_]: TagK: DefaultModule](
 
       val memoEnvHashCode = envMergeCriteria.hashCode()
       val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
-      val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
       if (strengthenedKeys.nonEmpty) {
         integrationLogger.log(logging.testkitDebugMessagesLogLevel(env.debugOutput))(
           s"Strengthened weak components: $strengthenedKeys"
         )
       }
 
+      val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
       PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet)
     }
   }

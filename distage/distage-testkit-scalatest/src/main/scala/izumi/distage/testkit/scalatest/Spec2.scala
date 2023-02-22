@@ -14,7 +14,7 @@ abstract class Spec2[F[+_, +_]: DefaultModule2](implicit val tagBIO: TagKK[F])
   with DistageAbstractScalatestSpec[F[Throwable, _]] {
 
   protected implicit def convertToWordSpecStringWrapperDS2(s: String): DSWordSpecStringWrapper2[F] = {
-    new DSWordSpecStringWrapper2(context, distageSuiteName, distageSuiteId, s, this, testEnv)
+    new DSWordSpecStringWrapper2(context, distageSuiteName, distageSuiteId, Seq(s), this, testEnv)
   }
 
   override protected def config: TestConfig = super.config.copy(

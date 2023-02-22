@@ -46,7 +46,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
   }
 
   protected[this] def registerBranch(description: String, verb: String, fun: () => Unit): Unit = {
-    context = Some(SuiteContext(description, verb))
+    context = Some(SuiteContext(Seq(description, verb)))
     fun()
     context = None
   }
@@ -55,9 +55,9 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
 }
 
 object DistageAbstractScalatestSpec {
-  final case class SuiteContext(left: String, verb: String) {
-    def toName(name: String): String = {
-      Seq(left, verb, name).mkString(" ")
+  final case class SuiteContext(prefix: Seq[String]) {
+    def toName(name: Seq[String]): Seq[String] = {
+      prefix ++ name
     }
   }
 
@@ -95,7 +95,7 @@ object DistageAbstractScalatestSpec {
     context: Option[SuiteContext],
     suiteName: String,
     suiteId: String,
-    testname: String,
+    testname: Seq[String],
     reg: TestRegistration[F],
     env: TestEnvironment,
   )(implicit override val tagMonoIO: TagK[F]
@@ -133,7 +133,7 @@ object DistageAbstractScalatestSpec {
     context: Option[SuiteContext],
     suiteName: String,
     suiteId: String,
-    testname: String,
+    testname: Seq[String],
     reg: TestRegistration[F[Throwable, _]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F],
@@ -172,7 +172,7 @@ object DistageAbstractScalatestSpec {
     context: Option[SuiteContext],
     suiteName: String,
     suiteId: String,
-    testname: String,
+    testname: Seq[String],
     reg: TestRegistration[F[Any, Throwable, _]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F[Any, _, _]],

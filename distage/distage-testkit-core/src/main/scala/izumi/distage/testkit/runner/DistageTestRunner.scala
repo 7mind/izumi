@@ -10,7 +10,6 @@ import izumi.distage.testkit.model.TestConfig.ParallelLevel
 import izumi.distage.testkit.runner.MemoizationTree.MemoizationLevelGroup
 import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.TestConfigLoader
 import izumi.distage.testkit.runner.services.{ReporterBracket, TestkitLogging}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
@@ -27,11 +26,11 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   isTestSkipException: Throwable => Boolean,
   reporterBracket: ReporterBracket[F],
   logging: TestkitLogging,
+  planner: TestPlanner[F],
 ) {
   def run(tests: Seq[DistageTest[F]]): Unit = {
     try {
       val start = IzTime.utcNowOffset
-      val planner = new TestPlanner[F](logging, new TestConfigLoader.TestConfigLoaderImpl)
       val envs = planner.groupTests(tests)
       val end = IzTime.utcNowOffset
       val planningTime = FiniteDuration(ChronoUnit.NANOS.between(start, end), TimeUnit.NANOSECONDS)
@@ -54,7 +53,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       case t: Throwable =>
         reporter.onFailure(t)
     } finally {
-      reporter.endAll()
+      reporter.endScope()
     }
   }
 

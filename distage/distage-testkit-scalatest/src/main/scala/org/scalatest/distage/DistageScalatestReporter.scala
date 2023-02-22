@@ -15,7 +15,7 @@ class DistageScalatestReporter extends TestReporter {
     f.printStackTrace()
   }
 
-  override def endAll(): Unit = {}
+  override def endScope(): Unit = {}
 
   override def beginSuite(id: SuiteData): Unit = {
     doReport(id.suiteId)(

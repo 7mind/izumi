@@ -11,11 +11,12 @@ trait TestConfigLoader {
 }
 
 object TestConfigLoader {
-  private final val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]
 
   class TestConfigLoaderImpl() extends TestConfigLoader {
+    private final val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]
+
     def loadConfig(env: TestEnvironment, envLogger: IzLogger): AppConfig = {
-      TestConfigLoader.memoizedConfig
+      memoizedConfig
         .computeIfAbsent(
           (env.configBaseName, env.bootstrapFactory, env.configOverrides),
           _ => {

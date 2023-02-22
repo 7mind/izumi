@@ -10,7 +10,8 @@ import scala.concurrent.duration.FiniteDuration
 
 final case class DistageTest[F[_]](test: Functoid[F[Any]], environment: TestEnvironment, meta: TestMeta)
 
-final case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String) {
+final case class TestId(path: Seq[String], suiteName: String, suiteId: String, suiteClassName: String) {
+  lazy val name: String = path.mkString(" ")
   override def toString: String = s"$suiteName: $name"
 }
 

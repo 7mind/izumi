@@ -11,13 +11,13 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
   private val runningSuites = new mutable.HashMap[String, TestMeta]()
 
   override def onFailure(f: Throwable): Unit = synchronized {
-    endAll()
+    endScope()
     underlying.onFailure(f)
   }
 
-  override def endAll(): Unit = synchronized {
+  override def endScope(): Unit = synchronized {
     finish(_ => true)
-    underlying.endAll()
+    underlying.endScope()
   }
 
   override def beginSuite(id: SuiteData): Unit = {}
