@@ -17,12 +17,18 @@ import izumi.fundamentals.graphs.DG
 sealed trait DIError
 
 object DIError {
+  implicit class DIErrorsExt(private val errors: List[DIError]) extends AnyVal {
+    def aggregateErrors: InjectorFailed = {
+      val i = new DIFailureInterpreter()
+      i.asError(errors)
+    }
+  }
+
   implicit class DIResultExt[A](private val result: Either[List[DIError], A]) extends AnyVal {
     def aggregateErrors: Either[InjectorFailed, A] = {
       result match {
         case Left(errors) =>
-          val i = new DIFailureInterpreter()
-          Left(i.asError(errors))
+          Left(errors.aggregateErrors)
 
         case Right(resolved) =>
           Right(resolved)

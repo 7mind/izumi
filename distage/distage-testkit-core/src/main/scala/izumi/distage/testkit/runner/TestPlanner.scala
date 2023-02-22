@@ -21,8 +21,54 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 
+import scala.collection.immutable.Map
+
+object TestPlanner {
+
+  final case class MemoizationEnv(
+    envExec: EnvExecutionParams,
+    integrationLogger: IzLogger,
+    runtimePlan: Plan,
+    memoizationInjector: Injector[Identity],
+    highestDebugOutputInTests: Boolean,
+  )
+
+  final case class PreparedTest[F[_]](
+    test: DistageTest[F],
+    appModule: Module,
+    testPlan: Plan,
+    activation: Activation,
+  )
+
+  final case class EnvMergeCriteria(
+    bsPlanMinusActivations: Vector[ExecutableOp],
+    bsModuleMinusActivations: BootstrapModule,
+    runtimePlan: Plan,
+  )
+
+  final case class PackedEnv[F[_]](
+    envMergeCriteria: EnvMergeCriteria,
+    preparedTests: Seq[PreparedTest[F]],
+    memoizationPlanTree: List[Plan],
+    anyMemoizationInjector: Injector[Identity],
+    anyIntegrationLogger: IzLogger,
+    highestDebugOutputInTests: Boolean,
+    strengthenedKeys: Set[DIKey],
+  )
+
+  sealed trait PlanningFailure
+  object PlanningFailure {
+    case class Exception(throwable: Throwable) extends PlanningFailure
+    case class DIErrors(errors: List[DIError]) extends PlanningFailure
+  }
+
+  final case class PlannedTests[F[_]](
+    good: Map[MemoizationEnv, Seq[MemoizationTree[F]]], // in fact there should always be just one element
+    bad: Seq[(Seq[DistageTest[F]], PlanningFailure)],
+  )
+}
+
 class TestPlanner[F[_]: TagK: DefaultModule](
-  reporterBracket: ReporterBracket[F],
   logging: TestkitLogging,
   configLoader: TestConfigLoader,
 ) {
@@ -39,49 +85,63 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     * By result you'll got [[TestEnvironment.MemoizationEnv]] mapped to [[MemoizationTree]] - tree-represented memoization plan with tests.
     * [[TestEnvironment.MemoizationEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
-  def groupTests(distageTests: Seq[DistageTest[F]], loggerCache: LateLoggerFactoryCachingImpl.Cache): Either[List[DIError], Map[MemoizationEnv, MemoizationTree[F]]] = {
-
-    // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
-    val allowVariationKeys = {
-      val activationKeys = Set(DIKey[Activation]("bootstrapActivation"), DIKey[ActivationInfo])
-      val recursiveKeys = Set(DIKey[BootstrapModule])
-      // FIXME: remove IzLogger dependency in `ResourceRewriter` and stop inserting LogstageModule in bootstrap
-      val hackyKeys = Set(DIKey[LogRouter])
-      activationKeys ++ recursiveKeys ++ hackyKeys
-    }
-
-    // here we are grouping our tests by memoization env
-
-    distageTests
-      .groupBy(_.environment.getExecParams).map {
-        case (envExec, grouped) =>
+  def groupTests(distageTests: Seq[DistageTest[F]], loggerCache: LateLoggerFactoryCachingImpl.Cache): PlannedTests[F] = {
+    val out: Seq[(Map[MemoizationEnv, MemoizationTree[F]], Seq[(Seq[DistageTest[F]], PlanningFailure)])] = distageTests
+      .groupBy(_.environment.getExecParams)
+      .view
+      .mapValues(_.groupBy(_.environment))
+      .toSeq
+      .map {
+        case (envExec, testsByEnv) =>
           val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
-          val memoizationEnvs = QuasiAsync.quasiAsyncIdentity
-            .parTraverse(grouped.groupBy(_.environment)) {
+
+          val memoizationEnvs =
+            QuasiAsync[Identity].parTraverse(testsByEnv) {
               case (env, tests) =>
-                reporterBracket.withRecoverFromFailedExecution(tests) {
-                  // make a config loader for current env with logger
-                  val config = configLoader.loadConfig(env, configLoadLogger)
-                  Option(prepareGroupPlans(loggerCache, allowVariationKeys, envExec, config, configLoadLogger, env, tests))
-                }(None)
-            }.flatten.biAggregate
+                // make a config loader for current env with logger
+                val config = configLoader.loadConfig(env, configLoadLogger)
+                prepareGroupPlans(loggerCache, allowedKeyVariations, envExec, config, configLoadLogger, env, tests).left.map(bad => (tests, bad))
+            }
+
+          val good = memoizationEnvs.collect {
+            case Right(env) =>
+              env
+          }
+
           // merge environments together by equality of their shared & runtime plans
           // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
           // so this saves a lot of reallocation of memoized resources
-
-          for {
-            envs <- memoizationEnvs
-          } yield {
-            envs.groupBy(_.envMergeCriteria).map {
-              case (EnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
-                val integrationLogger = packedEnv.head.anyIntegrationLogger
-                val memoizationInjector = packedEnv.head.anyMemoizationInjector
-                val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-                val memoizationTree = MemoizationTree[F](packedEnv)
-                MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, highestDebugOutputInTests) -> memoizationTree
-            }
+          val goodTrees: Map[MemoizationEnv, MemoizationTree[F]] = good.groupBy(_.envMergeCriteria).map {
+            case (EnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
+              val integrationLogger = packedEnv.head.anyIntegrationLogger
+              val memoizationInjector = packedEnv.head.anyMemoizationInjector
+              val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
+              val memoizationTree = MemoizationTree[F](packedEnv)
+              val env = MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, highestDebugOutputInTests)
+              (env, memoizationTree)
           }
-      }.biAggregate.map(_.flatten.toMap)
+
+          val bad: Seq[(Seq[DistageTest[F]], PlanningFailure)] = memoizationEnvs.collect {
+            case Left((tests, problem)) =>
+              ((tests, problem))
+          }
+
+          (goodTrees, bad)
+      }
+
+    val good = out.flatMap(_._1.toSeq).groupBy(_._1).view.mapValues(_.map(_._2)).toMap
+    val bad = out.flatMap(_._2)
+
+    PlannedTests(good, bad)
+  }
+
+  private lazy val allowedKeyVariations = {
+    // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
+    val activationKeys = Set(DIKey[Activation]("bootstrapActivation"), DIKey[ActivationInfo])
+    val recursiveKeys = Set(DIKey[BootstrapModule])
+    // FIXME: remove IzLogger dependency in `ResourceRewriter` and stop inserting LogstageModule in bootstrap
+    val hackyKeys = Set(DIKey[LogRouter])
+    activationKeys ++ recursiveKeys ++ hackyKeys
   }
 
   private def prepareGroupPlans(
@@ -92,7 +152,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     configLoadLogger: IzLogger,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
-  ): Either[List[DIError], PackedEnv[F]] = {
+  ): Either[PlanningFailure, PackedEnv[F]] = {
 
     withLeakedLogger(envExec, loggerCache, config, configLoadLogger) {
       router =>
@@ -255,38 +315,4 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     }.use(logger => withRouter(logger.router))
   }
 
-}
-
-object TestPlanner {
-
-  final case class MemoizationEnv(
-    envExec: EnvExecutionParams,
-    integrationLogger: IzLogger,
-    runtimePlan: Plan,
-    memoizationInjector: Injector[Identity],
-    highestDebugOutputInTests: Boolean,
-  )
-
-  final case class PreparedTest[F[_]](
-    test: DistageTest[F],
-    appModule: Module,
-    testPlan: Plan,
-    activation: Activation,
-  )
-
-  final case class EnvMergeCriteria(
-    bsPlanMinusActivations: Vector[ExecutableOp],
-    bsModuleMinusActivations: BootstrapModule,
-    runtimePlan: Plan,
-  )
-
-  final case class PackedEnv[F[_]](
-    envMergeCriteria: EnvMergeCriteria,
-    preparedTests: Seq[PreparedTest[F]],
-    memoizationPlanTree: List[Plan],
-    anyMemoizationInjector: Injector[Identity],
-    anyIntegrationLogger: IzLogger,
-    highestDebugOutputInTests: Boolean,
-    strengthenedKeys: Set[DIKey],
-  )
 }

@@ -31,19 +31,53 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 ) {
   def run(tests: Seq[DistageTest[F]]): Unit = {
     try {
-      val start = IzTime.utcNow
-      val planner = new TestPlanner[F](reporterBracket, logging, new TestConfigLoader.TestConfigLoaderImpl)
-      val envs = planner.groupTests(tests, loggerCache).getOrThrow()
-      val end = IzTime.utcNow
-      logEnvironmentsInfo(envs, ChronoUnit.MILLIS.between(start, end))
-      configuredParTraverse[Identity, (MemoizationEnv, MemoizationTree[F])](envs)(_._1.envExec.parallelEnvs) {
-        case (e, t) => proceedEnv(e, t, planner.runtimeGcRoots)
+      val start = IzTime.utcNowOffset
+      val planner = new TestPlanner[F](logging, new TestConfigLoader.TestConfigLoaderImpl)
+      val envs = planner.groupTests(tests, loggerCache) // .getOrThrow()
+      val end = IzTime.utcNowOffset
+      val planningTime = FiniteDuration(ChronoUnit.NANOS.between(start, end), TimeUnit.NANOSECONDS)
+
+      reportFailedPlanning(envs.bad)
+
+      val toRun = envs.good.flatMap {
+        case (env, trees) =>
+          // TODO: there should be just one element (probably)
+          trees.map {
+            tree =>
+              (env, tree)
+          }
       }
+
+      logEnvironmentsInfo(toRun, planningTime)
+      runTests(toRun, planner.runtimeGcRoots)
+
     } catch {
       case t: Throwable =>
         reporter.onFailure(t)
     } finally {
       reporter.endAll()
+    }
+  }
+
+  private def runTests(toRun: Map[MemoizationEnv, MemoizationTree[F]], runtimeRoots: Set[DIKey]): Unit = {
+    configuredParTraverse[Identity, (MemoizationEnv, MemoizationTree[F])](toRun)(_._1.envExec.parallelEnvs) {
+      case (e, t) => proceedEnv(e, t, runtimeRoots)
+    }
+  }
+
+  private def reportFailedPlanning(bad: Seq[(Seq[DistageTest[F]], PlanningFailure)]): Unit = {
+    bad.foreach {
+      case (badTests, failure) =>
+        badTests.foreach {
+          test =>
+            val asThrowable = failure match {
+              case PlanningFailure.Exception(throwable) =>
+                throwable
+              case PlanningFailure.DIErrors(errors) =>
+                errors.aggregateErrors
+            }
+            reporter.testStatus(test.meta, TestStatus.Failed(asThrowable, FiniteDuration.apply(0, TimeUnit.MILLISECONDS)))
+        }
     }
   }
 
@@ -223,12 +257,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private[this] def logEnvironmentsInfo(envs: Map[MemoizationEnv, MemoizationTree[F]], millis: Long): Unit = {
+  private[this] def logEnvironmentsInfo(envs: Map[MemoizationEnv, MemoizationTree[F]], duration: FiniteDuration): Unit = {
     val testRunnerLogger = {
       val minimumLogLevel = envs.map(_._1.envExec.logLevel).toSeq.sorted.headOption.getOrElse(Log.Level.Info)
       IzLogger(minimumLogLevel)("phase" -> "testRunner")
     }
-    testRunnerLogger.info(s"Creation of memoization trees takes $millis ...")
+    testRunnerLogger.info(s"Test planning took ${duration.toMillis} ...")
     val originalEnvSize = envs.iterator.flatMap(_._2.getAllTests.map(_.test.environment)).toSet.size
     val memoizationTreesNum = envs.size
 

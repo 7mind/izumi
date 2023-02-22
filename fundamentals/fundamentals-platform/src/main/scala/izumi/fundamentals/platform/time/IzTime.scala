@@ -92,7 +92,7 @@ trait IzTime extends IzTimeSafe {
   // current time
   def utcNow: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
 
-  def utcNowOffset: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
+  def utcNowOffset: OffsetDateTime = OffsetDateTime.now(TZ_UTC)
 
   def isoNow: String = utcNow.isoFormat
 
