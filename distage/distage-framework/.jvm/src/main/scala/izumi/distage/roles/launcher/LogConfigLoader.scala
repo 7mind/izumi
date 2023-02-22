@@ -62,8 +62,7 @@ object LogConfigLoader {
         LoggerFormat.Text
       }
 
-      val fullConfig = DeclarativeLoggerConfig(format, options, levels, cliOptions.level, jul)
-      fullConfig
+      DeclarativeLoggerConfig(format, options, levels, cliOptions.level, jul)
     }
 
     private[this] def readConfig(config: AppConfig): SinksConfig = {
