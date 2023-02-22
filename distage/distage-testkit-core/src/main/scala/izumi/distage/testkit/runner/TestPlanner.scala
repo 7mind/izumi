@@ -13,19 +13,18 @@ import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleApp
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
 import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment}
 import izumi.distage.testkit.runner.TestPlanner.*
-import izumi.distage.testkit.runner.services.{BootstrapFactory, LateLoggerFactoryCachingImpl, ReporterBracket, TestkitLogging}
+import izumi.distage.testkit.runner.services.{LateLoggerFactoryCachingImpl, ReporterBracket, TestConfigLoader, TestkitLogging}
+import izumi.functional.IzEither.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
-import izumi.functional.IzEither.*
-
-import java.util.concurrent.ConcurrentHashMap
 
 class TestPlanner[F[_]: TagK: DefaultModule](
   reporterBracket: ReporterBracket[F],
   logging: TestkitLogging,
+  configLoader: TestConfigLoader,
 ) {
   // first we need to plan runtime for our monad. Identity is also supported
   val runtimeGcRoots: Set[DIKey] = Set(
@@ -61,7 +60,9 @@ class TestPlanner[F[_]: TagK: DefaultModule](
             .parTraverse(grouped.groupBy(_.environment)) {
               case (env, tests) =>
                 reporterBracket.withRecoverFromFailedExecution(tests) {
-                  Option(prepareGroupPlans(loggerCache, allowVariationKeys, envExec, configLoadLogger, env, tests))
+                  // make a config loader for current env with logger
+                  val config = configLoader.loadConfig(env, configLoadLogger)
+                  Option(prepareGroupPlans(loggerCache, allowVariationKeys, envExec, config, configLoadLogger, env, tests))
                 }(None)
             }.flatten.biAggregate
           // merge environments together by equality of their shared & runtime plans
@@ -87,12 +88,11 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     loggerCache: LateLoggerFactoryCachingImpl.Cache,
     variableBsKeys: Set[DIKey],
     envExec: EnvExecutionParams,
+    config: AppConfig,
     configLoadLogger: IzLogger,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
   ): Either[List[DIError], PackedEnv[F]] = {
-    // make a config loader for current env with logger
-    val config = loadConfig(env, configLoadLogger)
 
     withLeakedLogger(envExec, loggerCache, config, configLoadLogger) {
       router =>
@@ -255,31 +255,9 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     }.use(logger => withRouter(logger.router))
   }
 
-  protected[this] def loadConfig(env: TestEnvironment, envLogger: IzLogger): AppConfig = {
-    TestPlanner.memoizedConfig
-      .computeIfAbsent(
-        (env.configBaseName, env.bootstrapFactory, env.configOverrides),
-        _ => {
-          val configLoader = env.bootstrapFactory
-            .makeConfigLoader(env.configBaseName, envLogger)
-            .map {
-              appConfig =>
-                env.configOverrides match {
-                  case Some(overrides) =>
-                    AppConfig(overrides.config.withFallback(appConfig.config).resolve())
-                  case None =>
-                    appConfig
-                }
-            }
-          configLoader.loadConfig()
-        },
-      )
-  }
-
 }
 
 object TestPlanner {
-  private final val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]
 
   final case class MemoizationEnv(
     envExec: EnvExecutionParams,

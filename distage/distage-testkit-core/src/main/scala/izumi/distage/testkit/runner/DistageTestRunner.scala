@@ -10,6 +10,7 @@ import izumi.distage.testkit.model.TestConfig.ParallelLevel
 import izumi.distage.testkit.runner.MemoizationTree.MemoizationLevelGroup
 import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
+import izumi.distage.testkit.runner.services.TestConfigLoader
 import izumi.distage.testkit.runner.services.{LateLoggerFactoryCachingImpl, ReporterBracket, TestkitLogging}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
@@ -31,7 +32,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   def run(tests: Seq[DistageTest[F]]): Unit = {
     try {
       val start = IzTime.utcNow
-      val planner = new TestPlanner[F](reporterBracket, logging)
+      val planner = new TestPlanner[F](reporterBracket, logging, new TestConfigLoader.TestConfigLoaderImpl)
       val envs = planner.groupTests(tests, loggerCache).getOrThrow()
       val end = IzTime.utcNow
       logEnvironmentsInfo(envs, ChronoUnit.MILLIS.between(start, end))

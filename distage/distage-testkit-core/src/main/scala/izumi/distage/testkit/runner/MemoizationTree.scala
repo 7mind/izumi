@@ -11,7 +11,6 @@ import izumi.functional.quasi.QuasiIO
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
-import izumi.functional.IzEither.*
 
 /**
   * Structure for creation, storage and traversing over memoization levels.
@@ -37,18 +36,6 @@ final class MemoizationTree[F[_]](val plan: Plan) {
   def add(memoizationTree: MemoizationTree[F]): Unit = {
     children.synchronized(children.put(memoizationTree.plan, memoizationTree))
     ()
-  }
-
-  /** Remap tree with function (mapedParentNode, thisNode) => thisNodeMaped */
-  @inline def stateMap[A, E](initialState: A)(m: (A, MemoizationTree[F]) => Either[List[E], (A, MemoizationTree[F])]): Either[List[E], MemoizationTree[F]] = {
-    m(initialState, this).flatMap {
-      case (state, tree) =>
-        children.toList
-          .biMapAggregate {
-            case (_, children) =>
-              children.stateMap(state)(m).map(tree.add)
-          }.map(_ => tree)
-    }
   }
 
   @inline override def toString: String = render()
