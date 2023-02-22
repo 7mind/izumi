@@ -118,9 +118,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       case TestGroup(preparedTests, strengthenedKeys) =>
         preparedTests.groupBy {
           preparedTest =>
-            val testId = preparedTest.test.meta.id
+            val testId = preparedTest.test.meta.test.id
             val parallelLevel = preparedTest.test.environment.parallelSuites
-            DistageTestRunner.SuiteData(testId.suite.suiteId, testId.suite, parallelLevel, strengthenedKeys)
+            DistageTestRunner.SuiteData(testId.suite, preparedTest.test.suiteMeta, parallelLevel, strengthenedKeys)
         }
     }
     // now we are ready to run each individual test
@@ -166,7 +166,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Failed(value, Duration.Zero)))
 
       case Right(newTestPlan) =>
-        val testLogger = testRunnerLogger("testId" -> test.meta.id)
+        val testLogger = testRunnerLogger("testId" -> test.meta.test.id)
         testLogger.log(logging.testkitDebugMessagesLogLevel(test.environment.debugOutput))(
           s"""Running test...
              |
@@ -269,7 +269,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     envs.foreach {
       case (PreparedTestEnv(_, _, runtimePlan, _, debugOutput), testTree) =>
-        val suites = testTree.getAllTests.map(_.test.meta.id.suite.suiteClassName).toList.distinct
+        val suites = testTree.getAllTests.map(_.test.suiteMeta.suiteClassName).toList.distinct
         testRunnerLogger.info(
           s"Memoization environment with ${suites.size -> "suites"} ${testTree.getAllTests.size -> "tests"} ${testTree -> "suitesMemoizationTree"}"
         )

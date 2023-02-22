@@ -10,12 +10,15 @@ import scala.concurrent.duration.FiniteDuration
 final case class DistageTest[F[_]](
   test: Functoid[F[Any]],
   environment: TestEnvironment,
-  meta: TestMeta,
-)
+  testMeta: TestMeta,
+  suiteMeta: SuiteMeta,
+) {
+  def meta: FullMeta = FullMeta(testMeta, suiteMeta)
+}
 
-final case class TestId(path: Seq[String], suite: SuiteMeta) {
+final case class TestId(path: Seq[String], suite: SuiteId) {
   lazy val name: String = path.mkString(" ")
-  override def toString: String = s"${suite.suiteName}: $name"
+  override def toString: String = s"${suite.suiteId}/$name"
 }
 
 final case class TestMeta(id: TestId, pos: SourceFilePosition, uid: Long)
@@ -23,6 +26,8 @@ final case class TestMeta(id: TestId, pos: SourceFilePosition, uid: Long)
 final case class SuiteId(suiteId: String) extends AnyVal
 
 final case class SuiteMeta(suiteId: SuiteId, suiteName: String, suiteClassName: String)
+
+final case class FullMeta(test: TestMeta, suite: SuiteMeta)
 
 sealed trait TestStatus
 

@@ -20,9 +20,10 @@ import scala.annotation.unused
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
 
-  override def registerTest[A](function: Functoid[F[A]], env: TestEnvironment, pos: SourceFilePosition, id: TestId): Unit = {
+  override def registerTest[A](function: Functoid[F[A]], env: TestEnvironment, pos: SourceFilePosition, id: TestId, meta: SuiteMeta): Unit = {
     if (firstRegistration) {
-      DistageTestsRegistrySingleton.register[F](DistageTest(function.asInstanceOf[Functoid[F[Any]]], env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
+      val test = DistageTest(function.asInstanceOf[Functoid[F[Any]]], env, TestMeta(id, pos, System.identityHashCode(function).toLong), meta)
+      DistageTestsRegistrySingleton.register[F](test)
     }
   }
 }
@@ -121,9 +122,9 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](function: Functoid[F[A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        SuiteMeta(SuiteId(suiteName), suiteId, suiteId),
+        SuiteId(suiteName),
       )
-      reg.registerTest(function, env, pos, id)
+      reg.registerTest(function, env, pos, id, SuiteMeta(id.suite, suiteId, suiteId))
     }
   }
 
@@ -158,9 +159,9 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        SuiteMeta(SuiteId(suiteName), suiteId, suiteId),
+        SuiteId(suiteName),
       )
-      reg.registerTest(fAsThrowable, env, pos, id)
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteId, suiteId))
     }
   }
 
@@ -221,9 +222,9 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        SuiteMeta(SuiteId(suiteName), suiteId, suiteId),
+        SuiteId(suiteName),
       )
-      reg.registerTest(fAsThrowable, env, pos, id)
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteId, suiteId))
     }
   }
 

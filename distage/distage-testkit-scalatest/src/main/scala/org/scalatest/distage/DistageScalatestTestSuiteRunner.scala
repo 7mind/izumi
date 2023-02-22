@@ -130,8 +130,8 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   }
 
   override def testNames: Set[String] = {
-    val testsInThisTestClass = DistageTestsRegistrySingleton.registeredTests[F].filter(_.meta.id.suite.suiteId == SuiteId(suiteId))
-    TreeSet[String](testsInThisTestClass.map(_.meta.id.name): _*)
+    val testsInThisTestClass = DistageTestsRegistrySingleton.registeredTests[F].filter(_.meta.test.id.suite == SuiteId(suiteId))
+    TreeSet[String](testsInThisTestClass.map(_.meta.test.id.name): _*)
   }
 
   override def tags: Map[String, Set[String]] = Map.empty
@@ -180,7 +180,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         testsInThisRuntime.filter {
           test =>
             val tags: Map[String, Set[String]] = Map.empty
-            val (filterTest, ignoreTest) = args.filter.apply(test.meta.id.name, tags, test.meta.id.suite.suiteId.suiteId)
+            val (filterTest, ignoreTest) = args.filter.apply(test.meta.test.id.name, tags, test.meta.test.id.suite.suiteId)
             val isTestOk = !filterTest && !ignoreTest
             isTestOk
         }
@@ -189,13 +189,13 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         if (!testNames.contains(testName)) {
           throw new IllegalArgumentException(Resources.testNotFound(testName))
         } else {
-          testsInThisRuntime.filter(_.meta.id.name == testName)
+          testsInThisRuntime.filter(_.meta.test.id.name == testName)
         }
     }
 
     try {
       if (toRun.nonEmpty) {
-        debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
+        debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.test.id.name)}")
         val logging = new TestkitLogging()
         val runner = new DistageTestRunner[F](
           testReporter,

@@ -1,8 +1,6 @@
 package izumi.distage.testkit.runner.api
 
-import izumi.distage.testkit.model.{SuiteMeta, TestMeta, TestStatus}
-
-
+import izumi.distage.testkit.model.{FullMeta, SuiteMeta, TestStatus}
 
 trait TestReporter {
   def endScope(): Unit
@@ -13,11 +11,10 @@ trait TestReporter {
 
   def endSuite(id: SuiteMeta): Unit
 
-  def testStatus(test: TestMeta, testStatus: TestStatus): Unit
+  def testStatus(meta: FullMeta, testStatus: TestStatus): Unit
 
-  def testInfo(test: TestMeta, message: String): Unit
+  def testInfo(meta: FullMeta, message: String): Unit
 }
-
 
 object TestReporter {
   case class Scope()

@@ -1,12 +1,12 @@
 package org.scalatest.distage
 
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
-import izumi.distage.testkit.model.{SuiteId, SuiteMeta, TestMeta, TestStatus}
+import izumi.distage.testkit.model.{FullMeta, SuiteId, SuiteMeta, TestStatus}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
+import izumi.fundamentals.platform.strings.IzString.*
 import org.scalatest.Suite.{getIndentedTextForInfo, getIndentedTextForTest}
 import org.scalatest.events.*
-import izumi.fundamentals.platform.strings.IzString.*
 
 class DistageScalatestReporter extends TestReporter {
 
@@ -42,28 +42,28 @@ class DistageScalatestReporter extends TestReporter {
     )
   }
 
-  override def testInfo(test: TestMeta, message: String): Unit = {
-    val suiteName1 = test.id.suite.suiteName
-    val suiteId1 = test.id.suite.suiteId
-    val suiteClassName1 = test.id.suite.suiteClassName
-    val testName = test.id.name
+  override def testInfo(test: FullMeta, message: String): Unit = {
+    val suiteName1 = test.suite.suiteName
+    val suiteId1 = test.suite.suiteId
+    val suiteClassName1 = test.suite.suiteClassName
+    val testName = test.test.id.name
     val formatter = Some(getIndentedTextForInfo(s"- $testName", 1, includeIcon = false, infoIsInsideATest = true))
     doReport(suiteId1)(
       InfoProvided(
         _,
-        s"Test: ${test.id} \n$message",
+        s"Test: ${test.test.id} \n$message",
         Some(NameInfo(suiteName1, suiteId1.suiteId, Some(suiteClassName1), Some(testName))),
-        location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+        location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
         formatter = formatter,
       )
     )
   }
 
-  override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = {
-    val suiteName1 = test.id.suite.suiteName
-    val suiteId1 = test.id.suite.suiteId
-    val suiteClassName1 = test.id.suite.suiteClassName
-    val testName = test.id.name
+  override def testStatus(test: FullMeta, testStatus: TestStatus): Unit = {
+    val suiteName1 = test.suite.suiteName
+    val suiteId1 = test.suite.suiteId
+    val suiteClassName1 = test.suite.suiteClassName
+    val testName = test.test.id.name
 
     val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
 
@@ -77,7 +77,7 @@ class DistageScalatestReporter extends TestReporter {
             Some(suiteClassName1),
             testName,
             testName,
-            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+            location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
             formatter = Some(MotionToSuppress),
           )
         )
@@ -92,7 +92,7 @@ class DistageScalatestReporter extends TestReporter {
             testName,
             recordedEvents = Vector.empty,
             duration = Some(duration.toMillis),
-            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+            location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
             formatter = formatter,
           )
         )
@@ -110,7 +110,7 @@ class DistageScalatestReporter extends TestReporter {
             analysis = Vector.empty,
             throwable = Option(t),
             duration = Some(duration.toMillis),
-            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+            location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
             formatter = formatter,
           )
         )
@@ -126,7 +126,7 @@ class DistageScalatestReporter extends TestReporter {
             testName,
             recordedEvents = Vector.empty,
             duration = Some(duration.toMillis),
-            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+            location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
             formatter = formatter,
           )
         )
@@ -143,7 +143,7 @@ class DistageScalatestReporter extends TestReporter {
             recordedEvents = Vector.empty,
             throwable = Some(new IntegrationCheckException(checks)),
             formatter = formatter,
-            location = Some(LineInFile(test.pos.line, test.pos.file, None)),
+            location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
           )
         )
     }
