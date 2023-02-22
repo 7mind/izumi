@@ -311,26 +311,4 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       Right(Plan.empty)
     }
   }
-
-//  private def withLeakedLogger[A](
-//    envExec: EnvExecutionParams,
-//    loggerCache: LateLoggerFactoryCachingImpl.Cache,
-//    config: AppConfig,
-//    earlyLogger: IzLogger,
-//  )(withRouter: LogRouter => A
-//  ) = {
-//    import scala.jdk.CollectionConverters.*
-//
-//    new LateLoggerFactoryCachingImpl(
-//      config,
-//      CLILoggerOptions(envExec.logLevel, json = false),
-//      earlyLogger,
-//      loggerCache,
-//    ).makeLateLogRouter {
-//      closeables =>
-//        loggerCache.closeables.addAll(closeables.asJava)
-//        ()
-//    }.use(logger => withRouter(logger.router))
-//  }
-
 }
