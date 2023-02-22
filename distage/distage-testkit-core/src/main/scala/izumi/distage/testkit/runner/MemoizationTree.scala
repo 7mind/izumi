@@ -77,7 +77,7 @@ final class MemoizationTree[F[_]](val plan: Plan) {
     }
     val currentLevelPad = {
       val emptyStep = if (suitePad.isEmpty) "" else s"\n${suitePad.dropRight(5)}║"
-      s"$emptyStep\n$levelPad╗ LEVEL = $level;\n$suitePad║ MEMOIZATION ROOTS: $levelInfo"
+      s"$emptyStep\n$levelPad╗ [$level] MEMOIZATION ROOTS: $levelInfo"
     }
 
     val str = {
