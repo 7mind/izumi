@@ -7,7 +7,7 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.ParallelLevel
-import izumi.distage.testkit.runner.MemoizationTree.MemoizationLevelGroup
+import izumi.distage.testkit.runner.MemoizationTree.TestGroup
 import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.services.{ReporterBracket, TestkitLogging}
@@ -57,8 +57,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private def runTests(toRun: Map[MemoizationEnv, MemoizationTree[F]], runtimeRoots: Set[DIKey]): Unit = {
-    configuredParTraverse[Identity, (MemoizationEnv, MemoizationTree[F])](toRun)(_._1.envExec.parallelEnvs) {
+  private def runTests(toRun: Map[PreparedTestEnv, MemoizationTree[F]], runtimeRoots: Set[DIKey]): Unit = {
+    configuredParTraverse[Identity, (PreparedTestEnv, MemoizationTree[F])](toRun)(_._1.envExec.parallelEnvs) {
       case (e, t) => proceedEnv(e, t, runtimeRoots)
     }
   }
@@ -79,8 +79,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def proceedEnv(env: MemoizationEnv, testsTree: MemoizationTree[F], runtimeGcRoots: Set[DIKey]): Unit = {
-    val MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, _) = env
+  protected def proceedEnv(env: PreparedTestEnv, testsTree: MemoizationTree[F], runtimeGcRoots: Set[DIKey]): Unit = {
+    val PreparedTestEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, _) = env
     val allEnvTests = testsTree.getAllTests.map(_.test)
     integrationLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
     reporterBracket.withRecoverFromFailedExecution(allEnvTests) {
@@ -113,13 +113,13 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     planChecker: PlanCircularDependencyCheck,
     deepestSharedLocator: Locator,
     testRunnerLogger: IzLogger,
-  )(levelGroups: Iterable[MemoizationLevelGroup[F]]
+  )(levelGroups: Iterable[TestGroup[F]]
   )(implicit
     F: QuasiIO[F],
     P: QuasiAsync[F],
   ): F[Unit] = {
     val testsBySuite = levelGroups.flatMap {
-      case MemoizationLevelGroup(preparedTests, strengthenedKeys) =>
+      case TestGroup(preparedTests, strengthenedKeys) =>
         preparedTests.groupBy {
           preparedTest =>
             val testId = preparedTest.test.meta.id
@@ -255,7 +255,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private[this] def logEnvironmentsInfo(envs: Map[MemoizationEnv, MemoizationTree[F]], duration: FiniteDuration): Unit = {
+  private[this] def logEnvironmentsInfo(envs: Map[PreparedTestEnv, MemoizationTree[F]], duration: FiniteDuration): Unit = {
     val testRunnerLogger = {
       val minimumLogLevel = envs.map(_._1.envExec.logLevel).toSeq.sorted.headOption.getOrElse(Log.Level.Info)
       IzLogger(minimumLogLevel)("phase" -> "testRunner")
@@ -272,7 +272,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     envs.foreach {
-      case (MemoizationEnv(_, _, runtimePlan, _, debugOutput), testTree) =>
+      case (PreparedTestEnv(_, _, runtimePlan, _, debugOutput), testTree) =>
         val suites = testTree.getAllTests.map(_.test.meta.id.suiteClassName).toList.distinct
         testRunnerLogger.info(
           s"Memoization environment with ${suites.size -> "suites"} ${testTree.getAllTests.size -> "tests"} ${testTree -> "suitesMemoizationTree"}"

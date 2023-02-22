@@ -27,19 +27,19 @@ import scala.util.Try
 
 object TestPlanner {
 
-  final case class MemoizationEnv(
-    envExec: EnvExecutionParams,
-    integrationLogger: IzLogger,
-    runtimePlan: Plan,
-    memoizationInjector: Injector[Identity],
-    highestDebugOutputInTests: Boolean,
-  )
-
   final case class PreparedTest[F[_]](
     test: DistageTest[F],
     appModule: Module,
     testPlan: Plan,
     activation: Activation,
+  )
+
+  final case class PreparedTestEnv(
+    envExec: EnvExecutionParams,
+    integrationLogger: IzLogger,
+    runtimePlan: Plan,
+    memoizationInjector: Injector[Identity],
+    highestDebugOutputInTests: Boolean,
   )
 
   final case class EnvMergeCriteria(
@@ -65,7 +65,7 @@ object TestPlanner {
   }
 
   final case class PlannedTests[F[_]](
-    good: Map[MemoizationEnv, Seq[MemoizationTree[F]]], // in fact there should always be just one element
+    good: Map[PreparedTestEnv, Seq[MemoizationTree[F]]], // in fact there should always be just one element
     bad: Seq[(Seq[DistageTest[F]], PlanningFailure)],
   )
 }
@@ -88,7 +88,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     * [[TestEnvironment.MemoizationEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
   def groupTests(distageTests: Seq[DistageTest[F]]): PlannedTests[F] = {
-    val out: Seq[(Map[MemoizationEnv, MemoizationTree[F]], Seq[(Seq[DistageTest[F]], PlanningFailure)])] = distageTests
+    val out: Seq[(Map[PreparedTestEnv, MemoizationTree[F]], Seq[(Seq[DistageTest[F]], PlanningFailure)])] = distageTests
       .groupBy(_.environment.getExecParams)
       .view
       .mapValues(_.groupBy(_.environment))
@@ -119,13 +119,13 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           // merge environments together by equality of their shared & runtime plans
           // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
           // so this saves a lot of reallocation of memoized resources
-          val goodTrees: Map[MemoizationEnv, MemoizationTree[F]] = good.groupBy(_.envMergeCriteria).map {
+          val goodTrees: Map[PreparedTestEnv, MemoizationTree[F]] = good.groupBy(_.envMergeCriteria).map {
             case (EnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
               val integrationLogger = packedEnv.head.anyIntegrationLogger
               val memoizationInjector = packedEnv.head.anyMemoizationInjector
               val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
               val memoizationTree = MemoizationTree[F](packedEnv)
-              val env = MemoizationEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, highestDebugOutputInTests)
+              val env = PreparedTestEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, highestDebugOutputInTests)
               (env, memoizationTree)
           }
 

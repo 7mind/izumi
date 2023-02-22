@@ -5,7 +5,7 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.testkit.runner.TestPlanner.{PackedEnv, PreparedTest}
-import izumi.distage.testkit.runner.MemoizationTree.MemoizationLevelGroup
+import izumi.distage.testkit.runner.MemoizationTree.TestGroup
 import izumi.functional.quasi.QuasiIO
 
 import scala.annotation.tailrec
@@ -20,15 +20,15 @@ import scala.collection.mutable.ArrayBuffer
   */
 final class MemoizationTree[F[_]](val plan: Plan) {
   private[this] val children = TrieMap.empty[Plan, MemoizationTree[F]]
-  private[this] val groups = ArrayBuffer.empty[MemoizationLevelGroup[F]]
+  private[this] val groups = ArrayBuffer.empty[TestGroup[F]]
 
-  def getGroups: List[MemoizationLevelGroup[F]] = groups.toList
+  def getGroups: List[TestGroup[F]] = groups.toList
 
   def getAllTests: Seq[PreparedTest[F]] = {
     (groups.iterator.flatMap(_.preparedTests) ++ children.iterator.flatMap(_._2.getAllTests)).toSeq
   }
 
-  def addGroup(group: MemoizationLevelGroup[F]): Unit = {
+  def addGroup(group: TestGroup[F]): Unit = {
     groups.synchronized(groups.append(group))
     ()
   }
@@ -57,7 +57,7 @@ final class MemoizationTree[F[_]](val plan: Plan) {
     }
   }
 
-  @tailrec private def addGroupByPath(path: List[Plan], levelTests: MemoizationLevelGroup[F]): Unit = {
+  @tailrec private def addGroupByPath(path: List[Plan], levelTests: TestGroup[F]): Unit = {
     path match {
       case Nil =>
         addGroup(levelTests)
@@ -104,7 +104,7 @@ final class MemoizationTree[F[_]](val plan: Plan) {
 }
 
 object MemoizationTree {
-  final case class MemoizationLevelGroup[F[_]](preparedTests: Iterable[PreparedTest[F]], strengthenedKeys: Set[DIKey])
+  final case class TestGroup[F[_]](preparedTests: Iterable[PreparedTest[F]], strengthenedKeys: Set[DIKey])
 
   def apply[F[_]](iterator: Iterable[PackedEnv[F]]): MemoizationTree[F] = {
     val tree = new MemoizationTree[F](Plan.empty)
@@ -112,7 +112,7 @@ object MemoizationTree {
     iterator.foreach {
       env =>
         val plans = env.memoizationPlanTree.filter(_.plan.meta.nodes.nonEmpty)
-        tree.addGroupByPath(plans, MemoizationLevelGroup(env.preparedTests, env.strengthenedKeys))
+        tree.addGroupByPath(plans, TestGroup(env.preparedTests, env.strengthenedKeys))
     }
     tree
   }
