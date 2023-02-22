@@ -1,7 +1,6 @@
 package izumi.distage.roles.launcher
 
 import distage.Lifecycle
-import izumi.distage.roles.launcher.LateLoggerFactory.DistageAppLogging
 import izumi.distage.roles.launcher.LogConfigLoader.DeclarativeLoggerConfig
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.adapter.jul.LogstageJulLogger
@@ -10,7 +9,7 @@ import izumi.logstage.api.routing.StaticLogRouter
 import logstage.{ConfigurableLogRouter, QueueingSink}
 
 trait LateLoggerFactory {
-  def makeLateLogRouter(config: DeclarativeLoggerConfig): Lifecycle[Identity, DistageAppLogging]
+  def makeLateLogRouter(config: DeclarativeLoggerConfig): Lifecycle[Identity, LogRouter]
 }
 
 object LateLoggerFactory {
@@ -22,23 +21,24 @@ object LateLoggerFactory {
   class LateLoggerFactoryImpl(
     routerFactory: RouterFactory
   ) extends LateLoggerFactory {
-    final def makeLateLogRouter(config: DeclarativeLoggerConfig): Lifecycle[Identity, DistageAppLogging] = {
+    final def makeLateLogRouter(config: DeclarativeLoggerConfig): Lifecycle[Identity, LogRouter] = {
       makeLateLogRouter(config, _.foreach(_.close()))
     }
 
-    protected final def makeLateLogRouter(config: DeclarativeLoggerConfig, onClose: List[AutoCloseable] => Unit): Lifecycle[Identity, DistageAppLogging] = {
+    protected final def makeLateLogRouter(config: DeclarativeLoggerConfig, onClose: List[AutoCloseable] => Unit): Lifecycle[Identity, LogRouter] = {
       for {
         router <- createThreadingRouter(config)
-        out <- Lifecycle.make[Identity, DistageAppLogging] {
-          StaticLogRouter.instance.setup(router)
-          if (config.interceptJUL) {
-            val julAdapter = new LogstageJulLogger(router)
-            julAdapter.installOnly()
-            DistageAppLogging(router, List(julAdapter, router))
-          } else {
-            DistageAppLogging(router, List(router))
-          }
-        }(loggers => onClose(loggers.closeables))
+        out <- Lifecycle
+          .make[Identity, DistageAppLogging] {
+            StaticLogRouter.instance.setup(router)
+            if (config.interceptJUL) {
+              val julAdapter = new LogstageJulLogger(router)
+              julAdapter.installOnly()
+              DistageAppLogging(router, List(julAdapter, router))
+            } else {
+              DistageAppLogging(router, List(router))
+            }
+          }(loggers => onClose(loggers.closeables)).map(_.router)
       } yield {
         out
       }
