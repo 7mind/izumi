@@ -13,34 +13,25 @@ trait LateLoggerFactory {
 }
 
 object LateLoggerFactory {
-  case class DistageAppLogging(
-    router: LogRouter,
-    closeables: List[AutoCloseable],
-  )
-
   class LateLoggerFactoryImpl(
     routerFactory: RouterFactory
   ) extends LateLoggerFactory {
-    final def makeLateLogRouter(config: DeclarativeLoggerConfig): Lifecycle[Identity, LogRouter] = {
-      makeLateLogRouter(config, _.foreach(_.close()))
-    }
-
-    protected final def makeLateLogRouter(config: DeclarativeLoggerConfig, onClose: List[AutoCloseable] => Unit): Lifecycle[Identity, LogRouter] = {
+    def makeLateLogRouter(config: DeclarativeLoggerConfig): Lifecycle[Identity, LogRouter] = {
       for {
         router <- createThreadingRouter(config)
-        out <- Lifecycle
-          .make[Identity, DistageAppLogging] {
-            StaticLogRouter.instance.setup(router)
+        _ <- Lifecycle.make[Identity, Unit](StaticLogRouter.instance.setup(router))(_ => ())
+        _ <- Lifecycle
+          .make[Identity, Option[AutoCloseable]] {
             if (config.interceptJUL) {
               val julAdapter = new LogstageJulLogger(router)
               julAdapter.installOnly()
-              DistageAppLogging(router, List(julAdapter, router))
+              Some(julAdapter)
             } else {
-              DistageAppLogging(router, List(router))
+              None
             }
-          }(loggers => onClose(loggers.closeables)).map(_.router)
+          }(_.foreach(_.close()))
       } yield {
-        out
+        router
       }
     }
 
