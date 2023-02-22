@@ -11,7 +11,7 @@ import izumi.distage.testkit.runner.MemoizationTree.MemoizationLevelGroup
 import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.services.TestConfigLoader
-import izumi.distage.testkit.runner.services.{LateLoggerFactoryCachingImpl, ReporterBracket, TestkitLogging}
+import izumi.distage.testkit.runner.services.{ReporterBracket, TestkitLogging}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
@@ -25,7 +25,6 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 class DistageTestRunner[F[_]: TagK: DefaultModule](
   reporter: TestReporter,
   isTestSkipException: Throwable => Boolean,
-  loggerCache: LateLoggerFactoryCachingImpl.Cache,
   reporterBracket: ReporterBracket[F],
   logging: TestkitLogging,
 ) {
@@ -33,7 +32,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     try {
       val start = IzTime.utcNowOffset
       val planner = new TestPlanner[F](logging, new TestConfigLoader.TestConfigLoaderImpl)
-      val envs = planner.groupTests(tests, loggerCache) // .getOrThrow()
+      val envs = planner.groupTests(tests)
       val end = IzTime.utcNowOffset
       val planningTime = FiniteDuration(ChronoUnit.NANOS.between(start, end), TimeUnit.NANOSECONDS)
 

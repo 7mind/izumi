@@ -1,5 +1,6 @@
 package izumi.distage.roles
 
+import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.launcher.StartupBanner
@@ -11,6 +12,9 @@ import izumi.distage.roles.launcher.LateLoggerFactory.DistageAppLogging
 
 class RoleAppBootLoggerModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
   make[EarlyLoggerFactory].from[EarlyLoggerFactory.EarlyLoggerFactoryImpl]
+
+  make[LogConfigLoader].from[LogConfigLoader.LogConfigLoaderImpl]
+  make[RouterFactory].from[RouterFactory.RouterFactoryImpl]
   make[LateLoggerFactory].from[LateLoggerFactory.LateLoggerFactoryImpl]
 
   make[Log.Level].named("early").fromValue(Log.Level.Info)
@@ -21,14 +25,17 @@ class RoleAppBootLoggerModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
       logger
   }
   make[DistageAppLogging].fromResource {
-    (factory: LateLoggerFactory) =>
-      factory.makeLateLogRouter()
+    (factory: LateLoggerFactory, config: LogConfigLoader.DeclarativeLoggerConfig) =>
+      factory.makeLateLogRouter(config)
   }
+  make[LogConfigLoader.DeclarativeLoggerConfig].from {
+    (loader: LogConfigLoader, config: AppConfig) =>
+      loader.loadLoggingConfig(config)
+  }
+
   make[LogRouter].from {
     (logging: DistageAppLogging) =>
       logging.router
   }
 
 }
-
-

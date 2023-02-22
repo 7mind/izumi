@@ -10,11 +10,12 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
-import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleAppActivationParser}
+import izumi.distage.roles.launcher.LogConfigLoader.LogConfigLoaderImpl
+import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleAppActivationParser, RouterFactory}
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
 import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment}
 import izumi.distage.testkit.runner.TestPlanner.*
-import izumi.distage.testkit.runner.services.{LateLoggerFactoryCachingImpl, TestConfigLoader, TestkitLogging}
+import izumi.distage.testkit.runner.services.{TestConfigLoader, TestkitLogging}
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -86,7 +87,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     * By result you'll got [[TestEnvironment.MemoizationEnv]] mapped to [[MemoizationTree]] - tree-represented memoization plan with tests.
     * [[TestEnvironment.MemoizationEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
-  def groupTests(distageTests: Seq[DistageTest[F]], loggerCache: LateLoggerFactoryCachingImpl.Cache): PlannedTests[F] = {
+  def groupTests(distageTests: Seq[DistageTest[F]]): PlannedTests[F] = {
     val out: Seq[(Map[MemoizationEnv, MemoizationTree[F]], Seq[(Seq[DistageTest[F]], PlanningFailure)])] = distageTests
       .groupBy(_.environment.getExecParams)
       .view
@@ -101,7 +102,13 @@ class TestPlanner[F[_]: TagK: DefaultModule](
               case (env, tests) =>
                 // make a config loader for current env with logger
                 val config = configLoader.loadConfig(env, configLoadLogger)
-                prepareGroupPlans(loggerCache, envExec, config, configLoadLogger, env, tests).left.map(bad => (tests, bad))
+
+                // test loggers will not create polling threads and will log immediately
+                val logConfigLoader = new LogConfigLoaderImpl(CLILoggerOptions(envExec.logLevel, json = false), configLoadLogger)
+                val logConfig = logConfigLoader.loadLoggingConfig(config)
+                val (router, _) = new RouterFactory.RouterFactoryImpl().createRouter(logConfig)(identity)
+
+                prepareGroupPlans(envExec, config, env, tests, router).left.map(bad => (tests, bad))
             }
 
           val good = memoizationEnvs.collect {
@@ -146,27 +153,22 @@ class TestPlanner[F[_]: TagK: DefaultModule](
   }
 
   private def prepareGroupPlans(
-    loggerCache: LateLoggerFactoryCachingImpl.Cache,
     envExec: EnvExecutionParams,
     config: AppConfig,
-    configLoadLogger: IzLogger,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
+    router: LogRouter,
   ): Either[PlanningFailure, PackedEnv[F]] = {
     Try {
-      withLeakedLogger(envExec, loggerCache, config, configLoadLogger) {
-        router =>
-          val lateLogger = IzLogger(router)
+      val lateLogger = IzLogger(router)
 
-          val fullActivation = makeTestActivation(config, env, lateLogger)
+      val fullActivation = makeTestActivation(config, env, lateLogger)
 
-          // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
-          val moduleProvider =
-            env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, router, env.roles, env.activationInfo, fullActivation)
+      // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
+      val moduleProvider =
+        env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, router, env.roles, env.activationInfo, fullActivation)
 
-          prepareTestEnv(env, tests, lateLogger, fullActivation, moduleProvider).left.map(errors => PlanningFailure.DIErrors(errors))
-
-      }
+      prepareTestEnv(env, tests, lateLogger, fullActivation, moduleProvider).left.map(errors => PlanningFailure.DIErrors(errors))
     }.toEither.left.map(PlanningFailure.Exception).flatten
   }
 
@@ -310,25 +312,25 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private def withLeakedLogger[A](
-    envExec: EnvExecutionParams,
-    loggerCache: LateLoggerFactoryCachingImpl.Cache,
-    config: AppConfig,
-    earlyLogger: IzLogger,
-  )(withRouter: LogRouter => A
-  ) = {
-    import scala.jdk.CollectionConverters.*
-
-    new LateLoggerFactoryCachingImpl(
-      config,
-      CLILoggerOptions(envExec.logLevel, json = false),
-      earlyLogger,
-      loggerCache,
-    ).makeLateLogRouter {
-      closeables =>
-        loggerCache.closeables.addAll(closeables.asJava)
-        ()
-    }.use(logger => withRouter(logger.router))
-  }
+//  private def withLeakedLogger[A](
+//    envExec: EnvExecutionParams,
+//    loggerCache: LateLoggerFactoryCachingImpl.Cache,
+//    config: AppConfig,
+//    earlyLogger: IzLogger,
+//  )(withRouter: LogRouter => A
+//  ) = {
+//    import scala.jdk.CollectionConverters.*
+//
+//    new LateLoggerFactoryCachingImpl(
+//      config,
+//      CLILoggerOptions(envExec.logLevel, json = false),
+//      earlyLogger,
+//      loggerCache,
+//    ).makeLateLogRouter {
+//      closeables =>
+//        loggerCache.closeables.addAll(closeables.asJava)
+//        ()
+//    }.use(logger => withRouter(logger.router))
+//  }
 
 }
