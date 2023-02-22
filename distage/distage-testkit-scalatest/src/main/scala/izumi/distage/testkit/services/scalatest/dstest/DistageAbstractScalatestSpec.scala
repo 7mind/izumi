@@ -122,9 +122,9 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](function: Functoid[F[A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        SuiteId(suiteName),
+        SuiteId(suiteId),
       )
-      reg.registerTest(function, env, pos, id, SuiteMeta(id.suite, suiteId, suiteId))
+      reg.registerTest(function, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId))
     }
   }
 
@@ -159,9 +159,9 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        SuiteId(suiteName),
+        SuiteId(suiteId),
       )
-      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteId, suiteId))
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId))
     }
   }
 
@@ -222,9 +222,9 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        SuiteId(suiteName),
+        SuiteId(suiteId),
       )
-      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteId, suiteId))
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId))
     }
   }
 
