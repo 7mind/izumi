@@ -68,6 +68,8 @@ class DistageScalatestReporter extends TestReporter {
     val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
 
     testStatus match {
+      case TestStatus.Instantiating =>
+        // do nothing here
       case TestStatus.Running =>
         doReport(suiteId1)(
           TestStarting(

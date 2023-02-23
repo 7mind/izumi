@@ -2,8 +2,6 @@ package izumi.distage.testkit.runner
 
 import distage.*
 import izumi.distage.framework.services.PlanCircularDependencyCheck
-import izumi.distage.model.exceptions.runtime.ProvisioningIntegrationException
-import izumi.distage.model.plan.Plan
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.Parallelism
@@ -11,7 +9,6 @@ import izumi.distage.testkit.runner.MemoizationTree.TestGroup
 import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.services.{ReporterBracket, TestkitLogging}
-import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.time.IzTime
@@ -19,7 +16,7 @@ import izumi.logstage.api.{IzLogger, Log}
 
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 
 object DistageTestRunner {
   case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism, strengthenedKeys: Set[DIKey])
@@ -27,10 +24,10 @@ object DistageTestRunner {
 
 class DistageTestRunner[F[_]: TagK: DefaultModule](
   reporter: TestReporter,
-  isTestSkipException: Throwable => Boolean,
-  reporterBracket: ReporterBracket[F],
   logging: TestkitLogging,
   planner: TestPlanner[F],
+  individualTestRunner: IndividualTestRunner[F],
+  reporterBracket: ReporterBracket[F],
 ) {
   def run(tests: Seq[DistageTest[F]]): Unit = {
     try {
@@ -79,7 +76,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     val PreparedTestEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, _) = env
     val allEnvTests = testsTree.getAllTests.map(_.test)
     integrationLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
-    reporterBracket.withRecoverFromFailedExecution(allEnvTests) {
+
+    val beforeAll = System.nanoTime()
+    try {
       val planChecker = new PlanCircularDependencyCheck(envExec.planningOptions, integrationLogger)
 
       // producing and verifying runtime plan
@@ -99,10 +98,32 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                   mainSharedLocator =>
                     proceedMemoizationLevel(planChecker, mainSharedLocator, integrationLogger)(tree.getGroups)
                 }
-            }(recover = tree => withTestsRecoverCause(None, tree.getAllTests.map(_.test))(_))
+            }(recover = {
+              tree =>
+                {
+                  action: F[Unit] =>
+                    val subtreeTests = tree.getAllTests.map(_.test)
+                    val beforeLevel = System.nanoTime()
+                    F.definitelyRecoverCause(action) {
+                      case (t, trace) =>
+                        F.maybeSuspend {
+                          val failure = reporterBracket.fail(beforeLevel)(t, trace)
+                          subtreeTests.foreach {
+                            test => reporter.testStatus(test.meta, failure)
+                          }
+                        }
+                    }
+                }
+            })
           }
       }
-    }(onError = ())
+    } catch {
+      case t: Throwable =>
+        // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
+        allEnvTests.foreach {
+          test => reporter.testStatus(test.meta, reporterBracket.fail(beforeAll)(t, () => t))
+        }
+    }
   }
 
   protected def proceedMemoizationLevel(
@@ -134,100 +155,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys)(test)
+              test => individualTestRunner.proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys)(test)
             }
         }
-    }
-  }
-
-  protected def proceedTest(
-    planChecker: PlanCircularDependencyCheck,
-    mainSharedLocator: Locator,
-    testRunnerLogger: IzLogger,
-    groupStrengthenedKeys: Set[DIKey],
-  )(preparedTest: PreparedTest[F]
-  )(implicit F: QuasiIO[F]
-  ): F[Unit] = {
-    val PreparedTest(test, appModule, testPlan, activation) = preparedTest
-
-    val testInjector = Injector.inherit(mainSharedLocator)
-
-    val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
-    val newAppModule = appModule.drop(allSharedKeys)
-    val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
-    val maybeNewTestPlan = if (newRoots.nonEmpty) {
-      testInjector.plan(PlannerInput(newAppModule, activation, newRoots)).aggregateErrors
-    } else {
-      Right(Plan.empty)
-    }
-
-    maybeNewTestPlan match {
-      case Left(value) =>
-        F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Failed(value, Duration.Zero)))
-
-      case Right(newTestPlan) =>
-        val testLogger = testRunnerLogger("testId" -> test.meta.test.id)
-        testLogger.log(logging.testkitDebugMessagesLogLevel(test.environment.debugOutput))(
-          s"""Running test...
-             |
-             |Test plan: $newTestPlan""".stripMargin
-        )
-
-        planChecker.showProxyWarnings(newTestPlan)
-
-        proceedIndividual(test, newTestPlan, testInjector)
-    }
-  }
-
-  protected def proceedIndividual(test: DistageTest[F], testPlan: Plan, testInjector: Injector[F])(implicit F: QuasiIO[F]): F[Unit] = {
-    withTestsRecoverCause(None, Seq(test)) {
-      if ((logging.enableDebugOutput || test.environment.debugOutput) && testPlan.keys.nonEmpty) {
-        reporter.testInfo(test.meta, s"Test plan info: $testPlan")
-      }
-      testInjector.produceCustomF[F](testPlan).use {
-        testLocator =>
-          F.suspendF {
-            val before = System.nanoTime()
-            reporter.testStatus(test.meta, TestStatus.Running)
-
-            withTestsRecoverCause(Some(before), Seq(test)) {
-              testLocator
-                .run(test.test)
-                .flatMap(_ => F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(testDuration(Some(before))))))
-            }
-          }
-      }
-    }
-  }
-
-  protected def withTestsRecoverCause(before: Option[Long], tests: Seq[DistageTest[F]])(testsAction: => F[Unit])(implicit F: QuasiIO[F]): F[Unit] = {
-    F.definitelyRecoverCause(testsAction) {
-      case (s, _) if isTestSkipException(s) =>
-        F.maybeSuspend {
-          tests.foreach {
-            test => reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration(before)))
-          }
-        }
-      case (ProvisioningIntegrationException(failures), _) =>
-        F.maybeSuspend {
-          tests.foreach {
-            test => reporter.testStatus(test.meta, TestStatus.Ignored(failures))
-          }
-        }
-      case (_, getTrace) =>
-        F.maybeSuspend {
-          tests.foreach {
-            test => reporter.testStatus(test.meta, TestStatus.Failed(getTrace(), testDuration(before)))
-          }
-        }
-    }
-  }
-
-  private[this] def testDuration(before: Option[Long]): FiniteDuration = {
-    before.fold(Duration.Zero) {
-      before =>
-        val after = System.nanoTime()
-        FiniteDuration(after - before, TimeUnit.NANOSECONDS)
     }
   }
 

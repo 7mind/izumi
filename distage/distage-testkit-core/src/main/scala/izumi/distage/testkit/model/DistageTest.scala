@@ -32,6 +32,8 @@ final case class FullMeta(test: TestMeta, suite: SuiteMeta)
 sealed trait TestStatus
 
 object TestStatus {
+  case object Instantiating extends TestStatus
+
   case object Running extends TestStatus
 
   sealed trait Done extends TestStatus

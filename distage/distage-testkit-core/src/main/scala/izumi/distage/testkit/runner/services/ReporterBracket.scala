@@ -1,22 +1,31 @@
 package izumi.distage.testkit.runner.services
 
-import izumi.distage.testkit.model.{DistageTest, TestStatus}
-import izumi.distage.testkit.runner.api.TestReporter
+import izumi.distage.model.exceptions.runtime.ProvisioningIntegrationException
+import izumi.distage.testkit.model.TestStatus
 
-import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 
-class ReporterBracket[F[_]](reporter: TestReporter) {
-  def withRecoverFromFailedExecution[A](allTests: Seq[DistageTest[F]])(f: => A)(onError: => A): A = {
-    try {
-      f
-    } catch {
-      case t: Throwable =>
-        // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
-        allTests.foreach {
-          test => reporter.testStatus(test.meta, TestStatus.Failed(t, Duration.Zero))
-        }
-        reporter.onFailure(t)
-        onError
-    }
+class ReporterBracket[F[_]](
+//   reporter: TestReporter,
+  isTestSkipException: Throwable => Boolean
+) {
+  def done(before: Long): TestStatus.Succeed = TestStatus.Succeed(testDuration(before))
+
+  def fail(before: Long)(t: Throwable, trace: () => Throwable): TestStatus.Done = (t, trace) match {
+    case (s, _) if isTestSkipException(s) =>
+      TestStatus.Cancelled(s.getMessage, testDuration(before))
+    case (ProvisioningIntegrationException(failures), _) =>
+      TestStatus.Ignored(failures)
+    case (_, getTrace) =>
+      TestStatus.Failed(getTrace(), testDuration(before))
+
+  }
+
+//  def reportFailure(test: DistageTest[F], startedAt: Long)(t: Throwable, trace: () => Throwable) = reporter.testStatus(test.meta, fail(startedAt)(t, trace))
+
+  private[this] def testDuration(before: Long): FiniteDuration = {
+    val after = System.nanoTime()
+    FiniteDuration(after - before, TimeUnit.NANOSECONDS)
   }
 }

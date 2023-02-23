@@ -5,7 +5,7 @@ import io.github.classgraph.ClassGraph
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, SuiteId}
-import izumi.distage.testkit.runner.{DistageTestRunner, TestPlanner}
+import izumi.distage.testkit.runner.{DistageTestRunner, IndividualTestRunner, TestPlanner}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.services.{ReporterBracket, TestConfigLoader, TestkitLogging}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
@@ -197,12 +197,18 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
       if (toRun.nonEmpty) {
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.test.id.name)}")
         val logging = new TestkitLogging()
+        val reporterBracket = new ReporterBracket[F](_.isInstanceOf[TestCanceledException])
+        val individualTestRunner = new IndividualTestRunner.IndividualTestRunnerImpl[F](
+          testReporter,
+          logging,
+          reporterBracket,
+        )
         val runner = new DistageTestRunner[F](
           testReporter,
-          _.isInstanceOf[TestCanceledException],
-          new ReporterBracket[F](testReporter),
           logging,
           new TestPlanner[F](logging, new TestConfigLoader.TestConfigLoaderImpl()),
+          individualTestRunner,
+          reporterBracket,
         )
         runner.run(toRun)
       }
