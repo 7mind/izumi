@@ -4,6 +4,7 @@ import distage.{DefaultModule3, TagK3, TagKK}
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.DSWordSpecStringWrapper3
+import izumi.functional.quasi.QuasiIO
 import izumi.logstage.distage.LogIO2Module
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
 
@@ -55,7 +56,7 @@ import scala.language.implicitConversions
   *   }
   * }}}
   */
-abstract class Spec3[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3[FR], val tagBIO: TagKK[FR[Any, _, _]])
+abstract class Spec3[FR[-_, +_, +_]: DefaultModule3](implicit val tagBIO3: TagK3[FR], val tagBIO: TagKK[FR[Any, _, _]], F: QuasiIO[FR[Any, Throwable, _]])
   extends DistageScalatestTestSuiteRunner[FR[Any, Throwable, _]]
   with DistageAbstractScalatestSpec[FR[Any, Throwable, _]] {
 

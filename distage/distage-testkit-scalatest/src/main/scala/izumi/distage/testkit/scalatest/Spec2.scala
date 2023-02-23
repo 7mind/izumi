@@ -4,12 +4,13 @@ import distage.{DefaultModule2, TagKK}
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.DSWordSpecStringWrapper2
+import izumi.functional.quasi.QuasiIO
 import izumi.logstage.distage.LogIO2Module
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
 
 import scala.language.implicitConversions
 
-abstract class Spec2[F[+_, +_]: DefaultModule2](implicit val tagBIO: TagKK[F])
+abstract class Spec2[F[+_, +_]: DefaultModule2](implicit val tagBIO: TagKK[F], F: QuasiIO[F[Throwable, _]])
   extends DistageScalatestTestSuiteRunner[F[Throwable, _]]
   with DistageAbstractScalatestSpec[F[Throwable, _]] {
 

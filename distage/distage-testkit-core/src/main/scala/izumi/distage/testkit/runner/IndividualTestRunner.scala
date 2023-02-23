@@ -19,8 +19,7 @@ trait IndividualTestRunner[F[_]] {
     mainSharedLocator: Locator,
     testRunnerLogger: IzLogger,
     groupStrengthenedKeys: Set[DIKey],
-  )(preparedTest: PreparedTest[F]
-  )(implicit F: QuasiIO[F]
+    preparedTest: PreparedTest[F],
   ): F[Unit]
 }
 
@@ -29,14 +28,14 @@ object IndividualTestRunner {
     reporter: TestReporter,
     logging: TestkitLogging,
     reporterBracket: ReporterBracket[F],
+  )(implicit F: QuasiIO[F]
   ) extends IndividualTestRunner[F] {
     def proceedTest(
       planChecker: PlanCircularDependencyCheck,
       mainSharedLocator: Locator,
       testRunnerLogger: IzLogger,
       groupStrengthenedKeys: Set[DIKey],
-    )(preparedTest: PreparedTest[F]
-    )(implicit F: QuasiIO[F]
+      preparedTest: PreparedTest[F],
     ): F[Unit] = {
       val PreparedTest(test, appModule, testPlan, activation) = preparedTest
 
@@ -73,7 +72,7 @@ object IndividualTestRunner {
       }
     }
 
-    protected def proceedIndividual(test: DistageTest[F], testPlan: Plan, testInjector: Injector[F])(implicit F: QuasiIO[F]): F[Unit] = {
+    protected def proceedIndividual(test: DistageTest[F], testPlan: Plan, testInjector: Injector[F]): F[Unit] = {
       val before = System.nanoTime()
       import QuasiIO.syntax.*
 

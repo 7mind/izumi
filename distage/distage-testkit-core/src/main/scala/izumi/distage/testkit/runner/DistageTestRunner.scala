@@ -16,7 +16,7 @@ import izumi.logstage.api.{IzLogger, Log}
 
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 object DistageTestRunner {
   case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism, strengthenedKeys: Set[DIKey])
@@ -67,7 +67,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
               case PlanningFailure.DIErrors(errors) =>
                 errors.aggregateErrors
             }
-            reporter.testStatus(test.meta, TestStatus.Failed(asThrowable, FiniteDuration.apply(0, TimeUnit.MILLISECONDS)))
+            reporter.testStatus(test.meta, TestStatus.Failed(asThrowable, Duration.Zero))
         }
     }
   }
@@ -155,7 +155,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => individualTestRunner.proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys)(test)
+              test => individualTestRunner.proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys, test)
             }
         }
     }

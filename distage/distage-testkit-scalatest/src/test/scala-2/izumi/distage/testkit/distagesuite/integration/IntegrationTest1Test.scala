@@ -78,7 +78,7 @@ class DisabledTestF2[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F[Nothing,
   override def release(resource: TestEnableDisable): F[Nothing, Unit] = F.unit
 }
 
-abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit F: ApplicativeError2[F]) extends Spec2[F] {
+abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit FA: ApplicativeError2[F], F: QuasiIO[F[Throwable, _]]) extends Spec2[F] {
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = new ModuleDef {

@@ -11,6 +11,7 @@ import izumi.distage.testkit.runner.services.{ReporterBracket, TestConfigLoader,
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
 import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
 import izumi.distage.testkit.spec.AbstractDistageSpec
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.*
@@ -72,7 +73,7 @@ object ScalatestInitWorkaround {
 
 }
 
-abstract class DistageScalatestTestSuiteRunner[F[_]](
+abstract class DistageScalatestTestSuiteRunner[F[_]: QuasiIO](
   implicit override val tagMonoIO: TagK[F],
   override val defaultModulesIO: DefaultModule[F],
 ) extends TestSuite
