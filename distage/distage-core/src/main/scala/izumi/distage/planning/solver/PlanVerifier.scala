@@ -496,7 +496,6 @@ object PlanVerifier {
 
     implicit class PlanIssueOps(private val issue: PlanIssue) extends AnyVal {
       def render: String = {
-
         issue match {
           case i: UnsaturatedAxis =>
             s"${i.key}: axis ${i.axis} has no bindings for choices ${i.missingAxisValues.mkString(", ")}"
