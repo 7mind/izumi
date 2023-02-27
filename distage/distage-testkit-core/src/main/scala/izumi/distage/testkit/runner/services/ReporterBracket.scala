@@ -16,11 +16,9 @@ class ReporterBracket[F[_]](
       TestStatus.Ignored(failures)
     case t =>
       TestStatus.Failed(t, duration)
-
   }
 
-  def done(before: Long): TestStatus.Succeed = TestStatus.Succeed(testDuration(before))
-
+  @deprecated
   def fail(before: Long)(t: Throwable, trace: () => Throwable): TestStatus.Done = (t, trace) match {
     case (s, _) if isTestSkipException(s) =>
       TestStatus.Cancelled(s.getMessage, testDuration(before))
