@@ -35,12 +35,18 @@ trait Provision[+F[_]] {
 }
 
 object Provision {
+  final case class ProvisionInstances(
+    instances: Map[DIKey, Any],
+    imports: Map[DIKey, Any],
+  )
+
   final case class ProvisionImmutable[+F[_]](
     // LinkedHashMap for ordering
     instancesImpl: mutable.LinkedHashMap[DIKey, Any],
     imports: Map[DIKey, Any],
     finalizers: Seq[Finalizer[F]],
   ) extends Provision[F] {
+    def raw: ProvisionInstances = ProvisionInstances(instances, imports)
     override def instances: Map[DIKey, Any] = instancesImpl
     override lazy val enumerate: immutable.Seq[IdentifiedRef] = super.enumerate
     override lazy val index: immutable.Map[DIKey, Any] = super.index

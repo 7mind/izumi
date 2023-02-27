@@ -48,7 +48,7 @@ final class InjectorDefaultImpl[F[_]](
   override private[distage] def produceDetailedFX[G[_]: TagK: QuasiIO](
     plan: Plan,
     filter: FinalizerFilter[G],
-  ): Lifecycle[G, Either[FailedProvision[G], Locator]] = {
+  ): Lifecycle[G, Either[FailedProvision, Locator]] = {
     interpreter.run[G](plan, bootstrapLocator, filter)
   }
 

@@ -3,15 +3,15 @@ package izumi.distage.model.provisioning
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.errors.DIError
-import izumi.functional.quasi.QuasiIO
-import izumi.distage.model.exceptions.*
 import izumi.distage.model.definition.errors.ProvisionerIssue.*
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.*
+import izumi.distage.model.exceptions.*
 import izumi.distage.model.exceptions.runtime.{MissingInstanceException, ProvisioningException}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
-import izumi.distage.model.provisioning.Provision.ProvisionImmutable
+import izumi.distage.model.provisioning.Provision.{ProvisionImmutable, ProvisionInstances}
 import izumi.distage.model.reflection.*
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
@@ -23,7 +23,7 @@ trait PlanInterpreter {
     plan: Plan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
-  ): Lifecycle[F, Either[FailedProvision[F], Locator]]
+  ): Lifecycle[F, Either[FailedProvision, Locator]]
 }
 
 object PlanInterpreter {
@@ -41,18 +41,19 @@ object PlanInterpreter {
     }
   }
 
-  case class FailedProvisionMeta(status: Map[DIKey, OpStatus])
+  final case class FailedProvisionMeta(status: Map[DIKey, OpStatus])
 
-  final case class FailedProvision[F[_]](
-    failed: ProvisionImmutable[F],
+  final case class FailedProvisionInternal[F[_]](provision: ProvisionImmutable[F], fail: FailedProvision)
+
+  final case class FailedProvision(
+    failed: ProvisionInstances,
     plan: Plan,
     parentContext: Locator,
     failure: ProvisioningFailure,
     meta: FailedProvisionMeta,
     fullStackTraces: Boolean,
   ) {
-    /** @throws ProvisioningException in `F` effect type */
-    def throwException[A]()(implicit F: QuasiIO[F]): F[A] = {
+    def toThrowable(): Throwable = {
       import FailedProvision.ProvisioningFailureOps
       val repr = failure.render(fullStackTraces)
       val ccFailed = failure.status.collect { case (key, _: OpStatus.Failure) => key }.toSet.size
@@ -69,21 +70,28 @@ object PlanInterpreter {
         case _: ProvisioningFailure.CantBuildIntegrationSubplan => Seq.empty
       }
 
-      F.fail {
-        new ProvisioningException(
-          s"""Interpreter stopped; out of $ccTotal operations: $ccFailed failed, $ccDone succeeded, $ccPending ignored
-             |$repr
-             |""".stripMargin,
-          null,
-        ).addAllSuppressed(allExceptions)
-      }
+      new ProvisioningException(
+        s"""Interpreter stopped; out of $ccTotal operations: $ccFailed failed, $ccDone succeeded, $ccPending ignored
+           |$repr
+           |""".stripMargin,
+        null,
+      ).addAllSuppressed(allExceptions)
     }
+
+    /** @throws ProvisioningException in `F` effect type */
+
   }
 
   object FailedProvision {
-    implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision[F], Locator]) extends AnyVal {
+    implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision, Locator]) extends AnyVal {
       /** @throws ProvisioningException in `F` effect type */
-      def throwOnFailure()(implicit F: QuasiIO[F]): F[Locator] = p.fold(_.throwException(), F.pure)
+      def failOnFailure()(implicit F: QuasiIO[F]): F[Locator] = p.fold(f => F.fail(f.toThrowable()), F.pure)
+      def throwOnFailure(): Locator = p match {
+        case Left(f) =>
+          throw f.toThrowable()
+        case Right(value) =>
+          value
+      }
     }
 
     implicit class ProvisioningFailureOps(private val failure: ProvisioningFailure) extends AnyVal {

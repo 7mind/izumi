@@ -230,7 +230,7 @@ trait Injector[F[_]] extends Planner with Producer {
       .liftF(G.maybeSuspendEither(plan(input).aggregateErrors))
       .flatMap(produceCustomF[G])
   }
-  final def produceDetailedCustomF[G[_]: TagK](input: PlannerInput)(implicit G: QuasiIO[G]): Lifecycle[G, Either[FailedProvision[G], Locator]] = {
+  final def produceDetailedCustomF[G[_]: TagK](input: PlannerInput)(implicit G: QuasiIO[G]): Lifecycle[G, Either[FailedProvision, Locator]] = {
     Lifecycle
       .liftF(G.maybeSuspendEither(plan(input).aggregateErrors))
       .flatMap(produceDetailedCustomF[G])
@@ -240,7 +240,7 @@ trait Injector[F[_]] extends Planner with Producer {
   final def produceCustomIdentity(input: PlannerInput): Lifecycle[Identity, Locator] = {
     produceCustomF[Identity](input)
   }
-  final def produceDetailedIdentity(input: PlannerInput): Lifecycle[Identity, Either[FailedProvision[Identity], Locator]] = {
+  final def produceDetailedIdentity(input: PlannerInput): Lifecycle[Identity, Either[FailedProvision, Locator]] = {
     produceDetailedCustomF[Identity](input)
   }
 

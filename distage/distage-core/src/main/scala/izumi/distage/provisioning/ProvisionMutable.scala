@@ -5,7 +5,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.plan.Plan
-import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionMeta, Finalizer}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionInternal, FailedProvisionMeta, Finalizer}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.provisioning.{NewObjectOp, Provision, ProvisioningFailure}
 import izumi.distage.model.recursive.LocatorRef
@@ -28,7 +28,7 @@ final class ProvisionMutable[F[_]: TagK](
     Seq(NewObjectOp.NewImport(DIKey.get[LocatorRef], locatorRef))
   }
 
-  def makeFailure(state: TraversalState, fullStackTraces: Boolean): FailedProvision[F] = {
+  def makeFailure(state: TraversalState, fullStackTraces: Boolean): FailedProvisionInternal[F] = {
     val diag = if (state.failures.isEmpty) {
       ProvisioningFailure.BrokenGraph(state.preds, state.status())
     } else {
@@ -37,16 +37,20 @@ final class ProvisionMutable[F[_]: TagK](
     makeFailure(state, fullStackTraces, diag)
   }
 
-  def makeFailure(state: TraversalState, fullStackTraces: Boolean, diag: ProvisioningFailure): FailedProvision[F] = {
+  def makeFailure(state: TraversalState, fullStackTraces: Boolean, diag: ProvisioningFailure): FailedProvisionInternal[F] = {
     val meta = FailedProvisionMeta(state.status())
 
-    FailedProvision(
-      failed = toImmutable,
-      plan = plan,
-      parentContext = parentContext,
-      failure = diag,
-      meta = meta,
-      fullStackTraces = fullStackTraces,
+    val prov = toImmutable
+    FailedProvisionInternal(
+      prov,
+      FailedProvision(
+        failed = toImmutable.raw,
+        plan = plan,
+        parentContext = parentContext,
+        failure = diag,
+        meta = meta,
+        fullStackTraces = fullStackTraces,
+      ),
     )
   }
 
