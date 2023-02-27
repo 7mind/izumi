@@ -13,6 +13,7 @@ import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.time.IzTime
 import izumi.logstage.api.{IzLogger, Log}
+import izumi.functional.quasi.QuasiIO.syntax.*
 
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
@@ -155,7 +156,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => individualTestRunner.proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys, test)
+              test => individualTestRunner.proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys, test).map(_ => ())
             }
         }
     }

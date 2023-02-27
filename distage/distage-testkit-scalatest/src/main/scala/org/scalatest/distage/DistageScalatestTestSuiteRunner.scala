@@ -5,6 +5,7 @@ import io.github.classgraph.ClassGraph
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, SuiteId}
+import izumi.distage.testkit.runner.services.TimedAction.TimedActionImpl
 import izumi.distage.testkit.runner.{DistageTestRunner, IndividualTestRunner, TestPlanner}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.services.{ReporterBracket, TestConfigLoader, TestkitLogging}
@@ -199,10 +200,12 @@ abstract class DistageScalatestTestSuiteRunner[F[_]: QuasiIO](
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.test.id.name)}")
         val logging = new TestkitLogging()
         val reporterBracket = new ReporterBracket[F](_.isInstanceOf[TestCanceledException])
+        val timed = new TimedActionImpl[F]()
         val individualTestRunner = new IndividualTestRunner.IndividualTestRunnerImpl[F](
           testReporter,
           logging,
           reporterBracket,
+          timed,
         )
         val runner = new DistageTestRunner[F](
           testReporter,
