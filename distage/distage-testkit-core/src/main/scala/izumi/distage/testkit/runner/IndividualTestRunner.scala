@@ -21,7 +21,7 @@ trait IndividualTestRunner[F[_]] {
     planChecker: PlanCircularDependencyCheck,
     mainSharedLocator: Locator,
     testRunnerLogger: IzLogger,
-    groupStrengthenedKeys: Set[DIKey], 
+    groupStrengthenedKeys: Set[DIKey],
     preparedTest: PreparedTest[F],
   ): F[IndividualTestResult]
 }

@@ -102,7 +102,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
             }(recover = {
               tree =>
                 {
-                  action: F[Unit] =>
+                  (action: F[Unit]) =>
                     val subtreeTests = tree.getAllTests.map(_.test)
                     val beforeLevel = System.nanoTime()
                     F.definitelyRecoverCause(action) {

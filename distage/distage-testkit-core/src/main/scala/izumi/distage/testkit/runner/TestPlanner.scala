@@ -23,6 +23,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 
+import scala.annotation.nowarn
 import scala.util.Try
 
 object TestPlanner {
@@ -87,7 +88,10 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     * By result you'll got [[TestEnvironment.MemoizationEnv]] mapped to [[MemoizationTree]] - tree-represented memoization plan with tests.
     * [[TestEnvironment.MemoizationEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
+  @nowarn("msg=Unused import")
   def groupTests(distageTests: Seq[DistageTest[F]]): PlannedTests[F] = {
+    import scala.collection.compat.*
+
     val out = distageTests
       .groupBy(_.environment.getExecParams)
       .view
@@ -168,8 +172,8 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       val moduleProvider =
         env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, router, env.roles, env.activationInfo, fullActivation)
 
-      prepareTestEnv(env, tests, lateLogger, fullActivation, moduleProvider).left.map(errors => PlanningFailure.DIErrors(errors))
-    }.toEither.left.map(PlanningFailure.Exception).flatten
+      prepareTestEnv(env, tests, lateLogger, fullActivation, moduleProvider).left.map(errors => PlanningFailure.DIErrors(errors): PlanningFailure)
+    }.toEither.left.map(e => PlanningFailure.Exception(e): PlanningFailure).flatMap(identity)
   }
 
   private def makeTestActivation(config: AppConfig, env: TestEnvironment, lateLogger: IzLogger): Activation = {
