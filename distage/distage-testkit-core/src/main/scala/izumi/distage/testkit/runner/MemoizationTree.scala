@@ -1,12 +1,10 @@
 package izumi.distage.testkit.runner
 
-import distage.Lifecycle
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.testkit.runner.TestPlanner.{PackedEnv, PreparedTest}
 import izumi.distage.testkit.runner.MemoizationTree.TestGroup
-import izumi.functional.quasi.QuasiIO
+import izumi.distage.testkit.runner.TestPlanner.{PackedEnv, PreparedTest}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -38,24 +36,9 @@ final class MemoizationTree[F[_]](val plan: Plan) {
     ()
   }
 
-  @inline override def toString: String = render()
+  def next: List[MemoizationTree[F]] = children.view.values.toList
 
-  def stateTraverseLifecycle[State](
-    initialState: State
-  )(func: (State, MemoizationTree[F]) => Lifecycle[F, State]
-  )(recover: MemoizationTree[F] => F[Unit] => F[Unit]
-  )(implicit F: QuasiIO[F]
-  ): F[Unit] = {
-    recover(this) {
-      func(initialState, this).use {
-        nextState =>
-          F.traverse_(children) {
-            case (_, tree) =>
-              tree.stateTraverseLifecycle(nextState)(func)(recover)
-          }
-      }
-    }
-  }
+  @inline override def toString: String = render()
 
   @tailrec private def addGroupByPath(path: List[Plan], levelTests: TestGroup[F]): Unit = {
     path match {

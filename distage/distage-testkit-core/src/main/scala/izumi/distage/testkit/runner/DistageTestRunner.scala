@@ -23,6 +23,14 @@ object DistageTestRunner {
   case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism, strengthenedKeys: Set[DIKey])
 }
 
+sealed trait EnvResult
+object EnvResult {
+  case class EnvSuccess(outputs: List[IndividualTestResult]) extends EnvResult
+
+  case class EnvLevelFailure(all: Seq[FullMeta], failure: TestStatus.Done) extends EnvResult
+  case class EnvGlobalFailure(all: Seq[FullMeta], failure: TestStatus.Done) extends EnvResult
+}
+
 class DistageTestRunner[F[_]: TagK: DefaultModule](
   reporter: TestReporter,
   logging: TestkitLogging,
@@ -42,7 +50,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       val toRun = envs.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
       logEnvironmentsInfo(toRun, planningTime)
       runTests(toRun, planner.runtimeGcRoots)
-
+      ()
     } catch {
       case t: Throwable =>
         reporter.onFailure(t)
@@ -51,10 +59,10 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private def runTests(toRun: Map[PreparedTestEnv, MemoizationTree[F]], runtimeRoots: Set[DIKey]): Unit = {
-    configuredParTraverse[Identity, (PreparedTestEnv, MemoizationTree[F])](toRun)(_._1.envExec.parallelEnvs) {
+  private def runTests(toRun: Map[PreparedTestEnv, MemoizationTree[F]], runtimeRoots: Set[DIKey]): List[EnvResult] = {
+    configuredParTraverse[Identity, (PreparedTestEnv, MemoizationTree[F]), List[EnvResult]](toRun)(_._1.envExec.parallelEnvs) {
       case (e, t) => proceedEnv(e, t, runtimeRoots)
-    }
+    }.flatten
   }
 
   private def reportFailedPlanning(bad: Seq[(Seq[DistageTest[F]], PlanningFailure)]): Unit = {
@@ -73,57 +81,69 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def proceedEnv(env: PreparedTestEnv, testsTree: MemoizationTree[F], runtimeGcRoots: Set[DIKey]): Unit = {
-    val PreparedTestEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, _) = env
+  protected def proceedEnv(env: PreparedTestEnv, testsTree: MemoizationTree[F], runtimeGcRoots: Set[DIKey]): List[EnvResult] = {
+    val PreparedTestEnv(envExec, integrationLogger, runtimePlan, runtimeInjector, _) = env
+    assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
+
     val allEnvTests = testsTree.getAllTests.map(_.test)
     integrationLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
 
-    val beforeAll = System.nanoTime()
-    try {
-      val planChecker = new PlanCircularDependencyCheck(envExec.planningOptions, integrationLogger)
+    val planChecker = new PlanCircularDependencyCheck(envExec.planningOptions, integrationLogger)
+    planChecker.showProxyWarnings(runtimePlan)
 
-      // producing and verifying runtime plan
-      assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
-      planChecker.showProxyWarnings(runtimePlan)
-      memoizationInjector.produceCustomF[Identity](runtimePlan).use {
+    val beforeAll = IzTime.utcNowOffset
+    try {
+      runtimeInjector.produceCustomF[Identity](runtimePlan).use {
         runtimeLocator =>
           val runner = runtimeLocator.get[QuasiIORunner[F]]
           implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
           implicit val P: QuasiAsync[F] = runtimeLocator.get[QuasiAsync[F]]
 
-          runner.run {
-            testsTree.stateTraverseLifecycle(runtimeLocator) {
-              case (locator, tree) =>
-                planChecker.showProxyWarnings(tree.plan)
-                Injector.inherit(locator).produceCustomF[F](tree.plan).evalTap {
-                  mainSharedLocator =>
-                    proceedMemoizationLevel(planChecker, mainSharedLocator, integrationLogger)(tree.getGroups)
+          def traverse(tree: MemoizationTree[F], parent: Locator): F[List[EnvResult]] = {
+            planChecker.showProxyWarnings(tree.plan)
+            val beforeLevel = IzTime.utcNowOffset
+
+            val nextLocator: Lifecycle[F, Locator] = Injector
+              .inherit(parent).produceCustomF[F](tree.plan)
+
+            F.definitelyRecover(nextLocator.use {
+              locator =>
+                for {
+                  results <- proceedMemoizationLevel(planChecker, locator, integrationLogger)(tree.getGroups)
+                  subResults <- F.traverse(tree.next) {
+                    nextTree =>
+                      traverse(nextTree, locator)
+                  }
+                } yield {
+                  List(EnvResult.EnvSuccess(results)) ++ subResults.flatten
                 }
-            }(recover = {
-              tree =>
-                {
-                  (action: F[Unit]) =>
-                    val subtreeTests = tree.getAllTests.map(_.test)
-                    val beforeLevel = System.nanoTime()
-                    F.definitelyRecoverCause(action) {
-                      case (t, trace) =>
-                        F.maybeSuspend {
-                          val failure = reporterBracket.fail(beforeLevel)(t, trace)
-                          subtreeTests.foreach {
-                            test => reporter.testStatus(test.meta, failure)
-                          }
-                        }
-                    }
+
+            }) {
+              t =>
+                F.maybeSuspend {
+                  val afterLevel = IzTime.utcNowOffset
+                  val failure = reporterBracket.fail(FiniteDuration(ChronoUnit.NANOS.between(beforeLevel, afterLevel), TimeUnit.NANOSECONDS), t)
+                  val all = tree.getAllTests.map(_.test)
+                  all.foreach {
+                    test => reporter.testStatus(test.meta, failure)
+                  }
+                  List(EnvResult.EnvLevelFailure(all.map(_.meta), failure))
                 }
-            })
+            }
           }
+
+          runner.run(traverse(testsTree, runtimeLocator))
       }
     } catch {
       case t: Throwable =>
+        val afterAll = IzTime.utcNowOffset
+        val failure = reporterBracket.fail(FiniteDuration(ChronoUnit.NANOS.between(beforeAll, afterAll), TimeUnit.NANOSECONDS), t)
         // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
         allEnvTests.foreach {
-          test => reporter.testStatus(test.meta, reporterBracket.fail(beforeAll)(t, () => t))
+          test => reporter.testStatus(test.meta, failure)
         }
+        List(EnvResult.EnvGlobalFailure(allEnvTests.map(_.meta), failure))
+
     }
   }
 
@@ -135,7 +155,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   )(implicit
     F: QuasiIO[F],
     P: QuasiAsync[F],
-  ): F[Unit] = {
+  ): F[List[IndividualTestResult]] = {
     val testsBySuite = levelGroups.flatMap {
       case TestGroup(preparedTests, strengthenedKeys) =>
         preparedTests.groupBy {
@@ -156,30 +176,30 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => individualTestRunner.proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys, test).map(_ => ())
+              test => individualTestRunner.proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys, test)
             }
         }
-    }
+    }.map(_.flatten)
   }
 
-  protected def configuredParTraverse[F1[_], A](
+  protected def configuredParTraverse[F1[_], A, B](
     l: Iterable[A]
   )(getParallelismGroup: A => Parallelism
-  )(f: A => F1[Unit]
+  )(f: A => F1[B]
   )(implicit
     F: QuasiIO[F1],
     P: QuasiAsync[F1],
-  ): F1[Unit] = {
+  ): F1[List[B]] = {
     val sorted = l.groupBy(getParallelismGroup).toList.sortBy {
       case (Parallelism.Unlimited, _) => 1
       case (Parallelism.Fixed(_), _) => 2
       case (Parallelism.Sequential, _) => 3
     }
-    F.traverse_(sorted) {
-      case (Parallelism.Fixed(n), l) if l.size > 1 => P.parTraverseN_(n)(l)(f)
-      case (Parallelism.Unlimited, l) if l.size > 1 => P.parTraverse_(l)(f)
-      case (_, l) => F.traverse_(l)(f)
-    }
+    F.traverse(sorted) {
+      case (Parallelism.Fixed(n), l) if l.size > 1 => P.parTraverseN(n)(l)(f)
+      case (Parallelism.Unlimited, l) if l.size > 1 => P.parTraverse(l)(f)
+      case (_, l) => F.traverse(l)(f)
+    }.map(_.flatten)
   }
 
   private[this] def logEnvironmentsInfo(envs: Map[PreparedTestEnv, MemoizationTree[F]], duration: FiniteDuration): Unit = {

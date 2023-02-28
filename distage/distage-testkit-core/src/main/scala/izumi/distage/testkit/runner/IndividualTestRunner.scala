@@ -4,17 +4,14 @@ import distage.*
 import izumi.distage.framework.services.PlanCircularDependencyCheck
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Plan
-import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.{ReporterBracket, TestkitLogging, Timed, TimedAction, Timing}
+import izumi.distage.testkit.runner.services.{ReporterBracket, TestkitLogging, Timed, TimedAction}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.logstage.api.IzLogger
-
-import scala.concurrent.duration.FiniteDuration
 
 trait IndividualTestRunner[F[_]] {
   def proceedTest(
@@ -24,30 +21,6 @@ trait IndividualTestRunner[F[_]] {
     groupStrengthenedKeys: Set[DIKey],
     preparedTest: PreparedTest[F],
   ): F[IndividualTestResult]
-}
-
-sealed trait IndividualTestResult {
-  def totalTime: FiniteDuration
-  def test: FullMeta
-}
-
-object IndividualTestResult {
-  sealed trait IndividualTestFailure extends IndividualTestResult
-  case class PlanningFailure(test: FullMeta, failedPlanningTiming: Timing, failure: InjectorFailed) extends IndividualTestFailure {
-    override def totalTime: FiniteDuration = failedPlanningTiming.duration
-  }
-  case class InstantiationFailure(test: FullMeta, planningTiming: Timing, failedInstantiationTiming: Timing, failure: FailedProvision) extends IndividualTestFailure {
-    override def totalTime: FiniteDuration = planningTiming.duration + failedInstantiationTiming.duration
-  }
-  case class ExecutionFailure(test: FullMeta, planningTiming: Timing, instantiationTiming: Timing, failedExecTiming: Timing, failure: Throwable)
-    extends IndividualTestFailure {
-    override def totalTime: FiniteDuration = planningTiming.duration + instantiationTiming.duration + failedExecTiming.duration
-  }
-
-  sealed trait IndividualTestSuccess extends IndividualTestResult
-  case class TestSuccess(test: FullMeta, planningTiming: Timing, instantiationTiming: Timing, executionTiming: Timing) extends IndividualTestSuccess {
-    override def totalTime: FiniteDuration = planningTiming.duration + instantiationTiming.duration + executionTiming.duration
-  }
 }
 
 object IndividualTestRunner {
