@@ -2,7 +2,7 @@ package izumi.distage.testkit.model
 
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
-import izumi.distage.testkit.runner.services.Timing
+import izumi.distage.testkit.runner.impl.services.Timing
 
 import scala.concurrent.duration.FiniteDuration
 

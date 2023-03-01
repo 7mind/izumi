@@ -8,7 +8,7 @@ import izumi.distage.model.definition.Activation
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.model.TestConfig.{AxisDIKeys, Parallelism, PriorAxisDIKeys}
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
-import izumi.distage.testkit.runner.services.BootstrapFactory
+import izumi.distage.testkit.runner.impl.services.BootstrapFactory
 import izumi.logstage.api.Log
 
 /**

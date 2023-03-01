@@ -1,4 +1,4 @@
-package izumi.distage.testkit.runner.services
+package izumi.distage.testkit.runner.impl.services
 
 import distage.*
 import izumi.functional.quasi.QuasiIO

@@ -1,4 +1,4 @@
-package izumi.distage.testkit.runner
+package izumi.distage.testkit.runner.impl
 
 import distage.*
 import izumi.distage.framework.services.PlanCircularDependencyCheck
@@ -6,9 +6,9 @@ import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Plan
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
-import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.{TestStatusConverter, TestkitLogging, Timed, TimedAction}
+import izumi.distage.testkit.runner.impl.TestPlanner.*
+import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, Timed, TimedAction}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.logstage.api.IzLogger

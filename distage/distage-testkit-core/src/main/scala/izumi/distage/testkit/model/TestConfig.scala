@@ -7,7 +7,7 @@ import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.model.TestConfig.PriorAxisDIKeys.MaxLevel
 import izumi.distage.testkit.model.TestConfig.{AxisDIKeys, Parallelism, PriorAxisDIKeys}
-import izumi.distage.testkit.runner.services.BootstrapFactory
+import izumi.distage.testkit.runner.impl.services.BootstrapFactory
 import izumi.logstage.api.Log
 
 import scala.annotation.nowarn

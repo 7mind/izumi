@@ -1,17 +1,16 @@
-package izumi.distage.testkit.runner
+package izumi.distage.testkit.runner.impl
 
 import distage.*
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.Parallelism
-import izumi.distage.testkit.runner.MemoizationTree.TestGroup
-import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.{TestStatusConverter, TestkitLogging, TimedAction}
+import izumi.distage.testkit.runner.impl.MemoizationTree.TestGroup
+import izumi.distage.testkit.runner.impl.TestPlanner.*
+import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedAction}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.logstage.api.{IzLogger, Log}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}

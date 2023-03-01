@@ -1,12 +1,12 @@
-package izumi.distage.testkit.runner
+package izumi.distage.testkit.runner.impl
 
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.testkit.runner.MemoizationTree.TestGroup
-import izumi.distage.testkit.runner.TestPlanner.{PackedEnv, PreparedTest}
+import izumi.distage.testkit.runner.impl.MemoizationTree.TestGroup
+import izumi.distage.testkit.runner.impl.TestPlanner.{PackedEnv, PreparedTest}
 
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 
@@ -36,7 +36,11 @@ final class MemoizationTree[F[_]](val plan: Plan) {
     ()
   }
 
-  def next: List[MemoizationTree[F]] = children.view.values.toList
+  @nowarn("msg=Unused import")
+  def next: List[MemoizationTree[F]] = {
+    import scala.collection.compat.*
+    children.view.map(_._2).toList
+  }
 
   @inline override def toString: String = render()
 

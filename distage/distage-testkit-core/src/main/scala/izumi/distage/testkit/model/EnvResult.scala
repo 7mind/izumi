@@ -1,7 +1,7 @@
 package izumi.distage.testkit.model
 
 import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
-import izumi.distage.testkit.runner.services.Timing
+import izumi.distage.testkit.runner.impl.services.Timing
 
 sealed trait EnvResult
 

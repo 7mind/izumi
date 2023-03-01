@@ -1,4 +1,4 @@
-package izumi.distage.testkit.runner.services
+package izumi.distage.testkit.runner.impl.services
 
 import izumi.distage.model.exceptions.runtime.ProvisioningIntegrationException
 import izumi.distage.testkit.model.TestStatus

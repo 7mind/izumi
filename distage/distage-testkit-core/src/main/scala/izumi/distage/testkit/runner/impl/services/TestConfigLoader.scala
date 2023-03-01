@@ -1,4 +1,4 @@
-package izumi.distage.testkit.runner.services
+package izumi.distage.testkit.runner.impl.services
 
 import izumi.distage.config.model.AppConfig
 import izumi.distage.testkit.model.TestEnvironment

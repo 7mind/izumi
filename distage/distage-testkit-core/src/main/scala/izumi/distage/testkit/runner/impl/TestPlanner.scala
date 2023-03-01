@@ -1,4 +1,4 @@
-package izumi.distage.testkit.runner
+package izumi.distage.testkit.runner.impl
 
 import distage.{Activation, BootstrapModule, DIKey, Injector, Module, PlannerInput, TagK}
 import izumi.distage.config.model.AppConfig
@@ -15,8 +15,8 @@ import izumi.distage.roles.launcher.LogConfigLoader.LogConfigLoaderImpl
 import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleAppActivationParser, RouterFactory}
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
 import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment}
-import izumi.distage.testkit.runner.TestPlanner.*
-import izumi.distage.testkit.runner.services.{TestConfigLoader, TestkitLogging}
+import izumi.distage.testkit.runner.impl.TestPlanner.*
+import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestkitLogging}
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs

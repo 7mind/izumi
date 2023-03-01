@@ -5,8 +5,9 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.{DistageTest, EnvResult}
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.TimedAction.TimedActionImpl
-import izumi.distage.testkit.runner.services.{TestConfigLoader, TestStatusConverter, TestkitLogging, TimedAction}
+import izumi.distage.testkit.runner.impl.services.TimedAction.TimedActionImpl
+import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestStatusConverter, TestkitLogging, TimedAction}
+import izumi.distage.testkit.runner.impl.{DistageTestRunner, IndividualTestRunner, TestPlanner}
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
 
