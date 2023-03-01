@@ -1,14 +1,12 @@
 package org.scalatest.distage
 
-import distage.TagK
+import _root_.distage.TagK
 import io.github.classgraph.ClassGraph
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, SuiteId}
-import izumi.distage.testkit.runner.services.TimedAction.TimedActionImpl
-import izumi.distage.testkit.runner.{DistageTestRunner, IndividualTestRunner, TestPlanner}
+import izumi.distage.testkit.runner.TestkitRunnerModule
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.{TestConfigLoader, TestStatusConverter, TestkitLogging}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
 import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
 import izumi.distage.testkit.spec.AbstractDistageSpec
@@ -198,27 +196,13 @@ abstract class DistageScalatestTestSuiteRunner[F[_]: QuasiIO](
     try {
       if (toRun.nonEmpty) {
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.test.id.name)}")
-        val logging = new TestkitLogging()
-        val reporterBracket = new TestStatusConverter[F](_.isInstanceOf[TestCanceledException])
-        val timed = new TimedActionImpl[F]()
-        val individualTestRunner = new IndividualTestRunner.IndividualTestRunnerImpl[F](
-          testReporter,
-          logging,
-          reporterBracket,
-          timed,
-        )
-        val runner = new DistageTestRunner[F](
-          testReporter,
-          logging,
-          new TestPlanner[F](logging, new TestConfigLoader.TestConfigLoaderImpl()),
-          individualTestRunner,
-          reporterBracket,
-          timed,
-          new TimedActionImpl[Identity](),
-        )
-        runner.run(toRun)
+        TestkitRunnerModule.run[F](testReporter, (t: Throwable) => t.isInstanceOf[TestCanceledException], toRun)
         ()
       }
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace()
+        throw t
     } finally {
       DistageTestsRegistrySingleton.completeStatuses[F]()
     }
