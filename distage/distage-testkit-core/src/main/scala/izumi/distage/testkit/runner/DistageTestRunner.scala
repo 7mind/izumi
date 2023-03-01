@@ -29,8 +29,6 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   timedAction: TimedAction[F],
   timedActionId: TimedAction[Identity],
 ) {
-  timedAction.discard()
-
   def run(tests: Seq[DistageTest[F]]): List[EnvResult] = {
     // We assume that under normal cirsumstances the code below should never throw.
     // All the exceptions should be converted to values by this time.
@@ -80,16 +78,16 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         maybeRtLocator =>
           maybeRtLocator.mapMerge(
             {
-              (fail, t) =>
-                val failure = statusConverter.fail(t.duration, fail.toThrowable)
+              (runtimeInstantiationFailure, runtimeInstantiationTiming) =>
+                val failure = statusConverter.fail(runtimeInstantiationTiming.duration, runtimeInstantiationFailure.toThrowable)
                 // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
                 allEnvTests.foreach {
                   test => reporter.testStatus(test.meta, failure)
                 }
-                EnvResult.RuntimePlanningFailure(t, allEnvTests.map(_.meta), fail)
+                EnvResult.RuntimePlanningFailure(runtimeInstantiationTiming, allEnvTests.map(_.meta), runtimeInstantiationFailure)
             },
             {
-              (runtimeLocator, t) =>
+              (runtimeLocator, runtimeInstantiationTiming) =>
                 val runner = runtimeLocator.get[QuasiIORunner[F]]
                 implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
                 implicit val P: QuasiAsync[F] = runtimeLocator.get[QuasiAsync[F]]
@@ -98,7 +96,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                   .get[IzLogger]("distage-testkit")
                   .info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
 
-                EnvResult.EnvSuccess(t, runner.run(traverse(testsTree, runtimeLocator)))
+                EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(traverse(testsTree, runtimeLocator)))
             },
           )
 
@@ -113,26 +111,26 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       maybeLocator =>
         maybeLocator.mapMerge(
           {
-            case (f, t) =>
+            case (levelInstantiationFailure, levelInstantiationTiming) =>
               F.maybeSuspend {
-                val failure = statusConverter.fail(t.duration, f.toThrowable)
+                val failure = statusConverter.fail(levelInstantiationTiming.duration, levelInstantiationFailure.toThrowable)
                 val all = tree.getAllTests.map(_.test)
                 all.foreach {
                   test => reporter.testStatus(test.meta, failure)
                 }
-                List(GroupResult.EnvLevelFailure(all.map(_.meta), f, t): GroupResult)
+                List(GroupResult.EnvLevelFailure(all.map(_.meta), levelInstantiationFailure, levelInstantiationTiming): GroupResult)
               }
           },
           {
-            case (locator, t) =>
+            case (levelLocator, levelInstantiationTiming) =>
               for {
-                results <- proceedMemoizationLevel(locator, tree.getGroups)
+                results <- proceedMemoizationLevel(levelLocator, tree.getGroups)
                 subResults <- F.traverse(tree.next) {
                   nextTree =>
-                    traverse(nextTree, locator)
+                    traverse(nextTree, levelLocator)
                 }
               } yield {
-                List(GroupResult.GroupSuccess(results, t)) ++ subResults.flatten
+                List(GroupResult.GroupSuccess(results, levelInstantiationTiming)) ++ subResults.flatten
               }
           },
         )
