@@ -40,12 +40,18 @@ class KeyMinimizer(
 
   private[this] val minimizedLTTRenderables = new LTTRenderables {
     override def r_SymName(sym: SymName, hasPrefix: Boolean): String = {
-      val shortname = sym.name.split('.').last
-      if (hasPrefix) {
-        shortname
-      } else {
-        val withSameName = index.getOrElse(shortname, 0)
-        if (withSameName <= 1) shortname else sym.name
+      sym match {
+        case sym: SymName.NamedSymbol =>
+          val shortname = sym.name.split('.').last
+          if (hasPrefix) {
+            shortname
+          } else {
+            val withSameName = index.getOrElse(shortname, 0)
+            if (withSameName <= 1) shortname else sym.name
+          }
+
+        case param: SymName.LambdaParamName =>
+          LTTRenderables.Short.r_LambdaParameterName.render(param)
       }
     }
   }
@@ -132,7 +138,10 @@ class KeyMinimizer(
       .unpack(key.tag.ref match {
         case reference: LightTypeTagRef.AbstractReference =>
           reference
-      }).map(_.ref.name)
+      }).iterator.map(_.ref).collect {
+        case sym: SymName.SymTermName => sym.name
+        case sym: SymName.SymTypeName => sym.name
+      }.toSet
   }
 
 }
