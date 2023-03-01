@@ -8,7 +8,7 @@ import izumi.distage.testkit.model.{DistageTest, SuiteId}
 import izumi.distage.testkit.runner.services.TimedAction.TimedActionImpl
 import izumi.distage.testkit.runner.{DistageTestRunner, IndividualTestRunner, TestPlanner}
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.{ReporterBracket, TestConfigLoader, TestkitLogging}
+import izumi.distage.testkit.runner.services.{TestConfigLoader, TestStatusConverter, TestkitLogging}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
 import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
 import izumi.distage.testkit.spec.AbstractDistageSpec
@@ -199,7 +199,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]: QuasiIO](
       if (toRun.nonEmpty) {
         debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.test.id.name)}")
         val logging = new TestkitLogging()
-        val reporterBracket = new ReporterBracket[F](_.isInstanceOf[TestCanceledException])
+        val reporterBracket = new TestStatusConverter[F](_.isInstanceOf[TestCanceledException])
         val timed = new TimedActionImpl[F]()
         val individualTestRunner = new IndividualTestRunner.IndividualTestRunnerImpl[F](
           testReporter,
@@ -213,8 +213,11 @@ abstract class DistageScalatestTestSuiteRunner[F[_]: QuasiIO](
           new TestPlanner[F](logging, new TestConfigLoader.TestConfigLoaderImpl()),
           individualTestRunner,
           reporterBracket,
+          timed,
+          new TimedActionImpl[Identity](),
         )
         runner.run(toRun)
+        ()
       }
     } finally {
       DistageTestsRegistrySingleton.completeStatuses[F]()

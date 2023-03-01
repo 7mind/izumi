@@ -5,7 +5,7 @@ import izumi.distage.testkit.model.TestStatus
 
 import scala.concurrent.duration.FiniteDuration
 
-class ReporterBracket[F[_]](
+class TestStatusConverter[F[_]](
   isTestSkipException: Throwable => Boolean
 ) {
   def fail(duration: FiniteDuration, t: Throwable): TestStatus.Done = t match {

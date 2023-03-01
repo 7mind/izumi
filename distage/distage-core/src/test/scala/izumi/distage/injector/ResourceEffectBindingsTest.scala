@@ -394,7 +394,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
             fail(s"Unexpected success! $value")
         }.unsafeRun()
 
-      val exc = failure.toThrowable()
+      val exc = failure.toThrowable
 
       assert(exc.getMessage.contains("Incompatible effect types"))
     }

@@ -8,7 +8,7 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.{ReporterBracket, TestkitLogging, Timed, TimedAction}
+import izumi.distage.testkit.runner.services.{TestStatusConverter, TestkitLogging, Timed, TimedAction}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.logstage.api.IzLogger
@@ -25,7 +25,7 @@ object IndividualTestRunner {
   class IndividualTestRunnerImpl[F[_]: TagK: DefaultModule](
     reporter: TestReporter,
     logging: TestkitLogging,
-    reporterBracket: ReporterBracket[F],
+    statusConverter: TestStatusConverter[F],
     timedAction: TimedAction[F],
   )(implicit F: QuasiIO[F]
   ) extends IndividualTestRunner[F] {
@@ -64,7 +64,7 @@ object IndividualTestRunner {
                         {
                           case (f, failedProvTime) =>
                             for {
-                              _ <- F.maybeSuspend(reporter.testStatus(test.meta, reporterBracket.fail(failedProvTime.duration, f.toThrowable())))
+                              _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.fail(failedProvTime.duration, f.toThrowable)))
                             } yield {
                               IndividualTestResult.InstantiationFailure(test.meta, successfulPlanningTime, failedProvTime, f)
                             }
@@ -83,7 +83,7 @@ object IndividualTestRunner {
                                 {
                                   case (f, failedExecTime) =>
                                     for {
-                                      _ <- F.maybeSuspend(reporter.testStatus(test.meta, reporterBracket.fail(failedExecTime.duration, f)))
+                                      _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.fail(failedExecTime.duration, f)))
                                     } yield {
                                       IndividualTestResult.ExecutionFailure(test.meta, successfulPlanningTime, successfulProvTime, failedExecTime, f)
                                     }

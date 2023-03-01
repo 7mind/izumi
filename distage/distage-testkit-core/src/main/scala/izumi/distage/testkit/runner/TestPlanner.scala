@@ -269,6 +269,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
           for {
             plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, fullActivation, testRoots)) else Right(Plan.empty)
+            _ <- Right(planChecker.showProxyWarnings(plan))
           } yield {
             PreparedTest(distageTest, appModule, plan, fullActivation)
           }
@@ -299,7 +300,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                 val levelModule = strengthenedAppModule.drop(allSharedKeys)
                 if (levelRoots.nonEmpty) {
                   for {
-                    plan <- prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule)
+                    plan <- prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule, planChecker)
                   } yield {
                     ((acc ++ List(plan), allSharedKeys ++ plan.keys))
                   }
@@ -308,7 +309,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                 }
             }.map(_._1)
         } else {
-          prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, injector, strengthenedAppModule).map(p => List(p))
+          prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, injector, strengthenedAppModule, planChecker).map(p => List(p))
         }
     } yield {
       val envMergeCriteria = PackedEnvMergeCriteria(bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, runtimePlan)
@@ -331,12 +332,21 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     activation: Activation,
     injector: Injector[Identity],
     appModule: Module,
+    check: PlanCircularDependencyCheck,
   ): Either[List[DIError], Plan] = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
-    if (sharedKeys.nonEmpty) {
-      injector.plan(PlannerInput(appModule, activation, sharedKeys))
-    } else {
-      Right(Plan.empty)
+
+    for {
+      plan <-
+        if (sharedKeys.nonEmpty) {
+          injector.plan(PlannerInput(appModule, activation, sharedKeys))
+        } else {
+          Right(Plan.empty)
+        }
+      _ <- Right(check.showProxyWarnings(plan))
+    } yield {
+      plan
     }
+
   }
 }

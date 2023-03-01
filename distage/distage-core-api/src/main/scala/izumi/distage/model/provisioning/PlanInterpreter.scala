@@ -53,7 +53,7 @@ object PlanInterpreter {
     meta: FailedProvisionMeta,
     fullStackTraces: Boolean,
   ) {
-    def toThrowable(): Throwable = {
+    def toThrowable: Throwable = {
       import FailedProvision.ProvisioningFailureOps
       val repr = failure.render(fullStackTraces)
       val ccFailed = failure.status.collect { case (key, _: OpStatus.Failure) => key }.toSet.size
@@ -85,10 +85,10 @@ object PlanInterpreter {
   object FailedProvision {
     implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision, Locator]) extends AnyVal {
       /** @throws ProvisioningException in `F` effect type */
-      def failOnFailure()(implicit F: QuasiIO[F]): F[Locator] = p.fold(f => F.fail(f.toThrowable()), F.pure)
+      def failOnFailure()(implicit F: QuasiIO[F]): F[Locator] = p.fold(f => F.fail(f.toThrowable), F.pure)
       def throwOnFailure(): Locator = p match {
         case Left(f) =>
-          throw f.toThrowable()
+          throw f.toThrowable
         case Right(value) =>
           value
       }
