@@ -1,35 +1,23 @@
 package izumi.distage.testkit.runner
 
 import distage.*
-import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.MemoizationTree.TestGroup
 import izumi.distage.testkit.runner.TestPlanner.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.services.{TestStatusConverter, TestkitLogging, TimedAction, Timing}
+import izumi.distage.testkit.runner.services.{TestStatusConverter, TestkitLogging, TimedAction}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
-import izumi.fundamentals.platform.time.IzTime
 import izumi.logstage.api.{IzLogger, Log}
 
-import java.time.temporal.ChronoUnit
-import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 object DistageTestRunner {
   case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism, strengthenedKeys: Set[DIKey])
-}
-
-sealed trait EnvResult
-object EnvResult {
-  case class EnvSuccess(outputs: List[IndividualTestResult]) extends EnvResult
-
-  case class EnvLevelFailure(all: Seq[FullMeta], failure: TestStatus.Done) extends EnvResult
-  case class RuntimePlanningFailure(t: Timing, all: Seq[FullMeta], failure: FailedProvision) extends EnvResult
 }
 
 class DistageTestRunner[F[_]: TagK: DefaultModule](
@@ -62,7 +50,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
   private def runTests(toRun: Map[PreparedTestEnv, MemoizationTree[F]]): List[EnvResult] = {
     configuredParTraverse[Identity, (PreparedTestEnv, MemoizationTree[F]), List[EnvResult]](toRun)(_._1.envExec.parallelEnvs) {
-      case (e, t) => proceedEnv(e, t)
+      case (e, t) => List(proceedEnv(e, t))
     }.flatten
   }
 
@@ -82,7 +70,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def proceedEnv(env: PreparedTestEnv, testsTree: MemoizationTree[F]): List[EnvResult] = {
+  protected def proceedEnv(env: PreparedTestEnv, testsTree: MemoizationTree[F]): EnvResult = {
     val PreparedTestEnv(_, runtimePlan, runtimeInjector, _) = env
 
     val allEnvTests = testsTree.getAllTests.map(_.test)
@@ -98,10 +86,10 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                 allEnvTests.foreach {
                   test => reporter.testStatus(test.meta, failure)
                 }
-                List(EnvResult.RuntimePlanningFailure(t, allEnvTests.map(_.meta), fail))
+                EnvResult.RuntimePlanningFailure(t, allEnvTests.map(_.meta), fail)
             },
             {
-              (runtimeLocator, _) =>
+              (runtimeLocator, t) =>
                 val runner = runtimeLocator.get[QuasiIORunner[F]]
                 implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
                 implicit val P: QuasiAsync[F] = runtimeLocator.get[QuasiAsync[F]]
@@ -110,7 +98,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                   .get[IzLogger]("distage-testkit")
                   .info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
 
-                runner.run(traverse(testsTree, runtimeLocator))
+                EnvResult.EnvSuccess(t, runner.run(traverse(testsTree, runtimeLocator)))
             },
           )
 
@@ -120,35 +108,34 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private def traverse(tree: MemoizationTree[F], parent: Locator)(implicit F: QuasiIO[F], P: QuasiAsync[F]): F[List[EnvResult]] = {
-    val beforeLevel = IzTime.utcNowOffset
-
-    val nextLocator: Lifecycle[F, Locator] = Injector
-      .inherit(parent).produceCustomF[F](tree.plan)
-
-    F.definitelyRecover(nextLocator.use {
-      locator =>
-        for {
-          results <- proceedMemoizationLevel(locator, tree.getGroups)
-          subResults <- F.traverse(tree.next) {
-            nextTree =>
-              traverse(nextTree, locator)
-          }
-        } yield {
-          List(EnvResult.EnvSuccess(results)) ++ subResults.flatten
-        }
-
-    }) {
-      t =>
-        F.maybeSuspend {
-          val afterLevel = IzTime.utcNowOffset
-          val failure = statusConverter.fail(FiniteDuration(ChronoUnit.NANOS.between(beforeLevel, afterLevel), TimeUnit.NANOSECONDS), t)
-          val all = tree.getAllTests.map(_.test)
-          all.foreach {
-            test => reporter.testStatus(test.meta, failure)
-          }
-          List(EnvResult.EnvLevelFailure(all.map(_.meta), failure))
-        }
+  private def traverse(tree: MemoizationTree[F], parent: Locator)(implicit F: QuasiIO[F], P: QuasiAsync[F]): F[List[GroupResult]] = {
+    timedAction.timed(Injector.inherit(parent).produceDetailedCustomF[F](tree.plan)).use {
+      maybeLocator =>
+        maybeLocator.mapMerge(
+          {
+            case (f, t) =>
+              F.maybeSuspend {
+                val failure = statusConverter.fail(t.duration, f.toThrowable)
+                val all = tree.getAllTests.map(_.test)
+                all.foreach {
+                  test => reporter.testStatus(test.meta, failure)
+                }
+                List(GroupResult.EnvLevelFailure(all.map(_.meta), f, t): GroupResult)
+              }
+          },
+          {
+            case (locator, t) =>
+              for {
+                results <- proceedMemoizationLevel(locator, tree.getGroups)
+                subResults <- F.traverse(tree.next) {
+                  nextTree =>
+                    traverse(nextTree, locator)
+                }
+              } yield {
+                List(GroupResult.GroupSuccess(results, t)) ++ subResults.flatten
+              }
+          },
+        )
     }
   }
 

@@ -3,7 +3,7 @@ package izumi.distage.testkit.runner
 import distage.{Injector, TagK}
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
-import izumi.distage.testkit.model.DistageTest
+import izumi.distage.testkit.model.{DistageTest, EnvResult}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.services.TimedAction.TimedActionImpl
 import izumi.distage.testkit.runner.services.{TestConfigLoader, TestStatusConverter, TestkitLogging, TimedAction}
