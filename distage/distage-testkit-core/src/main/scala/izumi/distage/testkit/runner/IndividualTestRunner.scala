@@ -15,9 +15,7 @@ import izumi.logstage.api.IzLogger
 
 trait IndividualTestRunner[F[_]] {
   def proceedTest(
-    planChecker: PlanCircularDependencyCheck,
     mainSharedLocator: Locator,
-    testRunnerLogger: IzLogger,
     groupStrengthenedKeys: Set[DIKey],
     preparedTest: PreparedTest[F],
   ): F[IndividualTestResult]
@@ -32,9 +30,7 @@ object IndividualTestRunner {
   )(implicit F: QuasiIO[F]
   ) extends IndividualTestRunner[F] {
     def proceedTest(
-      planChecker: PlanCircularDependencyCheck,
       mainSharedLocator: Locator,
-      testRunnerLogger: IzLogger,
       groupStrengthenedKeys: Set[DIKey],
       preparedTest: PreparedTest[F],
     ): F[IndividualTestResult] = {
@@ -57,8 +53,8 @@ object IndividualTestRunner {
           {
             case (plan, successfulPlanningTime) =>
               for {
-                _ <- logTest(testRunnerLogger, test, plan)
-                _ <- F.maybeSuspend(planChecker.showProxyWarnings(plan))
+                _ <- logTest(mainSharedLocator.get[IzLogger]("distage-testkit"), test, plan)
+                _ <- F.maybeSuspend(mainSharedLocator.get[PlanCircularDependencyCheck].showProxyWarnings(plan))
                 _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Instantiating))
                 testRunResult <- timedAction
                   .timed(testInjector.produceDetailedCustomF[F](plan))

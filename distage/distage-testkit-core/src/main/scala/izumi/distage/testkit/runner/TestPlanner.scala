@@ -2,11 +2,12 @@ package izumi.distage.testkit.runner
 
 import distage.{Activation, BootstrapModule, DIKey, Injector, Module, PlannerInput, TagK}
 import izumi.distage.config.model.AppConfig
+import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.ModuleProvider
+import izumi.distage.framework.services.{ModuleProvider, PlanCircularDependencyCheck}
 import izumi.distage.model.definition.Binding.SetElementBinding
-import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.definition.errors.DIError
+import izumi.distage.model.definition.{ImplDef, ModuleDef}
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
@@ -33,7 +34,6 @@ object TestPlanner {
     preparedTests: Seq[PreparedTest[F]],
     memoizationPlanTree: List[Plan],
     anyMemoizationInjector: Injector[Identity],
-    anyIntegrationLogger: IzLogger,
     highestDebugOutputInTests: Boolean,
     strengthenedKeys: Set[DIKey],
   )
@@ -52,7 +52,6 @@ object TestPlanner {
 
   final case class PreparedTestEnv(
     envExec: EnvExecutionParams,
-    integrationLogger: IzLogger,
     runtimePlan: Plan,
     memoizationInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
@@ -76,10 +75,12 @@ class TestPlanner[F[_]: TagK: DefaultModule](
   configLoader: TestConfigLoader,
 ) {
   // first we need to plan runtime for our monad. Identity is also supported
-  val runtimeGcRoots: Set[DIKey] = Set(
+  private val runtimeGcRoots: Set[DIKey] = Set(
     DIKey.get[QuasiIORunner[F]],
     DIKey.get[QuasiIO[F]],
     DIKey.get[QuasiAsync[F]],
+    DIKey.get[PlanCircularDependencyCheck],
+    DIKey.get[IzLogger].named("distage-testkit"),
   )
   /**
     * Performs tests grouping by it's memoization environment.
@@ -125,11 +126,11 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           // so this saves a lot of reallocation of memoized resources
           val goodTrees: Map[PreparedTestEnv, MemoizationTree[F]] = good.groupBy(_.envMergeCriteria).map {
             case (PackedEnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
-              val integrationLogger = packedEnv.head.anyIntegrationLogger
               val memoizationInjector = packedEnv.head.anyMemoizationInjector
               val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
               val memoizationTree = MemoizationTree[F](packedEnv)
-              val env = PreparedTestEnv(envExec, integrationLogger, runtimePlan, memoizationInjector, highestDebugOutputInTests)
+              assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
+              val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
               (env, memoizationTree)
           }
 
@@ -172,7 +173,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       val moduleProvider =
         env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, router, env.roles, env.activationInfo, fullActivation)
 
-      prepareTestEnv(env, tests, lateLogger, fullActivation, moduleProvider).left.map(errors => PlanningFailure.DIErrors(errors): PlanningFailure)
+      prepareTestEnv(envExec, env, tests, lateLogger, fullActivation, moduleProvider).left.map(errors => PlanningFailure.DIErrors(errors): PlanningFailure)
     }.toEither.left.map(e => PlanningFailure.Exception(e): PlanningFailure).flatMap(identity)
   }
 
@@ -202,6 +203,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
   }
 
   private[this] def prepareTestEnv(
+    envExecutionParams: EnvExecutionParams,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
     lateLogger: IzLogger,
@@ -231,8 +233,32 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     }
 
     for {
+      planChecker <- Right(new PlanCircularDependencyCheck(envExecutionParams.planningOptions, lateLogger))
+
       // runtime plan with `runtimeGcRoots`
-      runtimePlan <- injector.plan(PlannerInput(appModule, fullActivation, runtimeGcRoots))
+      runtimePlan <- injector.plan(
+        PlannerInput(
+          appModule ++ new ModuleDef {
+            make[EnvExecutionParams].fromValue(envExecutionParams)
+            make[PlanningOptions].from {
+              (exec: EnvExecutionParams) =>
+                exec.planningOptions
+            }
+
+            // we cannot capture local values here, that will break environment merge logic
+            make[PlanCircularDependencyCheck]
+            make[IzLogger].named("distage-testkit").from {
+              (logger: IzLogger) => logger
+            }
+            //            make[IzLogger].named("distage-testkit").fromValue(lateLogger)
+            //            make[PlanCircularDependencyCheck].fromValue(planChecker)
+
+          },
+          fullActivation,
+          runtimeGcRoots,
+        )
+      )
+      _ <- Right(planChecker.showProxyWarnings(runtimePlan))
       // all keys created in runtimePlan, we filter them out later to not recreate any components already in runtimeLocator
       runtimeKeys = runtimePlan.keys
 
@@ -287,16 +313,14 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     } yield {
       val envMergeCriteria = PackedEnvMergeCriteria(bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, runtimePlan)
 
-      val memoEnvHashCode = envMergeCriteria.hashCode()
-      val integrationLogger = lateLogger("memoEnv" -> memoEnvHashCode)
       if (strengthenedKeys.nonEmpty) {
-        integrationLogger.log(logging.testkitDebugMessagesLogLevel(env.debugOutput))(
+        lateLogger.log(logging.testkitDebugMessagesLogLevel(env.debugOutput))(
           s"Strengthened weak components: $strengthenedKeys"
         )
       }
 
       val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
-      PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, integrationLogger, highestDebugOutputInTests, strengthenedKeys.toSet)
+      PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, highestDebugOutputInTests, strengthenedKeys.toSet)
     }
   }
 

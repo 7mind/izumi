@@ -49,7 +49,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       // TODO: there shouldn't be a case with more than one tree per env, maybe we should assert/fail instead
       val toRun = envs.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
       logEnvironmentsInfo(toRun, planningTime)
-      runTests(toRun, planner.runtimeGcRoots)
+      runTests(toRun)
       ()
     } catch {
       case t: Throwable =>
@@ -59,9 +59,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private def runTests(toRun: Map[PreparedTestEnv, MemoizationTree[F]], runtimeRoots: Set[DIKey]): List[EnvResult] = {
+  private def runTests(toRun: Map[PreparedTestEnv, MemoizationTree[F]]): List[EnvResult] = {
     configuredParTraverse[Identity, (PreparedTestEnv, MemoizationTree[F]), List[EnvResult]](toRun)(_._1.envExec.parallelEnvs) {
-      case (e, t) => proceedEnv(e, t, runtimeRoots)
+      case (e, t) => proceedEnv(e, t)
     }.flatten
   }
 
@@ -81,15 +81,10 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  protected def proceedEnv(env: PreparedTestEnv, testsTree: MemoizationTree[F], runtimeGcRoots: Set[DIKey]): List[EnvResult] = {
-    val PreparedTestEnv(envExec, integrationLogger, runtimePlan, runtimeInjector, _) = env
-    assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
+  protected def proceedEnv(env: PreparedTestEnv, testsTree: MemoizationTree[F]): List[EnvResult] = {
+    val PreparedTestEnv(_, runtimePlan, runtimeInjector, _) = env
 
     val allEnvTests = testsTree.getAllTests.map(_.test)
-    integrationLogger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
-
-    val planChecker = new PlanCircularDependencyCheck(envExec.planningOptions, integrationLogger)
-    planChecker.showProxyWarnings(runtimePlan)
 
     val beforeAll = IzTime.utcNowOffset
     try {
@@ -98,6 +93,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           val runner = runtimeLocator.get[QuasiIORunner[F]]
           implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
           implicit val P: QuasiAsync[F] = runtimeLocator.get[QuasiAsync[F]]
+
+          runtimeLocator
+            .get[IzLogger]("distage-testkit")
+            .info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
+
+          val planChecker = runtimeLocator.get[PlanCircularDependencyCheck]
 
           def traverse(tree: MemoizationTree[F], parent: Locator): F[List[EnvResult]] = {
             planChecker.showProxyWarnings(tree.plan)
@@ -109,7 +110,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
             F.definitelyRecover(nextLocator.use {
               locator =>
                 for {
-                  results <- proceedMemoizationLevel(planChecker, locator, integrationLogger)(tree.getGroups)
+                  results <- proceedMemoizationLevel(locator, tree.getGroups)
                   subResults <- F.traverse(tree.next) {
                     nextTree =>
                       traverse(nextTree, locator)
@@ -148,10 +149,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   }
 
   protected def proceedMemoizationLevel(
-    planChecker: PlanCircularDependencyCheck,
     deepestSharedLocator: Locator,
-    testRunnerLogger: IzLogger,
-  )(levelGroups: Iterable[TestGroup[F]]
+    levelGroups: Iterable[TestGroup[F]],
   )(implicit
     F: QuasiIO[F],
     P: QuasiAsync[F],
@@ -176,7 +175,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => individualTestRunner.proceedTest(planChecker, deepestSharedLocator, testRunnerLogger, suiteData.strengthenedKeys, test)
+              test => individualTestRunner.proceedTest(deepestSharedLocator, suiteData.strengthenedKeys, test)
             }
         }
     }.map(_.flatten)
@@ -219,7 +218,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
 
     envs.foreach {
-      case (PreparedTestEnv(_, _, runtimePlan, _, debugOutput), testTree) =>
+      case (PreparedTestEnv(_, runtimePlan, _, debugOutput), testTree) =>
         val suites = testTree.getAllTests.map(_.test.suiteMeta.suiteClassName).toList.distinct
         testRunnerLogger.info(
           s"Memoization environment with ${suites.size -> "suites"} ${testTree.getAllTests.size -> "tests"} ${testTree -> "suitesMemoizationTree"}"
