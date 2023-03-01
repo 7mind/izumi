@@ -23,24 +23,12 @@ object Timed {
 }
 
 trait TimedAction[F[_]] {
-  def timed[A, B](action: => F[Either[A, B]]): F[Timed[Either[A, B]]]
-  def timed[A](action: => F[A])(implicit dummyImplicit: DummyImplicit): F[Timed[A]]
+  def timed[A](action: => F[A]): F[Timed[A]]
   def timed[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]]
 }
 
 object TimedAction {
   class TimedActionImpl[F[_]]()(implicit F: QuasiIO[F]) extends TimedAction[F] {
-    override def timed[A, B](action: => F[Either[A, B]]): F[Timed[Either[A, B]]] = {
-      for {
-        before <- F.maybeSuspend(IzTime.utcNowOffset)
-        value <- action
-        after <- F.maybeSuspend(IzTime.utcNowOffset)
-
-      } yield {
-        Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
-      }
-    }
-
     override def timed[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]] = {
       for {
         before <- Lifecycle.liftF(F.maybeSuspend(IzTime.utcNowOffset))
@@ -51,12 +39,11 @@ object TimedAction {
       }
     }
 
-    override def timed[A](action: => F[A])(implicit dummyImplicit: DummyImplicit): F[Timed[A]] = {
+    override def timed[A](action: => F[A]): F[Timed[A]] = {
       for {
         before <- F.maybeSuspend(IzTime.utcNowOffset)
         value <- action
         after <- F.maybeSuspend(IzTime.utcNowOffset)
-
       } yield {
         Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
       }
