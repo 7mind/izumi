@@ -29,17 +29,21 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   timedActionId: TimedAction[Identity],
 ) {
   def run(tests: Seq[DistageTest[F]]): List[EnvResult] = {
+    runF[Identity](tests, timedActionId)
+  }
+
+  def runF[G[_]](tests: Seq[DistageTest[F]], timed: TimedAction[G])(implicit G: QuasiIO[G]): G[List[EnvResult]] = {
     // We assume that under normal cirsumstances the code below should never throw.
     // All the exceptions should be converted to values by this time.
     // If it throws, there is a bug which needs to be fixed.
     for {
-      envs <- timedActionId.timed(planner.groupTests(tests))
-      _ <- QuasiIO[Identity].maybeSuspend(reportFailedPlanning(envs.out.bad))
+      envs <- timed.timed(G.maybeSuspend(planner.groupTests(tests)))
+      _ <- G.maybeSuspend(reportFailedPlanning(envs.out.bad))
       // TODO: there shouldn't be a case with more than one tree per env, maybe we should assert/fail instead
-      toRun = envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
-      _ <- QuasiIO[Identity].maybeSuspend(logEnvironmentsInfo(toRun, envs.timing.duration))
-      result = runTests(toRun)
-      _ <- QuasiIO[Identity].maybeSuspend(reporter.endScope())
+      toRun <- G.pure(envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2))
+      _ <- G.maybeSuspend(logEnvironmentsInfo(toRun, envs.timing.duration))
+      result <- G.maybeSuspend(runTests(toRun))
+      _ <- G.maybeSuspend(reporter.endScope())
     } yield {
       result
     }
@@ -72,36 +76,32 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     val allEnvTests = testsTree.getAllTests.map(_.test)
 
-    for {
-      maybeRtPlan <- timedActionId.timed(runtimeInjector.produceDetailedCustomF[Identity](runtimePlan)).use {
-        maybeRtLocator =>
-          maybeRtLocator.mapMerge(
-            {
-              (runtimeInstantiationFailure, runtimeInstantiationTiming) =>
-                val failure = statusConverter.fail(runtimeInstantiationTiming.duration, runtimeInstantiationFailure.toThrowable)
-                // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
-                allEnvTests.foreach {
-                  test => reporter.testStatus(test.meta, failure)
-                }
-                EnvResult.RuntimePlanningFailure(runtimeInstantiationTiming, allEnvTests.map(_.meta), runtimeInstantiationFailure)
-            },
-            {
-              (runtimeLocator, runtimeInstantiationTiming) =>
-                val runner = runtimeLocator.get[QuasiIORunner[F]]
-                implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
-                implicit val P: QuasiAsync[F] = runtimeLocator.get[QuasiAsync[F]]
+    timedActionId.timed(runtimeInjector.produceDetailedCustomF[Identity](runtimePlan)).use {
+      maybeRtLocator =>
+        maybeRtLocator.mapMerge(
+          {
+            (runtimeInstantiationFailure, runtimeInstantiationTiming) =>
+              val failure = statusConverter.fail(runtimeInstantiationTiming.duration, runtimeInstantiationFailure.toThrowable)
+              // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
+              allEnvTests.foreach {
+                test => reporter.testStatus(test.meta, failure)
+              }
+              EnvResult.RuntimePlanningFailure(runtimeInstantiationTiming, allEnvTests.map(_.meta), runtimeInstantiationFailure)
+          },
+          {
+            (runtimeLocator, runtimeInstantiationTiming) =>
+              val runner = runtimeLocator.get[QuasiIORunner[F]]
+              implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
+              implicit val P: QuasiAsync[F] = runtimeLocator.get[QuasiAsync[F]]
 
-                runtimeLocator
-                  .get[IzLogger]("distage-testkit")
-                  .info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
+              runtimeLocator
+                .get[IzLogger]("distage-testkit")
+                .info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
 
-                EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(traverse(testsTree, runtimeLocator)))
-            },
-          )
+              EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(traverse(testsTree, runtimeLocator)))
+          },
+        )
 
-      }
-    } yield {
-      maybeRtPlan
     }
   }
 
