@@ -69,9 +69,9 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
         try {
           // in case queue was empty we sleep a bit (it's a sane heuristic), otherwise it's better to continue working asap
           if (doFlush(maxBatchSize)) {
-            Thread.sleep(sleepTime.toMillis)
-          } else {
             Thread.`yield`()
+          } else {
+            Thread.sleep(sleepTime.toMillis)
           }
         } catch {
           case _: InterruptedException =>
