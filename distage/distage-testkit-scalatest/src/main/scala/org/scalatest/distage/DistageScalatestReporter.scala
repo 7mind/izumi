@@ -48,7 +48,12 @@ class DistageScalatestReporter extends TestReporter {
     }
   }
 
-  override def testStatus(test: FullMeta, testStatus: TestStatus): Unit = {
+  override def testSetupStatus(scopeId: ScopeId, meta: FullMeta, testStatus: TestStatus.Setup): Unit = {
+    this.testStatus(scopeId, -1, meta, testStatus)
+  }
+
+  override def testStatus(scope: ScopeId, depth: Int, test: FullMeta, testStatus: TestStatus): Unit = {
+    (scope, depth).discard()
     val suiteName1 = test.suite.suiteName
     val suiteId1 = test.suite.suiteId
     val suiteClassName1 = test.suite.suiteClassName

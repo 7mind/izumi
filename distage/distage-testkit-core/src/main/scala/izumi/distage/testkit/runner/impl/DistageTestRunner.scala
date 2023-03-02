@@ -41,7 +41,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       id <- G.maybeSuspend(ScopeId(UUIDGen.getTimeUUID()))
       _ <- G.maybeSuspend(reporter.beginScope(id))
       envs <- timed.timed(G.maybeSuspend(planner.groupTests(tests)))
-      _ <- G.maybeSuspend(reportFailedPlanning(envs.out.bad, envs.timing))
+      _ <- G.maybeSuspend(reportFailedPlanning(id, envs.out.bad, envs.timing))
       // TODO: there shouldn't be a case with more than one tree per env, maybe we should assert/fail instead
       toRun <- G.pure(envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2))
       _ <- G.maybeSuspend(logEnvironmentsInfo(toRun, envs.timing.duration))
@@ -58,7 +58,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }.flatten
   }
 
-  private def reportFailedPlanning(bad: Seq[(Seq[DistageTest[F]], PlanningFailure)], timing: Timing): Unit = {
+  private def reportFailedPlanning(id: ScopeId, bad: Seq[(Seq[DistageTest[F]], PlanningFailure)], timing: Timing): Unit = {
     bad.foreach {
       case (badTests, failure) =>
         badTests.foreach {
@@ -69,7 +69,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
               case PlanningFailure.DIErrors(errors) =>
                 errors.aggregateErrors
             }
-            reporter.testStatus(test.meta, TestStatus.FailedInitialPlanning(failure, asThrowable, timing))
+            reporter.testSetupStatus(id, test.meta, TestStatus.FailedInitialPlanning(failure, asThrowable, timing))
         }
     }
   }
@@ -89,7 +89,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
               val failure = statusConverter.failRuntimePlanning(result)
               // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
               allEnvTests.foreach {
-                test => reporter.testStatus(test.meta, failure)
+                test => reporter.testSetupStatus(id, test.meta, failure)
               }
 
               result
@@ -122,7 +122,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                 val result = GroupResult.EnvLevelFailure(all.map(_.meta), levelInstantiationFailure, levelInstantiationTiming)
                 val failure = statusConverter.failLevelInstantiation(result)
                 all.foreach {
-                  test => reporter.testStatus(test.meta, failure)
+                  test => reporter.testStatus(id, depth, test.meta, failure)
                 }
                 List(result: GroupResult)
               }
@@ -172,7 +172,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endLevel(id, depth, suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => individualTestRunner.proceedTest(deepestSharedLocator, suiteData.strengthenedKeys, test)
+              test => individualTestRunner.proceedTest(id, depth, deepestSharedLocator, suiteData.strengthenedKeys, test)
             }
         }
     }.map(_.flatten)

@@ -15,6 +15,8 @@ import izumi.logstage.api.IzLogger
 
 trait IndividualTestRunner[F[_]] {
   def proceedTest(
+    suiteId: ScopeId,
+    depth: Int,
     mainSharedLocator: Locator,
     groupStrengthenedKeys: Set[DIKey],
     preparedTest: PreparedTest[F],
@@ -30,6 +32,8 @@ object IndividualTestRunner {
   )(implicit F: QuasiIO[F]
   ) extends IndividualTestRunner[F] {
     def proceedTest(
+      suiteId: ScopeId,
+      depth: Int,
       mainSharedLocator: Locator,
       groupStrengthenedKeys: Set[DIKey],
       preparedTest: PreparedTest[F],
@@ -45,7 +49,7 @@ object IndividualTestRunner {
             case (f, failedPlanningTime) =>
               for {
                 result <- F.pure(IndividualTestResult.PlanningFailure(test.meta, failedPlanningTime, f))
-                _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.failPlanning(result)))
+                _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, statusConverter.failPlanning(result)))
               } yield {
                 result
               }
@@ -58,6 +62,8 @@ object IndividualTestRunner {
                 _ <- F.maybeSuspend(mainSharedLocator.get[PlanCircularDependencyCheck].showProxyWarnings(plan))
                 _ <- F.maybeSuspend(
                   reporter.testStatus(
+                    suiteId,
+                    depth,
                     test.meta,
                     TestStatus.Instantiating(plan, successfulPlanningTime, logPlan = (logging.enableDebugOutput || test.environment.debugOutput) && plan.keys.nonEmpty),
                   )
@@ -71,7 +77,7 @@ object IndividualTestRunner {
                           case (f, failedProvTime) =>
                             for {
                               result <- F.pure(IndividualTestResult.InstantiationFailure(test.meta, successfulPlanningTime, failedProvTime, f))
-                              _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.failInstantiation(result)))
+                              _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, statusConverter.failInstantiation(result)))
                             } yield {
                               result
                             }
@@ -79,7 +85,7 @@ object IndividualTestRunner {
                         {
                           case (l, successfulProvTime) =>
                             for {
-                              _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running(l, successfulPlanningTime, successfulProvTime)))
+                              _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, TestStatus.Running(l, successfulPlanningTime, successfulProvTime)))
                               successfulTestOutput <- timedAction.timed {
                                 F.definitelyRecover(l.run(test.test).map(_ => Right(()): Either[Throwable, Unit])) {
                                   f =>
@@ -91,7 +97,7 @@ object IndividualTestRunner {
                                   case (f, failedExecTime) =>
                                     for {
                                       result <- F.pure(IndividualTestResult.ExecutionFailure(test.meta, successfulPlanningTime, successfulProvTime, failedExecTime, f))
-                                      _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.failExecution(result)))
+                                      _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, statusConverter.failExecution(result)))
                                     } yield {
                                       result
                                     }
@@ -101,7 +107,7 @@ object IndividualTestRunner {
                                   case (_, testTiming) =>
                                     for {
                                       result <- F.pure(IndividualTestResult.TestSuccess(test.meta, successfulPlanningTime, successfulProvTime, testTiming))
-                                      _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.success(result)))
+                                      _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, statusConverter.success(result)))
                                     } yield {
                                       result
                                     }

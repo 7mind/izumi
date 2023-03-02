@@ -11,5 +11,7 @@ trait TestReporter {
 
   def endLevel(scope: ScopeId, depth: Int, id: SuiteMeta): Unit
 
-  def testStatus(meta: FullMeta, testStatus: TestStatus): Unit
+  def testSetupStatus(scopeId: ScopeId, meta: FullMeta, testStatus: TestStatus.Setup): Unit
+
+  def testStatus(scope: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus): Unit
 }
