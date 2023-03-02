@@ -6,7 +6,6 @@ import izumi.distage.fixtures.ResourceCases.*
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.definition.Lifecycle
 import izumi.functional.quasi.QuasiApplicative
-import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.data.{Free, FreeError, FreePanic}
 import izumi.fundamentals.platform.functional.Identity
@@ -395,9 +394,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
             fail(s"Unexpected success! $value")
         }.unsafeRun()
 
-      val exc = intercept[ProvisioningException] {
-        failure.throwException().unsafeRun()
-      }
+      val exc = failure.toThrowable()
 
       assert(exc.getMessage.contains("Incompatible effect types"))
     }

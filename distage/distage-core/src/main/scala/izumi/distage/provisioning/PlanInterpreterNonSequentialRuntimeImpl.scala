@@ -10,7 +10,7 @@ import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp.*
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.model.provisioning.*
-import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionInternal, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.{Locator, Planner}
 import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
@@ -39,32 +39,33 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
   )(implicit F: QuasiIO[F]
-  ): Lifecycle[F, Either[FailedProvision[F], Locator]] = {
-    Lifecycle.make(
-      acquire = instantiateImpl(plan, parentLocator)
-    )(release = {
-      resource =>
-        val finalizers = resource match {
-          case Left(failedProvision) => failedProvision.failed.finalizers
-          case Right(locator) => locator.finalizers
-        }
-        filterFinalizers.filter(finalizers).foldLeft(F.unit) {
-          case (acc, f) => acc.guarantee(F.suspendF(f.effect()))
-        }
-    })
+  ): Lifecycle[F, Either[FailedProvision, Locator]] = {
+    Lifecycle
+      .make(
+        acquire = instantiateImpl(plan, parentLocator)
+      )(release = {
+        resource =>
+          val finalizers = resource match {
+            case Left(failedProvision) => failedProvision.provision.finalizers
+            case Right(locator) => locator.finalizers
+          }
+          filterFinalizers.filter(finalizers).foldLeft(F.unit) {
+            case (acc, f) => acc.guarantee(F.suspendF(f.effect()))
+          }
+      }).map(_.left.map(_.fail))
   }
 
   private[this] def instantiateImpl[F[_]: TagK](
     plan: Plan,
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
-  ): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+  ): F[Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
     val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
 
     val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext)
 
     @nowarn("msg=Unused import")
-    def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[TraversalState, Either[FailedProvision[F], LocatorDefaultImpl[F]]]] = {
+    def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[TraversalState, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]]] = {
       import scala.collection.compat.*
 
       state.current match {
@@ -122,7 +123,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     initial: TraversalState,
     issues: Iterable[ProvisionerIssue],
   )(implicit F: QuasiIO[F]
-  ): F[Either[FailedProvision[F], A]] = {
+  ): F[Either[FailedProvisionInternal[F], A]] = {
     val failures = issues.map {
       issue =>
         TimedFinalResult.Failure(
@@ -139,7 +140,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     state: TraversalState,
     ctx: ProvisionMutable[F],
   )(implicit F: QuasiIO[F]
-  ): F[Either[FailedProvision[F], Plan]] = {
+  ): F[Either[FailedProvisionInternal[F], Plan]] = {
     val allChecks = ctx.plan.stepsUnordered.iterator.collect {
       case op: InstantiationOp if op.instanceType <:< abstractCheckType => op
     }.toSet

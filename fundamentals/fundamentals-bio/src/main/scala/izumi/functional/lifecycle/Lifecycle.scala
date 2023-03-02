@@ -189,7 +189,7 @@ import scala.annotation.unused
   * @see [[https://typelevel.org/cats-effect/datatypes/resource.html cats.effect.Resource]]
   * @see [[https://zio.dev/docs/datatypes/datatypes_managed zio.ZManaged]]
   */
-trait Lifecycle[+F[_], +OuterResource] {
+trait Lifecycle[+F[_], +A] {
   type InnerResource
 
   /**
@@ -211,7 +211,7 @@ trait Lifecycle[+F[_], +OuterResource] {
 
   /**
     * Either an action in `F` or a pure function used to
-    * extract the `OuterResource` from the `InnerResource`
+    * extract the `A` from the `InnerResource`
     *
     * The effect in the `Left` branch will be performed *interruptibly*,
     * it is not afforded the same kind of safety as `acquire` and `release` actions
@@ -223,44 +223,44 @@ trait Lifecycle[+F[_], +OuterResource] {
     *
     * @see [[Lifecycle.Basic]] `extract` doesn't have to be defined when inheriting from `Lifecycle.Basic`
     */
-  def extract[B >: OuterResource](resource: InnerResource): Either[F[B], B]
+  def extract[B >: A](resource: InnerResource): Either[F[B], B]
 
-  final def map[G[x] >: F[x]: QuasiFunctor, B](f: OuterResource => B): Lifecycle[G, B] = LifecycleMethodImpls.mapImpl[G, OuterResource, B](this)(f)
-  final def flatMap[G[x] >: F[x]: QuasiPrimitives, B](f: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] =
-    LifecycleMethodImpls.flatMapImpl[G, OuterResource, B](this)(f)
-  final def flatten[G[x] >: F[x]: QuasiPrimitives, B](implicit ev: OuterResource <:< Lifecycle[G, B]): Lifecycle[G, B] = this.flatMap(ev)
+  final def map[G[x] >: F[x]: QuasiFunctor, B](f: A => B): Lifecycle[G, B] = LifecycleMethodImpls.mapImpl[G, A, B](this)(f)
+  final def flatMap[G[x] >: F[x]: QuasiPrimitives, B](f: A => Lifecycle[G, B]): Lifecycle[G, B] =
+    LifecycleMethodImpls.flatMapImpl[G, A, B](this)(f)
+  final def flatten[G[x] >: F[x]: QuasiPrimitives, B](implicit ev: A <:< Lifecycle[G, B]): Lifecycle[G, B] = this.flatMap(ev)
 
-  final def catchAll[G[x] >: F[x]: QuasiIO, B >: OuterResource](recover: Throwable => Lifecycle[G, B]): Lifecycle[G, B] =
-    LifecycleMethodImpls.redeemImpl[G, OuterResource, B](this)(recover, Lifecycle.pure[G](_))
-  final def catchSome[G[x] >: F[x]: QuasiIO, B >: OuterResource](recover: PartialFunction[Throwable, Lifecycle[G, B]]): Lifecycle[G, B] =
+  final def catchAll[G[x] >: F[x]: QuasiIO, B >: A](recover: Throwable => Lifecycle[G, B]): Lifecycle[G, B] =
+    LifecycleMethodImpls.redeemImpl[G, A, B](this)(recover, Lifecycle.pure[G](_))
+  final def catchSome[G[x] >: F[x]: QuasiIO, B >: A](recover: PartialFunction[Throwable, Lifecycle[G, B]]): Lifecycle[G, B] =
     catchAll(e => recover.applyOrElse(e, (_: Throwable) => Lifecycle.fail(e)))
 
-  final def redeem[G[x] >: F[x]: QuasiIO, B](onFailure: Throwable => Lifecycle[G, B], onSuccess: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] =
-    LifecycleMethodImpls.redeemImpl[G, OuterResource, B](this)(onFailure, onSuccess)
+  final def redeem[G[x] >: F[x]: QuasiIO, B](onFailure: Throwable => Lifecycle[G, B], onSuccess: A => Lifecycle[G, B]): Lifecycle[G, B] =
+    LifecycleMethodImpls.redeemImpl[G, A, B](this)(onFailure, onSuccess)
 
-  final def evalMap[G[x] >: F[x]: QuasiPrimitives, B](f: OuterResource => G[B]): Lifecycle[G, B] = LifecycleMethodImpls.evalMapImpl[G, OuterResource, B](this)(f)
-  final def evalTap[G[x] >: F[x]: QuasiPrimitives](f: OuterResource => G[Unit]): Lifecycle[G, OuterResource] =
-    evalMap[G, OuterResource](a => QuasiFunctor[G].map(f(a))(_ => a))
+  final def evalMap[G[x] >: F[x]: QuasiPrimitives, B](f: A => G[B]): Lifecycle[G, B] = LifecycleMethodImpls.evalMapImpl[G, A, B](this)(f)
+  final def evalTap[G[x] >: F[x]: QuasiPrimitives](f: A => G[Unit]): Lifecycle[G, A] =
+    evalMap[G, A](a => QuasiFunctor[G].map(f(a))(_ => a))
 
   /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
-  final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): Lifecycle[G, OuterResource] =
-    LifecycleMethodImpls.wrapAcquireImpl[G, OuterResource](this: this.type)(f)
+  final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): Lifecycle[G, A] =
+    LifecycleMethodImpls.wrapAcquireImpl[G, A](this: this.type)(f)
 
   /** Wrap release action of this resource in another effect, e.g. for logging purposes */
-  final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): Lifecycle[G, OuterResource] =
-    LifecycleMethodImpls.wrapReleaseImpl[G, OuterResource](this: this.type)(f)
+  final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): Lifecycle[G, A] =
+    LifecycleMethodImpls.wrapReleaseImpl[G, A](this: this.type)(f)
 
-  final def beforeAcquire[G[x] >: F[x]: QuasiApplicative](f: => G[Unit]): Lifecycle[G, OuterResource] =
+  final def beforeAcquire[G[x] >: F[x]: QuasiApplicative](f: => G[Unit]): Lifecycle[G, A] =
     wrapAcquire[G](acquire => QuasiApplicative[G].map2(f, acquire)((_, res) => res))
 
   /** Prepend release action to existing */
-  final def beforeRelease[G[x] >: F[x]: QuasiApplicative](f: InnerResource => G[Unit]): Lifecycle[G, OuterResource] =
+  final def beforeRelease[G[x] >: F[x]: QuasiApplicative](f: InnerResource => G[Unit]): Lifecycle[G, A] =
     wrapRelease[G]((release, res) => QuasiApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
   final def void[G[x] >: F[x]: QuasiFunctor]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
 
-  @inline final def widen[B >: OuterResource]: Lifecycle[F, B] = this
-  @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
+  @inline final def widen[B >: A]: Lifecycle[F, B] = this
+  @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, A] = this
 }
 
 object Lifecycle extends LifecycleInstances {

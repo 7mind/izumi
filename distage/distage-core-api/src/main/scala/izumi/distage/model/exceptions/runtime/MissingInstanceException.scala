@@ -14,7 +14,7 @@ object MissingInstanceException {
 
     val refRepr = target.tpe.tag.ref.render()
 
-    def formatRelevant(similar: Iterable[Binding], header: String) = {
+    def formatRelevant(similar: Iterable[Binding], header: String): Seq[String] = {
       Option(similar)
         .filterNot(_.isEmpty)
         .map {

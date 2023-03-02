@@ -89,6 +89,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
         )
       ).getMessage contains "cannot parse configuration"
     )
+    // FIXME this causes error output during build, would be great to find a way to silence this
     assertCompiles(
       """
       PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", config = "check-test-bad.conf", onlyWarn = true))

@@ -2,6 +2,7 @@ package izumi.distage.framework
 
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.model.{PlanCheckInput, PlanCheckResult}
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning.AxisPoint
@@ -124,6 +125,7 @@ object PlanCheck {
       var effectiveConfig = "unknown, failed too early"
       var effectiveBsPlugins = LoadedPlugins.empty
       var effectiveAppPlugins = LoadedPlugins.empty
+      var effectiveModule = ModuleBase.empty
       var effectivePlugins = LoadedPlugins.empty
 
       def renderPlugins(plugins: Seq[PluginBase]): String = {
@@ -141,32 +143,34 @@ object PlanCheck {
 
       def returnPlanCheckError(cause: Either[Throwable, PlanVerifierResult.Incorrect]): PlanCheckResult.Incorrect = {
         val visitedKeys = cause.fold(_ => Set.empty[DIKey], _.visitedKeys)
-        val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNonEmptySet.map(_.render).niceList())
+        val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNonEmptySet.map(_.render + "\n").niceList())
         val message = {
           val configStr = if (checkConfig) {
             s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
           } else {
             ""
           }
+          val bindings = effectiveModule
           val bsPlugins = effectiveBsPlugins.result
           val appPlugins = effectiveAppPlugins.result
+          // fixme missing DefaultModule bindings !!!
           val bsPluginsStr = renderPlugins(bsPlugins)
           val appPluginsStr = renderPlugins(appPlugins)
           val printedBindings = if (printBindings) {
             (if (bsPlugins.nonEmpty)
                s"""
                   |Bootstrap bindings were:
-                  |
                   |${bsPlugins.flatMap(_.iterator.map(_.toString)).niceList()}
                   |""".stripMargin
              else "") ++
             s"""Bindings were:
-               |
-               |${appPlugins.flatMap(_.iterator.map(_.toString)).niceList()}
+               |${bindings.iterator.map(_.toString).niceList()}
                |
                |Keys visited:
                |${visitedKeys.niceList()}
                |
+               |App plugin bindings were:
+               |${appPlugins.flatMap(_.iterator.map(_.toString)).niceList()}
                |""".stripMargin
           } else ""
 
@@ -188,7 +192,8 @@ object PlanCheck {
              |  printBindings       = $printBindings${if (!printBindings) ", set to `true` for full bindings printout" else ""}
              |  onlyWarn            = $onlyWarn${if (!onlyWarn) ", set to `true` to ignore compilation error" else ""}
              |$onlyWarnAdvice
-             |${printedBindings}Error was:
+             |$printedBindings
+             |Error was:
              |$errorMsg
              |""".stripMargin
         }
@@ -206,6 +211,7 @@ object PlanCheck {
           case Roots.Of(roots) => roots.mkString(", ")
           case Roots.Everything => "<Roots.Everything>"
         }
+        effectiveModule = input.module
         effectiveAppPlugins = input.appPlugins
         effectiveBsPlugins = input.bsPlugins
         val loadedPlugins = input.appPlugins ++ input.bsPlugins
