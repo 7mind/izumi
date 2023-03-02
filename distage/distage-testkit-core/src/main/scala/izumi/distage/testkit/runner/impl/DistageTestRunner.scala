@@ -7,13 +7,14 @@ import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.MemoizationTree.TestGroup
 import izumi.distage.testkit.runner.impl.TestPlanner.*
-import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedAction}
+import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedAction, Timing}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.uuid.UUIDGen
 import izumi.logstage.api.{IzLogger, Log}
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 
 object DistageTestRunner {
   case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism, strengthenedKeys: Set[DIKey])
@@ -37,25 +38,27 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     // All the exceptions should be converted to values by this time.
     // If it throws, there is a bug which needs to be fixed.
     for {
+      id <- G.maybeSuspend(ScopeId(UUIDGen.getTimeUUID()))
+      _ <- G.maybeSuspend(reporter.beginScope(id))
       envs <- timed.timed(G.maybeSuspend(planner.groupTests(tests)))
-      _ <- G.maybeSuspend(reportFailedPlanning(envs.out.bad))
+      _ <- G.maybeSuspend(reportFailedPlanning(envs.out.bad, envs.timing))
       // TODO: there shouldn't be a case with more than one tree per env, maybe we should assert/fail instead
       toRun <- G.pure(envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2))
       _ <- G.maybeSuspend(logEnvironmentsInfo(toRun, envs.timing.duration))
-      result <- G.maybeSuspend(runTests(toRun))
-      _ <- G.maybeSuspend(reporter.endScope())
+      result <- G.maybeSuspend(runTests(id, toRun))
+      _ <- G.maybeSuspend(reporter.endScope(id))
     } yield {
       result
     }
   }
 
-  private def runTests(toRun: Map[PreparedTestEnv, MemoizationTree[F]]): List[EnvResult] = {
+  private def runTests(id: ScopeId, toRun: Map[PreparedTestEnv, MemoizationTree[F]]): List[EnvResult] = {
     configuredParTraverse[Identity, (PreparedTestEnv, MemoizationTree[F]), List[EnvResult]](toRun)(_._1.envExec.parallelEnvs) {
-      case (e, t) => List(proceedEnv(e, t))
+      case (e, t) => List(proceedEnv(id, e, t))
     }.flatten
   }
 
-  private def reportFailedPlanning(bad: Seq[(Seq[DistageTest[F]], PlanningFailure)]): Unit = {
+  private def reportFailedPlanning(bad: Seq[(Seq[DistageTest[F]], PlanningFailure)], timing: Timing): Unit = {
     bad.foreach {
       case (badTests, failure) =>
         badTests.foreach {
@@ -66,12 +69,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
               case PlanningFailure.DIErrors(errors) =>
                 errors.aggregateErrors
             }
-            reporter.testStatus(test.meta, TestStatus.Failed(asThrowable, Duration.Zero))
+            reporter.testStatus(test.meta, TestStatus.FailedInitialPlanning(failure, asThrowable, timing))
         }
     }
   }
 
-  protected def proceedEnv(env: PreparedTestEnv, testsTree: MemoizationTree[F]): EnvResult = {
+  protected def proceedEnv(id: ScopeId, env: PreparedTestEnv, testsTree: MemoizationTree[F]): EnvResult = {
     val PreparedTestEnv(_, runtimePlan, runtimeInjector, _) = env
 
     val allEnvTests = testsTree.getAllTests.map(_.test)
@@ -81,12 +84,15 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         maybeRtLocator.mapMerge(
           {
             (runtimeInstantiationFailure, runtimeInstantiationTiming) =>
-              val failure = statusConverter.fail(runtimeInstantiationTiming.duration, runtimeInstantiationFailure.toThrowable)
+              val result = EnvResult.RuntimePlanningFailure(runtimeInstantiationTiming, allEnvTests.map(_.meta), runtimeInstantiationFailure)
+
+              val failure = statusConverter.failRuntimePlanning(result)
               // fail all tests (if an exception reaches here, it must have happened before the runtime was successfully produced)
               allEnvTests.foreach {
                 test => reporter.testStatus(test.meta, failure)
               }
-              EnvResult.RuntimePlanningFailure(runtimeInstantiationTiming, allEnvTests.map(_.meta), runtimeInstantiationFailure)
+
+              result
           },
           {
             (runtimeLocator, runtimeInstantiationTiming) =>
@@ -98,35 +104,36 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                 .get[IzLogger]("distage-testkit")
                 .info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
 
-              EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(traverse(testsTree, runtimeLocator)))
+              EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(traverse(id, 0, testsTree, runtimeLocator)))
           },
         )
 
     }
   }
 
-  private def traverse(tree: MemoizationTree[F], parent: Locator)(implicit F: QuasiIO[F], P: QuasiAsync[F]): F[List[GroupResult]] = {
+  private def traverse(id: ScopeId, depth: Int, tree: MemoizationTree[F], parent: Locator)(implicit F: QuasiIO[F], P: QuasiAsync[F]): F[List[GroupResult]] = {
     timedAction.timed(Injector.inherit(parent).produceDetailedCustomF[F](tree.plan)).use {
       maybeLocator =>
         maybeLocator.mapMerge(
           {
             case (levelInstantiationFailure, levelInstantiationTiming) =>
               F.maybeSuspend {
-                val failure = statusConverter.fail(levelInstantiationTiming.duration, levelInstantiationFailure.toThrowable)
                 val all = tree.getAllTests.map(_.test)
+                val result = GroupResult.EnvLevelFailure(all.map(_.meta), levelInstantiationFailure, levelInstantiationTiming)
+                val failure = statusConverter.failLevelInstantiation(result)
                 all.foreach {
                   test => reporter.testStatus(test.meta, failure)
                 }
-                List(GroupResult.EnvLevelFailure(all.map(_.meta), levelInstantiationFailure, levelInstantiationTiming): GroupResult)
+                List(result: GroupResult)
               }
           },
           {
             case (levelLocator, levelInstantiationTiming) =>
               for {
-                results <- proceedMemoizationLevel(levelLocator, tree.getGroups)
+                results <- proceedMemoizationLevel(id, depth, levelLocator, tree.getGroups)
                 subResults <- F.traverse(tree.next) {
                   nextTree =>
-                    traverse(nextTree, levelLocator)
+                    traverse(id, depth + 1, nextTree, levelLocator)
                 }
               } yield {
                 List(GroupResult.GroupSuccess(results, levelInstantiationTiming)) ++ subResults.flatten
@@ -137,6 +144,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   }
 
   private def proceedMemoizationLevel(
+    id: ScopeId,
+    depth: Int,
     deepestSharedLocator: Locator,
     levelGroups: Iterable[TestGroup[F]],
   )(implicit
@@ -159,8 +168,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     configuredParTraverse(testsBySuite)(_._1.suiteParallelism) {
       case (suiteData, preparedTests) =>
         F.bracket(
-          acquire = F.maybeSuspend(reporter.beginSuite(suiteData.meta))
-        )(release = _ => F.maybeSuspend(reporter.endSuite(suiteData.meta))) {
+          acquire = F.maybeSuspend(reporter.beginLevel(id, depth, suiteData.meta))
+        )(release = _ => F.maybeSuspend(reporter.endLevel(id, depth, suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
               test => individualTestRunner.proceedTest(deepestSharedLocator, suiteData.strengthenedKeys, test)

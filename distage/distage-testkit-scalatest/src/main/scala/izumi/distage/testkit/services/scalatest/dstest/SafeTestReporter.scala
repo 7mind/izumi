@@ -1,8 +1,9 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import izumi.distage.testkit.model.{FullMeta, SuiteId, SuiteMeta, TestStatus}
+import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.SafeWrappedTestReporter.WrappedTestReport
+import izumi.fundamentals.platform.language.Quirks.Discarder
 
 import scala.collection.mutable
 
@@ -10,24 +11,22 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
   private val delayedReports = new mutable.LinkedHashMap[FullMeta, mutable.Queue[WrappedTestReport]]()
   private val runningSuites = new mutable.HashMap[SuiteId, FullMeta]()
 
-  override def onFailure(f: Throwable): Unit = synchronized {
-    endScope()
-    underlying.onFailure(f)
+  override def beginScope(id: ScopeId): Unit = synchronized {
+    underlying.beginScope(id)
   }
-
-  override def endScope(): Unit = synchronized {
+  override def endScope(id: ScopeId): Unit = synchronized {
     finish(_ => true)
-    underlying.endScope()
+    underlying.endScope(id)
   }
 
-  override def beginSuite(id: SuiteMeta): Unit = {}
-
-  override def endSuite(id: SuiteMeta): Unit = {
-    finish(_.test.id.suite == id.suiteId)
+  override def beginLevel(scope: ScopeId, depth: Int, id: SuiteMeta): Unit = {
+    (scope, depth, id).discard()
   }
 
-  override def testInfo(test: FullMeta, message: String): Unit = synchronized {
-    delayReport(test, WrappedTestReport.Info(message))
+  override def endLevel(scope: ScopeId, depth: Int, id: SuiteMeta): Unit = {
+    if (depth == 0) {
+      finish(_.test.id.suite == id.suiteId)
+    }
   }
 
   override def testStatus(test: FullMeta, testStatus: TestStatus): Unit = {
@@ -59,7 +58,6 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   private def reportStatus(test: FullMeta, reportType: WrappedTestReport): Unit = synchronized {
     reportType match {
-      case WrappedTestReport.Info(message) => underlying.testInfo(test, message)
       case WrappedTestReport.Status(status) => underlying.testStatus(test, status)
     }
   }
@@ -75,9 +73,14 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     }
     toReport.foreach { case (t, delayed) => reportDelayed(t, delayed.toList) }
 
+    def hasRunning(q: mutable.Queue[WrappedTestReport]) = q.exists {
+      case WrappedTestReport.Status(_: TestStatus.Running) => true
+      case _ => false
+    }
+
     // lock suite with another test if it's already running
     delayedReports.toList.foreach {
-      case (t, delayed) if predicate(t) && !runningSuites.contains(t.test.id.suite) && delayed.contains(WrappedTestReport.Status(TestStatus.Running)) =>
+      case (t, delayed) if predicate(t) && !runningSuites.contains(t.test.id.suite) && hasRunning(delayed) =>
         runningSuites(t.test.id.suite) = t
       case _ =>
     }
@@ -85,22 +88,20 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   private def reportDelayed(testMeta: FullMeta, delayed: List[WrappedTestReport]): Unit = synchronized {
     // support sequential report by sorting reports
-    (WrappedTestReport.Status(TestStatus.Running) :: delayed).distinct
-      .sortBy {
-        case WrappedTestReport.Status(TestStatus.Instantiating) => 0
-        case WrappedTestReport.Status(TestStatus.Running) => 1
-        case WrappedTestReport.Info(_) => 2
-        case WrappedTestReport.Status(_: TestStatus.Done) => 3
-      }.foreach(reportStatus(testMeta, _))
+    delayed.distinct.sortBy(_.order).foreach(reportStatus(testMeta, _))
     delayedReports.remove(testMeta)
     ()
   }
+
 }
 
 object SafeWrappedTestReporter {
-  sealed trait WrappedTestReport
+  sealed trait WrappedTestReport {
+    def order: Int
+  }
   object WrappedTestReport {
-    case class Info(message: String) extends WrappedTestReport
-    case class Status(status: TestStatus) extends WrappedTestReport
+    case class Status(status: TestStatus) extends WrappedTestReport {
+      override def order: Int = status.order
+    }
   }
 }

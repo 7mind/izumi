@@ -44,9 +44,10 @@ object IndividualTestRunner {
           {
             case (f, failedPlanningTime) =>
               for {
-                _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Failed(f, failedPlanningTime.duration)))
+                result <- F.pure(IndividualTestResult.PlanningFailure(test.meta, failedPlanningTime, f))
+                _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.failPlanning(result)))
               } yield {
-                IndividualTestResult.PlanningFailure(test.meta, failedPlanningTime, f)
+                result
               }
 
           },
@@ -55,7 +56,12 @@ object IndividualTestRunner {
               for {
                 _ <- logTest(mainSharedLocator.get[IzLogger]("distage-testkit"), test, plan)
                 _ <- F.maybeSuspend(mainSharedLocator.get[PlanCircularDependencyCheck].showProxyWarnings(plan))
-                _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Instantiating))
+                _ <- F.maybeSuspend(
+                  reporter.testStatus(
+                    test.meta,
+                    TestStatus.Instantiating(plan, successfulPlanningTime, logPlan = (logging.enableDebugOutput || test.environment.debugOutput) && plan.keys.nonEmpty),
+                  )
+                )
                 testRunResult <- timedAction
                   .timed(testInjector.produceDetailedCustomF[F](plan))
                   .use {
@@ -64,15 +70,16 @@ object IndividualTestRunner {
                         {
                           case (f, failedProvTime) =>
                             for {
-                              _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.fail(failedProvTime.duration, f.toThrowable)))
+                              result <- F.pure(IndividualTestResult.InstantiationFailure(test.meta, successfulPlanningTime, failedProvTime, f))
+                              _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.failInstantiation(result)))
                             } yield {
-                              IndividualTestResult.InstantiationFailure(test.meta, successfulPlanningTime, failedProvTime, f)
+                              result
                             }
                         },
                         {
                           case (l, successfulProvTime) =>
                             for {
-                              _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
+                              _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running(l, successfulPlanningTime, successfulProvTime)))
                               successfulTestOutput <- timedAction.timed {
                                 F.definitelyRecover(l.run(test.test).map(_ => Right(()): Either[Throwable, Unit])) {
                                   f =>
@@ -83,18 +90,20 @@ object IndividualTestRunner {
                                 {
                                   case (f, failedExecTime) =>
                                     for {
-                                      _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.fail(failedExecTime.duration, f)))
+                                      result <- F.pure(IndividualTestResult.ExecutionFailure(test.meta, successfulPlanningTime, successfulProvTime, failedExecTime, f))
+                                      _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.failExecution(result)))
                                     } yield {
-                                      IndividualTestResult.ExecutionFailure(test.meta, successfulPlanningTime, successfulProvTime, failedExecTime, f)
+                                      result
                                     }
 
                                 },
                                 {
                                   case (_, testTiming) =>
                                     for {
-                                      _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(successfulTestOutput.timing.duration)))
+                                      result <- F.pure(IndividualTestResult.TestSuccess(test.meta, successfulPlanningTime, successfulProvTime, testTiming))
+                                      _ <- F.maybeSuspend(reporter.testStatus(test.meta, statusConverter.success(result)))
                                     } yield {
-                                      IndividualTestResult.TestSuccess(test.meta, successfulPlanningTime, successfulProvTime, testTiming)
+                                      result
                                     }
 
                                 },
@@ -126,9 +135,6 @@ object IndividualTestRunner {
            |Test plan: $p""".stripMargin
       )
 
-      if ((logging.enableDebugOutput || test.environment.debugOutput) && p.keys.nonEmpty) {
-        reporter.testInfo(test.meta, s"Final test plan info: $p")
-      }
       ()
     }
 

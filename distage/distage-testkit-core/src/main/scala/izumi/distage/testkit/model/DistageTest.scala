@@ -3,6 +3,8 @@ package izumi.distage.testkit.model
 import distage.Functoid
 import izumi.fundamentals.platform.language.SourceFilePosition
 
+import java.util.UUID
+
 final case class DistageTest[F[_]](
   test: Functoid[F[Any]],
   environment: TestEnvironment,
@@ -24,3 +26,5 @@ final case class SuiteId(suiteId: String) extends AnyVal
 final case class SuiteMeta(suiteId: SuiteId, suiteName: String, suiteClassName: String)
 
 final case class FullMeta(test: TestMeta, suite: SuiteMeta)
+
+final case class ScopeId(id: UUID) extends AnyVal
