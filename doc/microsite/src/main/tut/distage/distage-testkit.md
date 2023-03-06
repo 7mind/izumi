@@ -579,9 +579,9 @@ The execution of tests is grouped into:
 The default is to run all of these in parallel.
 
 The @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) has options to change the behavior for each of these groups.
-The default is @scaladoc[`ParallelLevel.Unlimited`](izumi.distage.testkit.TestConfig$$ParallelLevel$$Unlimited$) which does not constrain the number of parallel tests.
-`ParallelLevel.Fixed(n: Int)` limits the execution to at most `n` test cases.
-While `ParallelLevel.Sequential` executes the test cases one at a time.
+The default is @scaladoc[`Parallelism.Unlimited`](izumi.distage.testkit.TestConfig$$Parallelism$$Unlimited$) which does not constrain the number of parallel tests.
+`Parallelism.Fixed(n: Int)` limits the execution to at most `n` test cases.
+While `Parallelism.Sequential` executes the test cases one at a time.
 
 - `parallelEnvs` - Parallelism level for distinct memoization environments.
 - `parallelSuites` - Parallelism level for test suites.
@@ -697,7 +697,7 @@ class NotUsingMemoTest extends DummyTest {
   override def config = super
     .config.copy(
       // this demo requires the tests to run sequentially
-      parallelTests = TestConfig.ParallelLevel.Sequential
+      parallelTests = TestConfig.Parallelism.Sequential
     )
 
   "Not memoizing BonusService" should {
@@ -751,7 +751,7 @@ class UsingMemoTest extends DummyTest {
     .config.copy(
       memoizationRoots = super.config.memoizationRoots ++ Set(DIKey[BonusService]),
       // this demo requires the test cases to run sequentially
-      parallelTests = TestConfig.ParallelLevel.Sequential
+      parallelTests = TestConfig.Parallelism.Sequential
     )
 
   val delta = util.Random.nextInt()
@@ -808,7 +808,7 @@ class AnotherUsingMemoTest extends DummyTest {
     .config.copy(
       memoizationRoots = super.config.memoizationRoots ++ Set(DIKey[BonusService]),
       // this demo requires the test cases to run sequentially
-      parallelTests = TestConfig.ParallelLevel.Sequential
+      parallelTests = TestConfig.Parallelism.Sequential
     )
 
   "Another test using BonusService" should {

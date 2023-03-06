@@ -1,7 +1,7 @@
 package izumi.distage.testkit.distagesuite
 
 import distage.ModuleDef
-import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec1
 import izumi.fundamentals.platform.functional.Identity
 import org.scalamock.scalatest.MockFactory

@@ -6,8 +6,8 @@ import distage.DIKey
 import distage.plugins.PluginDef
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.providers.Functoid
-import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.{MemoizedInstance, MemoizedLevel1, MemoizedLevel2, MemoizedLevel3, TestInstance}
+import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
 import org.scalatest.Assertion
 import zio.{IO, ZIO}

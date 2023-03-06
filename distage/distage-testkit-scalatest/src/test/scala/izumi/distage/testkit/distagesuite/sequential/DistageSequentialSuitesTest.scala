@@ -7,9 +7,9 @@ import izumi.functional.quasi.QuasiIO.syntax.QuasiIOSyntax
 import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.TestConfig.ParallelLevel
+import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstance
+import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec1
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.Log
@@ -36,9 +36,9 @@ sealed abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
     super.config.copy(
       memoizationRoots = Set(DIKey.get[MemoizedInstance]),
       pluginConfig = PluginConfig.empty,
-      parallelTests = ParallelLevel.Fixed(maxTests),
-      parallelSuites = ParallelLevel.Sequential,
-      parallelEnvs = ParallelLevel.Sequential,
+      parallelTests = Parallelism.Fixed(maxTests),
+      parallelSuites = Parallelism.Sequential,
+      parallelEnvs = Parallelism.Sequential,
       logLevel = Log.Level.Error,
     )
   }

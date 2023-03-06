@@ -4,8 +4,8 @@ import distage.ModuleDef
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
-import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.docker.DockerUserLabelsTest.*
+import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec2
 import izumi.functional.bio.F
 import zio.{IO, Task}

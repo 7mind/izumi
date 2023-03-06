@@ -7,9 +7,9 @@ import distage.plugins.PluginDef
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.distage.modules.DefaultModule
-import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.DistageTestExampleBase.*
 import izumi.distage.testkit.distagesuite.fixtures.*
+import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, Spec3}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.functional.bio.ApplicativeError2

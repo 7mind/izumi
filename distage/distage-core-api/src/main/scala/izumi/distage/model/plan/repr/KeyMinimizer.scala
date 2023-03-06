@@ -3,8 +3,9 @@ package izumi.distage.model.plan.repr
 import izumi.distage.model.reflection.DIKey.SetKeyMeta
 
 import scala.annotation.nowarn
-import izumi.distage.model.reflection._
-import izumi.fundamentals.collections.IzCollections._
+import izumi.distage.model.reflection.*
+import izumi.fundamentals.collections.IzCollections.*
+import izumi.fundamentals.platform.strings.IzConsoleColors
 import izumi.reflect.macrortti.LightTypeTagRef.SymName
 import izumi.reflect.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 

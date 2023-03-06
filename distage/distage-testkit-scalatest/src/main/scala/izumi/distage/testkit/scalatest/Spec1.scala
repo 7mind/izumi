@@ -4,14 +4,15 @@ import distage.TagK
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.DSWordSpecStringWrapper
+import izumi.functional.quasi.QuasiIO
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
 
 import scala.language.implicitConversions
 
-abstract class Spec1[F[_]: TagK: DefaultModule] extends DistageScalatestTestSuiteRunner[F] with DistageAbstractScalatestSpec[F] {
+abstract class Spec1[F[_]: TagK: DefaultModule: QuasiIO] extends DistageScalatestTestSuiteRunner[F] with DistageAbstractScalatestSpec[F] {
 
   protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
-    new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, s, this, testEnv)
+    new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, Seq(s), this, testEnv)
   }
 
 }

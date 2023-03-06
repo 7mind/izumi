@@ -2,14 +2,12 @@ package izumi.distage.testkit.services.scalatest.dstest
 
 import distage.{TagK, TagKK}
 import izumi.distage.constructors.HasConstructor
-import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.providers.Functoid
-import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.services.dstest.*
-import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
+import izumi.distage.testkit.model.{DistageTest, SuiteId, SuiteMeta, TestConfig, TestEnvironment, TestId, TestMeta}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.*
-import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
+import izumi.distage.testkit.spec.{AbstractDistageSpec, DISyntaxBIOBase, DISyntaxBase, DistageTestEnv, TestRegistration}
 import izumi.functional.bio.Local3
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer}
 import izumi.reflect.TagK3
 import org.scalactic.source
@@ -22,9 +20,10 @@ import scala.annotation.unused
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
 
-  override def registerTest[A](function: Functoid[F[A]], env: TestEnvironment, pos: SourceFilePosition, id: TestId): Unit = {
+  override def registerTest[A](function: Functoid[F[A]], env: TestEnvironment, pos: SourceFilePosition, id: TestId, meta: SuiteMeta): Unit = {
     if (firstRegistration) {
-      DistageTestsRegistrySingleton.register[F](DistageTest(function.asInstanceOf[Functoid[F[Any]]], env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
+      val test = DistageTest(function.asInstanceOf[Functoid[F[Any]]], env, TestMeta(id, pos, System.identityHashCode(function).toLong), meta)
+      DistageTestsRegistrySingleton.register[F](test)
     }
   }
 }
@@ -39,7 +38,8 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
   protected[this] def makeTestEnv(): TestEnvironment = loadEnvironment(config)
 
   protected[this] def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
-  protected[this] def distageSuiteId: String = this.getClass.getName
+
+  protected[this] def distageSuiteId: SuiteId = SuiteId(this.getClass.getName)
 
   protected implicit val subjectRegistrationFunction1: StringVerbBlockRegistration = new StringVerbBlockRegistration {
     override def apply(left: String, verb: String, @unused pos: source.Position, f: () => Unit): Unit = {
@@ -48,7 +48,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
   }
 
   protected[this] def registerBranch(description: String, verb: String, fun: () => Unit): Unit = {
-    context = Some(SuiteContext(description, verb))
+    context = Some(SuiteContext(Seq(description, verb)))
     fun()
     context = None
   }
@@ -57,9 +57,9 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
 }
 
 object DistageAbstractScalatestSpec {
-  final case class SuiteContext(left: String, verb: String) {
-    def toName(name: String): String = {
-      Seq(left, verb, name).mkString(" ")
+  final case class SuiteContext(prefix: Seq[String]) {
+    def toName(name: Seq[String]): Seq[String] = {
+      prefix ++ name
     }
   }
 
@@ -96,8 +96,8 @@ object DistageAbstractScalatestSpec {
   class DSWordSpecStringWrapper[F[_]](
     context: Option[SuiteContext],
     suiteName: String,
-    suiteId: String,
-    testname: String,
+    suiteId: SuiteId,
+    testname: Seq[String],
     reg: TestRegistration[F],
     env: TestEnvironment,
   )(implicit override val tagMonoIO: TagK[F]
@@ -123,19 +123,17 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](function: Functoid[F[A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
         suiteId,
       )
-      reg.registerTest(function, env, pos, id)
+      reg.registerTest(function, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
     }
   }
 
   class DSWordSpecStringWrapper2[F[+_, +_]](
     context: Option[SuiteContext],
     suiteName: String,
-    suiteId: String,
-    testname: String,
+    suiteId: SuiteId,
+    testname: Seq[String],
     reg: TestRegistration[F[Throwable, _]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F],
@@ -162,19 +160,17 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
         suiteId,
       )
-      reg.registerTest(fAsThrowable, env, pos, id)
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
     }
   }
 
   class DSWordSpecStringWrapper3[F[-_, +_, +_]: TagK3](
     context: Option[SuiteContext],
     suiteName: String,
-    suiteId: String,
-    testname: String,
+    suiteId: SuiteId,
+    testname: Seq[String],
     reg: TestRegistration[F[Any, Throwable, _]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F[Any, _, _]],
@@ -227,11 +223,9 @@ object DistageAbstractScalatestSpec {
     override protected def takeIO[A](fAsThrowable: Functoid[F[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
         suiteId,
       )
-      reg.registerTest(fAsThrowable, env, pos, id)
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
     }
   }
 

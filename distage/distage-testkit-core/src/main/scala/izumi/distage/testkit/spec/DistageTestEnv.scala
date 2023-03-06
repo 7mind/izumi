@@ -1,4 +1,4 @@
-package izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.spec
 
 import distage.plugins.PluginLoader
 import izumi.distage.framework.model.ActivationInfo
@@ -7,7 +7,8 @@ import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.testkit.{DebugProperties, TestConfig}
+import izumi.distage.testkit.{DebugProperties, model}
+import izumi.distage.testkit.model.{TestConfig, TestEnvironment}
 import izumi.fundamentals.platform.cache.SyncCache
 
 trait DistageTestEnv {
@@ -42,7 +43,7 @@ trait DistageTestEnv {
       make[ActivationInfo].fromValue(availableActivations)
     }
 
-    TestEnvironment(
+    model.TestEnvironment(
       bsModule = bsModule,
       appModule = appModule,
       roles = roles,

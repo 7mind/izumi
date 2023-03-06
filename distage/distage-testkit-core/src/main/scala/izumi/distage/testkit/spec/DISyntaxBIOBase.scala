@@ -1,4 +1,4 @@
-package izumi.distage.testkit.services
+package izumi.distage.testkit.spec
 
 import distage.{Tag, TagKK}
 import izumi.distage.model.providers.Functoid
