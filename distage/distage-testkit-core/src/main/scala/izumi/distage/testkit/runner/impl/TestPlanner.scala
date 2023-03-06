@@ -14,7 +14,7 @@ import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.LogConfigLoader.LogConfigLoaderImpl
 import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleAppActivationParser, RouterFactory}
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
-import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment}
+import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestkitLogging}
 import izumi.functional.IzEither.*
@@ -63,7 +63,7 @@ object TestPlanner {
     case class DIErrors(errors: List[DIError]) extends PlanningFailure
   }
 
-  case class PlannedTestEnvs[F[_]](envs: Map[PreparedTestEnv, MemoizationTree[F]])
+  case class PlannedTestEnvs[F[_]](envs: Map[PreparedTestEnv, TestTree[F]])
   final case class PlannedTests[F[_]](
     good: Seq[PlannedTestEnvs[F]], // in fact there should always be just one element
     bad: Seq[(Seq[DistageTest[F]], PlanningFailure)],
@@ -86,7 +86,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     * Performs tests grouping by it's memoization environment.
     * [[TestEnvironment.EnvExecutionParams]] - contains only parts of environment that will not affect plan.
     * Grouping by such structure will allow us to create memoization groups with shared logger and parallel execution policy.
-    * By result you'll got [[TestEnvironment.MemoizationEnv]] mapped to [[MemoizationTree]] - tree-represented memoization plan with tests.
+    * By result you'll got [[TestEnvironment.MemoizationEnv]] mapped to [[MemoizationTreeBuilder]] - tree-represented memoization plan with tests.
     * [[TestEnvironment.MemoizationEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
   @nowarn("msg=Unused import")
@@ -124,11 +124,11 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           // merge environments together by equality of their shared & runtime plans
           // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
           // so this saves a lot of reallocation of memoized resources
-          val goodTrees: Map[PreparedTestEnv, MemoizationTree[F]] = good.groupBy(_.envMergeCriteria).map {
+          val goodTrees: Map[PreparedTestEnv, TestTree[F]] = good.groupBy(_.envMergeCriteria).map {
             case (PackedEnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
               val memoizationInjector = packedEnv.head.anyMemoizationInjector
               val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-              val memoizationTree = MemoizationTree[F](packedEnv)
+              val memoizationTree = MemoizationTreeBuilder.build[F](packedEnv).toImmutable
               assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
               val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
               (env, memoizationTree)

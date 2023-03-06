@@ -5,16 +5,19 @@ import cats.kernel.{BoundedSemilattice, PartialOrder}
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.orphans.{`cats.kernel.BoundedSemilattice`, `cats.kernel.PartialOrder with cats.kernel.Hash`}
+import izumi.fundamentals.platform.cache.CachedHashcode
+
 import scala.annotation.unused
 
-trait ModuleBase {
+trait ModuleBase extends CachedHashcode {
   def bindings: Set[Binding]
   def iterator: Iterator[Binding] = bindings.iterator
 
   final def keys: Set[DIKey] = keysIterator.toSet
   def keysIterator: Iterator[DIKey] = iterator.map(_.key)
 
-  override final lazy val hashCode: Int = bindings.hashCode()
+  override final protected def hash: Int = bindings.hashCode()
+
   override final def equals(obj: Any): Boolean = obj match {
     case m: ModuleBase =>
       m.bindings == this.bindings

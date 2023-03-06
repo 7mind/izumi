@@ -15,6 +15,7 @@ import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.fundamentals.graphs.{DG, GraphMeta}
+import izumi.fundamentals.platform.cache.CachedHashcode
 import izumi.reflect.{Tag, TagK}
 
 import scala.annotation.nowarn
@@ -22,9 +23,9 @@ import scala.annotation.nowarn
 final case class Plan(
   plan: DG[DIKey, ExecutableOp],
   input: PlannerInput,
-) {
-  // TODO: equals/hashcode should not be used under normal circumstances. Currently we need them for "memoization levels" to work but we have to get rid of that
-  override def hashCode(): Int = {
+) extends CachedHashcode {
+  override protected def hash: Int = {
+    // TODO: equals/hashcode should not be used under normal circumstances. Currently we need them for "memoization levels" to work but we have to get rid of that
     this.plan.meta.hashCode() ^ this.plan.predecessors.hashCode()
   }
 

@@ -1,11 +1,11 @@
 package izumi.distage.model.reflection
 
 import izumi.distage.model.definition.{Identifier, ImplDef}
+import izumi.fundamentals.platform.cache.CachedProductHashcode
 import izumi.reflect.Tag
 
-sealed abstract class DIKey extends Product {
+sealed abstract class DIKey extends Product with CachedProductHashcode {
   def tpe: SafeType
-  override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
   protected def formatWithIndex(base: String, index: Option[Int]): String = {
     index match {
       case Some(value) =>

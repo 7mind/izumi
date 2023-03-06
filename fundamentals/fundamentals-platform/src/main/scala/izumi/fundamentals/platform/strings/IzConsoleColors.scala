@@ -1,4 +1,4 @@
-package izumi.distage.model.plan.repr
+package izumi.fundamentals.platform.strings
 
 import scala.io.AnsiColor
 
