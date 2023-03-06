@@ -208,6 +208,12 @@ object TestConfig {
     }
   }
 
+  @deprecated("renamed to Parallelism", "1.1.0")
+  type ParallelLevel = Parallelism
+
+  @deprecated("renamed to Parallelism", "1.1.0")
+  final val ParallelLevel = Parallelism
+
   sealed trait Parallelism
 
   object Parallelism {
