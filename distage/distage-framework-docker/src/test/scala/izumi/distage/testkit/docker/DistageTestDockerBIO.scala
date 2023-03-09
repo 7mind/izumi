@@ -25,8 +25,9 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
     "support docker resources" in {
       // TODO: additionally check flyway outcome with doobie
       (service: PgSvcExample, verifier: Lifecycle[IO[Throwable, _], ReuseCheckContainer.Container], log: LogIO2[IO]) =>
+        println(s"ports/1: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka}/${service.kafkaKraft}/${service.kafkaTwoFace} cs=${service.cs}")
         for {
-          _ <- log.info(s"ports/1: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
+          _ <- log.info(s"ports/1: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka}/${service.kafkaKraft}/${service.kafkaTwoFace} cs=${service.cs}")
           // a new alpine container is spawned every time here
           _ <- verifier.use(_ => IO.unit)
         } yield ()

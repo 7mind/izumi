@@ -18,6 +18,7 @@ class PgSvcExample(
   val ddb: AvailablePort @Id("ddb"),
   val kafka: AvailablePort @Id("kafka"),
   val kafkaKraft: AvailablePort @Id("kafka-kraft"),
+  val kafkaTwoFace: AvailablePort @Id("kafka-twoface"),
   val cs: AvailablePort @Id("cs"),
   val mq: AvailablePort @Id("mq"),
   val pgfw: AvailablePort @Id("pgfw"),
@@ -62,6 +63,11 @@ object DockerPlugin extends PluginDef {
   make[AvailablePort].named("kafka-kraft").tagged(Mode.Test).from {
     (kafka: KafkaKRaftDocker.Container) =>
       kafka.availablePorts.first(KafkaKRaftDocker.primaryPort)
+  }
+
+  make[AvailablePort].named("kafka-twoface").tagged(Mode.Test).from {
+    (kafka: KafkaTwofaceDocker.Container @Id("twoface")) =>
+      kafka.availablePorts.first(KafkaTwofaceDocker.outsidePort)
   }
 
   make[AvailablePort].named("pgfw").tagged(Mode.Test).from {

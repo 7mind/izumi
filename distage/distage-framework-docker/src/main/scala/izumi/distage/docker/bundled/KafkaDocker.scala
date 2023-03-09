@@ -35,7 +35,7 @@ object KafkaTwofaceDocker extends ContainerDef {
       env = ContainerEnvironment.from {
         ports =>
           val insidePortBinding = ports.getOrElse(insidePort, "0000")
-          val outsidePortBinding = ports.getOrElse(insidePort, "0000")
+          val outsidePortBinding = ports.getOrElse(outsidePort, "0000")
           Map(
             "KAFKA_INTER_BROKER_LISTENER_NAME" -> "INSIDE",
             "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP" -> "INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT",
@@ -43,6 +43,7 @@ object KafkaTwofaceDocker extends ContainerDef {
             "KAFKA_ADVERTISED_LISTENERS" -> s"INSIDE://:$insidePortBinding,OUTSIDE://127.0.0.1:$outsidePortBinding",
           )
       },
+      userTags = Map("kafka_container" -> "twofaced"),
     )
   }
 }
