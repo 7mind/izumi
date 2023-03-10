@@ -130,7 +130,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           {
             case (levelLocator, levelInstantiationTiming) =>
               for {
-                results <- proceedMemoizationLevel(id, depth, levelLocator, tree.groups)
+                results <- proceedMemoizationLevel(id, depth, levelLocator, tree.parentKeys ++ tree.levelPlan.keys, tree.groups)
                 subResults <- F.traverse(tree.nested) {
                   nextTree =>
                     traverse(id, depth + 1, nextTree, levelLocator)
@@ -147,6 +147,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     id: ScopeId,
     depth: Int,
     deepestSharedLocator: Locator,
+    allSharedKeys: Set[DIKey],
     levelGroups: Iterable[TestGroup[F]],
   )(implicit
     F: QuasiIO[F],
@@ -172,7 +173,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endLevel(id, depth, suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => individualTestRunner.proceedTest(id, depth, deepestSharedLocator, suiteData.strengthenedKeys, test)
+              test => individualTestRunner.proceedTest(id, depth, deepestSharedLocator, allSharedKeys, suiteData.strengthenedKeys, test)
             }
         }
     }.map(_.flatten)

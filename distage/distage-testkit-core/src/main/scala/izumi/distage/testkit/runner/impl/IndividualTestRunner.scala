@@ -7,7 +7,6 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, Timed, TimedAction}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
@@ -18,8 +17,9 @@ trait IndividualTestRunner[F[_]] {
     suiteId: ScopeId,
     depth: Int,
     mainSharedLocator: Locator,
+    allSharedKeys: Set[DIKey],
     groupStrengthenedKeys: Set[DIKey],
-    preparedTest: PreparedTest[F],
+    preparedTest: PreparedTest2[F],
   ): F[IndividualTestResult]
 }
 
@@ -35,15 +35,18 @@ object IndividualTestRunner {
       suiteId: ScopeId,
       depth: Int,
       mainSharedLocator: Locator,
+      allSharedKeys: Set[DIKey],
       groupStrengthenedKeys: Set[DIKey],
-      preparedTest: PreparedTest[F],
+      preparedTest: PreparedTest2[F],
     ): F[IndividualTestResult] = {
       val testInjector = Injector.inherit(mainSharedLocator)
 
       val test = preparedTest.test
 
+      assert(mainSharedLocator.allInstances.map(_.key).toSet == allSharedKeys)
+
       for {
-        maybeNewTestPlan <- finalPlan(preparedTest, mainSharedLocator, groupStrengthenedKeys, testInjector)
+        maybeNewTestPlan <- finalPlan(preparedTest, testInjector)
         testResult <- maybeNewTestPlan.mapMerge(
           {
             case (f, failedPlanningTime) =>
@@ -145,20 +148,17 @@ object IndividualTestRunner {
     }
 
     private def finalPlan(
-      prepared: PreparedTest[F],
-      mainSharedLocator: Locator,
-      groupStrengthenedKeys: Set[DIKey],
+      prepared: PreparedTest2[F],
       testInjector: Injector[F],
     ): F[Timed[Either[InjectorFailed, Plan]]] = {
       timedAction.timed {
         F.maybeSuspend {
-          val PreparedTest(_, appModule, testPlan, activation) = prepared
+//          val PreparedTest2(_, appModule, testPlan, activation) = prepared
+//          val newAppModule = appModule.drop(allSharedKeys)
+//          val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
 
-          val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
-          val newAppModule = appModule.drop(allSharedKeys)
-          val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
-          val maybeNewTestPlan = if (newRoots.nonEmpty) {
-            testInjector.plan(PlannerInput(newAppModule, activation, newRoots)).aggregateErrors
+          val maybeNewTestPlan = if (prepared.newRoots.nonEmpty) {
+            testInjector.plan(PlannerInput(prepared.newAppModule, prepared.activation, prepared.newRoots)).aggregateErrors
           } else {
             Right(Plan.empty)
           }

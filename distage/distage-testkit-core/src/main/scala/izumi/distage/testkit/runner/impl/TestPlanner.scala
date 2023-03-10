@@ -128,7 +128,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
             case (PackedEnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
               val memoizationInjector = packedEnv.head.anyMemoizationInjector
               val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-              val memoizationTree = MemoizationTreeBuilder.build[F](packedEnv).toImmutable
+              val memoizationTree = MemoizationTreeBuilder.build[F](packedEnv)
               assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
               val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
               (env, memoizationTree)
