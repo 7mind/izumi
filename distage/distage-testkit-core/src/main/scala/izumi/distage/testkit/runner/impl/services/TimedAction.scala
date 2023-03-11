@@ -23,6 +23,7 @@ object Timed {
 }
 
 trait TimedAction[F[_]] {
+  def timed[A](action: => A): Timed[A]
   def timed[A](action: => F[A]): F[Timed[A]]
   def timed[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]]
 }
@@ -47,6 +48,13 @@ object TimedAction {
       } yield {
         Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
       }
+    }
+
+    override def timed[A](action: => A): Timed[A] = {
+      val before = IzTime.utcNowOffset
+      val value = action
+      val after = IzTime.utcNowOffset
+      Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
     }
   }
 }

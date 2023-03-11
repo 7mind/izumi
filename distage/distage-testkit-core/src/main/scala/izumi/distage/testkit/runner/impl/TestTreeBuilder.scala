@@ -1,11 +1,10 @@
 package izumi.distage.testkit.runner.impl
 
-import distage.{DIKey, Injector, PlannerInput}
+import distage.{DIKey, Planner, PlannerInput}
 import izumi.distage.model.plan.Plan
 import izumi.distage.testkit.model.{PreparedTest, TestGroup, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.PackedEnv
 import izumi.distage.testkit.runner.impl.services.TimedAction
-import izumi.functional.quasi.QuasiIO
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -17,8 +16,8 @@ trait TestTreeBuilder[F[_]] {
 
 object TestTreeBuilder {
   class TestTreeBuilderImpl[F[_]](
-    timedAction: TimedAction[F]
-  )(implicit F: QuasiIO[F]
+    timedAction: TimedAction[F],
+    planner: Planner,
   ) extends TestTreeBuilder[F] {
 
     final class MemoizationTreeBuilder(plan: Plan) {
@@ -37,13 +36,11 @@ object TestTreeBuilder {
                 val input = PlannerInput(newAppModule, t.activation, newRoots)
 
               val maybeNewTestPlan = timedAction.timed {
-                F.maybeSuspend {
-                  if (newRoots.nonEmpty) {
-                    // it's important to remember that .plan() would always return the same result regardless of the parent locator!
-                    Injector.apply().plan(input).aggregateErrors
-                  } else {
-                    Right(Plan.empty)
-                  }
+                if (newRoots.nonEmpty) {
+                  // it's important to remember that .plan() would always return the same result regardless of the parent locator!
+                  planner.plan(input).aggregateErrors
+                } else {
+                  Right(Plan.empty)
                 }
               }
               PreparedTest(

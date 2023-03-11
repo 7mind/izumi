@@ -7,7 +7,7 @@ import izumi.distage.testkit.runner.impl.services.Timed
 
 final case class PreparedTest[F[_]](
   test: DistageTest[F],
-  maybePlan: F[Timed[Either[InjectorFailed, Plan]]],
+  maybePlan: Timed[Either[InjectorFailed, Plan]],
   roots: Set[DIKey],
 )
 

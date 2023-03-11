@@ -38,8 +38,7 @@ object IndividualTestRunner {
       val meta = test.meta
 
       for {
-        maybePlan <- preparedTest.maybePlan
-        testResult <- maybePlan.mapMerge(
+        testResult <- preparedTest.maybePlan.mapMerge(
           {
             case (f, failedPlanningTime) =>
               for {
