@@ -137,12 +137,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
           },
           {
             case (levelLocator, levelInstantiationTiming) =>
-//              assert(
-//                allSharedKeys.diff(mainSharedLocator.allInstances.map(_.key).toSet).isEmpty,
-//                s"main locator didn't contain all memoized keys, the following were missing: ${allSharedKeys.diff(mainSharedLocator.allInstances.map(_.key).toSet)}",
-//              )
               for {
-//                allSharedKeys <- F.pure(tree.parentKeys ++ tree.levelPlan.keys)
                 results <- proceedMemoizationLevel(id, depth, levelLocator, tree.groups)
                 subResults <- F.traverse(tree.nested) {
                   nextTree =>
