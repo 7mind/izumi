@@ -6,7 +6,7 @@ import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.TestPlanner.*
-import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedAction, Timing}
+import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, Timed, TimedAction, Timing}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
@@ -42,6 +42,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       _ <- G.maybeSuspend(reporter.beginScope(id))
       envs <- timed.timed(G.maybeSuspend(planner.groupTests(tests)))
       _ <- G.maybeSuspend(reportFailedPlanning(id, envs.out.bad, envs.timing))
+      _ <- G.maybeSuspend(reportFailedInvividualPlans(id, envs))
       // TODO: there shouldn't be a case with more than one tree per env, maybe we should assert/fail instead
       toRun <- G.pure(envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2))
       _ <- G.maybeSuspend(logEnvironmentsInfo(toRun, envs.timing.duration))
@@ -71,6 +72,13 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
             }
             reporter.testSetupStatus(id, test.meta, TestStatus.FailedInitialPlanning(failure, asThrowable, timing))
         }
+    }
+  }
+
+  private def reportFailedInvividualPlans[G[_]](id: ScopeId, envs: Timed[PlannedTests[F]]): Unit = {
+    envs.out.good.flatMap(_.envs.flatMap(_._2.allFailures)).foreach {
+      ft =>
+        reporter.testSetupStatus(id, ft.test.meta, TestStatus.FailedPlanning(ft.timedPlan.timing, ft.timedPlan.out.aggregateErrors))
     }
   }
 

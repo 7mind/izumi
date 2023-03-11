@@ -25,6 +25,18 @@ final case class TestTree[F[_]](
     groups.iterator.flatMap(_.preparedTests).toSeq
   }
 
+  def allFailures: Seq[FailedTest[F]] = {
+    thisLevelFailures ++ nestedFailures
+  }
+
+  private def nestedFailures: Seq[FailedTest[F]] = {
+    nested.iterator.flatMap(_.allFailures).toSeq
+  }
+
+  private def thisLevelFailures: Seq[FailedTest[F]] = {
+    groups.iterator.flatMap(_.failedTests).toSeq
+  }
+
   override protected def colorsEnabled(): Boolean = DIRendering.colorsEnabled
 
   private def render(level: Int = 0, suitePad: String = "", levelPad: String = ""): String = {

@@ -2,7 +2,7 @@ package izumi.distage.testkit.runner.impl
 
 import distage.{DIKey, Planner, PlannerInput}
 import izumi.distage.model.plan.Plan
-import izumi.distage.testkit.model.{PreparedTest, TestGroup, TestTree}
+import izumi.distage.testkit.model.{FailedTest, PreparedTest, TestGroup, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.PackedEnv
 import izumi.distage.testkit.runner.impl.services.TimedAction
 
@@ -35,21 +35,36 @@ object TestTreeBuilder {
 
                 val input = PlannerInput(newAppModule, t.activation, newRoots)
 
-              val maybeNewTestPlan = timedAction.timed {
-                if (newRoots.nonEmpty) {
-                  // it's important to remember that .plan() would always return the same result regardless of the parent locator!
-                  planner.plan(input).aggregateErrors
-                } else {
-                  Right(Plan.empty)
-                }
-              }
-              PreparedTest(
-                t.test,
-                maybeNewTestPlan,
-                newRoots,
-              )
+                (
+                  t,
+                  for {
+                    maybeNewTestPlan <- timedAction.timed {
+                      if (newRoots.nonEmpty) {
+                        // it's important to remember that .plan() would always return the same result regardless of the parent locator!
+                        planner.plan(input)
+                      } else {
+                        Right(Plan.empty)
+                      }
+                    }.invert
+                  } yield {
+                    PreparedTest(
+                      t.test,
+                      maybeNewTestPlan,
+                      newRoots,
+                    )
+                  },
+                )
             }
-            TestGroup(tests.toList, env.strengthenedKeys)
+
+            val goodTests = tests.collect {
+              case (_, Right(value)) => value
+            }.toList
+
+            val badTests = tests.collect {
+              case (t, Left(value)) => FailedTest(t.test, value)
+            }.toList
+
+            TestGroup(goodTests, badTests, env.strengthenedKeys)
         }.toList
 
         val children1 = children.map(_._2.toImmutable(levelKeys ++ plan.keys)).toList

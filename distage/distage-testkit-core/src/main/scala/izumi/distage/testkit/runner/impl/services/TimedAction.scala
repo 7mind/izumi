@@ -15,6 +15,16 @@ case class Timed[A](out: A, timing: Timing)
 
 object Timed {
   implicit class TimedEitherExt[A, B](val timed: Timed[Either[A, B]]) {
+    def invert: Either[Timed[A], Timed[B]] = {
+      timed.out match {
+        case Left(value) =>
+          Left(Timed(value, timed.timing))
+
+        case Right(value) =>
+          Right(Timed(value, timed.timing))
+      }
+    }
+
     def mapMerge[O](left: (A, Timing) => O, right: (B, Timing) => O): O = timed.out match {
       case Left(value) => left(value, timed.timing)
       case Right(value) => right(value, timed.timing)

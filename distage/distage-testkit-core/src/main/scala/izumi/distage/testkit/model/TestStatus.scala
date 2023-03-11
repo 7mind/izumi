@@ -1,6 +1,7 @@
 package izumi.distage.testkit.model
 
 import izumi.distage.model.Locator
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Plan
 import izumi.distage.testkit.runner.impl.TestPlanner.PlanningFailure
 import izumi.distage.testkit.runner.impl.services.Timing
@@ -36,6 +37,10 @@ object TestStatus {
     override def order: Int = 2300
   }
 
+  final case class FailedPlanning(timing: Timing, failure: InjectorFailed) extends Setup {
+    override def order: Int = 2400
+  }
+
   sealed trait InProgress extends TestStatus
 
   case class Instantiating(plan: Plan, successfulPlanningTime: Timing, logPlan: Boolean) extends InProgress {
@@ -58,9 +63,9 @@ object TestStatus {
     */
   sealed trait Finished extends Done
 
-  final case class FailedPlanning(failure: IndividualTestResult.PlanningFailure) extends Finished {
-    override def order: Int = 6000
-  }
+  //  case class PlanningFailure(test: FullMeta, failedPlanningTiming: Timing, failure: InjectorFailed) extends IndividualTestFailure {
+  //    override def totalTime: FiniteDuration = failedPlanningTiming.duration
+  //  }
 
   final case class Cancelled(cause: IndividualTestResult.IndividualTestFailure, throwableCause: Throwable) extends Finished {
     override def order: Int = 6100
