@@ -73,6 +73,7 @@ object TestPlanner {
 class TestPlanner[F[_]: TagK: DefaultModule](
   logging: TestkitLogging,
   configLoader: TestConfigLoader,
+  testTreeBuilder: TestTreeBuilder[F],
 ) {
   // first we need to plan runtime for our monad. Identity is also supported
   private val runtimeGcRoots: Set[DIKey] = Set(
@@ -128,7 +129,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
             case (PackedEnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
               val memoizationInjector = packedEnv.head.anyMemoizationInjector
               val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-              val memoizationTree = MemoizationTreeBuilder.build[F](packedEnv)
+              val memoizationTree = testTreeBuilder.build(packedEnv)
               assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
               val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
               (env, memoizationTree)

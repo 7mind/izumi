@@ -7,7 +7,7 @@ import izumi.distage.testkit.model.{DistageTest, EnvResult}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.services.TimedAction.TimedActionImpl
 import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestStatusConverter, TestkitLogging, TimedAction}
-import izumi.distage.testkit.runner.impl.{DistageTestRunner, IndividualTestRunner, TestPlanner}
+import izumi.distage.testkit.runner.impl.{DistageTestRunner, IndividualTestRunner, TestPlanner, TestTreeBuilder}
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
 
@@ -25,6 +25,7 @@ class TestkitRunnerModule[F[_]: QuasiIO: TagK: DefaultModule](reporter: TestRepo
   make[DistageTestRunner[F]].from[DistageTestRunner[F]]
   make[TestConfigLoader].from[TestConfigLoader.TestConfigLoaderImpl]
   make[TestPlanner[F]]
+  make[TestTreeBuilder[F]].from[TestTreeBuilder.TestTreeBuilderImpl[F]]
 }
 
 object TestkitRunnerModule {

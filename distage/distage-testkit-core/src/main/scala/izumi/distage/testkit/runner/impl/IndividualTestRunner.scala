@@ -35,24 +35,16 @@ object IndividualTestRunner {
       preparedTest: PreparedTest[F],
     ): F[IndividualTestResult] = {
       val test = preparedTest.test
+      val meta = test.meta
 
       for {
-        maybeNewTestPlan <- timedAction.timed {
-          F.maybeSuspend {
-            if (preparedTest.roots.nonEmpty) {
-              // it's important to remember that .plan() would always return the same result regardless of the parent locator!
-              Injector.apply().plan(PlannerInput(preparedTest.module, preparedTest.activation, preparedTest.roots)).aggregateErrors
-            } else {
-              Right(Plan.empty)
-            }
-          }
-        }
-        testResult <- maybeNewTestPlan.mapMerge(
+        maybePlan <- preparedTest.maybePlan
+        testResult <- maybePlan.mapMerge(
           {
             case (f, failedPlanningTime) =>
               for {
-                result <- F.pure(IndividualTestResult.PlanningFailure(test.meta, failedPlanningTime, f))
-                _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, statusConverter.failPlanning(result)))
+                result <- F.pure(IndividualTestResult.PlanningFailure(meta, failedPlanningTime, f))
+                _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, statusConverter.failPlanning(result)))
               } yield {
                 result
               }
@@ -67,7 +59,7 @@ object IndividualTestRunner {
                   reporter.testStatus(
                     suiteId,
                     depth,
-                    test.meta,
+                    meta,
                     TestStatus.Instantiating(plan, successfulPlanningTime, logPlan = (logging.enableDebugOutput || test.environment.debugOutput) && plan.keys.nonEmpty),
                   )
                 )
@@ -79,8 +71,8 @@ object IndividualTestRunner {
                         {
                           case (f, failedProvTime) =>
                             for {
-                              result <- F.pure(IndividualTestResult.InstantiationFailure(test.meta, successfulPlanningTime, failedProvTime, f))
-                              _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, statusConverter.failInstantiation(result)))
+                              result <- F.pure(IndividualTestResult.InstantiationFailure(meta, successfulPlanningTime, failedProvTime, f))
+                              _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, statusConverter.failInstantiation(result)))
                             } yield {
                               result
                             }
@@ -88,7 +80,7 @@ object IndividualTestRunner {
                         {
                           case (l, successfulProvTime) =>
                             for {
-                              _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, TestStatus.Running(l, successfulPlanningTime, successfulProvTime)))
+                              _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, TestStatus.Running(l, successfulPlanningTime, successfulProvTime)))
                               successfulTestOutput <- timedAction.timed {
                                 F.definitelyRecover(l.run(test.test).map(_ => Right(()): Either[Throwable, Unit])) {
                                   f =>
@@ -99,8 +91,8 @@ object IndividualTestRunner {
                                 {
                                   case (f, failedExecTime) =>
                                     for {
-                                      result <- F.pure(IndividualTestResult.ExecutionFailure(test.meta, successfulPlanningTime, successfulProvTime, failedExecTime, f))
-                                      _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, statusConverter.failExecution(result)))
+                                      result <- F.pure(IndividualTestResult.ExecutionFailure(meta, successfulPlanningTime, successfulProvTime, failedExecTime, f))
+                                      _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, statusConverter.failExecution(result)))
                                     } yield {
                                       result
                                     }
@@ -109,8 +101,8 @@ object IndividualTestRunner {
                                 {
                                   case (_, testTiming) =>
                                     for {
-                                      result <- F.pure(IndividualTestResult.TestSuccess(test.meta, successfulPlanningTime, successfulProvTime, testTiming))
-                                      _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, test.meta, statusConverter.success(result)))
+                                      result <- F.pure(IndividualTestResult.TestSuccess(meta, successfulPlanningTime, successfulProvTime, testTiming))
+                                      _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, statusConverter.success(result)))
                                     } yield {
                                       result
                                     }
