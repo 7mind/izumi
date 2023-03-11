@@ -14,10 +14,10 @@ import izumi.logstage.api.IzLogger
 
 trait IndividualTestRunner[F[_]] {
   def proceedTest(
-                   suiteId: ScopeId,
-                   depth: Int,
-                   mainSharedLocator: Locator,
-                   preparedTest: PreparedTest[F],
+    suiteId: ScopeId,
+    depth: Int,
+    mainSharedLocator: Locator,
+    preparedTest: PreparedTest[F],
   ): F[IndividualTestResult]
 }
 
@@ -30,17 +30,25 @@ object IndividualTestRunner {
   )(implicit F: QuasiIO[F]
   ) extends IndividualTestRunner[F] {
     def proceedTest(
-                     suiteId: ScopeId,
-                     depth: Int,
-                     mainSharedLocator: Locator,
-                     preparedTest: PreparedTest[F],
+      suiteId: ScopeId,
+      depth: Int,
+      mainSharedLocator: Locator,
+      preparedTest: PreparedTest[F],
     ): F[IndividualTestResult] = {
       val testInjector = Injector.inherit(mainSharedLocator)
 
       val test = preparedTest.test
 
       for {
-        maybeNewTestPlan <- finalPlan(preparedTest, testInjector)
+        maybeNewTestPlan <- timedAction.timed {
+          F.maybeSuspend {
+            if (preparedTest.roots.nonEmpty) {
+              testInjector.plan(PlannerInput(preparedTest.module, preparedTest.activation, preparedTest.roots)).aggregateErrors
+            } else {
+              Right(Plan.empty)
+            }
+          }
+        }
         testResult <- maybeNewTestPlan.mapMerge(
           {
             case (f, failedPlanningTime) =>
@@ -139,22 +147,6 @@ object IndividualTestRunner {
       )
 
       ()
-    }
-
-    private def finalPlan(
-                           test: PreparedTest[F],
-                           testInjector: Injector[F],
-    ): F[Timed[Either[InjectorFailed, Plan]]] = {
-      timedAction.timed {
-        F.maybeSuspend {
-          val maybeNewTestPlan = if (test.roots.nonEmpty) {
-            testInjector.plan(PlannerInput(test.module, test.activation, test.roots)).aggregateErrors
-          } else {
-            Right(Plan.empty)
-          }
-          maybeNewTestPlan
-        }
-      }
     }
   }
 
