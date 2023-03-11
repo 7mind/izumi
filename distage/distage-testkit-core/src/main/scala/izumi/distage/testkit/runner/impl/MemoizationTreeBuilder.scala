@@ -2,7 +2,7 @@ package izumi.distage.testkit.runner.impl
 
 import distage.DIKey
 import izumi.distage.model.plan.Plan
-import izumi.distage.testkit.model.{PreparedTest2, TestGroup, TestTree}
+import izumi.distage.testkit.model.{PreparedTest, TestGroup, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.PackedEnv
 
 import scala.annotation.tailrec
@@ -21,12 +21,10 @@ private[impl] final class MemoizationTreeBuilder[F[_]] private (plan: Plan) {
           t =>
             val allSharedKeys = levelKeys ++ plan.keys
             val newAppModule = t.appModule.drop(allSharedKeys)
-            val newRoots = t.testPlan.keys -- allSharedKeys ++ env.strengthenedKeys.intersect(newAppModule.keys)
+            val newRoots = t.targetKeys -- allSharedKeys ++ env.strengthenedKeys.intersect(newAppModule.keys)
 
-            PreparedTest2(
+            PreparedTest(
               t.test,
-              t.appModule,
-              t.testPlan,
               t.activation,
               newRoots,
               newAppModule,

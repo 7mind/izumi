@@ -13,15 +13,15 @@ final case class TestTree[F[_]](
 ) extends IzConsoleColors {
   def repr: String = styled(render(), c.RESET)
 
-  def allTests: Seq[PreparedTest2[F]] = {
+  def allTests: Seq[PreparedTest[F]] = {
     thisLevelTests ++ nestedTests
   }
 
-  private def nestedTests: Seq[PreparedTest2[F]] = {
+  private def nestedTests: Seq[PreparedTest[F]] = {
     nested.iterator.flatMap(_.allTests).toSeq
   }
 
-  private def thisLevelTests: Seq[PreparedTest2[F]] = {
+  private def thisLevelTests: Seq[PreparedTest[F]] = {
     groups.iterator.flatMap(_.preparedTests).toSeq
   }
 

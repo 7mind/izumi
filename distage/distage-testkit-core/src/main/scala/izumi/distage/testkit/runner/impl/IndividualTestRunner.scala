@@ -14,10 +14,10 @@ import izumi.logstage.api.IzLogger
 
 trait IndividualTestRunner[F[_]] {
   def proceedTest(
-    suiteId: ScopeId,
-    depth: Int,
-    mainSharedLocator: Locator,
-    preparedTest: PreparedTest2[F],
+                   suiteId: ScopeId,
+                   depth: Int,
+                   mainSharedLocator: Locator,
+                   preparedTest: PreparedTest[F],
   ): F[IndividualTestResult]
 }
 
@@ -30,10 +30,10 @@ object IndividualTestRunner {
   )(implicit F: QuasiIO[F]
   ) extends IndividualTestRunner[F] {
     def proceedTest(
-      suiteId: ScopeId,
-      depth: Int,
-      mainSharedLocator: Locator,
-      preparedTest: PreparedTest2[F],
+                     suiteId: ScopeId,
+                     depth: Int,
+                     mainSharedLocator: Locator,
+                     preparedTest: PreparedTest[F],
     ): F[IndividualTestResult] = {
       val testInjector = Injector.inherit(mainSharedLocator)
 
@@ -142,13 +142,13 @@ object IndividualTestRunner {
     }
 
     private def finalPlan(
-      test: PreparedTest2[F],
-      testInjector: Injector[F],
+                           test: PreparedTest[F],
+                           testInjector: Injector[F],
     ): F[Timed[Either[InjectorFailed, Plan]]] = {
       timedAction.timed {
         F.maybeSuspend {
-          val maybeNewTestPlan = if (test.newRoots.nonEmpty) {
-            testInjector.plan(PlannerInput(test.newAppModule, test.activation, test.newRoots)).aggregateErrors
+          val maybeNewTestPlan = if (test.roots.nonEmpty) {
+            testInjector.plan(PlannerInput(test.module, test.activation, test.roots)).aggregateErrors
           } else {
             Right(Plan.empty)
           }

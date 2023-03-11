@@ -17,7 +17,7 @@ import logstage.Log
 import scala.concurrent.duration.FiniteDuration
 
 object DistageTestRunner {
-  case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism, strengthenedKeys: Set[DIKey])
+  case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism)
 }
 
 class DistageTestRunner[F[_]: TagK: DefaultModule](
@@ -158,12 +158,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     P: QuasiAsync[F],
   ): F[List[IndividualTestResult]] = {
     val testsBySuite = levelGroups.flatMap {
-      case TestGroup(preparedTests, strengthenedKeys) =>
-        preparedTests.groupBy {
+      group =>
+        group.preparedTests.groupBy {
           preparedTest =>
             val testId = preparedTest.test.meta.test.id
             val parallelLevel = preparedTest.test.environment.parallelSuites
-            DistageTestRunner.SuiteData(testId.suite, preparedTest.test.suiteMeta, parallelLevel, strengthenedKeys)
+            DistageTestRunner.SuiteData(testId.suite, preparedTest.test.suiteMeta, parallelLevel)
         }
     }
     // now we are ready to run each individual test
