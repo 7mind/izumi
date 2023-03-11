@@ -2,12 +2,11 @@ package izumi.distage.testkit.runner.impl
 
 import distage.*
 import izumi.distage.framework.services.PlanCircularDependencyCheck
-import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Plan
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, Timed, TimedAction}
+import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedAction}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.logstage.api.IzLogger
@@ -35,15 +34,14 @@ object IndividualTestRunner {
       mainSharedLocator: Locator,
       preparedTest: PreparedTest[F],
     ): F[IndividualTestResult] = {
-      val testInjector = Injector.inherit(mainSharedLocator)
-
       val test = preparedTest.test
 
       for {
         maybeNewTestPlan <- timedAction.timed {
           F.maybeSuspend {
             if (preparedTest.roots.nonEmpty) {
-              testInjector.plan(PlannerInput(preparedTest.module, preparedTest.activation, preparedTest.roots)).aggregateErrors
+              // it's important to remember that .plan() would always return the same result regardless of the parent locator!
+              Injector.apply().plan(PlannerInput(preparedTest.module, preparedTest.activation, preparedTest.roots)).aggregateErrors
             } else {
               Right(Plan.empty)
             }
@@ -74,7 +72,7 @@ object IndividualTestRunner {
                   )
                 )
                 testRunResult <- timedAction
-                  .timed(testInjector.produceDetailedCustomF[F](plan))
+                  .timed(Injector.inherit(mainSharedLocator).produceDetailedCustomF[F](plan))
                   .use {
                     maybeLocator =>
                       maybeLocator.mapMerge(
