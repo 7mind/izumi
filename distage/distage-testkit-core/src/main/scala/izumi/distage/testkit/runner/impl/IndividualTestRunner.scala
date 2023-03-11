@@ -17,8 +17,6 @@ trait IndividualTestRunner[F[_]] {
     suiteId: ScopeId,
     depth: Int,
     mainSharedLocator: Locator,
-    allSharedKeys: Set[DIKey],
-    groupStrengthenedKeys: Set[DIKey],
     preparedTest: PreparedTest2[F],
   ): F[IndividualTestResult]
 }
@@ -35,15 +33,11 @@ object IndividualTestRunner {
       suiteId: ScopeId,
       depth: Int,
       mainSharedLocator: Locator,
-      allSharedKeys: Set[DIKey],
-      groupStrengthenedKeys: Set[DIKey],
       preparedTest: PreparedTest2[F],
     ): F[IndividualTestResult] = {
       val testInjector = Injector.inherit(mainSharedLocator)
 
       val test = preparedTest.test
-
-      assert(mainSharedLocator.allInstances.map(_.key).toSet == allSharedKeys)
 
       for {
         maybeNewTestPlan <- finalPlan(preparedTest, testInjector)
@@ -148,17 +142,13 @@ object IndividualTestRunner {
     }
 
     private def finalPlan(
-      prepared: PreparedTest2[F],
+      test: PreparedTest2[F],
       testInjector: Injector[F],
     ): F[Timed[Either[InjectorFailed, Plan]]] = {
       timedAction.timed {
         F.maybeSuspend {
-//          val PreparedTest2(_, appModule, testPlan, activation) = prepared
-//          val newAppModule = appModule.drop(allSharedKeys)
-//          val newRoots = testPlan.keys -- allSharedKeys ++ groupStrengthenedKeys.intersect(newAppModule.keys)
-
-          val maybeNewTestPlan = if (prepared.newRoots.nonEmpty) {
-            testInjector.plan(PlannerInput(prepared.newAppModule, prepared.activation, prepared.newRoots)).aggregateErrors
+          val maybeNewTestPlan = if (test.newRoots.nonEmpty) {
+            testInjector.plan(PlannerInput(test.newAppModule, test.activation, test.newRoots)).aggregateErrors
           } else {
             Right(Plan.empty)
           }

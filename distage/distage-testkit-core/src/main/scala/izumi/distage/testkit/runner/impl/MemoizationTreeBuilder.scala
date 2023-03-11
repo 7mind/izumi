@@ -14,16 +14,15 @@ private[impl] final class MemoizationTreeBuilder[F[_]] private (plan: Plan) {
   private[this] val groups = ArrayBuffer.empty[PackedEnv[F]]
 
   private def toImmutable(levelKeys: Set[DIKey]): TestTree[F] = {
-    val children1 = children.map(_._2.toImmutable(levelKeys ++ plan.keys)).toList
 
     val levelGroups = groups.map {
       env =>
         val tests = env.preparedTests.map {
           t =>
-            val allSharedKeys = levelKeys ++ t.testPlan.keys
+            val allSharedKeys = levelKeys ++ plan.keys
             val newAppModule = t.appModule.drop(allSharedKeys)
             val newRoots = t.testPlan.keys -- allSharedKeys ++ env.strengthenedKeys.intersect(newAppModule.keys)
-            
+
             PreparedTest2(
               t.test,
               t.appModule,
@@ -36,6 +35,7 @@ private[impl] final class MemoizationTreeBuilder[F[_]] private (plan: Plan) {
         TestGroup(tests.toList, env.strengthenedKeys)
     }.toList
 
+    val children1 = children.map(_._2.toImmutable(levelKeys ++ plan.keys)).toList
     TestTree(plan, levelGroups, children1, levelKeys)
   }
 
