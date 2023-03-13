@@ -13,6 +13,7 @@ import java.net.{Inet4Address, Inet6Address, InetAddress}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Success, Try}
+import scala.language.implicitConversions
 
 object Docker {
   final case class AvailablePort(host: ServiceHost, port: Int) extends HostPortPair {
@@ -164,7 +165,7 @@ object Docker {
     registry: Option[String] = None,
     ports: Seq[DockerPort],
     name: Option[String] = None,
-    env: Map[String, String] = Map.empty,
+    env: ContainerEnvironment = ContainerEnvironment.empty,
     userTags: Map[String, String] = Map.empty,
     cmd: Seq[String] = Seq.empty,
     entrypoint: Seq[String] = Seq.empty,
@@ -183,6 +184,23 @@ object Docker {
   ) {
     def tcpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.TCPBase => t: DockerPort }.toSet
     def udpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.UDPBase => t: DockerPort }.toSet
+  }
+
+  trait ContainerEnvironment { self =>
+    def env(containerPortMapping: Map[DockerPort, String]): Map[String, String]
+    final def ++(other: ContainerEnvironment): ContainerEnvironment = new ContainerEnvironment {
+      override def env(containerPortMapping: Map[DockerPort, String]): Map[String, String] = {
+        self.env(containerPortMapping) ++ other.env(containerPortMapping)
+      }
+    }
+  }
+  object ContainerEnvironment {
+    def from(create: Map[DockerPort, String] => Map[String, String]): ContainerEnvironment = new ContainerEnvironment {
+      override def env(containerPortMapping: Map[DockerPort, String]): Map[String, String] = create(containerPortMapping)
+    }
+    def empty: ContainerEnvironment = from(_ => Map.empty)
+
+    implicit def fromIterable[I[v] <: Iterable[v]](map: I[(String, String)]): ContainerEnvironment = from(_ => map.toMap)
   }
 
   /**

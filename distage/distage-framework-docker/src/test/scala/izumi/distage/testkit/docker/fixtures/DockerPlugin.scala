@@ -1,8 +1,8 @@
 package izumi.distage.testkit.docker.fixtures
 
 import distage.config.ConfigModuleDef
-import izumi.distage.docker.model.Docker.AvailablePort
 import izumi.distage.docker.bundled.*
+import izumi.distage.docker.model.Docker.AvailablePort
 import izumi.distage.docker.modules.DockerSupportModule
 import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Mode
@@ -17,6 +17,8 @@ class PgSvcExample(
   val pg: AvailablePort @Id("pg"),
   val ddb: AvailablePort @Id("ddb"),
   val kafka: AvailablePort @Id("kafka"),
+  val kafkaKraft: AvailablePort @Id("kafka-kraft"),
+  val kafkaTwoFace: AvailablePort @Id("kafka-twoface"),
   val cs: AvailablePort @Id("cs"),
   val mq: AvailablePort @Id("mq"),
   val pgfw: AvailablePort @Id("pgfw"),
@@ -56,6 +58,16 @@ object DockerPlugin extends PluginDef {
   make[AvailablePort].named("kafka").tagged(Mode.Test).from {
     (kafka: KafkaDocker.Container) =>
       kafka.availablePorts.first(KafkaDocker.primaryPort)
+  }
+
+  make[AvailablePort].named("kafka-kraft").tagged(Mode.Test).from {
+    (kafka: KafkaKRaftDocker.Container) =>
+      kafka.availablePorts.first(KafkaKRaftDocker.primaryPort)
+  }
+
+  make[AvailablePort].named("kafka-twoface").tagged(Mode.Test).from {
+    (kafka: KafkaTwofaceDocker.Container @Id("twoface")) =>
+      kafka.availablePorts.first(KafkaTwofaceDocker.outsidePort)
   }
 
   make[AvailablePort].named("pgfw").tagged(Mode.Test).from {

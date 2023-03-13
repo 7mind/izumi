@@ -341,7 +341,8 @@ open class ContainerResource[F[_], Tag](
     val portsEnv = ports.map {
       port => port.port.toEnvVariable -> port.binding.getBinding.getHostPortSpec
     }
-    val adjustedEnv = portsEnv ++ config.env
+    val containerEnv = config.env.env(ports.map(p => p.port -> p.binding.getBinding.getHostPortSpec).toMap)
+    val adjustedEnv = portsEnv ++ containerEnv
 
     for {
       _ <- F.when(config.autoPull) {
