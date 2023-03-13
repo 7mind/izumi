@@ -17,27 +17,29 @@ object TestStatus {
     */
   sealed trait Setup extends TestStatus
 
-  final case class FailedInitialPlanning(failure: PlanningFailure, throwableCause: Throwable, timing: Timing) extends Setup {
+  sealed trait Done extends TestStatus
+
+  final case class FailedInitialPlanning(failure: PlanningFailure, throwableCause: Throwable, timing: Timing) extends Setup with Done {
     override def order: Int = 1000
   }
 
-  final case class FailedRuntimePlanning(failure: EnvResult.RuntimePlanningFailure) extends Setup {
+  final case class FailedRuntimePlanning(failure: EnvResult.RuntimePlanningFailure) extends Setup with Done {
     override def order: Int = 2000
   }
 
-  final case class EarlyIgnoredByPrecondition(cause: GroupResult.EnvLevelFailure, checks: NonEmptyList[ResourceCheck.Failure]) extends Setup {
+  final case class EarlyIgnoredByPrecondition(cause: GroupResult.EnvLevelFailure, checks: NonEmptyList[ResourceCheck.Failure]) extends Setup with Done {
     override def order: Int = 2100
   }
 
-  final case class EarlyCancelled(cause: GroupResult.EnvLevelFailure, throwableCause: Throwable) extends Setup {
+  final case class EarlyCancelled(cause: GroupResult.EnvLevelFailure, throwableCause: Throwable) extends Setup with Done {
     override def order: Int = 2200
   }
 
-  final case class EarlyFailed(cause: GroupResult.EnvLevelFailure, throwableCause: Throwable) extends Setup {
+  final case class EarlyFailed(cause: GroupResult.EnvLevelFailure, throwableCause: Throwable) extends Setup with Done {
     override def order: Int = 2300
   }
 
-  final case class FailedPlanning(timing: Timing, failure: InjectorFailed) extends Setup {
+  final case class FailedPlanning(timing: Timing, failure: InjectorFailed) extends Setup with Done {
     override def order: Int = 2400
   }
 
@@ -50,8 +52,6 @@ object TestStatus {
   case class Running(locator: Locator, successfulPlanningTime: Timing, successfulProvTime: Timing) extends InProgress {
     override def order: Int = 4000
   }
-
-  sealed trait Done extends TestStatus
 
   /** An integration check failed
     */

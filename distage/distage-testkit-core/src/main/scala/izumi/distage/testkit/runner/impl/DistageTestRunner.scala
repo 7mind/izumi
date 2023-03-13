@@ -76,7 +76,9 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   }
 
   private def reportFailedInvividualPlans[G[_]](id: ScopeId, envs: Timed[PlannedTests[F]]): Unit = {
-    envs.out.good.flatMap(_.envs.flatMap(_._2.allFailures)).foreach {
+    val failures = envs.out.good.flatMap(_.envs.flatMap(_._2.allFailures))
+
+    failures.foreach {
       ft =>
         reporter.testSetupStatus(id, ft.test.meta, TestStatus.FailedPlanning(ft.timedPlan.timing, ft.timedPlan.out.aggregateErrors))
     }
@@ -130,7 +132,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                 val result = GroupResult.EnvLevelFailure(all.map(_.meta), levelInstantiationFailure, levelInstantiationTiming)
                 val failure = statusConverter.failLevelInstantiation(result)
                 all.foreach {
-                  test => reporter.testStatus(id, depth, test.meta, failure)
+                  test =>
+                    reporter.testStatus(id, depth, test.meta, failure)
                 }
                 List(result: GroupResult)
               }

@@ -33,15 +33,13 @@ object TestTreeBuilder {
                 val newAppModule = t.appModule.drop(allSharedKeys)
                 val newRoots = t.targetKeys -- allSharedKeys ++ env.strengthenedKeys.intersect(newAppModule.keys)
 
-                val input = PlannerInput(newAppModule, t.activation, newRoots)
-
                 (
                   t,
                   for {
                     maybeNewTestPlan <- timedAction.timed {
                       if (newRoots.nonEmpty) {
                         // it's important to remember that .plan() would always return the same result regardless of the parent locator!
-                        planner.plan(input)
+                        planner.plan(PlannerInput(newAppModule, t.activation, newRoots))
                       } else {
                         Right(Plan.empty)
                       }
