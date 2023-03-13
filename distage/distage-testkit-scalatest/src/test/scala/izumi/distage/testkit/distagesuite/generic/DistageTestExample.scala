@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
   override protected def config: TestConfig = {
     super.config.copy(
-      pluginConfig = PluginConfig.cached(classOf[MockAppCatsIOPlugin.type].getPackage.getName),
+      pluginConfig = PluginConfig.cached(classOf[ActiveComponent].getPackage.getName),
       memoizationRoots = Map(
         1 -> Set(DIKey.get[MockCache[F]]),
         2 -> Set(DIKey.get[Set[SetElement]], DIKey.get[SetCounter]),
