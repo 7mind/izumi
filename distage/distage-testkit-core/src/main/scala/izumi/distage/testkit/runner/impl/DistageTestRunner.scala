@@ -6,7 +6,7 @@ import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.TestPlanner.*
-import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedAction, Timing}
+import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, Timed, TimedAction, Timing}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
@@ -17,7 +17,7 @@ import logstage.Log
 import scala.concurrent.duration.FiniteDuration
 
 object DistageTestRunner {
-  case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism, strengthenedKeys: Set[DIKey])
+  case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism)
 }
 
 class DistageTestRunner[F[_]: TagK: DefaultModule](
@@ -42,6 +42,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
       _ <- G.maybeSuspend(reporter.beginScope(id))
       envs <- timed.timed(G.maybeSuspend(planner.groupTests(tests)))
       _ <- G.maybeSuspend(reportFailedPlanning(id, envs.out.bad, envs.timing))
+      _ <- G.maybeSuspend(reportFailedInvividualPlans(id, envs))
       // TODO: there shouldn't be a case with more than one tree per env, maybe we should assert/fail instead
       toRun <- G.pure(envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2))
       _ <- G.maybeSuspend(logEnvironmentsInfo(toRun, envs.timing.duration))
@@ -71,6 +72,15 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
             }
             reporter.testSetupStatus(id, test.meta, TestStatus.FailedInitialPlanning(failure, asThrowable, timing))
         }
+    }
+  }
+
+  private def reportFailedInvividualPlans[G[_]](id: ScopeId, envs: Timed[PlannedTests[F]]): Unit = {
+    val failures = envs.out.good.flatMap(_.envs.flatMap(_._2.allFailures))
+
+    failures.foreach {
+      ft =>
+        reporter.testSetupStatus(id, ft.test.meta, TestStatus.FailedPlanning(ft.timedPlan.timing, ft.timedPlan.out.aggregateErrors))
     }
   }
 
@@ -122,7 +132,8 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                 val result = GroupResult.EnvLevelFailure(all.map(_.meta), levelInstantiationFailure, levelInstantiationTiming)
                 val failure = statusConverter.failLevelInstantiation(result)
                 all.foreach {
-                  test => reporter.testStatus(id, depth, test.meta, failure)
+                  test =>
+                    reporter.testStatus(id, depth, test.meta, failure)
                 }
                 List(result: GroupResult)
               }
@@ -153,12 +164,12 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     P: QuasiAsync[F],
   ): F[List[IndividualTestResult]] = {
     val testsBySuite = levelGroups.flatMap {
-      case TestGroup(preparedTests, strengthenedKeys) =>
-        preparedTests.groupBy {
+      group =>
+        group.preparedTests.groupBy {
           preparedTest =>
             val testId = preparedTest.test.meta.test.id
             val parallelLevel = preparedTest.test.environment.parallelSuites
-            DistageTestRunner.SuiteData(testId.suite, preparedTest.test.suiteMeta, parallelLevel, strengthenedKeys)
+            DistageTestRunner.SuiteData(testId.suite, preparedTest.test.suiteMeta, parallelLevel)
         }
     }
     // now we are ready to run each individual test
@@ -172,7 +183,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
         )(release = _ => F.maybeSuspend(reporter.endLevel(id, depth, suiteData.meta))) {
           _ =>
             configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => individualTestRunner.proceedTest(id, depth, deepestSharedLocator, suiteData.strengthenedKeys, test)
+              test => individualTestRunner.proceedTest(id, depth, deepestSharedLocator, test)
             }
         }
     }.map(_.flatten)

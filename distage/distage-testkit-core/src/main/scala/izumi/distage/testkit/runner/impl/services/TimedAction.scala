@@ -15,6 +15,16 @@ case class Timed[A](out: A, timing: Timing)
 
 object Timed {
   implicit class TimedEitherExt[A, B](val timed: Timed[Either[A, B]]) {
+    def invert: Either[Timed[A], Timed[B]] = {
+      timed.out match {
+        case Left(value) =>
+          Left(Timed(value, timed.timing))
+
+        case Right(value) =>
+          Right(Timed(value, timed.timing))
+      }
+    }
+
     def mapMerge[O](left: (A, Timing) => O, right: (B, Timing) => O): O = timed.out match {
       case Left(value) => left(value, timed.timing)
       case Right(value) => right(value, timed.timing)
@@ -23,6 +33,7 @@ object Timed {
 }
 
 trait TimedAction[F[_]] {
+  def timed[A](action: => A): Timed[A]
   def timed[A](action: => F[A]): F[Timed[A]]
   def timed[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]]
 }
@@ -47,6 +58,13 @@ object TimedAction {
       } yield {
         Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
       }
+    }
+
+    override def timed[A](action: => A): Timed[A] = {
+      val before = IzTime.utcNowOffset
+      val value = action
+      val after = IzTime.utcNowOffset
+      Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
     }
   }
 }

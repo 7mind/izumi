@@ -146,7 +146,7 @@ class DistageScalatestReporter extends TestReporter {
         reportCancellation(s.cause.totalTime, s"ignored: ${s.checks.toList.niceList()}", None)
 
       case s: TestStatus.FailedPlanning =>
-        reportFailure(s.failure.totalTime, s.failure.failure)
+        reportFailure(s.timing.duration, s.failure)
 
       case s: TestStatus.Cancelled =>
         reportCancellation(s.cause.totalTime, s"cancelled: ${s.throwableCause.getMessage}", Some(s.throwableCause))

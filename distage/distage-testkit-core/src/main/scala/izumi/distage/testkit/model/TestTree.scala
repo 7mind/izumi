@@ -1,14 +1,15 @@
 package izumi.distage.testkit.model
 
+import distage.DIKey
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
-import izumi.distage.testkit.runner.impl.TestPlanner.PreparedTest
 import izumi.fundamentals.platform.strings.IzConsoleColors
 
 final case class TestTree[F[_]](
   levelPlan: Plan,
   groups: List[TestGroup[F]],
   nested: List[TestTree[F]],
+  parentKeys: Set[DIKey],
 ) extends IzConsoleColors {
   def repr: String = styled(render(), c.RESET)
 
@@ -22,6 +23,18 @@ final case class TestTree[F[_]](
 
   private def thisLevelTests: Seq[PreparedTest[F]] = {
     groups.iterator.flatMap(_.preparedTests).toSeq
+  }
+
+  def allFailures: Seq[FailedTest[F]] = {
+    thisLevelFailures ++ nestedFailures
+  }
+
+  private def nestedFailures: Seq[FailedTest[F]] = {
+    nested.iterator.flatMap(_.allFailures).toSeq
+  }
+
+  private def thisLevelFailures: Seq[FailedTest[F]] = {
+    groups.iterator.flatMap(_.failedTests).toSeq
   }
 
   override protected def colorsEnabled(): Boolean = DIRendering.colorsEnabled

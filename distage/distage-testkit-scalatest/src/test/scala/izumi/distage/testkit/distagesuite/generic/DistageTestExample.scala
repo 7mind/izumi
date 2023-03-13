@@ -1,31 +1,33 @@
-package izumi.distage.testkit.distagesuite
+package izumi.distage.testkit.distagesuite.generic
 
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import cats.effect.IO as CIO
 import distage.*
-import distage.plugins.PluginDef
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.modules.DefaultModule
-import izumi.distage.testkit.distagesuite.DistageTestExampleBase.*
 import izumi.distage.testkit.distagesuite.fixtures.*
+import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, Spec3}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
-import izumi.functional.bio.ApplicativeError2
+import izumi.functional.quasi.QuasiIO
+import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
+import zio.Has.HasSyntax
 import zio.{Has, Task, ZEnv, ZIO}
+
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
   override protected def config: TestConfig = {
     super.config.copy(
+      pluginConfig = PluginConfig.cached(classOf[ActiveComponent].getPackage.getName),
       memoizationRoots = Map(
         1 -> Set(DIKey.get[MockCache[F]]),
         2 -> Set(DIKey.get[Set[SetElement]], DIKey.get[SetCounter]),
-      )
+      ),
     )
   }
 }
