@@ -1,6 +1,7 @@
 package izumi.distage.testkit.model
 
 import izumi.distage.model.Locator
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Plan
 import izumi.distage.testkit.runner.impl.TestPlanner.PlanningFailure
 import izumi.distage.testkit.runner.impl.services.Timing
@@ -16,24 +17,30 @@ object TestStatus {
     */
   sealed trait Setup extends TestStatus
 
-  final case class FailedInitialPlanning(failure: PlanningFailure, throwableCause: Throwable, timing: Timing) extends Setup {
+  sealed trait Done extends TestStatus
+
+  final case class FailedInitialPlanning(failure: PlanningFailure, throwableCause: Throwable, timing: Timing) extends Setup with Done {
     override def order: Int = 1000
   }
 
-  final case class FailedRuntimePlanning(failure: EnvResult.RuntimePlanningFailure) extends Setup {
+  final case class FailedRuntimePlanning(failure: EnvResult.RuntimePlanningFailure) extends Setup with Done {
     override def order: Int = 2000
   }
 
-  final case class EarlyIgnoredByPrecondition(cause: GroupResult.EnvLevelFailure, checks: NonEmptyList[ResourceCheck.Failure]) extends Setup {
+  final case class EarlyIgnoredByPrecondition(cause: GroupResult.EnvLevelFailure, checks: NonEmptyList[ResourceCheck.Failure]) extends Setup with Done {
     override def order: Int = 2100
   }
 
-  final case class EarlyCancelled(cause: GroupResult.EnvLevelFailure, throwableCause: Throwable) extends Setup {
+  final case class EarlyCancelled(cause: GroupResult.EnvLevelFailure, throwableCause: Throwable) extends Setup with Done {
     override def order: Int = 2200
   }
 
-  final case class EarlyFailed(cause: GroupResult.EnvLevelFailure, throwableCause: Throwable) extends Setup {
+  final case class EarlyFailed(cause: GroupResult.EnvLevelFailure, throwableCause: Throwable) extends Setup with Done {
     override def order: Int = 2300
+  }
+
+  final case class FailedPlanning(timing: Timing, failure: InjectorFailed) extends Setup with Done {
+    override def order: Int = 2400
   }
 
   sealed trait InProgress extends TestStatus
@@ -46,8 +53,6 @@ object TestStatus {
     override def order: Int = 4000
   }
 
-  sealed trait Done extends TestStatus
-
   /** An integration check failed
     */
   final case class IgnoredByPrecondition(cause: IndividualTestResult.IndividualTestFailure, checks: NonEmptyList[ResourceCheck.Failure]) extends Done {
@@ -58,9 +63,9 @@ object TestStatus {
     */
   sealed trait Finished extends Done
 
-  final case class FailedPlanning(failure: IndividualTestResult.PlanningFailure) extends Finished {
-    override def order: Int = 6000
-  }
+  //  case class PlanningFailure(test: FullMeta, failedPlanningTiming: Timing, failure: InjectorFailed) extends IndividualTestFailure {
+  //    override def totalTime: FiniteDuration = failedPlanningTiming.duration
+  //  }
 
   final case class Cancelled(cause: IndividualTestResult.IndividualTestFailure, throwableCause: Throwable) extends Finished {
     override def order: Int = 6100

@@ -14,6 +14,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
   override def beginScope(id: ScopeId): Unit = synchronized {
     underlying.beginScope(id)
   }
+
   override def endScope(id: ScopeId): Unit = synchronized {
     finish(_ => true)
     underlying.endScope(id)
@@ -35,7 +36,6 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   override def testSetupStatus(scope: ScopeId, test: FullMeta, testStatus: TestStatus.Setup): Unit = {
     delayReport(scope, None, test, testStatus)
-
   }
 
   private[this] def delayReport(scope: ScopeId, depth: Option[Int], test: FullMeta, testReport: TestStatus): Unit = synchronized {

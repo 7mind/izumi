@@ -31,16 +31,16 @@ object TestPlanner {
 
   final case class PackedEnv[F[_]](
     envMergeCriteria: PackedEnvMergeCriteria,
-    preparedTests: Seq[PreparedTest[F]],
+    preparedTests: Seq[AlmostPreparedTest[F]],
     memoizationPlanTree: List[Plan],
     anyMemoizationInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
     strengthenedKeys: Set[DIKey],
   )
-  final case class PreparedTest[F[_]](
+  final case class AlmostPreparedTest[F[_]](
     test: DistageTest[F],
     appModule: Module,
-    testPlan: Plan,
+    targetKeys: Set[DIKey],
     activation: Activation,
   )
 
@@ -73,6 +73,7 @@ object TestPlanner {
 class TestPlanner[F[_]: TagK: DefaultModule](
   logging: TestkitLogging,
   configLoader: TestConfigLoader,
+  testTreeBuilder: TestTreeBuilder[F],
 ) {
   // first we need to plan runtime for our monad. Identity is also supported
   private val runtimeGcRoots: Set[DIKey] = Set(
@@ -128,7 +129,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
             case (PackedEnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
               val memoizationInjector = packedEnv.head.anyMemoizationInjector
               val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-              val memoizationTree = MemoizationTreeBuilder.build[F](packedEnv).toImmutable
+              val memoizationTree = testTreeBuilder.build(packedEnv)
               assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
               val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
               (env, memoizationTree)
@@ -271,10 +272,10 @@ class TestPlanner[F[_]: TagK: DefaultModule](
             plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, fullActivation, testRoots)) else Right(Plan.empty)
             _ <- Right(planChecker.showProxyWarnings(plan))
           } yield {
-            PreparedTest(distageTest, appModule, plan, fullActivation)
+            AlmostPreparedTest(distageTest, appModule, plan.keys, fullActivation)
           }
       }.biAggregate
-      envKeys = testPlans.flatMap(_.testPlan.keys).toSet
+      envKeys = testPlans.flatMap(_.targetKeys).toSet
 
       // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
       // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized

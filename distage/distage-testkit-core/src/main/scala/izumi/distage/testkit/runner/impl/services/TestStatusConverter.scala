@@ -22,10 +22,6 @@ class TestStatusConverter[F[_]](
     TestStatus.FailedRuntimePlanning(result)
   }
 
-  def failPlanning(result: IndividualTestResult.PlanningFailure): TestStatus.FailedPlanning = {
-    TestStatus.FailedPlanning(result)
-  }
-
   def failExecution(t: IndividualTestResult.ExecutionFailure): TestStatus.Done = {
     fail(t, t.failure)
   }
