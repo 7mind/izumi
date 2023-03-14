@@ -113,35 +113,45 @@ class DistageScalatestReporter extends TestReporter {
       )
     }
 
+    def reportStarting(): Unit = {
+      doReport(suiteId1)(
+        TestStarting(
+          _,
+          suiteName1,
+          suiteId1.suiteId,
+          Some(suiteClassName1),
+          testName,
+          testName,
+          location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
+          formatter = Some(MotionToSuppress),
+        )
+      )
+    }
+
     testStatus match {
       case s: TestStatus.FailedInitialPlanning =>
+        reportStarting()
         reportFailure(s.timing.duration, s.throwableCause)
       case s: TestStatus.FailedRuntimePlanning =>
+        reportStarting()
         reportFailure(s.failure.timing.duration, s.failure.failure.toThrowable)
       case s: TestStatus.EarlyIgnoredByPrecondition =>
+        reportStarting()
         reportCancellation(s.cause.instantiationTiming.duration, s"ignored early: ${s.checks.toList.niceList()}", None)
       case s: TestStatus.EarlyCancelled =>
+        reportStarting()
         reportCancellation(s.cause.instantiationTiming.duration, s"cancelled early: ${s.throwableCause.getMessage}", Some(s.throwableCause))
       case s: TestStatus.EarlyFailed =>
+        reportStarting()
         reportFailure(s.cause.instantiationTiming.duration, s.throwableCause)
       case s: TestStatus.Instantiating =>
         if (s.logPlan) {
           reportInfo(s"Final test plan info: ${s.plan}")
         }
-        ()
+        reportStarting()
       case _: TestStatus.Running =>
-        doReport(suiteId1)(
-          TestStarting(
-            _,
-            suiteName1,
-            suiteId1.suiteId,
-            Some(suiteClassName1),
-            testName,
-            testName,
-            location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
-            formatter = Some(MotionToSuppress),
-          )
-        )
+        ()
+
       case s: TestStatus.IgnoredByPrecondition =>
         reportCancellation(s.cause.totalTime, s"ignored: ${s.checks.toList.niceList()}", None)
 
