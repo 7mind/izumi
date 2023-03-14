@@ -1,7 +1,7 @@
 package izumi.distage.testkit.model
 
 import distage.DIKey
-import izumi.distage.model.plan.Plan
+import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
 import izumi.fundamentals.platform.strings.IzConsoleColors
 
@@ -40,20 +40,26 @@ final case class TestTree[F[_]](
   override protected def colorsEnabled(): Boolean = DIRendering.colorsEnabled
 
   private def render(level: Int = 0, suitePad: String = "", levelPad: String = ""): String = {
-    val memoizationRoots = levelPlan.keys
-    val levelInfo = if (levelPlan.keys.nonEmpty) {
-      val minimizer = KeyMinimizer(memoizationRoots, colorsEnabled())
-      memoizationRoots.iterator.map(minimizer.renderKey).mkString("[ ", ", ", " ]")
+    val allMemoizedKeys = levelPlan.keys
+    val memoizationRoots = levelPlan.input.roots match {
+      case Roots.Of(roots) => roots.toSet
+      case Roots.Everything => Set.empty[DIKey]
+    }
+    val transitiveMemoizedKeys = allMemoizedKeys diff memoizationRoots
+
+    def keysInfo(keys: Set[DIKey]): String = if (keys.nonEmpty) {
+      val minimizer = KeyMinimizer(keys, colorsEnabled())
+      keys.iterator.map(minimizer.renderKey).mkString("[ ", ", ", " ]")
     } else {
       "ø"
     }
     val currentLevelPad = {
       val emptyStep = if (suitePad.isEmpty) "" else s"\n${suitePad.dropRight(5)}║"
-      s"$emptyStep\n$levelPad╗ [L$level; ${thisLevelTests.size}T + ${nestedTests.size}I] roots: $levelInfo"
+      s"$emptyStep\n$levelPad╗ [Level $level; ${thisLevelTests.size} current tests + ${nestedTests.size} nested tests] roots: ${keysInfo(memoizationRoots)} transitive: ${keysInfo(transitiveMemoizedKeys)}"
     }
 
     val str = {
-      val testIds = groups.toList.flatMap(_.preparedTests.map(_.test.suiteMeta.suiteName)).distinct.sorted.map(t => s"$suitePad╠══* $t")
+      val testIds = groups.flatMap(_.preparedTests.map(_.test.suiteMeta.suiteName)).distinct.sorted.map(t => s"$suitePad╠══* $t")
 
       if (testIds.nonEmpty) s"$currentLevelPad\n${testIds.mkString("\n")}" else currentLevelPad
     }
