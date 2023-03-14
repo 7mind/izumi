@@ -5,9 +5,9 @@ import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.TestPlanner.*
-import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, Timed, TimedAction, Timing}
+import izumi.distage.testkit.runner.impl.services.*
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.uuid.UUIDGen
 import izumi.logstage.api.IzLogger
@@ -23,23 +23,23 @@ class DistageTestRunner[F[_]: TagK](
   reporter: TestReporter,
   logging: TestkitLogging,
   planner: TestPlanner[F],
-  individualTestRunner: IndividualTestRunner,
   statusConverter: TestStatusConverter,
-  timed: TimedAction,
+  timed: TimedActionF[Identity],
+  parTraverse: ExtParTraverse[Identity],
 ) {
 
   def run(tests: Seq[DistageTest[F]]): List[EnvResult] = {
-    runF[Identity](tests)
+    runF[Identity](tests, timed)
   }
 
-  def runF[G[_]](tests: Seq[DistageTest[F]])(implicit G: QuasiIO[G]): G[List[EnvResult]] = {
+  def runF[G[_]](tests: Seq[DistageTest[F]], timed: TimedActionF[G])(implicit G: QuasiIO[G]): G[List[EnvResult]] = {
     // We assume that under normal cirsumstances the code below should never throw.
     // All the exceptions should be converted to values by this time.
     // If it throws, there is a bug which needs to be fixed.
     for {
       id <- G.maybeSuspend(ScopeId(UUIDGen.getTimeUUID()))
       _ <- G.maybeSuspend(reporter.beginScope(id))
-      envs <- timed.timed(G.maybeSuspend(planner.groupTests(tests)))
+      envs <- timed(G.maybeSuspend(planner.groupTests(tests)))
       _ <- G.maybeSuspend(reportFailedPlanning(id, envs.out.bad, envs.timing))
       _ <- G.maybeSuspend(reportFailedInvividualPlans(id, envs))
       // TODO: there shouldn't be a case with more than one tree per env, maybe we should assert/fail instead
@@ -53,7 +53,7 @@ class DistageTestRunner[F[_]: TagK](
   }
 
   private def runTests(id: ScopeId, toRun: Map[PreparedTestEnv, TestTree[F]]): List[EnvResult] = {
-    configuredParTraverse[Identity, (PreparedTestEnv, TestTree[F]), List[EnvResult]](toRun)(_._1.envExec.parallelEnvs) {
+    parTraverse(toRun)(_._1.envExec.parallelEnvs) {
       case (e, t) => List(proceedEnv(id, e, t))
     }.flatten
   }
@@ -88,7 +88,7 @@ class DistageTestRunner[F[_]: TagK](
 
     val allEnvTests = testsTree.allTests.map(_.test)
 
-    timed.timed(runtimeInjector.produceDetailedCustomF[Identity](runtimePlan)).use {
+    timed(runtimeInjector.produceDetailedCustomF[Identity](runtimePlan)).use {
       maybeRtLocator =>
         maybeRtLocator.mapMerge(
           {
@@ -106,106 +106,17 @@ class DistageTestRunner[F[_]: TagK](
           {
             (runtimeLocator, runtimeInstantiationTiming) =>
               val runner = runtimeLocator.get[QuasiIORunner[F]]
-              implicit val F: QuasiIO[F] = runtimeLocator.get[QuasiIO[F]]
-              implicit val P: QuasiAsync[F] = runtimeLocator.get[QuasiAsync[F]]
+              val testTreeRunner = runtimeLocator.get[TestTreeRunner[F]]
 
               runtimeLocator
                 .get[IzLogger]("distage-testkit")
                 .info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
 
-              EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(traverse(id, 0, testsTree, runtimeLocator)))
+              EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(testTreeRunner.traverse(id, 0, testsTree, runtimeLocator)))
           },
         )
 
     }
-  }
-
-  private def traverse(id: ScopeId, depth: Int, tree: TestTree[F], parent: Locator)(implicit F: QuasiIO[F], P: QuasiAsync[F]): F[List[GroupResult]] = {
-    timed.timed(Injector.inherit(parent).produceDetailedCustomF[F](tree.levelPlan)).use {
-      maybeLocator =>
-        maybeLocator.mapMerge(
-          {
-            case (levelInstantiationFailure, levelInstantiationTiming) =>
-              F.maybeSuspend {
-                val all = tree.allTests.map(_.test)
-                val result = GroupResult.EnvLevelFailure(all.map(_.meta), levelInstantiationFailure, levelInstantiationTiming)
-                val failure = statusConverter.failLevelInstantiation(result)
-                all.foreach {
-                  test =>
-                    reporter.testStatus(id, depth, test.meta, failure)
-                }
-                List(result: GroupResult)
-              }
-          },
-          {
-            case (levelLocator, levelInstantiationTiming) =>
-              for {
-                results <- proceedMemoizationLevel(id, depth, levelLocator, tree.groups)
-                subResults <- F.traverse(tree.nested) {
-                  nextTree =>
-                    traverse(id, depth + 1, nextTree, levelLocator)
-                }
-              } yield {
-                List(GroupResult.GroupSuccess(results, levelInstantiationTiming)) ++ subResults.flatten
-              }
-          },
-        )
-    }
-  }
-
-  private def proceedMemoizationLevel(
-    id: ScopeId,
-    depth: Int,
-    deepestSharedLocator: Locator,
-    levelGroups: Iterable[TestGroup[F]],
-  )(implicit
-    F: QuasiIO[F],
-    P: QuasiAsync[F],
-  ): F[List[IndividualTestResult]] = {
-    val testsBySuite = levelGroups.flatMap {
-      group =>
-        group.preparedTests.groupBy {
-          preparedTest =>
-            val testId = preparedTest.test.meta.test.id
-            val parallelLevel = preparedTest.test.environment.parallelSuites
-            DistageTestRunner.SuiteData(testId.suite, preparedTest.test.suiteMeta, parallelLevel)
-        }
-    }
-    // now we are ready to run each individual test
-    // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-    // we assume that individual tests within a suite can't have different values of `parallelSuites`
-    // (because of structure & that difference even if happens wouldn't be actionable at the level of suites anyway)
-    configuredParTraverse(testsBySuite)(_._1.suiteParallelism) {
-      case (suiteData, preparedTests) =>
-        F.bracket(
-          acquire = F.maybeSuspend(reporter.beginLevel(id, depth, suiteData.meta))
-        )(release = _ => F.maybeSuspend(reporter.endLevel(id, depth, suiteData.meta))) {
-          _ =>
-            configuredParTraverse(preparedTests)(_.test.environment.parallelTests) {
-              test => individualTestRunner.proceedTest(id, depth, deepestSharedLocator, test)
-            }
-        }
-    }.map(_.flatten)
-  }
-
-  protected def configuredParTraverse[F1[_], A, B](
-    l: Iterable[A]
-  )(getParallelismGroup: A => Parallelism
-  )(f: A => F1[B]
-  )(implicit
-    F: QuasiIO[F1],
-    P: QuasiAsync[F1],
-  ): F1[List[B]] = {
-    val sorted = l.groupBy(getParallelismGroup).toList.sortBy {
-      case (Parallelism.Unlimited, _) => 1
-      case (Parallelism.Fixed(_), _) => 2
-      case (Parallelism.Sequential, _) => 3
-    }
-    F.traverse(sorted) {
-      case (Parallelism.Fixed(n), l) if l.size > 1 => P.parTraverseN(n)(l)(f)
-      case (Parallelism.Unlimited, l) if l.size > 1 => P.parTraverse(l)(f)
-      case (_, l) => F.traverse(l)(f)
-    }.map(_.flatten)
   }
 
   private[this] def logEnvironmentsInfo(envs: Map[PreparedTestEnv, TestTree[F]], duration: FiniteDuration): Unit = {

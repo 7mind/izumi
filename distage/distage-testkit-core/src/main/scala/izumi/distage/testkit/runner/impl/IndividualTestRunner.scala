@@ -5,13 +5,13 @@ import izumi.distage.framework.services.PlanCircularDependencyCheck
 import izumi.distage.model.plan.Plan
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedAction}
+import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedActionF}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.logstage.api.IzLogger
 
-trait IndividualTestRunner {
-  def proceedTest[F[_]: TagK: QuasiIO](
+trait IndividualTestRunner[F[_]] {
+  def proceedTest(
     suiteId: ScopeId,
     depth: Int,
     mainSharedLocator: Locator,
@@ -20,19 +20,21 @@ trait IndividualTestRunner {
 }
 
 object IndividualTestRunner {
-  class IndividualTestRunnerImpl(
+  class IndividualTestRunnerImpl[F[_]: TagK](
     reporter: TestReporter,
     logging: TestkitLogging,
     statusConverter: TestStatusConverter,
-    timedAction: TimedAction,
-  ) extends IndividualTestRunner {
+    timed: TimedActionF[F],
+    check: PlanCircularDependencyCheck,
+    testkitLogger: IzLogger @Id("distage-testkit"),
+  )(implicit F: QuasiIO[F]
+  ) extends IndividualTestRunner[F] {
 
-    def proceedTest[F[_]: TagK](
+    def proceedTest(
       suiteId: ScopeId,
       depth: Int,
       mainSharedLocator: Locator,
       preparedTest: PreparedTest[F],
-    )(implicit F: QuasiIO[F]
     ): F[IndividualTestResult] = {
       val test = preparedTest.test
       val meta = test.meta
@@ -41,8 +43,8 @@ object IndividualTestRunner {
       val successfulPlanningTime = preparedTest.timedPlan.timing
 
       for {
-        _ <- logTest(mainSharedLocator.get[IzLogger]("distage-testkit"), test, plan)
-        _ <- F.maybeSuspend(mainSharedLocator.get[PlanCircularDependencyCheck].showProxyWarnings(plan))
+        _ <- logTest(testkitLogger, test, plan)
+        _ <- F.maybeSuspend(check.showProxyWarnings(plan))
         _ <- F.maybeSuspend(
           reporter.testStatus(
             suiteId,
@@ -51,8 +53,8 @@ object IndividualTestRunner {
             TestStatus.Instantiating(plan, successfulPlanningTime, logPlan = (logging.enableDebugOutput || test.environment.debugOutput) && plan.keys.nonEmpty),
           )
         )
-        testRunResult <- timedAction
-          .timed(Injector.inherit(mainSharedLocator).produceDetailedCustomF[F](plan))
+        testRunResult <- timed
+          .apply(Injector.inherit(mainSharedLocator).produceDetailedCustomF[F](plan))
           .use {
             maybeLocator =>
               maybeLocator.mapMerge(
@@ -69,7 +71,7 @@ object IndividualTestRunner {
                   case (l, successfulProvTime) =>
                     for {
                       _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, TestStatus.Running(l, successfulPlanningTime, successfulProvTime)))
-                      successfulTestOutput <- timedAction.timed {
+                      successfulTestOutput <- timed {
                         F.definitelyRecover(l.run(test.test).map(_ => Right(()): Either[Throwable, Unit])) {
                           f =>
                             F.pure(Left(f))
@@ -109,7 +111,7 @@ object IndividualTestRunner {
       }
     }
 
-    private def logTest[F[_]](testRunnerLogger: IzLogger, test: DistageTest[F], p: Plan)(implicit F: QuasiIO[F]): F[Unit] = F.maybeSuspend {
+    private def logTest(testRunnerLogger: IzLogger, test: DistageTest[F], p: Plan): F[Unit] = F.maybeSuspend {
       val testLogger = testRunnerLogger("testId" -> test.meta.test.id)
       testLogger.log(logging.testkitDebugMessagesLogLevel(test.environment.debugOutput))(
         s"""Running test...
