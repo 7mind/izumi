@@ -3,7 +3,6 @@ package izumi.distage.testkit.runner.impl
 import distage.*
 import izumi.distage.framework.services.PlanCircularDependencyCheck
 import izumi.distage.model.plan.Plan
-import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedAction}
@@ -11,8 +10,8 @@ import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.logstage.api.IzLogger
 
-trait IndividualTestRunner[F[_]] {
-  def proceedTest(
+trait IndividualTestRunner {
+  def proceedTest[F[_]: TagK: QuasiIO](
     suiteId: ScopeId,
     depth: Int,
     mainSharedLocator: Locator,
@@ -21,18 +20,19 @@ trait IndividualTestRunner[F[_]] {
 }
 
 object IndividualTestRunner {
-  class IndividualTestRunnerImpl[F[_]: TagK: DefaultModule](
+  class IndividualTestRunnerImpl(
     reporter: TestReporter,
     logging: TestkitLogging,
-    statusConverter: TestStatusConverter[F],
-    timedAction: TimedAction[F],
-  )(implicit F: QuasiIO[F]
-  ) extends IndividualTestRunner[F] {
-    def proceedTest(
+    statusConverter: TestStatusConverter,
+    timedAction: TimedAction,
+  ) extends IndividualTestRunner {
+
+    def proceedTest[F[_]: TagK](
       suiteId: ScopeId,
       depth: Int,
       mainSharedLocator: Locator,
       preparedTest: PreparedTest[F],
+    )(implicit F: QuasiIO[F]
     ): F[IndividualTestResult] = {
       val test = preparedTest.test
       val meta = test.meta
@@ -109,7 +109,7 @@ object IndividualTestRunner {
       }
     }
 
-    private def logTest(testRunnerLogger: IzLogger, test: DistageTest[F], p: Plan): F[Unit] = F.maybeSuspend {
+    private def logTest[F[_]](testRunnerLogger: IzLogger, test: DistageTest[F], p: Plan)(implicit F: QuasiIO[F]): F[Unit] = F.maybeSuspend {
       val testLogger = testRunnerLogger("testId" -> test.meta.test.id)
       testLogger.log(logging.testkitDebugMessagesLogLevel(test.environment.debugOutput))(
         s"""Running test...

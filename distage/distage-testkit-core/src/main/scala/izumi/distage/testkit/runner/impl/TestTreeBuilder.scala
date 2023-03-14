@@ -16,7 +16,7 @@ trait TestTreeBuilder[F[_]] {
 
 object TestTreeBuilder {
   class TestTreeBuilderImpl[F[_]](
-    timedAction: TimedAction[F],
+    timedAction: TimedAction,
     planner: Planner,
   ) extends TestTreeBuilder[F] {
 
@@ -36,7 +36,7 @@ object TestTreeBuilder {
                 (
                   t,
                   for {
-                    maybeNewTestPlan <- timedAction.timed {
+                    maybeNewTestPlan <- timedAction.timedId {
                       if (newRoots.nonEmpty) {
                         // it's important to remember that .plan() would always return the same result regardless of the parent locator!
                         planner.plan(PlannerInput(newAppModule, t.activation, newRoots))
