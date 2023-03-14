@@ -4441,11 +4441,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
 lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Seq(
-      "2.13.10",
-      "2.12.17"
-    ),
-    scalaVersion := crossScalaVersions.value.head
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4463,11 +4459,7 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
 lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Seq(
-      "2.13.10",
-      "2.12.17"
-    ),
-    scalaVersion := crossScalaVersions.value.head
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4485,11 +4477,7 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
 lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Seq(
-      "2.13.10",
-      "2.12.17"
-    ),
-    scalaVersion := crossScalaVersions.value.head
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4509,11 +4497,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
 lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Seq(
-      "2.13.10",
-      "2.12.17"
-    ),
-    scalaVersion := crossScalaVersions.value.head
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4533,11 +4517,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Seq(
-      "2.13.10",
-      "2.12.17"
-    ),
-    scalaVersion := crossScalaVersions.value.head
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4550,11 +4530,7 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
 lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Seq(
-      "2.13.10",
-      "2.12.17"
-    ),
-    scalaVersion := crossScalaVersions.value.head
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4567,11 +4543,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
 lazy val `docs` = (project in file(".agg/doc-docs"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Seq(
-      "2.13.10",
-      "2.12.17"
-    ),
-    scalaVersion := crossScalaVersions.value.head
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4581,11 +4553,7 @@ lazy val `docs` = (project in file(".agg/doc-docs"))
 lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Seq(
-      "2.13.10",
-      "2.12.17"
-    ),
-    scalaVersion := crossScalaVersions.value.head
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4595,8 +4563,7 @@ lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
 lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Nil,
-    scalaVersion := "2.12.17"
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4606,8 +4573,7 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
 lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Nil,
-    scalaVersion := "2.12.17"
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4617,11 +4583,7 @@ lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"
 lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     publish / skip := true,
-    crossScalaVersions := Seq(
-      "2.13.10",
-      "2.12.17"
-    ),
-    scalaVersion := crossScalaVersions.value.head
+    crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -4664,7 +4626,6 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-head-commit=${com.github.sbt.git.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "2.13.10",
     ThisBuild / organization := "io.7mind.izumi",
     sonatypeProfileName := "io.7mind",
     sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}",

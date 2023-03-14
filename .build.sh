@@ -2,7 +2,8 @@
 set -xe
 
 # `++ 2.13.0 compile` has a different semantic than `;++2.13.0;compile`
-# Strict aggregation applies ONLY to former, and ONLY if crossScalaVersions := Nil in root project
+# Strict aggregation applies ONLY to former,
+#   and ONLY if crossScalaVersions := Nil is set in root project and ALL nested aggregates
 # see https://github.com/sbt/sbt/issues/3698#issuecomment-475955454
 # and https://github.com/sbt/sbt/pull/3995/files
 # TL;DR strict aggregation in sbt is broken; this is a workaround
@@ -147,7 +148,7 @@ case $i in
     secrets)
         secrets
     ;;
-  
+
     *)
         echo "Unknown option"
         exit 1

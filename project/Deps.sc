@@ -156,23 +156,23 @@ object Izumi {
 
   object Targets {
     // switch order to use 2.12 in IDEA
-//    val targetScala = Seq(scala212, scala213)
-    val targetScala = Seq(scala213, scala212)
+//    val targetScala3 = Seq(scala212, scala213, scala300)
+    val targetScala2 = Seq(scala213, scala212)
     val targetScala3 = Seq(scala300, scala213, scala212)
 
-    private val jvmPlatform = PlatformEnv(
+    private val jvmPlatform2 = PlatformEnv(
       platform = Platform.Jvm,
-      language = targetScala,
+      language = targetScala2,
       settings = Seq.empty,
     )
-    private val jsPlatform = PlatformEnv(
-      platform = Platform.Js,
-      language = targetScala,
-      settings = Seq(
-        "coverageEnabled" := false,
-        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
-      ),
-    )
+//    private val jsPlatform2 = PlatformEnv(
+//      platform = Platform.Js,
+//      language = targetScala,
+//      settings = Seq(
+//        "coverageEnabled" := false,
+//        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
+//      ),
+//    )
 
     private val jvmPlatform3 = PlatformEnv(
       platform = Platform.Jvm,
@@ -195,9 +195,9 @@ object Izumi {
         "coverageEnabled" := false
       ),
     )
-    final val cross = Seq(jvmPlatform, jsPlatform)
-    final val jvm = Seq(jvmPlatform)
-    final val js = Seq(jsPlatform)
+//    final val cross = Seq(jvmPlatform2, jsPlatform2)
+    final val jvm2 = Seq(jvmPlatform2)
+//    final val js = Seq(jsPlatform2)
 
     final val cross3 = Seq(jvmPlatform3, jsPlatform3)
     final val jvm3 = Seq(jvmPlatform3)
@@ -233,15 +233,13 @@ object Izumi {
       final val topLevelSettings = Seq()
 
       final val sharedAggSettings = outOfSource ++ Seq(
-        "crossScalaVersions" := Targets.targetScala.map(_.value),
-        "scalaVersion" := "crossScalaVersions.value.head".raw,
+        "crossScalaVersions" := "Nil".raw
       )
 
       final val rootSettings = Defaults.RootOptions ++ Defaults.SbtMetaRootOptions ++ Seq(
 //        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
 //          .root.id.value}").toFile""".raw,
         "crossScalaVersions" := "Nil".raw,
-        "scalaVersion" := Targets.targetScala.head.value,
         "organization" in SettingScope.Build := "io.7mind.izumi",
         "sonatypeProfileName" := "io.7mind",
         "sonatypeSessionName" := """s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}"""".raw,
@@ -769,7 +767,7 @@ object Izumi {
     ),
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
-    defaultPlatforms = Targets.jvm,
+    defaultPlatforms = Targets.jvm2,
     dontIncludeInSuperAgg = true,
   )
 
@@ -792,11 +790,6 @@ object Izumi {
     pathPrefix = Projects.sbtplugins.basePath,
     groups = Groups.sbt,
     defaultPlatforms = Targets.jvmSbt,
-    enableProjectSharedAggSettings = false,
-    settings = Seq(
-      "crossScalaVersions" := "Nil".raw,
-      "scalaVersion" := scala212.value,
-    ),
   )
 
   val izumi: Project = Project(
