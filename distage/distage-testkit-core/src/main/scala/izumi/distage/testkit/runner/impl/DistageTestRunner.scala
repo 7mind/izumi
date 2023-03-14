@@ -1,7 +1,6 @@
 package izumi.distage.testkit.runner.impl
 
 import distage.*
-import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.api.TestReporter
@@ -20,20 +19,20 @@ object DistageTestRunner {
   case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism)
 }
 
-class DistageTestRunner[F[_]: TagK: DefaultModule](
+class DistageTestRunner[F[_]: TagK](
   reporter: TestReporter,
   logging: TestkitLogging,
   planner: TestPlanner[F],
-  individualTestRunner: IndividualTestRunner[F],
-  statusConverter: TestStatusConverter[F],
-  timedAction: TimedAction[F],
-  timedActionId: TimedAction[Identity],
+  individualTestRunner: IndividualTestRunner,
+  statusConverter: TestStatusConverter,
+  timed: TimedAction,
 ) {
+
   def run(tests: Seq[DistageTest[F]]): List[EnvResult] = {
-    runF[Identity](tests, timedActionId)
+    runF[Identity](tests)
   }
 
-  def runF[G[_]](tests: Seq[DistageTest[F]], timed: TimedAction[G])(implicit G: QuasiIO[G]): G[List[EnvResult]] = {
+  def runF[G[_]](tests: Seq[DistageTest[F]])(implicit G: QuasiIO[G]): G[List[EnvResult]] = {
     // We assume that under normal cirsumstances the code below should never throw.
     // All the exceptions should be converted to values by this time.
     // If it throws, there is a bug which needs to be fixed.
@@ -75,7 +74,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private def reportFailedInvividualPlans[G[_]](id: ScopeId, envs: Timed[PlannedTests[F]]): Unit = {
+  private def reportFailedInvividualPlans(id: ScopeId, envs: Timed[PlannedTests[F]]): Unit = {
     val failures = envs.out.good.flatMap(_.envs.flatMap(_._2.allFailures))
 
     failures.foreach {
@@ -89,7 +88,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
 
     val allEnvTests = testsTree.allTests.map(_.test)
 
-    timedActionId.timed(runtimeInjector.produceDetailedCustomF[Identity](runtimePlan)).use {
+    timed.timed(runtimeInjector.produceDetailedCustomF[Identity](runtimePlan)).use {
       maybeRtLocator =>
         maybeRtLocator.mapMerge(
           {
@@ -122,7 +121,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
   }
 
   private def traverse(id: ScopeId, depth: Int, tree: TestTree[F], parent: Locator)(implicit F: QuasiIO[F], P: QuasiAsync[F]): F[List[GroupResult]] = {
-    timedAction.timed(Injector.inherit(parent).produceDetailedCustomF[F](tree.levelPlan)).use {
+    timed.timed(Injector.inherit(parent).produceDetailedCustomF[F](tree.levelPlan)).use {
       maybeLocator =>
         maybeLocator.mapMerge(
           {
