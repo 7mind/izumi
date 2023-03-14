@@ -8,9 +8,12 @@ import izumi.fundamentals.platform.strings.IzString.*
 import org.scalatest.Suite.{getIndentedTextForInfo, getIndentedTextForTest}
 import org.scalatest.events.*
 
+import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 
 class DistageScalatestReporter extends TestReporter {
+  private val runningTests = new mutable.LinkedHashSet[FullMeta]
+
   override def beginScope(id: ScopeId): Unit = {
     id.discard()
   }
@@ -61,7 +64,25 @@ class DistageScalatestReporter extends TestReporter {
 
     val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
 
+    def verifyRunningOrReport(): Unit = {
+      if (runningTests.add(test)) {
+        doReport(suiteId1)(
+          TestStarting(
+            _,
+            suiteName1,
+            suiteId1.suiteId,
+            Some(suiteClassName1),
+            testName,
+            testName,
+            location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
+            formatter = Some(MotionToSuppress),
+          )
+        )
+      }
+    }
+
     def reportFailure(duration: FiniteDuration, t: Throwable): Unit = {
+      verifyRunningOrReport()
       doReport(suiteId1)(
         TestFailed(
           _,
@@ -82,6 +103,7 @@ class DistageScalatestReporter extends TestReporter {
     }
 
     def reportCancellation(duration: FiniteDuration, clue: String, cause: Option[Throwable]): Unit = {
+      verifyRunningOrReport()
       doReport(suiteId1)(
         TestCanceled(
           _,
@@ -102,6 +124,7 @@ class DistageScalatestReporter extends TestReporter {
 
     def reportInfo(message: String): Unit = {
       val formatter = Some(getIndentedTextForInfo(s"- $testName", 1, includeIcon = false, infoIsInsideATest = true))
+      verifyRunningOrReport()
       doReport(suiteId1)(
         InfoProvided(
           _,
@@ -130,18 +153,8 @@ class DistageScalatestReporter extends TestReporter {
         }
         ()
       case _: TestStatus.Running =>
-        doReport(suiteId1)(
-          TestStarting(
-            _,
-            suiteName1,
-            suiteId1.suiteId,
-            Some(suiteClassName1),
-            testName,
-            testName,
-            location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
-            formatter = Some(MotionToSuppress),
-          )
-        )
+        verifyRunningOrReport()
+
       case s: TestStatus.IgnoredByPrecondition =>
         reportCancellation(s.cause.totalTime, s"ignored: ${s.checks.toList.niceList()}", None)
 

@@ -133,7 +133,7 @@ class DistageTestRunner[F[_]: TagK: DefaultModule](
                 val failure = statusConverter.failLevelInstantiation(result)
                 all.foreach {
                   test =>
-                    reporter.testStatus(id, depth, test.meta, failure)
+                    reporter.testSetupStatus(id, test.meta, failure)
                 }
                 List(result: GroupResult)
               }
