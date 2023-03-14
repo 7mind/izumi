@@ -33,14 +33,28 @@ object Timed {
 }
 
 trait TimedAction {
-  def timedId[A](action: => A): Timed[A]
-  def timed[F[_], A](action: => F[A])(implicit F: QuasiIO[F]): F[Timed[A]]
-  def timed[F[_], A](action: => Lifecycle[F, A])(implicit F: QuasiIO[F]): Lifecycle[F, Timed[A]]
+  def apply[A](action: => A): Timed[A]
 }
 
 object TimedAction {
-  class TimedActionImpl extends TimedAction {
-    override def timed[F[_], A](action: => Lifecycle[F, A])(implicit F: QuasiIO[F]): Lifecycle[F, Timed[A]] = {
+  class TimedActionImpl() extends TimedAction {
+    override def apply[A](action: => A): Timed[A] = {
+      val before = IzTime.utcNowOffset
+      val value = action
+      val after = IzTime.utcNowOffset
+      Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
+    }
+  }
+}
+
+trait TimedActionF[F[_]] {
+  def apply[A](action: => F[A]): F[Timed[A]]
+  def apply[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]]
+}
+
+object TimedActionF {
+  class TimedActionFImpl[F[_]]()(implicit F: QuasiIO[F]) extends TimedActionF[F] {
+    override def apply[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]] = {
       for {
         before <- Lifecycle.liftF(F.maybeSuspend(IzTime.utcNowOffset))
         value <- action
@@ -50,7 +64,7 @@ object TimedAction {
       }
     }
 
-    override def timed[F[_], A](action: => F[A])(implicit F: QuasiIO[F]): F[Timed[A]] = {
+    override def apply[A](action: => F[A]): F[Timed[A]] = {
       for {
         before <- F.maybeSuspend(IzTime.utcNowOffset)
         value <- action
@@ -60,11 +74,5 @@ object TimedAction {
       }
     }
 
-    override def timedId[A](action: => A): Timed[A] = {
-      val before = IzTime.utcNowOffset
-      val value = action
-      val after = IzTime.utcNowOffset
-      Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
-    }
   }
 }

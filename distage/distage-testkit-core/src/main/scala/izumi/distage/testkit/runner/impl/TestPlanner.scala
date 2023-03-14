@@ -1,6 +1,6 @@
 package izumi.distage.testkit.runner.impl
 
-import distage.{Activation, BootstrapModule, DIKey, Injector, Module, PlannerInput, TagK}
+import distage.{Activation, BootstrapModule, DIKey, Injector, LocatorRef, Module, PlannerInput, TagK}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
@@ -16,9 +16,10 @@ import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleApp
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
 import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.*
-import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestkitLogging}
+import izumi.distage.testkit.runner.impl.services.TimedActionF.TimedActionFImpl
+import izumi.distage.testkit.runner.impl.services.{ExtParTraverse, TestConfigLoader, TestkitLogging, TimedActionF}
 import izumi.functional.IzEither.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.quasi.{QuasiAsync, QuasiIORunner}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
@@ -74,14 +75,12 @@ class TestPlanner[F[_]: TagK: DefaultModule](
   logging: TestkitLogging,
   configLoader: TestConfigLoader,
   testTreeBuilder: TestTreeBuilder[F],
+  testRunnerLocator: LocatorRef,
 ) {
-  // first we need to plan runtime for our monad. Identity is also supported
+  // first we need to plan runtime for our monad, which is retained by TestTreeRunner. Identity is also supported.
   private val runtimeGcRoots: Set[DIKey] = Set(
     DIKey.get[QuasiIORunner[F]],
-    DIKey.get[QuasiIO[F]],
-    DIKey.get[QuasiAsync[F]],
-    DIKey.get[PlanCircularDependencyCheck],
-    DIKey.get[IzLogger].named("distage-testkit"),
+    DIKey.get[TestTreeRunner[F]],
   )
   /**
     * Performs tests grouping by it's memoization environment.
@@ -222,7 +221,12 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
       //  becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
 
-      val injector = Injector[Identity](bootstrapActivation = fullActivation, overrides = Seq(bsModule))
+      val injector = Injector[Identity](
+        // here we reuse all the components from test runner locator which are required as dependencies for IndividualTestRunner
+        parent = Some(testRunnerLocator.get),
+        bootstrapActivation = fullActivation,
+        overrides = Seq(bsModule),
+      )
 
       val injectorEnv = injector.providedEnvironment
 
@@ -251,8 +255,11 @@ class TestPlanner[F[_]: TagK: DefaultModule](
             make[IzLogger].named("distage-testkit").from {
               (logger: IzLogger) => logger
             }
-            //            make[IzLogger].named("distage-testkit").fromValue(lateLogger)
-            //            make[PlanCircularDependencyCheck].fromValue(planChecker)
+            // the dependencies will be available through testRunnerLocator which is set as parent for the current injector
+            make[TimedActionF[F]].from[TimedActionFImpl[F]]
+            make[TestTreeRunner[F]].from[TestTreeRunner.TestTreeRunnerImpl[F]]
+            make[IndividualTestRunner[F]].from[IndividualTestRunner.IndividualTestRunnerImpl[F]]
+            make[ExtParTraverse[F]].from[ExtParTraverse.ExtParTraverseImpl[F]]
 
           },
           fullActivation,
