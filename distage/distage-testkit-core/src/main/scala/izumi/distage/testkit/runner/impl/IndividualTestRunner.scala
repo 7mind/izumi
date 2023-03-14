@@ -21,12 +21,12 @@ trait IndividualTestRunner[F[_]] {
 
 object IndividualTestRunner {
   class IndividualTestRunnerImpl[F[_]: TagK](
-                                              reporter: TestReporter,
-                                              logging: TestkitLogging,
-                                              statusConverter: TestStatusConverter,
-                                              timed: TimedActionF[F],
-                                              check: PlanCircularDependencyCheck,
-                                              testkitLogger: IzLogger @Id("distage-testkit"),
+    reporter: TestReporter,
+    logging: TestkitLogging,
+    statusConverter: TestStatusConverter,
+    timed: TimedActionF[F],
+    check: PlanCircularDependencyCheck,
+    testkitLogger: IzLogger @Id("distage-testkit"),
   )(implicit F: QuasiIO[F]
   ) extends IndividualTestRunner[F] {
 
@@ -111,7 +111,7 @@ object IndividualTestRunner {
       }
     }
 
-    private def logTest[F[_]](testRunnerLogger: IzLogger, test: DistageTest[F], p: Plan)(implicit F: QuasiIO[F]): F[Unit] = F.maybeSuspend {
+    private def logTest(testRunnerLogger: IzLogger, test: DistageTest[F], p: Plan): F[Unit] = F.maybeSuspend {
       val testLogger = testRunnerLogger("testId" -> test.meta.test.id)
       testLogger.log(logging.testkitDebugMessagesLogLevel(test.environment.debugOutput))(
         s"""Running test...
