@@ -2,12 +2,11 @@ package izumi.distage.testkit.runner.impl
 
 import distage.{Activation, BootstrapModule, DIKey, Injector, LocatorRef, Module, PlannerInput, TagK}
 import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ModuleProvider, PlanCircularDependencyCheck}
 import izumi.distage.model.definition.Binding.SetElementBinding
+import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.definition.errors.DIError
-import izumi.distage.model.definition.{ImplDef, ModuleDef}
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
@@ -16,8 +15,7 @@ import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleApp
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
 import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.*
-import izumi.distage.testkit.runner.impl.services.TimedActionF.TimedActionFImpl
-import izumi.distage.testkit.runner.impl.services.{ExtParTraverse, TestConfigLoader, TestkitLogging, TimedActionF}
+import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestkitLogging}
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIORunner}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -243,25 +241,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       // runtime plan with `runtimeGcRoots`
       runtimePlan <- injector.plan(
         PlannerInput(
-          appModule ++ new ModuleDef {
-            make[EnvExecutionParams].fromValue(envExecutionParams)
-            make[PlanningOptions].from {
-              (exec: EnvExecutionParams) =>
-                exec.planningOptions
-            }
-
-            // we cannot capture local values here, that will break environment merge logic
-            make[PlanCircularDependencyCheck]
-            make[IzLogger].named("distage-testkit").from {
-              (logger: IzLogger) => logger
-            }
-            // the dependencies will be available through testRunnerLocator which is set as parent for the current injector
-            make[TimedActionF[F]].from[TimedActionFImpl[F]]
-            make[TestTreeRunner[F]].from[TestTreeRunner.TestTreeRunnerImpl[F]]
-            make[IndividualTestRunner[F]].from[IndividualTestRunner.IndividualTestRunnerImpl[F]]
-            make[ExtParTraverse[F]].from[ExtParTraverse.ExtParTraverseImpl[F]]
-
-          },
+          appModule ++ new TestRuntimeModule(envExecutionParams),
           fullActivation,
           runtimeGcRoots,
         )

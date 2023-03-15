@@ -105,14 +105,11 @@ class DistageTestRunner[F[_]: TagK](
           },
           {
             (runtimeLocator, runtimeInstantiationTiming) =>
-              val runner = runtimeLocator.get[QuasiIORunner[F]]
-              val testTreeRunner = runtimeLocator.get[TestTreeRunner[F]]
-
-              runtimeLocator
-                .get[IzLogger]("distage-testkit")
-                .info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
-
-              EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(testTreeRunner.traverse(id, 0, testsTree, runtimeLocator)))
+              runtimeLocator.run {
+                (runner: QuasiIORunner[F], testTreeRunner: TestTreeRunner[F], logger: IzLogger@Id("distage-testkit")) =>
+                  logger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
+                  EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(testTreeRunner.traverse(id, 0, testsTree, runtimeLocator)))
+              }
           },
         )
 
