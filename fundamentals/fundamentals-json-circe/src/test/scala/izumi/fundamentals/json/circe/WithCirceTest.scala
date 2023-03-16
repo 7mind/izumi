@@ -1,8 +1,8 @@
 package izumi.fundamentals.json.circe
 
 import io.circe
+import io.circe.syntax.*
 import io.circe.{Codec, Decoder, Encoder}
-import io.circe.syntax._
 import izumi.fundamentals.json.circe.WithCirceTest.{Cba, Enum, Enum1, Enum2, Nested, Sealed}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -55,45 +55,10 @@ object Dummy {
   implicit def dummy: Dummy.type = this
 }
 
-abstract class deriving[C <: Desc](implicit c: C { type I1 = C#I1; type I2 = C#I2 }, i10: C#I1, i20: C#I2) {
-  implicit val i1: C#I1R = c.extractI1(i10)
-  implicit val i2: C#I2R = c.extractI2(i20)
-}
-final class JustDecoder[A] extends Desc {
-  override type I1 = DerivationDerivedDecoder[A]
-  override type I1R = Decoder[A]
-  override type I2 = Dummy.type
-  override type I2R = Dummy.type
-
-  override def extractI1(i1: DerivationDerivedDecoder[A]): Decoder[A] = i1.value
-  override def extractI2(i2: Dummy.type): Dummy.type = i2
-}
-object JustDecoder {
-  implicit def x[A]: JustDecoder[A] = new JustDecoder[A]
-}
-final class DecoderEncoder[A] extends Desc {
-  override type I1 = DerivationDerivedDecoder[A]
-  override type I1R = Decoder[A]
-  override type I2 = DerivationDerivedEncoder[A]
-  override type I2R = Encoder.AsObject[A]
-
-  override def extractI1(i1: DerivationDerivedDecoder[A]): Decoder[A] = i1.value
-  override def extractI2(i2: DerivationDerivedEncoder[A]): Encoder.AsObject[A] = i2.value
-}
-object DecoderEncoder {
-  implicit def x[A]: DecoderEncoder[A] = new DecoderEncoder[A]
-}
-
 object WithCirceTest {
 
   final case class Cba(a: Int, b: Int)
   object Cba extends WithCirce[Cba]
-
-  final case class Cbaa(a: Int, b: Int)
-  object Cbaa extends deriving[JustDecoder[Cbaa]]
-
-  final case class Cbaaa(a: Int, b: Int)
-  object Cbaaa extends deriving[DecoderEncoder[Cbaa]]
 
   sealed trait Sealed
   object Sealed extends WithCirce[Sealed] {
@@ -115,11 +80,11 @@ object WithCirceTest {
   private[this] object codecs extends WithCirce[Nested]
 
   sealed trait Enum
-  object Enum extends WithCirce[Enum]
   case object Enum1 extends Enum {
-    implicit val codec: Codec.AsObject[Enum1.type] = circe.derivation.deriveCodec[Enum1.type]
+    implicit val codec: Codec.AsObject[Enum1.type] = circe.generic.semiauto.deriveCodec[Enum1.type]
   }
   case object Enum2 extends Enum {
-    implicit val codec: Codec.AsObject[Enum2.type] = circe.derivation.deriveCodec[Enum2.type]
+    implicit val codec: Codec.AsObject[Enum2.type] = circe.generic.semiauto.deriveCodec[Enum2.type]
   }
+  object Enum extends WithCirce[Enum]
 }

@@ -3,9 +3,6 @@ package izumi.fundamentals.json.circe
 import io.circe.Codec
 
 /**
-  * On Scala 2, requires library dependency on `"io.circe" %% "circe-derivation" % "0.13.0-M5"`
-  * or later (NOT brought in as a dependency automatically)
-  *
   * Provides circe codecs for case classes and sealed traits
   *
   * {{{
@@ -35,9 +32,9 @@ import io.circe.Codec
   *   }
   * }}}
   */
-abstract class WithCirce[A]()(implicit derivedCodec: DerivationDerivedCodec[A]) {
+abstract class WithCirce[A]()(implicit derivedCodec: => DerivationDerivedCodec[A]) {
   // workaround for https://github.com/milessabin/shapeless/issues/837
   def this(proxy: WithCirce[A]) = this()(DerivationDerivedCodec(proxy.codec))
 
-  implicit val codec: Codec.AsObject[A] = derivedCodec.value
+  implicit lazy val codec: Codec.AsObject[A] = derivedCodec.value
 }
