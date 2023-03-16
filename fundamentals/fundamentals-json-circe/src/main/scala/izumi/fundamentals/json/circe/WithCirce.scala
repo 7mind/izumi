@@ -3,7 +3,7 @@ package izumi.fundamentals.json.circe
 import io.circe.Codec
 
 /**
-  * Requires library dependency on `"io.circe" %% "circe-derivation" % "0.13.0-M5"`
+  * On Scala 2, requires library dependency on `"io.circe" %% "circe-derivation" % "0.13.0-M5"`
   * or later (NOT brought in as a dependency automatically)
   *
   * Provides circe codecs for case classes and sealed traits
