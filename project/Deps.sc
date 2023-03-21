@@ -332,7 +332,6 @@ object Izumi {
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
       final val reflection = ArtifactId("fundamentals-reflection")
       final val jsonCirce = ArtifactId("fundamentals-json-circe")
-      final val jsonCirceLegacy = ArtifactId("fundamentals-json-circe-legacy")
 
       final lazy val basics = Seq(
         platform,
@@ -461,6 +460,7 @@ object Izumi {
           circe_generic in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala3),
         ) ++ Seq(
           circe_derivation_scala2 in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
+          circe_generic in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
           jawn in Scope.Test.all,
           circe_literal in Scope.Test.all,
         ),
