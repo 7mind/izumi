@@ -20,10 +20,10 @@
 
 ---
 
-[![Latest Release](https://img.shields.io/github/tag/7mind/izumi.svg)](https://github.com/7mind/izumi/releases)
 [![Maven Central](https://img.shields.io/maven-central/v/io.7mind.izumi/distage-core_2.12.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.7mind.izumi%22)
 [![Sonatype releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/io.7mind.izumi/distage-core_2.12.svg)](https://oss.sonatype.org/content/repositories/releases/io/7mind/izumi/)
 [![Sonatype snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/io.7mind.izumi/distage-core_2.12.svg)](https://oss.sonatype.org/content/repositories/snapshots/io/7mind/izumi/)
+[![Latest Release](https://img.shields.io/github/tag/7mind/izumi.svg)](https://github.com/7mind/izumi/releases)
 [![Latest version](https://index.scala-lang.org/7mind/izumi/distage-core/latest.svg?color=orange)](https://index.scala-lang.org/7mind/izumi)
 
 What is it?
