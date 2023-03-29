@@ -2,7 +2,7 @@ package izumi.fundamentals.json.circe
 
 import io.circe
 import io.circe.syntax.*
-import io.circe.{Codec, Decoder, Encoder}
+import io.circe.Codec
 import izumi.fundamentals.json.circe.WithCirceTest.{Cba, Enum, Enum1, Enum2, Nested, Sealed}
 import org.scalatest.wordspec.AnyWordSpec
 

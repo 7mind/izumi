@@ -1008,7 +1008,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "io.circe" %% "circe-derivation" % V.circe_derivation % Test
+      "io.circe" %% "circe-derivation" % V.circe_derivation % Test,
+      "io.circe" %% "circe-generic" % V.circe % Test
     ) else Seq.empty },
     libraryDependencies ++= {
       val version = scalaVersion.value
