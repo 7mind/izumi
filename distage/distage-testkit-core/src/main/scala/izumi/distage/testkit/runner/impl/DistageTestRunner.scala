@@ -112,7 +112,6 @@ class DistageTestRunner[F[_]: TagK](
               }
           },
         )
-
     }
   }
 

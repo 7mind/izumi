@@ -1,5 +1,6 @@
 package org.scalatest.distage
 
+import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
@@ -81,7 +82,7 @@ class DistageScalatestReporter extends TestReporter {
       )
     }
 
-    def reportCancellation(duration: FiniteDuration, clue: String, cause: Option[Throwable]): Unit = {
+    def reportCancellation(duration: FiniteDuration, clue: String, cause: Throwable): Unit = {
       doReport(suiteId1)(
         TestCanceled(
           _,
@@ -95,7 +96,7 @@ class DistageScalatestReporter extends TestReporter {
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
           formatter = formatter,
-          throwable = cause,
+          throwable = Some(cause),
         )
       )
     }
@@ -137,10 +138,15 @@ class DistageScalatestReporter extends TestReporter {
         reportFailure(s.failure.timing.duration, s.failure.failure.toThrowable)
       case s: TestStatus.EarlyIgnoredByPrecondition =>
         reportStarting()
-        reportCancellation(s.cause.instantiationTiming.duration, s"ignored early: ${s.checks.toList.niceList()}", None)
+        reportCancellation(
+          s.cause.instantiationTiming.duration,
+          s"ignored early: ${s.checks.toList.niceList()}",
+          // the Throwable is necessary for Intellij to include explanation other than just 'Test Canceled'
+          cause = new IntegrationCheckException(s.checks),
+        )
       case s: TestStatus.EarlyCancelled =>
         reportStarting()
-        reportCancellation(s.cause.instantiationTiming.duration, s"cancelled early: ${s.throwableCause.getMessage}", Some(s.throwableCause))
+        reportCancellation(s.cause.instantiationTiming.duration, s"cancelled early: ${s.throwableCause.getMessage}", s.throwableCause)
       case s: TestStatus.EarlyFailed =>
         reportStarting()
         reportFailure(s.cause.instantiationTiming.duration, s.throwableCause)
@@ -153,13 +159,13 @@ class DistageScalatestReporter extends TestReporter {
         ()
 
       case s: TestStatus.IgnoredByPrecondition =>
-        reportCancellation(s.cause.totalTime, s"ignored: ${s.checks.toList.niceList()}", None)
+        reportCancellation(s.cause.totalTime, s"ignored: ${s.checks.toList.niceList()}", new IntegrationCheckException(s.checks))
 
       case s: TestStatus.FailedPlanning =>
         reportFailure(s.timing.duration, s.failure)
 
       case s: TestStatus.Cancelled =>
-        reportCancellation(s.cause.totalTime, s"cancelled: ${s.throwableCause.getMessage}", Some(s.throwableCause))
+        reportCancellation(s.cause.totalTime, s"cancelled: ${s.throwableCause.getMessage}", s.throwableCause)
       case s: TestStatus.Failed =>
         reportFailure(s.cause.totalTime, s.throwableCause)
       case s: TestStatus.Succeed =>
