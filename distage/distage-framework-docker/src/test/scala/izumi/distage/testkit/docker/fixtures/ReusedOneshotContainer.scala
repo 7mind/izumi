@@ -39,7 +39,8 @@ object ReuseCheckContainer extends ContainerDef {
 object ExitCodeCheckContainer extends ContainerDef {
   override def config: Config = {
     Config(
-      image = "alpine:3.10.0",
+      registry = Some("public.ecr.aws"),
+      image = "docker/library/alpine:3.17.3",
       ports = Seq(),
       mounts = Seq(CmdContainerModule.stateFileMount),
       entrypoint = Seq("sh", "-c", s"exit 42"),

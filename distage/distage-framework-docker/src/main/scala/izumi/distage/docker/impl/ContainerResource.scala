@@ -82,10 +82,16 @@ open class ContainerResource[F[_], Tag](
         PortDecl(containerPort, local, binding, labels)
     }
 
+    // use container registry or global registry if `useRegistry` is true
+    val imageRegistry = config.registry.orElse(client.globalRegistry)
+    val registryAuth = imageRegistry.flatMap(client.getRegistryAuth)
+    // render image name with specified registry like registry/repo/image
+    val imageName = renderImageName(imageRegistry)
+
     if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
-      runReused(ports)
+      runReused(imageName, imageRegistry, registryAuth, ports)
     } else {
-      runNew(ports)
+      runNew(imageName, imageRegistry, registryAuth, ports)
     }
   }
 
@@ -192,7 +198,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected[this] def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     val retryWait = 200.millis
     val maxAttempts = (config.pullTimeout / retryWait).toInt
     logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "timeout"} ${maxAttempts -> "max lock retries"}...")
@@ -203,7 +209,7 @@ open class ContainerResource[F[_], Tag](
       maxAttempts = maxAttempts,
     ) {
       for {
-        matchingImageContainers <- findMatchingImages(ports)
+        matchingImageContainers <- findMatchingImages(imageName, ports)
         candidate <- findAcceptableCandidate(ports, matchingImageContainers)
         result <- candidate match {
           case Some((c, cInspection, existingPorts)) =>
@@ -222,7 +228,7 @@ open class ContainerResource[F[_], Tag](
 
           case None =>
             logger.info(s"No existing container found for ${config.image}, will run new...")
-            runNew(ports)
+            runNew(imageName, imageRegistry, registryAuth, ports)
         }
       } yield {
         result
@@ -290,7 +296,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  private def findMatchingImages(ports: Seq[PortDecl]) = {
+  private def findMatchingImages(imageName: String, ports: Seq[PortDecl]): F[List[Container]] = {
 
     /*
      * We will filter out containers by "running" status if container exposes any ports to be mapped
@@ -310,7 +316,7 @@ open class ContainerResource[F[_], Tag](
       try {
         rawClient
           .listContainersCmd()
-          .withAncestorFilter(List(config.image).asJava)
+          .withAncestorFilter(List(imageName).asJava)
           .withStatusFilter(statusFilter.asJava)
           .withLabelFilter(config.userTags.asJava)
           .exec().asScala.toList
@@ -322,14 +328,8 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def runNew(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected[this] def runNew(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
-
-    // use container registry or global registry if `useRegistry` is true
-    val imageRegistry = config.registry.orElse(client.globalRegistry)
-    val registryAuth = imageRegistry.flatMap(client.getRegistryAuth)
-    // render image name with specified registry like registry/repo/image
-    val imageName = renderImageName(imageRegistry)
 
     val baseCmd = rawClient.createContainerCmd(imageName).withLabels(allPortLabels.asJava)
 
@@ -491,19 +491,10 @@ open class ContainerResource[F[_], Tag](
   }
 
   private[this] def renderImageName(registry: Option[String]) = {
-    lazy val renderedRegistry = registry.filterNot(_.contains("index.docker.io")).map(_ + "/").getOrElse("")
-    config.image.split("/").toList match {
-      case repo :: image :: Nil =>
-        s"$renderedRegistry$repo/$image"
-      case image :: Nil =>
-        s"${renderedRegistry}library/$image"
-      case registry :: repo :: image :: Nil =>
-        throw new IllegalArgumentException(s"Use config.regisry instead of manual registry specification: $registry; $repo/$image")
-      case other =>
-        throw new IllegalArgumentException(s"Unknown image name: $other")
-    }
+    registry
+      .filterNot(_.contains("index.docker.io"))
+      .fold(config.image)(reg => s"$reg/${config.image}")
   }
-
 }
 
 object ContainerResource {
