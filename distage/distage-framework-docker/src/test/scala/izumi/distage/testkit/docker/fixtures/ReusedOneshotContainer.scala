@@ -11,7 +11,8 @@ import izumi.distage.model.definition.Lifecycle
 object ReusedOneshotContainer extends ContainerDef {
   override def config: Config = {
     Config(
-      image = "alpine:3.12.0",
+      registry = Some("public.ecr.aws"),
+      image = "docker/library/alpine:3.17.3",
       ports = Seq(),
       mounts = Seq(CmdContainerModule.stateFileMount),
       entrypoint = Seq("sh", "-c", s"sleep 1; echo `date` >> ${CmdContainerModule.stateFilePath}"),
@@ -25,7 +26,8 @@ object ReusedOneshotContainer extends ContainerDef {
 object ReuseCheckContainer extends ContainerDef {
   override def config: Config = {
     Config(
-      image = "alpine:3.11.0",
+      registry = Some("public.ecr.aws"),
+      image = "docker/library/alpine:3.17.3",
       ports = Seq(),
       mounts = Seq(CmdContainerModule.stateFileMount),
       entrypoint = Seq("sh", "-c", s"if [[ $$(cat ${CmdContainerModule.stateFilePath} | wc -l | awk '{print $$1}') == 1 ]]; then exit 0; else exit 42; fi"),

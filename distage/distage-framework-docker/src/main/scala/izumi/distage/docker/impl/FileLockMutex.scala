@@ -30,7 +30,7 @@ object FileLockMutex {
       F.tailRecM(0) {
         attempts =>
           if (attempts != 0) {
-            logger.info(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire file lock for image $filename.")
+            logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire file lock for image $filename.")
           }
           F.definitelyRecover[Either[Int, Option[FileLock]]](
             doAcquire.map(lock => Right(Option(lock)))

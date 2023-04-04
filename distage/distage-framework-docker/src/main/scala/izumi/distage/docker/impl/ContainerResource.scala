@@ -23,7 +23,7 @@ import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
 import java.util.concurrent.{TimeUnit, TimeoutException}
-import scala.annotation.nowarn
+import scala.annotation.{nowarn, tailrec}
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
@@ -199,15 +199,8 @@ open class ContainerResource[F[_], Tag](
   }
 
   protected[this] def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
-    val retryWait = 200.millis
-    val maxAttempts = (config.pullTimeout / retryWait).toInt
-    logger.info(s"About to start or find container $imageName, ${config.pullTimeout -> "timeout"} ${maxAttempts -> "max lock retries"}...")
-
-    FileLockMutex.withLocalMutex(logger)(
-      s"distage-container-resource-$imageName:${config.ports.mkString(";")}".replaceAll("[:/]", "_"),
-      retryWait = retryWait,
-      maxAttempts = maxAttempts,
-    ) {
+    logger.info(s"About to start or find container $imageName, ${config.pullTimeout -> "timeout"}...")
+    fileLockMutex(s"distage-container-resource-$imageName:${config.ports.mkString(";")}") {
       for {
         matchingImageContainers <- findMatchingImages(imageName, ports)
         candidate <- findAcceptableCandidate(ports, matchingImageContainers)
@@ -408,35 +401,59 @@ open class ContainerResource[F[_], Tag](
   }
 
   protected[this] def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
-    F.maybeSuspendEither {
-      val existingImages = rawClient
-        .listImagesCmd().exec()
-        .asScala
-        .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
-        .toSet
-      // test if image exists
-      // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
-      if (existingImages.contains(imageName) || existingImages.contains(imageName.replace("library/", ""))) {
-        logger.info(s"Skipping pull for `$imageName`. Image already exists.")
-        Right(())
-      } else {
-        logger.info(s"Going to pull `$imageName`...")
-        // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
-        Try {
-          val pullCmd = Value(rawClient.pullImageCmd(imageName))
-            .mut(registry)(_.withRegistry(_))
-            .mut(registryAuth)(_.withAuthConfig(_))
-            .get
-          pullCmd.start().awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
-        } match {
-          case Success(true) => // pulled successfully
-            Right(())
-          case Success(_) => // timed out
-            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull timeout exception.", None)))
-          case Failure(t) => // failure occurred (e.g. rate limiter failure)
-            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t))))
-        }
+    @tailrec
+    def pullWithRetry(attempt: Int = 0): Either[Throwable, Unit] = {
+      Try {
+        val pullCmd = Value(rawClient.pullImageCmd(imageName))
+          .mut(registry)(_.withRegistry(_))
+          .mut(registryAuth)(_.withAuthConfig(_))
+          .get
+        pullCmd.start().awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
+      } match {
+        case Success(true) => // pulled successfully
+          Right(())
+        case Success(_) => // timed out
+          Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull timeout exception.", None)))
+        case Failure(t) if config.pullAttempts > attempt => // exponential retry
+          val sleepMillis = {
+            val sleep = config.pullAttemptInitialSleep.toMillis * math.pow(2.0, attempt.toDouble).toLong
+            if (sleep > config.pullAttemptMaxSleep.toMillis) {
+              config.pullAttemptMaxSleep.toMillis
+            } else {
+              sleep
+            }
+          }
+          logger.warn(s"Failed to pull image `$imageName`, will retry after $sleepMillis, ${t.getMessage -> "error"}")
+          Thread.sleep(sleepMillis)
+          pullWithRetry(attempt + 1)
+        case Failure(t) => // failure occurred (e.g. rate limiter failure)
+          Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull failed due to: ${t.getMessage}", Some(t))))
       }
+    }
+
+    fileLockMutex(s"distage-container-image-pull-$imageName") {
+      for {
+        existingImages <- F.maybeSuspend {
+          rawClient
+            .listImagesCmd().exec()
+            .asScala
+            .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
+            .toSet
+        }
+        _ <- {
+          // test if image exists
+          // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
+          if (existingImages.contains(imageName) || existingImages.contains(imageName.replace("library/", ""))) {
+            F.maybeSuspend(logger.info(s"Skipping pull for `$imageName`. Image already exists."))
+          } else {
+            F.maybeSuspendEither {
+              logger.info(s"Going to pull `$imageName`...")
+              // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
+              pullWithRetry()
+            }
+          }
+        }
+      } yield ()
     }
   }
 
@@ -494,6 +511,21 @@ open class ContainerResource[F[_], Tag](
     registry
       .filterNot(_.contains("index.docker.io"))
       .fold(config.image)(reg => s"$reg/${config.image}")
+  }
+
+  private[this] def fileLockMutex[A](
+    name: String
+  )(effect:
+    // MUST be by-name because of QuasiIO[Identity]
+    => F[A]
+  ): F[A] = {
+    val retryWait = 200.millis
+    val maxAttempts = (config.pullTimeout / retryWait).toInt
+    FileLockMutex.withLocalMutex(logger)(
+      name.replaceAll("[:/]", "_"),
+      retryWait = retryWait,
+      maxAttempts = maxAttempts,
+    )(effect)
   }
 }
 
