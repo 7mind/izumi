@@ -23,7 +23,7 @@ import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
 import java.util.concurrent.{TimeUnit, TimeoutException}
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.nowarn
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
@@ -401,34 +401,34 @@ open class ContainerResource[F[_], Tag](
   }
 
   protected[this] def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
-    @tailrec
-    def pullWithRetry(attempt: Int = 0): Either[Throwable, Unit] = {
-      Try {
-        val pullCmd = Value(rawClient.pullImageCmd(imageName))
-          .mut(registry)(_.withRegistry(_))
-          .mut(registryAuth)(_.withAuthConfig(_))
-          .get
-        pullCmd.start().awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
-      } match {
-        case Success(true) => // pulled successfully
-          Right(())
-        case Success(_) => // timed out
-          Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull timeout exception.", None)))
-        case Failure(t) if config.pullAttempts > attempt => // exponential retry
-          val sleepMillis = {
-            val sleep = config.pullAttemptInitialSleep.toMillis * math.pow(2.0, attempt.toDouble).toLong
-            if (sleep > config.pullAttemptMaxSleep.toMillis) {
-              config.pullAttemptMaxSleep.toMillis
-            } else {
-              sleep
+    def pullWithRetry(attempt: Int = 0): F[Unit] = {
+      F.maybeSuspend(
+        Try {
+          val pullCmd = Value(rawClient.pullImageCmd(imageName))
+            .mut(registry)(_.withRegistry(_))
+            .mut(registryAuth)(_.withAuthConfig(_))
+            .get
+          pullCmd.start().awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
+        }
+      ).flatMap {
+          case Success(true) => // pulled successfully
+            F.unit
+          case Success(_) => // timed out
+            F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull timeout exception.", None)))
+          case Failure(t) if config.pullAttempts > attempt => // exponential retry
+            val sleepDuration = {
+              val sleep = config.pullAttemptInitialSleep * math.pow(2.0, attempt.toDouble).toLong
+              if (sleep > config.pullAttemptMaxSleep) {
+                config.pullAttemptMaxSleep
+              } else {
+                sleep
+              }
             }
-          }
-          logger.warn(s"Failed to pull image `$imageName`, will retry after $sleepMillis, ${t.getMessage -> "error"}")
-          Thread.sleep(sleepMillis)
-          pullWithRetry(attempt + 1)
-        case Failure(t) => // failure occurred (e.g. rate limiter failure)
-          Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull failed due to: ${t.getMessage}", Some(t))))
-      }
+            logger.warn(s"Failed to pull image `$imageName`, will retry after $sleepDuration, ${t.getMessage -> "error"}")
+            P.sleep(sleepDuration).flatMap(_ => pullWithRetry(attempt + 1))
+          case Failure(t) => // failure occurred (e.g. rate limiter failure)
+            F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull failed due to: ${t.getMessage}", Some(t))))
+        }
     }
 
     fileLockMutex(s"distage-container-image-pull-$imageName") {
@@ -446,11 +446,8 @@ open class ContainerResource[F[_], Tag](
           if (existingImages.contains(imageName) || existingImages.contains(imageName.replace("library/", ""))) {
             F.maybeSuspend(logger.info(s"Skipping pull for `$imageName`. Image already exists."))
           } else {
-            F.maybeSuspendEither {
-              logger.info(s"Going to pull `$imageName`...")
-              // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
-              pullWithRetry()
-            }
+            // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
+            F.maybeSuspend(logger.info(s"Going to pull `$imageName`...")).flatMap(_ => pullWithRetry())
           }
         }
       } yield ()
