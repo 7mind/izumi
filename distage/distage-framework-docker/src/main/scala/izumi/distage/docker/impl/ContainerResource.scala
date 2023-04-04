@@ -201,10 +201,10 @@ open class ContainerResource[F[_], Tag](
   protected[this] def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     val retryWait = 200.millis
     val maxAttempts = (config.pullTimeout / retryWait).toInt
-    logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "timeout"} ${maxAttempts -> "max lock retries"}...")
+    logger.info(s"About to start or find container $imageName, ${config.pullTimeout -> "timeout"} ${maxAttempts -> "max lock retries"}...")
 
     FileLockMutex.withLocalMutex(logger)(
-      s"distage-container-resource-${config.image}:${config.ports.mkString(";")}".replaceAll("[:/]", "_"),
+      s"distage-container-resource-$imageName:${config.ports.mkString(";")}".replaceAll("[:/]", "_"),
       retryWait = retryWait,
       maxAttempts = maxAttempts,
     ) {
@@ -223,11 +223,11 @@ open class ContainerResource[F[_], Tag](
               hostName = cInspection.getConfig.getHostName,
               labels = cInspection.getConfig.getLabels.asScala.toMap,
             )
-            logger.info(s"Matching container found: ${config.image}->${unverified.name}:${unverified.id}, will try to reuse...")
+            logger.info(s"Matching container found: $imageName->${unverified.name}:${unverified.id}, will try to reuse...")
             await(unverified)
 
           case None =>
-            logger.info(s"No existing container found for ${config.image}, will run new...")
+            logger.info(s"No existing container found for $imageName, will run new...")
             runNew(imageName, imageRegistry, registryAuth, ports)
         }
       } yield {
@@ -365,7 +365,7 @@ open class ContainerResource[F[_], Tag](
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
           .get
 
-        logger.debug(s"Going to create container from image `${config.image}`...")
+        logger.debug(s"Going to create container from image `$imageName`...")
         val res = createContainerCmd.exec()
 
         logger.debug(s"Going to start container ${res.getId -> "id"}...")
@@ -377,7 +377,7 @@ open class ContainerResource[F[_], Tag](
 
         maybeMappedPorts match {
           case Left(value) =>
-            throw new RuntimeException(s"Created container from `${config.image}` with ${res.getId -> "id"}, but ports are missing: $value!")
+            throw new RuntimeException(s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!")
 
           case Right(mappedPorts) =>
             val container = DockerContainer[Tag](
@@ -390,7 +390,7 @@ open class ContainerResource[F[_], Tag](
               connectivity = mappedPorts,
               availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
             )
-            logger.info(s"Created new $container from ${config.image}... Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
+            logger.info(s"Created new $container from $imageName... Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
             config.networks.foreach {
               network =>
                 rawClient
@@ -416,8 +416,8 @@ open class ContainerResource[F[_], Tag](
         .toSet
       // test if image exists
       // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
-      if (existingImages.contains(config.image) || existingImages.contains(config.image.replace("library/", ""))) {
-        logger.info(s"Skipping pull for `${config.image}`. Image already exists.")
+      if (existingImages.contains(imageName) || existingImages.contains(imageName.replace("library/", ""))) {
+        logger.info(s"Skipping pull for `$imageName`. Image already exists.")
         Right(())
       } else {
         logger.info(s"Going to pull `$imageName`...")
@@ -432,7 +432,7 @@ open class ContainerResource[F[_], Tag](
           case Success(true) => // pulled successfully
             Right(())
           case Success(_) => // timed out
-            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None)))
+            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull timeout exception.", None)))
           case Failure(t) => // failure occurred (e.g. rate limiter failure)
             Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t))))
         }

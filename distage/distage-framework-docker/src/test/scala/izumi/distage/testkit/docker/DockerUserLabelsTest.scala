@@ -17,7 +17,7 @@ object DockerUserLabelsTest {
     override def config: Config = {
       Config(
         registry = Some("public.ecr.aws"),
-        image = "library/postgres:12.6",
+        image = "docker/library/postgres:12.6",
         ports = Seq(primaryPort),
         env = Map("POSTGRES_PASSWORD" -> "postgres"),
         userTags = Map("user.specific.tag" -> "test.tag"),
@@ -26,7 +26,7 @@ object DockerUserLabelsTest {
     }
   }
 
-  val taggedDockerModule = new ModuleDef {
+  val taggedDockerModule: ModuleDef = new ModuleDef {
     make[PostgresTestDocker.Container].fromResource {
       PostgresTestDocker.make[Task]
     }
