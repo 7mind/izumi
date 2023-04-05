@@ -1,6 +1,5 @@
 package izumi.distage.testkit.distagesuite.generic
 
-import cats.effect.IO as CIO
 import distage.*
 import distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.modules.DefaultModule
@@ -11,12 +10,11 @@ import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, Spec3}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
 import zio.Has.HasSyntax
-import zio.{Has, Task, ZEnv, ZIO}
+import zio.{Has, Task, ZIO}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
@@ -222,11 +220,6 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
 
 }
 
-final class DistageTestExampleId extends DistageTestExampleBase[Identity]
-final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
-final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
-final class DistageTestExampleZIOZEnv extends DistageTestExampleBase[ZIO[ZEnv, Throwable, +_]]
-
 abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
   "distage test" should {
     "sleep" in {
@@ -237,34 +230,6 @@ abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F
     }
   }
 }
-
-final class DistageSleepTest01 extends DistageSleepTest[CIO]
-final class DistageSleepTest02 extends DistageSleepTest[CIO]
-final class DistageSleepTest03 extends DistageSleepTest[CIO]
-final class DistageSleepTest04 extends DistageSleepTest[CIO]
-final class DistageSleepTest05 extends DistageSleepTest[CIO]
-final class DistageSleepTest06 extends DistageSleepTest[CIO]
-final class DistageSleepTest07 extends DistageSleepTest[CIO]
-final class DistageSleepTest08 extends DistageSleepTest[CIO]
-final class DistageSleepTest09 extends DistageSleepTest[CIO]
-final class IdentityDistageSleepTest01 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest02 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest03 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest04 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest05 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest06 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest07 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest08 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest09 extends DistageSleepTest[Identity]
-final class TaskDistageSleepTest01 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest02 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest03 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest04 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest05 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest06 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest07 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest08 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest09 extends DistageSleepTest[Task]
 
 abstract class OverloadingTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
   "test overloading of `in`" in {
@@ -283,20 +248,12 @@ abstract class OverloadingTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1
   }
 }
 
-final class OverloadingTestCIO extends OverloadingTest[CIO]
-final class OverloadingTestTask extends OverloadingTest[Task]
-final class OverloadingTestIdentity extends OverloadingTest[Identity]
-
 abstract class ActivationTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
   "resolve bindings for the same key via activation axis" in {
     (activeComponent: ActiveComponent) =>
       assert(activeComponent == TestActiveComponent)
   }
 }
-
-final class ActivationTestCIO extends ActivationTest[CIO]
-final class ActivationTestTask extends ActivationTest[Task]
-final class ActivationTestIdentity extends ActivationTest[Identity]
 
 abstract class ForcedRootTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[F] {
   override protected def config: TestConfig = super.config.copy(
@@ -312,7 +269,3 @@ abstract class ForcedRootTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[
       assert(locatorRef.get.get[ForcedRootProbe].started)
   }
 }
-
-final class ForcedRootTestCIO extends ForcedRootTest[CIO]
-final class ForcedRootTestTask extends ForcedRootTest[Task]
-final class ForcedRootTestIdentity extends ForcedRootTest[Identity]
