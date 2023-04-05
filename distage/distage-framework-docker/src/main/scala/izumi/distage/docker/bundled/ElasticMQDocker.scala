@@ -11,9 +11,8 @@ object ElasticMQDocker extends ContainerDef {
 
   override def config: Config = {
     Config(
-      image = "softwaremill/elasticmq:0.15.7",
+      image = "softwaremill/elasticmq:1.3.14",
       ports = Seq(primaryPort),
-      entrypoint = Seq("sh", "-c", s"/opt/docker/bin/elasticmq-server -Dnode-address.port=$$${primaryPort.toEnvVariable}"),
       healthCheck = ContainerHealthCheck.httpGetCheck(primaryPort),
     )
   }

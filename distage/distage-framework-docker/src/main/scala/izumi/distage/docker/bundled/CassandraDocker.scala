@@ -10,7 +10,8 @@ object CassandraDocker extends ContainerDef {
 
   override def config: Config = {
     Config(
-      image = "cassandra:3.11.6",
+      registry = Some("public.ecr.aws"),
+      image = "docker/library/cassandra:3.11.14",
       ports = Seq(primaryPort),
     )
   }

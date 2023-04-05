@@ -53,6 +53,8 @@ object KafkaKRaftDocker extends ContainerDef {
 
   override def config: Config = {
     Config(
+      // arm64 image is missing on public aws ecr
+      // registry = Some("public.ecr.aws"),
       image = "bitnami/kafka:3.4.0",
       ports = Seq(primaryPort),
       env = ContainerEnvironment.from {

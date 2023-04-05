@@ -82,10 +82,16 @@ open class ContainerResource[F[_], Tag](
         PortDecl(containerPort, local, binding, labels)
     }
 
+    // use container registry or global registry if `useRegistry` is true
+    val imageRegistry = config.registry.orElse(client.globalRegistry)
+    val registryAuth = imageRegistry.flatMap(client.getRegistryAuth)
+    // render image name with specified registry like registry/repo/image
+    val imageName = renderImageName(imageRegistry)
+
     if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
-      runReused(ports)
+      runReused(imageName, imageRegistry, registryAuth, ports)
     } else {
-      runNew(ports)
+      runNew(imageName, imageRegistry, registryAuth, ports)
     }
   }
 
@@ -192,18 +198,11 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def runReused(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
-    val retryWait = 200.millis
-    val maxAttempts = (config.pullTimeout / retryWait).toInt
-    logger.info(s"About to start or find container ${config.image}, ${config.pullTimeout -> "timeout"} ${maxAttempts -> "max lock retries"}...")
-
-    FileLockMutex.withLocalMutex(logger)(
-      s"distage-container-resource-${config.image}:${config.ports.mkString(";")}".replaceAll("[:/]", "_"),
-      retryWait = retryWait,
-      maxAttempts = maxAttempts,
-    ) {
+  protected[this] def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+    logger.info(s"About to start or find container $imageName, ${config.pullTimeout -> "timeout"}...")
+    fileLockMutex(s"distage-container-resource-$imageName:${config.ports.mkString(";")}") {
       for {
-        matchingImageContainers <- findMatchingImages(ports)
+        matchingImageContainers <- findMatchingImages(imageName, ports)
         candidate <- findAcceptableCandidate(ports, matchingImageContainers)
         result <- candidate match {
           case Some((c, cInspection, existingPorts)) =>
@@ -217,12 +216,12 @@ open class ContainerResource[F[_], Tag](
               hostName = cInspection.getConfig.getHostName,
               labels = cInspection.getConfig.getLabels.asScala.toMap,
             )
-            logger.info(s"Matching container found: ${config.image}->${unverified.name}:${unverified.id}, will try to reuse...")
+            logger.info(s"Matching container found: $imageName->${unverified.name}:${unverified.id}, will try to reuse...")
             await(unverified)
 
           case None =>
-            logger.info(s"No existing container found for ${config.image}, will run new...")
-            runNew(ports)
+            logger.info(s"No existing container found for $imageName, will run new...")
+            runNew(imageName, imageRegistry, registryAuth, ports)
         }
       } yield {
         result
@@ -290,7 +289,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  private def findMatchingImages(ports: Seq[PortDecl]) = {
+  private def findMatchingImages(imageName: String, ports: Seq[PortDecl]): F[List[Container]] = {
 
     /*
      * We will filter out containers by "running" status if container exposes any ports to be mapped
@@ -310,7 +309,7 @@ open class ContainerResource[F[_], Tag](
       try {
         rawClient
           .listContainersCmd()
-          .withAncestorFilter(List(config.image).asJava)
+          .withAncestorFilter(List(imageName).asJava)
           .withStatusFilter(statusFilter.asJava)
           .withLabelFilter(config.userTags.asJava)
           .exec().asScala.toList
@@ -322,14 +321,8 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def runNew(ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected[this] def runNew(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
-
-    // use container registry or global registry if `useRegistry` is true
-    val imageRegistry = config.registry.orElse(client.globalRegistry)
-    val registryAuth = imageRegistry.flatMap(client.getRegistryAuth)
-    // render image name with specified registry like registry/repo/image
-    val imageName = renderImageName(imageRegistry)
 
     val baseCmd = rawClient.createContainerCmd(imageName).withLabels(allPortLabels.asJava)
 
@@ -365,7 +358,7 @@ open class ContainerResource[F[_], Tag](
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
           .get
 
-        logger.debug(s"Going to create container from image `${config.image}`...")
+        logger.debug(s"Going to create container from image `$imageName`...")
         val res = createContainerCmd.exec()
 
         logger.debug(s"Going to start container ${res.getId -> "id"}...")
@@ -377,7 +370,7 @@ open class ContainerResource[F[_], Tag](
 
         maybeMappedPorts match {
           case Left(value) =>
-            throw new RuntimeException(s"Created container from `${config.image}` with ${res.getId -> "id"}, but ports are missing: $value!")
+            throw new RuntimeException(s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!")
 
           case Right(mappedPorts) =>
             val container = DockerContainer[Tag](
@@ -390,7 +383,7 @@ open class ContainerResource[F[_], Tag](
               connectivity = mappedPorts,
               availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
             )
-            logger.info(s"Created new $container from ${config.image}... Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
+            logger.info(s"Created new $container from $imageName... Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
             config.networks.foreach {
               network =>
                 rawClient
@@ -408,35 +401,56 @@ open class ContainerResource[F[_], Tag](
   }
 
   protected[this] def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
-    F.maybeSuspendEither {
-      val existingImages = rawClient
-        .listImagesCmd().exec()
-        .asScala
-        .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
-        .toSet
-      // test if image exists
-      // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
-      if (existingImages.contains(config.image) || existingImages.contains(config.image.replace("library/", ""))) {
-        logger.info(s"Skipping pull for `${config.image}`. Image already exists.")
-        Right(())
-      } else {
-        logger.info(s"Going to pull `$imageName`...")
-        // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
+    def pullWithRetry(attempt: Int = 0): F[Unit] = {
+      F.maybeSuspend(
         Try {
           val pullCmd = Value(rawClient.pullImageCmd(imageName))
             .mut(registry)(_.withRegistry(_))
             .mut(registryAuth)(_.withAuthConfig(_))
             .get
           pullCmd.start().awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
-        } match {
-          case Success(true) => // pulled successfully
-            Right(())
-          case Success(_) => // timed out
-            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `${config.image}` pull timeout exception.", None)))
-          case Failure(t) => // failure occurred (e.g. rate limiter failure)
-            Left(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image pulling failed due to: ${t.getMessage}", Some(t))))
         }
-      }
+      ).flatMap {
+          case Success(true) => // pulled successfully
+            F.unit
+          case Success(_) => // timed out
+            F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull timeout exception.", None)))
+          case Failure(t) if config.pullAttempts > attempt => // exponential retry
+            val sleepDuration = {
+              val sleep = config.pullAttemptInitialSleep * math.pow(2.0, attempt.toDouble).toLong
+              if (sleep > config.pullAttemptMaxSleep) {
+                config.pullAttemptMaxSleep
+              } else {
+                sleep
+              }
+            }
+            logger.warn(s"Failed to pull image `$imageName`, will retry after $sleepDuration, ${t.getMessage -> "error"}")
+            P.sleep(sleepDuration).flatMap(_ => pullWithRetry(attempt + 1))
+          case Failure(t) => // failure occurred (e.g. rate limiter failure)
+            F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull failed due to: ${t.getMessage}", Some(t))))
+        }
+    }
+
+    fileLockMutex(s"distage-container-image-pull-$imageName") {
+      for {
+        existingImages <- F.maybeSuspend {
+          rawClient
+            .listImagesCmd().exec()
+            .asScala
+            .flatMap(i => Option(i.getRepoTags).fold(List.empty[String])(_.toList))
+            .toSet
+        }
+        _ <- {
+          // test if image exists
+          // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
+          if (existingImages.contains(imageName) || existingImages.contains(imageName.replace("library/", ""))) {
+            F.maybeSuspend(logger.info(s"Skipping pull for `$imageName`. Image already exists."))
+          } else {
+            // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
+            F.maybeSuspend(logger.info(s"Going to pull `$imageName`...")).flatMap(_ => pullWithRetry())
+          }
+        }
+      } yield ()
     }
   }
 
@@ -491,19 +505,25 @@ open class ContainerResource[F[_], Tag](
   }
 
   private[this] def renderImageName(registry: Option[String]) = {
-    lazy val renderedRegistry = registry.filterNot(_.contains("index.docker.io")).map(_ + "/").getOrElse("")
-    config.image.split("/").toList match {
-      case repo :: image :: Nil =>
-        s"$renderedRegistry$repo/$image"
-      case image :: Nil =>
-        s"${renderedRegistry}library/$image"
-      case registry :: repo :: image :: Nil =>
-        throw new IllegalArgumentException(s"Use config.regisry instead of manual registry specification: $registry; $repo/$image")
-      case other =>
-        throw new IllegalArgumentException(s"Unknown image name: $other")
-    }
+    registry
+      .filterNot(_.contains("index.docker.io"))
+      .fold(config.image)(reg => s"$reg/${config.image}")
   }
 
+  private[this] def fileLockMutex[A](
+    name: String
+  )(effect:
+    // MUST be by-name because of QuasiIO[Identity]
+    => F[A]
+  ): F[A] = {
+    val retryWait = 200.millis
+    val maxAttempts = (config.pullTimeout / retryWait).toInt
+    FileLockMutex.withLocalMutex(logger)(
+      name.replaceAll("[:/]", "_"),
+      retryWait = retryWait,
+      maxAttempts = maxAttempts,
+    )(effect)
+  }
 }
 
 object ContainerResource {

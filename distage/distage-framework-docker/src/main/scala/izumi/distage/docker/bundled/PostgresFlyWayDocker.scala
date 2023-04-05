@@ -28,7 +28,8 @@ object PostgresFlyWayDocker extends ContainerDef {
 
   override def config: Config = PostgresFlyWayDocker.applyCfg(Cfg.default)(
     Config(
-      image = "library/postgres:12.3",
+      registry = Some("public.ecr.aws"),
+      image = "docker/library/postgres:12.6",
       ports = Seq(primaryPort),
     )
   )

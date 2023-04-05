@@ -2,8 +2,8 @@ package izumi.distage.testkit.docker
 
 import distage.ModuleDef
 import izumi.distage.docker.ContainerDef
-import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
+import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.testkit.docker.DockerUserLabelsTest.*
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec2
@@ -16,7 +16,8 @@ object DockerUserLabelsTest {
 
     override def config: Config = {
       Config(
-        image = "library/postgres:12.3",
+        registry = Some("public.ecr.aws"),
+        image = "docker/library/postgres:12.6",
         ports = Seq(primaryPort),
         env = Map("POSTGRES_PASSWORD" -> "postgres"),
         userTags = Map("user.specific.tag" -> "test.tag"),
@@ -25,7 +26,7 @@ object DockerUserLabelsTest {
     }
   }
 
-  val taggedDockerModule = new ModuleDef {
+  val taggedDockerModule: ModuleDef = new ModuleDef {
     make[PostgresTestDocker.Container].fromResource {
       PostgresTestDocker.make[Task]
     }
