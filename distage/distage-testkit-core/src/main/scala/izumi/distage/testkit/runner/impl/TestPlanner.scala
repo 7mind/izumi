@@ -126,7 +126,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
             case (PackedEnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
               val memoizationInjector = packedEnv.head.anyMemoizationInjector
               val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-              val memoizationTree = testTreeBuilder.build(packedEnv)
+              val memoizationTree = testTreeBuilder.build(runtimePlan, packedEnv)
               assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
               val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
               (env, memoizationTree)
@@ -249,6 +249,8 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       _ <- Right(planChecker.showProxyWarnings(runtimePlan))
       // all keys created in runtimePlan, we filter them out later to not recreate any components already in runtimeLocator
       runtimeKeys = runtimePlan.keys
+      // this is not critical, TestTreeBuilder excludes the keys anyway
+      reducedAppModule = appModule.drop(runtimeKeys)
 
       // produce plan for each test
       testPlans <- tests.map {
@@ -256,10 +258,10 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
           val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
           for {
-            plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(appModule, fullActivation, testRoots)) else Right(Plan.empty)
+            plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, fullActivation, testRoots)) else Right(Plan.empty)
             _ <- Right(planChecker.showProxyWarnings(plan))
           } yield {
-            AlmostPreparedTest(distageTest, appModule, plan.keys, fullActivation)
+            AlmostPreparedTest(distageTest, reducedAppModule, plan.keys, fullActivation)
           }
       }.biAggregate
       envKeys = testPlans.flatMap(_.targetKeys).toSet
@@ -267,7 +269,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
       // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized
       // weak sets behave as usual
-      (strengthenedKeys, strengthenedAppModule) = appModule.drop(runtimeKeys).foldLeftWith(List.empty[DIKey]) {
+      (strengthenedKeys, strengthenedAppModule) = reducedAppModule.foldLeftWith(List.empty[DIKey]) {
         case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && (envKeys(key) || envKeys(r.key)) =>
           (key :: acc) -> b.copy(implementation = r.copy(weak = false))
         case (acc, b) =>

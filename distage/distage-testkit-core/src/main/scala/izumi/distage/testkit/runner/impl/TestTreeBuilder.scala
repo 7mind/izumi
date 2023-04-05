@@ -11,7 +11,7 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 
 trait TestTreeBuilder[F[_]] {
-  def build(iterator: Iterable[PackedEnv[F]]): TestTree[F]
+  def build(runtimePlan: Plan, iterator: Iterable[PackedEnv[F]]): TestTree[F]
 }
 
 object TestTreeBuilder {
@@ -81,8 +81,8 @@ object TestTreeBuilder {
       }
     }
 
-    override def build(iterator: Iterable[PackedEnv[F]]): TestTree[F] = {
-      val tree = new MemoizationTreeBuilder(Plan.empty)
+    override def build(runtimePlan: Plan, iterator: Iterable[PackedEnv[F]]): TestTree[F] = {
+      val tree = new MemoizationTreeBuilder(runtimePlan)
       // usually, we have a small amount of levels, so parallel executions make only worse here
       iterator.foreach {
         env =>
