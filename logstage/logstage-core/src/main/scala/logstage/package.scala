@@ -23,8 +23,8 @@ package object logstage extends LogStage {
 
   override type LogIORaw[F[_], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F, E]
 
-  override type QueueingSink = sink.QueueingSink
-  override final val QueueingSink: sink.QueueingSink.type = sink.QueueingSink
+  override type ThreadingLogQueue = sink.ThreadingLogQueue
+  override final val ThreadingLogQueue: sink.ThreadingLogQueue.type = sink.ThreadingLogQueue
 
   override type ConfigurableLogRouter = api.routing.ConfigurableLogRouter
   override final val ConfigurableLogRouter: api.routing.ConfigurableLogRouter.type = api.routing.ConfigurableLogRouter

@@ -7,9 +7,9 @@ class LoggingAsyncSinkTest extends AnyWordSpec {
   "Log macro" should {
     "support async sinks" in {
       val testSink = new TestSink()
-      val asyncConsoleSinkJson = new QueueingSink(testSink)
+      val asyncConsoleSinkJson = new ThreadingLogQueue()
       try {
-        new ExampleService(IzLogger(IzLogger.Level.Trace, asyncConsoleSinkJson)).triggerManyMessages()
+        new ExampleService(IzLogger(IzLogger.Level.Trace, testSink, buffer = asyncConsoleSinkJson)).triggerManyMessages()
         assert(testSink.fetch().isEmpty)
         asyncConsoleSinkJson.start()
       } finally {

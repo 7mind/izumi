@@ -12,8 +12,8 @@ trait LogStage {
 
   type LogIORaw[F[_], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F, E]
 
-  type QueueingSink = sink.QueueingSink
-  val QueueingSink: sink.QueueingSink.type = sink.QueueingSink
+  type ThreadingLogQueue = sink.ThreadingLogQueue
+  val ThreadingLogQueue: sink.ThreadingLogQueue.type = sink.ThreadingLogQueue
 
   type ConfigurableLogRouter = api.routing.ConfigurableLogRouter
   val ConfigurableLogRouter: api.routing.ConfigurableLogRouter.type = api.routing.ConfigurableLogRouter

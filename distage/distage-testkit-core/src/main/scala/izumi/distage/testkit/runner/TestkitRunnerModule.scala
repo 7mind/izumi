@@ -11,6 +11,8 @@ import izumi.distage.testkit.runner.impl.services.TimedAction.TimedActionImpl
 import izumi.distage.testkit.runner.impl.services.TimedActionF.TimedActionFImpl
 import izumi.distage.testkit.runner.impl.{DistageTestRunner, TestPlanner, TestTreeBuilder}
 import izumi.fundamentals.platform.functional.Identity
+import izumi.logstage.api.logger.LogQueue
+import logstage.ThreadingLogQueue
 
 class TestkitRunnerModule[F[_]: TagK: DefaultModule](reporter: TestReporter, isCancellation: Throwable => Boolean) extends ModuleDef {
   addImplicit[TagK[F]]
@@ -30,6 +32,7 @@ class TestkitRunnerModule[F[_]: TagK: DefaultModule](reporter: TestReporter, isC
   make[ExtParTraverse[Identity]].from[ExtParTraverse.ExtParTraverseImpl[Identity]]
 
   make[DistageTestRunner[F]].from[DistageTestRunner[F]]
+  make[LogQueue].fromResource(ThreadingLogQueue.resource)
 }
 
 object TestkitRunnerModule {

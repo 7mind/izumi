@@ -21,7 +21,7 @@ import izumi.functional.quasi.{QuasiAsync, QuasiIORunner}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
-import izumi.logstage.api.logger.LogRouter
+import izumi.logstage.api.logger.{LogQueue, LogRouter}
 
 import scala.annotation.nowarn
 import scala.util.Try
@@ -74,6 +74,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
   configLoader: TestConfigLoader,
   testTreeBuilder: TestTreeBuilder[F],
   testRunnerLocator: LocatorRef,
+  logBuffer: LogQueue,
 ) {
   // first we need to plan runtime for our monad, which is retained by TestTreeRunner. Identity is also supported.
   private val runtimeGcRoots: Set[DIKey] = Set(
@@ -109,7 +110,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                 // test loggers will not create polling threads and will log immediately
                 val logConfigLoader = new LogConfigLoaderImpl(CLILoggerOptions(envExec.logLevel, json = false), configLoadLogger)
                 val logConfig = logConfigLoader.loadLoggingConfig(config)
-                val (router, _) = new RouterFactory.RouterFactoryImpl().createRouter(logConfig)(identity)
+                val router = new RouterFactory.RouterFactoryImpl().createRouter(logConfig, logBuffer)
 
                 prepareGroupPlans(envExec, config, env, tests, router).left.map(bad => (tests, bad))
             }

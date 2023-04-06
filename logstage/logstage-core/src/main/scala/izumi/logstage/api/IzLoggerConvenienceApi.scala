@@ -1,7 +1,7 @@
 package izumi.logstage.api
 
 import izumi.logstage.api.Log.CustomContext
-import izumi.logstage.api.logger.{LogRouter, LogSink, RoutingLogger}
+import izumi.logstage.api.logger.{LogQueue, LogRouter, LogSink, RoutingLogger}
 import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.sink.ConsoleSink
 
@@ -24,16 +24,21 @@ trait IzLoggerConvenienceApi[Logger <: RoutingLogger] {
   /**
     * By default, a basic colored console logger with global [[Level.Trace]] minimum threshold
     */
-  final def apply(threshold: Log.Level = Log.Level.Trace, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): Logger = {
-    make(ConfigurableLogRouter(threshold, sink, levels))
+  final def apply(
+    threshold: Log.Level = Log.Level.Trace,
+    sink: LogSink = ConsoleSink.ColoredConsoleSink,
+    levels: Map[String, Log.Level] = Map.empty,
+    buffer: LogQueue = LogQueue.LogQueueImmediateImpl,
+  ): Logger = {
+    make(ConfigurableLogRouter(threshold, sink, levels, buffer))
   }
 
-  final def apply(threshold: Log.Level, sinks: Seq[LogSink]): Logger = {
-    make(ConfigurableLogRouter(threshold, sinks))
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink], buffer: LogQueue): Logger = {
+    make(ConfigurableLogRouter(threshold, sinks, buffer))
   }
 
-  final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): Logger = {
-    make(ConfigurableLogRouter(threshold, sinks, levels))
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level], buffer: LogQueue): Logger = {
+    make(ConfigurableLogRouter(threshold, sinks, levels, buffer))
   }
 
   final def apply(router: LogRouter): Logger = {

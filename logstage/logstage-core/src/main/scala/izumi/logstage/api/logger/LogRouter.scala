@@ -15,8 +15,13 @@ trait LogRouter extends AutoCloseable {
 }
 
 object LogRouter {
-  def apply(threshold: Log.Level = Log.Level.Trace, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): ConfigurableLogRouter = {
-    ConfigurableLogRouter(threshold, Seq(sink), levels)
+  def apply(
+    threshold: Log.Level = Log.Level.Trace,
+    sink: LogSink = ConsoleSink.ColoredConsoleSink,
+    levels: Map[String, Log.Level] = Map.empty,
+    buffer: LogQueue = LogQueue.LogQueueImmediateImpl,
+  ): ConfigurableLogRouter = {
+    ConfigurableLogRouter(threshold, Seq(sink), levels, buffer)
   }
 
   lazy val debugRouter: LogRouter = new LogRouter {
