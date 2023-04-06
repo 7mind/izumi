@@ -106,7 +106,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       Seq(testSink)
     }
 
-    (IzLogger(IzLogger.Level.Trace, sinks, buffer = LogQueue.LogQueueImmediateImpl), testSink)
+    (IzLogger(IzLogger.Level.Trace, sinks, buffer = LogQueue.Immediate), testSink)
   }
 
   def setupJsonStrictLogger(debug: Boolean): (IzStrictLogger, TestSink) = {
@@ -119,7 +119,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       Seq(testSink)
     }
 
-    (IzStrictLogger(IzLogger.Level.Trace, sinks, buffer = LogQueue.LogQueueImmediateImpl), testSink)
+    (IzStrictLogger(IzLogger.Level.Trace, sinks, buffer = LogQueue.Immediate), testSink)
   }
 }
 

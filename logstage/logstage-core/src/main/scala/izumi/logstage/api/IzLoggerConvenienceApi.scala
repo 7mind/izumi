@@ -28,9 +28,13 @@ trait IzLoggerConvenienceApi[Logger <: RoutingLogger] {
     threshold: Log.Level = Log.Level.Trace,
     sink: LogSink = ConsoleSink.ColoredConsoleSink,
     levels: Map[String, Log.Level] = Map.empty,
-    buffer: LogQueue = LogQueue.LogQueueImmediateImpl,
+    buffer: LogQueue = LogQueue.Immediate,
   ): Logger = {
     make(ConfigurableLogRouter(threshold, sink, levels, buffer))
+  }
+
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink]): Logger = {
+    make(ConfigurableLogRouter(threshold, sinks, LogQueue.Immediate))
   }
 
   final def apply(threshold: Log.Level, sinks: Seq[LogSink], buffer: LogQueue): Logger = {
@@ -39,6 +43,10 @@ trait IzLoggerConvenienceApi[Logger <: RoutingLogger] {
 
   final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level], buffer: LogQueue): Logger = {
     make(ConfigurableLogRouter(threshold, sinks, levels, buffer))
+  }
+
+  final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): Logger = {
+    make(ConfigurableLogRouter(threshold, sinks, levels, LogQueue.Immediate))
   }
 
   final def apply(router: LogRouter): Logger = {
