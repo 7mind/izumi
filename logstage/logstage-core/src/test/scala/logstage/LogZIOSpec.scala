@@ -138,7 +138,7 @@ class LogZIOSpec extends AnyWordSpec {
   private def withTestSink[U](thunk: RIO[LogZIO, U]): TestSink = {
     val sink = new TestSink()
     val logger = LogIO.fromLogger[UIO](
-      IzLogger(Log.Level.Info, List(sink))
+      IzLogger(Log.Level.Info, sink)
     )
     runtime.unsafeRun {
       thunk.provide(Has(logger))

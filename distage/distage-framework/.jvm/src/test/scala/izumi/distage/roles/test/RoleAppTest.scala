@@ -70,8 +70,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         )
       )
 
-      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse.filter(!_.isInstanceOf[LogSink]))
-      assert(probe.resources.getStartedCloseables() != probe.resources.getClosedCloseables().reverse)
+//      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse.filter(!_.isInstanceOf[LogSink]))
+      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
+
       assert(
         probe.resources.getCheckedResources().toSet == Set[IntegrationCheck[IO]](probe.locator.get[IntegrationResource0[IO]], probe.locator.get[IntegrationResource1[IO]])
       )

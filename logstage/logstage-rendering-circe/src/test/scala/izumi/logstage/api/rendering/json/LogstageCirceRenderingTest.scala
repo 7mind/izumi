@@ -1,8 +1,9 @@
 package izumi.logstage.api.rendering.json
 
-import io.circe.literal._
-import io.circe.parser._
+import io.circe.literal.*
+import io.circe.parser.*
 import io.circe.{Codec, Json}
+import izumi.logstage.api.logger.LogQueue
 import izumi.logstage.api.rendering.LogstageCodec
 import izumi.logstage.api.strict.IzStrictLogger
 import izumi.logstage.api.{IzLogger, TestSink}
@@ -105,7 +106,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       Seq(testSink)
     }
 
-    (IzLogger(IzLogger.Level.Trace, sinks), testSink)
+    (IzLogger(IzLogger.Level.Trace, sinks, buffer = LogQueue.Immediate), testSink)
   }
 
   def setupJsonStrictLogger(debug: Boolean): (IzStrictLogger, TestSink) = {
@@ -118,7 +119,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       Seq(testSink)
     }
 
-    (IzStrictLogger(IzLogger.Level.Trace, sinks), testSink)
+    (IzStrictLogger(IzLogger.Level.Trace, sinks, buffer = LogQueue.Immediate), testSink)
   }
 }
 

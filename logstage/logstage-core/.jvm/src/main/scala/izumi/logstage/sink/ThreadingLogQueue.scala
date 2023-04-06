@@ -1,20 +1,34 @@
 package izumi.logstage.sink
 
+import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.console.TrivialLogger.Config
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.DebugProperties
 import izumi.logstage.api.Log
-import izumi.logstage.api.logger.LogSink
+import izumi.logstage.api.logger.{LogQueue, LogSink}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.*
 
-class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) extends LogSink {
-  private val queue = new ConcurrentLinkedQueue[Log.Entry]()
-  private val maxBatchSize = 100
+object ThreadingLogQueue {
+  case class LoggingAction(entry: Log.Entry, target: LogSink)
+
+  def resource(sleepTime: FiniteDuration = 50.millis, batchSize: Int = 100): Lifecycle[Identity, ThreadingLogQueue] = Lifecycle
+    .make[Identity, ThreadingLogQueue] {
+      val buffer = new ThreadingLogQueue(sleepTime, batchSize)
+      buffer.start()
+      buffer
+    } {
+      _.close()
+    }
+}
+
+class ThreadingLogQueue(sleepTime: FiniteDuration, batchSize: Int) extends LogQueue with AutoCloseable {
+  private val queue = new ConcurrentLinkedQueue[ThreadingLogQueue.LoggingAction]()
   private val stop = new AtomicBoolean(false)
 
   private val fallback = TrivialLogger.make[FallbackConsoleSink](DebugProperties.`izumi.logstage.routing.log-failures`.name, Config(forceLog = true))
@@ -55,7 +69,7 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
           fallback.log(IzumiProject.bugReportPrompt("LogStage shutdown hook had been interrupted"))
       }
 
-      target.sync()
+      // target.sync()
 
       if (!queue.isEmpty) {
         fallback.log(IzumiProject.bugReportPrompt("LogStage queue wasn't empty and the end of the polling thread"))
@@ -68,7 +82,7 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
       while (!stop.get()) {
         try {
           // in case queue was empty we sleep a bit (it's a sane heuristic), otherwise it's better to continue working asap
-          if (doFlush(maxBatchSize)) {
+          if (doFlush(batchSize)) {
             Thread.`yield`()
           } else {
             Thread.sleep(sleepTime.toMillis)
@@ -92,30 +106,30 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) exten
     pollingThread.start()
   }
 
-  def flush(e: Log.Entry): Unit = {
-    if (!stop.get()) { // Once shutdown is reqested the queue will stop receiving new messages, so it'll become finite
-      queue.add(e).discard()
-    } else {
-      target.flush(e)
-      target.sync()
-    }
-  }
-
   /**
     * @return true if any messages were processed
     */
   private def doFlush(maxBatch: Int): Boolean = {
     var cc: Int = 0
-    var entry: Log.Entry = null
+    var entry: ThreadingLogQueue.LoggingAction = null
 
     while ({
       entry = queue.poll()
       if (entry != null)
-        target.flush(entry)
+        entry.target.flush(entry.entry)
       cc += 1
       cc <= maxBatch && entry != null
     }) {}
 
     entry != null
+  }
+
+  override def append(entry: Log.Entry, target: LogSink): Unit = {
+    if (!stop.get()) { // Once shutdown is reqested the queue will stop receiving new messages, so it'll become finite
+      queue.add(ThreadingLogQueue.LoggingAction(entry, target)).discard()
+    } else {
+      target.flush(entry)
+      target.sync()
+    }
   }
 }

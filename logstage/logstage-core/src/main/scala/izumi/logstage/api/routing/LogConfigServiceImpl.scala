@@ -40,9 +40,9 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
     }
   }
 
-  override def close(): Unit = {
-    (loggerConfig.root.sinks ++ loggerConfig.entries.values.flatMap(_.sinks)).foreach(_.close())
-  }
+//  override def close(): Unit = {
+//    (loggerConfig.root.sinks ++ loggerConfig.entries.values.flatMap(_.sinks)).foreach(_.close())
+//  }
 
   private[this] def print(node: LogTreeNode, level: Int): String = {
     val sub = node.sub.values.map(s => print(s, level + 1))

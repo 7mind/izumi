@@ -2,8 +2,11 @@ package izumi.logstage.api.logger
 
 import izumi.logstage.api.Log
 
-trait LogSink extends AutoCloseable {
+trait LogSink {
   def flush(e: Log.Entry): Unit
   def sync(): Unit = ()
-  def close(): Unit = ()
 }
+
+
+
+
