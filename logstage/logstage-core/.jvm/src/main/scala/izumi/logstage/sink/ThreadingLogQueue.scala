@@ -17,9 +17,9 @@ import scala.concurrent.duration.*
 object ThreadingLogQueue {
   case class LoggingAction(entry: Log.Entry, target: LogSink)
 
-  final val resource = Lifecycle
+  def resource(sleepTime: FiniteDuration = 50.millis, batchSize: Int = 100): Lifecycle[Identity, ThreadingLogQueue] = Lifecycle
     .make[Identity, ThreadingLogQueue] {
-      val buffer = new ThreadingLogQueue()
+      val buffer = new ThreadingLogQueue(sleepTime, batchSize)
       buffer.start()
       buffer
     } {
@@ -27,7 +27,7 @@ object ThreadingLogQueue {
     }
 }
 
-class ThreadingLogQueue(sleepTime: FiniteDuration = 50.millis, batchSize: Int = 100) extends LogQueue with AutoCloseable {
+class ThreadingLogQueue(sleepTime: FiniteDuration, batchSize: Int) extends LogQueue with AutoCloseable {
   private val queue = new ConcurrentLinkedQueue[ThreadingLogQueue.LoggingAction]()
   private val stop = new AtomicBoolean(false)
 

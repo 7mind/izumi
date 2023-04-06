@@ -32,7 +32,7 @@ class TestkitRunnerModule[F[_]: TagK: DefaultModule](reporter: TestReporter, isC
   make[ExtParTraverse[Identity]].from[ExtParTraverse.ExtParTraverseImpl[Identity]]
 
   make[DistageTestRunner[F]].from[DistageTestRunner[F]]
-  make[LogQueue].fromResource(ThreadingLogQueue.resource)
+  make[LogQueue].fromResource(ThreadingLogQueue.resource())
 }
 
 object TestkitRunnerModule {
