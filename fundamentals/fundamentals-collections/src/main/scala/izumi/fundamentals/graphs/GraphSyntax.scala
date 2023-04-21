@@ -16,7 +16,11 @@ trait GraphSyntax[G[n, m] <: AbstractGraph[n, m]] {
       } yield {
         unsafeFactory(collected.predecessorMatrix, g.meta.without(collected.removed))
       }
+    }
 
+    def without(nodes: Set[N]): G[N, M] = {
+      val preds = g.predecessors.without(nodes)
+      unsafeFactory(preds, g.meta.without(nodes))
     }
   }
 
