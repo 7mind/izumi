@@ -46,7 +46,7 @@ class DisabledTestF[F[_]](implicit F: Applicative[F]) extends Lifecycle.Basic[F,
   override def release(resource: TestEnableDisable): F[Unit] = F.unit
 }
 
-abstract class MyDisabledTestF[F0[_]: QuasiIO: TagK: DefaultModule, F[x] <: F0[x]: TagK](implicit F: Applicative[F]) extends Spec1[F0] {
+abstract class MyDisabledTestF[F0[_]: QuasiIO: DefaultModule, F[x] <: F0[x]: TagK](f0Tag: TagK[F0])(implicit F: Applicative[F]) extends Spec1[F0]()(f0Tag, implicitly) {
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = new ModuleDef {
@@ -64,12 +64,12 @@ abstract class MyDisabledTestF[F0[_]: QuasiIO: TagK: DefaultModule, F[x] <: F0[x
   }
 }
 
-final class MyDisabledTestFCats extends MyDisabledTestF[cats.effect.IO, cats.effect.IO]
-//final class MyDisabledTestFMonixTask extends MyDisabledTestF[monix.eval.Task, monix.eval.Task]
-//final class MyDisabledTestFMonixBIOUIO extends MyDisabledTestF[monix.bio.Task, monix.bio.UIO]
-//final class MyDisabledTestFMonixBIOTask extends MyDisabledTestF[monix.bio.Task, monix.bio.Task]
-final class MyDisabledTestFZioUIO extends MyDisabledTestF[zio.Task, zio.UIO]
-final class MyDisabledTestFZioTask extends MyDisabledTestF[zio.Task, zio.Task]
+final class MyDisabledTestFCats extends MyDisabledTestF[cats.effect.IO, cats.effect.IO](implicitly)
+//final class MyDisabledTestFMonixTask extends MyDisabledTestF[monix.eval.Task, monix.eval.Task](implicitly)
+//final class MyDisabledTestFMonixBIOUIO extends MyDisabledTestF[monix.bio.Task, monix.bio.UIO](implicitly)
+//final class MyDisabledTestFMonixBIOTask extends MyDisabledTestF[monix.bio.Task, monix.bio.Task](implicitly)
+final class MyDisabledTestFZioUIO extends MyDisabledTestF[zio.Task, zio.UIO](implicitly)
+final class MyDisabledTestFZioTask extends MyDisabledTestF[zio.Task, zio.Task](implicitly)
 
 class DisabledTestF2[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F[Nothing, +_], TestEnableDisable] with IntegrationCheck[F[Nothing, _]] {
   override def resourcesAvailable(): F[Nothing, ResourceCheck] =

@@ -530,7 +530,7 @@ object Izumi {
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
         platforms = Targets.cross3,
       ),
-      Artifact( // broken on 3
+      Artifact(
         name = Projects.distage.core,
         libs = allMonadsOptional ++ Seq(
           zio_interop_cats in Scope.Optional.all
@@ -567,7 +567,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.framework,
-        libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect),
+        libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(scala3_compiler),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
