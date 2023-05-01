@@ -6,24 +6,21 @@ final case class SourceFilePositionMaterializer(get: SourceFilePosition) extends
 
 object SourceFilePositionMaterializer {
   inline def sourcePosition(implicit ev: SourceFilePositionMaterializer): SourceFilePosition = ev.get
-  inline implicit def materialize: SourceFilePositionMaterializer = ${ doMaterialize }
 
-  private def doMaterialize(using Quotes): Expr[SourceFilePositionMaterializer] = new SourceFilePositionMaterializerMacro().getSourceFilePositionMat()
+  inline implicit def materialize: SourceFilePositionMaterializer = ${ SourceFilePositionMaterializerMacro.getSourceFilePositionMaterializer }
 
-  private[language] final class SourceFilePositionMaterializerMacro(using qctx: Quotes) {
-    import qctx.reflect._
-
-    def getSourceFilePositionMat(): Expr[SourceFilePositionMaterializer] = {
+  object SourceFilePositionMaterializerMacro {
+    def getSourceFilePositionMaterializer(using qctx: Quotes): Expr[SourceFilePositionMaterializer] = {
       val pos = getSourceFilePosition()
-      '{SourceFilePositionMaterializer( ${ pos } )}
+      '{ SourceFilePositionMaterializer(${ pos }) }
     }
 
-    def getSourceFilePosition(): Expr[SourceFilePosition] = {
-      val pos = Position.ofMacroExpansion
+    def getSourceFilePosition()(using qctx: Quotes): Expr[SourceFilePosition] = {
+      val pos = qctx.reflect.Position.ofMacroExpansion
       val name = pos.sourceFile.name
       val line = pos.startLine + 1
 
-      '{SourceFilePosition( ${Expr(name)}, ${Expr(line)} )}
+      '{ SourceFilePosition(${ Expr(name) }, ${ Expr(line) }) }
     }
   }
 }
