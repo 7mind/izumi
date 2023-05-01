@@ -446,6 +446,7 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.language in Scope.Compile.all,
           Projects.fundamentals.collections in Scope.Compile.all,
+          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
         settings = Seq(
           "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
@@ -477,8 +478,7 @@ object Izumi {
         name = Projects.fundamentals.reflection,
         libs = Seq(izumi_reflect in Scope.Compile.all, scala_reflect),
         depends = Seq(
-          Projects.fundamentals.platform,
-          Projects.fundamentals.functional,
+          Projects.fundamentals.functional
         ),
         settings = Seq.empty,
       ),
@@ -511,7 +511,11 @@ object Izumi {
       Artifact(
         name = Projects.distage.coreApi,
         libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect),
-        depends = Seq(Projects.fundamentals.reflection, Projects.fundamentals.bio).map(_ in Scope.Compile.all),
+        depends = Seq(
+          Projects.fundamentals.reflection,
+          Projects.fundamentals.platform,
+          Projects.fundamentals.bio,
+        ).map(_ in Scope.Compile.all),
         platforms = Targets.cross3,
       ),
       Artifact(

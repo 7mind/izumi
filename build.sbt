@@ -832,7 +832,8 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
 lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-platform"))
   .dependsOn(
     `fundamentals-language` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile"
+    `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-reflection` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1173,7 +1174,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
 
 lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-reflection"))
   .dependsOn(
-    `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-functional` % "test->compile;compile->compile"
   )
   .settings(
@@ -1512,6 +1512,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
 lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   .dependsOn(
     `fundamentals-reflection` % "test->compile;compile->compile",
+    `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-bio` % "test->compile;compile->compile"
   )
   .settings(
