@@ -68,6 +68,7 @@ object KafkaKRaftDocker extends ContainerDef {
             "ALLOW_PLAINTEXT_LISTENER" -> "yes",
             "KAFKA_ENABLE_KRAFT" -> "yes",
             "KAFKA_BROKER_ID" -> "1",
+            "KAFKA_CFG_NODE_ID" -> "1",
             "KAFKA_CFG_ADVERTISED_HOST_NAME" -> "127.0.0.1",
             "KAFKA_CFG_PROCESS_ROLES" -> "broker,controller",
             "KAFKA_CFG_CONTROLLER_LISTENER_NAMES" -> "CONTROLLER",
