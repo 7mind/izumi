@@ -40,27 +40,28 @@ object MacroParametersImpl {
   def projectNameMacro(c: blackbox.Context)(): c.Expr[Option[String]] = attr(c, "product-name")
 
   private def attrBool(c: blackbox.Context, name: String): c.Expr[Option[Boolean]] = {
-    val prefix = s"$name="
-    val value = c.settings.find(_.startsWith(prefix)).map(_.stripPrefix(prefix))
-    if (value.isEmpty) {
-      c.info(c.enclosingPosition, s"Undefined macro parameter $name, add `-Xmacro-settings:$prefix<value>` into `scalac` options", force = true)
-    }
+    val value = getAttr(c, name)
 
-    import c.universe._
+    import c.universe.*
 
-    val isTrue = value.map(_.toLowerCase == "true")
+    val isTrue = value.map(_.toLowerCase).map(v => v == "true" || v == "1")
     c.Expr[Option[Boolean]](q"$isTrue")
   }
 
   private def attr(c: blackbox.Context, name: String): c.Expr[Option[String]] = {
+    val value = getAttr(c, name)
+
+    import c.universe.*
+    c.Expr[Option[String]](q"$value")
+  }
+
+  private def getAttr(c: blackbox.Context, name: String): Option[String] = {
     val prefix = s"$name="
-    val value = c.settings.find(_.startsWith(prefix)).map(_.stripPrefix(prefix))
+    val value = c.settings.filter(_.startsWith(prefix)).map(_.stripPrefix(prefix)).lastOption
     if (value.isEmpty) {
       c.info(c.enclosingPosition, s"Undefined macro parameter $name, add `-Xmacro-settings:$prefix<value>` into `scalac` options", force = true)
     }
-
-    import c.universe._
-    c.Expr[Option[String]](q"$value")
+    value
   }
 
 }

@@ -832,7 +832,8 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
 lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-platform"))
   .dependsOn(
     `fundamentals-language` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile"
+    `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-reflection` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1173,7 +1174,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
 
 lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-reflection"))
   .dependsOn(
-    `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-functional` % "test->compile;compile->compile"
   )
   .settings(
@@ -1512,6 +1512,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
 lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   .dependsOn(
     `fundamentals-reflection` % "test->compile;compile->compile",
+    `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-bio` % "test->compile;compile->compile"
   )
   .settings(
@@ -2700,7 +2701,15 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    ) else Seq.empty },
+    libraryDependencies ++= {
+      val version = scalaVersion.value
+      if (version.startsWith("0.") || version.startsWith("3.")) {
+        Seq(
+          "org.scala-lang" %% "scala3-compiler" % scalaVersion.value % Provided
+        )
+      } else Seq.empty
+    }
   )
   .settings(
     crossScalaVersions := Seq(

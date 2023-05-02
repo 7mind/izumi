@@ -282,7 +282,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     assert(result.issues.fromNonEmptySet.map(_.getClass) == Set(classOf[PlanIssue.IncompatibleEffectType]))
 
     val err = intercept[TestFailedException](assertCompiles("""
-      PlanCheck.assertAppCompileTime(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false)).assertAtRuntime()
+      PlanCheck.assertAppCompileTime(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false)).assertAgainAtRuntime()
       """))
 
     assert(err.getMessage.contains("injector uses effect λ %0 → 0 but binding uses incompatible effect λ %0 → cats.effect.IO[+0]"))

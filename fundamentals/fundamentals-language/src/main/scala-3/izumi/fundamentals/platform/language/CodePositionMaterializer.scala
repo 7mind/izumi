@@ -1,25 +1,25 @@
 package izumi.fundamentals.platform.language
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, targetName}
 import scala.collection.mutable
 import scala.quoted.{Expr, Quotes, Type}
 
 final case class CodePositionMaterializer(get: CodePosition) extends AnyVal
 
 object CodePositionMaterializer {
-  inline def apply()(implicit ev: CodePositionMaterializer, dummy: DummyImplicit): CodePositionMaterializer = ev
+  @targetName("applySummon")
+  inline def apply()(implicit ev: CodePositionMaterializer): CodePositionMaterializer = ev
   inline def codePosition(implicit ev: CodePositionMaterializer): CodePosition = ev.get
 
-  inline implicit def materialize: CodePositionMaterializer = ${ doMaterialize }
-  inline def materializeApplicationPointId: String = ${ doApplicationPointId }
+  inline implicit def materialize: CodePositionMaterializer = ${ CodePositionMaterializerMacro.getCodePositionMaterializer() }
 
-  private def doMaterialize(using Quotes): Expr[CodePositionMaterializer] = new CodePositionMaterializerMacro().getEnclosingPositionMat()
-  private def doApplicationPointId(using Quotes): Expr[String] = new CodePositionMaterializerMacro().getApplicationPointId()
+  inline def materializeApplicationPointId: String = ${ CodePositionMaterializerMacro.getApplicationPointId() }
 
-  private final class CodePositionMaterializerMacro(using val qctx: Quotes) {
-    import qctx.reflect._
+  object CodePositionMaterializerMacro {
 
-    private def ownershipChain(): Seq[Symbol] = {
+    def ownershipChain()(using qctx: Quotes): Seq[qctx.reflect.Symbol] = {
+      import qctx.reflect.*
+
       @tailrec
       def extractOwnershipChain(s: Symbol, st: mutable.ArrayBuffer[Symbol]): Unit = {
         st.prepend(s)
@@ -35,7 +35,7 @@ object CodePositionMaterializer {
       st.toSeq
     }
 
-    def getApplicationPointId(): Expr[String] = {
+    def getApplicationPointId()(using qctx: Quotes): Expr[String] = {
       val st = ownershipChain()
       val applicationId = st.tail
         .flatMap {
@@ -45,29 +45,29 @@ object CodePositionMaterializer {
             None
           case s if goodSymbol(s) =>
             Some(s.name)
-          case s =>
+          case _ =>
             None
         }
-        .map(_.toString.trim)
+        .map(_.trim)
         .mkString(".")
 
       Expr(applicationId)
     }
 
-    def getEnclosingPosition(): Expr[CodePosition] = {
-      val sourcePos = new SourceFilePositionMaterializer.SourceFilePositionMaterializerMacro().getSourceFilePosition()
+    def getEnclosingPosition()(using qctx: Quotes): Expr[CodePosition] = {
+      val sourcePos = SourceFilePositionMaterializer.SourceFilePositionMaterializerMacro.getSourceFilePosition()
       val applicationId = getApplicationPointId()
 
       '{ CodePosition(${ sourcePos }, ${ applicationId }) }
     }
 
-    def getEnclosingPositionMat(): Expr[CodePositionMaterializer] = {
+    def getCodePositionMaterializer()(using qctx: Quotes): Expr[CodePositionMaterializer] = {
       val pos = getEnclosingPosition()
       '{ CodePositionMaterializer(${ pos }) }
     }
 
-    private def goodSymbol(s: Symbol): Boolean = {
-      val name = s.name.toString
+    private def goodSymbol(using qctx: Quotes)(s: qctx.reflect.Symbol): Boolean = {
+      val name = s.name
       !name.startsWith("$") && !name.startsWith("<")
     }
   }

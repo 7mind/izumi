@@ -1,12 +1,9 @@
 package izumi.fundamentals.platform.build
 
-import izumi.fundamentals.platform.language.{ScalaRelease, ScalaReleaseMacro}
-
 import scala.quoted.{Expr, Quotes, Type}
 
 object MacroParameters {
-  import izumi.fundamentals.platform.language.IzScala
-  
+
   def scalaVersion(): Option[String] = macroSetting("scala-version")
   def scalaCrossVersions(): Option[String] = macroSetting("scala-versions")
 
@@ -25,11 +22,11 @@ object MacroParameters {
   def sbtIsInsideCI(): Option[Boolean] = macroSettingBool("is-ci")
 
   inline def macroSetting(inline name: String): Option[String] = {
-    ${ MacroParametersImpl.extractString('name) }
+    ${ MacroParametersImpl.extractString('{ name }) }
   }
 
   inline def macroSettingBool(inline name: String): Option[Boolean] = {
-    ${ MacroParametersImpl.extractBool('name) }
+    ${ MacroParametersImpl.extractBool('{ name }) }
   }
 
 }
