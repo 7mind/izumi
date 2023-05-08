@@ -27,7 +27,7 @@ object AnyConstructorMacro {
     lazy val context = new ConstructorContext[R, qctx.type, util.type](util)
 
     val tpeDeref = util.dereferenceTypeRef(tpe0)
-    if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract) && (tpeDeref match {
+    if ((tpe0.classSymbol.isDefined && !(util.symbolIsTraitOrAbstract(typeSymbol)) && (tpeDeref match {
         case _: Refinement => false; case _ => true
       })) || {
         tpeDeref match { case _: ConstantType | _: TermRef => true; case _ => false }

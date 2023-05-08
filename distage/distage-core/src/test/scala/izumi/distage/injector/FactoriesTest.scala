@@ -1,6 +1,6 @@
 package izumi.distage.injector
 
-import distage.{ModuleDef, With}
+import distage.{ModuleDef, TagKK, With}
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases.*
 import izumi.distage.model.PlannerInput
@@ -137,28 +137,28 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   // FIXME: broken due to dotty bug https://github.com/lampepfl/dotty/issues/16468
-//  "handle higher-kinded assisted abstract factories with multiple parameters of the same type" in {
-//    import FactoryCase2._
-//    import izumi.fundamentals.platform.functional.Identity
-//
-//    val definition = PlannerInput.everything(new ModuleDef {
-//      // FIXME: broken due to dotty bug https://github.com/lampepfl/dotty/issues/16468
-////      makeFactory[AssistedAbstractFactoryF[Identity]]
-//      make[Identity[Dependency]]
-//    })
-//
-//    val injector = mkInjector()
-//    val plan = injector.plan(definition)
-//    val context = injector.produce(plan).unsafeGet()
-//
-//    val dep = context.get[Dependency]
-//    val instantiated = context.get[AssistedAbstractFactoryF[Identity]]
-//    val instance = instantiated.x(1, 2, 3)
-//
-//    assert(instance.isInstanceOf[ProductFImpl[Identity]])
-//    assert(instance.asInstanceOf[ProductFImpl[Identity]].dependency eq dep)
-//    assert(instance == ProductFImpl[Identity](3, 2, 1, dep))
-//  }
+  "handle higher-kinded assisted abstract factories with multiple parameters of the same type" in {
+    import FactoryCase2._
+    import izumi.fundamentals.platform.functional.Identity
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      // FIXME: broken due to dotty bug https://github.com/lampepfl/dotty/issues/16468
+      makeFactory[AssistedAbstractFactoryF[Identity]]
+      make[Identity[Dependency]]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val dep = context.get[Dependency]
+    val instantiated = context.get[AssistedAbstractFactoryF[Identity]]
+    val instance = instantiated.x(1, 2, 3)
+
+    assert(instance.isInstanceOf[ProductFImpl[Identity]])
+    assert(instance.asInstanceOf[ProductFImpl[Identity]].dependency eq dep)
+    assert(instance == ProductFImpl[Identity](3, 2, 1, dep))
+  }
 
   "handle structural type factories" in {
     import FactoryCase1._
@@ -190,14 +190,35 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
       assertCompiles("""
         import FactoryCase1._
 
-        // FIXME: `make` support? should be compile-time error
         val definition = PlannerInput.everything(new ModuleDef {
           makeFactory[FactoryProducingFactory]
           make[Dependency]
         })
 
         val injector = mkInjector()
-        val plan = injector.plan(definition)
+        val plan = injector.planUnsafe(definition)
+        val context = injector.produce(plan).unsafeGet()
+
+        val instantiated = context.get[FactoryProducingFactory]
+
+        assert(instantiated.x().x().b == context.get[Dependency])
+      """)
+    }
+    assert(exc.getMessage.contains("Factory cannot produce factories"))
+  }
+
+  "Factory cannot produce factories (dotty test) [Scala 3 bug, `Couldn't find position` in `make` macro inside assertCompiles]" in {
+    val exc = intercept[TestFailedException] {
+      assertCompiles("""
+        import FactoryCase1._
+
+        val definition = PlannerInput.everything(new ModuleDef {
+          makeFactory[FactoryProducingFactory]
+//          make[Dependency]
+        })
+
+        val injector = mkInjector()
+        val plan = injector.planUnsafe(definition)
         val context = injector.produce(plan).unsafeGet()
 
         val instantiated = context.get[FactoryProducingFactory]
@@ -409,6 +430,25 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
     assert(factory.dep() ne factory.dep())
     assert(factory.dep().isInstanceOf[Dep])
+  }
+
+  "support polymorphic factory types" in {
+    import FactoryCase8._
+
+    def definition[F[+_, +_]: TagKK] = PlannerInput.everything(new ModuleDef {
+      makeFactory[XFactory[F]]
+      make[XContext[F]]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.planUnsafe(definition[Either])
+    val context = injector.produce(plan).unsafeGet()
+
+    val factory = context.get[XFactory[Either]]
+    val xContext = context.get[XContext[Either]]
+    val param = new XParam[Either]
+
+    assert(factory.create(param) == new XImpl[Either](xContext, param))
   }
 
 }
