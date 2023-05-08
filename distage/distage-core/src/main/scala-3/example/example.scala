@@ -1,5 +1,0 @@
-package example
-
-class example {
-
-}
