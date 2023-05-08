@@ -107,11 +107,6 @@ Adopters
 
 Are you using Izumi? Please consider opening a pull request to list your organization here:
 
-<a href="https://pitsdatarecovery.net/" title="PITS Global Data Recovery Services">
-  <img width="40%" src="https://www.pitsdatarecovery.net/wp-content/uploads/2020/09/pits-logo.svg" alt="PITS Global Data Recovery Services"/>
-</a>
-<br/>
-
 <a href="https://tinkoff.ru/">
   <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-best-bank.svg?sanitize=true" alt="Tinkoff"/>
 </a>
@@ -134,6 +129,11 @@ Are you using Izumi? Please consider opening a pull request to list your organiz
 
 <a href="https://glidewell.io/">
   <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-glidewell.svg?sanitize=true" alt="Glidewell.io"/>
+</a>
+<br/>
+
+<a href="https://pitsdatarecovery.net/" title="PITS Global Data Recovery Services">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-pits.svg?sanitize=true" alt="PITS Global Data Recovery Services"/>
 </a>
 <br/>
 
