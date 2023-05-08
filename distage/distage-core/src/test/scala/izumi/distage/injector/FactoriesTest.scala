@@ -1,6 +1,6 @@
 package izumi.distage.injector
 
-import distage.{ModuleDef, TagKK, TraitConstructor, With}
+import distage.{ModuleDef, TagKK, With}
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases.*
 import izumi.distage.model.PlannerInput
