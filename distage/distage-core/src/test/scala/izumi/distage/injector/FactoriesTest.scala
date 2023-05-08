@@ -1,6 +1,6 @@
 package izumi.distage.injector
 
-import distage.{ModuleDef, With}
+import distage.{ModuleDef, TraitConstructor, With}
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases.*
 import izumi.distage.model.PlannerInput
@@ -190,14 +190,35 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
       assertCompiles("""
         import FactoryCase1._
 
-        // FIXME: `make` support? should be compile-time error
         val definition = PlannerInput.everything(new ModuleDef {
           makeFactory[FactoryProducingFactory]
           make[Dependency]
         })
 
         val injector = mkInjector()
-        val plan = injector.plan(definition)
+        val plan = injector.planUnsafe(definition)
+        val context = injector.produce(plan).unsafeGet()
+
+        val instantiated = context.get[FactoryProducingFactory]
+
+        assert(instantiated.x().x().b == context.get[Dependency])
+      """)
+    }
+    assert(exc.getMessage.contains("Factory cannot produce factories"))
+  }
+
+  "Factory cannot produce factories (dotty test) [Scala 3 bug, `Couldn't find position` in `make` macro inside assertCompiles]" in {
+    val exc = intercept[TestFailedException] {
+      assertCompiles("""
+        import FactoryCase1._
+
+        val definition = PlannerInput.everything(new ModuleDef {
+          makeFactory[FactoryProducingFactory]
+//          make[Dependency]
+        })
+
+        val injector = mkInjector()
+        val plan = injector.planUnsafe(definition)
         val context = injector.produce(plan).unsafeGet()
 
         val instantiated = context.get[FactoryProducingFactory]

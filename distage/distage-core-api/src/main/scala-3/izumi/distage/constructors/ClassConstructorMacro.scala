@@ -31,7 +31,7 @@ object ClassConstructorMacro {
         singletonClassConstructor[R](Ident(t))
 
       case _ =>
-        if (typeRepr.typeSymbol.flags.is(Flags.Trait) || typeRepr.typeSymbol.flags.is(Flags.Abstract)) {
+        if (util.symbolIsTraitOrAbstract(typeRepr.typeSymbol)) {
           report.errorAndAbort(
             s"Cannot create ClassConstructor for type ${Type.show[R]} - it's a trait or an abstract class, not a concrete class. It cannot be constructed with `new`"
           )

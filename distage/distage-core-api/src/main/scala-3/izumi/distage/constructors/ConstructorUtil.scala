@@ -3,15 +3,19 @@ package izumi.distage.constructors
 import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.reflection.ReflectionUtil
 
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.{experimental, nowarn, tailrec}
 import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable
 import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 import izumi.distage.model.providers.FunctoidMacro.FunctoidParametersMacro
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
+import izumi.reflect.WeakTag
 
-class ConstructorContext[R: Type, Q <: Quotes, U <: ConstructorUtil[Q]](using val qctx: Q)(val util: U & ConstructorUtil[qctx.type]) {
+class ConstructorContext[R0, Q <: Quotes, U <: ConstructorUtil[Q]](using val rType: Type[R0], val qctx: Q)(val util: U & ConstructorUtil[qctx.type]) {
   import qctx.reflect.*
+
+  // for importing if necessary, `import context.{R, rType}`
+  type R = R0
 
   val resultTpe = TypeRepr.of[R].dealias.simplified
   val resultTpeTree = TypeTree.of[R]
@@ -61,6 +65,49 @@ class ConstructorContext[R: Type, Q <: Quotes, U <: ConstructorUtil[Q]](using va
   def isFactoryOrTrait: Boolean = abstractMembers.nonEmpty || refinementMethods.nonEmpty
 
   def isWireableTrait: Boolean = abstractMethodsWithParams.isEmpty && !resultTpeSyms.exists(_.flags.is(Flags.Sealed))
+
+  @experimental
+  def implementTraitAutoImplBody(
+    lamSym: Symbol,
+    lamOnlyCtorArguments: List[Term],
+    lamOnlyMethodArguments: List[Term],
+  ): Typed = {
+    val parents = util.buildParentConstructorCallTerms(constructorParamLists, lamOnlyCtorArguments)
+
+    val name: String = s"${resultTpeSyms.map(_.name).mkString("With")}TraitAutoImpl"
+    val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = methodDecls.generateDeclSymbols, selfType = None)
+
+    val defs = methodDecls.zip(lamOnlyMethodArguments).map {
+      case (util.MemberRepr(name, isMethod, _, _, _), arg) =>
+        val methodSyms = if (isMethod) clsSym.declaredMethod(name) else List(clsSym.declaredField(name))
+        assert(methodSyms.size == 1, "BUG: duplicated methods!")
+        val methodSym = methodSyms.head
+        if (isMethod) {
+          DefDef(methodSym, _ => Some(arg))
+        } else {
+          ValDef(methodSym, Some(arg))
+        }
+    }
+
+    val clsDef = ClassDef(clsSym, parents.toList, body = defs)
+    val applyNewTree = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
+    val traitCtorTree = '{ TraitConstructor.wrapInitialization[R](${ applyNewTree.asExprOf[R] })(compiletime.summonInline[WeakTag[R]]) }.asTerm
+    val block = Block(List(clsDef), traitCtorTree)
+    Typed(block, resultTpeTree)
+  }
+
+  def assertIsWireableTrait(isInFactoryConstructor: Boolean): Unit = {
+    if (!this.isWireableTrait) {
+      val tpeStr = this.resultTpeSyms.mkString(" & ")
+      report.errorAndAbort(
+        (if (isInFactoryConstructor) s"Factory cannot produce factories! Detected that $tpeStr is a factory, because:" else "") +
+        s"""Cannot create TraitConstructor for $tpeStr: $tpeStr has abstract methods taking parameters, expected only parameterless abstract methods:
+           |  ${this.abstractMethodsWithParams.map(s => s.name -> s.flags.show)}
+           |[methods without parameters: ${this.abstractMembers.map(s => s.name -> s.flags.show)}]""".stripMargin
+      )
+    }
+  }
+
 }
 
 class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
@@ -72,10 +119,23 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
 
   type ParamReprLists = List[List[ParamRepr]]
 
-  final case class MemberRepr(name: String, isMethod: Boolean, mbSymbol: Option[Symbol], tpe: TypeRepr, isNewMethod: Boolean)
+  final case class MemberRepr(name: String, isMethod: Boolean, mbSymbol: Option[Symbol], tpe: TypeRepr, isNewMethod: Boolean) {
+    def generateDeclSymbol(cls: Symbol): Symbol = {
+      // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
+      val overrideFlag = if (!isNewMethod) Flags.Override else Flags.EmptyFlags
+      if (isMethod) {
+        Symbol.newMethod(cls, name, tpe, Flags.Method | overrideFlag, Symbol.noSymbol)
+      } else {
+        Symbol.newVal(cls, name, returnTypeOfMethodOrByName(tpe), overrideFlag, Symbol.noSymbol)
+      }
+    }
+  }
+  object MemberRepr {
+    extension (methodDecls: List[MemberRepr]) def generateDeclSymbols(cls: Symbol): List[Symbol] = methodDecls.map(_.generateDeclSymbol(cls))
+  }
 
   def assertSignatureIsAcceptableForFactory(signatureParams: List[ParamRepr], resultTpe: TypeRepr, clue: String): Unit = {
-    require(signatureParams.groupMap(_.name)(_.tpe).forall(_._2.size == 1), "BUG: duplicated arg names!")
+    require(signatureParams.groupMap(_.name)(_.tpe).forall(_._2.size == 1), s"BUG: duplicated arg names! in $clue for type $resultTpe")
   }
 
   def requireConcreteTypeConstructor(tpe: TypeRepr, macroName: String): Unit = {
@@ -408,6 +468,10 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
     parents
   }
 
+  def symbolIsTraitOrAbstract(typeSym: Symbol): Boolean = {
+    typeSym.flags.is(Flags.Trait) || typeSym.flags.is(Flags.Abstract)
+  }
+
   // FIXME: move back to FactoryConstructor
   object factoryUtil {
 
@@ -428,7 +492,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       factoryProductParameterLists: List[List[FactoryProductParameter]],
     )
 
-    @annotation.experimental
+    @experimental
     def getFactoryProductData(
       resultTpe: TypeRepr
     )(flatLambdaSigIndexGetAndIncrement: () => Int
@@ -436,6 +500,9 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       mbMethodSym: Option[Symbol],
       methodType: TypeRepr,
     ): FactoryProductData = {
+
+      requireConcreteTypeConstructor(resultTpe, "FactoryConstructor")
+
       val getFactoryProductType = {
         (methodTypeArgs: List[TypeTree]) =>
           val rett0 = methodType match {
@@ -449,22 +516,24 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       }
       val factoryProductType = getFactoryProductType(Nil)
 
-      val isTrait = factoryProductType.typeSymbol.flags.is(Flags.Trait) || factoryProductType.typeSymbol.flags.is(Flags.Abstract)
+      val isTrait = symbolIsTraitOrAbstract(factoryProductType.typeSymbol)
 
-      val ctxUntyped = new ConstructorContext[Any, qctx.type, self.type & ConstructorUtil[qctx.type]](using qctx)(
-        self.asInstanceOf[self.type & ConstructorUtil[qctx.type]]
-      )(factoryProductType.asType.asInstanceOf[Type[Any]])
+      val ctxUntyped = new ConstructorContext[Any, qctx.type, self.type & ConstructorUtil[qctx.type]](
+        using factoryProductType.asType.asInstanceOf[Type[Any]],
+        qctx,
+      )(self.asInstanceOf[self.type & ConstructorUtil[qctx.type]])
 
-      val factoryProductCtorParamLists = {
-        if (isTrait) {
-          // TODO: decopypaste
-          val byNameMethodArgs = ctxUntyped.methodDecls.map {
-            case MemberRepr(n, _, s, t, _) => ParamRepr(n, s, t)
-          } // become byName later if they're InjectedDependencyParameter
-          ctxUntyped.constructorParamLists.flatMap(_._2) :+ byNameMethodArgs
-        } else {
-          extractConstructorParamLists(factoryProductType)
-        }
+      if (isTrait) {
+        ctxUntyped.assertIsWireableTrait(isInFactoryConstructor = true)
+      }
+
+      val factoryProductCtorParamLists = if (isTrait) {
+        val byNameMethodArgs = ctxUntyped.methodDecls.map {
+          case MemberRepr(n, _, s, t, _) => ParamRepr(n, s, returnTypeOfMethodOrByName(t))
+        } // become byName later via ensureByName if they're InjectedDependencyParameter
+        ctxUntyped.constructorParamLists.flatMap(_._2) :+ byNameMethodArgs
+      } else {
+        extractConstructorParamLists(factoryProductType)
       }
       assertSignatureIsAcceptableForFactory(factoryProductCtorParamLists.flatten, resultTpe, s"implementation constructor ${factoryProductType.show}")
 
@@ -474,7 +543,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       val indexedMethodParams = methodParams.zipWithIndex
       val methodParamIndex = indexedMethodParams.map { case (ParamRepr(n, _, t), idx) => (t, (n, idx)) }
 
-      val factoryProductParams = factoryProductCtorParamLists.zipWithIndex.map {
+      val factoryProductParamss = factoryProductCtorParamLists.zipWithIndex.map {
         case (params, paramListIdx) =>
           params.map {
             case ParamRepr(paramName, symbol, paramType) =>
@@ -505,7 +574,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
           }
       }
 
-      val consumedSigParams = factoryProductParams.flatten.collect { case p: MethodParameter => p.flatLocalSigIndex }.toSet
+      val consumedSigParams = factoryProductParamss.flatten.collect { case p: MethodParameter => p.flatLocalSigIndex }.toSet
       val unconsumedParameters = indexedMethodParams.filterNot(p => consumedSigParams.contains(p._2))
 
       if (unconsumedParameters.nonEmpty) {
@@ -517,66 +586,47 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       }
 
       val hackySecretTraitImpl = if (isTrait) {
-        Some(
-          (typeArgs: List[TypeTree], outermostLambdaArgs: List[Term], lamSym: Symbol, thisMethodArgs: List[Term], indexShift: Int) => {
-            val ctxTyped = new ConstructorContext[Any, qctx.type, self.type & ConstructorUtil[qctx.type]](using qctx)(
-              self.asInstanceOf[self.type & ConstructorUtil[qctx.type]]
-            )(getFactoryProductType(typeArgs).asType.asInstanceOf[Type[Any]])
-
-            // FIXME TraitConstructor copypaste
-            val (lamOnlyCtorArguments, lamOnlyMethodArguments) = factoryProductParams.flatten
-              .map {
-                case p: InjectedDependencyParameter =>
-                  outermostLambdaArgs(p.flatOutermostLambdaSigIndex + indexShift)
-                case p: MethodParameter =>
-                  thisMethodArgs(p.flatLocalSigIndex)
-              }
-              .splitAt(ctxTyped.flatCtorParams.size)
-
-            val parents = buildParentConstructorCallTerms(ctxTyped.constructorParamLists, lamOnlyCtorArguments)
-
-            val name: String = s"${ctxTyped.resultTpeSyms.map(_.name).mkString("With")}TraitAutoImpl"
-            val clsSym = {
-              def generateDecls(cls: Symbol): List[Symbol] = ctxTyped.methodDecls.map {
-                case MemberRepr(name, isMethod, _, mtype, _) =>
-                  // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
-                  if (isMethod) {
-                    Symbol.newMethod(cls, name, mtype, Flags.Method | Flags.Override, Symbol.noSymbol)
-                  } else {
-                    Symbol.newVal(cls, name, mtype, Flags.Override, Symbol.noSymbol)
-                  }
-              }
-              Symbol.newClass(lamSym, name, parents = ctxTyped.parentTypesParameterized, decls = generateDecls, selfType = None)
-            }
-
-            val defs = ctxTyped.methodDecls.zip(lamOnlyMethodArguments).map {
-              case (MemberRepr(name, isMethod, _, _, _), arg) =>
-                val methodSyms = if (isMethod) clsSym.declaredMethod(name) else List(clsSym.declaredField(name))
-                assert(methodSyms.size == 1, "BUG: duplicated methods!")
-                val methodSym = methodSyms.head
-                if (isMethod) {
-                  DefDef(methodSym, _ => Some(arg))
-                } else {
-                  ValDef(methodSym, Some(arg))
-                }
-            }
-
-            val clsDef = ClassDef(clsSym, parents.toList, body = defs)
-            val applyNewTree = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), ctxTyped.resultTpeTree)
-            val block = Block(List(clsDef), applyNewTree)
-            Typed(block, ctxTyped.resultTpeTree)
-          }
-        )
+        Some(createHackySecretTraitImpl(getFactoryProductType, factoryProductParamss))
       } else {
         None
       }
 
       FactoryProductData(
         getFactoryProductType,
-        factoryProductParams.flatten.collect { case p: InjectedDependencyParameter => p.depByNameParamRepr },
+        factoryProductParamss.flatten.collect { case p: InjectedDependencyParameter => p.depByNameParamRepr },
         hackySecretTraitImpl,
-        factoryProductParams,
+        factoryProductParamss,
       )
+    }
+
+    @experimental
+    private def createHackySecretTraitImpl(
+      getFactoryProductType: List[TypeTree] => TypeRepr,
+      factoryProductParamss: List[List[FactoryProductParameter]],
+    )(typeArgs: List[TypeTree],
+      outermostLambdaArgs: List[Term],
+      lamSym: Symbol,
+      thisMethodArgs: List[Term],
+      indexShift: Int,
+    ): Typed = {
+      val ctxTyped =
+        new ConstructorContext[Any, qctx.type, self.type & ConstructorUtil[qctx.type]](
+          using getFactoryProductType(typeArgs).asType.asInstanceOf[Type[Any]],
+          qctx,
+        )(self.asInstanceOf[self.type & ConstructorUtil[qctx.type]])
+
+      val (lamOnlyCtorArguments, lamOnlyMethodArguments) = {
+        factoryProductParamss.flatten
+          .map {
+            case p: InjectedDependencyParameter =>
+              outermostLambdaArgs(p.flatOutermostLambdaSigIndex + indexShift)
+            case p: MethodParameter =>
+              thisMethodArgs(p.flatLocalSigIndex)
+          }
+          .splitAt(ctxTyped.flatCtorParams.size)
+      }
+
+      ctxTyped.implementTraitAutoImplBody(lamSym, lamOnlyCtorArguments, lamOnlyMethodArguments)
     }
 
     def implementFactoryMethod(
