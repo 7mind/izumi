@@ -178,4 +178,18 @@ object FactoryCases {
     }
   }
 
+  object FactoryCase8 {
+    class XProduct[F[+_, +_]]
+
+    trait XFactory[F[+_, +_]] {
+      def create(xparam: XParam[F]): XProduct[F] @With[XImpl[F]]
+    }
+
+    class XParam[F[+_, +_]]
+
+    final case class XImpl[F[+_, +_]](xContext: XContext[F], xparam: XParam[F]) extends XProduct[F]
+
+    class XContext[F[+_, +_]]
+  }
+
 }

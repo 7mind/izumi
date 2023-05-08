@@ -366,7 +366,9 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       case Apply(TypeApply(Select(New(_), _), c :: _), _) =>
         Some(c.tpe)
       case aterm =>
-        report.errorAndAbort(s"distage.With annotation expects one type argument but got malformed tree ${aterm.show} ($aterm) : ${aterm.tpe}")
+        report.errorAndAbort(
+          s"distage.With annotation expects one type argument but got malformed tree ${aterm.show} ($aterm) : ${aterm.tpe}\n\nFull type was ${tpe.show} ($tpe)"
+        )
     }
   }
 
@@ -505,14 +507,35 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
 
       val getFactoryProductType = {
         (methodTypeArgs: List[TypeTree]) =>
-          val rett0 = methodType match {
+
+          val rettAppliedProperly = methodType match {
             case p: PolyType =>
               p.appliedTo(methodTypeArgs.map(_.tpe))
             case _ =>
               methodType
           }
-          val rett = returnTypeOfMethodOrByName(rett0)
-          readWithAnnotation(methodName, mbMethodSym, rett).getOrElse(rett).dealias.simplified
+          val rettAppliedForcefully = returnTypeOfMethodOrByName(rettAppliedProperly)
+
+          val res = (readWithAnnotation(methodName, mbMethodSym, rettAppliedForcefully), mbMethodSym) match {
+            case (Some(withResult), Some(methodSym)) =>
+              // FIXME perform manual substition to work around https://github.com/lampepfl/dotty/issues/16468
+              //       for a very limited case where we have `X[F] @With[X.Impl[F]]` - F has to be present both on lhs
+              //       and on rhs for this to work
+              val rettUnapplied = returnTypeOfMethodOrByName(methodSym.owner.typeRef.memberType(methodSym))
+              (rettAppliedForcefully.dealias.simplified, rettUnapplied.dealias.simplified, withResult.dealias.simplified) match {
+                case (AppliedType(_, rArgs), AppliedType(_, uArgs), AppliedType(wCtor, wArgs)) =>
+                  val untypedSymToResolvedType = uArgs.map(_.typeSymbol).zip(rArgs).toMap
+                  AppliedType(wCtor, wArgs.map(w => untypedSymToResolvedType.getOrElse(w.typeSymbol, w)))
+                case _ =>
+                  withResult
+              }
+            case (Some(withResult), _) =>
+              withResult
+            case (None, _) =>
+              rettAppliedForcefully.dealias.simplified
+          }
+
+          res.dealias.simplified
       }
       val factoryProductType = getFactoryProductType(Nil)
 
@@ -581,7 +604,13 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
         import izumi.fundamentals.platform.strings.IzString.*
         val explanation = unconsumedParameters.map { case (ParamRepr(n, _, t), _) => s"$n: ${t.show}" }.niceList()
         report.errorAndAbort(
-          s"Cannot build factory for ${resultTpe.show}, factory method $methodName has arguments which were not consumed by implementation constructor ${factoryProductType.show}: $explanation"
+          s"""Cannot build factory for ${resultTpe.show}, factory method $methodName has arguments which were not consumed by implementation constructor ${factoryProductType.show}:$explanation
+             |Factory product dependencies were: ${factoryProductCtorParamLists.map(_.map(_.tpe.show)).niceList()}
+             |
+             |raw-resultTpe: $resultTpe
+             |raw-factoryProductType: $factoryProductType
+             |raw-methodType: $methodType
+             |raw-dependencies: ${factoryProductCtorParamLists.map(_.map(_.tpe)).niceList()}""".stripMargin
         )
       }
 
