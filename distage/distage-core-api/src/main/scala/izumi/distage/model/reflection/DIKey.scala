@@ -31,14 +31,14 @@ object DIKey {
     def named(id: Identifier): IdKey[id.Id] = IdKey(tpe, id.id, mutatorIndex)(id.idContract)
 
     override def withTpe(tpe: SafeType): DIKey.TypeKey = copy(tpe = tpe)
-    override def toString: String = formatWithIndex(s"{type.${tpe.toString}}", mutatorIndex)
+    override def toString: String = formatWithIndex(s"{type.${tpe.tag.repr}}", mutatorIndex)
   }
 
   final case class IdKey[I: IdContract](tpe: SafeType, id: I, mutatorIndex: Option[Int] = None) extends BasicKey {
     val idContract: IdContract[I] = implicitly
     def withMutatorIndex(index: Option[Int]): IdKey[I] = copy(mutatorIndex = index)
     override def withTpe(tpe: SafeType): DIKey.IdKey[I] = copy(tpe = tpe)
-    override def toString: String = formatWithIndex(s"{type.${tpe.toString}@${idContract.repr(id)}}", mutatorIndex)
+    override def toString: String = formatWithIndex(s"{type.${tpe.tag.repr}@${idContract.repr(id)}}", mutatorIndex)
   }
 
   /**

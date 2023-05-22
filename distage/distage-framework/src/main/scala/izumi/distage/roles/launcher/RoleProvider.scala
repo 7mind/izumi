@@ -100,7 +100,7 @@ object RoleProvider {
     }
 
     protected def mkRoleBinding(roleBinding: ImplBinding, roleDescriptor: RoleDescriptor): RoleBinding = {
-      val runtimeClass = roleBinding.key.tpe.cls
+      val runtimeClass = roleBinding.key.tpe.closestClass
       val implType = roleBinding.implementation.implType
       RoleBinding(roleBinding, runtimeClass, implType, roleDescriptor)
     }
@@ -146,7 +146,7 @@ object RoleProvider {
     }
 
     protected def reflectCompanionDescriptor(role: SafeType): Option[RoleDescriptor] = {
-      val roleClassName = role.cls.getName
+      val roleClassName = role.closestClass.getName
       try {
         Some(TypeUtil.instantiateObject[RoleDescriptor](Class.forName(s"$roleClassName$$")))
       } catch {

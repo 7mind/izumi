@@ -75,7 +75,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
     } else if (param.wasGeneric) {
       classOf[Any]
     } else {
-      param.key.tpe.cls
+      param.key.tpe.closestClass
     }
 
     val declaredKey = param.key
@@ -91,7 +91,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
     param match {
       case param if forwardRefs.contains(realKey) || forwardRefs.contains(declaredKey) =>
         // substitute forward references by `null`
-        Right((clazz, TypeUtil.defaultValue(param.key.tpe.cls)))
+        Right((clazz, TypeUtil.defaultValue(param.key.tpe.closestClass)))
       case param =>
         context.fetchKey(declaredKey, param.isByName) match {
           case Some(v) =>
@@ -104,7 +104,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
   }
 
   private def noArgsConstructor(tpe: SafeType): Boolean = {
-    val constructors = tpe.cls.getConstructors
+    val constructors = tpe.closestClass.getConstructors
     constructors.isEmpty || constructors.exists(_.getParameters.isEmpty)
   }
 
