@@ -131,7 +131,7 @@ final case class Functoid[+A](get: Provider) {
     Functoid(newProvider)
   }
 
-  @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.cls, get.ret.tag)
+  @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.closestClass, get.ret.tag)
 }
 
 object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters {

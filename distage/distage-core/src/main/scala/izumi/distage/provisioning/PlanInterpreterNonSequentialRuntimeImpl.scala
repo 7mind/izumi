@@ -163,7 +163,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   private[this] def prioritize(ops: Iterable[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = ArraySeq.unsafeWrapArray {
     ops.toArray.sortBy {
       op =>
-        val repr = op.target.tpe.toString
+        val repr = op.target.tpe.tag.repr
         op match {
           case _: ImportDependency =>
             (-10, repr)
