@@ -69,7 +69,7 @@ Videos:
 * [Livecoding: DIStage & Bifunctor Tagless Final](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 * [DevInsideYou — Tagless Final with BIO](https://www.youtube.com/watch?v=ZdGK1uedAE0&t=580s)
 * [Source Talks — Pragmatic Pure FP approach to application design and testing with distage](https://www.youtube.com/watch?v=W60JO3TuFhc)
-* [(Livecoding) Izumi Framework: reinvent your productivity with modern pure functional Scala](https://www.youtube.com/watch?v=zwj5eVDqMI8)
+* [(Talk + Livecoding) Izumi Framework: reinvent your productivity with modern pure functional Scala](https://www.youtube.com/watch?v=zwj5eVDqMI8)
 * [(Talk only) Izumi Framework: reinvent your productivity with modern pure functional Scala](https://www.youtube.com/watch?v=Zk0Il6I5MQI)
 
 Slides:
