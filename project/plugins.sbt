@@ -25,7 +25,7 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % PV.sbt_scoverage)
 
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % PV.sbt_unidoc)
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-site" % PV.sbt_site)
+addSbtPlugin("com.github.sbt" % "sbt-site" % PV.sbt_site)
 
 addSbtPlugin("com.github.sbt" % "sbt-ghpages" % PV.sbt_ghpages)
 
