@@ -31,13 +31,14 @@ class SoundnessTest extends AnyWordSpec {
 
   "Cannot convert polymorphic BIOArrow into a bifunctor typeclass (normally)" in {
     val res = intercept[TestFailedException](assertCompiles("""
-      def valueF[F[-_, +_, +_]: BIOArrow: MonadAsk3: BIO3] = {
+      def valueF[F[-_, +_, +_]: Arrow3: MonadAsk3: IO3] = {
         val FA: BIOArrow2[FR[F, Int]#l] = implicitly[BIOArrow2[FR[F, Int]#l]]
         FA.andThen(F.unit, F.access((i: Int) => F.sync(println(i))))
       }
       zio.Runtime.default.unsafeRun(valueF[zio.ZIO].provide(1))
       """))
-    assert(res.getMessage contains "implicit")
+    assert(!res.getMessage.contains("not found type"))
+    assert(res.getMessage contains "implicit error")
     assert(res.getMessage contains "BIOArrow2")
   }
 
@@ -49,7 +50,8 @@ class SoundnessTest extends AnyWordSpec {
     }
     zio.Runtime.default.unsafeRun(valueZIO.provide(1))
     """))
-    assert(res.getMessage contains "implicit")
+    assert(!res.getMessage.contains("not found type"))
+    assert(res.getMessage contains "implicit error")
     assert(res.getMessage contains "BIOArrow2")
   }
 }

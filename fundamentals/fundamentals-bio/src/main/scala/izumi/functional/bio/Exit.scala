@@ -2,7 +2,7 @@ package izumi.functional.bio
 
 import cats.effect.kernel.Outcome
 import zio.ZIO
-import zio.internal.ZIOSucceedNow
+//import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
@@ -72,7 +72,7 @@ object Exit {
     override def toEither: Right[Nothing, E] = Right(error)
     override def toEitherCompound: Right[Nothing, E] = Right(error)
     override def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, Nothing] = Left(ev(error))
-    override def leftMap[E1](f: E => E1): Exit[E1, Nothing] = Error[E1](f(error), trace.map(f))
+    override def leftMap[E1](f: E => E1): Error[E1] = Error[E1](f(error), trace.map(f))
   }
 
   final case class Termination(compoundException: Throwable, allExceptions: List[Throwable], trace: Trace[Nothing]) extends Exit.Failure[Nothing] {
@@ -103,28 +103,31 @@ object Exit {
         toExit(cause)(outerInterruptionConfirmed)
     }
 
-    def toExit[E](result: zio.Cause[E])(outerInterruptionConfirmed: Boolean): Exit.Failure[E] = {
-      result.failureOrCause match {
-        case Left(err) =>
-          Error(err, Trace.ZIOTrace(result))
-
-        case Right(cause)
-            if (
-              cause.interrupted
-              // deem empty cause to be interruption as well, due to occasional invalid ZIO states
-              // caused by this line https://github.com/zio/zio/blob/22921ee5ac0d2e03531f8b37dfc0d5793a467af8/core/shared/src/main/scala/zio/internal/FiberContext.scala#L415=
-                || cause.isEmpty
-            ) && outerInterruptionConfirmed =>
-          val trace = Trace.ZIOTrace(cause)
-          Interruption(cause.defects, trace)
-
-        case Right(cause) =>
-          val exceptions = cause.defects
-          val compound = exceptions match {
-            case e :: Nil => e
-            case _ => zio.FiberFailure(cause)
-          }
-          Termination(compound, exceptions, Trace.ZIOTrace(cause))
+    def toExit[E](cause: zio.Cause[E])(outerInterruptionConfirmed: Boolean): Exit.Failure[E] = {
+      // ZIO 2, unlike ZIO 1, _does not_ guarantee that the presence of a typed failure
+      // means we're NOT interrupting, so we have to check for interruption to matter what
+      if ((cause.isInterrupted || {
+          // deem empty cause to be interruption as well, due to occasional invalid ZIO states
+          // in `ZIO.fail().uninterruptible` caused by this line https://github.com/zio/zio/blob/22921ee5ac0d2e03531f8b37dfc0d5793a467af8/core/shared/src/main/scala/zio/internal/FiberContext.scala#L415=
+          // NOTE: this line is for ZIO 1, it may not apply for ZIO 2, someone needs to debunk
+          // whether this is required
+          cause.isEmpty
+        }) && outerInterruptionConfirmed) {
+        val causeNoTypedErrors = cause.stripFailures // lose typed failures if there were some. Oh well
+        val trace = Trace.ZIOTrace(causeNoTypedErrors)
+        Interruption(cause.defects, trace)
+      } else {
+        cause.failureOrCause match {
+          case Left(error) =>
+            Error(error, Trace.ZIOTrace(cause))
+          case Right(cause) =>
+            val exceptions = cause.defects
+            val compound = exceptions match {
+              case e :: Nil => e
+              case _ => zio.FiberFailure(cause)
+            }
+            Termination(compound, exceptions, Trace.ZIOTrace(cause))
+        }
       }
     }
 
@@ -150,14 +153,14 @@ object Exit {
               zio.Cause.die(compoundException)
 
             case Interruption(_, headException :: tailExceptions, _) =>
-              zio.Cause.interrupt(zio.Fiber.Id.None) ++ tailExceptions.foldLeft(zio.Cause.die(headException))(_ ++ zio.Cause.die(_))
+              zio.Cause.interrupt(zio.FiberId.None) ++ tailExceptions.foldLeft(zio.Cause.die(headException))(_ ++ zio.Cause.die(_))
             case Interruption(_, _, _) =>
-              zio.Cause.interrupt(zio.Fiber.Id.None)
+              zio.Cause.interrupt(zio.FiberId.None)
           }
       }
     }
 
-    def ZIOSignalOnNoExternalInterruptFailure[R, E, A](f: ZIO[R, E, A])(signalOnNonInterrupt: => ZIO[R, Nothing, Any]): ZIO[R, E, A] = {
+    def ZIOSignalOnNoExternalInterruptFailure[R, E, A](f: ZIO[R, E, A])(signalOnNonInterrupt: => ZIO[R, Nothing, Any])(implicit trace: zio.Trace): ZIO[R, E, A] = {
       f.onExit {
         case zio.Exit.Success(_) =>
           ZIO.unit
@@ -170,11 +173,11 @@ object Exit {
       }
     }
 
-    def withIsInterrupted[R, E, A](f: Boolean => A): ZIO[R, E, A] = {
-      withIsInterruptedF[R, E, A](b => ZIOSucceedNow(f(b)))
+    def withIsInterrupted[R, E, A](f: Boolean => A)(implicit trace: zio.Trace): ZIO[R, E, A] = {
+      withIsInterruptedF[R, E, A](b => ZIO.succeed(f(b)))
     }
 
-    def withIsInterruptedF[R, E, A](f: Boolean => ZIO[R, E, A]): ZIO[R, E, A] = {
+    def withIsInterruptedF[R, E, A](f: Boolean => ZIO[R, E, A])(implicit trace: zio.Trace): ZIO[R, E, A] = {
       ZIO.descriptorWith(desc => f(desc.interrupters.nonEmpty))
     }
 

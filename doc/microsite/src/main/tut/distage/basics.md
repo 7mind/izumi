@@ -415,7 +415,7 @@ Try { Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal)
 ## Resource Bindings, Lifecycle
 
 You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) or
-[zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed)
+[zio.managed.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed)
 values specifying the allocation and finalization actions of an object.
 
 When ran, distage `Injector` itself returns a `Lifecycle` value that describes actions to create and finalize the object graph; the `Lifecycle` value is pure and can be reused multiple times.
@@ -512,7 +512,7 @@ println(closedInit.initialized)
 `Lifecycle` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap`, `.mapK` methods.
 
 You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods,
-and between a `Lifecycle` and `zio.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
+and between a `Lifecycle` and `zio.managed.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
 ### Inheritance helpers
 

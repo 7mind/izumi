@@ -66,7 +66,7 @@ object LifecycleAdapters {
     }
 
     /**
-      * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+      * Allows you to bind [[zio.managed.ZManaged]]-based constructor functions in `ModuleDef`:
       */
     implicit final def providerFromZIOProvider[R, E, A]: AdaptFunctoid.Aux[ZManaged[R, E, A], Lifecycle.FromZIO[R, E, A]] = {
       new AdaptFunctoid[ZManaged[R, E, A]] {
@@ -80,7 +80,7 @@ object LifecycleAdapters {
     }
 
     /**
-      * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+      * Allows you to bind [[zio.managed.ZManaged]]-based constructor functions in `ModuleDef`:
       */
     implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptFunctoid.Aux[ZLayer[R, E, Has[A]], Lifecycle.FromZIO[R, E, A]] = {
       new AdaptFunctoid[ZLayer[R, E, Has[A]]] {

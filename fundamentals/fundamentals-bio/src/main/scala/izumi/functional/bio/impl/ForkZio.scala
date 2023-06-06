@@ -19,9 +19,9 @@ open class ForkZio extends Fork3[ZIO] {
         //  unless wrapped in `interruptible`
         //  see: https://github.com/zio/zio/issues/945
         f.interruptible
-      }(ZIO.effectTotal(interrupted.set(true)))
+      }(ZIO.succeed(interrupted.set(true)))
       .forkDaemon
-      .map(Fiber2.fromZIO(ZIO.effectTotal(interrupted.get())))
+      .map(Fiber2.fromZIO(ZIO.succeed(interrupted.get())))
   }
 
   override def forkOn[R, E, A](ec: ExecutionContext)(f: ZIO[R, E, A]): ZIO[R, Nothing, Fiber3[ZIO, E, A]] = {
@@ -32,10 +32,10 @@ open class ForkZio extends Fork3[ZIO] {
         //  unless wrapped in `interruptible`
         //  see: https://github.com/zio/zio/issues/945
         f.interruptible
-          .on(ec)
-      }(ZIO.effectTotal(interrupted.set(true)))
+          .onExecutionContext(ec)
+      }(ZIO.succeed(interrupted.set(true)))
       .forkDaemon
-      .map(Fiber2.fromZIO(ZIO.effectTotal(interrupted.get())))
+      .map(Fiber2.fromZIO(ZIO.succeed(interrupted.get())))
   }
 
 }

@@ -1,7 +1,8 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.data.Isomorphism2
-import zio.{IO, RefM}
+import zio.{IO, Ref}
+//import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 trait RefM2[F[+_, +_], A] {
   def get: F[Nothing, A]
@@ -13,13 +14,13 @@ trait RefM2[F[+_, +_], A] {
 }
 
 object RefM2 {
-  def fromZIO[A](ref: RefM[A]): RefM2[IO, A] =
+  def fromZIO[A](ref: Ref.Synchronized[A]): RefM2[IO, A] =
     new RefM2[IO, A] {
       override def get: IO[Nothing, A] = ref.get
       override def set(a: A): IO[Nothing, Unit] = ref.set(a)
-      override def modify[E, B](f: A => IO[E, (B, A)]): IO[E, B] = ref.modify(f)
-      override def update[E](f: A => IO[E, A]): IO[E, A] = ref.updateAndGet(f)
-      override def update_[E](f: A => IO[E, A]): IO[E, Unit] = ref.update(f)
+      override def modify[E, B](f: A => IO[E, (B, A)]): IO[E, B] = ref.modifyZIO(f)
+      override def update[E](f: A => IO[E, A]): IO[E, A] = ref.updateAndGetZIO(f)
+      override def update_[E](f: A => IO[E, A]): IO[E, Unit] = ref.updateZIO(f)
     }
 
   def createFromBIO[F[+_, +_]: Bracket2: Primitives2, A](a: A): F[Nothing, RefM2[F, A]] = {

@@ -286,7 +286,7 @@ private[providers] trait FunctoidLifecycleAdapters {
   }
 
   /**
-    * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
+    * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
     */
   implicit final def providerFromZIO[R, E, A](
     managed: => ZManaged[R, E, A]
@@ -296,7 +296,7 @@ private[providers] trait FunctoidLifecycleAdapters {
   }
 
   /**
-    * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
+    * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
   implicit final def providerFromZIONothing[R, A](

@@ -3,7 +3,6 @@ package izumi.functional.bio.data
 import izumi.functional.bio.{F, IO2, UnsafeRun2}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.IO
-import zio.internal.Platform
 
 import java.util.concurrent.atomic.AtomicReference
 
@@ -28,7 +27,7 @@ class FreeMonadTest extends AnyWordSpec {
   val nested: FreePanic[TestFreeChoice, Nothing, Unit] = List.fill(100000)(simpleExecution).reduce((f1, f2) => f1.flatMap(_ => f2))
 
   "Interpret Free and run it via bio" in {
-    val runner = UnsafeRun2.createZIO[Any](Platform.default, ())
+    val runner = UnsafeRun2.createZIO[Any]()
     runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(simpleExecution.foldMap(_): IO[Nothing, Unit])) // type annotation required for Scala 3: https://github.com/lampepfl/dotty/issues/15888
     runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(nested.foldMap(_): IO[Nothing, Unit])) // type annotation required for Scala 3: https://github.com/lampepfl/dotty/issues/15888
   }
