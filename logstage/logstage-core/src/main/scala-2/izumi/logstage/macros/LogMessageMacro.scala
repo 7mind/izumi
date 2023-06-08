@@ -177,7 +177,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
         val sc = q"""_root_.scala.StringContext($stringContext.parts.map(_.stripMargin): _*)"""
         createMessageExpr(sc, namedArgs)
 
-      // support .stripMargin in scala 2.13 and 2.13.10
+      // support .stripMargin in scala 2.13 and 2.13.11
       case Select(Apply(_, List(arg)), TermName("stripMargin")) =>
         arg match {
           case Typed(tree, _) =>
