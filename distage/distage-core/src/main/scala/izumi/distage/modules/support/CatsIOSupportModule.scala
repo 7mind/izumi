@@ -16,9 +16,6 @@ object CatsIOSupportModule extends CatsIOSupportModule
   *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds `cats-effect` typeclass instances for `cats.effect.IO`
   *
-  * Will also add the following components:
-  *   - [[cats.effect.Blocker]] by using [[cats.effect.Blocker.apply]]
-  *
   * Added into scope by [[izumi.distage.modules.DefaultModule]].
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.

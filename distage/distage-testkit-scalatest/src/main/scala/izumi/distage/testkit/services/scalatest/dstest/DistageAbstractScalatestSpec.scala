@@ -6,7 +6,6 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.testkit.model.{DistageTest, SuiteId, SuiteMeta, TestConfig, TestEnvironment, TestId, TestMeta}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.*
 import izumi.distage.testkit.spec.{AbstractDistageSpec, DISyntaxBIOBase, DISyntaxBase, DistageTestEnv, TestRegistration}
-import izumi.functional.bio.Local3
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer}
 import izumi.reflect.TagK3
@@ -14,6 +13,7 @@ import org.scalactic.source
 import org.scalatest.Assertion
 import org.scalatest.distage.TestCancellation
 import org.scalatest.verbs.{CanVerb, MustVerb, ShouldVerb, StringVerbBlockRegistration}
+import zio.ZIO
 
 import scala.annotation.unused
 
@@ -178,31 +178,44 @@ object DistageAbstractScalatestSpec {
   ) extends DISyntaxBIOBase[F[Any, +_, +_]]
     with LowPriorityIdentityOverloads[F[Any, Throwable, _]] {
 
-    def in[R: HasConstructor](function: Functoid[F[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    // FIXME wtf specialize to ZIO?
+    def in[R: HasConstructor](function: Functoid[ZIO[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(
-        function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Unit]])(r)
+        function.map2(HasConstructor[R]) {
+          case (eff, r) => eff.provideEnvironment(r).asInstanceOf[F[Any, Any, Unit]]
         },
         pos.get,
       )
     }
-
-    def in[R: HasConstructor](function: Functoid[F[R, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(
-        function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Assertion]])(r)
-        },
-        pos.get,
-      )
+    def in[R: HasConstructor](value: => ZIO[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(HasConstructor[R].map(value.provideEnvironment(_).asInstanceOf[F[Any, Any, Unit]]), pos.get)
     }
-
-    def in[R: HasConstructor](value: => F[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
-    }
-
-    def in[R: HasConstructor](value: => F[R, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
-    }
+    // FIXME wtf specialize to ZIO?
+//    def in[R: HasConstructor](function: Functoid[F[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+//      takeBIO(
+//        function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+//          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Unit]])(r)
+//        },
+//        pos.get,
+//      )
+//    }
+//
+//    def in[R: HasConstructor](function: Functoid[F[R, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+//      takeBIO(
+//        function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+//          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Assertion]])(r)
+//        },
+//        pos.get,
+//      )
+//    }
+//
+//    def in[R: HasConstructor](value: => F[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+//      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
+//    }
+//
+//    def in[R: HasConstructor](value: => F[R, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+//      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
+//    }
 
     def in(function: Functoid[F[Any, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(function.asInstanceOf[Functoid[F[Any, Any, Any]]], pos.get)

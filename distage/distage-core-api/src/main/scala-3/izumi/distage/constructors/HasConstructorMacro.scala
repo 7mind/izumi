@@ -63,7 +63,7 @@ object HasConstructorMacro {
           }).changeOwner(lambdaSym)
       }
 
-      val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.ZIOHas })
+      val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.ZIOEnvironment })
       '{ new HasConstructor[R](${ f }) }
     }
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }

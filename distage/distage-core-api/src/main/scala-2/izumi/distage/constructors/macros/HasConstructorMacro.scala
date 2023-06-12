@@ -6,6 +6,7 @@ import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
+import zio.ZEnvironment
 
 import scala.reflect.macros.blackbox
 
@@ -17,7 +18,7 @@ object HasConstructorMacro {
     import c.universe._
     import impls.{c => _, u => _, _}
 
-    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
+    val targetType = weakTypeOf[T].dealias
     requireConcreteTypeConstructor(c)("HasConstructor", targetType)
 
     targetType match {
@@ -26,18 +27,17 @@ object HasConstructorMacro {
 
       case _ =>
         val deepIntersection = ReflectionUtil
-          .deepIntersectionTypeMembers[c.universe.type](targetType)
+          .deepIntersectionTypeMembersNoNorm[c.universe.type](targetType)
           .filter(_ ne definitions.AnyTpe)
-        ziohasConstructorAssertion(targetType, deepIntersection)
 
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 
         val params = reflectionProvider.zioHasParameters(c.freshName)(deepIntersection)
-        val provider: c.Expr[Functoid[T]] = {
-          generateProvider[T, ProviderType.ZIOHas.type](params :: Nil) {
+        val provider: c.Expr[Functoid[ZEnvironment[T]]] = {
+          generateProvider[ZEnvironment[T], ProviderType.ZIOEnvironment.type](params :: Nil) {
             case (headParam :: params) :: Nil =>
-              params.foldLeft(q"_root_.zio.Has.apply($headParam)") {
+              params.foldLeft(q"_root_.zio.ZEnvironment.apply($headParam)") {
                 (expr, arg) => q"$expr.add($arg)"
               }
             case _ => c.abort(c.enclosingPosition, s"Impossible happened, empty Has intersection or malformed type $targetType in HasConstructorMacro")

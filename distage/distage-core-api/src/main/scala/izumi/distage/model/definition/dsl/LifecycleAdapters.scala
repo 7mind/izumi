@@ -7,6 +7,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.Local3
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio.*
+import zio.managed.ZManaged
 
 object LifecycleAdapters {
 
@@ -74,7 +75,7 @@ object LifecycleAdapters {
 
         override def apply(a: Functoid[ZManaged[R, E, A]])(implicit tag: LifecycleTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
           import tag.tagFull
-          a.map(Lifecycle.fromZIO)
+          a.map(Lifecycle.fromZIO(_))
         }
       }
     }
@@ -82,13 +83,13 @@ object LifecycleAdapters {
     /**
       * Allows you to bind [[zio.managed.ZManaged]]-based constructor functions in `ModuleDef`:
       */
-    implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptFunctoid.Aux[ZLayer[R, E, Has[A]], Lifecycle.FromZIO[R, E, A]] = {
-      new AdaptFunctoid[ZLayer[R, E, Has[A]]] {
+    implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptFunctoid.Aux[ZLayer[R, E, A], Lifecycle.FromZIO[R, E, A]] = {
+      new AdaptFunctoid[ZLayer[R, E, A]] {
         type Out = Lifecycle.FromZIO[R, E, A]
 
-        override def apply(a: Functoid[ZLayer[R, E, Has[A]]])(implicit tag: LifecycleTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
+        override def apply(a: Functoid[ZLayer[R, E, A]])(implicit tag: LifecycleTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
           import tag.tagFull
-          a.map(layer => Lifecycle.fromZIO(layer.map(_.get[A]).build))
+          a.map(Lifecycle.fromZIO(_)(zio.Tag[A]))
         }
       }
     }

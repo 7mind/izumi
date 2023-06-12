@@ -9,7 +9,8 @@ import scala.concurrent.duration.*
 
 class SyntaxTest extends AnyWordSpec {
 
-  def fixme(): Unit = ???
+  // FIXME wtf
+  def fixme(): Unit = ()
 
   "BIOParallel.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
     import izumi.functional.bio.Parallel2
@@ -404,8 +405,10 @@ class SyntaxTest extends AnyWordSpec {
 
   "FR: Local/Ask summoners examples" in {
     import izumi.functional.bio.{Arrow3, Ask3, Bifunctor3, F, Local3, MonadAsk3, Temporal3}
+    // FIXME wtf
 //    import izumi.functional.bio.{Arrow3, Ask3, Bifunctor3, F, Local3, Monad3, MonadAsk3, Profunctor3, Temporal3}
 
+    // FIXME wtf
 //    def x[FR[-_, +_, +_]: Monad3: Ask3]: FR[Int, Nothing, Boolean] = {
 //      F.unit *> F.ask[Int].map {
 //        (_: Int) =>

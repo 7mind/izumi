@@ -109,7 +109,7 @@ object FactoryConstructor {
   *
   * `zio.Has` heterogeneous map values may be used by ZIO or other Reader-like effects
   *
-  * @see [[https://izumi.7mind.io/distage/basics.html#zio-has-bindings ZIO Has bindings]]
+  * @see [[https://izumi.7mind.io/distage/basics.html#zio-environment-bindings ZIO Environment bindings]]
   * @see [[AnyConstructor]]
   */
 final class HasConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]

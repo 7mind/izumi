@@ -25,7 +25,9 @@ object LogZIO {
     *   }
     * }}}
     */
-  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get[LogIO3[ZIO]])
+  // FIXME wtf
+//  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get[LogIO3[ZIO]])
+//  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](identity)
 
   def withFiberId(logger: AbstractLogger): LogIO2[IO] = {
     new WrappedLogIO[IO[Nothing, _]](logger)(SyncSafe2[IO]) {
@@ -34,9 +36,9 @@ object LogZIO {
       }
 
       override protected[this] def wrap[A](f: AbstractLogger => A): IO[Nothing, A] = {
-        IO.descriptorWith {
+        ZIO.descriptorWith {
           descriptor =>
-            IO.effectTotal(f(logger.withCustomContext(CustomContext("fiberId" -> descriptor.id))))
+            ZIO.succeed(f(logger.withCustomContext(CustomContext("fiberId" -> descriptor.id))))
         }
       }
     }
@@ -49,7 +51,7 @@ object LogZIO {
       }
 
       override protected[this] def wrap[A](f: AbstractLogger => A): ZIO[R, Nothing, A] = {
-        dynamic.flatMap(ctx => IO.effectTotal(f(logger.withCustomContext(ctx))))
+        dynamic.flatMap(ctx => ZIO.succeed(f(logger.withCustomContext(ctx))))
       }
     }
   }

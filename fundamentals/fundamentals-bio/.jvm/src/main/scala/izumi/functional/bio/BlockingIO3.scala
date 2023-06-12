@@ -3,7 +3,6 @@ package izumi.functional.bio
 import izumi.functional.bio.PredefinedHelper.Predefined
 import zio.Executor
 
-import java.util.concurrent.ThreadPoolExecutor
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 import zio.ZIO
 
@@ -32,26 +31,23 @@ object BlockingIO3 {
 private[bio] sealed trait BlockingIOInstances
 object BlockingIOInstances extends BlockingIOLowPriorityVersionSpecific {
 
-  def BlockingZIOFromThreadPool(blockingPool: ThreadPoolExecutor): BlockingIO3[ZIO] = {
-    val blockingExecutor = Executor.fromThreadPoolExecutor(blockingPool)
-    new BlockingIO3[ZIO] {
-      override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = {
-        ZIO.environmentWithZIO[R] {
-          r =>
-            ZIO.provideLayer[Any, E, Any, Any, A](zio.Runtime.setBlockingExecutor(blockingExecutor)) {
-              ZIO.blocking(f).provideEnvironment(r)
-            }
-        }
+  def BlockingZIOFromExecutor(blockingExecutor: Executor): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
+    override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = {
+      ZIO.environmentWithZIO[R] {
+        r =>
+          ZIO.provideLayer[Any, E, Any, Any, A](zio.Runtime.setBlockingExecutor(blockingExecutor)) {
+            ZIO.blocking(f).provideEnvironment(r)
+          }
       }
-      override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
-        ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
-          ZIO.attemptBlocking(f)
-        }
+    }
+    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
+      ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
+        ZIO.attemptBlocking(f)
       }
-      override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
-        ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
-          ZIO.attemptBlockingInterrupt(f)
-        }
+    }
+    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
+      ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
+        ZIO.attemptBlockingInterrupt(f)
       }
     }
   }

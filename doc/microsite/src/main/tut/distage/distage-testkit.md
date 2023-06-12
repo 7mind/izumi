@@ -330,7 +330,7 @@ abstract class BonusServiceTest extends Test {
 }
 ```
 
-The @ref[ZIO Has injection](basics.md#zio-has-bindings) support extends to the test cases, here we request two components implicitly using the ZIO environment:
+The @ref[ZIO Has injection](basics.md#zio-environment-bindings) support extends to the test cases, here we request two components implicitly using the ZIO environment:
 
 - `BonusService` - is requested by `ZIO.service[BonusService]`
 - `zio.Random.Service` - is requested by `zio.random.nextInt`
@@ -447,7 +447,7 @@ object BonusServicePlugin extends PluginDef {
 }
 ```
 
-Here we used @ref[ZIO Has injection](basics.md#zio-has-bindings) `.fromHas` to supply the environment dependencies for `ProdBonusService.managed`, namely `Has[Console.Service]`.
+Here we used @ref[ZIO Has injection](basics.md#zio-environment-bindings) `.fromHas` to supply the environment dependencies for `ProdBonusService.managed`, namely `Has[Console.Service]`.
 (Implementation for `Console.Service` is provided by default from @scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule))
 `.fromHas` can be used with `ZLayer`, `ZManaged` `ZIO` or any `F[-_, +_, +_]: Local3` (from @ref[BIO](../bio/00_bio.md) typeclasses).
 

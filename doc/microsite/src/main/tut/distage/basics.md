@@ -900,7 +900,7 @@ zio.Runtime.default.unsafeRun(io)
 
 You need to specify your effect type when constructing `Injector`, as in `Injector[F]()`, to use effect bindings in chosen `F[_]`.
 
-## ZIO Has Bindings
+## ZIO Environment bindings
 
 You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: Local3`:
 

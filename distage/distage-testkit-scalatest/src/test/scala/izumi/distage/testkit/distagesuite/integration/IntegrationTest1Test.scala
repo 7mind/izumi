@@ -11,13 +11,13 @@ import izumi.distage.testkit.scalatest.{Spec1, Spec2}
 import izumi.functional.bio.catz.*
 import izumi.functional.bio.{Applicative2, ApplicativeError2, F}
 import izumi.fundamentals.platform.integration.ResourceCheck
-import zio.{Task, UIO}
+import zio.{Task, UIO, ZEnvironment, ZIO}
 
 case class TestEnableDisable()
 
 class DisabledTestZIO extends Lifecycle.Simple[TestEnableDisable] with IntegrationCheck[UIO] {
   override def resourcesAvailable(): UIO[ResourceCheck] =
-    UIO.succeed(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
+    ZIO.succeed(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
 
   override def acquire: TestEnableDisable = TestEnableDisable()
   override def release(resource: TestEnableDisable): Unit = ()
@@ -33,7 +33,7 @@ class MyDisabledTestZIO extends Spec1[Task] {
   "My component" should {
     "this test should be skipped" in {
       (_: TestEnableDisable) =>
-        Task.fail(new Throwable("Test was not skipped!")).unit
+        ZIO.fail(new Throwable("Test was not skipped!")).unit
     }
   }
 }
@@ -81,8 +81,9 @@ class DisabledTestF2[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F[Nothing,
 abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit FA: ApplicativeError2[F], F: QuasiIO[F[Throwable, _]]) extends Spec2[F] {
   override def config: TestConfig = {
     super.config.copy(
-      moduleOverrides = new ModuleDef {
+      moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
         make[TestEnableDisable].fromResource[DisabledTestF2[F]]
+        make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
       }
     )
   }
@@ -97,4 +98,4 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit FA: A
 
 //final class MyDisabledTestF2MonixBIO extends MyDisabledTestF2[monix.bio.IO]
 final class MyDisabledTestF2ZioIO extends MyDisabledTestF2[zio.IO]
-final class MyDisabledTestF2ZIOZIOZEnv extends MyDisabledTestF2[zio.ZIO[zio.ZEnv, +_, +_]]
+final class MyDisabledTestF2ZIOZIOZEnv extends MyDisabledTestF2[zio.ZIO[Int, +_, +_]]
