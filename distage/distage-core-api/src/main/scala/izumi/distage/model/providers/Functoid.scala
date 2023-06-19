@@ -1,6 +1,6 @@
 package izumi.distage.model.providers
 
-import izumi.distage.constructors.{AnyConstructor, ClassConstructor, FactoryConstructor, HasConstructor, TraitConstructor}
+import izumi.distage.constructors.{AnyConstructor, ClassConstructor, FactoryConstructor, ZEnvConstructor, TraitConstructor}
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.distage.model.reflection.LinkedParameter
@@ -207,11 +207,11 @@ object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters {
   def makeFactory[A: FactoryConstructor]: Functoid[A] = FactoryConstructor[A]
 
   /**
-    * Derive constructor for a `zio.Has` value `A` using [[HasConstructor]]
+    * Derive constructor for a `zio.ZEnvironment` value `A` using [[ZEnvConstructor]]
     *
     * @see [[https://izumi.7mind.io/distage/basics.html#zio-environment-bindings ZIO Environment bindings]]
     */
-  def makeHas[A: HasConstructor]: Functoid[ZEnvironment[A]] = HasConstructor[A]
+  def makeHas[A: ZEnvConstructor]: Functoid[ZEnvironment[A]] = ZEnvConstructor[A]
 
   /** Derive constructor for a type `A` using [[AnyConstructor]] */
   def makeAny[A: AnyConstructor]: Functoid[A] = AnyConstructor[A]

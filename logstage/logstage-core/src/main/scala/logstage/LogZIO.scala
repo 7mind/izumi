@@ -28,6 +28,34 @@ object LogZIO {
   // FIXME wtf
 //  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get[LogIO3[ZIO]])
 //  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](identity)
+  object log extends LogZIOImpl(identity)
+
+  private[LogZIO] class LogZIOImpl(get: LogIO3[ZIO] => LogIO3[ZIO]) extends LogIO3Ask[ZIO] {
+    override final def log(entry: Log.Entry): ZIO[LogIO3[ZIO], Nothing, Unit] =
+      ZIO.serviceWithZIO(get(_).log(entry))
+
+    override final def log(logLevel: Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Unit] =
+      ZIO.serviceWithZIO(get(_).log(logLevel)(messageThunk))
+
+    override final def unsafeLog(entry: Log.Entry): ZIO[LogIO3[ZIO], Nothing, Unit] =
+      ZIO.serviceWithZIO(get(_).log(entry))
+
+    override final def acceptable(loggerId: Log.LoggerId, logLevel: Level): ZIO[LogIO3[ZIO], Nothing, Boolean] =
+      ZIO.serviceWithZIO(get(_).acceptable(loggerId, logLevel))
+
+    override final def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Boolean] =
+      ZIO.serviceWithZIO(get(_).acceptable(logLevel))
+
+    override final def createEntry(logLevel: Level, message: Log.Message)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Log.Entry] =
+      ZIO.serviceWithZIO(get(_).createEntry(logLevel, message))
+
+    override final def createContext(logLevel: Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Log.Context] =
+      ZIO.serviceWithZIO(get(_).createContext(logLevel, customContext))
+
+    override final def withCustomContext(context: CustomContext): LogIO2[ZIO[LogIO3[ZIO], _, _]] = {
+      new LogZIOImpl(get(_).withCustomContext(context))
+    }
+  }
 
   def withFiberId(logger: AbstractLogger): LogIO2[IO] = {
     new WrappedLogIO[IO[Nothing, _]](logger)(SyncSafe2[IO]) {

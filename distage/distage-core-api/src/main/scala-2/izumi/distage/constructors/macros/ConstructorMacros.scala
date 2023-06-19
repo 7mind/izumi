@@ -28,11 +28,11 @@ object ClassConstructorMacros {
   }
 }
 
-abstract class HasConstructorMacros extends ConstructorMacrosBase
-object HasConstructorMacros {
-  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = HasConstructorMacros { val c: C; val u: U }
-  def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): HasConstructorMacros.Aux[c0.type, u0.type] = {
-    new HasConstructorMacros {
+abstract class ZEnvConstructorMacros extends ConstructorMacrosBase
+object ZEnvConstructorMacros {
+  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = ZEnvConstructorMacros { val c: C; val u: U }
+  def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): ZEnvConstructorMacros.Aux[c0.type, u0.type] = {
+    new ZEnvConstructorMacros {
       val c: c0.type = c0
       val u: u0.type = u0
     }

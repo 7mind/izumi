@@ -1,6 +1,6 @@
 package izumi.distage.constructors.macros
 
-import izumi.distage.constructors.{DebugProperties, HasConstructor}
+import izumi.distage.constructors.{DebugProperties, ZEnvConstructor}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.StaticDIUniverse
@@ -10,20 +10,20 @@ import zio.ZEnvironment
 
 import scala.reflect.macros.blackbox
 
-object HasConstructorMacro {
+object ZEnvConstructorMacro {
 
-  def mkHasConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[HasConstructor[T]] = {
+  def mkZEnvConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ZEnvConstructor[T]] = {
     val macroUniverse = StaticDIUniverse(c)
-    val impls = HasConstructorMacros(c)(macroUniverse)
+    val impls = ZEnvConstructorMacros(c)(macroUniverse)
     import c.universe._
     import impls.{c => _, u => _, _}
 
     val targetType = weakTypeOf[T].dealias
-    requireConcreteTypeConstructor(c)("HasConstructor", targetType)
+    requireConcreteTypeConstructor(c)("ZEnvConstructor", targetType)
 
     targetType match {
       case definitions.AnyTpe =>
-        c.Expr[HasConstructor[T]](q"_root_.izumi.distage.constructors.HasConstructor.empty")
+        c.Expr[ZEnvConstructor[T]](q"_root_.izumi.distage.constructors.ZEnvConstructor.empty")
 
       case _ =>
         val deepIntersection = ReflectionUtil
@@ -40,12 +40,12 @@ object HasConstructorMacro {
               params.foldLeft(q"_root_.zio.ZEnvironment.apply($headParam)") {
                 (expr, arg) => q"$expr.add($arg)"
               }
-            case _ => c.abort(c.enclosingPosition, s"Impossible happened, empty Has intersection or malformed type $targetType in HasConstructorMacro")
+            case _ => c.abort(c.enclosingPosition, s"Impossible happened, empty Has intersection or malformed type $targetType in ZEnvConstructorMacro")
           }
         }
 
-        val res = c.Expr[HasConstructor[T]](q"{ new ${weakTypeOf[HasConstructor[T]]}($provider) }")
-        logger.log(s"Final syntax tree of HasConstructor for $targetType:\n$res")
+        val res = c.Expr[ZEnvConstructor[T]](q"{ new ${weakTypeOf[ZEnvConstructor[T]]}($provider) }")
+        logger.log(s"Final syntax tree of ZEnvConstructor for $targetType:\n$res")
 
         res
     }

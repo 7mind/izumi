@@ -11,19 +11,19 @@ import scala.collection.immutable.ArraySeq
 import scala.quoted.{Expr, Quotes, Type}
 import scala.compiletime.summonInline
 
-object HasConstructorMacro {
+object ZEnvConstructorMacro {
 
-  def make[R: Type](using qctx: Quotes): Expr[HasConstructor[R]] = try {
+  def make[R: Type](using qctx: Quotes): Expr[ZEnvConstructor[R]] = try {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
     import util.{ParamRepr, TypeReprAsType}
-    util.requireConcreteTypeConstructor(TypeRepr.of[R], "HasConstructor")
+    util.requireConcreteTypeConstructor(TypeRepr.of[R], "ZEnvConstructor")
 
     val typeRepr = TypeRepr.of[R].dealias.simplified
 
     if (typeRepr.typeSymbol == defn.AnyClass) {
-      '{ HasConstructor.empty }.asExprOf[HasConstructor[R]]
+      '{ ZEnvConstructor.empty }.asExprOf[ZEnvConstructor[R]]
     } else {
       val deepIntersection = ReflectionUtil
         .intersectionMembers(typeRepr)
@@ -59,12 +59,12 @@ object HasConstructorMacro {
                     }
                 }
             case _ =>
-              report.errorAndAbort(s"Impossible happened, empty Has intersection or malformed type ${typeRepr.show} in HasConstructorMacro")
+              report.errorAndAbort(s"Impossible happened, empty Has intersection or malformed type ${typeRepr.show} in ZEnvConstructorMacro")
           }).changeOwner(lambdaSym)
       }
 
       val f = util.makeFunctoid[ZEnvironment[R]](lamParams, lamExpr, '{ ProviderType.ZIOEnvironment })
-      '{ new HasConstructor[R](${ f }) }
+      '{ new ZEnvConstructor[R](${ f }) }
     }
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
 

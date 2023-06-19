@@ -19,7 +19,7 @@ import scala.language.experimental.macros as enableMacros
   *
   * Since version `1.1.0`, does not generate constructors "factory-like" traits and abstract classes, instead use [[FactoryConstructor]].
   *
-  * Use [[HasConstructor]] to generate constructors for `zio.Has` values.
+  * Use [[ZEnvConstructor]] to generate constructors for `zio.ZEnvironment` values.
   *
   * @example
   * {{{
@@ -112,14 +112,14 @@ object FactoryConstructor {
   * @see [[https://izumi.7mind.io/distage/basics.html#zio-environment-bindings ZIO Environment bindings]]
   * @see [[AnyConstructor]]
   */
-final class HasConstructor[T](val provider: Functoid[ZEnvironment[T]]) extends AnyVal with AnyConstructor[ZEnvironment[T]]
+final class ZEnvConstructor[T](val provider: Functoid[ZEnvironment[T]]) extends AnyVal with AnyConstructor[ZEnvironment[T]]
 
-object HasConstructor {
-  def apply[T](implicit ctor: HasConstructor[T]): Functoid[ZEnvironment[T]] = ctor.provider
+object ZEnvConstructor {
+  def apply[T](implicit ctor: ZEnvConstructor[T]): Functoid[ZEnvironment[T]] = ctor.provider
 
-  def empty: HasConstructor[Any] = new HasConstructor(Functoid.pure(ZEnvironment.empty))
+  def empty: ZEnvConstructor[Any] = new ZEnvConstructor(Functoid.pure(ZEnvironment.empty))
 
-  implicit def materialize[T]: HasConstructor[T] = macro HasConstructorMacro.mkHasConstructor[T]
+  implicit def materialize[T]: ZEnvConstructor[T] = macro ZEnvConstructorMacro.mkZEnvConstructor[T]
 }
 
 private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any {

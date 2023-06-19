@@ -2,7 +2,7 @@ package izumi.distage.injector
 
 import distage.Id
 import izumi.distage.compat.ZIOTest
-import izumi.distage.constructors.HasConstructor
+import izumi.distage.constructors.ZEnvConstructor
 import izumi.distage.fixtures.TraitCases.*
 import izumi.distage.fixtures.TraitCases.TraitCase2.{Dependency1, Trait1}
 import izumi.distage.fixtures.TypesCases.*
@@ -40,10 +40,10 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
 //      F.pure(trait1(d1))
 //    )
 
-  "HasConstructor" should {
+  "ZEnvConstructor" should {
 
     "construct Has with tricky type aliases" in {
-      val hasCtor = HasConstructor[HasIntBool with Any].get
+      val hasCtor = ZEnvConstructor[HasIntBool with Any].get
 
       val value = hasCtor.unsafeApply(Seq(TypedRef(5), TypedRef(false))).asInstanceOf[ZEnvironment[HasIntBool]]
 
@@ -56,10 +56,10 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
 
       val definition = new ModuleDef {
         make[Dep].from[DepA]
-        make[TestClass2[Dep]].fromHas {
+        make[TestClass2[Dep]].fromZEnv {
           (value: Dep) => ZIO.attempt(TestClass2(value))
         }
-        make[TestClass2[Dep]].named("noargs").fromHas(ZIO.attempt(TestClass2(new DepA: Dep)))
+        make[TestClass2[Dep]].named("noargs").fromZEnv(ZIO.attempt(TestClass2(new DepA: Dep)))
       }
 
       val injector = mkNoCyclesInjector()
@@ -78,12 +78,12 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       assert(instantiated2.inner ne context.get[Dep])
     }
 
-    "handle one-arg fromHas" in {
+    "handle one-arg fromZEnv" in {
       import TypesCase1.*
 
       val definition = new ModuleDef {
         make[Dep].from[DepA]
-        make[TestClass2[Dep]].fromHas(ZIO.environmentWithZIO {
+        make[TestClass2[Dep]].fromZEnv(ZIO.environmentWithZIO {
           (value: ZEnvironment[Dep]) =>
             ZIO.attempt(TestClass2(value.get))
         })
@@ -99,7 +99,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       assert(instantiated.inner eq context.get[Dep])
     }
 
-    "progression test: since ZIO 2 can't support named bindings in zio.Has type parameters" in {
+    "progression test: since ZIO 2 can't support named bindings in zio.ZEnvironment type parameters" in {
       import TypesCase1.*
 
       val ctorA: ZIO[Dep @Id("A"), Nothing, TestClass2[Dep]] = ZIO.serviceWith[Dep @Id("A")] {
@@ -112,8 +112,8 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Dep].named("A").from[DepA]
         make[Dep].named("B").from[DepB]
-        make[TestClass2[Dep]].named("A").fromHas[Dep @Id("A"), Nothing, TestClass2[Dep]](ctorA)
-        make[TestClass2[Dep]].named("B").fromHas(ctorB)
+        make[TestClass2[Dep]].named("A").fromZEnv[Dep @Id("A"), Nothing, TestClass2[Dep]](ctorA)
+        make[TestClass2[Dep]].named("B").fromZEnv(ctorB)
       })
 
       val injector = mkInjector()
@@ -133,7 +133,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       assert(t.failed.get.getMessage.contains("Found other bindings for the same type (did you forget to add or remove `@Id` annotation?)"))
     }
 
-    "progression test: since ZIO 2 can't support multiple named bindings in zio.Has without a type signature" in {
+    "progression test: since ZIO 2 can't support multiple named bindings in zio.ZEnvironment without a type signature" in {
       import TypesCase1.*
 
       val ctorAB = for {
@@ -144,7 +144,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       val definition = PlannerInput.everything(new ModuleDef {
         make[DepA].named("A").from[DepA]
         make[DepB].named("B").from[DepB]
-        make[TestClass3[Dep]].fromHas(ctorAB)
+        make[TestClass3[Dep]].fromZEnv(ctorAB)
       })
 
       val injector = mkInjector()
@@ -162,7 +162,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       assert(t.failed.get.getMessage.contains("Found other bindings for the same type (did you forget to add or remove `@Id` annotation?)"))
     }
 
-    "support multiple named bindings in zio.Has with a type signature" in {
+    "support multiple named bindings in zio.ZEnvironment with a type signature" in {
       import TypesCase1.*
 
       val ctorAB: ZIO[(DepA @Id("A")) & (DepB @Id("B")), Nothing, TestClass3[Dep]] = for {
@@ -173,7 +173,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       val definition = PlannerInput.everything(new ModuleDef {
         make[DepA].named("A").from[DepA]
         make[DepB].named("B").from[DepB]
-        make[TestClass3[Dep]].fromHas(ctorAB)
+        make[TestClass3[Dep]].fromZEnv(ctorAB)
       })
 
       val injector = mkInjector()
@@ -199,7 +199,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
 //        make[Dependency1]
 //        make[Dependency2]
 //        make[Dependency3]
-//        make[Trait3 { def dep1: Dependency1 }].fromHas(
+//        make[Trait3 { def dep1: Dependency1 }].fromZEnv(
 //          (d3: Dependency3) =>
 //            for {
 //              d1 <- getDep1
@@ -210,19 +210,19 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
 //              override val dep3 = d3
 //            }
 //        )
-//        make[Trait2].fromHas(for {
+//        make[Trait2].fromZEnv(for {
 //          d1 <- ZManaged.environmentWith[Dependency1](_.get)
 //          d2 <- ZManaged.environmentWith[Dependency2](_.get)
 //        } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
-////        make[Trait1].fromHas[Any, Nothing, Trait1] {
-//        // FIXME: report bug - Dotty infers this as `make[Trait1].fromHas[Any, Any, Trait1]` - awful inference here wtf?
-//        make[Trait1].fromHas {
+////        make[Trait1].fromZEnv[Any, Nothing, Trait1] {
+//        // FIXME: report bug - Dotty infers this as `make[Trait1].fromZEnv[Any, Any, Trait1]` - awful inference here wtf?
+//        make[Trait1].fromZEnv {
 //          (d1: Dependency1) =>
 //            ZLayer.succeed(new Trait1 { val dep1 = d1 })
 //        }
 //
-//        make[Trait2].named("classbased").fromHas[ResourceHasImpl[ZIO]]
-//        make[Trait1].named("classbased").fromHas[ResourceEmptyHasImpl[IO]]
+//        make[Trait2].named("classbased").fromZEnv[ResourceHasImpl[ZIO]]
+//        make[Trait1].named("classbased").fromZEnv[ResourceEmptyHasImpl[IO]]
 //
 //        many[Trait2].addHas[ResourceHasImpl[ZIO]]
 //        many[Trait1].addHas[ResourceEmptyHasImpl[IO]]
@@ -273,7 +273,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
 //        make[Dependency3]
 //        addImplicit[Local3[F]]
 //        addImplicit[Applicative2[F[Any, +_, +_]]]
-//        make[Trait3 { def dep1: Dependency1 }].fromHas(
+//        make[Trait3 { def dep1: Dependency1 }].fromZEnv(
 //          (d3: Dependency3) =>
 //            (for {
 //              d1 <- getDep1
@@ -284,8 +284,8 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
 //              override val dep3 = d3
 //            }): F[Has[Dependency1] with Has[Dependency2], Nothing, Trait3]
 //        )
-//        make[Trait2].fromHas[ResourceHasImpl[F]]
-//        make[Trait1].fromHas[ResourceEmptyHasImpl[F[Any, +_, +_]]]
+//        make[Trait2].fromZEnv[ResourceHasImpl[F]]
+//        make[Trait1].fromZEnv[ResourceEmptyHasImpl[F[Any, +_, +_]]]
 //
 //        many[Trait2].addHas[ResourceHasImpl[F]]
 //        many[Trait1].addHas[ResourceEmptyHasImpl[F[Any, +_, +_]]]
@@ -323,7 +323,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Dep]
         make[AnyValDep]
-        make[TestTrait].fromHas(
+        make[TestTrait].fromZEnv(
           ZIO.environmentWith[AnyValDep](
             h =>
               new TestTrait {
@@ -343,7 +343,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       assert(context.get[TestTrait].anyValDep.d eq context.get[Dep])
     }
 
-    "Scala 3 regression test: support more than 2 dependencies in HasConstructor" in {
+    "Scala 3 regression test: support more than 2 dependencies in ZEnvConstructor" in {
       trait OpenTracingService
 
       trait SttpBackend[F[_], +P]
@@ -357,7 +357,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       trait MyClient
 
       object MyPlugin extends ModuleDef {
-        make[MyClient].fromHas[OpenTracingService with MyPublisher with SttpBackend[Task, ZioStreams with WebSockets] with MyEndpoints[IO], Nothing, MyClient] {
+        make[MyClient].fromZEnv[OpenTracingService with MyPublisher with SttpBackend[Task, ZioStreams with WebSockets] with MyEndpoints[IO], Nothing, MyClient] {
           ZIO.succeed(???): ZIO[OpenTracingService with MyPublisher with SttpBackend[Task, ZioStreams with WebSockets] with MyEndpoints[IO], Nothing, MyClient]
         }
       }
