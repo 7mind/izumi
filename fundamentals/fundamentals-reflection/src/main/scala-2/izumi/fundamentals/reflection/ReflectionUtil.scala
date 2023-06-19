@@ -110,6 +110,16 @@ object ReflectionUtil {
     go(targetType).distinct
   }
 
+  def deepIntersectionTypeMembersNoNorm[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {
+    def go(tpe: U#Type): List[U#Type] = {
+      tpe match {
+        case r: U#RefinedTypeApi => r.parents.flatMap(t => deepIntersectionTypeMembers[U](t.dealias))
+        case _ => List(tpe)
+      }
+    }
+    go(targetType).distinct
+  }
+
   def getStringLiteral(c: blackbox.Context)(tree: c.universe.Tree): String = {
     findStringLiteral(tree).getOrElse(c.abort(c.enclosingPosition, "must use string literal"))
   }

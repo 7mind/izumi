@@ -5,13 +5,14 @@ import distage.{TagKK, *}
 import izumi.distage.compat.ZIOResourcesTestJvm.*
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Activation, ImplDef, Lifecycle, ModuleDef}
-import izumi.distage.model.plan.Roots
 import izumi.functional.bio.IO2
+
 import scala.annotation.unused
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 import zio.*
+import zio.managed.ZManaged
 
 object ZIOResourcesTestJvm {
   class Res { var initialized = false }
@@ -21,23 +22,21 @@ object ZIOResourcesTestJvm {
   class MessageQueueConnection
 
   class MyApp(@unused db: DBConnection, @unused mq: MessageQueueConnection) {
-    val run = IO(println("Hello World!"))
+    val run = ZIO.attempt(println("Hello World!"))
   }
 }
-final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
-
-  def unsafeRun[E, A](eff: => ZIO[ZEnv, E, A]): A = zio.Runtime.default.unsafeRun(eff)
+final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOTest {
 
   "ZManaged" should {
     "ZManaged works" in {
-      val dbResource = ZManaged.make(UIO {
+      val dbResource = ZManaged.acquireReleaseWith(ZIO.succeed {
         println("Connecting to DB!")
         new DBConnection
-      })(_ => UIO(println("Disconnecting DB")))
-      val mqResource = ZManaged.make(IO {
-        println("Connecting to Message Queue!");
+      })(_ => ZIO.succeed(println("Disconnecting DB")))
+      val mqResource = ZManaged.acquireReleaseWith(ZIO.succeed {
+        println("Connecting to Message Queue!")
         new MessageQueueConnection
-      })(_ => UIO(println("Disconnecting Message Queue")))
+      })(_ => ZIO.succeed(println("Disconnecting Message Queue")))
 
       val module = new ModuleDef {
         make[DBConnection].fromResource(dbResource)
@@ -45,18 +44,18 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         make[MyApp]
       }
 
-      unsafeRun(Injector[Task]().produce(module, Roots.Everything).use {
-        objects =>
-          objects.get[MyApp].run
+      unsafeRun(Injector[Task]().produceRun(module) {
+        (myApp: MyApp) =>
+          myApp.run
       })
     }
 
     "Lifecycle API should be compatible with provider and instance bindings of type ZManaged" in {
-      val resResource: ZManaged[Any, Throwable, Res1] = ZManaged.make(
-        acquire = IO {
+      val resResource: ZManaged[Any, Throwable, Res1] = ZManaged.acquireReleaseWith(
+        acquire = ZIO.attempt {
           val res = new Res1; res.initialized = true; res
         }
-      )(release = res => UIO(res.initialized = false))
+      )(release = res => ZIO.succeed(res.initialized = false))
 
       val definition: ModuleDef = new ModuleDef {
         make[Res].named("instance").fromResource(resResource)
@@ -80,7 +79,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       val plan = injector.planUnsafe(PlannerInput.everything(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
-        IO {
+        ZIO.attempt {
           val i1 = ctx.get[Res]("instance")
           val i2 = ctx.get[Res]("provider")
           assert(!(i1 eq i2))
@@ -91,7 +90,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       def assert2(i1: Res, i2: Res) = {
-        IO(assert(!i1.initialized && !i2.initialized))
+        ZIO.attempt(assert(!i1.initialized && !i2.initialized))
       }
 
       def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, _]](plan)
@@ -137,14 +136,14 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
 
   "ZLayer" should {
     "ZLayer works" in {
-      val dbResource = ZLayer.fromAcquireRelease(UIO {
+      val dbResource = ZLayer.scoped(ZIO.acquireRelease(ZIO.attempt {
         println("Connecting to DB!")
         new DBConnection
-      })(_ => UIO(println("Disconnecting DB")))
-      val mqResource = ZLayer.fromAcquireRelease(IO {
+      })(_ => ZIO.succeed(println("Disconnecting DB"))))
+      val mqResource = ZLayer.scoped(ZIO.acquireRelease(ZIO.attempt {
         println("Connecting to Message Queue!")
         new MessageQueueConnection
-      })(_ => UIO(println("Disconnecting Message Queue")))
+      })(_ => ZIO.succeed(println("Disconnecting Message Queue"))))
 
       val module = new ModuleDef {
         make[DBConnection].fromResource(dbResource)
@@ -152,18 +151,20 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         make[MyApp]
       }
 
-      unsafeRun(Injector[Task]().produce(module, Roots.Everything).use {
-        objects =>
-          objects.get[MyApp].run
+      unsafeRun(Injector[Task]().produceRun(module) {
+        (myApp: MyApp) =>
+          myApp.run
       })
     }
 
     "Lifecycle API should be compatible with provider and instance bindings of type ZLayer" in {
-      val resResource: ZLayer[Any, Throwable, Has[Res1]] = ZLayer.fromAcquireRelease(
-        acquire = IO {
-          val res = new Res1; res.initialized = true; res
-        }
-      )(release = res => UIO(res.initialized = false))
+      val resResource: ZLayer[Any, Throwable, Res1] = ZLayer.scoped(
+        ZIO.acquireRelease(
+          acquire = ZIO.attempt {
+            val res = new Res1; res.initialized = true; res
+          }
+        )(release = res => ZIO.succeed(res.initialized = false))
+      )
 
       val definition: ModuleDef = new ModuleDef {
         make[Res].named("instance").fromResource(resResource)
@@ -187,7 +188,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       val plan = injector.planUnsafe(PlannerInput.everything(definition, Activation.empty))
 
       def assert1(ctx: Locator) = {
-        IO {
+        ZIO.attempt {
           val i1 = ctx.get[Res]("instance")
           val i2 = ctx.get[Res]("provider")
           assert(!(i1 eq i2))
@@ -198,7 +199,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       }
 
       def assert2(i1: Res, i2: Res) = {
-        IO(assert(!i1.initialized && !i2.initialized))
+        ZIO.attempt(assert(!i1.initialized && !i2.initialized))
       }
 
       def produceBIO[F[+_, +_]: TagKK: IO2] = injector.produceCustomF[F[Throwable, _]](plan)
@@ -244,8 +245,8 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       When("ZManaged is interruptible")
       unsafeRun(
         ZManaged
-          .fromEffect(ZIO.never)
-          .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("ZManaged interrupted")))
+          .fromZIO(ZIO.never)
+          .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.succeed(Then("ZManaged interrupted")))
           .fork
           .use((_: Fiber[Nothing, Unit]).interrupt.unit)
       )
@@ -255,8 +256,8 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         Lifecycle
           .fromZIO {
             ZManaged
-              .fromEffect(ZIO.never)
-              .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("Lifecycle interrupted")))
+              .fromZIO(ZIO.never)
+              .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.succeed(Then("Lifecycle interrupted")))
               .fork
           }.use((_: Fiber[Nothing, Unit]).interrupt.unit)
       )
@@ -265,11 +266,11 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
       unsafeRun {
         import zio.interop.catz.*
         Lifecycle
-          .fromCats[ZIO[ZEnv, Throwable, _], Fiber[Nothing, Unit]](
+          .fromCats[ZIO[Any, Throwable, _], Fiber[Nothing, Unit]](
             ZManaged
-              .fromEffect(ZIO.never)
-              .onExit((_: zio.Exit[Throwable, Unit]) => ZIO.effectTotal(Then("Resource interrupted")))
-              .fork.toResourceZIO.mapK(FunctionK.id[Task].widen[ZIO[ZEnv, Throwable, _]])
+              .fromZIO(ZIO.never)
+              .onExit((_: zio.Exit[Throwable, Unit]) => ZIO.succeed(Then("Resource interrupted")))
+              .fork.toResourceZIO.mapK(FunctionK.id[Task].widen[ZIO[Any, Throwable, _]])
           ).use((_: Fiber[Throwable, Unit]).interrupt.unit)
       }
     }
@@ -280,8 +281,8 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
         Lifecycle
           .fromZIO[Any, Throwable, Fiber[Nothing, Unit]](
             ZManaged
-              .fromEffect(ZIO.never)
-              .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("ZManaged interrupted")))
+              .fromZIO(ZIO.never)
+              .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.succeed(Then("ZManaged interrupted")))
               .fork
           )
           .flatMap(a => Lifecycle.unit[Task].map(_ => a))
@@ -296,8 +297,8 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen {
               Lifecycle
                 .fromZIO[Any, Throwable, Fiber[Nothing, Unit]](
                   ZManaged
-                    .fromEffect(ZIO.never)
-                    .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.effectTotal(Then("ZManaged interrupted")))
+                    .fromZIO(ZIO.never)
+                    .onExit((_: zio.Exit[Nothing, Unit]) => ZIO.succeed(Then("ZManaged interrupted")))
                     .fork
                 )
           }.use((_: Fiber[Nothing, Unit]).interrupt.unit)

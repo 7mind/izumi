@@ -1,6 +1,6 @@
 package izumi.distage.model.providers
 
-import izumi.distage.constructors.{AnyConstructor, ClassConstructor, FactoryConstructor, HasConstructor, TraitConstructor}
+import izumi.distage.constructors.{AnyConstructor, ClassConstructor, FactoryConstructor, ZEnvConstructor, TraitConstructor}
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.distage.model.reflection.LinkedParameter
@@ -9,6 +9,9 @@ import izumi.distage.model.reflection.*
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.reflect.Tag
+import zio.ZEnvironment
+import zio.managed.ZManaged
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.annotation.unused
@@ -204,11 +207,11 @@ object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters {
   def makeFactory[A: FactoryConstructor]: Functoid[A] = FactoryConstructor[A]
 
   /**
-    * Derive constructor for a `zio.Has` value `A` using [[HasConstructor]]
+    * Derive constructor for a `zio.ZEnvironment` value `A` using [[ZEnvConstructor]]
     *
-    * @see [[https://izumi.7mind.io/distage/basics.html#zio-has-bindings ZIO Has bindings]]
+    * @see [[https://izumi.7mind.io/distage/basics.html#zio-environment-bindings ZIO Environment bindings]]
     */
-  def makeHas[A: HasConstructor]: Functoid[A] = HasConstructor[A]
+  def makeHas[A: ZEnvConstructor]: Functoid[ZEnvironment[A]] = ZEnvConstructor[A]
 
   /** Derive constructor for a type `A` using [[AnyConstructor]] */
   def makeAny[A: AnyConstructor]: Functoid[A] = AnyConstructor[A]
@@ -286,7 +289,7 @@ private[providers] trait FunctoidLifecycleAdapters {
   }
 
   /**
-    * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
+    * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
     */
   implicit final def providerFromZIO[R, E, A](
     managed: => ZManaged[R, E, A]
@@ -296,7 +299,7 @@ private[providers] trait FunctoidLifecycleAdapters {
   }
 
   /**
-    * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
+    * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
   implicit final def providerFromZIONothing[R, A](
@@ -310,10 +313,10 @@ private[providers] trait FunctoidLifecycleAdapters {
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
   implicit final def providerFromZLayerHas1[R, E, A: Tag](
-    layer: => ZLayer[R, E, Has[A]]
+    layer: => ZLayer[R, E, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(layer.build.map(_.get[A])))
+    Functoid.lift(Lifecycle.fromZIO(layer)(zio.Tag[A]))
   }
 
   /**
@@ -321,10 +324,11 @@ private[providers] trait FunctoidLifecycleAdapters {
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
   implicit final def providerFromZLayerNothingHas1[R, A: Tag](
-    layer: => ZLayer[R, Nothing, Has[A]]
+    layer: => ZLayer[R, Nothing, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(layer.build.map(_.get[A])))
+    Functoid.lift(Lifecycle.fromZIO(layer)(zio.Tag[A]))
   }
 
+  disableAutoTrace.discard()
 }

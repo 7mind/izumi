@@ -17,20 +17,28 @@ import izumi.reflect.{Tag, TagK3}
   *
   * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]` & `make[UnsafeRun3[F]]`
   */
-class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3, R: Tag] extends ModuleDef {
-  // QuasiIO & bifunctor bio instances
-  include(AnyBIO2SupportModule[F[R, +_, +_]])
+class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3, R0: Tag] extends ModuleDef {
   // trifunctor bio instances
   include(BIO3InstancesModule[F])
 
-  make[Async2[F[R, +_, +_]]].from {
-    implicit F: Async3[F] => Async2[F[R, +_, +_]]
+  def bio2Module[R: Tag]: ModuleDef = new ModuleDef {
+    // QuasiIO & bifunctor bio instances
+    include(AnyBIO2SupportModule[F[R, +_, +_]])
+
+    make[Async2[F[R, +_, +_]]].from {
+      implicit F: Async3[F] => Async2[F[R, +_, +_]]
+    }
+    make[Temporal2[F[R, +_, +_]]].from {
+      implicit F: Temporal3[F] => Temporal2[F[R, +_, +_]]
+    }
+    make[Fork2[F[R, +_, +_]]].from {
+      implicit Fork: Fork3[F] => Fork2[F[R, +_, +_]]
+    }
   }
-  make[Temporal2[F[R, +_, +_]]].from {
-    implicit F: Temporal3[F] => Temporal2[F[R, +_, +_]]
-  }
-  make[Fork2[F[R, +_, +_]]].from {
-    implicit Fork: Fork3[F] => Fork2[F[R, +_, +_]]
+
+  include(bio2Module[Any])
+  if (!(Tag[R0] =:= Tag[Any])) {
+    include(bio2Module[R0])
   }
 }
 

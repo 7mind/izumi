@@ -6,7 +6,6 @@ import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger
 import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF, AbstractMacroLogIO}
 import izumi.logstage.api.rendering.{AnyEncoded, RenderingPolicy}
-import izumi.reflect.Tag
 import logstage.LogIO3Ask.LogIO3AskImpl
 import logstage.UnsafeLogIO.{UnsafeLogIOSyncSafeInstance, UnsafeLogIOSyncSafeInstanceF}
 
@@ -69,7 +68,9 @@ object LogIO extends LowPriorityLogIOInstances {
     }
   }
 
-  implicit def fromBIOMonadAsk[F[-_, +_, +_]: MonadAsk3](implicit t: Tag[LogIO3[F]]): LogIO3Ask[F] = new LogIO3AskImpl[F](_.get[LogIO3[F]](implicitly, t))
+  // FIXME wtf
+//  implicit def fromBIOMonadAsk[F[-_, +_, +_]: MonadAsk3](implicit t: Tag[LogIO3[F]]): LogIO3Ask[F] = new LogIO3AskImpl[F](_.get[LogIO3[F]](implicitly, t))
+  implicit def fromBIOMonadAsk[F[-_, +_, +_]: MonadAsk3]: LogIO3Ask[F] = new LogIO3AskImpl[F](identity)
 
   implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[AnyRef] <:< G[AnyRef]): LogIO[G] = log.widen
 
