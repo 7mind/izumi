@@ -3,6 +3,7 @@ package izumi.distage.modules.platform
 import izumi.distage.model.definition.{Id, ModuleDef}
 import izumi.functional.bio.UnsafeRun2.{FailureHandler, ZIORunner}
 import izumi.functional.bio.{BlockingIO2, BlockingIO3, BlockingIOInstances, UnsafeRun2}
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.reflect.Tag
 import zio.{Executor, Runtime, ZEnvironment, ZIO, ZLayer}
 
@@ -13,7 +14,9 @@ private[modules] abstract class ZIOPlatformDependentSupportModule[R: Tag] extend
 
   make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIODefault)
   make[BlockingIO2[ZIO[R, +_, +_]]].from {
-    implicit B: BlockingIO3[ZIO] => BlockingIO2[ZIO[R, +_, +_]]
+    implicit B: BlockingIO3[ZIO] =>
+      B.discard() // Parameter not used on .js
+      BlockingIO2[ZIO[R, +_, +_]]
   }
 
   make[ZIORunner[R]].from {
