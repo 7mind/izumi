@@ -9,9 +9,11 @@ import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3}
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
-import zio.*
+import zio.internal.stacktracer.Tracer
+import zio.{ZEnvironment, ZIO, ZLayer}
 import zio.managed.{Reservation, ZManaged}
 import zio.managed.ZManaged.ReleaseMap
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import java.util.concurrent.{ExecutorService, TimeUnit}
 import scala.annotation.unused
@@ -478,17 +480,24 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  def toManaged[R, E, A: zio.Tag](layer: ZLayer[R, E, A]): ZManaged[R, E, A] = {
-    ZManaged.scoped[R](layer.build).map(_.get[A](zio.Tag[A]))
+  /** Convert [[zio.ZLayer]] to [[Lifecycle]] */
+  def fromZIO[R, E, A: zio.Tag](layer: ZLayer[R, E, A]): FromZIO[R, E, A] = {
+    implicit val trace: zio.Trace = Tracer.instance.empty
+
+    fromZIO(ZManaged.scoped[R](layer.build).map(_.get[A](zio.Tag[A])))
   }
 
   /** Convert [[zio.ZLayer]] to [[Lifecycle]] */
-  def fromZIO[R, E, A: zio.Tag](layer: ZLayer[R, E, A]): FromZIO[R, E, A] = {
-    fromZIO(toManaged(layer))
+  def fromZIOZEnv[R, E, A](layer: ZLayer[R, E, A]): FromZIO[R, E, ZEnvironment[A]] = {
+    implicit val trace: zio.Trace = Tracer.instance.empty
+
+    fromZIO(ZManaged.scoped[R](layer.build))
   }
 
   /** Convert [[zio.managed.ZManaged]] to [[Lifecycle]] */
   def fromZIO[R, E, A](managed: ZManaged[R, E, A]): FromZIO[R, E, A] = {
+    implicit val trace: zio.Trace = Tracer.instance.empty
+
     new FromZIO[R, E, A] {
       override def extract[B >: A](releaseMap: ReleaseMap): Left[ZIO[R, E, A], Nothing] =
         Left {
@@ -522,6 +531,8 @@ object Lifecycle extends LifecycleInstances {
   implicit final class SyntaxLifecycleZIO[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
     /** Convert [[Lifecycle]] to [[zio.managed.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
+      implicit val trace: zio.Trace = Tracer.instance.empty
+
       ZManaged.fromReservationZIO(
         resource.acquire.map(
           r =>
@@ -778,13 +789,19 @@ object Lifecycle extends LifecycleInstances {
 
   trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, _], A] {
     override final type InnerResource = ReleaseMap
-    override final def acquire: ZIO[R, E, ReleaseMap] = ReleaseMap.make
-    override final def release(releaseMap: ReleaseMap): ZIO[R, Nothing, Unit] = releaseMap.releaseAll(zio.Exit.succeed(()), zio.ExecutionStrategy.Sequential).unit
+    override final def acquire: ZIO[R, E, ReleaseMap] = ReleaseMap.make(Tracer.instance.empty)
+    override final def release(releaseMap: ReleaseMap): ZIO[R, Nothing, Unit] = {
+      implicit val trace: zio.Trace = Tracer.instance.empty
+
+      releaseMap.releaseAll(zio.Exit.succeed(()), zio.ExecutionStrategy.Sequential).unit
+    }
   }
 
   abstract class NoCloseBase[+F[_]: QuasiApplicative, +A] extends Lifecycle[F, A] {
     override final def release(resource: InnerResource): F[Unit] = QuasiApplicative[F].unit
   }
+
+  disableAutoTrace.discard()
 }
 
 private[izumi] sealed trait LifecycleInstances extends LifecycleCatsInstances {

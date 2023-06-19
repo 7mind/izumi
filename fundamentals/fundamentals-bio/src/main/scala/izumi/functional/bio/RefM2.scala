@@ -1,8 +1,10 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.data.Isomorphism2
+import izumi.fundamentals.platform.language.Quirks.Discarder
+import zio.internal.stacktracer.{InteropTracer, Tracer}
 import zio.{IO, Ref}
-//import zio.stacktracer.TracingImplicits.disableAutoTrace
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 trait RefM2[F[+_, +_], A] {
   def get: F[Nothing, A]
@@ -16,11 +18,11 @@ trait RefM2[F[+_, +_], A] {
 object RefM2 {
   def fromZIO[A](ref: Ref.Synchronized[A]): RefM2[IO, A] =
     new RefM2[IO, A] {
-      override def get: IO[Nothing, A] = ref.get
-      override def set(a: A): IO[Nothing, Unit] = ref.set(a)
-      override def modify[E, B](f: A => IO[E, (B, A)]): IO[E, B] = ref.modifyZIO(f)
-      override def update[E](f: A => IO[E, A]): IO[E, A] = ref.updateAndGetZIO(f)
-      override def update_[E](f: A => IO[E, A]): IO[E, Unit] = ref.updateZIO(f)
+      override def get: IO[Nothing, A] = ref.get(Tracer.newTrace)
+      override def set(a: A): IO[Nothing, Unit] = ref.set(a)(Tracer.newTrace)
+      override def modify[E, B](f: A => IO[E, (B, A)]): IO[E, B] = ref.modifyZIO(f)(InteropTracer.newTrace(f))
+      override def update[E](f: A => IO[E, A]): IO[E, A] = ref.updateAndGetZIO(f)(InteropTracer.newTrace(f))
+      override def update_[E](f: A => IO[E, A]): IO[E, Unit] = ref.updateZIO(f)(InteropTracer.newTrace(f))
     }
 
   def createFromBIO[F[+_, +_]: Bracket2: Primitives2, A](a: A): F[Nothing, RefM2[F, A]] = {
@@ -64,4 +66,6 @@ object RefM2 {
       override def update_[E](f: A => G[E, A]): G[E, Unit] = fg.to(self.update_(a => fg.from(f(a))))
     }
   }
+
+  disableAutoTrace.discard()
 }

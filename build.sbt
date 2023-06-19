@@ -521,6 +521,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
       "org.typelevel" %%% "cats-core" % V.cats % Optional,
       "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %%% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
       "dev.zio" %%% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
     ),
@@ -1411,7 +1412,9 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       "org.typelevel" %%% "cats-core" % V.cats % Optional,
       "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %%% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
+      "dev.zio" %%% "zio-interop-tracer" % V.zio_interop_cats % Optional,
       "org.typelevel" %%% "cats-effect-laws" % V.cats_effect % Test,
       "org.typelevel" %%% "cats-effect-testkit" % V.cats_effect % Test,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
@@ -1597,10 +1600,12 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       "org.typelevel" %%% "cats-core" % V.cats % Optional,
       "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %%% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
       "org.typelevel" %%% "cats-core" % V.cats % Test,
       "org.typelevel" %%% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %%% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -2100,6 +2105,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
       "org.typelevel" %%% "cats-core" % V.cats % Optional,
       "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %%% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
       "dev.zio" %%% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "javax.inject" % "javax.inject" % "1" % Test
@@ -2822,6 +2828,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       "org.typelevel" %%% "cats-core" % V.cats % Test,
       "org.typelevel" %%% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %%% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -3008,6 +3015,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "org.typelevel" %% "cats-core" % V.cats % Test,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
       "com.github.docker-java" % "docker-java-core" % V.docker_java,
       "com.github.docker-java" % "docker-java-transport-zerodep" % V.docker_java
@@ -3325,6 +3333,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
       "org.scalatest" %% "scalatest" % V.scalatest
     ),
@@ -3487,6 +3496,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
       "org.typelevel" %%% "cats-core" % V.cats % Optional,
       "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %%% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -4178,6 +4188,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "org.typelevel" %% "cats-core" % V.cats,
       "org.typelevel" %% "cats-effect" % V.cats_effect,
       "dev.zio" %% "zio" % V.zio excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "zio-managed" % V.zio excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
       "org.tpolecat" %% "doobie-core" % V.doobie,

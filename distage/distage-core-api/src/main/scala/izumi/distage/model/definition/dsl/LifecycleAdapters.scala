@@ -5,9 +5,11 @@ import izumi.distage.constructors.HasConstructor
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.Local3
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio.*
 import zio.managed.ZManaged
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 object LifecycleAdapters {
 
@@ -185,4 +187,5 @@ object LifecycleAdapters {
     } = TrifunctorHasLifecycleTag.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
   }
 
+  disableAutoTrace.discard()
 }

@@ -2,7 +2,10 @@ package izumi.functional.bio.impl
 
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.{Fiber2, Fiber3, Fork3}
+import izumi.fundamentals.platform.language.Quirks.Discarder
+import zio.internal.stacktracer.Tracer
 import zio.{IO, ZIO}
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.ExecutionContext
@@ -12,6 +15,8 @@ object ForkZio extends ForkZio
 open class ForkZio extends Fork3[ZIO] {
 
   override def fork[R, E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, Fiber2[IO, E, A]] = {
+    implicit val trace: zio.Trace = Tracer.instance.empty
+
     val interrupted = new AtomicBoolean(true) // fiber could be interrupted before executing a single op
     ZIOExit
       .ZIOSignalOnNoExternalInterruptFailure {
@@ -25,6 +30,8 @@ open class ForkZio extends Fork3[ZIO] {
   }
 
   override def forkOn[R, E, A](ec: ExecutionContext)(f: ZIO[R, E, A]): ZIO[R, Nothing, Fiber3[ZIO, E, A]] = {
+    implicit val trace: zio.Trace = Tracer.instance.empty
+
     val interrupted = new AtomicBoolean(true) // fiber could be interrupted before executing a single op
     ZIOExit
       .ZIOSignalOnNoExternalInterruptFailure {
@@ -38,4 +45,5 @@ open class ForkZio extends Fork3[ZIO] {
       .map(Fiber2.fromZIO(ZIO.succeed(interrupted.get())))
   }
 
+  disableAutoTrace.discard()
 }

@@ -3,6 +3,7 @@ package izumi.functional.bio
 import cats.effect.kernel.Outcome
 import izumi.functional.bio.Exit.{CatsExit, ZIOExit}
 import zio.IO
+//import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 trait Fiber2[+F[+_, +_], +E, +A] {
   def join: F[E, A]

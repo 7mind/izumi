@@ -1,8 +1,9 @@
 package izumi.functional.bio
 
 import cats.effect.kernel.Outcome
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import zio.ZIO
-//import zio.stacktracer.TracingImplicits.disableAutoTrace
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
@@ -228,4 +229,5 @@ object Exit {
     override final def flatMap[R, E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
   }
 
+  disableAutoTrace.discard()
 }

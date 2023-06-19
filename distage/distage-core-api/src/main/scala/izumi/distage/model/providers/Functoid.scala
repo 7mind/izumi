@@ -11,6 +11,7 @@ import izumi.fundamentals.platform.language.Quirks.*
 import izumi.reflect.Tag
 import zio.ZEnvironment
 import zio.managed.ZManaged
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.annotation.unused
@@ -329,4 +330,5 @@ private[providers] trait FunctoidLifecycleAdapters {
     Functoid.lift(Lifecycle.fromZIO(layer)(zio.Tag[A]))
   }
 
+  disableAutoTrace.discard()
 }

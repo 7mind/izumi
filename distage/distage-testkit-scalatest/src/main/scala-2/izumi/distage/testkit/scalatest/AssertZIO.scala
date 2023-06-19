@@ -12,15 +12,21 @@ import scala.reflect.macros.blackbox
 
 /** scalatest assertion macro for [[zio.ZIO]] */
 trait AssertZIO {
-  final def assertIO(arg: Boolean)(implicit prettifier: Prettifier, pos: Position): IO[Nothing, Assertion] = macro AssertZIOMacro.impl
+  final def assertIO(arg: Boolean)(implicit prettifier: Prettifier, pos: Position, zioTrace: zio.Trace): IO[Nothing, Assertion] = macro AssertZIOMacro.impl
 }
 
 object AssertZIO extends AssertZIO {
 
   object AssertZIOMacro {
-    def impl(c: blackbox.Context)(arg: c.Expr[Boolean])(prettifier: c.Expr[Prettifier], pos: c.Expr[Position]): c.Expr[IO[Nothing, Assertion]] = {
+    def impl(
+      c: blackbox.Context
+    )(arg: c.Expr[Boolean]
+    )(prettifier: c.Expr[Prettifier],
+      pos: c.Expr[Position],
+      zioTrace: c.Expr[zio.Trace],
+    ): c.Expr[IO[Nothing, Assertion]] = {
       import c.universe._
-      c.Expr[IO[Nothing, Assertion]](q"_root_.zio.ZIO.succeed(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})")
+      c.Expr[IO[Nothing, Assertion]](q"_root_.zio.ZIO.succeed(${DistageAssertionsMacro.assert(c)(arg)(prettifier, pos)})($zioTrace)")
     }
   }
 

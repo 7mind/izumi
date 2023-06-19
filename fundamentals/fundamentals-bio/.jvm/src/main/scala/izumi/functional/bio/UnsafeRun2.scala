@@ -3,6 +3,7 @@ package izumi.functional.bio
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.UnsafeRun2.InterruptAction
 import zio.{Executor, Fiber, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
+//import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import java.util.concurrent.{Executors, ThreadFactory}

@@ -1,10 +1,10 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.PredefinedHelper.Predefined
-import zio.Executor
-
-//import zio.stacktracer.TracingImplicits.disableAutoTrace
-import zio.ZIO
+import izumi.fundamentals.platform.language.Quirks.Discarder
+import zio.internal.stacktracer.{InteropTracer, Tracer}
+import zio.stacktracer.TracingImplicits.disableAutoTrace
+import zio.{Executor, ZIO}
 
 trait BlockingIO3[F[-_, +_, +_]] extends BlockingIOInstances with DivergenceHelper with PredefinedHelper {
 
@@ -33,6 +33,7 @@ object BlockingIOInstances extends BlockingIOLowPriorityVersionSpecific {
 
   def BlockingZIOFromExecutor(blockingExecutor: Executor): BlockingIO3[ZIO] = new BlockingIO3[ZIO] {
     override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = {
+      implicit val trace: zio.Trace = Tracer.newTrace
       ZIO.environmentWithZIO[R] {
         r =>
           ZIO.provideLayer[Any, E, Any, Any, A](zio.Runtime.setBlockingExecutor(blockingExecutor)) {
@@ -41,11 +42,15 @@ object BlockingIOInstances extends BlockingIOLowPriorityVersionSpecific {
       }
     }
     override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
+      val byName: () => A = () => f
+      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
       ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
         ZIO.attemptBlocking(f)
       }
     }
     override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
+      val byName: () => A = () => f
+      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
       ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
         ZIO.attemptBlockingInterrupt(f)
       }
@@ -53,9 +58,17 @@ object BlockingIOInstances extends BlockingIOLowPriorityVersionSpecific {
   }
 
   @inline implicit final def BlockingZIODefault: Predefined.Of[BlockingIO3[ZIO]] = Predefined(new BlockingIO3[ZIO] {
-    override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = ZIO.blocking(f)
-    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = ZIO.attemptBlocking(f)
-    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = ZIO.attemptBlockingInterrupt(f)
+    override def shiftBlocking[R, E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = ZIO.blocking(f)(Tracer.newTrace)
+    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
+      val byName: () => A = () => f
+      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
+      ZIO.attemptBlocking(f)
+    }
+    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
+      val byName: () => A = () => f
+      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
+      ZIO.attemptBlockingInterrupt(f)
+    }
   })
 
 //  @inline final def BlockingMonixBIOFromScheduler(ioScheduler: Scheduler): BlockingIO2[monix.bio.IO] = new BlockingIO2[monix.bio.IO] {
@@ -64,4 +77,5 @@ object BlockingIOInstances extends BlockingIOLowPriorityVersionSpecific {
 //    override def syncInterruptibleBlocking[A](f: => A): monix.bio.IO[Throwable, A] = syncBlocking(f)
 //  }
 
+  disableAutoTrace.discard()
 }
