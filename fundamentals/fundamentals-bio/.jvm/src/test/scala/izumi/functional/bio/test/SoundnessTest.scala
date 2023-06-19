@@ -39,7 +39,7 @@ class SoundnessTest extends AnyWordSpec {
       zio.Runtime.default.unsafe.run(valueF[zio.ZIO].provideEnvironment(zio.ZEnvironment(1)))
       """))
     assert(!res.getMessage.contains("not found type"))
-    assert(res.getMessage.contains("implicit error") || res.getMessage.contains("No given instance"))
+    assert(res.getMessage.contains("implicit error") || res.getMessage.contains("No given instance") || res.getMessage.contains("implicit value"))
     assert(res.getMessage contains "BIOArrow2")
   }
 
@@ -53,7 +53,7 @@ class SoundnessTest extends AnyWordSpec {
     zio.Runtime.default.unsafe.run(valueZIO.provideEnvironment(zio.ZEnvironment(1)))
     """))
     assert(!res.getMessage.contains("not found type"))
-    assert(res.getMessage.contains("implicit error") || res.getMessage.contains("No given instance"))
+    assert(res.getMessage.contains("implicit error") || res.getMessage.contains("No given instance") || res.getMessage.contains("implicit value"))
     assert(res.getMessage contains "BIOArrow2")
   }
 }
