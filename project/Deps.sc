@@ -491,7 +491,7 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++
-          Seq(zio_interop_tracer in Scope.Optional.all) ++
+          Seq(zio_interop_tracer in Scope.Compile.all) ++
           Seq(cats_effect_laws, cats_effect_testkit, scalatest, discipline, discipline_scalatest) ++
           Seq(zio_interop_cats in Scope.Test.all) ++
           Seq(scala_java_time in Scope.Test.js),

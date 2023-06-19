@@ -35,10 +35,11 @@ class SoundnessTest extends AnyWordSpec {
         val FA: BIOArrow2[FR[F, Int]#l] = implicitly[BIOArrow2[FR[F, Int]#l]]
         FA.andThen(F.unit, F.access((i: Int) => F.sync(println(i))))
       }
-      zio.Runtime.default.unsafeRun(valueF[zio.ZIO].provide(1))
+      implicit val u: zio.Unsafe = zio.Unsafe.unsafe(identity)
+      zio.Runtime.default.unsafe.run(valueF[zio.ZIO].provideEnvironment(zio.ZEnvironment(1)))
       """))
     assert(!res.getMessage.contains("not found type"))
-    assert(res.getMessage contains "implicit error")
+    assert(res.getMessage.contains("implicit error") || res.getMessage.contains("No given instance"))
     assert(res.getMessage contains "BIOArrow2")
   }
 
@@ -46,12 +47,13 @@ class SoundnessTest extends AnyWordSpec {
     val res = intercept[TestFailedException](assertCompiles("""
     def valueZIO = {
       val F: BIOArrow2[FR[zio.ZIO, Int]#l] = implicitly[BIOArrow2[FR[zio.ZIO, Int]#l]]
-      F.andThen(IO.unit, zio.ZIO.accessM[Int](i => zio.Task(println(i))))
+      F.andThen(zio.ZIO.unit, zio.ZIO.environmentWithZIO[Int](i => zio.ZIO.attempt(println(i))))
     }
-    zio.Runtime.default.unsafeRun(valueZIO.provide(1))
+    implicit val u: zio.Unsafe = zio.Unsafe.unsafe(identity)
+    zio.Runtime.default.unsafe.run(valueZIO.provideEnvironment(zio.ZEnvironment(1)))
     """))
     assert(!res.getMessage.contains("not found type"))
-    assert(res.getMessage contains "implicit error")
+    assert(res.getMessage.contains("implicit error") || res.getMessage.contains("No given instance"))
     assert(res.getMessage contains "BIOArrow2")
   }
 }

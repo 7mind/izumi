@@ -8,8 +8,8 @@ import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.{Tag, WeakTag}
 
 import scala.annotation.experimental
-
 import izumi.fundamentals.platform.reflection.ReflectionUtil
+import zio.ZEnvironment
 
 /**
   * An implicitly summonable constructor for a type `T`, can generate constructors for:
@@ -112,12 +112,12 @@ object FactoryConstructor {
   * @see [[https://izumi.7mind.io/distage/basics.html#zio-environment-bindings ZIO Environment bindings]]
   * @see [[AnyConstructor]]
   */
-final class HasConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+final class HasConstructor[T](val provider: Functoid[ZEnvironment[T]]) extends AnyVal with AnyConstructor[ZEnvironment[T]]
 
 object HasConstructor {
-  def apply[T](implicit ctor: HasConstructor[T]): Functoid[T] = ctor.provider
+  def apply[T](implicit ctor: HasConstructor[T]): Functoid[ZEnvironment[T]] = ctor.provider
 
-  val empty: HasConstructor[Any] = new HasConstructor(Functoid.unit)
+  def empty: HasConstructor[Any] = new HasConstructor(Functoid.pure(ZEnvironment.empty))
 
   inline implicit def materialize[T]: HasConstructor[T] = ${ HasConstructorMacro.make[T] }
 }

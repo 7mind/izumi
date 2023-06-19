@@ -337,7 +337,7 @@ open class AsyncZio extends Async3[ZIO] /*with Local3[ZIO]*/ {
       _ <- loopUntilInterrupted
     } yield ()
   }
-  ()
+
   @inline override final def currentEC: ZIO[Any, Nothing, ExecutionContext] = ZIO.executor(Tracer.instance.empty).map(_.asExecutionContext)(Tracer.instance.empty)
   @inline override final def onEC[R, E, A](ec: ExecutionContext)(f: ZIO[R, E, A]): ZIO[R, E, A] = f.onExecutionContext(ec)(Tracer.instance.empty)
 

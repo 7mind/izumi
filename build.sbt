@@ -1414,7 +1414,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %%% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
-      "dev.zio" %%% "zio-interop-tracer" % V.zio_interop_cats % Optional,
+      "dev.zio" %%% "zio-interop-tracer" % V.zio_interop_cats,
       "org.typelevel" %%% "cats-effect-laws" % V.cats_effect % Test,
       "org.typelevel" %%% "cats-effect-testkit" % V.cats_effect % Test,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
