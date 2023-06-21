@@ -27,7 +27,7 @@ final class ExitCodeCheckTest extends Spec2[IO] with AssertZIO {
             )
             .use(_ => ZIO.unit)
             .either
-          Left(error) = r
+          Left(error) = r: @unchecked
           _ <- assertIO(error.getMessage contains "Code=42, expected=1")
         } yield ()
     }
