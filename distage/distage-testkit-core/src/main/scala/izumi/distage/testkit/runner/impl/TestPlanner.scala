@@ -1,8 +1,8 @@
 package izumi.distage.testkit.runner.impl
 
 import distage.{Activation, BootstrapModule, DIKey, Injector, LocatorRef, Module, Planner, PlannerInput, TagK}
+import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ModuleProvider, PlanCircularDependencyCheck}
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
@@ -159,12 +159,10 @@ class TestPlanner[F[_]: TagK: DefaultModule](
   }
 
   private lazy val allowedKeyVariations = {
-    // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
-    val activationKeys = Set(DIKey[Activation]("bootstrapActivation"), DIKey[ActivationInfo])
-    val recursiveKeys = Set(DIKey[BootstrapModule])
     // FIXME: remove IzLogger dependency in `ResourceRewriter` and stop inserting LogstageModule in bootstrap
     val hackyKeys = Set(DIKey[LogRouter])
-    activationKeys ++ recursiveKeys ++ hackyKeys
+    // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
+    BootstrapLocator.selfReflectionKeys ++ hackyKeys
   }
 
   private def prepareGroupPlans(
