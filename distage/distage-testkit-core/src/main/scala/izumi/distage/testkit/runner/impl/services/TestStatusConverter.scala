@@ -2,6 +2,7 @@ package izumi.distage.testkit.runner.impl.services
 
 import izumi.distage.model.exceptions.runtime.ProvisioningIntegrationException
 import izumi.distage.testkit.model.{EnvResult, GroupResult, IndividualTestResult, TestStatus}
+import izumi.functional.bio.Exit
 
 class TestStatusConverter(
   isTestSkipException: Throwable => Boolean
@@ -23,20 +24,23 @@ class TestStatusConverter(
   }
 
   def failExecution(t: IndividualTestResult.ExecutionFailure): TestStatus.Done = {
-    fail(t, t.failure)
+    fail(t, t.failure, t.trace)
   }
 
   def failInstantiation(t: IndividualTestResult.InstantiationFailure): TestStatus.Done = {
-    fail(t, t.failure.toThrowable)
+    val throwable = t.failure.toThrowable
+    fail(t, throwable, Exit.Trace.ThrowableTrace(throwable))
   }
 
-  private def fail(cause: IndividualTestResult.IndividualTestFailure, t: Throwable): TestStatus.Done = t match {
-    case s if isTestSkipException(s) =>
-      TestStatus.Cancelled(cause, s)
-    case ProvisioningIntegrationException(failures) =>
-      TestStatus.IgnoredByPrecondition(cause, failures)
-    case t =>
-      TestStatus.Failed(cause, t)
+  private def fail(cause: IndividualTestResult.IndividualTestFailure, exception: Throwable, trace: Exit.Trace[Any]): TestStatus.Done = {
+    exception match {
+      case s if isTestSkipException(s) =>
+        TestStatus.Cancelled(cause, s)
+      case ProvisioningIntegrationException(failures) =>
+        TestStatus.IgnoredByPrecondition(cause, failures)
+      case e =>
+        TestStatus.Failed(cause, e, trace)
+    }
   }
 
   def success(s: IndividualTestResult.TestSuccess): TestStatus.Succeed = {

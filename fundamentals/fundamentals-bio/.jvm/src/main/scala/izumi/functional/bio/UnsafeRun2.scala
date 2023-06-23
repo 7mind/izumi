@@ -85,7 +85,7 @@ object UnsafeRun2 {
           value
 
         case failure: Exit.Failure[?] =>
-          throw failure.trace.unsafeAttachTrace(TypedError(_))
+          throw failure.trace.unsafeAttachTraceOrReturnNewThrowable()
       }
     }
 

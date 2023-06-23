@@ -128,7 +128,7 @@ object ContainerNetworkDef {
 
     private[this] def integrationCheckHack[A](f: => F[A]): F[A] = {
       // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-      F.definitelyRecover(f) {
+      F.definitelyRecoverUnsafeIgnoreTrace(f) {
         (c: Throwable) =>
           F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
       }
