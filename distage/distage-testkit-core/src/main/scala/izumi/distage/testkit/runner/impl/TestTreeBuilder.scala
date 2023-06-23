@@ -10,6 +10,10 @@ import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 
+/**
+  * Final test planning happens here.
+  * This is the point where we actually apply memoization by removing memoized keys
+  */
 trait TestTreeBuilder[F[_]] {
   def build(planner: Planner, runtimePlan: Plan, iterator: Iterable[PackedEnv[F]]): TestTree[F]
 }
@@ -18,19 +22,24 @@ object TestTreeBuilder {
   class TestTreeBuilderImpl[F[_]](
     timed: TimedAction
   ) extends TestTreeBuilder[F] {
-    final class MemoizationTreeBuilder(planner: Planner, runtimePlan: Plan) {
+    final class MemoizationTreeBuilder(planner: Planner, levelPlan: Plan) {
 
       private[this] val children = TrieMap.empty[Plan, MemoizationTreeBuilder]
       private[this] val groups = ArrayBuffer.empty[PackedEnv[F]]
 
-      def toImmutable(parentKeys: Set[DIKey]): TestTree[F] = {
+      def toImmutable: TestTree[F] = {
+        toImmutable(Set.empty)
+      }
+
+      private def toImmutable(parentKeys: Set[DIKey]): TestTree[F] = {
+        val sharedKeysAtThisLevel = parentKeys ++ levelPlan.keys
+
         val levelGroups = groups.map {
           env =>
             val tests = env.preparedTests.map {
               t =>
-                val allSharedKeys = parentKeys ++ runtimePlan.keys
-                val newAppModule = t.appModule.drop(allSharedKeys)
-                val newRoots = t.targetKeys -- allSharedKeys ++ env.strengthenedKeys.intersect(newAppModule.keys)
+                val newAppModule = t.appModule.drop(sharedKeysAtThisLevel)
+                val newRoots = t.targetKeys -- sharedKeysAtThisLevel ++ env.strengthenedKeys.intersect(newAppModule.keys)
 
                 (
                   t,
@@ -66,8 +75,8 @@ object TestTreeBuilder {
             TestGroup(goodTests, badTests, env.strengthenedKeys)
         }.toList
 
-        val children1 = children.map(_._2.toImmutable(parentKeys ++ runtimePlan.keys)).toList
-        TestTree(runtimePlan, levelGroups, children1, parentKeys)
+        val children1 = children.map(_._2.toImmutable(sharedKeysAtThisLevel)).toList
+        TestTree(levelPlan, levelGroups, children1, parentKeys)
       }
 
       @tailrec def addGroupByPath(path: List[Plan], env: PackedEnv[F]): Unit = {
@@ -75,8 +84,8 @@ object TestTreeBuilder {
           case Nil =>
             groups.synchronized(groups.append(env))
             ()
-          case node :: tail =>
-            val childTree = children.synchronized(children.getOrElseUpdate(node, new MemoizationTreeBuilder(planner, node)))
+          case plan :: tail =>
+            val childTree = children.synchronized(children.getOrElseUpdate(plan, new MemoizationTreeBuilder(planner, plan)))
             childTree.addGroupByPath(tail, env)
         }
       }
@@ -90,7 +99,7 @@ object TestTreeBuilder {
           val plans = env.memoizationPlanTree.filter(_.plan.meta.nodes.nonEmpty)
           tree.addGroupByPath(plans, env)
       }
-      tree.toImmutable(runtimePlan.keys)
+      tree.toImmutable
     }
   }
 }
