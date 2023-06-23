@@ -1,7 +1,6 @@
 package izumi.distage.testkit.runner
 
 import distage.{Injector, TagK}
-import izumi.distage.model.Planner
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.{DistageTest, EnvResult}
@@ -28,7 +27,6 @@ class TestkitRunnerModule[F[_]: TagK: DefaultModule](reporter: TestReporter, isC
   make[TestConfigLoader].from[TestConfigLoader.TestConfigLoaderImpl]
   make[TestPlanner[F]]
   make[TestTreeBuilder[F]].from[TestTreeBuilder.TestTreeBuilderImpl[F]]
-  make[Planner].fromValue(Injector())
   make[ExtParTraverse[Identity]].from[ExtParTraverse.ExtParTraverseImpl[Identity]]
 
   make[DistageTestRunner[F]].from[DistageTestRunner[F]]

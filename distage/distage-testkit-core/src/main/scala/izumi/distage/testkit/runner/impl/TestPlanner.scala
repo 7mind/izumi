@@ -1,6 +1,6 @@
 package izumi.distage.testkit.runner.impl
 
-import distage.{Activation, BootstrapModule, DIKey, Injector, LocatorRef, Module, PlannerInput, TagK}
+import distage.{Activation, BootstrapModule, DIKey, Injector, LocatorRef, Module, Planner, PlannerInput, TagK}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ModuleProvider, PlanCircularDependencyCheck}
@@ -32,7 +32,7 @@ object TestPlanner {
     envMergeCriteria: PackedEnvMergeCriteria,
     preparedTests: Seq[AlmostPreparedTest[F]],
     memoizationPlanTree: List[Plan],
-    anyMemoizationInjector: Injector[Identity],
+    envInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
     strengthenedKeys: Set[DIKey],
   )
@@ -125,9 +125,9 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           // so this saves a lot of reallocation of memoized resources
           val goodTrees: Map[PreparedTestEnv, TestTree[F]] = good.groupBy(_.envMergeCriteria).map {
             case (PackedEnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
-              val memoizationInjector = packedEnv.head.anyMemoizationInjector
+              val memoizationInjector = packedEnv.head.envInjector
               val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-              val memoizationTree = testTreeBuilder.build(runtimePlan, packedEnv)
+              val memoizationTree = testTreeBuilder.build(memoizationInjector, runtimePlan, packedEnv)
               assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
               val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
               (env, memoizationTree)
@@ -321,7 +321,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     runtimeKeys: Set[DIKey],
     memoizationRoots: Set[DIKey],
     activation: Activation,
-    injector: Injector[Identity],
+    injector: Planner,
     appModule: Module,
     check: PlanCircularDependencyCheck,
   ): Either[List[DIError], Plan] = {

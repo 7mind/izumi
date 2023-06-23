@@ -11,25 +11,24 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ArrayBuffer
 
 trait TestTreeBuilder[F[_]] {
-  def build(runtimePlan: Plan, iterator: Iterable[PackedEnv[F]]): TestTree[F]
+  def build(planner: Planner, runtimePlan: Plan, iterator: Iterable[PackedEnv[F]]): TestTree[F]
 }
 
 object TestTreeBuilder {
   class TestTreeBuilderImpl[F[_]](
-    timed: TimedAction,
-    planner: Planner,
+    timed: TimedAction
   ) extends TestTreeBuilder[F] {
+    final class MemoizationTreeBuilder(planner: Planner, runtimePlan: Plan) {
 
-    final class MemoizationTreeBuilder(plan: Plan) {
       private[this] val children = TrieMap.empty[Plan, MemoizationTreeBuilder]
       private[this] val groups = ArrayBuffer.empty[PackedEnv[F]]
 
-      def toImmutable(levelKeys: Set[DIKey]): TestTree[F] = {
+      def toImmutable(parentKeys: Set[DIKey]): TestTree[F] = {
         val levelGroups = groups.map {
           env =>
             val tests = env.preparedTests.map {
               t =>
-                val allSharedKeys = levelKeys ++ plan.keys
+                val allSharedKeys = parentKeys ++ runtimePlan.keys
                 val newAppModule = t.appModule.drop(allSharedKeys)
                 val newRoots = t.targetKeys -- allSharedKeys ++ env.strengthenedKeys.intersect(newAppModule.keys)
 
@@ -38,7 +37,9 @@ object TestTreeBuilder {
                   for {
                     maybeNewTestPlan <- timed {
                       if (newRoots.nonEmpty) {
-                        // it's important to remember that .plan() would always return the same result regardless of the parent locator!
+                        /** (1) It's important to remember that .plan() would always return the same result regardless of the parent locator!
+                          * (2) The planner here must preserve customizations (bootstrap modules) hence be the same as instantiated in TestPlanner
+                          */
                         planner.plan(PlannerInput(newAppModule, t.activation, newRoots))
                       } else {
                         Right(Plan.empty)
@@ -65,8 +66,8 @@ object TestTreeBuilder {
             TestGroup(goodTests, badTests, env.strengthenedKeys)
         }.toList
 
-        val children1 = children.map(_._2.toImmutable(levelKeys ++ plan.keys)).toList
-        TestTree(plan, levelGroups, children1, levelKeys)
+        val children1 = children.map(_._2.toImmutable(parentKeys ++ runtimePlan.keys)).toList
+        TestTree(runtimePlan, levelGroups, children1, parentKeys)
       }
 
       @tailrec def addGroupByPath(path: List[Plan], env: PackedEnv[F]): Unit = {
@@ -75,21 +76,21 @@ object TestTreeBuilder {
             groups.synchronized(groups.append(env))
             ()
           case node :: tail =>
-            val childTree = children.synchronized(children.getOrElseUpdate(node, new MemoizationTreeBuilder(node)))
+            val childTree = children.synchronized(children.getOrElseUpdate(node, new MemoizationTreeBuilder(planner, node)))
             childTree.addGroupByPath(tail, env)
         }
       }
     }
 
-    override def build(runtimePlan: Plan, iterator: Iterable[PackedEnv[F]]): TestTree[F] = {
-      val tree = new MemoizationTreeBuilder(runtimePlan)
+    override def build(planner: Planner, runtimePlan: Plan, iterator: Iterable[PackedEnv[F]]): TestTree[F] = {
+      val tree = new MemoizationTreeBuilder(planner, runtimePlan)
       // usually, we have a small amount of levels, so parallel executions make only worse here
       iterator.foreach {
         env =>
           val plans = env.memoizationPlanTree.filter(_.plan.meta.nodes.nonEmpty)
           tree.addGroupByPath(plans, env)
       }
-      tree.toImmutable(Set.empty)
+      tree.toImmutable(runtimePlan.keys)
     }
   }
 }
