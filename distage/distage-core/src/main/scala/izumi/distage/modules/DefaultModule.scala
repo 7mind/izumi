@@ -1,7 +1,7 @@
 package izumi.distage.modules
 
 import izumi.distage.model.definition.{Module, ModuleDef}
-import izumi.functional.quasi.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives}
+import izumi.functional.quasi.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives, QuasiTemporal}
 import izumi.distage.modules.support.*
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
 import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
@@ -154,13 +154,14 @@ sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances6 {
-  implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiIORunner]: DefaultModule[F] = {
+  implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiTemporal: QuasiIORunner]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
       addImplicit[QuasiFunctor[F]]
       addImplicit[QuasiApplicative[F]]
       addImplicit[QuasiPrimitives[F]]
       addImplicit[QuasiIO[F]]
       addImplicit[QuasiAsync[F]]
+      addImplicit[QuasiTemporal[F]]
       addImplicit[QuasiIORunner[F]]
     })
   }

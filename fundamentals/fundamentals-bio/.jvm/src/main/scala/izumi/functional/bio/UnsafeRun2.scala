@@ -5,10 +5,10 @@ import izumi.functional.bio.UnsafeRun2.InterruptAction
 import zio.{Executor, Fiber, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import java.util.concurrent.{Executors, ThreadFactory}
 import scala.annotation.nowarn
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 trait UnsafeRun2[F[_, _]] {
   def unsafeRun[E, A](io: => F[E, A]): A
@@ -221,21 +221,6 @@ object UnsafeRun2 {
       thread.setDaemon(daemon)
 
       thread
-    }
-
-  }
-
-  object NamedThreadFactory {
-    private final lazy val factory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
-
-    final lazy val QuasiAsyncIdentityPool = ExecutionContext.fromExecutorService {
-      Executors.newCachedThreadPool(factory)
-    }
-
-    final def QuasiAsyncIdentityThreadFactory(max: Int): ExecutionContext = {
-      ExecutionContext.fromExecutorService {
-        Executors.newFixedThreadPool(max, factory)
-      }
     }
 
   }

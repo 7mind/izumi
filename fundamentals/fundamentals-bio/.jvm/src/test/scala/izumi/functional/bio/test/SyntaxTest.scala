@@ -688,7 +688,7 @@ class SyntaxTest extends AnyWordSpec {
   "BIO.clock/entropy are callable" in {
     import izumi.functional.bio.{F, Functor2, Temporal2, Clock2, Entropy2}
 
-    def x[F[+_, +_]: Temporal2] = {
+    def x[F[+_, +_]: Temporal2: Clock2] = {
       F.clock.now()
     }
 
@@ -709,7 +709,7 @@ class SyntaxTest extends AnyWordSpec {
   "BIO3.clock/entropy are callable" in {
     import izumi.functional.bio.{F, Functor3, Temporal3, Clock3, Entropy3}
 
-    def x[F[-_, +_, +_]: Temporal3] = {
+    def x[F[-_, +_, +_]: Temporal3: Clock3] = {
       F.clock.now()
     }
 
