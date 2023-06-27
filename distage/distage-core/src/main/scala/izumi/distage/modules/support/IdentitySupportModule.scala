@@ -19,6 +19,7 @@ trait IdentitySupportModule extends ModuleDef {
   addImplicit[QuasiApplicative[Identity]]
   addImplicit[QuasiPrimitives[Identity]]
   addImplicit[QuasiIO[Identity]]
+  addImplicit[QuasiTemporal[Identity]]
   addImplicit[QuasiIORunner[Identity]]
   make[Clock1[Identity]].fromValue(Clock1.Standard)
   make[Entropy1[Identity]].fromValue(Entropy1.Standard)

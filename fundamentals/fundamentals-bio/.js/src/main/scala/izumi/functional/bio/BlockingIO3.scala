@@ -5,9 +5,9 @@ import izumi.functional.bio.PredefinedHelper.Predefined
 
 /** Scala.js does not support blockingIO */
 trait BlockingIO3[F[_, _, _]] extends BlockingIOInstances with DivergenceHelper with PredefinedHelper {
-  private[bio] def shiftBlocking[R, E, A](f: F[R, E, A]): F[R, E, A]
-  private[bio] def syncBlocking[A](f: => A): F[Any, Throwable, A]
-  private[bio] def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A]
+  def shiftBlocking[R, E, A](f: F[R, E, A]): F[R, E, A]
+  def syncBlocking[A](f: => A): F[Any, Throwable, A]
+  def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A]
 }
 object BlockingIO3 {
   def apply[F[-_, +_, +_]: BlockingIO3]: BlockingIO3[F] = implicitly
@@ -16,11 +16,13 @@ object BlockingIO3 {
 private[bio] sealed trait BlockingIOInstances
 object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 
-  implicit def fromSyncSafe3[F[-_, +_, +_] : SyncSafe3]: Predefined.Of[BlockingIO3[F]] = Predefined(new BlockingIO3[F] {
-    override private[bio] def shiftBlocking[R, E, A](f: F[R, E, A]): F[R, E, A] = f
-    override private[bio] def syncBlocking[A](f: => A): F[Any, Throwable, A] = SyncSafe3[F].syncSafe(f)
-    override private[bio] def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A] = SyncSafe3[F].syncSafe(f)
+  implicit def fromSyncSafe3[F[-_, +_, +_]: SyncSafe3]: Predefined.Of[BlockingIO3[F]] = Predefined(new BlockingIO3[F] {
+    override def shiftBlocking[R, E, A](f: F[R, E, A]): F[R, E, A] = f
+    override def syncBlocking[A](f: => A): F[Any, Throwable, A] = SyncSafe3[F].syncSafe(f)
+    override def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A] = SyncSafe3[F].syncSafe(f)
   })
+
+  def BlockingZIODefault: BlockingIO3[zio.ZIO] = fromSyncSafe3[zio.ZIO]
 
 }
 

@@ -78,8 +78,8 @@ package object distage extends Distage {
   override type FactoryConstructor[T] = constructors.FactoryConstructor[T]
   override val FactoryConstructor: constructors.FactoryConstructor.type = constructors.FactoryConstructor
 
-  override type HasConstructor[T] = constructors.HasConstructor[T]
-  override val HasConstructor: constructors.HasConstructor.type = constructors.HasConstructor
+  override type ZEnvConstructor[T] = constructors.ZEnvConstructor[T]
+  override val ZEnvConstructor: constructors.ZEnvConstructor.type = constructors.ZEnvConstructor
 
   override type BindingTag = model.definition.BindingTag
   override val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag

@@ -207,7 +207,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     for {
       res <- F.traverse(result.ops) {
         op =>
-          F.definitelyRecover[Option[ProvisionerIssue]](
+          F.definitelyRecoverWithTrace[Option[ProvisionerIssue]](
             runIfIntegrationCheck(op, integrationCheckFType).flatMap {
               case None =>
                 F.maybeSuspend {
@@ -217,7 +217,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
               case failure @ Some(_) =>
                 F.pure(failure)
             }
-          )(err => F.pure(Some(UnexpectedIntegrationCheck(result.key, err))))
+          )((_, trace) => F.pure(Some(UnexpectedIntegrationCheck(result.key, trace.unsafeAttachTraceOrReturnNewThrowable()))))
       }
     } yield {
       res.flatten match {

@@ -9,13 +9,13 @@ object BuildAttributesImpl {
   def buildTimestampMacro()(using quotes: Quotes): Expr[LocalDateTime] = {
     '{
       LocalDateTime.of(
-        compilationTime.getYear,
-        compilationTime.getMonthValue,
-        compilationTime.getDayOfMonth,
-        compilationTime.getHour,
-        compilationTime.getMinute,
-        compilationTime.getSecond,
-        compilationTime.getNano,
+        ${ Expr(compilationTime.getYear) },
+        ${ Expr(compilationTime.getMonthValue) },
+        ${ Expr(compilationTime.getDayOfMonth) },
+        ${ Expr(compilationTime.getHour) },
+        ${ Expr(compilationTime.getMinute) },
+        ${ Expr(compilationTime.getSecond) },
+        ${ Expr(compilationTime.getNano) },
       )
     }
   }

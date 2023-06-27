@@ -28,30 +28,11 @@ object ClassConstructorMacros {
   }
 }
 
-abstract class HasConstructorMacros extends ConstructorMacrosBase {
-  import c.universe._
-
-  def ziohasConstructorAssertion(targetType: Type, deepIntersection: List[Type]): Unit = {
-    val (good, bad) = deepIntersection.partition(tpe => tpe.typeConstructor.typeSymbol.fullName == "zio.Has")
-    if (bad.nonEmpty) {
-      c.abort(
-        c.enclosingPosition,
-        s"Cannot construct an implementation for ZIO Has type `$targetType`: intersection contains type constructors that aren't `zio.Has` or `Any`: $bad (${bad.map(_.typeSymbol)})",
-      )
-    }
-    if (good.isEmpty) {
-      c.abort(
-        c.enclosingPosition,
-        s"Cannot construct an implementation for ZIO Has type `$targetType`: the intersection type is empty, it contains no `zio.Has` or `Any` type constructors in it, type was $targetType (${targetType.typeSymbol}",
-      )
-    }
-  }
-
-}
-object HasConstructorMacros {
-  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = HasConstructorMacros { val c: C; val u: U }
-  def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): HasConstructorMacros.Aux[c0.type, u0.type] = {
-    new HasConstructorMacros {
+abstract class ZEnvConstructorMacros extends ConstructorMacrosBase
+object ZEnvConstructorMacros {
+  type Aux[C <: blackbox.Context, U <: StaticDIUniverse] = ZEnvConstructorMacros { val c: C; val u: U }
+  def apply(c0: blackbox.Context)(u0: StaticDIUniverse.Aux[c0.universe.type]): ZEnvConstructorMacros.Aux[c0.type, u0.type] = {
+    new ZEnvConstructorMacros {
       val c: c0.type = c0
       val u: u0.type = u0
     }

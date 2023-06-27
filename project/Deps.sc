@@ -92,9 +92,15 @@ object Izumi {
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
+    final val zio_managed = Library("dev.zio", "zio-managed", V.zio, LibraryType.Auto)
+      .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
+    final val zio_all = Seq(zio_core, zio_managed)
+
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
-    final val zio_all = Seq(zio_core, zio_interop_cats)
+
+    final val zio_interop_tracer = Library("dev.zio", "zio-interop-tracer", V.zio_interop_cats, LibraryType.Auto)
+
 //    final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
 //    final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
 //    final val monix_all = Seq(monix, monix_bio)
@@ -485,6 +491,7 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++
+          Seq(zio_interop_tracer in Scope.Compile.all) ++
           Seq(cats_effect_laws, cats_effect_testkit, scalatest, discipline, discipline_scalatest) ++
           Seq(zio_interop_cats in Scope.Test.all) ++
           Seq(scala_java_time in Scope.Test.js),
@@ -500,10 +507,10 @@ object Izumi {
   )
 
   final val allCatsOptional = cats_all.map(_ in Scope.Optional.all)
-  final val allZioOptional = Seq(zio_core, izumi_reflect).map(_ in Scope.Optional.all)
-  final val allMonads = cats_all ++ zio_all ++ Seq(izumi_reflect) ++ monix_all
+  final val allZioOptional = (zio_all ++ Seq(izumi_reflect)).map(_ in Scope.Optional.all)
+  final val allMonads = cats_all ++ zio_all ++ Seq(zio_interop_cats) ++ Seq(izumi_reflect) ++ monix_all
   final val allMonadsOptional = allCatsOptional ++ allZioOptional ++ monix_all.map(_ in Scope.Optional.all)
-  final val allMonadsTest = (cats_all ++ monix_all ++ Seq(zio_core, izumi_reflect)).map(_ in Scope.Test.all)
+  final val allMonadsTest = (cats_all ++ monix_all ++ zio_all ++ Seq(izumi_reflect)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
     name = Projects.distage.id,

@@ -108,9 +108,9 @@ object `cats.effect.kernel.MonadCancel` {
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
   */
-final abstract class `cats.effect.kernel.Concurrent`[K[_[_]]]
-object `cats.effect.kernel.Concurrent` {
-  @inline implicit final def get: `cats.effect.kernel.Concurrent`[cats.effect.kernel.Concurrent] = null
+final abstract class `cats.effect.kernel.GenTemporal`[R[_[_], E]]
+object `cats.effect.kernel.GenTemporal` {
+  @inline implicit final def get: `cats.effect.kernel.GenTemporal`[cats.effect.kernel.GenTemporal] = null
 }
 
 /**

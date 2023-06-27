@@ -8,9 +8,10 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
 
   "Issue https://github.com/zio/zio/issues/6911" should {
 
-    val silentRuntime = zio.Runtime.default.withReportFailure(_ => ())
+    val runtime = zio.Runtime.default
+    implicit val unsafe: zio.Unsafe = zio.Unsafe.unsafe(identity)
 
-    "not reproduce with F.parTraverse" in silentRuntime.unsafeRun {
+    "not reproduce with F.parTraverse" in runtime.unsafe.run {
       F.parTraverse(
         List(
           F.unit.forever,
@@ -24,7 +25,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.parTraverse_" in silentRuntime.unsafeRun {
+    "not reproduce with F.parTraverse_" in runtime.unsafe.run {
       F.parTraverse_(
         List(
           F.unit.forever,
@@ -38,7 +39,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.parTraverseN" in silentRuntime.unsafeRun {
+    "not reproduce with F.parTraverseN" in runtime.unsafe.run {
       F.parTraverseN(2)(
         List(
           F.unit.forever,
@@ -52,7 +53,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.parTraverseN_" in silentRuntime.unsafeRun {
+    "not reproduce with F.parTraverseN_" in runtime.unsafe.run {
       F.parTraverseN_(2)(
         List(
           F.unit.forever,
@@ -66,7 +67,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.race" in silentRuntime.unsafeRun {
+    "not reproduce with F.race" in runtime.unsafe.run {
       F.race(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -79,7 +80,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.racePairUnsafe" in silentRuntime.unsafeRun {
+    "not reproduce with F.racePairUnsafe" in runtime.unsafe.run {
       F.racePairUnsafe(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -91,7 +92,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.zipWithPar" in silentRuntime.unsafeRun {
+    "not reproduce with F.zipWithPar" in runtime.unsafe.run {
       F.zipWithPar(
         F.unit.forever.widen[Unit],
         F.terminate(new RuntimeException("testexception")).widen[Unit],
@@ -103,7 +104,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.zipPar" in silentRuntime.unsafeRun {
+    "not reproduce with F.zipPar" in runtime.unsafe.run {
       F.zipPar(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -115,7 +116,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.zipParLeft" in silentRuntime.unsafeRun {
+    "not reproduce with F.zipParLeft" in runtime.unsafe.run {
       F.zipParLeft(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -127,7 +128,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.zipParRight" in silentRuntime.unsafeRun {
+    "not reproduce with F.zipParRight" in runtime.unsafe.run {
       F.zipParRight(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -139,7 +140,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "guaranteeExceptOnInterrupt works correctly" in silentRuntime.unsafeRun {
+    "guaranteeExceptOnInterrupt works correctly" in runtime.unsafe.run {
       for {
         succRes <- F.mkRef(Option.empty[Boolean])
         failRes <- F.mkRef(Option.empty[Boolean])

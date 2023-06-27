@@ -13,8 +13,7 @@ import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
-import zio.Has.HasSyntax
-import zio.{Has, Task, ZIO}
+import zio.{Task, ZEnvironment, ZIO}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
@@ -36,7 +35,7 @@ class DistageTestExampleBIO extends Spec2[zio.IO] with DistageMemoizeExample[Tas
     "support bifunctor" in {
       (service: MockUserRepository[Task]) =>
         for {
-          _ <- Task(assert(service != null))
+          _ <- ZIO.attempt(assert(service != null))
         } yield ()
     }
   }
@@ -45,7 +44,7 @@ class DistageTestExampleBIO extends Spec2[zio.IO] with DistageMemoizeExample[Tas
 
 class DistageTestExampleBIOEnv extends Spec3[ZIO] with DistageMemoizeExample[Task] with AssertZIO {
 
-  val service = ZIO.access[Has[MockUserRepository[Task]]](_.get)
+  val service = ZIO.environmentWith[MockUserRepository[Task]](_.get)
 
   "distage test runner" should {
     "support trifunctor env" in {
@@ -114,6 +113,8 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         .weak[SetElement2]
         .weak[SetElement3]
         .weak[SetElement4]
+
+      make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
     }
   )
 
@@ -179,7 +180,6 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
       (service: MockUserRepository[F]) =>
         for {
           _ <- F.maybeSuspend(assert(service != null))
-          _ <- F.maybeSuspend(println("test2"))
         } yield ()
     }
 
@@ -189,7 +189,6 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
           _ <- F.maybeSuspend(XXX_Whitebox_memoizedMockCache.compareAndSet(null, service.cache))
           _ <- F.maybeSuspend(assert(service != null))
           _ <- F.maybeSuspend(assert(service.cache eq XXX_Whitebox_memoizedMockCache.get()))
-          _ <- F.maybeSuspend(println("test1"))
         } yield ()
     }
 

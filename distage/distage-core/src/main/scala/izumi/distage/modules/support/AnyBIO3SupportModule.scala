@@ -15,22 +15,31 @@ import izumi.reflect.{Tag, TagK3}
   *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[-_, +_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds [[izumi.functional.bio]] typeclass instances for `F[-_, +_, +_]`
   *
-  * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]` & `make[UnsafeRun3[F]]`
+  * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]`, `make[UnsafeRun3[F]]`
+ *  Optional additions: `make[Primitives3[F]]`, `make[PrimitivesM3[F]]`, `make[Scheduler3[F]]`
   */
-class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3, R: Tag] extends ModuleDef {
-  // QuasiIO & bifunctor bio instances
-  include(AnyBIO2SupportModule[F[R, +_, +_]])
+class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3, R0: Tag] extends ModuleDef {
   // trifunctor bio instances
   include(BIO3InstancesModule[F])
 
-  make[Async2[F[R, +_, +_]]].from {
-    implicit F: Async3[F] => Async2[F[R, +_, +_]]
+  def bio2Module[R: Tag]: ModuleDef = new ModuleDef {
+    // QuasiIO & bifunctor bio instances
+    include(AnyBIO2SupportModule[F[R, +_, +_]])
+
+    make[Async2[F[R, +_, +_]]].from {
+      implicit F: Async3[F] => Async2[F[R, +_, +_]]
+    }
+    make[Temporal2[F[R, +_, +_]]].from {
+      implicit F: Temporal3[F] => Temporal2[F[R, +_, +_]]
+    }
+    make[Fork2[F[R, +_, +_]]].from {
+      implicit Fork: Fork3[F] => Fork2[F[R, +_, +_]]
+    }
   }
-  make[Temporal2[F[R, +_, +_]]].from {
-    implicit F: Temporal3[F] => Temporal2[F[R, +_, +_]]
-  }
-  make[Fork2[F[R, +_, +_]]].from {
-    implicit Fork: Fork3[F] => Fork2[F[R, +_, +_]]
+
+  include(bio2Module[Any])
+  if (!(Tag[R0] =:= Tag[Any])) {
+    include(bio2Module[R0])
   }
 }
 
@@ -70,6 +79,7 @@ object AnyBIO3SupportModule extends App with ModuleDef {
         implicitly[QuasiPrimitives3[F] =:= QuasiPrimitives2[F[Any, +_, +_]]]
         implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +_, +_]]]
         implicitly[QuasiAsync3[F] =:= QuasiAsync2[F[Any, +_, +_]]]
+        implicitly[QuasiTemporal3[F] =:= QuasiTemporal2[F[Any, +_, +_]]]
         ()
       }
     }
