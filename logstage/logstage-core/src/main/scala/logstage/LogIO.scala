@@ -36,22 +36,6 @@ object LogIO extends LowPriorityLogIOInstances {
     */
   @inline def log[F[_]](implicit l: LogIO[F]): l.type = l
 
-  def fromLogger[F[_]: SyncSafe1](logger: AbstractLoggerF[F]): LogIO[F] = {
-    new UnsafeLogIOSyncSafeInstanceF[F](logger)(SyncSafe1[F]) with LogIO[F] {
-      override def log(entry: Entry): F[Unit] = {
-        logger.log(entry)
-      }
-
-      override def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
-        logger.log(logLevel)(messageThunk)
-      }
-
-      override def withCustomContext(context: CustomContext): LogIO[F] = {
-        fromLogger[F](logger.withCustomContext(context))
-      }
-    }
-  }
-
   def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): LogIO[F] = {
     new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F]) with LogIO[F] {
       override def log(entry: Entry): F[Unit] = {
@@ -60,6 +44,22 @@ object LogIO extends LowPriorityLogIOInstances {
 
       override def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
         F.syncSafe(logger.log(logLevel)(messageThunk))
+      }
+
+      override def withCustomContext(context: CustomContext): LogIO[F] = {
+        fromLogger[F](logger.withCustomContext(context))
+      }
+    }
+  }
+
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLoggerF[F]): LogIO[F] = {
+    new UnsafeLogIOSyncSafeInstanceF[F](logger)(SyncSafe1[F]) with LogIO[F] {
+      override def log(entry: Entry): F[Unit] = {
+        logger.log(entry)
+      }
+
+      override def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+        logger.log(logLevel)(messageThunk)
       }
 
       override def withCustomContext(context: CustomContext): LogIO[F] = {
