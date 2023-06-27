@@ -2451,7 +2451,7 @@ lazy val `distage-extension-configJVM` = `distage-extension-config`.jvm
       "com.github.pureconfig" %% "pureconfig-core" % V.pureconfig
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      "com.github.pureconfig" %% "pureconfig-generic-base" % V.pureconfig
+      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig
     ) else Seq.empty }
   )
   .disablePlugins(AssemblyPlugin)
