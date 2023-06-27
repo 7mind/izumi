@@ -3,7 +3,7 @@ package izumi.distage.modules.support
 import distage.DIKey
 import izumi.distage.modules.platform.ZIOPlatformDependentSupportModule
 import izumi.functional.bio.*
-import izumi.functional.bio.retry.Scheduler3
+import izumi.functional.bio.retry.{Scheduler3, SchedulerInstances}
 import izumi.reflect.Tag
 import zio.{IO, ZEnvironment, ZIO}
 
@@ -48,10 +48,7 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
 
   // FIXME wtf
   addImplicit[Async3[ZIO]]
-  make[Temporal3[ZIO]].from {
-    implicit r: Clock3[ZIO] =>
-      implicitly[Temporal3[ZIO]]
-  }
+  addImplicit[Temporal3[ZIO]]
   // FIXME wtf
 //  addImplicit[Local3[ZIO]]
   addImplicit[Fork3[ZIO]]
@@ -59,8 +56,7 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   addImplicit[PrimitivesM3[ZIO]]
 
   make[Scheduler3[ZIO]].from {
-    implicit r: Temporal3[ZIO] =>
-      implicitly[Scheduler3[ZIO]]
+    SchedulerInstances.SchedulerFromTemporalAndClock(_: Temporal2[zio.IO], _: Clock3[ZIO])
   }
 
   addImplicit[TransZio[IO]]

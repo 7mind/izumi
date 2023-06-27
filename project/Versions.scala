@@ -7,16 +7,16 @@ object V {
 
   val kind_projector = "0.13.2"
 
-  val scalatest = "3.2.15"
+  val scalatest = "3.2.16"
 
   val cats = "2.8.0"
-  val cats_effect = "3.4.10"
+  val cats_effect = "3.4.11"
 
   val discipline = "1.5.1"
   val discipline_scalatest = "2.2.0"
 
   val zio = "2.0.14"
-  val zio_interop_cats = "23.0.0.7"
+  val zio_interop_cats = "23.0.0.8"
 
   val monix = "3.4.0"
   val monix_bio = "1.2.0"
@@ -36,8 +36,8 @@ object V {
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.14.4"
-  val docker_java = "3.3.0"
+  val bytebuddy = "1.14.5"
+  val docker_java = "3.3.1"
 
   // microsite-only
   val doobie = "1.0.0-RC2"

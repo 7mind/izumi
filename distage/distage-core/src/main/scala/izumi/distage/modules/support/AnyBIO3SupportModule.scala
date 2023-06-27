@@ -15,7 +15,8 @@ import izumi.reflect.{Tag, TagK3}
   *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[-_, +_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds [[izumi.functional.bio]] typeclass instances for `F[-_, +_, +_]`
   *
-  * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]` & `make[UnsafeRun3[F]]`
+  * Depends on `make[Async3[F]]`, `make[Temporal3[F]]`, `make[Local3[F]]`, `make[Fork3[F]]`, `make[UnsafeRun3[F]]`
+ *  Optional additions: `make[Primitives3[F]]`, `make[PrimitivesM3[F]]`, `make[Scheduler3[F]]`
   */
 class AnyBIO3SupportModule[F[-_, +_, +_]: TagK3, R0: Tag] extends ModuleDef {
   // trifunctor bio instances
@@ -78,6 +79,7 @@ object AnyBIO3SupportModule extends App with ModuleDef {
         implicitly[QuasiPrimitives3[F] =:= QuasiPrimitives2[F[Any, +_, +_]]]
         implicitly[QuasiIO3[F] =:= QuasiIO2[F[Any, +_, +_]]]
         implicitly[QuasiAsync3[F] =:= QuasiAsync2[F[Any, +_, +_]]]
+        implicitly[QuasiTemporal3[F] =:= QuasiTemporal2[F[Any, +_, +_]]]
         ()
       }
     }

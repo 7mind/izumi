@@ -180,7 +180,6 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
       (service: MockUserRepository[F]) =>
         for {
           _ <- F.maybeSuspend(assert(service != null))
-          _ <- F.maybeSuspend(println("test2"))
         } yield ()
     }
 
@@ -190,7 +189,6 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
           _ <- F.maybeSuspend(XXX_Whitebox_memoizedMockCache.compareAndSet(null, service.cache))
           _ <- F.maybeSuspend(assert(service != null))
           _ <- F.maybeSuspend(assert(service.cache eq XXX_Whitebox_memoizedMockCache.get()))
-          _ <- F.maybeSuspend(println("test1"))
         } yield ()
     }
 

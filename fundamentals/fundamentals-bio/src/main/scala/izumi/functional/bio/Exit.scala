@@ -14,37 +14,72 @@ sealed trait Exit[+E, +A] {
 
 object Exit {
 
+  /** Tracing information about the error `E` */
   trait Trace[+E] {
     def asString: String
+
+    /** The returned Throwable must contain some mention of the error `E`, if not the original error fully */
     def toThrowable: Throwable
 
-    /** Unsafely Mutate the contained Throwable to attach this Trace's debugging information to it.
+    /**
+      * Try to Unsafely Mutate the contained Throwable (if any) to attach this Trace's debugging information to it and return it.
+      *
+      * If the Throwable cannot be mutated to attach tracing information to it, may create a new Throwable with the tracing information.
+      *
+      * The returned Throwable must contain some mention of the error `E`, if not the original error fully.
       *
       * @note may mutate arbitrary Throwables contained in the trace, discard all throwables that came from the same source
       * @param conv convert any contained typed errors into a Throwable
       */
-    def unsafeAttachTrace(conv: E => Throwable): Throwable
+    def unsafeAttachTraceOrReturnNewThrowable(conv: E => Throwable): Throwable
+
+    final def unsafeAttachTraceOrReturnNewThrowable(): Throwable = unsafeAttachTraceOrReturnNewThrowable(TypedError(_))
 
     def map[E1](f: E => E1): Trace[E1]
 
     override final def toString: String = asString
   }
   object Trace {
-    def empty: Trace[Nothing] = new Trace[Nothing] {
-      override val asString: String = "<empty trace>"
+    def forTypedError[E](error: E): Trace[E] = error match {
+      case t: Throwable => ThrowableTrace(t)
+      case e => ThrowableTrace(TypedError(e))
+    }
+
+    def forUnknownError: Trace[Nothing] = new Trace[Nothing] {
+      override val asString: String = "<empty trace, unknown error>"
       override def toThrowable: Throwable = new RuntimeException(asString)
-      override def unsafeAttachTrace(conv: Nothing => Throwable): Throwable = toThrowable
+      override def unsafeAttachTraceOrReturnNewThrowable(conv: Nothing => Throwable): Throwable = toThrowable
       override def map[E1](f: Nothing => E1): Trace[E1] = this
     }
 
     final case class ZIOTrace[+E](cause: zio.Cause[E]) extends Trace[E] {
       override def asString: String = cause.prettyPrint
       override def toThrowable: Throwable = zio.FiberFailure(cause)
-      override def unsafeAttachTrace(conv: E => Throwable): Throwable = cause.squashTraceWith {
-        case t: Throwable => t
-        case e => conv(e)
+      override def unsafeAttachTraceOrReturnNewThrowable(conv: E => Throwable): Throwable = {
+        val zio2ThrowableWithSuppressedAttached = cause.squashTraceWith {
+          case t: Throwable => t
+          case e => conv(e)
+        }
+        if (zio2ThrowableWithSuppressedAttached.getSuppressed.isEmpty) {
+          // Throwable has disabled suppression, return full cause instead (add stackless like its added in squashTraceWith, NB stackless removes Throwable stacktraces, not monadic traces)
+          zio.FiberFailure(zio.Cause.stackless(cause))
+        } else {
+          zio2ThrowableWithSuppressedAttached
+        }
       }
       override def map[E1](f: E => E1): Trace[E1] = ZIOTrace(cause.map(f))
+    }
+
+    final case class ThrowableTrace(toThrowable: Throwable) extends Trace[Nothing] {
+      override def asString: String = {
+        import java.io.{PrintWriter, StringWriter}
+        val sw = new StringWriter
+        val pw = new PrintWriter(sw)
+        toThrowable.printStackTrace(pw)
+        sw.toString
+      }
+      override def unsafeAttachTraceOrReturnNewThrowable(conv: Nothing => Throwable): Throwable = toThrowable
+      override def map[E1](f: Nothing => E1): Trace[E1] = this
     }
   }
 
@@ -63,7 +98,6 @@ object Exit {
 
     final def toThrowable(implicit ev: E <:< Throwable): Throwable = toEitherCompound.fold(identity, ev)
     final def toThrowable(conv: E => Throwable): Throwable = toEitherCompound.fold(identity, conv)
-    final def unsafeAttachTrace(conv: E => Throwable): Throwable = trace.unsafeAttachTrace(conv)
 
     override final def map[B](f: Nothing => B): this.type = this
     override final def flatMap[E1 >: E, B](f: Nothing => Exit[E1, B]): this.type = this

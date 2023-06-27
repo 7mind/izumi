@@ -14,7 +14,7 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.functional.Value
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -36,6 +36,7 @@ open class ContainerResource[F[_], Tag](
 )(implicit
   val F: QuasiIO[F],
   val P: QuasiAsync[F],
+  val T: QuasiTemporal[F],
 ) extends Lifecycle.Basic[F, DockerContainer[Tag]] {
 
   import client.rawClient
@@ -60,10 +61,11 @@ open class ContainerResource[F[_], Tag](
     client: DockerClientWrapper[F] = client,
     logger: IzLogger = logger,
     deps: Set[DockerContainer[Any]] = deps,
-  )(implicit F: QuasiIO[F] = F,
+    F: QuasiIO[F] = F,
     P: QuasiAsync[F] = P,
+    T: QuasiTemporal[F] = T,
   ): ContainerResource[F, Tag] = {
-    new ContainerResource[F, Tag](config, client, logger, deps)(F, P)
+    new ContainerResource[F, Tag](config, client, logger, deps)(F, P, T)
   }
 
   override def acquire: F[DockerContainer[Tag]] = F.suspendF {
@@ -134,7 +136,7 @@ open class ContainerResource[F[_], Tag](
             val next = attempt + 1
             if (maxAttempts >= next) {
               logger.debug(s"Health check uncertain, retrying $next/$maxAttempts on $container...")
-              P.sleep(config.healthCheckInterval).map(_ => Left((container, next)))
+              T.sleep(config.healthCheckInterval).map(_ => Left((container, next)))
             } else {
               last match {
                 case HealthCheckResult.Failed(failure) =>
@@ -425,7 +427,7 @@ open class ContainerResource[F[_], Tag](
               }
             }
             logger.warn(s"Failed to pull image `$imageName`, will retry after $sleepDuration, ${t.getMessage -> "error"}")
-            P.sleep(sleepDuration).flatMap(_ => pullWithRetry(attempt + 1))
+            T.sleep(sleepDuration).flatMap(_ => pullWithRetry(attempt + 1))
           case Failure(t) => // failure occurred (e.g. rate limiter failure)
             F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull failed due to: ${t.getMessage}", Some(t))))
         }

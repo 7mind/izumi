@@ -2,6 +2,5 @@ package izumi.distage.modules.platform
 
 import izumi.distage.model.definition.ModuleDef
 
-object IdentityPlatformDependentSupportModule extends ModuleDef {
-  // there is no QuasiAsync on SJS
-}
+// Platform-dependent because QuasiAsync[Identity] doesn't work on Scala.js
+object IdentityPlatformDependentSupportModule extends ModuleDef

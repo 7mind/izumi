@@ -3,7 +3,7 @@ package izumi.functional.bio.retry
 import izumi.functional.bio.Clock1.ClockAccuracy
 import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.{Clock3, Error2, F, Functor2, IO2, Monad2, Primitives2, Ref2, Temporal2, Temporal3, TemporalInstances, UnsafeRun2}
+import izumi.functional.bio.{Clock2, Clock3, Error2, F, Functor2, IO2, Monad2, Primitives2, Ref2, Root, Temporal2, Temporal3, TemporalInstances, UnsafeRun2}
 import org.scalatest.Assertion
 import org.scalatest.wordspec.AnyWordSpec
 import zio.ZIO
@@ -18,11 +18,13 @@ class SchedulerTest extends AnyWordSpec {
 //  private val monixRunner: UnsafeRun2[bio.IO] = UnsafeRun2.createMonixBIO(Scheduler.global, bio.IO.defaultOptions)
 //  private val monixScheduler: Scheduler2[bio.IO] = new SchedulerMonix(implicitly[cats.effect.kernel.Clock[bio.UIO]])
 
-  private val zioTemporal: Temporal3[ZIO] = TemporalInstances.Temporal3Zio(Clock3[ZIO])
-  private val zioScheduler: Scheduler2[zio.IO] = SchedulerInstances.SchedulerFromTemporal(zioTemporal)
+  private val zioClock: Clock3[ZIO] = Clock3[ZIO]
+  private val zioTemporal: Temporal3[ZIO] = TemporalInstances.Temporal3Zio
+  private val zioScheduler: Scheduler2[zio.IO] = SchedulerInstances.SchedulerFromTemporalAndClock(Root.Convert3To2(zioTemporal), zioClock)
   private val zioRunner: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO[Any]()
 
   private object implicits {
+    implicit val zioClockImplicit: Clock3[ZIO] = zioClock
     implicit val zioTemporalImplicit: Temporal3[ZIO] = zioTemporal
     implicit val zioSchedulerImplicit: Scheduler2[zio.IO] = zioScheduler
   }
@@ -378,7 +380,7 @@ class SchedulerTest extends AnyWordSpec {
       } yield res
     }
 
-    def testTimedScheduler[F[+_, +_]: Temporal2, E, B](eff: F[E, Any])(policy: RetryPolicy[F, Any, B], n: Int): F[E, Vector[FiniteDuration]] = {
+    def testTimedScheduler[F[+_, +_]: Temporal2: Clock2, E, B](eff: F[E, Any])(policy: RetryPolicy[F, Any, B], n: Int): F[E, Vector[FiniteDuration]] = {
       def loop(in: Any, makeDecision: RetryFunction[F, Any, B], acc: Vector[FiniteDuration], iter: Int): F[E, Vector[FiniteDuration]] = {
         if (iter <= 0) F.pure(acc)
         else {
