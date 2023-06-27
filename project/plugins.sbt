@@ -15,7 +15,7 @@ addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.2")
 
 ////////////////////////////////////////////////////////////////////////////////
 
-addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.97")
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.99")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % PV.sbt_assembly)
 
