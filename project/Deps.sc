@@ -83,7 +83,7 @@ object Izumi {
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
     final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm
-    final val pureconfig_generic_base = Library("com.github.pureconfig", "pureconfig-generic-base", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
+    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
       ScalaVersionScope.AllScala2
     )
     final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
@@ -550,7 +550,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_core, pureconfig_generic_base, magnolia) ++ Seq(scala_reflect),
+        libs = Seq(pureconfig_core, pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.cross3,
