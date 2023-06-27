@@ -6,8 +6,7 @@ import zio.{Executor, Fiber, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironme
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.annotation.unused
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 /**
   * Scala.js does not support running effects synchronously so only async interface is available
@@ -148,10 +147,5 @@ object UnsafeRun2 {
         }
       }
     }
-  }
-
-  object NamedThreadFactory {
-    final lazy val QuasiAsyncIdentityPool: ExecutionContext = ExecutionContext.Implicits.global
-    final def QuasiAsyncIdentityThreadFactory(@unused max: Int): ExecutionContext = QuasiAsyncIdentityPool
   }
 }

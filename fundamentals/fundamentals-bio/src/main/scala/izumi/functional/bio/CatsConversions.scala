@@ -57,8 +57,8 @@ trait CatsConversions6 extends CatsConversions60 {
     new BIOCatsMonadCancelImpl[F](F)
 }
 trait CatsConversions60 extends CatsConversions7 {
-  @inline implicit final def BIOToSync[F[+_, +_]](implicit F: IO2[F], blocking: BlockingIO2[F], clock: Clock2[F]): cats.effect.kernel.Sync[F[Throwable, _]] & S8 =
-    new BIOCatsSyncImpl[F](F, blocking, clock)
+  @inline implicit final def BIOToSync[F[+_, +_]](implicit F: IO2[F], BlockingIO: BlockingIO2[F], Clock: Clock2[F]): cats.effect.kernel.Sync[F[Throwable, _]] & S8 =
+    new BIOCatsSyncImpl[F](F, BlockingIO, Clock)
 }
 trait CatsConversions7 extends CatsConversions8 {
   @inline implicit final def BIOToSpawn[F[+_, +_]](implicit F: IO2[F], FC: Concurrent2[F], Fork: Fork2[F]): cats.effect.kernel.GenSpawn[F[Throwable, _], Throwable] & S9 =
@@ -82,22 +82,24 @@ trait CatsConversions10 extends CatsConversions11 {
     F: IO2[F],
     FC: Concurrent2[F],
     FT: Temporal2[F],
+    Clock: Clock2[F],
     Fork: Fork2[F],
     Primitives: Primitives2[F],
     BlockingIO: BlockingIO2[F],
   ): cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] & S11 = {
-    new BIOCatsTemporalImpl(F, FC, FT, Fork, Primitives, BlockingIO, FT.clock)
+    new BIOCatsTemporalImpl(F, FC, FT, Fork, Primitives, BlockingIO, Clock)
   }
 }
 trait CatsConversions11 {
   @inline implicit final def BIOToAsync[F[+_, +_]](
     implicit @unused ev: Functor2[F],
     F: Async2[F],
-    T: Temporal2[F],
+    FT: Temporal2[F],
+    Clock: Clock2[F],
     Fork: Fork2[F],
     BlockingIO: BlockingIO2[F],
     Primitives: Primitives2[F],
-  ): cats.effect.kernel.Async[F[Throwable, _]] & S12 = new BIOCatsAsync[F](F, F, T, Fork, BlockingIO, T.clock, Primitives)
+  ): cats.effect.kernel.Async[F[Throwable, _]] & S12 = new BIOCatsAsync[F](F, F, FT, Fork, BlockingIO, Clock, Primitives)
 }
 
 object CatsConversions {
@@ -517,7 +519,11 @@ object CatsConversions {
         }
         F.uninterruptibleExcept(
           restore =>
-            F.flatMap(k { e => p.trySuccess(e); () }) {
+            F.flatMap(k {
+              e =>
+                p.trySuccess(e)
+                ()
+            }) {
               case Some(canceler) => F.guaranteeOnInterrupt(restore(get), _ => F.orTerminate(canceler))
               case None => restore(get)
             }

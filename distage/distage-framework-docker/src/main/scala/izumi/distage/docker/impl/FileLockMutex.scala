@@ -1,7 +1,7 @@
 package izumi.distage.docker.impl
 
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.logstage.api.IzLogger
 
 import java.io.File
@@ -22,6 +22,7 @@ object FileLockMutex {
   )(implicit
     F: QuasiIO[F],
     P: QuasiAsync[F],
+    T: QuasiTemporal[F],
   ): F[A] = {
     def retryOnFileLock(
       // MUST be by-name because of QuasiIO[Identity]
@@ -37,7 +38,7 @@ object FileLockMutex {
           )(recover = {
             case _: OverlappingFileLockException =>
               if (attempts < maxAttempts) {
-                P.sleep(retryWait).map(_ => Left(attempts + 1))
+                T.sleep(retryWait).map(_ => Left(attempts + 1))
               } else {
                 logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container")
                 F.pure(Right(None))

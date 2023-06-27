@@ -16,6 +16,9 @@ package object quasi {
   type QuasiAsync2[F[_, _]] = QuasiAsync[F[Throwable, _]]
   type QuasiAsync3[F[_, _, _]] = QuasiAsync[F[Any, Throwable, _]]
 
+  type QuasiTemporal2[F[_, _]] = QuasiTemporal[F[Throwable, _]]
+  type QuasiTemporal3[F[_, _, _]] = QuasiTemporal[F[Any, Throwable, _]]
+
   type QuasiIORunner2[F[_, _]] = QuasiIORunner[F[Throwable, _]]
   type QuasiIORunner3[F[_, _, _]] = QuasiIORunner[F[Any, Throwable, _]]
 }

@@ -8,7 +8,7 @@ import izumi.distage.docker.model.Docker.*
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{IdContract, SafeType}
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.IzLogger
 
@@ -47,8 +47,8 @@ object DockerContainer {
       override def repr(v: DependencyTag): String = s"container:${v.tpe}"
     }
   }
-  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, Set[DockerContainer[Any]], QuasiIO[F], QuasiAsync[F]) => ContainerResource[F, conf.Tag] = {
-    new ContainerResource[F, conf.Tag](conf.config, _, _, _)(_, _)
+  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, Set[DockerContainer[Any]], QuasiIO[F], QuasiAsync[F], QuasiTemporal[F]) => ContainerResource[F, conf.Tag] = {
+    new ContainerResource[F, conf.Tag](conf.config, _, _, _)(_, _, _)
   }
 
   implicit final class DockerProviderExtensions[F[_], T](private val self: Functoid[ContainerResource[F, T]]) extends AnyVal {
@@ -75,7 +75,6 @@ object DockerContainer {
     ): Functoid[ContainerResource[F, T]] = {
       self.zip(modify).map {
         case (self, f) =>
-          import self.{F, P}
           self.copy(config = f(self.config))
       }
     }
@@ -85,7 +84,6 @@ object DockerContainer {
     ): Functoid[ContainerResource[F, T]] = {
       self.mapSame {
         self =>
-          import self.{F, P}
           self.copy(config = modify(self.config))
       }
     }

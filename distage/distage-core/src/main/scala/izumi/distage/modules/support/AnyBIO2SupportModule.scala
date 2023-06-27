@@ -18,7 +18,8 @@ import scala.concurrent.ExecutionContext
   *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds [[izumi.functional.bio]] typeclass instances for `F[+_, +_]`
   *
-  * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`
+  * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`, `make[Fork2[F]]`
+  * Optional additions: `make[Primitives2[F]]`, `make[PrimitivesM2[F]]`, `make[Scheduler2[F]]`
   */
 class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
   include(BIO2InstancesModule[F])
@@ -35,7 +36,10 @@ class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
       QuasiIO.fromBIO(_: IO2[F])
     }
   make[QuasiAsync2[F]].from {
-    QuasiAsync.fromBIO(_: Async2[F], _: Temporal2[F])
+    QuasiAsync.fromBIO(_: Async2[F])
+  }
+  make[QuasiTemporal2[F]].from {
+    QuasiTemporal.fromBIO(_: Temporal2[F])
   }
   make[SyncSafe2[F]].from {
     SyncSafe1.fromBIO(_: IO2[F])
