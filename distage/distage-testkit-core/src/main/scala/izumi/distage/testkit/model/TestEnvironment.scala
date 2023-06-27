@@ -19,25 +19,25 @@ import izumi.logstage.api.Log
   * This process happens automatically and the user is not expected to directly interact with [[TestEnvironment]]
   */
 final case class TestEnvironment(
-                                  bsModule: ModuleBase,
-                                  appModule: ModuleBase,
-                                  roles: RolesInfo,
-                                  activationInfo: ActivationInfo,
-                                  activation: Activation,
-                                  memoizationRoots: PriorAxisDIKeys,
-                                  forcedRoots: AxisDIKeys,
-                                  parallelEnvs: Parallelism,
-                                  bootstrapFactory: BootstrapFactory,
-                                  configBaseName: String,
-                                  configOverrides: Option[AppConfig],
-                                  planningOptions: PlanningOptions,
-                                  logLevel: Log.Level,
-                                  activationStrategy: TestActivationStrategy,
-)( // exclude from `equals` test-runner only parameters that do not affect the memoization plan and
-   // that are not used in [[DistageTestRunner.groupEnvs]] grouping to allow merging more envs
-   val parallelSuites: Parallelism,
-   val parallelTests: Parallelism,
-   val debugOutput: Boolean,
+  bsModule: ModuleBase,
+  appModule: ModuleBase,
+  roles: RolesInfo,
+  activationInfo: ActivationInfo,
+  activation: Activation,
+  memoizationRoots: PriorAxisDIKeys,
+  forcedRoots: AxisDIKeys,
+  parallelEnvs: Parallelism,
+  bootstrapFactory: BootstrapFactory,
+  configBaseName: String,
+  configOverrides: Option[AppConfig],
+  planningOptions: PlanningOptions,
+  logLevel: Log.Level,
+  activationStrategy: TestActivationStrategy,
+)(// exclude from `equals` test-runner only parameters that do not affect the memoization plan and
+  // that are not used in [[DistageTestRunner.groupEnvs]] grouping to allow merging more envs
+  val parallelSuites: Parallelism,
+  val parallelTests: Parallelism,
+  val debugOutput: Boolean,
 ) {
   def getExecParams: EnvExecutionParams = {
     EnvExecutionParams(
@@ -50,8 +50,8 @@ final case class TestEnvironment(
 
 object TestEnvironment {
   final case class EnvExecutionParams(
-                                       parallelEnvs: Parallelism,
-                                       planningOptions: PlanningOptions,
-                                       logLevel: Log.Level,
+    parallelEnvs: Parallelism,
+    planningOptions: PlanningOptions,
+    logLevel: Log.Level,
   )
 }

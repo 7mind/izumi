@@ -1,4 +1,5 @@
 package izumi.logstage.adapter.jul
+
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log
 import logstage.LogRouter

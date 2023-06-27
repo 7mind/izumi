@@ -6,6 +6,7 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedActionF}
+import izumi.functional.bio.Exit
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.logstage.api.IzLogger
@@ -72,16 +73,16 @@ object IndividualTestRunner {
                     for {
                       _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, TestStatus.Running(l, successfulPlanningTime, successfulProvTime)))
                       successfulTestOutput <- timed {
-                        F.definitelyRecover(l.run(test.test).map(_ => Right(()): Either[Throwable, Unit])) {
-                          f =>
-                            F.pure(Left(f))
+                        F.definitelyRecoverWithTrace(l.run(test.test).map(_ => Right(()): Either[(Throwable, Exit.Trace[Throwable]), Unit])) {
+                          (error, trace) =>
+                            F.pure(Left((error, trace)))
                         }
                       }
                       executionResult <- successfulTestOutput.mapMerge(
                         {
-                          case (f, failedExecTime) =>
+                          case ((exception, trace), failedExecTime) =>
                             for {
-                              result <- F.pure(IndividualTestResult.ExecutionFailure(meta, successfulPlanningTime, successfulProvTime, failedExecTime, f))
+                              result <- F.pure(IndividualTestResult.ExecutionFailure(meta, successfulPlanningTime, successfulProvTime, failedExecTime, exception, trace))
                               _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, statusConverter.failExecution(result)))
                             } yield {
                               result

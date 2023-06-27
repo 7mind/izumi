@@ -22,9 +22,9 @@ class OperationExecutorImpl(
     step: NonImportOp,
   )(implicit F: QuasiIO[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    F.definitelyRecover(
+    F.definitelyRecoverWithTrace(
       executeUnsafe(context, step)
-    )(err => F.pure(Left(UnexpectedStepProvisioning(step, err))))
+    )((_, trace) => F.pure(Left(UnexpectedStepProvisioning(step, trace.unsafeAttachTraceOrReturnNewThrowable()))))
   }
 
   private[this] def executeUnsafe[F[_]: TagK](

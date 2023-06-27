@@ -77,9 +77,6 @@ object PlanInterpreter {
         null,
       ).addAllSuppressed(allExceptions)
     }
-
-    /** @throws ProvisioningException in `F` effect type */
-
   }
 
   object FailedProvision {

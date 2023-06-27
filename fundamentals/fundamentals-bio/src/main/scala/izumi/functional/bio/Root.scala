@@ -95,7 +95,7 @@ sealed trait RootInstancesLowPriority7 extends RootInstancesLowPriority8 {
 }
 
 sealed trait RootInstancesLowPriority8 extends RootInstancesLowPriority9 {
-  @inline implicit final def Local3ZIO: Predefined.Of[Local3[ZIO]] = Predefined(AsyncZio)
+//  @inline implicit final def Local3ZIO: Predefined.Of[Local3[ZIO]] = Predefined(AsyncZio)
   @inline implicit final def BIOZIO: Predefined.Of[Async3[ZIO]] = Predefined(AsyncZio)
 }
 

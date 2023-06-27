@@ -3,6 +3,7 @@ package izumi.functional.bio
 import cats.effect.Deferred
 import izumi.functional.bio.data.~>>
 import zio.{IO, Promise}
+//import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 trait Promise2[+F[+_, +_], E, A] {
   def await: F[E, A]

@@ -1,11 +1,11 @@
 package izumi.distage.fixtures
 
 import java.util.concurrent.atomic.AtomicReference
-
 import izumi.distage.model.definition.Lifecycle
+import izumi.functional.bio.Exit
 import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax._
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.fundamentals.platform.language.Quirks.*
 
 import scala.collection.immutable.Queue
 import scala.collection.mutable
@@ -174,7 +174,7 @@ object ResourceCases {
           }
         )
       }
-      override def definitelyRecover[A](fa: => Suspend2[E, A])(recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
+      override def definitelyRecoverUnsafeIgnoreTrace[A](fa: => Suspend2[E, A])(recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
         Suspend2(
           () =>
             Try(fa.run()).toEither.flatMap(identity) match {
@@ -183,8 +183,8 @@ object ResourceCases {
             }
         )
       }
-      override def definitelyRecoverCause[A](action: => Suspend2[E, A])(recoverCause: (Throwable, () => Throwable) => Suspend2[E, A]): Suspend2[E, A] = {
-        definitelyRecover(action)(e => recoverCause(e, () => e))
+      override def definitelyRecoverWithTrace[A](action: => Suspend2[E, A])(recoverCause: (Throwable, Exit.Trace[Throwable]) => Suspend2[E, A]): Suspend2[E, A] = {
+        definitelyRecoverUnsafeIgnoreTrace(action)(e => recoverCause(e, Exit.Trace.ThrowableTrace(e)))
       }
       override def redeem[A, B](action: => Suspend2[E, A])(failure: Throwable => Suspend2[E, B], success: A => Suspend2[E, B]): Suspend2[E, B] = {
         Suspend2(
@@ -202,7 +202,7 @@ object ResourceCases {
       override def bracketCase[A, B](acquire: => Suspend2[E, A])(release: (A, Option[Throwable]) => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] = {
         acquire.flatMap {
           a =>
-            definitelyRecover(use(a)) {
+            definitelyRecoverUnsafeIgnoreTrace(use(a)) {
               err =>
                 release(a, Some(err)).flatMap(_ => fail(err))
             }.flatMap(res => release(a, None).map(_ => res))

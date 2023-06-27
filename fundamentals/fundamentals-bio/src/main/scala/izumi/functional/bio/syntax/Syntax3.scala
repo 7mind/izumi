@@ -265,8 +265,6 @@ object Syntax3 {
   }
 
   final class TemporalOps[FR[-_, +_, +_], -R, +E, +A](protected[this] val r: FR[R, E, A])(implicit protected[this] val F: Temporal3[FR]) {
-    @inline final def retryOrElse[R1 <: R, A2 >: A, E2](duration: FiniteDuration, orElse: E => FR[R1, E2, A2]): FR[R1, E2, A2] =
-      F.retryOrElseUntil[R1, E, A2, E2](r)(duration, orElse)
     @inline final def repeatUntil[E1 >: E, A2](tooManyAttemptsError: => E1, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): FR[R, E1, A2] =
       F.repeatUntil[R, E1, A2](new FunctorOps(r)(F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
 

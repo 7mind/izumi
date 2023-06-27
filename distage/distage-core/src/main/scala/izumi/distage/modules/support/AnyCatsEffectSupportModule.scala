@@ -1,12 +1,12 @@
 package izumi.distage.modules.support
 
-import cats.effect.kernel.{Async, Sync}
-import cats.effect.std.Dispatcher
 import cats.Parallel
+import cats.effect.kernel.{Async, GenTemporal, Sync}
+import cats.effect.std.Dispatcher
 import distage.{ModuleDef, TagK}
-import izumi.functional.quasi.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives}
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.bio.{Clock1, Entropy1, SyncSafe1}
+import izumi.functional.quasi.*
 import izumi.fundamentals.platform.functional.Identity
 
 /**
@@ -31,6 +31,9 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
     }
   make[QuasiAsync[F]].from {
     implicit F: Async[F] => QuasiAsync.fromCats
+  }
+  make[QuasiTemporal[F]].from {
+    implicit F: GenTemporal[F, Throwable] => QuasiTemporal.fromCats
   }
   make[SyncSafe1[F]].from {
     implicit F: Sync[F] => SyncSafe1.fromSync

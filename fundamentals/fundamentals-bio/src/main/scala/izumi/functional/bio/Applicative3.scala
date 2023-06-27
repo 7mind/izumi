@@ -22,7 +22,7 @@ trait Applicative3[F[-_, +_, +_]] extends Functor3[F] {
 
   @inline final def forever[R, E, A](r: F[R, E, A]): F[R, E, Nothing] = *>(r, forever(r))
   def traverse_[R, E, A](l: Iterable[A])(f: A => F[R, E, Unit]): F[R, E, Unit] = void(traverse(l)(f))
-  def sequence[R, E, A, B](l: Iterable[F[R, E, A]]): F[R, E, List[A]] = traverse(l)(identity)
+  def sequence[R, E, A](l: Iterable[F[R, E, A]]): F[R, E, List[A]] = traverse(l)(identity)
   def sequence_[R, E](l: Iterable[F[R, E, Unit]]): F[R, E, Unit] = void(traverse(l)(identity))
 
   def unit: F[Any, Nothing, Unit] = pure(())

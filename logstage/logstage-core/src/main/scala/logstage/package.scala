@@ -1,13 +1,12 @@
 import izumi.logstage.api.rendering.AnyEncoded
 import izumi.logstage.{api, sink}
-import zio.Has
 
 package object logstage extends LogStage {
 
   type LogIO2[F[_, _]] = LogIO[F[Nothing, _]]
   type LogIO3[F[_, _, _]] = LogIO[F[Any, Nothing, _]]
-  type LogIO3Ask[F[_, _, _]] = LogIO2[F[Has[LogIO3[F]], _, _]]
-  type LogZIO = Has[LogZIO.Service]
+  type LogIO3Ask[F[_, _, _]] = LogIO2[F[LogIO3[F], _, _]]
+  type LogZIO = LogZIO.Service
 
   type LogCreateIO2[F[_, _]] = LogCreateIO[F[Nothing, _]]
   type LogCreateIO3[F[_, _, _]] = LogCreateIO[F[Any, Nothing, _]]

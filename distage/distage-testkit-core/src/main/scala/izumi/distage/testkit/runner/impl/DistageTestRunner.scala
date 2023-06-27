@@ -7,7 +7,7 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.*
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.uuid.UUIDGen
 import izumi.logstage.api.IzLogger
@@ -19,43 +19,44 @@ object DistageTestRunner {
   case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism)
 }
 
-class DistageTestRunner[F[_]: TagK](
+class DistageTestRunner[F[_]: TagK, G[_]](
   reporter: TestReporter,
   logging: TestkitLogging,
   planner: TestPlanner[F],
   statusConverter: TestStatusConverter,
-  timed: TimedActionF[Identity],
-  parTraverse: ExtParTraverse[Identity],
+  timed: TimedActionF[G],
+  parTraverse: ExtParTraverse[G],
+  timedId: TimedActionF[Identity],
+)(implicit
+  G: QuasiIO[G],
+  GA: QuasiAsync[G],
+  I: QuasiIO[Identity],
 ) {
 
-  def run(tests: Seq[DistageTest[F]]): List[EnvResult] = {
-    runF[Identity](tests, timed)
-  }
-
-  def runF[G[_]](tests: Seq[DistageTest[F]], timed: TimedActionF[G])(implicit G: QuasiIO[G]): G[List[EnvResult]] = {
+  def run(tests: Seq[DistageTest[F]]): G[List[EnvResult]] = {
     // We assume that under normal cirsumstances the code below should never throw.
     // All the exceptions should be converted to values by this time.
     // If it throws, there is a bug which needs to be fixed.
     for {
       id <- G.maybeSuspend(ScopeId(UUIDGen.getTimeUUID()))
       _ <- G.maybeSuspend(reporter.beginScope(id))
-      envs <- timed(G.maybeSuspend(planner.groupTests(tests)))
+      envs <- timed(planner.groupTests[G](tests))
       _ <- G.maybeSuspend(reportFailedPlanning(id, envs.out.bad, envs.timing))
       _ <- G.maybeSuspend(reportFailedInvividualPlans(id, envs))
       // TODO: there shouldn't be a case with more than one tree per env, maybe we should assert/fail instead
-      toRun <- G.pure(envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2))
+      toRun = envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
       _ <- G.maybeSuspend(logEnvironmentsInfo(toRun, envs.timing.duration))
-      result <- G.maybeSuspend(runTests(id, toRun))
+      result <- runTests(id, toRun)
       _ <- G.maybeSuspend(reporter.endScope(id))
     } yield {
       result
     }
   }
 
-  private def runTests(id: ScopeId, toRun: Map[PreparedTestEnv, TestTree[F]]): List[EnvResult] = {
+  private def runTests(id: ScopeId, toRun: Map[PreparedTestEnv, TestTree[F]]): G[List[EnvResult]] = {
     parTraverse(toRun)(_._1.envExec.parallelEnvs) {
-      case (e, t) => List(proceedEnv(id, e, t))
-    }.flatten
+      case (e, t) => G.maybeSuspend(proceedEnv(id, e, t))
+    }
   }
 
   private def reportFailedPlanning(id: ScopeId, bad: Seq[(Seq[DistageTest[F]], PlanningFailure)], timing: Timing): Unit = {
@@ -88,7 +89,7 @@ class DistageTestRunner[F[_]: TagK](
 
     val allEnvTests = testsTree.allTests.map(_.test)
 
-    timed(runtimeInjector.produceDetailedCustomF[Identity](runtimePlan)).use {
+    timedId.apply(runtimeInjector.produceDetailedCustomF[Identity](runtimePlan)).use {
       maybeRtLocator =>
         maybeRtLocator.mapMerge(
           {
@@ -106,7 +107,7 @@ class DistageTestRunner[F[_]: TagK](
           {
             (runtimeLocator, runtimeInstantiationTiming) =>
               runtimeLocator.run {
-                (runner: QuasiIORunner[F], testTreeRunner: TestTreeRunner[F], logger: IzLogger@Id("distage-testkit")) =>
+                (runner: QuasiIORunner[F], testTreeRunner: TestTreeRunner[F], logger: IzLogger @Id("distage-testkit")) =>
                   logger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
                   EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(testTreeRunner.traverse(id, 0, testsTree, runtimeLocator)))
               }
