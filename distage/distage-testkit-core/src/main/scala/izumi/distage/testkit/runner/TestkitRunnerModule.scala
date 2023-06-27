@@ -1,7 +1,6 @@
 package izumi.distage.testkit.runner
 
 import distage.{Injector, TagK}
-import izumi.distage.model.Planner
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.{DistageTest, EnvResult}
@@ -24,14 +23,15 @@ class TestkitRunnerModule[F[_]: TagK: DefaultModule](reporter: TestReporter, isC
   make[Throwable => Boolean].fromValue(isCancellation)
   make[TestStatusConverter]
   make[TimedAction].from[TimedActionImpl]
-  make[TimedActionF[Identity]].from[TimedActionFImpl[Identity]]
   make[TestConfigLoader].from[TestConfigLoader.TestConfigLoaderImpl]
   make[TestPlanner[F]]
   make[TestTreeBuilder[F]].from[TestTreeBuilder.TestTreeBuilderImpl[F]]
-  make[Planner].fromValue(Injector())
+
+  make[TimedActionF[Identity]].from[TimedActionFImpl[Identity]]
   make[ExtParTraverse[Identity]].from[ExtParTraverse.ExtParTraverseImpl[Identity]]
 
-  make[DistageTestRunner[F]].from[DistageTestRunner[F]]
+  make[DistageTestRunner[F, Identity]].from[DistageTestRunner[F, Identity]]
+
   make[LogQueue].fromResource(ThreadingLogQueue.resource())
 }
 
@@ -39,7 +39,7 @@ object TestkitRunnerModule {
   def run[F[_]: TagK: DefaultModule](reporter: TestReporter, isCancellation: Throwable => Boolean, tests: Seq[DistageTest[F]]): Identity[List[EnvResult]] = {
     Injector()
       .produceRun(new TestkitRunnerModule[F](reporter, isCancellation)) {
-        (runner: DistageTestRunner[F]) =>
+        (runner: DistageTestRunner[F, Identity]) =>
           runner.run(tests)
       }
   }

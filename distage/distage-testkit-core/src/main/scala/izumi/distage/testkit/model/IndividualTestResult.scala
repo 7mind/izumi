@@ -2,6 +2,7 @@ package izumi.distage.testkit.model
 
 import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.testkit.runner.impl.services.Timing
+import izumi.functional.bio.Exit
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -17,7 +18,7 @@ object IndividualTestResult {
     override def totalTime: FiniteDuration = planningTiming.duration + failedInstantiationTiming.duration
   }
 
-  case class ExecutionFailure(test: FullMeta, planningTiming: Timing, instantiationTiming: Timing, failedExecTiming: Timing, failure: Throwable)
+  case class ExecutionFailure(test: FullMeta, planningTiming: Timing, instantiationTiming: Timing, failedExecTiming: Timing, failure: Throwable, trace: Exit.Trace[Throwable])
     extends IndividualTestFailure {
     override def totalTime: FiniteDuration = planningTiming.duration + instantiationTiming.duration + failedExecTiming.duration
   }

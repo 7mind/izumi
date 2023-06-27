@@ -8,18 +8,16 @@ import izumi.functional.bio.Exit.{CatsExit, ZIOExit}
 import izumi.functional.bio.data.Morphism1
 import izumi.functional.bio.{Clock1, Clock2, IO2}
 import org.scalacheck.{Arbitrary, Cogen, Prop}
-import zio.blocking.Blocking
-import zio.clock.Clock
-import zio.duration.Duration
-import zio.internal.{Executor, Tracing}
-import zio.{IO, Task, UIO, ZIO}
+import zio.{Clock, Duration, Executor, IO, Runtime, Scheduler, Task, Trace, UIO, Unsafe, ZIO, ZLayer}
 
+import java.time
 import java.time.*
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext}
 
 trait ZIOTestEnv extends TestInstances with EqThrowable {
 
@@ -31,8 +29,8 @@ trait ZIOTestEnv extends TestInstances with EqThrowable {
   override implicit def eqIOA[A: Eq](implicit ticker: Ticker): Eq[cats.effect.IO[A]] = {
     (ioa, iob) =>
       {
-        val a = unsafeRun(ioa)
-        val b = unsafeRun(iob)
+        val a = this.unsafeRun(ioa)
+        val b = this.unsafeRun(iob)
         Eq[Outcome[Option, Throwable, A]].eqv(a, b) || {
           System.err.println(s"not equal a=$a b=$b")
           false
@@ -52,45 +50,51 @@ trait ZIOTestEnv extends TestInstances with EqThrowable {
 
   implicit def clock2(implicit ticker: Ticker): Clock2[IO] = {
     new Clock2[IO] {
-      override def epoch: IO[Nothing, Long] = UIO(ticker.ctx.now().toMillis)
-      override def now(accuracy: Clock1.ClockAccuracy): IO[Nothing, ZonedDateTime] = UIO(
+      override def epoch: IO[Nothing, Long] = ZIO.succeed(ticker.ctx.now().toMillis)
+      override def now(accuracy: Clock1.ClockAccuracy): IO[Nothing, ZonedDateTime] = ZIO.succeed(
         ZonedDateTime.ofInstant(Instant.ofEpochMilli(ticker.ctx.now().toMillis), ZoneOffset.UTC)
       )
-      override def nowLocal(accuracy: Clock1.ClockAccuracy): IO[Nothing, LocalDateTime] = UIO(
+      override def nowLocal(accuracy: Clock1.ClockAccuracy): IO[Nothing, LocalDateTime] = ZIO.succeed(
         LocalDateTime.ofInstant(Instant.ofEpochMilli(ticker.ctx.now().toMillis), ZoneOffset.UTC)
       )
-      override def nowOffset(accuracy: Clock1.ClockAccuracy): IO[Nothing, OffsetDateTime] = UIO(
+      override def nowOffset(accuracy: Clock1.ClockAccuracy): IO[Nothing, OffsetDateTime] = ZIO.succeed(
         OffsetDateTime.ofInstant(Instant.ofEpochMilli(ticker.ctx.now().toMillis), ZoneOffset.UTC)
       )
-      override def monotonicNano: IO[Nothing, Long] = UIO(ticker.ctx.now().toNanos)
+      override def monotonicNano: IO[Nothing, Long] = ZIO.succeed(ticker.ctx.now().toNanos)
     }
   }
 
-  implicit def zioBlocking(implicit ticker: Ticker): Blocking = {
-    zio.Has(new Blocking.Service {
-      override def blockingExecutor: Executor = Executor.fromExecutionContext(Int.MaxValue)(ticker.ctx)
-    })
-  }
-
-  implicit def zioClock(implicit ticker: Ticker): Clock = {
-    zio.Has(new Clock.Service {
-      override def currentTime(unit: TimeUnit): UIO[Long] = UIO(ticker.ctx.now().toUnit(unit).toLong)
-      override def currentDateTime: IO[DateTimeException, OffsetDateTime] = UIO(OffsetDateTime.ofInstant(Instant.ofEpochMilli(ticker.ctx.now().toMillis), ZoneOffset.UTC))
-      override def nanoTime: UIO[Long] = UIO(ticker.ctx.now().toNanos)
-      override def sleep(duration: Duration): UIO[Unit] = {
-        import zio.duration.*
+  def zioClock(implicit ticker: Ticker): Clock = {
+    new Clock {
+      override def currentTime(unit: => TimeUnit)(implicit trace: Trace): UIO[Long] = {
+        ZIO.succeed(ticker.ctx.now().toUnit(unit).toLong)
+      }
+      override def currentDateTime(implicit trace: Trace): UIO[OffsetDateTime] = {
+        ZIO.succeed(OffsetDateTime.ofInstant(Instant.ofEpochMilli(ticker.ctx.now().toMillis), ZoneOffset.UTC))
+      }
+      override def nanoTime(implicit trace: Trace): UIO[Long] = {
+        ZIO.succeed(ticker.ctx.now().toNanos)
+      }
+      override def sleep(duration: => Duration)(implicit trace: Trace): UIO[Unit] = {
+        import zio.*
         duration.asScala match {
           case f: FiniteDuration =>
-            UIO.effectAsyncInterrupt {
+            ZIO.asyncInterrupt {
               k =>
                 val canceler = ticker.ctx.schedule(f, () => k(ZIO.unit))
-                Left(UIO(canceler()))
+                Left(ZIO.succeed(canceler()))
             }
           case _: Infinite =>
             ZIO.never
         }
       }
-    })
+
+      override def currentTime(unit: => ChronoUnit)(implicit trace: Trace, d: DummyImplicit): UIO[Long] = ???
+      override def instant(implicit trace: Trace): UIO[Instant] = ???
+      override def javaClock(implicit trace: Trace): UIO[time.Clock] = ???
+      override def localDateTime(implicit trace: Trace): UIO[LocalDateTime] = ???
+      override def scheduler(implicit trace: Trace): UIO[Scheduler] = ???
+    }
   }
 
   implicit def cogenTask[A: Cogen](implicit ticker: Ticker): Cogen[IO[Throwable, A]] = {
@@ -101,13 +105,11 @@ trait ZIOTestEnv extends TestInstances with EqThrowable {
     }
   }
 
-  // FIXME: ZIO cannot pass laws related to `MonadCancel#cancel` when using a fair generator
-  //  since it does not properly implement it
   implicit def arbTask[A: Arbitrary: Cogen](implicit ticker: Ticker): Arbitrary[Task[A]] = Arbitrary {
     arbitraryIO[A].arbitrary.map(liftIO(_))
   }
   def liftIO[A](io: cats.effect.IO[A])(implicit ticker: Ticker): zio.Task[A] = {
-    ZIO.effectAsyncInterrupt {
+    ZIO.asyncInterrupt {
       k =>
         val (result, cancel) = io.unsafeToFutureCancelable()
         k(ZIO.fromFuture(_ => result))
@@ -126,16 +128,21 @@ trait ZIOTestEnv extends TestInstances with EqThrowable {
     val interrupted = new AtomicBoolean(true)
     F.async[zio.Exit[Throwable, A]] {
       cb =>
-        val runtime = zio
-          .Runtime((), zio.internal.Platform.fromExecutionContext(ticker.ctx))
-          .withTracing(Tracing.disabled)
-          .withReportFailure(_ => ())
-        val canceler = runtime.unsafeRunAsyncCancelable {
-          ZIOExit.ZIOSignalOnNoExternalInterruptFailure {
-            io
-          }(IO.effectTotal(interrupted.set(false)))
-        }(exit => cb(Right(exit)))
-        val cancelerEffect = cats.effect.IO { val _: zio.Exit[Throwable, A] = canceler(zio.Fiber.Id.None) }
+        implicit val unsafe: Unsafe = Unsafe.unsafe(identity)
+        val runtime = Runtime.unsafe
+          .fromLayer {
+            Runtime.setExecutor(Executor.fromExecutionContext(ticker.ctx)) >+>
+            Runtime.setBlockingExecutor(Executor.fromExecutionContext(ticker.ctx)) >+>
+            ZLayer.scoped(ZIO.withClockScoped(zioClock))
+          }
+        val canceler = runtime.unsafe.runToFuture {
+          ZIOExit
+            .ZIOSignalOnNoExternalInterruptFailure {
+              io
+            }(ZIO.succeed(interrupted.set(false)))
+            .onExit(exit => ZIO.succeed(cb(Right(exit))))
+        }
+        val cancelerEffect = cats.effect.IO { val _: zio.Exit[Throwable, A] = Await.result(canceler.cancel(), scala.concurrent.duration.Duration.Inf) }
         F.pure(Some(cancelerEffect))
     }.flatMap {
         exit =>

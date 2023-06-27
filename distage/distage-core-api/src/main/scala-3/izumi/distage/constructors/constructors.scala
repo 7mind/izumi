@@ -8,8 +8,8 @@ import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.{Tag, WeakTag}
 
 import scala.annotation.experimental
-
 import izumi.fundamentals.platform.reflection.ReflectionUtil
+import zio.ZEnvironment
 
 /**
   * An implicitly summonable constructor for a type `T`, can generate constructors for:
@@ -19,7 +19,7 @@ import izumi.fundamentals.platform.reflection.ReflectionUtil
   *
   * Since version `1.1.0`, does not generate constructors "factory-like" traits and abstract classes, instead use [[FactoryConstructor]].
   *
-  * Use [[HasConstructor]] to generate constructors for `zio.Has` values.
+  * Use [[ZEnvConstructor]] to generate constructors for `zio.ZEnvironment` values.
   *
   * @example
   * {{{
@@ -105,21 +105,21 @@ object FactoryConstructor {
 }
 
 /**
-  * An implicitly summonable constructor for a `T <: zio.Has[A] with zio.Has[B] with zio.Has[C]`
+  * An implicitly summonable constructor for a `T <: zio.ZEnvironment[A] with zio.ZEnvironment[B] with zio.ZEnvironment[C]`
   *
-  * `zio.Has` heterogeneous map values may be used by ZIO or other Reader-like effects
+  * `zio.ZEnvironment` heterogeneous map values may be used by ZIO or other Reader-like effects
   *
-  * @see [[https://izumi.7mind.io/distage/basics.html#zio-has-bindings ZIO Has bindings]]
+  * @see [[https://izumi.7mind.io/distage/basics.html#zio-environment-bindings ZIO Environment bindings]]
   * @see [[AnyConstructor]]
   */
-final class HasConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+final class ZEnvConstructor[T](val provider: Functoid[ZEnvironment[T]]) extends AnyVal with AnyConstructor[ZEnvironment[T]]
 
-object HasConstructor {
-  def apply[T](implicit ctor: HasConstructor[T]): Functoid[T] = ctor.provider
+object ZEnvConstructor {
+  def apply[T](implicit ctor: ZEnvConstructor[T]): Functoid[ZEnvironment[T]] = ctor.provider
 
-  val empty: HasConstructor[Any] = new HasConstructor(Functoid.unit)
+  def empty: ZEnvConstructor[Any] = new ZEnvConstructor(Functoid.pure(ZEnvironment.empty))
 
-  inline implicit def materialize[T]: HasConstructor[T] = ${ HasConstructorMacro.make[T] }
+  inline implicit def materialize[T]: ZEnvConstructor[T] = ${ ZEnvConstructorMacro.make[T] }
 }
 
 private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any {

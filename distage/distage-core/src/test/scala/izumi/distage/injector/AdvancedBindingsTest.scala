@@ -5,6 +5,7 @@ import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.SetCases.{SetCase2, SetCase4}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.exceptions.runtime.TODOBindingException
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Try
@@ -51,7 +52,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
     val plan = injector.planUnsafe(definitionParent)
     val context = injector.produce(plan).unsafeGet()
 
-    val subInjector = Injector.inherit(context)
+    val subInjector = Injector.inherit[Identity](context)
     val planSub = subInjector.planUnsafe(definitionSub)
     val contextSub = subInjector.produce(planSub).unsafeGet()
 

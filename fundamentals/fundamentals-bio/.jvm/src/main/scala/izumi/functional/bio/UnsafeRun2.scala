@@ -2,14 +2,13 @@ package izumi.functional.bio
 
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.UnsafeRun2.InterruptAction
-import zio.internal.tracing.TracingConfig
-import zio.internal.{Executor, Platform, Tracing}
-import zio.{Cause, Runtime, Supervisor, ZIO}
+import zio.{Executor, Fiber, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
+//import zio.stacktracer.TracingImplicits.disableAutoTrace
 
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import java.util.concurrent.{Executors, ThreadFactory, ThreadPoolExecutor}
 import scala.annotation.nowarn
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 trait UnsafeRun2[F[_, _]] {
   def unsafeRun[E, A](io: => F[E, A]): A
@@ -25,16 +24,35 @@ trait UnsafeRun2[F[_, _]] {
 object UnsafeRun2 {
   def apply[F[_, _]: UnsafeRun2]: UnsafeRun2[F] = implicitly
 
-  def createZIO[R](platform: Platform, initialEnv: R): ZIORunner[R] = new ZIORunner[R](platform, initialEnv)
-
+  /**
+    * @param customCpuPool will replace [[zio.internal.ZScheduler]] if set
+    * @param customBlockingPool will replace [[zio.internal.Blocking.blockingExecutor]] if set
+    * @param handler will add a Supervisor for fiber failure exits if not Default
+    * @param otherRuntimeConfiguration zio.Runtime.* layers can be used to set other configuration options for [[zio.Runtime]]
+    * @param initialEnv initial environment
+    */
   def createZIO[R](
-    cpuPool: ThreadPoolExecutor,
+    customCpuPool: Option[Executor] = None,
+    customBlockingPool: Option[Executor] = None,
     handler: FailureHandler = FailureHandler.Default,
-    yieldEveryNFlatMaps: Int = 1024,
-    tracingConfig: TracingConfig = TracingConfig.enabled,
-    initialEnv: R = (): Any,
+    otherRuntimeConfiguration: List[ZLayer[Any, Nothing, Any]] = List.empty,
+    initialEnv: ZEnvironment[R] = ZEnvironment.empty,
   ): ZIORunner[R] = {
-    new ZIORunner(new ZIOPlatform(cpuPool, handler, yieldEveryNFlatMaps, tracingConfig), initialEnv)
+    val runtimeConfiguration = {
+      val cpuLayer = customCpuPool.fold(ZLayer.empty)(ec => Runtime.setExecutor(ec))
+      val blockingLayer = customBlockingPool.fold(ZLayer.empty)(ec => Runtime.setBlockingExecutor(ec))
+      val handlerSupervisorLayer = handler match {
+        case FailureHandler.Default => ZLayer.empty
+        case handler @ FailureHandler.Custom(_) => Runtime.addSupervisor(ZIORunner.failureHandlerSupervisor(handler))
+      }
+      cpuLayer >+> blockingLayer >+> handlerSupervisorLayer >+>
+      otherRuntimeConfiguration.foldLeft(ZLayer.empty)(_ >+> _)
+    }
+
+    new ZIORunner(
+      runtimeConfiguration,
+      initialEnv,
+    )
   }
 
 //  def createMonixBIO(s: Scheduler, opts: monix.bio.IO.Options): UnsafeRun2[monix.bio.IO] = new MonixBIORunner(s, opts)
@@ -52,11 +70,14 @@ object UnsafeRun2 {
   }
 
   class ZIORunner[R](
-    val platform: Platform,
-    val initialEnv: R,
+    val runtimeConfiguration: ZLayer[Any, Nothing, Any], // zio.Runtime.* layers combined with `++`
+    val initialEnv: ZEnvironment[R],
   ) extends UnsafeRun2[ZIO[R, +_, +_]] {
 
-    val runtime: Runtime[R] = Runtime(initialEnv, platform)
+    def applyRuntimeConfiguration[E, A](io: => ZIO[R, E, A]): ZIO[Any, E, A] = {
+      io.provideEnvironment(initialEnv)
+        .provideLayer(runtimeConfiguration)
+    }
 
     override def unsafeRun[E, A](io: => ZIO[R, E, A]): A = {
       unsafeRunSync(io) match {
@@ -64,21 +85,32 @@ object UnsafeRun2 {
           value
 
         case failure: Exit.Failure[?] =>
-          throw failure.trace.unsafeAttachTrace(TypedError(_))
+          throw failure.trace.unsafeAttachTraceOrReturnNewThrowable()
       }
     }
 
     override def unsafeRunAsync[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): Unit = {
       val interrupted = new AtomicBoolean(true)
-      runtime.unsafeRunAsync[E, A] {
-        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.effectTotal(interrupted.set(false)))
-      }(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))
+      Unsafe.unsafe {
+        implicit unsafe =>
+          Runtime.default.unsafe
+            .fork(applyRuntimeConfiguration {
+              ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false)))
+            })
+            .unsafe
+            .addObserver(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))
+      }
     }
 
     override def unsafeRunSync[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
       val interrupted = new AtomicBoolean(true)
-      val result = runtime.unsafeRunSync {
-        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.effectTotal(interrupted.set(false)))
+      val result = Unsafe.unsafe {
+        implicit unsafe =>
+          Runtime.default.unsafe.run {
+            applyRuntimeConfiguration {
+              ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false)))
+            }
+          }
       }
       ZIOExit.toExit(result)(interrupted.get())
     }
@@ -92,11 +124,28 @@ object UnsafeRun2 {
     override def unsafeRunAsyncInterruptible[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): InterruptAction[ZIO[R, +_, +_]] = {
       val interrupted = new AtomicBoolean(true)
 
-      val canceler = runtime.unsafeRunAsyncCancelable {
-        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.effectTotal(interrupted.set(false)))
-      }(exit => callback(ZIOExit.toExit(exit)(interrupted.get())))
+      val cancelerEffect = Unsafe.unsafe {
+        implicit u =>
+          Runtime.default.unsafe
+            .run(applyRuntimeConfiguration {
+              ZIO
+                .acquireReleaseExitWith(ZIO.descriptor)(
+                  (descriptor, exit: zio.Exit[E, A]) =>
+                    ZIO.succeed {
+                      exit match {
+                        case zio.Exit.Failure(cause) if !cause.interruptors.forall(_ == descriptor.id) =>
+                          ()
+                        case _ =>
+                          callback(ZIOExit.toExit(exit)(interrupted.get()))
+                      }
+                    }
+                )(_ => ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false))))
+                .interruptible
+                .forkDaemon
+                .map(_.interrupt.unit)
+            }).getOrThrowFiberFailure()
+      }
 
-      val cancelerEffect = ZIO.effectTotal { val _: zio.Exit[E, A] = canceler(zio.Fiber.Id.None) }
       InterruptAction(cancelerEffect)
     }
 
@@ -107,42 +156,23 @@ object UnsafeRun2 {
     }
   }
 
-  class ZIOPlatform(
-    cpuPool: ThreadPoolExecutor,
-    handler: FailureHandler,
-    yieldEveryNFlatMaps: Int,
-    tracingConfig: TracingConfig,
-  ) extends Platform {
+  object ZIORunner {
 
-    override val executor: Executor = Executor.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
-    override val tracing: Tracing = Tracing.enabledWith(tracingConfig)
-    override val supervisor: Supervisor[Any] = Supervisor.none
-    override val yieldOnStart: Boolean = true
+    def failureHandlerSupervisor(handler: FailureHandler.Custom): Supervisor[Unit] = new Supervisor[Unit] {
+      // @formatter:off
+      override def value(implicit trace: Trace): UIO[Unit] = ZIO.unit
+      override def onStart[R, E, A](environment: ZEnvironment[R], effect: ZIO[R, E, A], parent: Option[Fiber.Runtime[Any, Any]], fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = ()
+      // @formatter:on
 
-    override def reportFailure(cause: Cause[Any]): Unit = {
-      handler match {
-        case FailureHandler.Default =>
-          // do not log interruptions
-          if (!cause.interrupted) {
-            System.err.println(cause.prettyPrint)
-          }
-
-        case FailureHandler.Custom(f) =>
-          f(ZIOExit.toExit(cause)(outerInterruptionConfirmed = true))
+      override def onEnd[R, E, A](exit: zio.Exit[E, A], fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
+        exit match {
+          case zio.Exit.Success(_) => ()
+          case zio.Exit.Failure(cause) =>
+            handler.handler.apply(ZIOExit.toExit(cause)(outerInterruptionConfirmed = true))
+        }
       }
     }
-
-    override def fatal(t: Throwable): Boolean = {
-      t.isInstanceOf[VirtualMachineError]
-    }
-
-    override def reportFatal(t: Throwable): Nothing = {
-      t.printStackTrace()
-      sys.exit(-1)
-    }
-
   }
-
 
   //  class MonixBIORunner(val s: Scheduler, val opts: monix.bio.IO.Options) extends UnsafeRun2[monix.bio.IO] {
   //    override def unsafeRun[E, A](io: => bio.IO[E, A]): A = {
@@ -174,7 +204,6 @@ object UnsafeRun2 {
   //    }
   //  }
 
-
   final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
     @nowarn("msg=deprecated")
     private val parentGroup =
@@ -192,21 +221,6 @@ object UnsafeRun2 {
       thread.setDaemon(daemon)
 
       thread
-    }
-
-  }
-
-  object NamedThreadFactory {
-    private final lazy val factory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
-
-    final lazy val QuasiAsyncIdentityPool = ExecutionContext.fromExecutorService {
-      Executors.newCachedThreadPool(factory)
-    }
-
-    final def QuasiAsyncIdentityThreadFactory(max: Int): ExecutionContext = {
-      ExecutionContext.fromExecutorService {
-        Executors.newFixedThreadPool(max, factory)
-      }
     }
 
   }
