@@ -23,15 +23,15 @@ object V {
 
   val circe = "0.14.5"
   val circe_derivation = "0.13.0-M5"
-  val pureconfig = "0.17.3"
+  val pureconfig = "0.17.4"
   val magnolia = "1.1.3"
-  val jawn = "1.4.0"
+  val jawn = "1.5.0"
 
   // good to drop - scala
   val scala_java_time = "2.5.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.157"
+  val classgraph = "4.8.160"
   val slf4j = "2.0.7"
   val typesafe_config = "1.4.0"
 
