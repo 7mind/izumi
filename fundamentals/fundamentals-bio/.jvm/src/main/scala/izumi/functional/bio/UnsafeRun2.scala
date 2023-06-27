@@ -70,14 +70,15 @@ object UnsafeRun2 {
   }
 
   class ZIORunner[R](
-    val runtimeConfiguration: ZLayer[Any, Nothing, Any], // zio.Runtime.* layers combined with `++`
+    val runtimeConfiguration: ZLayer[Any, Nothing, Any], // zio.Runtime.* layers combined with `>+>`
     val initialEnv: ZEnvironment[R],
   ) extends UnsafeRun2[ZIO[R, +_, +_]] {
 
-    def applyRuntimeConfiguration[E, A](io: => ZIO[R, E, A]): ZIO[Any, E, A] = {
-      io.provideEnvironment(initialEnv)
-        .provideLayer(runtimeConfiguration)
-    }
+    lazy val runtime: Runtime[R] = Unsafe
+      .unsafe {
+        implicit unsafe =>
+          Runtime.unsafe.fromLayer(runtimeConfiguration)
+      }.mapEnvironment(_ => initialEnv)
 
     override def unsafeRun[E, A](io: => ZIO[R, E, A]): A = {
       unsafeRunSync(io) match {
@@ -93,10 +94,8 @@ object UnsafeRun2 {
       val interrupted = new AtomicBoolean(true)
       Unsafe.unsafe {
         implicit unsafe =>
-          Runtime.default.unsafe
-            .fork(applyRuntimeConfiguration {
-              ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false)))
-            })
+          runtime.unsafe
+            .fork(ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false))))
             .unsafe
             .addObserver(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))
       }
@@ -106,10 +105,8 @@ object UnsafeRun2 {
       val interrupted = new AtomicBoolean(true)
       val result = Unsafe.unsafe {
         implicit unsafe =>
-          Runtime.default.unsafe.run {
-            applyRuntimeConfiguration {
-              ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false)))
-            }
+          runtime.unsafe.run {
+            ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false)))
           }
       }
       ZIOExit.toExit(result)(interrupted.get())
@@ -126,8 +123,8 @@ object UnsafeRun2 {
 
       val cancelerEffect = Unsafe.unsafe {
         implicit u =>
-          Runtime.default.unsafe
-            .run(applyRuntimeConfiguration {
+          runtime.unsafe
+            .run {
               ZIO
                 .acquireReleaseExitWith(ZIO.descriptor)(
                   (descriptor, exit: zio.Exit[E, A]) =>
@@ -143,7 +140,7 @@ object UnsafeRun2 {
                 .interruptible
                 .forkDaemon
                 .map(_.interrupt.unit)
-            }).getOrThrowFiberFailure()
+            }.getOrThrowFiberFailure()
       }
 
       InterruptAction(cancelerEffect)

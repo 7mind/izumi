@@ -2451,7 +2451,7 @@ lazy val `distage-extension-configJVM` = `distage-extension-config`.jvm
       "com.github.pureconfig" %% "pureconfig-core" % V.pureconfig
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      "com.github.pureconfig" %% "pureconfig-generic-base" % V.pureconfig
+      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig
     ) else Seq.empty }
   )
   .disablePlugins(AssemblyPlugin)
@@ -4398,7 +4398,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                       (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
                   }
                 },
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.97"
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.99"
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
@@ -4673,16 +4673,12 @@ lazy val `distage-js` = (project in file(".agg/distage-distage-js"))
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `distage-core-apiJS`,
-    `distage-core-proxy-bytebuddy`,
     `distage-framework-apiJS`,
     `distage-coreJS`,
     `distage-extension-configJS`,
     `distage-extension-logstageJS`,
     `distage-extension-pluginsJS`,
-    `distage-frameworkJS`,
-    `distage-framework-docker`,
-    `distage-testkit-core`,
-    `distage-testkit-scalatest`
+    `distage-frameworkJS`
   )
 
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))
@@ -4721,9 +4717,7 @@ lazy val `logstage-js` = (project in file(".agg/logstage-logstage-js"))
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `logstage-coreJS`,
-    `logstage-rendering-circeJS`,
-    `logstage-adapter-slf4j`,
-    `logstage-sink-slf4j`
+    `logstage-rendering-circeJS`
   )
 
 lazy val `docs` = (project in file(".agg/doc-docs"))
@@ -4746,16 +4740,6 @@ lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
     `microsite`
   )
 
-lazy val `docs-js` = (project in file(".agg/doc-docs-js"))
-  .settings(
-    publish / skip := true,
-    crossScalaVersions := Nil
-  )
-  .disablePlugins(AssemblyPlugin)
-  .aggregate(
-    `microsite`
-  )
-
 lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   .settings(
     publish / skip := true,
@@ -4767,16 +4751,6 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   )
 
 lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"))
-  .settings(
-    publish / skip := true,
-    crossScalaVersions := Nil
-  )
-  .disablePlugins(AssemblyPlugin)
-  .aggregate(
-    `sbt-izumi-deps`
-  )
-
-lazy val `sbt-plugins-js` = (project in file(".agg/sbt-plugins-sbt-plugins-js"))
   .settings(
     publish / skip := true,
     crossScalaVersions := Nil
@@ -4808,8 +4782,7 @@ lazy val `izumi-js` = (project in file(".agg/.agg-js"))
   .aggregate(
     `fundamentals-js`,
     `distage-js`,
-    `logstage-js`,
-    `sbt-plugins-js`
+    `logstage-js`
   )
 
 lazy val `izumi` = (project in file("."))

@@ -11,8 +11,8 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 trait QuasiIORunner[F[_]] {
   def runFuture[A](f: => F[A]): Future[A]
-
 }
+
 object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
   @inline def apply[F[_]](implicit ev: QuasiIORunner[F]): QuasiIORunner[F] = ev
 
