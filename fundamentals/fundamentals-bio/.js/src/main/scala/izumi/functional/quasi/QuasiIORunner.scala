@@ -21,7 +21,7 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
   }
 
   final class BIOImpl[F[_, _]: UnsafeRun2](implicit val ec: ExecutionContext) extends QuasiIORunner[F[Throwable, _]] {
-    override def runFuture[A](f: => F[Throwable, A]): Future[A] = UnsafeRun2[F].unsafeRunFuture(f).flatMap {
+    override def runFuture[A](f: => F[Throwable, A]): Future[A] = UnsafeRun2[F].unsafeRunAsyncAsFuture(f).flatMap {
       case Exit.Success(value) =>
         Future.successful(value)
       case failure: Exit.Failure[Throwable] @unchecked =>

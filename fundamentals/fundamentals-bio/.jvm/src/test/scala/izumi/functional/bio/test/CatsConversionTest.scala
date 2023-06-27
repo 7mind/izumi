@@ -11,8 +11,6 @@ class CatsConversionTest extends AnyWordSpec with PlatformDependentTestBase {
 
   class X[F[+_, +_]: IO2](val ref: kernel.Ref[F[Throwable, _], Int])
 
-  implicit val clock: zio.clock.Clock = zio.Has(zio.clock.Clock.Service.live)
-
   "pickup conversion to Sync" in {
     def conv[F[+_, +_]: IO2: BlockingIO2]: F[Throwable, Int] = {
       Ref[F[Throwable, +_]]

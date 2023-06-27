@@ -69,7 +69,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
     deepIntersection.map {
       hasTpe =>
-        val tpe = ReflectionUtil.norm(u.u)(hasTpe.dealias).typeArgs.head
+        val tpe = hasTpe.dealias
         val syntheticSymbolInfo = SymbolInfo.Static.syntheticFromType(transformName)(tpe)
         Association.Parameter(syntheticSymbolInfo, keyFromSymbolResultType(syntheticSymbolInfo))
     }
@@ -119,7 +119,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
              |  * Type `$tpe` has been considered a factory because it's an abstract type and contains unimplemented abstract methods with parameters
              |  * Did you forget a `distage.With` annotation on the factory method to specify a non-abstract implementation type?
              |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.
-             |  
+             |
              |  * $mms
              |""".stripMargin,
           SafeType.create(tpe),

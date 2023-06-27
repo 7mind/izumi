@@ -49,18 +49,26 @@ trait QuasiIO[F[_]] extends QuasiPrimitives[F] {
 
   def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[A]
 
-  /** A stronger version of `handleErrorWith`, the difference is that
-    * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors
+  /**
+    * A stronger version of `handleErrorWith` (cats-effect) or `catchAll` (ZIO),
+    * the difference is that this will _also_ intercept Throwable defects in `ZIO`,
+    * not only typed errors.
+    *
+    * @note This function is meant for _RECOVERING_ errors, for _REPORTING_ errors use [[definitelyRecoverWithTrace]]
+    *       and include the full trace of the error in the report.
     */
-  def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A]
+  def definitelyRecoverUnsafeIgnoreTrace[A](action: => F[A])(recover: Throwable => F[A]): F[A]
 
-  /** `definitelyRecover`, but the second argument is a callback that when called,
-    * will return another Throwable, possible enhanced with the effect's own debugging information.
-    * @note the callback may perform side-effects to the original Throwable argument on the left,
+  /**
+    * Like [[definitelyRecoverUnsafeIgnoreTrace]], but the second parameter to the callback
+    * contains the effect's debugging information, possibly convertable to a Throwable via [[Exit.Trace#toThrowable]],
+    * or that could be used to mutably enhance the left-hand-side Throwable value via [[Exit.Trace#unsafeAttachTrace]]
+    *
+    * @note [[Exit.Trace#unsafeAttachTrace]] may perform side-effects to the original Throwable argument on the left,
     * the left throwable should be DISCARDED after calling the callback.
     * (e.g. in case of `ZIO`, the callback will mutate the throwable and attach a ZIO Trace to it.)
     */
-  def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, () => Throwable) => F[A]): F[A]
+  def definitelyRecoverWithTrace[A](action: => F[A])(recoverWithTrace: (Throwable, Exit.Trace[Throwable]) => F[A]): F[A]
 
   def redeem[A, B](action: => F[A])(failure: Throwable => F[B], success: A => F[B]): F[B]
 
@@ -116,12 +124,12 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       case Right(v) => v
     }
     override def suspendF[A](effAction: => A): Identity[A] = effAction
-    override def definitelyRecover[A](fa: => Identity[A])(recover: Throwable => Identity[A]): Identity[A] = {
+    override def definitelyRecoverUnsafeIgnoreTrace[A](fa: => Identity[A])(recover: Throwable => Identity[A]): Identity[A] = {
       try { fa }
       catch { case t: Throwable => recover(t) }
     }
-    override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: (Throwable, () => Throwable) => Identity[A]): Identity[A] = {
-      definitelyRecover(action)(e => recoverCause(e, () => e))
+    override def definitelyRecoverWithTrace[A](action: => Identity[A])(recoverCause: (Throwable, Exit.Trace[Throwable]) => Identity[A]): Identity[A] = {
+      definitelyRecoverUnsafeIgnoreTrace(action)(e => recoverCause(e, Exit.Trace.ThrowableTrace(e)))
     }
     override def redeem[A, B](action: => Identity[A])(failure: Throwable => Identity[B], success: A => Identity[B]): Identity[B] = {
       TryNonFatal(action) match {
@@ -177,11 +185,11 @@ private[quasi] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuasi
 
       override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
       override def maybeSuspendEither[A](eff: => Either[E, A]): F[E, A] = F.fromEither(eff)
-      override def definitelyRecover[A](action: => F[E, A])(recover: E => F[E, A]): F[E, A] = {
+      override def definitelyRecoverUnsafeIgnoreTrace[A](action: => F[E, A])(recover: E => F[E, A]): F[E, A] = {
         F.suspend(action).sandbox.catchAll(recover apply _.toThrowable)
       }
-      override def definitelyRecoverCause[A](action: => F[E, A])(recover: (E, () => E) => F[E, A]): F[E, A] = {
-        F.suspend(action).sandbox.catchAll(e => recover(e.toThrowable, () => e.trace.unsafeAttachTrace(identity)))
+      override def definitelyRecoverWithTrace[A](action: => F[E, A])(recover: (E, Exit.Trace[E]) => F[E, A]): F[E, A] = {
+        F.suspend(action).sandbox.catchAll(e => recover(e.toThrowable, e.trace))
       }
       override def redeem[A, B](action: => F[E, A])(failure: E => F[E, B], success: A => F[E, B]): F[E, B] = {
         action.redeem(failure, success)
@@ -220,11 +228,11 @@ private[quasi] sealed trait LowPriorityQuasiIOInstances1 {
 
       override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
       override def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[A] = F.defer(F.fromEither(eff))
-      override def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A] = {
+      override def definitelyRecoverUnsafeIgnoreTrace[A](action: => F[A])(recover: Throwable => F[A]): F[A] = {
         F.handleErrorWith(F.defer(action))(recover)
       }
-      override def definitelyRecoverCause[A](action: => F[A])(recoverCause: (Throwable, () => Throwable) => F[A]): F[A] = {
-        definitelyRecover(action)(e => recoverCause(e, () => e))
+      override def definitelyRecoverWithTrace[A](action: => F[A])(recoverCause: (Throwable, Exit.Trace[Throwable]) => F[A]): F[A] = {
+        definitelyRecoverUnsafeIgnoreTrace(action)(e => recoverCause(e, Exit.Trace.ThrowableTrace(e)))
       }
       override def redeem[A, B](action: => F[A])(failure: Throwable => F[B], success: A => F[B]): F[B] = {
         F.redeemWith(action)(failure, success)

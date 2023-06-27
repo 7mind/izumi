@@ -1,12 +1,15 @@
 package izumi.distage.model.definition.dsl
 
 import cats.effect.kernel.{Resource, Sync}
-import izumi.distage.constructors.HasConstructor
+import izumi.distage.constructors.ZEnvConstructor
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.Local3
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio.*
+import zio.managed.ZManaged
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 object LifecycleAdapters {
 
@@ -66,7 +69,7 @@ object LifecycleAdapters {
     }
 
     /**
-      * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+      * Allows you to bind [[zio.managed.ZManaged]]-based constructor functions in `ModuleDef`:
       */
     implicit final def providerFromZIOProvider[R, E, A]: AdaptFunctoid.Aux[ZManaged[R, E, A], Lifecycle.FromZIO[R, E, A]] = {
       new AdaptFunctoid[ZManaged[R, E, A]] {
@@ -74,21 +77,21 @@ object LifecycleAdapters {
 
         override def apply(a: Functoid[ZManaged[R, E, A]])(implicit tag: LifecycleTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
           import tag.tagFull
-          a.map(Lifecycle.fromZIO)
+          a.map(Lifecycle.fromZIO(_))
         }
       }
     }
 
     /**
-      * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+      * Allows you to bind [[zio.managed.ZManaged]]-based constructor functions in `ModuleDef`:
       */
-    implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptFunctoid.Aux[ZLayer[R, E, Has[A]], Lifecycle.FromZIO[R, E, A]] = {
-      new AdaptFunctoid[ZLayer[R, E, Has[A]]] {
+    implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptFunctoid.Aux[ZLayer[R, E, A], Lifecycle.FromZIO[R, E, A]] = {
+      new AdaptFunctoid[ZLayer[R, E, A]] {
         type Out = Lifecycle.FromZIO[R, E, A]
 
-        override def apply(a: Functoid[ZLayer[R, E, Has[A]]])(implicit tag: LifecycleTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
+        override def apply(a: Functoid[ZLayer[R, E, A]])(implicit tag: LifecycleTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
           import tag.tagFull
-          a.map(layer => Lifecycle.fromZIO(layer.map(_.get[A]).build))
+          a.map(Lifecycle.fromZIO(_)(zio.Tag[A]))
         }
       }
     }
@@ -126,7 +129,7 @@ object LifecycleAdapters {
 
     implicit def tagLocal3: Tag[Local3[F]]
     implicit def tagFull: Tag[Lifecycle[F[Any, E, _], A]]
-    implicit def ctorR: HasConstructor[R]
+    implicit def ctorR: ZEnvConstructor[R]
     implicit def ev: R0 <:< Lifecycle[F[R, E, _], A]
     implicit def resourceTag: LifecycleTag[Lifecycle[F[Any, E, _], A]]
   }
@@ -138,7 +141,7 @@ object LifecycleAdapters {
     implicit def trifunctorResourceTag[
       R1 <: Lifecycle[F0[R0, E0, _], A0],
       F0[_, _, _]: TagK3,
-      R0: HasConstructor,
+      R0: ZEnvConstructor,
       E0: Tag,
       A0 <: A1: Tag,
       A1,
@@ -153,7 +156,7 @@ object LifecycleAdapters {
       type E = E0
       type A = A0
       val tagLocal3: Tag[Local3[F]] = implicitly
-      val ctorR: HasConstructor[R0] = implicitly
+      val ctorR: ZEnvConstructor[R0] = implicitly
       val tagFull: Tag[Lifecycle[F0[Any, E0, _], A0]] = implicitly
       val ev: R1 <:< Lifecycle[F0[R0, E0, _], A0] = implicitly
       val resourceTag: LifecycleTag[Lifecycle[F0[Any, E0, _], A0]] = new LifecycleTag[Lifecycle[F0[Any, E0, _], A0]] {
@@ -173,7 +176,7 @@ object LifecycleAdapters {
     implicit def trifunctorResourceTagNothing[
       R1 <: Lifecycle[F0[R0, Nothing, _], A0],
       F0[_, _, _]: TagK3,
-      R0: HasConstructor,
+      R0: ZEnvConstructor,
       A0 <: A1: Tag,
       A1,
     ]: TrifunctorHasLifecycleTag[R1 with Lifecycle[F0[R0, Nothing, _], A0], A1] {
@@ -184,4 +187,5 @@ object LifecycleAdapters {
     } = TrifunctorHasLifecycleTag.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
   }
 
+  disableAutoTrace.discard()
 }

@@ -1,11 +1,11 @@
 package izumi.fundamentals.collections
 
 import scala.annotation.nowarn
-import scala.collection.compat._
+import scala.collection.compat.*
 import scala.collection.mutable
 
 @nowarn("msg=Unused import")
-final class IzMappings[A, B](private val list: IterableOnce[(A, B)]) extends AnyVal {
+final class IzIterOnceMappings[A, B](private val list: IterableOnce[(A, B)]) extends AnyVal {
   import scala.collection.compat._
 
   @nowarn("msg=deprecated")
@@ -22,5 +22,23 @@ final class IzMappings[A, B](private val list: IterableOnce[(A, B)]) extends Any
 
   def toMultimap: ImmutableMultiMap[A, B] = {
     toMultimapMut.view.mapValues(_.toSet).toMap
+  }
+}
+
+@nowarn("msg=Unused import")
+final class IzIterMappings[A, B](private val list: Iterable[(A, B)]) extends AnyVal {
+
+  import scala.collection.compat._
+
+  def toUniqueMap[E](onConflict: Map[A, List[B]] => E): Either[E, Map[A, B]] = {
+    val grouped = list.groupBy(_._1)
+    val bad = grouped.filter(_._2.size > 1)
+
+    if (bad.isEmpty) {
+      Right(list.toMap)
+    } else {
+      Left(onConflict(bad.view.mapValues(_.map(_._2).toList).toMap))
+    }
+
   }
 }

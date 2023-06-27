@@ -8,7 +8,7 @@ import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec2
 import izumi.logstage.api.Log
 import logstage.LogIO2
-import zio.IO
+import zio.{IO, ZIO}
 
 // these tests need to check mutex for reusable containers during parallel test runs
 abstract class DistageTestDockerBIO extends Spec2[IO] {
@@ -29,7 +29,7 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
         for {
           _ <- log.info(s"ports/1: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka}/${service.kafkaKraft}/${service.kafkaTwoFace} cs=${service.cs}")
           // a new alpine container is spawned every time here
-          _ <- verifier.use(_ => IO.unit)
+          _ <- verifier.use(_ => ZIO.unit)
         } yield ()
     }
 
@@ -38,7 +38,7 @@ abstract class DistageTestDockerBIO extends Spec2[IO] {
         for {
           _ <- log.info(s"ports/2: pg=${service.pg} pgfw=${service.pgfw} ddb=${service.ddb} kafka=${service.kafka} cs=${service.cs}")
           // a new alpine container is spawned every time here
-          _ <- verifier.use(_ => IO.unit)
+          _ <- verifier.use(_ => ZIO.unit)
         } yield ()
     }
 

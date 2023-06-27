@@ -25,7 +25,7 @@ class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
 
   make[QuasiIORunner2[F]]
     .from[QuasiIORunner.BIOImpl[F]]
-    .annotateParameter[ExecutionContext]("cpu")
+    .annotateParameter[ExecutionContext]("cpu") // scala.js
 
   make[QuasiIO2[F]]
     .aliased[QuasiPrimitives2[F]]

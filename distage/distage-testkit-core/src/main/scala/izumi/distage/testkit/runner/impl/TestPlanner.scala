@@ -1,8 +1,8 @@
 package izumi.distage.testkit.runner.impl
 
-import distage.{Activation, BootstrapModule, DIKey, Injector, LocatorRef, Module, PlannerInput, TagK}
+import distage.{Activation, BootstrapModule, DIKey, Injector, LocatorRef, Module, Planner, PlannerInput, TagK}
+import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ModuleProvider, PlanCircularDependencyCheck}
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ImplDef
@@ -32,7 +32,7 @@ object TestPlanner {
     envMergeCriteria: PackedEnvMergeCriteria,
     preparedTests: Seq[AlmostPreparedTest[F]],
     memoizationPlanTree: List[Plan],
-    anyMemoizationInjector: Injector[Identity],
+    envInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
     strengthenedKeys: Set[DIKey],
   )
@@ -43,9 +43,13 @@ object TestPlanner {
     activation: Activation,
   )
 
-  final case class PackedEnvMergeCriteria(
+  final case class InjectorEquivalenceCriteria(
     bsPlanMinusActivations: Vector[ExecutableOp],
     bsModuleMinusActivations: BootstrapModule,
+  )
+
+  final case class PackedEnvMergeCriteria(
+    injectorEquivalenceCriteria: InjectorEquivalenceCriteria,
     runtimePlan: Plan,
   )
 
@@ -115,20 +119,27 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                 prepareGroupPlans(envExec, config, env, tests, router).left.map(bad => (tests, bad))
             }
 
-          val good = memoizationEnvs.collect {
-            case Right(env) =>
-              env
-          }
+          val good = memoizationEnvs
+            .collect {
+              case Right(env) =>
+                env
+            }
+            .filter(_.preparedTests.nonEmpty)
 
           // merge environments together by equality of their shared & runtime plans
           // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
           // so this saves a lot of reallocation of memoized resources
           val goodTrees: Map[PreparedTestEnv, TestTree[F]] = good.groupBy(_.envMergeCriteria).map {
-            case (PackedEnvMergeCriteria(_, _, runtimePlan), packedEnv) =>
-              val memoizationInjector = packedEnv.head.anyMemoizationInjector
-              val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-              val memoizationTree = testTreeBuilder.build(runtimePlan, packedEnv)
+            case (criteria, packedEnv) =>
+              // injectors do NOT provide equality but we defined custom injector equvalence for the purpose
+              // any injector from the group would do
+              val memoizationInjector = packedEnv.head.envInjector
+              val runtimePlan = criteria.runtimePlan
               assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
+
+              val memoizationTree = testTreeBuilder.build(memoizationInjector, runtimePlan, packedEnv)
+
+              val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
               val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
               (env, memoizationTree)
           }
@@ -148,12 +159,10 @@ class TestPlanner[F[_]: TagK: DefaultModule](
   }
 
   private lazy val allowedKeyVariations = {
-    // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
-    val activationKeys = Set(DIKey[Activation]("bootstrapActivation"), DIKey[ActivationInfo])
-    val recursiveKeys = Set(DIKey[BootstrapModule])
     // FIXME: remove IzLogger dependency in `ResourceRewriter` and stop inserting LogstageModule in bootstrap
     val hackyKeys = Set(DIKey[LogRouter])
-    activationKeys ++ recursiveKeys ++ hackyKeys
+    // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
+    BootstrapLocator.selfReflectionKeys ++ hackyKeys
   }
 
   private def prepareGroupPlans(
@@ -216,7 +225,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       moduleProvider.appModules().merge overriddenBy env.appModule
     }
 
-    val (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector) = {
+    val (injectorEquivalence, injector) = {
       // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
       //  becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
 
@@ -233,7 +242,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.stepsUnordered.filterNot(variableBsKeys contains _.target).toVector
       val bsModuleMinusVariableKeys = injectorEnv.bootstrapModule.drop(variableBsKeys)
 
-      (bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, injector)
+      (InjectorEquivalenceCriteria(bsPlanMinusVariableKeys, bsModuleMinusVariableKeys), injector)
     }
 
     for {
@@ -303,7 +312,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, injector, strengthenedAppModule, planChecker).map(p => List(p))
         }
     } yield {
-      val envMergeCriteria = PackedEnvMergeCriteria(bsPlanMinusVariableKeys, bsModuleMinusVariableKeys, runtimePlan)
+      val envMergeCriteria = PackedEnvMergeCriteria(injectorEquivalence, runtimePlan)
 
       if (strengthenedKeys.nonEmpty) {
         lateLogger.log(logging.testkitDebugMessagesLogLevel(env.debugOutput))(
@@ -321,7 +330,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     runtimeKeys: Set[DIKey],
     memoizationRoots: Set[DIKey],
     activation: Activation,
-    injector: Injector[Identity],
+    injector: Planner,
     appModule: Module,
     check: PlanCircularDependencyCheck,
   ): Either[List[DIError], Plan] = {

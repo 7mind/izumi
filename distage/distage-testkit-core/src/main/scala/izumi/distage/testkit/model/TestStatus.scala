@@ -5,6 +5,7 @@ import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Plan
 import izumi.distage.testkit.runner.impl.TestPlanner.PlanningFailure
 import izumi.distage.testkit.runner.impl.services.Timing
+import izumi.functional.bio.Exit
 import izumi.fundamentals.collections.nonempty.NonEmptyList
 import izumi.fundamentals.platform.integration.ResourceCheck
 
@@ -71,7 +72,7 @@ object TestStatus {
     override def order: Int = 6100
   }
 
-  final case class Failed(cause: IndividualTestResult.IndividualTestFailure, throwableCause: Throwable) extends Finished {
+  final case class Failed(cause: IndividualTestResult.IndividualTestFailure, throwableCause: Throwable, trace: Exit.Trace[Any]) extends Finished {
     override def order: Int = 6200
   }
 

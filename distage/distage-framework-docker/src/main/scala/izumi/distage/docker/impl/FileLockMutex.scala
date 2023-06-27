@@ -32,7 +32,7 @@ object FileLockMutex {
           if (attempts != 0) {
             logger.debug(s"Attempt ${attempts -> "num"} out of $maxAttempts to acquire file lock for image $filename.")
           }
-          F.definitelyRecover[Either[Int, Option[FileLock]]](
+          F.definitelyRecoverUnsafeIgnoreTrace[Either[Int, Option[FileLock]]](
             doAcquire.map(lock => Right(Option(lock)))
           )(recover = {
             case _: OverlappingFileLockException =>
@@ -75,7 +75,10 @@ object FileLockMutex {
 
     F.bracket(
       acquire = createChannel()
-    )(release = channel => F.definitelyRecover(F.maybeSuspend(channel.close()))(_ => F.unit))(
+    )(release = {
+      channel =>
+        F.definitelyRecoverUnsafeIgnoreTrace(F.maybeSuspend(channel.close()))(_ => F.unit)
+    })(
       use = {
         channel =>
           F.bracket(

@@ -2,12 +2,12 @@ package izumi.distage.testkit.distagesuite.generic
 
 import cats.effect.IO as CIO
 import izumi.fundamentals.platform.functional.Identity
-import zio.{Task, ZEnv, ZIO}
+import zio.{Task, ZIO}
 
 final class DistageTestExampleId extends DistageTestExampleBase[Identity]
 final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
-final class DistageTestExampleZIOZEnv extends DistageTestExampleBase[ZIO[ZEnv, Throwable, +_]]
+final class DistageTestExampleZIOZEnv extends DistageTestExampleBase[ZIO[Int, Throwable, +_]]
 
 final class DistageSleepTest01 extends DistageSleepTest[CIO]
 final class DistageSleepTest02 extends DistageSleepTest[CIO]

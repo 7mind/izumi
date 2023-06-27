@@ -55,7 +55,7 @@ sealed trait MiniBIO[+E, +A] {
           try { a() }
           catch {
             case t: Throwable =>
-              Exit.Termination(t, Trace.empty)
+              Exit.Termination(t, Trace.ThrowableTrace(t))
           }
         exit match {
           case Exit.Success(value) =>
@@ -81,7 +81,7 @@ sealed trait MiniBIO[+E, +A] {
           try e()
           catch {
             case t: Throwable =>
-              Exit.Termination(t, Trace.empty)
+              Exit.Termination(t, Trace.ThrowableTrace(t))
           }
         val catcher = stack.dropWhile(!_.isInstanceOf[Catcher[?, ?, ?, ?]])
         catcher match {
@@ -111,7 +111,7 @@ object MiniBIO {
 
   final case class Fail[+E](e: () => Exit.Failure[E]) extends MiniBIO[E, Nothing]
   object Fail {
-    def terminate(t: Throwable): Fail[Nothing] = Fail(() => Exit.Termination(t, Trace.empty))
+    def terminate(t: Throwable): Fail[Nothing] = Fail(() => Exit.Termination(t, Trace.ThrowableTrace(t)))
     def halt[E](e: => Exit.Failure[E]): Fail[E] = Fail(() => e)
   }
   final case class Sync[+E, +A](a: () => Exit[E, A]) extends MiniBIO[E, A]
@@ -121,7 +121,7 @@ object MiniBIO {
   implicit val BIOMiniBIO: IO2[MiniBIO] with BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
     override def pure[A](a: A): MiniBIO[Nothing, A] = sync(a)
     override def flatMap[R, E, A, B](r: MiniBIO[E, A])(f: A => MiniBIO[E, B]): MiniBIO[E, B] = FlatMap(r, f)
-    override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.empty))
+    override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.forTypedError(v)))
     override def terminate(v: => Throwable): MiniBIO[Nothing, Nothing] = Fail.terminate(v)
     override def sendInterruptToSelf: MiniBIO[Nothing, Unit] = unit
 
@@ -129,7 +129,7 @@ object MiniBIO {
       () =>
         try {
           Exit.Success(effect)
-        } catch { case e: Throwable => Exit.Error(e, Trace.empty) }
+        } catch { case e: Throwable => Exit.Error(e, Trace.ThrowableTrace(e)) }
     }
     override def sync[A](effect: => A): MiniBIO[Nothing, A] = Sync(() => Exit.Success(effect))
 

@@ -19,6 +19,8 @@ object TypesCases {
 
     final case class TestClass2[D](inner: D)
 
+    final case class TestClass3[D](a: D, b: D)
+
     trait TestTrait {
       def dep: TypeAliasDepA
     }
