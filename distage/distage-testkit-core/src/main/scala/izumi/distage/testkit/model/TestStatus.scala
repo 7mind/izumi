@@ -68,7 +68,7 @@ object TestStatus {
   //    override def totalTime: FiniteDuration = failedPlanningTiming.duration
   //  }
 
-  final case class Cancelled(cause: IndividualTestResult.IndividualTestFailure, throwableCause: Throwable) extends Finished {
+  final case class Cancelled(cause: IndividualTestResult.IndividualTestFailure, throwableCause: Throwable, trace: Exit.Trace[Any]) extends Finished {
     override def order: Int = 6100
   }
 

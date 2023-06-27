@@ -10,8 +10,8 @@ class TestStatusConverter(
 
   def failLevelInstantiation(cause: GroupResult.EnvLevelFailure): TestStatus.Setup = {
     cause.failure.toThrowable match {
-      case s if isTestSkipException(s) =>
-        TestStatus.EarlyCancelled(cause, s)
+      case s if isTestSkipException(s) => // can't match, s is always a ProvisioningException
+        TestStatus.EarlyCancelled(cause, s) // this never happens right now
       case ProvisioningIntegrationException(failures) =>
         TestStatus.EarlyIgnoredByPrecondition(cause, failures)
       case t =>
@@ -35,7 +35,7 @@ class TestStatusConverter(
   private def fail(cause: IndividualTestResult.IndividualTestFailure, exception: Throwable, trace: Exit.Trace[Any]): TestStatus.Done = {
     exception match {
       case s if isTestSkipException(s) =>
-        TestStatus.Cancelled(cause, s)
+        TestStatus.Cancelled(cause, s, trace)
       case ProvisioningIntegrationException(failures) =>
         TestStatus.IgnoredByPrecondition(cause, failures)
       case e =>

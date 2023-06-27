@@ -17,7 +17,8 @@ import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnv
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestkitLogging}
 import izumi.functional.IzEither.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIORunner}
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
@@ -62,11 +63,11 @@ object TestPlanner {
 
   sealed trait PlanningFailure
   object PlanningFailure {
-    case class Exception(throwable: Throwable) extends PlanningFailure
-    case class DIErrors(errors: List[DIError]) extends PlanningFailure
+    final case class Exception(throwable: Throwable) extends PlanningFailure
+    final case class DIErrors(errors: List[DIError]) extends PlanningFailure
   }
 
-  case class PlannedTestEnvs[F[_]](envs: Map[PreparedTestEnv, TestTree[F]])
+  final case class PlannedTestEnvs[F[_]](envs: Map[PreparedTestEnv, TestTree[F]])
   final case class PlannedTests[F[_]](
     good: Seq[PlannedTestEnvs[F]], // in fact there should always be just one element
     bad: Seq[(Seq[DistageTest[F]], PlanningFailure)],
@@ -89,73 +90,81 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     * Performs tests grouping by it's memoization environment.
     * [[TestEnvironment.EnvExecutionParams]] - contains only parts of environment that will not affect plan.
     * Grouping by such structure will allow us to create memoization groups with shared logger and parallel execution policy.
-    * By result you'll got [[TestEnvironment.MemoizationEnv]] mapped to [[MemoizationTreeBuilder]] - tree-represented memoization plan with tests.
-    * [[TestEnvironment.MemoizationEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
+    * By result you'll got [[PackedEnv]] mapped to [[izumi.distage.testkit.runner.impl.TestTreeBuilder.TestTreeBuilderImpl.MemoizationTreeBuilder]]
+    * - tree-represented memoization plan with tests.
+    * [[PackedEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
   @nowarn("msg=Unused import")
-  def groupTests(distageTests: Seq[DistageTest[F]]): PlannedTests[F] = {
+  def groupTests[G[_]](distageTests: Seq[DistageTest[F]])(implicit G: QuasiIO[G], GA: QuasiAsync[G]): G[PlannedTests[F]] = {
     import scala.collection.compat.*
 
-    val out = distageTests
-      .groupBy(_.environment.getExecParams)
-      .view
-      .mapValues(_.groupBy(_.environment))
-      .toSeq
-      .map {
+    for {
+      out <- G.traverse(
+        distageTests
+          .groupBy(_.environment.getExecParams)
+          .view
+          .mapValues(_.groupBy(_.environment))
+          .toSeq
+      ) {
         case (envExec, testsByEnv) =>
           val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
 
-          val memoizationEnvs =
-            QuasiAsync[Identity].parTraverse(testsByEnv) {
+          for {
+            memoizationEnvs <- GA.parTraverse(testsByEnv) {
               case (env, tests) =>
-                // make a config loader for current env with logger
-                val config = configLoader.loadConfig(env, configLoadLogger)
+                G.maybeSuspend {
+                  // make a config loader for current env with logger
+                  val config = configLoader.loadConfig(env, configLoadLogger)
 
-                // test loggers will not create polling threads and will log immediately
-                val logConfigLoader = new LogConfigLoaderImpl(CLILoggerOptions(envExec.logLevel, json = false), configLoadLogger)
-                val logConfig = logConfigLoader.loadLoggingConfig(config)
-                val router = new RouterFactory.RouterFactoryImpl().createRouter(logConfig, logBuffer)
+                  // test loggers will not create polling threads and will log immediately
+                  val logConfigLoader = new LogConfigLoaderImpl(CLILoggerOptions(envExec.logLevel, json = false), configLoadLogger)
+                  val logConfig = logConfigLoader.loadLoggingConfig(config)
+                  val router = new RouterFactory.RouterFactoryImpl().createRouter(logConfig, logBuffer)
 
-                prepareGroupPlans(envExec, config, env, tests, router).left.map(bad => (tests, bad))
+                  prepareGroupPlans(envExec, config, env, tests, router).left.map(bad => (tests, bad))
+                }
+            }
+          } yield {
+
+            val good = memoizationEnvs
+              .collect {
+                case Right(env) =>
+                  env
+              }
+              .filter(_.preparedTests.nonEmpty)
+
+            // merge environments together by equality of their shared & runtime plans
+            // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
+            // so this saves a lot of reallocation of memoized resources
+            val goodTrees: Map[PreparedTestEnv, TestTree[F]] = good.groupBy(_.envMergeCriteria).map {
+              case (criteria, packedEnv) =>
+                // injectors do NOT provide equality but we defined custom injector equvalence for the purpose
+                // any injector from the group would do
+                val memoizationInjector = packedEnv.head.envInjector
+                val runtimePlan = criteria.runtimePlan
+                assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
+
+                val memoizationTree = testTreeBuilder.build(memoizationInjector, runtimePlan, packedEnv)
+
+                val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
+                val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
+                (env, memoizationTree)
             }
 
-          val good = memoizationEnvs
-            .collect {
-              case Right(env) =>
-                env
+            val bad: Seq[(Seq[DistageTest[F]], PlanningFailure)] = memoizationEnvs.collect {
+              case Left((tests, problem)) =>
+                (tests, problem)
             }
-            .filter(_.preparedTests.nonEmpty)
 
-          // merge environments together by equality of their shared & runtime plans
-          // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
-          // so this saves a lot of reallocation of memoized resources
-          val goodTrees: Map[PreparedTestEnv, TestTree[F]] = good.groupBy(_.envMergeCriteria).map {
-            case (criteria, packedEnv) =>
-              // injectors do NOT provide equality but we defined custom injector equvalence for the purpose
-              // any injector from the group would do
-              val memoizationInjector = packedEnv.head.envInjector
-              val runtimePlan = criteria.runtimePlan
-              assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
-
-              val memoizationTree = testTreeBuilder.build(memoizationInjector, runtimePlan, packedEnv)
-
-              val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-              val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
-              (env, memoizationTree)
+            (PlannedTestEnvs(goodTrees), bad)
           }
-
-          val bad: Seq[(Seq[DistageTest[F]], PlanningFailure)] = memoizationEnvs.collect {
-            case Left((tests, problem)) =>
-              ((tests, problem))
-          }
-
-          (PlannedTestEnvs(goodTrees), bad)
       }
+    } yield {
+      val good = out.map(_._1)
+      val bad = out.flatMap(_._2)
 
-    val good = out.map(_._1)
-    val bad = out.flatMap(_._2)
-
-    PlannedTests(good, bad)
+      PlannedTests(good, bad)
+    }
   }
 
   private lazy val allowedKeyVariations = {

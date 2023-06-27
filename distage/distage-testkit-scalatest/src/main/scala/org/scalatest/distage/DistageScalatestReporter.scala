@@ -77,7 +77,7 @@ class DistageScalatestReporter extends TestReporter {
           analysis = Vector.empty,
           // use .toThrowable instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
           // does not display suppressed exceptions (which is how zio attaches trace)
-          throwable = Option(trace.toThrowable),
+          throwable = Some(trace.toThrowable),
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
           formatter = formatter,
@@ -85,7 +85,7 @@ class DistageScalatestReporter extends TestReporter {
       )
     }
 
-    def reportCancellation(duration: FiniteDuration, clue: String, cause: Throwable): Unit = {
+    def reportCancellation(duration: FiniteDuration, clue: String, trace: Exit.Trace[Any]): Unit = {
       doReport(suiteId1)(
         TestCanceled(
           _,
@@ -99,7 +99,9 @@ class DistageScalatestReporter extends TestReporter {
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
           formatter = formatter,
-          throwable = Some(cause),
+          // use .toThrowable instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
+          // does not display suppressed exceptions (which is how zio attaches trace)
+          throwable = Some(trace.toThrowable),
         )
       )
     }
@@ -146,11 +148,11 @@ class DistageScalatestReporter extends TestReporter {
           s.cause.instantiationTiming.duration,
           s"ignored early: ${s.checks.toList.niceList()}",
           // the Throwable is necessary for Intellij to include explanation other than just 'Test Canceled'
-          cause = new IntegrationCheckException(s.checks),
+          Exit.Trace.ThrowableTrace(new IntegrationCheckException(s.checks, captureStackTrace = false)),
         )
       case s: TestStatus.EarlyCancelled =>
         reportStarting()
-        reportCancellation(s.cause.instantiationTiming.duration, s"cancelled early: ${s.throwableCause.getMessage}", s.throwableCause)
+        reportCancellation(s.cause.instantiationTiming.duration, s"cancelled early: ${s.throwableCause.getMessage}", Exit.Trace.ThrowableTrace(s.throwableCause))
       case s: TestStatus.EarlyFailed =>
         reportStarting()
         reportFailure(s.cause.instantiationTiming.duration, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause))
@@ -163,13 +165,17 @@ class DistageScalatestReporter extends TestReporter {
         ()
 
       case s: TestStatus.IgnoredByPrecondition =>
-        reportCancellation(s.cause.totalTime, s"ignored: ${s.checks.toList.niceList()}", new IntegrationCheckException(s.checks))
+        reportCancellation(
+          s.cause.totalTime,
+          s"ignored: ${s.checks.toList.niceList()}",
+          Exit.Trace.ThrowableTrace(new IntegrationCheckException(s.checks, captureStackTrace = false)),
+        )
 
       case s: TestStatus.FailedPlanning =>
         reportFailure(s.timing.duration, s.failure, Exit.Trace.ThrowableTrace(s.failure))
 
       case s: TestStatus.Cancelled =>
-        reportCancellation(s.cause.totalTime, s"cancelled: ${s.throwableCause.getMessage}", s.throwableCause)
+        reportCancellation(s.cause.totalTime, s"cancelled: ${s.throwableCause.getMessage}", s.trace)
       case s: TestStatus.Failed =>
         reportFailure(s.cause.totalTime, s.throwableCause, s.trace)
       case s: TestStatus.Succeed =>
