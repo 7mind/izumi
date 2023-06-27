@@ -52,7 +52,7 @@ object PureconfigAutoDerive {
            import _root_.pureconfig.module.magnolia.auto.reader._
            import _root_.izumi.distage.config.codec.PureconfigInstances._
 
-           new ${weakTypeOf[PureconfigAutoDerive[A]]}(import _root_.pureconfig.module.magnolia.auto.reader.exportReader[${weakTypeOf[A]}].instance)
+           new ${weakTypeOf[PureconfigAutoDerive[A]]}(_root_.pureconfig.module.magnolia.auto.reader.exportReader[${weakTypeOf[A]}].instance)
          }"""
       }
     }
