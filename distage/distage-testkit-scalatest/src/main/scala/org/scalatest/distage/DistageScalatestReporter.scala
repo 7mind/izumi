@@ -4,6 +4,7 @@ import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
+import izumi.functional.bio.Exit
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.strings.IzString.*
 import org.scalatest.Suite.{getIndentedTextForInfo, getIndentedTextForTest}
@@ -62,11 +63,11 @@ class DistageScalatestReporter extends TestReporter {
 
     val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
 
-    def reportFailure(duration: FiniteDuration, t: Throwable): Unit = {
+    def reportFailure(duration: FiniteDuration, throwable: Throwable, trace: Exit.Trace[Any]): Unit = {
       doReport(suiteId1)(
         TestFailed(
           _,
-          Option(t.getMessage).getOrElse("null"),
+          Option(throwable.getMessage).getOrElse("null"),
           suiteName1,
           suiteId1.suiteId,
           Some(suiteClassName1),
@@ -74,7 +75,9 @@ class DistageScalatestReporter extends TestReporter {
           testName,
           recordedEvents = Vector.empty,
           analysis = Vector.empty,
-          throwable = Option(t),
+          // use .toThrowable instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
+          // does not display suppressed exceptions (which is how zio attaches trace)
+          throwable = Option(trace.toThrowable),
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
           formatter = formatter,
@@ -132,10 +135,11 @@ class DistageScalatestReporter extends TestReporter {
     testStatus match {
       case s: TestStatus.FailedInitialPlanning =>
         reportStarting()
-        reportFailure(s.timing.duration, s.throwableCause)
+        reportFailure(s.timing.duration, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause))
       case s: TestStatus.FailedRuntimePlanning =>
         reportStarting()
-        reportFailure(s.failure.timing.duration, s.failure.failure.toThrowable)
+        val throwable = s.failure.failure.toThrowable
+        reportFailure(s.failure.timing.duration, throwable, Exit.Trace.ThrowableTrace(throwable))
       case s: TestStatus.EarlyIgnoredByPrecondition =>
         reportStarting()
         reportCancellation(
@@ -149,7 +153,7 @@ class DistageScalatestReporter extends TestReporter {
         reportCancellation(s.cause.instantiationTiming.duration, s"cancelled early: ${s.throwableCause.getMessage}", s.throwableCause)
       case s: TestStatus.EarlyFailed =>
         reportStarting()
-        reportFailure(s.cause.instantiationTiming.duration, s.throwableCause)
+        reportFailure(s.cause.instantiationTiming.duration, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause))
       case s: TestStatus.Instantiating =>
         if (s.logPlan) {
           reportInfo(s"Final test plan info: ${s.plan}")
@@ -162,12 +166,12 @@ class DistageScalatestReporter extends TestReporter {
         reportCancellation(s.cause.totalTime, s"ignored: ${s.checks.toList.niceList()}", new IntegrationCheckException(s.checks))
 
       case s: TestStatus.FailedPlanning =>
-        reportFailure(s.timing.duration, s.failure)
+        reportFailure(s.timing.duration, s.failure, Exit.Trace.ThrowableTrace(s.failure))
 
       case s: TestStatus.Cancelled =>
         reportCancellation(s.cause.totalTime, s"cancelled: ${s.throwableCause.getMessage}", s.throwableCause)
       case s: TestStatus.Failed =>
-        reportFailure(s.cause.totalTime, s.throwableCause)
+        reportFailure(s.cause.totalTime, s.throwableCause, s.trace)
       case s: TestStatus.Succeed =>
         doReport(suiteId1)(
           TestSucceeded(
