@@ -1,13 +1,13 @@
 package izumi.distage.model.definition.dsl
 
+import izumi.distage.AnyLocalContext
 import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, ZEnvConstructor}
-import LifecycleAdapters.LifecycleTag
-import izumi.distage.LocalContext
 import izumi.distage.model.definition.*
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
+import izumi.distage.model.definition.dsl.LifecycleAdapters.LifecycleTag
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
@@ -108,7 +108,7 @@ object ModuleDefDSL {
     final def from[I <: T: Tag](function: => I): AfterBind =
       from(Functoid.lift(function))
 
-    final def fromModule(module: ModuleBase)(implicit ev: T <:< LocalContext): AfterBind = ???
+    final def fromModule(module: ModuleBase)(implicit ev: T <:< AnyLocalContext): AfterBind = ???
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
@@ -273,12 +273,12 @@ object ModuleDefDSL {
     }
 
     final def fromResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
     }
 
     final def fromResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
     }
 
@@ -287,7 +287,7 @@ object ModuleDefDSL {
     )(implicit adapt: LifecycleAdapters.AdaptFunctoid.Aux[R0, R],
       tag: LifecycleTag[R],
     ): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
     }
 
@@ -297,12 +297,12 @@ object ModuleDefDSL {
       * This will acquire a NEW resource again for every `refResource` binding
       */
     final def refResource[R <: Lifecycle[LifecycleF, T]](implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)))
     }
 
     final def refResource[R <: Lifecycle[LifecycleF, T]](name: Identifier)(implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
 
@@ -394,12 +394,12 @@ object ModuleDefDSL {
       addResource[R](AnyConstructor[R])
 
     final def addResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
     }
 
     final def addResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
     }
 
@@ -409,17 +409,17 @@ object ModuleDefDSL {
       tag: LifecycleTag[R],
       pos: CodePositionMaterializer,
     ): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)), pos)
     }
 
     final def refResource[R <: Lifecycle[LifecycleF, T]](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)), pos)
     }
 
     final def refResource[R <: Lifecycle[LifecycleF, T]](name: Identifier)(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
     }
 
