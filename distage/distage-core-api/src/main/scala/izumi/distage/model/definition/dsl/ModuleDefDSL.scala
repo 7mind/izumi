@@ -1,6 +1,6 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.AnyLocalContext
+import izumi.distage.LocalContext
 import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
@@ -108,7 +108,7 @@ object ModuleDefDSL {
     final def from[I <: T: Tag](function: => I): AfterBind =
       from(Functoid.lift(function))
 
-    final def fromModule(module: ModuleBase)(implicit ev: T <:< AnyLocalContext): AfterBind = ???
+    final def fromModule[F[_]: TagK](module: ModuleBase)(implicit ev: T =:= LocalContext[F]): AfterBind = ???
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
