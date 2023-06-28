@@ -96,7 +96,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -132,10 +132,11 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -146,7 +147,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -157,7 +158,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -165,7 +166,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -265,7 +266,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -301,10 +302,11 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -315,7 +317,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -326,7 +328,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -334,7 +336,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -432,7 +434,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -468,10 +470,11 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -482,7 +485,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -493,7 +496,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -501,7 +504,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -604,7 +607,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -640,10 +643,11 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -654,7 +658,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -669,7 +673,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -677,7 +681,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -786,7 +790,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -822,10 +826,11 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -836,7 +841,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -847,7 +852,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -855,7 +860,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -959,7 +964,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -995,10 +1000,11 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1009,7 +1015,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1020,7 +1026,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -1028,7 +1034,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1146,7 +1152,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1182,10 +1188,11 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1196,7 +1203,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1209,7 +1216,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -1217,7 +1224,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1319,7 +1326,7 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1355,10 +1362,11 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform).cross
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1369,7 +1377,7 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform).cross
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1380,7 +1388,7 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform).cross
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -1388,7 +1396,7 @@ lazy val `fundamentals-reflection` = crossProject(JVMPlatform, JSPlatform).cross
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1501,7 +1509,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1537,10 +1545,11 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1551,7 +1560,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1562,7 +1571,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -1570,7 +1579,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1688,7 +1697,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1724,10 +1733,11 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1738,7 +1748,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1749,7 +1759,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -1757,7 +1767,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1786,7 +1796,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1864,7 +1874,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1900,10 +1910,11 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -1914,7 +1925,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2013,7 +2024,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2049,10 +2060,11 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2063,7 +2075,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2074,7 +2086,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2082,7 +2094,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2189,7 +2201,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2225,10 +2237,11 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2239,7 +2252,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2250,7 +2263,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2258,7 +2271,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2369,7 +2382,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2405,10 +2418,11 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2419,7 +2433,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2430,7 +2444,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2438,7 +2452,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2550,7 +2564,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2586,10 +2600,11 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2600,7 +2615,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2611,7 +2626,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2619,7 +2634,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2723,7 +2738,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2759,10 +2774,11 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2773,7 +2789,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2784,7 +2800,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2792,7 +2808,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2919,7 +2935,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2955,10 +2971,11 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -2969,7 +2986,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2980,7 +2997,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -2988,7 +3005,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3027,7 +3044,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3105,7 +3122,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3141,10 +3158,11 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3155,7 +3173,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3181,7 +3199,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3259,7 +3277,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3295,10 +3313,11 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3309,7 +3328,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3345,7 +3364,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3423,7 +3442,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3459,10 +3478,11 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3473,7 +3493,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3579,7 +3599,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3615,10 +3635,11 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3629,7 +3650,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3640,7 +3661,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3648,7 +3669,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3759,7 +3780,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3795,10 +3816,11 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3809,7 +3831,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3820,7 +3842,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -3828,7 +3850,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   .jsSettings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3857,7 +3879,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3935,7 +3957,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3971,10 +3993,11 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -3985,7 +4008,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4016,7 +4039,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -4094,7 +4117,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4130,10 +4153,11 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -4144,7 +4168,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4201,7 +4225,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.10",
+      "2.13.11",
       "2.12.17"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -4279,7 +4303,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4315,10 +4339,11 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -4329,7 +4354,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4493,7 +4518,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.10") => Seq(
+      case (_, "2.13.11") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4529,10 +4554,11 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=msg=legacy-binding:silent",
     scalacOptions += "-Wconf:msg=nowarn:silent",
-    scalacOptions += "-Wconf:msg=parameter.value.x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
     scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
-    scalacOptions += "-Wconf:msg=is.eta.expanded.even.though:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
@@ -4543,7 +4569,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.10") => Seq(
+      case (false, "2.13.11") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )

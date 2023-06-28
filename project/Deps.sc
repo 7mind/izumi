@@ -149,7 +149,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.17")
-  final val scala213 = ScalaVersion("2.13.10")
+  final val scala213 = ScalaVersion("2.13.11")
   final val scala300 = ScalaVersion("3.2.2")
 
   object Groups {
@@ -293,15 +293,19 @@ object Izumi {
           SettingKey(Some(scala213), None) := Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const](
             "-Wunused:-synthetics"
           ),
-          SettingKey(Some(scala300), None) := Seq[Const]("-Yretain-trees", "-language:3.2") ++ Defaults.Scala3Options,
+          SettingKey(Some(scala300), None) := Seq[Const](
+            "-Yretain-trees", // FIXME required
+            "-language:3.2",
+          ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
+        "scalacOptions" += "-Wconf:msg=msg=legacy-binding:silent",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
-        "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
+        "scalacOptions" += "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
         "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
-        "scalacOptions" += "-Wconf:msg=is.eta.expanded.even.though:silent",
+        "scalacOptions" += "-Wconf:cat=lint-eta-sam:silent",
         "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,

@@ -18,6 +18,8 @@ private[izumi] object __QuasiAsyncPlatformSpecific {
     Lifecycle
       .fromExecutorService {
         Executors.newFixedThreadPool(max, factory)
-      }.map(ExecutionContext.fromExecutorService)
+      }.map[ /* Scala 3.2.2 inference bug */ Identity[_] /* Scala 3.2.2 inference bug */, ExecutionContext] {
+        ExecutionContext.fromExecutorService
+      }
   }
 }
