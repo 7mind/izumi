@@ -53,6 +53,12 @@ Add the `distage-core` library:
   version="$izumi.version$"
 }
 
+If you're using Scala 3 you **must** enable `-Yretain-trees` for this library to work correctly:
+
+```scala
+// REQUIRED options for Scala 3
+scalacOptions += "-Yretain-trees"
+```
 
 ### Hello World example
 
