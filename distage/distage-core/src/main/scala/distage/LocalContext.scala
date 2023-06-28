@@ -16,8 +16,8 @@ class LocalContext[F[_]: QuasiIO: TagK](parent: Locator, plan: Plan, values: Map
   }
 
   final def produceRun[A](function: Functoid[F[A]]): F[A] = {
-    val u: PartialFunction[ImportDependency, LocalInstance[AnyRef]] = values.get.unlift.compose(PartialFunction.fromFunction((i: ImportDependency) => i.target))
-    val imported = plan.resolveImports(u)
+    val lookup = values.get.unlift.compose(PartialFunction.fromFunction((i: ImportDependency) => i.target))
+    val imported = plan.resolveImports(lookup)
     Injector.inherit(parent).produce(imported).run(function)
   }
 }
