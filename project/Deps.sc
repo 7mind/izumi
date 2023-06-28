@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.97`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.99`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -83,7 +83,7 @@ object Izumi {
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
     final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm
-    final val pureconfig_generic_base = Library("com.github.pureconfig", "pureconfig-generic-base", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
+    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
       ScalaVersionScope.AllScala2
     )
     final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
@@ -149,7 +149,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.18")
-  final val scala213 = ScalaVersion("2.13.10")
+  final val scala213 = ScalaVersion("2.13.11")
   final val scala300 = ScalaVersion("3.2.2")
 
   object Groups {
@@ -293,15 +293,19 @@ object Izumi {
           SettingKey(Some(scala213), None) := Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const](
             "-Wunused:-synthetics"
           ),
-          SettingKey(Some(scala300), None) := Seq[Const]("-Yretain-trees", "-language:3.2") ++ Defaults.Scala3Options,
+          SettingKey(Some(scala300), None) := Seq[Const](
+            "-Yretain-trees", // FIXME required
+            "-language:3.2",
+          ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
+        "scalacOptions" += "-Wconf:msg=msg=legacy-binding:silent",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
-        "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
+        "scalacOptions" += "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
         "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
-        "scalacOptions" += "-Wconf:msg=is.eta.expanded.even.though:silent",
+        "scalacOptions" += "-Wconf:cat=lint-eta-sam:silent",
         "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
@@ -550,7 +554,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_core, pureconfig_generic_base, magnolia) ++ Seq(scala_reflect),
+        libs = Seq(pureconfig_core, pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.cross3,
