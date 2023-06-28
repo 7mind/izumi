@@ -2,6 +2,7 @@ package izumi.distage.model.definition.dsl
 
 import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, ZEnvConstructor}
 import LifecycleAdapters.LifecycleTag
+import izumi.distage.LocalContext
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
@@ -106,6 +107,8 @@ object ModuleDefDSL {
 
     final def from[I <: T: Tag](function: => I): AfterBind =
       from(Functoid.lift(function))
+
+    final def fromModule(module: ModuleBase)(implicit ev: T <:< LocalContext): AfterBind = ???
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))

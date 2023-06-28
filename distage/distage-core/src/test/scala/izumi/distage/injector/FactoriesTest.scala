@@ -1,9 +1,11 @@
 package izumi.distage.injector
 
 import distage.{ModuleDef, TagKK, With}
+import izumi.distage.LocalContext
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases.*
 import izumi.distage.model.PlannerInput
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -20,6 +22,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
       makeFactory[OverridingFactory]
       makeFactory[AssistedFactory]
       makeFactory[AbstractFactory]
+      make[LocalContext[Identity]].from()
     })
 
     val injector = mkNoCyclesInjector()
