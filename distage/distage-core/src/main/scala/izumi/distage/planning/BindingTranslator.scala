@@ -90,6 +90,9 @@ object BindingTranslator {
 
         case w: Reference =>
           WiringOp.ReferenceKey(target, w, userBinding)
+
+        case w: PrepareLocalContext =>
+          WiringOp.LocalContext(target, w, userBinding)
       }
     }
 
@@ -116,6 +119,8 @@ object BindingTranslator {
 
         case r: ImplDef.ReferenceImpl =>
           SingletonWiring.Reference(r.implType, r.key, r.weak)
+        case c: ImplDef.ContextImpl =>
+          SingletonWiring.PrepareLocalContext(c.function, c.module, c.implType)
       }
     }
 

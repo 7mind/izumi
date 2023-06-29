@@ -1,14 +1,13 @@
 package izumi.distage
 
 import izumi.distage.model.definition.Identifier
-import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.Tag
 
-trait AnyLocalContext {}
-trait LocalContext[F[_]] extends AnyLocalContext {
-  def add[T <: AnyRef: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F]
-  def add[T <: AnyRef: Tag](id: Identifier, value: T)(implicit pos: CodePositionMaterializer): LocalContext[F]
-  def produceRun[A](function: Functoid[F[A]]): F[A]
+trait AnyLocalContext[F[_]]
 
+trait LocalContext[F[_], R] extends AnyLocalContext[F] {
+  def add[T <: AnyRef: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R]
+  def add[T <: AnyRef: Tag](id: Identifier, value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R]
+  def produceRun(): F[R]
 }

@@ -11,7 +11,10 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
   "support local contexts" in {
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[LocalContext[Identity]].fromModule(new ModuleDef {})
+      make[LocalContext[Identity, Unit]].named("test").fromModule(new ModuleDef {}).running {
+        () =>
+          println("hi")
+      }
     })
 
     val injector = mkNoCyclesInjector()

@@ -136,6 +136,8 @@ class ProxyStrategyDefaultImpl(
         Right(op.target.tpe)
       case op: WiringOp.UseInstance =>
         Left(UnsupportedProxyOp(op))
+      case op: WiringOp.LocalContext =>
+        Left(UnsupportedProxyOp(op))
       case op: WiringOp.ReferenceKey =>
         Left(UnsupportedProxyOp(op))
     }

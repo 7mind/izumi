@@ -90,6 +90,7 @@ object BootstrapLocator {
     instanceStrategy = new InstanceStrategyDefaultImpl,
     effectStrategy = new EffectStrategyDefaultImpl,
     resourceStrategy = new ResourceStrategyDefaultImpl,
+    contextStrategy = new ContextStrategyDefaultImpl,
   )
 
   private final val bootstrapProducer: PlanInterpreter = {
@@ -125,6 +126,7 @@ object BootstrapLocator {
     make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
+    make[ContextStrategy].from[ContextStrategyDefaultImpl]
     make[EffectStrategy].from[EffectStrategyDefaultImpl]
     make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
 

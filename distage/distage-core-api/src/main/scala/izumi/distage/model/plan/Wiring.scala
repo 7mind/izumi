@@ -1,5 +1,6 @@
 package izumi.distage.model.plan
 
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, Provider, SafeType}
 
 sealed trait Wiring {
@@ -23,6 +24,16 @@ object Wiring {
       override def replaceKeys(f: DIKey => DIKey): Function = {
         this.copy(provider = this.provider.replaceKeys(f))
       }
+    }
+
+    final case class PrepareLocalContext(provider: Provider, module: ModuleBase, implType: SafeType) extends SingletonWiring {
+      override def instanceType: SafeType = implType
+
+      override def requiredKeys: Set[DIKey] = Set.empty
+
+      override def associations: Seq[LinkedParameter] = Seq.empty
+
+      override def replaceKeys(f: DIKey => DIKey): PrepareLocalContext = this
     }
 
     final case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends SingletonWiring {

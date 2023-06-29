@@ -1,6 +1,6 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.LocalContext
+import izumi.distage.AnyLocalContext
 import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
@@ -16,6 +16,7 @@ import izumi.reflect.{Tag, TagK}
 import zio.*
 import zio.managed.ZManaged
 
+import scala.annotation.unused
 import scala.collection.immutable.HashSet
 
 /**
@@ -108,7 +109,8 @@ object ModuleDefDSL {
     final def from[I <: T: Tag](function: => I): AfterBind =
       from(Functoid.lift(function))
 
-    final def fromModule[F[_]: TagK](module: ModuleBase)(implicit ev: T =:= LocalContext[F]): AfterBind = ???
+    final def fromModule[F[_]](module: ModuleBase)(implicit ev: T <:< AnyLocalContext[F]): LocalContextDSL[F, AfterBind] =
+      new LocalContextDSL[F, AfterBind](module, bind)
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
@@ -845,6 +847,12 @@ object ModuleDefDSL {
     private[this] def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
       val newState = mutableCursor.append(op)
       new MultiSetElementDSL[T](mutableState, newState)
+    }
+  }
+
+  final class LocalContextDSL[F[_], AfterBind](module: ModuleBase, bind: ImplDef => AfterBind) {
+    def running[R](function: Functoid[F[R]])(implicit @unused ev: TagK[F]): AfterBind = {
+      bind(ImplDef.ContextImpl(function.get.ret, function.get, module))
     }
   }
 

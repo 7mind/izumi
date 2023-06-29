@@ -64,6 +64,8 @@ object OpFormatter {
 
             case w: WiringOp =>
               w match {
+                case LocalContext(target, wiring, origin) =>
+                  formatProviderOp(target, wiring, origin, deferred)
                 case CallProvider(target, wiring, origin) =>
                   formatProviderOp(target, wiring, origin, deferred)
                 case UseInstance(target, wiring, origin) =>
@@ -147,6 +149,9 @@ object OpFormatter {
       deps match {
         case f: Function =>
           doFormat(formatFunction(f.provider), f.associations.map(formatDependency(deferred)), "call", ('(', ')'), ('{', '}'))
+
+        case f: PrepareLocalContext =>
+          doFormat(formatFunction(f.provider), f.associations.map(formatDependency(deferred)), "context", ('(', ')'), ('{', '}'))
 
         case other @ (_: Effect | _: Resource | _: Instance | _: Reference) =>
           s"UNEXPECTED WIREABLE: $other"

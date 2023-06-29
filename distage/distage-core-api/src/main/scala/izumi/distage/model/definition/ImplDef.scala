@@ -15,6 +15,8 @@ object ImplDef {
   final case class ReferenceImpl(implType: SafeType, key: DIKey, weak: Boolean) extends DirectImplDef
   final case class InstanceImpl(implType: SafeType, instance: Any) extends DirectImplDef
   final case class ProviderImpl(implType: SafeType, function: Provider) extends DirectImplDef
+  final case class ContextImpl(implType: SafeType, function: Provider, module: ModuleBase) extends DirectImplDef
+
 
   sealed trait RecursiveImplDef extends ImplDef
   final case class EffectImpl(implType: SafeType, effectHKTypeCtor: SafeType, effectImpl: DirectImplDef) extends RecursiveImplDef
