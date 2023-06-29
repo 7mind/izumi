@@ -109,7 +109,7 @@ object ModuleDefDSL {
     final def from[I <: T: Tag](function: => I): AfterBind =
       from(Functoid.lift(function))
 
-    final def fromModule[F[_]](module: ModuleBase)(implicit ev: T <:< AnyLocalContext[F]): LocalContextDSL[F, AfterBind] =
+    final def fromModule[F[_]](module: ModuleBase)(implicit @unused ev: T <:< AnyLocalContext[F]): LocalContextDSL[F, AfterBind] =
       new LocalContextDSL[F, AfterBind](module, bind)
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
@@ -851,7 +851,7 @@ object ModuleDefDSL {
   }
 
   final class LocalContextDSL[F[_], AfterBind](module: ModuleBase, bind: ImplDef => AfterBind) {
-    def running[R](function: Functoid[F[R]])(implicit @unused ev: TagK[F]): AfterBind = {
+    def running[R](function: Functoid[F[R]]): AfterBind = {
       bind(ImplDef.ContextImpl(function.get.ret, function, module))
     }
   }
