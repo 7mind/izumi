@@ -10,9 +10,10 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
 
   "support local contexts" in {
     val definition = PlannerInput.everything(new ModuleDef {
+      make[LocalContextTest.Summator]
       make[LocalContext[Identity, Int]].named("test").fromModule(new ModuleDef {}).running {
-        (locval: Int) =>
-          1 + locval
+        (locval: Int, summator: LocalContextTest.Summator) =>
+          summator.sum(locval)
       }
     })
 
@@ -21,8 +22,14 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
     val context = injector.produce(plan).unsafeGet()
 
     val local = context.get[LocalContext[Identity, Int]]("test")
-    val out = local.add[Int](42).produceRun()
-    assert(out == 1 + 42)
+    val out = local.add[Int](1).produceRun()
+    assert(out == 43)
   }
 
+}
+
+object LocalContextTest {
+  class Summator {
+    def sum(i: Int): Int = i + 42
+  }
 }
