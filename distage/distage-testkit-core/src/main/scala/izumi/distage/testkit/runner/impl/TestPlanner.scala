@@ -16,6 +16,7 @@ import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
 import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestkitLogging}
+import izumi.distage.testkit.spec.DistageTestEnv
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
@@ -167,11 +168,15 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private lazy val allowedKeyVariations = {
+  // FIXME: this shit is too fragile, this needs to be solved properly
+  private lazy val allowedKeyVariations: Set[DIKey] = {
     // FIXME: remove IzLogger dependency in `ResourceRewriter` and stop inserting LogstageModule in bootstrap
     val hackyKeys = Set(DIKey[LogRouter])
     // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
-    BootstrapLocator.selfReflectionKeys ++ hackyKeys
+    BootstrapLocator.selfReflectionKeys ++
+    // test runtime adds more informative bootstrap keys:
+    DistageTestEnv.testkitBootstrapReflectiveKeys ++
+    hackyKeys
   }
 
   private def prepareGroupPlans(
