@@ -9,11 +9,10 @@ import org.scalatest.wordspec.AnyWordSpec
 class LocalContextTest extends AnyWordSpec with MkInjector {
 
   "support local contexts" in {
-
     val definition = PlannerInput.everything(new ModuleDef {
-      make[LocalContext[Identity, Unit]].named("test").fromModule(new ModuleDef {}).running {
-        () =>
-          println("hi")
+      make[LocalContext[Identity, Int]].named("test").fromModule(new ModuleDef {}).running {
+        (locval: Int) =>
+          1 + locval
       }
     })
 
@@ -21,7 +20,9 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    println(context)
+    val local = context.get[LocalContext[Identity, Int]]("test")
+    val out = local.add[Int](42).produceRun()
+    assert(out == 1 + 42)
   }
 
 }

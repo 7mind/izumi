@@ -852,7 +852,7 @@ object ModuleDefDSL {
 
   final class LocalContextDSL[F[_], AfterBind](module: ModuleBase, bind: ImplDef => AfterBind) {
     def running[R](function: Functoid[F[R]])(implicit @unused ev: TagK[F]): AfterBind = {
-      bind(ImplDef.ContextImpl(function.get.ret, function.get, module))
+      bind(ImplDef.ContextImpl(function.get.ret, function, module))
     }
   }
 

@@ -151,7 +151,7 @@ object OpFormatter {
           doFormat(formatFunction(f.provider), f.associations.map(formatDependency(deferred)), "call", ('(', ')'), ('{', '}'))
 
         case f: PrepareLocalContext =>
-          doFormat(formatFunction(f.provider), f.associations.map(formatDependency(deferred)), "context", ('(', ')'), ('{', '}'))
+          doFormat(formatFunction(f.provider.get), f.associations.map(formatDependency(deferred)), "context", ('(', ')'), ('{', '}'))
 
         case other @ (_: Effect | _: Resource | _: Instance | _: Reference) =>
           s"UNEXPECTED WIREABLE: $other"

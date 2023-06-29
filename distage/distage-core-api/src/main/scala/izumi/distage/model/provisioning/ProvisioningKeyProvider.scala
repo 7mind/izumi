@@ -1,5 +1,6 @@
 package izumi.distage.model.provisioning
 
+import izumi.distage.model.plan.Plan
 import izumi.distage.model.reflection.DIKey
 
 import scala.collection.Map
@@ -22,4 +23,6 @@ trait ProvisioningKeyProvider {
   def narrow(allRequiredKeys: Set[DIKey]): ProvisioningKeyProvider
 
   def instances: Map[DIKey, Any]
+
+  def plan: Plan
 }

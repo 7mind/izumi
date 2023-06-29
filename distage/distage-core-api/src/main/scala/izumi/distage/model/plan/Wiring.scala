@@ -1,13 +1,21 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.plan.ExecutableOp.AddRecursiveLocatorRef
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, Provider, SafeType}
 
 sealed trait Wiring {
   def instanceType: SafeType
-  def associations: Seq[LinkedParameter]
   def replaceKeys(f: DIKey => DIKey): Wiring
   def requiredKeys: Set[DIKey]
+
+  /**
+    * TODO: this is only used in cycle resolved and, probably, might be removed
+    * @return
+    */
+  def associations: Seq[LinkedParameter]
+
 }
 
 object Wiring {
@@ -26,10 +34,10 @@ object Wiring {
       }
     }
 
-    final case class PrepareLocalContext(provider: Provider, module: ModuleBase, implType: SafeType) extends SingletonWiring {
+    final case class PrepareLocalContext(provider: Functoid[Any], module: ModuleBase, implType: SafeType) extends SingletonWiring {
       override def instanceType: SafeType = implType
 
-      override def requiredKeys: Set[DIKey] = Set.empty
+      override def requiredKeys: Set[DIKey] = Set(AddRecursiveLocatorRef.magicLocatorKey)
 
       override def associations: Seq[LinkedParameter] = Seq.empty
 
