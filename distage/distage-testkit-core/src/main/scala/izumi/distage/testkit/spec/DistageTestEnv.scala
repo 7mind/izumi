@@ -1,5 +1,6 @@
 package izumi.distage.testkit.spec
 
+import distage.DIKey
 import distage.plugins.PluginLoader
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ActivationChoicesExtractor
@@ -39,9 +40,7 @@ trait DistageTestEnv {
     val bootstrapModule = mergeStrategy.merge(bsPlugins.result) overriddenBy testConfig.bootstrapOverrides
     val availableActivations = new ActivationChoicesExtractor.Impl(testConfig.unusedValidAxisChoices).findAvailableChoices(appModule)
 
-    val bsModule = bootstrapModule overriddenBy new BootstrapModuleDef {
-      make[ActivationInfo].fromValue(availableActivations)
-    }
+    val bsModule = bootstrapModule overriddenBy DistageTestEnv.testkitBootstrapReflectiveModule(availableActivations)
 
     model.TestEnvironment(
       bsModule = bsModule,
@@ -90,4 +89,13 @@ object DistageTestEnv {
   }
 
   private[distage] final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
+
+  private[distage] def testkitBootstrapReflectiveModule(availableActivations: ActivationInfo): BootstrapModuleDef = new BootstrapModuleDef {
+    //     Update `testkitBootstrapReflectiveKeys` if you add anything here
+    make[ActivationInfo].fromValue(availableActivations)
+  }
+
+  lazy val testkitBootstrapReflectiveKeys: Set[DIKey] = {
+    testkitBootstrapReflectiveModule(ActivationInfo(Map.empty)).keys
+  }
 }
