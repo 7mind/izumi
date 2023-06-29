@@ -21,9 +21,12 @@ class ContextStrategyDefaultImpl extends ContextStrategy {
       case Some(value) =>
         val locatorRef = value.asInstanceOf[LocatorRef]
         val impl = op.wiring.provider.asInstanceOf[Functoid[F[Any]]]
-        val subplan = Injector().planUnsafe(PlannerInput(op.wiring.module, context.plan.input.activation, impl.get.diKeys.toSet))
-        val ctx = new LocalContextImpl[F, Any](locatorRef, subplan, impl, Map.empty)
-        F.pure(Right(Seq(NewObjectOp.UseInstance(op.target, ctx))))
+        F.pure((for {
+          subplan <- Injector().plan(PlannerInput(op.wiring.module, context.plan.input.activation, impl.get.diKeys.toSet))
+        } yield {
+          val ctx = new LocalContextImpl[F, Any](locatorRef, subplan, impl, Map.empty)
+          Seq(NewObjectOp.UseInstance(op.target, ctx))
+        }).left.map(err => ProvisionerIssue.LocalContextPlanningFailed(op.target, err)))
 
       case None =>
         F.pure(Left(MissingInstance(locatorKey)))
