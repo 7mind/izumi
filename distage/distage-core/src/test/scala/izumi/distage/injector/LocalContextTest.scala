@@ -2,7 +2,7 @@ package izumi.distage.injector
 
 import distage.{Activation, DIKey, Injector, ModuleDef, PlanVerifier}
 import izumi.distage.LocalContext
-import izumi.distage.injector.LocalContextTest.{LocalSummator, UselessDependency}
+import izumi.distage.injector.LocalContextTest.{LocalSummator, Summator, UselessDependency}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
@@ -13,7 +13,7 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
   "support local contexts" in {
     val module = new ModuleDef {
       make[UselessDependency]
-      make[LocalContextTest.Summator]
+      make[Summator]
 
       make[LocalContext[Identity, Int]]
         .named("test")
@@ -22,7 +22,7 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
         })
         .external(DIKey.get[Int])
         .running {
-          (summator: LocalContextTest.LocalSummator) =>
+          (summator: LocalSummator) =>
             summator.localSum
         }
     }
@@ -34,7 +34,10 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
     val context = injector.produce(plan).unsafeGet()
 
     val local = context.get[LocalContext[Identity, Int]]("test")
-    val out = local.add[Int](1).produceRun()
+    assert(context.find[UselessDependency].nonEmpty)
+    assert(context.find[Summator].nonEmpty)
+    assert(context.find[LocalSummator].isEmpty)
+    val out = local.provide[Int](1).produceRun()
     assert(out == 230)
 
     val result = PlanVerifier().verify[Identity](module, Roots.Everything, Injector.providedKeys(), Set.empty)

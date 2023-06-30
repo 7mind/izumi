@@ -15,7 +15,7 @@ class LocalContextImpl[F[_]: QuasiIO: TagK, R] private (
   functoid: Functoid[F[R]],
   values: Map[DIKey, LocalInstance[AnyRef]],
 ) extends LocalContext[F, R] {
-  final def add[T <: Any: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
+  final def provide[T <: Any: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
     val key = DIKey.get[T]
     doAdd(value.asInstanceOf[AnyRef], pos, key)
   }
