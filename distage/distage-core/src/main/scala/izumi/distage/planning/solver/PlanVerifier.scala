@@ -1,8 +1,8 @@
 package izumi.distage.planning.solver
 
 import distage.TagK
-import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
+import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.exceptions.PlanVerificationException
 import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp}
@@ -11,15 +11,15 @@ import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.PlanVerifier.PlanIssue.*
 import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
+import izumi.distage.planning.{BindingTranslator, LocalContextHandler}
 import izumi.distage.provisioning.strategies.ImportStrategyDefaultImpl
 import izumi.functional.IzEither.*
-import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet}
+import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
@@ -33,7 +33,7 @@ import scala.concurrent.duration.FiniteDuration
 class PlanVerifier(
   preps: GraphPreparations
 ) {
-  import scala.collection.compat._
+  import scala.collection.compat.*
 
   def verify[F[_]: TagK](
     bindings: ModuleBase,
@@ -41,7 +41,12 @@ class PlanVerifier(
     providedKeys: DIKey => Boolean,
     excludedActivations: Set[NonEmptySet[AxisPoint]],
   ): PlanVerifierResult = {
-    val ops = preps.computeOperationsUnsafe(bindings).toSeq
+    val ops = preps
+      .computeOperationsUnsafe(
+        new LocalContextHandler.VerificationHandler(this, excludedActivations),
+        bindings,
+      ).toSeq
+
     val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
       case (axis, points) =>
         (axis, points.map(_.value).toSet)

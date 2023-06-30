@@ -7,8 +7,8 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, Monadi
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
+import izumi.distage.planning.{BindingTranslator, LocalContextHandler}
 import izumi.fundamentals.collections.MutableMultiMap
 import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
@@ -21,7 +21,7 @@ class GraphPreparations(
   bindingTranslator: BindingTranslator
 ) {
 
-  import scala.collection.compat._
+  import scala.collection.compat.*
 
   def findWeakSetMembers(
     setOps: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
@@ -46,7 +46,7 @@ class GraphPreparations(
   }
 
   def executableOpIndex(matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp]): MutableMultiMap[DIKey, InstantiationOp] = {
-    import izumi.fundamentals.collections.IzCollections._
+    import izumi.fundamentals.collections.IzCollections.*
 
     matrix.links.map {
       case (successor, node) =>
@@ -67,7 +67,7 @@ class GraphPreparations(
         // TODO: should we remove roots which are retained by effective roots? see #1476
         roots.toSet
       case Roots.Everything =>
-        import izumi.fundamentals.collections.IzCollections._
+        import izumi.fundamentals.collections.IzCollections.*
         // this somehow duplicates plan.noSuccessors, though this happens BEFORE planning
         val dependees = allOps.flatMap {
           case (k, op) =>
@@ -107,13 +107,13 @@ class GraphPreparations(
       Node(Set(op.effectKey), op: InstantiationOp)
   }
 
-  def computeOperationsUnsafe(bindings: ModuleBase): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
+  def computeOperationsUnsafe(handler: LocalContextHandler, bindings: ModuleBase): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
     bindings.iterator
       // this is a minor optimization but it makes some conflict resolution strategies impossible
       // .filter(b => activationChoices.allValid(toAxis(b)))
       .flatMap {
         b =>
-          val next = bindingTranslator.computeProvisioning(b)
+          val next = bindingTranslator.computeProvisioning(handler, b)
           (next.provisions ++ next.sets.values).map((b, _))
       }
       .zipWithIndex

@@ -36,7 +36,7 @@ class PlannerDefaultImpl(
 
   override def planNoRewrite(input: PlannerInput): Either[List[DIError], Plan] = {
     for {
-      resolved <- resolver.resolveConflicts(input).left.map(e => e.map(ConflictResolutionFailed.apply))
+      resolved <- resolver.resolveConflicts(input, this).left.map(e => e.map(ConflictResolutionFailed.apply))
       plan <- preparePlan(resolved)
       withImports = addImports(plan, input.roots)
       withoutLoops <- forwardingRefResolver.resolveMatrix(withImports)

@@ -1,9 +1,10 @@
 package izumi.distage.injector
 
-import distage.{DIKey, ModuleDef}
+import distage.{DIKey, Injector, ModuleDef, PlanVerifier}
 import izumi.distage.LocalContext
 import izumi.distage.injector.LocalContextTest.LocalSummator
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -31,6 +32,9 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
     val local = context.get[LocalContext[Identity, Int]]("test")
     val out = local.add[Int](1).produceRun()
     assert(out == 142)
+
+    val result = PlanVerifier().verify[Identity](definition.bindings, Roots.Everything, Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
   }
 
 }
