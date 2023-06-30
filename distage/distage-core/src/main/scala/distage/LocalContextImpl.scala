@@ -8,7 +8,7 @@ import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 
-class LocalContextImpl[F[_]: QuasiIO: TagK, R](
+class LocalContextImpl[F[_]: QuasiIO: TagK, R] private (
   externalKeys: Set[DIKey],
   parent: LocatorRef,
   plan: Plan,
@@ -40,7 +40,11 @@ class LocalContextImpl[F[_]: QuasiIO: TagK, R](
   }
 
   override def produceRun(): F[R] = {
-    val lookup = (values.get _).unlift.compose(PartialFunction.fromFunction((i: ImportDependency) => i.target)).andThen(_.value)
+    val lookup: PartialFunction[ImportDependency, AnyRef] = {
+      case i: ImportDependency if values.contains(i.target) =>
+        values(i.target).value
+    }
+
     val imported = plan.resolveImports(lookup)
     Injector.inherit(parent.get).produce(imported).run(functoid)
 
@@ -48,5 +52,8 @@ class LocalContextImpl[F[_]: QuasiIO: TagK, R](
 }
 
 object LocalContextImpl {
+  def empty[F[_]: QuasiIO: TagK, R](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[F[R]]) =
+    new LocalContextImpl[F, R](externalKeys, locatorRef, subplan, impl, Map.empty)
+
   private case class LocalInstance[+T](value: T, position: CodePosition)
 }

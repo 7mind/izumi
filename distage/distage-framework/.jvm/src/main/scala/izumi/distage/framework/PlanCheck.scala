@@ -5,10 +5,10 @@ import izumi.distage.framework.model.{PlanCheckInput, PlanCheckResult}
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.planning.AxisPoint
+import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.fundamentals.collections.nonempty.NonEmptySet

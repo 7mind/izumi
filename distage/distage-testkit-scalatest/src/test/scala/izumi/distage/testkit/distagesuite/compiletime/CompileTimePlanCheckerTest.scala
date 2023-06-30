@@ -7,10 +7,8 @@ import com.github.pshirshov.test3.bootstrap.BootstrapFixture3.{BasicConfig, Boot
 import com.github.pshirshov.test3.plugins.Fixture3
 import izumi.distage.framework.model.exceptions.PlanCheckException
 import izumi.distage.framework.{PlanCheck, PlanCheckConfig}
-import izumi.distage.model.planning.AxisPoint
+import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue.UnsaturatedAxis
 import izumi.distage.roles.test.{TestEntrypoint, TestEntrypointPatchedLeak}
 import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.language.literals.{LiteralBoolean, LiteralString}
@@ -304,7 +302,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     assert(res.verificationFailed)
     assert(res.maybeError.get.isRight)
     assert(res.issues.fromNonEmptySet.forall {
-      case UnsaturatedAxis(_, _, missingAxisValues) => missingAxisValues == NonEmptySet(AxisPoint("mode" -> "test"))
+      case PlanIssue.UnsaturatedAxis(_, _, missingAxisValues) => missingAxisValues == NonEmptySet(AxisPoint("mode" -> "test"))
       case _ => false
     })
   }

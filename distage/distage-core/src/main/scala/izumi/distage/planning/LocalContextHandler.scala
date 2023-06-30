@@ -2,9 +2,10 @@ package izumi.distage.planning
 
 import distage.Roots
 import izumi.distage.model.definition.ImplDef
+import izumi.distage.model.exceptions.planning.LocalContextVerificationFailed
 import izumi.distage.model.plan.Wiring
 import izumi.distage.model.plan.Wiring.SingletonWiring
-import izumi.distage.model.planning.AxisPoint
+import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
@@ -36,14 +37,14 @@ object LocalContextHandler {
           val issues = incorrect.issues.value.toSet
 
           val missingImports = issues.collect {
-            case issue: PlanVerifier.PlanIssue.MissingImport =>
+            case issue: PlanIssue.MissingImport =>
               issue.key
           }
 
-          if (issues.forall(_.isInstanceOf[PlanVerifier.PlanIssue.MissingImport])) {
+          if (issues.forall(_.isInstanceOf[PlanIssue.MissingImport])) {
             SingletonWiring.PrepareLocalContext(c.function, c.module, c.implType, c.externalKeys, missingImports)
           } else {
-            throw new RuntimeException(s"Subcontext validation failed: $incorrect") // TODO
+            throw new LocalContextVerificationFailed(s"Subcontext validation failed", c, issues) // TODO
           }
 
         case _: PlanVerifierResult.Correct =>

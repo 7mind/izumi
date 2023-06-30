@@ -9,7 +9,7 @@ import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.UserBinding
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue.*
+import izumi.distage.model.planning.PlanIssue.*
 import izumi.fundamentals.collections.nonempty.{NonEmptyMap, NonEmptySet}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
