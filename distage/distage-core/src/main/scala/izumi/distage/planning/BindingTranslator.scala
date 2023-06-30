@@ -4,8 +4,8 @@ import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBindin
 import izumi.distage.model.definition.{Binding, ImplDef}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan.Wiring
-import izumi.distage.model.plan.Wiring.SingletonWiring._
-import izumi.distage.model.plan.Wiring._
+import izumi.distage.model.plan.Wiring.*
+import izumi.distage.model.plan.Wiring.SingletonWiring.*
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator.NextOps
@@ -120,7 +120,11 @@ object BindingTranslator {
         case r: ImplDef.ReferenceImpl =>
           SingletonWiring.Reference(r.implType, r.key, r.weak)
         case c: ImplDef.ContextImpl =>
-          SingletonWiring.PrepareLocalContext(c.function, c.module, c.implType)
+//          SingletonWiring.PrepareLocalContext(c.function, c.module, c.implType)
+
+//          val localPlanner: Planner = Injector()
+//          localPlanner.planUnsafe(PlannerInput(c.module, activation, c.function.get.diKeys.toSet))
+          SingletonWiring.PrepareLocalContext(c.function, c.module, c.implType, c.externalKeys)
       }
     }
 

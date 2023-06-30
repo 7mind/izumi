@@ -3,18 +3,40 @@ package distage
 import distage.LocalContextImpl.LocalInstance
 import izumi.distage.LocalContext
 import izumi.distage.model.definition.Identifier
+import izumi.distage.model.exceptions.runtime.UndeclaredKeyException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 
-class LocalContextImpl[F[_]: QuasiIO: TagK, R](parent: LocatorRef, plan: Plan, functoid: Functoid[F[R]], values: Map[DIKey, LocalInstance[AnyRef]])
-  extends LocalContext[F, R] {
+class LocalContextImpl[F[_]: QuasiIO: TagK, R](
+  externalKeys: Set[DIKey],
+  parent: LocatorRef,
+  plan: Plan,
+  functoid: Functoid[F[R]],
+  values: Map[DIKey, LocalInstance[AnyRef]],
+) extends LocalContext[F, R] {
   final def add[T <: Any: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
-    new LocalContextImpl(parent, plan, functoid, values ++ Map(DIKey.get[T] -> LocalInstance(value.asInstanceOf[AnyRef], pos.get)))
+    val key = DIKey.get[T]
+    doAdd(value.asInstanceOf[AnyRef], pos, key)
+  }
+
+  private def doAdd(value: AnyRef, pos: CodePositionMaterializer, key: DIKey) = {
+    if (!externalKeys.contains(key)) {
+      throw new UndeclaredKeyException(s"Key $key is not declared as an external key for this local context. The key is declared at ${pos.get.position.toString}", key)
+    }
+
+    new LocalContextImpl(
+      externalKeys,
+      parent,
+      plan,
+      functoid,
+      values ++ Map(key -> LocalInstance(value, pos.get)),
+    )
   }
 
   final def add[T <: Any: Tag](id: Identifier, value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
-    new LocalContextImpl(parent, plan, functoid, values ++ Map(DIKey[T](id) -> LocalInstance(value.asInstanceOf[AnyRef], pos.get)))
+    val key = DIKey[T](id)
+    doAdd(value.asInstanceOf[AnyRef], pos, key)
   }
 
   override def produceRun(): F[R] = {
