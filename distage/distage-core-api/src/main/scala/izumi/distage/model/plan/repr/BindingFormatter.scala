@@ -35,7 +35,7 @@ object BindingFormatter {
           s"value($instance: $implType)"
         case ImplDef.ProviderImpl(_, function) =>
           s"call($function)"
-        case ImplDef.ContextImpl(_, function, _) =>
+        case ImplDef.ContextImpl(_, function, _, _) =>
           s"context($function)"
         case ImplDef.EffectImpl(_, effectHKTypeCtor, effectImpl) =>
           s"effect[$effectHKTypeCtor](${formatImplDef(effectImpl)})"

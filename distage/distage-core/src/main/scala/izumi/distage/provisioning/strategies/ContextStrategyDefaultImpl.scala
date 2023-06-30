@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import distage.{Injector, LocalContextImpl, LocatorRef, PlannerInput}
+import distage.{LocalContextImpl, LocatorRef, Planner, PlannerInput}
 import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.definition.errors.ProvisionerIssue.MissingInstance
 import izumi.distage.model.plan.ExecutableOp.{AddRecursiveLocatorRef, WiringOp}
@@ -10,7 +10,9 @@ import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.functional.quasi.QuasiIO
 import izumi.reflect.TagK
 
-class ContextStrategyDefaultImpl extends ContextStrategy {
+class ContextStrategyDefaultImpl(
+  planner: Planner
+) extends ContextStrategy {
   override def prepareContext[F[_]: TagK](
     context: ProvisioningKeyProvider,
     op: WiringOp.LocalContext,
@@ -22,7 +24,7 @@ class ContextStrategyDefaultImpl extends ContextStrategy {
         val locatorRef = value.asInstanceOf[LocatorRef]
         val impl = op.wiring.provider.asInstanceOf[Functoid[F[Any]]]
         F.pure((for {
-          subplan <- Injector().plan(PlannerInput(op.wiring.module, context.plan.input.activation, impl.get.diKeys.toSet))
+          subplan <- planner.plan(PlannerInput(op.wiring.module, context.plan.input.activation, impl.get.diKeys.toSet))
         } yield {
           val ctx = new LocalContextImpl[F, Any](locatorRef, subplan, impl, Map.empty)
           Seq(NewObjectOp.UseInstance(op.target, ctx))

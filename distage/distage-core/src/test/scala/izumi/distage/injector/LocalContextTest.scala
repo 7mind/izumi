@@ -1,6 +1,6 @@
 package izumi.distage.injector
 
-import distage.ModuleDef
+import distage.{DIKey, ModuleDef}
 import izumi.distage.LocalContext
 import izumi.distage.injector.LocalContextTest.LocalSummator
 import izumi.distage.model.PlannerInput
@@ -17,6 +17,7 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
         .fromModule(new ModuleDef {
           make[LocalSummator]
         })
+        .external(DIKey.get[Int])
         .running {
           (summator: LocalContextTest.LocalSummator) =>
             summator.localSum

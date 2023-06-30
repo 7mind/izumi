@@ -90,7 +90,7 @@ object BootstrapLocator {
     instanceStrategy = new InstanceStrategyDefaultImpl,
     effectStrategy = new EffectStrategyDefaultImpl,
     resourceStrategy = new ResourceStrategyDefaultImpl,
-    contextStrategy = new ContextStrategyDefaultImpl,
+    contextStrategy = new ContextStrategyDefaultImpl(bootstrapPlanner),
   )
 
   private final val bootstrapProducer: PlanInterpreter = {

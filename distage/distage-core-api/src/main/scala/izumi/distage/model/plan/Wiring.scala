@@ -34,7 +34,7 @@ object Wiring {
       }
     }
 
-    final case class PrepareLocalContext(provider: Functoid[Any], module: ModuleBase, implType: SafeType) extends SingletonWiring {
+    final case class PrepareLocalContext(provider: Functoid[Any], module: ModuleBase, implType: SafeType, externalKeys: Set[DIKey]) extends SingletonWiring {
       override def instanceType: SafeType = implType
 
       override def requiredKeys: Set[DIKey] = Set(AddRecursiveLocatorRef.magicLocatorKey)
