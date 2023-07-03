@@ -209,7 +209,7 @@ object Syntax3 {
 
   class PanicOps[FR[-_, +_, +_], -R, +E, +A](override protected[this] val r: FR[R, E, A])(implicit override protected[this] val F: Panic3[FR]) extends BracketOps(r)(F) {
     @inline final def sandbox: FR[R, Exit.Failure[E], A] = F.sandbox(r)
-    @inline final def sandboxExit: FR[R, Nothing, Exit[E, A]] = F.redeemPure(F.sandbox(r))(identity, Exit.Success(_))
+    @inline final def sandboxExit: FR[R, Nothing, Exit[E, A]] = F.sandboxExit(r)
 
     /**
       * Catch all _defects_ in this effect and convert them to Throwable

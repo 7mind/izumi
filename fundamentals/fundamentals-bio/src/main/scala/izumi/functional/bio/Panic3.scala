@@ -88,6 +88,10 @@ trait Panic3[F[-_, +_, +_]] extends Bracket3[F] with PanicSyntax {
   @inline final def orTerminate[R, A](r: F[R, Throwable, A]): F[R, Nothing, A] = {
     catchAll(r)(terminate(_))
   }
+
+  @inline final def sandboxExit[R, E, A](r: F[R, E, A]): F[R, Nothing, Exit[E, A]] = {
+    redeemPure(sandbox(r))(identity, Exit.Success(_))
+  }
 }
 
 private[bio] sealed trait PanicSyntax
