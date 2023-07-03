@@ -175,7 +175,8 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
 
   }
 
-  "Issues https://github.com/zio/zio/issues/5459 https://github.com/zio/zio/issues/3100 https://github.com/zio/zio/issues/3065 https://github.com/zio/zio/issues/1764 leaking 'interruption inheritance' into BIO" should {
+  "Issue https://github.com/zio/zio/issues/8243 leaking 'interruption inheritance' into BIO" should {
+    // related issues https://github.com/zio/zio/issues/5459 https://github.com/zio/zio/issues/3100 https://github.com/zio/zio/issues/3065 https://github.com/zio/zio/issues/1764
 
     "F.timeout in uninterruptible region is correctly not interrupted when parent is interrupted" in {
       import scala.concurrent.duration.*
