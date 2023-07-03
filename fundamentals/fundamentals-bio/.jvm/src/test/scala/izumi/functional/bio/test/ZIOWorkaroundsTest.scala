@@ -1,17 +1,17 @@
 package izumi.functional.bio.test
 
 import izumi.functional.bio.*
+import org.scalatest.Assertion
 import org.scalatest.wordspec.AnyWordSpec
 import zio.ZIO
 
 class ZIOWorkaroundsTest extends AnyWordSpec {
 
+  val runtime = UnsafeRun2.createZIO()
+
   "Issue https://github.com/zio/zio/issues/6911" should {
 
-    val runtime = zio.Runtime.default
-    implicit val unsafe: zio.Unsafe = zio.Unsafe.unsafe(identity)
-
-    "not reproduce with F.parTraverse" in runtime.unsafe.run {
+    "not reproduce with F.parTraverse" in runtime.unsafeRun {
       F.parTraverse(
         List(
           F.unit.forever,
@@ -25,7 +25,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.parTraverse_" in runtime.unsafe.run {
+    "not reproduce with F.parTraverse_" in runtime.unsafeRun {
       F.parTraverse_(
         List(
           F.unit.forever,
@@ -39,7 +39,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.parTraverseN" in runtime.unsafe.run {
+    "not reproduce with F.parTraverseN" in runtime.unsafeRun {
       F.parTraverseN(2)(
         List(
           F.unit.forever,
@@ -53,7 +53,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.parTraverseN_" in runtime.unsafe.run {
+    "not reproduce with F.parTraverseN_" in runtime.unsafeRun {
       F.parTraverseN_(2)(
         List(
           F.unit.forever,
@@ -67,7 +67,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.race" in runtime.unsafe.run {
+    "not reproduce with F.race" in runtime.unsafeRun {
       F.race(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -80,7 +80,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.racePairUnsafe" in runtime.unsafe.run {
+    "not reproduce with F.racePairUnsafe" in runtime.unsafeRun {
       F.racePairUnsafe(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -92,7 +92,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.zipWithPar" in runtime.unsafe.run {
+    "not reproduce with F.zipWithPar" in runtime.unsafeRun {
       F.zipWithPar(
         F.unit.forever.widen[Unit],
         F.terminate(new RuntimeException("testexception")).widen[Unit],
@@ -104,7 +104,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.zipPar" in runtime.unsafe.run {
+    "not reproduce with F.zipPar" in runtime.unsafeRun {
       F.zipPar(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -116,7 +116,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.zipParLeft" in runtime.unsafe.run {
+    "not reproduce with F.zipParLeft" in runtime.unsafeRun {
       F.zipParLeft(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -128,7 +128,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.zipParRight" in runtime.unsafe.run {
+    "not reproduce with F.zipParRight" in runtime.unsafeRun {
       F.zipParRight(
         F.unit.forever,
         F.terminate(new RuntimeException("testexception")),
@@ -140,7 +140,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "guaranteeExceptOnInterrupt works correctly" in runtime.unsafe.run {
+    "guaranteeExceptOnInterrupt works correctly" in runtime.unsafeRun {
       for {
         succRes <- F.mkRef(Option.empty[Boolean])
         failRes <- F.mkRef(Option.empty[Boolean])
@@ -171,6 +171,130 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
 
         results <- F.traverse(List(succRes, failRes, terminateRes, innerInterruptRes, parTraverseRes, outerInterruptRes1, outerInterruptRes2))(_.get)
       } yield assert(results == List(Some(true), Some(true), Some(true), Some(true), Some(true), None, Some(true)))
+    }
+
+  }
+
+  "Issues https://github.com/zio/zio/issues/5459 https://github.com/zio/zio/issues/3100 https://github.com/zio/zio/issues/3065 https://github.com/zio/zio/issues/1764 leaking 'interruption inheritance' into BIO" should {
+
+    "F.timeout in uninterruptible region is correctly not interrupted when parent is interrupted" in {
+      import scala.concurrent.duration.*
+
+      def test[F[+_, +_]: Async2: Temporal2: Primitives2: Fork2]: F[Nothing, Assertion] = {
+        for {
+          fiberStarted <- F.mkLatch
+          stopFiber <- F.mkLatch
+          innerFiberNotInterrupted <- F.mkLatch
+          fiberNotInterrupted1 <- F.mkRef(false)
+          fiberNotInterrupted2 <- F.mkRef(Option.empty[Boolean])
+          fiber <- F.fork {
+            F.uninterruptible(
+              F.timeout(5.hours)(
+                (fiberStarted.succeed(()) *>
+                F.sleep(1.second) *>
+                stopFiber.await *>
+                innerFiberNotInterrupted.succeed(()))
+                  .guaranteeExceptOnInterrupt(_ => fiberNotInterrupted1.set(true))
+              ).flatMap(promiseModifiedOrTimedOut => fiberNotInterrupted2.set(promiseModifiedOrTimedOut))
+            )
+          }
+          _ <- fiberStarted.await
+          innerIsNotInterrupted <- fiber.interrupt
+            .as(false)
+            .race(
+              F.sleep(1.second) *>
+              stopFiber.succeed(()) *>
+              innerFiberNotInterrupted.await.as(true)
+            )
+          isNotInterrupted1 <- fiberNotInterrupted1.get
+          isNotInterrupted2 <- fiberNotInterrupted2.get
+        } yield assert(innerIsNotInterrupted && isNotInterrupted1 && (isNotInterrupted2 == Some(true)))
+      }
+
+      runtime.unsafeRun(test[zio.IO])
+    }
+
+    "F.race in uninterruptible region is correctly not interrupted when parent is interrupted" in {
+      import scala.concurrent.duration.*
+
+      def test[F[+_, +_]: Async2: Temporal2: Primitives2: Fork2]: F[Nothing, Assertion] = {
+        for {
+          fiberStarted <- F.mkLatch
+          stopFiber <- F.mkLatch
+          innerFiberNotInterrupted <- F.mkLatch
+          fiberNotInterrupted1 <- F.mkRef(false)
+          fiberNotInterrupted2 <- F.mkRef(Option.empty[Boolean])
+          fiber <- F.fork {
+            F.uninterruptible(
+              F.race(
+                r1 = (
+                  fiberStarted.succeed(()) *>
+                    F.sleep(1.second) *>
+                    stopFiber.await *>
+                    innerFiberNotInterrupted
+                      .succeed(())
+                      .map(Some(_))
+                ).guaranteeExceptOnInterrupt(_ => fiberNotInterrupted1.set(true)),
+                r2 = F.sleep(5.hours).as(None),
+              ).flatMap(promiseModifiedOrTimedOut => fiberNotInterrupted2.set(promiseModifiedOrTimedOut))
+            )
+          }
+          _ <- fiberStarted.await
+          innerIsNotInterrupted <- fiber.interrupt
+            .as(false)
+            .race(
+              F.sleep(1.second) *>
+              stopFiber.succeed(()) *>
+              innerFiberNotInterrupted.await.as(true)
+            )
+          isNotInterrupted1 <- fiberNotInterrupted1.get
+          isNotInterrupted2 <- fiberNotInterrupted2.get
+        } yield assert(innerIsNotInterrupted && isNotInterrupted1 && (isNotInterrupted2 == Some(true)))
+      }
+
+      runtime.unsafeRun(test[zio.IO])
+    }
+
+  }
+
+  "avoid sleep/race 'interruption inheritance' in ZIO" should {
+
+    "F.timeout interrupts the timed action correctly within an uninterruptible region" in {
+      import scala.concurrent.duration.*
+
+      def test[F[+_, +_]: Async2: Temporal2: Primitives2: Fork2]: F[String, Assertion] = {
+        for {
+          fiber <- F.fork {
+            F.uninterruptible(
+              F.timeout(1.seconds)(F.never)
+            )
+          }
+          res <- fiber.join.timeoutFail("timed out")(1.minute)
+        } yield assert(res.isEmpty)
+      }
+
+      runtime.unsafeRun(test[zio.IO])
+    }
+
+    "F.race interrupts the timed action correctly within an uninterruptible region" in {
+      import scala.concurrent.duration.*
+
+      def test[F[+_, +_]: Async2: Temporal2: Primitives2: Fork2]: F[String, Assertion] = {
+        for {
+          started <- F.mkLatch
+          finish <- F.mkLatch
+          fiber <- F.fork {
+            F.uninterruptible(
+              F.race(started.succeed(()) *> finish.await.as(1), F.never)
+            )
+          }
+          _ <- started.await
+          _ <- finish.succeed(())
+          res <- fiber.join.timeoutFail("timed out")(1.minute)
+        } yield assert(res == 1)
+      }
+
+      runtime.unsafeRun(test[zio.IO])
     }
 
   }

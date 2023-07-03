@@ -6,7 +6,7 @@ import cats.effect.testkit.TestInstances
 import cats.kernel.Order
 import izumi.functional.bio.Exit.{CatsExit, ZIOExit}
 import izumi.functional.bio.data.Morphism1
-import izumi.functional.bio.{Clock1, Clock2, IO2}
+import izumi.functional.bio.{Clock1, Clock2}
 import org.scalacheck.{Arbitrary, Cogen, Prop}
 import zio.{Clock, Duration, Executor, IO, Runtime, Scheduler, Task, Trace, UIO, Unsafe, ZIO, ZLayer}
 
