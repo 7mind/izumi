@@ -82,10 +82,10 @@ object __ZIORaceCompat {
 
         val parentRuntimeFlags = parentStatus.runtimeFlags
 
-        @inline def complete[E, E2, A, B](
-          winner: Fiber.Runtime[E, A],
-          loser: Fiber.Runtime[E2, B],
-          cont: (Fiber.Runtime[E, A], Fiber.Runtime[E2, B]) => ZIO[R, E3, C],
+        @inline def complete[EE, EE2, AA, BB](
+          winner: Fiber.Runtime[EE, AA],
+          loser: Fiber.Runtime[EE2, BB],
+          cont: (Fiber.Runtime[EE, AA], Fiber.Runtime[EE2, BB]) => ZIO[R, E3, C],
           ab: AtomicBoolean,
           cb: ZIO[R, E3, C] => Any,
         ): Any =
