@@ -1,6 +1,6 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.AnyLocalContext
+import izumi.distage.{AnyLocalContext, LocalContext}
 import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
@@ -11,6 +11,7 @@ import izumi.distage.model.definition.dsl.LifecycleAdapters.LifecycleTag
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 import zio.*
@@ -109,11 +110,35 @@ object ModuleDefDSL {
     final def from[I <: T: Tag](function: => I): AfterBind =
       from(Functoid.lift(function))
 
+    final def fromValue[I <: T: Tag](instance: I): AfterBind =
+      bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
+
+    /**
+      * Defines local context
+      */
     final def fromModule[F[_]](module: ModuleBase = ModuleBase.empty)(implicit @unused ev: T <:< AnyLocalContext[F]): LocalContextDSL[F, AfterBind] =
       new LocalContextDSL[F, AfterBind](module, Set.empty, bind)
 
-    final def fromValue[I <: T: Tag](instance: I): AfterBind =
-      bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
+    /**
+      * Defines local context with empty local module
+      */
+    final def external[F[_]](keys: DIKey*)(implicit @unused ev: T <:< AnyLocalContext[F]): LocalContextDSL[F, AfterBind] = {
+      new LocalContextDSL[F, AfterBind](Module.empty, keys.toSet, bind)
+    }
+
+    /**
+      * Defines local context with empty local module and local keys
+      */
+    def running[F[_], R](function: Functoid[F[R]])(implicit @unused ev: T =:= LocalContext[F, R]): AfterBind = {
+      new LocalContextDSL[F, AfterBind](Module.empty, Set.empty, bind).running(function)
+    }
+
+    /**
+      * Defines local context with empty local module and local keys, specialised for Identity
+      */
+    def running[R](function: Functoid[R])(implicit @unused ev: T =:= LocalContext[Identity, R], dummyImplicit: DummyImplicit): AfterBind = {
+      running[Identity, R](function)
+    }
 
     /**
       * A function that receives its arguments from DI object graph, including named instances via [[izumi.distage.model.definition.Id]] annotation.

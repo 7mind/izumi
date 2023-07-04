@@ -6,6 +6,7 @@ import izumi.distage.injector.LocalContextTest.{LocalSummator, Summator, Useless
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks
 import org.scalatest.wordspec.AnyWordSpec
 
 class LocalContextTest extends AnyWordSpec with MkInjector {
@@ -44,6 +45,37 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
     assert(result.issues.isEmpty)
   }
 
+  "support various local context syntax modes" in {
+    val module1 = new ModuleDef {
+      make[LocalContext[Identity, Int]]
+        .named("test")
+        .external(DIKey.get[Int])
+        .running {
+          (summator: LocalSummator) =>
+            summator.localSum
+        }
+    }
+
+    val module2 = new ModuleDef {
+      make[LocalContext[Identity, Int]]
+        .named("test")
+        .running {
+          (summator: LocalSummator) =>
+            summator.localSum
+        }
+    }
+
+    val module3 = new ModuleDef {
+      make[LocalContext[cats.effect.IO, Int]]
+        .named("test")
+        .running {
+          (summator: LocalSummator) =>
+            cats.effect.IO(summator.localSum)
+        }
+    }
+
+    Quirks.discard((module1, module2, module3))
+  }
 }
 
 object LocalContextTest {
