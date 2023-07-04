@@ -43,7 +43,7 @@ class PlanVerifier(
       .computeOperationsUnsafe(
         new LocalContextHandler.VerificationHandler(this, excludedActivations),
         bindings,
-      ).toSeq
+      ).right.get.toSeq
 
     val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
       case (axis, points) =>

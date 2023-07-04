@@ -2,6 +2,7 @@ package izumi.distage.planning.solver
 
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
+import izumi.distage.model.definition.errors.LocalContextFailure
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
@@ -9,6 +10,7 @@ import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.distage.planning.{BindingTranslator, LocalContextHandler}
+import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.MutableMultiMap
 import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
@@ -107,34 +109,37 @@ class GraphPreparations(
       Node(Set(op.effectKey), op: InstantiationOp)
   }
 
-  def computeOperationsUnsafe(handler: LocalContextHandler, bindings: ModuleBase): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
-    bindings.iterator
-      // this is a minor optimization but it makes some conflict resolution strategies impossible
-      // .filter(b => activationChoices.allValid(toAxis(b)))
-      .flatMap {
-        b =>
-          val next = bindingTranslator.computeProvisioning(handler, b)
-          (next.provisions ++ next.sets.values).map((b, _))
-      }
-      .zipWithIndex
-      .map {
-        case ((b, n), idx) =>
-          val mutIndex = b match {
-            case Binding.SingletonBinding(_, _, _, _, true) =>
-              Some(idx)
-            case _ =>
-              None
-          }
+  def computeOperationsUnsafe(
+    handler: LocalContextHandler,
+    bindings: ModuleBase,
+  ): Either[List[LocalContextFailure], Iterator[(Annotated[DIKey], InstantiationOp, Binding)]] = {
 
-          val axis = n match {
-            case _: CreateSet =>
-              Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
-            case _ =>
-              getAxisPoints(b)
-          }
+    for {
+      translated <- bindings.iterator
+        // this is a minor optimization but it makes some conflict resolution strategies impossible
+        // .filter(b => activationChoices.allValid(toAxis(b)))
+        .map(b => bindingTranslator.computeProvisioning(handler, b).map(next => (b, next))).biAggregateScalar
+      bindingsToOps = translated.flatMap { case (b, next) => (next.provisions ++ next.sets.values).map((b, _)) }
+    } yield {
+      bindingsToOps.zipWithIndex
+        .map {
+          case ((b, n), idx) =>
+            val mutIndex = b match {
+              case Binding.SingletonBinding(_, _, _, _, true) =>
+                Some(idx)
+              case _ =>
+                None
+            }
 
-          (Annotated(n.target, mutIndex, axis), n, b)
-      }
+            val axis = n match {
+              case _: CreateSet =>
+                Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
+              case _ =>
+                getAxisPoints(b)
+            }
+            (Annotated(n.target, mutIndex, axis), n, b)
+        }
+    }
   }
 
   def computeSetsUnsafe(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Iterator[(DIKey, (CreateSet, Set[DIKey]))] = {

@@ -1,6 +1,7 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.errors.LocalContextFailure
 import izumi.distage.model.definition.{Binding, ImplDef}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan.Wiring
@@ -10,10 +11,8 @@ import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator.NextOps
 
-
-
 trait BindingTranslator {
-  def computeProvisioning(handler: LocalContextHandler, binding: Binding): NextOps
+  def computeProvisioning(handler: LocalContextHandler, binding: Binding): Either[LocalContextFailure, NextOps]
 }
 
 object BindingTranslator {
@@ -24,42 +23,54 @@ object BindingTranslator {
   )
 
   class Impl extends BindingTranslator {
-    def computeProvisioning(handler: LocalContextHandler, binding: Binding): NextOps = {
+    def computeProvisioning(handler: LocalContextHandler, binding: Binding): Either[LocalContextFailure, NextOps] = {
       binding match {
         case singleton: SingletonBinding[?] =>
-          NextOps(
-            sets = Map.empty,
-            provisions = provisionSingleton(handler, singleton),
-          )
+          for {
+            provisions <- provisionSingleton(handler, singleton)
+          } yield {
+            NextOps(
+              sets = Map.empty,
+              provisions = provisions,
+            )
+          }
 
         case set: SetElementBinding =>
           val target = set.key
           val elementKey = target
           val setKey = set.key.set
 
-          val next = computeProvisioning(handler, SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
-          val oldSet = next.sets.getOrElse(target, CreateSet(setKey, Set.empty, OperationOrigin.UserBinding(binding)))
-          val newSet = oldSet.copy(members = oldSet.members + elementKey)
+          for {
+            next <- computeProvisioning(handler, SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
+          } yield {
+            val oldSet = next.sets.getOrElse(target, CreateSet(setKey, Set.empty, OperationOrigin.UserBinding(binding)))
+            val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
-          NextOps(
-            sets = next.sets.updated(target, newSet),
-            provisions = next.provisions,
-          )
+            NextOps(
+              sets = next.sets.updated(target, newSet),
+              provisions = next.provisions,
+            )
+          }
 
         case set: EmptySetBinding[?] =>
           val newSet = CreateSet(set.key, Set.empty, OperationOrigin.UserBinding(binding))
 
-          NextOps(
-            sets = Map(set.key -> newSet),
-            provisions = Seq.empty,
+          Right(
+            NextOps(
+              sets = Map(set.key -> newSet),
+              provisions = Seq.empty,
+            )
           )
       }
     }
 
-    private[this] def provisionSingleton(handler: LocalContextHandler, binding: Binding.ImplBinding): Seq[InstantiationOp] = {
+    private[this] def provisionSingleton(handler: LocalContextHandler, binding: Binding.ImplBinding): Either[LocalContextFailure, Seq[InstantiationOp]] = {
       val target = binding.key
-      val wiring = implToWiring(handler, binding.implementation)
-      wiringToInstantiationOp(target, binding, wiring)
+      for {
+        wiring <- implToWiring(handler, binding.implementation)
+      } yield {
+        wiringToInstantiationOp(target, binding, wiring)
+      }
     }
 
     private[this] def wiringToInstantiationOp(target: DIKey, binding: Binding, wiring: Wiring): Seq[InstantiationOp] = {
@@ -98,29 +109,38 @@ object BindingTranslator {
       }
     }
 
-    private[this] def implToWiring(handler: LocalContextHandler, implementation: ImplDef): Wiring = {
+    private[this] def implToWiring(handler: LocalContextHandler, implementation: ImplDef): Either[LocalContextFailure, Wiring] = {
       implementation match {
         case d: ImplDef.DirectImplDef =>
           directImplToPureWiring(handler, d)
 
         case e: ImplDef.EffectImpl =>
-          MonadicWiring.Effect(e.implType, e.effectHKTypeCtor, directImplToPureWiring(handler, e.effectImpl))
+          for {
+            w <- directImplToPureWiring(handler, e.effectImpl)
+          } yield {
+            MonadicWiring.Effect(e.implType, e.effectHKTypeCtor, w)
+          }
 
         case r: ImplDef.ResourceImpl =>
-          MonadicWiring.Resource(r.implType, r.effectHKTypeCtor, directImplToPureWiring(handler, r.resourceImpl))
+          for {
+            w <- directImplToPureWiring(handler, r.resourceImpl)
+          } yield {
+            MonadicWiring.Resource(r.implType, r.effectHKTypeCtor, w)
+          }
       }
     }
 
-    private[this] def directImplToPureWiring(handler: LocalContextHandler, implementation: ImplDef.DirectImplDef): SingletonWiring = {
+    private[this] def directImplToPureWiring(handler: LocalContextHandler, implementation: ImplDef.DirectImplDef): Either[LocalContextFailure, SingletonWiring] = {
       implementation match {
         case p: ImplDef.ProviderImpl =>
-          Wiring.SingletonWiring.Function(p.function)
+          Right(Wiring.SingletonWiring.Function(p.function))
 
         case i: ImplDef.InstanceImpl =>
-          SingletonWiring.Instance(i.implType, i.instance)
+          Right(SingletonWiring.Instance(i.implType, i.instance))
 
         case r: ImplDef.ReferenceImpl =>
-          SingletonWiring.Reference(r.implType, r.key, r.weak)
+          Right(SingletonWiring.Reference(r.implType, r.key, r.weak))
+
         case c: ImplDef.ContextImpl =>
           handler.handle(c)
       }
