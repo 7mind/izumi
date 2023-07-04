@@ -39,62 +39,73 @@ class PlanVerifier(
     providedKeys: DIKey => Boolean,
     excludedActivations: Set[NonEmptySet[AxisPoint]],
   ): PlanVerifierResult = {
-    val ops = preps
-      .computeOperationsUnsafe(
-        new LocalContextHandler.VerificationHandler(this, excludedActivations),
-        bindings,
-      ).right.get.toSeq
-
-    val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
-      case (axis, points) =>
-        (axis, points.map(_.value).toSet)
-    }
-    val (mutators, defns) = ops.partition(_._3.isMutator)
-    val justOps = defns.map { case (k, op, _) => k -> op }
-
-    val setOps = preps
-      .computeSetsUnsafe(justOps)
-      .map {
-        case (k, (s, _)) =>
-          (Annotated(k, None, Set.empty), Node(s.members, s))
-
-      }.toMultimapView
-      .map {
-        case (k, v) =>
-          val members = v.flatMap(_.deps).toSet
-          (k, Node(members, v.head.meta.copy(members = members): InstantiationOp))
-      }
-      .toSeq
-
-    val opsMatrix: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps.toDeps(justOps)
-
-    val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(opsMatrix ++ setOps)
-
-    val matrixToTrace = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
-    val justMutators = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
-
-    val rootKeys: Set[DIKey] = preps.getRoots(roots, justOps)
-    val execOpIndex: MutableMultiMap[DIKey, InstantiationOp] = preps.executableOpIndex(matrix)
-
-    val mutVisited = mutable.HashSet.empty[(DIKey, Set[AxisPoint])]
-    val effectType = SafeType.getK[F]
-
     val before = System.currentTimeMillis()
     var after = before
-    val issues =
-      try {
-        trace(allAxis, mutVisited, matrixToTrace, execOpIndex, justMutators, providedKeys, excludedActivations, rootKeys, effectType, bindings)
-      } finally {
-        after = System.currentTimeMillis()
+
+    (for {
+      ops <- preps
+        .computeOperationsUnsafe(
+          new LocalContextHandler.VerificationHandler(this, excludedActivations),
+          bindings,
+        ).map(_.toSeq)
+    } yield {
+      val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
+        case (axis, points) =>
+          (axis, points.map(_.value).toSet)
       }
+      val (mutators, defns) = ops.partition(_._3.isMutator)
+      val justOps = defns.map { case (k, op, _) => k -> op }
 
-    val visitedKeys = mutVisited.map(_._1).toSet
-    val time = FiniteDuration(after - before, TimeUnit.MILLISECONDS)
+      val setOps = preps
+        .computeSetsUnsafe(justOps)
+        .map {
+          case (k, (s, _)) =>
+            (Annotated(k, None, Set.empty), Node(s.members, s))
 
-    NonEmptySet.from(issues) match {
-      case issues @ Some(_) => PlanVerifierResult.Incorrect(issues, visitedKeys, time)
-      case None => PlanVerifierResult.Correct(visitedKeys, time)
+        }.toMultimapView
+        .map {
+          case (k, v) =>
+            val members = v.flatMap(_.deps).toSet
+            (k, Node(members, v.head.meta.copy(members = members): InstantiationOp))
+        }
+        .toSeq
+
+      val opsMatrix: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps.toDeps(justOps)
+
+      val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(opsMatrix ++ setOps)
+
+      val matrixToTrace = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
+      val justMutators = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
+
+      val rootKeys: Set[DIKey] = preps.getRoots(roots, justOps)
+      val execOpIndex: MutableMultiMap[DIKey, InstantiationOp] = preps.executableOpIndex(matrix)
+
+      val mutVisited = mutable.HashSet.empty[(DIKey, Set[AxisPoint])]
+      val effectType = SafeType.getK[F]
+
+      val issues =
+        try {
+          trace(allAxis, mutVisited, matrixToTrace, execOpIndex, justMutators, providedKeys, excludedActivations, rootKeys, effectType, bindings)
+        } finally {
+          after = System.currentTimeMillis()
+        }
+
+      val visitedKeys = mutVisited.map(_._1).toSet
+      val time = FiniteDuration(after - before, TimeUnit.MILLISECONDS)
+
+      NonEmptySet.from(issues) match {
+        case issues @ Some(_) => PlanVerifierResult.Incorrect(issues, visitedKeys, time)
+        case None => PlanVerifierResult.Correct(visitedKeys, time)
+      }
+    }) match {
+      case Left(value) =>
+        after = System.currentTimeMillis()
+        val time = FiniteDuration(after - before, TimeUnit.MILLISECONDS)
+        val issues = value.map(f => PlanIssue.CantVerifyLocalContext(f)).toSet[PlanIssue]
+        PlanVerifierResult.Incorrect(Some(NonEmptySet.unsafeFrom(issues)), Set.empty, time)
+      case Right(value) => value
     }
+
   }
 
   protected[this] def trace(

@@ -1,12 +1,14 @@
 package izumi.distage.model.planning
 
 import izumi.distage.model.definition.Binding
+import izumi.distage.model.definition.errors.{DIError, LocalContextFailure}
 import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet}
 import izumi.fundamentals.platform.IzumiProject
+import izumi.fundamentals.platform.strings.IzString.*
 
 sealed abstract class PlanIssue {
   def key: DIKey
@@ -53,6 +55,10 @@ object PlanIssue {
 
   final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
 
+  final case class CantVerifyLocalContext(value: LocalContextFailure) extends PlanIssue {
+    override def key: DIKey = value.binding.key
+  }
+
   implicit class PlanIssueOps(private val issue: PlanIssue) extends AnyVal {
     def render: String = {
       issue match {
@@ -85,7 +91,16 @@ object PlanIssue {
           s"${i.key}: injector uses effect ${i.provisionerEffectType} but binding uses incompatible effect ${i.actionEffectType} $origin"
         case i: MissingImport =>
           i.toString
+        case l: CantVerifyLocalContext =>
+          val explanation = l.value match {
+            case s: LocalContextFailure.SubplanningFailure =>
+              s.errors.map(DIError.format).niceList()
+            case s: LocalContextFailure.VerificationFailure =>
+              s.errors.map(_.render).niceList()
+          }
+          s"${l.key}: verification failed for subcontext ${l.value.impl.implType}: $explanation"
       }
     }
   }
+
 }

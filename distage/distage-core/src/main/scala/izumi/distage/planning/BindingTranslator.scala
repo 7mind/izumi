@@ -67,7 +67,7 @@ object BindingTranslator {
     private[this] def provisionSingleton(handler: LocalContextHandler, binding: Binding.ImplBinding): Either[LocalContextFailure, Seq[InstantiationOp]] = {
       val target = binding.key
       for {
-        wiring <- implToWiring(handler, binding.implementation)
+        wiring <- implToWiring(handler, binding)
       } yield {
         wiringToInstantiationOp(target, binding, wiring)
       }
@@ -109,28 +109,32 @@ object BindingTranslator {
       }
     }
 
-    private[this] def implToWiring(handler: LocalContextHandler, implementation: ImplDef): Either[LocalContextFailure, Wiring] = {
-      implementation match {
+    private[this] def implToWiring(handler: LocalContextHandler, binding: Binding.ImplBinding): Either[LocalContextFailure, Wiring] = {
+      binding.implementation match {
         case d: ImplDef.DirectImplDef =>
-          directImplToPureWiring(handler, d)
+          directImplToPureWiring(handler, binding, d)
 
         case e: ImplDef.EffectImpl =>
           for {
-            w <- directImplToPureWiring(handler, e.effectImpl)
+            w <- directImplToPureWiring(handler, binding, e.effectImpl)
           } yield {
             MonadicWiring.Effect(e.implType, e.effectHKTypeCtor, w)
           }
 
         case r: ImplDef.ResourceImpl =>
           for {
-            w <- directImplToPureWiring(handler, r.resourceImpl)
+            w <- directImplToPureWiring(handler, binding, r.resourceImpl)
           } yield {
             MonadicWiring.Resource(r.implType, r.effectHKTypeCtor, w)
           }
       }
     }
 
-    private[this] def directImplToPureWiring(handler: LocalContextHandler, implementation: ImplDef.DirectImplDef): Either[LocalContextFailure, SingletonWiring] = {
+    private[this] def directImplToPureWiring(
+      handler: LocalContextHandler,
+      binding: Binding,
+      implementation: ImplDef.DirectImplDef,
+    ): Either[LocalContextFailure, SingletonWiring] = {
       implementation match {
         case p: ImplDef.ProviderImpl =>
           Right(Wiring.SingletonWiring.Function(p.function))
@@ -142,7 +146,7 @@ object BindingTranslator {
           Right(SingletonWiring.Reference(r.implType, r.key, r.weak))
 
         case c: ImplDef.ContextImpl =>
-          handler.handle(c)
+          handler.handle(binding, c)
       }
     }
 
