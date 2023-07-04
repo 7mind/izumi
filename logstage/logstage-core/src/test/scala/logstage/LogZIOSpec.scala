@@ -139,9 +139,10 @@ class LogZIOSpec extends AnyWordSpec {
     val logger = LogIO.fromLogger[UIO](
       IzLogger(Log.Level.Info, sink)
     )
-    runtime.unsafe.run {
-      thunk.provideEnvironment(ZEnvironment(logger))
-    }(implicitly, Unsafe.unsafe(identity))
+    runtime.unsafe
+      .run {
+        thunk.provideEnvironment(ZEnvironment(logger))
+      }(implicitly, Unsafe.unsafe(identity)).getOrThrowFiberFailure()(Unsafe.unsafe(identity))
     sink
   }
 }
