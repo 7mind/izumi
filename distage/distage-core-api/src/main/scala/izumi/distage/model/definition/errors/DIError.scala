@@ -134,10 +134,8 @@ object DIError {
       case CannotProcessLocalContext(problems) =>
         problems
           .map {
-            case l: LocalContextFailure.SubplanningFailure =>
+            (l: LocalContextPlanningFailure) =>
               s"Failed to plan local context ${l.impl.implType}: ${l.errors.map(format).niceList()}"
-            case l: LocalContextFailure.VerificationFailure =>
-              s"Failed to verify local context ${l.impl.implType}: ${l.errors.map(_.render).niceList()}"
           }.niceList()
     }
   }

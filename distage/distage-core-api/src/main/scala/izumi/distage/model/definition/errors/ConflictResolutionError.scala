@@ -13,7 +13,7 @@ object ConflictResolutionError {
 
   final case class UnsolvedConflicts[N](defs: Map[MutSel[N], Set[Annotated[N]]]) extends ConflictResolutionError[N, Nothing]
 
-  final case class CannotProcessLocalContext[N](problems: List[LocalContextFailure]) extends ConflictResolutionError[N, Nothing]
+  final case class CannotProcessLocalContext[N](problems: List[LocalContextPlanningFailure]) extends ConflictResolutionError[N, Nothing]
 
   final case class UnconfiguredAxisInMutators[N](problems: List[UnconfiguredMutatorAxis]) extends ConflictResolutionError[N, Nothing]
 

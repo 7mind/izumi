@@ -1,7 +1,7 @@
 package izumi.distage.model.planning
 
 import izumi.distage.model.definition.Binding
-import izumi.distage.model.definition.errors.{DIError, LocalContextFailure}
+import izumi.distage.model.definition.errors.LocalContextVerificationFailure
 import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -55,7 +55,7 @@ object PlanIssue {
 
   final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
 
-  final case class CantVerifyLocalContext(value: LocalContextFailure) extends PlanIssue {
+  final case class CantVerifyLocalContext(value: LocalContextVerificationFailure) extends PlanIssue {
     override def key: DIKey = value.binding.key
   }
 
@@ -92,12 +92,7 @@ object PlanIssue {
         case i: MissingImport =>
           i.toString
         case l: CantVerifyLocalContext =>
-          val explanation = l.value match {
-            case s: LocalContextFailure.SubplanningFailure =>
-              s.errors.map(DIError.format).niceList()
-            case s: LocalContextFailure.VerificationFailure =>
-              s.errors.map(_.render).niceList()
-          }
+          val explanation = l.value.errors.map(_.render).niceList()
           s"${l.key}: verification failed for subcontext ${l.value.impl.implType}: $explanation"
       }
     }

@@ -2,7 +2,6 @@ package izumi.distage.planning.solver
 
 import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
-import izumi.distage.model.definition.errors.LocalContextFailure
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
@@ -109,10 +108,10 @@ class GraphPreparations(
       Node(Set(op.effectKey), op: InstantiationOp)
   }
 
-  def computeOperationsUnsafe(
-    handler: LocalContextHandler,
+  def computeOperationsUnsafe[Err](
+    handler: LocalContextHandler[Err],
     bindings: ModuleBase,
-  ): Either[List[LocalContextFailure], Iterator[(Annotated[DIKey], InstantiationOp, Binding)]] = {
+  ): Either[List[Err], Iterator[(Annotated[DIKey], InstantiationOp, Binding)]] = {
 
     for {
       translated <- bindings.iterator

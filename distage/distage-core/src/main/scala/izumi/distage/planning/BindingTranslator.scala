@@ -1,7 +1,6 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.errors.LocalContextFailure
 import izumi.distage.model.definition.{Binding, ImplDef}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan.Wiring
@@ -12,7 +11,7 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator.NextOps
 
 trait BindingTranslator {
-  def computeProvisioning(handler: LocalContextHandler, binding: Binding): Either[LocalContextFailure, NextOps]
+  def computeProvisioning[Err](handler: LocalContextHandler[Err], binding: Binding): Either[Err, NextOps]
 }
 
 object BindingTranslator {
@@ -23,7 +22,7 @@ object BindingTranslator {
   )
 
   class Impl extends BindingTranslator {
-    def computeProvisioning(handler: LocalContextHandler, binding: Binding): Either[LocalContextFailure, NextOps] = {
+    def computeProvisioning[Err](handler: LocalContextHandler[Err], binding: Binding): Either[Err, NextOps] = {
       binding match {
         case singleton: SingletonBinding[?] =>
           for {
@@ -64,7 +63,7 @@ object BindingTranslator {
       }
     }
 
-    private[this] def provisionSingleton(handler: LocalContextHandler, binding: Binding.ImplBinding): Either[LocalContextFailure, Seq[InstantiationOp]] = {
+    private[this] def provisionSingleton[Err](handler: LocalContextHandler[Err], binding: Binding.ImplBinding): Either[Err, Seq[InstantiationOp]] = {
       val target = binding.key
       for {
         wiring <- implToWiring(handler, binding)
@@ -109,7 +108,7 @@ object BindingTranslator {
       }
     }
 
-    private[this] def implToWiring(handler: LocalContextHandler, binding: Binding.ImplBinding): Either[LocalContextFailure, Wiring] = {
+    private[this] def implToWiring[Err](handler: LocalContextHandler[Err], binding: Binding.ImplBinding): Either[Err, Wiring] = {
       binding.implementation match {
         case d: ImplDef.DirectImplDef =>
           directImplToPureWiring(handler, binding, d)
@@ -130,11 +129,11 @@ object BindingTranslator {
       }
     }
 
-    private[this] def directImplToPureWiring(
-      handler: LocalContextHandler,
+    private[this] def directImplToPureWiring[Err](
+      handler: LocalContextHandler[Err],
       binding: Binding,
       implementation: ImplDef.DirectImplDef,
-    ): Either[LocalContextFailure, SingletonWiring] = {
+    ): Either[Err, SingletonWiring] = {
       implementation match {
         case p: ImplDef.ProviderImpl =>
           Right(Wiring.SingletonWiring.Function(p.function))

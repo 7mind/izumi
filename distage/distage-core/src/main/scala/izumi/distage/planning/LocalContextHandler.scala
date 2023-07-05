@@ -1,8 +1,8 @@
 package izumi.distage.planning
 
 import distage.Roots
+import izumi.distage.model.definition.errors.{LocalContextPlanningFailure, LocalContextVerificationFailure}
 import izumi.distage.model.definition.{Binding, ImplDef}
-import izumi.distage.model.definition.errors.LocalContextFailure
 import izumi.distage.model.plan.Wiring.SingletonWiring
 import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.{Planner, PlannerInput}
@@ -11,16 +11,16 @@ import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.functional.Identity
 
-trait LocalContextHandler {
-  def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextFailure, SingletonWiring]
+trait LocalContextHandler[Error] {
+  def handle(binding: Binding, c: ImplDef.ContextImpl): Either[Error, SingletonWiring]
 }
 
 object LocalContextHandler {
-  class KnownActivationHandler(planner: Planner, input: PlannerInput) extends LocalContextHandler {
-    override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextFailure.SubplanningFailure, SingletonWiring] = {
+  class KnownActivationHandler(planner: Planner, input: PlannerInput) extends LocalContextHandler[LocalContextPlanningFailure] {
+    override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextPlanningFailure, SingletonWiring] = {
       for {
         subplan <- planner
-          .plan(PlannerInput(c.module, input.activation, c.function.get.diKeys.toSet)).left.map(errors => LocalContextFailure.SubplanningFailure(binding, c, errors))
+          .plan(PlannerInput(c.module, input.activation, c.function.get.diKeys.toSet)).left.map(errors => LocalContextPlanningFailure(binding, c, errors))
       } yield {
         val allImported = subplan.importedKeys
         val importedParents = allImported.diff(c.externalKeys)
@@ -29,8 +29,8 @@ object LocalContextHandler {
     }
   }
 
-  class VerificationHandler(verifier: PlanVerifier, excludedActivations: Set[NonEmptySet[AxisPoint]]) extends LocalContextHandler {
-    override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextFailure.VerificationFailure, SingletonWiring] = {
+  class VerificationHandler(verifier: PlanVerifier, excludedActivations: Set[NonEmptySet[AxisPoint]]) extends LocalContextHandler[LocalContextVerificationFailure] {
+    override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextVerificationFailure, SingletonWiring] = {
       val ver = verifier.verify[Identity](c.module, Roots(c.function.get.diKeys.toSet), k => c.externalKeys.contains(k), excludedActivations)
 
       ver match {
@@ -45,7 +45,7 @@ object LocalContextHandler {
           if (issues.forall(_.isInstanceOf[PlanIssue.MissingImport])) {
             Right(SingletonWiring.PrepareLocalContext(c.function, c.module, c.implType, c.externalKeys, missingImports))
           } else {
-            Left(LocalContextFailure.VerificationFailure(binding, c, issues))
+            Left(LocalContextVerificationFailure(binding, c, issues))
           }
 
         case _: PlanVerifierResult.Correct =>
