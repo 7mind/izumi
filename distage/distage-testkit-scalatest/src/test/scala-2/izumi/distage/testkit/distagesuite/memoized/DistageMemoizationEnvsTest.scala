@@ -12,12 +12,8 @@ import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
 import org.scalatest.Assertion
 import zio.{IO, ZIO}
 
-import scala.collection.mutable
 
 // TODO: for some mysterious reason these tests fail on Scala 3. That must be fixed.
-
-
-
 abstract class DistageMemoizationEnvsTest extends Spec3[ZIO] with AssertZIO {
   override protected def config: TestConfig = {
     super.config

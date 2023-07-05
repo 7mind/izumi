@@ -1,5 +1,9 @@
 package izumi.distage.testkit.distagesuite.memoized
 
+import java.util.UUID
+
+import scala.collection.mutable
+
 object MemoizationEnv {
   final case class MemoizedInstance(uuid: UUID)
   final case class TestInstance(uuid: UUID)
