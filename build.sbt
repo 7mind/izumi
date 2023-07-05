@@ -2277,7 +2277,10 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) },
+    Test / npmDependencies ++= Seq(
+      (  "hash.js",  "1.1.7")
+    )
   )
 lazy val `distage-coreJVM` = `distage-core`.jvm
   .dependsOn(

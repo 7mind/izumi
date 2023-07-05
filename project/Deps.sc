@@ -554,6 +554,9 @@ object Izumi {
           Projects.distage.proxyBytebuddy in Scope.Compile.jvm,
           Projects.fundamentals.platform tin Scope.Compile.all,
         ),
+        settings = Seq(
+          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
+        ),
         platforms = Targets.cross3,
       ),
       Artifact(
