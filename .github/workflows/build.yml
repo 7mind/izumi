@@ -26,7 +26,8 @@ jobs:
     needs: [ 'checksecret' ]
     strategy:
       matrix:
-        java: [ '11', '17' ]
+#        java: [ '11', '17' ]
+        java: [ '17' ]
         scala: [ '2.12', '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@main
@@ -60,7 +61,8 @@ jobs:
     needs: [ 'checksecret' ]
     strategy:
       matrix:
-        java: [ '11', '17' ]
+#        java: [ '11', '17' ]
+        java: [ '17' ]
         scala: [ '2.12', '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@main
