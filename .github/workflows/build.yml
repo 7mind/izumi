@@ -27,18 +27,22 @@ jobs:
     strategy:
       matrix:
         java: [ '11', '17' ]
-#        java: [ '17' ]
         scala: [ '2.12', '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@main
         with:
-          jave-vendor: "oracle"
           java-version: ${{ matrix.java }}
-      - name: Build and Test
-#        continue-on-error: ${{ matrix.scala == '3' }}
+      - name: Build and Test with Coverage
+        if: matrix.scala != '3'
         run: |
           bash sbtgen.sc
           bash .build.sh ${{ matrix.scala }} coverage
+      - name: Build and Test without Coverage
+        if: matrix.scala == '3'
+        run: |
+          bash sbtgen.sc
+          bash .build.sh ${{ matrix.scala }} test
+
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
 #        continue-on-error: ${{ matrix.scala == '3' }}
@@ -63,18 +67,21 @@ jobs:
     strategy:
       matrix:
         java: [ '11', '17' ]
-#        java: [ '17' ]
         scala: [ '2.12', '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@main
         with:
-          jave-vendor: "oracle"
           java-version: ${{ matrix.java }}
-      - name: Build and Test
-#        continue-on-error: ${{ matrix.scala == '3' }}
+      - name: Build and Test with Coverage
+        if: matrix.scala != '3'
         run: |
           bash sbtgen.sc --nojvm --js
           bash .build.sh ${{ matrix.scala }} coverage
+      - name: Build and Test without Coverage
+        if: matrix.scala == '3'
+        run: |
+          bash sbtgen.sc --nojvm --js
+          bash .build.sh ${{ matrix.scala }} test
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
 #        continue-on-error: ${{ matrix.scala == '3' }}
