@@ -37,12 +37,11 @@ jobs:
         run: |
           bash sbtgen.sc
           bash .build.sh ${{ matrix.scala }} coverage
-      - name: Build and Test without Coverage
+      - name: Build and Test without Coverage # coverage leads to verification errors on scala3
         if: matrix.scala == '3'
         run: |
           bash sbtgen.sc
           bash .build.sh ${{ matrix.scala }} test
-
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
 #        continue-on-error: ${{ matrix.scala == '3' }}
@@ -77,7 +76,7 @@ jobs:
         run: |
           bash sbtgen.sc --nojvm --js
           bash .build.sh ${{ matrix.scala }} coverage
-      - name: Build and Test without Coverage
+      - name: Build and Test without Coverage # coverage leads to verification errors on scala3
         if: matrix.scala == '3'
         run: |
           bash sbtgen.sc --nojvm --js
