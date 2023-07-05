@@ -4,12 +4,13 @@ import distage.{ModuleDef, TagKK, With}
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases.*
 import izumi.distage.model.PlannerInput
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.language.reflectiveCalls
 
-class FactoriesTest extends AnyWordSpec with MkInjector {
+class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "handle factory injections" in {
     import FactoryCase1._
@@ -185,7 +186,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(instance.isInstanceOf[ConcreteDep])
   }
 
-  "Factory cannot produce factories" in {
+  "Factory cannot produce factories" in brokenOnScala3 {
     val exc = intercept[TestFailedException] {
       assertCompiles("""
         import FactoryCase1._

@@ -21,7 +21,11 @@ class IzFilesTest extends AnyWordSpec {
 
   "Resource tools" should {
     "support concurrent queries" in {
+      // unfortunately this test is unreliable, the filesystem logic might occasionally fail during initialization
       import scala.concurrent.ExecutionContext.Implicits.global
+
+
+
       val seq = (0 to 200).map {
         _ =>
           Future(IzResources.getPath("library.properties"))

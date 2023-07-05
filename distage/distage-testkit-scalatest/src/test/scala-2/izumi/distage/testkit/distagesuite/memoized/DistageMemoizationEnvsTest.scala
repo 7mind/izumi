@@ -14,6 +14,8 @@ import zio.{IO, ZIO}
 
 import scala.collection.mutable
 
+// TODO: for some mysterious reason these tests fail on Scala 3. That must be fixed.
+
 object MemoizationEnv {
   final case class MemoizedInstance(uuid: UUID)
   final case class TestInstance(uuid: UUID)
