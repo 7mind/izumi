@@ -33,12 +33,12 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
       - name: Build and Test with Coverage
-        if: matrix.scala != '3'
+        if: ${{ matrix.scala }} != '3'
         run: |
           bash sbtgen.sc
           bash .build.sh ${{ matrix.scala }} coverage
       - name: Build and Test without Coverage # coverage leads to verification errors on scala3
-        if: matrix.scala == '3'
+        if: ${{ matrix.scala }} == '3'
         run: |
           bash sbtgen.sc
           bash .build.sh ${{ matrix.scala }} test
@@ -72,12 +72,12 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
       - name: Build and Test with Coverage
-        if: matrix.scala != '3'
+        if: ${{ matrix.scala }} != '3'
         run: |
           bash sbtgen.sc --nojvm --js
           bash .build.sh ${{ matrix.scala }} coverage
       - name: Build and Test without Coverage # coverage leads to verification errors on scala3
-        if: matrix.scala == '3'
+        if: ${{ matrix.scala }} == '3'
         run: |
           bash sbtgen.sc --nojvm --js
           bash .build.sh ${{ matrix.scala }} test
