@@ -32,6 +32,7 @@ jobs:
     steps:
       - uses: 7mind/github-env@main
         with:
+          jave-vendor: "oracle"
           java-version: ${{ matrix.java }}
       - name: Build and Test
 #        continue-on-error: ${{ matrix.scala == '3' }}
@@ -67,6 +68,7 @@ jobs:
     steps:
       - uses: 7mind/github-env@main
         with:
+          jave-vendor: "oracle"
           java-version: ${{ matrix.java }}
       - name: Build and Test
 #        continue-on-error: ${{ matrix.scala == '3' }}
