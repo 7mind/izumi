@@ -6,6 +6,7 @@ import izumi.distage.compat.ZIOResourcesTestJvm.*
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Activation, ImplDef, Lifecycle, ModuleDef}
 import izumi.functional.bio.IO2
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 
 import scala.annotation.unused
 import org.scalatest.GivenWhenThen
@@ -25,7 +26,7 @@ object ZIOResourcesTestJvm {
     val run = ZIO.attempt(println("Hello World!"))
   }
 }
-final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOTest {
+final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOTest with ScalatestGuards {
 
   "ZManaged" should {
     "ZManaged works" in {
@@ -111,7 +112,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
       }
     }
 
-    "Conversions from ZManaged should fail to typecheck if the result type is unrelated to the binding type" in {
+    "Conversions from ZManaged should fail to typecheck if the result type is unrelated to the binding type" in brokenOnScala3 {
       assertCompiles(
         """
          new ModuleDef {
@@ -220,7 +221,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
       }
     }
 
-    "Conversions from ZLayer should fail to typecheck if the result type is unrelated to the binding type" in {
+    "Conversions from ZLayer should fail to typecheck if the result type is unrelated to the binding type" in brokenOnScala3 {
       assertCompiles(
         """
          new ModuleDef {

@@ -36,6 +36,10 @@ function coverage {
   csbt "'${VERSION_COMMAND}clean'" coverage "'${VERSION_COMMAND}Test/compile'" "'${VERSION_COMMAND}test'" "'${VERSION_COMMAND}coverageReport'" || exit 1
 }
 
+function test {
+  csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}Test/compile'" "'${VERSION_COMMAND}test'" || exit 1
+}
+
 function site-publish {
   echo "Publishing site from branch=$CI_BRANCH; tag=$CI_BRANCH_TAG"
   csbt "'project docs'" +clean "'${VERSION_COMMAND}ghpagesSynchLocal'" "'${VERSION_COMMAND}ghpagesPushSite'" || exit 1
@@ -131,6 +135,10 @@ case $i in
 
     coverage)
         coverage
+    ;;
+
+    test)
+        test
     ;;
 
     publishScala)
