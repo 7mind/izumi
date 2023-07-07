@@ -7,7 +7,7 @@ import izumi.reflect.Tag
 trait AnyLocalContext[F[_]]
 
 trait LocalContext[F[_], R] extends AnyLocalContext[F] {
-  def provide[T <: Any: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R]
-  def add[T <: Any: Tag](id: Identifier, value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R]
+  def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R]
+  def provideNamed[T: Tag](id: Identifier, value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R]
   def produceRun(): F[R]
 }

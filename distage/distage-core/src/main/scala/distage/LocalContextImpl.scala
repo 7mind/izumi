@@ -15,12 +15,18 @@ class LocalContextImpl[F[_]: QuasiIO: TagK, R] private (
   functoid: Functoid[F[R]],
   values: Map[DIKey, LocalInstance[AnyRef]],
 ) extends LocalContext[F, R] {
-  final def provide[T <: Any: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
+
+  final def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
     val key = DIKey.get[T]
     doAdd(value.asInstanceOf[AnyRef], pos, key)
   }
 
-  private def doAdd(value: AnyRef, pos: CodePositionMaterializer, key: DIKey) = {
+  final def provideNamed[T: Tag](id: Identifier, value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
+    val key = DIKey[T](id)
+    doAdd(value.asInstanceOf[AnyRef], pos, key)
+  }
+
+  private def doAdd(value: AnyRef, pos: CodePositionMaterializer, key: DIKey): LocalContextImpl[F, R] = {
     if (!externalKeys.contains(key)) {
       throw new UndeclaredKeyException(s"Key $key is not declared as an external key for this local context. The key is declared at ${pos.get.position.toString}", key)
     }
@@ -32,11 +38,6 @@ class LocalContextImpl[F[_]: QuasiIO: TagK, R] private (
       functoid,
       values ++ Map(key -> LocalInstance(value, pos.get)),
     )
-  }
-
-  final def add[T <: Any: Tag](id: Identifier, value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
-    val key = DIKey[T](id)
-    doAdd(value.asInstanceOf[AnyRef], pos, key)
   }
 
   override def produceRun(): F[R] = {

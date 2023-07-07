@@ -11,8 +11,8 @@ import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.fundamentals.collections.nonempty.NonEmptySet
 import izumi.fundamentals.platform.functional.Identity
 
-trait LocalContextHandler[Error] {
-  def handle(binding: Binding, c: ImplDef.ContextImpl): Either[Error, SingletonWiring]
+trait LocalContextHandler[+E] {
+  def handle(binding: Binding, c: ImplDef.ContextImpl): Either[E, SingletonWiring]
 }
 
 object LocalContextHandler {

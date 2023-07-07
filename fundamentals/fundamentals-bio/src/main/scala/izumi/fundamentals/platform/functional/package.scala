@@ -2,7 +2,6 @@ package izumi.fundamentals.platform
 
 package object functional {
   final type Identity[+A] = A
-
   object Identity {
     def apply[A](a: A): Identity[A] = a
   }
