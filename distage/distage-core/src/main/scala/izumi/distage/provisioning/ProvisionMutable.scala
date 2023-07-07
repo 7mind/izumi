@@ -71,7 +71,7 @@ final class ProvisionMutable[F[_]: TagK](
   }
 
   def asContext(): LocatorContext = {
-    LocatorContext(toImmutable, parentContext)
+    LocatorContext(toImmutable, parentContext, plan)
   }
 
   override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {

@@ -15,6 +15,7 @@ class OperationExecutorImpl(
   instanceStrategy: InstanceStrategy,
   effectStrategy: EffectStrategy,
   resourceStrategy: ResourceStrategy,
+  contextStrategy: ContextStrategy,
 ) extends OperationExecutor {
 
   override def execute[F[_]: TagK](
@@ -43,6 +44,9 @@ class OperationExecutorImpl(
 
     case op: WiringOp.CallProvider =>
       providerStrategy.callProvider(context, op)
+
+    case op: WiringOp.LocalContext =>
+      contextStrategy.prepareContext(context, op)
 
     case op: ProxyOp.MakeProxy =>
       proxyStrategy.makeProxy(context, op)

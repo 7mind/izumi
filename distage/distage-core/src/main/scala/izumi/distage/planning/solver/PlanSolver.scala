@@ -2,14 +2,15 @@ package izumi.distage.planning.solver
 
 import distage.Injector
 import izumi.distage.DebugProperties
-import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.conflicts.{Annotated, MutSel, Node}
-import izumi.distage.model.definition.errors.ConflictResolutionError.UnconfiguredAxisInMutators
 import izumi.distage.model.definition.errors.*
+import izumi.distage.model.definition.errors.ConflictResolutionError.{CannotProcessLocalContext, UnconfiguredAxisInMutators}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.distage.model.reflection.DIKey
+import izumi.distage.model.{Planner, PlannerInput}
+import izumi.distage.planning.LocalContextHandler
 import izumi.distage.planning.solver.SemigraphSolver.*
 import izumi.functional.IzEither.*
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
@@ -20,7 +21,8 @@ import scala.annotation.nowarn
 
 trait PlanSolver {
   def resolveConflicts(
-    input: PlannerInput
+    input: PlannerInput,
+    planner: Planner,
   ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]]
 }
 
@@ -41,7 +43,8 @@ object PlanSolver {
     import scala.collection.compat.*
 
     def resolveConflicts(
-      input: PlannerInput
+      input: PlannerInput,
+      planner: Planner, // we need this for recursive planning of the local contexts
     ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
 
       if (enableDebugVerify) {
@@ -52,7 +55,7 @@ object PlanSolver {
       }
 
       for {
-        problem <- computeProblem(input)
+        problem <- computeProblem(planner, input)
         resolution <- resolver.resolve(problem.matrix, problem.roots, problem.activations, problem.weakSetMembers)
         retainedKeys = resolution.graph.meta.nodes.map(_._1.key).toSet
         membersToDrop =
@@ -78,12 +81,12 @@ object PlanSolver {
       } yield resolved
     }
 
-    protected def computeProblem(input: PlannerInput): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], Problem] = {
+    protected def computeProblem(planner: Planner, input: PlannerInput): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], Problem] = {
       val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.value) }.toSet
       val ac = ActivationChoices(activations)
 
       for {
-        allOps <- computeOperations(ac, input).left.map(issues => List(UnconfiguredAxisInMutators[DIKey](issues)))
+        allOps <- computeOperations(planner, ac, input)
         ops = preps.toDeps(allOps)
         sets <- computeSets(ac, allOps).left.map(issues => List(ConflictResolutionError.SetAxisProblem[DIKey](issues)))
       } yield {
@@ -99,10 +102,16 @@ object PlanSolver {
       }
     }
 
-    private def computeOperations(ac: ActivationChoices, input: PlannerInput): Either[List[UnconfiguredMutatorAxis], Seq[(Annotated[DIKey], InstantiationOp)]] = {
-      val allOpsMaybe = preps
-        .computeOperationsUnsafe(input.bindings)
-        .map {
+    private def computeOperations(
+      planner: Planner,
+      ac: ActivationChoices,
+      input: PlannerInput,
+    ) = {
+      val handler = new LocalContextHandler.KnownActivationHandler(planner, input)
+
+      for {
+        maybeOps <- preps.computeOperationsUnsafe(handler, input.bindings).left.map(issues => List(CannotProcessLocalContext[DIKey](issues)))
+        configuredOps = maybeOps.map {
           case aob @ (Annotated(key, Some(_), axis), _, b) =>
             isProperlyActivatedSetElement(ac, axis) {
               unconfigured =>
@@ -111,15 +120,19 @@ object PlanSolver {
           case aob =>
             Right((aob, true))
         }
-      allOpsMaybe.biAggregate.map {
-        value =>
-          val goodMutators = value.filter(_._2).map(_._1)
-          goodMutators.map {
-            case (a, o, _) =>
-              (a, o)
-          }.toVector
+        out <- configuredOps.biAggregate.map {
+          value =>
+            val goodMutators = value.filter(_._2).map(_._1)
+            goodMutators.map {
+              case (a, o, _) =>
+                (a, o)
+            }.toVector
+        }.left.map(issues => List(UnconfiguredAxisInMutators[DIKey](issues)))
+      } yield {
+        out
       }
-    }
+
+    } // Either[List[UnconfiguredMutatorAxis], Seq[(Annotated[DIKey], InstantiationOp)]]
 
     private def computeSets(
       ac: ActivationChoices,

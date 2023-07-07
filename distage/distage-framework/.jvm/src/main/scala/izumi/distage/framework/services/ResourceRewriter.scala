@@ -104,6 +104,8 @@ class ResourceRewriter(
           implDef match {
             case _: ImplDef.ReferenceImpl =>
               DontChange
+            case _: ImplDef.ContextImpl =>
+              DontChange
 
             case _: ImplDef.InstanceImpl =>
               logger.warn(

@@ -131,6 +131,12 @@ object DIError {
             case i: SetAxisIssue.InconsistentSetElementAxis =>
               s"Set ${i.set} has an element which is defined multiple times with valid activations: ${i.element}, unexpected axis sets: ${i.problems}"
           }.niceList()
+      case CannotProcessLocalContext(problems) =>
+        problems
+          .map {
+            (l: LocalContextPlanningFailure) =>
+              s"Failed to plan local context ${l.impl.implType}: ${l.errors.map(format).niceList()}"
+          }.niceList()
     }
   }
   protected[this] def conflictingAxisTagsHint(
