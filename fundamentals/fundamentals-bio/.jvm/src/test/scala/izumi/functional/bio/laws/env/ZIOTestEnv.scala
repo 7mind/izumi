@@ -6,7 +6,7 @@ import cats.effect.testkit.TestInstances
 import cats.kernel.Order
 import izumi.functional.bio.Exit.{CatsExit, ZIOExit}
 import izumi.functional.bio.data.Morphism1
-import izumi.functional.bio.{Clock1, Clock2, IO2}
+import izumi.functional.bio.{Clock1, Clock2}
 import org.scalacheck.{Arbitrary, Cogen, Prop}
 import zio.{Clock, Duration, Executor, IO, Runtime, Scheduler, Task, Trace, UIO, Unsafe, ZIO, ZLayer}
 
@@ -100,7 +100,9 @@ trait ZIOTestEnv extends TestInstances with EqThrowable {
   implicit def cogenTask[A: Cogen](implicit ticker: Ticker): Cogen[IO[Throwable, A]] = {
     Cogen[cats.effect.IO[Outcome[cats.effect.IO, Throwable, A]]].contramap {
       (io: IO[Throwable, A]) =>
-        toIO(io.sandboxExit.map(exit => CatsExit.exitToOutcomeThrowable[IO, A](exit)))
+        import izumi.functional.bio.Root.BIOZIO
+
+        toIO(BIOZIO.sandboxExit(io).map(exit => CatsExit.exitToOutcomeThrowable[IO, A](exit)))
           .map(_.mapK(Morphism1[IO[Throwable, +_], cats.effect.IO](toIO(_)).toCats))
     }
   }

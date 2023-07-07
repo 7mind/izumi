@@ -14,6 +14,7 @@ import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 
 import scala.annotation.unused
 import scala.concurrent.ExecutionContext
@@ -30,7 +31,7 @@ object CatsResourcesTestJvm {
   }
 }
 
-final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with CatsIOPlatformDependentTest {
+final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with CatsIOPlatformDependentTest with ScalatestGuards {
 
   "`No More Orphans` type provider is accessible" in {
     def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.kernel.Sync`](): Unit = ()
@@ -205,7 +206,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
     request[IO]
   }
 
-  "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in {
+  "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in brokenOnScala3 {
     assertCompiles(
       """
          new ModuleDef {

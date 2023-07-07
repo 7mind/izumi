@@ -4,7 +4,7 @@ import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.data.{Morphism3, RestoreInterruption3}
 import izumi.functional.bio.{Async3, Exit, Fiber2, Fiber3, __PlatformSpecific}
 import izumi.fundamentals.platform.language.Quirks.Discarder
-import zio._izumicompat_.__ZIOWithFiberRuntime
+import zio._izumicompat_.{__ZIORaceCompat, __ZIOWithFiberRuntime}
 import zio.internal.stacktracer.{InteropTracer, Tracer}
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 import zio.{ZEnvironment, ZIO}
@@ -226,7 +226,7 @@ open class AsyncZio extends Async3[ZIO] /*with Local3[ZIO]*/ {
   @inline override final def race[R, E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
     implicit val trace: zio.Trace = Tracer.instance.empty
 
-    r1.interruptible.raceFirst(r2.interruptible)
+    __ZIORaceCompat.raceFirst(r1.interruptible, r2.interruptible)
   }
 
   @inline override final def racePairUnsafe[R, E, A, B](
@@ -237,9 +237,10 @@ open class AsyncZio extends Async3[ZIO] /*with Local3[ZIO]*/ {
 
     val interrupted1 = new AtomicBoolean(true)
     val interrupted2 = new AtomicBoolean(true)
-    (ZIOExit.ZIOSignalOnNoExternalInterruptFailure(r1.interruptible)(sync(interrupted1.set(false)))
-    raceWith
-    ZIOExit.ZIOSignalOnNoExternalInterruptFailure(r2.interruptible)(sync(interrupted2.set(false))))(
+    __ZIORaceCompat.raceWith(
+      ZIOExit.ZIOSignalOnNoExternalInterruptFailure(r1.interruptible)(sync(interrupted1.set(false))),
+      ZIOExit.ZIOSignalOnNoExternalInterruptFailure(r2.interruptible)(sync(interrupted2.set(false))),
+    )(
       { case (l, f) => ZIO.succeed(Left((ZIOExit.toExit(l)(interrupted1.get()), Fiber2.fromZIO(sync(interrupted2.get()))(f)))) },
       { case (r, f) => ZIO.succeed(Right((Fiber2.fromZIO(sync(interrupted1.get()))(f), ZIOExit.toExit(r)(interrupted2.get())))) },
     )
