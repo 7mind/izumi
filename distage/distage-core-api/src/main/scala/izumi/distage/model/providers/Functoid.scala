@@ -10,7 +10,6 @@ import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.reflect.Tag
 import zio.ZEnvironment
-import zio.managed.ZManaged
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import scala.annotation.unchecked.uncheckedVariance
@@ -308,30 +307,9 @@ private[providers] trait FunctoidLifecycleAdapters {
   }
 
   /**
-    * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
-    */
-  implicit final def providerFromZIO[R, E, A](
-    managed: => ZManaged[R, E, A]
-  )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
-  ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(managed))
-  }
-
-  /**
-    * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
-    */
-  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZIONothing[R, A](
-    managed: => ZManaged[R, Nothing, A]
-  )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
-  ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(managed))
-  }
-
-  /**
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZLayerHas1[R, E, A: Tag](
+  implicit final def providerFromZLayer[R, E, A: Tag](
     layer: => ZLayer[R, E, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
@@ -341,8 +319,8 @@ private[providers] trait FunctoidLifecycleAdapters {
   /**
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
-  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZLayerNothingHas1[R, A: Tag](
+  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZLayer[Any, Nothing, Clock]
+  implicit final def providerFromZLayerNothing[R, A: Tag](
     layer: => ZLayer[R, Nothing, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {

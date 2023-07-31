@@ -339,8 +339,8 @@ The @ref[ZIO Has injection](basics.md#zio-environment-bindings) support extends 
 While this compiles just fine, this test cannot be run without the object graph containing a `BonusService` component!
 
 Our demonstration application includes `dummy` and `production` implementations for `BonusService`.
-For each implementation, we define a `ZManaged` value describing how to create and finalize it.
-After adding implementations for `BonusService` component using these `ZManaged`'s as constructors, our test cases will be able to use the component `BonusService`.
+For each implementation, we define a `ZLayer` value describing how to create and finalize it.
+After adding implementations for `BonusService` component using these `ZLayer`'s as constructors, our test cases will be able to use the component `BonusService`.
 
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
@@ -450,7 +450,7 @@ object BonusServicePlugin extends PluginDef {
 
 Here we used @ref[ZIO Has injection](basics.md#zio-environment-bindings) `.fromZEnv` to supply the environment dependencies for `ProdBonusService.managed`, namely `Has[Console.Service]`.
 (Implementation for `Console.Service` is provided by default from @scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule))
-`.fromZEnv` can be used with `ZLayer`, `ZManaged` `ZIO` or any `F[-_, +_, +_]: Local3` (from @ref[BIO](../bio/00_bio.md) typeclasses).
+`.fromZEnv` can be used with `ZLayer`, `ZIO` or any `F[-_, +_, +_]: Local3` (from @ref[BIO](../bio/00_bio.md) typeclasses).
 
 Note that the `BonusServicePlugin` is not explicitly added to the `Test.config`:
 But, this `PluginDef` class is defined in the same package as the test, namely in `app`. By default the `pluginConfig`

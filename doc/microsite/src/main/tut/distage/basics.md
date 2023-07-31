@@ -427,7 +427,7 @@ Try { Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal)
 ## Resource Bindings, Lifecycle
 
 You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) or
-[zio.managed.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed)
+[zio.ZLayer](https://zio.dev/reference/contextual/zlayer/)
 values specifying the allocation and finalization actions of an object.
 
 When ran, distage `Injector` itself returns a `Lifecycle` value that describes actions to create and finalize the object graph; the `Lifecycle` value is pure and can be reused multiple times.
@@ -524,7 +524,7 @@ println(closedInit.initialized)
 `Lifecycle` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap`, `.mapK` methods.
 
 You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods,
-and between a `Lifecycle` and `zio.managed.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
+and between a `Lifecycle` and `zio.ZLayer` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
 ### Inheritance helpers
 
@@ -918,7 +918,7 @@ You need to specify your effect type when constructing `Injector`, as in `Inject
 
 ## ZIO Environment bindings
 
-You can inject into ZIO Environment using `make[_].fromZEnv` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: Local3`:
+You can inject into ZIO Environment using `make[_].fromZEnv` syntax for `ZLayer`, `ZIO` or any `F[_, _, _]: Local3`:
 
 ```scala mdoc:to-string
 import zio._
@@ -1510,6 +1510,6 @@ Cats & ZIO instances and syntax are available automatically in `distage-core`, w
 However, distage *won't* bring in `cats` or `zio` as dependencies if you don't already depend on them.
 (see [No More Orphans](https://blog.7mind.io/no-more-orphans.html) blog post for details on how that works)
 
-@ref[Cats Resource & ZIO ZManaged Bindings](basics.md#resource-bindings-lifecycle) also work out of the box without any magic imports.
+@ref[Cats Resource & ZIO ZLayer Bindings](basics.md#resource-bindings-lifecycle) also work out of the box without any magic imports.
 
 All relevant typeclass instances for chosen effect type, such as `ConcurrentEffect[F]`, are @ref[included by default](basics.md#out-of-the-box-typeclass-instances) (overridable by user bindings)

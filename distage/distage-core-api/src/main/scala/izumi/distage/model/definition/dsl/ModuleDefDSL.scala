@@ -15,7 +15,6 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 import zio.*
-import zio.managed.ZManaged
 
 import scala.annotation.unused
 import scala.collection.immutable.HashSet
@@ -503,13 +502,6 @@ object ModuleDefDSL {
         dsl.fromEffect[IO[E, _], I](function.map2(ZEnvConstructor[R])(_.provideEnvironment(_)))
       }
 
-      def fromZEnv[R: ZEnvConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
-        dsl.fromResource(ZEnvConstructor[R].map(resource.provideEnvironment(_)))
-      }
-      def fromZEnv[R: ZEnvConstructor, E: Tag, I <: T: Tag](function: Functoid[ZManaged[R, E, I]])(implicit d1: DummyImplicit): AfterBind = {
-        dsl.fromResource(function.map2(ZEnvConstructor[R])(_.provideEnvironment(_)))
-      }
-
       def fromZEnv[R: ZEnvConstructor, E: Tag, I <: T: Tag](layer: ZLayer[R, E, I]): AfterBind = {
         dsl.fromResource(ZEnvConstructor[R].map(ZLayer.succeedEnvironment(_) >>> layer))
       }
@@ -587,17 +579,6 @@ object ModuleDefDSL {
       }
       def addHas[R: ZEnvConstructor, E: Tag, I <: T: Tag](function: Functoid[ZIO[R, E, I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
         dsl.addEffect[IO[E, _], I](function.map2(ZEnvConstructor[R])(_.provideEnvironment(_)))
-      }
-
-      def addHas[R: ZEnvConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addResource(ZEnvConstructor[R].map(resource.provideEnvironment(_)))
-      }
-      def addHas[R: ZEnvConstructor, E: Tag, I <: T: Tag](
-        function: Functoid[ZManaged[R, E, I]]
-      )(implicit pos: CodePositionMaterializer,
-        d1: DummyImplicit,
-      ): AfterAdd = {
-        dsl.addResource(function.map2(ZEnvConstructor[R])(_.provideEnvironment(_)))
       }
 
       def addHas[R: ZEnvConstructor, E: Tag, I <: T: Tag](layer: ZLayer[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {

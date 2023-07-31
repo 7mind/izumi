@@ -8,7 +8,6 @@ import izumi.functional.bio.Local3
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.reflect.{Tag, TagK, TagK3}
 import zio.*
-import zio.managed.ZManaged
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 object LifecycleAdapters {
@@ -69,21 +68,7 @@ object LifecycleAdapters {
     }
 
     /**
-      * Allows you to bind [[zio.managed.ZManaged]]-based constructor functions in `ModuleDef`:
-      */
-    implicit final def providerFromZIOProvider[R, E, A]: AdaptFunctoid.Aux[ZManaged[R, E, A], Lifecycle.FromZIO[R, E, A]] = {
-      new AdaptFunctoid[ZManaged[R, E, A]] {
-        type Out = Lifecycle.FromZIO[R, E, A]
-
-        override def apply(a: Functoid[ZManaged[R, E, A]])(implicit tag: LifecycleTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-          import tag.tagFull
-          a.map(Lifecycle.fromZIO(_))
-        }
-      }
-    }
-
-    /**
-      * Allows you to bind [[zio.managed.ZManaged]]-based constructor functions in `ModuleDef`:
+      * Allows you to bind [[zio.ZLayer]]-based constructor functions in `ModuleDef`:
       */
     implicit final def providerFromZLayerProvider[R, E, A: Tag]: AdaptFunctoid.Aux[ZLayer[R, E, A], Lifecycle.FromZIO[R, E, A]] = {
       new AdaptFunctoid[ZLayer[R, E, A]] {
