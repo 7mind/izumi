@@ -53,7 +53,7 @@ import scala.annotation.unused
   *
   * Or by converting from an existing [[cats.effect.Resource]] or a [[zio.ZLayer]]:
   *   - Use [[Lifecycle.fromCats]], [[Lifecycle.SyntaxLifecycleCats#toCats]] to convert from and to a [[cats.effect.Resource]]
-  *   - And [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert from and to a [[zio.ZLayer]]
+  *   - And [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert from and to a [[zio.ZIO]]
   *
   * Usage is done via [[Lifecycle.SyntaxUse#use use]]:
   *
@@ -530,16 +530,21 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  implicit final class SyntaxLifecycleZIO[-R, +E, A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
-    /** Convert [[Lifecycle]] to [[zio.ZLayer]] */
-    def toZIO(implicit a: zio.Tag[A]): ZLayer[R, E, A] = {
+  implicit final class SyntaxLifecycleZIO[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
+    /** Convert [[Lifecycle]] to [[zio.ZIO]] */
+    def toZIO[B >: A: zio.Tag]: ZIO[R & Scope, E, B] = {
       implicit val trace: zio.Trace = Tracer.instance.empty
 
-      ZLayer.fromZIO(for {
+      for {
         scope <- resource.acquire
-        r <- resource.extract(scope).fold(identity, ZIO.succeed(_))
-
-      } yield r)
+        r <- ZIO.acquireRelease(resource.extract(scope).fold(identity, ZIO.succeed(_)))(
+          _ =>
+            resource.release(scope).orDieWith {
+              case e: Throwable => e
+              case any => new RuntimeException(s"Lifecycle finalizer: $any")
+            }
+        )
+      } yield r
     }
   }
 
