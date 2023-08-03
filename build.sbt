@@ -3036,7 +3036,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "org.typelevel" %% "cats-core" % V.cats % Test,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
       "com.github.docker-java" % "docker-java-core" % V.docker_java,
       "com.github.docker-java" % "docker-java-transport-zerodep" % V.docker_java
@@ -3356,7 +3355,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
       "org.scalatest" %% "scalatest" % V.scalatest
     ),
@@ -4216,7 +4214,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "org.typelevel" %% "cats-core" % V.cats,
       "org.typelevel" %% "cats-effect" % V.cats_effect,
       "dev.zio" %% "zio" % V.zio excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "zio-managed" % V.zio excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
       "org.tpolecat" %% "doobie-core" % V.doobie,
