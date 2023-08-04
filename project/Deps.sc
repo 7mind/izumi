@@ -92,7 +92,7 @@ object Izumi {
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
-    final val zio_all = Seq(zio_core, zio_managed)
+    final val zio_all = Seq(zio_core)
 
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
