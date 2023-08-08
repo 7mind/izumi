@@ -2108,7 +2108,8 @@ lazy val `distage-framework-apiJS` = `distage-framework-api`.js
 
 lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-core"))
   .dependsOn(
-    `distage-core-api` % "test->compile;compile->compile"
+    `distage-core-api` % "test->compile;compile->compile",
+    `fundamentals-platform` % "test->test;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -2276,7 +2277,10 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) },
+    Test / npmDependencies ++= Seq(
+      (  "hash.js",  "1.1.7")
+    )
   )
 lazy val `distage-coreJVM` = `distage-core`.jvm
   .dependsOn(

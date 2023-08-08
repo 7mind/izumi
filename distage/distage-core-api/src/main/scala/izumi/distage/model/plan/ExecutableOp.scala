@@ -76,6 +76,12 @@ object ExecutableOp {
         this.copy(target = targets(this.target), wiring = this.wiring.replaceKeys(parameters))
       }
     }
+
+    final case class LocalContext(target: DIKey, wiring: SingletonWiring.PrepareLocalContext, origin: EqualizedOperationOrigin) extends WiringOp {
+      override def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): InstantiationOp = {
+        this.copy(target = targets(this.target), wiring = this.wiring.replaceKeys(parameters))
+      }
+    }
   }
 
   sealed trait MonadicOp extends InstantiationOp {

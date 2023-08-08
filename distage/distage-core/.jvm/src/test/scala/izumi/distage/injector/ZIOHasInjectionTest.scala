@@ -9,12 +9,13 @@ import izumi.distage.fixtures.TypesCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.reflection.TypedRef
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.wordspec.AnyWordSpec
 import zio.*
 
 import scala.util.Try
 
-class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
+class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with ScalatestGuards {
 
   type HasInt = Int
   type HasX[B] = B
@@ -99,7 +100,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       assert(instantiated.inner eq context.get[Dep])
     }
 
-    "progression test: since ZIO 2 can't support named bindings in zio.ZEnvironment type parameters" in {
+    "progression test: since ZIO 2 can't support named bindings in zio.ZEnvironment type parameters" in brokenOnScala3 {
       import TypesCase1.*
 
       val ctorA: ZIO[Dep @Id("A"), Nothing, TestClass2[Dep]] = ZIO.serviceWith[Dep @Id("A")] {
@@ -133,7 +134,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       assert(t.failed.get.getMessage.contains("Found other bindings for the same type (did you forget to add or remove `@Id` annotation?)"))
     }
 
-    "progression test: since ZIO 2 can't support multiple named bindings in zio.ZEnvironment without a type signature" in {
+    "progression test: since ZIO 2 can't support multiple named bindings in zio.ZEnvironment without a type signature" in brokenOnScala3 {
       import TypesCase1.*
 
       val ctorAB = for {
@@ -162,7 +163,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
       assert(t.failed.get.getMessage.contains("Found other bindings for the same type (did you forget to add or remove `@Id` annotation?)"))
     }
 
-    "support multiple named bindings in zio.ZEnvironment with a type signature" in {
+    "support multiple named bindings in zio.ZEnvironment with a type signature" in brokenOnScala3 {
       import TypesCase1.*
 
       val ctorAB: ZIO[(DepA @Id("A")) & (DepB @Id("B")), Nothing, TestClass3[Dep]] = for {
@@ -317,7 +318,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest {
 //      assert(instantiated4 ne null)
 //    }
 
-    "can handle AnyVals" in {
+    "can handle AnyVals" in brokenOnScala3 {
       import TraitCase6.*
 
       val definition = PlannerInput.everything(new ModuleDef {

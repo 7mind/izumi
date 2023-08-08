@@ -12,32 +12,8 @@ import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
 import org.scalatest.Assertion
 import zio.{IO, ZIO}
 
-import scala.collection.mutable
 
-object MemoizationEnv {
-  final case class MemoizedInstance(uuid: UUID)
-  final case class TestInstance(uuid: UUID)
-  final val anotherTestInstance: TestInstance = TestInstance(UUID.randomUUID())
-  final val memoizedInstance: mutable.HashSet[MemoizedInstance] = mutable.HashSet.empty
-
-  final case class MemoizedLevel1(UUID: UUID)
-  final val memoizedLevel1: mutable.HashSet[MemoizedLevel1] = mutable.HashSet.empty
-
-  final case class MemoizedLevel2(UUID: UUID)
-  final val memoizedLevel2: mutable.HashSet[MemoizedLevel2] = mutable.HashSet.empty
-
-  final case class MemoizedLevel3(UUID: UUID)
-  final val memoizedLevel3: mutable.HashSet[MemoizedLevel3] = mutable.HashSet.empty
-
-  def makeInstance[T](set: mutable.HashSet[T])(ctor: UUID => T): T = {
-    val instance = ctor(UUID.randomUUID())
-    set.synchronized {
-      set += instance
-    }
-    instance
-  }
-}
-
+// TODO: for some mysterious reason these tests fail on Scala 3. That must be fixed.
 abstract class DistageMemoizationEnvsTest extends Spec3[ZIO] with AssertZIO {
   override protected def config: TestConfig = {
     super.config

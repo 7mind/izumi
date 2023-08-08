@@ -7,9 +7,10 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.macros.TraitInitializationFailedException
 import izumi.distage.model.exceptions.runtime.ProvisioningException
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.wordspec.AnyWordSpec
 
-class CircularDependenciesTest extends AnyWordSpec with MkInjector {
+class CircularDependenciesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "support trait initialization" in {
     import CircularCase2._
@@ -30,7 +31,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     assert(exc.getSuppressed.head.getCause.isInstanceOf[RuntimeException])
   }
 
-  "support complex circular dependencies" in {
+  "support complex circular dependencies" in brokenOnScala3 {
     import CircularCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {

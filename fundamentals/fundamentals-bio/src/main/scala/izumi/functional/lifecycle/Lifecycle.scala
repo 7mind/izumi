@@ -290,7 +290,7 @@ object Lifecycle extends LifecycleInstances {
   }
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): Lifecycle[F, A] = {
-    @inline def a = acquire; @inline def r = release
+    @inline def a: F[A] = acquire; @inline def r: A => F[Unit] = release
     new Lifecycle.Basic[F, A] {
       override def acquire: F[A] = a
       override def release(resource: A): F[Unit] = r(resource)
@@ -303,6 +303,15 @@ object Lifecycle extends LifecycleInstances {
 
   def makeSimple[A](acquire: => A)(release: A => Unit): Lifecycle[Identity, A] = {
     make[Identity, A](acquire)(release)
+  }
+
+  /** For stateful objects that have a separate post-creation init method. */
+  def makeSimpleInit[A](create: => A)(init: A => Unit)(release: A => Unit): Lifecycle[Identity, A] = {
+    makeSimple {
+      val a = create
+      init(a)
+      a
+    }(release)
   }
 
   def makePair[F[_], A](allocate: F[(A, F[Unit])]): Lifecycle[F, A] = {

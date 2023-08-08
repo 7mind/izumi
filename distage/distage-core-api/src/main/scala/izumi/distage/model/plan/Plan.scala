@@ -204,6 +204,13 @@ object Plan {
       }.toMap)))
     }
 
+    def importedKeys: Set[DIKey] = {
+      plan.plan.meta.nodes.view.collect {
+        case (k, _: ImportDependency) =>
+          k
+      }.toSet
+    }
+
     def resolveImport[T: Tag](instance: T): Plan = {
       resolveImports {
         case i if i.target == DIKey.get[T] =>

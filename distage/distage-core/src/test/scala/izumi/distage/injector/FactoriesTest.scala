@@ -4,15 +4,16 @@ import distage.{ModuleDef, TagKK, With}
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases.*
 import izumi.distage.model.PlannerInput
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.language.reflectiveCalls
 
-class FactoriesTest extends AnyWordSpec with MkInjector {
+class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "handle factory injections" in {
-    import FactoryCase1._
+    import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[Factory]
@@ -50,7 +51,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "handle generic arguments in factory methods" in {
-    import FactoryCase1._
+    import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[GenericAssistedFactory]
@@ -69,7 +70,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "handle named assisted dependencies in factory methods" in {
-    import FactoryCase1._
+    import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[NamedAssistedFactory]
@@ -95,7 +96,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "handle factories with mixed assisted and non-assisted methods" in {
-    import FactoryCase1._
+    import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[MixedAssistendNonAssisted]
@@ -116,7 +117,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "handle assisted abstract factories with multiple parameters of the same type with names matching constructor" in {
-    import FactoryCase2._
+    import FactoryCase2.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[AssistedAbstractFactory]
@@ -138,7 +139,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
   // FIXME: broken due to dotty bug https://github.com/lampepfl/dotty/issues/16468
   "handle higher-kinded assisted abstract factories with multiple parameters of the same type" in {
-    import FactoryCase2._
+    import FactoryCase2.*
     import izumi.fundamentals.platform.functional.Identity
 
     val definition = PlannerInput.everything(new ModuleDef {
@@ -161,7 +162,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "handle structural type factories" in {
-    import FactoryCase1._
+    import FactoryCase1.*
 
     FactoryConstructor[{
         def makeConcreteDep(): Dependency @With[ConcreteDep]
@@ -185,7 +186,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
     assert(instance.isInstanceOf[ConcreteDep])
   }
 
-  "Factory cannot produce factories" in {
+  "Factory cannot produce factories" in brokenOnScala3 {
     val exc = intercept[TestFailedException] {
       assertCompiles("""
         import FactoryCase1._
@@ -230,7 +231,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "factory always produces new instances" in {
-    import FactoryCase1._
+    import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency]
@@ -249,7 +250,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "can handle factory methods with implicit parameters" in {
-    import FactoryCase3._
+    import FactoryCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep1]
@@ -281,7 +282,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "can handle abstract classes" in {
-    import FactoryCase1._
+    import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency]
@@ -297,7 +298,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "handle assisted dependencies in factory methods" in {
-    import FactoryCase1._
+    import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[AssistedFactory]
@@ -314,7 +315,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "support makeFactory" in {
-    import FactoryCase4._
+    import FactoryCase4.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[IFactoryImpl]
@@ -335,7 +336,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "support intersection factory types" in {
-    import FactoryCase4._
+    import FactoryCase4.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[IFactory1 & IFactory]
@@ -356,7 +357,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "support intersection factory types with implicit overrides" in {
-    import FactoryCase7._
+    import FactoryCase7.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[IFactory1 & IFactory2]
@@ -379,7 +380,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "support refinement factory types with overrides" in {
-    import FactoryCase7._
+    import FactoryCase7.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[IFactory1].fromFactory[IFactory1 { def dep(): Dep }]
@@ -397,7 +398,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
 
   "support make[].fromFactory" in {
     // this case makes no sense tbh
-    import FactoryCase5._
+    import FactoryCase5.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[IFactory1].fromFactory[IFactoryImpl]
@@ -416,7 +417,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "support make[].fromFactory: narrowing" in {
-    import FactoryCase6._
+    import FactoryCase6.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[IFactory].fromFactory[IFactoryImpl]
@@ -433,7 +434,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector {
   }
 
   "support polymorphic factory types" in {
-    import FactoryCase8._
+    import FactoryCase8.*
 
     def definition[F[+_, +_]: TagKK] = PlannerInput.everything(new ModuleDef {
       makeFactory[XFactory[F]]

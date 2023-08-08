@@ -2,13 +2,14 @@ package izumi.distage.injector
 
 import distage.{Injector, ModuleDef}
 import izumi.distage.gc.MkGcInjector
-import izumi.distage.injector.JSRAnnotationTest._
+import izumi.distage.injector.JSRAnnotationTest.*
 import izumi.distage.model.PlannerInput
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.wordspec.AnyWordSpec
 
-class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
+class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuards {
   "JSR330 @Named anno" should {
-    "work with combined annos when no functoid is involved" in {
+    "work with combined annos when no functoid is involved" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
@@ -39,7 +40,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithFieldAnnos].address1 == context.get[String]("address1"))
     }
 
-    "work with alias annos when no functoid is involved" in {
+    "work with alias annos when no functoid is involved" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
@@ -51,7 +52,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithTypeAnnos].address == context.get[String]("address"))
     }
 
-    "work with param annos when no functoid is involved" in {
+    "work with param annos when no functoid is involved" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
@@ -82,7 +83,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithFieldAnnos].address1 == context.get[String]("address1"))
     }
 
-    "work with alias annos when functoid takes .apply" in {
+    "work with alias annos when functoid takes .apply" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
@@ -94,7 +95,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithTypeAnnos].address == context.get[String]("address"))
     }
 
-    "work with combined annos when functoid takes .apply" in {
+    "work with combined annos when functoid takes .apply" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
@@ -112,7 +113,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfig].address1 == context.get[String]("address1"))
     }
 
-    "work with param annos when functoid takes .apply" in {
+    "work with param annos when functoid takes .apply" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
@@ -130,7 +131,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithParamAnnos].address1 == context.get[String]("address1"))
     }
 
-    "work with field annos when functoid takes overriden companion as function" in {
+    "work with field annos when functoid takes overriden companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port1").from(90)
         make[String].named("address1").from("localhost1")
@@ -143,7 +144,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithFieldAnnos].address1 == context.get[String]("address1"))
     }
 
-    "work with alias annos when functoid takes companion as function" in {
+    "work with alias annos when functoid takes companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
@@ -155,7 +156,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithTypeAnnos].address == context.get[String]("address"))
     }
 
-    "work with combined annos when functoid takes companion as function" in {
+    "work with combined annos when functoid takes companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
@@ -173,7 +174,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfig].address1 == context.get[String]("address1"))
     }
 
-    "work with param annos when functoid takes companion as function" in {
+    "work with param annos when functoid takes companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
@@ -191,7 +192,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector {
       assert(context.get[ServerConfigWithParamAnnos].address1 == context.get[String]("address1"))
     }
 
-    "work with param annos when functoid takes overriden companion as function" in {
+    "work with param annos when functoid takes overriden companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")

@@ -41,6 +41,8 @@ object CycleTools {
                   Seq(w.target -> false)
                 case _: WiringOp.ReferenceKey =>
                   Seq(w.target -> false)
+                case _: WiringOp.LocalContext =>
+                  Seq(w.target -> false)
               }
             case o =>
               Seq(o.target -> false)

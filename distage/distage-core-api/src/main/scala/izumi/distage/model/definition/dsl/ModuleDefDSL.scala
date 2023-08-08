@@ -1,20 +1,23 @@
 package izumi.distage.model.definition.dsl
 
+import izumi.distage.{AnyLocalContext, LocalContext}
 import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, ZEnvConstructor}
-import LifecycleAdapters.LifecycleTag
 import izumi.distage.model.definition.*
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
+import izumi.distage.model.definition.dsl.LifecycleAdapters.LifecycleTag
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 import zio.*
 import zio.managed.ZManaged
 
+import scala.annotation.unused
 import scala.collection.immutable.HashSet
 
 /**
@@ -109,6 +112,33 @@ object ModuleDefDSL {
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
+
+    /**
+      * Defines local context
+      */
+    final def fromModule[F[_]](module: ModuleBase = ModuleBase.empty)(implicit @unused ev: T <:< AnyLocalContext[F]): LocalContextDSL[F, AfterBind] =
+      new LocalContextDSL[F, AfterBind](module, Set.empty, bind)
+
+    /**
+      * Defines local context with empty local module
+      */
+    final def external[F[_]](keys: DIKey*)(implicit @unused ev: T <:< AnyLocalContext[F]): LocalContextDSL[F, AfterBind] = {
+      new LocalContextDSL[F, AfterBind](Module.empty, keys.toSet, bind)
+    }
+
+    /**
+      * Defines local context with empty local module and local keys
+      */
+    def running[F[_], R](function: Functoid[F[R]])(implicit @unused ev: T =:= LocalContext[F, R]): AfterBind = {
+      new LocalContextDSL[F, AfterBind](Module.empty, Set.empty, bind).running(function)
+    }
+
+    /**
+      * Defines local context with empty local module and local keys, specialised for Identity
+      */
+    def running[R](function: Functoid[R])(implicit @unused ev: T =:= LocalContext[Identity, R], dummyImplicit: DummyImplicit): AfterBind = {
+      running[Identity, R](function)
+    }
 
     /**
       * A function that receives its arguments from DI object graph, including named instances via [[izumi.distage.model.definition.Id]] annotation.
@@ -270,12 +300,12 @@ object ModuleDefDSL {
     }
 
     final def fromResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
     }
 
     final def fromResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
     }
 
@@ -284,7 +314,7 @@ object ModuleDefDSL {
     )(implicit adapt: LifecycleAdapters.AdaptFunctoid.Aux[R0, R],
       tag: LifecycleTag[R],
     ): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
     }
 
@@ -294,12 +324,12 @@ object ModuleDefDSL {
       * This will acquire a NEW resource again for every `refResource` binding
       */
     final def refResource[R <: Lifecycle[LifecycleF, T]](implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)))
     }
 
     final def refResource[R <: Lifecycle[LifecycleF, T]](name: Identifier)(implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
 
@@ -391,12 +421,12 @@ object ModuleDefDSL {
       addResource[R](AnyConstructor[R])
 
     final def addResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
     }
 
     final def addResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
     }
 
@@ -406,17 +436,17 @@ object ModuleDefDSL {
       tag: LifecycleTag[R],
       pos: CodePositionMaterializer,
     ): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)), pos)
     }
 
     final def refResource[R <: Lifecycle[LifecycleF, T]](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)), pos)
     }
 
     final def refResource[R <: Lifecycle[LifecycleF, T]](name: Identifier)(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
     }
 
@@ -842,6 +872,16 @@ object ModuleDefDSL {
     private[this] def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
       val newState = mutableCursor.append(op)
       new MultiSetElementDSL[T](mutableState, newState)
+    }
+  }
+
+  final class LocalContextDSL[F[_], AfterBind](module: ModuleBase, ext: Set[DIKey], bind: ImplDef => AfterBind) {
+    def external(keys: DIKey*): LocalContextDSL[F, AfterBind] = {
+      new LocalContextDSL[F, AfterBind](module, ext ++ keys.toSet, bind)
+    }
+
+    def running[R](function: Functoid[F[R]]): AfterBind = {
+      bind(ImplDef.ContextImpl(function.get.ret, function, module, ext))
     }
   }
 

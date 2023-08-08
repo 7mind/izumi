@@ -2,6 +2,7 @@ package izumi.distage.provisioning
 
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.dsl.AnyKindShim
+import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
@@ -10,6 +11,7 @@ import izumi.distage.model.reflection.DIKey
 final case class LocatorContext(
   provision: ProvisionImmutable[AnyKindShim.LifecycleF],
   locator: Locator,
+  plan: Plan,
 ) extends ProvisioningKeyProvider {
 
   override def fetchUnsafe(key: DIKey): Option[Any] = {
@@ -44,6 +46,6 @@ final case class LocatorContext(
   }
 
   override def narrow(allRequiredKeys: Set[DIKey]): ProvisioningKeyProvider = {
-    LocatorContext(provision.narrow(allRequiredKeys), locator)
+    LocatorContext(provision.narrow(allRequiredKeys), locator, plan)
   }
 }
