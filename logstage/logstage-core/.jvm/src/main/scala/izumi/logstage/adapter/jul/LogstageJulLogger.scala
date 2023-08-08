@@ -42,7 +42,7 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler wit
 
   @inline private[this] def mkEntry(record: LogRecord): Log.Entry = {
 
-    val loggerName = if (record.getLoggerName == null) "unknown" else record.getLoggerName
+    val loggerName = Option(record.getLoggerName).getOrElse("unknown")
     val id = Log.LoggerId(loggerName)
 
     val thread = Thread.currentThread()
@@ -50,19 +50,17 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler wit
     val ctx = Log.StaticExtendedContext(id, SourceFilePosition.unknown)
     val threadData = Log.ThreadData(thread.getName, thread.getId)
 
-    val params = if (record.getParameters == null) Seq.empty else record.getParameters.toSeq
-    val allParams = if (record.getThrown == null) params else params ++ Seq(record.getThrown)
+    val params = Option(record.getParameters).toSeq.flatten
+    val allParams = params ++ Option(record.getThrown).toSeq
 
     val messageArgs = allParams.zipWithIndex.map {
       kv =>
         Log.LogArg(Seq(s"_${kv._2}"), kv._1, hiddenName = true, None)
     }
 
-    val template = if (record.getMessage == null) {
-      Array.empty
-    } else {
-      record.getMessage.split("\\{\\d+\\}", -1).map(_.replace("\\", "\\\\"))
-    }
+    val template = Option(record.getMessage)
+      .map(_.split("\\{\\d+\\}", -1).map(_.replace("\\", "\\\\")))
+      .getOrElse(Array.empty[String])
 
     val level = toLevel(record)
     Log.Entry(
