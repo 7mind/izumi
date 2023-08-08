@@ -42,25 +42,27 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler wit
 
   @inline private[this] def mkEntry(record: LogRecord): Log.Entry = {
 
-    val id = Log.LoggerId(record.getLoggerName)
+    val loggerName = if (record.getLoggerName == null) "unknown" else record.getLoggerName
+    val id = Log.LoggerId(loggerName)
 
     val thread = Thread.currentThread()
 
     val ctx = Log.StaticExtendedContext(id, SourceFilePosition.unknown)
     val threadData = Log.ThreadData(thread.getName, thread.getId)
 
-    val allParams = if (record.getThrown == null) {
-      record.getParameters.toSeq
-    } else {
-      record.getParameters.toSeq ++ Seq(record.getThrown)
-    }
+    val params = if (record.getParameters == null) Seq.empty else record.getParameters.toSeq
+    val allParams = if (record.getThrown == null) params else params ++ Seq(record.getThrown)
 
     val messageArgs = allParams.zipWithIndex.map {
       kv =>
         Log.LogArg(Seq(s"_${kv._2}"), kv._1, hiddenName = true, None)
     }
 
-    val template = record.getMessage.split("\\{\\d+\\}", -1).map(_.replace("\\", "\\\\"))
+    val template = if (record.getMessage == null) {
+      Array.empty
+    } else {
+      record.getMessage.split("\\{\\d+\\}", -1).map(_.replace("\\", "\\\\"))
+    }
 
     val level = toLevel(record)
     Log.Entry(
