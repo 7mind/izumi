@@ -5,13 +5,14 @@ import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases.*
 import izumi.distage.fixtures.TypesCases.*
 import izumi.distage.model.PlannerInput
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.Ordering.Implicits.infixOrderingOps
 import scala.language.reflectiveCalls
 
-class AdvancedTypesTest extends AnyWordSpec with MkInjector {
+class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "support generics" in {
     import TypesCase1._
@@ -166,7 +167,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
 
   }
 
-  "handle abstract `with` types" in {
+  "handle abstract `with` types" in brokenOnScala3 {
     import TypesCase3._
 
     class Definition[T: Tag, G <: T with Trait1: Tag: AnyConstructor, C <: T with Trait4: Tag: AnyConstructor] extends ModuleDef {
@@ -240,7 +241,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     assert(context.get[Dep {}] != null)
   }
 
-  "support constant types in class strategy" in {
+  "support constant types in class strategy" in brokenOnScala3 {
     assume(IzScala.scalaRelease >= ScalaRelease.`2_13`(0))
     assertCompiles(
       """

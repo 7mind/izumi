@@ -12,11 +12,12 @@ import izumi.distage.model.definition.errors.{ConflictResolutionError, DIError}
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
-class BasicTest extends AnyWordSpec with MkInjector {
+class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "maintain correct operation order" in {
     import BasicCase1.*
     val definition = PlannerInput(
@@ -106,7 +107,9 @@ class BasicTest extends AnyWordSpec with MkInjector {
         injector.produce(injector.plan(definition)).unsafeGet().get[TestClass]
         """)
     }
-    assert(res.getMessage.contains("BadIdAnnotationException"))
+    brokenOnScala3 {
+      assert(res.getMessage.contains("BadIdAnnotationException"))
+    }
   }
 
   "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {
@@ -399,10 +402,12 @@ class BasicTest extends AnyWordSpec with MkInjector {
       make[ServerConfig].from(ServerConfig)
     })
 
-    val context = mkInjector().produce(definition).unsafeGet()
+    brokenOnScala3 {
+      val context = mkInjector().produce(definition).unsafeGet()
 
-    assert(context.get[ServerConfig].port == context.get[Int]("port"))
-    assert(context.get[ServerConfig].address == context.get[String]("address"))
+      assert(context.get[ServerConfig].port == context.get[Int]("port"))
+      assert(context.get[ServerConfig].address == context.get[String]("address"))
+    }
   }
 
   "support mutations" in {

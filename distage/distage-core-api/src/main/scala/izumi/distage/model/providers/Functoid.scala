@@ -1,6 +1,6 @@
 package izumi.distage.model.providers
 
-import izumi.distage.constructors.{AnyConstructor, ClassConstructor, FactoryConstructor, ZEnvConstructor, TraitConstructor}
+import izumi.distage.constructors.{AnyConstructor, ClassConstructor, FactoryConstructor, TraitConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.distage.model.reflection.LinkedParameter
@@ -124,11 +124,30 @@ final case class Functoid[+A](get: Provider) {
   def addDependency(key: DIKey): Functoid[A] = addDependencies(key :: Nil)
   def addDependencies(keys: Iterable[DIKey]): Functoid[A] = copy[A](get = get.addUnused(keys))
 
+  /**
+    * Add an `@Id` annotation to an unannotated parameter `P`, e.g.
+    * for .annotateParameter("x"), transform lambda `(p: P) => x(p)`
+    * into `(p: P @Id("x")) => x(p)`
+    */
   def annotateParameter[P: Tag](name: Identifier): Functoid[A] = {
     val paramTpe = SafeType.get[P]
+    annotateParameterWhen(name) {
+      case DIKey.TypeKey(tpe, _) => tpe == paramTpe
+      case _: DIKey.IdKey[?] => false
+    }
+  }
+  /** Add an `@Id(name)` annotation to all unannotated parameters */
+  def annotateAllParameters(name: Identifier): Functoid[A] = {
+    annotateParameterWhen(name) {
+      case _: DIKey.TypeKey => true
+      case _: DIKey.IdKey[?] => false
+    }
+  }
+  /** Add an `@Id(name)` annotation to all parameters matching `predicate` */
+  def annotateParameterWhen(name: Identifier)(predicate: DIKey.BasicKey => Boolean): Functoid[A] = {
     val newProvider = this.get.replaceKeys {
-      case DIKey.TypeKey(tpe, m) if tpe == paramTpe =>
-        DIKey.IdKey(paramTpe, name.id, m)(name.idContract)
+      case k: DIKey.BasicKey if predicate(k) =>
+        DIKey.IdKey(k.tpe, name.id, k.mutatorIndex)(name.idContract)
       case k => k
     }
     Functoid(newProvider)

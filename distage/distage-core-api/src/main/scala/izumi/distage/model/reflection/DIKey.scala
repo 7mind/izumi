@@ -24,6 +24,7 @@ object DIKey {
 
   sealed trait BasicKey extends DIKey {
     def withTpe(tpe: SafeType): DIKey.BasicKey
+    def mutatorIndex: Option[Int]
   }
 
   final case class TypeKey(tpe: SafeType, mutatorIndex: Option[Int] = None) extends BasicKey {
