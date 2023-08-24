@@ -1,6 +1,6 @@
 package izumi.functional
 
-import izumi.functional.IzEither.{EitherBiAggregate, EitherBiFlatAggregate, EitherBiFlatMapAggregate, EitherBiMapAggregate, EitherScalarOps}
+import izumi.functional.IzEither.{EitherBiAggregate, EitherBiFlatAggregate, EitherBiFlatMapAggregate, EitherBiMapAggregate, EitherExt, EitherScalarOps}
 
 import scala.collection.compat.*
 import scala.language.implicitConversions
@@ -15,9 +15,21 @@ trait IzEither extends IzEitherTraversals {
   @inline implicit final def EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](col: Col[Either[L, R]]): EitherScalarOps[L, R, Col] = new EitherScalarOps(col)
   @inline implicit final def EitherBiMapAggregate[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiMapAggregate[Col, T] = new EitherBiMapAggregate(col)
   @inline implicit final def EitherBiFlatMapAggregate[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiFlatMapAggregate[Col, T] = new EitherBiFlatMapAggregate(col)
+
+  @inline implicit final def EitherObjectExt(e: Either.type): EitherExt = new EitherExt(e)
 }
 
 object IzEither extends IzEither {
+
+  final class EitherExt(private val e: Either.type) extends AnyVal {
+    def failWhen[A](cond: Boolean)(fun: => A): Either[A, Unit] = {
+      if (cond) {
+        Left(fun)
+      } else {
+        Right(())
+      }
+    }
+  }
 
   final class EitherBiMapAggregate[Col[x] <: IterableOnce[x], T](private val col: Col[T]) extends AnyVal {
     /** `traverse` with error accumulation */
