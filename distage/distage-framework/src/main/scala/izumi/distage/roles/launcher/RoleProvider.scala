@@ -63,7 +63,9 @@ object RoleProvider {
       val missing = requiredRoles.diff(availableRoleBindings.map(_.descriptor.id))
       if (missing.nonEmpty) {
         logger.crit(s"Missing ${missing.niceList() -> "roles"}")
-        throw new DIAppBootstrapException(s"Unknown roles:${missing.niceList("    ")}")
+        throw new DIAppBootstrapException(s"""Unknown roles:${missing.niceList("    ")}
+                                             |
+                                             |Available roles:${rolesInfo.render()}""".stripMargin)
       }
       if (requiredRoleBindings.isEmpty) {
         throw new DIAppBootstrapException(s"""No roles selected to launch, please select one of the following roles using syntax `:${'$'}roleName` on the command-line.
