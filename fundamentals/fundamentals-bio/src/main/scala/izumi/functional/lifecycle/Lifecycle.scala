@@ -441,12 +441,30 @@ object Lifecycle extends LifecycleInstances {
       * this will leak the resource and cause it to never be cleaned up.
       *
       * This function only makes sense in code examples or at top-level,
-      * please use [[SyntaxUse#use]] instead!
+      * please use [[SyntaxUse#use]] otherwise!
       *
-      * @note will also acquire the resource without an uninterruptible section
+      * @note will acquire the resource without an uninterruptible section
       */
     def unsafeGet()(implicit F: QuasiPrimitives[F]): F[A] = {
       F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
+    }
+
+    /**
+      * Unsafely acquire the resource, return it and the finalizer.
+      * The resource will be leaked unless the finalizer is used.
+      *
+      * This function only makes sense in code examples or at top-level,
+      * please use [[SyntaxUse#use]] otherwise!
+      *
+      * @note will acquire the resource without an uninterruptible section
+      */
+    def unsafeAllocate()(implicit F: QuasiPrimitives[F]): F[(A, () => F[Unit])] = {
+      F.flatMap(resource.acquire) {
+        inner =>
+          F.map(
+            resource.extract(inner).fold(identity, F.pure)
+          )(a => (a, () => resource.release(inner)))
+      }
     }
   }
 
