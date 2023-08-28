@@ -113,7 +113,6 @@ abstract class RoleAppMain[F[_]](
     *
     * @note All resources will be leaked. Use [[replLocatorWithClose]] if you need resource cleanup within a REPL session.
     */
-
   def replLocator(args: String*)(implicit F: QuasiIO[F]): F[Locator] = {
     F.map(replLocatorWithClose(args*))(_._1)
   }
