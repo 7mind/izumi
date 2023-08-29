@@ -20,6 +20,7 @@ import izumi.distage.testkit.spec.DistageTestEnv
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
@@ -65,7 +66,7 @@ object TestPlanner {
   sealed trait PlanningFailure
   object PlanningFailure {
     final case class Exception(throwable: Throwable) extends PlanningFailure
-    final case class DIErrors(errors: List[DIError]) extends PlanningFailure
+    final case class DIErrors(errors: NEList[DIError]) extends PlanningFailure
   }
 
   final case class PlannedTestEnvs[F[_]](envs: Map[PreparedTestEnv, TestTree[F]])
@@ -231,7 +232,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     lateLogger: IzLogger,
     fullActivation: Activation,
     moduleProvider: ModuleProvider,
-  ): Either[List[DIError], PackedEnv[F]] = {
+  ): Either[NEList[DIError], PackedEnv[F]] = {
     val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
     val appModule = {
       // add default module manually, instead of passing it to Injector, to be able to split it later into runtime/non-runtime manually
@@ -347,7 +348,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     injector: Planner,
     appModule: Module,
     check: PlanCircularDependencyCheck,
-  ): Either[List[DIError], Plan] = {
+  ): Either[NEList[DIError], Plan] = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
 
     for {

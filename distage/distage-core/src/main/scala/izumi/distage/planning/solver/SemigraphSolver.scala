@@ -32,7 +32,7 @@ trait SemigraphSolver[N, I, V] {
     roots: Set[N],
     activations: Set[AxisPoint],
     weak: Set[WeakEdge[N]],
-  ): Either[List[ConflictResolutionError[N, V]], Resolution[N, V]]
+  ): Either[NEList[ConflictResolutionError[N, V]], Resolution[N, V]]
 }
 
 @nowarn("msg=Unused import")
@@ -65,13 +65,13 @@ object SemigraphSolver {
       roots: Set[N],
       activations: Set[AxisPoint],
       weak: Set[WeakEdge[N]],
-    ): Either[List[ConflictResolutionError[N, V]], Resolution[N, V]] = {
+    ): Either[NEList[ConflictResolutionError[N, V]], Resolution[N, V]] = {
       for {
         semiMatrix <- resolveAxis(predecessors, roots, weak, activations)
         unsolvedConflicts = semiMatrix.links.keySet.groupBy(a => MutSel(a.key, a.mut)).filter(_._2.size > 1)
         _ <-
           if (unsolvedConflicts.nonEmpty) {
-            Left(List(UnsolvedConflicts(unsolvedConflicts)))
+            Left(NEList(UnsolvedConflicts(unsolvedConflicts)))
           } else {
             Right(())
           }
@@ -98,7 +98,7 @@ object SemigraphSolver {
       roots: Set[N],
       weak: Set[WeakEdge[N]],
       activations: Set[AxisPoint],
-    ): Either[List[ConflictResolutionError[N, V]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
+    ): Either[NEList[ConflictResolutionError[N, V]], SemiIncidenceMatrix[Annotated[N], Selected[N], V]] = {
       for {
         _ <- nonAmbigiousActivations(activations)
         activationChoices = ActivationChoices(activations)
@@ -116,12 +116,12 @@ object SemigraphSolver {
 
     protected def nonAmbigiousActivations(
       activations: Set[AxisPoint]
-    ): Either[List[ConflictingAxisChoices[N]], Unit] = {
+    ): Either[NEList[ConflictingAxisChoices[N]], Unit] = {
       val bad = activations.groupBy(_.axis).filter(_._2.size > 1)
       if (bad.isEmpty)
         Right(())
       else
-        Left(List(ConflictingAxisChoices(bad)))
+        Left(NEList(ConflictingAxisChoices(bad)))
     }
 
     @tailrec
@@ -132,8 +132,8 @@ object SemigraphSolver {
     )(roots: Set[N],
       reachable: Set[N],
       currentResult: mutable.HashMap[Annotated[N], Node[N, V]],
-    ): Either[List[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
-      val out: Either[List[ConflictResolutionError[N, V]], Seq[(Annotated[N], Node[N, V])]] = roots.toSeq
+    ): Either[NEList[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
+      val out: Either[NEList[ConflictResolutionError[N, V]], Seq[(Annotated[N], Node[N, V])]] = roots.toSeq
         .biFlatMapAggregate {
           root =>
             val (mutators, definitions) =
@@ -178,7 +178,7 @@ object SemigraphSolver {
     protected def resolveConflict(
       activations: ActivationChoices,
       conflict: Seq[(Annotated[N], Node[N, V])],
-    ): Either[List[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
+    ): Either[NEList[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
 
       val (onlyValid, /*invalid*/ _) = filterDeactivated(activations, conflict)
 
@@ -194,7 +194,7 @@ object SemigraphSolver {
                 if (activations.allConfigured(head._1.axis)) {
                   Right(Map(head))
                 } else {
-                  Left(List(conflictingDefsError(activations, conflict)))
+                  Left(NEList(conflictingDefsError(activations, conflict)))
                 }
               case _ =>
                 chooseMostSpecificInConflict(activations, conflict)
@@ -218,7 +218,7 @@ object SemigraphSolver {
     protected def chooseMostSpecificInConflict(
       activations: ActivationChoices,
       conflict: NEList[(Annotated[N], Node[N, V])],
-    ): Either[List[ConflictingDefs[N, V]], Map[Annotated[N], Node[N, V]]] = {
+    ): Either[NEList[ConflictingDefs[N, V]], Map[Annotated[N], Node[N, V]]] = {
       val sorted = conflict.toList.sortWith((a, b) => b._1.axis.subsetOf(a._1.axis))
       val mostSpecific = sorted.head
       val mostSpecificAxis = mostSpecific._1.axis
@@ -236,7 +236,7 @@ object SemigraphSolver {
       if (allAreComparableAndStrictlyLess && mostSpecificAxis.nonEmpty && activations.allConfigured(mostSpecificAxis)) {
         Right(Map(mostSpecific))
       } else {
-        Left(List(conflictingDefsError(activations, conflict)))
+        Left(NEList(conflictingDefsError(activations, conflict)))
       }
     }
 
@@ -244,7 +244,7 @@ object SemigraphSolver {
       ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap, activations)
     }
 
-    private def resolveMutations(predecessors: SemiIncidenceMatrix[MutSel[N], N, V]): Either[List[Nothing], Result] = {
+    private def resolveMutations(predecessors: SemiIncidenceMatrix[MutSel[N], N, V]): Either[NEList[Nothing], Result] = {
       val conflicts = predecessors.links.keySet
         .groupBy(_.key)
         .filter(_._2.size > 1)

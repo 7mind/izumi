@@ -126,13 +126,13 @@ class PlanVerifier(
         if (visited.contains(key) || allVisited.contains((key, currentActivation))) {
           Right(Iterator.empty)
         } else {
-          @inline def reportMissing[A](key: DIKey, dependee: DIKey): Left[List[MissingImport], Nothing] = {
+          @inline def reportMissing[A](key: DIKey, dependee: DIKey): Left[NEList[MissingImport], Nothing] = {
             val origins = allImportingBindings(matrix, currentActivation)(key, dependee)
             val similarBindings = ImportStrategyDefaultImpl.findSimilarImports(bindings, key)
-            Left(List(MissingImport(key, dependee, origins, similarBindings.similarSame, similarBindings.similarSub)))
+            Left(NEList(MissingImport(key, dependee, origins, similarBindings.similarSame, similarBindings.similarSub)))
           }
 
-          @inline def reportMissingIfNotProvided[A](key: DIKey, dependee: DIKey)(orElse: => Either[List[PlanIssue], A]): Either[List[PlanIssue], A] = {
+          @inline def reportMissingIfNotProvided[A](key: DIKey, dependee: DIKey)(orElse: => Either[NEList[PlanIssue], A]): Either[NEList[PlanIssue], A] = {
             if (providedKeys(key)) orElse else reportMissing(key, dependee)
           }
 
@@ -171,12 +171,14 @@ class PlanVerifier(
                                   case Some(value) if value.sizeIs == 1 =>
                                     if (ac.allValid(value.head._2)) Right(List(memberKey)) else Right(Nil)
                                   case Some(value) =>
-                                    Left(List(InconsistentSetMembers(memberKey, NEList.unsafeFrom(value.iterator.map(_._1.origin.value).toList))))
+                                    Left(NEList(InconsistentSetMembers(memberKey, NEList.unsafeFrom(value.iterator.map(_._1.origin.value).toList))))
                                   case None =>
                                     reportMissingIfNotProvided(memberKey, key)(Right(List(memberKey)))
                                 }
                             }(Set)
-                        } yield (ops.head.copy(members = members), Set.empty[AxisPoint], Set.empty[AxisPoint])
+                        } yield {
+                          (ops.head.copy(members = members), Set.empty[AxisPoint], Set.empty[AxisPoint])
+                        }
                     }
                   } yield otherOps ++ mergedSets
                 }
@@ -193,7 +195,7 @@ class PlanVerifier(
                     if (probablyUnsaturatedAxis.isEmpty) {
                       reportMissing(key, dependee)
                     } else {
-                      Left(probablyUnsaturatedAxis)
+                      Left(NEList.unsafeFrom(probablyUnsaturatedAxis))
                     }
                   } else {
                     Right(())
@@ -222,10 +224,10 @@ class PlanVerifier(
 
     // for trampoline
     sealed trait RecResult {
-      type RecursionResult <: Iterator[Either[List[PlanIssue], Iterator[() => RecursionResult]]]
+      type RecursionResult <: Iterator[Either[NEList[PlanIssue], Iterator[() => RecursionResult]]]
     }
     type RecursionResult = RecResult#RecursionResult
-    @inline def RecursionResult(a: Iterator[Either[List[PlanIssue], Iterator[() => RecursionResult]]]): RecursionResult = a.asInstanceOf[RecursionResult]
+    @inline def RecursionResult(a: Iterator[Either[NEList[PlanIssue], Iterator[() => RecursionResult]]]): RecursionResult = a.asInstanceOf[RecursionResult]
 
     // trampoline
     val errors = Set.newBuilder[PlanIssue]
@@ -271,7 +273,7 @@ class PlanVerifier(
     execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
     excludedActivations: Set[NESet[AxisPoint]],
     effectType: SafeType,
-  ): Either[List[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
+  ): Either[NEList[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
     val issues =
       checkForUnsaturatedAxis(allAxis, withoutCurrentActivations, excludedActivations) ++
       checkForShadowedActivations(allAxis, withoutCurrentActivations) ++
@@ -281,7 +283,7 @@ class PlanVerifier(
       checkForIncompatibleEffectType(effectType, withoutCurrentActivations)
 
     if (issues.nonEmpty) {
-      Left(issues)
+      Left(NEList.unsafeFrom(issues))
     } else {
       val next = withoutCurrentActivations.iterator.map {
         case (op, activations, _) =>
