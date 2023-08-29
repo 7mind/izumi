@@ -984,7 +984,7 @@ final class NonEmptySet[T] private (val toSet: Set[T]) extends AnyVal {
 /**
   * Companion object for class <code>NonEmptySet</code>.
   */
-object NonEmptySet {
+object NonEmptySet extends NonEmptySetInstances {
 
   /**
     * Constructs a new <code>NonEmptySet</code> given at least one element.

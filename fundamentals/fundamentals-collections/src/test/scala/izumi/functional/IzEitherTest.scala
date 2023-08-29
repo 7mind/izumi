@@ -1,11 +1,10 @@
 package izumi.functional
 
+import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptySet}
 import org.scalatest.wordspec.AnyWordSpec
-import IzEither.*
 
 import scala.annotation.nowarn
-import scala.collection.mutable
 
 @nowarn("msg=Unused import")
 class IzEitherTest extends AnyWordSpec {
@@ -31,49 +30,6 @@ class IzEitherTest extends AnyWordSpec {
   "IzEither should support NonEmptyCollections" in {
 
     val nel0 = List(Right(1), Right(2), Left(NonEmptyList("error")))
-
-    implicit def factoryNel[A]: Factory[A, NonEmptyList[A]] = new Factory[A, NonEmptyList[A]] {
-      override def fromSpecific(it: IterableOnce[A]): NonEmptyList[A] = NonEmptyList.unsafeFrom(it.iterator.toList)
-
-      override def newBuilder: mutable.Builder[A, NonEmptyList[A]] = {
-        new mutable.Builder[A, NonEmptyList[A]] {
-
-          val sub = implicitly[Factory[A, List[A]]].newBuilder
-          override def clear(): Unit = sub.clear()
-
-          override def result(): NonEmptyList[A] = {
-            NonEmptyList.unsafeFrom(sub.result())
-          }
-
-          override def addOne(elem: A): this.type = {
-            sub.addOne(elem)
-            this
-          }
-        }
-      }
-    }
-
-    implicit def factoryNes[A]: Factory[A, NonEmptySet[A]] = new Factory[A, NonEmptySet[A]] {
-      override def fromSpecific(it: IterableOnce[A]): NonEmptySet[A] = NonEmptySet.unsafeFrom(it.iterator.toSet)
-
-      override def newBuilder: mutable.Builder[A, NonEmptySet[A]] = {
-        new mutable.Builder[A, NonEmptySet[A]] {
-
-          val sub = implicitly[Factory[A, Set[A]]].newBuilder
-
-          override def clear(): Unit = sub.clear()
-
-          override def result(): NonEmptySet[A] = {
-            NonEmptySet.unsafeFrom(sub.result())
-          }
-
-          override def addOne(elem: A): this.type = {
-            sub.addOne(elem)
-            this
-          }
-        }
-      }
-    }
 
     implicitly[Factory[String, NonEmptyList[String]]]
     assert(nel0.biAggregate == Left(NonEmptyList("error")))

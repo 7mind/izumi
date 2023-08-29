@@ -1450,7 +1450,7 @@ final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
 /**
   * Companion object for class <code>NonEmptyList</code>.
   */
-object NonEmptyList {
+object NonEmptyList extends NonEmptyListInstances {
 
   /**
     * Constructs a new <code>NonEmptyList</code> of one element

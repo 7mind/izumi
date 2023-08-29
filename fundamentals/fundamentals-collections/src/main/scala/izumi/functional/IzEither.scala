@@ -37,6 +37,14 @@ object IzEither extends IzEither {
         Right(())
       }
     }
+
+    def orFail[L, R](cond: Boolean)(ok: => R)(fail: => L): Either[L, R] = {
+      if (cond) {
+        Left(fail)
+      } else {
+        Right(ok)
+      }
+    }
   }
 
   final class EitherBiAggregate[L, R, ColL[_], ColR[x] <: IterableOnce[x]](private val col: ColR[Either[ColL[L], R]]) extends AnyVal {
