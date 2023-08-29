@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.strings
 
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.strings.IzString.*
 
 import scala.language.implicitConversions
@@ -16,7 +16,7 @@ object TextTree {
 
   case class StringNode[T](value: String) extends TextTree[T]
 
-  case class Node[T](chunks: NonEmptyList[TextTree[T]]) extends TextTree[T]
+  case class Node[T](chunks: NEList[TextTree[T]]) extends TextTree[T]
 
   case class Shift[T](nested: TextTree[T], shift: Int) extends TextTree[T]
 
@@ -27,7 +27,7 @@ object TextTree {
       if (target.isEmpty) {
         StringNode("")
       } else {
-        NonEmptyList.from(target.flatMap(t => Seq(t, StringNode[T](sep))).init) match {
+        NEList.from(target.flatMap(t => Seq(t, StringNode[T](sep))).init) match {
           case Some(value) =>
             Node(value)
           case None =>
@@ -52,15 +52,15 @@ object TextTree {
 
     def flatten: TextTree[T] = {
       target match {
-        case v: ValueNode[T] => Node(NonEmptyList(v))
-        case s: StringNode[T] => Node(NonEmptyList(s))
+        case v: ValueNode[T] => Node(NEList(v))
+        case s: StringNode[T] => Node(NEList(s))
         case s: Shift[T] => Shift(s.flatten, s.shift)
         case t: Trim[T] => Trim(t.flatten)
         case n: Node[T] =>
           Node(n.chunks.flatMap {
             _.flatten match {
               case n: Node[T] => n.chunks
-              case o => NonEmptyList(o)
+              case o => NEList(o)
             }
           })
       }
@@ -126,7 +126,7 @@ object TextTree {
         }
         .reverse
 
-      Node(NonEmptyList(StringNode[T](sc.parts.last), seq).reverse)
+      Node(NEList(StringNode[T](sc.parts.last), seq).reverse)
     }
   }
 

@@ -4,7 +4,7 @@ import scala.collection.compat.Factory
 import scala.collection.mutable
 import scala.annotation.{nowarn, unused}
 
-trait NonEmptySetInstances {
+trait NESetInstances {
   @nowarn("msg=dead code following this construct")
   implicit def factoryNes[A]: Factory[A, NESet[A]] = new Factory[A, NESet[A]] {
     override def apply(@unused from: Nothing): mutable.Builder[A, NESet[A]] = apply()

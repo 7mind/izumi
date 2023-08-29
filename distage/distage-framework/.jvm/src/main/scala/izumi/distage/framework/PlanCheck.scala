@@ -11,7 +11,7 @@ import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.LoadedPlugins
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.language.Quirks.discard
@@ -111,7 +111,7 @@ object PlanCheck {
     def checkAppParsed[F[_]](
       app: CheckableApp.Aux[F],
       chosenRoles: RoleSelection,
-      excludedActivations: Set[NonEmptySet[AxisPoint]],
+      excludedActivations: Set[NESet[AxisPoint]],
       chosenConfig: Option[String],
       checkConfig: Boolean,
       printBindings: Boolean,
@@ -143,7 +143,7 @@ object PlanCheck {
 
       def returnPlanCheckError(cause: Either[Throwable, PlanVerifierResult.Incorrect]): PlanCheckResult.Incorrect = {
         val visitedKeys = cause.fold(_ => Set.empty[DIKey], _.visitedKeys)
-        val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNonEmptySet.map(_.render + "\n").niceList())
+        val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNESet.map(_.render + "\n").niceList())
         val message = {
           val configStr = if (checkConfig) {
             s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
@@ -185,7 +185,7 @@ object PlanCheck {
           s"""Found a problem with your DI wiring, when checking application=${app.getClass.getName.split('.').last.split('$').last}, with parameters:
              |
              |  roles               = $chosenRoles (effective roles: $effectiveRoleNames) (all effective roots: $effectiveRoots)
-             |  excludedActivations = ${NonEmptySet.from(excludedActivations).fold("ø")(_.map(_.mkString(" ")).mkString(" | "))}
+             |  excludedActivations = ${NESet.from(excludedActivations).fold("ø")(_.map(_.mkString(" ")).mkString(" | "))}
              |  bootstrapPlugins    = $bsPluginsStr
              |  plugins             = $appPluginsStr
              |  checkConfig         = $checkConfig$configStr
@@ -230,7 +230,7 @@ object PlanCheck {
 
     private[this] def checkAnyApp[F[_]](
       planVerifier: PlanVerifier,
-      excludedActivations: Set[NonEmptySet[AxisPoint]],
+      excludedActivations: Set[NESet[AxisPoint]],
       checkConfig: Boolean,
       reportEffectiveConfig: String => Unit,
     )(planCheckInput: PlanCheckInput[F]
@@ -272,7 +272,7 @@ object PlanCheck {
         Nil
       }
 
-      NonEmptySet.from(planVerifierResult.issues.fromNonEmptySet ++ configIssues) match {
+      NESet.from(planVerifierResult.issues.fromNESet ++ configIssues) match {
         case Some(allIssues) =>
           PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys, planVerifierResult.time)
         case None =>
@@ -320,9 +320,9 @@ object PlanCheck {
       )
     }
 
-    private[this] def parseActivations(s: String): Set[NonEmptySet[AxisPoint]] = {
+    private[this] def parseActivations(s: String): Set[NESet[AxisPoint]] = {
       s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
-          NonEmptySet from _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
+          NESet from _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
         }.toSet
     }
 

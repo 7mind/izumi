@@ -7,7 +7,7 @@ import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections.*
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
@@ -182,7 +182,7 @@ object SemigraphSolver {
 
       val (onlyValid, /*invalid*/ _) = filterDeactivated(activations, conflict)
 
-      NonEmptyList.from(onlyValid) match {
+      NEList.from(onlyValid) match {
         case Some(conflict) =>
           // keep in mind: only `invalid` contains elements which are known to be inactive (there is a conflicting axis point)
           if (conflict.toList.sizeIs == 1) {
@@ -217,7 +217,7 @@ object SemigraphSolver {
     // however, activations cannot be compared if they contain opposite axis points along any axis
     protected def chooseMostSpecificInConflict(
       activations: ActivationChoices,
-      conflict: NonEmptyList[(Annotated[N], Node[N, V])],
+      conflict: NEList[(Annotated[N], Node[N, V])],
     ): Either[List[ConflictingDefs[N, V]], Map[Annotated[N], Node[N, V]]] = {
       val sorted = conflict.toList.sortWith((a, b) => b._1.axis.subsetOf(a._1.axis))
       val mostSpecific = sorted.head
@@ -240,7 +240,7 @@ object SemigraphSolver {
       }
     }
 
-    protected def conflictingDefsError(activations: ActivationChoices, conflict: NonEmptyList[(Annotated[N], Node[N, V])]): ConflictingDefs[N, V] = {
+    protected def conflictingDefsError(activations: ActivationChoices, conflict: NEList[(Annotated[N], Node[N, V])]): ConflictingDefs[N, V] = {
       ConflictingDefs(conflict.toList.map { case (k, n) => k.withoutAxis -> (k.axis -> n) }.toMultimap, activations)
     }
 

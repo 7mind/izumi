@@ -1,7 +1,7 @@
 package izumi.functional
 
 import izumi.functional.IzEither.*
-import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptySet}
+import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.nowarn
@@ -29,30 +29,30 @@ class IzEitherTest extends AnyWordSpec {
 
   "IzEither should support NonEmptyCollections" in {
 
-    val nel0 = List(Right(1), Right(2), Left(NonEmptyList("error")))
+    val nel0 = List(Right(1), Right(2), Left(NEList("error")))
 
-    implicitly[Factory[String, NonEmptyList[String]]]
-    assert(nel0.biAggregate == Left(NonEmptyList("error")))
+    implicitly[Factory[String, NEList[String]]]
+    assert(nel0.biAggregate == Left(NEList("error")))
 
-    val nes0 = List(Right(()), Left(NonEmptySet("error")))
-    assert(nes0.biAggregate == Left(NonEmptySet("error")))
+    val nes0 = List(Right(()), Left(NESet("error")))
+    assert(nes0.biAggregate == Left(NESet("error")))
 
     assert(nes0.biMapAggregateVoid {
       case Left(value) => Left(value + "error1")
       case Right(value) => Right(value)
-    } == Left(NonEmptySet("error", "error1")))
+    } == Left(NESet("error", "error1")))
 
-    val nel1 = List(Right(List(1)), Left(NonEmptyList("error")))
-    assert(nel1.biFlatAggregate == Left(NonEmptyList("error")))
+    val nel1 = List(Right(List(1)), Left(NEList("error")))
+    assert(nel1.biFlatAggregate == Left(NEList("error")))
 
     assert(nel1.biMapAggregate {
-      case Left(value) => Left(Set(value ++ NonEmptyList("a")))
+      case Left(value) => Left(Set(value ++ NEList("a")))
       case Right(value) => Right(Set(value ++ List(1)))
-    } == Left(Set(NonEmptyList("error", "a"))))
+    } == Left(Set(NEList("error", "a"))))
 
-    val nel2 = List(Right(1), Left(NonEmptyList("error")))
-    assert(nel2.biFlatMapAggregate(_.map(i => List(i))) == Left(NonEmptyList("error")))
-    assert(nel2.biFlatMapAggregateTo(_.map(i => List(i)))(Set) == Left(NonEmptyList("error")))
+    val nel2 = List(Right(1), Left(NEList("error")))
+    assert(nel2.biFlatMapAggregate(_.map(i => List(i))) == Left(NEList("error")))
+    assert(nel2.biFlatMapAggregateTo(_.map(i => List(i)))(Set) == Left(NEList("error")))
 
   }
 }

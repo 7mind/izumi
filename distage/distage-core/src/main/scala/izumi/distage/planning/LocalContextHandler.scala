@@ -8,7 +8,7 @@ import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.functional.Identity
 
 trait LocalContextHandler[+E] {
@@ -29,7 +29,7 @@ object LocalContextHandler {
     }
   }
 
-  class VerificationHandler(verifier: PlanVerifier, excludedActivations: Set[NonEmptySet[AxisPoint]]) extends LocalContextHandler[LocalContextVerificationFailure] {
+  class VerificationHandler(verifier: PlanVerifier, excludedActivations: Set[NESet[AxisPoint]]) extends LocalContextHandler[LocalContextVerificationFailure] {
     override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextVerificationFailure, SingletonWiring] = {
       val ver = verifier.verify[Identity](c.module, Roots(c.function.get.diKeys.toSet), k => c.externalKeys.contains(k), excludedActivations)
 

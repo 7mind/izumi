@@ -2293,6 +2293,7 @@ lazy val `distage-coreJS` = `distage-core`.js
       "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time % Test
     )
   )
+  .enablePlugins(ScalaJSBundlerPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-config"))

@@ -4,7 +4,7 @@ import scala.annotation.{nowarn, unused}
 import scala.collection.compat.Factory
 import scala.collection.mutable
 
-trait NonEmptyListInstances {
+trait NEListInstances {
   @nowarn("msg=dead code following this construct")
   implicit def factoryNel[A]: Factory[A, NEList[A]] = new Factory[A, NEList[A]] {
     override def apply(@unused from: Nothing): mutable.Builder[A, NEList[A]] = apply()

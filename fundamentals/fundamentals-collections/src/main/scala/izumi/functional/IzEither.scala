@@ -1,7 +1,7 @@
 package izumi.functional
 
 import izumi.functional.IzEither.{EitherBiAggregate, EitherBiFlatAggregate, EitherBiFlatMapAggregate, EitherBiMapAggregate, EitherBiTraversals, EitherExt, EitherLrPartitions, EitherScalarOps}
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.NEList
 
 import scala.collection.compat.*
 import scala.language.implicitConversions
@@ -216,7 +216,7 @@ object IzEither extends IzEither {
       biAggregateScalar.left.map(_.toList)
     }
 
-    def biAggregateScalar(implicit buildR: Factory[R, ColR[R]]): Either[NonEmptyList[L], ColR[R]] = {
+    def biAggregateScalar(implicit buildR: Factory[R, ColR[R]]): Either[NEList[L], ColR[R]] = {
       val bad = List.newBuilder[L]
       val good = buildR.newBuilder
 
@@ -229,7 +229,7 @@ object IzEither extends IzEither {
       if (badList.isEmpty) {
         Right(good.result())
       } else {
-        Left(NonEmptyList.unsafeFrom(badList))
+        Left(NEList.unsafeFrom(badList))
       }
     }
 
