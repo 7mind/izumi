@@ -2,8 +2,9 @@ package izumi.fundamentals.collections.nonempty
 
 // shameless copypaste from Scalactic
 
-import scala.collection.compat._
+import scala.collection.compat.*
 import scala.collection.mutable.{ArrayBuffer, Buffer}
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 // Can't be a LinearSeq[T] because Builder would be able to create an empty one.
@@ -1023,4 +1024,6 @@ object NonEmptySet {
   implicit final class OptionOps[A](private val option: Option[NonEmptySet[A]]) extends AnyVal {
     @inline def fromNonEmptySet: Set[A] = if (option.isEmpty) Set.empty else option.get.toSet
   }
+
+  @inline implicit def asIterable[A](ne: NonEmptySet[A]): IterableOnce[A] = ne.toIterable
 }

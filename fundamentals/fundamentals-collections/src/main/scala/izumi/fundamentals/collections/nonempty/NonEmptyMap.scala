@@ -5,7 +5,8 @@ package izumi.fundamentals.collections.nonempty
 import scala.collection.{Iterable, Seq, mutable}
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.reflect.ClassTag
-import scala.collection.compat._
+import scala.collection.compat.*
+import scala.language.implicitConversions
 
 // Can't be a LinearSeq[T] because Builder would be able to create an empty one.
 /**
@@ -906,5 +907,7 @@ object NonEmptyMap {
   implicit final class OptionOps[K, +V](private val option: Option[NonEmptyMap[K, V]]) extends AnyVal {
     @inline def fromNonEmptyMap: Map[K, V] = if (option.isEmpty) Map.empty else option.get.toMap
   }
+
+  @inline implicit def asIterable[K, V](ne: NonEmptyMap[K, V]): IterableOnce[(K, V)] = ne.toIterable
 
 }

@@ -2,9 +2,10 @@ package izumi.fundamentals.collections.nonempty
 
 // shameless copypaste from Scalactic
 
-import scala.collection.compat._
+import scala.collection.compat.*
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.collection.{Iterable, Seq, mutable}
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 final class NonEmptyList[+T] private (val toList: List[T]) extends AnyVal {
@@ -1508,6 +1509,8 @@ object NonEmptyList {
     require(list.nonEmpty)
     new NonEmptyList(list)
   }
+
+  @inline implicit def asIterable[A](nel: NonEmptyList[A]): IterableOnce[A] = nel.toIterable
 
   implicit final class OptionOps[+A](private val option: Option[NonEmptyList[A]]) extends AnyVal {
     @inline def fromNonEmptyList: List[A] = if (option.isEmpty) Nil else option.get.toList
