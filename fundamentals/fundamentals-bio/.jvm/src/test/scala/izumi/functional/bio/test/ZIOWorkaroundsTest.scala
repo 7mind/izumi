@@ -186,6 +186,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
           fiberStarted <- F.mkLatch
           stopFiber <- F.mkLatch
           innerFiberNotInterrupted <- F.mkLatch
+          outerFiberNotInterrupted <- F.mkLatch
           fiberNotInterrupted1 <- F.mkRef(false)
           fiberNotInterrupted2 <- F.mkRef(Option.empty[Boolean])
           fiber <- F.fork {
@@ -196,7 +197,11 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
                 stopFiber.await *>
                 innerFiberNotInterrupted.succeed(()))
                   .guaranteeExceptOnInterrupt(_ => fiberNotInterrupted1.set(true))
-              ).flatMap(promiseModifiedOrTimedOut => fiberNotInterrupted2.set(promiseModifiedOrTimedOut))
+              ).flatMap {
+                  promiseModifiedOrTimedOut =>
+                    fiberNotInterrupted2.set(promiseModifiedOrTimedOut) *>
+                    outerFiberNotInterrupted.succeed(())
+                }
             )
           }
           _ <- fiberStarted.await
@@ -205,7 +210,8 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
             .race(
               F.sleep(1.second) *>
               stopFiber.succeed(()) *>
-              innerFiberNotInterrupted.await.as(true)
+              innerFiberNotInterrupted.await *>
+              outerFiberNotInterrupted.await.as(true)
             )
           isNotInterrupted1 <- fiberNotInterrupted1.get
           isNotInterrupted2 <- fiberNotInterrupted2.get
