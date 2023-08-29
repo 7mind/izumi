@@ -117,7 +117,7 @@ class GraphPreparations(
       translated <- bindings.iterator
         // this is a minor optimization but it makes some conflict resolution strategies impossible
         // .filter(b => activationChoices.allValid(toAxis(b)))
-        .map(b => bindingTranslator.computeProvisioning(handler, b).map(next => (b, next))).biAggregateScalar
+        .map(b => bindingTranslator.computeProvisioning(handler, b).map(next => (b, next))).biAggregateScalarList
       bindingsToOps = translated.flatMap { case (b, next) => (next.provisions ++ next.sets.values).map((b, _)) }
     } yield {
       bindingsToOps.zipWithIndex

@@ -50,7 +50,7 @@ object PlanSolver {
       if (enableDebugVerify) {
         val res = PlanVerifier(preps).verify[Identity](input.bindings, input.roots, Injector.providedKeys(), Set.empty)
         if (res.issues.nonEmpty) {
-          System.err.println(res.issues.fromNonEmptySet.niceList())
+          System.err.println(res.issues.fromNESet.niceList())
         }
       }
 
