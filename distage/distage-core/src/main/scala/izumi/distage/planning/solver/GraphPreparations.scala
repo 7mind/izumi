@@ -11,6 +11,7 @@ import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.distage.planning.{BindingTranslator, LocalContextHandler}
 import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.MutableMultiMap
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.gc.Tracer
@@ -111,13 +112,13 @@ class GraphPreparations(
   def computeOperationsUnsafe[Err](
     handler: LocalContextHandler[Err],
     bindings: ModuleBase,
-  ): Either[List[Err], Iterator[(Annotated[DIKey], InstantiationOp, Binding)]] = {
+  ): Either[NEList[Err], Iterator[(Annotated[DIKey], InstantiationOp, Binding)]] = {
 
     for {
       translated <- bindings.iterator
         // this is a minor optimization but it makes some conflict resolution strategies impossible
         // .filter(b => activationChoices.allValid(toAxis(b)))
-        .map(b => bindingTranslator.computeProvisioning(handler, b).map(next => (b, next))).biAggregateScalarList
+        .map(b => bindingTranslator.computeProvisioning(handler, b).map(next => (b, next))).biAggregateScalar
       bindingsToOps = translated.flatMap { case (b, next) => (next.provisions ++ next.sets.values).map((b, _)) }
     } yield {
       bindingsToOps.zipWithIndex

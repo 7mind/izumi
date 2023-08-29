@@ -7,6 +7,7 @@ import izumi.distage.model.plan.ExecutableOp.{InstantiationOp, ProxyOp}
 import izumi.distage.model.planning.ForwardingRefResolver
 import izumi.distage.model.reflection.*
 import izumi.distage.planning.sequential.FwdrefLoopBreaker.BreakAt
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.cycles.LoopDetector
 import izumi.fundamentals.graphs.{DG, GraphMeta}
@@ -111,11 +112,11 @@ class ForwardingRefResolverDefaultImpl(
     *
     * There is no reason to touch this code unless we uncover some other soundness problems
     */
-  override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
+  override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[NEList[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
     val context = new FwdRefResolutionContext(plan)
 
     @tailrec
-    def next(predcessors: Map[DIKey, Set[DIKey]]): Either[List[LoopResolutionError], Unit] = {
+    def next(predcessors: Map[DIKey, Set[DIKey]]): Either[NEList[LoopResolutionError], Unit] = {
       val resolved = predcessors.filter(kv => kv._2.forall(context.updatedPredcessors.contains))
       if (resolved.nonEmpty) {
         resolved.foreach {
@@ -131,7 +132,7 @@ class ForwardingRefResolverDefaultImpl(
         val loopMembers = predcessors.view.filterKeys(isInvolvedIntoCycle(predcessors)).toMap
 
         if (loopMembers.isEmpty) {
-          Left(List(BUG_UnableToFindLoop(predcessors)))
+          Left(NEList(BUG_UnableToFindLoop(predcessors)))
         } else {
           breaker.breakLoop(loopMembers, plan) match {
             case Left(value) =>
@@ -165,7 +166,7 @@ class ForwardingRefResolverDefaultImpl(
               case mp: ProxyOp.MakeProxy =>
                 Right(mp.copy(op = mp.op.replaceKeys(identity, k => idx.getOrElse(k, k))))
               case o =>
-                Left(List(LoopResolutionError.BUG_NotALoopMember(o)))
+                Left(NEList(LoopResolutionError.BUG_NotALoopMember(o)))
             }
           } yield {
             val preds = context.updatedPredcessors(in)

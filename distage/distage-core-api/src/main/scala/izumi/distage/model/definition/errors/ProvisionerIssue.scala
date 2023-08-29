@@ -7,6 +7,7 @@ import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp, Proxy
 import izumi.distage.model.provisioning.NewObjectOp
 import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyContext
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, SafeType}
+import izumi.fundamentals.collections.nonempty.NEList
 
 sealed trait ProvisionerIssue {
   def key: DIKey
@@ -61,7 +62,7 @@ object ProvisionerIssue {
 
   final case class MissingInstance(key: DIKey) extends ProvisionerIssue
 
-  final case class LocalContextPlanningFailed(key: DIKey, issues: List[DIError]) extends ProvisionerIssue
+  final case class LocalContextPlanningFailed(key: DIKey, issues: NEList[DIError]) extends ProvisionerIssue
 
   final case class UnsupportedOp(tpe: SafeType, op: ExecutableOp, context: String) extends ProvisionerIssue {
     override def key: DIKey = op.target

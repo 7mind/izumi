@@ -7,6 +7,7 @@ import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.{Injector, PlannerInput}
 import izumi.distage.modules.DefaultModule
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
@@ -31,7 +32,7 @@ class Bootloader(
   val defaultModule: Module @Id("defaultModule"),
   val input: PlannerInput,
 ) {
-  def boot(config: BootConfig): Either[List[DIError], BootstrappedApp] = {
+  def boot(config: BootConfig): Either[NEList[DIError], BootstrappedApp] = {
     val activation = config.activation(input.activation)
     val bootstrap = config.bootstrap(bootstrapModule)
     val injector = injectorFactory(

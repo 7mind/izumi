@@ -54,18 +54,21 @@ object IzEither extends IzEither {
       val good = buildR.newBuilder
 
       val iterator = col.iterator
+      var allGood = true
       while (iterator.hasNext) {
         iterator.next() match {
-          case Left(e) => bad ++= iterL(e)
-          case Right(v) => good += v
+          case Left(e) =>
+            allGood = false
+            bad ++= iterL(e)
+          case Right(v) =>
+            good += v
         }
       }
 
-      val badList = bad.result()
-      if (iterL(badList).iterator.isEmpty) {
+      if (allGood) {
         Right(good.result())
       } else {
-        Left(badList)
+        Left(bad.result())
       }
     }
 
@@ -74,18 +77,20 @@ object IzEither extends IzEither {
       val bad = buildL.newBuilder
 
       val iterator = col.iterator
+      var allGood = true
       while (iterator.hasNext) {
         iterator.next() match {
-          case Left(e) => bad ++= iterL(e)
+          case Left(e) =>
+            allGood = false
+            bad ++= iterL(e)
           case _ =>
         }
       }
 
-      val badList = bad.result()
-      if (iterL(badList).iterator.isEmpty) {
+      if (allGood) {
         Right(())
       } else {
-        Left(badList)
+        Left(bad.result())
       }
     }
   }
@@ -111,18 +116,21 @@ object IzEither extends IzEither {
       val good = buildR.newBuilder
 
       val iterator = col.iterator
+      var allGood = true
       while (iterator.hasNext) {
         f(iterator.next()) match {
-          case Left(e) => bad ++= iterL(e)
-          case Right(v) => good += v
+          case Left(e) =>
+            allGood = false
+            bad ++= iterL(e)
+          case Right(v) =>
+            good += v
         }
       }
 
-      val badList = bad.result()
-      if (iterL(badList).iterator.isEmpty) {
+      if (allGood) {
         Right(good.result())
       } else {
-        Left(badList)
+        Left(bad.result())
       }
     }
 
@@ -131,18 +139,20 @@ object IzEither extends IzEither {
       val bad = buildL.newBuilder
 
       val iterator = col.iterator
+      var allGood = true
       while (iterator.hasNext) {
         f(iterator.next()) match {
-          case Left(e) => bad ++= iterL(e)
+          case Left(e) =>
+            allGood = false
+            bad ++= iterL(e)
           case _ =>
         }
       }
 
-      val badList = bad.result()
-      if (iterL(badList).iterator.isEmpty) {
+      if (allGood) {
         Right(())
       } else {
-        Left(badList)
+        Left(bad.result())
       }
     }
   }
@@ -169,18 +179,21 @@ object IzEither extends IzEither {
       val good = buildR.newBuilder
 
       val iterator = col.iterator
+      var allGood = true
       while (iterator.hasNext) {
         f(iterator.next()) match {
-          case Left(e) => bad ++= iterL(e)
-          case Right(v) => good ++= v
+          case Left(e) =>
+            allGood = false
+            bad ++= iterL(e)
+          case Right(v) =>
+            good ++= v
         }
       }
 
-      val badList = bad.result()
-      if (iterL(badList).iterator.isEmpty) {
+      if (allGood) {
         Right(good.result())
       } else {
-        Left(badList)
+        Left(bad.result())
       }
     }
   }
@@ -193,18 +206,21 @@ object IzEither extends IzEither {
       val good = buildR.newBuilder
 
       val iterator = result.iterator
+      var allGood = true
       while (iterator.hasNext) {
         iterator.next() match {
-          case Left(e) => bad ++= iterL(e)
-          case Right(v) => good ++= v
+          case Left(e) =>
+            bad ++= iterL(e)
+            allGood = false
+          case Right(v) =>
+            good ++= v
         }
       }
 
-      val badList = bad.result()
-      if (iterL(badList).iterator.isEmpty) {
+      if (allGood) {
         Right(good.result())
       } else {
-        Left(badList)
+        Left(bad.result())
       }
     }
   }
