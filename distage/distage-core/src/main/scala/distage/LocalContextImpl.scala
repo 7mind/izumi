@@ -8,25 +8,25 @@ import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 
-class LocalContextImpl[F[_]: QuasiIO: TagK, R] private (
+final class LocalContextImpl[F[_]: QuasiIO, A] private (
   externalKeys: Set[DIKey],
   parent: LocatorRef,
   val plan: Plan,
-  functoid: Functoid[F[R]],
+  functoid: Functoid[F[A]],
   values: Map[DIKey, LocalInstance[AnyRef]],
-) extends LocalContext[F, R] {
+) extends LocalContext[F, A] {
 
-  final def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
+  def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, A] = {
     val key = DIKey.get[T]
     doAdd(value.asInstanceOf[AnyRef], pos, key)
   }
 
-  final def provideNamed[T: Tag](id: Identifier, value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, R] = {
+  def provideNamed[T: Tag](id: Identifier, value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, A] = {
     val key = DIKey[T](id)
     doAdd(value.asInstanceOf[AnyRef], pos, key)
   }
 
-  private def doAdd(value: AnyRef, pos: CodePositionMaterializer, key: DIKey): LocalContextImpl[F, R] = {
+  private def doAdd(value: AnyRef, pos: CodePositionMaterializer, key: DIKey): LocalContextImpl[F, A] = {
     if (!externalKeys.contains(key)) {
       throw new UndeclaredKeyException(s"Key $key is not declared as an external key for this local context. The key is declared at ${pos.get.position.toString}", key)
     }
@@ -40,19 +40,23 @@ class LocalContextImpl[F[_]: QuasiIO: TagK, R] private (
     )
   }
 
-  override def produceRun(): F[R] = {
+  override def produceRun(): F[A] = {
+    produce().use(QuasiIO[F].pure(_))
+  }
+
+  override def produce(): Lifecycle[F, A] = {
     val lookup: PartialFunction[ImportDependency, AnyRef] = {
       case i: ImportDependency if values.contains(i.target) =>
         values(i.target).value
     }
-
     val imported = plan.resolveImports(lookup)
-    Injector.inherit(parent.get).produce(imported).run(functoid)
+    Injector.inherit(parent.get).produce(imported).evalMap(_.run(functoid))
   }
+
 }
 
 object LocalContextImpl {
-  def empty[F[_]: QuasiIO: TagK, R](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[F[R]]) =
+  def empty[F[_]: QuasiIO, R](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[F[R]]) =
     new LocalContextImpl[F, R](externalKeys, locatorRef, subplan, impl, Map.empty)
 
   private case class LocalInstance[+T](value: T, position: CodePosition)
