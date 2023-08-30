@@ -18,9 +18,10 @@ trait LocalContextHandler[+E] {
 object LocalContextHandler {
   class KnownActivationHandler(planner: Planner, input: PlannerInput) extends LocalContextHandler[LocalContextPlanningFailure] {
     override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextPlanningFailure, SingletonWiring] = {
+      val roots = c.function.get.diKeys.toSet
       for {
         subplan <- planner
-          .plan(PlannerInput(c.module, input.activation, c.function.get.diKeys.toSet)).left.map(errors => LocalContextPlanningFailure(binding, c, errors))
+          .plan(PlannerInput(c.module, input.activation, roots)).left.map(errors => LocalContextPlanningFailure(binding, c, errors))
       } yield {
         val allImported = subplan.importedKeys
         val importedParents = allImported.diff(c.externalKeys)
@@ -31,7 +32,8 @@ object LocalContextHandler {
 
   class VerificationHandler(verifier: PlanVerifier, excludedActivations: Set[NESet[AxisPoint]]) extends LocalContextHandler[LocalContextVerificationFailure] {
     override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextVerificationFailure, SingletonWiring] = {
-      val ver = verifier.verify[Identity](c.module, Roots(c.function.get.diKeys.toSet), k => c.externalKeys.contains(k), excludedActivations)
+      val roots = c.function.get.diKeys.toSet
+      val ver = verifier.verify[Identity](c.module, Roots(roots), k => c.externalKeys.contains(k), excludedActivations)
 
       ver match {
         case incorrect: PlanVerifierResult.Incorrect =>

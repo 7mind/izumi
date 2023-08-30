@@ -2,6 +2,7 @@ package izumi.distage.model.definition
 
 import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.orphans.{`cats.kernel.BoundedSemilattice`, `cats.kernel.PartialOrder with cats.kernel.Hash`}
@@ -72,6 +73,8 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
     def flatMap[T <: ModuleBase](f: Binding => Iterable[Binding])(implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(module.bindings.flatMap(f))
     }
+
+    def running[R](function: Functoid[R]): LocalContextDef[R] = LocalContextDef(module, function)
   }
 
   implicit final class ModuleDefMorph(private val module: ModuleBase) extends AnyVal {

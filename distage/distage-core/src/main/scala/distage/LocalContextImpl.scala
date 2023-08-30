@@ -11,7 +11,7 @@ import izumi.fundamentals.platform.language.{CodePosition, CodePositionMateriali
 class LocalContextImpl[F[_]: QuasiIO: TagK, R] private (
   externalKeys: Set[DIKey],
   parent: LocatorRef,
-  plan: Plan,
+  val plan: Plan,
   functoid: Functoid[F[R]],
   values: Map[DIKey, LocalInstance[AnyRef]],
 ) extends LocalContext[F, R] {
@@ -48,7 +48,6 @@ class LocalContextImpl[F[_]: QuasiIO: TagK, R] private (
 
     val imported = plan.resolveImports(lookup)
     Injector.inherit(parent.get).produce(imported).run(functoid)
-
   }
 }
 

@@ -1,6 +1,6 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.{AnyLocalContext, LocalContext}
+import izumi.distage.LocalContext
 import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
@@ -114,30 +114,21 @@ object ModuleDefDSL {
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     /**
-      * Defines local context
-      */
-    final def fromModule[F[_]](module: ModuleBase = ModuleBase.empty)(implicit @unused ev: T <:< AnyLocalContext[F]): LocalContextDSL[F, AfterBind] =
-      new LocalContextDSL[F, AfterBind](module, Set.empty, bind)
-
-    /**
-      * Defines local context with empty local module
-      */
-    final def external[F[_]](keys: DIKey*)(implicit @unused ev: T <:< AnyLocalContext[F]): LocalContextDSL[F, AfterBind] = {
-      new LocalContextDSL[F, AfterBind](Module.empty, keys.toSet, bind)
-    }
-
-    /**
       * Defines local context with empty local module and local keys
       */
-    def running[F[_], R](function: Functoid[F[R]])(implicit @unused ev: T =:= LocalContext[F, R]): AfterBind = {
-      new LocalContextDSL[F, AfterBind](Module.empty, Set.empty, bind).running(function)
+    def fromLocalContext[F[_], R](defn: LocalContextDef[F[R]])(implicit @unused ev: T =:= LocalContext[F, R]): LocalContextDSL[F, R, AfterBind] = {
+      new LocalContextDSL[F, R, AfterBind](defn.module, Set.empty, bind, defn.function).bound()
     }
 
     /**
       * Defines local context with empty local module and local keys, specialised for Identity
       */
-    def running[R](function: Functoid[R])(implicit @unused ev: T =:= LocalContext[Identity, R], dummyImplicit: DummyImplicit): AfterBind = {
-      running[Identity, R](function)
+    def fromLocalContext[R](
+      defn: LocalContextDef[R]
+    )(implicit @unused ev: T =:= LocalContext[Identity, R],
+      dummyImplicit: DummyImplicit,
+    ): LocalContextDSL[Identity, R, AfterBind] = {
+      fromLocalContext[Identity, R](defn)
     }
 
     /**
@@ -875,13 +866,29 @@ object ModuleDefDSL {
     }
   }
 
-  final class LocalContextDSL[F[_], AfterBind](module: ModuleBase, ext: Set[DIKey], bind: ImplDef => AfterBind) {
-    def external(keys: DIKey*): LocalContextDSL[F, AfterBind] = {
-      new LocalContextDSL[F, AfterBind](module, ext ++ keys.toSet, bind)
+  final class LocalContextDSL[F[_], R, AfterBind](module: ModuleBase, ext: Set[DIKey], bind: ImplDef => AfterBind, functoid: Functoid[F[R]]) {
+    protected[dsl] def doBind(): AfterBind = {
+      // it's okay to call this function multiple times, the underlying state is mutable and the last operation will be successful
+      bind(ImplDef.ContextImpl(functoid.get.ret, functoid, module, ext))
     }
 
-    def running[R](function: Functoid[F[R]]): AfterBind = {
-      bind(ImplDef.ContextImpl(function.get.ret, function, module, ext))
+    protected[dsl] def bound(): LocalContextDSL[F, R, AfterBind] = {
+      doBind()
+      this
+    }
+
+//    /**
+//      * Defines local context
+//      */
+//    def fromModule(module: ModuleBase = ModuleBase.empty): AfterBind = {
+//      new LocalContextDSL[F, R, AfterBind](this.module ++ module, ext, bind, functoid).doBind()
+//    }
+
+    /**
+      * Defines local context with empty local module
+      */
+    def external(keys: DIKey*): LocalContextDSL[F, R, AfterBind] = {
+      new LocalContextDSL[F, R, AfterBind](module, ext ++ keys.toSet, bind, functoid).bound()
     }
   }
 
