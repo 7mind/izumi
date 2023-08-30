@@ -96,7 +96,7 @@ object PlanInterpreter {
         failure match {
           case ProvisioningFailure.AggregateFailure(_, failures, _) =>
             def stackTrace(exception: Throwable): String = {
-              if (fullStackTraces) exception.stackTrace else exception.getMessage
+              if (fullStackTraces) exception.stacktraceString else exception.getMessage
             }
 
             val messages = failures
@@ -169,11 +169,11 @@ object PlanInterpreter {
                 case ProxyClassloadingFailed(context, causes) =>
                   s"Failed to load proxy class with ByteBuddy " +
                   s"class=${context.runtimeClass}, params=${context.params}\n\n" +
-                  s"exception 1(DynamicProxyProvider classLoader)=${causes.head.stackTrace}\n\n" +
-                  s"exception 2(classloader of class)=${causes.last.stackTrace}"
+                  s"exception 1(DynamicProxyProvider classLoader)=${causes.head.stacktraceString}\n\n" +
+                  s"exception 2(classloader of class)=${causes.last.stacktraceString}"
                 case ProxyInstantiationFailed(context, cause) =>
                   s"Failed to instantiate class with ByteBuddy, make sure you don't dereference proxied parameters in constructors: " +
-                  s"class=${context.runtimeClass}, params=${context.params}, exception=${cause.stackTrace}"
+                  s"class=${context.runtimeClass}, params=${context.params}, exception=${cause.stacktraceString}"
                 case LocalContextPlanningFailed(key, issues) =>
                   s"Failed to prepare plan for local context with key=$key: ${issues.map(DIError.format).toList.niceList()}"
               }

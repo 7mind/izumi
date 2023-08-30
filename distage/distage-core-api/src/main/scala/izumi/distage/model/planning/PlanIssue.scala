@@ -85,7 +85,7 @@ object PlanIssue {
               .mkString("; ")}; ${i.op.toSourceFilePosition}"
         case i: UnparseableConfigBinding =>
           import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
-          s"${i.key}: cannot parse configuration ${i.op.toSourceFilePosition}: ${i.exception.stackTrace}"
+          s"${i.key}: cannot parse configuration ${i.op.toSourceFilePosition}: ${i.exception.stacktraceString}"
         case i: IncompatibleEffectType =>
           val origin = i.op.origin.value.toSourceFilePosition
           s"${i.key}: injector uses effect ${i.provisionerEffectType} but binding uses incompatible effect ${i.actionEffectType} $origin"

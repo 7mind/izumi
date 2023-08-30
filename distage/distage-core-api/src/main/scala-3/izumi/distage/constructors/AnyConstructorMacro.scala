@@ -47,7 +47,7 @@ object AnyConstructorMacro {
            |It's neither a concrete class, nor a wireable trait or abstract class!""".stripMargin
       )
     }
-  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
   @experimental
   def makeMethod[T: Type, BT: Type](using qctx: Quotes): Expr[BT] = try {
@@ -68,7 +68,7 @@ object AnyConstructorMacro {
       case None =>
         makeMethodImpl[T, BT](outerClass)
     }
-  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
   @experimental
   private def applyMake[T: Type, BT: Type](using qctx: Quotes)(outerClass: qctx.reflect.Symbol)(functoid: Expr[Functoid[T]]): Expr[BT] = {

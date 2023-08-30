@@ -17,7 +17,7 @@ object ClassConstructorMacro {
     util.requireConcreteTypeConstructor(TypeRepr.of[R], "ClassConstructor")
 
     makeImpl[R](util)
-  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
   def makeImpl[R: Type](using qctx: Quotes)(util: ConstructorUtil[qctx.type]): Expr[ClassConstructor[R]] = {
     import qctx.reflect.*

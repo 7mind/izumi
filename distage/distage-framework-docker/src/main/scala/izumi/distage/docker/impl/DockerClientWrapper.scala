@@ -65,7 +65,7 @@ class DockerClientWrapper[F[_]](
         logger.info(s"Removed $containerId ($context)")
       } catch {
         case failure: Throwable =>
-          logger.warn(s"Got failure during container remove $containerId ${failure.stackTrace -> "failure"}")
+          logger.warn(s"Got failure during container remove $containerId ${failure.stacktraceString -> "failure"}")
       }
     }
   }

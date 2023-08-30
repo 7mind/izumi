@@ -161,7 +161,7 @@ open class ContainerResource[F[_], Tag](
                         case (port, tested, None) =>
                           s"- $port with candidate $tested: no diagnostics"
                         case (port, tested, Some(cause)) =>
-                          s"- $port with candidate $tested:\n${cause.stackTrace.shift(4)}"
+                          s"- $port with candidate $tested:\n${cause.stacktraceString.shift(4)}"
                       }
 
                     sb.append(s"Unchecked ports:\n")
@@ -178,7 +178,7 @@ open class ContainerResource[F[_], Tag](
             }
 
           case Left(t) =>
-            F.fail(new RuntimeException(s"$container failed due to exception: ${t.stackTrace}", t))
+            F.fail(new RuntimeException(s"$container failed due to exception: ${t.stacktraceString}", t))
         }
   }
 

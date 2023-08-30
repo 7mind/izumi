@@ -143,7 +143,7 @@ object PlanCheck {
 
       def returnPlanCheckError(cause: Either[Throwable, PlanVerifierResult.Incorrect]): PlanCheckResult.Incorrect = {
         val visitedKeys = cause.fold(_ => Set.empty[DIKey], _.visitedKeys)
-        val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNESet.map(_.render + "\n").niceList())
+        val errorMsg = cause.fold("\n" + _.stacktraceString, _.issues.fromNESet.map(_.render + "\n").niceList())
         val message = {
           val configStr = if (checkConfig) {
             s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"

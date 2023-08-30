@@ -22,7 +22,7 @@ object Issue {
 
     override def toString: String =
       s"""$sourceFilePosition {
-         |${stackTrace.stackTrace.shift(4)}
+         |${stackTrace.stacktraceString.shift(4)}
          |}""".stripMargin
   }
 
