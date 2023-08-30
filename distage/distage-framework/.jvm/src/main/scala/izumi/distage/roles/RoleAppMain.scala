@@ -216,7 +216,7 @@ object RoleAppMain {
 
   object Options extends ParserDef {
     final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
-    final val logFormatParam = arg("log-format", "lf", "log format", "{hocon|json}")
+    final val logFormatParam = arg("log-format", "lf", "log format", "{text|json}")
     final val configParam = arg("config", "c", "path to config file", "<path>")
     final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
     final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
