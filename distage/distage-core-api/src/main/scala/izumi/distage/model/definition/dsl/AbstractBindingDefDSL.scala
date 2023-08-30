@@ -387,10 +387,6 @@ object AbstractBindingDefDSL {
     }
   }
 
-  final class LocalContextRef() extends BindingRef {
-    override def interpret: collection.Seq[Binding] = ???
-  }
-
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding = {
       val implKey = DIKey.TypeKey(implDef.implType)
