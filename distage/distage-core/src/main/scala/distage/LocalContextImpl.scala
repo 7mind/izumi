@@ -8,7 +8,7 @@ import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 
-final class LocalContextImpl[F[_]: QuasiIO, A] private (
+final class LocalContextImpl[F[_]: QuasiIO: TagK, A] private (
   externalKeys: Set[DIKey],
   parent: LocatorRef,
   val plan: Plan,
@@ -56,7 +56,7 @@ final class LocalContextImpl[F[_]: QuasiIO, A] private (
 }
 
 object LocalContextImpl {
-  def empty[F[_]: QuasiIO, R](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[F[R]]) =
+  def empty[F[_]: QuasiIO: TagK, R](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[F[R]]) =
     new LocalContextImpl[F, R](externalKeys, locatorRef, subplan, impl, Map.empty)
 
   private case class LocalInstance[+T](value: T, position: CodePosition)
