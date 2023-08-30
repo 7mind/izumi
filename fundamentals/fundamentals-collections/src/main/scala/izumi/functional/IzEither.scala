@@ -1,12 +1,13 @@
 package izumi.functional
 
-import izumi.functional.IzEither.{EitherBiAggregate, EitherBiFlatAggregate, EitherBiFlatMapAggregate, EitherBiMapAggregate, EitherBiTraversals, EitherExt, EitherLrPartitions, EitherScalarOps}
 import izumi.fundamentals.collections.nonempty.NEList
 
 import scala.collection.compat.*
 import scala.language.implicitConversions
 
 trait IzEither {
+  import izumi.functional.IzEither.*
+
   @inline implicit final def EitherBiAggregate[L, R, Src[_], Col[x] <: IterableOnce[x]](
     col: Col[Either[Src[L], R]]
   ): EitherBiAggregate[L, R, Src, Col] = new EitherBiAggregate(col)
@@ -25,12 +26,14 @@ trait IzEither {
   @inline implicit final def EitherBiTraversals[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiTraversals[Col, T] = new EitherBiTraversals(col)
 
   @inline implicit final def EitherLrPartitions[L, R, Col[x] <: IterableOnce[x]](col: Col[Either[L, R]]): EitherLrPartitions[L, R, Col] = new EitherLrPartitions(col)
+
+  @inline implicit final def EitherTo[L, R, ColR[x] <: IterableOnce[x]](col: Either[L, ColR[R]]): EitherTo[ColR, L, R] = new EitherTo(col)
 }
 
 object IzEither extends IzEither {
 
   final class EitherExt(private val e: Either.type) extends AnyVal {
-    def failWhen[A](cond: Boolean)(fun: => A): Either[A, Unit] = {
+    def ifThenFail[A](cond: Boolean)(fun: => A): Either[A, Unit] = {
       if (cond) {
         Left(fun)
       } else {
@@ -38,217 +41,175 @@ object IzEither extends IzEither {
       }
     }
 
-    def orFail[L, R](cond: Boolean)(ok: => R)(fail: => L): Either[L, R] = {
+    def ifThenElse[L, R](cond: Boolean)(ok: => R)(fail: => L): Either[L, R] = {
       if (cond) {
-        Left(fail)
-      } else {
         Right(ok)
+      } else {
+        Left(fail)
+      }
+    }
+  }
+
+  private implicit final class EitherAccumulate[A, ColR[x] <: IterableOnce[x]](private val col: ColR[A]) extends AnyVal {
+
+    @inline def accumulateErrors[ColL[_], L, R, L1, R1](
+      map: A => Either[L, R],
+      onLeft: L => IterableOnce[L1],
+      onRight: R => Unit,
+      end: () => R1,
+    )(implicit buildL: Factory[L1, ColL[L1]]
+    ): Either[ColL[L1], R1] = {
+      val bad = buildL.newBuilder
+
+      val iterator = col.iterator
+      var allGood = true
+      while (iterator.hasNext) {
+        map(iterator.next()) match {
+          case Left(e) =>
+            allGood = false
+            bad ++= onLeft(e)
+          case Right(v) =>
+            onRight(v)
+        }
+      }
+
+      if (allGood) {
+        Right(end())
+      } else {
+        Left(bad.result())
       }
     }
   }
 
   final class EitherBiAggregate[L, R, ColL[_], ColR[x] <: IterableOnce[x]](private val col: ColR[Either[ColL[L], R]]) extends AnyVal {
     /** `sequence` with error accumulation */
-    def biAggregate(implicit iterL: ColL[L] => IterableOnce[L], buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]]): Either[ColL[L], ColR[R]] = {
-      val bad = buildL.newBuilder
+    @deprecated("use .biSequence")
+    def biAggregate(implicit iterL: ColL[L] => IterableOnce[L], buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]]): Either[ColL[L], ColR[R]] = { biSequence }
+
+    def biSequence(implicit iterL: ColL[L] => IterableOnce[L], buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]]): Either[ColL[L], ColR[R]] = {
       val good = buildR.newBuilder
+      col.accumulateErrors(identity, (l: ColL[L]) => iterL(l), (v: R) => good += v, () => good.result())
+    }
 
-      val iterator = col.iterator
-      var allGood = true
-      while (iterator.hasNext) {
-        iterator.next() match {
-          case Left(e) =>
-            allGood = false
-            bad ++= iterL(e)
-          case Right(v) =>
-            good += v
-        }
-      }
-
-      if (allGood) {
-        Right(good.result())
-      } else {
-        Left(bad.result())
-      }
+    @deprecated("use .biSequence_")
+    def biAggregateVoid(implicit iterL: ColL[L] => IterableOnce[L], buildL: Factory[L, ColL[L]]): Either[ColL[L], Unit] = {
+      biSequence_
     }
 
     /** `sequence_` with error accumulation */
-    def biAggregateVoid(implicit iterL: ColL[L] => IterableOnce[L], buildL: Factory[L, ColL[L]]): Either[ColL[L], Unit] = {
-      val bad = buildL.newBuilder
+    def biSequence_(implicit iterL: ColL[L] => IterableOnce[L], buildL: Factory[L, ColL[L]]): Either[ColL[L], Unit] = {
+      col.accumulateErrors(identity, (l: ColL[L]) => iterL(l), (_: R) => (), () => ())
+    }
+  }
 
-      val iterator = col.iterator
-      var allGood = true
-      while (iterator.hasNext) {
-        iterator.next() match {
-          case Left(e) =>
-            allGood = false
-            bad ++= iterL(e)
-          case _ =>
-        }
-      }
+  /** `sequence` with error accumulation */
+  final class EitherScalarOps[L, R, ColR[x] <: IterableOnce[x]](private val col: ColR[Either[L, R]]) extends AnyVal {
+    @deprecated("use .biSequence")
+    def biAggregateScalar(implicit buildR: Factory[R, ColR[R]]): Either[NEList[L], ColR[R]] = {
+      biSequenceScalar
+    }
 
-      if (allGood) {
-        Right(())
-      } else {
-        Left(bad.result())
-      }
+    def biSequenceScalar(implicit buildR: Factory[R, ColR[R]]): Either[NEList[L], ColR[R]] = {
+      val good = buildR.newBuilder
+      col.accumulateErrors(identity, (l: L) => Seq(l), (v: R) => good ++= Seq(v), () => good.result())
+    }
+  }
+
+  final class EitherTo[ColR[x] <: IterableOnce[x], L, R](private val col: Either[L, ColR[R]]) extends AnyVal {
+    def to[CC](buildR: Factory[R, CC]): Either[L, CC] = {
+      col.map(_.iterator.to(buildR))
     }
   }
 
   final class EitherBiMapAggregate[ColR[x] <: IterableOnce[x], T](private val col: ColR[T]) extends AnyVal {
-    /** `traverse` with error accumulation */
-    @inline def biMapAggregate[ColL[_], L, A](
+    @deprecated("use .biTraverse")
+    def biMapAggregate[ColL[_], L, A](
       f: T => Either[ColL[L], A]
     )(implicit buildR: Factory[A, ColR[A]],
       buildL: Factory[L, ColL[L]],
       iterL: ColL[L] => IterableOnce[L],
     ): Either[ColL[L], ColR[A]] = {
-      biMapAggregateTo(f)(buildR)
+      biTraverse(f)
     }
 
+    /** `traverse` with error accumulation */
+    def biTraverse[ColL[_], L, A](
+      f: T => Either[ColL[L], A]
+    )(implicit buildR: Factory[A, ColR[A]],
+      buildL: Factory[L, ColL[L]],
+      iterL: ColL[L] => IterableOnce[L],
+    ): Either[ColL[L], ColR[A]] = {
+      val good = buildR.newBuilder
+      col.accumulateErrors(f, (l: ColL[L]) => iterL(l), (v: A) => good += v, () => good.result())
+    }
+
+    @deprecated("use .biTraverse(f).to(...)")
     def biMapAggregateTo[ColL[_], L, A, CC](
       f: T => Either[ColL[L], A]
-    )(buildR: Factory[A, CC]
+    )(buildRR: Factory[A, CC]
     )(implicit iterL: ColL[L] => IterableOnce[L],
       buildL: Factory[L, ColL[L]],
+      buildR: Factory[A, ColR[A]],
     ): Either[ColL[L], CC] = {
-      val bad = buildL.newBuilder
-      val good = buildR.newBuilder
+      biTraverse(f).to(buildRR)
+    }
 
-      val iterator = col.iterator
-      var allGood = true
-      while (iterator.hasNext) {
-        f(iterator.next()) match {
-          case Left(e) =>
-            allGood = false
-            bad ++= iterL(e)
-          case Right(v) =>
-            good += v
-        }
-      }
-
-      if (allGood) {
-        Right(good.result())
-      } else {
-        Left(bad.result())
-      }
+    @deprecated("use .biTraverse_")
+    def biMapAggregateVoid[ColL[_], L](f: T => Either[ColL[L], Unit])(implicit buildL: Factory[L, ColL[L]], iterL: ColL[L] => IterableOnce[L]): Either[ColL[L], Unit] = {
+      biTraverse_(f)
     }
 
     /** `traverse_` with error accumulation */
-    def biMapAggregateVoid[ColL[_], L](f: T => Either[ColL[L], Unit])(implicit buildL: Factory[L, ColL[L]], iterL: ColL[L] => IterableOnce[L]): Either[ColL[L], Unit] = {
-      val bad = buildL.newBuilder
-
-      val iterator = col.iterator
-      var allGood = true
-      while (iterator.hasNext) {
-        f(iterator.next()) match {
-          case Left(e) =>
-            allGood = false
-            bad ++= iterL(e)
-          case _ =>
-        }
-      }
-
-      if (allGood) {
-        Right(())
-      } else {
-        Left(bad.result())
-      }
+    def biTraverse_[ColL[_], L](f: T => Either[ColL[L], Unit])(implicit buildL: Factory[L, ColL[L]], iterL: ColL[L] => IterableOnce[L]): Either[ColL[L], Unit] = {
+      col.accumulateErrors(f, (l: ColL[L]) => iterL(l), (_: Unit) => (), () => ())
     }
   }
 
   final class EitherBiFlatMapAggregate[ColR[x] <: IterableOnce[x], T](private val col: ColR[T]) extends AnyVal {
     /** `flatTraverse` with error accumulation */
+
+    @deprecated("use .biFlatTraverse")
     def biFlatMapAggregate[ColL[_], L, A](
       f: T => Either[ColL[L], IterableOnce[A]]
     )(implicit buildR: Factory[A, ColR[A]],
       buildL: Factory[L, ColL[L]],
       iterL: ColL[L] => IterableOnce[L],
     ): Either[ColL[L], ColR[A]] = {
-      biFlatMapAggregateTo(f)(buildR)
+      biFlatTraverse(f)
     }
 
-    /** `flatTraverse` with error accumulation */
+    def biFlatTraverse[ColL[_], L, A](
+      f: T => Either[ColL[L], IterableOnce[A]]
+    )(implicit buildR: Factory[A, ColR[A]],
+      buildL: Factory[L, ColL[L]],
+      iterL: ColL[L] => IterableOnce[L],
+    ): Either[ColL[L], ColR[A]] = {
+      val good = buildR.newBuilder
+      col.accumulateErrors(f, (l: ColL[L]) => iterL(l), (v: IterableOnce[A]) => good ++= v, () => good.result())
+    }
+
+    @deprecated("use .biFlatTraverse(f).to(...)")
     def biFlatMapAggregateTo[ColL[_], L, A, CC](
       f: T => Either[ColL[L], IterableOnce[A]]
-    )(buildR: Factory[A, CC]
+    )(buildRR: Factory[A, CC]
     )(implicit iterL: ColL[L] => IterableOnce[L],
       buildL: Factory[L, ColL[L]],
+      buildR: Factory[A, ColR[A]],
     ): Either[ColL[L], CC] = {
-      val bad = buildL.newBuilder
-      val good = buildR.newBuilder
-
-      val iterator = col.iterator
-      var allGood = true
-      while (iterator.hasNext) {
-        f(iterator.next()) match {
-          case Left(e) =>
-            allGood = false
-            bad ++= iterL(e)
-          case Right(v) =>
-            good ++= v
-        }
-      }
-
-      if (allGood) {
-        Right(good.result())
-      } else {
-        Left(bad.result())
-      }
+      biFlatTraverse(f).to(buildRR)
     }
   }
 
-  final class EitherBiFlatAggregate[L, R, ColR[x] <: IterableOnce[x], ColIn[x] <: IterableOnce[x], ColL[_]](private val result: ColR[Either[ColL[L], ColIn[R]]])
+  final class EitherBiFlatAggregate[L, R, ColR[x] <: IterableOnce[x], ColIn[x] <: IterableOnce[x], ColL[_]](private val col: ColR[Either[ColL[L], ColIn[R]]])
     extends AnyVal {
     /** `flatSequence` with error accumulation */
-    def biFlatAggregate(implicit buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]], iterL: ColL[L] => IterableOnce[L]): Either[ColL[L], ColR[R]] = {
-      val bad = buildL.newBuilder
-      val good = buildR.newBuilder
+    @deprecated("use .biFlatten")
+    def biFlatAggregate(implicit buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]], iterL: ColL[L] => IterableOnce[L]): Either[ColL[L], ColR[R]] =
+      biFlatten
 
-      val iterator = result.iterator
-      var allGood = true
-      while (iterator.hasNext) {
-        iterator.next() match {
-          case Left(e) =>
-            bad ++= iterL(e)
-            allGood = false
-          case Right(v) =>
-            good ++= v
-        }
-      }
-
-      if (allGood) {
-        Right(good.result())
-      } else {
-        Left(bad.result())
-      }
+    def biFlatten(implicit buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]], iterL: ColL[L] => IterableOnce[L]): Either[ColL[L], ColR[R]] = {
+      col.biFlatTraverse(identity)
     }
-  }
-
-  /** `sequence` with error accumulation */
-  final class EitherScalarOps[L, R, ColR[x] <: IterableOnce[x]](private val e: ColR[Either[L, R]]) extends AnyVal {
-
-    def biAggregateScalarList(implicit buildR: Factory[R, ColR[R]]): Either[List[L], ColR[R]] = {
-      biAggregateScalar.left.map(_.toList)
-    }
-
-    def biAggregateScalar(implicit buildR: Factory[R, ColR[R]]): Either[NEList[L], ColR[R]] = {
-      val bad = List.newBuilder[L]
-      val good = buildR.newBuilder
-
-      e.iterator.foreach {
-        case Left(e) => bad += e
-        case Right(v) => good += v
-      }
-
-      val badList = bad.result()
-      if (badList.isEmpty) {
-        Right(good.result())
-      } else {
-        Left(NEList.unsafeFrom(badList))
-      }
-    }
-
   }
 
   final class EitherBiTraversals[Col[x] <: IterableOnce[x], T](private val col: Col[T]) extends AnyVal {
@@ -287,7 +248,13 @@ object IzEither extends IzEither {
   }
 
   final class EitherLrPartitions[L, R, Col[x] <: IterableOnce[x]](col: Col[Either[L, R]]) {
-    def lrPartition(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
+    // this doesn't play well with intellisense
+    // def partition()(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = biPartition
+
+    @deprecated("use .biPartition instead")
+    def lrPartition(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = biPartition
+
+    def biPartition(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
       val bad = bl.newBuilder
       val good = br.newBuilder
 
