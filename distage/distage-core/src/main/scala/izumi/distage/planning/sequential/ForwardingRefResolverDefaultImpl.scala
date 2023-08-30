@@ -174,7 +174,7 @@ class ForwardingRefResolverDefaultImpl(
             context.updatedPlan.put(in, upd)
             ()
           }
-      }.biAggregate
+      }.biSequence
     } yield {
       val p = IncidenceMatrix(context.updatedPredcessors.view.mapValues(_.toSet).toMap)
       DG.fromPred(p, GraphMeta(context.updatedPlan.toMap))

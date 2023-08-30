@@ -134,7 +134,7 @@ object SemigraphSolver {
       currentResult: mutable.HashMap[Annotated[N], Node[N, V]],
     ): Either[NEList[ConflictResolutionError[N, V]], Map[Annotated[N], Node[N, V]]] = {
       val out: Either[NEList[ConflictResolutionError[N, V]], Seq[(Annotated[N], Node[N, V])]] = roots.toSeq
-        .biFlatMapAggregate {
+        .biFlatTraverse {
           root =>
             val (mutators, definitions) =
               index

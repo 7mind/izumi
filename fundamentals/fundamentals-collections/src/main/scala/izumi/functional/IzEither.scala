@@ -15,6 +15,7 @@ trait IzEither {
   @inline implicit final def EitherBiFlatAggregate[L, R, Col[x] <: IterableOnce[x], Col2[x] <: IterableOnce[x], Src[_]](
     col: Col[Either[Src[L], Col2[R]]]
   ): EitherBiFlatAggregate[L, R, Col, Col2, Src] = new EitherBiFlatAggregate(col)
+
   @inline implicit final def EitherScalarOps[L, R, Col[x] <: IterableOnce[x]](col: Col[Either[L, R]]): EitherScalarOps[L, R, Col] = new EitherScalarOps(col)
 
   @inline implicit final def EitherBiMapAggregate[Col[x] <: IterableOnce[x], T](col: Col[T]): EitherBiMapAggregate[Col, T] = new EitherBiMapAggregate(col)
@@ -28,6 +29,8 @@ trait IzEither {
   @inline implicit final def EitherLrPartitions[L, R, Col[x] <: IterableOnce[x]](col: Col[Either[L, R]]): EitherLrPartitions[L, R, Col] = new EitherLrPartitions(col)
 
   @inline implicit final def EitherTo[L, R, ColR[x] <: IterableOnce[x]](col: Either[L, ColR[R]]): EitherTo[ColR, L, R] = new EitherTo(col)
+
+  @inline protected implicit final def EitherAccumulate[A, ColR[x] <: IterableOnce[x]](col: ColR[A]): EitherAccumulate[A, ColR] = new EitherAccumulate(col)
 }
 
 object IzEither extends IzEither {
@@ -50,7 +53,7 @@ object IzEither extends IzEither {
     }
   }
 
-  private implicit final class EitherAccumulate[A, ColR[x] <: IterableOnce[x]](private val col: ColR[A]) extends AnyVal {
+  protected final class EitherAccumulate[A, ColR[x] <: IterableOnce[x]](private val col: ColR[A]) extends AnyVal {
 
     @inline def accumulateErrors[ColL[_], L, R, L1, R1](
       map: A => Either[L, R],
@@ -104,7 +107,7 @@ object IzEither extends IzEither {
 
   /** `sequence` with error accumulation */
   final class EitherScalarOps[L, R, ColR[x] <: IterableOnce[x]](private val col: ColR[Either[L, R]]) extends AnyVal {
-    @deprecated("use .biSequence")
+    @deprecated("use .biSequenceScalar")
     def biAggregateScalar(implicit buildR: Factory[R, ColR[R]]): Either[NEList[L], ColR[R]] = {
       biSequenceScalar
     }
@@ -117,7 +120,13 @@ object IzEither extends IzEither {
 
   final class EitherTo[ColR[x] <: IterableOnce[x], L, R](private val col: Either[L, ColR[R]]) extends AnyVal {
     def to[CC](buildR: Factory[R, CC]): Either[L, CC] = {
-      col.map(_.iterator.to(buildR))
+      // just col.map(_.to(buildR)) doesn't work on 2.12
+      col.map {
+        r =>
+          val b = buildR.newBuilder
+          b ++= r.iterator
+          b.result()
+      }
     }
   }
 

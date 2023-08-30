@@ -63,6 +63,6 @@ class SanityCheckerDefaultImpl() extends SanityChecker {
       failIf(missingRoots.nonEmpty)(DIError.VerificationError.BUG_ProxyWithoutInit(missingRoots)),
     )
 
-    checks.biAggregateVoid
+    checks.biSequence_
   }
 }

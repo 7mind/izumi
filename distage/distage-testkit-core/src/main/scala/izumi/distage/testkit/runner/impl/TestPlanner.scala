@@ -288,7 +288,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           } yield {
             AlmostPreparedTest(distageTest, reducedAppModule, plan.keys, fullActivation)
           }
-      }.biAggregate
+      }.biSequence
       envKeys = testPlans.flatMap(_.targetKeys).toSet
 
       // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they

@@ -56,7 +56,7 @@ class PlannerDefaultImpl(
         case (target, deps) =>
           for {
             mappedTarget <- updateKey(target)
-            mappedDeps <- deps.map(updateKey).biAggregate
+            mappedDeps <- deps.map(updateKey).biSequence
             op <- resolved.meta.nodes.get(target).map {
               op =>
                 for {
@@ -69,7 +69,7 @@ class PlannerDefaultImpl(
                           (original, updated)
                         }
 
-                    }.biAggregate.map(_.toMap)
+                    }.biSequence.map(_.toMap)
                 } yield {
                   val mapper = (key: DIKey) => remaps.getOrElse(key, key)
                   Some(op.meta.replaceKeys(key => Map(op.meta.target -> mappedTarget).getOrElse(key, key), mapper))
@@ -84,7 +84,7 @@ class PlannerDefaultImpl(
           } yield {
             ((mappedTarget, mappedDeps), op.map(o => (mappedTarget, o)))
           }
-      }.biAggregate
+      }.biSequence
     } yield {
       val mappedOps = mappedGraph.view.flatMap(_._2).toMap
       val mappedMatrix = mappedGraph.view.map(_._1).filter { case (k, _) => mappedOps.contains(k) }.toMap

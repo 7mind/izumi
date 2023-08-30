@@ -160,12 +160,12 @@ class PlanVerifier(
                     case a => Right(a)
                   }
                   for {
-                    mergedSets <- setOps.groupBy(_.target).values.biMapAggregate {
+                    mergedSets <- setOps.groupBy(_.target).values.biTraverse {
                       ops =>
                         for {
                           members <- ops.iterator
                             .flatMap(_.members)
-                            .biFlatMapAggregateTo {
+                            .biFlatTraverse {
                               memberKey =>
                                 matrix.get(memberKey) match {
                                   case Some(value) if value.sizeIs == 1 =>
@@ -175,7 +175,7 @@ class PlanVerifier(
                                   case None =>
                                     reportMissingIfNotProvided(memberKey, key)(Right(List(memberKey)))
                                 }
-                            }(Set)
+                            }.to(Set)
                         } yield {
                           (ops.head.copy(members = members), Set.empty[AxisPoint], Set.empty[AxisPoint])
                         }

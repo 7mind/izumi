@@ -39,7 +39,7 @@ class TCPContainerHealthCheck extends ContainerHealthCheckBase {
         }
     }
 
-    val (bad, good) = checks.lrPartition
+    val (bad, good) = checks.biPartition
 
     val errored = UnavailablePorts(
       bad.iterator

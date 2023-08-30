@@ -121,7 +121,7 @@ object PlanSolver {
           case aob =>
             Right((aob, true))
         }
-        out <- configuredOps.biAggregate
+        out <- configuredOps.biSequence
           .map {
             value =>
               val goodMutators = value.filter(_._2).map(_._1)
@@ -172,7 +172,7 @@ object PlanSolver {
                           v =>
                             handleSetWithSingleActivationSet(firstOp, memberKey, ac, v)
                               .map(isActivated => (v, isActivated))
-                        }.biAggregate
+                        }.biSequence
                         out <- configuredElements.filter(_._2._2) match {
                           case only :: Nil =>
                             Right(only._2)
@@ -190,14 +190,14 @@ object PlanSolver {
                   }
               }
 
-            members.biAggregate.map {
+            members.biSequence.map {
               value =>
                 val goodMembers = value.view.filter(_._2).map(_._1).toSet
                 val result = firstOp.copy(members = goodMembers)
                 (Annotated(setKey, None, Set.empty), Node(result.members, result: InstantiationOp))
             }
 
-        }.biAggregate
+        }.biSequence
       } yield {
         sets.toMap
       }
