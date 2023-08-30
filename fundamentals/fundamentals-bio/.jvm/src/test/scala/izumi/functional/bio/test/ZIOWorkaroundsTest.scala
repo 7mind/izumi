@@ -185,6 +185,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         for {
           fiberStarted <- F.mkLatch
           stopFiber <- F.mkLatch
+          stopFiber2 <- F.mkLatch
           innerFiberNotInterrupted <- F.mkLatch
           outerFiberNotInterrupted <- F.mkLatch
           fiberNotInterrupted1 <- F.mkRef(false)
@@ -200,7 +201,8 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
               ).flatMap {
                   promiseModifiedOrTimedOut =>
                     fiberNotInterrupted2.set(promiseModifiedOrTimedOut) *>
-                    outerFiberNotInterrupted.succeed(())
+                    outerFiberNotInterrupted.succeed(()) *>
+                    stopFiber2.await
                 }
             )
           }
@@ -215,6 +217,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
             )
           isNotInterrupted1 <- fiberNotInterrupted1.get
           isNotInterrupted2 <- fiberNotInterrupted2.get
+          _ <- stopFiber2.succeed(())
         } yield assert(innerIsNotInterrupted && isNotInterrupted1 && (isNotInterrupted2 == Some(true)))
       }
 
@@ -228,6 +231,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         for {
           fiberStarted <- F.mkLatch
           stopFiber <- F.mkLatch
+          stopFiber2 <- F.mkLatch
           innerFiberNotInterrupted <- F.mkLatch
           outerFiberNotInterrupted <- F.mkLatch
           fiberNotInterrupted1 <- F.mkRef(false)
@@ -247,7 +251,8 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
               ).flatMap {
                   promiseModifiedOrTimedOut =>
                     fiberNotInterrupted2.set(promiseModifiedOrTimedOut) *>
-                    outerFiberNotInterrupted.succeed(())
+                    outerFiberNotInterrupted.succeed(()) *>
+                    stopFiber2.await
                 }
             )
           }
@@ -262,6 +267,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
             )
           isNotInterrupted1 <- fiberNotInterrupted1.get
           isNotInterrupted2 <- fiberNotInterrupted2.get
+          _ <- stopFiber2.succeed(())
         } yield assert(innerIsNotInterrupted && isNotInterrupted1 && (isNotInterrupted2 == Some(true)))
       }
 
