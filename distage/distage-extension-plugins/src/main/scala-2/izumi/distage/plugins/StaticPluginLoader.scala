@@ -1,5 +1,7 @@
 package izumi.distage.plugins
 
+import izumi.distage.model.definition.ModuleBase
+
 import scala.language.experimental.macros
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
 import izumi.fundamentals.platform.language.SourcePackageMaterializer.SourcePackageMaterializerMacro
@@ -51,12 +53,12 @@ object StaticPluginLoader {
         new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
       }
 
-      val quoted: List[Tree] = instantiatePluginsInCode(c)(loadedPlugins.result)
+      val quoted: List[Tree] = instantiatePluginsInCode(c)(loadedPlugins.loaded)
 
       c.Expr[List[PluginBase]](q"$quoted")
     }
 
-    def instantiatePluginsInCode(c: blackbox.Context)(loadedPlugins: Seq[PluginBase]): List[c.Tree] = {
+    def instantiatePluginsInCode(c: blackbox.Context)(loadedPlugins: Seq[ModuleBase]): List[c.Tree] = {
       import c.universe.*
       val runtimeMirror = ru.runtimeMirror(this.getClass.getClassLoader)
       loadedPlugins.map {

@@ -26,7 +26,7 @@ object StaticPluginLoader {
       new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
     }
 
-    val quoted = instantiatePluginsInCode(loadedPlugins.result)
+    val quoted = instantiatePluginsInCode(loadedPlugins.loaded)
 
     Expr.ofList(quoted)
   }
