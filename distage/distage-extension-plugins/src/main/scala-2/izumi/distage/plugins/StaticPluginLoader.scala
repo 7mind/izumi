@@ -53,12 +53,12 @@ object StaticPluginLoader {
         new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
       }
 
-      val quoted: List[Tree] = instantiatePluginsInCode(c)(loadedPlugins.loaded)
+      val quoted: List[Tree] = instantiatePluginsInCode[PluginBase](c)(loadedPlugins.loaded)
 
       c.Expr[List[PluginBase]](q"$quoted")
     }
 
-    def instantiatePluginsInCode(c: blackbox.Context)(loadedPlugins: Seq[ModuleBase]): List[c.Tree] = {
+    def instantiatePluginsInCode[T <: ModuleBase](c: blackbox.Context)(loadedPlugins: Seq[T]): List[c.Tree] = {
       import c.universe.*
       val runtimeMirror = ru.runtimeMirror(this.getClass.getClassLoader)
       loadedPlugins.map {
