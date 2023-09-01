@@ -37,7 +37,7 @@ object Wiring {
     final case class PrepareLocalContext(provider: Functoid[Any], module: ModuleBase, implType: SafeType, externalKeys: Set[DIKey], importedParentKeys: Set[DIKey])
       extends SingletonWiring {
       override def instanceType: SafeType = implType
-      override def requiredKeys: Set[DIKey] = (Set(AddRecursiveLocatorRef.magicLocatorKey) ++ importedParentKeys).diff(Set())
+      override def requiredKeys: Set[DIKey] = Set(AddRecursiveLocatorRef.magicLocatorKey) ++ importedParentKeys
       override def associations: Seq[LinkedParameter] = Seq.empty
       override def replaceKeys(f: DIKey => DIKey): PrepareLocalContext = this
     }
