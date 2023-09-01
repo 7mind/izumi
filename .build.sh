@@ -101,9 +101,6 @@ function init {
     printenv
 
     java -version
-
-    rm -f .jvmopts
-    cp .jvmopts.github .jvmopts
 }
 
 init
