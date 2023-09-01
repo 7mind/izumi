@@ -96,7 +96,7 @@ function init {
     export SCALA3=$(cat project/Deps.sc | grep 'val scala300 ' |  sed -r 's/.*\"(.*)\".**/\1/')
 
     # details on github runners: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-    export SBT_OPTS="-Xmx6G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2G"
+    export JVM_OPTS="-Xmx6G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2G"
 
     printenv
 
