@@ -72,9 +72,32 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
     val context = injector.produce(plan).unsafeGet()
 
     val local = context.get[LocalContext[Identity, Int]]("test")
-    println(local.plan.render())
 
     assert(local.produceRun() == 231)
+  }
+
+  "support self references" in {
+    val module = new ModuleDef {
+      make[LocalContext[Identity, Int]]
+        .fromLocalContext(
+          new ModuleDef {
+            make[LocalRecursiveService].from[LocalRecursiveServiceGoodImpl]
+          }.running {
+            (summator: LocalRecursiveService) =>
+              summator.localSum
+          }
+        ).external[Arg]
+    }
+
+    val definition = PlannerInput(module, Activation.empty, DIKey.get[LocalContext[Identity, Int]])
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val local = context.get[LocalContext[Identity, Int]]
+
+    assert(local.provide(Arg(10)).produceRun() == 20)
   }
 
   "support various local context syntax modes" in {
@@ -130,4 +153,17 @@ object LocalContextTest {
   }
 
   case class Arg(value: Int)
+
+  trait LocalRecursiveService {
+    def localSum: Int
+  }
+
+  class LocalRecursiveServiceGoodImpl(value: Arg, self: LocalContext[Identity, Int]) extends LocalRecursiveService {
+    def localSum: Int = if (value.value > 0) {
+      2 + self.provide(Arg(value.value - 1)).produceRun()
+    } else {
+      0
+    }
+  }
+
 }
