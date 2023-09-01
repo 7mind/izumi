@@ -1,7 +1,7 @@
 package izumi.distage.framework
 
 import izumi.distage.framework.model.PlanCheckResult
-import izumi.distage.plugins.PluginBase
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
 import izumi.fundamentals.reflection.{TrivialMacroLogger, TypeUtil}
 
@@ -26,7 +26,7 @@ import scala.reflect.runtime.{universe => ru}
   */
 final case class PlanCheckMaterializer[AppMain <: CheckableApp, -Cfg <: PlanCheckConfig.Any](
   checkPassed: Boolean,
-  checkedPlugins: Seq[PluginBase],
+  checkedPlugins: Seq[ModuleBase],
   app: AppMain,
   roles: String,
   excludeActivations: String,
@@ -61,8 +61,10 @@ object PlanCheckMaterializer {
     CheckConfig <: Boolean,
     PrintBindings <: Boolean,
     OnlyWarn <: Boolean,
-  ]: PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]] =
-    macro PlanCheckMaterializerMacro.impl[AppMain, Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]
+  ]: PlanCheckMaterializer[
+    AppMain,
+    PlanCheckConfig[Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn],
+  ] = macro PlanCheckMaterializerMacro.impl[AppMain, Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]
 
   object PlanCheckMaterializerMacro extends PlanCheckMaterializerCommon {
     def impl[
@@ -142,7 +144,7 @@ object PlanCheckMaterializer {
       // we can't just splice a type reference or create an expression referencing the type for it to pickup,
       // Zinc does recompile in these cases, but for Intellij `new` is required
       val pluginsList: List[Tree] = StaticPluginLoaderMacro.instantiatePluginsInCode(c)(referencablePlugins)
-      val referenceStmt = c.Expr[List[PluginBase]](Liftable.liftList[Tree].apply(pluginsList))
+      val referenceStmt = c.Expr[List[ModuleBase]](Liftable.liftList[Tree].apply(pluginsList))
       val checkPassedExpr = c.Expr[Boolean](Liftable.liftBoolean(checkPassed))
 
       def lit[T: c.WeakTypeTag](s: T): c.Expr[T] = c.Expr[T](Literal(Constant(s)))

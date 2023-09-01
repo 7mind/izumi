@@ -39,6 +39,8 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
     }
   }
 
+  def from(module: ModuleBase): ModuleBase = make(module.bindings)
+
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = ModuleBase.make
 
   implicit final class ModuleDefSeqExt[S <: ModuleBase](private val defs: Iterable[S]) extends AnyVal {
