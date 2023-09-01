@@ -877,18 +877,27 @@ object ModuleDefDSL {
       this
     }
 
-//    /**
-//      * Defines local context
-//      */
-//    def fromModule(module: ModuleBase = ModuleBase.empty): AfterBind = {
-//      new LocalContextDSL[F, R, AfterBind](this.module ++ module, ext, bind, functoid).doBind()
-//    }
-
     /**
       * Defines local context with empty local module
       */
     def external(keys: DIKey*): LocalContextDSL[F, R, AfterBind] = {
       new LocalContextDSL[F, R, AfterBind](module, ext ++ keys.toSet, bind, functoid).bound()
+    }
+
+    def external[K1: Tag]: LocalContextDSL[F, R, AfterBind] = {
+      external(DIKey.get[K1])
+    }
+
+    def external[K1: Tag, K2: Tag]: LocalContextDSL[F, R, AfterBind] = {
+      external(DIKey.get[K1], DIKey.get[K2])
+    }
+
+    def external[K1: Tag, K2: Tag, K3: Tag]: LocalContextDSL[F, R, AfterBind] = {
+      external(DIKey.get[K1], DIKey.get[K2], DIKey.get[K3])
+    }
+
+    def external[K1: Tag, K2: Tag, K3: Tag, K4: Tag]: LocalContextDSL[F, R, AfterBind] = {
+      external(DIKey.get[K1], DIKey.get[K2], DIKey.get[K3], DIKey.get[K4])
     }
   }
 
