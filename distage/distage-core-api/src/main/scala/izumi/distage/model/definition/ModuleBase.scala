@@ -7,6 +7,7 @@ import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.orphans.{`cats.kernel.BoundedSemilattice`, `cats.kernel.PartialOrder with cats.kernel.Hash`}
 import izumi.fundamentals.platform.cache.CachedHashcode
+import izumi.reflect.Tag
 
 import scala.annotation.unused
 
@@ -75,6 +76,8 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
     }
 
     def running[R](function: Functoid[R]): LocalContextDef[R] = LocalContextDef(module, function)
+
+    def exporting[R: Tag]: LocalContextDef[R] = LocalContextDef(module, Functoid.identity[R])
   }
 
   implicit final class ModuleDefMorph(private val module: ModuleBase) extends AnyVal {
