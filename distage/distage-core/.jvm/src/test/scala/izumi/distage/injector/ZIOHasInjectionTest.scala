@@ -211,10 +211,6 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
               )(_ => ZIO.succeed(res.acquired = false))
             } yield res
         )
-//        make[Trait2].fromZManagedEnv(for {
-//          d1 <- ZManaged.environmentWith[Dependency1](_.get)
-//          d2 <- ZManaged.environmentWith[Dependency2](_.get)
-//        } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
 
         make[Trait2].fromZIOEnv(for {
           d1 <- ZIO.service[Dependency1]
