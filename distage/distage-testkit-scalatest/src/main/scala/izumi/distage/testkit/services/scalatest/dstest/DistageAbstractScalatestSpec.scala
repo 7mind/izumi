@@ -175,7 +175,6 @@ object DistageAbstractScalatestSpec {
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F[Any, _, _]],
     override val tagMonoIO: TagK[F[Any, Throwable, _]],
-    @unused ev: F[Any, Any, Any] =:= ZIO[Any, Any, Any], // FIXME wtf specialize to ZIO?
   ) extends DISyntaxBIOBase[F[Any, +_, +_]]
     with LowPriorityIdentityOverloads[F[Any, Throwable, _]] {
 
