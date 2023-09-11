@@ -90,7 +90,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
           val i1 = ctx.get[Res]("instance")
           val i2 = ctx.get[Res]("provider")
           assert(i1 ne i2)
-          assert((i1.allocated, i2.allocated) == (true, true))
+          assert((i1.allocated -> i2.allocated) == (true -> true))
           i1 -> i2
         }
       }
