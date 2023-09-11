@@ -126,7 +126,7 @@ object ModuleDefDSL {
       */
     def fromLocalContext[R](
       defn: LocalContextDef[R]
-    )(implicit @unused ev: T =:= LocalContext[Identity, R],
+    )(implicit ev: T =:= LocalContext[Identity, R],
       dummyImplicit: DummyImplicit,
     ): LocalContextDSL[Identity, R, AfterBind] = {
       fromLocalContext[Identity, R](defn)

@@ -684,9 +684,9 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all) ++ Seq(
-          circe_generic in Scope.Compile.all
-        ),
+        libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all) ++
+          Seq(circe_generic in Scope.Compile.all) ++
+          Seq(zio_managed in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           // ignore microsite in IDEA
