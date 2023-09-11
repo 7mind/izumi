@@ -90,13 +90,13 @@ final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen w
           val i1 = ctx.get[Res]("instance")
           val i2 = ctx.get[Res]("provider")
           assert(i1 ne i2)
-          assert(i1.allocated && i2.allocated)
+          assert((i1.allocated -> i2.allocated) == (true -> true))
           i1 -> i2
         }
       }
 
       def assertReleased(i1: Res, i2: Res): Task[Assertion] = {
-        ZIO.attempt(assert(!i1.allocated && !i2.allocated))
+        ZIO.attempt(assert((i1.allocated -> i2.allocated) == (false -> false)))
       }
 
       def produceBIO[F[+_, +_]: TagKK: IO2]: Lifecycle[F[Throwable, _], Locator] = injector.produceCustomF[F[Throwable, _]](plan)
