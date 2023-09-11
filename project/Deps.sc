@@ -94,7 +94,7 @@ object Izumi {
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
     final val zio_managed = Library("dev.zio", "zio-managed", V.zio, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
-    final val zio_all = Seq(zio_core, zio_managed)
+    final val zio_all = Seq(zio_core)
 
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
@@ -301,7 +301,7 @@ object Izumi {
         ),
         "scalacOptions" -= "-Wconf:any:warning",
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
-        "scalacOptions" += "-Wconf:msg=msg=legacy-binding:silent",
+        "scalacOptions" += "-Wconf:msg=legacy-binding:silent",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
         "scalacOptions" += "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
         "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
@@ -495,6 +495,7 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++
+          Seq(zio_managed in Scope.Optional.all) ++
           Seq(zio_interop_tracer in Scope.Compile.all) ++
           Seq(cats_effect_laws, cats_effect_testkit, scalatest, discipline, discipline_scalatest) ++
           Seq(zio_interop_cats in Scope.Test.all) ++
@@ -521,7 +522,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.distage.coreApi,
-        libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect),
+        libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(zio_managed in Scope.Optional.all),
         depends = Seq(
           Projects.fundamentals.reflection,
           Projects.fundamentals.platform,
@@ -578,7 +579,8 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.plugins,
-        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect),
+        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect) ++
+          Seq( /* for ZIOResourcesZManagedTestJvm */ zio_managed, zio_interop_cats, cats_effect).map(_ in Scope.Test.all),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),

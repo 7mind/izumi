@@ -26,7 +26,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
         context.fetchKey(resourceKey, makeByName = false) match {
           case Some(resource0) if op.isEffect[F] =>
             val resource = resource0.asInstanceOf[Lifecycle[F, Any]]
-            // FIXME: make uninterruptible / safe register finalizer sooner than now
+            // FIXME: make explicitly uninterruptible / save register finalizer sooner than now
             resource.acquire.flatMap {
               innerResource =>
                 F.suspendF {
@@ -38,7 +38,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
             }
           case Some(resourceIdentity0) =>
             val resourceIdentity: Lifecycle[Identity, Any] = resourceIdentity0.asInstanceOf[Lifecycle[Identity, Any]]
-            // FIXME: make uninterruptible / safe register finalizer sooner than now
+            // FIXME: make explicitly uninterruptible / save register finalizer sooner than now
             F.maybeSuspend {
               val innerResource = resourceIdentity.acquire
               val instance: Any = resourceIdentity.extract(innerResource).merge

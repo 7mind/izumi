@@ -331,7 +331,7 @@ abstract class BonusServiceTest extends Test {
 }
 ```
 
-The @ref[ZIO Has injection](basics.md#zio-environment-bindings) support extends to the test cases, here we request two components implicitly using the ZIO environment:
+The @ref[ZIO Environment injection](basics.md#zio-environment-bindings) support extends to the test cases, here we request two components implicitly using the ZIO environment:
 
 - `BonusService` - is requested by `ZIO.service[BonusService]`
 - `zio.Random.Service` - is requested by `zio.random.nextInt`
@@ -416,7 +416,7 @@ The testing of `BonusService` in our demonstration application will follow the D
 post [Unit, Functional, Integration? You are doing it wrong](https://blog.7mind.io/constructive-test-taxonomy.html) for
 a discussion of test taxonomy and the value of this tactic.
 
-A binding for the implementation of `BonusService` must be passed to `distage`, to be able to build a `Has[BonusService]` to inject into the `ZIO` environment of the test.
+A binding for the implementation of `BonusService` must be passed to `distage`, to be able to build a `zio.ZEnvironment[BonusService]` to inject into the `ZIO` environment of the test.
 
 But note that we have two implementations, to use both one option is to define separate modules for the dummy and production implementations.
 One module would be used by tests and the other only by production.
@@ -439,18 +439,17 @@ import distage.StandardAxis.Repo
 
 object BonusServicePlugin extends PluginDef {
   make[BonusService]
-    .fromZEnv(DummyBonusService.managed)
+    .fromZManagedEnv(DummyBonusService.managed)
     .tagged(Repo.Dummy)
 
   make[BonusService]
-    .fromZEnv(ProdBonusService.managed)
+    .fromZManagedEnv(ProdBonusService.managed)
     .tagged(Repo.Prod)
 }
 ```
 
-Here we used @ref[ZIO Has injection](basics.md#zio-environment-bindings) `.fromZEnv` to supply the environment dependencies for `ProdBonusService.managed`, namely `Has[Console.Service]`.
-(Implementation for `Console.Service` is provided by default from @scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule))
-`.fromZEnv` can be used with `ZLayer`, `ZManaged` `ZIO` or any `F[-_, +_, +_]: Local3` (from @ref[BIO](../bio/00_bio.md) typeclasses).
+Here we used @ref[ZIO Environment injection](basics.md#zio-environment-bindings) `.fromZManagedEnv` to supply the environment dependencies for `ProdBonusService.managed`, namely `Console`.
+`.fromZIOEnv`+ methods can be used with `ZLayer`, `ZManaged` `ZIO` or `Lifecycle[ZIO[R, E, _], _]`.
 
 Note that the `BonusServicePlugin` is not explicitly added to the `Test.config`:
 But, this `PluginDef` class is defined in the same package as the test, namely in `app`. By default the `pluginConfig`
@@ -530,13 +529,13 @@ For `F[_]`, including `Identity`:
 
 For `F[-_, +_, +_]`, it's same with `F[Any, _, _]`:
 
-- `in { ???: F[zio.ZEnvironment[C] with zio.ZEnvironment[D], _, Unit] }`: The test case is an effect requiring an environment. The test
+- `in { ???: ZIO[C with D, _, Unit] }`: The test case is an effect requiring an environment. The test
   case will fail if the effect fails. The environment will be injected from the object graph.
-- `in { ???: F[zio.ZEnvironment[C] with zio.ZEnvironment[D], _, Assertion] }`: The test case is an effect requiring an environment. The
+- `in { ???: ZIO[C with D, _, Assertion] }`: The test case is an effect requiring an environment. The
   test case will fail if the effect fails or produces a failure assertion. The environment will be injected from the
   object graph.
-- `in { (a: A, b: B) => ???: F[zio.ZEnvironment[C] with zio.ZEnvironment[D], _, Assertion] }`: The test case is a function producing an
-  effect requiring an environment. All of `a: A`, `b: B`, `Has[C]` and `Has[D]`
+- `in { (a: A, b: B) => ZIO[C with D, _, Assertion] }`: The test case is a function producing an
+  effect requiring an environment. All of `a: A`, `b: B`, `zio.ZEnvironment[C]` and `zio.ZEnvironment[D]`
   will be injected from the object graph.
 
 Provided by trait @scaladoc[AssertZIO](izumi.distage.testkit.scalatest.AssertZIO):
