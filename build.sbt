@@ -2534,7 +2534,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     `distage-core-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile",
     `distage-extension-config` % "test->compile",
-    `logstage-core` % "test->compile"
+    `logstage-core` % "test->compile",
+    `fundamentals-platform` % "test->test;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(

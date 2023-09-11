@@ -4,7 +4,7 @@ import cats.arrow.FunctionK
 import distage.{TagKK, *}
 import izumi.distage.compat.ZIOResourcesZManagedTestJvm.*
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{Activation, ImplDef, Lifecycle, ModuleDef}
+import izumi.distage.model.definition.ImplDef
 import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 
@@ -26,7 +26,9 @@ object ZIOResourcesZManagedTestJvm {
     def run: Task[Unit] = ZIO.attempt(())
   }
 }
-final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen with ZIOTest with ScalatestGuards {
+final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen with ScalatestGuards {
+
+  protected def unsafeRun[E, A](eff: => ZIO[Any, E, A]): A = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(eff).getOrThrowFiberFailure())
 
   "ZManaged" should {
 

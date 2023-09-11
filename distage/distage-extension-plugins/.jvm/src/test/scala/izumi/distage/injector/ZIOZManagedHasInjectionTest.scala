@@ -1,18 +1,50 @@
 package izumi.distage.injector
 
-import izumi.distage.compat.ZIOTest
-import izumi.distage.fixtures.TraitCases.*
+import distage.Injector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.assertions.ScalatestGuards
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 import zio.*
 import zio.managed.ZManaged
 
-class ZIOZManagedHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with ScalatestGuards {
+class ZIOZManagedHasInjectionTest extends AnyWordSpec with ScalatestGuards {
 
-  import izumi.distage.fixtures.TraitCases.TraitCase2.*
+  protected def unsafeRun[E, A](eff: => ZIO[Any, E, A]): A = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(eff).getOrThrowFiberFailure())
+
+  def mkNoCyclesInjector(): Injector[Identity] = Injector.NoCycles()
+
+  object TraitCase2 {
+
+    class Dependency1 {
+      override def toString: String = "Hello World"
+    }
+
+    class Dependency2
+
+    class Dependency3
+
+    trait Trait1 {
+      def dep1: Dependency1
+    }
+
+    trait Trait2 extends Trait1 {
+      override def dep1: Dependency1
+
+      def dep2: Dependency2
+    }
+
+    trait Trait3 extends Trait1 with Trait2 {
+      def dep3: Dependency3
+
+      def prr(): String = dep1.toString
+    }
+
+  }
+
+  import TraitCase2.*
 
   type HasInt = Int
   type HasX[B] = B
@@ -38,8 +70,6 @@ class ZIOZManagedHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTe
   "ZManaged ZEnvConstructor" should {
 
     "handle multi-parameter Has with mixed args & env injection and a refinement return" in {
-      import TraitCase2.*
-
       import scala.language.reflectiveCalls
 
       def getDep1: URIO[Dependency1, Dependency1] = ZIO.environmentWith[Dependency1](_.get)
