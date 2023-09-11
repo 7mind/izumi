@@ -2535,7 +2535,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     `distage-core` % "test->compile",
     `distage-extension-config` % "test->compile",
     `logstage-core` % "test->compile",
-    `fundamentals-platform` % "test->test;compile->compile"
+    `fundamentals-platform` % "test->compile,test"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -4102,7 +4102,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
       "org.tpolecat" %% "doobie-core" % V.doobie,
       "org.tpolecat" %% "doobie-postgres" % V.doobie,
-      "io.circe" %% "circe-generic" % V.circe
+      "io.circe" %% "circe-generic" % V.circe,
+      "dev.zio" %% "zio-managed" % V.zio excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)

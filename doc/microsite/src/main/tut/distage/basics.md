@@ -524,7 +524,7 @@ println(closedInit.initialized)
 `Lifecycle` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap`, `.mapK` methods.
 
 You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods,
-and between a `Lifecycle` and `zio.managed.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
+and between a `Lifecycle` and scoped `zio.ZIO`/`zio.managed.ZManaged`/`zio.ZLayer` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
 ### Inheritance helpers
 
@@ -931,16 +931,16 @@ class Dependency
 
 class X(dependency: Dependency)
 
-def makeX: RIO[Dependency, X] = {
+def makeX: ZIO[Dependency, Throwable, X] = {
   for {
     dep <- ZIO.service[Dependency]
     _   <- Console.printLine(s"Obtained environment dependency = $dep")
   } yield new X(dep)
 }
 
-def makeXManaged: RManaged[Dependency, X] = makeX.toManaged
+def makeXManaged: ZManaged[Dependency, Throwable, X] = makeX.toManaged
 
-def makeXLayer: RLayer[Dependency, X] = ZLayer.fromZIO(makeX)
+def makeXLayer: ZLayer[Dependency, Throwable, X] = ZLayer.fromZIO(makeX)
 
 def module1 = new ModuleDef {
   make[Dependency]
@@ -977,7 +977,6 @@ Another example:
 
 ```scala mdoc:reset:to-string
 import distage.{Injector, ModuleDef}
-import zio.managed._
 import zio.{Console, UIO, URIO, RIO, ZIO, Ref, Task}
 
 trait Hello {
@@ -997,12 +996,13 @@ val world: URIO[World, String] = ZIO.serviceWithZIO(_.world)
 // service implementations
 
 val makeHello = {
-  (for {
-    _     <- Console.printLine("Creating Enterprise Hellower...")
-    hello = new Hello { val hello = ZIO.succeed("Hello") }
-  } yield hello).toManagedWith(release = _ =>
-    Console.printLine("Shutting down Enterprise Hellower").orDie
-  )
+  for {
+    _     <- ZIO.acquireRelease(
+      acquire = Console.printLine("Creating Enterprise Hellower...")
+    )(release = _ => Console.printLine("Shutting down Enterprise Hellower").orDie)
+  } yield new Hello {
+    val hello = ZIO.succeed("Hello")
+  }
 }
 
 val makeWorld = {
