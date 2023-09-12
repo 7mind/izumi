@@ -167,7 +167,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
 
   }
 
-  "handle abstract `with` types" in brokenOnScala3 {
+  "handle abstract `with` types" in {
     import TypesCase3._
 
     class Definition[T: Tag, G <: T with Trait1: Tag: AnyConstructor, C <: T with Trait4: Tag: AnyConstructor] extends ModuleDef {
@@ -182,16 +182,18 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val instantiated = context.get[Trait3[Dep] with Trait1]
-    val instantiated2 = context.get[Trait3[Dep] with Trait4]
+    brokenOnScala3 {
+      val instantiated = context.get[Trait3[Dep] with Trait1]
+      val instantiated2 = context.get[Trait3[Dep] with Trait4]
 
-    assert(instantiated.dep == context.get[Dep])
-    assert(instantiated.isInstanceOf[Trait1])
-    assert(!instantiated.isInstanceOf[Trait4])
+      assert(instantiated.dep == context.get[Dep])
+      assert(instantiated.isInstanceOf[Trait1])
+      assert(!instantiated.isInstanceOf[Trait4])
 
-    assert(instantiated2.dep == context.get[Dep])
-    assert(instantiated2.isInstanceOf[Trait1])
-    assert(instantiated2.isInstanceOf[Trait4])
+      assert(instantiated2.dep == context.get[Dep])
+      assert(instantiated2.isInstanceOf[Trait1])
+      assert(instantiated2.isInstanceOf[Trait4])
+    }
   }
 
   "handle generic parameters in abstract `with` types" in {
@@ -241,15 +243,17 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     assert(context.get[Dep {}] != null)
   }
 
-  "support constant types in class strategy" in brokenOnScala3 {
+  "support constant types in class strategy" in {
     assume(IzScala.scalaRelease >= ScalaRelease.`2_13`(0))
-    assertCompiles(
-      """
+    brokenOnScala3 {
+      assertCompiles(
+        """
         new ModuleDef {
           make[5]
         }
       """
-    )
+      )
+    }
   }
 
   "regression test for https://github.com/7mind/izumi/issues/1523 Parameterization failure with Set of intersection type alias" in {
