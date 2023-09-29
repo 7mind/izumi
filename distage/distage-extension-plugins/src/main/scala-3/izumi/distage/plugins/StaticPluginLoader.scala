@@ -46,16 +46,17 @@ object StaticPluginLoader {
 
         val tpe = clsSym.typeRef
 
-        if (clsSym.flags.is(Flags.Module) || clsSym.isTerm) {
+        val term = if (clsSym.flags.is(Flags.Module) || clsSym.isTerm) {
           val objRef = clsSym.companionModule.termRef
-          Ref.term(objRef).asExprOf[T]
+          Ref.term(objRef)
         } else if (clsSym.isType && clsSym.isClassDef) {
-          Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), TypeTree.ref(clsSym)).asExprOf[T]
+          Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), TypeTree.ref(clsSym))
         } else {
           report.errorAndAbort(
             s"Couldn't reflect runtime class of `${plugin.getClass}`, got non-type and non-object symbol=$clsSym typeRef=${clsSym.typeRef} companionModule=${clsSym.companionModule} companionClass=${clsSym.companionClass}"
           )
         }
+        Typed(term, TypeTree.of[T]).asExprOf[T]
     }.toList
   }
 

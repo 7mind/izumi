@@ -7,12 +7,10 @@ import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.Tag
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 
-import scala.annotation.experimental
 import scala.quoted.{Expr, Quotes, Type}
 
 object MakeMacro {
 
-  @experimental
   def makeMethod[T: Type, BT: Type](using qctx: Quotes): Expr[BT] = try {
     import qctx.reflect.*
 
@@ -33,7 +31,6 @@ object MakeMacro {
     }
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
-  @experimental
   private def applyMake[T: Type, BT: Type](using qctx: Quotes)(outerClass: qctx.reflect.Symbol)(functoid: Expr[Functoid[T]]): Expr[BT] = {
     import qctx.reflect.*
 
@@ -43,7 +40,6 @@ object MakeMacro {
     Apply(Apply(TypeApply(Select.unique(This(outerClass), "_make"), List(TypeTree.of[T])), List(functoid.asTerm)), List(tagT.asTerm, codep.asTerm)).asExprOf[BT]
   }
 
-  @experimental
   private def makeMethodImpl[T: Type, BT: Type](using qctx: Quotes)(outerClass: qctx.reflect.Symbol): Expr[BT] = {
     import qctx.reflect.*
 
