@@ -1,9 +1,10 @@
 package izumi.distage.plugins
 
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
 
 import scala.compiletime.error
-import scala.quoted.{Expr, Quotes}
+import scala.quoted.{Expr, Quotes, Type}
 
 /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
   *
@@ -26,12 +27,12 @@ object StaticPluginLoader {
       new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
     }
 
-    val quoted = instantiatePluginsInCode(loadedPlugins.result)
+    val quoted = instantiatePluginsInCode[PluginBase](loadedPlugins.loaded)
 
     Expr.ofList(quoted)
   }
 
-  def instantiatePluginsInCode(loadedPlugins: Seq[PluginBase])(using qctx: Quotes): List[Expr[PluginBase]] = {
+  def instantiatePluginsInCode[T <: ModuleBase: Type](loadedPlugins: Seq[T])(using qctx: Quotes): List[Expr[T]] = {
     import qctx.reflect.*
 
     loadedPlugins.map {
@@ -47,9 +48,9 @@ object StaticPluginLoader {
 
         if (clsSym.flags.is(Flags.Module) || clsSym.isTerm) {
           val objRef = clsSym.companionModule.termRef
-          Ref.term(objRef).asExprOf[PluginBase]
+          Ref.term(objRef).asExprOf[T]
         } else if (clsSym.isType && clsSym.isClassDef) {
-          Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), TypeTree.ref(clsSym)).asExprOf[PluginBase]
+          Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), TypeTree.ref(clsSym)).asExprOf[T]
         } else {
           report.errorAndAbort(
             s"Couldn't reflect runtime class of `${plugin.getClass}`, got non-type and non-object symbol=$clsSym typeRef=${clsSym.typeRef} companionModule=${clsSym.companionModule} companionClass=${clsSym.companionClass}"

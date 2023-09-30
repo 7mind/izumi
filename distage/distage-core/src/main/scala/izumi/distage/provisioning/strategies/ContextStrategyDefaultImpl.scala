@@ -26,7 +26,7 @@ class ContextStrategyDefaultImpl(
         F.pure((for {
           subplan <- planner.plan(PlannerInput(op.wiring.module, context.plan.input.activation, impl.get.diKeys.toSet))
         } yield {
-          val ctx = LocalContextImpl.empty[F, Any](op.wiring.externalKeys,locatorRef, subplan, impl)
+          val ctx = LocalContextImpl.empty[F, Any](op.wiring.externalKeys, locatorRef, subplan, impl, op.target)
           Seq(NewObjectOp.UseInstance(op.target, ctx))
         }).left.map(err => ProvisionerIssue.LocalContextPlanningFailed(op.target, err)))
 

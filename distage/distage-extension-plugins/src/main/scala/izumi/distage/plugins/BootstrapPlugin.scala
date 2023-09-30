@@ -1,6 +1,6 @@
 package izumi.distage.plugins
 
-import izumi.distage.model.definition.{Binding, BootstrapModule, ModuleMake}
+import izumi.distage.model.definition.{Binding, BootstrapModule, ModuleBase, ModuleMake}
 
 trait BootstrapPlugin extends PluginBase with BootstrapModule
 
@@ -13,6 +13,8 @@ object BootstrapPlugin {
       override val bindings: Set[Binding] = b
     }
   }
+
+  def from(module: ModuleBase): BootstrapPlugin = make(module.bindings)
 
   implicit val bootstrapPluginModuleApi: ModuleMake[BootstrapPlugin] = BootstrapPlugin.make
 }

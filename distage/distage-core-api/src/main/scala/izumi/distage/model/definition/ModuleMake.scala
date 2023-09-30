@@ -10,6 +10,8 @@ object ModuleMake {
 
   sealed trait Aux[-S, +T <: ModuleBase] {
     def make(bindings: Set[Binding]): T
+    final def from(moduleBase: ModuleBase): T = make(moduleBase.bindings)
+
     final def empty: T = make(Set.empty)
   }
 }
