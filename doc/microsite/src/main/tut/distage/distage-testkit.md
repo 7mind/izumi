@@ -50,7 +50,8 @@ We'll start with the following model and service interface for the game score sy
 "fakepackage app": Unit
 
 import zio._
-import zio.console.{Console, putStrLn}
+import zio.managed._
+import zio.Console
 
 final case class Score(
   value: Int
@@ -73,14 +74,14 @@ object Score {
   def addStar(config: Config, score: Score) =
     score.copy(value = score.value + config.starValue)
 
-  def echoConfig(config: Config): RIO[Has[Console.Service], Config] =
+  def echoConfig(config: Config): Task[Config] =
     for {
-      _ <- putStrLn(config.toString)
+      _ <- Console.printLine(config.toString)
     } yield config
 
-  def addMango(config: Config, score: Score): RIO[Has[Console.Service] with Has[BonusService], Score] =
+  def addMango(config: Config, score: Score): RIO[BonusService, Score] =
     for {
-      bonusService <- RIO.service[BonusService]
+      bonusService <- ZIO.service[BonusService]
       currentBonus <- bonusService.queryCurrentBonus
     } yield {
       val value = score.value + config.mangoValue + currentBonus
@@ -310,14 +311,14 @@ abstract class BonusServiceTest extends Test {
       for {
         bonusService <- ZIO.service[BonusService]
         currentBonus <- bonusService.queryCurrentBonus
-        _            <- putStrLn(s"currentBonus = $currentBonus")
+        _            <- Console.printLine(s"currentBonus = $currentBonus")
         _            <- assertIO(currentBonus == defaultConfig.defaultBonus)
       } yield ()
     }
 
     "increment by delta" in {
       for {
-        delta        <- zio.random.nextInt
+        delta        <- zio.Random.nextInt
         bonusService <- ZIO.service[BonusService]
         initialBonus <- bonusService.queryCurrentBonus
         actualBonus  <- bonusService.increaseCurrentBonus(delta)
@@ -330,7 +331,7 @@ abstract class BonusServiceTest extends Test {
 }
 ```
 
-The @ref[ZIO Has injection](basics.md#zio-has-bindings) support extends to the test cases, here we request two components implicitly using the ZIO environment:
+The @ref[ZIO Environment injection](basics.md#zio-environment-bindings) support extends to the test cases, here we request two components implicitly using the ZIO environment:
 
 - `BonusService` - is requested by `ZIO.service[BonusService]`
 - `zio.Random.Service` - is requested by `zio.random.nextInt`
@@ -364,10 +365,10 @@ object DummyBonusService {
     impl = new Impl(ref)
   } yield impl
 
-  val release: UIO[Unit] = UIO.unit
+  val release: UIO[Unit] = ZIO.unit
 
   val managed: TaskManaged[DummyBonusService.Impl] =
-    acquire.toManaged(_ => release)
+    acquire.toManagedWith(_ => release)
 }
 ```
 
@@ -383,28 +384,28 @@ unimplemented for our demonstration:
 object ProdBonusService {
 
   class Impl(
-    console: Console.Service,
+    console: Console,
     url: String,
   ) extends BonusService {
 
     override def queryCurrentBonus = for {
-      _ <- console.putStrLn(s"querying $url")
+      _ <- console.printLine(s"querying $url")
     } yield ???
 
     override def increaseCurrentBonus(delta: Int) = for {
-      _ <- console.putStrLn(s"post to $url")
+      _ <- console.printLine(s"post to $url")
     } yield ???
   }
 
-  val acquire: RIO[Has[Console.Service], ProdBonusService.Impl] = for {
-    console <- ZIO.service[Console.Service]
+  val acquire: RIO[Console, ProdBonusService.Impl] = for {
+    console <- ZIO.service[Console]
     impl      = new Impl(console, "https://my-bonus-server/current-bonus.json")
   } yield impl
 
-  val release: UIO[Unit] = UIO.unit
+  val release: UIO[Unit] = ZIO.unit
 
-  val managed: RManaged[Has[Console.Service], ProdBonusService.Impl] =
-    acquire.toManaged(_ => release)
+  val managed: RManaged[Console, ProdBonusService.Impl] =
+    acquire.toManagedWith(_ => release)
 }
 ```
 
@@ -415,7 +416,7 @@ The testing of `BonusService` in our demonstration application will follow the D
 post [Unit, Functional, Integration? You are doing it wrong](https://blog.7mind.io/constructive-test-taxonomy.html) for
 a discussion of test taxonomy and the value of this tactic.
 
-A binding for the implementation of `BonusService` must be passed to `distage`, to be able to build a `Has[BonusService]` to inject into the `ZIO` environment of the test.
+A binding for the implementation of `BonusService` must be passed to `distage`, to be able to build a `zio.ZEnvironment[BonusService]` to inject into the `ZIO` environment of the test.
 
 But note that we have two implementations, to use both one option is to define separate modules for the dummy and production implementations.
 One module would be used by tests and the other only by production.
@@ -438,18 +439,17 @@ import distage.StandardAxis.Repo
 
 object BonusServicePlugin extends PluginDef {
   make[BonusService]
-    .fromHas(DummyBonusService.managed)
+    .fromZManagedEnv(DummyBonusService.managed)
     .tagged(Repo.Dummy)
 
   make[BonusService]
-    .fromHas(ProdBonusService.managed)
+    .fromZManagedEnv(ProdBonusService.managed)
     .tagged(Repo.Prod)
 }
 ```
 
-Here we used @ref[ZIO Has injection](basics.md#zio-has-bindings) `.fromHas` to supply the environment dependencies for `ProdBonusService.managed`, namely `Has[Console.Service]`.
-(Implementation for `Console.Service` is provided by default from @scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule))
-`.fromHas` can be used with `ZLayer`, `ZManaged` `ZIO` or any `F[-_, +_, +_]: Local3` (from @ref[BIO](../bio/00_bio.md) typeclasses).
+Here we used @ref[ZIO Environment injection](basics.md#zio-environment-bindings) `.fromZManagedEnv` to supply the environment dependencies for `ProdBonusService.managed`, namely `Console`.
+`.fromZIOEnv`+ methods can be used with `ZLayer`, `ZManaged` `ZIO` or `Lifecycle[ZIO[R, E, _], _]`.
 
 Note that the `BonusServicePlugin` is not explicitly added to the `Test.config`:
 But, this `PluginDef` class is defined in the same package as the test, namely in `app`. By default the `pluginConfig`
@@ -529,13 +529,13 @@ For `F[_]`, including `Identity`:
 
 For `F[-_, +_, +_]`, it's same with `F[Any, _, _]`:
 
-- `in { ???: F[zio.Has[C] with zio.Has[D], _, Unit] }`: The test case is an effect requiring an environment. The test
+- `in { ???: ZIO[C with D, _, Unit] }`: The test case is an effect requiring an environment. The test
   case will fail if the effect fails. The environment will be injected from the object graph.
-- `in { ???: F[zio.Has[C] with zio.Has[D], _, Assertion] }`: The test case is an effect requiring an environment. The
+- `in { ???: ZIO[C with D, _, Assertion] }`: The test case is an effect requiring an environment. The
   test case will fail if the effect fails or produces a failure assertion. The environment will be injected from the
   object graph.
-- `in { (a: A, b: B) => ???: F[zio.Has[C] with zio.Has[D], _, Assertion] }`: The test case is a function producing an
-  effect requiring an environment. All of `a: A`, `b: B`, `Has[C]` and `Has[D]`
+- `in { (a: A, b: B) => ZIO[C with D, _, Assertion] }`: The test case is a function producing an
+  effect requiring an environment. All of `a: A`, `b: B`, `zio.ZEnvironment[C]` and `zio.ZEnvironment[D]`
   will be injected from the object graph.
 
 Provided by trait @scaladoc[AssertZIO](izumi.distage.testkit.scalatest.AssertZIO):
@@ -579,9 +579,9 @@ The execution of tests is grouped into:
 The default is to run all of these in parallel.
 
 The @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) has options to change the behavior for each of these groups.
-The default is @scaladoc[`ParallelLevel.Unlimited`](izumi.distage.testkit.TestConfig$$ParallelLevel$$Unlimited$) which does not constrain the number of parallel tests.
-`ParallelLevel.Fixed(n: Int)` limits the execution to at most `n` test cases.
-While `ParallelLevel.Sequential` executes the test cases one at a time.
+The default is @scaladoc[`Parallelism.Unlimited`](izumi.distage.testkit.TestConfig$$Parallelism$$Unlimited$) which does not constrain the number of parallel tests.
+`Parallelism.Fixed(n: Int)` limits the execution to at most `n` test cases.
+While `Parallelism.Sequential` executes the test cases one at a time.
 
 - `parallelEnvs` - Parallelism level for distinct memoization environments.
 - `parallelSuites` - Parallelism level for test suites.
@@ -697,16 +697,16 @@ class NotUsingMemoTest extends DummyTest {
   override def config = super
     .config.copy(
       // this demo requires the tests to run sequentially
-      parallelTests = TestConfig.ParallelLevel.Sequential
+      parallelTests = TestConfig.Parallelism.Sequential
     )
 
   "Not memoizing BonusService" should {
     "use a new instance in the first case" in {
-      val delta = util.Random.nextInt()
-
       for {
+        delta        <- zio.Random.nextInt
+
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
 
         // change the bonus service state
         currentBonus <- bonusService.increaseCurrentBonus(delta)
@@ -719,7 +719,7 @@ class NotUsingMemoTest extends DummyTest {
     "use a new instance in the second case" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
 
         currentBonus <- bonusService.queryCurrentBonus
 
@@ -751,7 +751,7 @@ class UsingMemoTest extends DummyTest {
     .config.copy(
       memoizationRoots = super.config.memoizationRoots ++ Set(DIKey[BonusService]),
       // this demo requires the test cases to run sequentially
-      parallelTests = TestConfig.ParallelLevel.Sequential
+      parallelTests = TestConfig.Parallelism.Sequential
     )
 
   val delta = util.Random.nextInt()
@@ -760,7 +760,7 @@ class UsingMemoTest extends DummyTest {
     "use a new instance in the first case" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
 
         // change the bonus service state
         currentBonus <- bonusService.increaseCurrentBonus(delta)
@@ -773,7 +773,7 @@ class UsingMemoTest extends DummyTest {
     "use the same instance in the second case" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
 
         currentBonus <- bonusService.queryCurrentBonus
         expectedBonus = defaultConfig.defaultBonus + delta
@@ -808,16 +808,16 @@ class AnotherUsingMemoTest extends DummyTest {
     .config.copy(
       memoizationRoots = super.config.memoizationRoots ++ Set(DIKey[BonusService]),
       // this demo requires the test cases to run sequentially
-      parallelTests = TestConfig.ParallelLevel.Sequential
+      parallelTests = TestConfig.Parallelism.Sequential
     )
 
   "Another test using BonusService" should {
     "use the same instance" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
         currentBonus <- bonusService.queryCurrentBonus
-        _            <- console.putStrLn(s"currentBonus = ${currentBonus}")
+        _            <- Console.printLine(s"currentBonus = ${currentBonus}")
       } yield ()
     }
   }
@@ -875,7 +875,7 @@ Forced roots may be configured per-activation / combination of activations, e.g.
 
 Implementation classes that inherit from @scaladoc[`izumi.distage.model.provisioning.IntegrationCheck`](izumi.distage.model.provisioning.IntegrationCheck)
 will have their `resourceCheck()` method called before the test instantiation to check if external test dependencies —
-such as Docker containers in @ref[distage-framework-docker](distage-framework-docker.md#docker-test-resources) —
+such as Docker containers in @ref[distage-framework-docker](distage-framework-docker.md) —
 are available for the test (or for the role when in main scope).
 
 If not, the test will be canceled/ignored.
@@ -930,16 +930,16 @@ object leaderboard {
   }
 
   object zioenv {
-    import zio.{IO, ZIO, URIO, Has}
+    import zio.{IO, ZIO, URIO}
     import repo.Ladder
-    type LadderEnv = Has[Ladder[IO]]
-    type RndEnv = Has[Rnd[IO]]
+    type LadderEnv = Ladder[IO]
+    type RndEnv = Rnd[IO]
     object ladder extends Ladder[ZIO[LadderEnv, _, _]] {
-      def submitScore(userId: UserId, score: Score): ZIO[LadderEnv, QueryFailure, Unit] = ZIO.accessM(_.get.submitScore(userId, score))
-      def getScores: ZIO[LadderEnv, QueryFailure, List[(UserId, Score)]]                = ZIO.accessM(_.get.getScores)
+      def submitScore(userId: UserId, score: Score): ZIO[LadderEnv, QueryFailure, Unit] = ZIO.serviceWithZIO(_.submitScore(userId, score))
+      def getScores: ZIO[LadderEnv, QueryFailure, List[(UserId, Score)]]                = ZIO.serviceWithZIO(_.getScores)
     }
     object rnd extends Rnd[ZIO[RndEnv, _, _]] {
-      override def apply[A]: URIO[RndEnv, A] = ZIO.accessM(_.get.apply[A])
+      override def apply[A]: URIO[RndEnv, A] = ZIO.serviceWithZIO(_.apply[A])
     }
   }
 }
@@ -1032,7 +1032,7 @@ abstract class LadderTest extends LeaderboardTest {
           assertIO(user1Rank < user2Rank)
         } else if (score2 > score1) {
           assertIO(user2Rank < user1Rank)
-        } else IO.unit
+        } else ZIO.unit
       } yield ()
     }
 
@@ -1056,7 +1056,7 @@ abstract class LadderTest extends LeaderboardTest {
               assertIO(user1Rank < user2Rank)
             } else if (score2 > score1) {
               assertIO(user2Rank < user1Rank)
-            } else IO.unit
+            } else ZIO.unit
           } yield ()
     }
   }

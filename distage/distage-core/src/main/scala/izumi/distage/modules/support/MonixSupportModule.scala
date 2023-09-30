@@ -14,7 +14,7 @@
 ///**
 //  * `monix.eval.Task` effect type support for `distage` resources, effects, roles & tests
 //  *
-//  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+//  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
 //  *  - Adds `cats-effect` typeclass instances for `monix`
 //  *
 //  * Will also add the following components:

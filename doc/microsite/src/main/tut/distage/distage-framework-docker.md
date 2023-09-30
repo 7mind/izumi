@@ -51,7 +51,8 @@ object PostgresDocker extends ContainerDef {
 
   override def config: Config = {
     Config(
-      image = "library/postgres:12.2",
+      registry = Some("public.ecr.aws"),
+      image = "docker/library/postgres:12.6",
       ports = Seq(primaryPort),
       env = Map("POSTGRES_PASSWORD" -> "postgres"),
     )
@@ -126,7 +127,7 @@ minimalExample.unsafeRunSync()(cats.effect.unsafe.IORuntime.global)
 ```
 
 If the `DockerSupportModule` is not included in an application then a get of a Docker container
-dependent resource will fail with a `izumi.distage.model.exceptions.interpretation.ProvisioningException`.
+dependent resource will fail with a `izumi.distage.model.exceptions.runtime.ProvisioningException`.
 
 ### Config API
 
@@ -491,10 +492,10 @@ class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
   include(DockerSupportModule[F] overriddenBy new ModuleDef {
     make[Docker.ClientConfig].from {
       Docker.ClientConfig(
-        globalReuse      = DockerReusePolicy.ReuseEnabled,
-        useRemote        = true,
-        useRegistry      = true,
-        remote           = Some(
+        globalReuse       = DockerReusePolicy.ReuseEnabled,
+        useRemote         = true,
+        useGlobalRegistry = true,
+        remote            = Some(
           Docker.RemoteDockerConfig(
             host      = "tcp://localhost:2376",
             tlsVerify = true,
@@ -502,13 +503,19 @@ class CustomDockerConfigExampleModule[F[_]: TagK] extends ModuleDef {
             config    = "/home/user/.docker",
           )
         ),
-        registry = Some(
-          Docker.DockerRegistryConfig(
-            url      = "https://index.docker.io/v1/",
-            username = "dockeruser",
-            password = "ilovedocker",
-            email    = "dockeruser@github.com",
-          )
+        globalRegistry = Some("index.docker.io"), // docker hub default registry
+        registryConfigs = List(
+            Docker.DockerRegistryConfig(
+              registry = "index.docker.io",
+              username = "docker_user",
+              password = "i_love_docker",
+              email    = Some("dockeruser@github.com"),
+            ),
+            Docker.DockerRegistryConfig(
+              registry = "your.registry",
+              username = "my_registry_user",
+              password = "i_love_my_registry",
+            ),
         ),
       )
     }
@@ -600,7 +607,7 @@ docker rm -f $(docker ps -q -a -f 'label=distage.type')
 ### Troubleshooting
 
 ```
-// izumi.distage.model.exceptions.interpretation.ProvisioningException: Provisioner stopped after 1 instances, 2/14 operations failed:
+// izumi.distage.model.exceptions.runtime.ProvisioningException: Provisioner stopped after 1 instances, 2/14 operations failed:
 //  - {type.izumi.distage.docker.DockerClientWrapper[=λ %0 → IO[+0]]} (distage-framework-docker.md:40), MissingInstanceException: Instance is not available in the object graph: {type.izumi.distage.docker.DockerClientWrapper[=λ %0 → IO[+0]]}.
 ```
 

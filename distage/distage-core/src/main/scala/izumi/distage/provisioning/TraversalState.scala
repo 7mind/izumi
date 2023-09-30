@@ -1,6 +1,6 @@
 package izumi.distage.provisioning
 
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.provisioning.{NewObjectOp, OpStatus}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.provisioning.TraversalState.Current.{CannotProgress, Done, Step}

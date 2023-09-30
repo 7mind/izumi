@@ -23,5 +23,4 @@ package object mono {
   type SyncSafe[F[_]] = SyncSafe1[F]
   @deprecated("Renamed to izumi.functional.bio.SyncSafe1")
   lazy val SyncSafe: SyncSafe1.type = SyncSafe1
-
 }

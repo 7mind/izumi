@@ -1,12 +1,16 @@
 package izumi.functional.bio.impl
 
 import izumi.functional.bio.Clock1.ClockAccuracy
-import izumi.functional.bio.{F, Temporal2}
+import izumi.functional.bio.{Clock2, F, Temporal2}
 import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2}
 
-open class SchedulerImpl[F[+_, +_]: Temporal2] extends Scheduler2[F] {
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
+import scala.concurrent.duration.FiniteDuration
+
+open class SchedulerImpl[F[+_, +_]: Temporal2](implicit clock: Clock2[F]) extends Scheduler2[F] {
 
   override def repeat[E, A, B](eff: F[E, A])(policy: RetryPolicy[F, A, B]): F[E, A] = {
     eff.flatMap(out => loop(out, policy.action)(F.pure(_))(eff.flatMap))
@@ -20,7 +24,7 @@ open class SchedulerImpl[F[+_, +_]: Temporal2] extends Scheduler2[F] {
     eff.catchAll(err => loop(err, policy.action)(orElse)(eff.catchAll))
   }
 
-  def loop[E, S, A, B](
+  protected[this] def loop[E, S, A, B](
     in: A,
     makeDecision: RetryFunction[F, A, S],
   )(stopper: A => F[E, B]
@@ -37,6 +41,22 @@ open class SchedulerImpl[F[+_, +_]: Temporal2] extends Scheduler2[F] {
           stopper(in)
       }
     } yield next).flatten
+  }
+
+  override def retryOrElseUntil[E, A, E2](r: F[E, A])(duration: FiniteDuration, orElse: E => F[E2, A]): F[E2, A] = {
+    def loop(maxTime: ZonedDateTime): F[E2, A] = {
+      F.redeem[Any, E, A, E2, A](r)(
+        err = error =>
+          F.flatMap[Any, E2, ZonedDateTime, A](
+            clock.now(ClockAccuracy.MILLIS)
+          )(now => if (now.isBefore(maxTime)) loop(maxTime) else orElse(error)),
+        succ = F.pure(_),
+      )
+    }
+
+    F.flatMap[Any, E2, ZonedDateTime, A](
+      clock.now(ClockAccuracy.MILLIS)
+    )(now => loop(maxTime = now.plus(duration.toMillis, ChronoUnit.MILLIS)))
   }
 
 }

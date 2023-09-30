@@ -7,8 +7,8 @@ import izumi.functional.IzEither.EitherBiAggregate
 import scala.annotation.switch
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
-import JsonFlattener._
-import PathElement._
+import JsonFlattener.*
+import PathElement.*
 import izumi.fundamentals.platform.strings.IzEscape
 
 class JsonFlattener {
@@ -88,7 +88,7 @@ class JsonFlattener {
           case (path, tpe) =>
             (path, tpe, v)
         }
-    }.biAggregate
+    }.biSequence
 
     for {
       p <- maybePaths
@@ -105,46 +105,53 @@ class JsonFlattener {
       val (p, tpe) = path.splitAt(idx)
 
       if (tpe.length < 2) {
-        return Left(List(UnpackFailure.BadPathFormat(path)))
-      }
-      val rtpe = tpe.charAt(1)
-      if (!tpes.contains(rtpe)) {
-        return Left(List(UnpackFailure.UnexpectedType(tpe.substring(1), path)))
-      }
-
-      val buf = new ArrayBuffer[PathElement]()
-      var inEscape = false
-      var start = 0
-
-      for (idx <- p.indices) {
-        val c = p.charAt(idx)
-        if (inEscape) {
-          inEscape = false
-        } else if (c == escapeChar) {
-          inEscape = true
-        } else if (c == '.') {
-          addChunk(p, buf, start, idx) match {
-            case Left(value) =>
-              return Left(value)
-            case Right(_) =>
-          }
-          start = idx + 1
-        }
-      }
-
-      if (inEscape) {
-        Left(List(UnpackFailure.UnterminatedEscapeSequence(path)))
+        Left(List(UnpackFailure.BadPathFormat(path)))
       } else {
-        if (start < p.length) {
-          addChunk(p, buf, start, p.length) match {
+        val rtpe = tpe.charAt(1)
+        if (!tpes.contains(rtpe)) {
+          Left(List(UnpackFailure.UnexpectedType(tpe.substring(1), path)))
+        } else {
+
+          val buf = new ArrayBuffer[PathElement]()
+          var inEscape = false
+          var start = 0
+
+          var idx = 0
+          var last: Either[List[UnpackFailure], Unit] = Right(())
+          while (idx < p.length && last.isRight) {
+            val c = p.charAt(idx)
+            if (inEscape) {
+              inEscape = false
+            } else if (c == escapeChar) {
+              inEscape = true
+            } else if (c == '.') {
+              last = addChunk(p, buf, start, idx)
+              start = idx + 1
+            }
+            idx = idx + 1
+          }
+
+          last match {
             case Left(value) =>
-              return Left(value)
+              Left(value)
             case Right(_) =>
+              if (inEscape) {
+                Left(List(UnpackFailure.UnterminatedEscapeSequence(path)))
+              } else {
+                if (start < p.length) {
+                  addChunk(p, buf, start, p.length) match {
+                    case Left(value) =>
+                      Left(value)
+                    case Right(_) =>
+                      Right((buf.toVector, rtpe))
+                  }
+                } else {
+                  Right((buf.toVector, rtpe))
+                }
+              }
           }
         }
-        Right((buf.toVector, rtpe))
       }
-
     }
   }
 
@@ -173,7 +180,7 @@ class JsonFlattener {
 
       case Some(value) =>
         for {
-          elements <- value.map(v => parse(v._2, v._3)).biAggregate
+          elements <- value.map(v => parse(v._2, v._3)).biSequence
         } yield {
           Json.fromValues(elements)
         }
@@ -182,7 +189,7 @@ class JsonFlattener {
 
         if (grouped2.nonEmpty && grouped2.keys.forall(_.isInstanceOf[Index])) {
           for {
-            elements <- grouped2.toSeq.sortBy(_._1.asInstanceOf[Index].idx).map(_._2).map(inflateParsedNext).biAggregate
+            elements <- grouped2.toSeq.sortBy(_._1.asInstanceOf[Index].idx).map(_._2).map(inflateParsedNext).biSequence
           } yield {
             Json.fromValues(elements)
           }
@@ -197,7 +204,7 @@ class JsonFlattener {
                     } yield {
                       escape.unescape(k.asInstanceOf[ObjectName].name) -> field
                     }
-                }.toSeq.biAggregate
+                }.toSeq.biSequence
           } yield {
             Json.fromFields(elements)
           }

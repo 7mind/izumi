@@ -1,15 +1,16 @@
 package izumi.distage.modules
 
 import izumi.distage.model.definition.{Module, ModuleDef}
-import izumi.distage.model.effect.{QuasiApplicative, QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.distage.modules.support._
+import izumi.functional.quasi.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives, QuasiTemporal}
+import izumi.distage.modules.support.*
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
 import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
 import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
-import izumi.fundamentals.orphans._
+import izumi.fundamentals.orphans.*
 import izumi.fundamentals.platform.functional.Identity
+
 import scala.annotation.unused
-import izumi.reflect.{TagK, TagK3, TagKK}
+import izumi.reflect.{Tag, TagK, TagK3, TagKK}
 
 /**
   * Implicitly available effect type support for `distage` resources, effects, roles & tests.
@@ -17,7 +18,7 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   * Automatically provides default runtime environments & typeclasses instances for effect types.
   * All the defaults are overrideable via [[izumi.distage.model.definition.ModuleDef]]
   *
-  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
   *  - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
   *
@@ -30,7 +31,7 @@ import izumi.reflect.{TagK, TagK3, TagKK}
   *   - Any `F[_]` with `cats-effect` instances
   *   - Any `F[+_, +_]` with [[izumi.functional.bio]] instances
   *   - Any `F[-_, +_, +_]` with [[izumi.functional.bio]] instances
-  *   - Any `F[_]` with [[izumi.distage.model.effect.QuasiIO]] instances
+  *   - Any `F[_]` with [[izumi.functional.quasi.QuasiIO]] instances
   */
 final case class DefaultModule[F[_]](module: Module) extends AnyVal {
   @inline def to[G[_]]: DefaultModule[G] = new DefaultModule[G](module)
@@ -54,15 +55,17 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
-    * This adds cats typeclass instances to the default effect module if you have cats-effect on classpath,
-    * otherwise the default effect module for ZIO will be [[forZIO]], containing BIO & QuasiIO, but not cats-effect instances.
+    * This adds cats typeclass instances to the default effect module if you have `cats-effect` and `zio-interop-cats` on classpath,
+    * otherwise the default effect module for ZIO will be [[forZIO]], containing BIO & QuasiIO instances, but no `cats-effect` instances.
     */
-  implicit def forZIOPlusCats[K[_, _, _], ZIO[_, _, _], R](
+  implicit def forZIOPlusCats[K[_[_], _], A[_[_]], ZIO[_, _, _], R](
     implicit
-    @unused ensureInteropCatsOnClasspath: `zio.interop.ZManagedSyntax`[K],
-    @unused l: `zio.ZIO`[ZIO],
+    @unused ensureInteropCatsOnClasspath: `zio.interop.CatsIOResourceSyntax`[K],
+    @unused ensureCatsEffectOnClasspath: `cats.effect.kernel.Async`[A],
+    @unused isZIO: `zio.ZIO`[ZIO],
+    tagR: Tag[R],
   ): DefaultModule2[ZIO[R, _, _]] = {
-    DefaultModule(ZIOSupportModule ++ ZIOCatsEffectInstancesModule)
+    DefaultModule(ZIOSupportModule[R] ++ ZIOCatsEffectInstancesModule[R])
   }
 }
 
@@ -75,8 +78,8 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
     *
     * @see [[izumi.distage.modules.support.ZIOSupportModule]]
     */
-  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R]: DefaultModule2[ZIO[R, _, _]] = {
-    DefaultModule(ZIOSupportModule)
+  implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R: Tag]: DefaultModule2[ZIO[R, _, _]] = {
+    DefaultModule(ZIOSupportModule[R])
   }
 
 //  /**
@@ -125,10 +128,8 @@ sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModul
 
 sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModulesInstances5 {
   /** @see [[izumi.distage.modules.support.AnyBIO3SupportModule]] */
-  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: Scheduler3](
-    implicit tagBIO: TagKK[F[Any, +_, +_]]
-  ): DefaultModule3[F] = {
-    DefaultModule(AnyBIO3SupportModule.withImplicits[F])
+  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: Scheduler3]: DefaultModule3[F] = {
+    DefaultModule(AnyBIO3SupportModule.withImplicits[F, Any])
   }
 }
 
@@ -154,11 +155,14 @@ sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances6 {
-  implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiIORunner]: DefaultModule[F] = {
+  implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiTemporal: QuasiIORunner]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
+      addImplicit[QuasiFunctor[F]]
+      addImplicit[QuasiApplicative[F]]
+      addImplicit[QuasiPrimitives[F]]
       addImplicit[QuasiIO[F]]
       addImplicit[QuasiAsync[F]]
-      addImplicit[QuasiApplicative[F]]
+      addImplicit[QuasiTemporal[F]]
       addImplicit[QuasiIORunner[F]]
     })
   }

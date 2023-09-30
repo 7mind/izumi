@@ -1,6 +1,6 @@
 package izumi.fundamentals.collections
 
-import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet, NonEmptyString}
+import izumi.fundamentals.collections.nonempty.{NEList, NEMap, NESet, NEString}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.nowarn
@@ -10,35 +10,35 @@ class NonEmptyCollectionsTest extends AnyWordSpec {
 
   import scala.collection.compat._
 
-  "NonEmptyList" should {
+  "NEList" should {
     "maintain base contracts" in {
-      val nl = NonEmptyList(1)
+      val nl = NEList(1)
       assert(nl.to(List) == List(1))
       assert(nl.head == 1)
       assert(nl.last == 1)
     }
   }
 
-  "NonEmptySet" should {
+  "NESet" should {
     "maintain base contracts" in {
-      val nl = NonEmptySet(1, 1)
+      val nl = NESet(1, 1)
       assert(nl.to(Set) == Set(1))
       assert(nl.head == 1)
       assert(nl.last == 1)
     }
   }
 
-  "NonEmptyString" should {
+  "NEString" should {
     "maintain base contracts" in {
-      assert(NonEmptyString.from("").isEmpty)
-      assert(NonEmptyString.from("abc").exists(_.theString == "abc"))
+      assert(NEString.from("").isEmpty)
+      assert(NEString.from("abc").exists(_.theString == "abc"))
     }
   }
 
-  "NonEmptyMap" should {
+  "NEMap" should {
     "maintain base contracts" in {
-      assert(NonEmptyMap((1, "x")).toMap == Map((1, "x")))
-      assert(NonEmptyMap.from[Nothing, Nothing](Map.empty).isEmpty)
+      assert(NEMap((1, "x")).toMap == Map((1, "x")))
+      assert(NEMap.from[Nothing, Nothing](Map.empty).isEmpty)
     }
   }
 

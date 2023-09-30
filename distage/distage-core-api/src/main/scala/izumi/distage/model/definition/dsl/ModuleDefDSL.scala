@@ -1,21 +1,24 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.constructors.{AnyConstructor, HasConstructor}
-import izumi.distage.model.definition.Lifecycle.{LifecycleTag, TrifunctorHasLifecycleTag}
-import izumi.distage.model.definition._
+import izumi.distage.LocalContext
+import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, ZEnvConstructor}
+import izumi.distage.model.definition.*
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SetInstruction, SingletonInstruction, _}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
+import izumi.distage.model.definition.dsl.LifecycleAdapters.{LifecycleTag, ZIOEnvLifecycleTag}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.functional.bio.Local3
 import izumi.functional.bio.data.Morphism1
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.reflect.{Tag, TagK, TagK3}
-import zio._
+import izumi.reflect.{Tag, TagK}
+import zio.*
+import zio.managed.ZManaged
 
+import scala.annotation.unused
 import scala.collection.immutable.HashSet
 
 /**
@@ -101,7 +104,7 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
 
 object ModuleDefDSL {
 
-  trait MakeDSLBase[T, AfterBind] {
+  trait MakeDSLBase[T, AfterBind] extends AnyKindShim {
     final def from[I <: T: AnyConstructor]: AfterBind =
       from(AnyConstructor[I])
 
@@ -110,6 +113,24 @@ object ModuleDefDSL {
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
+
+    /**
+      * Defines local context with empty local module and local keys
+      */
+    def fromLocalContext[F[_], R](defn: LocalContextDef[F[R]])(implicit @unused ev: T =:= LocalContext[F, R]): LocalContextDSL[F, R, AfterBind] = {
+      new LocalContextDSL[F, R, AfterBind](defn.module, Set.empty, bind, defn.function).bound()
+    }
+
+    /**
+      * Defines local context with empty local module and local keys, specialised for Identity
+      */
+    def fromLocalContext[R](
+      defn: LocalContextDef[R]
+    )(implicit ev: T =:= LocalContext[Identity, R],
+      dummyImplicit: DummyImplicit,
+    ): LocalContextDSL[Identity, R, AfterBind] = {
+      fromLocalContext[Identity, R](defn)
+    }
 
     /**
       * A function that receives its arguments from DI object graph, including named instances via [[izumi.distage.model.definition.Id]] annotation.
@@ -266,26 +287,26 @@ object ModuleDefDSL {
       * @see - [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
       *      - [[Lifecycle]]
       */
-    final def fromResource[R <: Lifecycle[Any, T]: AnyConstructor](implicit tag: LifecycleTag[R]): AfterBind = {
+    final def fromResource[R <: Lifecycle[LifecycleF, T]: AnyConstructor](implicit tag: LifecycleTag[R]): AfterBind = {
       fromResource(AnyConstructor[R])
     }
 
-    final def fromResource[R](instance: R with Lifecycle[Any, T])(implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+    final def fromResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R]): AfterBind = {
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
     }
 
-    final def fromResource[R](function: Functoid[R with Lifecycle[Any, T]])(implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+    final def fromResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R]): AfterBind = {
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
     }
 
-    final def fromResource[R0, R <: Lifecycle[Any, T]](
+    final def fromResource[R0, R <: Lifecycle[LifecycleF, T]](
       function: Functoid[R0]
-    )(implicit adapt: Lifecycle.AdaptFunctoid.Aux[R0, R],
+    )(implicit adapt: LifecycleAdapters.AdaptFunctoid.Aux[R0, R],
       tag: LifecycleTag[R],
     ): AfterBind = {
-      import tag._
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
     }
 
@@ -294,13 +315,13 @@ object ModuleDefDSL {
       *
       * This will acquire a NEW resource again for every `refResource` binding
       */
-    final def refResource[R <: Lifecycle[Any, T]](implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+    final def refResource[R <: Lifecycle[LifecycleF, T]](implicit tag: LifecycleTag[R]): AfterBind = {
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)))
     }
 
-    final def refResource[R <: Lifecycle[Any, T]](name: Identifier)(implicit tag: LifecycleTag[R]): AfterBind = {
-      import tag._
+    final def refResource[R <: Lifecycle[LifecycleF, T]](name: Identifier)(implicit tag: LifecycleTag[R]): AfterBind = {
+      import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
 
@@ -314,11 +335,15 @@ object ModuleDefDSL {
       bind(ImplDef.ProviderImpl(provider.ret, provider))
     }
 
+    final def fromFactory[I <: T: FactoryConstructor]: AfterBind = {
+      from[I](FactoryConstructor[I])
+    }
+
     protected[this] def bind(impl: ImplDef): AfterBind
     protected[this] def key: DIKey
   }
 
-  trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
+  trait SetDSLBase[T, AfterAdd, AfterMultiAdd] extends AnyKindShim {
 
     final def add[I <: T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](AnyConstructor[I])
@@ -331,6 +356,9 @@ object ModuleDefDSL {
 
     final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
+
+    final def addFactory[I <: T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+      add[I](FactoryConstructor[I])
 
     /**
       * Bind by reference to another bound key
@@ -381,36 +409,36 @@ object ModuleDefDSL {
     final def refEffect[F[_]: TagK, I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
 
-    final def addResource[R <: Lifecycle[Any, T]: AnyConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
+    final def addResource[R <: Lifecycle[LifecycleF, T]: AnyConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
       addResource[R](AnyConstructor[R])
 
-    final def addResource[R](instance: R with Lifecycle[Any, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+    final def addResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
     }
 
-    final def addResource[R](function: Functoid[R with Lifecycle[Any, T]])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+    final def addResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
     }
 
-    final def addResource[R0, R <: Lifecycle[Any, T]](
+    final def addResource[R0, R <: Lifecycle[LifecycleF, T]](
       function: Functoid[R0]
-    )(implicit adapt: Lifecycle.AdaptFunctoid.Aux[R0, R],
+    )(implicit adapt: LifecycleAdapters.AdaptFunctoid.Aux[R0, R],
       tag: LifecycleTag[R],
       pos: CodePositionMaterializer,
     ): AfterAdd = {
-      import tag._
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)), pos)
     }
 
-    final def refResource[R <: Lifecycle[Any, T]](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+    final def refResource[R <: Lifecycle[LifecycleF, T]](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)), pos)
     }
 
-    final def refResource[R <: Lifecycle[Any, T]](name: Identifier)(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
+    final def refResource[R <: Lifecycle[LifecycleF, T]](name: Identifier)(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
+      import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
     }
 
@@ -458,193 +486,309 @@ object ModuleDefDSL {
     protected[this] def appendElement(newImpl: ImplDef, pos: CodePositionMaterializer): AfterAdd
   }
 
-  object MakeDSLBase {
-    implicit final class MakeFromZIOHas[T, AfterBind](protected val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal with MakeFromHasLowPriorityOverloads[T, AfterBind] {
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](effect: ZIO[R, E, I]): AfterBind = {
-        dsl.fromEffect[IO[E, _], I](HasConstructor[R].map(effect.provide))
-      }
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[ZIO[R, E, I]]): AfterBind = {
-        dsl.fromEffect[IO[E, _], I](function.map2(HasConstructor[R])(_.provide(_)))
-      }
+  /** Workaround for https://github.com/lampepfl/dotty/issues/16406#issuecomment-1712058227 */
+  type DottyNothing = Nothing
 
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
-        dsl.fromResource(HasConstructor[R].map(resource.provide))
-      }
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[ZManaged[R, E, I]])(implicit d1: DummyImplicit): AfterBind = {
-        dsl.fromResource(function.map2(HasConstructor[R])(_.provide(_)))
-      }
+  object MakeDSLBase extends AnyKindShim {
 
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](layer: ZLayer[R, E, Has[I]]): AfterBind = {
-        dsl.fromResource(HasConstructor[R].map(layer.build.map(_.get[I]).provide))
-      }
-      def fromHas[R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[ZLayer[R, E, Has[I]]])(implicit d1: DummyImplicit, d2: DummyImplicit): AfterBind = {
-        dsl.fromResource(function.map2(HasConstructor[R])(_.build.map(_.get[I]).provide(_)))
-      }
+    implicit final class MakeFromZIOZEnv[T, AfterBind](protected val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal {
 
-      /**
-        * Adds a dependency on `Local3[F]`
-        *
-        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
-        */
-      def fromHas[R1 <: Lifecycle[Any, T]: AnyConstructor](implicit tag: TrifunctorHasLifecycleTag[R1, T]): AfterBind = {
-        import tag._
-        val provider: Functoid[Lifecycle[F[Any, E, _], A]] =
-          AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]](tagLocal3)) {
-            case ((resource, r), f) => provideLifecycle(f)(resource, r)
-          }
+      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](effect: ZIO[Scope with R, E, I]): AfterBind = {
+        val provider: Functoid[Lifecycle.FromZIO[Any, E, I]] = ZEnvConstructor[R]
+          .map(r => effect.provideSomeEnvironment[Scope](_.unionAll[R](r)))
+          .map(Lifecycle.fromZIO[Any](_))
+
         dsl.fromResource(provider)
       }
-    }
-    sealed trait MakeFromHasLowPriorityOverloads[T, AfterBind] extends Any {
-      protected[this] def dsl: MakeDSLBase[T, AfterBind]
 
-      /** Adds a dependency on `Local3[F]` */
-      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I]): AfterBind = {
-        dsl.fromEffect[F[Any, E, _], I](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
-          (r, F: Local3[F]) => F.provide(effect)(r)
-        })
+      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZIO[Scope with R, E, I]]): AfterBind = {
+        val provider: Functoid[Lifecycle.FromZIO[Any, E, I]] = function
+          .map2(ZEnvConstructor[R])((zio, r) => zio.provideSomeEnvironment[Scope](_.unionAll[R](r)))
+          .map(Lifecycle.fromZIO[Any](_))
+
+        dsl.fromResource(provider)
       }
 
-      /** Adds a dependency on `Local3[F]` */
-      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[F[R, E, I]]): AfterBind = {
-        dsl.fromEffect[F[Any, E, _], I](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((effect, r), f) => f.provide(effect)(r)
-        })
+      def fromZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
+        dsl.fromResource(ZEnvConstructor[R].map(resource.provideEnvironment(_)))
       }
 
-      /**
-        * Adds a dependency on `Local3[F]`
-        *
-        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
-        */
-      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](resource: Lifecycle[F[R, E, _], I]): AfterBind = {
-        dsl.fromResource[Lifecycle[F[Any, E, _], I]](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
-          (r: R, F: Local3[F]) => provideLifecycle(F)(resource, r)
-        })
+      def fromZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZManaged[R, E, I]]): AfterBind = {
+        dsl.fromResource(function.map2(ZEnvConstructor[R])(_.provideEnvironment(_)))
+      }
+
+      def fromZLayerEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](layer: ZLayer[R, E, I]): AfterBind = {
+        dsl.fromResource(ZEnvConstructor[R].map(ZLayer.succeedEnvironment(_) >>> layer))
+      }
+      def fromZLayerEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZLayer[R, E, I]]): AfterBind = {
+        dsl.fromResource(function.map2(ZEnvConstructor[R])((layer, e) => ZLayer.succeedEnvironment(e) >>> layer))
       }
 
       /**
-        * Adds a dependency on `Local3[F]`
+        * Bind to a Lifecycle class which has a ZIO effect type that specifies dependencies via zio environment, e.g.
+        *
+        * {{{
+        * class IntLifecycle extends Lifecycle.OfZIO[Double, Nothing, Int](
+        *   for {
+        *     double <- ZIO.service[Double]
+        *     _ <- ZIO.acquireRelease(ZIO.unit)(_ => ZIO.succeed(println("Closed")))
+        *   } yield double.toInt
+        * )
+        *
+        * val module = new ModuleDef {
+        *   make[Int].fromZEnvLifecycle[IntLifecycle]
+        *   make[Double].from(5.0)
+        * }
+        *
+        * Injector[Task]().produceRun(module) {
+        *   (i: Int) => ZIO.succeed(println(i))
+        * }
+        * // 5
+        * // Closed
+        * }}}
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
+        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      final def fromHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        function: Functoid[Lifecycle[F[R, E, _], I]]
-      )(implicit d1: DummyImplicit
-      ): AfterBind = {
-        dsl.fromResource[Lifecycle[F[Any, E, _], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((resource, r), f) => provideLifecycle(f)(resource, r)
-        })
+      def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: AnyConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
+        import tag.{R, E, A, ctorR, tagFull, resourceTag, ev}
+        val provider = AnyConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
+        dsl.fromResource(provider)(resourceTag)
       }
+
+      /**
+        * Bind to a Lifecycle value which has a ZIO effect type that specifies dependencies via zio environment
+        *
+        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
+        */
+      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: Lifecycle[ZIO[R, E, _], I]): AfterBind = {
+        val provider = ZEnvConstructor[R].map(provideZEnvLifecycle(resource, _))
+        dsl.fromResource[Lifecycle[ZIO[Any, E, _], I]](provider)
+      }
+
+      /**
+        * Bind to a Lifecycle value which has a ZIO effect type that specifies dependencies via zio environment
+        *
+        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
+        */
+      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[Lifecycle[ZIO[R, E, _], I]]): AfterBind = {
+        val provider = function.map2(ZEnvConstructor[R])(provideZEnvLifecycle)
+        dsl.fromResource[Lifecycle[ZIO[Any, E, _], I]](provider)
+      }
+
+      // FIXME wtf
+//      /**
+//        * Adds a dependency on `Local3[F]`
+//        *
+//        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+//        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
+//        */
+//      def fromZEnv[R1 <: Lifecycle[LifecycleF, T]: AnyConstructor](implicit tag: TrifunctorHasLifecycleTag[R1, T]): AfterBind = {
+//        import tag._
+//        val provider: Functoid[Lifecycle[F[Any, E, _], A]] =
+//          AnyConstructor[R1].zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]](tagLocal3)) {
+//            case ((resource, r), f) => provideLifecycle(f)(resource, r)
+//          }
+//        dsl.fromResource(provider)
+//      }
     }
+    // FIXME wtf
+//    sealed trait MakeFromHasLowPriorityOverloads[T, AfterBind] extends Any {
+//      protected[this] def dsl: MakeDSLBase[T, AfterBind]
+//
+//      /** Adds a dependency on `Local3[F]` */
+//      final def fromZEnv[F[-_, +_, +_]: TagK3, R: ZEnvConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I]): AfterBind = {
+//        dsl.fromEffect[F[Any, E, _], I](ZEnvConstructor[R].map2(Functoid.identity[Local3[F]]) {
+//          (r, F: Local3[F]) => F.provide(effect)(r)
+//        })
+//      }
+//
+//      /** Adds a dependency on `Local3[F]` */
+//      final def fromZEnv[F[-_, +_, +_]: TagK3, R: ZEnvConstructor, E: Tag, I <: T: Tag](function: Functoid[F[R, E, I]]): AfterBind = {
+//        dsl.fromEffect[F[Any, E, _], I](function.zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+//          case ((effect, r), f) => f.provide(effect)(r)
+//        })
+//      }
+//
+//      /**
+//        * Adds a dependency on `Local3[F]`
+//        *
+//        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+//        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
+//        */
+//      final def fromZEnv[F[-_, +_, +_]: TagK3, R: ZEnvConstructor, E: Tag, I <: T: Tag](resource: Lifecycle[F[R, E, _], I]): AfterBind = {
+//        dsl.fromResource[Lifecycle[F[Any, E, _], I]](ZEnvConstructor[R].map2(Functoid.identity[Local3[F]]) {
+//          (r: R, F: Local3[F]) => provideLifecycle(F)(resource, r)
+//        })
+//      }
+//
+//      /**
+//        * Adds a dependency on `Local3[F]`
+//        *
+//        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+//        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
+//        */
+//      final def fromZEnv[F[-_, +_, +_]: TagK3, R: ZEnvConstructor, E: Tag, I <: T: Tag](
+//        function: Functoid[Lifecycle[F[R, E, _], I]]
+//      )(implicit d1: DummyImplicit
+//      ): AfterBind = {
+//        dsl.fromResource[Lifecycle[F[Any, E, _], I]](function.zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+//          case ((resource, r), f) => provideLifecycle(f)(resource, r)
+//        })
+//      }
+//    }
+
   }
 
-  object SetDSLBase {
-    implicit final class AddFromZIOHas[T, AfterAdd](protected val dsl: SetDSLBase[T, AfterAdd, ?]) extends AnyVal with AddFromHasLowPriorityOverloads[T, AfterAdd] {
-      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](effect: ZIO[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addEffect[IO[E, _], I](HasConstructor[R].map(effect.provide))
+  object SetDSLBase extends AnyKindShim {
+
+    implicit final class AddFromZIOZEnv[T, AfterAdd](protected val dsl: SetDSLBase[T, AfterAdd, ?]) extends AnyVal {
+      def addZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](effect: ZIO[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
+        dsl.addEffect[IO[E, _], I](ZEnvConstructor[R].map(effect.provideEnvironment(_)))
       }
-      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](function: Functoid[ZIO[R, E, I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addEffect[IO[E, _], I](function.map2(HasConstructor[R])(_.provide(_)))
+      def addZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZIO[R, E, I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
+        dsl.addEffect[IO[E, _], I](function.map2(ZEnvConstructor[R])(_.provideEnvironment(_)))
       }
 
-      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](resource: ZManaged[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addResource(HasConstructor[R].map(resource.provide))
+      def addZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: ZManaged[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
+        dsl.addResource(ZEnvConstructor[R].map(resource.provideEnvironment(_)))
       }
-      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](
+
+      def addZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](
         function: Functoid[ZManaged[R, E, I]]
-      )(implicit pos: CodePositionMaterializer,
-        d1: DummyImplicit,
-      ): AfterAdd = {
-        dsl.addResource(function.map2(HasConstructor[R])(_.provide(_)))
-      }
-
-      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](layer: ZLayer[R, E, Has[I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addResource(HasConstructor[R].map(layer.build.map(_.get[I]).provide))
-      }
-      def addHas[R: HasConstructor, E: Tag, I <: T: Tag](
-        function: Functoid[ZLayer[R, E, Has[I]]]
-      )(implicit pos: CodePositionMaterializer,
-        d1: DummyImplicit,
-        d2: DummyImplicit,
-      ): AfterAdd = {
-        dsl.addResource(function.map2(HasConstructor[R])(_.build.map(_.get[I]).provide(_)))
-      }
-
-      /**
-        * Adds a dependency on `Local3[F]`
-        *
-        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
-        */
-      final def addHas[R1 <: Lifecycle[Any, T]: AnyConstructor](implicit tag: TrifunctorHasLifecycleTag[R1, T], pos: CodePositionMaterializer): AfterAdd = {
-        import tag._
-        val provider: Functoid[Lifecycle[F[Any, E, _], A]] =
-          AnyConstructor[R1].zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]](tagLocal3)) {
-            case ((resource, r), f) => provideLifecycle(f)(resource, r)
-          }
-        dsl.addResource(provider)
-      }
-    }
-    sealed trait AddFromHasLowPriorityOverloads[T, AfterAdd] extends Any {
-      protected[this] def dsl: SetDSLBase[T, AfterAdd, ?]
-
-      /** Adds a dependency on `Local3[F]` */
-      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
-        dsl.addEffect[F[Any, E, _], I](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
-          (r, F: Local3[F]) => F.provide(effect)(r)
-        })
-      }
-
-      /** Adds a dependency on `Local3[F]` */
-      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        function: Functoid[F[R, E, I]]
       )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
-        dsl.addEffect[F[Any, E, _], I](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((effect, r), f) => f.provide(effect)(r)
-        })
+        dsl.addResource(function.map2(ZEnvConstructor[R])(_.provideEnvironment(_)))
+      }
+
+      def addZLayerEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](layer: ZLayer[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
+        dsl.addResource(ZEnvConstructor[R].map(ZLayer.succeedEnvironment(_) >>> layer))
+      }
+      def addZLayerEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZLayer[R, E, I]])(implicit pos: CodePositionMaterializer): AfterAdd = {
+        dsl.addResource(function.map2(ZEnvConstructor[R])((r, e) => ZLayer.succeedEnvironment(e) >>> r))
       }
 
       /**
-        * Adds a dependency on `Local3[F]`
+        * Adds set element binding to a Lifecycle class which has a ZIO effect type that specifies dependencies via zio environment.
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        resource: Lifecycle[F[R, E, _], I]
+      def addZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: AnyConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T], pos: CodePositionMaterializer): AfterAdd = {
+        import tag.{R, E, A, ctorR, tagFull, resourceTag, ev}
+        val provider = AnyConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
+        dsl.addResource(provider)(resourceTag, pos)
+      }
+
+      /**
+        * Adds set element binding to a Lifecycle value which has a ZIO effect type that specifies dependencies via zio environment.
+        *
+        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
+        */
+      def addZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](
+        resource: Lifecycle[ZIO[R, E, _], I]
       )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
-        dsl.addResource[Lifecycle[F[Any, E, _], I]](HasConstructor[R].map2(Functoid.identity[Local3[F]]) {
-          (r: R, F: Local3[F]) => provideLifecycle(F)(resource, r)
-        })
+        val provider = ZEnvConstructor[R].map(provideZEnvLifecycle(resource, _))
+        dsl.addResource[Lifecycle[ZIO[Any, E, _], I]](provider)
       }
 
       /**
-        * Adds a dependency on `Local3[F]`
+        * Adds set element binding to a Lifecycle value which has a ZIO effect type that specifies dependencies via zio environment.
         *
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      final def addHas[F[-_, +_, +_]: TagK3, R: HasConstructor, E: Tag, I <: T: Tag](
-        function: Functoid[Lifecycle[F[R, E, _], I]]
-      )(implicit pos: CodePositionMaterializer,
-        d1: DummyImplicit,
+      def addZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](
+        function: Functoid[Lifecycle[ZIO[R, E, _], I]]
+      )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
-        dsl.addResource[Lifecycle[F[Any, E, _], I]](function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((resource, r), f) => provideLifecycle(f)(resource, r)
-        })
+        val provider = function.map2(ZEnvConstructor[R])(provideZEnvLifecycle)
+        dsl.addResource[Lifecycle[ZIO[Any, E, _], I]](provider)
       }
 
+      // FIXME wtf
+//      /**
+//        * Adds a dependency on `Local3[F]`
+//        *
+//        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+//        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
+//        */
+//      final def addZEnv[R1 <: Lifecycle[LifecycleF, T]: AnyConstructor](implicit tag: TrifunctorHasLifecycleTag[R1, T], pos: CodePositionMaterializer): AfterAdd = {
+//        import tag._
+//        val provider: Functoid[Lifecycle[F[Any, E, _], A]] =
+//          AnyConstructor[R1].zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]](tagLocal3)) {
+//            case ((resource, r), f) => provideLifecycle(f)(resource, r)
+//          }
+//        dsl.addResource(provider)
+//      }
     }
+    // FIXME wtf
+//    sealed trait AddFromHasLowPriorityOverloads[T, AfterAdd] extends Any {
+//      protected[this] def dsl: SetDSLBase[T, AfterAdd, ?]
+//
+//      /** Adds a dependency on `Local3[F]` */
+//      final def addZEnv[F[-_, +_, +_]: TagK3, R: ZEnvConstructor, E: Tag, I <: T: Tag](effect: F[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
+//        dsl.addEffect[F[Any, E, _], I](ZEnvConstructor[R].map2(Functoid.identity[Local3[F]]) {
+//          (r, F: Local3[F]) => F.provide(effect)(r)
+//        })
+//      }
+//
+//      /** Adds a dependency on `Local3[F]` */
+//      final def addZEnv[F[-_, +_, +_]: TagK3, R: ZEnvConstructor, E: Tag, I <: T: Tag](
+//        function: Functoid[F[R, E, I]]
+//      )(implicit pos: CodePositionMaterializer
+//      ): AfterAdd = {
+//        dsl.addEffect[F[Any, E, _], I](function.zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+//          case ((effect, r), f) => f.provide(effect)(r)
+//        })
+//      }
+//
+//      /**
+//        * Adds a dependency on `Local3[F]`
+//        *
+//        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+//        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
+//        */
+//      final def addZEnv[F[-_, +_, +_]: TagK3, R: ZEnvConstructor, E: Tag, I <: T: Tag](
+//        resource: Lifecycle[F[R, E, _], I]
+//      )(implicit pos: CodePositionMaterializer
+//      ): AfterAdd = {
+//        dsl.addResource[Lifecycle[F[Any, E, _], I]](ZEnvConstructor[R].map2(Functoid.identity[Local3[F]]) {
+//          (r: R, F: Local3[F]) => provideLifecycle(F)(resource, r)
+//        })
+//      }
+//
+//      /**
+//        * Adds a dependency on `Local3[F]`
+//        *
+//        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+//        * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
+//        */
+//      final def addZEnv[F[-_, +_, +_]: TagK3, R: ZEnvConstructor, E: Tag, I <: T: Tag](
+//        function: Functoid[Lifecycle[F[R, E, _], I]]
+//      )(implicit pos: CodePositionMaterializer,
+//        d1: DummyImplicit,
+//      ): AfterAdd = {
+//        dsl.addResource[Lifecycle[F[Any, E, _], I]](function.zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+//          case ((resource, r), f) => provideLifecycle(f)(resource, r)
+//        })
+//      }
+//
+//    }
+
   }
 
-  @inline private[this] def provideLifecycle[F[-_, +_, +_], R, E, A](F: Local3[F])(resource: Lifecycle[F[R, E, _], A], r: R): Lifecycle[F[Any, E, _], A] = {
-    resource.mapK[F[R, E, _], F[Any, E, _]](Morphism1(F.provide(_)(r)))
+  // FIXME wtf
+//  @inline private[this] def provideLifecycle[F[-_, +_, +_], R, E, A](F: Local3[F])(resource: Lifecycle[F[R, E, _], A], r: R): Lifecycle[F[Any, E, _], A] = {
+//    resource.mapK[F[R, E, _], F[Any, E, _]](Morphism1(F.provide(_)(r)))
+//  }
+
+  @inline private[this] def provideZEnvLifecycle[R, E, A](lifecycle: Lifecycle[ZIO[R, E, _], A], zenv: ZEnvironment[R]): Lifecycle[ZIO[Any, E, _], A] = {
+    lifecycle.mapK[ZIO[R, E, _], ZIO[Any, E, _]](Morphism1(_.provideEnvironment(zenv)))
   }
 
   // DSL state machine
@@ -787,16 +931,7 @@ object ModuleDefDSL {
     }
 
     private[this] final def annotateParameterOp[P: Tag](name: Identifier): Modify[T] = {
-      Modify[T] {
-        old =>
-          val paramTpe = SafeType.get[P]
-          val newProvider = old.get.replaceKeys {
-            case DIKey.TypeKey(tpe, m) if tpe == paramTpe =>
-              DIKey.IdKey(paramTpe, name.id, m)(name.idContract)
-            case k => k
-          }
-          Functoid(newProvider)
-      }
+      Modify[T](_.annotateParameter[P](name))
     }
   }
 
@@ -840,6 +975,41 @@ object ModuleDefDSL {
     private[this] def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
       val newState = mutableCursor.append(op)
       new MultiSetElementDSL[T](mutableState, newState)
+    }
+  }
+
+  final class LocalContextDSL[F[_], R, AfterBind](module: ModuleBase, ext: Set[DIKey], bind: ImplDef => AfterBind, functoid: Functoid[F[R]]) {
+    protected[dsl] def doBind(): AfterBind = {
+      // it's okay to call this function multiple times, the underlying state is mutable and the last operation will be successful
+      bind(ImplDef.ContextImpl(functoid.get.ret, functoid, module, ext))
+    }
+
+    protected[dsl] def bound(): LocalContextDSL[F, R, AfterBind] = {
+      doBind()
+      this
+    }
+
+    /**
+      * Defines local context with empty local module
+      */
+    def external(keys: DIKey*): LocalContextDSL[F, R, AfterBind] = {
+      new LocalContextDSL[F, R, AfterBind](module, ext ++ keys.toSet, bind, functoid).bound()
+    }
+
+    def external[K1: Tag]: LocalContextDSL[F, R, AfterBind] = {
+      external(DIKey.get[K1])
+    }
+
+    def external[K1: Tag, K2: Tag]: LocalContextDSL[F, R, AfterBind] = {
+      external(DIKey.get[K1], DIKey.get[K2])
+    }
+
+    def external[K1: Tag, K2: Tag, K3: Tag]: LocalContextDSL[F, R, AfterBind] = {
+      external(DIKey.get[K1], DIKey.get[K2], DIKey.get[K3])
+    }
+
+    def external[K1: Tag, K2: Tag, K3: Tag, K4: Tag]: LocalContextDSL[F, R, AfterBind] = {
+      external(DIKey.get[K1], DIKey.get[K2], DIKey.get[K3], DIKey.get[K4])
     }
   }
 

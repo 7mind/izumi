@@ -5,8 +5,6 @@ object IzPlatform extends AbstractIzPlatform {
 
   def isHeadless: Boolean = false
 
-  def hasColorfulTerminal: Boolean = false
-
   def terminalColorsEnabled: Boolean = false
 
   def isGraalNativeImage: Boolean = false

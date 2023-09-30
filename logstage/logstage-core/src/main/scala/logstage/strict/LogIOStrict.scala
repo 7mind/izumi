@@ -3,10 +3,10 @@ package logstage.strict
 import izumi.functional.bio.{SyncSafe1, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.*
-import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroStrictLogIO, EncodingAwareAbstractLogIO, LogIORaw}
+import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF, AbstractMacroStrictLogIO, EncodingAwareAbstractLogIO, LogIORaw}
 import izumi.logstage.api.rendering.StrictEncoded
 import logstage.Level
-import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
+import logstage.UnsafeLogIO.{UnsafeLogIOSyncSafeInstance, UnsafeLogIOSyncSafeInstanceF}
 
 import scala.language.implicitConversions
 
@@ -15,7 +15,7 @@ trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] wit
 
   final def raw: LogIORaw[F, StrictEncoded] = new LogIORaw(this)
 
-  override def widen[G[_]](implicit ev: F[?] <:< G[?]): LogIOStrict[G] = this.asInstanceOf[LogIOStrict[G]]
+  override def widen[G[_]](implicit ev: F[AnyRef] <:< G[AnyRef]): LogIOStrict[G] = this.asInstanceOf[LogIOStrict[G]]
 }
 
 object LogIOStrict extends LowPriorityLogIOStrictInstances {
@@ -34,6 +34,22 @@ object LogIOStrict extends LowPriorityLogIOStrictInstances {
     */
   @inline def log[F[_]](implicit l: LogIOStrict[F]): l.type = l
 
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLoggerF[F]): LogIOStrict[F] = {
+    new UnsafeLogIOSyncSafeInstanceF[F](logger)(SyncSafe1[F]) with LogIOStrict[F] {
+      override def log(entry: Entry): F[Unit] = {
+        logger.log(entry)
+      }
+
+      override def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+        logger.log(logLevel)(messageThunk)
+      }
+
+      override def withCustomContext(context: CustomContext): LogIOStrict[F] = {
+        fromLogger[F](logger.withCustomContext(context))
+      }
+    }
+  }
+
   def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): LogIOStrict[F] = {
     new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F]) with LogIOStrict[F] {
       override def log(entry: Entry): F[Unit] = {
@@ -50,7 +66,7 @@ object LogIOStrict extends LowPriorityLogIOStrictInstances {
     }
   }
 
-  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[?] <:< G[?]): LogIOStrict[G] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[AnyRef] <:< G[AnyRef]): LogIOStrict[G] = log.widen
 }
 
 sealed trait LowPriorityLogIOStrictInstances {

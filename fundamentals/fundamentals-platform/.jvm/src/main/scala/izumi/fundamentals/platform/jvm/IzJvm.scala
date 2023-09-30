@@ -3,10 +3,8 @@ package izumi.fundamentals.platform.jvm
 import izumi.fundamentals.platform.IzPlatform
 
 import java.lang.management.ManagementFactory
-import java.net.{URLClassLoader, URLDecoder}
 import java.nio.file.{Path, Paths}
 import java.time.ZonedDateTime
-import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 
 trait IzJvm {
@@ -15,9 +13,6 @@ trait IzJvm {
 
   @deprecated("Use IzPlatform", "28/04/2022")
   def isHeadless: Boolean = IzPlatform.isHeadless
-
-  @deprecated("Use IzPlatform", "28/04/2022")
-  def hasColorfulTerminal: Boolean = IzPlatform.hasColorfulTerminal
 
   @deprecated("Use IzPlatform", "28/04/2022")
   def terminalColorsEnabled: Boolean = IzPlatform.terminalColorsEnabled
@@ -32,48 +27,6 @@ trait IzJvm {
 
   protected def getStartTime: Long = ManagementFactory.getRuntimeMXBean.getStartTime
 
-  @tailrec
-  private def extractCp(classLoader: Option[ClassLoader], cp: Seq[String]): Seq[String] = {
-    val clCp = classLoader match {
-      case Some(u: URLClassLoader) =>
-        u.getURLs
-          .map(u => URLDecoder.decode(u.getFile, "UTF-8"))
-          .toSeq
-      case _ =>
-        Seq.empty
-    }
-
-    val all = cp ++ clCp
-    val parent = classLoader.flatMap(c => Option(c.getParent))
-    parent match {
-      case Some(cl) =>
-        extractCp(Option(cl), all)
-      case None =>
-        all
-    }
-  }
-
-  def safeClasspathSeq(classLoader: ClassLoader): Seq[String] = {
-    val classLoaderCp = extractCp(Option(classLoader), Seq.empty)
-
-    Seq(
-      classLoaderCp,
-      System.getProperty("java.class.path").split(':').toSeq,
-    ).flatten
-  }
-
-  def baseClassloader: ClassLoader = {
-    Thread.currentThread.getContextClassLoader.getParent
-  }
-
-  def safeClasspath(classLoader: ClassLoader): String = {
-    safeClasspathSeq(classLoader)
-      .mkString(System.getProperty("path.separator"))
-  }
-
-  def safeClasspath(): String = safeClasspath(baseClassloader)
-
-  def safeClasspathSeq(): Seq[String] = safeClasspathSeq(baseClassloader)
 }
 
-object IzJvm extends IzJvm
+object IzJvm extends IzJvm with IzClasspath

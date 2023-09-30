@@ -1,21 +1,24 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding}
-import izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
+import izumi.distage.model.definition.{Binding, Identifier, ImplDef, ModuleBase}
 import izumi.distage.model.planning.PlanningHook
+import izumi.distage.model.reflection.*
 import izumi.distage.model.reflection.DIKey.{SetElementKey, SetKeyMeta}
-import izumi.distage.model.reflection._
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.distage.planning.AutoSetHook.InclusionPredicate
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 import izumi.reflect.Tag
 
 /**
   * A hook that will collect all implementations with types that are {{{_ <: T}}} into a `Set[T]` set binding
-  * available for summoning
+  * available for summoning.
+  *
+  * This class is not intended to be used directly, there is a convenience helper, [[AutoSetModule]].
   *
   * Usage:
   *
   * {{{
-  *   val collectCloseables = new AutoSetHook[AutoCloseable, AutoCloseable]
+  *   val collectCloseables = AutoSetHook[AutoCloseable]("closeables")
   *
   *   val injector = Injector(new BootstrapModuleDef {
   *     many[PlanningHook]
@@ -31,12 +34,12 @@ import izumi.reflect.Tag
   *   }
   * }}}
   *
-  * These Auto-Sets can be used to implement custom lifetimes:
+  * These Auto-Sets can be used (just as example) to implement custom lifecycles:
   *
   * {{{
   *   val locator = injector.produce(modules)
   *
-  *   val closeables = locator.get[Set[AutoCloseable]]
+  *   val closeables = locator.get[Set[AutoCloseable]]("closeables")
   *   try { locator.get[App].runMain() } finally {
   *     // reverse closeables list, Auto-Sets preserve order, in the order of *initialization*
   *     // Therefore resources should closed in the *opposite order*
@@ -44,42 +47,20 @@ import izumi.reflect.Tag
   *     closeables.reverse.foreach(_.close())
   *   }
   * }}}
-  *
-  * Auto-Sets are NOT subject to Garbage Collection, they are assembled
-  * *after* garbage collection is done, as such they can't contain garbage by construction
-  * and they cannot be designated as GC root keys.
   */
-class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMaterializer) extends PlanningHook {
-  protected val instanceType: SafeType = SafeType.get[INSTANCE]
+final case class AutoSetHook[BINDING: Tag](includeOnly: InclusionPredicate, name: Option[Identifier], weak: Boolean, pos: CodePosition) extends PlanningHook {
   protected val setElementType: SafeType = SafeType.get[BINDING]
-  protected val setKey: DIKey = DIKey.get[Set[BINDING]]
+
+  protected val setKey: DIKey = name match {
+    case Some(value) => DIKey.get[Set[BINDING]].named(value)
+    case None => DIKey.get[Set[BINDING]]
+  }
 
   override def hookDefinition(definition: ModuleBase): ModuleBase = {
-    val setMembers: Set[Binding.ImplBinding] = definition.bindings.flatMap {
-      case i: ImplBinding =>
-        i.implementation match {
-          case implDef: ImplDef.DirectImplDef =>
-            val implType = implDef.implType
-            if (implType <:< setElementType) {
-              Some(i)
-            } else {
-              None
-            }
+    val setMembers = findMatchingBindings(definition)
 
-          case implDef: ImplDef.RecursiveImplDef =>
-            if (implDef.implType <:< setElementType) {
-              Some(i)
-            } else {
-              None
-            }
-        }
-      case _: EmptySetBinding[?] =>
-        None
-
-    }
-
-    if (setMembers.isEmpty) {
-      definition
+    val elements = if (setMembers.isEmpty) {
+      Set.empty[Binding]
     } else {
       val elementOps: Set[Binding] = setMembers.flatMap {
         b =>
@@ -97,16 +78,78 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMateria
 
           if (!isAutosetElement) {
             val implType = b.implementation.implType
-            val impl: ImplDef = ImplDef.ReferenceImpl(implType, b.key, weak = true)
+            val impl: ImplDef = ImplDef.ReferenceImpl(implType, b.key, weak = weak)
             Seq(SetElementBinding(SetElementKey(setKey, b.key, SetKeyMeta.WithAutoset(setKey)), impl, b.tags, b.origin))
           } else {
             Seq.empty
           }
       }
 
-      val ops: Set[Binding] = Set(EmptySetBinding(setKey, Set.empty, pos.get.position))
-      definition ++ ModuleBase.make(ops ++ elementOps)
+      elementOps
     }
 
+    val declareSet = definition ++ ModuleBase.make(Set(EmptySetBinding(setKey, Set.empty, pos.position)))
+    declareSet ++ ModuleBase.make(elements)
   }
+
+  private def findMatchingBindings(definition: ModuleBase): Set[ImplBinding] = {
+    definition.bindings
+      .filter {
+        case sb: Binding.SingletonBinding[?] if sb.isMutator => false
+        case _ => true
+      }
+      .flatMap {
+        case i: ImplBinding =>
+          i.implementation match {
+            case implDef: ImplDef.DirectImplDef =>
+              val implType = implDef.implType
+              if (implType <:< setElementType) {
+                Some(i)
+              } else {
+                None
+              }
+
+            case implDef: ImplDef.RecursiveImplDef =>
+              if (implDef.implType <:< setElementType) {
+                Some(i)
+              } else {
+                None
+              }
+          }
+        case _: EmptySetBinding[?] =>
+          None
+      }
+      .filter(includeOnly.filter)
+  }
+}
+
+object AutoSetHook {
+
+  trait InclusionPredicate {
+    def filter(b: Binding.ImplBinding): Boolean
+  }
+
+  object InclusionPredicate {
+    object IncludeAny extends InclusionPredicate {
+      override def filter(b: ImplBinding): Boolean = true
+    }
+  }
+
+  def apply[T: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[T] = {
+    new AutoSetHook[T](InclusionPredicate.IncludeAny, None, true, pos.get)
+  }
+
+  def apply[T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AutoSetHook[T] = {
+    new AutoSetHook[T](InclusionPredicate.IncludeAny, Some(name), true, pos.get)
+  }
+
+  def apply[T: Tag](
+    includeOnly: InclusionPredicate = InclusionPredicate.IncludeAny,
+    name: Identifier = null,
+    weak: Boolean = true,
+  )(implicit pos: CodePositionMaterializer
+  ): AutoSetHook[T] = {
+    new AutoSetHook[T](includeOnly, Option(name), weak, pos.get)
+  }
+
 }

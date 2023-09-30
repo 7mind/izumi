@@ -1,9 +1,7 @@
 package izumi.distage.config.model
 
-import com.typesafe.config.{Config, ConfigFactory}
+import izumi.distage.config.DistageConfigImpl
 
-final case class AppConfig(config: Config)
+final case class AppConfig(config: DistageConfigImpl)
 
-object AppConfig {
-  val empty: AppConfig = AppConfig(ConfigFactory.empty())
-}
+object AppConfig extends AppConfigSyntax {}

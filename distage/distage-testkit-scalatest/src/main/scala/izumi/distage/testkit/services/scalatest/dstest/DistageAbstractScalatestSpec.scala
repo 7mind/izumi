@@ -1,30 +1,29 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
 import distage.{TagK, TagKK}
-import izumi.distage.constructors.HasConstructor
-import izumi.distage.model.effect.QuasiIO
+import izumi.distage.constructors.ZEnvConstructor
 import izumi.distage.model.providers.Functoid
-import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.services.dstest.*
-import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
+import izumi.distage.testkit.model.{DistageTest, SuiteId, SuiteMeta, TestConfig, TestEnvironment, TestId, TestMeta}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec.*
-import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
-import izumi.functional.bio.Local3
+import izumi.distage.testkit.spec.{AbstractDistageSpec, DISyntaxBIOBase, DISyntaxBase, DistageTestEnv, TestRegistration}
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer}
 import izumi.reflect.TagK3
 import org.scalactic.source
 import org.scalatest.Assertion
 import org.scalatest.distage.TestCancellation
 import org.scalatest.verbs.{CanVerb, MustVerb, ShouldVerb, StringVerbBlockRegistration}
+import zio.ZIO
 
 import scala.annotation.unused
 
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
 
-  override def registerTest(function: Functoid[F[?]], env: TestEnvironment, pos: SourceFilePosition, id: TestId): Unit = {
+  override def registerTest[A](function: Functoid[F[A]], env: TestEnvironment, pos: SourceFilePosition, id: TestId, meta: SuiteMeta): Unit = {
     if (firstRegistration) {
-      DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
+      val test = DistageTest(function.asInstanceOf[Functoid[F[Any]]], env, TestMeta(id, pos, System.identityHashCode(function).toLong), meta)
+      DistageTestsRegistrySingleton.register[F](test)
     }
   }
 }
@@ -39,7 +38,8 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
   protected[this] def makeTestEnv(): TestEnvironment = loadEnvironment(config)
 
   protected[this] def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
-  protected[this] def distageSuiteId: String = this.getClass.getName
+
+  protected[this] def distageSuiteId: SuiteId = SuiteId(this.getClass.getName)
 
   protected implicit val subjectRegistrationFunction1: StringVerbBlockRegistration = new StringVerbBlockRegistration {
     override def apply(left: String, verb: String, @unused pos: source.Position, f: () => Unit): Unit = {
@@ -48,7 +48,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
   }
 
   protected[this] def registerBranch(description: String, verb: String, fun: () => Unit): Unit = {
-    context = Some(SuiteContext(description, verb))
+    context = Some(SuiteContext(Seq(description, verb)))
     fun()
     context = None
   }
@@ -57,9 +57,9 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
 }
 
 object DistageAbstractScalatestSpec {
-  final case class SuiteContext(left: String, verb: String) {
-    def toName(name: String): String = {
-      Seq(left, verb, name).mkString(" ")
+  final case class SuiteContext(prefix: Seq[String]) {
+    def toName(name: Seq[String]): Seq[String] = {
+      prefix ++ name
     }
   }
 
@@ -84,7 +84,7 @@ object DistageAbstractScalatestSpec {
       takeFunIO(cancel, pos.get)
     }
 
-    private def cancel(F: QuasiIO[F]): F[Nothing] = {
+    private def cancel[A](F: QuasiIO[F]): F[A] = {
       F.maybeSuspend(cancelNow())
     }
 
@@ -96,8 +96,8 @@ object DistageAbstractScalatestSpec {
   class DSWordSpecStringWrapper[F[_]](
     context: Option[SuiteContext],
     suiteName: String,
-    suiteId: String,
-    testname: String,
+    suiteId: SuiteId,
+    testname: Seq[String],
     reg: TestRegistration[F],
     env: TestEnvironment,
   )(implicit override val tagMonoIO: TagK[F]
@@ -120,118 +120,125 @@ object DistageAbstractScalatestSpec {
       takeIO(() => value, pos.get)
     }
 
-    override protected def takeIO(function: Functoid[F[?]], pos: SourceFilePosition): Unit = {
+    override protected def takeIO[A](function: Functoid[F[A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
         suiteId,
       )
-      reg.registerTest(function, env, pos, id)
+      reg.registerTest(function, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
     }
   }
 
   class DSWordSpecStringWrapper2[F[+_, +_]](
     context: Option[SuiteContext],
     suiteName: String,
-    suiteId: String,
-    testname: String,
+    suiteId: SuiteId,
+    testname: Seq[String],
     reg: TestRegistration[F[Throwable, _]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F],
-    implicit override val tagMonoIO: TagK[F[Throwable, _]],
+    override val tagMonoIO: TagK[F[Throwable, _]],
   ) extends DISyntaxBIOBase[F]
     with LowPriorityIdentityOverloads[F[Throwable, _]] {
 
-    def in(function: Functoid[F[?, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(function, pos.get)
+    def in(function: Functoid[F[Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(function.asInstanceOf[Functoid[F[Any, Any]]], pos.get)
     }
 
-    def in(function: Functoid[F[?, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(function, pos.get)
+    def in(function: Functoid[F[Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(function.asInstanceOf[Functoid[F[Any, Any]]], pos.get)
     }
 
-    def in(value: => F[?, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(() => value, pos.get)
+    def in(value: => F[Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(() => value.asInstanceOf[F[Any, Any]], pos.get)
     }
 
-    def in(value: => F[?, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(() => value, pos.get)
+    def in(value: => F[Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(() => value.asInstanceOf[F[Any, Any]], pos.get)
     }
 
-    override protected def takeIO(fAsThrowable: Functoid[F[Throwable, ?]], pos: SourceFilePosition): Unit = {
+    override protected def takeIO[A](fAsThrowable: Functoid[F[Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
         suiteId,
       )
-      reg.registerTest(fAsThrowable, env, pos, id)
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
     }
   }
 
   class DSWordSpecStringWrapper3[F[-_, +_, +_]: TagK3](
     context: Option[SuiteContext],
     suiteName: String,
-    suiteId: String,
-    testname: String,
+    suiteId: SuiteId,
+    testname: Seq[String],
     reg: TestRegistration[F[Any, Throwable, _]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F[Any, _, _]],
-    implicit override val tagMonoIO: TagK[F[Any, Throwable, _]],
+    override val tagMonoIO: TagK[F[Any, Throwable, _]],
   ) extends DISyntaxBIOBase[F[Any, +_, +_]]
     with LowPriorityIdentityOverloads[F[Any, Throwable, _]] {
 
-    def in[R: HasConstructor](function: Functoid[F[R, ?, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    // FIXME wtf specialize to ZIO?
+    def in[R: ZEnvConstructor](function: Functoid[ZIO[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(
-        function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((eff, r), f) => f.provide(eff)(r)
+        function.map2(ZEnvConstructor[R]) {
+          case (eff, r) => eff.provideEnvironment(r).asInstanceOf[F[Any, Any, Unit]]
         },
         pos.get,
       )
     }
+    def in[R: ZEnvConstructor](value: => ZIO[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(ZEnvConstructor[R].map(value.provideEnvironment(_).asInstanceOf[F[Any, Any, Unit]]), pos.get)
+    }
+    // FIXME wtf specialize to ZIO?
+//    def in[R: ZEnvConstructor](function: Functoid[F[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+//      takeBIO(
+//        function.zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+//          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Unit]])(r)
+//        },
+//        pos.get,
+//      )
+//    }
+//
+//    def in[R: ZEnvConstructor](function: Functoid[F[R, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+//      takeBIO(
+//        function.zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]]) {
+//          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Assertion]])(r)
+//        },
+//        pos.get,
+//      )
+//    }
+//
+//    def in[R: ZEnvConstructor](value: => F[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+//      takeBIO(Functoid.identity[Local3[F]].map2(ZEnvConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
+//    }
+//
+//    def in[R: ZEnvConstructor](value: => F[R, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+//      takeBIO(Functoid.identity[Local3[F]].map2(ZEnvConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
+//    }
 
-    def in[R: HasConstructor](function: Functoid[F[R, ?, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(
-        function.zip(HasConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-          case ((eff, r), f) => f.provide(eff)(r)
-        },
-        pos.get,
-      )
+    def in(function: Functoid[F[Any, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(function.asInstanceOf[Functoid[F[Any, Any, Any]]], pos.get)
     }
 
-    def in[R: HasConstructor](value: => F[R, ?, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
+    def in(function: Functoid[F[Any, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(function.asInstanceOf[Functoid[F[Any, Any, Assertion]]], pos.get)
     }
 
-    def in[R: HasConstructor](value: => F[R, ?, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(Functoid.identity[Local3[F]].map2(HasConstructor[R])(_.provide(value)(_)), pos.get)
+    def in(value: => F[Any, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(() => value.asInstanceOf[F[Any, Any, Any]], pos.get)
     }
 
-    def in(function: Functoid[F[Any, ?, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(function, pos.get)
+    def in(value: => F[Any, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(() => value.asInstanceOf[F[Any, Any, Any]], pos.get)
     }
 
-    def in(function: Functoid[F[Any, ?, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(function, pos.get)
-    }
-
-    def in(value: => F[Any, ?, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(() => value, pos.get)
-    }
-
-    def in(value: => F[Any, ?, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(() => value, pos.get)
-    }
-
-    override protected def takeIO(fAsThrowable: Functoid[F[Any, Throwable, ?]], pos: SourceFilePosition): Unit = {
+    override protected def takeIO[A](fAsThrowable: Functoid[F[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
-        suiteName,
-        suiteId,
         suiteId,
       )
-      reg.registerTest(fAsThrowable, env, pos, id)
+      reg.registerTest(fAsThrowable, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
     }
   }
 

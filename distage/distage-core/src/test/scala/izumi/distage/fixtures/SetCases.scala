@@ -61,4 +61,11 @@ object SetCases {
     }
   }
 
+  object SetCase4 {
+    trait Service
+
+    class Service1 extends Service
+
+    class Service2 extends Service
+  }
 }

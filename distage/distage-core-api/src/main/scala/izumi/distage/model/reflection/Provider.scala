@@ -1,6 +1,6 @@
 package izumi.distage.model.reflection
 
-import izumi.distage.model.exceptions.reflection.UnsafeCallArgsMismatched
+import izumi.distage.model.exceptions.runtime.UnsafeProviderCallArgsMismatched
 import izumi.distage.model.reflection.Provider.ProviderType
 
 trait Provider {
@@ -59,7 +59,7 @@ trait Provider {
     if (countOk && typesOk) {
       newArgs
     } else {
-      throw new UnsafeCallArgsMismatched(
+      throw new UnsafeProviderCallArgsMismatched(
         message = s"""Mismatched arguments for unsafe call:
                      | ${if (!typesOk) "Wrong types!" else ""}
                      | ${if (!countOk) s"Expected number of arguments $arity, but got ${refs.size}" else ""}
@@ -78,7 +78,7 @@ object Provider {
   object ProviderType {
     case object Class extends ProviderType
     case object Trait extends ProviderType
-    case object ZIOHas extends ProviderType
+    case object ZIOEnvironment extends ProviderType
     case object Factory extends ProviderType
     case object Singleton extends ProviderType
     case object Function extends ProviderType

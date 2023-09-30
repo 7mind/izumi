@@ -14,7 +14,7 @@ object ResourceCheck {
     override def toString: String = {
       cause match {
         case Some(t) =>
-          s"Unavailable resource: $description, ${t.getClass}: ${t.stackTrace}"
+          s"Unavailable resource: $description, ${t.getClass}: ${t.stacktraceString}"
 
         case None =>
           s"Unavailable resource: $description"

@@ -1,7 +1,7 @@
 package izumi.distage.injector
 
 import distage.{BootstrapModuleDef, Injector, ModuleDef}
-import izumi.distage.fixtures.SetCases._
+import izumi.distage.fixtures.SetCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
@@ -11,7 +11,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class AutoSetTest extends AnyWordSpec with MkInjector {
 
   "AutoSets preserve dependency order" in {
-    import SetCase3._
+    import SetCase3.*
 
     val definition = new ModuleDef {
       make[ServiceA]
@@ -22,10 +22,10 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
 
     val injector = Injector[Identity](new BootstrapModuleDef {
       many[PlanningHook]
-        .add(new AutoSetHook[Ordered, Ordered])
+        .add(AutoSetHook[Ordered]("order"))
     })
 
-    val autoset = injector.produce(PlannerInput.everything(definition)).unsafeGet().get[Set[Ordered]]
+    val autoset = injector.produce(PlannerInput.everything(definition)).unsafeGet().get[Set[Ordered]]("order")
 
     assert(autoset.toSeq == autoset.toSeq.sortBy(_.order))
   }
@@ -43,7 +43,7 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
 
     val injector = Injector[Identity](new BootstrapModuleDef {
       many[PlanningHook]
-        .add(new AutoSetHook[Int, Int])
+        .add(AutoSetHook[Int])
     })
 
     val autoset = injector.produce(PlannerInput.everything(definition)).unsafeGet().get[Set[Int]]

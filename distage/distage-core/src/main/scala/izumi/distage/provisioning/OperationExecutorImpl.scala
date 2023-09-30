@@ -1,8 +1,8 @@
 package izumi.distage.provisioning
 
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue
-import izumi.distage.model.exceptions.interpretation.ProvisionerIssue.ProvisionerExceptionIssue.UnexpectedStepProvisioningException
+import izumi.distage.model.definition.errors.ProvisionerIssue
+import izumi.functional.quasi.QuasiIO
+import ProvisionerIssue.ProvisionerExceptionIssue.UnexpectedStepProvisioning
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, NonImportOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
@@ -15,6 +15,7 @@ class OperationExecutorImpl(
   instanceStrategy: InstanceStrategy,
   effectStrategy: EffectStrategy,
   resourceStrategy: ResourceStrategy,
+  contextStrategy: ContextStrategy,
 ) extends OperationExecutor {
 
   override def execute[F[_]: TagK](
@@ -22,9 +23,9 @@ class OperationExecutorImpl(
     step: NonImportOp,
   )(implicit F: QuasiIO[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    F.definitelyRecover(
+    F.definitelyRecoverWithTrace(
       executeUnsafe(context, step)
-    )(err => F.pure(Left(UnexpectedStepProvisioningException(step, err))))
+    )((_, trace) => F.pure(Left(UnexpectedStepProvisioning(step, trace.unsafeAttachTraceOrReturnNewThrowable()))))
   }
 
   private[this] def executeUnsafe[F[_]: TagK](
@@ -33,16 +34,19 @@ class OperationExecutorImpl(
   )(implicit F: QuasiIO[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = step match {
     case op: CreateSet =>
-      F.maybeSuspend(Right(setStrategy.makeSet(context, op)))
+      setStrategy.makeSet(context, op)
 
     case op: WiringOp.UseInstance =>
-      F.maybeSuspend(Right(instanceStrategy.getInstance(context, op)))
+      instanceStrategy.getInstance(context, op)
 
     case op: WiringOp.ReferenceKey =>
-      F.maybeSuspend(Right(instanceStrategy.getInstance(context, op)))
+      instanceStrategy.getInstance(context, op)
 
     case op: WiringOp.CallProvider =>
-      F.maybeSuspend(Right(providerStrategy.callProvider(context, op)))
+      providerStrategy.callProvider(context, op)
+
+    case op: WiringOp.LocalContext =>
+      contextStrategy.prepareContext(context, op)
 
     case op: ProxyOp.MakeProxy =>
       proxyStrategy.makeProxy(context, op)
@@ -51,10 +55,10 @@ class OperationExecutorImpl(
       proxyStrategy.initProxy(context, this, op)
 
     case op: MonadicOp.ExecuteEffect =>
-      F.map(effectStrategy.executeEffect[F](context, op))(Right(_))
+      effectStrategy.executeEffect[F](context, op)
 
     case op: MonadicOp.AllocateResource =>
-      F.map(resourceStrategy.allocateResource[F](context, op))(Right(_))
+      resourceStrategy.allocateResource[F](context, op)
   }
 
 }

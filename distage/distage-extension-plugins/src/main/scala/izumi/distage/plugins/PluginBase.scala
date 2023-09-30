@@ -21,5 +21,7 @@ object PluginBase {
     }
   }
 
+  def from(module: ModuleBase): PluginBase = make(module.bindings)
+
   implicit val pluginBaseModuleApi: ModuleMake[PluginBase] = PluginBase.make
 }

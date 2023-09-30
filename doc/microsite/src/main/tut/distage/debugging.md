@@ -14,7 +14,7 @@ class B
 
 def badModule = new ModuleDef {
   make[A]
-  make[B].fromEffect(zio.Task { ??? })
+  make[B].fromEffect(zio.ZIO.attempt { ??? })
 }
 ```
 
@@ -43,9 +43,7 @@ You can print the output of `plan.render()` to get detailed info on what will ha
 and line numbers so your IDE can show you where the binding was defined!
 
 ```scala mdoc:to-string
-import distage.PlannerInput
-
-val plan = Injector().plan(goodModule, Roots.target[A])
+val plan = Injector().plan(goodModule, Roots.target[A]).getOrThrow()
 
 println(plan.render())
 ```

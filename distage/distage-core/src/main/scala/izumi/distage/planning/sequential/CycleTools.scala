@@ -1,7 +1,7 @@
 package izumi.distage.planning.sequential
 
 import izumi.distage.model.plan.ExecutableOp
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, WiringOp}
+import izumi.distage.model.plan.ExecutableOp.{ImportOp, InstantiationOp, WiringOp}
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.graphs.DG
 
@@ -41,11 +41,13 @@ object CycleTools {
                   Seq(w.target -> false)
                 case _: WiringOp.ReferenceKey =>
                   Seq(w.target -> false)
+                case _: WiringOp.LocalContext =>
+                  Seq(w.target -> false)
               }
             case o =>
               Seq(o.target -> false)
           }
-        case _: ImportDependency =>
+        case _: ImportOp =>
           Seq.empty
       }
 

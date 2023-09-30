@@ -2,6 +2,7 @@ package izumi.functional.bio.data
 
 import izumi.functional.bio.{Exit, Panic2}
 
+import scala.annotation.nowarn
 import scala.util.Try
 
 sealed abstract class FreePanic[+S[_, _], +E, +A] {
@@ -41,15 +42,17 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
     foldMap[S1, FreePanic[T, +_, +_]](Morphism2(FreePanic lift f(_)))
   }
 
+  // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
+  @nowarn("msg=(pattern case: FreePanic.FlatMapped)|(Unreachable case)")
   @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Panic2[G]): G[E, A] = {
     this match {
       case FreePanic.Pure(a) => G.pure(a)
       case FreePanic.Suspend(a) => transform(a)
       case FreePanic.Fail(fail) => G.fail(fail())
       case FreePanic.Terminate(termination) => G.terminate(termination())
-      case s: FreePanic.SelfInterrupt[S] =>
+      case s: FreePanic.SelfInterrupt[S] @unchecked =>
         @inline def selfInterrupt[e, a](s: FreePanic[S, e, a] & FreePanic.SelfInterrupt[S]): G[e, a] = {
-          s match {
+          (s: FreePanic[S, e, a] @unchecked) match {
             case FreePanic.SelfInterrupt() => G.sendInterruptToSelf
           }
         }
@@ -62,21 +65,21 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
           )
       case s: FreePanic.Sandbox[S, E, A] @unchecked =>
         @inline def foldMapSandbox[e, a](s: FreePanic[S, e, a] & FreePanic.Sandbox[S, e, a]): G[e, a] = {
-          s match {
+          (s: FreePanic[S, e, a] @unchecked) match {
             case FreePanic.Sandbox(sub) => sub.foldMap(transform).sandbox
           }
         }
         foldMapSandbox[E, A](s)
       case FreePanic.Uninterruptible(sub) =>
         G.uninterruptible(sub.foldMap(transform))
-      case FreePanic.BracketCase(acquire, release, use) =>
-        acquire.foldMap(transform).bracketCase((a, e: Exit[E, A]) => release(a, e).foldMap(transform))(a => use(a).foldMap(transform))
+      case s: FreePanic.BracketCase[S, E, ?, A] @unchecked =>
+        s.acquire.foldMap[S1, G](transform).bracketCase[E, A]((a, e: Exit[E, A]) => s.release(a, e).foldMap[S1, G](transform))(a => s.use(a).foldMap[S1, G](transform))
       case FreePanic.UninterruptibleExcept(sub) =>
         G.uninterruptibleExcept((r: RestoreInterruption2[G]) => sub(FreePanic.CapturedRestoreInterruption.captureRestore(r)).foldMap(transform))
-      case FreePanic.BracketExcept(acquire, release, use) =>
-        G.bracketExcept(r => acquire(FreePanic.CapturedRestoreInterruption.captureRestore(r)).foldMap(transform))((a, e: Exit[E, A]) => release(a, e).foldMap(transform))(
-          a => use(a).foldMap(transform)
-        )
+      case s: FreePanic.BracketExcept[S, E, ?, A] @unchecked =>
+        G.bracketExcept(r => s.acquire(FreePanic.CapturedRestoreInterruption.captureRestore(r)).foldMap(transform))(
+          (a, e: Exit[E, A]) => s.release(a, e).foldMap(transform)
+        )(a => s.use(a).foldMap(transform))
       case s: FreePanic.CapturedRestoreInterruption[S, G, E, A] @unchecked =>
         @inline def applyRestore[e, a](s: FreePanic[S, e, a] & FreePanic.CapturedRestoreInterruption[S, G, e, a]) = {
           s match {
@@ -186,7 +189,7 @@ object FreePanic {
 
   @inline implicit def FreePanicInstances[S[_, _]]: Panic2[FreePanic[S, +_, +_]] = Panic2Instance.asInstanceOf[Panic2Instance[S]]
 
-  object Panic2Instance extends Panic2Instance[Any]
+  object Panic2Instance extends Panic2Instance[Nothing]
   class Panic2Instance[S[_, _]] extends Panic2[FreePanic[S, +_, +_]] {
     @inline override final def flatMap[R, E, A, B](r: FreePanic[S, E, A])(f: A => FreePanic[S, E, B]): FreePanic[S, E, B] = r.flatMap(f)
     @inline override final def *>[R, E, A, B](f: FreePanic[S, E, A], next: => FreePanic[S, E, B]): FreePanic[S, E, B] = f *> next

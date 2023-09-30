@@ -23,11 +23,11 @@ object ProviderCases {
     val testVal: (String @Id("valsigtypeann1"), Int @Id("valsigtypeann2")) => String = (x, _) => x
 
     val testVal2: Boolean => String = {
-      x: Boolean @Id("valbodytypeann") => x.toString
+      (x: Boolean @Id("valbodytypeann")) => x.toString
     }
 
     val testVal3: Long @Id("valsbtypeann1") => String @Id("valsbtypeann2") => Long = {
-      x: Long @Id("valsbtypeann3") => _ => x
+      (x: Long @Id("valsbtypeann3")) => _ => x
     }
 
     val testValByName: (=> Any) => Unit = _ => ()

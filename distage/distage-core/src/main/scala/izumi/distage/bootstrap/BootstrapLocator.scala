@@ -3,6 +3,7 @@ package izumi.distage.bootstrap
 import izumi.distage.bootstrap.DynamicProxyBootstrap.DynamicProxyProvider
 import izumi.distage.model.*
 import izumi.distage.model.definition.*
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.*
 import izumi.distage.model.planning.*
@@ -48,7 +49,7 @@ object BootstrapLocator {
 
     val plan =
       BootstrapLocator.bootstrapPlanner
-        .plan(bindings, bootstrapActivation, Roots.Everything)
+        .plan(bindings, bootstrapActivation, Roots.Everything).getOrThrow()
 
     val resource =
       BootstrapLocator.bootstrapProducer
@@ -89,6 +90,7 @@ object BootstrapLocator {
     instanceStrategy = new InstanceStrategyDefaultImpl,
     effectStrategy = new EffectStrategyDefaultImpl,
     resourceStrategy = new ResourceStrategyDefaultImpl,
+    contextStrategy = new ContextStrategyDefaultImpl(bootstrapPlanner),
   )
 
   private final val bootstrapProducer: PlanInterpreter = {
@@ -124,6 +126,7 @@ object BootstrapLocator {
     make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
+    make[ContextStrategy].from[ContextStrategyDefaultImpl]
     make[EffectStrategy].from[EffectStrategyDefaultImpl]
     make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
 
@@ -136,7 +139,7 @@ object BootstrapLocator {
     make[BindingTranslator].from[BindingTranslator.Impl]
 
     make[ProxyProvider].tagged(Cycles.Proxy).fromValue(DynamicProxyProvider)
-    make[ProxyProvider].fromValue(ProxyProviderFailingImpl)
+    make[ProxyProvider].fromValue(new ProxyProviderFailingImpl(ProvisionerIssue.ProxyFailureCause.ProxiesDisabled()))
 
     make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]

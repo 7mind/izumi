@@ -3,7 +3,7 @@ package izumi.distage.model.recursive
 import java.util.concurrent.atomic.AtomicReference
 
 import izumi.distage.model.Locator
-import izumi.distage.model.exceptions.MissingInstanceException
+import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.model.reflection.DIKey
 
 /**

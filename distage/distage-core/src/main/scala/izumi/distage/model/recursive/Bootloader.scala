@@ -1,11 +1,13 @@
 package izumi.distage.model.recursive
 
 import izumi.distage.InjectorFactory
+import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id, Module, ModuleBase}
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.{Injector, PlannerInput}
 import izumi.distage.modules.DefaultModule
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
@@ -30,10 +32,10 @@ class Bootloader(
   val defaultModule: Module @Id("defaultModule"),
   val input: PlannerInput,
 ) {
-  def boot(config: BootConfig): BootstrappedApp = {
+  def boot(config: BootConfig): Either[NEList[DIError], BootstrappedApp] = {
     val activation = config.activation(input.activation)
     val bootstrap = config.bootstrap(bootstrapModule)
-    val injector = injectorFactory[Identity](
+    val injector = injectorFactory(
       bootstrapActivation = config.bootstrapActivation(bootstrapActivation),
       overrides = Seq(bootstrap),
     )(
@@ -43,7 +45,11 @@ class Bootloader(
     )
     val module = config.appModule(input.bindings)
     val roots = config.roots(input.roots)
-    val plan = injector.plan(PlannerInput(module, activation, roots))
-    BootstrappedApp(injector, module, plan)
+
+    for {
+      plan <- injector.plan(PlannerInput(module, activation, roots))
+    } yield {
+      BootstrappedApp(injector, module, plan)
+    }
   }
 }

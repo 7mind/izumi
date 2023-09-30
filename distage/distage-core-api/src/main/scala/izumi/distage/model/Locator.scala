@@ -9,6 +9,8 @@ import izumi.distage.model.provisioning.OpStatus
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, TypedRef}
+import izumi.functional.lifecycle.Lifecycle
+import izumi.functional.quasi.QuasiPrimitives
 import izumi.reflect.{Tag, TagK}
 
 import scala.collection.immutable
@@ -107,6 +109,11 @@ trait Locator {
 }
 
 object Locator {
+  implicit final class SyntaxLocatorRun[F[_]](private val resource: Lifecycle[F, Locator]) extends AnyVal {
+    def run[B](function: Functoid[F[B]])(implicit F: QuasiPrimitives[F]): F[B] =
+      resource.use(_.run(function))
+  }
+
   val empty: AbstractLocator = new AbstractLocator {
     override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = None
     override def instances: immutable.Seq[IdentifiedRef] = Nil

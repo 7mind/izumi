@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.resources
 
-import java.io.{FileSystem => _, _}
+import java.io._
 import java.net.{URI, URL}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
@@ -33,14 +33,12 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
       Some(LoadablePathReference(Paths.get(u.toURI), null))
     } catch {
       case _: FileSystemNotFoundException =>
-        IzFiles.getFs(u.toURI) match {
+        IzFiles.getFs(u.toURI, classLoader) match {
           case Failure(_) =>
             Some(UnloadablePathReference(u.toURI))
-          // throw exception
+
           case Success(fs) =>
-            fs.synchronized {
-              Some(LoadablePathReference(fs.provider().getPath(u.toURI), fs))
-            }
+            Some(LoadablePathReference(fs.provider().getPath(u.toURI), fs))
         }
 
     }

@@ -4,11 +4,10 @@ import izumi.functional.bio.{Error2, MonadAsk3, Panic2, SyncSafe1, SyncSafe2, Sy
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger
-import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLogIO}
+import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF, AbstractMacroLogIO}
 import izumi.logstage.api.rendering.{AnyEncoded, RenderingPolicy}
-import izumi.reflect.Tag
 import logstage.LogIO3Ask.LogIO3AskImpl
-import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
+import logstage.UnsafeLogIO.{UnsafeLogIOSyncSafeInstance, UnsafeLogIOSyncSafeInstanceF}
 
 import scala.annotation.unused
 import scala.language.implicitConversions
@@ -18,7 +17,7 @@ trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with 
 
   final def raw: LogIORaw[F, AnyEncoded] = new logger.LogIORaw(this)
 
-  override def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): LogIO[G] = this.asInstanceOf[LogIO[G]]
+  override def widen[G[_]](implicit @unused ev: F[AnyRef] <:< G[AnyRef]): LogIO[G] = this.asInstanceOf[LogIO[G]]
 }
 
 object LogIO extends LowPriorityLogIOInstances {
@@ -53,9 +52,27 @@ object LogIO extends LowPriorityLogIOInstances {
     }
   }
 
-  implicit def fromBIOMonadAsk[F[-_, +_, +_]: MonadAsk3](implicit t: Tag[LogIO3[F]]): LogIO3Ask[F] = new LogIO3AskImpl[F](_.get[LogIO3[F]](implicitly, t))
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLoggerF[F]): LogIO[F] = {
+    new UnsafeLogIOSyncSafeInstanceF[F](logger)(SyncSafe1[F]) with LogIO[F] {
+      override def log(entry: Entry): F[Unit] = {
+        logger.log(entry)
+      }
 
-  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[?] <:< G[?]): LogIO[G] = log.widen
+      override def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+        logger.log(logLevel)(messageThunk)
+      }
+
+      override def withCustomContext(context: CustomContext): LogIO[F] = {
+        fromLogger[F](logger.withCustomContext(context))
+      }
+    }
+  }
+
+  // FIXME wtf
+//  implicit def fromBIOMonadAsk[F[-_, +_, +_]: MonadAsk3](implicit t: Tag[LogIO3[F]]): LogIO3Ask[F] = new LogIO3AskImpl[F](_.get[LogIO3[F]](implicitly, t))
+  implicit def fromBIOMonadAsk[F[-_, +_, +_]: MonadAsk3]: LogIO3Ask[F] = new LogIO3AskImpl[F](identity)
+
+  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[AnyRef] <:< G[AnyRef]): LogIO[G] = log.widen
 
   implicit final class LogIO2Syntax[F[+_, +_]](private val log: LogIO2[F]) extends AnyVal {
     def fail(msg: Message)(implicit F: Error2[F], pos: CodePositionMaterializer): F[RuntimeException, Nothing] = {

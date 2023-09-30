@@ -1,12 +1,11 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
-import izumi.functional.bio.Entropy1.fromImpure
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.uuid.UUIDGen
 
 import java.util.UUID
-import scala.annotation.nowarn
+import scala.annotation.{nowarn, unused}
 import scala.collection.compat.*
 import scala.collection.generic.CanBuildFrom
 import scala.language.implicitConversions
@@ -119,8 +118,8 @@ object Entropy1 extends LowPriorityEntropyInstances {
     Divergent(F.asInstanceOf[C[FR[R0, E, _]]])
   }
 
-  @inline implicit final def covarianceConversion[F[_], G[_]](entropy: Entropy1[F])(implicit ev: F[?] <:< G[?]): Entropy1[G] = {
-    val _ = ev; entropy.asInstanceOf[Entropy1[G]]
+  @inline implicit final def covarianceConversion[F[_], G[_]](entropy: Entropy1[F])(implicit @unused ev: F[Unit] <:< G[Unit]): Entropy1[G] = {
+    entropy.asInstanceOf[Entropy1[G]]
   }
 
 }
@@ -144,7 +143,7 @@ sealed trait LowPriorityEntropyInstances {
       override def nextTimeUUID(): F[UUID] = F.syncSafe(impureEntropy.nextTimeUUID())
       override def nextUUID(): F[UUID] = F.syncSafe(impureEntropy.nextUUID())
       override def writeRandomBytes(bytes: Array[Byte]): F[Unit] = F.syncSafe(impureEntropy.writeRandomBytes(bytes))
-      override def withSeed(seed: Long): Entropy1[F] = fromImpure(impureEntropy.withSeed(seed))
+      override def withSeed(seed: Long): Entropy1[F] = fromImpureEntropy(impureEntropy.withSeed(seed), F)
 
       @nowarn("msg=CanBuildFrom")
       override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]] =

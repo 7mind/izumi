@@ -5,7 +5,7 @@ object newtype {
   type Newtype[A] = Newsubtype[A, Any]
 
   private[newtype] abstract class NewtypeCustom[A >: Lower <: Upper, Lower <: Upper, Upper] {
-    private[NewtypeCustom] final object FinalT {
+    private[NewtypeCustom] object FinalT {
       type T >: Lower <: Upper
     }
     final type T = FinalT.T

@@ -6,6 +6,8 @@ import izumi.functional.bio.data.RestoreInterruption3
 trait Panic3[F[-_, +_, +_]] extends Bracket3[F] with PanicSyntax {
   def terminate(v: => Throwable): F[Any, Nothing, Nothing]
 
+  /** @note Will return either [[Exit.Error]] or [[Exit.Termination]] in the error channel.
+   *       [[Exit.Interruption]] cannot be sandboxed. Use [[guaranteeOnInterrupt]] for cleanups on interruptions. */
   def sandbox[R, E, A](r: F[R, E, A]): F[R, Exit.Failure[E], A]
 
   /**
@@ -88,13 +90,21 @@ trait Panic3[F[-_, +_, +_]] extends Bracket3[F] with PanicSyntax {
   @inline final def orTerminate[R, A](r: F[R, Throwable, A]): F[R, Nothing, A] = {
     catchAll(r)(terminate(_))
   }
+
+  /** @note Will return either [[Exit.Error]] or [[Exit.Termination]]. [[Exit.Interruption]] cannot be sandboxed.
+   *       Use [[guaranteeOnInterrupt]] for cleanups on interruptions. */
+  @inline final def sandboxExit[R, E, A](r: F[R, E, A]): F[R, Nothing, Exit[E, A]] = {
+    redeemPure(sandbox(r))(identity, Exit.Success(_))
+  }
 }
 
 private[bio] sealed trait PanicSyntax
 object PanicSyntax {
   implicit final class PanicOrTerminateK[F[-_, +_, +_]](private val F: Panic3[F]) extends AnyVal {
     def orTerminateK[R]: F[R, Throwable, _] ~> F[R, Nothing, _] = {
-      Lambda[F[R, Throwable, _] ~> F[R, Nothing, _]](f => F.orTerminate(f))
+      new (F[R, Throwable, _] ~> F[R, Nothing, _]) {
+        override def apply[A](fa: F[R, Throwable, A]): F[R, Nothing, A] = F.orTerminate(fa)
+      }
     }
   }
 }

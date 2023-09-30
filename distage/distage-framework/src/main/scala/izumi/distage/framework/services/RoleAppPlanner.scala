@@ -4,9 +4,9 @@ import distage.{Injector, PlannerInput}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
-import izumi.distage.model.effect.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.plan.{Plan, Roots}
-import izumi.distage.model.recursive.{BootConfig, Bootloader}
+import izumi.distage.model.recursive.{BootConfig, Bootloader, BootstrappedApp}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
 import izumi.fundamentals.platform.functional.Identity
@@ -47,24 +47,40 @@ object RoleAppPlanner {
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
-      val runtimeBsApp = bootloader.boot(
-        BootConfig(
-          bootstrap = _ => bsModule,
-          activation = _ => activation,
-          roots = _ => Roots(runtimeGcRoots),
+      logger.trace(s"Application will use: ${appMainRoots -> "app roots"} and $activation")
+
+      // TODO: why .module doesn't work within for-comprehension?..
+      def log(runtimeBsApp: BootstrappedApp): Either[Nothing, Unit] = Right {
+        logger.trace(s"Bootstrap plan:\n${runtimeBsApp.plan.render() -> "bootstrap dump" -> null}")
+        logger.trace(s"App module: ${runtimeBsApp.module -> "app module" -> null}")
+      }
+
+      val out = for {
+        bootstrapped <- bootloader.boot(
+          BootConfig(
+            bootstrap = _ => bsModule,
+            activation = _ => activation,
+            roots = _ => Roots(runtimeGcRoots),
+          )
         )
-      )
-      val runtimeKeys = runtimeBsApp.plan.keys
-      val appPlan = runtimeBsApp.injector.plan(PlannerInput(runtimeBsApp.module.drop(runtimeKeys), activation, appMainRoots))
 
-      val check = new PlanCircularDependencyCheck(options, logger)
-      check.verify(runtimeBsApp.plan)
-      check.verify(appPlan)
+        runtimeKeys = bootstrapped.plan.keys
+        _ <- log(bootstrapped)
+        appPlan <- bootstrapped.injector.plan(PlannerInput(bootstrapped.module.drop(runtimeKeys), activation, appMainRoots))
+      } yield {
 
-      logger.info(
-        s"Planning finished. ${appPlan.keys.size -> "main ops"} ${runtimeBsApp.plan.keys.size -> "runtime ops"}"
-      )
-      AppStartupPlans(runtimeBsApp.plan, appPlan, runtimeBsApp.injector)
+        val check = new PlanCircularDependencyCheck(options, logger)
+
+        check.showProxyWarnings(bootstrapped.plan)
+        check.showProxyWarnings(appPlan)
+
+        logger.info(s"Planning finished. ${appPlan.keys.size -> "main ops"} ${bootstrapped.plan.keys.size -> "runtime ops"}")
+        logger.debug(s"Plan:\n${appPlan.render() -> "plan dump" -> null}")
+
+        AppStartupPlans(bootstrapped.plan, appPlan, bootstrapped.injector)
+      }
+
+      out.getOrThrow()
     }
 
   }

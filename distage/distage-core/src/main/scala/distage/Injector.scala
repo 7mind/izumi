@@ -3,7 +3,7 @@ package distage
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.model.definition
 import izumi.distage.model.definition.BootstrapContextModule
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.{InjectorDefaultImpl, InjectorFactory}
@@ -52,7 +52,7 @@ object Injector extends InjectorFactory {
   ): Injector[F] = {
     bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides)
   }
-
+  
   /**
     * Create a default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
     *

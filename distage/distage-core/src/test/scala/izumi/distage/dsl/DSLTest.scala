@@ -11,9 +11,12 @@ import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, L
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.matchers.should
 import org.scalatest.wordspec.AnyWordSpec
 
-class DSLTest extends AnyWordSpec with MkInjector {
+import scala.annotation.unused
+
+class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
   import TestTagOps._
 
@@ -100,7 +103,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
 
       val injector = mkInjector()
       val definitionAnnotated = PlannerInput(ModuleAnnotated, Activation(), Roots.Everything)
-      val planAnnotated = injector.plan(definitionAnnotated)
+      val planAnnotated = injector.planUnsafe(definitionAnnotated)
 
       assert(planAnnotated.definition.bindings.nonEmpty)
 
@@ -379,6 +382,11 @@ class DSLTest extends AnyWordSpec with MkInjector {
       assert(definition2.bindings.map(_.tags.strings) == Set(Set("tag1", "tag2")))
     }
 
+    "support ClassConstructor" in {
+      class K(@unused a: String) {}
+      ClassConstructor[K].get
+    }
+
     "support binding to multiple interfaces" in {
       import BasicCase6._
 
@@ -514,12 +522,12 @@ class DSLTest extends AnyWordSpec with MkInjector {
       })
 
       val injector = mkInjector()
-      val plan1 = injector.plan(definition)
-      val plan2 = injector.plan(defWithoutSugar)
+      val plan1 = injector.planUnsafe(definition)
+      val plan2 = injector.planUnsafe(defWithoutSugar)
       assert(plan1.definition == plan2.definition)
 
-      val plan3 = injector.plan(defWithTags)
-      val plan4 = injector.plan(defWithTagsWithoutSugar)
+      val plan3 = injector.planUnsafe(defWithTags)
+      val plan4 = injector.planUnsafe(defWithTagsWithoutSugar)
       assert(plan3.definition == plan4.definition)
 
       val context = injector.produce(plan1).unsafeGet()
@@ -622,16 +630,14 @@ class DSLTest extends AnyWordSpec with MkInjector {
       val res2 = intercept[TestFailedException](
         assertCompiles(
           """
-          def definition[F[_]] = new ModuleDef {
+          def definition[F[_]: TagK] = new ModuleDef {
             make[Int].fromResource[Lifecycle.Basic[F, Int]]
           }
         """
         )
       )
-      assert(res2.getMessage contains "Wiring unsupported: `F[Unit]`")
-      assert(res2.getMessage contains "trying to create an implementation")
-      assert(res2.getMessage contains "`method release`")
-      assert(res2.getMessage contains "`trait Basic`")
+
+      res2.getMessage should include regex "AnyConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use makeFactory or fromFactory to wire factories"
     }
 
     "define multiple bindings with different axis but the same implementation" in {
@@ -678,7 +684,7 @@ class DSLTest extends AnyWordSpec with MkInjector {
         assert(definition.bindings.size == 4)
       }
       Injector().produceRun(definition) {
-        s: Set[Int] =>
+        (s: Set[Int]) =>
           intercept[TestFailedException] {
             assert(s == Set(1, 2, 3))
           }

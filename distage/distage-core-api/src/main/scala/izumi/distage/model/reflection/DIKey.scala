@@ -1,11 +1,11 @@
 package izumi.distage.model.reflection
 
 import izumi.distage.model.definition.{Identifier, ImplDef}
+import izumi.fundamentals.platform.cache.CachedProductHashcode
 import izumi.reflect.Tag
 
-sealed abstract class DIKey extends Product {
+sealed abstract class DIKey extends Product with CachedProductHashcode {
   def tpe: SafeType
-  override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
   protected def formatWithIndex(base: String, index: Option[Int]): String = {
     index match {
       case Some(value) =>
@@ -24,6 +24,7 @@ object DIKey {
 
   sealed trait BasicKey extends DIKey {
     def withTpe(tpe: SafeType): DIKey.BasicKey
+    def mutatorIndex: Option[Int]
   }
 
   final case class TypeKey(tpe: SafeType, mutatorIndex: Option[Int] = None) extends BasicKey {
@@ -31,14 +32,14 @@ object DIKey {
     def named(id: Identifier): IdKey[id.Id] = IdKey(tpe, id.id, mutatorIndex)(id.idContract)
 
     override def withTpe(tpe: SafeType): DIKey.TypeKey = copy(tpe = tpe)
-    override def toString: String = formatWithIndex(s"{type.${tpe.toString}}", mutatorIndex)
+    override def toString: String = formatWithIndex(s"{type.${tpe.tag.repr}}", mutatorIndex)
   }
 
   final case class IdKey[I: IdContract](tpe: SafeType, id: I, mutatorIndex: Option[Int] = None) extends BasicKey {
     val idContract: IdContract[I] = implicitly
     def withMutatorIndex(index: Option[Int]): IdKey[I] = copy(mutatorIndex = index)
     override def withTpe(tpe: SafeType): DIKey.IdKey[I] = copy(tpe = tpe)
-    override def toString: String = formatWithIndex(s"{type.${tpe.toString}@${idContract.repr(id)}}", mutatorIndex)
+    override def toString: String = formatWithIndex(s"{type.${tpe.tag.repr}@${idContract.repr(id)}}", mutatorIndex)
   }
 
   /**

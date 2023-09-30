@@ -5,11 +5,11 @@ import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases.*
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiApplicative
-import izumi.distage.model.exceptions.interpretation.ProvisioningException
+import izumi.functional.quasi.QuasiApplicative
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.data.{Free, FreeError, FreePanic}
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
@@ -31,7 +31,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         new ModuleDef {
           make[Int].named("2").from(2)
           make[Int].fromEffect[Identity, Int] {
-            i: Int @Id("2") => 10 + i
+            (i: Int @Id("2")) => 10 + i
           }
         },
         Activation.empty,
@@ -39,7 +39,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       )
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[Int] == 12)
@@ -50,7 +50,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         new ModuleDef {
           make[Int].named("2").from(2)
           make[Int].fromEffect {
-            i: Int @Id("2") => Suspend2(10 + i)
+            (i: Int @Id("2")) => Suspend2(10 + i)
           }
         },
         Activation.empty,
@@ -58,7 +58,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       )
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
 
@@ -78,7 +78,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val context = injector.produceCustomF[Suspend2[Nothing, _]](plan).unsafeGet().unsafeRun()
 
@@ -92,7 +92,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         new ModuleDef {
           make[Int].named("2").from(2)
           make[Int].fromEffect[Identity, Int] {
-            i: Int @Id("2") => 10 + i
+            (i: Int @Id("2")) => 10 + i
           }
         },
         Activation.empty,
@@ -100,7 +100,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       )
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
       val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Int] == 12)
@@ -119,7 +119,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
             ref.update(_ ++ set).void
         }
         make[Unit].named("1").fromEffect {
-          ref: Ref[Fn, Set[Char]] =>
+          (ref: Ref[Fn, Set[Char]]) =>
             ref.update(_ + 'z').void
         }
         make[Unit].named("2").fromEffect {
@@ -129,7 +129,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
       val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Set[Char]] == "ab".toSet)
@@ -297,7 +297,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val instance = injector.produce(plan).use {
         context =>
@@ -317,7 +317,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val instance = injector
         .produceCustomF[Suspend2[Throwable, _]](plan).use {
@@ -340,7 +340,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val resource = injector.produceCustomF[Suspend2[Throwable, _]](plan)
 
@@ -377,7 +377,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val resource = injector.produceDetailedCustomF[Suspend2[Throwable, _]](plan)
 
@@ -394,9 +394,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
             fail(s"Unexpected success! $value")
         }.unsafeRun()
 
-      val exc = intercept[ProvisioningException] {
-        failure.throwException().unsafeRun()
-      }
+      val exc = failure.toThrowable
 
       assert(exc.getMessage.contains("Incompatible effect types"))
     }
@@ -412,7 +410,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       })
 
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       val resource = injector
         .produceDetailedCustomF[Suspend2[Throwable, _]](plan)
@@ -444,8 +442,14 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         }
       }
 
-      assert(t.message.get contains "<trace>")
-      assert(t.message.get contains "could not find implicit value for TagK[F]")
+      import Ordering.Implicits.*
+      if (IzScala.scalaRelease < ScalaRelease.`3`(0, 0)) { // no Tag trace yet on Scala 3
+        assert(t.message.get contains "<trace>")
+      }
+      assert(
+        (t.message.get contains "could not find implicit value for TagK[F]") ||
+        (t.message.get contains "could not find implicit value for izumi.reflect.Tag[F]")
+      )
     }
 
     "can pass a block with inner method calls into Lifecycle.Of constructor (https://github.com/scala/bug/issues/11969)" in {

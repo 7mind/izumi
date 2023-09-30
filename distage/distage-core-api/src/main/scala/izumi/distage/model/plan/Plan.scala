@@ -1,21 +1,21 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.definition.{Identifier, ModuleBase}
-import izumi.distage.model.exceptions.planning.DIBugException
+import izumi.distage.model.exceptions.runtime.ToposortFailed
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, MonadicOp}
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{DIPlanCompactFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DependencyGraph
-import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.model.{Locator, PlannerInput}
 import izumi.functional.Renderable
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.fundamentals.graphs.{DG, GraphMeta}
+import izumi.fundamentals.platform.cache.CachedHashcode
 import izumi.reflect.{Tag, TagK}
 
 import scala.annotation.nowarn
@@ -23,9 +23,9 @@ import scala.annotation.nowarn
 final case class Plan(
   plan: DG[DIKey, ExecutableOp],
   input: PlannerInput,
-) {
-  // TODO: equals/hashcode should not be used under normal circumstances. Currently we need them for "memoization levels" to work but we have to get rid of that
-  override def hashCode(): Int = {
+) extends CachedHashcode {
+  override protected def hash: Int = {
+    // TODO: equals/hashcode should not be used under normal circumstances. Currently we need them for "memoization levels" to work but we have to get rid of that
     this.plan.meta.hashCode() ^ this.plan.predecessors.hashCode()
   }
 
@@ -70,10 +70,13 @@ object Plan {
     /** Original [[ModuleBase bindings]] of this plan */
     def definitionOriginal: ModuleBase = plan.input.bindings
 
+    /**
+      * This is only used by plan formatter
+      */
     def toposort: Seq[DIKey] = {
       Toposort.cycleBreaking(plan.plan.predecessors, ToposortLoopBreaker.breakOn[DIKey](_.headOption)) match {
         case Left(value) =>
-          throw new DIBugException(s"BUG: toposort failed during plan rendering: $value")
+          throw new ToposortFailed(value)
         case Right(value) =>
           value
       }
@@ -94,7 +97,7 @@ object Plan {
           val dependees = plan.plan.successors.links(k)
           val dependeesWithoutKeys = dependees.diff(keys)
           if (dependeesWithoutKeys.nonEmpty || plan.plan.noSuccessors.contains(k)) {
-            Seq((k, ImportDependency(k, dependeesWithoutKeys, plan.plan.meta.nodes(k).origin.value.toSynthetic)))
+            Seq((k, ExecutableOp.createImport(k, dependeesWithoutKeys, plan.plan.meta.nodes(k).origin.value.toSynthetic)))
           } else {
             Seq.empty
           }
@@ -144,12 +147,11 @@ object Plan {
       *
       * @see [[distage.Injector#assert]] for a check you can use in tests
       */
-    def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NonEmptyList[ImportDependency]] = {
-      val locatorRefKey = DIKey[LocatorRef]
+    def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NEList[ImportDependency]] = {
       val nonMagicImports = plan.stepsUnordered.iterator.collect {
-        case i: ImportDependency if i.target != locatorRefKey && !ignoredImports(i.target) => i
+        case i: ImportDependency if !ignoredImports(i.target) => i
       }.toList
-      NonEmptyList.from(nonMagicImports)
+      NEList.from(nonMagicImports)
     }
 
     /**
@@ -160,12 +162,12 @@ object Plan {
       * @tparam F effect type to check against
       * @return a non-empty list of operations incompatible with `F` if present
       */
-    def incompatibleEffectType[F[_]: TagK]: Option[NonEmptyList[MonadicOp]] = {
+    def incompatibleEffectType[F[_]: TagK]: Option[NEList[MonadicOp]] = {
       val effectType = SafeType.getK[F]
       val badSteps = plan.stepsUnordered.iterator.collect {
         case op: MonadicOp if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) => op
       }.toList
-      NonEmptyList.from(badSteps)
+      NEList.from(badSteps)
     }
 
     /**
@@ -200,6 +202,13 @@ object Plan {
         case op =>
           op
       }.toMap)))
+    }
+
+    def importedKeys: Set[DIKey] = {
+      plan.plan.meta.nodes.view.collect {
+        case (k, _: ImportDependency) =>
+          k
+      }.toSet
     }
 
     def resolveImport[T: Tag](instance: T): Plan = {

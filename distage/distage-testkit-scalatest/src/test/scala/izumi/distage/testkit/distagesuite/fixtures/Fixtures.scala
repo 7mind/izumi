@@ -7,7 +7,7 @@ import distage.TagK
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.StandardAxis.Mode
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -18,6 +18,7 @@ import scala.collection.mutable
 object MockAppCatsIOPlugin extends MockAppPlugin[CIO]
 object MockAppZioPlugin extends MockAppPlugin[Task]
 object MockAppIdPlugin extends MockAppPlugin[Identity]
+object MockAppZioZEnvPlugin extends MockAppPlugin[zio.ZIO[Int, Throwable, +_]]
 
 abstract class MockAppPlugin[F[_]: TagK] extends PluginDef {
   make[MockPostgresDriver[F]]

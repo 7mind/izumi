@@ -10,7 +10,7 @@ private[distage] class ByteBuddyAtomicRefDispatcher(
   nullProxy: AnyRef
 ) extends AtomicProxyDispatcher
   with InvocationHandler {
-  override def invoke(o: scala.Any, method: Method, objects: Array[AnyRef]): AnyRef = {
+  override def invoke(proxy: scala.Any, method: Method, objects: Array[AnyRef]): AnyRef = {
     val methodName = method.getName
     if (methodName == "equals" && (method.getParameterTypes sameElements Array(classOf[AnyRef]))) {
       objects.headOption match {

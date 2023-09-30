@@ -64,6 +64,8 @@ object OpFormatter {
 
             case w: WiringOp =>
               w match {
+                case LocalContext(target, wiring, origin) =>
+                  formatProviderOp(target, wiring, origin, deferred)
                 case CallProvider(target, wiring, origin) =>
                   formatProviderOp(target, wiring, origin, deferred)
                 case UseInstance(target, wiring, origin) =>
@@ -89,6 +91,17 @@ object OpFormatter {
 
           val hint = styled(hintBase, c.CYAN)
           formatDefn(target, pos, s"${formatOpName("import")} ${formatKey(target)} $hint")
+
+        case ref: AddRecursiveLocatorRef =>
+          val pos = formatBindingPosition(ref.origin)
+          val hintBase = if (ref.references.nonEmpty) {
+            s"// required for ${ref.references.map(formatKey).mkString(" and ")}"
+          } else { // this should never happen actually
+            " // no dependees"
+          }
+
+          val hint = styled(hintBase, c.CYAN)
+          formatDefn(ref.target, pos, s"${formatOpName("locator")} ${formatKey(ref.target)} $hint")
 
         case p: ProxyOp =>
           p match {
@@ -136,6 +149,9 @@ object OpFormatter {
       deps match {
         case f: Function =>
           doFormat(formatFunction(f.provider), f.associations.map(formatDependency(deferred)), "call", ('(', ')'), ('{', '}'))
+
+        case f: PrepareLocalContext =>
+          doFormat(formatFunction(f.provider.get), f.associations.map(formatDependency(deferred)), "context", ('(', ')'), ('{', '}'))
 
         case other @ (_: Effect | _: Resource | _: Instance | _: Reference) =>
           s"UNEXPECTED WIREABLE: $other"

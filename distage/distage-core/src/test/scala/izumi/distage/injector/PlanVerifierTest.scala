@@ -2,19 +2,21 @@ package izumi.distage.injector
 
 import distage.{Activation, DIKey, Injector, Lifecycle, Roots}
 import izumi.distage.fixtures.PlanVerifierCases.*
+import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.exceptions.planning.ConflictResolutionException
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.UserBinding
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue.*
-import izumi.fundamentals.collections.nonempty.{NonEmptyMap, NonEmptySet}
+import izumi.distage.model.planning.PlanIssue.*
+import izumi.fundamentals.collections.nonempty.{NEMap, NESet}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class PlanVerifierTest extends AnyWordSpec with MkInjector {
+
   "Verifier handles resources (uniform case, Roots.Everything, https://github.com/7mind/izumi/issues/1476)" in {
     import PlanVerifierCase1._
 
@@ -135,7 +137,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(result.verificationFailed)
-    assert(result.issues.fromNonEmptySet == Set(UnsaturatedAxis(DIKey[Fork2], Axis1.name, NonEmptySet(Axis1.B.toAxisPoint))))
+    assert(result.issues.fromNESet == Set(UnsaturatedAxis(DIKey[Fork2], Axis1.name, NESet(Axis1.B.toAxisPoint))))
   }
 
   "Verifier flags axis fork with only choice along inapplicable axis" in {
@@ -150,7 +152,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(result.verificationFailed)
-    assert(result.issues.fromNonEmptySet == Set(UnsaturatedAxis(DIKey[Fork2], Axis1.name, NonEmptySet(Axis1.B.toAxisPoint))))
+    assert(result.issues.fromNESet == Set(UnsaturatedAxis(DIKey[Fork2], Axis1.name, NESet(Axis1.B.toAxisPoint))))
   }
 
   "Verifier flags missing import only for ImplB" in {
@@ -166,7 +168,13 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(result.verificationFailed)
     assert(result.issues.size == 1)
-    assert(result.issues.fromNonEmptySet == Set(MissingImport(DIKey[Fork2], DIKey[Fork1], Set(implBOrigin))))
+//    val issues = result.issues.toList.flatMap(_.toList)
+//    assert(issues.size == 1)
+//
+//    val imports = issues.collect {case m: MissingImport => m}
+//    assert(imports.size == 1)
+//    assert(imports.head.key == )
+    assert(result.issues.fromNESet == Set(MissingImport(DIKey[Fork2], DIKey[Fork1], Set(implBOrigin), Set.empty, Set.empty)))
   }
 
   "Verifier flags conflicting activations" in {
@@ -179,12 +187,12 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork1].tagged(Axis2.D).from[ImplA]
     }
 
-    assertThrows[ConflictResolutionException] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D))
+    assertThrows[InjectorFailed] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D)).unsafeGet()
     }
 
-    assertThrows[ConflictResolutionException] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B))
+    assertThrows[InjectorFailed] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B)).unsafeGet()
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -193,7 +201,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     assert(result.issues.get.head.asInstanceOf[UnsolvableConflict].key == DIKey[Fork1])
     assert(
       result.issues.get.head.asInstanceOf[UnsolvableConflict].ops.map(_._2) ==
-      NonEmptySet(Set(Axis1.A), Set(Axis1.B), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint))
+      NESet(Set(Axis1.A), Set(Axis1.B), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint))
     )
   }
 
@@ -210,19 +218,19 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork2].tagged(Axis2.D).from[ImplD2]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.D)).unsafeGet()
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
 
     assert(result.issues.get.size == 2)
-    assert(result.issues.get.map(_.asInstanceOf[UnsolvableConflict].key) == NonEmptySet(DIKey[Fork2]))
+    assert(result.issues.get.map(_.asInstanceOf[UnsolvableConflict].key) == NESet(DIKey[Fork2]))
     assert(
       result.issues.get.map(_.asInstanceOf[UnsolvableConflict].ops.map(_._2)) ==
-      NonEmptySet(
-        NonEmptySet(Set(Axis1.A), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint)),
-        NonEmptySet(Set(Axis1.B), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint)),
+      NESet(
+        NESet(Set(Axis1.A), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint)),
+        NESet(Set(Axis1.B), Set(Axis2.C), Set(Axis2.D)).map(_.map(_.toAxisPoint)),
       )
     )
   }
@@ -237,12 +245,12 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork1].tagged(Axis1.B, Axis2.D).from[ImplA]
     }
 
-    assertThrows[ConflictResolutionException] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D))
+    assertThrows[InjectorFailed] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B, Axis2 -> Axis2.D)).unsafeGet()
     }
 
-    assertThrows[ConflictResolutionException] {
-      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B))
+    assertThrows[InjectorFailed] {
+      mkInjector().produceGet[Fork1](definition, Activation(Axis1 -> Axis1.B)).unsafeGet()
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -251,7 +259,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     assert(result.issues.get.head.asInstanceOf[UnsolvableConflict].key == DIKey[Fork1])
     assert(
       result.issues.get.head.asInstanceOf[UnsolvableConflict].ops.map(_._2) ==
-      NonEmptySet(Set(Axis2.C), Set(Axis2.D), Set(Axis3.E), Set(Axis3.F)).map(_.map(_.toAxisPoint))
+      NESet(Set(Axis2.C), Set(Axis2.D), Set(Axis3.E), Set(Axis3.F)).map(_.map(_.toAxisPoint))
     )
   }
 
@@ -271,7 +279,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         .isInstanceOf[ImplA2]
     )
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A)).unsafeGet()
     }
 
@@ -295,7 +303,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         .isInstanceOf[ImplA3]
     )
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation.empty).unsafeGet()
     }
 
@@ -304,7 +312,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     assert(result.issues.get.head.key == DIKey[Fork1])
     assert(result.issues.get.head.asInstanceOf[ShadowedActivation].activation == Set.empty)
     assert(
-      result.issues.get.head.asInstanceOf[ShadowedActivation].shadowingBindings.keySet == NonEmptySet(
+      result.issues.get.head.asInstanceOf[ShadowedActivation].shadowingBindings.keySet == NESet(
         Set(AxisPoint("axis1", "a")),
         Set(AxisPoint("axis1", "b")),
       )
@@ -321,7 +329,9 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(
-      result.issues.contains(NonEmptySet(DuplicateActivations(DIKey[Fork1], NonEmptyMap(Set.empty -> NonEmptySet.unsafeFrom(definition.bindings.map(UserBinding))))))
+      result.issues.contains(
+        NESet(DuplicateActivations(DIKey[Fork1], NEMap(Set.empty -> NESet.unsafeFrom(definition.bindings.map(UserBinding.apply)))))
+      )
     )
   }
 
@@ -337,7 +347,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork2].tagged(Axis2.D).from[ImplD]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A)).unsafeGet()
     }
 
@@ -347,7 +357,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance2 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.C)).unsafeGet()
     assert(instance2.isInstanceOf[ImplA2])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.B)).unsafeGet()
     }
 
@@ -373,7 +383,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork1].tagged(Axis1.B).from[ImplA6]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A)).unsafeGet()
     }
 
@@ -383,7 +393,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance1 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.D, Axis3.F)).unsafeGet()
     assert(instance1.isInstanceOf[ImplA5])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.C)).unsafeGet()
     }
 
@@ -407,22 +417,22 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(result.issues.get.size == 2)
-    assert(result.issues.get.map(_.asInstanceOf[ShadowedActivation].key) == NonEmptySet(DIKey[Fork1]))
+    assert(result.issues.get.map(_.asInstanceOf[ShadowedActivation].key) == NESet(DIKey[Fork1]))
     assert(
-      result.issues.get.map(_.asInstanceOf[ShadowedActivation].activation) == NonEmptySet(
+      result.issues.get.map(_.asInstanceOf[ShadowedActivation].activation) == NESet(
         Set(AxisPoint("axis1", "a")),
         Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c")),
       )
     )
     assert(
-      result.issues.get.map(_.asInstanceOf[ShadowedActivation].shadowingBindings.keySet) == NonEmptySet(
-        NonEmptySet(
+      result.issues.get.map(_.asInstanceOf[ShadowedActivation].shadowingBindings.keySet) == NESet(
+        NESet(
           Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "d")),
           Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c")),
           Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c"), AxisPoint("axis3", "e")),
           Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c"), AxisPoint("axis3", "f")),
         ),
-        NonEmptySet(
+        NESet(
           Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c"), AxisPoint("axis3", "e")),
           Set(AxisPoint("axis1", "a"), AxisPoint("axis2", "c"), AxisPoint("axis3", "f")),
         ),
@@ -444,7 +454,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork2].tagged(Axis2.C).from[ImplC]
     }
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A)).unsafeGet()
     }
 
@@ -454,7 +464,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance1 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.D, Axis3.F)).unsafeGet()
     assert(instance1.isInstanceOf[ImplA5])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.C)).unsafeGet()
     }
 
@@ -464,14 +474,14 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance3 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.A, Axis2.C, Axis3.F)).unsafeGet()
     assert(instance3.isInstanceOf[ImplA4])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.B)).unsafeGet()
     }
 
     val instance4 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.D)).unsafeGet()
     assert(instance4.isInstanceOf[ImplA6])
 
-    assertThrows[ConflictResolutionException] {
+    assertThrows[InjectorFailed] {
       mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.C)).unsafeGet()
     }
 
@@ -506,23 +516,32 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     }
 
     val result1 = PlanVerifier().verify[Identity](definition, Roots.target[X], Injector.providedKeys(), Set.empty)
-    assert(result1.issues.fromNonEmptySet.map(_.getClass) == Set(classOf[MissingImport], classOf[UnsaturatedAxis]))
+    assert(result1.issues.fromNESet.map(_.getClass) == Set(classOf[MissingImport], classOf[UnsaturatedAxis]))
+    val brokenBinding = definition.bindings.filter(b => b.isInstanceOf[SetElementBinding])
     assert(
-      result1.issues.fromNonEmptySet == Set(
-        MissingImport(DIKey[ExternalDep], DIKey[X], result1.issues.fromNonEmptySet.collect { case MissingImport(_, d, origins) if d == DIKey[X] => origins }.flatten),
+      result1.issues.fromNESet == Set(
         MissingImport(
           DIKey[ExternalDep],
-          result1.issues.get.collectFirst { case MissingImport(_, d, _) if d.isInstanceOf[DIKey.SetElementKey] => d }.get,
-          result1.issues.fromNonEmptySet.collect { case MissingImport(_, d, origins) if d.isInstanceOf[DIKey.SetElementKey] => origins }.flatten,
+          DIKey[X],
+          result1.issues.fromNESet.collect { case MissingImport(_, d, origins, _, _) if d == DIKey[X] => origins }.flatten,
+          brokenBinding,
+          Set.empty,
         ),
-        UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a"))),
+        MissingImport(
+          DIKey[ExternalDep],
+          result1.issues.get.collectFirst { case MissingImport(_, d, _, _, _) if d.isInstanceOf[DIKey.SetElementKey] => d }.get,
+          result1.issues.fromNESet.collect { case MissingImport(_, d, origins, _, _) if d.isInstanceOf[DIKey.SetElementKey] => origins }.flatten,
+          brokenBinding,
+          Set.empty,
+        ),
+        UnsaturatedAxis(DIKey[BadDep], "axis", NESet(AxisPoint("axis", "a"))),
       )
     )
 
     val result2 = PlanVerifier().verify[Identity](definition, Roots.target[X], providedKeys = Set(DIKey[ExternalDep]), Set.empty)
     assert(
-      result2.issues.fromNonEmptySet == Set(
-        UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a")))
+      result2.issues.fromNESet == Set(
+        UnsaturatedAxis(DIKey[BadDep], "axis", NESet(AxisPoint("axis", "a")))
       )
     )
   }
@@ -538,7 +557,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     }
 
     val result1 = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
-    assert(result1.issues.fromNonEmptySet == Set(UnsaturatedAxis(DIKey[BadDep], "axis", NonEmptySet(AxisPoint("axis", "a")))))
+    assert(result1.issues.fromNESet == Set(UnsaturatedAxis(DIKey[BadDep], "axis", NESet(AxisPoint("axis", "a")))))
 
     val result2 = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], providedKeys = Set(DIKey[BadDep]), Set.empty)
     assert(result2.issues.isEmpty)
@@ -600,4 +619,18 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
     assert(result.issues.isEmpty)
   }
+
+  "Verifier handles weak sets: named weak references are still weak" in {
+    import PlanVerifierCase1._
+
+    val definition = new ModuleDef {
+      many[Fork1]
+        .weak[ImplA]
+        .weak[ImplB]("missing")
+    }
+
+    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork1]], Injector.providedKeys(), Set.empty)
+    assert(result.issues.isEmpty)
+  }
+
 }

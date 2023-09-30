@@ -15,7 +15,7 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
   private val sc0: DIKey = DIKey.get[SharedComponent0]
   private val sc1: DIKey = DIKey.get[SharedComponent1]
 
-  private val injector = mkInjector()
+  private lazy val injector = mkInjector()
 
   "support plan separation" in {
     val primary = Set(pcKey)
@@ -33,7 +33,7 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
       primary ++ sub,
     )
 
-    val srcPlan = injector.plan(definition)
+    val srcPlan = injector.planUnsafe(definition)
 
     def verifySingleImport(key: DIKey): Unit = {
       val plan = srcPlan.replaceWithImports(Set(key))

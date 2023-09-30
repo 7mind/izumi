@@ -3,7 +3,7 @@ package logstage
 import izumi.functional.bio.{SyncSafe1, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{Entry, LoggerId}
-import izumi.logstage.api.logger.AbstractLogger
+import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF}
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
 import scala.annotation.unused
@@ -19,13 +19,15 @@ trait UnsafeLogIO[F[_]] extends LogCreateIO[F] {
   /** Check if this class/package is allowed to log messages at or above `logLevel` */
   def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): F[Boolean]
 
-  override def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): UnsafeLogIO[G] = this.asInstanceOf[UnsafeLogIO[G]]
+  override def widen[G[_]](implicit @unused ev: F[AnyRef] <:< G[AnyRef]): UnsafeLogIO[G] = this.asInstanceOf[UnsafeLogIO[G]]
 }
 
 object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
   def apply[F[_]: UnsafeLogIO]: UnsafeLogIO[F] = implicitly
 
   def fromLogger[F[_]: SyncSafe1](logger: AbstractLogger): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe1[F])
+
+  def fromLogger[F[_]: SyncSafe1](logger: AbstractLoggerF[F]): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstanceF[F](logger)(SyncSafe1[F])
 
   class UnsafeLogIOSyncSafeInstance[F[_]](logger: AbstractLogger)(F: SyncSafe1[F]) extends LogCreateIOSyncSafeInstance[F](F) with UnsafeLogIO[F] {
     override def unsafeLog(entry: Entry): F[Unit] = {
@@ -41,7 +43,25 @@ object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
     }
   }
 
-  implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit ev: F[?] <:< G[?]): UnsafeLogIO[G] = log.widen
+  class UnsafeLogIOSyncSafeInstanceF[F[_]](
+    logger: AbstractLoggerF[F]
+  )(F: SyncSafe1[F] // Used in LogCreateIOSyncSafeInstance
+  ) extends LogCreateIOSyncSafeInstance[F](F)
+    with UnsafeLogIO[F] {
+    override def unsafeLog(entry: Entry): F[Unit] = {
+      logger.unsafeLog(entry)
+    }
+
+    override def acceptable(loggerId: LoggerId, logLevel: Level): F[Boolean] = {
+      logger.acceptable(loggerId, logLevel)
+    }
+
+    override def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): F[Boolean] = {
+      logger.acceptable(logLevel)
+    }
+  }
+
+  implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit ev: F[AnyRef] <:< G[AnyRef]): UnsafeLogIO[G] = log.widen
 }
 
 sealed trait LowPriorityUnsafeLogIOInstances {
@@ -62,10 +82,14 @@ object UnsafeLogIO2 {
   @inline def apply[F[_, _]: UnsafeLogIO2]: UnsafeLogIO2[F] = implicitly
 
   @inline def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLogger): UnsafeLogIO2[F] = UnsafeLogIO.fromLogger(logger)
+
+  @inline def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLoggerF[F[Nothing, _]]): UnsafeLogIO2[F] = UnsafeLogIO.fromLogger(logger)
 }
 
 object UnsafeLogIO3 {
   @inline def apply[F[_, _, _]: UnsafeLogIO3]: UnsafeLogIO3[F] = implicitly
 
   @inline def fromLogger[F[_, _, _]: SyncSafe3](logger: AbstractLogger): UnsafeLogIO3[F] = UnsafeLogIO.fromLogger(logger)
+
+  @inline def fromLogger[F[_, _, _]: SyncSafe3](logger: AbstractLoggerF[F[Any, Nothing, _]]): UnsafeLogIO3[F] = UnsafeLogIO.fromLogger(logger)
 }

@@ -53,6 +53,12 @@ Add the `distage-core` library:
   version="$izumi.version$"
 }
 
+If you're using Scala 3 you **must** enable `-Yretain-trees` for this library to work correctly:
+
+```scala
+// REQUIRED options for Scala 3
+scalacOptions += "-Yretain-trees"
+```
 
 ### Hello World example
 
@@ -61,7 +67,7 @@ Suppose we have an abstract `Greeter` component, and some other components that 
 ```scala mdoc:reset:invisible:to-string
 var counter = 0
 val names = Array("izumi", "kai", "Pavel")
-def HACK_OVERRIDE_getStrLn = zio.ZIO {
+def HACK_OVERRIDE_readLine = zio.ZIO.attempt {
   val n = names(counter % names.length)
   counter += 1
   println(s"> $n")
@@ -70,35 +76,35 @@ def HACK_OVERRIDE_getStrLn = zio.ZIO {
 ```
 
 ```scala mdoc:override:to-string
-import zio.RIO
-import zio.console.{Console, getStrLn, putStrLn}
+import zio.Task
+import zio.Console.{printLine, readLine}
 
 trait Greeter {
-  def hello(name: String): RIO[Console, Unit]
+  def hello(name: String): Task[Unit]
 }
 
 final class PrintGreeter extends Greeter {
   override def hello(name: String) =
-    putStrLn(s"Hello $name!")
+    printLine(s"Hello $name!")
 }
 
 trait Byer {
-  def bye(name: String): RIO[Console, Unit]
+  def bye(name: String): Task[Unit]
 }
 
 final class PrintByer extends Byer {
   override def bye(name: String) =
-    putStrLn(s"Bye $name!")
+    printLine(s"Bye $name!")
 }
 
 final class HelloByeApp(
   greeter: Greeter,
   byer: Byer,
 ) {
-  def run: RIO[Console, Unit] = {
+  def run: Task[Unit] = {
     for {
-      _    <- putStrLn("What's your name?")
-      name <- HACK_OVERRIDE_getStrLn
+      _    <- printLine("What's your name?")
+      name <- HACK_OVERRIDE_readLine
       _    <- greeter.hello(name)
       _    <- byer.bye(name)
     } yield ()
@@ -126,9 +132,9 @@ actionable series of steps - a @scaladoc[Plan](izumi.distage.model.plan.Plan), a
 ```scala mdoc:to-string
 import distage.{Activation, Injector, Roots}
 
-val injector = Injector[RIO[Console, _]]()
+val injector = Injector[Task]()
 
-val plan = injector.plan(HelloByeModule, Activation.empty, Roots.target[HelloByeApp])
+val plan = injector.plan(HelloByeModule, Activation.empty, Roots.target[HelloByeApp]).getOrThrow()
 ```
 
 The series of steps must be executed to produce the object graph.
@@ -136,7 +142,7 @@ The series of steps must be executed to produce the object graph.
 `Injector.produce` will interpret the steps into a @ref[`Lifecycle`](basics.md#resource-bindings-lifecycle) value holding the lifecycle of the object graph:
 
 ```scala mdoc:to-string
-import zio.Runtime.default.unsafeRun
+import izumi.functional.bio.UnsafeRun2
 
 // Interpret into a Lifecycle value
 
@@ -153,7 +159,9 @@ val effect = resource.use {
 
 // Run the resulting program
 
-unsafeRun(effect)
+val runner = UnsafeRun2.createZIO()
+
+runner.unsafeRun(effect)
 ```
 
 ### Singleton components
@@ -240,10 +248,11 @@ You can choose between different implementations of a component using "Activatio
 
 ```scala mdoc:to-string
 import distage.{Axis, Activation, ModuleDef, Injector}
+import zio.Console
 
 class AllCapsGreeter extends Greeter {
   def hello(name: String) =
-    putStrLn(s"HELLO ${name.toUpperCase}")
+    Console.printLine(s"HELLO ${name.toUpperCase}")
 }
 
 // declare a configuration axis for our components
@@ -271,7 +280,7 @@ def CombinedModule = HelloByeModule overriddenBy TwoImplsModule
 
 // Choose component configuration when making an Injector:
 
-unsafeRun {
+runner.unsafeRun {
   Injector()
     .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.AllCaps))
     .use(_.run)
@@ -279,7 +288,7 @@ unsafeRun {
 
 // Check that result changes with a different configuration:
 
-unsafeRun {
+runner.unsafeRun {
   Injector()
     .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.Normal))
     .use(_.run)
@@ -326,10 +335,11 @@ There may be many configuration axes in an application and components can specif
 
 ```scala mdoc:to-string
 import distage.StandardAxis.Mode
+import zio.Console
 
 class TestPrintGreeter extends Greeter {
   def hello(name: String) =
-    putStrLn(s"Test 1 2, hello $name")
+    Console.printLine(s"Test 1 2, hello $name")
 }
 
 // declare 3 possible implementations
@@ -340,9 +350,11 @@ def TestModule = new ModuleDef {
   make[Greeter].tagged(Style.AllCaps).from[AllCapsGreeter]
 }
 
-def runWith(activation: Activation) = unsafeRun {
-  Injector().produceRun(TestModule, activation) {
-    greeter: Greeter => greeter.hello("$USERNAME")
+def runWith(activation: Activation) = {
+  runner.unsafeRun {
+    Injector().produceRun(TestModule, activation) {
+      greeter: Greeter => greeter.hello("$USERNAME")
+    }
   }
 }
 
@@ -414,8 +426,8 @@ Try { Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal)
 
 ## Resource Bindings, Lifecycle
 
-You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) or
-[zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed)
+You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html), [scoped zio.ZIO](https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1), [zio.ZLayer](https://zio.dev/reference/contextual/zlayer) or
+[zio.managed.ZManaged](https://zio.dev/1.0.18/reference/resource/zmanaged/)
 values specifying the allocation and finalization actions of an object.
 
 When ran, distage `Injector` itself returns a `Lifecycle` value that describes actions to create and finalize the object graph; the `Lifecycle` value is pure and can be reused multiple times.
@@ -512,7 +524,7 @@ println(closedInit.initialized)
 `Lifecycle` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap`, `.mapK` methods.
 
 You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods,
-and between a `Lifecycle` and `zio.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
+and between a `Lifecycle` and scoped `zio.ZIO`/`zio.managed.ZManaged`/`zio.ZLayer` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
 ### Inheritance helpers
 
@@ -522,6 +534,8 @@ The following helpers allow defining `Lifecycle` sub-classes using expression-li
 - @scaladoc[Lifecycle.OfInner](izumi.distage.model.definition.Lifecycle$$OfInner)
 - @scaladoc[Lifecycle.OfCats](izumi.distage.model.definition.Lifecycle$$OfCats)
 - @scaladoc[Lifecycle.OfZIO](izumi.distage.model.definition.Lifecycle$$OfZIO)
+- @scaladoc[Lifecycle.OfZManaged](izumi.distage.model.definition.Lifecycle$$OfZManaged)
+- @scaladoc[Lifecycle.OfZLayer](izumi.distage.model.definition.Lifecycle$$OfZLayer)
 - @scaladoc[Lifecycle.LiftF](izumi.distage.model.definition.Lifecycle$$LiftF)
 - @scaladoc[Lifecycle.Make](izumi.distage.model.definition.Lifecycle$$Make)
 - @scaladoc[Lifecycle.Make_](izumi.distage.model.definition.Lifecycle$$Make_)
@@ -596,7 +610,7 @@ Example usage:
 ```scala mdoc:reset:to-string
 import cats.effect.{IO, Sync}
 import distage.{Activation, DefaultModule, Injector, Module, TagK}
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 
 def polymorphicHelloWorld[F[_]: TagK: QuasiIO: DefaultModule]: F[Unit] = {
   Injector[F]().produceRun(
@@ -895,43 +909,47 @@ val io = Injector[Task]()
       } yield res1 + res2
   }
 
-zio.Runtime.default.unsafeRun(io)
+import izumi.functional.bio.UnsafeRun2
+
+val runtime = UnsafeRun2.createZIO()
+
+runtime.unsafeRun(io)
 ```
 
 You need to specify your effect type when constructing `Injector`, as in `Injector[F]()`, to use effect bindings in chosen `F[_]`.
 
-## ZIO Has Bindings
+## ZIO Environment bindings
 
-You can inject into ZIO Environment using `make[_].fromHas` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: Local3`:
+You can inject into ZIO Environment using `make[_].fromZEnv` syntax for `ZLayer`, `ZManaged`, `ZIO` or any `F[_, _, _]: Local3`:
 
 ```scala mdoc:to-string
 import zio._
-import zio.console.{Console, putStrLn}
+import zio.managed._
 import distage.ModuleDef
 
 class Dependency
 
 class X(dependency: Dependency)
 
-def makeX: RIO[Console with Has[Dependency], X] = {
+def makeX: ZIO[Dependency, Throwable, X] = {
   for {
     dep <- ZIO.service[Dependency]
-    _   <- putStrLn(s"Obtained environment dependency = $dep")
+    _   <- Console.printLine(s"Obtained environment dependency = $dep")
   } yield new X(dep)
 }
 
-def makeXManaged: RManaged[Console with Has[Dependency], X] = makeX.toManaged_
+def makeXManaged: ZManaged[Dependency, Throwable, X] = makeX.toManaged
 
-def makeXLayer: RLayer[Console with Has[Dependency], Has[X]] = makeX.toLayer
+def makeXLayer: ZLayer[Dependency, Throwable, X] = ZLayer.fromZIO(makeX)
 
 def module1 = new ModuleDef {
   make[Dependency]
 
-  make[X].fromHas(makeX)
+  make[X].fromZIOEnv(makeX)
   // or
-  make[X].fromHas(makeXManaged)
+  make[X].fromZManagedEnv(makeXManaged)
   // or
-  make[X].fromHas(makeXLayer)
+  make[X].fromZLayerEnv(makeXLayer)
 }
 ```
 
@@ -940,27 +958,26 @@ You can also mix environment and parameter dependencies at the same time in one 
 ```scala mdoc:to-string
 def zioArgEnvCtor(
   dependency: Dependency
-): RLayer[Console, Has[X]] = {
+): RLayer[Console, X] = {
   ZLayer.succeed(dependency) ++
-  ZLayer.identity[Console] >>>
-  makeX.toLayer
+  ZLayer.environment[Console] >>>
+  ZLayer.fromZIO(makeX)
 }
 
 def module2 = new ModuleDef {
   make[Dependency]
 
-  make[X].fromHas(zioArgEnvCtor _)
+  make[X].fromZLayerEnv(zioArgEnvCtor _)
 }
 ```
 
-`zio.Has` values are derived at compile-time by @scaladoc[HasConstructor](izumi.distage.constructors.HasConstructor) macro and can be summoned at need.
+`zio.ZEnvironment` values are derived at compile-time by @scaladoc[ZEnvConstructor](izumi.distage.constructors.ZEnvConstructor) macro and can be summoned at need.
 
 Another example:
 
 ```scala mdoc:reset:to-string
 import distage.{Injector, ModuleDef}
-import zio.console.{putStrLn, Console}
-import zio.{UIO, RIO, Ref, Task, Has}
+import zio.{Console, UIO, URIO, RIO, ZIO, Ref, Task}
 
 trait Hello {
   def hello: UIO[String]
@@ -972,19 +989,20 @@ trait World {
 // Environment forwarders that allow
 // using service functions from everywhere
 
-val hello: RIO[Has[Hello], String] = RIO.accessM(_.get.hello)
+val hello: URIO[Hello, String] = ZIO.serviceWithZIO(_.hello)
 
-val world: RIO[Has[World], String] = RIO.accessM(_.get.world)
+val world: URIO[World, String] = ZIO.serviceWithZIO(_.world)
 
 // service implementations
 
 val makeHello = {
-  (for {
-    _     <- putStrLn("Creating Enterprise Hellower...")
-    hello = new Hello { val hello = UIO("Hello") }
-  } yield hello).toManaged(release = _ =>
-    putStrLn("Shutting down Enterprise Hellower").orDie
-  )
+  for {
+    _     <- ZIO.acquireRelease(
+      acquire = Console.printLine("Creating Enterprise Hellower...")
+    )(release = _ => Console.printLine("Shutting down Enterprise Hellower").orDie)
+  } yield new Hello {
+    val hello = ZIO.succeed("Hello")
+  }
 }
 
 val makeWorld = {
@@ -997,24 +1015,28 @@ val makeWorld = {
 
 // the main function
 
-val turboFunctionalHelloWorld: RIO[Has[Hello] with Has[World] with Has[Console.Service], Unit] = {
+val turboFunctionalHelloWorld: RIO[Hello with World, Unit] = {
   for {
     hello <- hello
     world <- world
-    _     <- putStrLn(s"$hello $world")
+    _     <- Console.print(s"$hello $world")
   } yield ()
 }
 
 def module = new ModuleDef {
-  make[Hello].fromHas(makeHello)
-  make[World].fromHas(makeWorld)
-  make[Unit].fromHas(turboFunctionalHelloWorld)
+  make[Hello].fromZIOEnv(makeHello)
+  make[World].fromZIOEnv(makeWorld)
+  make[Unit].fromZIOEnv(turboFunctionalHelloWorld)
 }
 
 val main = Injector[Task]()
-  .produceRun[Unit](module)((_: Unit) => Task.unit)
+  .produceRun[Unit](module)((_: Unit) => ZIO.unit)
 
-zio.Runtime.default.unsafeRun(main)
+import izumi.functional.bio.UnsafeRun2
+
+val runtime = UnsafeRun2.createZIO()
+
+runtime.unsafeRun(main)
 ```
 
 ### Converting ZIO environment dependencies to parameters
@@ -1032,9 +1054,8 @@ See: https://gitter.im/ZIO/Core?at=5dbb06a86570b076740f6db2
 Example:
 
 ```scala mdoc:reset:to-string
-import cats.Contravariant
-import distage.{Injector, ModuleDef, Functoid, Tag, TagK, HasConstructor}
-import zio.{Task, UIO, URIO, Has}
+import distage.{Injector, ModuleDef, Functoid, Tag, TagK, ZEnvConstructor}
+import zio.{URIO, ZIO, ZEnvironment}
 
 trait Dependee[-R] {
   def x(y: String): URIO[R, Int]
@@ -1042,20 +1063,25 @@ trait Dependee[-R] {
 trait Depender[-R] {
   def y: URIO[R, String]
 }
-implicit val contra1: Contravariant[Dependee] = new Contravariant[Dependee] {
-  def contramap[A, B](fa: Dependee[A])(f: B => A): Dependee[B] = new Dependee[B] { def x(y: String) = fa.x(y).provideSome(f) }
-}
-implicit val contra2: Contravariant[Depender] = new Contravariant[Depender] {
-  def contramap[A, B](fa: Depender[A])(f: B => A): Depender[B] = new Depender[B] { def y = fa.y.provideSome(f) }
+
+trait ContravariantService[M[_]] {
+  def contramapZEnv[A, B](s: M[A])(f: ZEnvironment[B] => ZEnvironment[A]): M[B]
 }
 
-type DependeeR = Has[Dependee[Any]]
-type DependerR = Has[Depender[Any]]
+implicit val contra1: ContravariantService[Dependee] = new ContravariantService[Dependee] {
+  def contramapZEnv[A, B](fa: Dependee[A])(f: ZEnvironment[B] => ZEnvironment[A]): Dependee[B] = new Dependee[B] { def x(y: String) = fa.x(y).provideSomeEnvironment(f) }
+}
+implicit val contra2: ContravariantService[Depender] = new ContravariantService[Depender] {
+  def contramapZEnv[A, B](fa: Depender[A])(f: ZEnvironment[B] => ZEnvironment[A]): Depender[B] = new Depender[B] { def y = fa.y.provideSomeEnvironment(f) }
+}
+
+type DependeeR = Dependee[Any]
+type DependerR = Depender[Any]
 object dependee extends Dependee[DependeeR] {
-  def x(y: String) = URIO.accessM(_.get.x(y))
+  def x(y: String) = ZIO.serviceWithZIO(_.x(y))
 }
 object depender extends Depender[DependerR] {
-  def y = URIO.accessM(_.get.y)
+  def y = ZIO.serviceWithZIO(_.y)
 }
 
 // cycle
@@ -1064,15 +1090,15 @@ object dependerImpl extends Depender[DependeeR] {
 }
 object dependeeImpl extends Dependee[DependerR] {
   def x(y: String): URIO[DependerR, Int] = {
-    if (y == "hello") UIO(5)
+    if (y == "hello") ZIO.succeed(5)
     else depender.y.map(y.length + _.length)
   }
 }
 
 /** Fulfill the environment dependencies of a service from the object graph */
-def fullfill[R: Tag: HasConstructor, M[_]: TagK: Contravariant](service: M[R]): Functoid[M[Any]] = {
-  HasConstructor[R]
-    .map(depsCakeR => Contravariant[M].contramap(service)(_ => depsCakeR))
+def fullfill[R: Tag: ZEnvConstructor, M[_]: TagK: ContravariantService](service: M[R]): Functoid[M[Any]] = {
+  ZEnvConstructor[R]
+    .map(zenv => implicitly[ContravariantService[M]].contramapZEnv(service)(_ => zenv))
 }
 
 def module = new ModuleDef {
@@ -1080,15 +1106,21 @@ def module = new ModuleDef {
   make[Dependee[Any]].from(fullfill(dependeeImpl))
 }
 
-Injector()
-  .produceRun(module) {
-    HasConstructor[DependeeR].map {
-      (for {
-        r <- dependee.x("zxc")
-        _ <- Task(println(s"result: $r"))
-      } yield ()).provide(_)
+import izumi.functional.bio.UnsafeRun2
+
+val runtime = UnsafeRun2.createZIO()
+
+runtime.unsafeRun {
+  Injector()
+    .produceRun(module) {
+      ZEnvConstructor[DependeeR].map {
+        (for {
+          r <- dependee.x("zxc")
+          _ <- ZIO.attempt(println(s"result: $r"))
+        } yield ()).provideEnvironment(_)
+      }
     }
-  }.fold(_ => 1, _ => 0)
+}
 ```
 
 ## Auto-Traits
@@ -1227,7 +1259,8 @@ Injector().produceRun(module overriddenBy new ModuleDef {
 
 ## Auto-Factories
 
-`distage` can instantiate 'factory' classes from suitable traits. This feature is especially useful with `Akka`.
+`distage` can derive 'factory' implementations from suitable traits using `makeFactory` method.
+This feature is especially useful with `Akka`.
 All unimplemented methods _with parameters_ in a trait will be filled by factory methods:
 
 Given a class `ActorFactory`:
@@ -1248,11 +1281,11 @@ trait ActorFactory {
 }
 ```
 
-And a binding of `ActorFactory` *without* an implementation
+And a binding of `ActorFactory` *without* an implementation.
 
 ```scala mdoc:to-string
 class ActorModule extends ModuleDef {
-  make[ActorFactory]
+  makeFactory[ActorFactory]
 }
 ```
 
@@ -1265,6 +1298,8 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
   }
 }
 ```
+
+Since `distage` version `1.1.0` you have to bind factories explicitly using `makeFactory` and `fromFactory` methods, not implicitly via `make`; parameterless methods in factories now produce new instances instead of summoning a dependency.
 
 ### @With annotation
 
@@ -1293,7 +1328,7 @@ object Actor {
 }
 
 def factoryModule = new ModuleDef {
-  make[Actor.Factory]
+  makeFactory[Actor.Factory]
   make[Actor.Configuration].from(Actor.Configuration(allCaps = false))
 }
 
@@ -1321,7 +1356,7 @@ Advantages of `distage` as a driver for TF compared to implicits:
 
 - easy explicit overrides
 - easy @ref[effectful instantiation](basics.md#effect-bindings) and @ref[resource management](basics.md#resource-bindings-lifecycle)
-- extremely easy & scalable @ref[test](distage-testkit.md#testkit) context setup due to the above
+- extremely easy & scalable @ref[test](distage-testkit.md) context setup due to the above
 - multiple different implementations for a type using disambiguation by `@Id`
 
 For example, let's take [`freestyle`'s tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
@@ -1411,10 +1446,7 @@ The program module is polymorphic over effect type. It can be instantiated by a 
 
 ```scala mdoc:to-string
 import zio.interop.catz._
-import zio.Runtime
-import zio.{Task, ZEnv}
-
-implicit val runtime: Runtime[ZEnv] = Runtime.global
+import zio.Task
 
 val ZIOProgram = ProgramModule[Task] ++ SyncInterpreters[Task]
 ```
@@ -1422,28 +1454,27 @@ val ZIOProgram = ProgramModule[Task] ++ SyncInterpreters[Task]
 We may even choose different interpreters at runtime:
 
 ```scala mdoc:to-string
-import zio.RIO
-import zio.console.{Console, getStrLn, putStrLn}
+import zio.Console
 import distage.Activation
 
-object RealInteractionZIO extends Interaction[RIO[Console, _]] {
-  def tell(s: String): RIO[Console, Unit]  = putStrLn(s)
-  def ask(s: String): RIO[Console, String] = putStrLn(s) *> getStrLn
+object RealInteractionZIO extends Interaction[Task] {
+  def tell(s: String): Task[Unit]  = Console.printLine(s)
+  def ask(s: String): Task[String] = Console.printLine(s) *> Console.readLine
 }
 
 def RealInterpretersZIO = {
-  SyncInterpreters[RIO[Console, _]] overriddenBy new ModuleDef {
-    make[Interaction[RIO[Console, _]]].from(RealInteractionZIO)
+  SyncInterpreters[Task] overriddenBy new ModuleDef {
+    make[Interaction[Task]].from(RealInteractionZIO)
   }
 }
 
 def chooseInterpreters(isDummy: Boolean) = {
-  val interpreters = if (isDummy) SyncInterpreters[RIO[Console, _]]
+  val interpreters = if (isDummy) SyncInterpreters[Task]
                      else         RealInterpretersZIO
-  def module = ProgramModule[RIO[Console, _]] ++ interpreters
+  def module = ProgramModule[Task] ++ interpreters
 
-  Injector[RIO[Console, _]]()
-    .produceGet[TaglessProgram[RIO[Console, _]]](module, Activation.empty)
+  Injector[Task]()
+    .produceGet[TaglessProgram[Task]](module, Activation.empty)
 }
 
 // execute

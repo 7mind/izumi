@@ -6,7 +6,7 @@ open class PrimitivesMFromBIO[F[+_, +_]: Bracket2: Primitives2] extends Primitiv
   override def mkRefM[A](a: A): F[Nothing, RefM2[F, A]] = {
     RefM2.createFromBIO(a)
   }
-  override def mkMutex[E, A]: F[Nothing, Mutex2[F]] = {
+  override def mkMutex: F[Nothing, Mutex2[F]] = {
     Mutex2.createFromBIO
   }
 }

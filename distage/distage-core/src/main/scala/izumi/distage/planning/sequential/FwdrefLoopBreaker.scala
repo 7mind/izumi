@@ -4,13 +4,14 @@ import izumi.distage.model.definition.errors.DIError.LoopResolutionError
 import izumi.distage.model.definition.errors.DIError.LoopResolutionError.NoAppropriateResolutionFound
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
+import izumi.distage.model.plan.ExecutableOp.{ImportOp, InstantiationOp, SemiplanOp}
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning.sequential.FwdrefLoopBreaker.BreakAt
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.DG
 
 trait FwdrefLoopBreaker {
-  def breakLoop(withLoops: Map[DIKey, Set[DIKey]], plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[List[LoopResolutionError], BreakAt]
+  def breakLoop(withLoops: Map[DIKey, Set[DIKey]], plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[NEList[LoopResolutionError], BreakAt]
 }
 
 object FwdrefLoopBreaker {
@@ -30,7 +31,7 @@ object FwdrefLoopBreaker {
             plan.meta.nodes(o) match {
               case _: ReferenceKey =>
                 false
-              case _: ImportDependency =>
+              case _: ImportOp =>
                 false
               case _: InstantiationOp =>
                 provider.canBeProxied(key.tpe)
@@ -40,7 +41,7 @@ object FwdrefLoopBreaker {
       }
     }
 
-    def breakLoop(): Either[List[LoopResolutionError], BreakAt] = {
+    def breakLoop(): Either[NEList[LoopResolutionError], BreakAt] = {
       import CycleTools.*
 
       val candidates = withLoops.keys.toVector
@@ -62,7 +63,7 @@ object FwdrefLoopBreaker {
           }
             .map(finish(_, byName = false))
         }
-        .toRight(List(NoAppropriateResolutionFound(candidates)))
+        .toRight(NEList(NoAppropriateResolutionFound(candidates)))
 
     }
 
@@ -89,7 +90,7 @@ object FwdrefLoopBreaker {
   class FwdrefLoopBreakerDefaultImpl(
     mirrorProvider: MirrorProvider
   ) extends FwdrefLoopBreaker {
-    override def breakLoop(withLoops: Map[DIKey, Set[DIKey]], plan: DG[DIKey, SemiplanOp]): Either[List[LoopResolutionError], BreakAt] = {
+    override def breakLoop(withLoops: Map[DIKey, Set[DIKey]], plan: DG[DIKey, SemiplanOp]): Either[NEList[LoopResolutionError], BreakAt] = {
       new BreakingContext(mirrorProvider, withLoops, plan).breakLoop()
     }
   }

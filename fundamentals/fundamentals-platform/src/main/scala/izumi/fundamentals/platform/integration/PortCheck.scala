@@ -90,7 +90,7 @@ class PortCheck(timeout: FiniteDuration) {
     }
   }
 
-  private def portFor(uriPort: => Int, defaultPort: Option[Int], port: Int) = {
+  private def portFor(uriPort: => Int, defaultPort: Option[Int], port: Int): Int = {
     val portOrDefault = port match {
       case -1 =>
         defaultPort.getOrElse(uriPort)

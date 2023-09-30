@@ -102,13 +102,13 @@ class LocatorDefTest extends AnyWordSpec {
       }
 
       assert(ctx.run {
-        i: Int => i + 5
+        (i: Int) => i + 5
       } == 10)
       assert(ctx.runOption {
-        i: Int => i + 5
+        (i: Int) => i + 5
       } == Some(10))
       assert(ctx.runOption {
-        i: Int @Id("special") => i
+        (i: Int @Id("special")) => i
       }.isEmpty)
     }
 

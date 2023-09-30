@@ -1,37 +1,45 @@
 package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.effect.*
+import izumi.functional.quasi.*
 import izumi.distage.modules.typeclass.BIO2InstancesModule
 import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Applicative2, Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
+import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagKK
+
+import scala.concurrent.ExecutionContext
 
 /**
   * Any `BIO` effect type support for `distage` resources, effects, roles & tests.
   *
   * For all `F[+_, +_]` with available `make[Async2[F]]`, `make[Temporal2[F]]` and `make[UnsafeRun2[F]]` bindings.
   *
-  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds [[izumi.functional.bio]] typeclass instances for `F[+_, +_]`
   *
-  * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`
+  * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`, `make[Fork2[F]]`
+  * Optional additions: `make[Primitives2[F]]`, `make[PrimitivesM2[F]]`, `make[Scheduler2[F]]`
   */
 class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
   include(BIO2InstancesModule[F])
 
   make[QuasiIORunner2[F]]
     .from[QuasiIORunner.BIOImpl[F]]
+    .annotateParameter[ExecutionContext]("cpu") // scala.js
 
-  make[QuasiIO2[F]].from {
-    QuasiIO.fromBIO(_: IO2[F])
-  }
-  make[QuasiApplicative2[F]].from {
-    QuasiApplicative.fromBIO[F, Throwable](_: Applicative2[F])
-  }
+  make[QuasiIO2[F]]
+    .aliased[QuasiPrimitives2[F]]
+    .aliased[QuasiApplicative2[F]]
+    .aliased[QuasiFunctor2[F]]
+    .from {
+      QuasiIO.fromBIO(_: IO2[F])
+    }
   make[QuasiAsync2[F]].from {
-    QuasiAsync.fromBIO(_: Async2[F], _: Temporal2[F])
+    QuasiAsync.fromBIO(_: Async2[F])
+  }
+  make[QuasiTemporal2[F]].from {
+    QuasiTemporal.fromBIO(_: Temporal2[F])
   }
   make[SyncSafe2[F]].from {
     SyncSafe1.fromBIO(_: IO2[F])

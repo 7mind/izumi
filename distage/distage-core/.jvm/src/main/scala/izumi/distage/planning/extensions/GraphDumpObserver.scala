@@ -129,6 +129,8 @@ final class GraphDumpObserver() extends PlanningObserver {
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {
+              case _: Wiring.SingletonWiring.PrepareLocalContext =>
+                "context"
               case Wiring.SingletonWiring.Function(_) =>
                 "lambda"
               case Wiring.SingletonWiring.Instance(_, _) =>
@@ -150,6 +152,9 @@ final class GraphDumpObserver() extends PlanningObserver {
 
       case ExecutableOp.ImportDependency(_, _, _) =>
         "import"
+
+      case ExecutableOp.AddRecursiveLocatorRef(_, _) =>
+        "locator"
 
       case op: ExecutableOp.ProxyOp =>
         op match {

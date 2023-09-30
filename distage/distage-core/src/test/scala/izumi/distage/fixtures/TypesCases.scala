@@ -19,6 +19,8 @@ object TypesCases {
 
     final case class TestClass2[D](inner: D)
 
+    final case class TestClass3[D](a: D, b: D)
+
     trait TestTrait {
       def dep: TypeAliasDepA
     }
@@ -88,6 +90,20 @@ object TypesCases {
     }
 
     class Dep(val widgetId: WidgetId)
+  }
+
+  object TypesCase6 {
+    class Dep
+
+    class Dep2 extends Dep
+
+    trait Trait1 {
+      def dep: Dep
+    }
+
+    trait Trait2 {
+      def dep: Dep2
+    }
   }
 
 }

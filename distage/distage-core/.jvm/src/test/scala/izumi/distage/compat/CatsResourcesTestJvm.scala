@@ -14,6 +14,7 @@ import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 
 import scala.annotation.unused
 import scala.concurrent.ExecutionContext
@@ -30,13 +31,7 @@ object CatsResourcesTestJvm {
   }
 }
 
-final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with CatsIOPlatformDependentTest {
-
-  private def createCPUPool(ioRuntime: => IORuntime): Lifecycle[Identity, ExecutionContext] = {
-    new CatsIOPlatformDependentSupportModule {
-      val res = createCPUPool(ioRuntime)
-    }.res
-  }
+final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with CatsIOPlatformDependentTest with ScalatestGuards {
 
   "`No More Orphans` type provider is accessible" in {
     def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.kernel.Sync`](): Unit = ()
@@ -81,9 +76,9 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       }
       make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
 
-      final class CreateCPUPool(ioRuntime: => IORuntime)
+      final class CreateCPUPool(@unused ioRuntime: => IORuntime)
         extends Lifecycle.Of[Identity, ExecutionContext](
-          createCPUPool(ioRuntime)
+          CatsIOPlatformDependentSupportModule.createCPUPool
         )
     }
 
@@ -116,10 +111,10 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       }
       make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
 
-      // DIFFERENCE: !!!
-      final class CreateCPUPool(ioRuntime: IORuntime)
+      // DIFFERENCE: not by-name
+      final class CreateCPUPool(@unused ioRuntime: IORuntime)
         extends Lifecycle.Of[Identity, ExecutionContext](
-          createCPUPool(ioRuntime)
+          CatsIOPlatformDependentSupportModule.createCPUPool
         )
     }
 
@@ -144,7 +139,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       make[Res].named("instance").fromResource(resResource)
 
       make[Res].named("provider").fromResource {
-        _: Res @Id("instance") =>
+        (_: Res @Id("instance")) =>
           resResource
       }
     }
@@ -159,7 +154,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
     }
 
     val injector = Injector[Identity]()
-    val plan = injector.plan(PlannerInput.everything(definition ++ new ModuleDef {
+    val plan = injector.planUnsafe(PlannerInput.everything(definition ++ new ModuleDef {
       addImplicit[Sync[IO]]
     }))
 
@@ -211,7 +206,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
     request[IO]
   }
 
-  "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in {
+  "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in brokenOnScala3 {
     assertCompiles(
       """
          new ModuleDef {
@@ -229,7 +224,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       )
     )
     assert(res.getMessage contains "implicit")
-    assert(res.getMessage contains "AdaptFunctoid.Aux")
+    assert(res.getMessage contains "AdaptFunctoid")
   }
 
 }

@@ -3,26 +3,23 @@ package izumi.distage.modules.typeclass
 import cats.Parallel
 import cats.effect.kernel.Async
 import distage.ModuleDef
-import zio.{Runtime, Task, ZEnv}
+import izumi.reflect.Tag
+import zio.ZIO
 
-object ZIOCatsEffectInstancesModule extends ZIOCatsEffectInstancesModule
+object ZIOCatsEffectInstancesModule {
+  def apply[R: Tag]: ZIOCatsEffectInstancesModule[R] = new ZIOCatsEffectInstancesModule[R]
+}
 
 /**
   * Adds `cats-effect` typeclass instances for ZIO
-  *
-  * Depends on `zio.Runtime[Any]` and `ThreadPoolExecutor @Id("zio.io")` (both can be found in [[izumi.distage.modules.support.ZIOSupportModule]])
-  *
-  * Will also add the following components:
-  *   - [[cats.effect.Blocker]] by using `ThreadPoolExecutor @Id("zio.io")`
   */
-trait ZIOCatsEffectInstancesModule extends ModuleDef {
-  include(CatsEffectInstancesModule[Task])
+class ZIOCatsEffectInstancesModule[R: Tag] extends ModuleDef {
+  include(CatsEffectInstancesModule[ZIO[R, Throwable, +_]])
 
-  make[Async[Task]].from {
-    r: Runtime[ZEnv] =>
-      zio.interop.catz.asyncRuntimeInstance[Any](r)
+  make[Async[ZIO[R, Throwable, +_]]].from {
+    zio.interop.catz.asyncInstance[R]
   }
-  make[Parallel[Task]].from {
-    zio.interop.catz.parallelInstance[Any, Throwable]
+  make[Parallel[ZIO[R, Throwable, +_]]].from {
+    zio.interop.catz.parallelInstance[R, Throwable]
   }
 }

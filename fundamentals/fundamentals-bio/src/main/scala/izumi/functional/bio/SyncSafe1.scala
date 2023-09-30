@@ -3,6 +3,7 @@ package izumi.functional.bio
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.fundamentals.orphans.`cats.effect.kernel.Sync`
 
+import scala.annotation.unused
 import scala.language.implicitConversions
 
 /** Import _exception-safe_ side effects */
@@ -66,7 +67,7 @@ trait LowPrioritySyncSafeInstances2 {
     Divergent(F.asInstanceOf[C[FR[R0, E, _]]])
   }
 
-  @inline implicit final def covarianceConversion[F[_], G[_]](syncSafe: SyncSafe1[F])(implicit ev: F[?] <:< G[?]): SyncSafe1[G] = {
-    val _ = ev; syncSafe.asInstanceOf[SyncSafe1[G]]
+  @inline implicit final def covarianceConversion[F[_], G[_]](syncSafe: SyncSafe1[F])(implicit @unused ev: F[Unit] <:< G[Unit]): SyncSafe1[G] = {
+    syncSafe.asInstanceOf[SyncSafe1[G]]
   }
 }

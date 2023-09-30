@@ -15,6 +15,8 @@ import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
 
+import scala.annotation.unused
+
 trait RoleProvider {
   def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo
 }
@@ -23,15 +25,13 @@ object RoleProvider {
   private[this] final val sysPropIgnoreMismatchedEffect = DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(false)
   private[this] final val syspropRolesReflection = DebugProperties.`izumi.distage.roles.reflection`.boolValue(true)
 
-  open class Impl(
+  open class NonReflectiveImpl(
     logger: IzLogger @Id("early"),
     ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
-    reflectionEnabled: Boolean @Id("distage.roles.reflection"),
     parameters: RawAppArgs,
   ) extends RoleProvider {
 
     protected[this] val isIgnoredMismatchedEffect: Boolean = sysPropIgnoreMismatchedEffect || ignoreMismatchedEffect
-    protected[this] val isReflectionEnabled: Boolean = reflectionEnabled && syspropRolesReflection && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage
 
     def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo = {
       val rolesInfo = getInfo(
@@ -44,7 +44,7 @@ object RoleProvider {
     }
 
     protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
-      val availableRoleBindings = instantiateRoleBindings(bindings, roleType)
+      val availableRoleBindings = findRoleBindings(bindings, roleType)
       val requiredRoleBindings = availableRoleBindings.filter(isRoleEnabled(requiredRoles))
 
       val roleNames = availableRoleBindings.map(_.descriptor.id)
@@ -63,7 +63,9 @@ object RoleProvider {
       val missing = requiredRoles.diff(availableRoleBindings.map(_.descriptor.id))
       if (missing.nonEmpty) {
         logger.crit(s"Missing ${missing.niceList() -> "roles"}")
-        throw new DIAppBootstrapException(s"Unknown roles:${missing.niceList("    ")}")
+        throw new DIAppBootstrapException(s"""Unknown roles:${missing.niceList("    ")}
+                                             |
+                                             |Available roles:${rolesInfo.render()}""".stripMargin)
       }
       if (requiredRoleBindings.isEmpty) {
         throw new DIAppBootstrapException(s"""No roles selected to launch, please select one of the following roles using syntax `:${'$'}roleName` on the command-line.
@@ -74,14 +76,19 @@ object RoleProvider {
       rolesInfo
     }
 
-    protected def instantiateRoleBindings(bindings: Set[Binding], roleType: SafeType): Set[RoleBinding] = {
+    protected def findRoleBindings(bindings: Set[Binding], roleType: SafeType): Set[RoleBinding] = {
       bindings.collect {
-        case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) && checkRoleType(s.implementation.implType, roleType, log = !sysPropIgnoreMismatchedEffect) =>
+        case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) && checkRoleType(s.implementation.implType, roleType, log = !isIgnoredMismatchedEffect) =>
           mkRoleBinding(s, s.tags.collectFirst { case RoleTag(roleDescriptor) => roleDescriptor }.get)
 
-        case s: ImplBinding if isReflectionEnabled && s.implementation.implType <:< roleType =>
-          reflectCompanionBinding(s)
+        case s: ImplBinding if s.implementation.implType <:< roleType =>
+          handleMissingStaticMetadata(roleType, s)
       }
+    }
+
+    protected def handleMissingStaticMetadata(@unused roleType: SafeType, s: ImplBinding): RoleBinding = {
+      logger.crit(s"${s.key -> "role"} defined ${s.origin -> "at"} has no RoleDescriptor, companion reflection is disabled")
+      throw new DIAppBootstrapException(s"role=${s.key} defined at=${s.origin} has no RoleDescriptor, companion reflection is disabled")
     }
 
     protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
@@ -95,9 +102,27 @@ object RoleProvider {
     }
 
     protected def mkRoleBinding(roleBinding: ImplBinding, roleDescriptor: RoleDescriptor): RoleBinding = {
-      val runtimeClass = roleBinding.key.tpe.cls
+      val runtimeClass = roleBinding.key.tpe.closestClass
       val implType = roleBinding.implementation.implType
       RoleBinding(roleBinding, runtimeClass, implType, roleDescriptor)
+    }
+  }
+
+  open class ReflectiveImpl(
+    logger: IzLogger @Id("early"),
+    ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
+    reflectionEnabled: Boolean @Id("distage.roles.reflection"),
+    parameters: RawAppArgs,
+  ) extends NonReflectiveImpl(logger, ignoreMismatchedEffect, parameters) {
+
+    protected[this] val isReflectionEnabled: Boolean = reflectionEnabled && syspropRolesReflection && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage
+
+    override protected def handleMissingStaticMetadata(roleType: SafeType, s: ImplBinding): RoleBinding = {
+      if (isReflectionEnabled) {
+        reflectCompanionBinding(s)
+      } else {
+        super.handleMissingStaticMetadata(roleType, s)
+      }
     }
 
     protected def reflectCompanionBinding(roleBinding: ImplBinding): RoleBinding = {
@@ -123,7 +148,7 @@ object RoleProvider {
     }
 
     protected def reflectCompanionDescriptor(role: SafeType): Option[RoleDescriptor] = {
-      val roleClassName = role.cls.getName
+      val roleClassName = role.closestClass.getName
       try {
         Some(TypeUtil.instantiateObject[RoleDescriptor](Class.forName(s"$roleClassName$$")))
       } catch {
@@ -134,7 +159,6 @@ object RoleProvider {
           None
       }
     }
-
   }
 
 }
