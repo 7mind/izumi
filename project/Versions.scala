@@ -7,10 +7,10 @@ object V {
 
   val kind_projector = "0.13.2"
 
-  val scalatest = "3.2.16"
+  val scalatest = "3.2.17"
 
   val cats = "2.8.0"
-  val cats_effect = "3.4.11"
+  val cats_effect = "3.5.2"
 
   val discipline = "1.5.1"
   val discipline_scalatest = "2.2.0"
@@ -21,22 +21,22 @@ object V {
   val monix = "3.4.0"
   val monix_bio = "1.2.0"
 
-  val circe = "0.14.5"
+  val circe = "0.14.6"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.17.4"
-  val magnolia = "1.1.3"
+  val magnolia = "1.1.6"
   val jawn = "1.5.1"
 
   // good to drop - scala
   val scala_java_time = "2.5.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.160"
-  val slf4j = "2.0.7"
+  val classgraph = "4.8.162"
+  val slf4j = "2.0.9"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.14.5"
+  val bytebuddy = "1.14.8"
   val docker_java = "3.3.3"
 
   // microsite-only

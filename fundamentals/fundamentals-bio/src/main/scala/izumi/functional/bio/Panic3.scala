@@ -16,7 +16,7 @@ trait Panic3[F[-_, +_, +_]] extends Bracket3[F] with PanicSyntax {
     * This is _NOT_ the same as
     *
     * {{{
-    *   F.halt(Exit.Interrupted(Trace.empty))
+    *   F.halt(Exit.Interrupted(Trace.forUnknownError))
     * }}}
     *
     * The code above exits with `Exit.Interrupted` failure *unconditionally*,
@@ -25,7 +25,7 @@ trait Panic3[F[-_, +_, +_]] extends Bracket3[F] with PanicSyntax {
     *
     * {{{
     *   F.uninterruptible {
-    *     F.halt(Exit.Interrupted(Trace.empty)) *>
+    *     F.halt(Exit.Interrupted(Trace.forUnknownError)) *>
     *     F.sync(println("Hello!")) // interrupted above. Hello _not_ printed
     *   }
     * }}}
