@@ -60,8 +60,8 @@ object CatsToBIO {
 
       private[this] def outcomeToExit[E, A](outcome: Outcome[F, Throwable, A]): Bifunctorized[F, Nothing, Exit[E, A]] = outcome match {
         case Outcome.Succeeded(fa) => Bifunctorized.assert(F.map(fa)(Exit.Success(_)))
-        case Outcome.Errored(exc @ PrivateTypedError(e)) => pure(Exit.Error(e.asInstanceOf[E], Exit.Trace.CatsTrace(exc)))
-        case Outcome.Errored(t) => pure(Exit.Termination(t, Exit.Trace.CatsTrace(t)))
+        case Outcome.Errored(exc @ PrivateTypedError(e)) => pure(Exit.Error(e.asInstanceOf[E], Exit.Trace.ThrowableTrace(exc)))
+        case Outcome.Errored(t) => pure(Exit.Termination(t, Exit.Trace.ThrowableTrace(t)))
         case Outcome.Canceled() => pure(Exit.Interruption(Nil, Exit.Trace.empty))
       }
 
@@ -127,8 +127,8 @@ object CatsToBIO {
       override def sandbox[R, E, A](r: Bifunctorized[F, E, A]): Bifunctorized[F, Exit.Failure[E], A] = {
         Bifunctorized.assert(
           F.handleErrorWith(r.unwrap) {
-            case exc @ PrivateTypedError(e) => fail(Exit.Error(e.asInstanceOf[E], Exit.Trace.CatsTrace(exc))).unwrap
-            case t => fail(Exit.Termination(t, Exit.Trace.CatsTrace(t))).unwrap
+            case exc @ PrivateTypedError(e) => fail(Exit.Error(e.asInstanceOf[E], Exit.Trace.ThrowableTrace(exc))).unwrap
+            case t => fail(Exit.Termination(t, Exit.Trace.ThrowableTrace(t))).unwrap
           }
         )
       }
