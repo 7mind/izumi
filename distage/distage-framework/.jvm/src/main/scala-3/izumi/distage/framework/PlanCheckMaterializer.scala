@@ -2,7 +2,8 @@ package izumi.distage.framework
 
 import dotty.tools.dotc.core.Contexts
 import izumi.distage.framework.model.PlanCheckResult
-import izumi.distage.plugins.{PluginBase, StaticPluginLoader}
+import izumi.distage.model.definition.ModuleBase
+import izumi.distage.plugins.StaticPluginLoader
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.reflection.TrivialMacroLogger
@@ -27,7 +28,7 @@ import scala.quoted.{Expr, Quotes, Type}
   */
 final case class PlanCheckMaterializer[AppMain <: CheckableApp, -Cfg <: PlanCheckConfig.Any](
   checkPassed: Boolean,
-  checkedPlugins: Seq[PluginBase],
+  checkedPlugins: Seq[ModuleBase],
   app: AppMain,
   roles: String,
   excludeActivations: String,
@@ -148,7 +149,7 @@ object PlanCheckMaterializer extends PlanCheckMaterializerCommon {
 
     // NOTE: We haven't checked yet if we _have_ to splice `new` for to trigger recompilation for Scala 3 - on Intellij or in general,
     // still, for now we use the same strategy as in Scala 2 - we splice `new` expressions.
-    val pluginsList: Expr[List[PluginBase]] = Expr.ofList(StaticPluginLoader.instantiatePluginsInCode(referencablePlugins))
+    val pluginsList: Expr[List[ModuleBase]] = Expr.ofList(StaticPluginLoader.instantiatePluginsInCode[ModuleBase](referencablePlugins))
 
     '{
       val referencedPlugins = ${ pluginsList }

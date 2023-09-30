@@ -10,7 +10,7 @@ import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Mo
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
 import zio.internal.stacktracer.Tracer
-import zio.{ZEnvironment, ZIO, ZLayer}
+import zio.{Scope, ZEnvironment, ZIO, ZLayer}
 import zio.managed.{Reservation, ZManaged}
 import zio.managed.ZManaged.ReleaseMap
 import zio.stacktracer.TracingImplicits.disableAutoTrace
@@ -53,9 +53,10 @@ import scala.annotation.unused
   *   )
   * }}}
   *
-  * Or by converting from an existing [[cats.effect.Resource]] or a [[zio.managed.ZManaged]]:
+  * Or by converting from an existing [[cats.effect.Resource]], scoped [[zio.ZIO]] or a [[zio.managed.ZManaged]]:
   *   - Use [[Lifecycle.fromCats]], [[Lifecycle.SyntaxLifecycleCats#toCats]] to convert from and to a [[cats.effect.Resource]]
-  *   - And [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert from and to a [[zio.managed.ZManaged]]
+  *   - Use [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert from and to a scoped [[zio.ZIO]]
+  *   - And [[Lifecycle.fromZManaged]], [[Lifecycle.SyntaxLifecycleZManaged#toZManaged]] to convert from and to a [[zio.managed.ZManaged]]
   *
   * Usage is done via [[Lifecycle.SyntaxUse#use use]]:
   *
@@ -136,6 +137,8 @@ import scala.annotation.unused
   *  - [[Lifecycle.OfInner]]
   *  - [[Lifecycle.OfCats]]
   *  - [[Lifecycle.OfZIO]]
+  *  - [[Lifecycle.OfZManaged]]
+  *  - [[Lifecycle.OfZLayer]]
   *  - [[Lifecycle.LiftF]]
   *  - [[Lifecycle.Make]]
   *  - [[Lifecycle.Make_]]
@@ -190,7 +193,9 @@ import scala.annotation.unused
   *
   * @see [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource ModuleDef.fromResource]]
   * @see [[https://typelevel.org/cats-effect/datatypes/resource.html cats.effect.Resource]]
-  * @see [[https://zio.dev/docs/datatypes/datatypes_managed zio.managed.ZManaged]]
+  * @see [[https://zio.dev/1.0.18/reference/resource/zmanaged/ zio.managed.ZManaged]]
+  * @see [[https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1 scoped zio.ZIO]]
+  * @see [[https://zio.dev/reference/contextual/zlayer zio.ZLayer]]
   */
 trait Lifecycle[+F[_], +A] {
   type InnerResource
@@ -473,7 +478,7 @@ object Lifecycle extends LifecycleInstances {
   }
 
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
-  def fromCats[F[_], A](resource: Resource[F, A])(implicit F: Sync[F]): FromCats[F, A] = {
+  def fromCats[F[_], A](resource: Resource[F, A])(implicit F: Sync[F]): Lifecycle.FromCats[F, A] = {
     new FromCats[F, A] {
       override def acquire: F[kernel.Ref[F, List[F[Unit]]]] = {
         kernel.Ref.of[F, List[F[Unit]]](Nil)(kernel.Ref.Make.syncInstance(F))
@@ -507,26 +512,45 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  /** Convert [[zio.ZLayer]] to [[Lifecycle]] */
-  def fromZIO[R, E, A: zio.Tag](layer: ZLayer[R, E, A]): FromZIO[R, E, A] = {
-    implicit val trace: zio.Trace = Tracer.instance.empty
+  /** Convert a Scoped [[zio.ZIO]] to [[Lifecycle]]
+    *
+    * {{{
+    *    def fromZIO[R, E, A](f: ZIO[Scope with R, E, A]): Lifecycle.FromZIO[R, E, A]
+    * }}}
+    */
+  def fromZIO[R]: SyntaxLifecycleFromZIO[R] = new SyntaxLifecycleFromZIO[R]()
+  final class SyntaxLifecycleFromZIO[R](private val dummy: Boolean = false) extends AnyVal {
+    def apply[E, A](f: ZIO[Scope with R, E, A]): Lifecycle.FromZIO[R, E, A] = {
+      implicit val trace: zio.Trace = Tracer.instance.empty
 
-    fromZIO(ZManaged.scoped[R](layer.build).map(_.get[A](zio.Tag[A])))
+      new FromZIO.FromZIOScoped[R, E, A] {
+        override def extract[B >: A](scope: Scope.Closeable): Either[ZIO[R, E, B], B] = Left {
+          scope.extend[R](f)
+        }
+      }
+    }
   }
 
   /** Convert [[zio.ZLayer]] to [[Lifecycle]] */
-  def fromZIOZEnv[R, E, A](layer: ZLayer[R, E, A]): FromZIO[R, E, ZEnvironment[A]] = {
+  def fromZLayer[R, E, A: zio.Tag](layer: ZLayer[R, E, A]): Lifecycle.FromZIO[R, E, A] = {
     implicit val trace: zio.Trace = Tracer.instance.empty
 
-    fromZIO(ZManaged.scoped[R](layer.build))
+    fromZIO[R](layer.build.map(_.get[A](zio.Tag[A])))
+  }
+
+  /** Convert [[zio.ZLayer]] to [[Lifecycle]] */
+  def fromZLayerZEnv[R, E, A](layer: ZLayer[R, E, A]): Lifecycle.FromZIO[R, E, ZEnvironment[A]] = {
+    implicit val trace: zio.Trace = Tracer.instance.empty
+
+    fromZIO[R](layer.build)
   }
 
   /** Convert [[zio.managed.ZManaged]] to [[Lifecycle]] */
-  def fromZIO[R, E, A](managed: ZManaged[R, E, A]): FromZIO[R, E, A] = {
+  def fromZManaged[R, E, A](managed: ZManaged[R, E, A]): Lifecycle.FromZIO[R, E, A] = {
     implicit val trace: zio.Trace = Tracer.instance.empty
 
-    new FromZIO[R, E, A] {
-      override def extract[B >: A](releaseMap: ReleaseMap): Left[ZIO[R, E, A], Nothing] =
+    new FromZIO.FromZIOManaged[R, E, A] {
+      override def extract[B >: A](releaseMap: ReleaseMap): Either[ZIO[R, E, B], B] =
         Left {
           ZManaged.currentReleaseMap.locally(releaseMap)(managed.zio).map(_._2)
         }
@@ -556,8 +580,29 @@ object Lifecycle extends LifecycleInstances {
   }
 
   implicit final class SyntaxLifecycleZIO[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
+    /** Convert [[Lifecycle]] to scoped [[zio.ZIO]] */
+    def toZIO: ZIO[Scope with R, E, A] = {
+      implicit val trace: zio.Trace = Tracer.instance.empty
+
+      ZIO.uninterruptibleMask {
+        restore =>
+          ZIO
+            .acquireRelease(
+              resource.acquire
+            )(resource.release(_).orDieWith {
+              case e: Throwable => e
+              case any => new RuntimeException(s"Lifecycle finalizer: $any")
+            }).flatMap {
+              r =>
+                ZIO.suspendSucceed(restore(resource.extract(r).fold(identity, ZIO.succeed(_))))
+            }
+      }
+    }
+  }
+
+  implicit final class SyntaxLifecycleZManaged[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
     /** Convert [[Lifecycle]] to [[zio.managed.ZManaged]] */
-    def toZIO: ZManaged[R, E, A] = {
+    def toZManaged: ZManaged[R, E, A] = {
       implicit val trace: zio.Trace = Tracer.instance.empty
 
       ZManaged.fromReservationZIO(
@@ -620,13 +665,13 @@ object Lifecycle extends LifecycleInstances {
   open class OfCats[F[_]: Sync, A](inner: => Resource[F, A]) extends Lifecycle.Of[F, A](fromCats(inner))
 
   /**
-    * Class-based proxy over a [[zio.managed.ZManaged]] value
+    * Class-based proxy over a scoped [[zio.ZIO]] value
     *
     * {{{
-    *   class IntRes extends Lifecycle.OfZIO(Managed.succeed(1000))
+    *   class IntRes extends Lifecycle.OfZIO(ZIO.acquireRelease(ZIO.succeed(1000))(_ => ZIO.unit))
     * }}}
     *
-    * For binding resource values using class syntax in [[ModuleDef]]:
+    * For binding resource values using class syntax in [[izumi.distage.model.definition.ModuleDef ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
@@ -634,7 +679,41 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class OfZIO[-R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO(inner))
+  open class OfZIO[-R, +E, +A](inner: => ZIO[Scope with R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO[R](inner))
+
+  /**
+    * Class-based proxy over a [[zio.managed.ZManaged]] value
+    *
+    * {{{
+    *   class IntRes extends Lifecycle.OfZManaged(ZManaged.succeed(1000))
+    * }}}
+    *
+    * For binding resource values using class syntax in [[izumi.distage.model.definition.ModuleDef ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
+    */
+  open class OfZManaged[-R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZManaged(inner))
+
+  /**
+    * Class-based proxy over a [[zio.ZLayer]] value
+    *
+    * {{{
+    *   class IntRes extends Lifecycle.OfZLayer(ZLayer.succeed(1000))
+    * }}}
+    *
+    * For binding resource values using class syntax in [[izumi.distage.model.definition.ModuleDef ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
+    */
+  open class OfZLayer[-R, +E, +A: zio.Tag](inner: => ZLayer[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZLayer(inner))
 
   /**
     * Class-based variant of [[make]]:
@@ -814,13 +893,27 @@ object Lifecycle extends LifecycleInstances {
     override final type InnerResource = kernel.Ref[F, List[F[Unit]]]
   }
 
-  trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, _], A] {
-    override final type InnerResource = ReleaseMap
-    override final def acquire: ZIO[R, E, ReleaseMap] = ReleaseMap.make(Tracer.instance.empty)
-    override final def release(releaseMap: ReleaseMap): ZIO[R, Nothing, Unit] = {
-      implicit val trace: zio.Trace = Tracer.instance.empty
+  trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, _], A]
 
-      releaseMap.releaseAll(zio.Exit.succeed(()), zio.ExecutionStrategy.Sequential).unit
+  object FromZIO {
+    trait FromZIOManaged[R, E, A] extends FromZIO[R, E, A] {
+      override final type InnerResource = ReleaseMap
+      override final def acquire: ZIO[R, E, ReleaseMap] = ReleaseMap.make(Tracer.instance.empty)
+      override final def release(releaseMap: ReleaseMap): ZIO[R, Nothing, Unit] = {
+        implicit val trace: zio.Trace = Tracer.instance.empty
+
+        releaseMap.releaseAll(zio.Exit.succeed(()), zio.ExecutionStrategy.Sequential).unit
+      }
+    }
+
+    trait FromZIOScoped[R, E, A] extends FromZIO[R, E, A] {
+      override final type InnerResource = Scope.Closeable
+      override final def acquire: ZIO[R, E, Scope.Closeable] = Scope.make(Tracer.instance.empty)
+      override final def release(scope: Scope.Closeable): ZIO[R, Nothing, Unit] = {
+        implicit val trace: zio.Trace = Tracer.instance.empty
+
+        scope.close(zio.Exit.succeed(()))
+      }
     }
   }
 

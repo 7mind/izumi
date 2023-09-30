@@ -12,5 +12,7 @@ object Module {
     }
   }
 
+  def from(module: ModuleBase): Module = make(module.bindings)
+
   implicit val moduleApi: ModuleMake[Module] = Module.make
 }
