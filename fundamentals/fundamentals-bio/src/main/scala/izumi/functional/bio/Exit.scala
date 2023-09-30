@@ -221,7 +221,7 @@ object Exit {
 //  object MonixExit {
 //    def toExit[E, A](exit: Either[Option[bio.Cause[E]], A]): Exit[E, A] = {
 //      exit match {
-//        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.empty)
+//        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.forUnknownError)
 //        case Left(Some(error)) => toExit(error)
 //        case Right(value) => Success(value)
 //      }
@@ -236,8 +236,8 @@ object Exit {
 //
 //    def toExit[E](cause: bio.Cause[E]): Exit.Failure[E] = {
 //      cause match {
-//        case bio.Cause.Error(value) => Exit.Error(value, Trace.empty)
-//        case bio.Cause.Termination(value) => Exit.Termination(value, Trace.empty)
+//        case bio.Cause.Error(value) => Exit.Error(value, Trace.forUnknownError)
+//        case bio.Cause.Termination(value) => Exit.Termination(value, Trace.forUnknownError)
 //      }
 //    }
 //  }
