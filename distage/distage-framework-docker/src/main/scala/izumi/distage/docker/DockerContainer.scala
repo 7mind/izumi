@@ -24,12 +24,10 @@ final case class DockerContainer[+T](
 ) {
   override def toString: String = {
     val out = new StringBuilder()
-    out.append(s"$name/${containerConfig.image}@${connectivity.dockerHost.getOrElse("localhost")}")
+    out.append(s"docker://${connectivity.dockerHost.getOrElse("localhost")}/{${containerConfig.image}}$name")
     availablePorts match {
       case VerifiedContainerConnectivity.HasAvailablePorts(availablePorts) =>
-        out.append(" {")
-        out.append(availablePorts.toString)
-        out.append('}')
+        out.append(availablePorts.availablePorts.toSeq.map { case (p, m) => s"$p=${m.mkString(",")}" }.mkString("?ports={", ";", "}"))
       case VerifiedContainerConnectivity.NoAvailablePorts() =>
     }
 
@@ -47,7 +45,9 @@ object DockerContainer {
       override def repr(v: DependencyTag): String = s"container:${v.tpe}"
     }
   }
-  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, Set[DockerContainer[Any]], QuasiIO[F], QuasiAsync[F], QuasiTemporal[F]) => ContainerResource[F, conf.Tag] = {
+  def resource[F[_]](
+    conf: ContainerDef
+  ): (DockerClientWrapper[F], IzLogger, Set[DockerContainer[Any]], QuasiIO[F], QuasiAsync[F], QuasiTemporal[F]) => ContainerResource[F, conf.Tag] = {
     new ContainerResource[F, conf.Tag](conf.config, _, _, _)(_, _, _)
   }
 

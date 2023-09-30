@@ -14,6 +14,7 @@ final class LocalContextImpl[F[_]: QuasiIO: TagK, A] private (
   val plan: Plan,
   functoid: Functoid[F[A]],
   values: Map[DIKey, LocalInstance[AnyRef]],
+  selfKey: DIKey,
 ) extends LocalContext[F, A] {
 
   def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): LocalContext[F, A] = {
@@ -37,6 +38,7 @@ final class LocalContextImpl[F[_]: QuasiIO: TagK, A] private (
       plan,
       functoid,
       values ++ Map(key -> LocalInstance(value, pos.get)),
+      selfKey,
     )
   }
 
@@ -48,6 +50,9 @@ final class LocalContextImpl[F[_]: QuasiIO: TagK, A] private (
     val lookup: PartialFunction[ImportDependency, AnyRef] = {
       case i: ImportDependency if values.contains(i.target) =>
         values(i.target).value
+      case i: ImportDependency if i.target == selfKey =>
+        this
+
     }
     val imported = plan.resolveImports(lookup)
     Injector.inherit(parent.get).produce(imported).evalMap(_.run(functoid))
@@ -56,8 +61,8 @@ final class LocalContextImpl[F[_]: QuasiIO: TagK, A] private (
 }
 
 object LocalContextImpl {
-  def empty[F[_]: QuasiIO: TagK, R](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[F[R]]) =
-    new LocalContextImpl[F, R](externalKeys, locatorRef, subplan, impl, Map.empty)
+  def empty[F[_]: QuasiIO: TagK, R](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[F[R]], selfKey: DIKey) =
+    new LocalContextImpl[F, R](externalKeys, locatorRef, subplan, impl, Map.empty, selfKey)
 
   private case class LocalInstance[+T](value: T, position: CodePosition)
 }

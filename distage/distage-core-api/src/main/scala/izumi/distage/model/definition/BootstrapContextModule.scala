@@ -12,5 +12,7 @@ object BootstrapContextModule {
     }
   }
 
+  def from(module: ModuleBase): BootstrapContextModule = make(module.bindings)
+
   implicit val BootstrapBaseModuleApi: ModuleMake[BootstrapContextModule] = BootstrapContextModule.make
 }
