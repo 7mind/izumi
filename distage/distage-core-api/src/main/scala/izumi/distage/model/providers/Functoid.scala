@@ -308,45 +308,66 @@ private[providers] trait FunctoidLifecycleAdapters {
   }
 
   /**
+    * Allows you to bind Scoped [[zio.ZIO]]-based constructors in `ModuleDef`:
+    */
+  implicit final def providerFromZIOScoped[R, E, A](
+    scoped: => ZIO[Scope with R, E, A]
+  )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
+  ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
+    Functoid.lift(Lifecycle.fromZIO[R](scoped))
+  }
+
+  /**
+    * Allows you to bind Scoped [[zio.ZIO]]-based constructors in `ModuleDef`:
+    */
+  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
+  implicit final def providerFromZIOScopedNothing[R, A](
+    scoped: => ZIO[Scope with R, Nothing, A]
+  )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
+  ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
+    Functoid.lift(Lifecycle.fromZIO[R](scoped))
+  }
+
+  /**
     * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZIO[R, E, A](
+  implicit final def providerFromZManaged[R, E, A](
     managed: => ZManaged[R, E, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(managed))
+    Functoid.lift(Lifecycle.fromZManaged(managed))
   }
 
   /**
     * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZIONothing[R, A](
+  implicit final def providerFromZManagedNothing[R, A](
     managed: => ZManaged[R, Nothing, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(managed))
+    Functoid.lift(Lifecycle.fromZManaged(managed))
   }
 
   /**
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZLayerHas1[R, E, A: Tag](
+  implicit final def providerFromZLayer[R, E, A: Tag](
     layer: => ZLayer[R, E, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(layer)(zio.Tag[A]))
+    Functoid.lift(Lifecycle.fromZLayer(layer)(zio.Tag[A]))
   }
 
   /**
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZLayerNothingHas1[R, A: Tag](
+  implicit final def providerFromZLayerNothing[R, A: Tag](
     layer: => ZLayer[R, Nothing, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(layer)(zio.Tag[A]))
+    Functoid.lift(Lifecycle.fromZLayer(layer)(zio.Tag[A]))
   }
 
   disableAutoTrace.discard()

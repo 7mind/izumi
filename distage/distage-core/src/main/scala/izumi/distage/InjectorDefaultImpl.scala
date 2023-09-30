@@ -9,6 +9,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finali
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.functional.quasi.QuasiIO
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.reflect.TagK
 
 /**
@@ -33,11 +34,11 @@ final class InjectorDefaultImpl[F[_]](
   // passed-through into `Bootloader`
   private[this] val bsModule: BootstrapModule = bootstrapLocator.get[BootstrapModule]
 
-  override def plan(input: PlannerInput): Either[List[DIError], Plan] = {
+  override def plan(input: PlannerInput): Either[NEList[DIError], Plan] = {
     planner.plan(addSelfInfo(input))
   }
 
-  override def planNoRewrite(input: PlannerInput): Either[List[DIError], Plan] = {
+  override def planNoRewrite(input: PlannerInput): Either[NEList[DIError], Plan] = {
     planner.planNoRewrite(addSelfInfo(input))
   }
 

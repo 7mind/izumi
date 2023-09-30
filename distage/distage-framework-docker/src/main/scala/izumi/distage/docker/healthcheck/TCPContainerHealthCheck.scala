@@ -6,7 +6,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.{AvailablePorts, He
 import izumi.distage.docker.healthcheck.ContainerHealthCheckBase.{FailedPort, GoodPort, PortCandidate}
 import izumi.functional.IzEither._
 import izumi.fundamentals.collections.IzCollections._
-import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap}
+import izumi.fundamentals.collections.nonempty.{NEList, NEMap}
 import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
@@ -16,8 +16,8 @@ class TCPContainerHealthCheck extends ContainerHealthCheckBase {
   override protected def perform(
     logger: IzLogger,
     container: DockerContainer[?],
-    tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]],
-    udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]],
+    tcpPorts: Map[DockerPort.TCPBase, NEList[ServicePort]],
+    udpPorts: Map[DockerPort.UDPBase, NEList[ServicePort]],
   ): HealthCheckResult = {
     val check = new PortCheck(container.containerConfig.portProbeTimeout)
 
@@ -39,7 +39,7 @@ class TCPContainerHealthCheck extends ContainerHealthCheckBase {
         }
     }
 
-    val (bad, good) = checks.lrPartition
+    val (bad, good) = checks.biPartition
 
     val errored = UnavailablePorts(
       bad.iterator
@@ -54,10 +54,10 @@ class TCPContainerHealthCheck extends ContainerHealthCheckBase {
       .map { case GoodPort(a, b) => (a, b) }
       .toMultimapView.map {
         case (dp, ap) =>
-          (dp: DockerPort, NonEmptyList(ap.head, ap.tail))
+          (dp: DockerPort, NEList(ap.head, ap.tail))
       }.toMap
 
-    NonEmptyMap.from(succeded) match {
+    NEMap.from(succeded) match {
       case Some(value) =>
         val available = AvailablePorts(value)
         val allTCPPortsAvailable = tcpPortsGood(container, available)

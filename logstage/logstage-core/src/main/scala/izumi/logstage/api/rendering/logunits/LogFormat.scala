@@ -75,7 +75,7 @@ object LogFormat {
               }
 
               // TODO: we may try to use codec here
-              builder.append(t.value.stackTrace)
+              builder.append(t.value.stacktraceString)
               if (options.colored) {
                 builder.append(Console.RESET)
               }
@@ -205,7 +205,7 @@ object LogFormat {
           } catch {
             case f: Throwable =>
               import IzThrowable._
-              val message = s"[${argValue.getClass.getName}#toString failed]\n${f.stackTrace} "
+              val message = s"[${argValue.getClass.getName}#toString failed]\n${f.stacktraceString} "
               wrapped(withColors, Console.RED, message)
           }
       }

@@ -88,7 +88,7 @@ class JsonFlattener {
           case (path, tpe) =>
             (path, tpe, v)
         }
-    }.biAggregate
+    }.biSequence
 
     for {
       p <- maybePaths
@@ -180,7 +180,7 @@ class JsonFlattener {
 
       case Some(value) =>
         for {
-          elements <- value.map(v => parse(v._2, v._3)).biAggregate
+          elements <- value.map(v => parse(v._2, v._3)).biSequence
         } yield {
           Json.fromValues(elements)
         }
@@ -189,7 +189,7 @@ class JsonFlattener {
 
         if (grouped2.nonEmpty && grouped2.keys.forall(_.isInstanceOf[Index])) {
           for {
-            elements <- grouped2.toSeq.sortBy(_._1.asInstanceOf[Index].idx).map(_._2).map(inflateParsedNext).biAggregate
+            elements <- grouped2.toSeq.sortBy(_._1.asInstanceOf[Index].idx).map(_._2).map(inflateParsedNext).biSequence
           } yield {
             Json.fromValues(elements)
           }
@@ -204,7 +204,7 @@ class JsonFlattener {
                     } yield {
                       escape.unescape(k.asInstanceOf[ObjectName].name) -> field
                     }
-                }.toSeq.biAggregate
+                }.toSeq.biSequence
           } yield {
             Json.fromFields(elements)
           }

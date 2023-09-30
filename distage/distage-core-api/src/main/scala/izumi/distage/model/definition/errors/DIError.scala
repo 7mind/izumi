@@ -12,19 +12,20 @@ import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.planning.ActivationChoices
 import izumi.distage.model.reflection.DIKey
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.DG
 
 sealed trait DIError
 
 object DIError {
-  implicit class DIErrorsExt(private val errors: List[DIError]) extends AnyVal {
+  implicit class DIErrorsExt(private val errors: NEList[DIError]) {
     def aggregateErrors: InjectorFailed = {
       val i = new DIFailureInterpreter()
       i.asError(errors)
     }
   }
 
-  implicit class DIResultExt[A](private val result: Either[List[DIError], A]) extends AnyVal {
+  implicit class DIResultExt[A](private val result: Either[NEList[DIError], A]) {
     def aggregateErrors: Either[InjectorFailed, A] = {
       result match {
         case Left(errors) =>
@@ -121,7 +122,7 @@ object DIError {
           .map {
             e =>
               s"Mutator for ${e.mutator} defined at ${e.pos} with unconfigured axis: ${e.unconfigured.mkString(",")}"
-          }.niceList()
+          }.toList.niceList()
         s"Mutators with unconfigured axis: $message"
       case SetAxisProblem(problems) =>
         problems
@@ -130,13 +131,13 @@ object DIError {
               s"Set element references axis ${u.unconfigured.mkString(",")} with undefined values: set ${u.set}, element ${u.element}"
             case i: SetAxisIssue.InconsistentSetElementAxis =>
               s"Set ${i.set} has an element which is defined multiple times with valid activations: ${i.element}, unexpected axis sets: ${i.problems}"
-          }.niceList()
+          }.toList.niceList()
       case CannotProcessLocalContext(problems) =>
         problems
           .map {
             (l: LocalContextPlanningFailure) =>
-              s"Failed to plan local context ${l.impl.implType}: ${l.errors.map(format).niceList()}"
-          }.niceList()
+              s"Failed to plan local context ${l.impl.implType}: ${l.errors.map(format).toList.niceList()}"
+          }.toList.niceList()
     }
   }
   protected[this] def conflictingAxisTagsHint(

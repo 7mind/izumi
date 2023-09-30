@@ -1,7 +1,7 @@
 package izumi.distage.framework
 
 import izumi.distage.framework.model.PlanCheckResult
-import izumi.distage.plugins.PluginBase
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.TypeUtil
@@ -13,7 +13,7 @@ private[framework] trait PlanCheckMaterializerCommon {
     * & retain only those that are suitable for being loaded by PluginLoader (objects / zero-arg classes) -
     * and that can be easily instantiated with `new`
     */
-  protected def filterReferencablePlugins(checkedLoadedPlugins: LoadedPlugins): Seq[PluginBase] = {
+  protected def filterReferencablePlugins(checkedLoadedPlugins: LoadedPlugins): Seq[ModuleBase] = {
     checkedLoadedPlugins.allRaw
       .filterNot(TypeUtil isAnonymous _.getClass)
       .filter(p => TypeUtil.isObject(p.getClass).isDefined || TypeUtil.isZeroArgClass(p.getClass).isDefined)

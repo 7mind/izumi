@@ -9,7 +9,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}
 
@@ -259,7 +259,7 @@ trait Injector[F[_]] extends Planner with Producer {
   final def assert(
     bindings: ModuleBase,
     roots: Roots,
-    excludedActivations: Set[NonEmptySet[AxisChoice]] = Set.empty,
+    excludedActivations: Set[NESet[AxisChoice]] = Set.empty,
   ): Unit = {
     PlanVerifier()
       .verify[F](
@@ -285,7 +285,7 @@ trait Injector[F[_]] extends Planner with Producer {
   final def verify(
     bindings: ModuleBase,
     roots: Roots,
-    excludedActivations: Set[NonEmptySet[AxisChoice]] = Set.empty,
+    excludedActivations: Set[NESet[AxisChoice]] = Set.empty,
   ): PlanVerifierResult = {
     PlanVerifier()
       .verify[F](

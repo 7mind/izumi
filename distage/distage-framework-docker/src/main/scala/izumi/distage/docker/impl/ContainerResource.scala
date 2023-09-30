@@ -15,7 +15,7 @@ import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.functional.Value
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.network.IzSockets
@@ -161,7 +161,7 @@ open class ContainerResource[F[_], Tag](
                         case (port, tested, None) =>
                           s"- $port with candidate $tested: no diagnostics"
                         case (port, tested, Some(cause)) =>
-                          s"- $port with candidate $tested:\n${cause.stackTrace.shift(4)}"
+                          s"- $port with candidate $tested:\n${cause.stacktraceString.shift(4)}"
                       }
 
                     sb.append(s"Unchecked ports:\n")
@@ -178,7 +178,7 @@ open class ContainerResource[F[_], Tag](
             }
 
           case Left(t) =>
-            F.fail(new RuntimeException(s"$container failed due to exception: ${t.stackTrace}", t))
+            F.fail(new RuntimeException(s"$container failed due to exception: ${t.stacktraceString}", t))
         }
   }
 
@@ -485,7 +485,7 @@ open class ContainerResource[F[_], Tag](
           port =>
             ServiceHost(port.getHostIp).map(ServicePort(_, Integer.parseInt(port.getHostPortSpec)))
         }
-        (containerPort, NonEmptyList.from(mappings))
+        (containerPort, NEList.from(mappings))
     }
     val unmapped = ports.collect { case (cp, None) => cp }
 

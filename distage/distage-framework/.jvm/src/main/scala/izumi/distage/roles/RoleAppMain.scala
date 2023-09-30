@@ -4,6 +4,7 @@ import cats.effect.kernel.Async
 import distage.Injector
 import izumi.distage.framework.services.ModuleProvider
 import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleCheckableApp}
+import izumi.distage.model.Locator
 import izumi.distage.model.definition.{Axis, Module, ModuleDef}
 import izumi.distage.modules.{DefaultModule, DefaultModule2, DefaultModule3}
 import izumi.distage.plugins.PluginConfig
@@ -12,14 +13,16 @@ import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.AppShutdownStrategy.*
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.bio.{Async2, Async3}
+import izumi.functional.lifecycle.Lifecycle
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.cli.model.raw.{RawRoleParams, RequiredRoles}
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
-
-import scala.annotation.unused
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.logstage.distage.{LogIO2Module, LogIO3Module}
 import izumi.reflect.{TagK, TagK3, TagKK}
+
+import scala.annotation.unused
 
 /**
   * Create a launcher for role-based applications by extending this in a top-level object
@@ -92,6 +95,37 @@ abstract class RoleAppMain[F[_]](
       case t: Throwable =>
         earlyFailureHandler(argv).onError(t)
     }
+  }
+
+  /**
+    * Create an object graph for inspection in the REPL:
+    *
+    * {{{
+    * scala> val graph = Launcher.replLocator("-u", "mode:test", ":role1")
+    * val graph: izumi.fundamentals.platform.functional.Identity[izumi.distage.model.Locator] = izumi.distage.LocatorDefaultImpl@6f6a2ac8
+    *
+    * scala> val testObj = graph.get[Hello]
+    * val testObj: example.Hellower = example.Hellower@25109d84
+    *
+    * scala> testObj.hello("test")
+    * Hello test!
+    * }}}
+    *
+    * @note All resources will be leaked. Use [[replLocatorWithClose]] if you need resource cleanup within a REPL session.
+    */
+  def replLocator(args: String*)(implicit F: QuasiIO[F]): F[Locator] = {
+    F.map(replLocatorWithClose(args*))(_._1)
+  }
+
+  def replLocatorWithClose(args: String*)(implicit F: QuasiIO[F]): F[(Locator, () => F[Unit])] = {
+    val combinedLifecycle: Lifecycle[F, Locator] = {
+      Injector
+        .NoProxies[Identity]()
+        .produceGet[AppResource[F]](roleAppBootModule(ArgV(args.toArray))).toEffect[F]
+        .flatMap(_.resource.toEffect[F])
+        .flatMap(_.appResource)
+    }
+    combinedLifecycle.unsafeAllocate()
   }
 
   /**
@@ -182,7 +216,7 @@ object RoleAppMain {
 
   object Options extends ParserDef {
     final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
-    final val logFormatParam = arg("log-format", "lf", "log format", "{hocon|json}")
+    final val logFormatParam = arg("log-format", "lf", "log format", "{text|json}")
     final val configParam = arg("config", "c", "path to config file", "<path>")
     final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
     final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")

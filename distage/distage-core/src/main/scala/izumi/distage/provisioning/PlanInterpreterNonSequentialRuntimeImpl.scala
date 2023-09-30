@@ -16,7 +16,7 @@ import izumi.distage.model.{Locator, Planner}
 import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptySet}
+import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.reflect.TagK
@@ -145,7 +145,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       case op: InstantiationOp if op.instanceType <:< abstractCheckType => op
     }.toSet
     if (allChecks.nonEmpty) {
-      NonEmptySet.from(allChecks.map(_.target)) match {
+      NESet.from(allChecks.map(_.target)) match {
         case Some(integrationChecks) =>
           F.maybeSuspend {
             planner
@@ -257,7 +257,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           case ResourceCheck.Success() =>
             F.pure(None)
           case failure: ResourceCheck.Failure =>
-            F.pure(Some(IntegrationCheckFailure(key, new IntegrationCheckException(NonEmptyList(failure)))))
+            F.pure(Some(IntegrationCheckFailure(key, new IntegrationCheckException(NEList(failure)))))
         }
     }
   }

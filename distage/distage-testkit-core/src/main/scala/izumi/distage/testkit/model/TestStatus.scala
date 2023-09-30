@@ -6,7 +6,7 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.testkit.runner.impl.TestPlanner.PlanningFailure
 import izumi.distage.testkit.runner.impl.services.Timing
 import izumi.functional.bio.Exit
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.integration.ResourceCheck
 
 sealed trait TestStatus {
@@ -28,7 +28,7 @@ object TestStatus {
     override def order: Int = 2000
   }
 
-  final case class EarlyIgnoredByPrecondition(cause: GroupResult.EnvLevelFailure, checks: NonEmptyList[ResourceCheck.Failure]) extends Setup with Done {
+  final case class EarlyIgnoredByPrecondition(cause: GroupResult.EnvLevelFailure, checks: NEList[ResourceCheck.Failure]) extends Setup with Done {
     override def order: Int = 2100
   }
 
@@ -56,7 +56,7 @@ object TestStatus {
 
   /** An integration check failed
     */
-  final case class IgnoredByPrecondition(cause: IndividualTestResult.IndividualTestFailure, checks: NonEmptyList[ResourceCheck.Failure]) extends Done {
+  final case class IgnoredByPrecondition(cause: IndividualTestResult.IndividualTestFailure, checks: NEList[ResourceCheck.Failure]) extends Done {
     override def order: Int = 5000
   }
 

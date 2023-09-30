@@ -1,6 +1,7 @@
--Xmx6G
+# this is for local development only, see .build.sh for CI settings
+-Xmx16G
 -XX:ReservedCodeCacheSize=256M
--XX:MaxMetaspaceSize=2G
+-XX:MaxMetaspaceSize=4G
 
 -XX:+OmitStackTraceInFastThrow
 -XX:SoftRefLRUPolicyMSPerMB=50
@@ -10,11 +11,6 @@
 -XX:+UseG1GC
 #-XX:+UseZGC
 
-# Enable Graal JIT
-#-XX:+UnlockExperimentalVMOptions
-#-XX:+EnableJVMCI
-#-XX:+UseJVMCICompiler
-
 # Bumping JIT inline-level increases performance of Scala code
 #   https://www.reddit.com/r/scala/comments/cigh0t/these_go_to_eighteen_c_jon_pretty/
 #   https://scalacenter.github.io/bloop/docs/performance-guide#tweak-the-java-jit
@@ -23,7 +19,3 @@
 # These seem to cause sbt import slowdown :\
 #-XX:MaxInlineSize=270
 #-XX:MaxTrivialSize=12
-
-#-Xshare:on
-#-Xshare:dump
-#-Xlog:class+load=info

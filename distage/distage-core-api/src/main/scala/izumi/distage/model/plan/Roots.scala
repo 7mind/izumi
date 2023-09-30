@@ -1,7 +1,7 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.reflection._
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.reflect.Tag
 
 /**
@@ -33,19 +33,19 @@ sealed trait Roots {
 
 object Roots {
   def apply(root: DIKey, roots: DIKey*): Roots = {
-    Roots.Of(NonEmptySet(root, roots: _*))
+    Roots.Of(NESet(root, roots: _*))
   }
-  def apply(roots: NonEmptySet[? <: DIKey]): Roots = {
+  def apply(roots: NESet[? <: DIKey]): Roots = {
     Roots.Of(roots.widen)
   }
   def apply(roots: Set[? <: DIKey])(implicit d: DummyImplicit): Roots = {
     require(roots.nonEmpty, "GC roots set cannot be empty")
-    Roots.Of(NonEmptySet.from(roots).get.widen)
+    Roots.Of(NESet.from(roots).get.widen)
   }
-  def target[T: Tag]: Roots = Roots(NonEmptySet(DIKey.get[T]))
-  def target[T: Tag](name: String): Roots = Roots(NonEmptySet(DIKey.get[T].named(name)))
+  def target[T: Tag]: Roots = Roots(NESet(DIKey.get[T]))
+  def target[T: Tag](name: String): Roots = Roots(NESet(DIKey.get[T].named(name)))
 
-  final case class Of(roots: NonEmptySet[DIKey]) extends Roots
+  final case class Of(roots: NESet[DIKey]) extends Roots
 
   /** Disable garbage collection and try to instantiate every single binding.
     *

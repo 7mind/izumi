@@ -3,7 +3,7 @@ package izumi.distage.docker.healthcheck
 import izumi.distage.docker.model.Docker._
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
-import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap}
+import izumi.fundamentals.collections.nonempty.{NEList, NEMap}
 import izumi.logstage.api.IzLogger
 
 trait ContainerHealthCheck {
@@ -91,8 +91,8 @@ object ContainerHealthCheck {
     }
   }
 
-  final case class AvailablePorts(availablePorts: NonEmptyMap[DockerPort, NonEmptyList[AvailablePort]]) {
-    def get(port: DockerPort): Option[NonEmptyList[AvailablePort]] = availablePorts.toMap.get(port)
+  final case class AvailablePorts(availablePorts: NEMap[DockerPort, NEList[AvailablePort]]) {
+    def get(port: DockerPort): Option[NEList[AvailablePort]] = availablePorts.toMap.get(port)
 
     def firstOption(port: DockerPort): Option[AvailablePort] = availablePorts.toMap.get(port).map(_.head)
 
@@ -104,7 +104,7 @@ object ContainerHealthCheck {
   }
 
   sealed trait VerifiedContainerConnectivity {
-    def get(port: DockerPort): Option[NonEmptyList[AvailablePort]]
+    def get(port: DockerPort): Option[NEList[AvailablePort]]
     def firstOption(port: DockerPort): Option[AvailablePort]
 
     final def first(port: DockerPort): AvailablePort = firstOption(port) match {
@@ -114,7 +114,7 @@ object ContainerHealthCheck {
         throw new java.util.NoSuchElementException(s"Port $port is unavailable")
     }
 
-    final def apply(port: DockerPort): NonEmptyList[AvailablePort] = get(port) match {
+    final def apply(port: DockerPort): NEList[AvailablePort] = get(port) match {
       case Some(value) =>
         value
       case None =>
@@ -123,13 +123,13 @@ object ContainerHealthCheck {
   }
   object VerifiedContainerConnectivity {
     case class HasAvailablePorts(availablePorts: AvailablePorts) extends VerifiedContainerConnectivity {
-      override def get(port: DockerPort): Option[NonEmptyList[AvailablePort]] = availablePorts.get(port)
+      override def get(port: DockerPort): Option[NEList[AvailablePort]] = availablePorts.get(port)
 
       override def firstOption(port: DockerPort): Option[AvailablePort] = availablePorts.firstOption(port)
     }
 
     case class NoAvailablePorts() extends VerifiedContainerConnectivity {
-      override def get(port: DockerPort): Option[NonEmptyList[AvailablePort]] = None
+      override def get(port: DockerPort): Option[NEList[AvailablePort]] = None
 
       override def firstOption(port: DockerPort): Option[AvailablePort] = None
     }

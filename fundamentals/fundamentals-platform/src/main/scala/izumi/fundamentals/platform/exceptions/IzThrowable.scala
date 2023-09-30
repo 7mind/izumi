@@ -5,12 +5,18 @@ import scala.language.implicitConversions
 
 final class IzThrowable(private val t: Throwable) extends AnyVal {
 
-  def stackTrace: String = {
+  def stacktraceString: String = {
     import java.io.{PrintWriter, StringWriter}
     val sw = new StringWriter
     val pw = new PrintWriter(sw)
     t.printStackTrace(pw)
     sw.toString
+  }
+
+  // this doesn't play well with intellisense
+  @deprecated("use .stacktraceString")
+  def stackTrace: String = {
+    stacktraceString
   }
 
   def allMessages: Seq[String] = {

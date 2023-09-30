@@ -426,8 +426,8 @@ Try { Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal)
 
 ## Resource Bindings, Lifecycle
 
-You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) or
-[zio.managed.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed)
+You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html), [scoped zio.ZIO](https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1), [zio.ZLayer](https://zio.dev/reference/contextual/zlayer) or
+[zio.managed.ZManaged](https://zio.dev/1.0.18/reference/resource/zmanaged/)
 values specifying the allocation and finalization actions of an object.
 
 When ran, distage `Injector` itself returns a `Lifecycle` value that describes actions to create and finalize the object graph; the `Lifecycle` value is pure and can be reused multiple times.
@@ -524,7 +524,7 @@ println(closedInit.initialized)
 `Lifecycle` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap`, `.mapK` methods.
 
 You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods,
-and between a `Lifecycle` and `zio.managed.ZManaged` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
+and between a `Lifecycle` and scoped `zio.ZIO`/`zio.managed.ZManaged`/`zio.ZLayer` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
 ### Inheritance helpers
 
@@ -534,6 +534,8 @@ The following helpers allow defining `Lifecycle` sub-classes using expression-li
 - @scaladoc[Lifecycle.OfInner](izumi.distage.model.definition.Lifecycle$$OfInner)
 - @scaladoc[Lifecycle.OfCats](izumi.distage.model.definition.Lifecycle$$OfCats)
 - @scaladoc[Lifecycle.OfZIO](izumi.distage.model.definition.Lifecycle$$OfZIO)
+- @scaladoc[Lifecycle.OfZManaged](izumi.distage.model.definition.Lifecycle$$OfZManaged)
+- @scaladoc[Lifecycle.OfZLayer](izumi.distage.model.definition.Lifecycle$$OfZLayer)
 - @scaladoc[Lifecycle.LiftF](izumi.distage.model.definition.Lifecycle$$LiftF)
 - @scaladoc[Lifecycle.Make](izumi.distage.model.definition.Lifecycle$$Make)
 - @scaladoc[Lifecycle.Make_](izumi.distage.model.definition.Lifecycle$$Make_)
@@ -929,25 +931,25 @@ class Dependency
 
 class X(dependency: Dependency)
 
-def makeX: RIO[Dependency, X] = {
+def makeX: ZIO[Dependency, Throwable, X] = {
   for {
     dep <- ZIO.service[Dependency]
     _   <- Console.printLine(s"Obtained environment dependency = $dep")
   } yield new X(dep)
 }
 
-def makeXManaged: RManaged[Dependency, X] = makeX.toManaged
+def makeXManaged: ZManaged[Dependency, Throwable, X] = makeX.toManaged
 
-def makeXLayer: RLayer[Dependency, X] = ZLayer.fromZIO(makeX)
+def makeXLayer: ZLayer[Dependency, Throwable, X] = ZLayer.fromZIO(makeX)
 
 def module1 = new ModuleDef {
   make[Dependency]
 
-  make[X].fromZEnv(makeX)
+  make[X].fromZIOEnv(makeX)
   // or
-  make[X].fromZEnv(makeXManaged)
+  make[X].fromZManagedEnv(makeXManaged)
   // or
-  make[X].fromZEnv(makeXLayer)
+  make[X].fromZLayerEnv(makeXLayer)
 }
 ```
 
@@ -965,7 +967,7 @@ def zioArgEnvCtor(
 def module2 = new ModuleDef {
   make[Dependency]
 
-  make[X].fromZEnv(zioArgEnvCtor _)
+  make[X].fromZLayerEnv(zioArgEnvCtor _)
 }
 ```
 
@@ -975,7 +977,6 @@ Another example:
 
 ```scala mdoc:reset:to-string
 import distage.{Injector, ModuleDef}
-import zio.managed._
 import zio.{Console, UIO, URIO, RIO, ZIO, Ref, Task}
 
 trait Hello {
@@ -995,12 +996,13 @@ val world: URIO[World, String] = ZIO.serviceWithZIO(_.world)
 // service implementations
 
 val makeHello = {
-  (for {
-    _     <- Console.printLine("Creating Enterprise Hellower...")
-    hello = new Hello { val hello = ZIO.succeed("Hello") }
-  } yield hello).toManagedWith(release = _ =>
-    Console.printLine("Shutting down Enterprise Hellower").orDie
-  )
+  for {
+    _     <- ZIO.acquireRelease(
+      acquire = Console.printLine("Creating Enterprise Hellower...")
+    )(release = _ => Console.printLine("Shutting down Enterprise Hellower").orDie)
+  } yield new Hello {
+    val hello = ZIO.succeed("Hello")
+  }
 }
 
 val makeWorld = {
@@ -1022,9 +1024,9 @@ val turboFunctionalHelloWorld: RIO[Hello with World, Unit] = {
 }
 
 def module = new ModuleDef {
-  make[Hello].fromZEnv(makeHello)
-  make[World].fromZEnv(makeWorld)
-  make[Unit].fromZEnv(turboFunctionalHelloWorld)
+  make[Hello].fromZIOEnv(makeHello)
+  make[World].fromZIOEnv(makeWorld)
+  make[Unit].fromZIOEnv(turboFunctionalHelloWorld)
 }
 
 val main = Injector[Task]()
