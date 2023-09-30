@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.97`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.99`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -77,15 +77,13 @@ object Izumi {
     final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
     final val circe_literal = Library("io.circe", "circe-literal", V.circe, LibraryType.Auto)
     final val circe_generic = Library("io.circe", "circe-generic", V.circe, LibraryType.Auto)
-    final val circe_derivation_scala2 = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
-      ScalaVersionScope.AllScala2
-    )
+    final val circe_derivation_scala2 = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
 
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
     final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm
-    final val pureconfig_generic_base = Library("com.github.pureconfig", "pureconfig-generic-base", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
+    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
       ScalaVersionScope.AllScala2
     )
     final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
@@ -94,9 +92,15 @@ object Izumi {
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
+    final val zio_managed = Library("dev.zio", "zio-managed", V.zio, LibraryType.Auto)
+      .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
+    final val zio_all = Seq(zio_core)
+
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
-    final val zio_all = Seq(zio_core, zio_interop_cats)
+
+    final val zio_interop_tracer = Library("dev.zio", "zio-interop-tracer", V.zio_interop_cats, LibraryType.Auto)
+
 //    final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
 //    final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
 //    final val monix_all = Seq(monix, monix_bio)
@@ -144,8 +148,8 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.17")
-  final val scala213 = ScalaVersion("2.13.10")
+  final val scala212 = ScalaVersion("2.12.18")
+  final val scala213 = ScalaVersion("2.13.11")
   final val scala300 = ScalaVersion("3.2.2")
 
   object Groups {
@@ -158,23 +162,23 @@ object Izumi {
 
   object Targets {
     // switch order to use 2.12 in IDEA
-//    val targetScala = Seq(scala212, scala213)
-    val targetScala = Seq(scala213, scala212)
+//    val targetScala3 = Seq(scala212, scala213, scala300)
+    val targetScala2 = Seq(scala213, scala212)
     val targetScala3 = Seq(scala300, scala213, scala212)
 
-    private val jvmPlatform = PlatformEnv(
+    private val jvmPlatform2 = PlatformEnv(
       platform = Platform.Jvm,
-      language = targetScala,
+      language = targetScala2,
       settings = Seq.empty,
     )
-    private val jsPlatform = PlatformEnv(
-      platform = Platform.Js,
-      language = targetScala,
-      settings = Seq(
-        "coverageEnabled" := false,
-        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
-      ),
-    )
+//    private val jsPlatform2 = PlatformEnv(
+//      platform = Platform.Js,
+//      language = targetScala,
+//      settings = Seq(
+//        "coverageEnabled" := false,
+//        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
+//      ),
+//    )
 
     private val jvmPlatform3 = PlatformEnv(
       platform = Platform.Jvm,
@@ -197,9 +201,9 @@ object Izumi {
         "coverageEnabled" := false
       ),
     )
-    final val cross = Seq(jvmPlatform, jsPlatform)
-    final val jvm = Seq(jvmPlatform)
-    final val js = Seq(jsPlatform)
+//    final val cross = Seq(jvmPlatform2, jsPlatform2)
+    final val jvm2 = Seq(jvmPlatform2)
+//    final val js = Seq(jsPlatform2)
 
     final val cross3 = Seq(jvmPlatform3, jsPlatform3)
     final val jvm3 = Seq(jvmPlatform3)
@@ -235,15 +239,13 @@ object Izumi {
       final val topLevelSettings = Seq()
 
       final val sharedAggSettings = outOfSource ++ Seq(
-        "crossScalaVersions" := Targets.targetScala.map(_.value),
-        "scalaVersion" := "crossScalaVersions.value.head".raw,
+        "crossScalaVersions" := "Nil".raw
       )
 
       final val rootSettings = Defaults.RootOptions ++ Defaults.SbtMetaRootOptions ++ Seq(
 //        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
 //          .root.id.value}").toFile""".raw,
         "crossScalaVersions" := "Nil".raw,
-        "scalaVersion" := Targets.targetScala.head.value,
         "organization" in SettingScope.Build := "io.7mind.izumi",
         "sonatypeProfileName" := "io.7mind",
         "sonatypeSessionName" := """s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}"""".raw,
@@ -282,11 +284,6 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-//        workaround for:
-//        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
-//          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
-        "libraryDependencySchemes" in SettingScope.Build += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
-        "libraryDependencySchemes" in SettingScope.Build += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
@@ -296,15 +293,19 @@ object Izumi {
           SettingKey(Some(scala213), None) := Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const](
             "-Wunused:-synthetics"
           ),
-          SettingKey(Some(scala300), None) := Seq[Const]("-Yretain-trees", "-language:3.2") ++ Defaults.Scala3Options,
+          SettingKey(Some(scala300), None) := Seq[Const](
+            "-Yretain-trees", // FIXME required
+            "-language:3.2",
+          ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
+        "scalacOptions" += "-Wconf:msg=legacy-binding:silent",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
-        "scalacOptions" += "-Wconf:msg=parameter.value.x\\\\$4.in.anonymous.function.is.never.used:silent",
+        "scalacOptions" += "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
         "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
-        "scalacOptions" += "-Wconf:msg=is.eta.expanded.even.though:silent",
+        "scalacOptions" += "-Wconf:cat=lint-eta-sam:silent",
         "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
@@ -455,6 +456,7 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.language in Scope.Compile.all,
           Projects.fundamentals.collections in Scope.Compile.all,
+          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
         settings = Seq(
           "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
@@ -464,28 +466,37 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.jsonCirce,
         libs = Seq(
+          scala_reflect,
           circe_core in Scope.Compile.all,
           circe_generic in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala3),
-          circe_derivation_scala2,
-          scala_reflect,
         ) ++ Seq(
+          circe_derivation_scala2 in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
+          circe_generic in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
           jawn in Scope.Test.all,
           circe_literal in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
+        settings = Seq(
+          //        workaround for:
+          //        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
+          //          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
+          "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
+          "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
+        ),
       ),
       Artifact(
         name = Projects.fundamentals.reflection,
         libs = Seq(izumi_reflect in Scope.Compile.all, scala_reflect),
         depends = Seq(
-          Projects.fundamentals.platform,
-          Projects.fundamentals.functional,
+          Projects.fundamentals.functional
         ),
         settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++
+          Seq(zio_managed in Scope.Optional.all) ++
+          Seq(zio_interop_tracer in Scope.Compile.all) ++
           Seq(cats_effect_laws, cats_effect_testkit, scalatest, discipline, discipline_scalatest) ++
           Seq(zio_interop_cats in Scope.Test.all) ++
           Seq(scala_java_time in Scope.Test.js),
@@ -501,18 +512,22 @@ object Izumi {
   )
 
   final val allCatsOptional = cats_all.map(_ in Scope.Optional.all)
-  final val allZioOptional = Seq(zio_core, izumi_reflect).map(_ in Scope.Optional.all)
-  final val allMonads = cats_all ++ zio_all ++ Seq(izumi_reflect) ++ monix_all
+  final val allZioOptional = (zio_all ++ Seq(izumi_reflect)).map(_ in Scope.Optional.all)
+  final val allMonads = cats_all ++ zio_all ++ Seq(zio_interop_cats) ++ Seq(izumi_reflect) ++ monix_all
   final val allMonadsOptional = allCatsOptional ++ allZioOptional ++ monix_all.map(_ in Scope.Optional.all)
-  final val allMonadsTest = (cats_all ++ monix_all ++ Seq(zio_core, izumi_reflect)).map(_ in Scope.Test.all)
+  final val allMonadsTest = (cats_all ++ monix_all ++ zio_all ++ Seq(izumi_reflect)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
     name = Projects.distage.id,
     artifacts = Seq(
       Artifact(
         name = Projects.distage.coreApi,
-        libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect),
-        depends = Seq(Projects.fundamentals.reflection, Projects.fundamentals.bio).map(_ in Scope.Compile.all),
+        libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(zio_managed in Scope.Optional.all),
+        depends = Seq(
+          Projects.fundamentals.reflection,
+          Projects.fundamentals.platform,
+          Projects.fundamentals.bio,
+        ).map(_ in Scope.Compile.all),
         platforms = Targets.cross3,
       ),
       Artifact(
@@ -527,7 +542,7 @@ object Izumi {
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
         platforms = Targets.cross3,
       ),
-      Artifact( // broken on 3
+      Artifact(
         name = Projects.distage.core,
         libs = allMonadsOptional ++ Seq(
           zio_interop_cats in Scope.Optional.all
@@ -535,12 +550,20 @@ object Izumi {
           scala_java_time in Scope.Test.js,
           javaXInject in Scope.Test.all,
         ),
-        depends = Seq(Projects.distage.coreApi in Scope.Compile.all, Projects.distage.proxyBytebuddy in Scope.Compile.jvm),
+        depends = Seq(
+          Projects.distage.coreApi in Scope.Compile.all,
+          Projects.distage.proxyBytebuddy in Scope.Compile.jvm,
+          Projects.fundamentals.platform tin Scope.Compile.all,
+        ),
+        settings = Seq(
+          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
+        ),
+        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
         platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_core, pureconfig_generic_base, magnolia) ++ Seq(scala_reflect),
+        libs = Seq(pureconfig_core, pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.cross3,
@@ -556,15 +579,17 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.plugins,
-        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect),
+        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect) ++
+          Seq( /* for ZIOResourcesZManagedTestJvm */ zio_managed, zio_interop_cats, cats_effect).map(_ in Scope.Test.jvm),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
-          Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
+          Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all) ++
+          Seq( /* for ZIOResourcesZManagedTestJvm */ Projects.fundamentals.platform tin Scope.Test.jvm),
         platforms = Targets.cross3,
       ),
       Artifact(
         name = Projects.distage.framework,
-        libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect),
+        libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(scala3_compiler),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
@@ -620,13 +645,14 @@ object Izumi {
       Artifact(
         name = Projects.logstage.renderingCirce,
         libs = Seq(
+          circe_core in Scope.Compile.all,
           jawn in Scope.Test.all,
           circe_parser in Scope.Test.all,
           circe_literal in Scope.Test.all,
           circe_generic in Scope.Test.all,
           zio_core in Scope.Test.all,
         ),
-        depends = Seq(Projects.fundamentals.jsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,
@@ -658,7 +684,9 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all),
+        libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all) ++
+          Seq(circe_generic in Scope.Compile.all) ++
+          Seq(zio_managed in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           // ignore microsite in IDEA
@@ -739,8 +767,10 @@ object Izumi {
                   (ghpagesRepository.value / "paradox.json").getCanonicalPath == f.getCanonicalPath ||
                   (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
                   (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
+                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath || (
+                      f.toPath.getParent.toAbsolutePath == (ghpagesRepository.value / "index.html").toPath.getParent.toAbsolutePath &&
+                        f.getCanonicalPath.endsWith(".html")
+                  )
               }
             }"""
           ),
@@ -765,7 +795,7 @@ object Izumi {
     ),
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
-    defaultPlatforms = Targets.jvm,
+    defaultPlatforms = Targets.jvm2,
     dontIncludeInSuperAgg = true,
   )
 
@@ -788,11 +818,6 @@ object Izumi {
     pathPrefix = Projects.sbtplugins.basePath,
     groups = Groups.sbt,
     defaultPlatforms = Targets.jvmSbt,
-    enableProjectSharedAggSettings = false,
-    settings = Seq(
-      "crossScalaVersions" := "Nil".raw,
-      "scalaVersion" := scala212.value,
-    ),
   )
 
   val izumi: Project = Project(

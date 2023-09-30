@@ -10,7 +10,7 @@ Izumi (*jp. 泉水, spring*) is an ecosystem of independent libraries and framew
 
 including the following components:
 
-1. @ref[**distage**](distage/00_distage.md) – Compile-time safe, transparent and debuggable Dependency Injection framework for pure FP Scala,
+1. @ref[**distage**](distage/00_distage.md) – Compile-time safe, transparent and debuggable multi-modal Dependency Injection framework for pure FP Scala,
 2. @ref[**distage-testkit**](distage/distage-testkit.md) – Hyper-pragmatic pure FP Test framework. Shares heavy resources globally across all test suites; lets you easily swap implementations of component; uses your effect type for parallelism.
 3. @ref[**distage-framework-docker**](distage/distage-framework-docker.md) – A distage extension for using docker containers in tests or for local application runs, comes with example Postgres, Cassandra, Kafka & DynamoDB containers.
 4. @ref[**LogStage**](logstage/00_logstage.md) – Automatic structural logs from Scala string interpolations,
@@ -64,9 +64,10 @@ Development
 Documentation
 -------------
 
-* @scaladoc[Scaladoc](izumi.index)
 * [Documentation](https://izumi.7mind.io/)
 * SNAPSHOT [Documentation](https://izumi.7mind.io/latest/snapshot/)
+* @scaladoc[Scaladoc](izumi.index)
+
 
 Further reading
 ---------------
@@ -115,9 +116,11 @@ YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/p
 
 @@@ index
 
-* [distage](distage/00_distage.md)
-* [LogStage](logstage/00_logstage.md)
+* [Glossary](glossary.md)
+* [Izumi Best Practices](guidelines.md)
 * [BIO](bio/00_bio.md)
+* [LogStage](logstage/00_logstage.md)
+* [DIStage](distage/00_distage.md)
 * [Idealingua](idealingua/00_idealingua.md)
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)

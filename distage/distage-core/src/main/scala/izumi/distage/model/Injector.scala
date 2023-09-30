@@ -9,7 +9,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}
 
@@ -230,7 +230,7 @@ trait Injector[F[_]] extends Planner with Producer {
       .liftF(G.maybeSuspendEither(plan(input).aggregateErrors))
       .flatMap(produceCustomF[G])
   }
-  final def produceDetailedCustomF[G[_]: TagK](input: PlannerInput)(implicit G: QuasiIO[G]): Lifecycle[G, Either[FailedProvision[G], Locator]] = {
+  final def produceDetailedCustomF[G[_]: TagK](input: PlannerInput)(implicit G: QuasiIO[G]): Lifecycle[G, Either[FailedProvision, Locator]] = {
     Lifecycle
       .liftF(G.maybeSuspendEither(plan(input).aggregateErrors))
       .flatMap(produceDetailedCustomF[G])
@@ -240,7 +240,7 @@ trait Injector[F[_]] extends Planner with Producer {
   final def produceCustomIdentity(input: PlannerInput): Lifecycle[Identity, Locator] = {
     produceCustomF[Identity](input)
   }
-  final def produceDetailedIdentity(input: PlannerInput): Lifecycle[Identity, Either[FailedProvision[Identity], Locator]] = {
+  final def produceDetailedIdentity(input: PlannerInput): Lifecycle[Identity, Either[FailedProvision, Locator]] = {
     produceDetailedCustomF[Identity](input)
   }
 
@@ -259,7 +259,7 @@ trait Injector[F[_]] extends Planner with Producer {
   final def assert(
     bindings: ModuleBase,
     roots: Roots,
-    excludedActivations: Set[NonEmptySet[AxisChoice]] = Set.empty,
+    excludedActivations: Set[NESet[AxisChoice]] = Set.empty,
   ): Unit = {
     PlanVerifier()
       .verify[F](
@@ -285,7 +285,7 @@ trait Injector[F[_]] extends Planner with Producer {
   final def verify(
     bindings: ModuleBase,
     roots: Roots,
-    excludedActivations: Set[NonEmptySet[AxisChoice]] = Set.empty,
+    excludedActivations: Set[NESet[AxisChoice]] = Set.empty,
   ): PlanVerifierResult = {
     PlanVerifier()
       .verify[F](

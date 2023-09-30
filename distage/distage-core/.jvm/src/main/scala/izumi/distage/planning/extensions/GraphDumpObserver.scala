@@ -129,6 +129,8 @@ final class GraphDumpObserver() extends PlanningObserver {
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {
+              case _: Wiring.SingletonWiring.PrepareLocalContext =>
+                "context"
               case Wiring.SingletonWiring.Function(_) =>
                 "lambda"
               case Wiring.SingletonWiring.Instance(_, _) =>

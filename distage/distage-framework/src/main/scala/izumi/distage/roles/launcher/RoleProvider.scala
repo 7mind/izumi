@@ -63,7 +63,9 @@ object RoleProvider {
       val missing = requiredRoles.diff(availableRoleBindings.map(_.descriptor.id))
       if (missing.nonEmpty) {
         logger.crit(s"Missing ${missing.niceList() -> "roles"}")
-        throw new DIAppBootstrapException(s"Unknown roles:${missing.niceList("    ")}")
+        throw new DIAppBootstrapException(s"""Unknown roles:${missing.niceList("    ")}
+                                             |
+                                             |Available roles:${rolesInfo.render()}""".stripMargin)
       }
       if (requiredRoleBindings.isEmpty) {
         throw new DIAppBootstrapException(s"""No roles selected to launch, please select one of the following roles using syntax `:${'$'}roleName` on the command-line.
@@ -100,7 +102,7 @@ object RoleProvider {
     }
 
     protected def mkRoleBinding(roleBinding: ImplBinding, roleDescriptor: RoleDescriptor): RoleBinding = {
-      val runtimeClass = roleBinding.key.tpe.cls
+      val runtimeClass = roleBinding.key.tpe.closestClass
       val implType = roleBinding.implementation.implType
       RoleBinding(roleBinding, runtimeClass, implType, roleDescriptor)
     }
@@ -146,7 +148,7 @@ object RoleProvider {
     }
 
     protected def reflectCompanionDescriptor(role: SafeType): Option[RoleDescriptor] = {
-      val roleClassName = role.cls.getName
+      val roleClassName = role.closestClass.getName
       try {
         Some(TypeUtil.instantiateObject[RoleDescriptor](Class.forName(s"$roleClassName$$")))
       } catch {

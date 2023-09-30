@@ -9,7 +9,7 @@ import izumi.distage.modules.DefaultModule
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
-trait InjectorFactory extends InjectorFactoryDottyWorkarounds {
+trait InjectorFactory {
 
   /**
     * Create a new Injector

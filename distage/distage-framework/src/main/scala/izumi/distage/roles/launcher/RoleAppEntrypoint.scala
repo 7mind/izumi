@@ -102,10 +102,10 @@ object RoleAppEntrypoint {
             _ <- F.maybeSuspend(lateLogger.info(s"Task finished: $task"))
           } yield ()
 
-          F.definitelyRecover(loggedTask) {
-            error =>
+          F.definitelyRecoverWithTrace(loggedTask) {
+            (error, trace) =>
               for {
-                _ <- F.maybeSuspend(lateLogger.error(s"Task failed: $task, $error"))
+                _ <- F.maybeSuspend(lateLogger.error(s"Task failed: $task, $error, $trace"))
                 _ <- F.fail[Unit](error)
               } yield ()
           }

@@ -9,6 +9,9 @@ import scala.annotation.unused
   * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  *
+  * @note For Scala 2, it appears necessary for the type in question to be higher-kinded and
+  *       be top-level to not provoke compile failures when it's not found.
   */
 
 // cats-kernel
@@ -108,9 +111,9 @@ object `cats.effect.kernel.MonadCancel` {
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
   */
-final abstract class `cats.effect.kernel.Concurrent`[K[_[_]]]
-object `cats.effect.kernel.Concurrent` {
-  @inline implicit final def get: `cats.effect.kernel.Concurrent`[cats.effect.kernel.Concurrent] = null
+final abstract class `cats.effect.kernel.GenTemporal`[R[_[_], E]]
+object `cats.effect.kernel.GenTemporal` {
+  @inline implicit final def get: `cats.effect.kernel.GenTemporal`[cats.effect.kernel.GenTemporal] = null
 }
 
 /**
@@ -156,9 +159,9 @@ object `zio.ZIO` {
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
   */
-final abstract class `zio.interop.ZManagedSyntax`[K[_, _, _]]
-object `zio.interop.ZManagedSyntax` {
-  @inline implicit final def get: `zio.interop.ZManagedSyntax`[zio.interop.ZManagedSyntax] = null
+final abstract class `zio.interop.CatsIOResourceSyntax`[K[_[_], _]]
+object `zio.interop.CatsIOResourceSyntax` {
+  @inline implicit final def get: `zio.interop.CatsIOResourceSyntax`[zio.interop.CatsIOResourceSyntax] = null
 }
 
 //// monix-bio

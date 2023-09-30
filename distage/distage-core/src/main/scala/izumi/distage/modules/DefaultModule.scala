@@ -1,7 +1,7 @@
 package izumi.distage.modules
 
 import izumi.distage.model.definition.{Module, ModuleDef}
-import izumi.functional.quasi.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives}
+import izumi.functional.quasi.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives, QuasiTemporal}
 import izumi.distage.modules.support.*
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
 import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
@@ -55,13 +55,14 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
-    * This adds cats typeclass instances to the default effect module if you have cats-effect on classpath,
-    * otherwise the default effect module for ZIO will be [[forZIO]], containing BIO & QuasiIO, but not cats-effect instances.
+    * This adds cats typeclass instances to the default effect module if you have `cats-effect` and `zio-interop-cats` on classpath,
+    * otherwise the default effect module for ZIO will be [[forZIO]], containing BIO & QuasiIO instances, but no `cats-effect` instances.
     */
-  implicit def forZIOPlusCats[K[_, _, _], ZIO[_, _, _], R](
+  implicit def forZIOPlusCats[K[_[_], _], A[_[_]], ZIO[_, _, _], R](
     implicit
-    @unused ensureInteropCatsOnClasspath: `zio.interop.ZManagedSyntax`[K],
-    @unused l: `zio.ZIO`[ZIO],
+    @unused ensureInteropCatsOnClasspath: `zio.interop.CatsIOResourceSyntax`[K],
+    @unused ensureCatsEffectOnClasspath: `cats.effect.kernel.Async`[A],
+    @unused isZIO: `zio.ZIO`[ZIO],
     tagR: Tag[R],
   ): DefaultModule2[ZIO[R, _, _]] = {
     DefaultModule(ZIOSupportModule[R] ++ ZIOCatsEffectInstancesModule[R])
@@ -154,13 +155,14 @@ sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances6 {
-  implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiIORunner]: DefaultModule[F] = {
+  implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiTemporal: QuasiIORunner]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
       addImplicit[QuasiFunctor[F]]
       addImplicit[QuasiApplicative[F]]
       addImplicit[QuasiPrimitives[F]]
       addImplicit[QuasiIO[F]]
       addImplicit[QuasiAsync[F]]
+      addImplicit[QuasiTemporal[F]]
       addImplicit[QuasiIORunner[F]]
     })
   }

@@ -8,13 +8,11 @@ import izumi.distage.roles.{DebugProperties, RoleAppMain}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
 
-
 /**
   * Note, besides replacing this class, activation parsing strategy can also be changed by using bootstrap modules or plugins
-  * and adding an override for `make[Activation].named("roleapp")` to [[izumi.distage.roles.RoleAppMain#appModuleOverrides]]
+  * and adding an override for `make[Activation].named("roleapp")` to [[izumi.distage.roles.RoleAppMain#roleAppBootOverrides]]
   */
-trait ActivationParser extends AbstractActivationParser {
-}
+trait ActivationParser extends AbstractActivationParser {}
 
 object ActivationParser {
   private[this] final val syspropWarnUnsetActivations = DebugProperties.`izumi.distage.roles.activation.warn-unset`.boolValue(true)
@@ -53,9 +51,9 @@ object ActivationParser {
              |
              |Consider adding default choices for these to your `Activation @Id("additional")` component.
              |
-             |You may do this by adding a binding for it in your`RoleAppMain#appModuleOverrides`, as in:
+             |You may do this by adding a binding for it in your`RoleAppMain#roleAppBootOverrides`, as in:
              |  ```scala
-             |  override def appModuleOverrides(argv: ArgV): Module = new ModuleDef {
+             |  override def roleAppBootOverrides(argv: ArgV): Module = new ModuleDef {
              |    make[Activation].named("additional").from {
              |      Activation(
              |        Repo -> Repo.Dummy,

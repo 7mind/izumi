@@ -1,7 +1,7 @@
 package izumi.distage.framework
 
 import izumi.distage.framework.model.PlanCheckResult
-import izumi.distage.plugins.PluginBase
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
 import izumi.fundamentals.reflection.{TrivialMacroLogger, TypeUtil}
 
@@ -26,7 +26,7 @@ import scala.reflect.runtime.{universe => ru}
   */
 final case class PlanCheckMaterializer[AppMain <: CheckableApp, -Cfg <: PlanCheckConfig.Any](
   checkPassed: Boolean,
-  checkedPlugins: Seq[PluginBase],
+  checkedPlugins: Seq[ModuleBase],
   app: AppMain,
   roles: String,
   excludeActivations: String,
@@ -61,10 +61,12 @@ object PlanCheckMaterializer {
     CheckConfig <: Boolean,
     PrintBindings <: Boolean,
     OnlyWarn <: Boolean,
-  ]: PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]] =
-    macro PlanCheckMaterializerMacro.impl[AppMain, Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]
+  ]: PlanCheckMaterializer[
+    AppMain,
+    PlanCheckConfig[Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn],
+  ] = macro PlanCheckMaterializerMacro.impl[AppMain, Roles, ExcludeActivations, Config, CheckConfig, PrintBindings, OnlyWarn]
 
-  object PlanCheckMaterializerMacro {
+  object PlanCheckMaterializerMacro extends PlanCheckMaterializerCommon {
     def impl[
       AppMain <: CheckableApp: c.WeakTypeTag,
       Roles <: String: c.WeakTypeTag,
@@ -108,54 +110,41 @@ object PlanCheckMaterializer {
       val checkConfig = noneIfUnset[CheckConfig]
       val printBindings = noneIfUnset[PrintBindings]
       val onlyWarn = noneIfUnset[OnlyWarn]
+      val warn = onlyWarn.getOrElse(PlanCheck.defaultOnlyWarn)
 
       val maybeMain = instantiateObject[AppMain](c.universe)
 
       val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.plancheck`.name)
 
-      val (checkPassed, checkedLoadedPlugins) = {
-        val warn = onlyWarn.getOrElse(PlanCheck.defaultOnlyWarn)
-        PlanCheck.runtime.checkApp(
-          app = maybeMain,
-          cfg = new PlanCheckConfig(
-            roles = roles,
-            excludeActivations = activations,
-            config = config,
-            checkConfig = checkConfig.getOrElse(PlanCheck.defaultCheckConfig),
-            printBindings = printBindings.getOrElse(PlanCheck.defaultPrintBindings),
-            onlyWarn = warn,
-          ),
-          logger = logger,
-        ) match {
-          case PlanCheckResult.Correct(loadedPlugins, _) =>
-            true -> loadedPlugins
-          case PlanCheckResult.Incorrect(loadedPlugins, _, message, _) =>
-            if (warn) {
-              val fatalWarnings = c.compilerSettings.exists(s => s == "-Wconf:any:error" || s == "-Xfatal-warnings")
-              if (fatalWarnings) {
-                c.info(c.enclosingPosition, message, force = true)
-              } else {
-                c.warning(c.enclosingPosition, message)
-              }
-              false -> loadedPlugins
+      val (maybeMessage, checkedLoadedPlugins) = {
+        doCheckApp(roles, activations, config, checkConfig, printBindings, warn, maybeMain, logger)
+      }
+      val checkPassed = maybeMessage match {
+        case None => true
+        case Some(message) =>
+          if (warn) {
+            val fatalWarnings = c.compilerSettings.exists(s => s == "-Wconf:any:error" || s == "-Xfatal-warnings")
+            if (fatalWarnings) {
+              c.info(c.enclosingPosition, message, force = true)
             } else {
-              c.abort(c.enclosingPosition, message)
+              c.warning(c.enclosingPosition, message)
             }
-        }
+            false
+          } else {
+            c.abort(c.enclosingPosition, message)
+          }
       }
 
       // filter out anonymous classes that can't be referred in code
       // & retain only those that are suitable for being loaded by PluginLoader (objects / zero-arg classes) -
       // and that can be easily instantiated with `new`
-      val referencablePlugins = checkedLoadedPlugins.allRaw
-        .filterNot(TypeUtil isAnonymous _.getClass)
-        .filter(p => TypeUtil.isObject(p.getClass).isDefined || TypeUtil.isZeroArgClass(p.getClass).isDefined)
+      val referencablePlugins = filterReferencablePlugins(checkedLoadedPlugins)
 
       // We _have_ to call `new` to cause Intellij's incremental compiler to recompile users,
       // we can't just splice a type reference or create an expression referencing the type for it to pickup,
       // Zinc does recompile in these cases, but for Intellij `new` is required
       val pluginsList: List[Tree] = StaticPluginLoaderMacro.instantiatePluginsInCode(c)(referencablePlugins)
-      val referenceStmt = c.Expr[List[PluginBase]](Liftable.liftList[Tree].apply(pluginsList))
+      val referenceStmt = c.Expr[List[ModuleBase]](Liftable.liftList[Tree].apply(pluginsList))
       val checkPassedExpr = c.Expr[Boolean](Liftable.liftBoolean(checkPassed))
 
       def lit[T: c.WeakTypeTag](s: T): c.Expr[T] = c.Expr[T](Literal(Constant(s)))

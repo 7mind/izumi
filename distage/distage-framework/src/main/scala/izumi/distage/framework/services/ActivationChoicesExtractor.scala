@@ -1,9 +1,9 @@
 package izumi.distage.framework.services
 
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.model.definition.{Axis, BindingTag, ModuleBase}
+import izumi.distage.model.definition.{Axis, BindingTag, Id, ModuleBase}
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 
 trait ActivationChoicesExtractor {
   def findAvailableChoices(module: ModuleBase): ActivationInfo
@@ -11,7 +11,9 @@ trait ActivationChoicesExtractor {
 
 object ActivationChoicesExtractor {
 
-  class Impl(additionalAxisValues: Set[Axis.AxisChoice]) extends ActivationChoicesExtractor {
+  class Impl(
+    unusedValidAxisChoices: Set[Axis.AxisChoice] @Id("unused-valid-axis-choices")
+  ) extends ActivationChoicesExtractor {
     def findAvailableChoices(module: ModuleBase): ActivationInfo = {
       findAvailableChoicesDetailed(module) match {
         case Left(badAxis) =>
@@ -27,7 +29,8 @@ object ActivationChoicesExtractor {
 
     /** @return Either conflicting axis names or a set of axis choices present in the bindings */
     def findAvailableChoicesDetailed(module: ModuleBase): Either[Map[String, Set[Axis]], ActivationInfo] = {
-      val allChoices = module.bindings.flatMap(_.tags).collect { case BindingTag.AxisTag(axisValue) => axisValue } ++ additionalAxisValues
+      val usedChoices = module.bindings.flatMap(_.tags).collect { case BindingTag.AxisTag(axisValue) => axisValue }
+      val allChoices = usedChoices ++ unusedValidAxisChoices
       val allAxis = allChoices.map(_.axis).groupBy(_.name)
       val badAxis = allAxis.filter(_._2.size > 1)
       if (badAxis.isEmpty) Right(ActivationInfo(allChoices.groupBy(_.axis))) else Left(badAxis)

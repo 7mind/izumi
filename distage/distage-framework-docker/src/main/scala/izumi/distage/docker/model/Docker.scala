@@ -5,7 +5,7 @@ import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.model.Docker.ClientConfig.parseReusePolicy
 import izumi.distage.docker.{DebugProperties, DockerConst}
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.integration.PortCheck.HostPortPair
 import pureconfig.ConfigReader
 
@@ -13,6 +13,7 @@ import java.net.{Inet4Address, Inet6Address, InetAddress}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Success, Try}
+import scala.language.implicitConversions
 
 object Docker {
   final case class AvailablePort(host: ServiceHost, port: Int) extends HostPortPair {
@@ -141,6 +142,15 @@ object Docker {
     * @param pullTimeout Maximum amount of time to wait for `docker pull` to download the image
     *                    default: 120 seconds
     *
+    * @param pullAttempts Maximum number of attempts for `docker pull`. If pull unexpectedly failed will try again after exponential backoff sleep.
+    *                     default: 3
+    *
+    * @param pullAttemptInitialSleep Initial exponential backoff sleep duration after failed attempt to download the image with `docker pull`.
+    *                                default: 1 seconds
+    *
+    * @param pullAttemptMaxSleep Max exponential backoff sleep duration after failed attempt to download the image with `docker pull`.
+    *                            default: 3 seconds
+    *
     * @param name     Name of the container, if left at `None` Docker will generate a random name
     *
     * @param env      Setup environment variables visible inside docker container
@@ -164,7 +174,7 @@ object Docker {
     registry: Option[String] = None,
     ports: Seq[DockerPort],
     name: Option[String] = None,
-    env: Map[String, String] = Map.empty,
+    env: ContainerEnvironment = ContainerEnvironment.empty,
     userTags: Map[String, String] = Map.empty,
     cmd: Seq[String] = Seq.empty,
     entrypoint: Seq[String] = Seq.empty,
@@ -177,12 +187,32 @@ object Docker {
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
+    pullAttempts: Int = 3,
+    pullAttemptInitialSleep: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
+    pullAttemptMaxSleep: FiniteDuration = FiniteDuration(3, TimeUnit.SECONDS),
     healthCheck: ContainerHealthCheck = ContainerHealthCheck.portCheck,
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
     autoPull: Boolean = true,
   ) {
     def tcpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.TCPBase => t: DockerPort }.toSet
     def udpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.UDPBase => t: DockerPort }.toSet
+  }
+
+  trait ContainerEnvironment { self =>
+    def env(containerPortMapping: Map[DockerPort, String]): Map[String, String]
+    final def ++(other: ContainerEnvironment): ContainerEnvironment = new ContainerEnvironment {
+      override def env(containerPortMapping: Map[DockerPort, String]): Map[String, String] = {
+        self.env(containerPortMapping) ++ other.env(containerPortMapping)
+      }
+    }
+  }
+  object ContainerEnvironment {
+    def from(create: Map[DockerPort, String] => Map[String, String]): ContainerEnvironment = new ContainerEnvironment {
+      override def env(containerPortMapping: Map[DockerPort, String]): Map[String, String] = create(containerPortMapping)
+    }
+    def empty: ContainerEnvironment = from(_ => Map.empty)
+
+    implicit def fromIterable[I[v] <: Iterable[v]](map: I[(String, String)]): ContainerEnvironment = from(_ => map.toMap)
   }
 
   /**
@@ -270,7 +300,7 @@ object Docker {
   final case class ReportedContainerConnectivity(
     dockerHost: Option[String],
     containerAddresses: Seq[ServiceHost],
-    dockerPorts: Map[DockerPort, NonEmptyList[ServicePort]],
+    dockerPorts: Map[DockerPort, NEList[ServicePort]],
   ) {
     override def toString: String = s"{host: $dockerHost; addresses=$containerAddresses; ports=$dockerPorts}"
   }

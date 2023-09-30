@@ -3,15 +3,15 @@ package izumi.distage.model.provisioning
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.errors.DIError
-import izumi.functional.quasi.QuasiIO
-import izumi.distage.model.exceptions.*
 import izumi.distage.model.definition.errors.ProvisionerIssue.*
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.*
+import izumi.distage.model.exceptions.*
 import izumi.distage.model.exceptions.runtime.{MissingInstanceException, ProvisioningException}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
-import izumi.distage.model.provisioning.Provision.ProvisionImmutable
+import izumi.distage.model.provisioning.Provision.{ProvisionImmutable, ProvisionInstances}
 import izumi.distage.model.reflection.*
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
@@ -23,7 +23,7 @@ trait PlanInterpreter {
     plan: Plan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
-  ): Lifecycle[F, Either[FailedProvision[F], Locator]]
+  ): Lifecycle[F, Either[FailedProvision, Locator]]
 }
 
 object PlanInterpreter {
@@ -41,17 +41,19 @@ object PlanInterpreter {
     }
   }
 
-  case class FailedProvisionMeta(status: Map[DIKey, OpStatus])
+  final case class FailedProvisionMeta(status: Map[DIKey, OpStatus])
 
-  final case class FailedProvision[F[_]](
-    failed: ProvisionImmutable[F],
+  final case class FailedProvisionInternal[F[_]](provision: ProvisionImmutable[F], fail: FailedProvision)
+
+  final case class FailedProvision(
+    failed: ProvisionInstances,
     plan: Plan,
     parentContext: Locator,
     failure: ProvisioningFailure,
     meta: FailedProvisionMeta,
     fullStackTraces: Boolean,
   ) {
-    def throwException[A]()(implicit F: QuasiIO[F]): F[A] = {
+    def toThrowable: Throwable = {
       import FailedProvision.ProvisioningFailureOps
       val repr = failure.render(fullStackTraces)
       val ccFailed = failure.status.collect { case (key, _: OpStatus.Failure) => key }.toSet.size
@@ -68,20 +70,25 @@ object PlanInterpreter {
         case _: ProvisioningFailure.CantBuildIntegrationSubplan => Seq.empty
       }
 
-      F.fail {
-        new ProvisioningException(
-          s"""Interpreter stopped; out of $ccTotal operations: $ccFailed failed, $ccDone succeeded, $ccPending ignored
-             |$repr
-             |""".stripMargin,
-          null,
-        ).addAllSuppressed(allExceptions)
-      }
+      new ProvisioningException(
+        s"""Interpreter stopped; out of $ccTotal operations: $ccFailed failed, $ccDone succeeded, $ccPending ignored
+           |$repr
+           |""".stripMargin,
+        null,
+      ).addAllSuppressed(allExceptions)
     }
   }
 
   object FailedProvision {
-    implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision[F], Locator]) extends AnyVal {
-      def throwOnFailure()(implicit F: QuasiIO[F]): F[Locator] = p.fold(_.throwException(), F.pure)
+    implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision, Locator]) extends AnyVal {
+      /** @throws ProvisioningException in `F` effect type */
+      def failOnFailure()(implicit F: QuasiIO[F]): F[Locator] = p.fold(f => F.fail(f.toThrowable), F.pure)
+      def throwOnFailure(): Locator = p match {
+        case Left(f) =>
+          throw f.toThrowable
+        case Right(value) =>
+          value
+      }
     }
 
     implicit class ProvisioningFailureOps(private val failure: ProvisioningFailure) extends AnyVal {
@@ -89,7 +96,7 @@ object PlanInterpreter {
         failure match {
           case ProvisioningFailure.AggregateFailure(_, failures, _) =>
             def stackTrace(exception: Throwable): String = {
-              if (fullStackTraces) exception.stackTrace else exception.getMessage
+              if (fullStackTraces) exception.stacktraceString else exception.getMessage
             }
 
             val messages = failures
@@ -162,11 +169,13 @@ object PlanInterpreter {
                 case ProxyClassloadingFailed(context, causes) =>
                   s"Failed to load proxy class with ByteBuddy " +
                   s"class=${context.runtimeClass}, params=${context.params}\n\n" +
-                  s"exception 1(DynamicProxyProvider classLoader)=${causes.head.stackTrace}\n\n" +
-                  s"exception 2(classloader of class)=${causes.last.stackTrace}"
+                  s"exception 1(DynamicProxyProvider classLoader)=${causes.head.stacktraceString}\n\n" +
+                  s"exception 2(classloader of class)=${causes.last.stacktraceString}"
                 case ProxyInstantiationFailed(context, cause) =>
                   s"Failed to instantiate class with ByteBuddy, make sure you don't dereference proxied parameters in constructors: " +
-                  s"class=${context.runtimeClass}, params=${context.params}, exception=${cause.stackTrace}"
+                  s"class=${context.runtimeClass}, params=${context.params}, exception=${cause.stacktraceString}"
+                case LocalContextPlanningFailed(key, issues) =>
+                  s"Failed to prepare plan for local context with key=$key: ${issues.map(DIError.format).toList.niceList()}"
               }
               .niceMultilineList("[!]")
             s"Plan interpreter failed:\n$messages"

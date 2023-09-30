@@ -1,20 +1,21 @@
 package org.scalatest.distage
 
-import java.util.concurrent.atomic.AtomicBoolean
-import distage.TagK
+import _root_.distage.TagK
 import io.github.classgraph.ClassGraph
 import izumi.distage.modules.DefaultModule
-import izumi.distage.roles.launcher.LateLoggerFactoryCachingImpl
 import izumi.distage.testkit.DebugProperties
-import izumi.distage.testkit.services.dstest.DistageTestRunner.*
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner}
-import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
+import izumi.distage.testkit.model.{DistageTest, SuiteId}
+import izumi.distage.testkit.runner.TestkitRunnerModule
+import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.SuiteReporter
+import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeTestReporter}
+import izumi.distage.testkit.spec.AbstractDistageSpec
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.*
 import org.scalatest.exceptions.TestCanceledException
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.immutable.TreeSet
 import scala.util.Try
 
@@ -35,7 +36,7 @@ object ScalatestInitWorkaround {
     private val classpathScanned = new AtomicBoolean(false)
     private val latch = new java.util.concurrent.CountDownLatch(1)
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
 
     def awaitTestsLoaded(): Unit = {
       latch.await()
@@ -128,8 +129,8 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   }
 
   override def testNames: Set[String] = {
-    val testsInThisTestClass = DistageTestsRegistrySingleton.registeredTests[F].filter(_.meta.id.suiteId == suiteId)
-    TreeSet[String](testsInThisTestClass.map(_.meta.id.name): _*)
+    val testsInThisTestClass = DistageTestsRegistrySingleton.registeredTests[F].filter(_.meta.test.id.suite == SuiteId(suiteId))
+    TreeSet[String](testsInThisTestClass.map(_.meta.test.id.name): _*)
   }
 
   override def tags: Map[String, Set[String]] = Map.empty
@@ -178,7 +179,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         testsInThisRuntime.filter {
           test =>
             val tags: Map[String, Set[String]] = Map.empty
-            val (filterTest, ignoreTest) = args.filter.apply(test.meta.id.name, tags, test.meta.id.suiteId)
+            val (filterTest, ignoreTest) = args.filter.apply(test.meta.test.id.name, tags, test.meta.test.id.suite.suiteId)
             val isTestOk = !filterTest && !ignoreTest
             isTestOk
         }
@@ -187,20 +188,21 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         if (!testNames.contains(testName)) {
           throw new IllegalArgumentException(Resources.testNotFound(testName))
         } else {
-          testsInThisRuntime.filter(_.meta.id.name == testName)
+          testsInThisRuntime.filter(_.meta.test.id.name == testName)
         }
     }
 
-    // TODO: we may even share logger across F implementations, but that would be harder to do in a nice manner because there is no lifecycle in scalatest
-    val cache = LateLoggerFactoryCachingImpl.makeCache()
     try {
       if (toRun.nonEmpty) {
-        debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
-        val runner = new DistageTestRunner[F](testReporter, _.isInstanceOf[TestCanceledException], cache)
-        runner.run(toRun)
+        debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.test.id.name)}")
+        TestkitRunnerModule.run[F](testReporter, (t: Throwable) => t.isInstanceOf[TestCanceledException], toRun)
+        ()
       }
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace()
+        throw t
     } finally {
-      cache.close()
       DistageTestsRegistrySingleton.completeStatuses[F]()
     }
   }

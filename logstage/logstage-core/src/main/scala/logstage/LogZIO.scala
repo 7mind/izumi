@@ -25,7 +25,37 @@ object LogZIO {
     *   }
     * }}}
     */
-  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get[LogIO3[ZIO]])
+  // FIXME wtf
+//  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get[LogIO3[ZIO]])
+//  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](identity)
+  object log extends LogZIOImpl(identity)
+
+  private[LogZIO] class LogZIOImpl(get: LogIO3[ZIO] => LogIO3[ZIO]) extends LogIO3Ask[ZIO] {
+    override final def log(entry: Log.Entry): ZIO[LogIO3[ZIO], Nothing, Unit] =
+      ZIO.serviceWithZIO(get(_).log(entry))
+
+    override final def log(logLevel: Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Unit] =
+      ZIO.serviceWithZIO(get(_).log(logLevel)(messageThunk))
+
+    override final def unsafeLog(entry: Log.Entry): ZIO[LogIO3[ZIO], Nothing, Unit] =
+      ZIO.serviceWithZIO(get(_).log(entry))
+
+    override final def acceptable(loggerId: Log.LoggerId, logLevel: Level): ZIO[LogIO3[ZIO], Nothing, Boolean] =
+      ZIO.serviceWithZIO(get(_).acceptable(loggerId, logLevel))
+
+    override final def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Boolean] =
+      ZIO.serviceWithZIO(get(_).acceptable(logLevel))
+
+    override final def createEntry(logLevel: Level, message: Log.Message)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Log.Entry] =
+      ZIO.serviceWithZIO(get(_).createEntry(logLevel, message))
+
+    override final def createContext(logLevel: Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Log.Context] =
+      ZIO.serviceWithZIO(get(_).createContext(logLevel, customContext))
+
+    override final def withCustomContext(context: CustomContext): LogIO2[ZIO[LogIO3[ZIO], _, _]] = {
+      new LogZIOImpl(get(_).withCustomContext(context))
+    }
+  }
 
   def withFiberId(logger: AbstractLogger): LogIO2[IO] = {
     new WrappedLogIO[IO[Nothing, _]](logger)(SyncSafe2[IO]) {
@@ -34,10 +64,7 @@ object LogZIO {
       }
 
       override protected[this] def wrap[A](f: AbstractLogger => A): IO[Nothing, A] = {
-        IO.descriptorWith {
-          descriptor =>
-            IO.effectTotal(f(logger.withCustomContext(CustomContext("fiberId" -> descriptor.id))))
-        }
+        addFiberIdToLogger(logger)(logger => ZIO.succeed(f(logger)))
       }
     }
   }
@@ -49,7 +76,7 @@ object LogZIO {
       }
 
       override protected[this] def wrap[A](f: AbstractLogger => A): ZIO[R, Nothing, A] = {
-        dynamic.flatMap(ctx => IO.effectTotal(f(logger.withCustomContext(ctx))))
+        dynamic.flatMap(dynCtx => ZIO.succeed(f(logger.withCustomContext(dynCtx))))
       }
     }
   }
@@ -60,10 +87,9 @@ object LogZIO {
         withFiberId(logger.withCustomContext(context))
       }
 
-      override def log(entry: Log.Entry): IO[Nothing, Unit] = logger.log(entry)
-
-      override def log(logLevel: _root_.izumi.logstage.api.Log.Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): IO[Nothing, Unit] =
-        logger.log(logLevel)(messageThunk)
+      override protected[this] def wrap[A](f: AbstractLoggerF[IO[Nothing, _]] => IO[Nothing, A]): IO[Nothing, A] = {
+        addFiberIdToLogger(logger)(f)
+      }
     }
   }
 
@@ -73,10 +99,16 @@ object LogZIO {
         withDynamicContext(logger.withCustomContext(context))(dynamic)
       }
 
-      override def log(entry: Log.Entry): ZIO[R, Nothing, Unit] = logger.log(entry)
+      override protected[this] def wrap[A](f: AbstractLoggerF[ZIO[R, Nothing, _]] => ZIO[R, Nothing, A]): ZIO[R, Nothing, A] = {
+        dynamic.flatMap(dynCtx => f(logger.withCustomContext(dynCtx)))
+      }
+    }
+  }
 
-      override def log(logLevel: _root_.izumi.logstage.api.Log.Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): ZIO[R, Nothing, Unit] =
-        logger.log(logLevel)(messageThunk)
+  def addFiberIdToLogger[G[_], R, E, A](logger: AbstractLoggerF[G])(f: logger.Self => ZIO[R, E, A]): ZIO[R, E, A] = {
+    ZIO.descriptorWith {
+      descriptor =>
+        f(logger.withCustomContext(CustomContext("fiberId" -> descriptor.id.threadName)))
     }
   }
 

@@ -1,5 +1,6 @@
 package izumi.distage.model.reflection.universe
 
+import izumi.fundamentals.platform.cache.{CachedHashcode, CachedRepr}
 import izumi.reflect.macrortti.{LightTypeTag, LightTypeTagImpl}
 
 private[distage] trait WithDISafeType { this: DIUniverseBase =>
@@ -8,10 +9,11 @@ private[distage] trait WithDISafeType { this: DIUniverseBase =>
   case class SafeType private (
     private[reflection] val typeNative: TypeNative,
     private[WithDISafeType] val tag: LightTypeTag,
-  ) {
+  ) extends CachedHashcode
+    with CachedRepr {
 
-    override final lazy val hashCode: Int = tag.hashCode()
-    override final lazy val toString: String = tag.repr
+    override final protected def hash: Int = tag.hashCode()
+    override final protected def repr: String = tag.repr
 
     override final def equals(obj: Any): Boolean = {
       obj match {
@@ -21,14 +23,6 @@ private[distage] trait WithDISafeType { this: DIUniverseBase =>
           false
       }
     }
-
-//    final def =:=(that: SafeType): Boolean = {
-//      tag =:= that.tag
-//    }
-//
-//    final def <:<(that: SafeType): Boolean = {
-//      tag <:< that.tag
-//    }
   }
 
   object SafeType {

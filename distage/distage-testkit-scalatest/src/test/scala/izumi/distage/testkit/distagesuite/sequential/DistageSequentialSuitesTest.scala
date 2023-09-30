@@ -1,20 +1,20 @@
 package izumi.distage.testkit.distagesuite.sequential
 
-import java.util.concurrent.atomic.AtomicInteger
 import cats.effect.IO as CIO
 import distage.{DIKey, TagK}
-import izumi.functional.quasi.QuasiIO.syntax.QuasiIOSyntax
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.TestConfig.ParallelLevel
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstance
+import izumi.distage.testkit.model.TestConfig
+import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.scalatest.Spec1
+import izumi.functional.quasi.QuasiIO.syntax.QuasiIOSyntax
+import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.Log
 import zio.Task
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationInt
 
 object DistageSequentialSuitesTest {
@@ -36,15 +36,15 @@ sealed abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
     super.config.copy(
       memoizationRoots = Set(DIKey.get[MemoizedInstance]),
       pluginConfig = PluginConfig.empty,
-      parallelTests = ParallelLevel.Fixed(maxTests),
-      parallelSuites = ParallelLevel.Sequential,
-      parallelEnvs = ParallelLevel.Sequential,
+      parallelTests = Parallelism.Fixed(maxTests),
+      parallelSuites = Parallelism.Sequential,
+      parallelEnvs = Parallelism.Sequential,
       logLevel = Log.Level.Error,
     )
   }
 
-  private[this] def checkCounters: QuasiAsync[F] => F[Unit] = {
-    FA =>
+  private[this] def checkCounters: QuasiTemporal[F] => F[Unit] = {
+    FT =>
       F.suspendF {
         val testsCounterVal = testsCounter.addAndGet(1)
         val suitesCounterVal =
@@ -56,7 +56,7 @@ sealed abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
 
         assert(suitesCounterVal <= maxSuites && testsCounterVal <= maxTests)
 
-        FA.sleep(500.millis).flatMap {
+        FT.sleep(500.millis).flatMap {
           _ =>
             F.maybeSuspend {
               val newTestsCounter = testsCounter.decrementAndGet()

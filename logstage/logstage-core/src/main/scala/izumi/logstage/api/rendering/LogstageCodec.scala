@@ -67,11 +67,16 @@ sealed trait LogstageCodecLowPriority {
 
   implicit final lazy val LogstageCodecThrowable: LogstageCodec[Throwable] = {
     (w, t) =>
-      w.openMap()
-      w.writeMapElement("type", Some(t.getClass.getName))
-      w.writeMapElement("message", Option(t.getMessage))
-      w.writeMapElement("stacktrace", Some(t.stackTrace))
-      w.closeMap()
+      Option(t) match {
+        case Some(_) =>
+          w.openMap()
+          w.writeMapElement("type", Option(t.getClass).map(_.getName))
+          w.writeMapElement("message", Option(t.getMessage))
+          w.writeMapElement("stacktrace", Option(t.stacktraceString))
+          w.closeMap()
+        case None =>
+          w.writeNull()
+      }
   }
 
 }

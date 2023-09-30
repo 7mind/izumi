@@ -1,7 +1,7 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import ProvisionerIssue.IncompatibleEffectType
+import izumi.distage.model.definition.errors.ProvisionerIssue.IncompatibleEffectType
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.Wiring.SingletonWiring
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
@@ -9,18 +9,17 @@ import izumi.distage.model.plan.repr.{DIRendering, KeyFormatter, OpFormatter, Ty
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey.ProxyInitKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.fundamentals.platform.cache.CachedProductHashcode
 import izumi.reflect.TagK
 
 import scala.annotation.tailrec
-import scala.util.hashing.MurmurHash3
 
-sealed abstract class ExecutableOp extends Product {
+sealed abstract class ExecutableOp extends Product with CachedProductHashcode {
   def target: DIKey
   def origin: EqualizedOperationOrigin
   override final def toString: String = {
     OpFormatter(KeyFormatter.Full, TypeFormatter.Full, DIRendering.colorsEnabled).format(this)
   }
-  override final lazy val hashCode: Int = MurmurHash3.productHash(this)
 }
 
 object ExecutableOp {
@@ -74,6 +73,12 @@ object ExecutableOp {
     }
     final case class ReferenceKey(target: DIKey, wiring: SingletonWiring.Reference, origin: EqualizedOperationOrigin) extends WiringOp {
       override def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): ReferenceKey = {
+        this.copy(target = targets(this.target), wiring = this.wiring.replaceKeys(parameters))
+      }
+    }
+
+    final case class LocalContext(target: DIKey, wiring: SingletonWiring.PrepareLocalContext, origin: EqualizedOperationOrigin) extends WiringOp {
+      override def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): InstantiationOp = {
         this.copy(target = targets(this.target), wiring = this.wiring.replaceKeys(parameters))
       }
     }

@@ -80,8 +80,8 @@ trait Distage {
   type FactoryConstructor[T] = constructors.FactoryConstructor[T]
   val FactoryConstructor: constructors.FactoryConstructor.type = constructors.FactoryConstructor
 
-  type HasConstructor[T] = constructors.HasConstructor[T]
-  val HasConstructor: constructors.HasConstructor.type = constructors.HasConstructor
+  type ZEnvConstructor[T] = constructors.ZEnvConstructor[T]
+  val ZEnvConstructor: constructors.ZEnvConstructor.type = constructors.ZEnvConstructor
 
   type BindingTag = model.definition.BindingTag
   val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag

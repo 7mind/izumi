@@ -26,17 +26,10 @@ object FactoryConstructorMacro {
 
     if (!factoryContext.isFactoryOrTrait) {
       report.errorAndAbort(
-        s"""${resultTpeSyms.mkString(" & ")} has no abstract methods so it's not a factory;; methods=${resultTpeSyms.map(s => (s, s.methodMembers))};; tpeTree=$resultTpeTree;; tpeTreeClass=${resultTpeTree.getClass}""".stripMargin
+        s"""${resultTpeSyms.mkString(" & ")} has no abstract methods so it's not a factory;; methods=${resultTpeSyms.map(
+            s => (s, s.methodMembers)
+          )};; tpeTree=$resultTpeTree;; tpeTreeClass=${resultTpeTree.getClass}""".stripMargin
       )
-    }
-
-    val refinementNames = factoryContext.refinementMethods.iterator.map(_._1).toSet
-
-    def generateDecls(cls: Symbol): List[Symbol] = factoryContext.methodDecls.map {
-      case MemberRepr(name, _, _, mtype, isNewMethod) =>
-        // for () methods MethodType(Nil)(_ => Nil, _ => m.returnTpt.symbol.typeRef) instead of mtype
-        val overrideFlag = if (!isNewMethod) Flags.Override else Flags.EmptyFlags
-        Symbol.newMethod(cls, name, mtype, overrideFlag | Flags.Method, Symbol.noSymbol)
     }
 
     var flatLambdaSigIndex = 0 // index of a new dependency to add to the outermost lambda requesting parameters
@@ -71,9 +64,9 @@ object FactoryConstructorMacro {
           parents = factoryContext.parentTypesParameterized,
           decls = {
             s =>
-              val methods = generateDecls(s)
-              methodSymbols = methods
-              methods
+              val methodSyms = factoryContext.methodDecls.generateDeclSymbols(s)
+              methodSymbols = methodSyms
+              methodSyms
           },
           selfType = None,
         )
@@ -89,28 +82,31 @@ object FactoryConstructorMacro {
         Typed(block, resultTpeTree)
     }
 
-//    report.warning(
-//      s"""|symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
-//          |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
-//          |tree = ${resultTpeSym.tree}
-//          |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
-//          |pct  = ${resultTpeSym.primaryConstructor.tree}
-//          |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
-//          |pctt = ${resultTpeSym.typeRef.memberType(resultTpeSym.primaryConstructor)}
-//          |pcts = ${resultTpeSym.typeRef.baseClasses
-//           .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
-//           .mkString("\n")}
-//          |defn = ${resultTpeSym.tree.show}
-//          |lam  = ${lamExpr.asTerm}
-//          |lam  = ${lamExpr.show}
-//          |prms = ${methodDecls.map((n, t) => (s"_$n", t, t.getClass))}
-//          |""".stripMargin
-//    )
+//    locally {
+//      val resultTpeSym = resultTpeSyms.head
+//      report.warning(
+//        s"""|symbol = $resultTpeSym, flags=${resultTpeSym.flags.show}
+//            |methods = ${resultTpeSym.methodMembers.map(s => s"name: ${s.name} flags ${s.flags.show}")}
+//            |tree = ${resultTpeSym.tree}
+//            |pcs  = ${resultTpeSym.primaryConstructor.tree.show}
+//            |pct  = ${resultTpeSym.primaryConstructor.tree}
+//            |pct-flags = ${resultTpeSym.primaryConstructor.flags.show}
+//            |pctt = ${resultTpeSym.typeRef.memberType(resultTpeSym.primaryConstructor)}
+//            |pcts = ${resultTpeSym.typeRef.baseClasses
+//             .map(s => (s, s.primaryConstructor)).map((cs, s) => if (s != Symbol.noSymbol) (cs, cs.flags.show, s.tree) else (cs, cs.flags.show, None))
+//             .mkString("\n")}
+//            |defn = ${resultTpeSym.tree.show}
+//            |lam  = ${lamExpr.asTerm}
+//            |lam  = ${lamExpr.show}
+//            |prms = ${factoryContext.methodDecls.map(m => (s"_${m.name}", m.tpe, m.tpe.getClass))}
+//            |""".stripMargin
+//      )
+//    }
 
     val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Factory })
     '{ new FactoryConstructor[R](${ f }) }
 
-  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case NonFatal(t) => qctx.reflect.report.errorAndAbort(t.stackTrace) }
-//  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case NonFatal(t) => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
+//  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
 }

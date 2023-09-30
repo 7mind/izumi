@@ -9,7 +9,8 @@ object DynamoDocker extends ContainerDef {
 
   override def config: Config = {
     Config(
-      image = "amazon/dynamodb-local:1.12.0",
+      registry = Some("public.ecr.aws"),
+      image = "aws-dynamodb-local/aws-dynamodb-local:1.21.0",
       ports = Seq(primaryPort),
     )
   }

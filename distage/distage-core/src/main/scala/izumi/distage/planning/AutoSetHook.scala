@@ -1,7 +1,7 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding}
-import izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
+import izumi.distage.model.definition.{Binding, Identifier, ImplDef, ModuleBase}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.*
 import izumi.distage.model.reflection.DIKey.{SetElementKey, SetKeyMeta}
@@ -18,7 +18,7 @@ import izumi.reflect.Tag
   * Usage:
   *
   * {{{
-  *   val collectCloseables = AutoSetHook[AutoCloseable]
+  *   val collectCloseables = AutoSetHook[AutoCloseable]("closeables")
   *
   *   val injector = Injector(new BootstrapModuleDef {
   *     many[PlanningHook]
@@ -34,12 +34,12 @@ import izumi.reflect.Tag
   *   }
   * }}}
   *
-  * These Auto-Sets can be used to implement custom lifetimes:
+  * These Auto-Sets can be used (just as example) to implement custom lifecycles:
   *
   * {{{
   *   val locator = injector.produce(modules)
   *
-  *   val closeables = locator.get[Set[AutoCloseable]]
+  *   val closeables = locator.get[Set[AutoCloseable]]("closeables")
   *   try { locator.get[App].runMain() } finally {
   *     // reverse closeables list, Auto-Sets preserve order, in the order of *initialization*
   *     // Therefore resources should closed in the *opposite order*
@@ -48,10 +48,13 @@ import izumi.reflect.Tag
   *   }
   * }}}
   */
-case class AutoSetHook[INSTANCE: Tag, BINDING: Tag](includeOnly: InclusionPredicate, pos: CodePosition) extends PlanningHook {
-  protected val instanceType: SafeType = SafeType.get[INSTANCE]
+final case class AutoSetHook[BINDING: Tag](includeOnly: InclusionPredicate, name: Option[Identifier], weak: Boolean, pos: CodePosition) extends PlanningHook {
   protected val setElementType: SafeType = SafeType.get[BINDING]
-  protected val setKey: DIKey = DIKey.get[Set[BINDING]]
+
+  protected val setKey: DIKey = name match {
+    case Some(value) => DIKey.get[Set[BINDING]].named(value)
+    case None => DIKey.get[Set[BINDING]]
+  }
 
   override def hookDefinition(definition: ModuleBase): ModuleBase = {
     val setMembers = findMatchingBindings(definition)
@@ -75,7 +78,7 @@ case class AutoSetHook[INSTANCE: Tag, BINDING: Tag](includeOnly: InclusionPredic
 
           if (!isAutosetElement) {
             val implType = b.implementation.implType
-            val impl: ImplDef = ImplDef.ReferenceImpl(implType, b.key, weak = true)
+            val impl: ImplDef = ImplDef.ReferenceImpl(implType, b.key, weak = weak)
             Seq(SetElementBinding(SetElementKey(setKey, b.key, SetKeyMeta.WithAutoset(setKey)), impl, b.tags, b.origin))
           } else {
             Seq.empty
@@ -91,6 +94,10 @@ case class AutoSetHook[INSTANCE: Tag, BINDING: Tag](includeOnly: InclusionPredic
 
   private def findMatchingBindings(definition: ModuleBase): Set[ImplBinding] = {
     definition.bindings
+      .filter {
+        case sb: Binding.SingletonBinding[?] if sb.isMutator => false
+        case _ => true
+      }
       .flatMap {
         case i: ImplBinding =>
           i.implementation match {
@@ -117,6 +124,7 @@ case class AutoSetHook[INSTANCE: Tag, BINDING: Tag](includeOnly: InclusionPredic
 }
 
 object AutoSetHook {
+
   trait InclusionPredicate {
     def filter(b: Binding.ImplBinding): Boolean
   }
@@ -127,20 +135,21 @@ object AutoSetHook {
     }
   }
 
-  def apply[INSTANCE: Tag, BINDING: Tag](includeOnly: InclusionPredicate)(implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, BINDING] = {
-    new AutoSetHook[INSTANCE, BINDING](includeOnly, pos.get)
+  def apply[T: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[T] = {
+    new AutoSetHook[T](InclusionPredicate.IncludeAny, None, true, pos.get)
   }
 
-  def apply[INSTANCE: Tag, BINDING: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, BINDING] = {
-    new AutoSetHook[INSTANCE, BINDING](InclusionPredicate.IncludeAny, pos.get)
+  def apply[T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AutoSetHook[T] = {
+    new AutoSetHook[T](InclusionPredicate.IncludeAny, Some(name), true, pos.get)
   }
 
-  def apply[INSTANCE: Tag](includeOnly: InclusionPredicate)(implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, INSTANCE] = {
-    new AutoSetHook(includeOnly, pos.get)
-  }
-
-  def apply[INSTANCE: Tag](implicit pos: CodePositionMaterializer): AutoSetHook[INSTANCE, INSTANCE] = {
-    new AutoSetHook(InclusionPredicate.IncludeAny, pos.get)
+  def apply[T: Tag](
+    includeOnly: InclusionPredicate = InclusionPredicate.IncludeAny,
+    name: Identifier = null,
+    weak: Boolean = true,
+  )(implicit pos: CodePositionMaterializer
+  ): AutoSetHook[T] = {
+    new AutoSetHook[T](includeOnly, Option(name), weak, pos.get)
   }
 
 }

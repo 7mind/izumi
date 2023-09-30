@@ -76,7 +76,7 @@ object DynamicProxyProvider extends ProxyProvider {
 
 //            throw new ProxyInstantiationException(
 //              s"Failed to instantiate class with ByteBuddy, make sure you don't dereference proxied parameters in constructors: " +
-//              s"class=${proxyContext.runtimeClass}, params=${proxyContext.params}, exception=${f.stackTrace}",
+//              s"class=${proxyContext.runtimeClass}, params=${proxyContext.params}, exception=${f.stacktraceString}",
 //              clazz,
 //              proxyContext.params,
 //              proxyContext.op,

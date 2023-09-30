@@ -16,7 +16,7 @@ class SafeTypeTest extends AnyWordSpec {
       assert(t1.hashCode == t2.hashCode)
       assert(t1.toString == t2.toString)
 
-      def mk[F[_]: TagK, T: Tag: ClassTag] = SafeType(Tag[F[T]].tag.typeArgs.head, scala.reflect.classTag[T].runtimeClass)
+      def mk[F[_]: TagK, T: Tag: ClassTag] = new SafeType(Tag(scala.reflect.classTag[T].runtimeClass, Tag[F[T]].tag.typeArgs.head))
       val t3 = mk[List, Int]
 
       assert(t1 == t3)

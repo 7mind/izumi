@@ -35,14 +35,14 @@ object IzZip {
   }
 
   // zip filesystem isn't thread safe
-  def findInZips(zips: Seq[File], predicate: Path => Boolean): Iterable[(Path, String)] = synchronized {
+  def findInZips(zips: Seq[File], predicate: Path => Boolean): Iterable[(Path, String)] = {
     zips
       .filter(f => f.exists() && f.isFile && (f.getName.endsWith(".jar") || f.getName.endsWith(".zip")))
       .flatMap {
         f =>
           val uri = f.toURI
           val jarUri = URI.create(s"jar:${uri.toString}")
-          val fs = IzFiles.getFs(jarUri).get
+          val fs = IzFiles.getFs(jarUri, Thread.currentThread().getContextClassLoader).get
 
           try {
             enumerate(predicate, fs)

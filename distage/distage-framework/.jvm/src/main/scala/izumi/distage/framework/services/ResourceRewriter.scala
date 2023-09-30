@@ -83,7 +83,7 @@ class ResourceRewriter(
 
   @inline private[this] def quickSubtypeCheck(tgt: SafeType, implType: SafeType): Boolean = {
     if (tgt.hasPreciseClass && implType.hasPreciseClass) {
-      tgt.cls.isAssignableFrom(implType.cls)
+      tgt.closestClass.isAssignableFrom(implType.closestClass)
     } else {
       implType <:< tgt
     }
@@ -103,6 +103,8 @@ class ResourceRewriter(
         if (quickSubtypeCheck(tgt, implType)) {
           implDef match {
             case _: ImplDef.ReferenceImpl =>
+              DontChange
+            case _: ImplDef.ContextImpl =>
               DontChange
 
             case _: ImplDef.InstanceImpl =>

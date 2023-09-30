@@ -2,7 +2,8 @@
 set -xe
 
 # `++ 2.13.0 compile` has a different semantic than `;++2.13.0;compile`
-# Strict aggregation applies ONLY to former, and ONLY if crossScalaVersions := Nil in root project
+# Strict aggregation applies ONLY to former,
+#   and ONLY if crossScalaVersions := Nil is set in root project and ALL nested aggregates
 # see https://github.com/sbt/sbt/issues/3698#issuecomment-475955454
 # and https://github.com/sbt/sbt/pull/3995/files
 # TL;DR strict aggregation in sbt is broken; this is a workaround
@@ -35,14 +36,18 @@ function coverage {
   csbt "'${VERSION_COMMAND}clean'" coverage "'${VERSION_COMMAND}Test/compile'" "'${VERSION_COMMAND}test'" "'${VERSION_COMMAND}coverageReport'" || exit 1
 }
 
+function test {
+  csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}Test/compile'" "'${VERSION_COMMAND}test'" || exit 1
+}
+
 function site-publish {
   echo "Publishing site from branch=$CI_BRANCH; tag=$CI_BRANCH_TAG"
-  csbt +clean "'${VERSION_COMMAND}doc/ghpagesSynchLocal'" "'${VERSION_COMMAND}doc/ghpagesPushSite'" || exit 1
+  csbt "'project docs'" +clean "'${VERSION_COMMAND}ghpagesSynchLocal'" "'${VERSION_COMMAND}ghpagesPushSite'" || exit 1
 }
 
 function site-test {
     echo "Not publishing site, because $CI_BRANCH is not 'develop' nor a tag"
-    csbt "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}doc/makeSite'" || exit 1
+    csbt "'project docs'" "'${VERSION_COMMAND}clean'" "'${VERSION_COMMAND}makeSite'" || exit 1
 }
 
 function publishScala {
@@ -73,15 +78,6 @@ function publishScala {
   fi
 }
 
-function init {
-    export SCALA211=$(cat project/Deps.sc | grep 'val scala211 ' |  sed -r 's/.*\"(.*)\".**/\1/')
-    export SCALA212=$(cat project/Deps.sc | grep 'val scala212 ' |  sed -r 's/.*\"(.*)\".**/\1/')
-    export SCALA213=$(cat project/Deps.sc | grep 'val scala213 ' |  sed -r 's/.*\"(.*)\".**/\1/')
-    export SCALA3=$(cat project/Deps.sc | grep 'val scala300 ' |  sed -r 's/.*\"(.*)\".**/\1/')
-
-    printenv
-}
-
 function secrets {
     if [[ "$CI_PULL_REQUEST" == "false"  ]] ; then
         echo "Unpacking secrets"
@@ -91,6 +87,20 @@ function secrets {
     else
         echo "Skipping secrets"
     fi
+}
+
+function init {
+    export SCALA211=$(cat project/Deps.sc | grep 'val scala211 ' |  sed -r 's/.*\"(.*)\".**/\1/')
+    export SCALA212=$(cat project/Deps.sc | grep 'val scala212 ' |  sed -r 's/.*\"(.*)\".**/\1/')
+    export SCALA213=$(cat project/Deps.sc | grep 'val scala213 ' |  sed -r 's/.*\"(.*)\".**/\1/')
+    export SCALA3=$(cat project/Deps.sc | grep 'val scala300 ' |  sed -r 's/.*\"(.*)\".**/\1/')
+
+    # details on github runners: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+    export _JAVA_OPTIONS="-Xmx3500M -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=1024M"
+
+    printenv
+
+    java -version
 }
 
 init
@@ -123,30 +133,22 @@ case $i in
         scalaall
     ;;
 
-    # versionate)
-    #     versionate
-    # ;;
-
     coverage)
         coverage
     ;;
 
-    # scripted)
-    #     scripted
-    # ;;
-
+    test)
+        test
+    ;;
 
     publishScala)
         publishScala
     ;;
 
-    sonatypeRelease)
-        sonatypeRelease
-    ;;
-
     site-publish)
         site-publish
     ;;
+
     site-test)
         site-test
     ;;

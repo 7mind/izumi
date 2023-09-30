@@ -27,7 +27,7 @@ object AnyConstructorMacro {
     lazy val context = new ConstructorContext[R, qctx.type, util.type](util)
 
     val tpeDeref = util.dereferenceTypeRef(tpe0)
-    if ((tpe0.classSymbol.isDefined && !typeSymbol.flags.is(Flags.Trait) && !typeSymbol.flags.is(Flags.Abstract) && (tpeDeref match {
+    if ((tpe0.classSymbol.isDefined && !(util.symbolIsTraitOrAbstract(typeSymbol)) && (tpeDeref match {
         case _: Refinement => false; case _ => true
       })) || {
         tpeDeref match { case _: ConstantType | _: TermRef => true; case _ => false }
@@ -47,7 +47,7 @@ object AnyConstructorMacro {
            |It's neither a concrete class, nor a wireable trait or abstract class!""".stripMargin
       )
     }
-  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
   @experimental
   def makeMethod[T: Type, BT: Type](using qctx: Quotes): Expr[BT] = try {
@@ -68,7 +68,7 @@ object AnyConstructorMacro {
       case None =>
         makeMethodImpl[T, BT](outerClass)
     }
-  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
   @experimental
   private def applyMake[T: Type, BT: Type](using qctx: Quotes)(outerClass: qctx.reflect.Symbol)(functoid: Expr[Functoid[T]]): Expr[BT] = {

@@ -11,6 +11,6 @@ object DebugProperties extends properties.DebugProperties {
   /** Print debug messages, default: `false` */
   final val `izumi.distage.testkit.debug` = BoolProperty("izumi.distage.testkit.debug")
 
-  /** Cache [[izumi.distage.testkit.services.dstest.TestEnvironment]], default: `true` */
+  /** Cache [[TestEnvironment]], default: `true` */
   final val `izumi.distage.testkit.environment.cache` = BoolProperty("izumi.distage.testkit.environment.cache")
 }

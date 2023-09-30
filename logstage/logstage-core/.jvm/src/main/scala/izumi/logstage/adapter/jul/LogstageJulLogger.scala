@@ -1,4 +1,5 @@
 package izumi.logstage.adapter.jul
+
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log
 import logstage.LogRouter
@@ -41,25 +42,25 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler wit
 
   @inline private[this] def mkEntry(record: LogRecord): Log.Entry = {
 
-    val id = Log.LoggerId(record.getLoggerName)
+    val loggerName = Option(record.getLoggerName).getOrElse("unknown")
+    val id = Log.LoggerId(loggerName)
 
     val thread = Thread.currentThread()
 
     val ctx = Log.StaticExtendedContext(id, SourceFilePosition.unknown)
     val threadData = Log.ThreadData(thread.getName, thread.getId)
 
-    val allParams = if (record.getThrown == null) {
-      record.getParameters.toSeq
-    } else {
-      record.getParameters.toSeq ++ Seq(record.getThrown)
-    }
+    val params = Option(record.getParameters).toSeq.flatten
+    val allParams = params ++ Option(record.getThrown).toSeq
 
     val messageArgs = allParams.zipWithIndex.map {
       kv =>
         Log.LogArg(Seq(s"_${kv._2}"), kv._1, hiddenName = true, None)
     }
 
-    val template = record.getMessage.split("\\{\\d+\\}", -1).map(_.replace("\\", "\\\\"))
+    val template = Option(record.getMessage)
+      .map(_.split("\\{\\d+\\}", -1).map(_.replace("\\", "\\\\")))
+      .getOrElse(Array.empty[String])
 
     val level = toLevel(record)
     Log.Entry(

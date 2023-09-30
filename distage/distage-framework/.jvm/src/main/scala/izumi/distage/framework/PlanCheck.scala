@@ -2,15 +2,15 @@ package izumi.distage.framework
 
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.model.{PlanCheckInput, PlanCheckResult}
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.planning.AxisPoint
+import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
-import izumi.distage.plugins.PluginBase
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.load.LoadedPlugins
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.language.Quirks.discard
@@ -110,7 +110,7 @@ object PlanCheck {
     def checkAppParsed[F[_]](
       app: CheckableApp.Aux[F],
       chosenRoles: RoleSelection,
-      excludedActivations: Set[NonEmptySet[AxisPoint]],
+      excludedActivations: Set[NESet[AxisPoint]],
       chosenConfig: Option[String],
       checkConfig: Boolean,
       printBindings: Boolean,
@@ -124,49 +124,64 @@ object PlanCheck {
       var effectiveConfig = "unknown, failed too early"
       var effectiveBsPlugins = LoadedPlugins.empty
       var effectiveAppPlugins = LoadedPlugins.empty
+      var effectiveModule = ModuleBase.empty
       var effectivePlugins = LoadedPlugins.empty
 
-      def renderPlugins(plugins: Seq[PluginBase]): String = {
+      def renderPlugins(loadedPlugins: LoadedPlugins): String = {
+        val plugins = loadedPlugins.loaded
         val pluginClasses = plugins.map(p => s"${p.getClass.getName} (${p.bindings.size} bindings)")
-        if (pluginClasses.isEmpty) {
-          "ø"
-        } else if (pluginClasses.size > 7) {
-          val otherPlugins = plugins.drop(7)
-          val otherBindingsSize = otherPlugins.map(_.bindings.size).sum
-          (pluginClasses.take(7) :+ s"<${otherPlugins.size} plugins omitted with $otherBindingsSize bindings>").mkString(", ")
-        } else {
-          pluginClasses.mkString(", ")
-        }
+
+        (if (pluginClasses.isEmpty) {
+           "ø"
+         } else if (pluginClasses.size > 7) {
+           val otherPlugins = plugins.drop(7)
+           val otherBindingsSize = otherPlugins.map(_.bindings.size).sum
+           (pluginClasses.take(7) :+ s"<${otherPlugins.size} plugins omitted with $otherBindingsSize bindings>").mkString(", ")
+         } else {
+           pluginClasses.mkString(", ")
+         }) + (
+          if (loadedPlugins.merges.nonEmpty) {
+            s", ${loadedPlugins.merges.size} merge modules with ${loadedPlugins.merges.foldLeft(0)(_ + _.bindings.size)} bindings"
+          } else {
+            ""
+          }
+        ) + (
+          if (loadedPlugins.overrides.nonEmpty) {
+            s", ${loadedPlugins.overrides.size} override modules with ${loadedPlugins.overrides.foldLeft(0)(_ + _.bindings.size)} bindings"
+          } else ""
+        )
       }
 
       def returnPlanCheckError(cause: Either[Throwable, PlanVerifierResult.Incorrect]): PlanCheckResult.Incorrect = {
         val visitedKeys = cause.fold(_ => Set.empty[DIKey], _.visitedKeys)
-        val errorMsg = cause.fold("\n" + _.stackTrace, _.issues.fromNonEmptySet.map(_.render).niceList())
+        val errorMsg = cause.fold("\n" + _.stacktraceString, _.issues.fromNESet.map(_.render + "\n").niceList())
         val message = {
           val configStr = if (checkConfig) {
             s"\n  config              = ${chosenConfig.fold("*")(c => s"resource:$c")} (effective: $effectiveConfig)"
           } else {
             ""
           }
+          val bindings = effectiveModule
           val bsPlugins = effectiveBsPlugins.result
           val appPlugins = effectiveAppPlugins.result
-          val bsPluginsStr = renderPlugins(bsPlugins)
-          val appPluginsStr = renderPlugins(appPlugins)
+          // fixme missing DefaultModule bindings !!!
+          val bsPluginsStr = renderPlugins(effectiveBsPlugins)
+          val appPluginsStr = renderPlugins(effectiveAppPlugins)
           val printedBindings = if (printBindings) {
             (if (bsPlugins.nonEmpty)
                s"""
                   |Bootstrap bindings were:
-                  |
                   |${bsPlugins.flatMap(_.iterator.map(_.toString)).niceList()}
                   |""".stripMargin
              else "") ++
             s"""Bindings were:
-               |
-               |${appPlugins.flatMap(_.iterator.map(_.toString)).niceList()}
+               |${bindings.iterator.map(_.toString).niceList()}
                |
                |Keys visited:
                |${visitedKeys.niceList()}
                |
+               |App plugin bindings were:
+               |${appPlugins.flatMap(_.iterator.map(_.toString)).niceList()}
                |""".stripMargin
           } else ""
 
@@ -181,14 +196,15 @@ object PlanCheck {
           s"""Found a problem with your DI wiring, when checking application=${app.getClass.getName.split('.').last.split('$').last}, with parameters:
              |
              |  roles               = $chosenRoles (effective roles: $effectiveRoleNames) (all effective roots: $effectiveRoots)
-             |  excludedActivations = ${NonEmptySet.from(excludedActivations).fold("ø")(_.map(_.mkString(" ")).mkString(" | "))}
+             |  excludedActivations = ${NESet.from(excludedActivations).fold("ø")(_.map(_.mkString(" ")).mkString(" | "))}
              |  bootstrapPlugins    = $bsPluginsStr
              |  plugins             = $appPluginsStr
              |  checkConfig         = $checkConfig$configStr
              |  printBindings       = $printBindings${if (!printBindings) ", set to `true` for full bindings printout" else ""}
              |  onlyWarn            = $onlyWarn${if (!onlyWarn) ", set to `true` to ignore compilation error" else ""}
              |$onlyWarnAdvice
-             |${printedBindings}Error was:
+             |$printedBindings
+             |Error was:
              |$errorMsg
              |""".stripMargin
         }
@@ -206,6 +222,7 @@ object PlanCheck {
           case Roots.Of(roots) => roots.mkString(", ")
           case Roots.Everything => "<Roots.Everything>"
         }
+        effectiveModule = input.module
         effectiveAppPlugins = input.appPlugins
         effectiveBsPlugins = input.bsPlugins
         val loadedPlugins = input.appPlugins ++ input.bsPlugins
@@ -224,7 +241,7 @@ object PlanCheck {
 
     private[this] def checkAnyApp[F[_]](
       planVerifier: PlanVerifier,
-      excludedActivations: Set[NonEmptySet[AxisPoint]],
+      excludedActivations: Set[NESet[AxisPoint]],
       checkConfig: Boolean,
       reportEffectiveConfig: String => Unit,
     )(planCheckInput: PlanCheckInput[F]
@@ -266,7 +283,7 @@ object PlanCheck {
         Nil
       }
 
-      NonEmptySet.from(planVerifierResult.issues.fromNonEmptySet ++ configIssues) match {
+      NESet.from(planVerifierResult.issues.fromNESet ++ configIssues) match {
         case Some(allIssues) =>
           PlanVerifierResult.Incorrect(Some(allIssues), planVerifierResult.visitedKeys, planVerifierResult.time)
         case None =>
@@ -314,9 +331,9 @@ object PlanCheck {
       )
     }
 
-    private[this] def parseActivations(s: String): Set[NonEmptySet[AxisPoint]] = {
+    private[this] def parseActivations(s: String): Set[NESet[AxisPoint]] = {
       s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
-          NonEmptySet from _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
+          NESet from _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
         }.toSet
     }
 

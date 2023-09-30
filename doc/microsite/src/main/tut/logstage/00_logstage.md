@@ -1,9 +1,6 @@
 ---
 out: index.html
 ---
-
-@@toc { depth=2 }
-
 # LogStage
 
 LogStage is a zero-cost structural logging framework for Scala & Scala.js
@@ -207,16 +204,20 @@ Example:
 ```scala mdoc:to-string:reset
 import logstage.{IzLogger, LogIO3, LogZIO}
 import logstage.LogZIO.log
-import zio.{Has, URIO}
+import zio.{URIO, ZEnvironment}
 
 val fn: URIO[LogZIO, Unit] = {
   log.info(s"I'm logging with ${log}stage!")
 }
 
-val logger: LogZIO.Service = LogIO3.fromLogger(IzLogger())
+val logger: LogZIO = LogIO3.fromLogger(IzLogger())
 
-zio.Runtime.default.unsafeRun {
-  fn.provide(Has(logger))
+import izumi.functional.bio.UnsafeRun2
+
+val runtime = UnsafeRun2.createZIO()
+
+runtime.unsafeRun {
+  fn.provideEnvironment(ZEnvironment(logger))
 }
 ```
 
@@ -225,10 +226,10 @@ zio.Runtime.default.unsafeRun {
 `LogZIO.withFiberId` provides a `LogIO` instance that logs the current ZIO `FiberId` in addition to the JVM thread id:
 
 ```scala mdoc:override:to-string
-val HACK_OVERRIDE_logger: LogZIO.Service = LogZIO.withFiberId(IzLogger())
+val HACK_OVERRIDE_logger: LogZIO = LogZIO.withFiberId(IzLogger())
 
-zio.Runtime.default.unsafeRun {
-   fn.provide(Has(HACK_OVERRIDE_logger))
+runtime.unsafeRun {
+  fn.provideEnvironment(ZEnvironment(HACK_OVERRIDE_logger))
 }
 ```
 
@@ -248,7 +249,7 @@ def databaseCall(): ZIO[LogZIO, Throwable, String] = ZIO.succeed("stubbed")
 def dbLayerFunction(arg: Int): ZIO[LogZIO, Throwable, String] = {
   LogZIO.withCustomContext("arg" -> arg) {
     for {
-      result <- databaseCall
+      result <- databaseCall()
       _      <- log.info(s"Database call $result")
     } yield result
  }
@@ -277,8 +278,8 @@ def controllerFunction(correlationId: String): ZIO[LogZIO, Throwable, String] = 
 }
 
 // at the end of the world
-zio.Runtime.default.unsafeRun {
-   controllerFunction("123").provide(Has(logger))
+runtime.unsafeRun {
+  controllerFunction("123").provideEnvironment(ZEnvironment(logger))
 }
 ```
 
@@ -290,26 +291,33 @@ I 2021-08-17T15:07:54.367 (00_logstage.md:235)  ….controllerFunction.232.233 [
 I 2021-08-17T15:07:54.371 (00_logstage.md:237)  …on.App12.controllerFunction [2280:Thread-60           ] Some log after controller function (without correlation_id)
 ```
 
-### Tagless trifunctor support
+```scala mdoc:invisible
+// FIXME wtf
 
-`LogIO3Ask.log` adds environment support for all trifunctor effect types with an instance of `MonadAsk3[F]` typeclass from @ref[BIO](../bio/00_bio.md) hierarchy.
-
-Example:
-
-```scala mdoc:to-string:reset
-import logstage.{LogIO3, LogIO3Ask, IzLogger}
-import logstage.LogIO3Ask.log
-import zio.{Has, ZIO}
-
-def fn[F[-_, +_, +_]: LogIO3Ask]: F[Has[LogIO3[F]], Nothing, Unit] = {
- log.info(s"I'm logging with ${log}stage!")
-}
-
-val logger = LogIO3.fromLogger(IzLogger())
-
-zio.Runtime.default.unsafeRun {
-  fn[ZIO].provide(Has(logger))
-}
+//### Tagless trifunctor support
+//
+//`LogIO3Ask.log` adds environment support for all trifunctor effect types with an instance of `MonadAsk3[F]` typeclass from @ref[BIO](../bio/00_bio.md) hierarchy.
+//
+//Example:
+//
+//```scala mdoc:to-string:reset
+//import logstage.{LogIO3, LogIO3Ask, IzLogger}
+//import logstage.LogIO3Ask.log
+//import zio.{Has, ZIO}
+//
+//def fn[F[-_, +_, +_]: LogIO3Ask]: F[Has[LogIO3[F]], Nothing, Unit] = {
+// log.info(s"I'm logging with ${log}stage!")
+//}
+//
+//val logger = LogIO3.fromLogger(IzLogger())
+//
+//import izumi.functional.bio.UnsafeRun2
+//
+//val runtime = UnsafeRun2.createZIO()
+//
+//runtime.unsafeRun {
+//  fn[ZIO].provideEnvironment(ZEnvironment(logger))
+//}
 ```
 
 Custom JSON rendering with LogstageCodec
@@ -323,14 +331,14 @@ Example:
 
 ```scala mdoc:reset:to-string
 import io.circe.Codec
-import io.circe.derivation
+import io.circe.generic.semiauto
 import logstage.LogstageCodec
 import logstage.circe.LogstageCirceCodec
 
 final case class KV(key: String, value: Int)
 
 object KV {
-  implicit val circeCodec: Codec[KV] = derivation.deriveCodec[KV]
+  implicit val circeCodec: Codec[KV] = semiauto.deriveCodec[KV]
   implicit val logstageCodec: LogstageCodec[KV] = LogstageCirceCodec.derived[KV]
 }
 ```

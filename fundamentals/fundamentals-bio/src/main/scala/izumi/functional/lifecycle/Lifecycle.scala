@@ -9,8 +9,11 @@ import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3}
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
-import zio.*
-import zio.ZManaged.ReleaseMap
+import zio.internal.stacktracer.Tracer
+import zio.{Scope, ZEnvironment, ZIO, ZLayer}
+import zio.managed.{Reservation, ZManaged}
+import zio.managed.ZManaged.ReleaseMap
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import java.util.concurrent.{ExecutorService, TimeUnit}
 import scala.annotation.unused
@@ -50,9 +53,10 @@ import scala.annotation.unused
   *   )
   * }}}
   *
-  * Or by converting from an existing [[cats.effect.Resource]] or a [[zio.ZManaged]]:
+  * Or by converting from an existing [[cats.effect.Resource]], scoped [[zio.ZIO]] or a [[zio.managed.ZManaged]]:
   *   - Use [[Lifecycle.fromCats]], [[Lifecycle.SyntaxLifecycleCats#toCats]] to convert from and to a [[cats.effect.Resource]]
-  *   - And [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert from and to a [[zio.ZManaged]]
+  *   - Use [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert from and to a scoped [[zio.ZIO]]
+  *   - And [[Lifecycle.fromZManaged]], [[Lifecycle.SyntaxLifecycleZManaged#toZManaged]] to convert from and to a [[zio.managed.ZManaged]]
   *
   * Usage is done via [[Lifecycle.SyntaxUse#use use]]:
   *
@@ -133,6 +137,8 @@ import scala.annotation.unused
   *  - [[Lifecycle.OfInner]]
   *  - [[Lifecycle.OfCats]]
   *  - [[Lifecycle.OfZIO]]
+  *  - [[Lifecycle.OfZManaged]]
+  *  - [[Lifecycle.OfZLayer]]
   *  - [[Lifecycle.LiftF]]
   *  - [[Lifecycle.Make]]
   *  - [[Lifecycle.Make_]]
@@ -187,9 +193,11 @@ import scala.annotation.unused
   *
   * @see [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource ModuleDef.fromResource]]
   * @see [[https://typelevel.org/cats-effect/datatypes/resource.html cats.effect.Resource]]
-  * @see [[https://zio.dev/docs/datatypes/datatypes_managed zio.ZManaged]]
+  * @see [[https://zio.dev/1.0.18/reference/resource/zmanaged/ zio.managed.ZManaged]]
+  * @see [[https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1 scoped zio.ZIO]]
+  * @see [[https://zio.dev/reference/contextual/zlayer zio.ZLayer]]
   */
-trait Lifecycle[+F[_], +OuterResource] {
+trait Lifecycle[+F[_], +A] {
   type InnerResource
 
   /**
@@ -211,7 +219,7 @@ trait Lifecycle[+F[_], +OuterResource] {
 
   /**
     * Either an action in `F` or a pure function used to
-    * extract the `OuterResource` from the `InnerResource`
+    * extract the `A` from the `InnerResource`
     *
     * The effect in the `Left` branch will be performed *interruptibly*,
     * it is not afforded the same kind of safety as `acquire` and `release` actions
@@ -223,44 +231,44 @@ trait Lifecycle[+F[_], +OuterResource] {
     *
     * @see [[Lifecycle.Basic]] `extract` doesn't have to be defined when inheriting from `Lifecycle.Basic`
     */
-  def extract[B >: OuterResource](resource: InnerResource): Either[F[B], B]
+  def extract[B >: A](resource: InnerResource): Either[F[B], B]
 
-  final def map[G[x] >: F[x]: QuasiFunctor, B](f: OuterResource => B): Lifecycle[G, B] = LifecycleMethodImpls.mapImpl[G, OuterResource, B](this)(f)
-  final def flatMap[G[x] >: F[x]: QuasiPrimitives, B](f: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] =
-    LifecycleMethodImpls.flatMapImpl[G, OuterResource, B](this)(f)
-  final def flatten[G[x] >: F[x]: QuasiPrimitives, B](implicit ev: OuterResource <:< Lifecycle[G, B]): Lifecycle[G, B] = this.flatMap(ev)
+  final def map[G[x] >: F[x]: QuasiFunctor, B](f: A => B): Lifecycle[G, B] = LifecycleMethodImpls.mapImpl[G, A, B](this)(f)
+  final def flatMap[G[x] >: F[x]: QuasiPrimitives, B](f: A => Lifecycle[G, B]): Lifecycle[G, B] =
+    LifecycleMethodImpls.flatMapImpl[G, A, B](this)(f)
+  final def flatten[G[x] >: F[x]: QuasiPrimitives, B](implicit ev: A <:< Lifecycle[G, B]): Lifecycle[G, B] = this.flatMap(ev)
 
-  final def catchAll[G[x] >: F[x]: QuasiIO, B >: OuterResource](recover: Throwable => Lifecycle[G, B]): Lifecycle[G, B] =
-    LifecycleMethodImpls.redeemImpl[G, OuterResource, B](this)(recover, Lifecycle.pure[G](_))
-  final def catchSome[G[x] >: F[x]: QuasiIO, B >: OuterResource](recover: PartialFunction[Throwable, Lifecycle[G, B]]): Lifecycle[G, B] =
+  final def catchAll[G[x] >: F[x]: QuasiIO, B >: A](recover: Throwable => Lifecycle[G, B]): Lifecycle[G, B] =
+    LifecycleMethodImpls.redeemImpl[G, A, B](this)(recover, Lifecycle.pure[G](_))
+  final def catchSome[G[x] >: F[x]: QuasiIO, B >: A](recover: PartialFunction[Throwable, Lifecycle[G, B]]): Lifecycle[G, B] =
     catchAll(e => recover.applyOrElse(e, (_: Throwable) => Lifecycle.fail(e)))
 
-  final def redeem[G[x] >: F[x]: QuasiIO, B](onFailure: Throwable => Lifecycle[G, B], onSuccess: OuterResource => Lifecycle[G, B]): Lifecycle[G, B] =
-    LifecycleMethodImpls.redeemImpl[G, OuterResource, B](this)(onFailure, onSuccess)
+  final def redeem[G[x] >: F[x]: QuasiIO, B](onFailure: Throwable => Lifecycle[G, B], onSuccess: A => Lifecycle[G, B]): Lifecycle[G, B] =
+    LifecycleMethodImpls.redeemImpl[G, A, B](this)(onFailure, onSuccess)
 
-  final def evalMap[G[x] >: F[x]: QuasiPrimitives, B](f: OuterResource => G[B]): Lifecycle[G, B] = LifecycleMethodImpls.evalMapImpl[G, OuterResource, B](this)(f)
-  final def evalTap[G[x] >: F[x]: QuasiPrimitives](f: OuterResource => G[Unit]): Lifecycle[G, OuterResource] =
-    evalMap[G, OuterResource](a => QuasiFunctor[G].map(f(a))(_ => a))
+  final def evalMap[G[x] >: F[x]: QuasiPrimitives, B](f: A => G[B]): Lifecycle[G, B] = LifecycleMethodImpls.evalMapImpl[G, A, B](this)(f)
+  final def evalTap[G[x] >: F[x]: QuasiPrimitives](f: A => G[Unit]): Lifecycle[G, A] =
+    evalMap[G, A](a => QuasiFunctor[G].map(f(a))(_ => a))
 
   /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
-  final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): Lifecycle[G, OuterResource] =
-    LifecycleMethodImpls.wrapAcquireImpl[G, OuterResource](this: this.type)(f)
+  final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): Lifecycle[G, A] =
+    LifecycleMethodImpls.wrapAcquireImpl[G, A](this: this.type)(f)
 
   /** Wrap release action of this resource in another effect, e.g. for logging purposes */
-  final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): Lifecycle[G, OuterResource] =
-    LifecycleMethodImpls.wrapReleaseImpl[G, OuterResource](this: this.type)(f)
+  final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): Lifecycle[G, A] =
+    LifecycleMethodImpls.wrapReleaseImpl[G, A](this: this.type)(f)
 
-  final def beforeAcquire[G[x] >: F[x]: QuasiApplicative](f: => G[Unit]): Lifecycle[G, OuterResource] =
+  final def beforeAcquire[G[x] >: F[x]: QuasiApplicative](f: => G[Unit]): Lifecycle[G, A] =
     wrapAcquire[G](acquire => QuasiApplicative[G].map2(f, acquire)((_, res) => res))
 
   /** Prepend release action to existing */
-  final def beforeRelease[G[x] >: F[x]: QuasiApplicative](f: InnerResource => G[Unit]): Lifecycle[G, OuterResource] =
+  final def beforeRelease[G[x] >: F[x]: QuasiApplicative](f: InnerResource => G[Unit]): Lifecycle[G, A] =
     wrapRelease[G]((release, res) => QuasiApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
   final def void[G[x] >: F[x]: QuasiFunctor]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
 
-  @inline final def widen[B >: OuterResource]: Lifecycle[F, B] = this
-  @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, OuterResource] = this
+  @inline final def widen[B >: A]: Lifecycle[F, B] = this
+  @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, A] = this
 }
 
 object Lifecycle extends LifecycleInstances {
@@ -287,7 +295,7 @@ object Lifecycle extends LifecycleInstances {
   }
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): Lifecycle[F, A] = {
-    @inline def a = acquire; @inline def r = release
+    @inline def a: F[A] = acquire; @inline def r: A => F[Unit] = release
     new Lifecycle.Basic[F, A] {
       override def acquire: F[A] = a
       override def release(resource: A): F[Unit] = r(resource)
@@ -300,6 +308,15 @@ object Lifecycle extends LifecycleInstances {
 
   def makeSimple[A](acquire: => A)(release: A => Unit): Lifecycle[Identity, A] = {
     make[Identity, A](acquire)(release)
+  }
+
+  /** For stateful objects that have a separate post-creation init method. */
+  def makeSimpleInit[A](create: => A)(init: A => Unit)(release: A => Unit): Lifecycle[Identity, A] = {
+    makeSimple {
+      val a = create
+      init(a)
+      a
+    }(release)
   }
 
   def makePair[F[_], A](allocate: F[(A, F[Unit])]): Lifecycle[F, A] = {
@@ -429,12 +446,30 @@ object Lifecycle extends LifecycleInstances {
       * this will leak the resource and cause it to never be cleaned up.
       *
       * This function only makes sense in code examples or at top-level,
-      * please use [[SyntaxUse#use]] instead!
+      * please use [[SyntaxUse#use]] otherwise!
       *
-      * @note will also acquire the resource without an uninterruptible section
+      * @note will acquire the resource without an uninterruptible section
       */
     def unsafeGet()(implicit F: QuasiPrimitives[F]): F[A] = {
       F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
+    }
+
+    /**
+      * Unsafely acquire the resource, return it and the finalizer.
+      * The resource will be leaked unless the finalizer is used.
+      *
+      * This function only makes sense in code examples or at top-level,
+      * please use [[SyntaxUse#use]] otherwise!
+      *
+      * @note will acquire the resource without an uninterruptible section
+      */
+    def unsafeAllocate()(implicit F: QuasiPrimitives[F]): F[(A, () => F[Unit])] = {
+      F.flatMap(resource.acquire) {
+        inner =>
+          F.map(
+            resource.extract(inner).fold(identity, F.pure)
+          )(a => (a, () => resource.release(inner)))
+      }
     }
   }
 
@@ -443,7 +478,7 @@ object Lifecycle extends LifecycleInstances {
   }
 
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
-  def fromCats[F[_], A](resource: Resource[F, A])(implicit F: Sync[F]): FromCats[F, A] = {
+  def fromCats[F[_], A](resource: Resource[F, A])(implicit F: Sync[F]): Lifecycle.FromCats[F, A] = {
     new FromCats[F, A] {
       override def acquire: F[kernel.Ref[F, List[F[Unit]]]] = {
         kernel.Ref.of[F, List[F[Unit]]](Nil)(kernel.Ref.Make.syncInstance(F))
@@ -477,11 +512,48 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  /** Convert [[zio.ZManaged]] to [[Lifecycle]] */
-  def fromZIO[R, E, A](managed: ZManaged[R, E, A]): FromZIO[R, E, A] = {
-    new FromZIO[R, E, A] {
-      override def extract[B >: A](releaseMap: ReleaseMap): Left[ZIO[R, E, A], Nothing] =
-        Left(managed.zio.provideSome[R](_ -> releaseMap).map(_._2))
+  /** Convert a Scoped [[zio.ZIO]] to [[Lifecycle]]
+    *
+    * {{{
+    *    def fromZIO[R, E, A](f: ZIO[Scope with R, E, A]): Lifecycle.FromZIO[R, E, A]
+    * }}}
+    */
+  def fromZIO[R]: SyntaxLifecycleFromZIO[R] = new SyntaxLifecycleFromZIO[R]()
+  final class SyntaxLifecycleFromZIO[R](private val dummy: Boolean = false) extends AnyVal {
+    def apply[E, A](f: ZIO[Scope with R, E, A]): Lifecycle.FromZIO[R, E, A] = {
+      implicit val trace: zio.Trace = Tracer.instance.empty
+
+      new FromZIO.FromZIOScoped[R, E, A] {
+        override def extract[B >: A](scope: Scope.Closeable): Either[ZIO[R, E, B], B] = Left {
+          scope.extend[R](f)
+        }
+      }
+    }
+  }
+
+  /** Convert [[zio.ZLayer]] to [[Lifecycle]] */
+  def fromZLayer[R, E, A: zio.Tag](layer: ZLayer[R, E, A]): Lifecycle.FromZIO[R, E, A] = {
+    implicit val trace: zio.Trace = Tracer.instance.empty
+
+    fromZIO[R](layer.build.map(_.get[A](zio.Tag[A])))
+  }
+
+  /** Convert [[zio.ZLayer]] to [[Lifecycle]] */
+  def fromZLayerZEnv[R, E, A](layer: ZLayer[R, E, A]): Lifecycle.FromZIO[R, E, ZEnvironment[A]] = {
+    implicit val trace: zio.Trace = Tracer.instance.empty
+
+    fromZIO[R](layer.build)
+  }
+
+  /** Convert [[zio.managed.ZManaged]] to [[Lifecycle]] */
+  def fromZManaged[R, E, A](managed: ZManaged[R, E, A]): Lifecycle.FromZIO[R, E, A] = {
+    implicit val trace: zio.Trace = Tracer.instance.empty
+
+    new FromZIO.FromZIOManaged[R, E, A] {
+      override def extract[B >: A](releaseMap: ReleaseMap): Either[ZIO[R, E, B], B] =
+        Left {
+          ZManaged.currentReleaseMap.locally(releaseMap)(managed.zio).map(_._2)
+        }
     }
   }
 
@@ -508,13 +580,36 @@ object Lifecycle extends LifecycleInstances {
   }
 
   implicit final class SyntaxLifecycleZIO[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
-    /** Convert [[Lifecycle]] to [[zio.ZManaged]] */
-    def toZIO: ZManaged[R, E, A] = {
-      ZManaged.makeReserve(
+    /** Convert [[Lifecycle]] to scoped [[zio.ZIO]] */
+    def toZIO: ZIO[Scope with R, E, A] = {
+      implicit val trace: zio.Trace = Tracer.instance.empty
+
+      ZIO.uninterruptibleMask {
+        restore =>
+          ZIO
+            .acquireRelease(
+              resource.acquire
+            )(resource.release(_).orDieWith {
+              case e: Throwable => e
+              case any => new RuntimeException(s"Lifecycle finalizer: $any")
+            }).flatMap {
+              r =>
+                ZIO.suspendSucceed(restore(resource.extract(r).fold(identity, ZIO.succeed(_))))
+            }
+      }
+    }
+  }
+
+  implicit final class SyntaxLifecycleZManaged[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
+    /** Convert [[Lifecycle]] to [[zio.managed.ZManaged]] */
+    def toZManaged: ZManaged[R, E, A] = {
+      implicit val trace: zio.Trace = Tracer.instance.empty
+
+      ZManaged.fromReservationZIO(
         resource.acquire.map(
           r =>
             Reservation(
-              ZIO.effectSuspendTotal(resource.extract(r).fold(identity, ZIO.succeed(_))),
+              ZIO.suspendSucceed(resource.extract(r).fold(identity, ZIO.succeed(_))),
               _ =>
                 resource
                   .release(r).orDieWith {
@@ -570,13 +665,13 @@ object Lifecycle extends LifecycleInstances {
   open class OfCats[F[_]: Sync, A](inner: => Resource[F, A]) extends Lifecycle.Of[F, A](fromCats(inner))
 
   /**
-    * Class-based proxy over a [[zio.ZManaged]] value
+    * Class-based proxy over a scoped [[zio.ZIO]] value
     *
     * {{{
-    *   class IntRes extends Lifecycle.OfZIO(Managed.succeed(1000))
+    *   class IntRes extends Lifecycle.OfZIO(ZIO.acquireRelease(ZIO.succeed(1000))(_ => ZIO.unit))
     * }}}
     *
-    * For binding resource values using class syntax in [[ModuleDef]]:
+    * For binding resource values using class syntax in [[izumi.distage.model.definition.ModuleDef ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
@@ -584,7 +679,41 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class OfZIO[-R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO(inner))
+  open class OfZIO[-R, +E, +A](inner: => ZIO[Scope with R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO[R](inner))
+
+  /**
+    * Class-based proxy over a [[zio.managed.ZManaged]] value
+    *
+    * {{{
+    *   class IntRes extends Lifecycle.OfZManaged(ZManaged.succeed(1000))
+    * }}}
+    *
+    * For binding resource values using class syntax in [[izumi.distage.model.definition.ModuleDef ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
+    */
+  open class OfZManaged[-R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZManaged(inner))
+
+  /**
+    * Class-based proxy over a [[zio.ZLayer]] value
+    *
+    * {{{
+    *   class IntRes extends Lifecycle.OfZLayer(ZLayer.succeed(1000))
+    * }}}
+    *
+    * For binding resource values using class syntax in [[izumi.distage.model.definition.ModuleDef ModuleDef]]:
+    *
+    * {{{
+    *   val module = new ModuleDef {
+    *     make[Int].fromResource[IntRes]
+    *   }
+    * }}}
+    */
+  open class OfZLayer[-R, +E, +A: zio.Tag](inner: => ZLayer[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZLayer(inner))
 
   /**
     * Class-based variant of [[make]]:
@@ -764,15 +893,35 @@ object Lifecycle extends LifecycleInstances {
     override final type InnerResource = kernel.Ref[F, List[F[Unit]]]
   }
 
-  trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, _], A] {
-    override final type InnerResource = ReleaseMap
-    override final def acquire: ZIO[R, E, ReleaseMap] = ReleaseMap.make
-    override final def release(releaseMap: ReleaseMap): ZIO[R, Nothing, Unit] = releaseMap.releaseAll(zio.Exit.succeed(()), zio.ExecutionStrategy.Sequential).unit
+  trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, _], A]
+
+  object FromZIO {
+    trait FromZIOManaged[R, E, A] extends FromZIO[R, E, A] {
+      override final type InnerResource = ReleaseMap
+      override final def acquire: ZIO[R, E, ReleaseMap] = ReleaseMap.make(Tracer.instance.empty)
+      override final def release(releaseMap: ReleaseMap): ZIO[R, Nothing, Unit] = {
+        implicit val trace: zio.Trace = Tracer.instance.empty
+
+        releaseMap.releaseAll(zio.Exit.succeed(()), zio.ExecutionStrategy.Sequential).unit
+      }
+    }
+
+    trait FromZIOScoped[R, E, A] extends FromZIO[R, E, A] {
+      override final type InnerResource = Scope.Closeable
+      override final def acquire: ZIO[R, E, Scope.Closeable] = Scope.make(Tracer.instance.empty)
+      override final def release(scope: Scope.Closeable): ZIO[R, Nothing, Unit] = {
+        implicit val trace: zio.Trace = Tracer.instance.empty
+
+        scope.close(zio.Exit.succeed(()))
+      }
+    }
   }
 
   abstract class NoCloseBase[+F[_]: QuasiApplicative, +A] extends Lifecycle[F, A] {
     override final def release(resource: InnerResource): F[Unit] = QuasiApplicative[F].unit
   }
+
+  disableAutoTrace.discard()
 }
 
 private[izumi] sealed trait LifecycleInstances extends LifecycleCatsInstances {

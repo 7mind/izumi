@@ -3,7 +3,7 @@ package izumi.logstage.api
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import izumi.fundamentals.platform.build.ExposedTestScope
-import izumi.fundamentals.platform.language.Quirks._
+  import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.logger.LogSink
 import izumi.logstage.api.rendering.RenderingPolicy
 

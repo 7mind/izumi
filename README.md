@@ -20,11 +20,11 @@
 
 ---
 
-[![Latest Release](https://img.shields.io/github/tag/7mind/izumi.svg)](https://github.com/7mind/izumi/releases)
 [![Maven Central](https://img.shields.io/maven-central/v/io.7mind.izumi/distage-core_2.12.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.7mind.izumi%22)
 [![Sonatype releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/io.7mind.izumi/distage-core_2.12.svg)](https://oss.sonatype.org/content/repositories/releases/io/7mind/izumi/)
 [![Sonatype snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/io.7mind.izumi/distage-core_2.12.svg)](https://oss.sonatype.org/content/repositories/snapshots/io/7mind/izumi/)
-[![Latest version](https://index.scala-lang.org/7mind/izumi/latest.svg?color=orange)](https://index.scala-lang.org/7mind/izumi)
+[![Latest Release](https://img.shields.io/github/tag/7mind/izumi.svg)](https://github.com/7mind/izumi/releases)
+[![Latest version](https://index.scala-lang.org/7mind/izumi/distage-core/latest.svg?color=orange)](https://index.scala-lang.org/7mind/izumi)
 
 What is it?
 ===========
@@ -33,7 +33,7 @@ Izumi (*jp. 泉水, spring*) is an ecosystem of independent libraries and framew
 
 including the following components:
 
-1. [distage](https://izumi.7mind.io/distage/) – Compile-time safe, transparent and debuggable Dependency Injection framework for pure FP Scala,
+1. [distage](https://izumi.7mind.io/distage/) – Compile-time safe, transparent and debuggable multi-modal Dependency Injection framework for pure FP Scala,
 2. [distage-testkit](https://izumi.7mind.io/distage/distage-testkit) – Hyper-pragmatic pure FP Test framework. Shares heavy resources globally across all test suites; lets you easily swap implementations of component; uses your effect type for parallelism.
 3. [distage-framework-docker](https://izumi.7mind.io/distage/distage-framework-docker) – A distage extension for using docker containers in tests or for local application runs, comes with example Postgres, Cassandra, Kafka & DynamoDB containers.
 4. [LogStage](https://izumi.7mind.io/logstage/) – Automatic structural logs from Scala string interpolations,
@@ -56,10 +56,10 @@ Example projects:
 
 Support Chats:
 
-* [Izumi on Gitter](https://gitter.im/7mind/izumi)
 * [Izumi User Group [RU] on Telegram](https://t.me/scala_any/708)
 * [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
 * [Discussions on Github](https://github.com/7mind/izumi/discussions)
+* [Izumi on Gitter](https://gitter.im/7mind/izumi)
 
 Videos:
 
@@ -69,6 +69,8 @@ Videos:
 * [Livecoding: DIStage & Bifunctor Tagless Final](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 * [DevInsideYou — Tagless Final with BIO](https://www.youtube.com/watch?v=ZdGK1uedAE0&t=580s)
 * [Source Talks — Pragmatic Pure FP approach to application design and testing with distage](https://www.youtube.com/watch?v=W60JO3TuFhc)
+* [(Talk + Livecoding) Izumi Framework: reinvent your productivity with modern pure functional Scala](https://www.youtube.com/watch?v=zwj5eVDqMI8)
+* [(Talk only) Izumi Framework: reinvent your productivity with modern pure functional Scala](https://www.youtube.com/watch?v=Zk0Il6I5MQI)
 
 Slides:
 
@@ -129,6 +131,11 @@ Are you using Izumi? Please consider opening a pull request to list your organiz
 
 <a href="https://glidewell.io/">
   <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-glidewell.svg?sanitize=true" alt="Glidewell.io"/>
+</a>
+<br/>
+
+<a href="https://pitsdatarecovery.net/" title="PITS Global Data Recovery Services">
+  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-pits.svg?sanitize=true" alt="PITS Global Data Recovery Services"/>
 </a>
 <br/>
 

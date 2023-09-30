@@ -2,29 +2,29 @@ package izumi.fundamentals.platform.build
 
 import izumi.fundamentals.reflection.ReflectiveCall
 
+import scala.annotation.experimental
+import scala.quoted.{Expr, Quotes, Type}
+
+@experimental
 object MacroParametersImpl {
-  import scala.quoted.{Expr, Quotes, Type}
 
-  def extractString(key: Expr[String])(using quotes: Quotes): Expr[Option[String]] = {
-    '{ ${ extract(key) }.lastOption }
+  def extractString(name: Expr[String])(using quotes: Quotes): Expr[Option[String]] = {
+    Expr(extract(name.valueOrAbort))
   }
 
-  def extractBool(key: Expr[String])(using quotes: Quotes): Expr[Option[Boolean]] = {
-    '{ ${ extract(key) }.lastOption.map(_.toLowerCase).map(v => v == "true" || v == "1") }
+  def extractBool(name: Expr[String])(using quotes: Quotes): Expr[Option[Boolean]] = {
+    val value = extract(name.valueOrAbort)
+    val isTrue = value.map(_.toLowerCase).map(v => v == "true" || v == "1")
+    Expr(isTrue)
   }
 
-  private def extract(key: Expr[String])(using quotes: Quotes): Expr[List[String]] = {
+  private def extract(name: String)(using quotes: Quotes): Option[String] = {
     import quotes.reflect.*
-    val k = key.valueOrAbort
-    val prefix = s"$k="
-
-
-    // CompilationInfo.XmacroSettings
-    val out = ReflectiveCall.call[List[String]](CompilationInfo, "XmacroSettings")
-
-    val values = out.filter(_.startsWith(prefix)).map(_.stripPrefix(prefix))
-
-    Expr( values )
+    val prefix = s"$name="
+    val value = CompilationInfo.XmacroSettings.filter(_.startsWith(prefix)).map(_.stripPrefix(prefix)).lastOption
+    if (value.isEmpty) {
+      report.info(s"Undefined macro parameter $name, add `-Xmacro-settings:$prefix<value>` into `scalac` options")
+    }
+    value
   }
 }
-

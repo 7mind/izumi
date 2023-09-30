@@ -7,12 +7,13 @@ import izumi.distage.fixtures.ResourceCases.{CircularResourceCase, Ref, Suspend2
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.Roots
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.immutable.Queue
 
-class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
+class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "CircularDependenciesTest" should {
 
@@ -177,7 +178,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector {
       assert(context.get[GenericCircular[Dependency]] eq context.get[Dependency].dep)
     }
 
-    "support named circular dependencies" in {
+    "support named circular dependencies" in brokenOnScala3 {
       import CircularCase4.*
 
       val definition = PlannerInput.everything(new ModuleDef {

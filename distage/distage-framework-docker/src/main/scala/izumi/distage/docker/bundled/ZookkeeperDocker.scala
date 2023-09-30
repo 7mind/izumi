@@ -7,7 +7,8 @@ import izumi.distage.docker.model.Docker.DockerPort
 object ZookeeperDocker extends ContainerDef {
   override def config: Config = {
     Config(
-      image = "zookeeper:3.4.14",
+      registry = Some("public.ecr.aws"),
+      image = "docker/library/zookeeper:3.5",
       ports = Seq(DockerPort.TCP(2181)),
     )
   }

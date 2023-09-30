@@ -10,6 +10,4 @@ final case class PreparedApp[F[_]](
   effect: QuasiIO[F],
 )
 
-
-
-object PreparedApp extends PreparedAppSyntax {}
+object PreparedApp extends PreparedAppSyntax

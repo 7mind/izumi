@@ -1,11 +1,11 @@
 package izumi.distage.framework.model
 
 import izumi.distage.framework.model.exceptions.PlanCheckException
+import izumi.distage.model.planning.PlanIssue
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.load.LoadedPlugins
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 
 sealed abstract class PlanCheckResult {
   def checkedPlugins: LoadedPlugins
@@ -14,7 +14,7 @@ sealed abstract class PlanCheckResult {
   def maybeError: Option[Either[Throwable, PlanVerifierResult.Incorrect]]
   def maybeErrorMessage: Option[String]
 
-  final def issues: Option[NonEmptySet[PlanVerifier.PlanIssue]] = maybeError.flatMap(_.toOption.flatMap(_.issues))
+  final def issues: Option[NESet[PlanIssue]] = maybeError.flatMap(_.toOption.flatMap(_.issues))
   final def verificationPassed: Boolean = maybeError.isEmpty
   final def verificationFailed: Boolean = maybeError.isDefined
 

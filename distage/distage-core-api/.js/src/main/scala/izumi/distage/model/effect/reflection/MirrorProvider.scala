@@ -11,7 +11,7 @@ trait MirrorProvider {
 object MirrorProvider {
   object Impl extends MirrorProvider {
     override def runtimeClass(tpe: SafeType): Option[Class[?]] = {
-      if (tpe.hasPreciseClass) Some(tpe.cls) else None
+      if (tpe.hasPreciseClass) Some(tpe.closestClass) else None
     }
     override def canBeProxied(tpe: SafeType): Boolean = {
       false
