@@ -62,7 +62,7 @@ object CatsToBIO {
         case Outcome.Succeeded(fa) => Bifunctorized.assert(F.map(fa)(Exit.Success(_)))
         case Outcome.Errored(exc @ PrivateTypedError(e)) => pure(Exit.Error(e.asInstanceOf[E], Exit.Trace.ThrowableTrace(exc)))
         case Outcome.Errored(t) => pure(Exit.Termination(t, Exit.Trace.ThrowableTrace(t)))
-        case Outcome.Canceled() => pure(Exit.Interruption(Nil, Exit.Trace.empty))
+        case Outcome.Canceled() => pure(Exit.Interruption(Nil, Exit.Trace.forUnknownError))
       }
 
       private[this] def fromPoll(poll: Poll[F]): RestoreInterruption2[Bifunctorized[F, +_, +_]] = {
