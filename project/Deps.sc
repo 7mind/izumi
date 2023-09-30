@@ -767,8 +767,10 @@ object Izumi {
                   (ghpagesRepository.value / "paradox.json").getCanonicalPath == f.getCanonicalPath ||
                   (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
                   (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
+                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath || (
+                      f.toPath.getParent.toAbsolutePath == (ghpagesRepository.value / "index.html").toPath.getParent.toAbsolutePath &&
+                        f.getCanonicalPath.endsWith(".html")
+                  )
               }
             }"""
           ),
