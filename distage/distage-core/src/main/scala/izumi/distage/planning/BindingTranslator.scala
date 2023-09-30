@@ -104,7 +104,9 @@ object BindingTranslator {
           WiringOp.ReferenceKey(target, w, userBinding)
 
         case w: PrepareLocalContext =>
-          WiringOp.LocalContext(target, w, userBinding)
+          // it's safe to import self reference and it can always be synthetised within a context
+          val removedSelfImport = w.importedParentKeys.diff(Set(target))
+          WiringOp.LocalContext(target, w.copy(importedParentKeys = removedSelfImport), userBinding)
       }
     }
 

@@ -29,7 +29,7 @@ object MissingInstanceException {
     (Seq(
       s"""Instance is not available in the object graph: $target.
          |Required by refs: ${references.niceList(prefix = "* ")}""".stripMargin,
-      s"""You may add missing binding with code alike to
+      s"""You may add missing binding with code like
          |
          |  make[$refRepr]""".stripMargin,
     ) ++ similarSameHints ++ similarSubHints).mkString("\n\n")

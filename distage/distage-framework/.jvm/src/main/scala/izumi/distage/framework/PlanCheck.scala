@@ -9,7 +9,6 @@ import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
-import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -128,17 +127,29 @@ object PlanCheck {
       var effectiveModule = ModuleBase.empty
       var effectivePlugins = LoadedPlugins.empty
 
-      def renderPlugins(plugins: Seq[PluginBase]): String = {
+      def renderPlugins(loadedPlugins: LoadedPlugins): String = {
+        val plugins = loadedPlugins.loaded
         val pluginClasses = plugins.map(p => s"${p.getClass.getName} (${p.bindings.size} bindings)")
-        if (pluginClasses.isEmpty) {
-          "ø"
-        } else if (pluginClasses.size > 7) {
-          val otherPlugins = plugins.drop(7)
-          val otherBindingsSize = otherPlugins.map(_.bindings.size).sum
-          (pluginClasses.take(7) :+ s"<${otherPlugins.size} plugins omitted with $otherBindingsSize bindings>").mkString(", ")
-        } else {
-          pluginClasses.mkString(", ")
-        }
+
+        (if (pluginClasses.isEmpty) {
+           "ø"
+         } else if (pluginClasses.size > 7) {
+           val otherPlugins = plugins.drop(7)
+           val otherBindingsSize = otherPlugins.map(_.bindings.size).sum
+           (pluginClasses.take(7) :+ s"<${otherPlugins.size} plugins omitted with $otherBindingsSize bindings>").mkString(", ")
+         } else {
+           pluginClasses.mkString(", ")
+         }) + (
+          if (loadedPlugins.merges.nonEmpty) {
+            s", ${loadedPlugins.merges.size} merge modules with ${loadedPlugins.merges.foldLeft(0)(_ + _.bindings.size)} bindings"
+          } else {
+            ""
+          }
+        ) + (
+          if (loadedPlugins.overrides.nonEmpty) {
+            s", ${loadedPlugins.overrides.size} override modules with ${loadedPlugins.overrides.foldLeft(0)(_ + _.bindings.size)} bindings"
+          } else ""
+        )
       }
 
       def returnPlanCheckError(cause: Either[Throwable, PlanVerifierResult.Incorrect]): PlanCheckResult.Incorrect = {
@@ -154,8 +165,8 @@ object PlanCheck {
           val bsPlugins = effectiveBsPlugins.result
           val appPlugins = effectiveAppPlugins.result
           // fixme missing DefaultModule bindings !!!
-          val bsPluginsStr = renderPlugins(bsPlugins)
-          val appPluginsStr = renderPlugins(appPlugins)
+          val bsPluginsStr = renderPlugins(effectiveBsPlugins)
+          val appPluginsStr = renderPlugins(effectiveAppPlugins)
           val printedBindings = if (printBindings) {
             (if (bsPlugins.nonEmpty)
                s"""
