@@ -64,6 +64,7 @@ final class ConfigWriter[F[_]](
     }
 
     roleInfo.availableRoleBindings
+      // .filter(b => !(b.binding.key.tpe <:< SafeType.get[BundledService]))
       .foreach {
         role =>
           val component = ConfigurableComponent(role.descriptor.id, role.descriptor.artifact.map(_.version), Some(commonConfig))
