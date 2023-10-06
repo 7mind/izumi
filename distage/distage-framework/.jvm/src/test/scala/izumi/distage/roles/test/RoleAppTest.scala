@@ -8,18 +8,19 @@ import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.roles.DebugProperties
+import izumi.distage.roles.launcher.AppShutdownStrategy
 import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
+import izumi.distage.roles.{DebugProperties, RoleAppBootModule}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.fundamentals.platform.resources.{ArtifactVersion, IzArtifact}
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogSink
 import org.scalatest.wordspec.AnyWordSpec
@@ -179,6 +180,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
+        new RoleAppBootModule[IO](new AppShutdownStrategy.ImmediateExitShutdownStrategy[IO], PluginConfig.empty, PluginConfig.empty, IzArtifact.undefined, Set.empty),
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -216,6 +218,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
+        new RoleAppBootModule[IO](new AppShutdownStrategy.ImmediateExitShutdownStrategy[IO], PluginConfig.empty, PluginConfig.empty, IzArtifact.undefined, Set.empty),
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -257,6 +260,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
+        new RoleAppBootModule[IO](new AppShutdownStrategy.ImmediateExitShutdownStrategy[IO], PluginConfig.empty, PluginConfig.empty, IzArtifact.undefined, Set.empty),
       )
 
       val plans = roleAppPlanner.makePlan(roots)

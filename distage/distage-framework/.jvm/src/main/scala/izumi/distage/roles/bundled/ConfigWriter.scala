@@ -1,19 +1,19 @@
 package izumi.distage.roles.bundled
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import distage.{BootstrapModuleDef, ModuleDef}
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.Id
-import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ConfigurableComponent, ExtractConfigPath, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.Value
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.functional.quasi.QuasiIO
+import izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawRoleParams, RequiredRoles}
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
-import scala.annotation.unused
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
@@ -21,7 +21,7 @@ import izumi.logstage.distage.LogstageModule
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import scala.annotation.nowarn
+import scala.annotation.{nowarn, unused}
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.Try
 
@@ -63,29 +63,30 @@ final class ConfigWriter[F[_]](
       writeConfig(options, commonComponent, None, commonConfig)
     }
 
-    roleInfo.availableRoleBindings.foreach {
-      role =>
-        val component = ConfigurableComponent(role.descriptor.id, role.descriptor.artifact.map(_.version), Some(commonConfig))
-        val refConfig = buildConfig(options, component)
-        val versionedComponent = if (options.useLauncherVersion) {
-          component.copy(version = Some(ArtifactVersion(launcherVersion.version)))
-        } else {
-          component
-        }
+    roleInfo.availableRoleBindings
+      .foreach {
+        role =>
+          val component = ConfigurableComponent(role.descriptor.id, role.descriptor.artifact.map(_.version), Some(commonConfig))
+          val refConfig = buildConfig(options, component)
+          val versionedComponent = if (options.useLauncherVersion) {
+            component.copy(version = Some(ArtifactVersion(launcherVersion.version)))
+          } else {
+            component
+          }
 
-        try {
-          writeConfig(options, versionedComponent, None, refConfig)
-          minimizedConfig(refConfig, role)
-            .foreach {
-              cfg =>
-                writeConfig(options, versionedComponent, Some("minimized"), cfg)
-            }
-        } catch {
-          case exception: Throwable =>
-            logger.crit(s"Cannot process role ${role.descriptor.id}")
-            throw exception
-        }
-    }
+          try {
+            writeConfig(options, versionedComponent, None, refConfig)
+            minimizedConfig(refConfig, role)
+              .foreach {
+                cfg =>
+                  writeConfig(options, versionedComponent, Some("minimized"), cfg)
+              }
+          } catch {
+            case exception: Throwable =>
+              logger.crit(s"Cannot process role ${role.descriptor.id}")
+              throw exception
+          }
+      }
   }
 
   private[this] def buildConfig(config: WriteReference, cmp: ConfigurableComponent): Config = {
@@ -114,10 +115,18 @@ final class ConfigWriter[F[_]](
   private[this] def minimizedConfig(config: Config, role: RoleBinding): Option[Config] = {
     val roleDIKey = role.binding.key
 
-    val bootstrapOverride = new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false)
+    val bootstrapOverride = new BootstrapModuleDef {
+      include(new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false))
+    }
 
-    val plans = roleAppPlanner
-      .reboot(bootstrapOverride)
+    val rootOverride = new ModuleDef {
+      include(bootstrapOverride)
+      make[IzLogger].named("early").from[IzLogger]
+      make[RequiredRoles].fromValue(RequiredRoles(Vector(RawRoleParams(role.descriptor.id))))
+    }
+
+    val singleRolePlan = roleAppPlanner
+      .fullReboot(rootOverride, bootstrapOverride)
       .makePlan(Set(roleDIKey))
 
     def getConfig(plan: Plan): Iterator[ConfigPath] = {
@@ -127,9 +136,9 @@ final class ConfigWriter[F[_]](
     }
 
     val resolvedConfig =
-      getConfig(plans.app).toSet + _HackyMandatorySection
+      getConfig(singleRolePlan.app).toSet + _HackyMandatorySection
 
-    if (plans.app.stepsUnordered.exists(_.target == roleDIKey)) {
+    if (singleRolePlan.app.stepsUnordered.exists(_.target == roleDIKey)) {
       Some(ConfigWriter.minimized(resolvedConfig, config))
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")
@@ -155,8 +164,8 @@ final class ConfigWriter[F[_]](
   // TODO: sdk?
   @nowarn("msg=Unused import")
   private[this] def cleanupEffectiveAppConfig(effectiveAppConfig: Config, reference: Config): Config = {
-    import scala.collection.compat._
-    import scala.jdk.CollectionConverters._
+    import scala.collection.compat.*
+    import scala.jdk.CollectionConverters.*
 
     ConfigFactory.parseMap(effectiveAppConfig.root().unwrapped().asScala.view.filterKeys(reference.hasPath).toMap.asJava)
   }
@@ -220,8 +229,8 @@ object ConfigWriter extends RoleDescriptor {
 
   @nowarn("msg=Unused import")
   def minimized(requiredPaths: Set[ConfigPath], source: Config): Config = {
-    import scala.collection.compat._
-    import scala.jdk.CollectionConverters._
+    import scala.collection.compat.*
+    import scala.jdk.CollectionConverters.*
 
     val paths = requiredPaths.map(_.toPath)
 

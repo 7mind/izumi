@@ -87,10 +87,11 @@ abstract class RoleAppMain[F[_]](
   def main(args: Array[String]): Unit = {
     val argv = ArgV(args)
     try {
-      Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
-        (appResource: AppResource[F]) =>
-          appResource.resource.use(_.run())
-      }
+      Injector
+        .NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
+          (appResource: AppResource[F]) =>
+            appResource.resource.use(_.run())
+        }
     } catch {
       case t: Throwable =>
         earlyFailureHandler(argv).onError(t)
@@ -159,12 +160,16 @@ abstract class RoleAppMain[F[_]](
   def roleAppBootModule(argv: ArgV): Module = {
     val mainModule = roleAppBootModule(argv, RequiredRoles(requiredRoles(argv)))
     val overrideModule = roleAppBootOverrides(argv)
-    mainModule overriddenBy overrideModule
+    val fullModule = mainModule overriddenBy overrideModule
+
+    fullModule overriddenBy new ModuleDef {
+      make[Module].named("root").fromValue(fullModule)
+    }
   }
 
   /** @see [[izumi.distage.roles.RoleAppBootModule]] for initial values */
   def roleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = {
-    new RoleAppBootModule[F](
+    val fullModule = new RoleAppBootModule[F](
       shutdownStrategy = shutdownStrategy,
       pluginConfig = pluginConfig,
       bootstrapPluginConfig = bootstrapPluginConfig,
@@ -174,6 +179,10 @@ abstract class RoleAppMain[F[_]](
       args = argv,
       requiredRoles = additionalRoles,
     )
+
+    fullModule ++ new ModuleDef {
+      make[Module].named("root").fromValue(fullModule)
+    }
   }
 
   protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = {

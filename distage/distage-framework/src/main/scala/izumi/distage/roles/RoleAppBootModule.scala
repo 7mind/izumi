@@ -175,4 +175,8 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
     (transformer: AppResourceProvider[F]) =>
       transformer.makeAppResource
   }
+
+  make[RoleAppBootModule[F]].from {
+    new RoleAppBootModule[F](shutdownStrategy, pluginConfig, bootstrapPluginConfig, appArtifact, unusedValidAxisChoices)
+  }
 }
