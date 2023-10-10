@@ -32,7 +32,7 @@ class IzEitherTest extends AnyWordSpec {
     "support NonEmptyCollections" in {
       val nel0 = List(Right(1), Right(2), Left(NEList("error")))
 
-      implicitly[Factory[String, NEList[String]]]
+      assert(implicitly[Factory[String, NEList[String]]] ne null)
       assert(nel0.biSequence == Left(NEList("error")))
 
       val nes0 = List(Right(()), Left(NESet("error")))

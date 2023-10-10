@@ -503,6 +503,7 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,
+          Projects.fundamentals.collections,
         ),
       ),
     ),

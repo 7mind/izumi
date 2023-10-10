@@ -24,6 +24,10 @@ trait Applicative3[F[-_, +_, +_]] extends Functor3[F] {
   def traverse_[R, E, A](l: Iterable[A])(f: A => F[R, E, Unit]): F[R, E, Unit] = void(traverse(l)(f))
   def sequence[R, E, A](l: Iterable[F[R, E, A]]): F[R, E, List[A]] = traverse(l)(identity)
   def sequence_[R, E](l: Iterable[F[R, E, Unit]]): F[R, E, Unit] = void(traverse(l)(identity))
+  def flatTraverse[R, E, A, B](l: Iterable[A])(f: A => F[R, E, Iterable[B]]): F[R, E, List[B]] = map(traverse(l)(f))(_.flatten)
+  def flatSequence[R, E, A](l: Iterable[F[R, E, Iterable[A]]]): F[R, E, List[A]] = flatTraverse(l)(identity)
+  def collect[R, E, A, B](l: Iterable[A])(f: A => F[R, E, Option[B]]): F[R, E, List[B]] = map(traverse(l)(f))(_.flatten)
+  def filter[R, E, A](l: Iterable[A])(f: A => F[R, E, Boolean]): F[R, E, List[A]] = collect(l)(a => map(f(a))(if (_) Some(a) else None))
 
   def unit: F[Any, Nothing, Unit] = pure(())
   @inline final def traverse[R, E, A, B](o: Option[A])(f: A => F[R, E, B]): F[R, E, Option[B]] = o match {
