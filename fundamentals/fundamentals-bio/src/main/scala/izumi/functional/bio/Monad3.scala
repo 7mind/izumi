@@ -40,6 +40,40 @@ trait Monad3[F[-_, +_, +_]] extends Applicative3[F] {
     }
   }
 
+  def foldLeft[R, E, A, AC](l: Iterable[A])(z: AC)(f: (AC, A) => F[R, E, AC]): F[R, E, AC] = {
+    def go(l: List[A], ac: AC): F[R, E, AC] = {
+      l match {
+        case head :: tail => flatMap(f(ac, head))(go(tail, _))
+        case Nil => pure(ac)
+      }
+    }
+    go(l.toList, z)
+  }
+
+  def find[R, E, A](l: Iterable[A])(f: A => F[R, E, Boolean]): F[R, E, Option[A]] = {
+    def go(l: List[A]): F[R, E, Option[A]] = {
+      l match {
+        case head :: tail => flatMap(f(head))(if (_) pure(Some(head)) else go(tail))
+        case Nil => pure(None)
+      }
+    }
+    go(l.toList)
+  }
+
+  def collectFirst[R, E, A, B](l: Iterable[A])(f: A => F[R, E, Option[B]]): F[R, E, Option[B]] = {
+    def go(l: List[A]): F[R, E, Option[B]] = {
+      l match {
+        case head :: tail =>
+          flatMap(f(head)) {
+            case res @ Some(_) => pure(res)
+            case None => go(tail)
+          }
+        case Nil => pure(None)
+      }
+    }
+    go(l.toList)
+  }
+
   /**
     * Execute an action repeatedly until its result fails to satisfy the given predicate
     * and return that result, discarding all others.

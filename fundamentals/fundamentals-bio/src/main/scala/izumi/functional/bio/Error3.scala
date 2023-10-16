@@ -2,7 +2,9 @@ package izumi.functional.bio
 
 import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
 
-trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
+import scala.annotation.nowarn
+
+trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] with ErrorAccumulatingOps3[F] {
 
   def catchAll[R, E, A, E2](r: F[R, E, A])(f: E => F[R, E2, A]): F[R, E2, A]
 
@@ -54,6 +56,12 @@ trait Error3[F[-_, +_, +_]] extends ApplicativeError3[F] with Monad3[F] {
   /** Retries this effect until its error satisfies the specified effectful predicate. */
   def retryUntilF[R, R1 <: R, E, A](r: F[R, E, A])(f: E => F[R1, Nothing, Boolean]): F[R1, E, A] = {
     catchAll(r: F[R1, E, A])(e => flatMap(f(e))(if (_) fail(e) else retryUntilF(r)(f)))
+  }
+
+  @nowarn("msg=Unused import")
+  def partition[R, E, A](l: Iterable[F[R, E, A]]): F[R, Nothing, (List[E], List[A])] = {
+    import scala.collection.compat.*
+    map(traverse(l)(attempt[R, E, A]))(_.partitionMap(identity))
   }
 
   /** for-comprehensions sugar:

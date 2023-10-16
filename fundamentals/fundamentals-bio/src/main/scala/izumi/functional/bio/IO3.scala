@@ -1,5 +1,6 @@
 package izumi.functional.bio
 
+import scala.collection.compat.*
 import scala.util.Try
 
 trait IO3[F[-_, +_, +_]] extends Panic3[F] {
@@ -22,7 +23,7 @@ trait IO3[F[-_, +_, +_]] extends Panic3[F] {
     * {{{
     * import izumi.functional.bio.F
     *
-    * val referentiallyTransparentArrayAllocation: F[Nothing, Array[Byte]] = {
+    * val exceptionSafeArrayAllocation: F[Nothing, Array[Byte]] = {
     *   F.sync(new Array(256))
     * }
     * }}}
@@ -34,7 +35,11 @@ trait IO3[F[-_, +_, +_]] extends Panic3[F] {
     */
   def sync[A](effect: => A): F[Any, Nothing, A]
 
+  /** Capture a side-effectful block of code that can throw exceptions and returns another effect */
   def suspend[R, A](effect: => F[R, Throwable, A]): F[R, Throwable, A] = flatten(syncThrowable(effect))
+
+  /** Capture an _exception-safe_ side-effect that returns another effect */
+  def suspendSafe[R, E, A](effect: => F[R, E, A]): F[R, E, A] = flatten(sync(effect))
 
   @inline final def apply[A](effect: => A): F[Any, Throwable, A] = syncThrowable(effect)
 
@@ -48,5 +53,49 @@ trait IO3[F[-_, +_, +_]] extends Panic3[F] {
   }
   override def fromTry[A](effect: => Try[A]): F[Any, Throwable, A] = {
     syncThrowable(effect.get)
+  }
+
+  override protected[this] def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], R, E, E1, A, B, B1, AC](
+    col: ColR[A]
+  )(effect: A => F[R, E, B],
+    onLeft: E => IterableOnce[E1],
+    init: AC,
+    onRight: (AC, B) => AC,
+    end: AC => B1,
+  )(implicit buildL: Factory[E1, ColL[E1]]
+  ): F[R, ColL[E1], B1] = {
+    suspendSafe {
+      val bad = buildL.newBuilder
+
+      val iterator = col.iterator
+      var good = init
+      var allGood = true
+
+      def go(): F[R, ColL[E1], B1] = {
+        suspendSafe(if (iterator.hasNext) {
+          redeem(effect(iterator.next()))(
+            e =>
+              suspendSafe {
+                allGood = false
+                bad ++= onLeft(e)
+                go()
+              },
+            v =>
+              suspendSafe {
+                good = onRight(good, v)
+                go()
+              },
+          )
+        } else {
+          if (allGood) {
+            pure(end(good))
+          } else {
+            fail(bad.result())
+          }
+        })
+      }
+
+      go()
+    }
   }
 }

@@ -39,6 +39,12 @@ open class AsyncZio extends Async3[ZIO] /*with Local3[ZIO]*/ {
 
     ZIO.suspend(effect)
   }
+  @inline override final def suspendSafe[R, E, A](effect: => ZIO[R, E, A]): ZIO[R, E, A] = {
+    val byName: () => ZIO[R, E, A] = () => effect
+    implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
+
+    ZIO.suspendSucceed(effect)
+  }
 
   @inline override final def fail[E](v: => E): ZIO[Any, E, Nothing] = {
     val byName: () => E = () => v
@@ -184,6 +190,21 @@ open class AsyncZio extends Async3[ZIO] /*with Local3[ZIO]*/ {
   @inline override final def sequence[R, E, A](l: Iterable[ZIO[R, E, A]]): ZIO[R, E, List[A]] = ZIO.collectAll(l.toList)(implicitly, Tracer.instance.empty)
   @inline override final def traverse_[R, E, A](l: Iterable[A])(f: A => ZIO[R, E, Unit]): ZIO[R, E, Unit] = ZIO.foreachDiscard(l)(f)(InteropTracer.newTrace(f))
   @inline override final def sequence_[R, E](l: Iterable[ZIO[R, E, Unit]]): ZIO[R, E, Unit] = ZIO.foreachDiscard(l)(identity)(Tracer.instance.empty)
+  @inline override final def filter[R, E, A](l: Iterable[A])(f: A => ZIO[R, E, Boolean]): ZIO[R, E, List[A]] = ZIO.filter(l.toList)(f)(implicitly, InteropTracer.newTrace(f))
+
+  @inline override final def foldLeft[R, E, A, AC](l: Iterable[A])(z: AC)(f: (AC, A) => ZIO[R, E, AC]): ZIO[R, E, AC] = {
+    ZIO.foldLeft(l)(z)(f)(InteropTracer.newTrace(f))
+  }
+
+  @inline override final def find[R, E, A](l: Iterable[A])(f: A => ZIO[R, E, Boolean]): ZIO[R, E, Option[A]] = {
+    val trace = InteropTracer.newTrace(f)
+
+    ZIO.collectFirst(l)(a => f(a).map(if (_) Some(a) else None)(trace))(trace)
+  }
+
+  @inline override final def collectFirst[R, E, A, B](l: Iterable[A])(f: A => ZIO[R, E, Option[B]]): ZIO[R, E, Option[B]] = {
+    ZIO.collectFirst(l)(f)(InteropTracer.newTrace(f))
+  }
 
   @inline override final def sandbox[R, E, A](r: ZIO[R, E, A]): ZIO[R, Exit.Failure[E], A] = {
     implicit val trace: zio.Trace = Tracer.instance.empty

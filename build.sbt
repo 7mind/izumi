@@ -1347,7 +1347,8 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
 lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   .dependsOn(
     `fundamentals-language` % "test->compile;compile->compile",
-    `fundamentals-orphans` % "test->compile;compile->compile"
+    `fundamentals-orphans` % "test->compile;compile->compile",
+    `fundamentals-collections` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
