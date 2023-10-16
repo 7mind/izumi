@@ -7,17 +7,17 @@ import scala.collection.compat.immutable.LazyList
 import scala.collection.compat.immutable.LazyList.#::
 import scala.collection.immutable.Queue
 
-trait ErrorAccumulatingOps3[F[-_, +_, +_]] { this: Error3[F] =>
+trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
 
   /** `traverse` with error accumulation */
-  def traverseAccumErrors[ColR[x] <: IterableOnce[x], ColL[_], R, E, A, B](
+  def traverseAccumErrors[ColR[x] <: IterableOnce[x], ColL[_], E, A, B](
     col: ColR[A]
-  )(f: A => F[R, ColL[E], B]
+  )(f: A => F[ColL[E], B]
   )(implicit
     buildR: Factory[B, ColR[B]],
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
-  ): F[R, ColL[E], ColR[B]] = {
+  ): F[ColL[E], ColR[B]] = {
     accumulateErrorsImpl(col)(
       effect = f,
       onLeft = (l: ColL[E]) => iterL(l),
@@ -28,13 +28,13 @@ trait ErrorAccumulatingOps3[F[-_, +_, +_]] { this: Error3[F] =>
   }
 
   /** `traverse_` with error accumulation */
-  def traverseAccumErrors_[ColR[x] <: IterableOnce[x], ColL[_], R, E, A](
+  def traverseAccumErrors_[ColR[x] <: IterableOnce[x], ColL[_], E, A](
     col: ColR[A]
-  )(f: A => F[R, ColL[E], Unit]
+  )(f: A => F[ColL[E], Unit]
   )(implicit
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
-  ): F[R, ColL[E], Unit] = {
+  ): F[ColL[E], Unit] = {
     accumulateErrorsImpl(col)(
       effect = f,
       onLeft = (l: ColL[E]) => iterL(l),
@@ -45,31 +45,31 @@ trait ErrorAccumulatingOps3[F[-_, +_, +_]] { this: Error3[F] =>
   }
 
   /** `sequence` with error accumulation */
-  def sequenceAccumErrors[ColR[x] <: IterableOnce[x], ColL[_], R, E, A](
-    col: ColR[F[R, ColL[E], A]]
+  def sequenceAccumErrors[ColR[x] <: IterableOnce[x], ColL[_], E, A](
+    col: ColR[F[ColL[E], A]]
   )(implicit
     buildR: Factory[A, ColR[A]],
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
-  ): F[R, ColL[E], ColR[A]] = {
+  ): F[ColL[E], ColR[A]] = {
     traverseAccumErrors(col)(identity)
   }
 
   /** `sequence_` with error accumulation */
-  def sequenceAccumErrors_[ColR[x] <: IterableOnce[x], ColL[_], R, E, A](
-    col: ColR[F[R, ColL[E], A]]
+  def sequenceAccumErrors_[ColR[x] <: IterableOnce[x], ColL[_], E, A](
+    col: ColR[F[ColL[E], A]]
   )(implicit
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
-  ): F[R, ColL[E], Unit] = {
+  ): F[ColL[E], Unit] = {
     traverseAccumErrors_(col)(void(_))
   }
 
   /** `sequence` with error accumulation */
-  def sequenceAccumErrorsNEList[ColR[x] <: IterableOnce[x], R, E, A](
-    col: ColR[F[R, E, A]]
+  def sequenceAccumErrorsNEList[ColR[x] <: IterableOnce[x], E, A](
+    col: ColR[F[E, A]]
   )(implicit buildR: Factory[A, ColR[A]]
-  ): F[R, NEList[E], ColR[A]] = {
+  ): F[NEList[E], ColR[A]] = {
     accumulateErrorsImpl(col)(
       effect = identity,
       onLeft = (e: E) => Seq(e),
@@ -80,14 +80,14 @@ trait ErrorAccumulatingOps3[F[-_, +_, +_]] { this: Error3[F] =>
   }
 
   /** `flatTraverse` with error accumulation */
-  def flatTraverseAccumErrors[ColR[x] <: IterableOnce[x], ColIn[x] <: IterableOnce[x], ColL[_], R, E, A, B](
+  def flatTraverseAccumErrors[ColR[x] <: IterableOnce[x], ColIn[x] <: IterableOnce[x], ColL[_], E, A, B](
     col: ColR[A]
-  )(f: A => F[R, ColL[E], ColIn[B]]
+  )(f: A => F[ColL[E], ColIn[B]]
   )(implicit
     buildR: Factory[B, ColR[B]],
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
-  ): F[R, ColL[E], ColR[B]] = {
+  ): F[ColL[E], ColR[B]] = {
     accumulateErrorsImpl(col)(
       effect = f,
       onLeft = (l: ColL[E]) => iterL(l),
@@ -98,31 +98,31 @@ trait ErrorAccumulatingOps3[F[-_, +_, +_]] { this: Error3[F] =>
   }
 
   /** `flatSequence` with error accumulation */
-  def flatSequenceAccumErrors[ColR[x] <: IterableOnce[x], ColIn[x] <: IterableOnce[x], ColL[_], R, E, A](
-    col: ColR[F[R, ColL[E], ColIn[A]]]
+  def flatSequenceAccumErrors[ColR[x] <: IterableOnce[x], ColIn[x] <: IterableOnce[x], ColL[_], E, A](
+    col: ColR[F[ColL[E], ColIn[A]]]
   )(implicit
     buildR: Factory[A, ColR[A]],
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
-  ): F[R, ColL[E], ColR[A]] = {
+  ): F[ColL[E], ColR[A]] = {
     flatTraverseAccumErrors(col)(identity)
   }
 
-  protected[this] def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], R, E, E1, A, B, B1, AC](
+  protected[this] def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](
     col: ColR[A]
-  )(effect: A => F[R, E, B],
+  )(effect: A => F[E, B],
     onLeft: E => IterableOnce[E1],
     init: AC,
     onRight: (AC, B) => AC,
     end: AC => B1,
   )(implicit buildL: Factory[E1, ColL[E1]]
-  ): F[R, ColL[E1], B1] = {
+  ): F[ColL[E1], B1] = {
     def go(
       bad: Queue[E1],
       good: AC,
       lazyList: LazyList[A],
       allGood: Boolean,
-    ): F[R, ColL[E1], B1] = {
+    ): F[ColL[E1], B1] = {
       lazyList match {
         case h #:: tail =>
           redeem(effect(h))(

@@ -257,10 +257,10 @@ object Exit {
   implicit lazy val ExitInstances: Monad2[Exit] & Bifunctor2[Exit] = new Monad2[Exit] with Bifunctor2[Exit] {
     override final val InnerF: Functor2[Exit] = this
     override final def pure[A](a: A): Exit[Nothing, A] = Exit.Success(a)
-    override final def map[R, E, A, B](r: Exit[E, A])(f: A => B): Exit[E, B] = r.map(f)
-    override final def bimap[R, E, A, E2, A2](r: Exit[E, A])(f: E => E2, g: A => A2): Exit[E2, A2] = r.leftMap(f).map(g)
-    override final def leftMap[R, E, A, E2](r: Exit[E, A])(f: E => E2): Exit[E2, A] = r.leftMap(f)
-    override final def flatMap[R, E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
+    override final def map[E, A, B](r: Exit[E, A])(f: A => B): Exit[E, B] = r.map(f)
+    override final def bimap[E, A, E2, A2](r: Exit[E, A])(f: E => E2, g: A => A2): Exit[E2, A2] = r.leftMap(f).map(g)
+    override final def leftMap[E, A, E2](r: Exit[E, A])(f: E => E2): Exit[E2, A] = r.leftMap(f)
+    override final def flatMap[E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
   }
 
   disableAutoTrace.discard()

@@ -12,8 +12,6 @@ package object strict extends LogstageStrict {
   override val LogIOStrict2: LogIO2Strict.type = LogIO2Strict
   override type LogIOStrict3[F[_, _, _]] = LogIO3Strict[F]
   override val LogIOStrict3: LogIO3Strict.type = LogIO3Strict
-  override type LogIOStrict3Ask[F[_, _, _]] = LogIO3AskStrict[F]
-  override val LogIOStrict3Ask: LogIO3AskStrict.type = LogIO3AskStrict
 
   override type LogZIOStrict = LogIO3Strict[ZIO]
 

@@ -2,7 +2,7 @@ package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.functional.quasi.*
-import izumi.distage.modules.typeclass.BIO2InstancesModule
+import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.retry.Scheduler2
 import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.platform.functional.Identity
@@ -21,8 +21,8 @@ import scala.concurrent.ExecutionContext
   * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`, `make[Fork2[F]]`
   * Optional additions: `make[Primitives2[F]]`, `make[PrimitivesM2[F]]`, `make[Scheduler2[F]]`
   */
-class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
-  include(BIO2InstancesModule[F])
+class AnyBIOSupportModule[F[+_, +_]: TagKK] extends ModuleDef {
+  include(BIOInstancesModule[F])
 
   make[QuasiIORunner2[F]]
     .from[QuasiIORunner.BIOImpl[F]]
@@ -59,17 +59,17 @@ class AnyBIO2SupportModule[F[+_, +_]: TagKK] extends ModuleDef {
   }
 }
 
-object AnyBIO2SupportModule extends ModuleDef {
-  @inline def apply[F[+_, +_]: TagKK]: AnyBIO2SupportModule[F] = new AnyBIO2SupportModule
+object AnyBIOSupportModule extends ModuleDef {
+  @inline def apply[F[+_, +_]: TagKK]: AnyBIOSupportModule[F] = new AnyBIOSupportModule
 
   /**
-    * Make [[AnyBIO2SupportModule]], binding the required dependencies in place to values from implicit scope
+    * Make [[AnyBIOSupportModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[Fork2[F]]` and `make[Primitives2[F]]` are not required by [[AnyBIO2SupportModule]]
+    * `make[Fork2[F]]` and `make[Primitives2[F]]` are not required by [[AnyBIOSupportModule]]
     * but are added for completeness
     */
   def withImplicits[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: PrimitivesM2: Scheduler2]: ModuleDef = new ModuleDef {
-    include(AnyBIO2SupportModule[F])
+    include(AnyBIOSupportModule[F])
 
     addImplicit[Async2[F]]
     addImplicit[Fork2[F]]

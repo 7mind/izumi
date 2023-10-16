@@ -10,25 +10,25 @@ trait BlockingIO3[F[_, _, _]] extends BlockingIOInstances with DivergenceHelper 
   def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A]
 }
 object BlockingIO3 {
-  def apply[F[-_, +_, +_]: BlockingIO3]: BlockingIO3[F] = implicitly
+  def apply[F[-_, +_, +_]: BlockingIO2]: BlockingIO2[F] = implicitly
 }
 
 private[bio] sealed trait BlockingIOInstances
 object BlockingIOInstances extends LowPriorityBlockingIOInstances {
 
-  implicit def fromSyncSafe3[F[-_, +_, +_]: SyncSafe3]: Predefined.Of[BlockingIO3[F]] = Predefined(new BlockingIO3[F] {
+  implicit def fromSyncSafe3[F[-_, +_, +_]: SyncSafe3]: Predefined.Of[BlockingIO2[F]] = Predefined(new BlockingIO2[F] {
     override def shiftBlocking[R, E, A](f: F[R, E, A]): F[R, E, A] = f
     override def syncBlocking[A](f: => A): F[Any, Throwable, A] = SyncSafe3[F].syncSafe(f)
     override def syncInterruptibleBlocking[A](f: => A): F[Any, Throwable, A] = SyncSafe3[F].syncSafe(f)
   })
 
-  def BlockingZIODefault: BlockingIO3[zio.ZIO] = fromSyncSafe3[zio.ZIO]
+  def BlockingZIODefault: BlockingIO2[zio.ZIO] = fromSyncSafe3[zio.ZIO]
 
 }
 
 sealed trait LowPriorityBlockingIOInstances {
 
-  @inline implicit final def blockingConvert3To2[C[f[-_, +_, +_]] <: BlockingIO3[f], FR[-_, +_, +_], R](
+  @inline implicit final def blockingConvert3To2[C[f[-_, +_, +_]] <: BlockingIO2[f], FR[-_, +_, +_], R](
     implicit BlockingIO3: C[FR] { type Divergence = Nondivergent }
   ): Divergent.Of[BlockingIO2[FR[R, +_, +_]]] = {
     Divergent(BlockingIO3.asInstanceOf[BlockingIO2[FR[R, +_, +_]]])

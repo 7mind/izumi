@@ -57,7 +57,7 @@ import distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
 import zio.IO
 
-object ExampleLauncher extends RoleAppMain.LauncherBIO2[IO] {
+object ExampleLauncher extends RoleAppMain.LauncherBIO[IO] {
   override def pluginConfig = {
     PluginConfig.const(
       // add the plugin with ExampleRoleTask

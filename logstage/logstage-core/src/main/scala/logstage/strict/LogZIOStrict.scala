@@ -23,9 +23,6 @@ object LogZIOStrict {
     *   }
     * }}}
     */
-  // FIXME wtf
-//  object log extends LogIO3AskStrictImpl[ZIO](_.get[LogIO3Strict[ZIO]])
-//  object log extends LogIO3AskStrictImpl[ZIO](identity)
 
   def withFiberIdStrict(logger: AbstractLogger): LogIO2Strict[IO] = {
     new WrappedLogIOStrict[IO[Nothing, _]](logger)(SyncSafe2[IO]) {

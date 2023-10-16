@@ -12,7 +12,7 @@ import izumi.reflect.TagKK
   *
   * @see [[izumi.functional.bio]]
   */
-class BIO2InstancesModule[F[+_, +_]: TagKK] extends ModuleDef {
+class BIOInstancesModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[Functor2[F]].using[Async2[F]]
   make[Bifunctor2[F]].using[Async2[F]]
   make[Applicative2[F]].using[Async2[F]]
@@ -27,17 +27,17 @@ class BIO2InstancesModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[Concurrent2[F]].using[Async2[F]]
 }
 
-object BIO2InstancesModule {
-  @inline def apply[F[+_, +_]: TagKK]: BIO2InstancesModule[F] = new BIO2InstancesModule
+object BIOInstancesModule {
+  @inline def apply[F[+_, +_]: TagKK]: BIOInstancesModule[F] = new BIOInstancesModule
 
   /**
-    * Make [[BIO2InstancesModule]], binding the required dependencies in place to values from implicit scope
+    * Make [[BIOInstancesModule]], binding the required dependencies in place to values from implicit scope
     *
-    * `make[Temporal2[F]]`, `make[UnsafeRun2[F]]` `make[Fork2[F]]` and `make[Primitives2[F]]` are not required by [[BIO2InstancesModule]]
+    * `make[Temporal2[F]]`, `make[UnsafeRun2[F]]` `make[Fork2[F]]` and `make[Primitives2[F]]` are not required by [[BIOInstancesModule]]
     * but are added for completeness
     */
   def withImplicits[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: PrimitivesM2: Scheduler2]: ModuleDef = new ModuleDef {
-    include(BIO2InstancesModule[F])
+    include(BIOInstancesModule[F])
 
     addImplicit[Async2[F]]
     addImplicit[Fork2[F]]

@@ -18,7 +18,7 @@ Usage of `distage-testkit` generally follows these steps:
     - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1), for monofunctors (`cats.effect.IO`
       , `monix`)
     - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2), for bifunctors (`ZIO`, `monix-bio`)
-    - `F[-_, +_, +_]` - @scaladoc[`Spec3[F]`](izumi.distage.testkit.scalatest.Spec3) for trifunctors (`ZIO`)
+    - `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.Spec3) for `ZIO` with environment support in tests
 2. Override `def config: TestConfig` to customize the @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig)
 3. Establish test case contexts
    using [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html),
@@ -101,12 +101,12 @@ matches our application's effect type from the following:
 - No effect type, imperative usage - @scaladoc[`SpecIdentity`](izumi.distage.testkit.scalatest.SpecIdentity)
 - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1)
 - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2)
-- `F[-_, +_, +_]` - @scaladoc[`Spec3[F]`](izumi.distage.testkit.scalatest.Spec3)
+- `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO)
 
 The effect monad is expected to support sync and async effects. `distage-testkit` provides this support for `Identity`
 , `monix`, `monix-bio`, `ZIO`, and monads wth instances of `cats-effect` or @ref[BIO](../bio/00_bio.md) typeclasses. For
 our demonstration application, the tests will use the `ZIO[-R, +E, +A]` effect type. This means we'll be
-using `Spec3[ZIO]` for the test suite base class.
+using `SpecZIO` for the test suite base class.
 
 The default config (`super.config`) has `pluginConfig`, which by default will scan the package the test is defined in
 for defined Plugin modules. See the @ref:[`distage-extension-plugins`](./distage-framework.md#plugins) documentation for
@@ -123,7 +123,7 @@ import com.typesafe.config.ConfigFactory
 import distage.ModuleDef
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
 
-abstract class Test extends Spec3[ZIO] with AssertZIO {
+abstract class Test extends SpecZIO with AssertZIO {
   val defaultConfig = Config(
     starValue = 10,
     mangoValue = 256,
@@ -654,7 +654,7 @@ class MemoizedLevel3
 ```
 
 ```scala mdoc:to-string
-class SameLevel_1_WithActivationsOverride extends Spec3[ZIO] {
+class SameLevel_1_WithActivationsOverride extends SpecZIO {
   override protected def config: TestConfig = {
     super.config.copy(
         memoizationRoots = Map(
@@ -963,7 +963,7 @@ import leaderboard.repo.{Ladder, Profiles}
 import leaderboard.zioenv.{ladder, rnd}
 import zio.{ZIO, IO}
 
-abstract class LeaderboardTest extends Spec3[ZIO] with AssertZIO {
+abstract class LeaderboardTest extends SpecZIO with AssertZIO {
   override def config = TestConfig(
     pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = new ModuleDef {
