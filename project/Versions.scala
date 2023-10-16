@@ -31,12 +31,12 @@ object V {
   val scala_java_time = "2.5.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.162"
+  val classgraph = "4.8.163"
   val slf4j = "2.0.9"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.14.8"
+  val bytebuddy = "1.14.9"
   val docker_java = "3.3.3"
 
   // microsite-only
