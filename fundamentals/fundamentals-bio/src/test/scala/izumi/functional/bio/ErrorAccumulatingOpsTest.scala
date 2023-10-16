@@ -10,13 +10,6 @@ final class ErrorAccumulatingOpsTestEither extends ErrorAccumulatingOpsTest[Eith
   override def unsafeRun[E, A](f: Either[E, A]): Either[E, A] = f
 }
 
-final class ErrorAccumulatingOpsTestZIO extends ErrorAccumulatingOpsTest[zio.IO] {
-  private val runner: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO()
-
-  override implicit def F: Error2[zio.IO] = Root.Convert3To2(Root.BIOZIO)
-  override def unsafeRun[E, A](f: zio.IO[E, A]): Either[E, A] = runner.unsafeRun(f.attempt)
-}
-
 @nowarn("msg=Unused import")
 abstract class ErrorAccumulatingOpsTest[F[+_, +_]] extends AnyWordSpec {
   import scala.collection.compat.*
