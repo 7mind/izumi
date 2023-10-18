@@ -23,9 +23,9 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val definition = PlannerInput(
       new ModuleDef {
         make[TestClass]
-        make[TestDependency3]
+        makeTrait[TestDependency3]
         make[TestDependency0].from[TestImpl0]
-        make[TestDependency1]
+        makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
         make[TestInstanceBinding].from(TestInstanceBinding())
@@ -132,7 +132,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       many[JustTrait].named("named.empty.set")
 
       many[JustTrait]
-        .add[JustTrait]
+        .addTrait[JustTrait]
         .add(new Impl1)
 
       many[JustTrait]
@@ -312,7 +312,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase4.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency].named("special")
+      makeTrait[Dependency].named("special")
       make[TestClass]
     })
 

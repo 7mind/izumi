@@ -54,7 +54,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[DepA]
-      make[TestTrait]
+      makeTrait[TestTrait]
     })
 
     val injector = mkInjector()
@@ -69,7 +69,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency1 @Id("special")]
-      make[Trait1]
+      makeTrait[Trait1]
     })
 
     val injector = mkInjector()
@@ -88,7 +88,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
-      make[Trait2 with Trait1].from[Trait6]
+      make[Trait2 with Trait1].fromTrait[Trait6]
     })
 
     val injector = mkInjector()
@@ -106,9 +106,9 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
-      make[Trait1 { def dep: Dep2 }].from[Trait3[Dep2]]
-      make[Trait1 { def dep: Dep }].from[Trait3[Dep]]
-      make[{ def dep: Dep }].from[Trait6]
+      make[Trait1 { def dep: Dep2 }].fromTrait[Trait3[Dep2]]
+      make[Trait1 { def dep: Dep }].fromTrait[Trait3[Dep]]
+      make[{ def dep: Dep }].fromTrait[Trait6]
     })
 
     val injector = mkInjector()
@@ -132,7 +132,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
       make[Dep2]
       locally {
         type X[A] = Trait1[Dep, A]
-        make[X[T]]
+        makeTrait[X[T]]
       }
     }
 
@@ -149,7 +149,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "light type tags can handle abstract structural refinement types" in {
     import TypesCase3._
 
-    class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag: AnyConstructor] extends ModuleDef {
+    class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag: TraitConstructor] extends ModuleDef {
       make[Dep]
       make[T { def dep2: Dep }].from(() => null.asInstanceOf[T { def dep2: Dep }])
       make[T { def dep: Dep }].from[G]
@@ -170,7 +170,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "handle abstract `with` types" in {
     import TypesCase3._
 
-    class Definition[T: Tag, G <: T with Trait1: Tag: AnyConstructor, C <: T with Trait4: Tag: AnyConstructor] extends ModuleDef {
+    class Definition[T: Tag, G <: T with Trait1: Tag: TraitConstructor, C <: T with Trait4: Tag: TraitConstructor] extends ModuleDef {
       make[Dep]
       make[T with Trait4].from[C]
       make[T with Trait1].from[G]
@@ -201,7 +201,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
 
     class Definition[T <: Dep: Tag: AnyConstructor, K >: Trait5[T]: Tag] extends ModuleDef {
       make[T]
-      make[Trait3[T] with K].from[Trait5[T]]
+      make[Trait3[T] with K].fromTrait[Trait5[T]]
     }
 
     val definition = PlannerInput.everything(new Definition[Dep, Trait4])

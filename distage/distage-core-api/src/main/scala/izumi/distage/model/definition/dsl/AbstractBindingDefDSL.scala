@@ -1,6 +1,6 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.constructors.FactoryConstructor
+import izumi.distage.constructors.{FactoryConstructor, TraitConstructor}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
@@ -149,6 +149,12 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
     _bindDSL[T](ref)
   }
 
+  /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
+  final protected[this] def makeTrait[T: Tag: TraitConstructor]: BindDSLAfterFrom[T] = {
+    val ref = _registered(new SingletonRef(Bindings.provider[T](TraitConstructor[T])))
+    _bindDSLAfterFrom[T](ref)
+  }
+
   /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
   final protected[this] def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = {
     val ref = _registered(new SingletonRef(Bindings.provider[T](FactoryConstructor[T])))
@@ -194,6 +200,7 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
       final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = self._make[T](provider)
 
       final protected[this] def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = self.makeFactory[T]
+      final protected[this] def makeTrait[T: Tag: TraitConstructor]: BindDSLAfterFrom[T] = self.makeTrait[T]
 
       /**
         * Avoid `discarded non-Unit value` warning.

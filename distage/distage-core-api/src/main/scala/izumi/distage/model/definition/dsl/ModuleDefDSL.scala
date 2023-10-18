@@ -1,7 +1,7 @@
 package izumi.distage.model.definition.dsl
 
 import izumi.distage.LocalContext
-import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, ZEnvConstructor}
+import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, TraitConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
@@ -41,8 +41,10 @@ import scala.collection.immutable.HashSet
   *
   * Singleton bindings:
   *   - `make[X]` = create X using its constructor
+  *   - `makeTrait[X]` = create an abstract class or a trait `X` using [[izumi.distage.constructors.TraitConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]])
   *   - `makeFactory[X]` = create a "factory-like" abstract class or a trait `X` using [[izumi.distage.constructors.FactoryConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]])
   *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
+  *   - `make[X].fromTrait[XImpl]` = bind X to its abstract class or a trait subtype XImpl, deriving constructor using [[izumi.distage.constructors.TraitConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]])
   *   - `make[X].fromFactory[XImpl]` = bind X to its "factory-like" abstract class or a trait subtype XImpl, deriving constructor using [[izumi.distage.constructors.FactoryConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]])
   *   - `make[X].from(myX)` = bind X to an already existing instance `myX`
   *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]] requesting an Y parameter
@@ -117,24 +119,6 @@ object ModuleDefDSL {
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     /**
-      * Defines local context with empty local module and local keys
-      */
-    def fromLocalContext[F[_], R](defn: LocalContextDef[F[R]])(implicit @unused ev: T =:= LocalContext[F, R]): LocalContextDSL[F, R, AfterBind] = {
-      new LocalContextDSL[F, R, AfterBind](defn.module, Set.empty, bind, defn.function).bound()
-    }
-
-    /**
-      * Defines local context with empty local module and local keys, specialised for Identity
-      */
-    def fromLocalContext[R](
-      defn: LocalContextDef[R]
-    )(implicit ev: T =:= LocalContext[Identity, R],
-      dummyImplicit: DummyImplicit,
-    ): LocalContextDSL[Identity, R, AfterBind] = {
-      fromLocalContext[Identity, R](defn)
-    }
-
-    /**
       * A function that receives its arguments from DI object graph, including named instances via [[izumi.distage.model.definition.Id]] annotation.
       *
       * The following syntaxes are supported by extractor macro:
@@ -194,9 +178,30 @@ object ModuleDefDSL {
     final def from[I <: T](function: Functoid[I]): AfterBind =
       bind(ImplDef.ProviderImpl(function.get.ret, function.get))
 
+    /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
+    final def fromTrait[I <: T: TraitConstructor]: AfterBind =
+      from[I](TraitConstructor[I])
+
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
-    final def fromFactory[I <: T: FactoryConstructor]: AfterBind = {
+    final def fromFactory[I <: T: FactoryConstructor]: AfterBind =
       from[I](FactoryConstructor[I])
+
+    /**
+      * Defines local context with empty local module and local keys
+      */
+    def fromLocalContext[F[_], R](defn: LocalContextDef[F[R]])(implicit @unused ev: T =:= LocalContext[F, R]): LocalContextDSL[F, R, AfterBind] = {
+      new LocalContextDSL[F, R, AfterBind](defn.module, Set.empty, bind, defn.function).bound()
+    }
+
+    /**
+      * Defines local context with empty local module and local keys, specialised for Identity
+      */
+    def fromLocalContext[R](
+      defn: LocalContextDef[R]
+    )(implicit ev: T =:= LocalContext[Identity, R],
+      dummyImplicit: DummyImplicit,
+    ): LocalContextDSL[Identity, R, AfterBind] = {
+      fromLocalContext[Identity, R](defn)
     }
 
     /**
@@ -359,6 +364,10 @@ object ModuleDefDSL {
 
     final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
+
+    /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
+    final def addTrait[I <: T: Tag: TraitConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+      add[I](TraitConstructor[I])
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
     final def addFactory[I <: T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): AfterAdd =

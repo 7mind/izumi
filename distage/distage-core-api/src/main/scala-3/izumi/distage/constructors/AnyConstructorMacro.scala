@@ -33,13 +33,14 @@ object AnyConstructorMacro {
         tpeDeref match { case _: ConstantType | _: TermRef => true; case _ => false }
       }) {
       ClassConstructorMacro.makeImpl[R](util)
-    } else if ({
-      context.isWireableTrait
-    }) {
+    } else if (context.isWireableTrait) {
       TraitConstructorMacro.makeImpl[R](util, context)
+      report.errorAndAbort(
+        s"AnyConstructor failure: ${Type.show[R]} is a trait or an abstract class, use makeTrait or fromTrait to wire traits."
+      )
     } else if (context.isFactoryOrTrait) {
       report.errorAndAbort(
-        s"""AnyConstructor failure: ${Type.show[R]} is a Factory, use makeFactory or fromFactory to wire factories.""".stripMargin
+        s"AnyConstructor failure: ${Type.show[R]} is a Factory, use makeFactory or fromFactory to wire factories."
       )
     } else {
       report.errorAndAbort(

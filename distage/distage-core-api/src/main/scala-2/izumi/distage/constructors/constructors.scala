@@ -15,9 +15,10 @@ import scala.language.experimental.macros as enableMacros
   * An implicitly summonable constructor for a type `T`, can generate constructors for:
   *
   *   - concrete classes (using [[ClassConstructor]])
-  *   - traits and abstract classes ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]], using [[TraitConstructor]])
   *
-  * Since version `1.1.0`, does not generate constructors "factory-like" traits and abstract classes, instead use [[FactoryConstructor]].
+  * Since version `1.2.0`, does not generate constructors for traits and abstract classes, or for "factory-like" traits
+  * and abstract classes, instead use [[TraitConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits]])
+  * and [[FactoryConstructor]] respectively. ([[https://izumi.7mind.io/distage/basics#auto-factories Auto-Factories]])
   *
   * Use [[ZEnvConstructor]] to generate constructors for `zio.ZEnvironment` values.
   *

@@ -101,11 +101,14 @@ object AnyConstructorMacro {
     if (reflectionProvider.isConcrete(targetType)) {
       ClassConstructorMacro.mkClassConstructor[T](c)
     } else if (reflectionProvider.isWireableAbstract(targetType)) {
-      TraitConstructorMacro.mkTraitConstructor[T](c)
+      c.abort(
+        c.enclosingPosition,
+        s"AnyConstructor failure: $targetType is a trait or an abstract class, use makeTrait or fromTrait to wire traits.",
+      )
     } else if (reflectionProvider.isFactory(targetType)) {
       c.abort(
         c.enclosingPosition,
-        s"""AnyConstructor failure: $targetType is a Factory, use makeFactory or fromFactory to wire factories.""".stripMargin,
+        s"AnyConstructor failure: $targetType is a Factory, use makeFactory or fromFactory to wire factories.",
       )
     } else {
       c.abort(

@@ -25,7 +25,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
-      make[BopTrait[Int]]
+      makeTrait[BopTrait[Int]]
     })
 
     val context = Injector.Standard().produce(definition).unsafeGet()
@@ -39,7 +39,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
-      make[BopAbstractClass[Int]]
+      makeTrait[BopAbstractClass[Int]]
     })
 
     val context = Injector.Standard().produce(definition).unsafeGet()
@@ -72,8 +72,8 @@ class ArityTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[NoArgClass]
-      make[NoArgTrait]
-      make[NoArgAbstractClass]
+      makeTrait[NoArgTrait]
+      makeTrait[NoArgAbstractClass]
     })
 
     val context = Injector.Standard().produce(definition).unsafeGet()
