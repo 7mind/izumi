@@ -1,6 +1,6 @@
 package izumi.distage.model.definition
 
-import izumi.distage.constructors.AnyConstructor
+import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, TraitConstructor}
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey.SetKeyMeta
@@ -11,6 +11,12 @@ import izumi.reflect.Tag
 object Bindings {
   def binding[T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     provider[T](AnyConstructor[T])
+
+  def bindingTrait[T: Tag: TraitConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
+    provider[T](TraitConstructor[T])
+
+  def bindingFactory[T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
+    provider[T](FactoryConstructor[T])
 
   def binding[T: Tag, I <: T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     provider[T](AnyConstructor[I])

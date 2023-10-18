@@ -41,7 +41,9 @@ import scala.collection.immutable.HashSet
   *
   * Singleton bindings:
   *   - `make[X]` = create X using its constructor
+  *   - `makeFactory[X]` = create a "factory-like" abstract class or a trait `X` using [[izumi.distage.constructors.FactoryConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]])
   *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
+  *   - `make[X].fromFactory[XImpl]` = bind X to its "factory-like" abstract class or a trait subtype XImpl, deriving constructor using [[izumi.distage.constructors.FactoryConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]])
   *   - `make[X].from(myX)` = bind X to an already existing instance `myX`
   *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]] requesting an Y parameter
   *   - `make[X].from { y: Y @Id("special") => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]], requesting a named "special" Y parameter
@@ -192,6 +194,11 @@ object ModuleDefDSL {
     final def from[I <: T](function: Functoid[I]): AfterBind =
       bind(ImplDef.ProviderImpl(function.get.ret, function.get))
 
+    /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
+    final def fromFactory[I <: T: FactoryConstructor]: AfterBind = {
+      from[I](FactoryConstructor[I])
+    }
+
     /**
       * Bind by reference to another bound key
       *
@@ -335,10 +342,6 @@ object ModuleDefDSL {
       bind(ImplDef.ProviderImpl(provider.ret, provider))
     }
 
-    final def fromFactory[I <: T: FactoryConstructor]: AfterBind = {
-      from[I](FactoryConstructor[I])
-    }
-
     protected[this] def bind(impl: ImplDef): AfterBind
     protected[this] def key: DIKey
   }
@@ -357,6 +360,7 @@ object ModuleDefDSL {
     final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
 
+    /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
     final def addFactory[I <: T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](FactoryConstructor[I])
 
