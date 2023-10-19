@@ -8,7 +8,6 @@ import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestS
 import izumi.distage.testkit.spec.{AbstractDistageSpec, DISyntaxBIOBase, DISyntaxBase, DistageTestEnv, TestRegistration}
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer}
-import izumi.reflect.TagK3
 import org.scalactic.source
 import org.scalatest.Assertion
 import org.scalatest.distage.TestCancellation
@@ -166,74 +165,61 @@ object DistageAbstractScalatestSpec {
     }
   }
 
-  class DSWordSpecStringWrapper3[F[-_, +_, +_]: TagK3](
+  class DSWordSpecStringWrapperZIO(
     context: Option[SuiteContext],
     suiteName: String,
     suiteId: SuiteId,
     testname: Seq[String],
-    reg: TestRegistration[F[Any, Throwable, _]],
+    reg: TestRegistration[ZIO[Any, Throwable, _]],
     env: TestEnvironment,
-  )(implicit override val tagBIO: TagKK[F[Any, _, _]],
-    override val tagMonoIO: TagK[F[Any, Throwable, _]],
-  ) extends DISyntaxBIOBase[F[Any, +_, +_]]
-    with LowPriorityIdentityOverloads[F[Any, Throwable, _]] {
+  )(implicit override val tagBIO: TagKK[ZIO[Any, _, _]],
+    override val tagMonoIO: TagK[ZIO[Any, Throwable, _]],
+  ) extends DISyntaxBIOBase[ZIO[Any, +_, +_]]
+    with LowPriorityIdentityOverloads[ZIO[Any, Throwable, _]] {
 
-    // FIXME wtf specialize to ZIO?
     def in[R: ZEnvConstructor](function: Functoid[ZIO[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(
         function.map2(ZEnvConstructor[R]) {
-          case (eff, r) => eff.provideEnvironment(r).asInstanceOf[F[Any, Any, Unit]]
+          case (eff, r) => eff.provideEnvironment(r)
         },
         pos.get,
       )
     }
+
+    def in[R: ZEnvConstructor](function: Functoid[ZIO[R, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(
+        function.map2(ZEnvConstructor[R]) {
+          case (eff, r) => eff.provideEnvironment(r)
+        },
+        pos.get,
+      )
+    }
+
     def in[R: ZEnvConstructor](value: => ZIO[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(ZEnvConstructor[R].map(value.provideEnvironment(_).asInstanceOf[F[Any, Any, Unit]]), pos.get)
-    }
-    // FIXME wtf specialize to ZIO?
-//    def in[R: ZEnvConstructor](function: Functoid[F[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
-//      takeBIO(
-//        function.zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-//          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Unit]])(r)
-//        },
-//        pos.get,
-//      )
-//    }
-//
-//    def in[R: ZEnvConstructor](function: Functoid[F[R, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-//      takeBIO(
-//        function.zip(ZEnvConstructor[R]).map2(Functoid.identity[Local3[F]]) {
-//          case ((eff, r), f) => f.provide(eff.asInstanceOf[F[R, Any, Assertion]])(r)
-//        },
-//        pos.get,
-//      )
-//    }
-//
-//    def in[R: ZEnvConstructor](value: => F[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-//      takeBIO(Functoid.identity[Local3[F]].map2(ZEnvConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
-//    }
-//
-//    def in[R: ZEnvConstructor](value: => F[R, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-//      takeBIO(Functoid.identity[Local3[F]].map2(ZEnvConstructor[R])(_.provide(value.asInstanceOf[F[R, Any, Unit]])(_)), pos.get)
-//    }
-
-    def in(function: Functoid[F[Any, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(function.asInstanceOf[Functoid[F[Any, Any, Any]]], pos.get)
+      takeBIO(ZEnvConstructor[R].map(value.provideEnvironment(_)), pos.get)
     }
 
-    def in(function: Functoid[F[Any, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(function.asInstanceOf[Functoid[F[Any, Any, Assertion]]], pos.get)
+    def in[R: ZEnvConstructor](value: => ZIO[R, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(ZEnvConstructor[R].map(value.provideEnvironment(_)), pos.get)
     }
 
-    def in(value: => F[Any, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeBIO(() => value.asInstanceOf[F[Any, Any, Any]], pos.get)
+    def in(function: Functoid[ZIO[Any, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(function, pos.get)
     }
 
-    def in(value: => F[Any, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeBIO(() => value.asInstanceOf[F[Any, Any, Any]], pos.get)
+    def in(function: Functoid[ZIO[Any, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(function, pos.get)
     }
 
-    override protected def takeIO[A](fAsThrowable: Functoid[F[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
+    def in(value: => ZIO[Any, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+      takeBIO(() => value, pos.get)
+    }
+
+    def in(value: => ZIO[Any, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+      takeBIO(() => value, pos.get)
+    }
+
+    override protected def takeIO[A](fAsThrowable: Functoid[ZIO[Any, Throwable, A]], pos: SourceFilePosition): Unit = {
       val id = TestId(
         context.fold(testname)(_.toName(testname)),
         suiteId,

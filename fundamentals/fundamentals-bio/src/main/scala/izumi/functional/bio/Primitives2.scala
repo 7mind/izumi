@@ -25,9 +25,10 @@ object Primitives2 {
 }
 
 private[bio] sealed trait PrimitivesInstances
-object PrimitivesInstances {
-  @inline implicit def PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: Primitives2[F[Any, +_, +_]] = impl.PrimitivesZio.asInstanceOf[Primitives3[F]]
+object PrimitivesInstances extends PrimitivesInstancesLowPriority {
+  @inline implicit def PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: Primitives2[F[Any, +_, +_]] = impl.PrimitivesZio.asInstanceOf[Primitives2[F[Any, +_, +_]]]
+}
 
-  // do not use Primitives3 alias here because it confuses both Scala 2 and Scala 3 typechecker in certain cases
-//  @inline implicit def PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: Primitives3[F] = impl.PrimitivesZio.asInstanceOf[Primitives3[F]]
+sealed trait PrimitivesInstancesLowPriority {
+  @inline implicit def PrimitivesZioR[F[-_, +_, +_]: `zio.ZIO`, R]: Primitives2[F[R, +_, +_]] = impl.PrimitivesZio.asInstanceOf[Primitives2[F[R, +_, +_]]]
 }

@@ -1,9 +1,8 @@
 package izumi.distage.testkit.scalatest
 
-import izumi.functional.bio.{IO2, IO3}
 import org.scalactic.source.Position
-import org.scalactic.{Prettifier, source}
-import org.scalatest.{Assertion, Assertions, AssertionsMacro}
+import org.scalactic.Prettifier
+import org.scalatest.{Assertion, Assertions}
 import zio.ZIO
 
 /** scalatest assertion macro for [[zio.ZIO]] */

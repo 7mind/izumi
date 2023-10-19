@@ -131,7 +131,7 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.roles.RoleAppMain
 import zio.IO
 
-abstract class MyRoleLauncher extends RoleAppMain.LauncherBIO2[IO] {
+abstract class MyRoleLauncher extends RoleAppMain.LauncherBIO[IO] {
   override protected def roleAppBootOverrides(argv: RoleAppMain.ArgV): Module = new ModuleDef {
     make[PlanningOptions].from(PlanningOptions(addGraphVizDump = true))
   }

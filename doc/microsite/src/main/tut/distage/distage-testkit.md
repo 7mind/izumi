@@ -18,7 +18,7 @@ Usage of `distage-testkit` generally follows these steps:
     - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1), for monofunctors (`cats.effect.IO`
       , `monix`)
     - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2), for bifunctors (`ZIO`, `monix-bio`)
-    - `F[-_, +_, +_]` - @scaladoc[`Spec3[F]`](izumi.distage.testkit.scalatest.Spec3) for trifunctors (`ZIO`)
+    - `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO) for `ZIO` with environment support in tests
 2. Override `def config: TestConfig` to customize the @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig)
 3. Establish test case contexts
    using [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html),
@@ -32,7 +32,7 @@ Usage of `distage-testkit` generally follows these steps:
       @scaladoc[`in`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$LowPriorityIdentityOverloads)
     - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper)
     - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper2)
-    - @scaladoc[`in` for `F[-_, +_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
+    - @scaladoc[`in` for `ZIO[-R, +E, +A]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapperZIO)
     - Test cases dependent on injectables: @scaladoc[`Functoid`](izumi.distage.model.providers.Functoid)
 
 ### API Overview
@@ -101,12 +101,12 @@ matches our application's effect type from the following:
 - No effect type, imperative usage - @scaladoc[`SpecIdentity`](izumi.distage.testkit.scalatest.SpecIdentity)
 - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1)
 - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2)
-- `F[-_, +_, +_]` - @scaladoc[`Spec3[F]`](izumi.distage.testkit.scalatest.Spec3)
+- `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO)
 
 The effect monad is expected to support sync and async effects. `distage-testkit` provides this support for `Identity`
 , `monix`, `monix-bio`, `ZIO`, and monads wth instances of `cats-effect` or @ref[BIO](../bio/00_bio.md) typeclasses. For
 our demonstration application, the tests will use the `ZIO[-R, +E, +A]` effect type. This means we'll be
-using `Spec3[ZIO]` for the test suite base class.
+using `SpecZIO` for the test suite base class.
 
 The default config (`super.config`) has `pluginConfig`, which by default will scan the package the test is defined in
 for defined Plugin modules. See the @ref:[`distage-extension-plugins`](./distage-framework.md#plugins) documentation for
@@ -121,9 +121,9 @@ classpath scanning, like so:
 
 import com.typesafe.config.ConfigFactory
 import distage.ModuleDef
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
+import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 
-abstract class Test extends Spec3[ZIO] with AssertZIO {
+abstract class Test extends SpecZIO with AssertZIO {
   val defaultConfig = Config(
     starValue = 10,
     mangoValue = 256,
@@ -258,7 +258,7 @@ The different effect types fix the `F[_]` argument for this syntax:
 
 - `Spec1`: `F[_]`
 - `Spec2`: `F[Throwable, _]`
-- `Spec3`: `F[Any, Throwable, _]`
+- `SpecZIO`: `ZIO[R, Any, _]`
 
 With our demonstration application we'll use this to verify the `Score.echoConfig` method. The `Config` required is from
 the `distage` object graph defined in `moduleOverrides`.
@@ -296,7 +296,7 @@ __runTest__(new ScoreEffectsTest with MdocTest { def name = "ScoreEffectsTest" }
 
 #### Assertions with Effects with Environments
 
-@scaladoc[The `in` method for `F[_, _, _]` effect types](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
+@scaladoc[The `in` method for `ZIO`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapperZIO)
 supports injection of environments from the object graph in addition to simple assertions and assertions with effects.
 
 A test that verifies the `BonusService` in our demonstration would be:
@@ -654,7 +654,7 @@ class MemoizedLevel3
 ```
 
 ```scala mdoc:to-string
-class SameLevel_1_WithActivationsOverride extends Spec3[ZIO] {
+class SameLevel_1_WithActivationsOverride extends SpecZIO {
   override protected def config: TestConfig = {
     super.config.copy(
         memoizationRoots = Map(
@@ -957,13 +957,13 @@ import distage.{Activation, DIKey, ModuleDef}
 import distage.StandardAxis.{Scene, Repo}
 import distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
+import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.model.{Score, UserId}
 import leaderboard.repo.{Ladder, Profiles}
 import leaderboard.zioenv.{ladder, rnd}
 import zio.{ZIO, IO}
 
-abstract class LeaderboardTest extends Spec3[ZIO] with AssertZIO {
+abstract class LeaderboardTest extends SpecZIO with AssertZIO {
   override def config = TestConfig(
     pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = new ModuleDef {
