@@ -17,12 +17,12 @@ import scala.collection.mutable
 /**
   * Combined Garbage Collector, Conflict Resolver and Mutation Resolver
   *
-  * Traces the graph from the roots, solves conflict by applying axis rules and
+  * Traces the graph from the roots, solves the conflicts just in time by applying the axis rules, and
   * orders mutators in sane and predictable order.
   *
-  * "predecessor" stands for "a node which should be processed before it's successor".
+  * "predecessor" stands for "a node which should be processed before its successor".
   *
-  * Map of predecessors is a map where key is a dependant and value is a set of all its direct dependencies
+  * Map of predecessors is a map where the key is a dependent and the value is a set of all its direct dependencies
   */
 trait SemigraphSolver[N, I, V] {
   import izumi.distage.planning.solver.SemigraphSolver.*
