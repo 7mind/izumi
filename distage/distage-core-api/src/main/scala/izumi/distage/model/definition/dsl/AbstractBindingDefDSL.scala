@@ -168,13 +168,13 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
     * Example:
     *
     * {{{
-    *   import distage.{AnyConstructor, Tag, ModuleDef}
+    *   import distage.{ClassConstructor, Tag, ModuleDef}
     *   import izumi.distage.model.definition.dsl.ModuleDefDSL
     *
     *   trait RegisteredComponent
     *   class RegisteredComponentImpl extends RegisteredComponent
     *
-    *   def addAndRegister[T <: RegisteredComponent: Tag: AnyConstructor](implicit mutateModule: ModuleDefDSL#MutationContext): Unit = {
+    *   def addAndRegister[T <: RegisteredComponent: Tag: ClassConstructor](implicit mutateModule: ModuleDefDSL#MutationContext): Unit = {
     *     new mutateModule.dsl {
     *       make[T]
     *

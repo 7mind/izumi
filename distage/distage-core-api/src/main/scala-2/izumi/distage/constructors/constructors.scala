@@ -11,24 +11,20 @@ import zio.ZEnvironment
 
 import scala.language.experimental.macros as enableMacros
 
+sealed trait AnyConstructorBase[T] extends Any with ClassConstructorOptionalMakeDSL[T] {
+  def provider: Functoid[T]
+}
+
 /**
-  * An implicitly summonable constructor for a type `T`, can generate constructors for:
-  *
-  *   - concrete classes (using [[ClassConstructor]])
-  *
-  * Since version `1.2.0`, does not generate constructors for traits and abstract classes, or for "factory-like" traits
-  * and abstract classes, instead use [[TraitConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits]])
-  * and [[FactoryConstructor]] respectively. ([[https://izumi.7mind.io/distage/basics#auto-factories Auto-Factories]])
-  *
-  * Use [[ZEnvConstructor]] to generate constructors for `zio.ZEnvironment` values.
+  * An implicitly summonable constructor for a concrete class `T`
   *
   * @example
   * {{{
-  *  import distage.{AnyConstructor, Functoid, Injector, ModuleDef}
+  *  import distage.{ClassConstructor, Functoid, Injector, ModuleDef}
   *
   *  class A(val i: Int)
   *
-  *  val constructor: Functoid[A] = AnyConstructor[A]
+  *  val constructor: Functoid[A] = ClassConstructor[A]
   *
   *  val lifecycle = Injector().produceGet[A](new ModuleDef {
   *    make[A].from(constructor)
@@ -43,22 +39,7 @@ import scala.language.experimental.macros as enableMacros
   *
   * @return [[izumi.distage.model.providers.Functoid]][T] value
   */
-sealed trait AnyConstructor[T] extends Any with AnyConstructorOptionalMakeDSL[T] {
-  def provider: Functoid[T]
-}
-
-object AnyConstructor {
-  def apply[T](implicit ctor: AnyConstructor[T]): Functoid[T] = ctor.provider
-
-  implicit def materialize[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructor[T]
-}
-
-/**
-  * An implicitly summonable constructor for a concrete class `T`
-  *
-  * @see [[AnyConstructor]]
-  */
-final class ClassConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+final class ClassConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructorBase[T]
 
 object ClassConstructor {
   def apply[T](implicit ctor: ClassConstructor[T]): Functoid[T] = ctor.provider
@@ -71,9 +52,10 @@ object ClassConstructor {
   *
   * @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]]
   * @see [[izumi.distage.model.definition.impl]] recommended documenting annotation for use with [[TraitConstructor]]
-  * @see [[AnyConstructor]]
+  *
+  * @return [[izumi.distage.model.providers.Functoid]][T] value
   */
-final class TraitConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+final class TraitConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructorBase[T]
 
 object TraitConstructor {
   def apply[T](implicit ctor: TraitConstructor[T]): Functoid[T] = ctor.provider
@@ -95,9 +77,10 @@ object TraitConstructor {
   *
   * @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]]
   * @see [[izumi.distage.model.definition.impl]] recommended documenting annotation for use with [[FactoryConstructor]]
-  * @see [[AnyConstructor]]
+  *
+  * @return [[izumi.distage.model.providers.Functoid]][T] value
   */
-final class FactoryConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructor[T]
+final class FactoryConstructor[T](val provider: Functoid[T]) extends AnyVal with AnyConstructorBase[T]
 
 object FactoryConstructor {
   def apply[T](implicit ctor: FactoryConstructor[T]): Functoid[T] = ctor.provider
@@ -111,9 +94,8 @@ object FactoryConstructor {
   * `zio.ZEnvironment` heterogeneous map values may be used by ZIO or other Reader-like effects
   *
   * @see [[https://izumi.7mind.io/distage/basics.html#zio-environment-bindings ZIO Environment bindings]]
-  * @see [[AnyConstructor]]
   */
-final class ZEnvConstructor[T](val provider: Functoid[ZEnvironment[T]]) extends AnyVal with AnyConstructor[ZEnvironment[T]]
+final class ZEnvConstructor[T](val provider: Functoid[ZEnvironment[T]]) extends AnyVal with AnyConstructorBase[ZEnvironment[T]]
 
 object ZEnvConstructor {
   def apply[T](implicit ctor: ZEnvConstructor[T]): Functoid[ZEnvironment[T]] = ctor.provider
@@ -123,19 +105,19 @@ object ZEnvConstructor {
   implicit def materialize[T]: ZEnvConstructor[T] = macro ZEnvConstructorMacro.mkZEnvConstructor[T]
 }
 
-private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] extends Any {
+private[constructors] sealed trait ClassConstructorOptionalMakeDSL[T] extends Any {
   def provider: Functoid[T]
 }
 
-object AnyConstructorOptionalMakeDSL {
-  private[constructors] final class Impl[T](val provider: Functoid[T]) extends AnyVal with AnyConstructorOptionalMakeDSL[T]
+object ClassConstructorOptionalMakeDSL {
+  private[constructors] final class Impl[T](val provider: Functoid[T]) extends AnyVal with ClassConstructorOptionalMakeDSL[T]
 
-  @inline def apply[T](functoid: Functoid[T]): AnyConstructorOptionalMakeDSL.Impl[T] = {
-    new AnyConstructorOptionalMakeDSL.Impl[T](functoid)
+  @inline def apply[T](functoid: Functoid[T]): ClassConstructorOptionalMakeDSL.Impl[T] = {
+    new ClassConstructorOptionalMakeDSL.Impl[T](functoid)
   }
 
-  def errorConstructor[T](tpe: String, nonWhitelistedMethods: List[String]): AnyConstructorOptionalMakeDSL.Impl[T] = {
-    AnyConstructorOptionalMakeDSL[T](Functoid.lift(throwError(tpe, nonWhitelistedMethods)))
+  def errorConstructor[T](tpe: String, nonWhitelistedMethods: List[String]): ClassConstructorOptionalMakeDSL.Impl[T] = {
+    ClassConstructorOptionalMakeDSL[T](Functoid.lift(throwError(tpe, nonWhitelistedMethods)))
   }
 
   def throwError(tpe: String, nonWhitelistedMethods: List[String]): Nothing = {
@@ -150,5 +132,5 @@ object AnyConstructorOptionalMakeDSL {
     )
   }
 
-  implicit def materialize[T]: AnyConstructorOptionalMakeDSL.Impl[T] = macro AnyConstructorMacro.anyConstructorOptionalMakeDSL[T]
+  implicit def materialize[T]: ClassConstructorOptionalMakeDSL.Impl[T] = macro MakeMacro.classConstructorOptionalMakeDSL[T]
 }

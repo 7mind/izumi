@@ -1,7 +1,7 @@
 package izumi.distage.model.definition.dsl
 
 import izumi.distage.LocalContext
-import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, TraitConstructor, ZEnvConstructor}
+import izumi.distage.constructors.{ClassConstructor, FactoryConstructor, TraitConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
@@ -109,8 +109,8 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
 object ModuleDefDSL {
 
   trait MakeDSLBase[T, AfterBind] extends AnyKindShim {
-    final def from[I <: T: AnyConstructor]: AfterBind =
-      from(AnyConstructor[I])
+    final def from[I <: T: ClassConstructor]: AfterBind =
+      from(ClassConstructor[I])
 
     final def from[I <: T: Tag](function: => I): AfterBind =
       from(Functoid.lift(function))
@@ -175,7 +175,7 @@ object ModuleDefDSL {
       * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
       * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
       */
-    final def from[I <: T](function: Functoid[I]): AfterBind =
+    final def from[I <: T](function: Functoid[I])(implicit d: DummyImplicit): AfterBind =
       bind(ImplDef.ProviderImpl(function.get.ret, function.get))
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
@@ -199,7 +199,7 @@ object ModuleDefDSL {
     def fromLocalContext[R](
       defn: LocalContextDef[R]
     )(implicit ev: T =:= LocalContext[Identity, R],
-      dummyImplicit: DummyImplicit,
+      d: DummyImplicit,
     ): LocalContextDSL[Identity, R, AfterBind] = {
       fromLocalContext[Identity, R](defn)
     }
@@ -299,8 +299,8 @@ object ModuleDefDSL {
       * @see - [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
       *      - [[Lifecycle]]
       */
-    final def fromResource[R <: Lifecycle[LifecycleF, T]: AnyConstructor](implicit tag: LifecycleTag[R]): AfterBind = {
-      fromResource(AnyConstructor[R])
+    final def fromResource[R <: Lifecycle[LifecycleF, T]: ClassConstructor](implicit tag: LifecycleTag[R]): AfterBind = {
+      fromResource(ClassConstructor[R])
     }
 
     final def fromResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R]): AfterBind = {
@@ -308,7 +308,7 @@ object ModuleDefDSL {
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
     }
 
-    final def fromResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R]): AfterBind = {
+    final def fromResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R], d: DummyImplicit): AfterBind = {
       import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
     }
@@ -353,8 +353,8 @@ object ModuleDefDSL {
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] extends AnyKindShim {
 
-    final def add[I <: T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
-      add[I](AnyConstructor[I])
+    final def add[I <: T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+      add[I](ClassConstructor[I])
 
     final def add[I <: T: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterAdd =
       add(Functoid.lift(function))
@@ -422,15 +422,20 @@ object ModuleDefDSL {
     final def refEffect[F[_]: TagK, I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
 
-    final def addResource[R <: Lifecycle[LifecycleF, T]: AnyConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
-      addResource[R](AnyConstructor[R])
+    final def addResource[R <: Lifecycle[LifecycleF, T]: ClassConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
+      addResource[R](ClassConstructor[R])
 
     final def addResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
     }
 
-    final def addResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def addResource[R](
+      function: Functoid[R with Lifecycle[LifecycleF, T]]
+    )(implicit tag: LifecycleTag[R],
+      pos: CodePositionMaterializer,
+      d: DummyImplicit,
+    ): AfterAdd = {
       import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
     }
@@ -563,10 +568,10 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: AnyConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
+      def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: ClassConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
         import tag.{R, E, A, ctorR, tagFull, resourceTag, ev}
-        val provider = AnyConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
-        dsl.fromResource(provider)(resourceTag)
+        val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
+        dsl.fromResource(provider)(resourceTag, DummyImplicit.dummyImplicit)
       }
 
       /**
@@ -629,10 +634,13 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      def addZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: AnyConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T], pos: CodePositionMaterializer): AfterAdd = {
+      def addZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: ClassConstructor](
+        implicit tag: ZIOEnvLifecycleTag[R1, T],
+        pos: CodePositionMaterializer,
+      ): AfterAdd = {
         import tag.{R, E, A, ctorR, tagFull, resourceTag, ev}
-        val provider = AnyConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
-        dsl.addResource(provider)(resourceTag, pos)
+        val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
+        dsl.addResource(provider)(resourceTag, pos, DummyImplicit.dummyImplicit)
       }
 
       /**
@@ -676,7 +684,7 @@ object ModuleDefDSL {
   /** These are the _only_ (not `from`-like) methods that can chained after `make`
     * such that make[T] will still generate the constructor for `T`
     *
-    * See [[izumi.distage.constructors.macros.AnyConstructorMacro.anyConstructorOptionalMakeDSL]]
+    * See [[izumi.distage.constructors.macros.MakeMacro.classConstructorOptionalMakeDSL]]
     *
     * If ANY other method is chained in the same expression
     * it's assumed that it will replace make[T]'s constructor,

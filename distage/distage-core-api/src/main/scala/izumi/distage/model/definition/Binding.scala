@@ -1,6 +1,6 @@
 package izumi.distage.model.definition
 
-import izumi.distage.constructors.AnyConstructor
+import izumi.distage.constructors.{ClassConstructor}
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.plan.repr.{BindingFormatter, KeyFormatter}
 import izumi.distage.model.providers.Functoid
@@ -83,8 +83,8 @@ object Binding {
   }
 
   implicit final class WithImplementation[R](private val binding: ImplBinding { def withImplDef(implDef: ImplDef): R }) extends AnyVal {
-    def withImpl[T: Tag: AnyConstructor]: R =
-      withImpl[T](AnyConstructor[T])
+    def withImpl[T: Tag: ClassConstructor]: R =
+      withImpl[T](ClassConstructor[T])
 
     def withImpl[T: Tag](instance: T): R =
       binding.withImplDef(ImplDef.InstanceImpl(SafeType.get[T], instance))

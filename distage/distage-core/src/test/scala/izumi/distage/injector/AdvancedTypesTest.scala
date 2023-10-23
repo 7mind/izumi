@@ -1,7 +1,6 @@
 package izumi.distage.injector
 
 import distage.*
-import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases.*
 import izumi.distage.fixtures.TypesCases.*
 import izumi.distage.model.PlannerInput
@@ -152,7 +151,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag: TraitConstructor] extends ModuleDef {
       make[Dep]
       make[T { def dep2: Dep }].from(() => null.asInstanceOf[T { def dep2: Dep }])
-      make[T { def dep: Dep }].from[G]
+      make[T { def dep: Dep }].from(TraitConstructor[G])
     }
 
     val definition = PlannerInput.everything(new Definition[Trait1, Trait1])
@@ -172,8 +171,8 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
 
     class Definition[T: Tag, G <: T with Trait1: Tag: TraitConstructor, C <: T with Trait4: Tag: TraitConstructor] extends ModuleDef {
       make[Dep]
-      make[T with Trait4].from[C]
-      make[T with Trait1].from[G]
+      make[T with Trait4].from(TraitConstructor[C])
+      make[T with Trait1].from(TraitConstructor[G])
     }
 
     val definition = PlannerInput.everything(new Definition[Trait3[Dep], Trait3[Dep], Trait5[Dep]])
@@ -199,7 +198,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "handle generic parameters in abstract `with` types" in {
     import TypesCase3._
 
-    class Definition[T <: Dep: Tag: AnyConstructor, K >: Trait5[T]: Tag] extends ModuleDef {
+    class Definition[T <: Dep: Tag: ClassConstructor, K >: Trait5[T]: Tag] extends ModuleDef {
       make[T]
       make[Trait3[T] with K].fromTrait[Trait5[T]]
     }

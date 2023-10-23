@@ -230,7 +230,9 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         tag("tag2")
       }
 
-      assert(definition.bindings == Set(Bindings.binding[TestClass].addTags(Set("tag1", "tag2")), Bindings.bindingTrait[TestDependency0].addTags(Set("tag1", "tag2", "sniv"))))
+      assert(
+        definition.bindings == Set(Bindings.binding[TestClass].addTags(Set("tag1", "tag2")), Bindings.bindingTrait[TestDependency0].addTags(Set("tag1", "tag2", "sniv")))
+      )
     }
 
     "ModuleBuilder supports tags; same bindings with different tags are NOT merged (tag merging removed in 0.11.0)" in {
@@ -626,7 +628,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         """
         )
       )
-      assert(res1.getMessage contains "[T: AnyConstructor]")
+      assert(res1.getMessage contains "[T: ClassConstructor]")
       val res2 = intercept[TestFailedException](
         assertCompiles(
           """
@@ -637,7 +639,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         )
       )
 
-      res2.getMessage should include regex "AnyConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use makeFactory or fromFactory to wire factories"
+      res2.getMessage should include regex "ClassConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use `makeFactory` or `fromFactory` to wire factories"
     }
 
     "define multiple bindings with different axis but the same implementation" in {
