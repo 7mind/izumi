@@ -1,7 +1,7 @@
 package izumi.distage.injector
 
 import distage.With
-import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, TraitConstructor}
+import izumi.distage.constructors.{FactoryConstructor, TraitConstructor}
 import izumi.distage.fixtures.Scala3TraitCases.*
 import izumi.distage.model.reflection.TypedRef
 import org.scalatest.wordspec.AnyWordSpec

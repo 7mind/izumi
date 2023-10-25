@@ -1,6 +1,6 @@
 package izumi.distage.constructors
 
-import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL, ClassConstructorMacro, TraitConstructor, TraitConstructorMacro}
+import izumi.distage.constructors.{ClassConstructor, ClassConstructorMacro, ClassConstructorOptionalMakeDSL}
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.CodePositionMaterializer
@@ -10,44 +10,7 @@ import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import scala.annotation.experimental
 import scala.quoted.{Expr, Quotes, Type}
 
-object AnyConstructorMacro {
-
-  @experimental
-  def make[R: Type](using qctx: Quotes): Expr[AnyConstructor[R]] = try {
-    import qctx.reflect.{*, given}
-
-    val tpe0 = TypeRepr.of[R].dealias.simplified
-    val typeSymbol = tpe0.typeSymbol
-
-    // FIXME remove redundant check across macros
-    val util = new ConstructorUtil[qctx.type]()
-    util.requireConcreteTypeConstructor(TypeRepr.of[R], "AnyConstructor")
-
-    // FIXME remove redundant check across macros
-    lazy val context = new ConstructorContext[R, qctx.type, util.type](util)
-
-    val tpeDeref = util.dereferenceTypeRef(tpe0)
-    if ((tpe0.classSymbol.isDefined && !(util.symbolIsTraitOrAbstract(typeSymbol)) && (tpeDeref match {
-        case _: Refinement => false; case _ => true
-      })) || {
-        tpeDeref match { case _: ConstantType | _: TermRef => true; case _ => false }
-      }) {
-      ClassConstructorMacro.makeImpl[R](util)
-    } else if ({
-      context.isWireableTrait
-    }) {
-      TraitConstructorMacro.makeImpl[R](util, context)
-    } else if (context.isFactoryOrTrait) {
-      report.errorAndAbort(
-        s"""AnyConstructor failure: ${Type.show[R]} is a Factory, use makeFactory or fromFactory to wire factories.""".stripMargin
-      )
-    } else {
-      report.errorAndAbort(
-        s"""AnyConstructor failure: couldn't generate a constructor for ${Type.show[R]}!
-           |It's neither a concrete class, nor a wireable trait or abstract class!""".stripMargin
-      )
-    }
-  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
+object MakeMacro {
 
   @experimental
   def makeMethod[T: Type, BT: Type](using qctx: Quotes): Expr[BT] = try {
@@ -62,7 +25,7 @@ object AnyConstructorMacro {
     }
     val outerClass = goGetOuterClass(Symbol.spliceOwner)
 
-    Expr.summon[AnyConstructorOptionalMakeDSL[T]] match {
+    Expr.summon[ClassConstructorOptionalMakeDSL[T]] match {
       case Some(ctor) =>
         applyMake[T, BT](outerClass)('{ $ctor.provider })
       case None =>
@@ -158,9 +121,9 @@ object AnyConstructorMacro {
     // FIXME remove redundant wrapping and .provider call
     val functoid: Expr[Functoid[T]] =
       if (fromLikeMethods.isEmpty) {
-        '{ ${ AnyConstructorMacro.make[T] }.provider }
+        '{ ${ ClassConstructorMacro.make[T] }.provider }
       } else {
-        '{ AnyConstructorOptionalMakeDSL.errorConstructor[T](${ Expr(Type.show[T]) }, ${ Expr(fromLikeMethods) }).provider }
+        '{ ClassConstructorOptionalMakeDSL.errorConstructor[T](${ Expr(Type.show[T]) }, ${ Expr(fromLikeMethods) }).provider }
       }
 
     val res = applyMake[T, BT](outerClass)(functoid)

@@ -1125,12 +1125,11 @@ runtime.unsafeRun {
 
 ## Auto-Traits
 
-distage can instantiate traits and structural types. All unimplemented fields in a trait, or a refinement are filled in from the object graph.
+distage can instantiate traits and structural types.
 
-Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro
-and can be summoned at need.
+Use `makeTrait[X]` or `make[X].fromTrait[Y]` to wire traits, abstract classes or a structural types.
 
-If a suitable trait is specified as an implementation class for a binding, `TraitConstructor` will be used automatically:
+All unimplemented fields in a trait, or a refinement are filled in from the object graph. Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro and can be summoned at need.
 
 Example:
 
@@ -1195,8 +1194,8 @@ object PlusedInt {
 def module = new ModuleDef {
   make[Int].named("a").from(1)
   make[Int].named("b").from(2)
-  make[Pluser]
-  make[PlusedInt].from[PlusedInt.Impl]
+  makeTrait[Pluser]
+  make[PlusedInt].fromTrait[PlusedInt.Impl]
 }
 
 Injector().produceRun(module) {
@@ -1250,7 +1249,7 @@ it with a trait instead. Example:
 }
 
 Injector().produceRun(module overriddenBy new ModuleDef {
-  make[PlusedInt].from[OverridenPlusedIntImpl]
+  make[PlusedInt].fromTrait[OverridenPlusedIntImpl]
 }) {
   plusedInt: PlusedInt =>
     plusedInt.result()

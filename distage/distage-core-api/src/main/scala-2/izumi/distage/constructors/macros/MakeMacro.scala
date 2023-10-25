@@ -1,30 +1,28 @@
 package izumi.distage.constructors.macros
 
-import scala.annotation.nowarn
-import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL, DebugProperties}
+import izumi.distage.constructors.{ClassConstructorOptionalMakeDSL, DebugProperties}
 import izumi.distage.model.definition.dsl.ModuleDefDSL
-import izumi.distage.model.reflection.universe.StaticDIUniverse
-import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
+import izumi.fundamentals.reflection.TrivialMacroLogger
 
+import scala.annotation.nowarn
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
 @nowarn("msg=deprecated.*since 2.11")
-object AnyConstructorMacro {
+object MakeMacro {
 
   def make[B[_], T: c.WeakTypeTag](c: blackbox.Context): c.Expr[B[T]] = {
-    import c.universe._
-    c.Expr[B[T]](q"""${c.prefix}._make[${weakTypeOf[T]}](${c.inferImplicitValue(weakTypeOf[AnyConstructorOptionalMakeDSL[T]], silent = false)}.provider)""")
+    import c.universe.*
+    c.Expr[B[T]](q"""${c.prefix}._make[${weakTypeOf[T]}](${c.inferImplicitValue(weakTypeOf[ClassConstructorOptionalMakeDSL[T]], silent = false)}.provider)""")
   }
 
-  def anyConstructorOptionalMakeDSL[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructorOptionalMakeDSL.Impl[T]] = {
-    import c.universe._
+  def classConstructorOptionalMakeDSL[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ClassConstructorOptionalMakeDSL.Impl[T]] = {
+    import c.universe.*
 
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 
     val enclosingClass = c.enclosingClass
-    // We expect this macro to be called only and __ONLY__ from `AnyConstructorMacro.make`
+    // We expect this macro to be called only and __ONLY__ from `MakeMacro.make`
     // we're going to use the position of the `make` call to search for subsequent methods
     // instead of the position of the implicit search itself (which is unstable and
     // sometimes doesn't exist, for example during scaladoc compilation)
@@ -62,12 +60,12 @@ object AnyConstructorMacro {
 
     val tpe = weakTypeOf[T]
 
-    c.Expr[AnyConstructorOptionalMakeDSL.Impl[T]] {
+    c.Expr[ClassConstructorOptionalMakeDSL.Impl[T]] {
       maybeNonwhiteListedMethods match {
         case None =>
           c.abort(
             c.enclosingPosition,
-            s"""Couldn't find position of the `make` call when summoning AnyConstructorOptionalMakeDSL[$tpe]
+            s"""Couldn't find position of the `make` call when summoning ClassConstructorOptionalMakeDSL[$tpe]
                |Got tree: $maybeTree
                |Result of search: $maybeNonwhiteListedMethods
                |Searched for position: $positionOfMakeCall
@@ -79,42 +77,14 @@ object AnyConstructorMacro {
           if (nonwhiteListedMethods.isEmpty) {
             logger.log(s"""For $tpe found no `.from`-like calls in $maybeTree""".stripMargin)
 
-            q"""_root_.izumi.distage.constructors.AnyConstructorOptionalMakeDSL.apply[$tpe](${mkAnyConstructor[T](c)}.provider)"""
+            q"""_root_.izumi.distage.constructors.ClassConstructorOptionalMakeDSL.apply[$tpe](${ClassConstructorMacro.mkClassConstructor[T](c)}.provider)"""
           } else {
             logger.log(s"For $tpe found `.from`-like calls, generating ERROR constructor: $nonwhiteListedMethods")
 
-            q"""_root_.izumi.distage.constructors.AnyConstructorOptionalMakeDSL.errorConstructor[$tpe](${tpe.toString}, $nonwhiteListedMethods)"""
+            q"""_root_.izumi.distage.constructors.ClassConstructorOptionalMakeDSL.errorConstructor[$tpe](${tpe.toString}, $nonwhiteListedMethods)"""
           }
       }
     }
-  }
-
-  def mkAnyConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = {
-    import c.universe._
-
-    val macroUniverse = StaticDIUniverse(c)
-    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
-
-    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
-    requireConcreteTypeConstructor(c)("AnyConstructor", targetType)
-
-    if (reflectionProvider.isConcrete(targetType)) {
-      ClassConstructorMacro.mkClassConstructor[T](c)
-    } else if (reflectionProvider.isWireableAbstract(targetType)) {
-      TraitConstructorMacro.mkTraitConstructor[T](c)
-    } else if (reflectionProvider.isFactory(targetType)) {
-      c.abort(
-        c.enclosingPosition,
-        s"""AnyConstructor failure: $targetType is a Factory, use makeFactory or fromFactory to wire factories.""".stripMargin,
-      )
-    } else {
-      c.abort(
-        c.enclosingPosition,
-        s"""AnyConstructor failure: couldn't generate a constructor for $targetType!
-           |It's neither a concrete class, nor a wireable trait or abstract class!""".stripMargin,
-      )
-    }
-
   }
 
 }

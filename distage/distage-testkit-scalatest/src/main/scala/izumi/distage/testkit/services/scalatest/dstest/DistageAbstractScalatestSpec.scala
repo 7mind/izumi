@@ -92,7 +92,7 @@ object DistageAbstractScalatestSpec {
     }
   }
 
-  class DSWordSpecStringWrapper[F[_]](
+  open class DSWordSpecStringWrapper[F[_]](
     context: Option[SuiteContext],
     suiteName: String,
     suiteId: SuiteId,
@@ -128,7 +128,7 @@ object DistageAbstractScalatestSpec {
     }
   }
 
-  class DSWordSpecStringWrapper2[F[+_, +_]](
+  open class DSWordSpecStringWrapper2[F[+_, +_]](
     context: Option[SuiteContext],
     suiteName: String,
     suiteId: SuiteId,
@@ -165,7 +165,7 @@ object DistageAbstractScalatestSpec {
     }
   }
 
-  class DSWordSpecStringWrapperZIO(
+  open class DSWordSpecStringWrapperZIO(
     context: Option[SuiteContext],
     suiteName: String,
     suiteId: SuiteId,

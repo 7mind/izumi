@@ -1,6 +1,6 @@
 package izumi.distage.model.definition
 
-import izumi.distage.constructors.{AnyConstructor, FactoryConstructor, TraitConstructor}
+import izumi.distage.constructors.{ClassConstructor, FactoryConstructor, TraitConstructor}
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey.SetKeyMeta
@@ -9,8 +9,8 @@ import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.Tag
 
 object Bindings {
-  def binding[T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
-    provider[T](AnyConstructor[T])
+  def binding[T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
+    provider[T](ClassConstructor[T])
 
   def bindingTrait[T: Tag: TraitConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     provider[T](TraitConstructor[T])
@@ -18,8 +18,8 @@ object Bindings {
   def bindingFactory[T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     provider[T](FactoryConstructor[T])
 
-  def binding[T: Tag, I <: T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
-    provider[T](AnyConstructor[I])
+  def binding[T: Tag, I <: T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
+    provider[T](ClassConstructor[I])
 
   def binding[T: Tag, I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(SafeType.get[I], instance), Set.empty, pos.get.position)
@@ -36,8 +36,16 @@ object Bindings {
   def emptySet[T](implicit tag: Tag[Set[T]], pos: CodePositionMaterializer): EmptySetBinding[DIKey.TypeKey] =
     EmptySetBinding(DIKey.get[Set[T]], Set.empty, pos.get.position)
 
-  def setElement[T: Tag, I <: T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
-    setElementProvider[T](AnyConstructor[I])
+  def setElement[T: Tag, I <: T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
+    setElementProvider[T](ClassConstructor[I])
+  }
+
+  def setElementTrait[T: Tag, I <: T: Tag: TraitConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
+    setElementProvider[T](TraitConstructor[I])
+  }
+
+  def setElementFactory[T: Tag, I <: T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
+    setElementProvider[T](FactoryConstructor[I])
   }
 
   def setElement[T: Tag, I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): SetElementBinding = {
