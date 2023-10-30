@@ -31,9 +31,8 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
 
   override def finalizers[F[_]: TagK]: immutable.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
-  override private[definition] final def _bindDSL[T](ref: SingletonRef): LocatorDef.BindDSL[T] = new LocatorDef.BindDSL[T](ref, ref.key)
-  override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): LocatorDef.BindDSLUnnamedAfterFrom[T] =
-    new LocatorDef.BindDSLUnnamedAfterFrom(ref, ref.key)
+  override private[definition] final def _bindDSL[T](ref: SingletonRef): LocatorDef.BindDSL[T] = new LocatorDef.BindDSL[T](ref)
+  override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): LocatorDef.BindDSLUnnamedAfterFrom[T] = new LocatorDef.BindDSLUnnamedAfterFrom(ref)
   override private[definition] final def _setDSL[T](ref: SetRef): LocatorDef.SetDSL[T] = new LocatorDef.SetDSL[T](ref)
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
@@ -88,41 +87,36 @@ object LocatorDef {
 
   // DSL state machine
 
-  final class BindDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.TypeKey)
-    extends BindDSLBase[T, BindDSLUnnamedAfterFrom[T]]
-    with BindDSLMutBase[T] {
+  final class BindDSL[T](protected val mutableState: SingletonRef) extends BindDSLBase[T, BindDSLUnnamedAfterFrom[T]] with BindDSLMutBase[T] {
     def named(name: Identifier): BindNamedDSL[T] =
-      addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
+      addOp(SetId(name))(new BindNamedDSL[T](_))
 
     override protected def bind(impl: ImplDef): BindDSLUnnamedAfterFrom[T] =
-      addOp(SetImpl(impl))(new BindDSLUnnamedAfterFrom[T](_, key))
+      addOp(SetImpl(impl))(new BindDSLUnnamedAfterFrom[T](_))
   }
 
-  final class BindNamedDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.IdKey[?])
-    extends BindDSLBase[T, BindDSLNamedAfterFrom[T]]
-    with BindDSLMutBase[T] {
+  final class BindNamedDSL[T](protected val mutableState: SingletonRef) extends BindDSLBase[T, BindDSLNamedAfterFrom[T]] with BindDSLMutBase[T] {
     override protected def bind(impl: ImplDef): BindDSLNamedAfterFrom[T] =
-      addOp(SetImpl(impl))(new BindDSLNamedAfterFrom[T](_, key))
+      addOp(SetImpl(impl))(new BindDSLNamedAfterFrom[T](_))
   }
 
-  final class BindDSLUnnamedAfterFrom[T](override protected val mutableState: SingletonRef, override protected val key: DIKey.TypeKey) extends BindDSLMutBase[T] {
+  final class BindDSLUnnamedAfterFrom[T](override protected val mutableState: SingletonRef) extends BindDSLMutBase[T] {
     def named(name: Identifier): BindNamedDSL[T] =
-      addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
+      addOp(SetId(name))(new BindNamedDSL[T](_))
   }
 
-  final class BindDSLNamedAfterFrom[T](override protected val mutableState: SingletonRef, override protected val key: DIKey.IdKey[?]) extends BindDSLMutBase[T]
-  final class BindDSLAfterAlias[T](override protected val mutableState: SingletonRef, override protected val key: DIKey) extends BindDSLMutBase[T]
+  final class BindDSLNamedAfterFrom[T](override protected val mutableState: SingletonRef) extends BindDSLMutBase[T]
+  final class BindDSLAfterAlias[T](override protected val mutableState: SingletonRef) extends BindDSLMutBase[T]
 
   sealed trait BindDSLMutBase[T] {
     protected[this] def mutableState: SingletonRef
-    protected[this] def key: DIKey
 
     def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): BindDSLAfterAlias[T] = {
-      addOp(AliasTo(DIKey.get[T1], pos.get.position))(new BindDSLAfterAlias[T](_, key))
+      addOp(AliasTo(DIKey.get[T1], pos.get.position))(new BindDSLAfterAlias[T](_))
     }
 
     def aliased[T1 >: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): BindDSLAfterAlias[T] = {
-      addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new BindDSLAfterAlias[T](_, key))
+      addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new BindDSLAfterAlias[T](_))
     }
 
     protected[this] final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {

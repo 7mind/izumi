@@ -77,7 +77,7 @@ object ExecutableOp {
       }
     }
 
-    final case class LocalContext(target: DIKey, wiring: SingletonWiring.PrepareLocalContext, origin: EqualizedOperationOrigin) extends WiringOp {
+    final case class CreateSubcontext(target: DIKey, wiring: SingletonWiring.PrepareSubcontext, origin: EqualizedOperationOrigin) extends WiringOp {
       override def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): InstantiationOp = {
         this.copy(target = targets(this.target), wiring = this.wiring.replaceKeys(parameters))
       }

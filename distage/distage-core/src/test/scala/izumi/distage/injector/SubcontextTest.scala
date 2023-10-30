@@ -1,15 +1,15 @@
 package izumi.distage.injector
 
-import distage.{Activation, DIKey, Injector, Module, ModuleDef, PlanVerifier}
-import izumi.distage.LocalContext
-import izumi.distage.injector.LocalContextTest.*
+import distage.{Activation, DIKey, Injector, ModuleDef, PlanVerifier, Repo}
+import izumi.distage.Subcontext
+import izumi.distage.injector.SubcontextTest.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
 import org.scalatest.wordspec.AnyWordSpec
 
-class LocalContextTest extends AnyWordSpec with MkInjector {
+class SubcontextTest extends AnyWordSpec with MkInjector {
 
   "support local contexts" in {
     val module = new ModuleDef {
@@ -19,28 +19,33 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
       // this will not be used/instantiated
       make[LocalService].from[LocalServiceBadImpl]
 
-      make[LocalContext[Identity, Int]]
+      makeSubcontext[Int]
         .named("test")
-        .fromLocalContext(new ModuleDef {
-          make[LocalService].from[LocalServiceGoodImpl]
-        }.running {
+        .withSubmodule {
+          new ModuleDef {
+            make[LocalService]
+              .from[LocalServiceGoodImpl]
+              .annotateParameter[Arg]("x")
+          }
+        }
+        .extractWith {
           (summator: LocalService) =>
             summator.localSum
-        })
-        .external(DIKey.get[Arg])
+        }
+        .localDependency[Arg]("x")
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[LocalContext[Identity, Int]].named("test"))
+    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Int]].named("test"))
 
     val injector = mkNoCyclesInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val local = context.get[LocalContext[Identity, Int]]("test")
+    val local = context.get[Subcontext[Int]]("test")
     assert(context.find[GlobalServiceDependency].nonEmpty)
     assert(context.find[GlobalService].nonEmpty)
     assert(context.find[LocalService].isEmpty)
-    val out = local.provide[Arg](Arg(1)).produceRun()
+    val out = local.provide[Arg]("x")(Arg(1)).produceRun()
     assert(out == 230)
 
     val result = PlanVerifier().verify[Identity](module, Roots.Everything, Injector.providedKeys(), Set.empty)
@@ -52,88 +57,78 @@ class LocalContextTest extends AnyWordSpec with MkInjector {
       make[GlobalServiceDependency]
       make[GlobalService]
 
-      make[LocalContext[Identity, Int]]
+      makeSubcontext[Int]
         .named("test")
-        .fromLocalContext(
-          new ModuleDef {
-            make[Arg].fromValue(Arg(2))
-            make[LocalService].from[LocalServiceGoodImpl]
-          }.running {
-            (summator: LocalService) =>
-              summator.localSum
-          }
-        )
+        .withSubmodule(new ModuleDef {
+          make[Arg].fromValue(Arg(2))
+          make[LocalService].from[LocalServiceGoodImpl]
+        })
+        .extractWith {
+          (summator: LocalService) =>
+            summator.localSum
+        }
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[LocalContext[Identity, Int]].named("test"))
+    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Int]].named("test"))
 
     val injector = mkNoCyclesInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val local = context.get[LocalContext[Identity, Int]]("test")
+    val local = context.get[Subcontext[Int]]("test")
 
     assert(local.produceRun() == 231)
   }
 
   "support self references" in {
     val module = new ModuleDef {
-      make[LocalContext[Identity, Int]]
-        .fromLocalContext(
-          new ModuleDef {
-            make[LocalRecursiveService].from[LocalRecursiveServiceGoodImpl]
-          }.running {
-            (summator: LocalRecursiveService) =>
-              summator.localSum
-          }
-        ).external[Arg]
+      makeSubcontext[Int](new ModuleDef {
+        make[LocalRecursiveService].from[LocalRecursiveServiceGoodImpl]
+      })
+        .extractWith {
+          (summator: LocalRecursiveService) =>
+            summator.localSum
+        }
+        .localDependency[Arg]
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[LocalContext[Identity, Int]])
+    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Int]])
 
     val injector = mkNoCyclesInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val local = context.get[LocalContext[Identity, Int]]
+    val local = context.get[Subcontext[Int]]
 
     assert(local.provide(Arg(10)).produceRun() == 20)
   }
 
   "support various local context syntax modes" in {
     val module1 = new ModuleDef {
-      make[LocalContext[Identity, Int]]
+      makeSubcontext[Int]
         .named("test")
-        .fromLocalContext(Module.empty.running {
+        .tagged(Repo.Dummy)
+        .extractWith {
           (summator: LocalService) =>
             summator.localSum
-        })
-        .external(DIKey.get[Int])
+        }
+        .localDependency[Int]
     }
 
     val module2 = new ModuleDef {
-      make[LocalContext[Identity, Int]]
+      makeSubcontext[Int]
         .named("test")
-        .fromLocalContext(Module.empty.running {
+        .extractWith {
           (summator: LocalService) =>
             summator.localSum
-        })
+        }
     }
 
-    val module3 = new ModuleDef {
-      make[LocalContext[cats.effect.IO, Int]]
-        .named("test")
-        .fromLocalContext(Module.empty.running {
-          (summator: LocalService) =>
-            cats.effect.IO(summator.localSum)
-        })
-    }
-
-    Quirks.discard((module1, module2, module3))
+    Quirks.discard((module1, module2))
   }
 }
 
-object LocalContextTest {
+object SubcontextTest {
   class GlobalServiceDependency {
     def uselessConst: Int = 88
   }
@@ -158,7 +153,7 @@ object LocalContextTest {
     def localSum: Int
   }
 
-  class LocalRecursiveServiceGoodImpl(value: Arg, self: LocalContext[Identity, Int]) extends LocalRecursiveService {
+  class LocalRecursiveServiceGoodImpl(value: Arg, self: Subcontext[Int]) extends LocalRecursiveService {
     def localSum: Int = if (value.value > 0) {
       2 + self.provide(Arg(value.value - 1)).produceRun()
     } else {

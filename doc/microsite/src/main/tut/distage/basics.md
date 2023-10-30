@@ -220,7 +220,7 @@ object Ids {
 
 You cannot embed non-singletons into the object graph, but you may create them as normal using factories. `distage`'s @ref[Auto-Factories](#auto-factories) can generate implementations for your factories, removing the associated boilerplate.
 
-While Auto-Factories may remove the boilerplate of generating factories for singular components, if you need to create a new non-trivial subgraph dynamically, you'll need to run `Injector` again – you may use `Injector.inherit` to reuse components from the outer object graph in your new nested object graph, see @ref[Injector Inheritance](advanced-features.md#injector-inheritance). It's safe, performance-wise, to run `Injector` to create nested graphs, it's extremely fast.
+While Auto-Factories may remove the boilerplate of generating factories for singular components, if you need to create a new non-trivial subgraph dynamically, you'll need to run `Injector` again – you may use `Injector.inherit` to reuse components from the outer object graph in your new nested object graph, see @ref[Injector Inheritance](advanced-features.md#injector-inheritance). It's safe, performance-wise, to run `Injector` to create nested graphs – `Injector` is extremely fast.
 
 ## Real-world example
 

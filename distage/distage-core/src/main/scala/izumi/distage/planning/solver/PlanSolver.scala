@@ -10,7 +10,7 @@ import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
-import izumi.distage.planning.LocalContextHandler
+import izumi.distage.planning.SubcontextHandler
 import izumi.distage.planning.solver.SemigraphSolver.*
 import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.nonempty.NEList
@@ -107,8 +107,8 @@ object PlanSolver {
       planner: Planner,
       ac: ActivationChoices,
       input: PlannerInput,
-    ) = {
-      val handler = new LocalContextHandler.KnownActivationHandler(planner, input)
+    ): Either[NEList[ConflictResolutionError[DIKey, InstantiationOp]], Seq[(Annotated[DIKey], InstantiationOp)]] = {
+      val handler = new SubcontextHandler.KnownActivationHandler(planner, input)
 
       for {
         maybeOps <- preps.computeOperationsUnsafe(handler, input.bindings).left.map(issues => NEList(CannotProcessLocalContext[DIKey](issues)))
@@ -133,8 +133,7 @@ object PlanSolver {
       } yield {
         out
       }
-
-    } // Either[List[UnconfiguredMutatorAxis], Seq[(Annotated[DIKey], InstantiationOp)]]
+    }
 
     private def computeSets(
       ac: ActivationChoices,

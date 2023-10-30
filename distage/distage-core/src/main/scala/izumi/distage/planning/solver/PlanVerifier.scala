@@ -1,6 +1,5 @@
 package izumi.distage.planning.solver
 
-import distage.TagK
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
 import izumi.distage.model.exceptions.PlanVerificationException
@@ -13,13 +12,14 @@ import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
-import izumi.distage.planning.{BindingTranslator, LocalContextHandler}
+import izumi.distage.planning.{BindingTranslator, SubcontextHandler}
 import izumi.distage.provisioning.strategies.ImportStrategyDefaultImpl
 import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.collections.nonempty.{NEList, NEMap, NESet}
 import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
+import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
 import scala.annotation.{nowarn, tailrec}
@@ -42,12 +42,9 @@ class PlanVerifier(
     val before = System.currentTimeMillis()
     var after = before
 
+    val verificationHandler = new SubcontextHandler.VerificationHandler(this, excludedActivations)
     (for {
-      ops <- preps
-        .computeOperationsUnsafe(
-          new LocalContextHandler.VerificationHandler(this, excludedActivations),
-          bindings,
-        ).map(_.toSeq)
+      ops <- preps.computeOperationsUnsafe(verificationHandler, bindings).map(_.toSeq)
     } yield {
       val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
         case (axis, points) =>
@@ -98,10 +95,10 @@ class PlanVerifier(
         case None => PlanVerifierResult.Correct(visitedKeys, time)
       }
     }) match {
-      case Left(value) =>
+      case Left(errors) =>
         after = System.currentTimeMillis()
         val time = FiniteDuration(after - before, TimeUnit.MILLISECONDS)
-        val issues = value.map(f => PlanIssue.CantVerifyLocalContext(f)).toSet[PlanIssue]
+        val issues = errors.map(f => PlanIssue.CantVerifyLocalContext(f)).toSet[PlanIssue]
         PlanVerifierResult.Incorrect(Some(NESet.unsafeFrom(issues)), Set.empty, time)
       case Right(value) => value
     }

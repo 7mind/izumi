@@ -8,6 +8,7 @@ import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
+import izumi.distage.model.planning.PlanIssue
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
@@ -667,7 +668,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       assert(bindings.size == 3)
     }
 
-    "Progression test: set bindings with the same source position and implementation shouldn't conflict" in {
+    "progression test: set bindings with the same source position and implementation shouldn't conflict" in {
       val definition: ModuleDef = new ModuleDef {
         val fn = {
           var i = 0
@@ -691,6 +692,22 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
             assert(s == Set(1, 2, 3))
           }
       }
+    }
+
+    "addDependency supports adding dependencies for .fromValue and .using bindings" in {
+      val definition = new ModuleDef {
+        make[Int]
+          .fromValue(5)
+          .addDependency[String]
+        make[Unit].fromValue(())
+        make[Unit].named("x").using[Unit].addDependency[String]
+      }
+
+      val verification = PlanVerifier().verify[Identity](definition, Roots.Everything, Set.empty, Set.empty)
+      assert(verification.verificationFailed)
+      assert(verification.issues.get.forall(_.isInstanceOf[PlanIssue.MissingImport]))
+      val imports = verification.issues.get.toSet.collect { case i: PlanIssue.MissingImport => (i.dependee, i.key) }
+      assert(imports == Set(DIKey[Int] -> DIKey[String], DIKey[Unit]("x") -> DIKey[String]))
     }
 
   }

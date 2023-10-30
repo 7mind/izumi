@@ -1,5 +1,6 @@
 package izumi.distage.model.definition
 
+import izumi.distage.Subcontext
 import izumi.distage.constructors.{ClassConstructor, FactoryConstructor, TraitConstructor}
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.providers.Functoid
@@ -32,6 +33,15 @@ object Bindings {
 
   def provider[T: Tag](function: Functoid[T])(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(function.get.ret, function.get), Set.empty, pos.get.position)
+
+  def subcontext[T: Tag](
+    submodule: ModuleBase,
+    functoid: Functoid[T],
+    externalKeys: Set[DIKey],
+  )(implicit pos: CodePositionMaterializer
+  ): SingletonBinding[DIKey.TypeKey] = {
+    SingletonBinding(DIKey.get[Subcontext[T]], ImplDef.ContextImpl(functoid.get.ret, functoid.get, submodule, externalKeys), Set.empty, pos.get.position)
+  }
 
   def emptySet[T](implicit tag: Tag[Set[T]], pos: CodePositionMaterializer): EmptySetBinding[DIKey.TypeKey] =
     EmptySetBinding(DIKey.get[Set[T]], Set.empty, pos.get.position)

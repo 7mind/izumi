@@ -11,7 +11,7 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.BindingTranslator.NextOps
 
 trait BindingTranslator {
-  def computeProvisioning[Err](handler: LocalContextHandler[Err], binding: Binding): Either[Err, NextOps]
+  def computeProvisioning[Err](handler: SubcontextHandler[Err], binding: Binding): Either[Err, NextOps]
 }
 
 object BindingTranslator {
@@ -22,7 +22,7 @@ object BindingTranslator {
   )
 
   class Impl extends BindingTranslator {
-    def computeProvisioning[Err](handler: LocalContextHandler[Err], binding: Binding): Either[Err, NextOps] = {
+    def computeProvisioning[Err](handler: SubcontextHandler[Err], binding: Binding): Either[Err, NextOps] = {
       binding match {
         case singleton: SingletonBinding[?] =>
           for {
@@ -63,7 +63,7 @@ object BindingTranslator {
       }
     }
 
-    private[this] def provisionSingleton[Err](handler: LocalContextHandler[Err], binding: Binding.ImplBinding): Either[Err, Seq[InstantiationOp]] = {
+    private[this] def provisionSingleton[Err](handler: SubcontextHandler[Err], binding: Binding.ImplBinding): Either[Err, Seq[InstantiationOp]] = {
       val target = binding.key
       for {
         wiring <- implToWiring(handler, binding)
@@ -103,14 +103,14 @@ object BindingTranslator {
         case w: Reference =>
           WiringOp.ReferenceKey(target, w, userBinding)
 
-        case w: PrepareLocalContext =>
-          // it's safe to import self reference and it can always be synthetised within a context
-          val removedSelfImport = w.importedParentKeys.diff(Set(target))
-          WiringOp.LocalContext(target, w.copy(importedParentKeys = removedSelfImport), userBinding)
+        case w: PrepareSubcontext =>
+          // it's safe to import self reference and it can always be synthesised within a context
+          val removedSelfImport = w.importedFromParentKeys.diff(Set(target))
+          WiringOp.CreateSubcontext(target, w.copy(importedFromParentKeys = removedSelfImport), userBinding)
       }
     }
 
-    private[this] def implToWiring[Err](handler: LocalContextHandler[Err], binding: Binding.ImplBinding): Either[Err, Wiring] = {
+    private[this] def implToWiring[Err](handler: SubcontextHandler[Err], binding: Binding.ImplBinding): Either[Err, Wiring] = {
       binding.implementation match {
         case d: ImplDef.DirectImplDef =>
           directImplToPureWiring(handler, binding, d)
@@ -132,7 +132,7 @@ object BindingTranslator {
     }
 
     private[this] def directImplToPureWiring[Err](
-      handler: LocalContextHandler[Err],
+      handler: SubcontextHandler[Err],
       binding: Binding,
       implementation: ImplDef.DirectImplDef,
     ): Either[Err, SingletonWiring] = {

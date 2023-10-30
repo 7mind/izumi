@@ -2,8 +2,8 @@ package izumi.distage.modules.typeclass
 
 import cats.effect.kernel.*
 import cats.{Applicative, ApplicativeError, Apply, FlatMap, Functor, Invariant, InvariantSemigroupal, Monad, MonadError, Parallel, Semigroupal}
-import distage.TagK
 import izumi.distage.model.definition.ModuleDef
+import izumi.reflect.TagK
 
 /**
   * Adds `cats-effect` typeclass instances for any effect type `F[_]` with an available `make[ConcurrentEffect[F]` binding
