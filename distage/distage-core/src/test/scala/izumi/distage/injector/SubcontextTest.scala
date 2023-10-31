@@ -6,7 +6,6 @@ import izumi.distage.injector.SubcontextTest.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks
 import org.scalatest.wordspec.AnyWordSpec
 
 class SubcontextTest extends AnyWordSpec with MkInjector {
@@ -103,8 +102,13 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     assert(local.provide(Arg(10)).produceRun() == 20)
   }
 
-  "support various local context syntax modes" in {
-    val module1 = new ModuleDef {
+  "support activations on subcontexts" in {
+    val module = new ModuleDef {
+      make[GlobalServiceDependency]
+      make[GlobalService]
+      make[LocalService].from[LocalServiceGoodImpl]
+      make[Arg].fromValue(Arg(1))
+
       makeSubcontext[Int]
         .named("test")
         .tagged(Repo.Dummy)
@@ -113,18 +117,54 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
             summator.localSum
         }
         .localDependency[Int]
-    }
 
-    val module2 = new ModuleDef {
       makeSubcontext[Int]
         .named("test")
+        .tagged(Repo.Prod)
+        .extractWith {
+          (summator: LocalService) =>
+            summator.localSum - 2
+        }
+        .localDependency[Int]
+    }
+
+    val injector = mkNoCyclesInjector()
+    val dummySubcontext = injector.produceGet[Subcontext[Int]]("test")(module, Activation(Repo.Dummy)).unsafeGet()
+    val prodSubcontext = injector.produceGet[Subcontext[Int]]("test")(module, Activation(Repo.Prod)).unsafeGet()
+
+    val dummyRes = dummySubcontext.produceRun()
+    val prodRes = prodSubcontext.produceRun()
+
+    assert(dummyRes == 230)
+    assert(prodRes == 228)
+  }
+
+  "support activations in subcontexts" in {
+    val module = new ModuleDef {
+      make[GlobalServiceDependency]
+      make[GlobalService]
+
+      makeSubcontext[Int](new ModuleDef {
+        make[LocalService].from[LocalServiceGoodImpl]
+
+        make[Arg].tagged(Repo.Dummy).fromValue(Arg(1))
+        make[Arg].tagged(Repo.Prod).fromValue(Arg(-1))
+      })
         .extractWith {
           (summator: LocalService) =>
             summator.localSum
         }
     }
 
-    Quirks.discard((module1, module2))
+    val injector = mkNoCyclesInjector()
+    val subcontext = injector.produceGet[Subcontext[Int]](module, Activation(Repo.Dummy)).unsafeGet()
+    val prodSubcontext = injector.produceGet[Subcontext[Int]](module, Activation(Repo.Prod)).unsafeGet()
+
+    val dummyRes = subcontext.produceRun()
+    val prodRes = prodSubcontext.produceRun()
+
+    assert(dummyRes == 230)
+    assert(prodRes == 228)
   }
 }
 
