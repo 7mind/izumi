@@ -46,8 +46,8 @@ final class SubcontextImpl[A] private (
       .map(_.run(functoid))
   }
 
-  override def produceRun[F[_]: QuasiIO: TagK](): F[A] = {
-    produce().use(QuasiIO[F].pure(_))
+  override def produceRun[F[_]: QuasiIO: TagK, B](f: A => F[B]): F[B] = {
+    produce().use(f)
   }
 
   override def map[B: Tag](f: A => B): Subcontext[B] = {
