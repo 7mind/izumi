@@ -64,7 +64,7 @@ final class SubcontextImpl[A] private (
       parent = parent,
       plan = plan,
       functoid = functoid,
-      providedExternals = providedExternals ++ Map(key -> value),
+      providedExternals = providedExternals + (key -> value),
       selfKey = selfKey,
     )
   }
