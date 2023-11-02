@@ -6,6 +6,6 @@ import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.functional.quasi.QuasiIO
 import izumi.reflect.TagK
 
-trait ContextStrategy {
-  def prepareContext[F[_]: TagK: QuasiIO](context: ProvisioningKeyProvider, op: WiringOp.LocalContext): F[Either[ProvisionerIssue, Seq[NewObjectOp]]]
+trait SubcontextStrategy {
+  def prepareSubcontext[F[_]: TagK: QuasiIO](context: ProvisioningKeyProvider, op: WiringOp.CreateSubcontext): F[Either[ProvisionerIssue, Seq[NewObjectOp]]]
 }

@@ -174,8 +174,6 @@ object PlanInterpreter {
                 case ProxyInstantiationFailed(context, cause) =>
                   s"Failed to instantiate class with ByteBuddy, make sure you don't dereference proxied parameters in constructors: " +
                   s"class=${context.runtimeClass}, params=${context.params}, exception=${cause.stacktraceString}"
-                case LocalContextPlanningFailed(key, issues) =>
-                  s"Failed to prepare plan for local context with key=$key: ${issues.map(DIError.format).toList.niceList()}"
               }
               .niceMultilineList("[!]")
             s"Plan interpreter failed:\n$messages"

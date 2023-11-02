@@ -1,8 +1,6 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.ExecutableOp.AddRecursiveLocatorRef
-import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, Provider, SafeType}
 
 sealed trait Wiring {
@@ -34,12 +32,12 @@ object Wiring {
       }
     }
 
-    final case class PrepareLocalContext(provider: Functoid[Any], module: ModuleBase, implType: SafeType, externalKeys: Set[DIKey], importedParentKeys: Set[DIKey])
+    final case class PrepareSubcontext(provider: Provider, subplan: Plan, implType: SafeType, externalKeys: Set[DIKey], importedFromParentKeys: Set[DIKey])
       extends SingletonWiring {
       override def instanceType: SafeType = implType
-      override def requiredKeys: Set[DIKey] = Set(AddRecursiveLocatorRef.magicLocatorKey) ++ importedParentKeys
+      override def requiredKeys: Set[DIKey] = Set(AddRecursiveLocatorRef.magicLocatorKey) ++ importedFromParentKeys
       override def associations: Seq[LinkedParameter] = Seq.empty
-      override def replaceKeys(f: DIKey => DIKey): PrepareLocalContext = this
+      override def replaceKeys(f: DIKey => DIKey): PrepareSubcontext = this
     }
 
     final case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends SingletonWiring {

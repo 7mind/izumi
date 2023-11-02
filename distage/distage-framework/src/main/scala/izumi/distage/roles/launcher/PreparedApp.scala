@@ -6,6 +6,7 @@ import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
 
 final case class PreparedApp[F[_]](
   appResource: Lifecycle[F, Locator],
+  roleAppEntrypoint: RoleAppEntrypoint[F],
   runner: QuasiIORunner[F],
   effect: QuasiIO[F],
 )

@@ -1,24 +1,22 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.LocalContext
 import izumi.distage.constructors.{ClassConstructor, FactoryConstructor, TraitConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
+import izumi.distage.model.definition.dsl.AnyKindShim.LifecycleF
 import izumi.distage.model.definition.dsl.LifecycleAdapters.{LifecycleTag, ZIOEnvLifecycleTag}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.functional.bio.data.Morphism1
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 import zio.*
 import zio.managed.ZManaged
 
-import scala.annotation.unused
 import scala.collection.immutable.HashSet
 
 /**
@@ -102,13 +100,13 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
   }
 
   override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] = new MakeDSL[T](ref, ref.key)
-  override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): MakeDSLUnnamedAfterFrom[T] = new MakeDSLUnnamedAfterFrom[T](ref, ref.key)
+  override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): MakeDSLUnnamedAfterFrom[T] = new MakeDSLUnnamedAfterFrom[T](ref)
   override private[definition] final def _setDSL[T](ref: SetRef): SetDSL[T] = new SetDSL[T](ref)
 }
 
 object ModuleDefDSL {
 
-  trait MakeDSLBase[T, AfterBind] extends AnyKindShim {
+  trait MakeDSLBase[T, AfterBind] {
     final def from[I <: T: ClassConstructor]: AfterBind =
       from(ClassConstructor[I])
 
@@ -185,24 +183,6 @@ object ModuleDefDSL {
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
     final def fromFactory[I <: T: FactoryConstructor]: AfterBind =
       from[I](FactoryConstructor[I])
-
-    /**
-      * Defines local context with empty local module and local keys
-      */
-    def fromLocalContext[F[_], R](defn: LocalContextDef[F[R]])(implicit @unused ev: T =:= LocalContext[F, R]): LocalContextDSL[F, R, AfterBind] = {
-      new LocalContextDSL[F, R, AfterBind](defn.module, Set.empty, bind, defn.function).bound()
-    }
-
-    /**
-      * Defines local context with empty local module and local keys, specialised for Identity
-      */
-    def fromLocalContext[R](
-      defn: LocalContextDef[R]
-    )(implicit ev: T =:= LocalContext[Identity, R],
-      d: DummyImplicit,
-    ): LocalContextDSL[Identity, R, AfterBind] = {
-      fromLocalContext[Identity, R](defn)
-    }
 
     /**
       * Bind by reference to another bound key
@@ -351,7 +331,7 @@ object ModuleDefDSL {
     protected[this] def key: DIKey
   }
 
-  trait SetDSLBase[T, AfterAdd, AfterMultiAdd] extends AnyKindShim {
+  trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
 
     final def add[I <: T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](ClassConstructor[I])
@@ -507,7 +487,7 @@ object ModuleDefDSL {
   /** Workaround for https://github.com/lampepfl/dotty/issues/16406#issuecomment-1712058227 */
   type DottyNothing = Nothing
 
-  object MakeDSLBase extends AnyKindShim {
+  object MakeDSLBase {
 
     implicit final class MakeFromZIOZEnv[T, AfterBind](protected val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal {
 
@@ -600,7 +580,7 @@ object ModuleDefDSL {
 
   }
 
-  object SetDSLBase extends AnyKindShim {
+  object SetDSLBase {
 
     implicit final class AddFromZIOZEnv[T, AfterAdd](protected val dsl: SetDSLBase[T, AfterAdd, ?]) extends AnyVal {
       def addZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](effect: ZIO[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
@@ -719,7 +699,7 @@ object ModuleDefDSL {
     }
 
     override protected[this] def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
-      addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_, key))
+      addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_))
     }
 
     override protected[this] def toSame: SingletonRef => MakeDSL[T] = {
@@ -735,7 +715,7 @@ object ModuleDefDSL {
     with MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] {
 
     override protected[this] def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
-      addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_, key))
+      addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_))
     }
 
     override protected[this] def toSame: SingletonRef => MakeNamedDSL[T] = {
@@ -745,37 +725,34 @@ object ModuleDefDSL {
   }
 
   final class MakeDSLUnnamedAfterFrom[T](
-    override protected val mutableState: SingletonRef,
-    override protected val key: DIKey.TypeKey,
-  ) extends MakeDSLMutBase[T, MakeDSLUnnamedAfterFrom[T]] {
+    override protected val mutableState: SingletonRef
+  ) extends AnyVal
+    with MakeDSLMutBase[T, MakeDSLUnnamedAfterFrom[T]] {
 
     def named(name: Identifier): MakeDSLNamedAfterFrom[T] = {
-      addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_, key.named(name)))
+      addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_))
     }
 
     def namedByImpl: MakeDSLNamedAfterFrom[T] = {
-      addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_, key))
+      addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_))
     }
 
     override protected[this] def toSame: SingletonRef => MakeDSLUnnamedAfterFrom[T] = {
-      new MakeDSLUnnamedAfterFrom[T](_, key)
+      new MakeDSLUnnamedAfterFrom[T](_)
     }
 
   }
 
   final class MakeDSLNamedAfterFrom[T](
-    override protected val mutableState: SingletonRef,
-    override protected val key: DIKey.BasicKey,
+    override protected val mutableState: SingletonRef
   ) extends MakeDSLMutBase[T, MakeDSLNamedAfterFrom[T]] {
     override protected[this] def toSame: SingletonRef => MakeDSLNamedAfterFrom[T] = {
-      new MakeDSLNamedAfterFrom[T](_, key)
+      new MakeDSLNamedAfterFrom[T](_)
     }
   }
 
-  sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] {
+  sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] extends Any with AddDependencyDSL[T, Self] {
     protected[this] def mutableState: SingletonRef
-    protected[this] def key: DIKey.BasicKey
-
     protected[this] def toSame: SingletonRef => Self
 
     final def tagged(tags: BindingTag*): Self = {
@@ -790,22 +767,6 @@ object ModuleDefDSL {
       addOp(Modify(f))(toSame)
     }
 
-    final def addDependency[B: Tag]: Self = {
-      modifyBy(_.addDependency(DIKey.get[B]))
-    }
-
-    final def addDependency(key: DIKey): Self = {
-      modifyBy(_.addDependency(key))
-    }
-
-    final def addDependencies(keys: Iterable[DIKey]): Self = {
-      modifyBy(_.addDependencies(keys))
-    }
-
-    final def annotateParameter[P: Tag](name: Identifier): Self = {
-      addOp(annotateParameterOp[P](name))(toSame)
-    }
-
     final def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): Self = {
       addOp(AliasTo(DIKey.get[T1], pos.get.position))(toSame)
     }
@@ -818,9 +779,8 @@ object ModuleDefDSL {
       newState(mutableState.append(op))
     }
 
-    private[this] final def annotateParameterOp[P: Tag](name: Identifier): Modify[T] = {
-      Modify[T](_.annotateParameter[P](name))
-    }
+    override protected[this] def _modifyBy(f: Functoid[T] => Functoid[T]): Self = modifyBy(f)
+
   }
 
   final class SetDSL[T](
@@ -863,41 +823,6 @@ object ModuleDefDSL {
     private[this] def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
       val newState = mutableCursor.append(op)
       new MultiSetElementDSL[T](mutableState, newState)
-    }
-  }
-
-  final class LocalContextDSL[F[_], R, AfterBind](module: ModuleBase, ext: Set[DIKey], bind: ImplDef => AfterBind, functoid: Functoid[F[R]]) {
-    protected[dsl] def doBind(): AfterBind = {
-      // it's okay to call this function multiple times, the underlying state is mutable and the last operation will be successful
-      bind(ImplDef.ContextImpl(functoid.get.ret, functoid, module, ext))
-    }
-
-    protected[dsl] def bound(): LocalContextDSL[F, R, AfterBind] = {
-      doBind()
-      this
-    }
-
-    /**
-      * Defines local context with empty local module
-      */
-    def external(keys: DIKey*): LocalContextDSL[F, R, AfterBind] = {
-      new LocalContextDSL[F, R, AfterBind](module, ext ++ keys.toSet, bind, functoid).bound()
-    }
-
-    def external[K1: Tag]: LocalContextDSL[F, R, AfterBind] = {
-      external(DIKey.get[K1])
-    }
-
-    def external[K1: Tag, K2: Tag]: LocalContextDSL[F, R, AfterBind] = {
-      external(DIKey.get[K1], DIKey.get[K2])
-    }
-
-    def external[K1: Tag, K2: Tag, K3: Tag]: LocalContextDSL[F, R, AfterBind] = {
-      external(DIKey.get[K1], DIKey.get[K2], DIKey.get[K3])
-    }
-
-    def external[K1: Tag, K2: Tag, K3: Tag, K4: Tag]: LocalContextDSL[F, R, AfterBind] = {
-      external(DIKey.get[K1], DIKey.get[K2], DIKey.get[K3], DIKey.get[K4])
     }
   }
 

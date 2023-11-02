@@ -1,34 +1,30 @@
 package izumi.distage.provisioning.strategies
 
-import distage.{LocalContextImpl, LocatorRef, Planner, PlannerInput}
+import izumi.distage.SubcontextImpl
 import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.definition.errors.ProvisionerIssue.MissingInstance
 import izumi.distage.model.plan.ExecutableOp.{AddRecursiveLocatorRef, WiringOp}
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.provisioning.strategies.ContextStrategy
+import izumi.distage.model.provisioning.strategies.SubcontextStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
+import izumi.distage.model.recursive.LocatorRef
 import izumi.functional.quasi.QuasiIO
 import izumi.reflect.TagK
 
-class ContextStrategyDefaultImpl(
-  planner: Planner
-) extends ContextStrategy {
-  override def prepareContext[F[_]: TagK](
+class SubcontextStrategyDefaultImpl extends SubcontextStrategy {
+  override def prepareSubcontext[F[_]: TagK](
     context: ProvisioningKeyProvider,
-    op: WiringOp.LocalContext,
+    op: WiringOp.CreateSubcontext,
   )(implicit F: QuasiIO[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val locatorKey = AddRecursiveLocatorRef.magicLocatorKey
     context.fetchKey(locatorKey, makeByName = false) match {
       case Some(value) =>
         val locatorRef = value.asInstanceOf[LocatorRef]
-        val impl = op.wiring.provider.asInstanceOf[Functoid[F[Any]]]
-        F.pure((for {
-          subplan <- planner.plan(PlannerInput(op.wiring.module, context.plan.input.activation, impl.get.diKeys.toSet))
-        } yield {
-          val ctx = LocalContextImpl.empty[F, Any](op.wiring.externalKeys, locatorRef, subplan, impl, op.target)
-          Seq(NewObjectOp.UseInstance(op.target, ctx))
-        }).left.map(err => ProvisionerIssue.LocalContextPlanningFailed(op.target, err)))
+        val provider = op.wiring.provider
+        val subplan = op.wiring.subplan
+        val ctx = SubcontextImpl.empty[Any](op.wiring.externalKeys, locatorRef, subplan, Functoid(provider), op.target)
+        F.pure(Right(Seq(NewObjectOp.UseInstance(op.target, ctx))))
 
       case None =>
         F.pure(Left(MissingInstance(locatorKey)))

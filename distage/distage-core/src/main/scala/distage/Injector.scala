@@ -52,7 +52,7 @@ object Injector extends InjectorFactory {
   ): Injector[F] = {
     bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides)
   }
-  
+
   /**
     * Create a default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
     *
@@ -107,10 +107,10 @@ object Injector extends InjectorFactory {
     super.bootloader(bootstrapModule, bootstrapActivation, defaultModule, input)
   }
 
-  /** Enable cglib proxies, but try to resolve cycles using by-name parameters if they can be used */
+  /** Enable bytebuddy proxies, but try to resolve cycles using by-name parameters if they can be used */
   def Standard: Injector.type = this
 
-  /** Disable cglib proxies, allow only by-name parameters to resolve cycles */
+  /** Disable bytebuddy proxies, allow only by-name parameters to resolve cycles */
   object NoProxies extends InjectorBootstrap(Cycles.Byname)
 
   /** Disable all cycle resolution, immediately throw when circular dependencies are found, whether by-name or not */

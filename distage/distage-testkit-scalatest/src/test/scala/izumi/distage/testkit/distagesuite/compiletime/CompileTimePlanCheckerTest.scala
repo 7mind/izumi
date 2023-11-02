@@ -5,6 +5,7 @@ import com.github.pshirshov.test2.plugins.Fixture2
 import com.github.pshirshov.test2.plugins.Fixture2.{Dep, MissingDep}
 import com.github.pshirshov.test3.bootstrap.BootstrapFixture3.{BasicConfig, BootstrapComponent, UnsatisfiedDep}
 import com.github.pshirshov.test3.plugins.Fixture3
+import com.github.pshirshov.test4.Fixture4
 import izumi.distage.framework.model.exceptions.PlanCheckException
 import izumi.distage.framework.{PlanCheck, PlanCheckConfig}
 import izumi.distage.model.planning.{AxisPoint, PlanIssue}
@@ -289,6 +290,22 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   "StaticTestMainLogIO2 check passes with a LogIO2 dependency" in {
     val res = PlanCheck.runtime.checkApp(new StaticTestMainLogIO2[zio.IO], PlanCheckConfig(config = "check-test-good.conf"))
     assert(res.visitedKeys contains DIKey[LogIO2[zio.IO]])
+  }
+
+  "check subcontext submodule fails for missing bindings" in {
+    val Some(issues) = PlanCheck.runtime.checkApp(Fixture4.TestMainBad).issues
+    assert(issues.size == 1)
+    assert(issues.forall(_.isInstanceOf[PlanIssue.MissingImport]))
+    assert(issues.forall(_.asInstanceOf[PlanIssue.MissingImport].key == DIKey[Fixture4.MissingDep]))
+  }
+
+  "check passes for subcontext submodule if missing binding is marked as a local dependency" in {
+    new PlanCheck.Main(Fixture4.TestMainGood)
+      .assertAgainAtRuntime()
+    val (loc, close) = Fixture4.TestMainGood.replLocatorWithClose(":target")
+    val dep = loc.get[Fixture4.TargetRole].mkDep()
+    close()
+    assert(dep != null)
   }
 
   "progression test: role app fails check for excluded compound activations that are equivalent to just excluding `mode:test`" in {

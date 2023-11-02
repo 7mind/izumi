@@ -2,7 +2,7 @@ package izumi.distage.modules.typeclass
 
 import cats.Parallel
 import cats.effect.kernel.Async
-import distage.ModuleDef
+import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.Tag
 import zio.ZIO
 
