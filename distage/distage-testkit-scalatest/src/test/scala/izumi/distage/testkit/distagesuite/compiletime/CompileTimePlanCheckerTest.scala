@@ -302,6 +302,10 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   "check passes for subcontext submodule if missing binding is marked as a local dependency" in {
     new PlanCheck.Main(Fixture4.TestMainGood)
       .assertAgainAtRuntime()
+    val (loc, close) = Fixture4.TestMainGood.replLocatorWithClose(":target")
+    val dep = loc.get[Fixture4.TargetRole].mkDep()
+    close()
+    assert(dep != null)
   }
 
   "progression test: role app fails check for excluded compound activations that are equivalent to just excluding `mode:test`" in {
