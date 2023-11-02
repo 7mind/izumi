@@ -44,7 +44,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     assert(context.find[GlobalServiceDependency].nonEmpty)
     assert(context.find[GlobalService].nonEmpty)
     assert(context.find[LocalService].isEmpty)
-    val out = local.provide[Arg]("x")(Arg(1)).produceRun(identity)
+    val out = local.provide[Arg]("x")(Arg(1)).produceRun(x => x /* `identity` doesn't work on 2.12 */ )
     assert(out == 230)
 
     val result = PlanVerifier().verify[Identity](module, Roots.Everything, Injector.providedKeys(), Set.empty)
@@ -76,7 +76,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
     val local = context.get[Subcontext[Int]]("test")
 
-    assert(local.produceRun(identity) == 231)
+    assert(local.produceRun(x => x /* `identity` doesn't work on 2.12 */ ) == 231)
   }
 
   "support self references" in {
@@ -99,7 +99,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
     val local = context.get[Subcontext[Int]]
 
-    assert(local.provide(Arg(10)).produceRun(identity) == 20)
+    assert(local.provide(Arg(10)).produceRun(x => x /* `identity` doesn't work on 2.12 */ ) == 20)
   }
 
   "support activations on subcontexts" in {
@@ -132,7 +132,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     val dummySubcontext = injector.produceGet[Subcontext[Int]]("test")(module, Activation(Repo.Dummy)).unsafeGet()
     val prodSubcontext = injector.produceGet[Subcontext[Int]]("test")(module, Activation(Repo.Prod)).unsafeGet()
 
-    val dummyRes = dummySubcontext.produceRun(identity)
+    val dummyRes = dummySubcontext.produceRun(x => x /* `identity` doesn't work on 2.12 */ )
     val prodRes = prodSubcontext.produceRun(x => x: Identity[Int])
 
     assert(dummyRes == 230)
@@ -160,8 +160,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     val subcontext = injector.produceGet[Subcontext[Int]](module, Activation(Repo.Dummy)).unsafeGet()
     val prodSubcontext = injector.produceGet[Subcontext[Int]](module, Activation(Repo.Prod)).unsafeGet()
 
-    val dummyRes = subcontext.produceRun(identity)
-    val prodRes = prodSubcontext.produceRun(identity)
+    val dummyRes = subcontext.produceRun(x => x /* `identity` doesn't work on 2.12 */ )
+    val prodRes = prodSubcontext.produceRun(x => x /* `identity` doesn't work on 2.12 */ )
 
     assert(dummyRes == 230)
     assert(prodRes == 228)
@@ -195,7 +195,7 @@ object SubcontextTest {
 
   class LocalRecursiveServiceGoodImpl(value: Arg, self: Subcontext[Int]) extends LocalRecursiveService {
     def localSum: Int = if (value.value > 0) {
-      2 + self.provide(Arg(value.value - 1)).produceRun(identity)
+      2 + self.provide(Arg(value.value - 1)).produceRun(x => x /* `identity` doesn't work on 2.12 */ )
     } else {
       0
     }
