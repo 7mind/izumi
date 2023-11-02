@@ -358,6 +358,9 @@ val plan: Plan = objects.plan
 val bindings: ModuleBase = plan.definition
 ```
 
+Directly depending on `Locator` is a low-level API. If you only need to wire a subgraph within a larger object graph,
+you may be able to do this using a high-level @ref[Subcontexts](basics.md#subcontexts) API.
+
 #### Injector inheritance
 
 You may run a new planning cycle, inheriting the instances from an existing `Locator` into your new object subgraph:
@@ -374,6 +377,8 @@ childInjector.produceRun(new ModuleDef { make[Printer] }) {
   (_: Printer).printEm()
 }
 ```
+
+It's safe, performance-wise, to run `Injector` to create nested graphs – `Injector` is extremely fast.
 
 #### Bootloader
 

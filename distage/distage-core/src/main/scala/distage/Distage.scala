@@ -22,6 +22,8 @@ trait Distage {
 
   type LocatorRef = model.recursive.LocatorRef
 
+  type Subcontext[A] = izumi.distage.Subcontext[A]
+
   type PlanVerifier = solver.PlanVerifier
   val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 

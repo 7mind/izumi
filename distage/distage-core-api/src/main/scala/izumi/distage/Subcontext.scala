@@ -8,6 +8,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 
+/** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]] */
 trait Subcontext[A] {
   def produce[F[_]: QuasiIO: TagK](): Lifecycle[F, A]
   def produceRun[F[_]: QuasiIO: TagK, B](f: A => F[B]): F[B]
