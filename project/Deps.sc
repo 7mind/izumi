@@ -401,6 +401,11 @@ object Izumi {
     "fork" in (SettingScope.Test, Platform.Jvm) := true
   )
 
+  private val disableScaladocOnScala3 = ("sources" in SettingScope.Raw("Compile / doc")) := Seq(
+    SettingKey(Some(scala300), None) := Const.EmptySeq,
+    SettingKey.Default := "(Compile / doc / sources).value".raw,
+  )
+
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
     artifacts = Seq(
@@ -430,10 +435,7 @@ object Izumi {
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq.empty,
         settings = Seq(
-          ("sources" in SettingScope.Raw("Compile / doc")) := Seq(
-            SettingKey(Some(scala300), None) := Const.EmptySeq,
-            SettingKey.Default := "(Compile / doc / sources).value".raw,
-          )
+          disableScaladocOnScala3
         ),
       ),
       Artifact(
@@ -504,6 +506,11 @@ object Izumi {
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,
           Projects.fundamentals.collections,
+        ),
+        settings = Seq(
+          // DottyDoc crashes on fundamentals-bio (https://github.com/lampepfl/dotty/issues/18832)
+          // since trifunctor was removed (d3deae9aa3aed329dff03fa3b531d33843a5982a)
+          disableScaladocOnScala3
         ),
       ),
     ),
