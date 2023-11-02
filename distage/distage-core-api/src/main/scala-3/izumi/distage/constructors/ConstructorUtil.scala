@@ -3,12 +3,13 @@ package izumi.distage.constructors
 import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.reflection.ReflectionUtil
 
-import scala.annotation.{experimental, nowarn, tailrec}
+import scala.annotation.{nowarn, tailrec}
 import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable
 import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 import izumi.distage.model.providers.FunctoidMacro.FunctoidParametersMacro
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
+import izumi.fundamentals.reflection.ReflectiveCall
 import izumi.reflect.WeakTag
 
 class ConstructorContext[R0, Q <: Quotes, U <: ConstructorUtil[Q]](using val rType: Type[R0], val qctx: Q)(val util: U & ConstructorUtil[qctx.type]) {
@@ -66,7 +67,6 @@ class ConstructorContext[R0, Q <: Quotes, U <: ConstructorUtil[Q]](using val rTy
 
   def isFactoryOrTrait: Boolean = abstractMembers.nonEmpty || refinementMethods.nonEmpty
 
-  @experimental
   def implementTraitAutoImplBody(
     lamSym: Symbol,
     lamOnlyCtorArguments: List[Term],
@@ -75,7 +75,10 @@ class ConstructorContext[R0, Q <: Quotes, U <: ConstructorUtil[Q]](using val rTy
     val parents = util.buildParentConstructorCallTerms(constructorParamLists, lamOnlyCtorArguments)
 
     val name: String = s"${resultTpeSyms.map(_.name).mkString("With")}TraitAutoImpl"
-    val clsSym = Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = methodDecls.generateDeclSymbols, selfType = None)
+    val clsSym = {
+//    // Symbol.newClass(lamSym, name, parents = parentTypesParameterized, decls = methodDecls.generateDeclSymbols, selfType = None)
+      ReflectiveCall.call[Symbol](Symbol, "newClass", lamSym, name, parentTypesParameterized, methodDecls.generateDeclSymbols, None)
+    }
 
     val defs = methodDecls.zip(lamOnlyMethodArguments).map {
       case (util.MemberRepr(name, isMethod, _, _, _), arg) =>
@@ -89,7 +92,10 @@ class ConstructorContext[R0, Q <: Quotes, U <: ConstructorUtil[Q]](using val rTy
         }
     }
 
-    val clsDef = ClassDef(clsSym, parents.toList, body = defs)
+    val clsDef = {
+      // ClassDef(clsSym, parents.toList, body = defs)
+      ReflectiveCall.call[ClassDef](ClassDef, "apply", clsSym, parents.toList, defs)
+    }
     val applyNewTree = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
     val traitCtorTree = '{ TraitConstructor.wrapInitialization[R](${ applyNewTree.asExprOf[R] })(compiletime.summonInline[WeakTag[R]]) }.asTerm
     val block = Block(List(clsDef), traitCtorTree)
@@ -494,7 +500,6 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       factoryProductParameterLists: List[List[FactoryProductParameter]],
     )
 
-    @experimental
     def getFactoryProductData(
       resultTpe: TypeRepr
     )(flatLambdaSigIndexGetAndIncrement: () => Int
@@ -628,7 +633,6 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       )
     }
 
-    @experimental
     private def createHackySecretTraitImpl(
       getFactoryProductType: List[TypeTree] => TypeRepr,
       factoryProductParamss: List[List[FactoryProductParameter]],
