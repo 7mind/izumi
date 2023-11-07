@@ -278,17 +278,23 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       reducedAppModule = appModule.drop(runtimeKeys)
 
       // produce plan for each test
-      testPlans <- tests.map {
-        distageTest =>
-          val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
-          val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
-          for {
-            plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, fullActivation, testRoots)) else Right(Plan.empty)
-            _ <- Right(planChecker.showProxyWarnings(plan))
-          } yield {
-            AlmostPreparedTest(distageTest, reducedAppModule, plan.keys, fullActivation)
-          }
-      }.biSequence
+      testPlans <- tests
+        .groupBy {
+          distageTest =>
+            val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
+            val testRoots = forcedRoots ++ distageTest.test.get.diKeys
+            testRoots
+        }
+        .toSeq
+        .map {
+          case (testRoots, distageTests) =>
+            for {
+              plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, fullActivation, testRoots)) else Right(Plan.empty)
+              _ <- Right(planChecker.showProxyWarnings(plan))
+            } yield {
+              distageTests.map(AlmostPreparedTest(_, reducedAppModule, plan.keys, fullActivation))
+            }
+        }.biFlatten
       envKeys = testPlans.flatMap(_.targetKeys).toSet
 
       // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
