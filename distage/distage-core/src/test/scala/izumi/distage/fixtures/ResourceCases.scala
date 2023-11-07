@@ -69,10 +69,10 @@ object ResourceCases {
   object CircularResourceCase {
 
     sealed trait Ops { def invert: Ops }
-    case object ComponentStart extends Ops { val invert = ComponentStop }
-    case object ClientStart extends Ops { val invert = ClientStop }
-    case object ComponentStop extends Ops { val invert = ComponentStart }
-    case object ClientStop extends Ops { val invert = ClientStart }
+    case object ComponentStart extends Ops { val invert: Ops = ComponentStop }
+    case object ClientStart extends Ops { val invert: Ops = ClientStop }
+    case object ComponentStop extends Ops { val invert: Ops = ComponentStart }
+    case object ClientStop extends Ops { val invert: Ops = ClientStart }
 
     trait S3Client {
       def c: S3Component
