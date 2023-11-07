@@ -179,3 +179,4 @@ class FailingRole02[F[_]: QuasiIO](
 object FailingRole02 extends RoleDescriptor {
   override final val id = "failingrole02"
 }
+

@@ -66,7 +66,9 @@ package object distage extends Distage {
   override type Functoid[+A] = model.providers.Functoid[A]
   override val Functoid: model.providers.Functoid.type = model.providers.Functoid
 
+  @deprecated("Removed since 1.2.0. Use ClassConstructor instead.")
   override type AnyConstructor[T] = constructors.AnyConstructor[T]
+  @deprecated("Removed since 1.2.0. Use ClassConstructor instead.")
   override val AnyConstructor: constructors.AnyConstructor.type = constructors.AnyConstructor
 
   override type ClassConstructor[T] = constructors.ClassConstructor[T]

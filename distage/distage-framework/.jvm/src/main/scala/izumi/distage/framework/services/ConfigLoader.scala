@@ -17,8 +17,6 @@ import java.io.{File, FileNotFoundException}
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
-
-
 /**
   * Default config resources:
   *   - `\${roleName}.conf`
@@ -51,9 +49,7 @@ import scala.util.{Failure, Success, Try}
   * @see [[ConfigLoader.ConfigLocation]]
   * @see [[ConfigLoader.LocalFSImpl]]
   */
-trait ConfigLoader extends AbstractConfigLoader {
-
-}
+trait ConfigLoader extends AbstractConfigLoader {}
 
 object ConfigLoader {
   def empty: ConfigLoader = () => AppConfig(ConfigFactory.empty())
@@ -89,11 +85,11 @@ object ConfigLoader {
       rolesInfo: RolesInfo,
     ): ConfigLoader.Args = {
       val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
-      val emptyRoleConfigs = rolesInfo.requiredRoleNames.map(_ -> None).toMap
+      val emptyRoleConfigs = rolesInfo.availableRoleNames.map(_ -> None).toMap
       val specifiedRoleConfigs = parameters.roles.iterator
         .map(roleParams => roleParams.role -> roleParams.roleParameters.findValue(RoleAppMain.Options.configParam).asFile)
         .toMap
-      ConfigLoader.Args(maybeGlobalConfig, (emptyRoleConfigs ++ specifiedRoleConfigs).view.filterKeys(rolesInfo.requiredRoleNames).toMap)
+      ConfigLoader.Args(maybeGlobalConfig, (emptyRoleConfigs ++ specifiedRoleConfigs).view.toMap)
     }
 
     def empty: ConfigLoader.Args = ConfigLoader.Args(None, Map.empty)

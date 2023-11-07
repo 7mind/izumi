@@ -1,16 +1,15 @@
 package izumi.distage.testkit.distagesuite.tagged
 
-import java.util.concurrent.atomic.AtomicBoolean
-
 import distage.DIKey
 import distage.plugins.PluginDef
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.testkit.distagesuite.tagged.DistageTestTaggedAxesExampleBase.{DepsCounters, DummyDep, PrdDep}
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
-import zio.ZIO
+import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 
-abstract class DistageTestTaggedAxesExampleBase extends Spec3[ZIO] with AssertZIO {
+import java.util.concurrent.atomic.AtomicBoolean
+
+abstract class DistageTestTaggedAxesExampleBase extends SpecZIO with AssertZIO {
   override protected def config: TestConfig = super.config.copy(
     forcedRoots = Map(
       Set(Repo.Prod) -> Set(DIKey[PrdDep]),

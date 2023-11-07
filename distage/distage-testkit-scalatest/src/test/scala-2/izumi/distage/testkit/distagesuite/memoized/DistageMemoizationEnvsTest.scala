@@ -1,20 +1,19 @@
 package izumi.distage.testkit.distagesuite.memoized
 
-import java.util.UUID
-
 import distage.DIKey
 import distage.plugins.PluginDef
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.providers.Functoid
-import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.{MemoizedInstance, MemoizedLevel1, MemoizedLevel2, MemoizedLevel3, TestInstance}
+import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.*
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
+import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import org.scalatest.Assertion
-import zio.{IO, ZIO}
+import zio.IO
 
+import java.util.UUID
 
 // TODO: for some mysterious reason these tests fail on Scala 3. That must be fixed.
-abstract class DistageMemoizationEnvsTest extends Spec3[ZIO] with AssertZIO {
+abstract class DistageMemoizationEnvsTest extends SpecZIO with AssertZIO {
   override protected def config: TestConfig = {
     super.config
       .copy(

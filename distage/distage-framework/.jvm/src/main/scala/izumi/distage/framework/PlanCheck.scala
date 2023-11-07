@@ -51,10 +51,15 @@ object PlanCheck {
     discard(app, cfg)
 
     def main(@unused args: Array[String]): Unit = {
-      assertAtRuntime()
+      assertAgainAtRuntime()
     }
 
+    def assertAgainAtRuntime(): Unit = planCheck.assertAgainAtRuntime()
+    def checkAgainAtRuntime(): PlanCheckResult = planCheck.checkAgainAtRuntime()
+
+    @deprecated("Renamed to `assertAgainAtRuntime`", "1.2.0")
     def assertAtRuntime(): Unit = planCheck.assertAgainAtRuntime()
+    @deprecated("Renamed to `checkAgainAtRuntime`", "1.2.0")
     def checkAtRuntime(): PlanCheckResult = planCheck.checkAgainAtRuntime()
   }
 

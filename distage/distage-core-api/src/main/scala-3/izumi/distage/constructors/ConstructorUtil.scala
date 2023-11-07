@@ -55,16 +55,16 @@ class ConstructorContext[R0, Q <: Quotes, U <: ConstructorUtil[Q]](using val rTy
   lazy val constructorParamLists = parentTypesParameterized.map(t => t -> util.extractConstructorParamLists(t))
   lazy val flatCtorParams = constructorParamLists.flatMap(_._2.iterator.flatten)
 
-  val methodDecls = {
+  lazy val methodDecls = {
     val allMembers = abstractMembers.map(m => util.MemberRepr(m.name, m.flags.is(Flags.Method), Some(m), resultTpe.memberType(m), false)) ++ refinementMethods
     util
       .processOverrides(allMembers)
       .sortBy(_.name) // sort alphabetically because Dotty order is undefined (does not return in definition order)
   }
 
-  def isFactoryOrTrait: Boolean = abstractMembers.nonEmpty || refinementMethods.nonEmpty
-
   def isWireableTrait: Boolean = abstractMethodsWithParams.isEmpty && !resultTpeSyms.exists(_.flags.is(Flags.Sealed))
+
+  def isFactoryOrTrait: Boolean = abstractMembers.nonEmpty || refinementMethods.nonEmpty
 
   @experimental
   def implementTraitAutoImplBody(

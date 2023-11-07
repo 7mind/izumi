@@ -22,6 +22,8 @@ trait Distage {
 
   type LocatorRef = model.recursive.LocatorRef
 
+  type Subcontext[A] = izumi.distage.Subcontext[A]
+
   type PlanVerifier = solver.PlanVerifier
   val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
@@ -68,7 +70,9 @@ trait Distage {
   type Functoid[+A] = model.providers.Functoid[A]
   val Functoid: model.providers.Functoid.type = model.providers.Functoid
 
+  @deprecated("Removed since 1.2.0. Use ClassConstructor instead.")
   type AnyConstructor[T] = constructors.AnyConstructor[T]
+  @deprecated("Removed since 1.2.0. Use ClassConstructor instead.")
   val AnyConstructor: constructors.AnyConstructor.type = constructors.AnyConstructor
 
   type ClassConstructor[T] = constructors.ClassConstructor[T]

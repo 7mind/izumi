@@ -1,6 +1,6 @@
 package izumi.distage.roles.model.definition
 
-import izumi.distage.constructors.AnyConstructorMacro
+import izumi.distage.constructors.MakeMacro
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSL
 import izumi.distage.roles.model.RoleDescriptor.GetRoleDescriptor
@@ -20,7 +20,7 @@ object RoleModuleDef {
   object RoleModuleDefMacros {
     def makeRole[T: Type](getRoleDescriptor: Expr[GetRoleDescriptor[T]])(using qctx: Quotes): Expr[MakeDSL[T]] = {
       '{
-        ${ AnyConstructorMacro.makeMethod[T, MakeDSL[T]] }.tagged(RoleTag(${ getRoleDescriptor }.roleDescriptor))
+        ${ MakeMacro.makeMethod[T, MakeDSL[T]] }.tagged(RoleTag(${ getRoleDescriptor }.roleDescriptor))
       }
     }
   }

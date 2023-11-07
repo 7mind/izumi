@@ -28,7 +28,7 @@ object StaticTestMainBadEffect extends RoleAppMain.LauncherIdentity {
   override protected def pluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test.plugins") ++ staticTestMainPlugin[Identity, cats.effect.IO]
 }
 
-class StaticTestMainLogIO2[F[+_, +_]: TagKK: Async2: DefaultModule2] extends RoleAppMain.LauncherBIO2[F] {
+class StaticTestMainLogIO2[F[+_, +_]: TagKK: Async2: DefaultModule2] extends RoleAppMain.LauncherBIO[F] {
   override protected def pluginConfig: PluginConfig =
     PluginConfig
       .cached("com.github.pshirshov.test.plugins")

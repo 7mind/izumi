@@ -20,7 +20,7 @@ class StaticDSLTest extends AnyWordSpec {
           .from[TestClass]
         make[TestDependency0]
           .named("named.test.dependency.0")
-          .from[TestDependency0]
+          .fromTrait[TestDependency0]
         make[TestInstanceBinding]
           .named("named.test")
           .from(TestInstanceBinding())
@@ -29,7 +29,7 @@ class StaticDSLTest extends AnyWordSpec {
         many[JustTrait]
           .add[Impl0]
           .add(new Impl1)
-          .add[JustTrait]
+          .addTrait[JustTrait]
         many[JustTrait]
           .named("named.set")
           .add(new Impl2())

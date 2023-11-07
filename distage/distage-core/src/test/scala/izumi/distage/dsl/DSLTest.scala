@@ -8,6 +8,7 @@ import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
+import izumi.distage.model.planning.PlanIssue
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
@@ -30,7 +31,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
         make[TestClass]
           .named("named.test.class")
-        make[TestDependency0]
+        makeTrait[TestDependency0]
           .named("named.test.dependency.0")
         make[TestInstanceBinding]
           .named("named.test")
@@ -47,7 +48,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           .add[Impl3]
 
         make[TestDependency0].namedByImpl.from[TestImpl0]
-        make[TestDependency0].namedByImpl
+        makeTrait[TestDependency0].namedByImpl
       }
 
       assert(definition != null)
@@ -161,12 +162,12 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       }
 
       val mod3_1 = new ModuleDef {
-        make[TestDependency1]
+        makeTrait[TestDependency1]
       }
 
       val mod3_2 = Module.empty
 
-      val mod3 = (mod3_1 ++ mod3_2) :+ Bindings.binding[NotInContext]
+      val mod3 = (mod3_1 ++ mod3_2) :+ Bindings.bindingTrait[NotInContext]
 
       val mod4: ModuleBase = Module.make {
         Set(
@@ -201,7 +202,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         make[TestClass]
       }
       object mod2 extends ModuleDef {
-        make[TestDependency0]
+        makeTrait[TestDependency0]
       }
 
       mod1 ++ mod2
@@ -214,7 +215,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         make[TestClass]
       }
       class mod2 extends ModuleDef {
-        make[TestDependency0]
+        makeTrait[TestDependency0]
       }
 
       val _: Module = new mod1 ++ new mod2
@@ -226,11 +227,13 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val definition: ModuleBase = new ModuleDef {
         tag("tag1")
         make[TestClass]
-        make[TestDependency0].tagged("sniv")
+        makeTrait[TestDependency0].tagged("sniv")
         tag("tag2")
       }
 
-      assert(definition.bindings == Set(Bindings.binding[TestClass].addTags(Set("tag1", "tag2")), Bindings.binding[TestDependency0].addTags(Set("tag1", "tag2", "sniv"))))
+      assert(
+        definition.bindings == Set(Bindings.binding[TestClass].addTags(Set("tag1", "tag2")), Bindings.bindingTrait[TestDependency0].addTags(Set("tag1", "tag2", "sniv")))
+      )
     }
 
     "ModuleBuilder supports tags; same bindings with different tags are NOT merged (tag merging removed in 0.11.0)" in {
@@ -299,8 +302,8 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       import BasicCase1._
 
       val def1 = new ModuleDef {
-        make[TestDependency0].tagged("a")
-        make[TestDependency0].tagged("b")
+        makeTrait[TestDependency0].tagged("a")
+        makeTrait[TestDependency0].tagged("b")
 
         tag("1")
       }
@@ -308,7 +311,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val def2 = new ModuleDef {
         tag("2")
 
-        make[TestDependency0].tagged("x").tagged("y")
+        makeTrait[TestDependency0].tagged("x").tagged("y")
       }
 
       val definition = def1 ++ def2
@@ -324,7 +327,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val tags12: Seq[BindingTag] = Seq("1", "2")
 
       val def1 = new ModuleDef {
-        make[TestDependency0].tagged("a").tagged("b")
+        makeTrait[TestDependency0].tagged("a").tagged("b")
 
         tag(tags12: _*)
       }
@@ -332,7 +335,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val def2 = new ModuleDef {
         tag("2", "3")
 
-        make[TestDependency0].tagged("x").tagged("y")
+        makeTrait[TestDependency0].tagged("x").tagged("y")
       }
 
       val definition = def1 overriddenBy def2
@@ -344,14 +347,14 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     "support zero element" in {
       import BasicCase1._
       val def1 = new ModuleDef {
-        make[TestDependency0]
+        makeTrait[TestDependency0]
       }
 
       val def2 = new ModuleDef {
-        make[TestDependency0]
+        makeTrait[TestDependency0]
       }
       val def3 = new ModuleDef {
-        make[TestDependency1]
+        makeTrait[TestDependency1]
       }
 
       assert((def1 overriddenBy Module.empty) == def1)
@@ -363,7 +366,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       import BasicCase1._
 
       trait Def1 extends ModuleDef {
-        make[TestDependency0]
+        makeTrait[TestDependency0]
         tag("tag2")
       }
 
@@ -626,7 +629,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         """
         )
       )
-      assert(res1.getMessage contains "[T: AnyConstructor]")
+      assert(res1.getMessage contains "[T: ClassConstructor]")
       val res2 = intercept[TestFailedException](
         assertCompiles(
           """
@@ -637,7 +640,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         )
       )
 
-      res2.getMessage should include regex "AnyConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use makeFactory or fromFactory to wire factories"
+      res2.getMessage should include regex "ClassConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use `makeFactory` or `fromFactory` to wire factories"
     }
 
     "define multiple bindings with different axis but the same implementation" in {
@@ -665,7 +668,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       assert(bindings.size == 3)
     }
 
-    "Progression test: set bindings with the same source position and implementation shouldn't conflict" in {
+    "progression test: set bindings with the same source position and implementation shouldn't conflict" in {
       val definition: ModuleDef = new ModuleDef {
         val fn = {
           var i = 0
@@ -689,6 +692,22 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
             assert(s == Set(1, 2, 3))
           }
       }
+    }
+
+    "addDependency supports adding dependencies for .fromValue and .using bindings" in {
+      val definition = new ModuleDef {
+        make[Int]
+          .fromValue(5)
+          .addDependency[String]
+        make[Unit].fromValue(())
+        make[Unit].named("x").using[Unit].addDependency[String]
+      }
+
+      val verification = PlanVerifier().verify[Identity](definition, Roots.Everything, Set.empty, Set.empty)
+      assert(verification.verificationFailed)
+      assert(verification.issues.get.forall(_.isInstanceOf[PlanIssue.MissingImport]))
+      val imports = verification.issues.get.toSet.collect { case i: PlanIssue.MissingImport => (i.dependee, i.key) }
+      assert(imports == Set(DIKey[Int] -> DIKey[String], DIKey[Unit]("x") -> DIKey[String]))
     }
 
   }

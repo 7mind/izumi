@@ -1347,7 +1347,8 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
 lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   .dependsOn(
     `fundamentals-language` % "test->compile;compile->compile",
-    `fundamentals-orphans` % "test->compile;compile->compile"
+    `fundamentals-orphans` % "test->compile;compile->compile",
+    `fundamentals-collections` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1516,7 +1517,11 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       )
       case (_, _) => Seq.empty
     } },
-    Test / packageDoc / publishArtifact := false
+    Test / packageDoc / publishArtifact := false,
+    Compile / doc / sources := { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "3.2.2") => Seq.empty
+      case (_, _) => (Compile / doc / sources).value
+    } }
   )
   .disablePlugins(AssemblyPlugin)
 
