@@ -48,12 +48,12 @@ object ClassConstructorMacro {
     } else if (reflectionProvider.isWireableAbstract(targetType)) {
       c.abort(
         c.enclosingPosition,
-        s"ClassConstructor failure: $targetType is a trait or an abstract class, use `makeTrait` or `fromTrait` to wire traits.",
+        s"ClassConstructor failure: $targetType is a trait or an abstract class, use `makeTrait` or `make[X].fromTrait` to wire traits.",
       )
     } else if (reflectionProvider.isFactory(targetType)) {
       c.abort(
         c.enclosingPosition,
-        s"ClassConstructor failure: $targetType is a Factory, use `makeFactory` or `fromFactory` to wire factories.",
+        s"ClassConstructor failure: $targetType is a Factory, use `makeFactory` or `make[X].fromFactory` to wire factories.",
       )
     } else {
       c.abort(

@@ -640,7 +640,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         )
       )
 
-      res2.getMessage should include regex "ClassConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use `makeFactory` or `fromFactory` to wire factories"
+      res2.getMessage should include regex "ClassConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use `makeFactory` or `make[X].fromFactory` to wire factories"
     }
 
     "define multiple bindings with different axis but the same implementation" in {

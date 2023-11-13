@@ -32,11 +32,11 @@ object ClassConstructorMacro {
       makeImpl[R](util, typeRepr, tpeDeref)
     } else if (context.isWireableTrait) {
       report.errorAndAbort(
-        s"ClassConstructor failure: ${Type.show[R]} is a trait or an abstract class, use `makeTrait` or `fromTrait` to wire traits."
+        s"ClassConstructor failure: ${Type.show[R]} is a trait or an abstract class, use `makeTrait` or `make[X].fromTrait` to wire traits."
       )
     } else if (context.isFactoryOrTrait) {
       report.errorAndAbort(
-        s"ClassConstructor failure: ${Type.show[R]} is a Factory, use `makeFactory` or `fromFactory` to wire factories."
+        s"ClassConstructor failure: ${Type.show[R]} is a Factory, use `makeFactory` or `make[X].fromFactory` to wire factories."
       )
     } else {
       report.errorAndAbort(
