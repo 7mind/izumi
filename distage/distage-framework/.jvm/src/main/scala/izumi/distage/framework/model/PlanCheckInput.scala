@@ -1,8 +1,7 @@
 package izumi.distage.framework.model
 
 import distage.Injector
-import izumi.distage.framework.services.ConfigLoader
-import izumi.distage.framework.services.ConfigLoader.ConfigLocation
+import izumi.distage.framework.services.{ConfigArgsProvider, ConfigLoader, ConfigLocationProvider}
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.reflection.DIKey
@@ -26,7 +25,7 @@ object PlanCheckInput {
     module: ModuleBase,
     roots: Roots,
     roleNames: Set[String] = Set.empty,
-    configLoader: ConfigLoader = new ConfigLoader.LocalFSImpl(IzLogger(), ConfigLocation.Default, ConfigLoader.Args.empty),
+    configLoader: ConfigLoader = new ConfigLoader.LocalFSImpl(IzLogger(), ConfigLocationProvider.Default, ConfigArgsProvider.Empty),
     appPlugins: LoadedPlugins = LoadedPlugins.empty,
     bsPlugins: LoadedPlugins = LoadedPlugins.empty,
   )(implicit effectType: TagK[F],

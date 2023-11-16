@@ -5,9 +5,6 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigLoaderException, ConfigSource, ResourceConfigKind}
 import izumi.distage.model.definition.Id
 import izumi.distage.model.exceptions.DIException
-import izumi.distage.roles.RoleAppMain
-import izumi.distage.roles.model.meta.RolesInfo
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
 import izumi.fundamentals.platform.strings.IzString.*
@@ -56,53 +53,20 @@ object ConfigLoader {
 
   import scala.collection.compat.*
 
-  trait ConfigLocation {
-    def forRole(roleName: String): Seq[ConfigSource] = ConfigLocation.defaultConfigReferences(roleName)
-    def forBase(filename: String): Seq[ConfigSource] = ConfigLocation.defaultConfigReferences(filename)
-    def defaultBaseConfigs: Seq[String] = ConfigLocation.defaultBaseConfigs
-  }
-  object ConfigLocation {
-    object Default extends ConfigLocation
-
-    def defaultBaseConfigs: Seq[String] = Seq("application", "common")
-
-    def defaultConfigReferences(name: String): Seq[ConfigSource] = {
-      Seq(
-        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
-        ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
-      )
-    }
-  }
-
   final case class Args(
     global: Option[File],
     role: Map[String, Option[File]],
   )
-  object Args {
-    def makeConfigLoaderArgs(
-      parameters: RawAppArgs,
-      rolesInfo: RolesInfo,
-    ): ConfigLoader.Args = {
-      val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
-      val emptyRoleConfigs = rolesInfo.availableRoleNames.map(_ -> None).toMap
-      val specifiedRoleConfigs = parameters.roles.iterator
-        .map(roleParams => roleParams.role -> roleParams.roleParameters.findValue(RoleAppMain.Options.configParam).asFile)
-        .toMap
-      ConfigLoader.Args(maybeGlobalConfig, (emptyRoleConfigs ++ specifiedRoleConfigs).view.toMap)
-    }
-
-    def empty: ConfigLoader.Args = ConfigLoader.Args(None, Map.empty)
-  }
 
   open class LocalFSImpl(
     logger: IzLogger @Id("early"),
-    configLocation: ConfigLocation,
-    configArgs: ConfigLoader.Args,
+    configLocation: ConfigLocationProvider,
+    args: ConfigArgsProvider,
   ) extends ConfigLoader {
     protected def resourceClassLoader: ClassLoader = getClass.getClassLoader
 
     def loadConfig(): AppConfig = {
+      val configArgs = args.args()
       val commonReferenceConfigs = configLocation.defaultBaseConfigs.flatMap(configLocation.forBase)
       val commonExplicitConfigs = configArgs.global.map(ConfigSource.File.apply).toList
 
