@@ -1,6 +1,7 @@
 package izumi.distage.roles
 
 import distage.Injector
+import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.{Activation, Axis, Module, ModuleDef}
@@ -9,6 +10,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.AppShutdownStrategy
+import izumi.distage.roles.launcher.ActivationParser
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawRoleParams, RequiredRoles}
@@ -107,7 +109,12 @@ abstract class RoleAppMain[F[_]](
     ) ++ new ModuleDef {
       make[RawAppArgs].fromValue(RawAppArgs(RawEntrypointParams.empty, additionalRoles.requiredRoles))
       make[PlanningOptions].fromValue(planningOptions())
-      make[Activation].named("roleapp").fromValue(activation())
+      make[ActivationParser].from[ActivationParser.Impl]
+      make[Activation].named("default").fromValue(activation())
+      make[Activation].named("roleapp").from {
+        (parser: ActivationParser, config: AppConfig) =>
+          parser.parseActivation(config)
+      }
     }
   }
 

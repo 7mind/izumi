@@ -25,33 +25,6 @@ import scala.annotation.{nowarn, unused}
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.Try
 
-//import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-//import distage.config.AppConfig
-//import izumi.distage.config.model.ConfTag
-//import izumi.distage.framework.services.RoleAppPlanner
-//import izumi.distage.model.definition.Id
-//import izumi.functional.quasi.QuasiIO
-//import izumi.distage.model.plan.operations.OperationOrigin
-//import izumi.distage.model.plan.{ExecutableOp, Plan}
-//import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ConfigurableComponent, ExtractConfigPath, WriteReference}
-//import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
-//import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-//import izumi.functional.Value
-//import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-//import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
-//
-//import scala.annotation.unused
-//import izumi.fundamentals.platform.resources.ArtifactVersion
-//import izumi.logstage.api.IzLogger
-//import izumi.logstage.api.logger.LogRouter
-//import izumi.logstage.distage.LogstageModule
-//
-//import java.nio.charset.StandardCharsets
-//import java.nio.file.{Files, Paths}
-//import scala.annotation.nowarn
-//import scala.collection.compat.immutable.ArraySeq
-//import scala.util.Try
-
 final class ConfigWriter[F[_]](
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
@@ -134,6 +107,7 @@ final class ConfigWriter[F[_]](
     val roleConfigs = appConfig.roles.map(lrc => lrc.copy(roleConfig = lrc.roleConfig.copy(active = lrc.roleConfig.role == role.descriptor.id)))
 
     // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
+    // TODO: here we accept all the role configs regardless of them being active or not, that might resolve cross-role conflicts in unpredictable manner
     val fullConfig = configMerger.mergeFilter(appConfig.shared, roleConfigs, _ => true)
     val correctedAppConfig = appConfig.copy(config = fullConfig, roles = roleConfigs)
 
