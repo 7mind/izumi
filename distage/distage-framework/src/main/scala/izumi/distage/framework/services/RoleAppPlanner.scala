@@ -4,9 +4,9 @@ import distage.config.{AppConfig, AppConfigModule}
 import distage.{BootstrapModuleDef, Injector, PlannerInput}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
-import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
+import izumi.distage.model.definition.{Activation, BootstrapModule, Id, ModuleBase}
 import izumi.distage.model.plan.{Plan, Roots}
-import izumi.distage.model.recursive.{BootConfig, Bootloader, BootstrappedApp}
+import izumi.distage.model.recursive.{BootConfig, Bootloader}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.launcher.ActivationParser
@@ -59,23 +59,23 @@ object RoleAppPlanner {
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
       logger.trace(s"Application will use: ${appMainRoots -> "app roots"} and $activation")
 
-      // TODO: why .module doesn't work within for-comprehension?..
-      def log(runtimeBsApp: BootstrappedApp): Either[Nothing, Unit] = Right {
-        logger.trace(s"Bootstrap plan:\n${runtimeBsApp.plan.render() -> "bootstrap dump" -> null}")
-        logger.trace(s"App module: ${runtimeBsApp.module -> "app module" -> null}")
-      }
-
       val out = for {
         bootstrapped <- bootloader.boot(
           BootConfig(
-            bootstrap = _ => bsModule,
+            bootstrap = _ =>
+              bsModule overriddenBy new BootstrapModuleDef {
+                make[RoleAppPlanner].fromValue(self)
+              },
             activation = _ => activation,
             roots = _ => Roots(runtimeGcRoots),
           )
         )
 
         runtimeKeys = bootstrapped.plan.keys
-        _ <- log(bootstrapped)
+        _ <- Right {
+          logger.trace(s"Bootstrap plan:\n${bootstrapped.plan.render() -> "bootstrap dump" -> null}")
+          logger.trace(s"App module: ${(bootstrapped.module: ModuleBase) -> "app module" -> null}")
+        }
         appPlan <- bootstrapped.injector.plan(PlannerInput(bootstrapped.module.drop(runtimeKeys), activation, appMainRoots))
       } yield {
 
@@ -92,15 +92,6 @@ object RoleAppPlanner {
 
       out.getOrThrow()
     }
-
-// broken, we should fix it in order to make reboots more correct
-//    private def makeModule(): BootstrapModule = {
-//      val self: RoleAppPlanner = this
-//      val selfRefl = new BootstrapModuleDef {
-//        make[RoleAppPlanner].from(self)
-//      }
-//      bsModule overriddenBy selfRefl
-//    }
 
   }
 
