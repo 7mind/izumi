@@ -1,6 +1,7 @@
 package izumi.distage.framework.model
 
 import distage.Injector
+import izumi.distage.framework.services.ConfigMerger.ConfigMergerImpl
 import izumi.distage.framework.services.{ConfigArgsProvider, ConfigLoader, ConfigLocationProvider}
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.Roots
@@ -25,7 +26,11 @@ object PlanCheckInput {
     module: ModuleBase,
     roots: Roots,
     roleNames: Set[String] = Set.empty,
-    configLoader: ConfigLoader = new ConfigLoader.LocalFSImpl(IzLogger(), ConfigLocationProvider.Default, ConfigArgsProvider.Empty),
+    configLoader: ConfigLoader = {
+      val logger = IzLogger()
+      val merger = new ConfigMergerImpl(logger)
+      new ConfigLoader.LocalFSImpl(logger, merger, ConfigLocationProvider.Default, ConfigArgsProvider.Empty)
+    },
     appPlugins: LoadedPlugins = LoadedPlugins.empty,
     bsPlugins: LoadedPlugins = LoadedPlugins.empty,
   )(implicit effectType: TagK[F],

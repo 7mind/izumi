@@ -1,6 +1,7 @@
 package izumi.distage.testkit.runner.impl.services
 
-import izumi.distage.config.model.AppConfig
+import izumi.distage.config.model.{AppConfig, GenericConfigSource, RoleConfig}
+import izumi.distage.framework.services.ConfigMerger.ConfigMergerImpl
 import izumi.distage.framework.services.{ConfigArgsProvider, ConfigLoader, ConfigLocationProvider}
 import izumi.distage.testkit.model.TestEnvironment
 import izumi.logstage.api.IzLogger
@@ -26,7 +27,7 @@ object TestConfigLoader {
                 appConfig =>
                   env.configOverrides match {
                     case Some(overrides) =>
-                      AppConfig(overrides.config.withFallback(appConfig.config).resolve())
+                      AppConfig.provided(overrides.config.withFallback(appConfig.config).resolve())
                     case None =>
                       appConfig
                   }
@@ -38,9 +39,10 @@ object TestConfigLoader {
 
     protected def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader = {
       val provider = new ConfigArgsProvider {
-        override def args(): ConfigLoader.Args = ConfigLoader.Args(None, Map(configBaseName -> None))
+        override def args(): ConfigLoader.Args = ConfigLoader.Args(None, List(RoleConfig(configBaseName, active = true, GenericConfigSource.ConfigDefault)))
       }
-      new ConfigLoader.LocalFSImpl(logger, ConfigLocationProvider.Default, provider)
+      val merger = new ConfigMergerImpl(logger)
+      new ConfigLoader.LocalFSImpl(logger, merger, ConfigLocationProvider.Default, provider)
     }
 
   }

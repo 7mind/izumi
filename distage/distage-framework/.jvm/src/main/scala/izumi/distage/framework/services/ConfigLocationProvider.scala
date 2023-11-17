@@ -1,21 +1,27 @@
 package izumi.distage.framework.services
 
-import izumi.distage.framework.services.ConfigLoader.LocalFSImpl.{ConfigSource, ResourceConfigKind}
+import izumi.distage.config.model.{ConfigSource, ResourceConfigKind}
 
 trait ConfigLocationProvider {
-  def forRole(roleName: String): Seq[ConfigSource] = ConfigLocationProvider.defaultConfigReferences(roleName)
+  def forRole(roleName: String): Seq[ConfigSource]
 
-  def forBase(filename: String): Seq[ConfigSource] = ConfigLocationProvider.defaultConfigReferences(filename)
-
-  def defaultBaseConfigs: Seq[String] = ConfigLocationProvider.defaultBaseConfigs
+  def commonReferenceConfigs: Seq[ConfigSource]
 }
 
 object ConfigLocationProvider {
-  object Default extends ConfigLocationProvider
+  object Default extends ConfigLocationProvider {
+    def forRole(roleName: String): Seq[ConfigSource] = {
+      ConfigLocationProvider.defaultConfigReferences(roleName)
+    }
 
-  def defaultBaseConfigs: Seq[String] = Seq("application", "common")
+    def commonReferenceConfigs: Seq[ConfigSource] = {
+      ConfigLocationProvider.defaultBaseConfigs.flatMap(ConfigLocationProvider.defaultConfigReferences)
+    }
+  }
 
-  def defaultConfigReferences(name: String): Seq[ConfigSource] = {
+  private def defaultBaseConfigs: Seq[String] = Seq("application", "common")
+
+  private def defaultConfigReferences(name: String): Seq[ConfigSource] = {
     Seq(
       ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
       ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),

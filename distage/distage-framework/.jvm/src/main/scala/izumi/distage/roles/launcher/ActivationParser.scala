@@ -32,6 +32,7 @@ object ActivationParser {
       val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(AxisPoint parseAxisPoint _.value)
       val cmdActivations = parser.parseActivation(cmdChoices, activationInfo)
 
+      // println(s"PARSEACT: ${config.config}")
       val configChoices = if (config.config.hasPath(configActivationSection)) {
         ActivationConfig.diConfigReader.decodeConfig(configActivationSection)(config.config).activation.map(AxisPoint(_))
       } else Iterable.empty
