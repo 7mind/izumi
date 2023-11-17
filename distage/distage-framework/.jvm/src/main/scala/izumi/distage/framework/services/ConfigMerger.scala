@@ -11,41 +11,21 @@ import scala.util.Try
 
 trait ConfigMerger {
   def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs]): Config
+  def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean): Config
+  def foldConfigs(roleConfigs: Iterable[ConfigLoadResult.Success]): Config
 }
 
 object ConfigMerger {
   class ConfigMergerImpl(logger: IzLogger @Id("early")) extends ConfigMerger {
     override def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs]): Config = {
-//      val (roleReferenceConfigs, roleExplicitConfigs) = (configArgs.role: Iterable[(String, Option[File])]).partitionMap {
-//        case (role, None) => Left(configLocation.forRole(role))
-//        case (_, Some(file)) => Right(ConfigSource.File(file))
-//      }
-//
-//      val allConfigs = (roleExplicitConfigs.iterator ++ commonExplicitConfigs ++ roleReferenceConfigs.iterator.flatten ++ commonReferenceConfigs).toList
-//
-//      val (cfgInfo, loaded) = loadConfigSources(allConfigs)
-//
-//      logger.info(s"Using system properties with fallback ${cfgInfo.niceList() -> "config files"}")
-//
-//      val (good, bad) = loaded.partition(_._2.isSuccess)
-//
-//      if (bad.nonEmpty) {
-//        val failuresList = bad.collect {
-//          case (s, Failure(f)) =>
-//            s"$s: $f"
-//        }
-//        val failures = failuresList.niceList()
-//
-//        logger.error(s"Failed to load configs: $failures")
-//        throw new ConfigLoaderException(s"Failed to load configs: failures=$failures", failuresList)
-//      } else {
-//
-//      }
+      mergeFilter(shared, role, _.roleConfig.active)
+    }
 
+    override def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean): Config = {
       val cfgInfo = (shared ++ role.flatMap(_.loaded)).map(c => c.clue)
       logger.info(s"Using system properties with fallback ${cfgInfo.niceList() -> "config files"}")
 
-      val toMerge = shared ++ role.filter(_.roleConfig.active).flatMap(_.loaded)
+      val toMerge = shared ++ role.filter(filter).flatMap(_.loaded)
 
       val folded = foldConfigs(toMerge)
 
@@ -55,7 +35,7 @@ object ConfigMerger {
         .resolve()
     }
 
-    private def foldConfigs(roleConfigs: Iterable[ConfigLoadResult.Success]): Config = {
+    def foldConfigs(roleConfigs: Iterable[ConfigLoadResult.Success]): Config = {
       roleConfigs.iterator.foldLeft(ConfigFactory.empty()) {
         case (acc, loaded) =>
           verifyConfigs(loaded, acc)

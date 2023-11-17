@@ -5,6 +5,7 @@ import cats.effect.unsafe.IORuntime
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
+import distage.config.AppConfig
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
@@ -15,6 +16,7 @@ import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.DebugProperties
+import izumi.distage.roles.launcher.ActivationParser
 import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
@@ -179,6 +181,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
+        parser = new ActivationParser {
+          override def parseActivation(config: AppConfig): Activation = ???
+        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -216,6 +221,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
+        parser = new ActivationParser {
+          override def parseActivation(config: AppConfig): Activation = ???
+        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -257,6 +265,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
+        parser = new ActivationParser {
+          override def parseActivation(config: AppConfig): Activation = ???
+        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -283,20 +294,20 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       }
     }
 
-    "produce config dumps and support minimization" ignore {
+    "produce config dumps and support minimization" in {
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
       withProperties(overrides ++ Map(TestPluginCatsIO.versionProperty -> version.version)) {
         TestEntrypoint.main(Array("-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
       }
 
-      val cwCfg = cfg("configwriter", version)
+      val cwCfg = cfg("configwriter-full", version)
       val cwCfgMin = cfg("configwriter-minimized", version)
 
       assert(cwCfg.exists(), s"$cwCfg exists")
       assert(cwCfgMin.exists(), s"$cwCfgMin exists")
       assert(cwCfg.length() > cwCfgMin.length())
 
-      val role0Cfg = cfg("testrole00", version)
+      val role0Cfg = cfg("testrole00-full", version)
       val role0CfgMin = cfg("testrole00-minimized", version)
 
       assert(role0Cfg.exists(), s"$role0Cfg exists")
@@ -316,11 +327,11 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role0CfgMinParsed.hasPath("testservice"))
 
       assert(role0CfgMinParsed.getString("testservice2.strval") == "xxx")
-      assert(role0CfgMinParsed.getString("testservice.overridenInt") == "111")
+      assert(role0CfgMinParsed.getString("testservice.overridenInt") == "222")
       assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 265)
       assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List("111", "222"))
 
-      val role4Cfg = cfg("testrole04", version)
+      val role4Cfg = cfg("testrole04-full", version)
       val role4CfgMin = cfg("testrole04-minimized", version)
 
       assert(role4Cfg.exists(), s"$role4Cfg exists")

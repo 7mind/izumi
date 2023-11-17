@@ -1,20 +1,22 @@
 package izumi.distage.framework.services
 
-import distage.{Injector, PlannerInput}
+import distage.config.{AppConfig, AppConfigModule}
+import distage.{BootstrapModuleDef, Injector, PlannerInput}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.recursive.{BootConfig, Bootloader, BootstrappedApp}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
+import izumi.distage.roles.launcher.ActivationParser
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
 trait RoleAppPlanner {
-  def reboot(bsModule: BootstrapModule): RoleAppPlanner
+  def reboot(bsModule: BootstrapModule, config: Option[AppConfig]): RoleAppPlanner
   def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans
 }
 
@@ -32,6 +34,7 @@ object RoleAppPlanner {
     bsModule: BootstrapModule @Id("roleapp"),
     bootloader: Bootloader @Id("roleapp"),
     logger: IzLogger,
+    parser: ActivationParser,
   )(implicit
     defaultModule: DefaultModule[F]
   ) extends RoleAppPlanner { self =>
@@ -42,8 +45,15 @@ object RoleAppPlanner {
       DIKey.get[QuasiAsync[F]],
     )
 
-    override def reboot(bsOverride: BootstrapModule): RoleAppPlanner = {
-      new RoleAppPlanner.Impl[F](options, activation, bsModule overriddenBy bsOverride, bootloader, logger)
+    override def reboot(bsOverride: BootstrapModule, config: Option[AppConfig]): RoleAppPlanner = {
+      val configOverride = new BootstrapModuleDef {
+        config.foreach(cfg => include(AppConfigModule(cfg)))
+      }
+      val updatedBsModule = bsModule overriddenBy bsOverride overriddenBy configOverride
+
+      val activation = config.map(parser.parseActivation).getOrElse(this.activation)
+
+      new RoleAppPlanner.Impl[F](options, activation, updatedBsModule, bootloader, logger, parser)
     }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
@@ -54,6 +64,12 @@ object RoleAppPlanner {
         logger.trace(s"Bootstrap plan:\n${runtimeBsApp.plan.render() -> "bootstrap dump" -> null}")
         logger.trace(s"App module: ${runtimeBsApp.module -> "app module" -> null}")
       }
+
+//      val self: RoleAppPlanner = this
+//      val bsmd: BootstrapModule = new BootstrapModuleDef {
+//        make[RoleAppPlanner].from(self)
+//      }
+//      val newBsModule: BootstrapModule = bsModule // .overriddenBy(bsmd)(BootstrapModule.BootstrapModuleApi)
 
       val out = for {
         bootstrapped <- bootloader.boot(
