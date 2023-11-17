@@ -110,7 +110,7 @@ abstract class RoleAppMain[F[_]](
       make[RawAppArgs].fromValue(RawAppArgs(RawEntrypointParams.empty, additionalRoles.requiredRoles))
       make[PlanningOptions].fromValue(planningOptions())
       make[ActivationParser].from[ActivationParser.Impl]
-      make[Activation].named("default").fromValue(activation())
+      make[Activation].named("entrypoint").fromValue(activation())
       make[Activation].named("roleapp").from {
         (parser: ActivationParser, config: AppConfig) =>
           parser.parseActivation(config)

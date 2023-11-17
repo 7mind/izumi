@@ -8,10 +8,15 @@ trait ActivationParser extends AbstractActivationParser {}
 
 object ActivationParser {
 
-  class Impl(activation: Activation@Id("default")) extends ActivationParser {
-
+  class Impl(
+              defaultActivations: Activation@Id("default"),
+              additionalActivations: Activation@Id("additional"),
+              activation: Activation@Id("entrypoint"),
+            ) extends ActivationParser {
     def parseActivation(@unused config: AppConfig): Activation = {
-      activation
+      defaultActivations ++
+        additionalActivations ++
+        activation
     }
   }
 
