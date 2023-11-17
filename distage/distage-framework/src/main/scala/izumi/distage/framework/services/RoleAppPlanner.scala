@@ -68,7 +68,7 @@ object RoleAppPlanner {
       val out = for {
         bootstrapped <- bootloader.boot(
           BootConfig(
-            bootstrap = _ => makeModule(),
+            bootstrap = _ => bsModule,
             activation = _ => activation,
             roots = _ => Roots(runtimeGcRoots),
           )
@@ -93,13 +93,14 @@ object RoleAppPlanner {
       out.getOrThrow()
     }
 
-    private def makeModule(): BootstrapModule = {
-      val self: RoleAppPlanner = this
-      val bsmd: BootstrapModule = new BootstrapModuleDef {
-        make[RoleAppPlanner].from(self)
-      }
-      bsModule overriddenBy bsmd
-    }
+// broken, we should fix it in order to make reboots more correct
+//    private def makeModule(): BootstrapModule = {
+//      val self: RoleAppPlanner = this
+//      val selfRefl = new BootstrapModuleDef {
+//        make[RoleAppPlanner].from(self)
+//      }
+//      bsModule overriddenBy selfRefl
+//    }
 
   }
 
