@@ -65,16 +65,10 @@ object RoleAppPlanner {
         logger.trace(s"App module: ${runtimeBsApp.module -> "app module" -> null}")
       }
 
-//      val self: RoleAppPlanner = this
-//      val bsmd: BootstrapModule = new BootstrapModuleDef {
-//        make[RoleAppPlanner].from(self)
-//      }
-//      val newBsModule: BootstrapModule = bsModule // .overriddenBy(bsmd)(BootstrapModule.BootstrapModuleApi)
-
       val out = for {
         bootstrapped <- bootloader.boot(
           BootConfig(
-            bootstrap = _ => bsModule,
+            bootstrap = _ => makeModule(),
             activation = _ => activation,
             roots = _ => Roots(runtimeGcRoots),
           )
@@ -97,6 +91,14 @@ object RoleAppPlanner {
       }
 
       out.getOrThrow()
+    }
+
+    private def makeModule(): BootstrapModule = {
+      val self: RoleAppPlanner = this
+      val bsmd: BootstrapModule = new BootstrapModuleDef {
+        make[RoleAppPlanner].from(self)
+      }
+      bsModule overriddenBy bsmd
     }
 
   }
