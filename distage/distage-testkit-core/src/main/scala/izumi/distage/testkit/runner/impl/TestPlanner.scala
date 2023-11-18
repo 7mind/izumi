@@ -212,14 +212,13 @@ class TestPlanner[F[_]: TagK: DefaultModule](
         val activationParser = new ActivationParser.Impl(
           roleAppActivationParser,
           RawAppArgs.empty,
-          config,
           env.activationInfo,
           env.activation,
           Activation.empty,
           lateLogger,
           warnUnset,
         )
-        val configActivation = activationParser.parseActivation()
+        val configActivation = activationParser.parseActivation(config)
 
         configActivation ++ env.activation
     }

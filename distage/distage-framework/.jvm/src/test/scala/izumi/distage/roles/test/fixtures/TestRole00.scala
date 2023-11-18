@@ -51,7 +51,7 @@ object roles {
 
     override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
       logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies, $conflict")
-      assert(conf.overridenInt == 111)
+      assert(conf.overridenInt == 222, s"Common value is 111, role-specific value is 222, found ${conf.overridenInt}")
     }) {
       _ =>
         QuasiIO[F].maybeSuspend {
@@ -179,4 +179,3 @@ class FailingRole02[F[_]: QuasiIO](
 object FailingRole02 extends RoleDescriptor {
   override final val id = "failingrole02"
 }
-

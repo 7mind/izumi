@@ -276,7 +276,7 @@ val module = new ConfigModuleDef {
   makeConfig[OtherConf]("conf").named("other")
 
   // add config instance
-  make[AppConfig].from(AppConfig(
+  make[AppConfig].from(AppConfig.provided(
     ConfigFactory.parseString(
       """conf {
         |  name = "John"
