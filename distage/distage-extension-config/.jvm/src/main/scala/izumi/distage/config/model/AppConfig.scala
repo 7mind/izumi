@@ -7,13 +7,11 @@ import java.io.File
 
 final case class AppConfig(
   config: DistageConfigImpl,
-  shared: List[ConfigLoadResult.Success],
-  roles: List[LoadedRoleConfigs],
 )
 
 object AppConfig {
-  val empty: AppConfig = AppConfig(ConfigFactory.empty(), List.empty, List.empty)
-  def provided(config: DistageConfigImpl): AppConfig = AppConfig(config, List.empty, List.empty)
+  val empty: AppConfig = AppConfig(ConfigFactory.empty())
+  def provided(config: DistageConfigImpl): AppConfig = AppConfig(config)
 }
 
 sealed trait GenericConfigSource

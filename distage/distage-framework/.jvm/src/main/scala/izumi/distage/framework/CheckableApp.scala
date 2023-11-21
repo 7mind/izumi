@@ -173,7 +173,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
           if (cfg.origin().resource() eq null) {
             throw new DIConfigReadException(s"Couldn't find a config resource with name `$resourceName` - file not found", null)
           }
-          AppConfig(cfg, List.empty, List.empty)
+          AppConfig(cfg)
       }
     }
   }
