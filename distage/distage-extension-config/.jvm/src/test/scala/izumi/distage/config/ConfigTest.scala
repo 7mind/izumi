@@ -20,7 +20,7 @@ final class ConfigTest extends AnyWordSpec {
   }
 
   def mkModule(config: Config): AppConfigModule = {
-    val appConfig = AppConfig(config)
+    val appConfig = AppConfig(config, List.empty, List.empty)
     new AppConfigModule(appConfig)
   }
 

@@ -51,7 +51,7 @@ trait ConfigLoader extends AbstractConfigLoader {}
 
 @nowarn("msg=Unused import")
 object ConfigLoader {
-  def empty: ConfigLoader = () => AppConfig(ConfigFactory.empty())
+  def empty: ConfigLoader = () => AppConfig(ConfigFactory.empty(), List.empty, List.empty)
 
   import scala.collection.compat.*
 
@@ -111,7 +111,7 @@ object ConfigLoader {
           throw new ConfigLoaderException(s"Cannot load configuration: ${failures.toList.niceList()}", value.map(_.failure).toList)
         case Right((shared, role)) =>
           val merged = merger.addSystemProps(merger.merge(shared, role))
-          AppConfig(merged)
+          AppConfig(merged, shared, role)
       }
 
     }
