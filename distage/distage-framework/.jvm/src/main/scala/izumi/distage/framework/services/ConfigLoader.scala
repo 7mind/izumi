@@ -110,7 +110,7 @@ object ConfigLoader {
           logger.error(s"Cannot load configuration: ${failures.toList.niceList() -> "failures"}")
           throw new ConfigLoaderException(s"Cannot load configuration: ${failures.toList.niceList()}", value.map(_.failure).toList)
         case Right((shared, role)) =>
-          val merged = merger.merge(shared, role)
+          val merged = merger.addSystemProps(merger.merge(shared, role))
           AppConfig(merged, shared, role)
       }
 

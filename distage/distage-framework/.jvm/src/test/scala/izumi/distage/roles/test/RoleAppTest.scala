@@ -327,9 +327,11 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role0CfgMinParsed.hasPath("testservice"))
 
       assert(role0CfgMinParsed.getString("testservice2.strval") == "xxx")
-      assert(role0CfgMinParsed.getString("testservice.overridenInt") == "222")
-      assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 265)
-      assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List("111", "222"))
+      assert(role0CfgMinParsed.getString("testservice.overridenInt") == "555")
+
+      // ConfigWriter DOES NOT consider system properties!
+      assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 222)
+      assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List(1, 2, 3))
 
       val role4Cfg = cfg("testrole04-full", version)
       val role4CfgMin = cfg("testrole04-minimized", version)

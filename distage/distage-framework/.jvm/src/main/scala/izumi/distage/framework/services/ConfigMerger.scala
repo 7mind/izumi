@@ -12,7 +12,8 @@ import scala.util.Try
 trait ConfigMerger {
   def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs]): Config
   def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean): Config
-  def foldConfigs(roleConfigs: Iterable[ConfigLoadResult.Success]): Config
+  def foldConfigs(roleConfigs: List[ConfigLoadResult.Success]): Config
+  def addSystemProps(config: Config): Config
 }
 
 object ConfigMerger {
@@ -27,20 +28,16 @@ object ConfigMerger {
 
       val toMerge = shared ++ role.filter(filter).flatMap(_.loaded)
 
-      val folded = foldConfigs(toMerge)
-
-      ConfigFactory
-        .systemProperties()
-        .withFallback(folded)
-        .resolve()
+      foldConfigs(toMerge)
     }
 
-    def foldConfigs(roleConfigs: Iterable[ConfigLoadResult.Success]): Config = {
-      roleConfigs.iterator.foldLeft(ConfigFactory.empty()) {
-        case (acc, loaded) =>
-          verifyConfigs(loaded, acc)
-          acc.withFallback(loaded.config)
-      }
+    def foldConfigs(roleConfigs: List[ConfigLoadResult.Success]): Config = {
+      roleConfigs.reverse // rightmost config will have the highest priority
+        .foldLeft(ConfigFactory.empty()) {
+          case (acc, loaded) =>
+            verifyConfigs(loaded, acc)
+            acc.withFallback(loaded.config)
+        }
     }
 
     protected def verifyConfigs(loaded: ConfigLoadResult.Success, acc: Config): Unit = {
@@ -68,5 +65,11 @@ object ConfigMerger {
       }
     }
 
+    override def addSystemProps(config: Config): Config = {
+      ConfigFactory
+        .systemProperties()
+        .withFallback(config)
+        .resolve()
+    }
   }
 }
