@@ -13,10 +13,12 @@ trait ConfigArgsProvider {
 }
 
 object ConfigArgsProvider {
+  def const(args: ConfigLoader.Args): ConfigArgsProvider = new ConfigArgsProvider.Const(args)
+  def empty: ConfigArgsProvider = ConfigArgsProvider.Empty
 
-  object Empty extends ConfigArgsProvider {
-    override def args(): ConfigLoader.Args = ConfigLoader.Args(None, List.empty)
-  }
+  open class Const(override val args: ConfigLoader.Args) extends ConfigArgsProvider
+
+  object Empty extends ConfigArgsProvider.Const(ConfigLoader.Args(None, List.empty))
 
   @nowarn("msg=Unused import")
   class Default(

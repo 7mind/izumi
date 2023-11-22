@@ -27,7 +27,7 @@ import scala.util.{Failure, Success, Try}
   *   - `common-reference.conf`
   *   - `common-reference-dev.conf`
   *
-  * NOTE: You can change default config locations by overriding `make[ConfigLocation]`
+  * NOTE: You can change default config locations by overriding `make[ConfigLocationProvider]`
   * binding in [[izumi.distage.roles.RoleAppMain#roleAppBootOverrides]] (defaults defined in [[izumi.distage.roles.RoleAppBootModule]])
   *
   * When explicit configs are passed to the role launcher on the command-line using the `-c` option, they have higher priority than all the reference configs.
@@ -44,10 +44,10 @@ import scala.util.{Failure, Success, Try}
   *   - explicits: `role1.conf`, `role2.conf`, `global.conf`,
   *   - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf`
   *
-  * @see [[ConfigLoader.ConfigLocation]]
+  * @see [[ConfigLocationProvider]]
   * @see [[ConfigLoader.LocalFSImpl]]
   */
-trait ConfigLoader extends AbstractConfigLoader {}
+trait ConfigLoader extends AbstractConfigLoader
 
 @nowarn("msg=Unused import")
 object ConfigLoader {
