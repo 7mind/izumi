@@ -1,7 +1,8 @@
 package izumi.distage.roles.launcher
 
+import distage.config.AppConfig
 import izumi.distage.model.definition.Activation
 
 trait AbstractActivationParser {
-  def parseActivation(): Activation
+  def parseActivation(config: AppConfig): Activation
 }
