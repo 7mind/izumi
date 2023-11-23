@@ -16,7 +16,9 @@ object ConfigArgsProvider {
   def const(args: ConfigLoader.Args): ConfigArgsProvider = new ConfigArgsProvider.Const(args)
   def empty: ConfigArgsProvider = ConfigArgsProvider.Empty
 
-  open class Const(override val args: ConfigLoader.Args) extends ConfigArgsProvider
+  open class Const(args0: ConfigLoader.Args) extends ConfigArgsProvider {
+    override def args(): ConfigLoader.Args = args0
+  }
 
   object Empty extends ConfigArgsProvider.Const(ConfigLoader.Args(None, List.empty))
 
