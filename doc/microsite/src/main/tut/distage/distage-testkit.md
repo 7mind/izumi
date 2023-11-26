@@ -6,7 +6,7 @@
 
 `distage-testkit` simplifies pragmatic purely-functional program testing providing `Spec*`
 [ScalaTest](https://www.scalatest.org/) base classes for any existing Scala effect type with kind `F[_]`,
-`F[+_, +_]`, `F[-_, +_, +_]` or `Identity`. `Spec`s provide an interface similar to ScalaTest's
+`F[+_, +_]`, `ZIO[-R, +E, +A]` or `Identity`. `Spec`s provide an interface similar to ScalaTest's
 [`WordSpec`](http://doc.scalatest.org/3.1.0/org/scalatest/wordspec/AnyWordSpec.html), however
 `distage-testkit` adds additional capabilities such as: first class support for effect types; dependency injection; and
 parallel execution.
@@ -527,7 +527,7 @@ For `F[_]`, including `Identity`:
   and `b` will be injected from the object graph. The test case will fail if the effect fails or produces a failure
   assertion.
 
-For `F[-_, +_, +_]`, it's same with `F[Any, _, _]`:
+For `ZIO[-R, +E, +A]` in `SpecZIO`:
 
 - `in { ???: ZIO[C with D, _, Unit] }`: The test case is an effect requiring an environment. The test
   case will fail if the effect fails. The environment will be injected from the object graph.
@@ -535,7 +535,7 @@ For `F[-_, +_, +_]`, it's same with `F[Any, _, _]`:
   test case will fail if the effect fails or produces a failure assertion. The environment will be injected from the
   object graph.
 - `in { (a: A, b: B) => ZIO[C with D, _, Assertion] }`: The test case is a function producing an
-  effect requiring an environment. All of `a: A`, `b: B`, `zio.ZEnvironment[C]` and `zio.ZEnvironment[D]`
+  effect requiring an environment. All of `a: A`, `b: B`, and `zio.ZEnvironment[C with D]`
   will be injected from the object graph.
 
 Provided by trait @scaladoc[AssertZIO](izumi.distage.testkit.scalatest.AssertZIO):

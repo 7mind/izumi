@@ -1769,11 +1769,7 @@ class BifunctorIOModule[F[_, _]: TagKK] extends ModuleDef
 Or use `Tag.auto.T` to abstract over any kind:
 
 ```scala mdoc:to-string
-class MonadTransModule[F[_[_], _]: Tag.auto.T] extends ModuleDef
-```
-
-```scala mdoc:to-string
-class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
+class MonadTransformerModule[F[_[_], _]: Tag.auto.T] extends ModuleDef
 ```
 
 ```scala mdoc:to-string

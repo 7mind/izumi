@@ -73,7 +73,7 @@ sealed trait RootInstancesLowPriority8 extends RootInstancesLowPriority9 {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  // since removing trifunctor ZIO instances also require no-more-orphans machinery
+  // since removing trifunctor, ZIO instances now also require no-more-orphans machinery
   @inline implicit final def BIOZIO[ZIO[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[Async2[ZIO[Any, +_, +_]]] = Predefined(AsyncZio.asInstanceOf[Async2[ZIO[Any, +_, +_]]])
 }
 

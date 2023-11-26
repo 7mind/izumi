@@ -7,7 +7,7 @@ import izumi.fundamentals.platform.language.Quirks.Discarder
 import zio._izumicompat_.{__ZIORaceCompat, __ZIOWithFiberRuntime}
 import zio.internal.stacktracer.{InteropTracer, Tracer}
 import zio.stacktracer.TracingImplicits.disableAutoTrace
-import zio.{ZEnvironment, ZIO}
+import zio.ZIO
 
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicBoolean
@@ -311,22 +311,6 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
   }
   @inline override final def zipParRight[E, A, B](fa: ZIO[R, E, A], fb: ZIO[R, E, B]): ZIO[R, E, B] = {
     fa.&>(fb)(Tracer.instance.empty)
-  }
-
-  // Trifunctor implementations with Tag evidence
-  // Probably unworkable at all: we end up floating a combinatoric explosion of evidences for every type we encounter
-  def andThen[R1: zio.Tag, E, A](f: ZIO[R, E, R1], g: ZIO[R1, E, A]): ZIO[R, E, A] = {
-    implicit val trace: zio.Trace = Tracer.instance.empty
-
-    f.flatMap(r1 => g.provideEnvironment(ZEnvironment(r1)))
-  }
-  def choice[RL: zio.Tag, RR: zio.Tag, E, A](f: ZIO[RL, E, A], g: ZIO[RR, E, A])(implicit t: zio.Tag[Either[RL, RR]]): ZIO[Either[RL, RR], E, A] = {
-    implicit val trace: zio.Trace = Tracer.instance.empty
-
-    ZIO.serviceWithZIO[Either[RL, RR]] {
-      case Left(l) => f.provideEnvironment(ZEnvironment(l))
-      case Right(r) => g.provideEnvironment(ZEnvironment(r))
-    }
   }
 
   @inline override final def sendInterruptToSelf: ZIO[Any, Nothing, Unit] = {
