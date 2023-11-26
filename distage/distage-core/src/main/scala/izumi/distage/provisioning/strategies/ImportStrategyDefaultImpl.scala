@@ -1,12 +1,12 @@
 package izumi.distage.provisioning.strategies
 
-import distage.{DIKey, ModuleBase}
-import izumi.distage.model.definition.Binding
+import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.definition.errors.ProvisionerIssue.MissingImport
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.strategies.ImportStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.DIKey
 
 class ImportStrategyDefaultImpl extends ImportStrategy {
   override def importDependency(context: ProvisioningKeyProvider, plan: Plan, op: ImportDependency): Either[MissingImport, Seq[NewObjectOp]] = {

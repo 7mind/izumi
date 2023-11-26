@@ -3,7 +3,7 @@ package izumi.distage.model
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.reflect.Tag
 
 /**
@@ -33,7 +33,7 @@ object PlannerInput {
     *
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph that can be described by `bindings`
     */
-  def apply(bindings: ModuleBase, activation: Activation, roots: NonEmptySet[? <: DIKey]): PlannerInput = PlannerInput(bindings, activation, Roots(roots))
+  def apply(bindings: ModuleBase, activation: Activation, roots: NESet[? <: DIKey]): PlannerInput = PlannerInput(bindings, activation, Roots(roots))
 
   /**
     * Instantiate `roots` and the dependencies of `roots`, discarding bindings that are unrelated.

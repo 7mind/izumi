@@ -2,25 +2,26 @@ package izumi.distage.model.definition.errors
 
 import izumi.distage.model.definition.errors.DIError.{ConflictResolutionFailed, LoopResolutionError}
 import izumi.distage.model.exceptions.planning.InjectorFailed
+import izumi.fundamentals.collections.nonempty.NEList
 
 class DIFailureInterpreter() {
   // TODO: we need to completely get rid of exceptions, this is just some transitional stuff
-  def throwOnError(issues: List[DIError]): Nothing = {
+  def throwOnError(issues: NEList[DIError]): Nothing = {
     throw asError(issues)
   }
 
-  def asError(issues: List[DIError]): InjectorFailed = {
+  def asError(issues: NEList[DIError]): InjectorFailed = {
     import izumi.fundamentals.platform.strings.IzString.*
-    lazy val conflicts = issues.collect { case c: ConflictResolutionFailed => c }
-    lazy val loops = issues.collect { case e: LoopResolutionError => DIError.formatError(e) }.niceList()
-    lazy val inconsistencies = issues.collect { case e: DIError.VerificationError => DIError.formatError(e) }.niceList()
+    lazy val conflicts = issues.toList.collect { case c: ConflictResolutionFailed => c }
+    lazy val loops = issues.toList.collect { case e: LoopResolutionError => DIError.formatError(e) }.niceList()
+    lazy val inconsistencies = issues.toList.collect { case e: DIError.VerificationError => DIError.formatError(e) }.niceList()
 
     if (conflicts.nonEmpty) {
       conflictError(conflicts)
     } else if (loops.nonEmpty) {
-      new InjectorFailed(s"Injector failed unexpectedly. List of issues: $loops", issues)
+      new InjectorFailed(s"Injector failed unexpectedly. List of issues: $loops", issues.toList)
     } else if (inconsistencies.nonEmpty) {
-      new InjectorFailed(s"Injector failed unexpectedly. List of issues: $loops", issues)
+      new InjectorFailed(s"Injector failed unexpectedly. List of issues: $loops", issues.toList)
     } else {
       new InjectorFailed("BUG: Injector failed and is unable to provide any diagnostics", List.empty)
     }

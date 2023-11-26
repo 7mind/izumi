@@ -291,35 +291,6 @@ I 2021-08-17T15:07:54.367 (00_logstage.md:235)  ….controllerFunction.232.233 [
 I 2021-08-17T15:07:54.371 (00_logstage.md:237)  …on.App12.controllerFunction [2280:Thread-60           ] Some log after controller function (without correlation_id)
 ```
 
-```scala mdoc:invisible
-// FIXME wtf
-
-//### Tagless trifunctor support
-//
-//`LogIO3Ask.log` adds environment support for all trifunctor effect types with an instance of `MonadAsk3[F]` typeclass from @ref[BIO](../bio/00_bio.md) hierarchy.
-//
-//Example:
-//
-//```scala mdoc:to-string:reset
-//import logstage.{LogIO3, LogIO3Ask, IzLogger}
-//import logstage.LogIO3Ask.log
-//import zio.{Has, ZIO}
-//
-//def fn[F[-_, +_, +_]: LogIO3Ask]: F[Has[LogIO3[F]], Nothing, Unit] = {
-// log.info(s"I'm logging with ${log}stage!")
-//}
-//
-//val logger = LogIO3.fromLogger(IzLogger())
-//
-//import izumi.functional.bio.UnsafeRun2
-//
-//val runtime = UnsafeRun2.createZIO()
-//
-//runtime.unsafeRun {
-//  fn[ZIO].provideEnvironment(ZEnvironment(logger))
-//}
-```
-
 Custom JSON rendering with LogstageCodec
 ----------------------------------------
 

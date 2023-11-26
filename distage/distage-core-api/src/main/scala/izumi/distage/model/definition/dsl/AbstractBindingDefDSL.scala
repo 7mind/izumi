@@ -1,12 +1,12 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.constructors.FactoryConstructor
-import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
+import izumi.distage.constructors.{FactoryConstructor, TraitConstructor}
 import izumi.distage.model.definition.*
+import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{SingletonRef, *}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.exceptions.dsl.InvalidFunctoidModifier
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey
@@ -25,13 +25,38 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
   private[definition] def _setDSL[T](ref: SetRef): SetDSL[T]
 
   private[definition] def frozenState: Iterator[Binding] = {
-    mutableState.iterator.flatMap(_.interpret)
+    mutableState.iterator.flatMap(_.interpret())
   }
 
   protected[this] def _registered[T <: BindingRef](bindingRef: T): T = {
     mutableState += bindingRef
     bindingRef
   }
+
+  final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
+    val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
+    _bindDSL[T](ref)
+  }
+
+  /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
+  final protected[this] def makeTrait[T: Tag: TraitConstructor]: BindDSLAfterFrom[T] = {
+    val ref = _registered(new SingletonRef(Bindings.provider[T](TraitConstructor[T])))
+    _bindDSLAfterFrom[T](ref)
+  }
+
+  /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
+  final protected[this] def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = {
+    val ref = _registered(new SingletonRef(Bindings.provider[T](FactoryConstructor[T])))
+    _bindDSLAfterFrom[T](ref)
+  }
+
+  /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]] */
+  final protected[this] def makeSubcontext[T: Tag](submodule: ModuleBase): SubcontextDSL[T] = {
+    val ref = _registered(new SubcontextRef(Bindings.subcontext[T](submodule, Functoid.identity[T], Set.empty)))
+    new SubcontextDSL[T](ref)
+  }
+  /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]] */
+  final protected[this] def makeSubcontext[T: Tag]: SubcontextDSL[T] = makeSubcontext[T](ModuleBase.empty)
 
   /**
     * Set bindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
@@ -144,17 +169,6 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
     ref
   }
 
-  final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = {
-    val ref = _registered(new SingletonRef(Bindings.provider[T](provider)))
-    _bindDSL[T](ref)
-  }
-
-  /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
-  final protected[this] def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = {
-    val ref = _registered(new SingletonRef(Bindings.provider[T](FactoryConstructor[T])))
-    _bindDSLAfterFrom[T](ref)
-  }
-
   /**
     * Use this to create utility functions that add bindings mutably to the current module,
     * as opposed to creating new modules and [[IncludesDSL.include including]] them.
@@ -162,13 +176,13 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
     * Example:
     *
     * {{{
-    *   import distage.{AnyConstructor, Tag, ModuleDef}
+    *   import distage.{ClassConstructor, Tag, ModuleDef}
     *   import izumi.distage.model.definition.dsl.ModuleDefDSL
     *
     *   trait RegisteredComponent
     *   class RegisteredComponentImpl extends RegisteredComponent
     *
-    *   def addAndRegister[T <: RegisteredComponent: Tag: AnyConstructor](implicit mutateModule: ModuleDefDSL#MutationContext): Unit = {
+    *   def addAndRegister[T <: RegisteredComponent: Tag: ClassConstructor](implicit mutateModule: ModuleDefDSL#MutationContext): Unit = {
     *     new mutateModule.dsl {
     *       make[T]
     *
@@ -184,16 +198,18 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
     */
   final class MutationContext {
     abstract class dsl extends AbstractBindingDefDSLMacro[BindDSL] {
+      final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = self._make[T](provider)
+      final protected[this] def makeTrait[T: Tag: TraitConstructor]: BindDSLAfterFrom[T] = self.makeTrait[T]
+      final protected[this] def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = self.makeFactory[T]
+      final protected[this] def makeSubcontext[T: Tag](submodule: ModuleBase): SubcontextDSL[T] = self.makeSubcontext[T](submodule)
+      final protected[this] def makeSubcontext[T: Tag]: SubcontextDSL[T] = self.makeSubcontext[T]
+
       final protected[this] def many[T](implicit tag: Tag[Set[T]], pos: CodePositionMaterializer): SetDSL[T] = self.many[T]
 
       final protected[this] def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): BindDSLAfterFrom[T] = self.addImplicit[T]
 
       final protected[this] def todo[T: Tag](implicit pos: CodePositionMaterializer): BindDSLAfterFrom[T] = self.todo[T]
       final protected[this] def modify[T]: ModifyDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = self.modify[T]
-
-      final protected[this] def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = self._make[T](provider)
-
-      final protected[this] def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = self.makeFactory[T]
 
       /**
         * Avoid `discarded non-Unit value` warning.
@@ -209,102 +225,171 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
 
 object AbstractBindingDefDSL {
 
-  final class ModifyDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](private val dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL]) extends AnyVal {
+  sealed abstract class ModifyDSLBase[T] {
+
+    def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T]
+
+    def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.map(f))
+    }
+
+    def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependency(DIKey[B]))
+    }
+
+    def addDependency[B: Tag](name: Identifier)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependency(DIKey[B](name)))
+    }
+
+    def addDependency(key: DIKey)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependency(key))
+    }
+
+    def addDependencies(keys: Iterable[DIKey])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.addDependencies(keys))
+    }
+
+    def annotateParameter[P: Tag](name: Identifier)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      by(_.annotateParameter[P](name))
+    }
+
+  }
+
+  final class ModifyDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL]) extends ModifyDSLBase[T] {
+
     def named(name: Identifier): ModifyNamedDSL[T, BindDSL, BindDSLAfterFrom, SetDSL] = {
       new ModifyNamedDSL(dsl, name)
     }
 
-    def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.map(f))
+    override def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      val key = DIKey.get[T]
+      new ModifyTaggingDSL(dsl._modify(key)(f)(pos))
     }
 
-    def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      new ModifyTaggingDSL(dsl._modify(DIKey.get[T])(f)(pos))
-    }
-
-    def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependency(DIKey[B]))
-    }
-
-    def addDependency[B: Tag](name: Identifier)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependency(DIKey[B](name)))
-    }
-
-    def addDependency(key: DIKey)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependency(key))
-    }
-
-    def addDependencies(keys: Iterable[DIKey])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependencies(keys))
-    }
   }
 
-  final class ModifyNamedDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL], name: Identifier) {
-    def apply(f: T => T)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.map(f))
+  final class ModifyNamedDSL[T, BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]](
+    dsl: AbstractBindingDefDSL[BindDSL, BindDSLAfterFrom, SetDSL],
+    name: Identifier,
+  ) extends ModifyDSLBase[T] {
+
+    override def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
+      val key = DIKey.get[T].named(name)
+      new ModifyTaggingDSL(dsl._modify(key)(f)(pos))
     }
 
-    def by(f: Functoid[T] => Functoid[T])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      new ModifyTaggingDSL(dsl._modify(DIKey.get[T].named(name))(f)(pos))
-    }
-
-    def addDependency[B: Tag](implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependency(DIKey[B]))
-    }
-
-    def addDependency[B: Tag](name: Identifier)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependency(DIKey[B](name)))
-    }
-
-    def addDependency(key: DIKey)(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependency(key))
-    }
-
-    def addDependencies(keys: Iterable[DIKey])(implicit tag: Tag[T], pos: CodePositionMaterializer): ModifyTaggingDSL[T] = {
-      by(_.addDependencies(keys))
-    }
   }
 
-  final class ModifyTaggingDSL[T](private val ref: SingletonRef) extends AnyVal {
+  final class ModifyTaggingDSL[T](private val mutableState: SingletonRef) extends AnyVal with AddDependencyDSL[T, ModifyTaggingDSL[T]] {
+
     def tagged(tags: BindingTag*): ModifyTaggingDSL[T] = {
-      new ModifyTaggingDSL(ref.append(AddTags(tags.toSet)))
+      new ModifyTaggingDSL(mutableState.append(AddTags(tags.toSet)))
     }
 
     def by(f: Functoid[T] => Functoid[T]): ModifyTaggingDSL[T] = {
-      new ModifyTaggingDSL[T](ref.append(Modify(f)))
+      new ModifyTaggingDSL[T](mutableState.append(Modify(f)))
     }
 
-    def map(f: T => T): ModifyTaggingDSL[T] = {
+    def modify(f: T => T): ModifyTaggingDSL[T] = {
       by(_.mapSame(f))
     }
 
-    def addDependency[B: Tag]: ModifyTaggingDSL[T] = {
-      by(_.addDependency(DIKey.get[B]))
+    @deprecated("Renamed to .modify", "1.2.0")
+    def map(f: T => T): ModifyTaggingDSL[T] = {
+      modify(f)
     }
 
-    def addDependency(key: DIKey): ModifyTaggingDSL[T] = {
-      by(_.addDependency(key))
+    override protected[this] def _modifyBy(f: Functoid[T] => Functoid[T]): ModifyTaggingDSL[T] = by(f)
+  }
+
+  trait AddDependencyDSL[T, Self] extends Any {
+    protected[this] def _modifyBy(f: Functoid[T] => Functoid[T]): Self
+
+    def addDependency[B: Tag]: Self = {
+      _modifyBy(_.addDependency[B])
     }
 
-    def addDependencies(keys: Iterable[DIKey]): ModifyTaggingDSL[T] = {
-      by(_.addDependencies(keys))
+    def addDependency[B: Tag](name: Identifier): Self = {
+      _modifyBy(_.addDependency[B](name))
+    }
+
+    def addDependency(key: DIKey): Self = {
+      _modifyBy(_.addDependency(key))
+    }
+
+    def addDependencies(keys: Iterable[DIKey]): Self = {
+      _modifyBy(_.addDependencies(keys))
+    }
+
+    def annotateParameter[P: Tag](name: Identifier): Self = {
+      _modifyBy(_.annotateParameter[P](name))
+    }
+  }
+
+  final class SubcontextDSL[T](override protected val mutableState: SubcontextRef) extends SubcontextDSLBase[T, SubcontextDSL[T]] {
+
+    def named(name: Identifier): SubcontextNamedDSL[T] = {
+      addOp(SubcontextInstruction.SetId(name))(new SubcontextNamedDSL[T](_))
+    }
+
+    override protected[this] def toSame: SubcontextRef => SubcontextDSL[T] = new SubcontextDSL[T](_)
+  }
+
+  final class SubcontextNamedDSL[T](override protected val mutableState: SubcontextRef) extends SubcontextDSLBase[T, SubcontextNamedDSL[T]] {
+    override protected[this] def toSame: SubcontextRef => SubcontextNamedDSL[T] = new SubcontextNamedDSL[T](_)
+  }
+
+  sealed abstract class SubcontextDSLBase[T, Self] {
+    protected[this] def mutableState: SubcontextRef
+    protected[this] def toSame: SubcontextRef => Self
+
+    final def tagged(tags: BindingTag*): Self = {
+      addOp(SubcontextInstruction.AddTags(tags.toSet))(toSame)
+    }
+
+    final def withSubmodule(submodule: ModuleBase): Self = {
+      addOp(SubcontextInstruction.AddSubmodule(submodule))(toSame)
+    }
+
+    final def extractWith(f: Functoid[T]): Self = {
+      addOp(SubcontextInstruction.SetExtractor(f))(toSame)
+    }
+
+    final def localDependency[B: Tag]: Self = {
+      localDependency(DIKey[B])
+    }
+
+    final def localDependency[B: Tag](name: Identifier): Self = {
+      localDependency(DIKey[B](name))
+    }
+
+    final def localDependency(key: DIKey): Self = {
+      localDependencies(key :: Nil)
+    }
+
+    final def localDependencies(keys: Iterable[DIKey]): Self = {
+      addOp(SubcontextInstruction.AddLocalDependencies(keys))(toSame)
+    }
+
+    protected[this] final def addOp[R](op: SubcontextInstruction)(newState: SubcontextRef => R): R = {
+      newState(mutableState.append(op))
     }
   }
 
   trait BindingRef {
-    def interpret: collection.Seq[Binding]
+    def interpret(): collection.Seq[Binding]
   }
 
   final class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
-    override def interpret: collection.Seq[ImplBinding] = {
+    override def interpret(): collection.Seq[ImplBinding] = {
       var b: SingletonBinding[DIKey.BasicKey] = initial
       var refs: List[SingletonBinding[DIKey.BasicKey]] = Nil
       val sortedOps = ops.sortBy {
         case _: SetImpl => 0
         case _: AddTags => 0
         case _: SetId => 0
-        case _: Modify[?] => 1
-        case _: SetIdFromImplName => 2
+        case _: SetIdFromImplName => 1
+        case _: Modify[?] => 2
         case _: AliasTo => 3
       }
       sortedOps.foreach {
@@ -317,7 +402,7 @@ object AbstractBindingDefDSL {
           b = b.withTarget(key)
         case SetIdFromImplName() =>
           b = b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tag.longNameWithPrefix.toLowerCase))
-        case Modify(functoidModifier) =>
+        case Modify(functoidModifier: (Functoid[t] => Functoid[u])) =>
           b.implementation match {
             case ImplDef.ProviderImpl(implType, function) =>
               val newProvider = functoidModifier(Functoid(function)).get
@@ -325,10 +410,14 @@ object AbstractBindingDefDSL {
                 b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
               } else {
                 throw new InvalidFunctoidModifier(
-                  s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}`"
+                  s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}` (${initial.origin})"
                 )
               }
-            case _ => ()
+            case _ =>
+              // add an independent mutator instead of modifying the original functoid, if no original functoid is available
+              val newProvider = functoidModifier(Functoid.identityKey(b.key).asInstanceOf[Functoid[t]]).get
+              val newRef = SingletonBinding(b.key, ImplDef.ProviderImpl(newProvider.ret, newProvider), Set.empty, b.origin, isMutator = true)
+              refs = newRef :: refs
           }
         case AliasTo(key, pos) =>
           // it's ok to retrieve `tags`, `implType` & `key` from `b` because all changes to
@@ -354,7 +443,7 @@ object AbstractBindingDefDSL {
     private[this] val elems: mutable.Queue[SetElementRef] = mutable.Queue.empty
     private[this] val multiElems: mutable.Queue[MultiSetElementRef] = mutable.Queue.empty
 
-    override def interpret: collection.Seq[Binding] = {
+    override def interpret(): collection.Seq[Binding] = {
       val emptySetBinding = setOps.foldLeft(initial: EmptySetBinding[DIKey.BasicKey]) {
         (b, instr) =>
           instr match {
@@ -432,6 +521,36 @@ object AbstractBindingDefDSL {
     }
   }
 
+  final class SubcontextRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SubcontextInstruction] = mutable.Queue.empty) extends BindingRef {
+    override def interpret(): collection.Seq[ImplBinding] = {
+      require(initial.implementation.isInstanceOf[ImplDef.ContextImpl])
+      var b: SingletonBinding[DIKey.BasicKey] = initial
+      def bImpl(): ImplDef.ContextImpl = (b.implementation: @unchecked) match { case implDef: ImplDef.ContextImpl => implDef }
+      ops.foreach {
+        case SubcontextInstruction.AddTags(tags) =>
+          b = b.addTags(tags)
+        case SubcontextInstruction.SetId(contractedId) =>
+          val key = DIKey.TypeKey(b.key.tpe).named(contractedId)
+          b = b.withTarget(key)
+        case SubcontextInstruction.SetExtractor(functoid) =>
+          val i = bImpl()
+          b = b.withImplDef(i.copy(implType = functoid.get.ret, extractingFunction = functoid.get))
+        case SubcontextInstruction.AddLocalDependencies(localDependencies) =>
+          val i = bImpl()
+          b = b.withImplDef(i.copy(externalKeys = i.externalKeys ++ localDependencies))
+        case SubcontextInstruction.AddSubmodule(submodule) =>
+          val i = bImpl()
+          b = b.withImplDef(i.copy(module = i.module ++ submodule))
+      }
+      Seq(b)
+    }
+
+    def append(op: SubcontextInstruction): SubcontextRef = {
+      ops += op
+      this
+    }
+  }
+
   sealed trait SingletonInstruction
   object SingletonInstruction {
     final case class SetImpl(implDef: ImplDef) extends SingletonInstruction
@@ -456,6 +575,15 @@ object AbstractBindingDefDSL {
   sealed trait MultiSetElementInstruction
   object MultiSetElementInstruction {
     final case class MultiAddTags(tags: Set[BindingTag]) extends MultiSetElementInstruction
+  }
+
+  sealed trait SubcontextInstruction
+  object SubcontextInstruction {
+    final case class AddTags(tags: Set[BindingTag]) extends SubcontextInstruction
+    final case class SetId(id: Identifier) extends SubcontextInstruction
+    final case class SetExtractor[T](functoid: Functoid[T]) extends SubcontextInstruction
+    final case class AddLocalDependencies(localDependencies: Iterable[DIKey]) extends SubcontextInstruction
+    final case class AddSubmodule(submodule: ModuleBase) extends SubcontextInstruction
   }
 
 }

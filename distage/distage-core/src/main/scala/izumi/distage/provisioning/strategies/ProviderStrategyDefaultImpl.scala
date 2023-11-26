@@ -23,7 +23,7 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy {
           case _ =>
             Left(List(param))
         }
-    }.biAggregate
+    }.biSequence
 
     args match {
       case Left(value) =>

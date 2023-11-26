@@ -17,7 +17,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[Factory]
-      make[Dependency]
+      makeTrait[Dependency]
       makeFactory[OverridingFactory]
       makeFactory[AssistedFactory]
       makeFactory[AbstractFactory]
@@ -74,7 +74,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[NamedAssistedFactory]
-      make[Dependency]
+      makeTrait[Dependency]
       make[Dependency].named("special").from(SpecialDep())
       make[Dependency].named("veryspecial").from(VerySpecialDep())
     })
@@ -100,7 +100,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[MixedAssistendNonAssisted]
-      make[Dependency]
+      makeTrait[Dependency]
     })
 
     val injector = mkInjector()
@@ -186,7 +186,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     assert(instance.isInstanceOf[ConcreteDep])
   }
 
-  "Factory cannot produce factories" in brokenOnScala3 {
+  "Factory cannot produce factories" in {
     val exc = intercept[TestFailedException] {
       assertCompiles("""
         import FactoryCase1._
@@ -205,7 +205,12 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         assert(instantiated.x().x().b == context.get[Dependency])
       """)
     }
-    assert(exc.getMessage.contains("Factory cannot produce factories"))
+    brokenOnScala3 {
+      assert(!exc.getMessage.contains("Couldn't find position"))
+    }
+    brokenOnScala3 {
+      assert(exc.getMessage.contains("Factory cannot produce factories"))
+    }
   }
 
   "Factory cannot produce factories (dotty test) [Scala 3 bug, `Couldn't find position` in `make` macro inside assertCompiles]" in {
@@ -234,7 +239,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency]
+      makeTrait[Dependency]
       make[TestClass]
       makeFactory[Factory]
     })
@@ -285,7 +290,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency]
+      makeTrait[Dependency]
       make[TestClass]
       makeFactory[AbstractClassFactory]
     })

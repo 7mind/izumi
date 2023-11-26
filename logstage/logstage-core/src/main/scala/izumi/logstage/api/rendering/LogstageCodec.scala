@@ -72,7 +72,7 @@ sealed trait LogstageCodecLowPriority {
           w.openMap()
           w.writeMapElement("type", Option(t.getClass).map(_.getName))
           w.writeMapElement("message", Option(t.getMessage))
-          w.writeMapElement("stacktrace", Option(t.stackTrace))
+          w.writeMapElement("stacktrace", Option(t.stacktraceString))
           w.closeMap()
         case None =>
           w.writeNull()

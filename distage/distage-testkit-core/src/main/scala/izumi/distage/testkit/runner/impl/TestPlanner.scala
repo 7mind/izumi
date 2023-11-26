@@ -20,6 +20,7 @@ import izumi.distage.testkit.spec.DistageTestEnv
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
@@ -65,7 +66,7 @@ object TestPlanner {
   sealed trait PlanningFailure
   object PlanningFailure {
     final case class Exception(throwable: Throwable) extends PlanningFailure
-    final case class DIErrors(errors: List[DIError]) extends PlanningFailure
+    final case class DIErrors(errors: NEList[DIError]) extends PlanningFailure
   }
 
   final case class PlannedTestEnvs[F[_]](envs: Map[PreparedTestEnv, TestTree[F]])
@@ -211,14 +212,13 @@ class TestPlanner[F[_]: TagK: DefaultModule](
         val activationParser = new ActivationParser.Impl(
           roleAppActivationParser,
           RawAppArgs.empty,
-          config,
           env.activationInfo,
           env.activation,
           Activation.empty,
           lateLogger,
           warnUnset,
         )
-        val configActivation = activationParser.parseActivation()
+        val configActivation = activationParser.parseActivation(config)
 
         configActivation ++ env.activation
     }
@@ -231,7 +231,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     lateLogger: IzLogger,
     fullActivation: Activation,
     moduleProvider: ModuleProvider,
-  ): Either[List[DIError], PackedEnv[F]] = {
+  ): Either[NEList[DIError], PackedEnv[F]] = {
     val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
     val appModule = {
       // add default module manually, instead of passing it to Injector, to be able to split it later into runtime/non-runtime manually
@@ -277,17 +277,23 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       reducedAppModule = appModule.drop(runtimeKeys)
 
       // produce plan for each test
-      testPlans <- tests.map {
-        distageTest =>
-          val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
-          val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
-          for {
-            plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, fullActivation, testRoots)) else Right(Plan.empty)
-            _ <- Right(planChecker.showProxyWarnings(plan))
-          } yield {
-            AlmostPreparedTest(distageTest, reducedAppModule, plan.keys, fullActivation)
-          }
-      }.biAggregate
+      testPlans <- tests
+        .groupBy {
+          distageTest =>
+            val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
+            val testRoots = forcedRoots ++ distageTest.test.get.diKeys
+            testRoots
+        }
+        .toSeq
+        .map {
+          case (testRoots, distageTests) =>
+            for {
+              plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, fullActivation, testRoots)) else Right(Plan.empty)
+              _ <- Right(planChecker.showProxyWarnings(plan))
+            } yield {
+              distageTests.map(AlmostPreparedTest(_, reducedAppModule, plan.keys, fullActivation))
+            }
+        }.biFlatten
       envKeys = testPlans.flatMap(_.targetKeys).toSet
 
       // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
@@ -347,7 +353,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     injector: Planner,
     appModule: Module,
     check: PlanCircularDependencyCheck,
-  ): Either[List[DIError], Plan] = {
+  ): Either[NEList[DIError], Plan] = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
 
     for {

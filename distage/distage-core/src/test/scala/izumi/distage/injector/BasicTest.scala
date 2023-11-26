@@ -12,6 +12,7 @@ import izumi.distage.model.definition.errors.{ConflictResolutionError, DIError}
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
@@ -23,9 +24,9 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val definition = PlannerInput(
       new ModuleDef {
         make[TestClass]
-        make[TestDependency3]
+        makeTrait[TestDependency3]
         make[TestDependency0].from[TestImpl0]
-        make[TestDependency1]
+        makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
         make[TestInstanceBinding].from(TestInstanceBinding())
@@ -99,7 +100,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         import BadAnnotationsCase._
 
         val definition = PlannerInput.everything(new ModuleDef {
-          make[TestDependency0]
+          makeTrait[TestDependency0]
           make[TestClass]
         })
 
@@ -132,7 +133,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       many[JustTrait].named("named.empty.set")
 
       many[JustTrait]
-        .add[JustTrait]
+        .addTrait[JustTrait]
         .add(new Impl1)
 
       many[JustTrait]
@@ -312,7 +313,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase4.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency].named("special")
+      makeTrait[Dependency].named("special")
       make[TestClass]
     })
 
@@ -449,13 +450,16 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
           .named("x") {
             (m: Mutable) =>
               m.copy(a = m.a + 10)
-          }.tagged(Repo.Prod)
+          }
+          .tagged(Repo.Prod)
 
         modify[Mutable]
           .named("x") {
             (m: Mutable) =>
-              m.copy(a = m.a + 20)
-          }.tagged(Repo.Dummy)
+              m.copy(a = m.a + 10)
+          }
+          .tagged(Repo.Dummy)
+          .modify((m: Mutable) => m.copy(a = m.a + 10))
       },
       Activation(Repo -> Repo.Prod),
     )
@@ -465,7 +469,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     assert(context.get[Mutable]("x") == Mutable(11, Some(SomethingUseful("x"))))
   }
 
-  "support mutations with axis tags when axis is unconfigured" in {
+  "fail mutations with axis tags when axis is unconfigured" in {
     import Mutations01.*
 
     val definition = PlannerInput.everything(
@@ -500,9 +504,13 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       Activation.empty,
     )
 
-    intercept[InjectorFailed] {
+    val failure = intercept[InjectorFailed] {
       mkInjector().produce(definition).unsafeGet()
     }
+    assert(failure.errors.exists {
+      case DIError.ConflictResolutionFailed(ConflictResolutionError.UnconfiguredAxisInMutators(NEList(a @ _, b @ _))) => true
+      case _ => false
+    })
   }
 
   "regression test: imports correctly specify which binding they are required by when missing" in {
@@ -519,7 +527,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     class RegisteredComponentImpl1 extends RegisteredComponent
     class RegisteredComponentImpl2 extends RegisteredComponent
 
-    def addAndRegister[T <: RegisteredComponent: Tag: AnyConstructor](implicit mutateModule: ModuleDefDSL#MutationContext): Unit = {
+    def addAndRegister[T <: RegisteredComponent: Tag: ClassConstructor](implicit mutateModule: ModuleDefDSL#MutationContext): Unit = {
       new mutateModule.dsl {
         make[T]
           .named("xyz")

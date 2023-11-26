@@ -1,12 +1,12 @@
 package izumi.fundamentals.platform
 
-import java.util.concurrent.TimeUnit
 import izumi.fundamentals.platform.files.IzFiles
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.nio.file.{Files, Paths}
+import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.util.Try
 
 class IzFilesTest extends AnyWordSpec {
 
@@ -14,19 +14,39 @@ class IzFilesTest extends AnyWordSpec {
     "resolve path entries on nix-like systems" in {
       assert(IzFiles.which("bash").nonEmpty)
     }
+
+    "destroy directories and files" in {
+      val dir0 = Files.createTempDirectory("test")
+      assert(dir0.toFile.exists())
+
+      IzFiles.erase(dir0.toFile)
+      assert(!dir0.toFile.exists())
+
+      val file0 = Files.createTempFile("test", "test")
+      assert(file0.toFile.exists())
+      IzFiles.erase(file0.toFile)
+      assert(!file0.toFile.exists())
+    }
+
+    "resolve home directory" in {
+      Paths.get(IzFiles.homedir()).toFile.isDirectory
+    }
+
+//    "support last modified" in {
+//      assert(IzFiles.getLastModifiedRecursively(IzFiles.home().toFile).nonEmpty)
+//    }
+
   }
 
   import izumi.fundamentals.platform.resources.IzResources
+
   import scala.concurrent.Future
 
   "Resource tools" should {
     "support concurrent queries" in {
-      // unfortunately this test is unreliable, the filesystem logic might occasionally fail during initialization
+      // the filesystem logic might occasionally fail during initialization
+      // we need to file a JDK bug if we can reliably reproduce this
       import scala.concurrent.ExecutionContext.Implicits.global
-
-      while (Try(IzResources.getPath("library.properties")).isFailure) {
-        Thread.sleep(100)
-      }
 
       val seq = (0 to 200).map {
         _ =>

@@ -95,12 +95,12 @@ function init {
     export SCALA213=$(cat project/Deps.sc | grep 'val scala213 ' |  sed -r 's/.*\"(.*)\".**/\1/')
     export SCALA3=$(cat project/Deps.sc | grep 'val scala300 ' |  sed -r 's/.*\"(.*)\".**/\1/')
 
+    # details on github runners: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+    export _JAVA_OPTIONS="-Xmx4000M -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=1024M"
+
     printenv
 
     java -version
-
-    rm -f .jvmopts
-    cp .jvmopts.github .jvmopts
 }
 
 init

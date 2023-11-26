@@ -34,7 +34,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
                   import izumi.functional.IzEither.*
                   f.associations
                     .map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a))
-                    .biAggregate
+                    .biSequence
                     .map(_.toArray: Array[(Class[?], Any)])
                     .left
                     .map(

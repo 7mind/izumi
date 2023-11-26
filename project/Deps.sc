@@ -94,7 +94,7 @@ object Izumi {
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
     final val zio_managed = Library("dev.zio", "zio-managed", V.zio, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
-    final val zio_all = Seq(zio_core, zio_managed)
+    final val zio_all = Seq(zio_core)
 
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
@@ -149,7 +149,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.18")
-  final val scala213 = ScalaVersion("2.13.11")
+  final val scala213 = ScalaVersion("2.13.12")
   final val scala300 = ScalaVersion("3.2.2")
 
   object Groups {
@@ -301,9 +301,10 @@ object Izumi {
         ),
         "scalacOptions" -= "-Wconf:any:warning",
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
-        "scalacOptions" += "-Wconf:msg=msg=legacy-binding:silent",
+        "scalacOptions" += "-Wconf:msg=legacy-binding:silent",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
         "scalacOptions" += "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
+        "scalacOptions" += "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
         "scalacOptions" += "-Wconf:cat=lint-eta-sam:silent",
         "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
@@ -401,6 +402,11 @@ object Izumi {
     "fork" in (SettingScope.Test, Platform.Jvm) := true
   )
 
+  private val disableScaladocOnScala3 = ("sources" in SettingScope.Raw("Compile / doc")) := Seq(
+    SettingKey(Some(scala300), None) := Const.EmptySeq,
+    SettingKey.Default := "(Compile / doc / sources).value".raw,
+  )
+
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
     artifacts = Seq(
@@ -430,10 +436,7 @@ object Izumi {
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq.empty,
         settings = Seq(
-          ("sources" in SettingScope.Raw("Compile / doc")) := Seq(
-            SettingKey(Some(scala300), None) := Const.EmptySeq,
-            SettingKey.Default := "(Compile / doc / sources).value".raw,
-          )
+          disableScaladocOnScala3
         ),
       ),
       Artifact(
@@ -495,6 +498,7 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++
+          Seq(zio_managed in Scope.Optional.all) ++
           Seq(zio_interop_tracer in Scope.Compile.all) ++
           Seq(cats_effect_laws, cats_effect_testkit, scalatest, discipline, discipline_scalatest) ++
           Seq(zio_interop_cats in Scope.Test.all) ++
@@ -502,6 +506,12 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,
+          Projects.fundamentals.collections,
+        ),
+        settings = Seq(
+          // DottyDoc crashes on fundamentals-bio (https://github.com/lampepfl/dotty/issues/18832)
+          // since trifunctor was removed (d3deae9aa3aed329dff03fa3b531d33843a5982a)
+          disableScaladocOnScala3
         ),
       ),
     ),
@@ -521,7 +531,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.distage.coreApi,
-        libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect),
+        libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(zio_managed in Scope.Optional.all),
         depends = Seq(
           Projects.fundamentals.reflection,
           Projects.fundamentals.platform,
@@ -578,10 +588,12 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.plugins,
-        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect),
+        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect) ++
+          Seq( /* for ZIOResourcesZManagedTestJvm */ zio_managed, zio_interop_cats, cats_effect).map(_ in Scope.Test.jvm),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
-          Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
+          Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all) ++
+          Seq( /* for ZIOResourcesZManagedTestJvm */ Projects.fundamentals.platform tin Scope.Test.jvm),
         platforms = Targets.cross3,
       ),
       Artifact(
@@ -681,9 +693,9 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.docs.microsite,
-        libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all) ++ Seq(
-          circe_generic in Scope.Compile.all
-        ),
+        libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all) ++
+          Seq(circe_generic in Scope.Compile.all) ++
+          Seq(zio_managed in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Seq(
           // ignore microsite in IDEA
@@ -764,8 +776,10 @@ object Izumi {
                   (ghpagesRepository.value / "paradox.json").getCanonicalPath == f.getCanonicalPath ||
                   (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
                   (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath
+                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath || (
+                      f.toPath.getParent.toAbsolutePath == (ghpagesRepository.value / "index.html").toPath.getParent.toAbsolutePath &&
+                        f.getCanonicalPath.endsWith(".html")
+                  )
               }
             }"""
           ),

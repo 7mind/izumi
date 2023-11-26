@@ -96,10 +96,10 @@ object Clock1 extends LowPriorityClockInstances {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  @inline implicit final def limitedCovariance2[C[f[_]] <: Clock1[f], FR[_, _], R0](
-    implicit F: C[FR[Nothing, _]] { type Divergence = Nondivergent }
-  ): Divergent.Of[C[FR[R0, _]]] = {
-    Divergent(F.asInstanceOf[C[FR[R0, _]]])
+  @inline implicit final def limitedCovariance2[C[f[_]] <: Clock1[f], F[_, _], E](
+    implicit F: C[F[Nothing, _]] { type Divergence = Nondivergent }
+  ): Divergent.Of[C[F[E, _]]] = {
+    Divergent(F.asInstanceOf[C[F[E, _]]])
   }
 
   @inline implicit final def limitedCovariance3[C[f[_]] <: Clock1[f], FR[_, _, _], R0, E](

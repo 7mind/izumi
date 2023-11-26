@@ -1,6 +1,6 @@
 package izumi.distage.model.providers
 
-import izumi.distage.constructors.{AnyConstructor, ClassConstructor, FactoryConstructor, TraitConstructor, ZEnvConstructor}
+import izumi.distage.constructors.{ClassConstructor, FactoryConstructor, TraitConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.distage.model.reflection.LinkedParameter
@@ -232,8 +232,9 @@ object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters {
     */
   def makeHas[A: ZEnvConstructor]: Functoid[ZEnvironment[A]] = ZEnvConstructor[A]
 
-  /** Derive constructor for a type `A` using [[AnyConstructor]] */
-  def makeAny[A: AnyConstructor]: Functoid[A] = AnyConstructor[A]
+  @deprecated("Same as `makeClass`, use `makeClass`")
+  /** @deprecated Same as `makeClass`, use `makeClass` */
+  def makeAny[A: ClassConstructor]: Functoid[A] = ClassConstructor[A]
 
   def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): Functoid[Nothing] = {
     new Functoid[Nothing](
@@ -308,45 +309,66 @@ private[providers] trait FunctoidLifecycleAdapters {
   }
 
   /**
+    * Allows you to bind Scoped [[zio.ZIO]]-based constructors in `ModuleDef`:
+    */
+  implicit final def providerFromZIOScoped[R, E, A](
+    scoped: => ZIO[Scope with R, E, A]
+  )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
+  ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
+    Functoid.lift(Lifecycle.fromZIO[R](scoped))
+  }
+
+  /**
+    * Allows you to bind Scoped [[zio.ZIO]]-based constructors in `ModuleDef`:
+    */
+  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
+  implicit final def providerFromZIOScopedNothing[R, A](
+    scoped: => ZIO[Scope with R, Nothing, A]
+  )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
+  ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
+    Functoid.lift(Lifecycle.fromZIO[R](scoped))
+  }
+
+  /**
     * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZIO[R, E, A](
+  implicit final def providerFromZManaged[R, E, A](
     managed: => ZManaged[R, E, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(managed))
+    Functoid.lift(Lifecycle.fromZManaged(managed))
   }
 
   /**
     * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZIONothing[R, A](
+  implicit final def providerFromZManagedNothing[R, A](
     managed: => ZManaged[R, Nothing, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(managed))
+    Functoid.lift(Lifecycle.fromZManaged(managed))
   }
 
   /**
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZLayerHas1[R, E, A: Tag](
+  implicit final def providerFromZLayer[R, E, A: Tag](
     layer: => ZLayer[R, E, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(layer)(zio.Tag[A]))
+    Functoid.lift(Lifecycle.fromZLayer(layer)(zio.Tag[A]))
   }
 
   /**
     * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZLayerNothingHas1[R, A: Tag](
+  implicit final def providerFromZLayerNothing[R, A: Tag](
     layer: => ZLayer[R, Nothing, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZIO(layer)(zio.Tag[A]))
+    Functoid.lift(Lifecycle.fromZLayer(layer)(zio.Tag[A]))
   }
 
   disableAutoTrace.discard()

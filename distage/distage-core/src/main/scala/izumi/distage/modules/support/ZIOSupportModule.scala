@@ -1,12 +1,10 @@
 package izumi.distage.modules.support
 
-import distage.DIKey
 import izumi.distage.model.definition.Id
 import izumi.distage.modules.platform.ZIOPlatformDependentSupportModule
 import izumi.functional.bio.*
 import izumi.functional.bio.UnsafeRun2.{FailureHandler, ZIORunner}
-import izumi.functional.bio.retry.{Scheduler3, SchedulerInstances}
-import izumi.fundamentals.platform.language.Quirks.Discarder
+import izumi.functional.bio.retry.{Scheduler2, SchedulerInstances}
 import izumi.reflect.Tag
 import zio.{Executor, IO, Runtime, ZEnvironment, ZIO, ZLayer}
 
@@ -34,31 +32,17 @@ object ZIOSupportModule {
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
 class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
-  include(
-    AnyBIO3SupportModule[ZIO, R]
-      // FIXME wtf
-      // FIXME wtf trifunctor broken
-      .--(
-        Set(
-          DIKey[Ask3[ZIO]],
-          DIKey[MonadAsk3[ZIO]],
-          DIKey[Profunctor3[ZIO]],
-          DIKey[Arrow3[ZIO]],
-        )
-      )
-  )
+  include(AnyBIOSupportModule[ZIO[Any, +_, +_]])
+  if (!(Tag[R] =:= Tag[Any])) {
+    include(AnyBIOSupportModule[ZIO[R, +_, +_]])
+  }
 
   // assume default environment is `Any`, otherwise let the error message guide the user here.
   make[ZEnvironment[Any]].named("zio-initial-env").fromValue(ZEnvironment.empty)
 
   make[UnsafeRun2[ZIO[R, _, _]]].using[ZIORunner[R]]
 
-  make[BlockingIO3[ZIO]].from(BlockingIOInstances.BlockingZIODefault)
-  make[BlockingIO2[ZIO[R, +_, +_]]].from {
-    implicit B: BlockingIO3[ZIO] =>
-      B.discard() // Parameter not used on .js
-      BlockingIO2[ZIO[R, +_, +_]]
-  }
+  make[BlockingIO2[ZIO[R, +_, +_]]].from(BlockingIOInstances.BlockingZIODefaultR[ZIO, R])
 
   make[ZIORunner[R]].from {
     (
@@ -87,17 +71,21 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   make[ExecutionContext].named("cpu").from((_: Executor @Id("cpu")).asExecutionContext)
   make[ExecutionContext].named("io").from((_: Executor @Id("io")).asExecutionContext)
 
-  // FIXME wtf
-  addImplicit[Async3[ZIO]]
-  addImplicit[Temporal3[ZIO]]
-  // FIXME wtf
-//  addImplicit[Local3[ZIO]]
-  addImplicit[Fork3[ZIO]]
-  addImplicit[Primitives3[ZIO]]
-  addImplicit[PrimitivesM3[ZIO]]
+  addImplicit[Async2[zio.IO]]
+  addImplicit[Temporal2[zio.IO]]
+  addImplicit[Fork2[zio.IO]]
+  addImplicit[Primitives2[zio.IO]]
+  addImplicit[PrimitivesM2[zio.IO]]
+  if (!(Tag[R] =:= Tag[Any])) {
+    addImplicit[Async2[ZIO[R, +_, +_]]]
+    addImplicit[Temporal2[ZIO[R, +_, +_]]]
+    addImplicit[Fork2[ZIO[R, +_, +_]]]
+    addImplicit[Primitives2[ZIO[R, +_, +_]]]
+    addImplicit[PrimitivesM2[ZIO[R, +_, +_]]]
+  }
 
-  make[Scheduler3[ZIO]].from {
-    SchedulerInstances.SchedulerFromTemporalAndClock(_: Temporal2[zio.IO], _: Clock3[ZIO])
+  make[Scheduler2[ZIO[R, +_, +_]]].from {
+    SchedulerInstances.SchedulerFromTemporalAndClock(_: Temporal2[ZIO[R, +_, +_]], _: Clock2[ZIO[R, +_, +_]])
   }
 
   addImplicit[TransZio[IO]]

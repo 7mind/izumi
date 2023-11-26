@@ -5,7 +5,7 @@ import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.model.Docker.ClientConfig.parseReusePolicy
 import izumi.distage.docker.{DebugProperties, DockerConst}
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.integration.PortCheck.HostPortPair
 import pureconfig.ConfigReader
 
@@ -300,7 +300,7 @@ object Docker {
   final case class ReportedContainerConnectivity(
     dockerHost: Option[String],
     containerAddresses: Seq[ServiceHost],
-    dockerPorts: Map[DockerPort, NonEmptyList[ServicePort]],
+    dockerPorts: Map[DockerPort, NEList[ServicePort]],
   ) {
     override def toString: String = s"{host: $dockerHost; addresses=$containerAddresses; ports=$dockerPorts}"
   }

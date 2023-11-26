@@ -1,17 +1,17 @@
 package izumi.distage.planning.sequential
 
-import distage.Roots
 import izumi.distage.model.definition.errors.DIError
-import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.planning.SanityChecker
 import izumi.distage.model.reflection.DIKey
 import izumi.functional.IzEither.*
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.DG
 
 class SanityCheckerDefaultImpl() extends SanityChecker {
 
-  override def verifyPlan(plan: DG[DIKey, ExecutableOp], roots: Roots): Either[List[DIError.VerificationError], Unit] = {
+  override def verifyPlan(plan: DG[DIKey, ExecutableOp], roots: Roots): Either[NEList[DIError.VerificationError], Unit] = {
     val inconsistentKeys = plan.meta.nodes.filter { case (k, op) => k != op.target }
     val unreferencedKeys = plan.meta.nodes.keySet -- plan.successors.links.keySet
     val missingKeys = plan.successors.links.keySet -- plan.meta.nodes.keySet
@@ -43,9 +43,9 @@ class SanityCheckerDefaultImpl() extends SanityChecker {
         Set.empty[DIKey]
     }
 
-    def failIf(cond: => Boolean)(error: => DIError.VerificationError): Either[List[DIError.VerificationError], Unit] = {
+    def failIf(cond: => Boolean)(error: => DIError.VerificationError): Either[NEList[DIError.VerificationError], Unit] = {
       if (cond) {
-        Left(List(error))
+        Left(NEList(error))
       } else {
         Right(())
       }
@@ -62,6 +62,6 @@ class SanityCheckerDefaultImpl() extends SanityChecker {
       failIf(missingRoots.nonEmpty)(DIError.VerificationError.BUG_ProxyWithoutInit(missingRoots)),
     )
 
-    checks.biAggregateVoid
+    checks.biSequence_
   }
 }

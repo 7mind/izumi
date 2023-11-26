@@ -63,7 +63,7 @@ final class TrivialLoggerImpl(
   }
 
   @inline private[this] def formatError(s: => String, e: => Throwable): String = {
-    s"$id: $s\n${e.stackTrace}"
+    s"$id: $s\n${e.stacktraceString}"
   }
 
   @inline private[this] def flush(level: Level, s: => String): Unit = {

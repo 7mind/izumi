@@ -66,6 +66,6 @@ object ZEnvConstructorMacro {
       val f = util.makeFunctoid[ZEnvironment[R]](lamParams, lamExpr, '{ ProviderType.ZIOEnvironment })
       '{ new ZEnvConstructor[R](${ f }) }
     }
-  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stackTrace) }
+  } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
 }

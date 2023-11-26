@@ -29,18 +29,13 @@ final class DefaultModuleTest extends AnyWordSpec with MkInjector with CatsIOPla
       )
     }
 
-    "build for fromBIO2" in {
+    "build for fromBIO" in {
       implicit val unsafeRun2: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO()
       unsafeRun(
-        Injector[zio.Task]()(implicitly[QuasiIO[zio.Task]], implicitly[TagK[zio.Task]], DefaultModule.fromBIO2[zio.IO])
+        Injector[zio.Task]()(implicitly[QuasiIO[zio.Task]], implicitly[TagK[zio.Task]], DefaultModule.fromBIO[zio.IO])
           .produce(Module.empty, Roots.Everything).unsafeGet()
       )
     }
-
-//    "build for fromBIO3" in {
-//      implicit val unsafeRun2: UnsafeRun3[zio.ZIO] = UnsafeRun2.createZIO()
-//      unsafeRun(Injector[zio.Task]()(implicitly[QuasiIO[zio.Task]], implicitly[TagK[zio.Task]], DefaultModule.fromBIO3[zio.ZIO]).produce(Module.empty, Roots.Everything).unsafeGet())
-//    }
 
     "build for fromCats" in {
       catsIOUnsafeRunSync {

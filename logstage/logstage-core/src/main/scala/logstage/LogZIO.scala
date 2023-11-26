@@ -25,9 +25,6 @@ object LogZIO {
     *   }
     * }}}
     */
-  // FIXME wtf
-//  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get[LogIO3[ZIO]])
-//  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](identity)
   object log extends LogZIOImpl(identity)
 
   private[LogZIO] class LogZIOImpl(get: LogIO3[ZIO] => LogIO3[ZIO]) extends LogIO3Ask[ZIO] {

@@ -116,22 +116,6 @@ class LogZIOSpec extends AnyWordSpec {
       )
     }
 
-    // FIXME wtf
-//    "doc example works" in {
-//      import logstage.LogIO3Ask.log
-//      import zio.ZIO
-//
-//      def fn[F[-_, +_, +_]: LogIO3Ask]: F[LogIO3[F], Nothing, Unit] = {
-//        log.info(s"I'm logging with ${log}stage!"): @nowarn
-//      }
-//
-//      val logger = LogIO3.fromLogger(IzLogger())
-//
-//      zio.Runtime.default.unsafeRun {
-//        fn[ZIO].provide(Has(logger))
-//      }
-//    }
-
   }
 
   private def withTestSink[U](thunk: RIO[LogZIO, U]): TestSink = {

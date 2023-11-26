@@ -13,6 +13,7 @@ import izumi.distage.model.planning.*
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.solver.{PlanSolver, SemigraphSolver}
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 
@@ -29,12 +30,12 @@ class PlannerDefaultImpl(
 
   import scala.collection.compat.*
 
-  override def plan(input: PlannerInput): Either[List[DIError], Plan] = {
+  override def plan(input: PlannerInput): Either[NEList[DIError], Plan] = {
     planNoRewrite(input.copy(bindings = rewrite(input.bindings)))
 
   }
 
-  override def planNoRewrite(input: PlannerInput): Either[List[DIError], Plan] = {
+  override def planNoRewrite(input: PlannerInput): Either[NEList[DIError], Plan] = {
     for {
       resolved <- resolver.resolveConflicts(input, this).left.map(e => e.map(ConflictResolutionFailed.apply))
       plan <- preparePlan(resolved)
@@ -47,7 +48,7 @@ class PlannerDefaultImpl(
     }
   }
 
-  private def preparePlan(resolved: DG[MutSel[DIKey], SemigraphSolver.RemappedValue[InstantiationOp, DIKey]]): Either[List[DIError], DG[DIKey, InstantiationOp]] = {
+  private def preparePlan(resolved: DG[MutSel[DIKey], SemigraphSolver.RemappedValue[InstantiationOp, DIKey]]): Either[NEList[DIError], DG[DIKey, InstantiationOp]] = {
     import izumi.functional.IzEither.*
 
     for {
@@ -55,7 +56,7 @@ class PlannerDefaultImpl(
         case (target, deps) =>
           for {
             mappedTarget <- updateKey(target)
-            mappedDeps <- deps.map(updateKey).biAggregate
+            mappedDeps <- deps.map(updateKey).biSequence
             op <- resolved.meta.nodes.get(target).map {
               op =>
                 for {
@@ -68,7 +69,7 @@ class PlannerDefaultImpl(
                           (original, updated)
                         }
 
-                    }.biAggregate.map(_.toMap)
+                    }.biSequence.map(_.toMap)
                 } yield {
                   val mapper = (key: DIKey) => remaps.getOrElse(key, key)
                   Some(op.meta.replaceKeys(key => Map(op.meta.target -> mappedTarget).getOrElse(key, key), mapper))
@@ -83,7 +84,7 @@ class PlannerDefaultImpl(
           } yield {
             ((mappedTarget, mappedDeps), op.map(o => (mappedTarget, o)))
           }
-      }.biAggregate
+      }.biSequence
     } yield {
       val mappedOps = mappedGraph.view.flatMap(_._2).toMap
       val mappedMatrix = mappedGraph.view.map(_._1).filter { case (k, _) => mappedOps.contains(k) }.toMap
@@ -97,7 +98,7 @@ class PlannerDefaultImpl(
     hook.hookDefinition(module)
   }
 
-  protected[this] def updateKey(mutSel: MutSel[DIKey]): Either[List[DIError], DIKey] = {
+  protected[this] def updateKey(mutSel: MutSel[DIKey]): Either[NEList[DIError], DIKey] = {
     mutSel.mut match {
       case Some(value) =>
         updateKey(mutSel.key, value)
@@ -106,7 +107,7 @@ class PlannerDefaultImpl(
     }
   }
 
-  protected[this] def updateKey(key: DIKey, mindex: Int): Either[List[DIError], DIKey] = {
+  protected[this] def updateKey(key: DIKey, mindex: Int): Either[NEList[DIError], DIKey] = {
     key match {
       case DIKey.TypeKey(tpe, _) =>
         Right(DIKey.TypeKey(tpe, Some(mindex)))
@@ -119,7 +120,7 @@ class PlannerDefaultImpl(
       case e: DIKey.EffectKey =>
         updateKey(e.key, mindex).map(updated => e.copy(key = updated))
       case k =>
-        Left(List(BUG_UnexpectedMutatorKey(k, mindex)))
+        Left(NEList(BUG_UnexpectedMutatorKey(k, mindex)))
     }
   }
 

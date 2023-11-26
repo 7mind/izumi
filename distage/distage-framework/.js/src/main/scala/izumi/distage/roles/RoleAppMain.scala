@@ -1,13 +1,17 @@
 package izumi.distage.roles
 
 import distage.Injector
+import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
+import izumi.distage.model.Locator
 import izumi.distage.model.definition.{Activation, Axis, Module, ModuleDef}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.AppShutdownStrategy
+import izumi.distage.roles.launcher.ActivationParser
+import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawRoleParams, RequiredRoles}
 import izumi.fundamentals.platform.functional.Identity
@@ -53,6 +57,37 @@ abstract class RoleAppMain[F[_]](
     }
   }
 
+  /**
+    * Create an object graph for inspection in the REPL:
+    *
+    * {{{
+    * scala> val graph = Launcher.replLocator("-u", "mode:test", ":role1")
+    * val graph: izumi.fundamentals.platform.functional.Identity[izumi.distage.model.Locator] = izumi.distage.LocatorDefaultImpl@6f6a2ac8
+    *
+    * scala> val testObj = graph.get[Hello]
+    * val testObj: example.Hellower = example.Hellower@25109d84
+    *
+    * scala> testObj.hello("test")
+    * Hello test!
+    * }}}
+    *
+    * @note All resources will be leaked. Use [[replLocatorWithClose]] if you need resource cleanup within a REPL session.
+    */
+  def replLocator(argV: ArgV = ArgV.empty): F[Locator] = {
+    quasi.map(replLocatorWithClose(argV))(_._1)
+  }
+
+  def replLocatorWithClose(argV: ArgV = ArgV.empty): F[(Locator, () => F[Unit])] = {
+    val combinedLifecycle: Lifecycle[F, Locator] = {
+      Injector
+        .NoProxies[Identity]()
+        .produceGet[AppResource[F]](roleAppBootModule(argV)).toEffect[F]
+        .flatMap(_.resource.toEffect[F])
+        .flatMap(_.appResource)
+    }
+    combinedLifecycle.unsafeAllocate()
+  }
+
   final def roleAppBootModule: Module = {
     roleAppBootModule(ArgV.empty)
   }
@@ -74,13 +109,19 @@ abstract class RoleAppMain[F[_]](
     ) ++ new ModuleDef {
       make[RawAppArgs].fromValue(RawAppArgs(RawEntrypointParams.empty, additionalRoles.requiredRoles))
       make[PlanningOptions].fromValue(planningOptions())
-      make[Activation].named("roleapp").fromValue(activation())
+      make[ActivationParser].from[ActivationParser.Impl]
+      make[Activation].named("entrypoint").fromValue(activation())
+      make[Activation].named("roleapp").from {
+        (parser: ActivationParser, config: AppConfig) =>
+          parser.parseActivation(config)
+      }
     }
   }
 
   def planningOptions(): PlanningOptions = PlanningOptions()
 
   def activation(): Activation = Activation.empty
+
 //  protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
 //    AppFailureHandler.NullHandler
 //  }

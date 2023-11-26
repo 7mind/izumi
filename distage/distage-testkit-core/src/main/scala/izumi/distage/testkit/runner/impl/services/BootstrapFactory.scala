@@ -1,10 +1,11 @@
 package izumi.distage.testkit.runner.impl.services
 
 import distage.config.AppConfig
+import izumi.distage.config.model.{GenericConfigSource, RoleConfig}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.ConfigLoader.ConfigLocation
-import izumi.distage.framework.services.{ConfigLoader, ModuleProvider}
+import izumi.distage.framework.services.ConfigMerger.ConfigMergerImpl
+import izumi.distage.framework.services.{ConfigArgsProvider, ConfigLoader, ConfigLocationProvider, ModuleProvider}
 import izumi.distage.model.definition.Activation
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
@@ -13,6 +14,10 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.reflect.TagK
 
+/**
+  * The purpose of this class is to allow testkit user to override
+  * module loading and config loading logic by overriding [[izumi.distage.testkit.model.TestConfig]]
+  */
 trait BootstrapFactory {
   def makeModuleProvider[F[_]: TagK](
     options: PlanningOptions,
@@ -25,17 +30,20 @@ trait BootstrapFactory {
 
   def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader
 
-  protected def makeConfigLocation(configBaseName: String): ConfigLocation
+  protected def makeConfigLocationProvider(configBaseName: String): ConfigLocationProvider
 }
 
 object BootstrapFactory {
   object Impl extends BootstrapFactory {
-    override protected def makeConfigLocation(configBaseName: String): ConfigLocation = {
-      ConfigLocation.Default
+    override protected def makeConfigLocationProvider(configBaseName: String): ConfigLocationProvider = {
+      ConfigLocationProvider.Default
     }
 
     override def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader = {
-      new ConfigLoader.LocalFSImpl(logger, makeConfigLocation(configBaseName), ConfigLoader.Args(None, Map(configBaseName -> None)))
+      val argsProvider = ConfigArgsProvider.const(ConfigLoader.Args(None, List(RoleConfig(configBaseName, active = true, GenericConfigSource.ConfigDefault))))
+      val merger = new ConfigMergerImpl(logger)
+      val locationProvider = makeConfigLocationProvider(configBaseName)
+      new ConfigLoader.LocalFSImpl(logger, merger, locationProvider, argsProvider)
     }
 
     override def makeModuleProvider[F[_]: TagK](

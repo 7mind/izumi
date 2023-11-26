@@ -4,22 +4,25 @@ import cats.effect.kernel.Async
 import distage.Injector
 import izumi.distage.framework.services.ModuleProvider
 import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleCheckableApp}
+import izumi.distage.model.Locator
 import izumi.distage.model.definition.{Axis, Module, ModuleDef}
-import izumi.distage.modules.{DefaultModule, DefaultModule2, DefaultModule3}
+import izumi.distage.modules.{DefaultModule, DefaultModule2}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.AppShutdownStrategy.*
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
-import izumi.functional.bio.{Async2, Async3}
+import izumi.functional.bio.Async2
+import izumi.functional.lifecycle.Lifecycle
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.cli.model.raw.{RawRoleParams, RequiredRoles}
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.resources.IzArtifactMaterializer
+import izumi.logstage.distage.LogIO2Module
+import izumi.reflect.{TagK, TagKK}
 
 import scala.annotation.unused
-import izumi.fundamentals.platform.resources.IzArtifactMaterializer
-import izumi.logstage.distage.{LogIO2Module, LogIO3Module}
-import izumi.reflect.{TagK, TagK3, TagKK}
 
 /**
   * Create a launcher for role-based applications by extending this in a top-level object
@@ -95,6 +98,37 @@ abstract class RoleAppMain[F[_]](
   }
 
   /**
+    * Create an object graph for inspection in the REPL:
+    *
+    * {{{
+    * scala> val graph = Launcher.replLocator("-u", "mode:test", ":role1")
+    * val graph: izumi.fundamentals.platform.functional.Identity[izumi.distage.model.Locator] = izumi.distage.LocatorDefaultImpl@6f6a2ac8
+    *
+    * scala> val testObj = graph.get[Hello]
+    * val testObj: example.Hellower = example.Hellower@25109d84
+    *
+    * scala> testObj.hello("test")
+    * Hello test!
+    * }}}
+    *
+    * @note All resources will be leaked. Use [[replLocatorWithClose]] if you need resource cleanup within a REPL session.
+    */
+  def replLocator(args: String*)(implicit F: QuasiIO[F]): F[Locator] = {
+    F.map(replLocatorWithClose(args*))(_._1)
+  }
+
+  def replLocatorWithClose(args: String*)(implicit F: QuasiIO[F]): F[(Locator, () => F[Unit])] = {
+    val combinedLifecycle: Lifecycle[F, Locator] = {
+      Injector
+        .NoProxies[Identity]()
+        .produceGet[AppResource[F]](roleAppBootModule(ArgV(args.toArray))).toEffect[F]
+        .flatMap(_.resource.toEffect[F])
+        .flatMap(_.appResource)
+    }
+    combinedLifecycle.unsafeAllocate()
+  }
+
+  /**
     * Shortcut for [[izumi.distage.framework.PlanCheck.Main]]
     *
     * {{{
@@ -149,21 +183,12 @@ abstract class RoleAppMain[F[_]](
 
 object RoleAppMain {
 
-  abstract class LauncherBIO2[F[+_, +_]: TagKK: Async2: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, _]] {
+  abstract class LauncherBIO[F[+_, +_]: TagKK: Async2: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, _]] {
     override protected def shutdownStrategy: AppShutdownStrategy[F[Throwable, _]] = new BIOShutdownStrategy[F]
 
     // add LogIO2[F] for bifunctor convenience to match existing LogIO[F[Throwable, _]]
     override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
       modify[ModuleProvider](_.mapApp(LogIO2Module[F]() +: _))
-    }
-  }
-
-  abstract class LauncherBIO3[F[-_, +_, +_]: TagK3: Async3: DefaultModule3](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Any, Throwable, _]] {
-    override protected def shutdownStrategy: AppShutdownStrategy[F[Any, Throwable, _]] = new BIOShutdownStrategy[F[Any, +_, +_]]
-
-    // add LogIO2[F] for trifunctor convenience to match existing LogIO[F[Throwable, _]]
-    override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
-      modify[ModuleProvider](_.mapApp(LogIO3Module[F]() +: _))
     }
   }
 
@@ -182,7 +207,7 @@ object RoleAppMain {
 
   object Options extends ParserDef {
     final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
-    final val logFormatParam = arg("log-format", "lf", "log format", "{hocon|json}")
+    final val logFormatParam = arg("log-format", "lf", "log format", "{text|json}")
     final val configParam = arg("config", "c", "path to config file", "<path>")
     final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
     final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")

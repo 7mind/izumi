@@ -17,6 +17,8 @@ class JULTest extends AnyWordSpec {
       val julogger = Logger.getLogger(getClass.getName)
       val arr: Array[AnyRef] = Array("param1", "param2", new RuntimeException("param2"))
       julogger.log(Level.INFO, "message: {0} {1} {2}", arr)
+      julogger.log(Level.INFO, "message", null.asInstanceOf[Array[AnyRef]])
+      julogger.log(Level.INFO, "message")
     }
   }
 

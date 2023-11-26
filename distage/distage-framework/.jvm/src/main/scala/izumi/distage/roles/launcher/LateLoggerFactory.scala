@@ -18,7 +18,7 @@ object LateLoggerFactory {
   ) extends LateLoggerFactory {
     def makeLateLogRouter(config: DeclarativeLoggerConfig): Lifecycle[Identity, LogRouter] = {
       for {
-        router <- Lifecycle.pure(routerFactory.createRouter(config, buffer))
+        router <- Lifecycle.liftF[Identity, LogRouter](routerFactory.createRouter(config, buffer))
         _ <- Lifecycle.make[Identity, Unit](StaticLogRouter.instance.setup(router))(_ => ())
         _ <- Lifecycle
           .make[Identity, Option[AutoCloseable]] {

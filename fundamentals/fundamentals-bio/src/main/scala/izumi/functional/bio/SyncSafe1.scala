@@ -32,20 +32,13 @@ object SyncSafe1 extends LowPrioritySyncSafeInstances0 {
 }
 
 trait LowPrioritySyncSafeInstances0 extends LowPrioritySyncSafeInstances1 {
-  implicit final def fromBIO3[F[-_, +_, +_]: IO3]: SyncSafe1[F[Any, Nothing, _]] =
-    new SyncSafe1[F[Any, Nothing, _]] {
-      override def syncSafe[A](f: => A): F[Any, Nothing, A] = F.sync(f)
-    }
-}
-
-trait LowPrioritySyncSafeInstances1 extends LowPrioritySyncSafeInstances2 {
   implicit final def fromBIO[F[+_, +_]: IO2]: SyncSafe1[F[Nothing, _]] =
     new SyncSafe1[F[Nothing, _]] {
       override def syncSafe[A](f: => A): F[Nothing, A] = F.sync(f)
     }
 }
 
-trait LowPrioritySyncSafeInstances2 {
+trait LowPrioritySyncSafeInstances1 {
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make SyncSafe covariant, because covariant implicits
@@ -55,10 +48,10 @@ trait LowPrioritySyncSafeInstances2 {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  @inline implicit final def limitedCovariance2[C[f[_]] <: SyncSafe1[f], FR[_, _], R0](
+  @inline implicit final def limitedCovariance2[C[f[_]] <: SyncSafe1[f], FR[_, _], E](
     implicit F: C[FR[Nothing, _]] { type Divergence = Nondivergent }
-  ): Divergent.Of[C[FR[R0, _]]] = {
-    Divergent(F.asInstanceOf[C[FR[R0, _]]])
+  ): Divergent.Of[C[FR[E, _]]] = {
+    Divergent(F.asInstanceOf[C[FR[E, _]]])
   }
 
   @inline implicit final def limitedCovariance3[C[f[_]] <: SyncSafe1[f], FR[_, _, _], R0, E](

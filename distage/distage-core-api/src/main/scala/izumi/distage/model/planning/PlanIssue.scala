@@ -6,7 +6,7 @@ import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet}
+import izumi.fundamentals.collections.nonempty.{NEList, NEMap, NESet}
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.strings.IzString.*
 
@@ -23,13 +23,13 @@ object PlanIssue {
   }
 
   /** There are reachable axis choices for which there is no binding for this key */
-  final case class UnsaturatedAxis(key: DIKey, axis: String, missingAxisValues: NonEmptySet[AxisPoint]) extends PlanIssue
+  final case class UnsaturatedAxis(key: DIKey, axis: String, missingAxisValues: NESet[AxisPoint]) extends PlanIssue
 
   /** Binding contains multiple axis choices for the same axis */
-  final case class ConflictingAxisChoices(key: DIKey, op: OperationOrigin, bad: NonEmptyMap[String, Set[AxisPoint]]) extends PlanIssue
+  final case class ConflictingAxisChoices(key: DIKey, op: OperationOrigin, bad: NEMap[String, Set[AxisPoint]]) extends PlanIssue
 
   /** Multiple bindings contain identical axis choices */
-  final case class DuplicateActivations(key: DIKey, ops: NonEmptyMap[Set[AxisPoint], NonEmptySet[OperationOrigin]]) extends PlanIssue
+  final case class DuplicateActivations(key: DIKey, ops: NEMap[Set[AxisPoint], NESet[OperationOrigin]]) extends PlanIssue
 
   /** There is a binding with an activation that is completely shadowed by other bindings with larger activations and cannot be chosen */
   final case class ShadowedActivation(
@@ -37,11 +37,11 @@ object PlanIssue {
     op: OperationOrigin,
     activation: Set[AxisPoint],
     allPossibleAxisChoices: Map[String, Set[String]],
-    shadowingBindings: NonEmptyMap[Set[AxisPoint], OperationOrigin],
+    shadowingBindings: NEMap[Set[AxisPoint], OperationOrigin],
   ) extends PlanIssue
 
   /** There is no possible activation that could choose a unique binding among these contradictory axes */
-  final case class UnsolvableConflict(key: DIKey, ops: NonEmptySet[(OperationOrigin, Set[AxisPoint])]) extends PlanIssue
+  final case class UnsolvableConflict(key: DIKey, ops: NESet[(OperationOrigin, Set[AxisPoint])]) extends PlanIssue
 
   /**
     * A config binding (from `distage-extension-config` module) could not be parsed from the reference config using configured binding.
@@ -51,7 +51,7 @@ object PlanIssue {
   final case class UnparseableConfigBinding(key: DIKey, op: OperationOrigin, exception: Throwable) extends PlanIssue
 
   /** A distage bug, should never happen (bindings machinery guarantees a unique key for each set member, they cannot have the same key by construction) */
-  final case class InconsistentSetMembers(key: DIKey, ops: NonEmptyList[OperationOrigin]) extends PlanIssue
+  final case class InconsistentSetMembers(key: DIKey, ops: NEList[OperationOrigin]) extends PlanIssue
 
   final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
 
@@ -85,7 +85,7 @@ object PlanIssue {
               .mkString("; ")}; ${i.op.toSourceFilePosition}"
         case i: UnparseableConfigBinding =>
           import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
-          s"${i.key}: cannot parse configuration ${i.op.toSourceFilePosition}: ${i.exception.stackTrace}"
+          s"${i.key}: cannot parse configuration ${i.op.toSourceFilePosition}: ${i.exception.stacktraceString}"
         case i: IncompatibleEffectType =>
           val origin = i.op.origin.value.toSourceFilePosition
           s"${i.key}: injector uses effect ${i.provisionerEffectType} but binding uses incompatible effect ${i.actionEffectType} $origin"

@@ -10,9 +10,10 @@ import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
-import izumi.distage.planning.LocalContextHandler
+import izumi.distage.planning.SubcontextHandler
 import izumi.distage.planning.solver.SemigraphSolver.*
 import izumi.functional.IzEither.*
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.strings.IzString.*
@@ -23,7 +24,7 @@ trait PlanSolver {
   def resolveConflicts(
     input: PlannerInput,
     planner: Planner,
-  ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]]
+  ): Either[NEList[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]]
 }
 
 object PlanSolver {
@@ -45,12 +46,12 @@ object PlanSolver {
     def resolveConflicts(
       input: PlannerInput,
       planner: Planner, // we need this for recursive planning of the local contexts
-    ): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
+    ): Either[NEList[ConflictResolutionError[DIKey, InstantiationOp]], DG[MutSel[DIKey], RemappedValue[InstantiationOp, DIKey]]] = {
 
       if (enableDebugVerify) {
         val res = PlanVerifier(preps).verify[Identity](input.bindings, input.roots, Injector.providedKeys(), Set.empty)
         if (res.issues.nonEmpty) {
-          System.err.println(res.issues.fromNonEmptySet.niceList())
+          System.err.println(res.issues.fromNESet.niceList())
         }
       }
 
@@ -81,14 +82,14 @@ object PlanSolver {
       } yield resolved
     }
 
-    protected def computeProblem(planner: Planner, input: PlannerInput): Either[List[ConflictResolutionError[DIKey, InstantiationOp]], Problem] = {
+    protected def computeProblem(planner: Planner, input: PlannerInput): Either[NEList[ConflictResolutionError[DIKey, InstantiationOp]], Problem] = {
       val activations: Set[AxisPoint] = input.activation.activeChoices.map { case (a, c) => AxisPoint(a.name, c.value) }.toSet
       val ac = ActivationChoices(activations)
 
       for {
         allOps <- computeOperations(planner, ac, input)
         ops = preps.toDeps(allOps)
-        sets <- computeSets(ac, allOps).left.map(issues => List(ConflictResolutionError.SetAxisProblem[DIKey](issues)))
+        sets <- computeSets(ac, allOps).left.map(issues => NEList(ConflictResolutionError.SetAxisProblem[DIKey](issues)))
       } yield {
         val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] =
           SemiEdgeSeq(ops ++ sets)
@@ -106,38 +107,38 @@ object PlanSolver {
       planner: Planner,
       ac: ActivationChoices,
       input: PlannerInput,
-    ) = {
-      val handler = new LocalContextHandler.KnownActivationHandler(planner, input)
+    ): Either[NEList[ConflictResolutionError[DIKey, InstantiationOp]], Seq[(Annotated[DIKey], InstantiationOp)]] = {
+      val handler = new SubcontextHandler.KnownActivationHandler(planner, input)
 
       for {
-        maybeOps <- preps.computeOperationsUnsafe(handler, input.bindings).left.map(issues => List(CannotProcessLocalContext[DIKey](issues)))
+        maybeOps <- preps.computeOperationsUnsafe(handler, input.bindings).left.map(issues => NEList(CannotProcessLocalContext[DIKey](issues)))
         configuredOps = maybeOps.map {
           case aob @ (Annotated(key, Some(_), axis), _, b) =>
             isProperlyActivatedSetElement(ac, axis) {
               unconfigured =>
-                Left(List(UnconfiguredMutatorAxis(key, b.origin, unconfigured)))
+                Left(NEList(UnconfiguredMutatorAxis(key, b.origin, unconfigured)))
             }.map(out => (aob, out))
           case aob =>
             Right((aob, true))
         }
-        out <- configuredOps.biAggregate.map {
-          value =>
-            val goodMutators = value.filter(_._2).map(_._1)
-            goodMutators.map {
-              case (a, o, _) =>
-                (a, o)
-            }.toVector
-        }.left.map(issues => List(UnconfiguredAxisInMutators[DIKey](issues)))
+        out <- configuredOps.biSequence
+          .map {
+            value =>
+              val goodMutators = value.filter(_._2).map(_._1)
+              goodMutators.map {
+                case (a, o, _) =>
+                  (a, o)
+              }.toVector
+          }.left.map(issues => NEList(UnconfiguredAxisInMutators[DIKey](issues)))
       } yield {
         out
       }
-
-    } // Either[List[UnconfiguredMutatorAxis], Seq[(Annotated[DIKey], InstantiationOp)]]
+    }
 
     private def computeSets(
       ac: ActivationChoices,
       allOps: Seq[(Annotated[DIKey], InstantiationOp)],
-    ): Either[List[SetAxisIssue], Map[Annotated[DIKey], Node[DIKey, InstantiationOp]]] = {
+    ): Either[NEList[SetAxisIssue], Map[Annotated[DIKey], Node[DIKey, InstantiationOp]]] = {
       val setMembersUnsafe = preps.computeSetsUnsafe(allOps)
       val reverseOpIndex: Map[DIKey, List[Set[AxisPoint]]] = allOps.view
         .filter(_._1.mut.isEmpty)
@@ -153,7 +154,7 @@ object PlanSolver {
       def handleSetWithSingleActivationSet(firstOp: CreateSet, memberKey: DIKey, ac: ActivationChoices, activations: Set[AxisPoint]) = {
         isProperlyActivatedSetElement(ac, activations) {
           unconfigured =>
-            Left(List(SetAxisIssue.UnconfiguredSetElementAxis(firstOp.target, memberKey, firstOp.origin.value, unconfigured)))
+            Left(NEList(SetAxisIssue.UnconfiguredSetElementAxis(firstOp.target, memberKey, firstOp.origin.value, unconfigured)))
         }.map(out => (memberKey, out))
       }
 
@@ -170,14 +171,14 @@ object PlanSolver {
                           v =>
                             handleSetWithSingleActivationSet(firstOp, memberKey, ac, v)
                               .map(isActivated => (v, isActivated))
-                        }.biAggregate
+                        }.biSequence
                         out <- configuredElements.filter(_._2._2) match {
                           case only :: Nil =>
                             Right(only._2)
                           case Nil =>
                             Right((memberKey, false))
                           case valid =>
-                            Left(List(SetAxisIssue.InconsistentSetElementAxis(firstOp.target, memberKey, valid.map(_._1))))
+                            Left(NEList(SetAxisIssue.InconsistentSetElementAxis(firstOp.target, memberKey, valid.map(_._1))))
                         }
                       } yield {
                         out
@@ -188,14 +189,14 @@ object PlanSolver {
                   }
               }
 
-            members.biAggregate.map {
+            members.biSequence.map {
               value =>
                 val goodMembers = value.view.filter(_._2).map(_._1).toSet
                 val result = firstOp.copy(members = goodMembers)
                 (Annotated(setKey, None, Set.empty), Node(result.members, result: InstantiationOp))
             }
 
-        }.biAggregate
+        }.biSequence
       } yield {
         sets.toMap
       }
