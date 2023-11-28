@@ -10,6 +10,8 @@ import logstage.{LogCreateIO, LogIO, LogRouter, UnsafeLogIO}
   * Add a `LogIO[F]` component and others, depending on an existing `IzLogger`
   *
   * To setup `IzLogger` at the same time, use `apply` with parameters
+  *
+  * Depends on `IzLogger`
   */
 class LogIOModule[F[_]: TagK] extends ModuleDef {
   make[LogIO[F]]
@@ -31,7 +33,10 @@ object LogIOModule {
   }
 }
 
-/** [[LogIOModule]] for bifunctors */
+/** [[LogIOModule]] for bifunctors
+  *
+  * Depends on `IzLogger`
+  */
 class LogIO2Module[F[_, _]: TagKK] extends LogIOModule[F[Nothing, _]]
 
 object LogIO2Module {
@@ -41,7 +46,10 @@ object LogIO2Module {
   }
 }
 
-/** [[LogIOModule]] for trifunctors */
+/** [[LogIOModule]] for trifunctors
+  *
+  * Depends on `IzLogger`
+  */
 class LogIO3Module[F[_, _, _]: TagK3] extends LogIOModule[F[Any, Nothing, _]]
 
 object LogIO3Module {

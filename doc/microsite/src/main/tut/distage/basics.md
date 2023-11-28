@@ -1522,6 +1522,7 @@ final class PetStoreBusinessLogic[F[+_, +_]: Error2](
   log: LogIO2[F],
 ) {
   private val contextLog = log.withCustomContext("requestId" -> requestId)
+
   def buyPetLogic(petId: PetId, payment: Int): F[TransactionFailure, Pet] = {
     for {
       pet <- petStoreReposistory.findPet(petId).fromOption(TransactionFailure.NoSuchPet)
