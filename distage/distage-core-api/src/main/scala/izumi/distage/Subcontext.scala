@@ -11,6 +11,13 @@ import izumi.reflect.{Tag, TagK}
 /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]] */
 trait Subcontext[A] {
   def produce[F[_]: QuasiIO: TagK](): Lifecycle[F, A]
+
+  /**
+    * Same as `.produce[F]().use(f)`
+    *
+    * @note Resources allocated by the subcontext will be closed after `f` exits.
+    *       Use `produce` if you need to extend the lifetime of the Subcontext's resources.
+    */
   def produceRun[F[_]: QuasiIO: TagK, B](f: A => F[B]): F[B]
   final def produceRun[B](f: A => B): B = produceRun[Identity, B](f)
 

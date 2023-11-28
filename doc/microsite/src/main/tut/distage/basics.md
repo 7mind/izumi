@@ -1443,7 +1443,7 @@ def module2[F[+_, +_] : TagKK] = new ModuleDef {
     .localDependency[RequestId]
 }
 
-class HACK_OVERRIDE_PetStoreAPIHandler[F[+_, +_] : IO2 : TagKK](
+class HACK_OVERRIDE_PetStoreAPIHandler[F[+_, +_]: IO2: TagKK](
   petStoreBusinessLogic: Subcontext[HACK_OVERRIDE_PetStoreBusinessLogic[F]]
 ) {
   def buyPet(petId: PetId, payment: Int): F[Throwable, Pet] = {
@@ -1457,7 +1457,7 @@ class HACK_OVERRIDE_PetStoreAPIHandler[F[+_, +_] : IO2 : TagKK](
 }
 ```
 
-We managed to move RequestId from a method parameter, that polluted every method signature, to a class parameter, that we pass to the subgraph just once - when the RequestId is generated.
+We managed to move RequestId from a method parameter that polluted every method signature, to a class parameter, that we pass to the subgraph just once - when the RequestId is generated.
 
 Full example:
 
@@ -1481,6 +1481,7 @@ def HACK_OVERRIDE_IzLogger(): logstage.IzLogger = {
 ```scala mdoc:override:to-string
 import distage.{Injector, Lifecycle, ModuleDef, Subcontext, TagKK}
 import izumi.functional.bio.{Error2, F, IO2, Monad2, Primitives2}
+import izumi.functional.bio.data.Morphism1
 import logstage.{IzLogger, LogIO2}
 import izumi.logstage.distage.LogIO2Module
 
@@ -1503,10 +1504,14 @@ final class PetStoreAPIHandler[F[+_, +_]: IO2: TagKK](
   def buyPet(petId: PetId, payment: Int): F[TransactionFailure, Pet] = {
     for {
       requestId <- F.sync(RequestId(UUID.randomUUID()))
-      component <- petStoreBusinessLogic
+      pet <- petStoreBusinessLogic
               .provide[RequestId](requestId)
-              .produceRun[F[Throwable, _], PetStoreBusinessLogic[F]](F.pure(_)).orTerminate
-      pet       <- component.buyPetLogic(petId, payment)
+              .produce[F[Throwable, _]]()
+              .mapK[F[Throwable, _], F[TransactionFailure, _]](Morphism1(_.orTerminate))
+              .use {
+                component =>
+                  component.buyPetLogic(petId, payment)
+              }
     } yield pet
   }
 }
