@@ -23,12 +23,20 @@ object ConfigMerger {
     }
 
     override def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean): Config = {
-      val cfgInfo = (shared ++ role.flatMap(_.loaded)).map(c => c.clue)
-      logger.info(s"Using system properties with fallback ${cfgInfo.niceList() -> "config files"}")
+      val cfgInfo = shared ++ role.flatMap(_.loaded)
+      val nonEmpty = cfgInfo.filterNot(_.config.isEmpty)
 
       val toMerge = shared ++ role.filter(filter).flatMap(_.loaded)
 
-      foldConfigs(toMerge)
+      val folded = foldConfigs(toMerge)
+      logger.info(
+        s"Merged ${shared.size -> "shared configs"} and ${role.size -> "role configs"} of which ${nonEmpty.length -> "non empty"} into application config with ${folded
+            .entrySet().size() -> "root nodes"}: ${nonEmpty
+            .map(c => c.clue).niceList() -> "config files"}"
+      )
+      logger.trace(s"Full list of processed configs: ${cfgInfo.map(c => c.clue).niceList() -> "locations"}")
+
+      folded
     }
 
     def foldConfigs(roleConfigs: List[ConfigLoadResult.Success]): Config = {
@@ -66,10 +74,15 @@ object ConfigMerger {
     }
 
     override def addSystemProps(config: Config): Config = {
-      ConfigFactory
+      val result = ConfigFactory
         .systemProperties()
         .withFallback(config)
         .resolve()
+      logger.info(
+        s"Config with ${config.entrySet().size() -> "root nodes"} had been enhanced with system properties, new config has ${result.entrySet().size() -> "new root nodes"}"
+      )
+
+      result
     }
   }
 }
