@@ -14,6 +14,6 @@ class RoleAppBootConfigModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
   make[ConfigArgsProvider].from[ConfigArgsProvider.Default]
   make[AppConfig].from {
     (configLoader: ConfigLoader) =>
-      configLoader.loadConfig()
+      configLoader.loadConfig("application startup")
   }
 }

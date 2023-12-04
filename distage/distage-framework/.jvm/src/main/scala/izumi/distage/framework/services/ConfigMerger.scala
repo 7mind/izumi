@@ -10,19 +10,19 @@ import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
 trait ConfigMerger {
-  def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs]): Config
-  def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean): Config
+  def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], clue: String): Config
+  def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean, clue: String): Config
   def foldConfigs(roleConfigs: List[ConfigLoadResult.Success]): Config
   def addSystemProps(config: Config): Config
 }
 
 object ConfigMerger {
   class ConfigMergerImpl(logger: IzLogger @Id("early")) extends ConfigMerger {
-    override def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs]): Config = {
-      mergeFilter(shared, role, _.roleConfig.active)
+    override def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], clue: String): Config = {
+      mergeFilter(shared, role, _.roleConfig.active, clue)
     }
 
-    override def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean): Config = {
+    override def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean, clue: String): Config = {
       val cfgInfo = shared ++ role.flatMap(_.loaded)
       val nonEmpty = cfgInfo.filterNot(_.config.isEmpty)
 
@@ -30,8 +30,8 @@ object ConfigMerger {
 
       val folded = foldConfigs(toMerge)
       logger.info(
-        s"Merged ${shared.size -> "shared configs"} and ${role.size -> "role configs"} of which ${nonEmpty.length -> "non empty"} into application config with ${folded
-            .entrySet().size() -> "root nodes"}: ${nonEmpty
+        s"${clue -> "context"}: merged ${shared.size -> "shared configs"} and ${role.size -> "role configs"} of which ${nonEmpty.length -> "non empty"} into config with ${folded
+            .entrySet().size() -> "root nodes"}, ${nonEmpty
             .map(c => c.clue).niceList() -> "config files"}"
       )
       logger.trace(s"Full list of processed configs: ${cfgInfo.map(c => c.clue).niceList() -> "locations"}")

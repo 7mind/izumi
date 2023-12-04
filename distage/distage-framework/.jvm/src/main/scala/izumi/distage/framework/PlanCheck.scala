@@ -262,7 +262,7 @@ object PlanCheck {
       val reachableKeys = providedKeys ++ planVerifierResult.visitedKeys
 
       val configIssues = if (checkConfig) {
-        val realAppConfig = configLoader.loadConfig()
+        val realAppConfig = configLoader.loadConfig("compile-time validation")
         reportEffectiveConfig(realAppConfig.config.origin().toString)
 
         module.iterator

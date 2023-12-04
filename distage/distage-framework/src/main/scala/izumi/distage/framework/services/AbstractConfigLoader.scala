@@ -3,7 +3,7 @@ package izumi.distage.framework.services
 import izumi.distage.config.model.AppConfig
 
 trait AbstractConfigLoader {
-  def loadConfig(): AppConfig
+  def loadConfig(clue: String): AppConfig
 
-  final def map(f: AppConfig => AppConfig): ConfigLoader = () => f(loadConfig())
+  final def map(f: AppConfig => AppConfig): ConfigLoader = (clue: String) => f(loadConfig(clue))
 }
