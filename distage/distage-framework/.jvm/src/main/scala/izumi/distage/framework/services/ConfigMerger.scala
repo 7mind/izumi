@@ -59,10 +59,14 @@ object ConfigMerger {
 
     private def verifyConfigs(fallbackOrdered: List[ConfigLoadResult.Success]): Unit = {
       import izumi.fundamentals.collections.IzCollections.*
-      fallbackOrdered.flatMap(c => getKeys(c.config).map(key => (key, c))).toUniqueMap(identity) match {
+      val keyIndex = fallbackOrdered
+        .filter(_.src.isInstanceOf[ConfigSource.Resource])
+        .flatMap(c => getKeys(c.config).map(key => (key, c)))
+
+      keyIndex.toUniqueMap(identity) match {
         case Left(value) =>
-          val diag = value.map { case (key, configs) => s"$key is defined in ${configs.map(_.src).niceList(prefix = "* ").shift(2)}" }
-          logger.warn(s"There were config ${diag.niceList() -> "conflicts"}")
+          val diag = value.map { case (key, configs) => s"$key is defined in ${configs.map(_.clue).niceList(prefix = "* ").shift(2)}" }
+          logger.warn(s"Reference config resources have ${diag.niceList() -> "conflicting keys"}")
         case Right(_) =>
       }
     }
