@@ -1,6 +1,7 @@
 package izumi.distage.framework.services
 
 import izumi.distage.config.model.{GenericConfigSource, RoleConfig}
+import izumi.distage.model.definition.Id
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -14,18 +15,16 @@ trait ConfigArgsProvider {
 
 object ConfigArgsProvider {
   def const(args: ConfigLoader.Args): ConfigArgsProvider = new ConfigArgsProvider.Const(args)
-  def empty: ConfigArgsProvider = ConfigArgsProvider.Empty
 
   open class Const(args0: ConfigLoader.Args) extends ConfigArgsProvider {
     override def args(): ConfigLoader.Args = args0
   }
 
-  object Empty extends ConfigArgsProvider.Const(ConfigLoader.Args(None, List.empty))
-
   @nowarn("msg=Unused import")
   class Default(
     parameters: RawAppArgs,
     rolesInfo: RolesInfo,
+    alwaysIncludeReferenceRoleConfigs: Boolean @Id("distage.roles.always-include-reference-role-configs"),
   ) extends ConfigArgsProvider {
     override def args(): ConfigLoader.Args = {
       import scala.collection.compat.*
@@ -46,7 +45,7 @@ object ConfigArgsProvider {
       }
       val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
 
-      ConfigLoader.Args(maybeGlobalConfig, roleConfigs)
+      ConfigLoader.Args(maybeGlobalConfig, roleConfigs, alwaysIncludeReferenceRoleConfigs)
     }
   }
 }

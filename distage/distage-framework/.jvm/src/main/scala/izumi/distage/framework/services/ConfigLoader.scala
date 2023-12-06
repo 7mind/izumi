@@ -58,6 +58,7 @@ object ConfigLoader {
   final case class Args(
     global: Option[File],
     configs: List[RoleConfig],
+    alwaysIncludeReferenceRoleConfigs: Boolean,
   )
   final class ConfigLoaderException(message: String, val failures: List[Throwable]) extends DIException(message)
 
@@ -74,11 +75,17 @@ object ConfigLoader {
 
       val maybeLoadedRoleConfigs = configArgs.configs.map {
         rc =>
+          val defaults = configLocation.forRole(rc.role).map(loadConfigSource)
           val loaded = rc.configSource match {
             case GenericConfigSource.ConfigFile(file) =>
-              Seq(loadConfigSource(ConfigSource.File(file)))
+              val provided = Seq(loadConfigSource(ConfigSource.File(file)))
+              if (configArgs.alwaysIncludeReferenceRoleConfigs) {
+                provided ++ defaults
+              } else {
+                provided
+              }
             case GenericConfigSource.ConfigDefault =>
-              configLocation.forRole(rc.role).map(loadConfigSource)
+              defaults
           }
           (rc, loaded)
       }
