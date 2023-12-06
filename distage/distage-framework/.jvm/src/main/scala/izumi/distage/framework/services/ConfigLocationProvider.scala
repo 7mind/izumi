@@ -1,6 +1,6 @@
 package izumi.distage.framework.services
 
-import izumi.distage.config.model.{ConfigSource, ResourceConfigKind}
+import izumi.distage.config.model.ConfigSource
 
 trait ConfigLocationProvider {
   def forRole(roleName: String): Seq[ConfigSource]
@@ -23,9 +23,9 @@ object ConfigLocationProvider {
 
   private def defaultConfigReferences(name: String): Seq[ConfigSource] = {
     Seq(
-      ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
-      ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
-      ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
+      ConfigSource.Resource(s"$name.conf"),
+      ConfigSource.Resource(s"$name-reference.conf"),
+      ConfigSource.Resource(s"$name-reference-dev.conf"),
     )
   }
 }

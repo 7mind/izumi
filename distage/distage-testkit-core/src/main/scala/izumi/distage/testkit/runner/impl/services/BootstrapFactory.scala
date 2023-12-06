@@ -40,7 +40,13 @@ object BootstrapFactory {
     }
 
     override def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader = {
-      val argsProvider = ConfigArgsProvider.const(ConfigLoader.Args(None, List(RoleConfig(configBaseName, active = true, GenericConfigSource.ConfigDefault))))
+      val argsProvider = ConfigArgsProvider.const(
+        ConfigLoader.Args(
+          None,
+          List(RoleConfig(configBaseName, active = true, GenericConfigSource.ConfigDefault)),
+          alwaysIncludeReferenceRoleConfigs = true, // we expect no user-provided role configs in tests
+        )
+      )
       val merger = new ConfigMergerImpl(logger)
       val locationProvider = makeConfigLocationProvider(configBaseName)
       new ConfigLoader.LocalFSImpl(logger, merger, locationProvider, argsProvider)

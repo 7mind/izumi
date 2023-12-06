@@ -400,9 +400,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name -> "true",
         DebugProperties.`izumi.distage.roles.activation.warn-unset`.name -> "false",
       ) {
-        val checkTestGoodResouce = getClass.getResource("/check-test-good.conf").getPath
-        new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
-//        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+        val checkTestGoodRes = getClass.getResource("/check-test-good.conf").getPath
+        val customRoleConfigRes = getClass.getResource("/custom-role.conf").getPath
+        new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id, "-c", customRoleConfigRes))
+//        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id))
       }
     }
   }

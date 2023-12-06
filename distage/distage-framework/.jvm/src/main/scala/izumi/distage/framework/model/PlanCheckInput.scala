@@ -22,6 +22,8 @@ final case class PlanCheckInput[F[_]](
   bsPlugins: LoadedPlugins,
 )
 object PlanCheckInput {
+  private val emptyConfigArgs = ConfigArgsProvider.const(ConfigLoader.Args(None, List.empty, alwaysIncludeReferenceRoleConfigs = true))
+
   def apply[F[_]](
     module: ModuleBase,
     roots: Roots,
@@ -29,7 +31,7 @@ object PlanCheckInput {
     configLoader: ConfigLoader = {
       val logger = IzLogger()
       val merger = new ConfigMergerImpl(logger)
-      new ConfigLoader.LocalFSImpl(logger, merger, ConfigLocationProvider.Default, ConfigArgsProvider.Empty)
+      new ConfigLoader.LocalFSImpl(logger, merger, ConfigLocationProvider.Default, emptyConfigArgs)
     },
     appPlugins: LoadedPlugins = LoadedPlugins.empty,
     bsPlugins: LoadedPlugins = LoadedPlugins.empty,
