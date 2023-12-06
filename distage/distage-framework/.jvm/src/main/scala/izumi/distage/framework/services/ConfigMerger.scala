@@ -41,7 +41,7 @@ object ConfigMerger {
 
       val configRepr = (shared.map(c => (c.clue, true)) ++ role.flatMap(r => r.loaded.map(c => (s"${c.clue}, role=${r.roleConfig.role}", filter(r)))))
         .map(c => s"${c._1}, active = ${c._2}")
-      logger.info(s"Full list of processed configs: ${configRepr.niceList() -> "locations"}")
+      logger.debug(s"Full list of processed configs: ${configRepr.niceList() -> "locations"}")
 
       folded
     }
