@@ -51,9 +51,7 @@ trait ZIOTestEnv extends TestInstances with EqThrowable {
   implicit def clock2(implicit ticker: Ticker): Clock2[IO] = {
     new Clock2[IO] {
       override def epoch: IO[Nothing, Long] = ZIO.succeed(ticker.ctx.now().toMillis)
-      override def now(accuracy: Clock1.ClockAccuracy): IO[Nothing, ZonedDateTime] = ZIO.succeed(
-        ZonedDateTime.ofInstant(Instant.ofEpochMilli(ticker.ctx.now().toMillis), ZoneOffset.UTC)
-      )
+      override def now(accuracy: Clock1.ClockAccuracy): IO[Nothing, ZonedDateTime] = nowZoned(accuracy)
       override def nowLocal(accuracy: Clock1.ClockAccuracy): IO[Nothing, LocalDateTime] = ZIO.succeed(
         LocalDateTime.ofInstant(Instant.ofEpochMilli(ticker.ctx.now().toMillis), ZoneOffset.UTC)
       )
@@ -61,6 +59,10 @@ trait ZIOTestEnv extends TestInstances with EqThrowable {
         OffsetDateTime.ofInstant(Instant.ofEpochMilli(ticker.ctx.now().toMillis), ZoneOffset.UTC)
       )
       override def monotonicNano: IO[Nothing, Long] = ZIO.succeed(ticker.ctx.now().toNanos)
+
+      override def nowZoned(accuracy: Clock1.ClockAccuracy): IO[Nothing, ZonedDateTime] = ZIO.succeed(
+        ZonedDateTime.ofInstant(Instant.ofEpochMilli(ticker.ctx.now().toMillis), ZoneOffset.UTC)
+      )
     }
   }
 

@@ -4,7 +4,7 @@ import izumi.functional.bio.Clock1.ClockAccuracy
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.fundamentals.platform.functional.Identity
 
-import java.time.temporal.ChronoUnit
+import java.time.temporal.{ChronoUnit, TemporalUnit}
 import java.time.{LocalDateTime, OffsetDateTime, ZoneId, ZonedDateTime}
 import scala.annotation.unused
 import scala.language.implicitConversions
@@ -14,9 +14,12 @@ trait Clock1[F[_]] extends DivergenceHelper {
   def epoch: F[Long]
 
   /** Should return current time (UTC timezone) */
-  def now(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): F[ZonedDateTime]
-  def nowLocal(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): F[LocalDateTime]
-  def nowOffset(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): F[OffsetDateTime]
+  @deprecated("use nowZoned")
+  def now(accuracy: ClockAccuracy = ClockAccuracy.RAW): F[ZonedDateTime]
+
+  def nowZoned(accuracy: ClockAccuracy = ClockAccuracy.RAW): F[ZonedDateTime]
+  def nowLocal(accuracy: ClockAccuracy = ClockAccuracy.RAW): F[LocalDateTime]
+  def nowOffset(accuracy: ClockAccuracy = ClockAccuracy.RAW): F[OffsetDateTime]
 
   /** Should return a never decreasing measure of time, in nanoseconds */
   def monotonicNano: F[Long]
@@ -39,50 +42,120 @@ object Clock1 extends LowPriorityClockInstances {
       System.nanoTime()
     }
 
-    override def now(accuracy: ClockAccuracy): ZonedDateTime = {
+    override def nowZoned(accuracy: ClockAccuracy): ZonedDateTime = {
       ClockAccuracy.applyAccuracy(ZonedDateTime.now(TZ_UTC), accuracy)
     }
 
+    @deprecated("use nowZoned")
+    override def now(accuracy: ClockAccuracy): ZonedDateTime = {
+      nowZoned(accuracy)
+    }
+
     override def nowLocal(accuracy: ClockAccuracy): LocalDateTime = {
-      now(accuracy).toLocalDateTime
+      // do not reuse nowZoned because of sjs
+      ClockAccuracy.applyAccuracy(LocalDateTime.now(TZ_UTC), accuracy)
     }
 
     override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = {
-      now(accuracy).toOffsetDateTime
+      // do not reuse nowZoned because of sjs
+      ClockAccuracy.applyAccuracy(OffsetDateTime.now(TZ_UTC), accuracy)
     }
 
     private[this] final val TZ_UTC: ZoneId = ZoneId.of("UTC")
   }
 
+  @deprecated("Use ConstantZoned/ConstantOffset")
   final class Constant(time: ZonedDateTime, nano: Long) extends Clock1[Identity] {
+    private val underlying = new ConstantZoned(time, nano)
+
+    override def epoch: Long = underlying.epoch
+    @deprecated("use nowZoned")
+    override def now(accuracy: ClockAccuracy): ZonedDateTime = underlying.now(accuracy)
+
+    override def nowLocal(accuracy: ClockAccuracy): LocalDateTime = underlying.nowLocal(accuracy)
+    override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = underlying.nowOffset(accuracy)
+    override def nowZoned(accuracy: ClockAccuracy): Identity[ZonedDateTime] = underlying.nowZoned(accuracy)
+    override def monotonicNano: Long = nano
+  }
+
+  final class ConstantZoned(time: ZonedDateTime, nano: Long) extends Clock1[Identity] {
     override def epoch: Long = time.toEpochSecond
-    override def now(accuracy: ClockAccuracy): ZonedDateTime = ClockAccuracy.applyAccuracy(time, accuracy)
-    override def nowLocal(accuracy: ClockAccuracy): LocalDateTime = now(accuracy).toLocalDateTime
-    override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = now(accuracy).toOffsetDateTime
+    @deprecated("use nowZoned")
+    override def now(accuracy: ClockAccuracy): ZonedDateTime = nowZoned(accuracy)
+
+    override def nowLocal(accuracy: ClockAccuracy): LocalDateTime = ClockAccuracy.applyAccuracy(time.toLocalDateTime, accuracy)
+    override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = ClockAccuracy.applyAccuracy(time.toOffsetDateTime, accuracy)
+    override def nowZoned(accuracy: ClockAccuracy): Identity[ZonedDateTime] = ClockAccuracy.applyAccuracy(time, accuracy)
+    override def monotonicNano: Long = nano
+  }
+
+  final class ConstantOffset(time: OffsetDateTime, nano: Long) extends Clock1[Identity] {
+    override def epoch: Long = time.toEpochSecond
+    @deprecated("use nowZoned")
+    override def now(accuracy: ClockAccuracy): ZonedDateTime = nowZoned(accuracy)
+
+    override def nowLocal(accuracy: ClockAccuracy): LocalDateTime = ClockAccuracy.applyAccuracy(time.toLocalDateTime, accuracy)
+    override def nowOffset(accuracy: ClockAccuracy): OffsetDateTime = ClockAccuracy.applyAccuracy(time, accuracy)
+    override def nowZoned(accuracy: ClockAccuracy): Identity[ZonedDateTime] = ClockAccuracy.applyAccuracy(time.toZonedDateTime, accuracy)
     override def monotonicNano: Long = nano
   }
 
   sealed trait ClockAccuracy
   object ClockAccuracy {
+    @deprecated("Use ClockAccuracy.RAW (but better set the limit explicitly!)")
     case object DEFAULT extends ClockAccuracy
+
+    /** The accuracy will not be changed. Generally speaking, it's a bad idea because the actual accuracy might differ between JVM versions (e.g. 11 vs 17)
+      */
+    case object RAW extends ClockAccuracy
+
+    /** Highest precision, although it might be unsafe to use it because some tools (e.g. PostgreSQL) may be implicitly truncating nanosecond-precision timestamps.
+      */
     case object NANO extends ClockAccuracy
     case object MILLIS extends ClockAccuracy
+
+    /**
+      * This is the safest choice for PostgreSQL which is known to truncate timestamps to microseconds
+      */
     case object MICROS extends ClockAccuracy
     case object SECONDS extends ClockAccuracy
     case object MINUTES extends ClockAccuracy
     case object HOURS extends ClockAccuracy
 
-    def applyAccuracy(now: ZonedDateTime, clockAccuracy: ClockAccuracy): ZonedDateTime = {
-      clockAccuracy match {
-        case ClockAccuracy.DEFAULT => now
-        case ClockAccuracy.NANO => now.truncatedTo(ChronoUnit.NANOS)
-        case ClockAccuracy.MILLIS => now.truncatedTo(ChronoUnit.MILLIS)
-        case ClockAccuracy.MICROS => now.truncatedTo(ChronoUnit.MICROS)
-        case ClockAccuracy.SECONDS => now.truncatedTo(ChronoUnit.SECONDS)
-        case ClockAccuracy.MINUTES => now.truncatedTo(ChronoUnit.MINUTES)
-        case ClockAccuracy.HOURS => now.truncatedTo(ChronoUnit.HOURS)
+    private trait TruncatableTime[T] {
+      def truncatedTo(timestamp: T, unit: TemporalUnit): T
+    }
+    private object TruncatableTime {
+      implicit object TruncatableZoned extends TruncatableTime[ZonedDateTime] {
+        override def truncatedTo(timestamp: ZonedDateTime, unit: TemporalUnit): ZonedDateTime = timestamp.truncatedTo(unit)
+      }
+      implicit object TruncatableOffset extends TruncatableTime[OffsetDateTime] {
+        override def truncatedTo(timestamp: OffsetDateTime, unit: TemporalUnit): OffsetDateTime = timestamp.truncatedTo(unit)
+      }
+      implicit object TruncatableLocal extends TruncatableTime[LocalDateTime] {
+        override def truncatedTo(timestamp: LocalDateTime, unit: TemporalUnit): LocalDateTime = timestamp.truncatedTo(unit)
       }
     }
+
+    private def applyTTAccuracy[T: TruncatableTime](now: T, clockAccuracy: ClockAccuracy): T = {
+      val tt = implicitly[TruncatableTime[T]]
+      clockAccuracy match {
+        case ClockAccuracy.DEFAULT => now
+        case ClockAccuracy.RAW => now
+        case ClockAccuracy.NANO => tt.truncatedTo(now, ChronoUnit.NANOS)
+        case ClockAccuracy.MILLIS => tt.truncatedTo(now, ChronoUnit.MILLIS)
+        case ClockAccuracy.MICROS => tt.truncatedTo(now, ChronoUnit.MICROS)
+        case ClockAccuracy.SECONDS => tt.truncatedTo(now, ChronoUnit.SECONDS)
+        case ClockAccuracy.MINUTES => tt.truncatedTo(now, ChronoUnit.MINUTES)
+        case ClockAccuracy.HOURS => tt.truncatedTo(now, ChronoUnit.HOURS)
+      }
+    }
+
+    def applyAccuracy(now: ZonedDateTime, clockAccuracy: ClockAccuracy): ZonedDateTime = applyTTAccuracy(now, clockAccuracy)
+
+    def applyAccuracy(now: OffsetDateTime, clockAccuracy: ClockAccuracy): OffsetDateTime = applyTTAccuracy(now, clockAccuracy)
+
+    def applyAccuracy(now: LocalDateTime, clockAccuracy: ClockAccuracy): LocalDateTime = applyTTAccuracy(now, clockAccuracy)
   }
 
   @inline implicit final def impureClock: Clock1[Identity] = Standard
@@ -118,10 +191,13 @@ sealed trait LowPriorityClockInstances {
   @inline implicit final def fromImpureClock[F[_]](implicit impureClock: Clock1[Identity], F: SyncSafe1[F]): Clock1[F] = {
     new Clock1[F] {
       override val epoch: F[Long] = F.syncSafe(impureClock.epoch)
-      override def now(accuracy: ClockAccuracy): F[ZonedDateTime] = F.syncSafe(impureClock.now(accuracy))
+      @deprecated("use nowZoned")
+      override def now(accuracy: ClockAccuracy): F[ZonedDateTime] = nowZoned(accuracy)
       override def nowLocal(accuracy: ClockAccuracy): F[LocalDateTime] = F.syncSafe(impureClock.nowLocal(accuracy))
       override def nowOffset(accuracy: ClockAccuracy): F[OffsetDateTime] = F.syncSafe(impureClock.nowOffset(accuracy))
+      override def nowZoned(accuracy: ClockAccuracy): F[ZonedDateTime] = F.syncSafe(impureClock.nowZoned(accuracy))
       override val monotonicNano: F[Long] = F.syncSafe(impureClock.monotonicNano)
+
     }
   }
 
