@@ -3419,6 +3419,171 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .disablePlugins(AssemblyPlugin)
 
+lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file("distage/distage-testkit-scalatest-sbt-module-filtering-test"))
+  .dependsOn(
+    `distage-testkit-scalatest` % "test->compile,test"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+    ) else Seq.empty }
+  )
+  .settings(
+    crossScalaVersions := Seq(
+      "3.2.2",
+      "2.13.12",
+      "2.12.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    organization := "io.7mind.izumi",
+    Compile / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/main/scala" ,
+    Compile / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/main/scala-$v").distinct,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/main/resources" ,
+    Test / unmanagedSourceDirectories += baseDirectory.value / ".jvm/src/test/scala" ,
+    Test / unmanagedSourceDirectories ++= (scalaBinaryVersion.value :: CrossVersion.partialVersion(scalaVersion.value).toList.map(_._1))
+      .map(v => baseDirectory.value / s".jvm/src/test/scala-$v").distinct,
+    Test / unmanagedResourceDirectories += baseDirectory.value / ".jvm/src/test/resources" ,
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.12.18") => Seq(
+        "-Wconf:any:error",
+        "-release:8",
+        "-explaintypes",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        "-Ypartial-unification",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Xlint:adapted-args",
+        "-Xlint:by-name-right-associative",
+        "-Xlint:constant",
+        "-Xlint:delayedinit-select",
+        "-Xlint:doc-detached",
+        "-Xlint:inaccessible",
+        "-Xlint:infer-any",
+        "-Xlint:missing-interpolator",
+        "-Xlint:nullary-override",
+        "-Xlint:nullary-unit",
+        "-Xlint:option-implicit",
+        "-Xlint:package-object-classes",
+        "-Xlint:poly-implicit-overload",
+        "-Xlint:private-shadow",
+        "-Xlint:stars-align",
+        "-Xlint:type-parameter-shadow",
+        "-Xlint:unsound-match",
+        "-opt-warnings:_",
+        "-Ywarn-extra-implicit",
+        "-Ywarn-unused:_",
+        "-Ywarn-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-inaccessible",
+        "-Ywarn-infer-any",
+        "-Ywarn-nullary-override",
+        "-Ywarn-nullary-unit",
+        "-Ywarn-numeric-widen",
+        "-Ywarn-unused-import",
+        "-Ywarn-value-discard",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified"
+      )
+      case (_, "2.13.12") => Seq(
+        "-Wconf:any:error",
+        "-release:8",
+        "-explaintypes",
+        "-Xsource:3",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:after",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics"
+      )
+      case (_, "3.2.2") => Seq(
+        "-Yretain-trees",
+        "-language:3.2",
+        "-release:8",
+        "-Ykind-projector:underscores",
+        "-no-indent",
+        "-explain"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions += "-Wconf:cat=deprecation:warning",
+    scalacOptions += "-Wconf:msg=legacy-binding:silent",
+    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions += "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+    scalacOptions += "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+    scalacOptions += "-Wconf:msg=package.object.inheritance:silent",
+    scalacOptions += "-Wconf:cat=lint-eta-sam:silent",
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.12.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (false, "2.13.12") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    publish / skip := true
+  )
+  .disablePlugins(AssemblyPlugin)
+
 lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   .dependsOn(
     `fundamentals-bio` % "test->compile;compile->compile",
@@ -4115,6 +4280,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `distage-framework-docker` % "test->compile;compile->compile",
     `distage-testkit-core` % "test->compile;compile->compile",
     `distage-testkit-scalatest` % "test->compile;compile->compile",
+    `distage-testkit-scalatest-sbt-module-filtering-test` % "test->compile;compile->compile",
     `logstage-core` % "test->compile;compile->compile",
     `logstage-rendering-circe` % "test->compile;compile->compile",
     `logstage-adapter-slf4j` % "test->compile;compile->compile",
@@ -4569,7 +4735,8 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     `distage-framework`,
     `distage-framework-docker`,
     `distage-testkit-core`,
-    `distage-testkit-scalatest`
+    `distage-testkit-scalatest`,
+    `distage-testkit-scalatest-sbt-module-filtering-test`
   )
 
 lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
@@ -4589,7 +4756,8 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     `distage-framework`,
     `distage-framework-docker`,
     `distage-testkit-core`,
-    `distage-testkit-scalatest`
+    `distage-testkit-scalatest`,
+    `distage-testkit-scalatest-sbt-module-filtering-test`
   )
 
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))
