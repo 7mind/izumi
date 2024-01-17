@@ -1,7 +1,7 @@
 package org.scalatest.distage
 
 import _root_.distage.TagK
-import io.github.classgraph.ClassGraph
+import io.github.classgraph.{ClassGraph, ClassInfo}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, SuiteId}
@@ -12,12 +12,14 @@ import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySing
 import izumi.distage.testkit.spec.AbstractDistageSpec
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.jvm.IzClasspath
 import org.scalatest.*
 import org.scalatest.exceptions.TestCanceledException
 
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.immutable.TreeSet
 import scala.util.Try
+import scala.util.chaining.scalaUtilChainingOps
 
 trait ScalatestInitWorkaround {
   def awaitTestsLoaded(): Unit
@@ -48,18 +50,23 @@ object ScalatestInitWorkaround {
         val scan = new ClassGraph()
           .enableClassInfo()
           .addClassLoader(classLoader)
+          .pipe(instance.modifyClasspathScan)
           .scan()
         try {
           val suiteClassName = classOf[DistageScalatestTestSuiteRunner[Identity]].getName
-          val testClasses = scan.getSubclasses(suiteClassName).asScala.filterNot(_.isAbstract)
+
+          val allTestClasses = scan.getSubclasses(suiteClassName).asScala.filterNot(_.isAbstract)
+          val onlyTestClassesInCurrentModule = allTestClasses.filter(instance._sbtIsClassDefinedInCurrentTestModule(classLoader))
+
           lazy val debugLogger = TrivialLogger.make[ScalatestInitWorkaroundImpl.type](DebugProperties.`izumi.distage.testkit.debug`.name)
-          testClasses.foreach(
+          onlyTestClassesInCurrentModule.foreach(
             classInfo =>
               Try {
                 debugLogger.log(s"Added scanned class `${classInfo.getName}` to current test run")
                 classInfo.loadClass().getDeclaredConstructor().newInstance()
               }
           )
+
           DistageTestsRegistrySingleton.disableRegistration()
           latch.countDown()
         } finally {
@@ -77,13 +84,50 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 ) extends TestSuite
   with AbstractDistageSpec[F] {
 
-  /** Modify test discovery options for SBT test runner only.
+  /**
+    * Modify test discovery options for SBT test runner only.
     * Overriding this with [[withWhitelistJarsOnly]] will slightly boost test start-up speed,
     * but will disable the ability to discover tests that inherit [[izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec]]
     * indirectly through a different library JAR. (this does not affect local sbt modules)
     */
-  protected def modifyClasspathScan: ClassGraph => ClassGraph = identity
+  def modifyClasspathScan: ClassGraph => ClassGraph = identity
   protected final def withWhitelistJarsOnly: ClassGraph => ClassGraph = _.acceptJars("distage-testkit-scalatest*")
+
+  /**
+    * Override this to change the heuristic by which testkit determines that a test class is defined in the current SBT module.
+    *
+    * Affects SBT test runner only.
+    *
+    * By default we assume that classes with classfiles located in the first directory on the classpath
+    * which contains `test-classes` in its pathname are the classes defined in the current SBT test module.
+    *
+    * @see [[_sbtFindCurrentTestModuleClasspathElement]] - override this to change just the method for finding the `test-classes` directory not all the logic
+    */
+  def _sbtIsClassDefinedInCurrentTestModule(classLoader: ClassLoader): ClassInfo => Boolean = {
+    val classpathElems = IzClasspath.safeClasspathSeq(classLoader)
+    _sbtFindCurrentTestModuleClasspathElement(classpathElems) match {
+      case Some(firstTestClassesDir) =>
+        (classInfo: ClassInfo) => {
+          val file = classInfo.getClasspathElementFile
+          file.isDirectory && file.toString == firstTestClassesDir
+        }
+      case None =>
+        import izumi.fundamentals.platform.strings.IzString.*
+        System.err.println(
+          s"""DISTAGE-TESTKIT CRITICAL: Couldn't find a `test-classes` directory on the classpath, disabling fix preventing launch of tests defined in other sbt modules.
+             |Classpath was = ${classpathElems.niceList()}""".stripMargin
+        )
+        _ => true
+    }
+  }
+
+  /**
+    * Override this to change the method for finding the `test-classes` directory for [[_sbtIsClassDefinedInCurrentTestModule]]
+    */
+  protected def _sbtFindCurrentTestModuleClasspathElement(classpathElems: Seq[String]): Option[String] = {
+    val firstTestClassesDir = classpathElems.find(_.contains("test-classes"))
+    firstTestClassesDir
+  }
 
   // initialize status early, so that runner can set it to `true` even before this test is discovered
   // by scalatest, if it was already executed by that time

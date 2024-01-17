@@ -1,0 +1,3 @@
+package izumi.distage.testkit.modulefiltering
+
+final class SbtModuleFilteringTest extends SbtModuleFilteringPoisonPillTest
