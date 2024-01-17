@@ -16,10 +16,12 @@ trait Clock1[F[_]] extends DivergenceHelper {
   /** Should return current time (UTC timezone) */
   @deprecated("use nowZoned")
   def now(accuracy: ClockAccuracy = ClockAccuracy.RAW): F[ZonedDateTime]
+  private[izumi] def nowLocal(accuracy: ClockAccuracy): F[LocalDateTime] = nowLocal(accuracy, Clock1.TZ_UTC)
+  private[izumi] def nowOffset(accuracy: ClockAccuracy): F[OffsetDateTime] = nowOffset(accuracy, Clock1.TZ_UTC)
 
-  def nowZoned(accuracy: ClockAccuracy = ClockAccuracy.RAW, zone: ZoneId = Clock1.TZ_UTC): F[ZonedDateTime]
-  def nowLocal(accuracy: ClockAccuracy = ClockAccuracy.RAW, zone: ZoneId = Clock1.TZ_UTC): F[LocalDateTime]
-  def nowOffset(accuracy: ClockAccuracy = ClockAccuracy.RAW, zone: ZoneId = Clock1.TZ_UTC): F[OffsetDateTime]
+  def nowZoned(accuracy: ClockAccuracy = ClockAccuracy.MICROS, zone: ZoneId = Clock1.TZ_UTC): F[ZonedDateTime]
+  def nowLocal(accuracy: ClockAccuracy = ClockAccuracy.MICROS, zone: ZoneId = Clock1.TZ_UTC): F[LocalDateTime]
+  def nowOffset(accuracy: ClockAccuracy = ClockAccuracy.MICROS, zone: ZoneId = Clock1.TZ_UTC): F[OffsetDateTime]
 
   /** Should return a never decreasing measure of time, in nanoseconds */
   def monotonicNano: F[Long]
@@ -104,7 +106,7 @@ object Clock1 extends LowPriorityClockInstances {
   sealed trait ClockAccuracy
   object ClockAccuracy {
     @deprecated("Use ClockAccuracy.RAW (but better set the limit explicitly!)")
-    case object DEFAULT extends ClockAccuracy
+    private[izumi] case object DEFAULT extends ClockAccuracy
 
     /** The accuracy will not be changed. Generally speaking, it's a bad idea because the actual accuracy might differ between JVM versions (e.g. 11 vs 17)
       */
@@ -127,15 +129,9 @@ object Clock1 extends LowPriorityClockInstances {
       def truncatedTo(timestamp: T, unit: TemporalUnit): T
     }
     private object TruncatableTime {
-      implicit object TruncatableZoned extends TruncatableTime[ZonedDateTime] {
-        override def truncatedTo(timestamp: ZonedDateTime, unit: TemporalUnit): ZonedDateTime = timestamp.truncatedTo(unit)
-      }
-      implicit object TruncatableOffset extends TruncatableTime[OffsetDateTime] {
-        override def truncatedTo(timestamp: OffsetDateTime, unit: TemporalUnit): OffsetDateTime = timestamp.truncatedTo(unit)
-      }
-      implicit object TruncatableLocal extends TruncatableTime[LocalDateTime] {
-        override def truncatedTo(timestamp: LocalDateTime, unit: TemporalUnit): LocalDateTime = timestamp.truncatedTo(unit)
-      }
+      implicit lazy val TruncatableZoned: TruncatableTime[ZonedDateTime] = (timestamp: ZonedDateTime, unit: TemporalUnit) => timestamp.truncatedTo(unit)
+      implicit lazy val TruncatableOffset: TruncatableTime[OffsetDateTime] = (timestamp: OffsetDateTime, unit: TemporalUnit) => timestamp.truncatedTo(unit)
+      implicit lazy val TruncatableLocal: TruncatableTime[LocalDateTime] = (timestamp: LocalDateTime, unit: TemporalUnit) => timestamp.truncatedTo(unit)
     }
 
     private def applyTTAccuracy[T: TruncatableTime](now: T, clockAccuracy: ClockAccuracy): T = {
