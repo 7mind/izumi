@@ -16,10 +16,12 @@ import izumi.fundamentals.platform.jvm.IzClasspath
 import org.scalatest.*
 import org.scalatest.exceptions.TestCanceledException
 
+import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.immutable.TreeSet
 import scala.util.Try
 import scala.util.chaining.scalaUtilChainingOps
+import scala.util.control.NonFatal
 
 trait ScalatestInitWorkaround {
   def awaitTestsLoaded(): Unit
@@ -107,9 +109,24 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     val classpathElems = IzClasspath.safeClasspathSeq(classLoader)
     _sbtFindCurrentTestModuleClasspathElement(classpathElems) match {
       case Some(firstTestClassesDir) =>
+        val firstTestClassesDirPath = Paths.get(firstTestClassesDir).toAbsolutePath.toRealPath().normalize()
         (classInfo: ClassInfo) => {
-          val file = classInfo.getClasspathElementFile
-          file.isDirectory && file.toString == firstTestClassesDir
+          try {
+            val filePath = classInfo.getClasspathElementFile.toPath.toAbsolutePath.toRealPath().normalize()
+            val isInThisModuleTestClassesDir = firstTestClassesDirPath == filePath || filePath.startsWith(firstTestClassesDirPath)
+            if (!isInThisModuleTestClassesDir) {
+              _sbtReportFilteredOutTest(classInfo, filePath.toString, firstTestClassesDirPath.toString)
+            }
+            isInThisModuleTestClassesDir
+          } catch {
+            case NonFatal(t) =>
+              import izumi.fundamentals.platform.exceptions.IzThrowable.*
+              System.err.println(
+                s"DISTAGE-TESTKIT CRITICAL: Couldn't determine if a test class className=`${classInfo.getName}` was defined in the current SBT module due to error=${t.stacktraceString}" +
+                " including it by default"
+              )
+              true
+          }
         }
       case None =>
         import izumi.fundamentals.platform.strings.IzString.*
@@ -121,12 +138,18 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     }
   }
 
-  /**
-    * Override this to change the method for finding the `test-classes` directory for [[_sbtIsClassDefinedInCurrentTestModule]]
-    */
+  /** Override this to change the method for finding the `test-classes` directory for [[_sbtIsClassDefinedInCurrentTestModule]] */
   protected def _sbtFindCurrentTestModuleClasspathElement(classpathElems: Seq[String]): Option[String] = {
-    val firstTestClassesDir = classpathElems.find(_.contains("test-classes"))
+    val firstTestClassesDir = classpathElems.find(elt => elt.contains("test-classes") && Try(Paths.get(elt).toFile.isDirectory).getOrElse(false))
     firstTestClassesDir
+  }
+
+  /** Override this to change or remove log message warning about a filtered out test class in [[_sbtIsClassDefinedInCurrentTestModule]] */
+  protected def _sbtReportFilteredOutTest(cls: ClassInfo, fileClassPathElem: String, firstTestClassesClassPathElem: String): Unit = {
+    System.out.println(
+      s"DISTAGE-TESTKIT: Filtered out test class className=`${cls.getName}` because it was not defined in current SBT module."
+      + s" Expected classpath element: expected=`$firstTestClassesClassPathElem` but got actual=`$fileClassPathElem`"
+    )
   }
 
   // initialize status early, so that runner can set it to `true` even before this test is discovered
