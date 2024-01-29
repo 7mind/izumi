@@ -319,6 +319,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(!role0CfgMinParsed.hasPath("unrequiredEntry"))
       assert(!role0CfgMinParsed.hasPath("logger"))
       assert(!role0CfgMinParsed.hasPath("listconf"))
+      assert(!role0CfgMinParsed.hasPath("testservice.unrequiredEntry"))
 
       assert(role0CfgMinParsed.hasPath("integrationOnlyCfg"))
       assert(role0CfgMinParsed.hasPath("integrationOnlyCfg2"))
