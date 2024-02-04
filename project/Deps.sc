@@ -190,7 +190,7 @@ object Izumi {
       language = targetScala3,
       settings = Seq(
         "coverageEnabled" := false,
-        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
+        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }".raw,
       ),
     )
 
