@@ -10,7 +10,7 @@ import izumi.distage.config.DistageConfigImpl
 import pureconfig.ConfigReader
 import pureconfig.error.ConfigReaderException
 
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
 /**
   * Config reader that uses a [[pureconfig.ConfigReader pureconfig.ConfigReader]] implicit instance for a type
@@ -59,6 +59,8 @@ import scala.reflect.ClassTag
 trait DIConfigReader[A] extends AbstractDIConfigReader[A] {
   protected def decodeConfigValue(configValue: ConfigValue): Try[A]
 
+  def fieldsMeta: ConfigMeta = ConfigMeta.ConfigMetaUnknown()
+
   final def decodeConfig(config: DistageConfigImpl): Try[A] = decodeConfigValue(config.root())
 
   final def decodeConfig(path: String)(config: DistageConfigImpl)(implicit tag: Tag[A]): A = {
@@ -100,19 +102,25 @@ object DIConfigReader extends LowPriorityDIConfigReaderInstances {
   @inline def apply[T: DIConfigReader]: DIConfigReader[T] = implicitly
 
   def derived[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] =
-    DIConfigReader.deriveFromPureconfigConfigReader[T](implicitly, dec.value)
+    DIConfigReader.deriveFromPureconfigAutoDerive[T](classTag[T], dec)
 
-  implicit def deriveFromPureconfigConfigReader[T: ClassTag](implicit dec: ConfigReader[T]): DIConfigReader[T] = {
-    cv =>
-      dec.from(cv) match {
-        case Left(errs) => Failure(ConfigReaderException[T](errs))
-        case Right(value) => Success(value)
-      }
+  implicit def deriveFromExistingPureconfigConfigReader[T: ClassTag](implicit dec: ConfigReader[T]): DIConfigReader[T] = {
+    useConfigReader[T](dec, _)
+  }
+
+  private[codec] def useConfigReader[T: ClassTag](dec: ConfigReader[T], cv: ConfigValue): Try[T] = {
+    dec.from(cv) match {
+      case Left(errs) => Failure(ConfigReaderException[T](errs))
+      case Right(value) => Success(value)
+    }
   }
 }
 
 sealed trait LowPriorityDIConfigReaderInstances {
   implicit final def deriveFromPureconfigAutoDerive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] = {
-    DIConfigReader.deriveFromPureconfigConfigReader(implicitly, dec.value)
+    new DIConfigReader[T] {
+      override protected def decodeConfigValue(configValue: ConfigValue): Try[T] = DIConfigReader.useConfigReader[T](dec.value, configValue)
+      override val fieldsMeta: ConfigMeta = dec.fieldsMeta
+    }
   }
 }
