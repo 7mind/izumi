@@ -20,7 +20,7 @@ addSbtPlugin("com.github.sbt" % "sbt-ghpages" % PV.sbt_ghpages)
 
 addSbtPlugin("com.lightbend.paradox" % "sbt-paradox" % PV.sbt_paradox)
 
-addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % PV.sbt_paradox_material_theme)
+addSbtPlugin("com.github.sbt" % "sbt-paradox-material-theme" % PV.sbt_paradox_material_theme)
 
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % PV.sbt_mdoc)
 
