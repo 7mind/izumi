@@ -12,13 +12,17 @@ addSbtPlugin("com.jsuereth" % "sbt-pgp" % PV.sbt_pgp)
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % PV.sbt_scoverage)
 
-addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % PV.sbt_unidoc)
+addSbtPlugin("com.github.sbt" % "sbt-unidoc" % PV.sbt_unidoc)
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-site" % PV.sbt_site)
+addSbtPlugin("com.github.sbt" % "sbt-site" % PV.sbt_site)
+
+addSbtPlugin("com.github.sbt" % "sbt-site-paradox" % PV.sbt_site)
 
 addSbtPlugin("com.github.sbt" % "sbt-ghpages" % PV.sbt_ghpages)
 
 addSbtPlugin("com.lightbend.paradox" % "sbt-paradox" % PV.sbt_paradox)
+
+addSbtPlugin("com.lightbend.paradox" % "sbt-paradox-theme" % PV.sbt_paradox)
 
 addSbtPlugin("com.github.sbt" % "sbt-paradox-material-theme" % PV.sbt_paradox_material_theme)
 
