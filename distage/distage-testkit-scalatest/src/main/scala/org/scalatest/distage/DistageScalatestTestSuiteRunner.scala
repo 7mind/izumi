@@ -14,11 +14,10 @@ import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.jvm.IzClasspath
 import org.scalatest.*
-import org.scalatest.exceptions.TestCanceledException
+import org.scalatest.exceptions.{DuplicateTestNameException, TestCanceledException}
 
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.collection.immutable.TreeSet
 import scala.util.Try
 import scala.util.chaining.scalaUtilChainingOps
 import scala.util.control.NonFatal
@@ -197,18 +196,24 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
   override def testNames: Set[String] = {
     val testsInThisTestClass = DistageTestsRegistrySingleton.registeredTests[F].filter(_.meta.test.id.suite == SuiteId(suiteId))
-    TreeSet[String](testsInThisTestClass.map(_.meta.test.id.name): _*)
+    val testsByName = testsInThisTestClass.groupBy(_.meta.test.id.name)
+    testsByName.foreach {
+      case (testName, tests) => if (tests.size > 1) {
+        throw new DuplicateTestNameException(testName, 0)
+      }
+    }
+    testsByName.keys.toSet
   }
 
   override def tags: Map[String, Set[String]] = Map.empty
 
-  override def expectedTestCount(filter: Filter): Int = {
-    if (filter.tagsToInclude.isDefined) {
-      0
-    } else {
-      testNames.size - tags.size
-    }
-  }
+//  override def expectedTestCount(filter: Filter): Int = {
+//    if (filter.tagsToInclude.isDefined) {
+//      0
+//    } else {
+//      testNames.size - tags.size
+//    }
+//  }
 
   override def testDataFor(testName: String, theConfigMap: ConfigMap): TestData = {
     val suiteTags = for {

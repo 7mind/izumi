@@ -7,6 +7,10 @@ import izumi.reflect.Tag
 
 import scala.util.{Failure, Success, Try}
 import izumi.distage.config.DistageConfigImpl
+import pureconfig.ConfigReader
+import pureconfig.error.ConfigReaderException
+
+import scala.reflect.ClassTag
 
 /**
   * Config reader that uses a [[pureconfig.ConfigReader pureconfig.ConfigReader]] implicit instance for a type
@@ -92,7 +96,23 @@ trait DIConfigReader[A] extends AbstractDIConfigReader[A] {
   }
 }
 
-object DIConfigReader extends LowPriorityDIConfigReaderInstances2 {
+object DIConfigReader extends LowPriorityDIConfigReaderInstances {
   @inline def apply[T: DIConfigReader]: DIConfigReader[T] = implicitly
 
+  def derived[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] =
+    DIConfigReader.deriveFromPureconfigConfigReader[T](implicitly, dec.value)
+
+  implicit def deriveFromPureconfigConfigReader[T: ClassTag](implicit dec: ConfigReader[T]): DIConfigReader[T] = {
+    cv =>
+      dec.from(cv) match {
+        case Left(errs) => Failure(ConfigReaderException[T](errs))
+        case Right(value) => Success(value)
+      }
+  }
+}
+
+sealed trait LowPriorityDIConfigReaderInstances {
+  implicit final def deriveFromPureconfigAutoDerive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] = {
+    DIConfigReader.deriveFromPureconfigConfigReader(implicitly, dec.value)
+  }
 }
