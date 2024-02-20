@@ -12,22 +12,22 @@ import scala.language.implicitConversions
 sealed trait TextTree[+T]
 
 object TextTree {
-  case class ValueNode[T](value: T) extends TextTree[T]
+  case class ValueNode[+T](value: T) extends TextTree[T]
 
-  case class StringNode[T](value: String) extends TextTree[T]
+  case class StringNode(value: String) extends TextTree[Nothing]
 
-  case class Node[T](chunks: NEList[TextTree[T]]) extends TextTree[T]
+  case class Node[+T](chunks: NEList[TextTree[T]]) extends TextTree[T]
 
-  case class Shift[T](nested: TextTree[T], shift: Int) extends TextTree[T]
+  case class Shift[+T](nested: TextTree[T], shift: Int) extends TextTree[T]
 
-  case class Trim[T](nested: TextTree[T]) extends TextTree[T]
+  case class Trim[+T](nested: TextTree[T]) extends TextTree[T]
 
   implicit class TextTreeSeqOps[T](target: Seq[TextTree[T]]) {
     def join(sep: String): TextTree[T] = {
       if (target.isEmpty) {
         StringNode("")
       } else {
-        NEList.from(target.flatMap(t => Seq(t, StringNode[T](sep))).init) match {
+        NEList.from(target.flatMap(t => Seq(t, StringNode(sep))).init) match {
           case Some(value) =>
             Node(value)
           case None =>
@@ -37,13 +37,13 @@ object TextTree {
     }
   }
 
-  implicit class TextTreeGenericOps[T](target: TextTree[T]) {
+  implicit final class TextTreeGenericOps[T](private val target: TextTree[T]) {
     def dump: String = mapRender(_.toString)
 
     def mapRender(f: T => String): String = {
       target match {
         case v: ValueNode[T] => f(v.value)
-        case s: StringNode[T] => s.value
+        case s: StringNode => s.value
         case s: Shift[T] => s.nested.mapRender(f).shift(s.shift)
         case t: Trim[T] => t.nested.mapRender(f).trim
         case n: Node[T] => n.chunks.map(_.mapRender(f)).mkString
@@ -53,7 +53,7 @@ object TextTree {
     def flatten: TextTree[T] = {
       target match {
         case v: ValueNode[T] => Node(NEList(v))
-        case s: StringNode[T] => Node(NEList(s))
+        case s: StringNode => Node(NEList(s))
         case s: Shift[T] => Shift(s.flatten, s.shift)
         case t: Trim[T] => Trim(t.flatten)
         case n: Node[T] =>
@@ -69,7 +69,7 @@ object TextTree {
     def map[U](f: T => U): TextTree[U] = {
       target match {
         case v: ValueNode[T] => ValueNode(f(v.value))
-        case s: StringNode[T] => StringNode(s.value)
+        case s: StringNode => StringNode(s.value)
         case s: Shift[T] => Shift(s.nested.map(f), s.shift)
         case s: Trim[T] => Trim(s.nested.map(f))
         case n: Node[T] => Node(n.chunks.map(_.map(f)))
@@ -79,7 +79,7 @@ object TextTree {
     def values: Seq[T] = {
       target match {
         case v: ValueNode[T] => Seq(v.value)
-        case _: StringNode[T] => Seq.empty
+        case _: StringNode => Seq.empty
         case t: Trim[T] => t.nested.values
         case s: Shift[T] => s.nested.values
         case n: Node[T] => n.chunks.toSeq.flatMap(_.values)
@@ -89,7 +89,7 @@ object TextTree {
     def stripMargin(marginChar: Char): TextTree[T] = {
       target match {
         case v: ValueNode[T] => v
-        case s: StringNode[T] => s
+        case s: StringNode => s
         case s: Shift[T] => s
         case t: Trim[T] => t
         case n: Node[T] =>
@@ -98,7 +98,7 @@ object TextTree {
             case n: Node[T] => n
             case s: Shift[T] => s
             case t: Trim[T] => t
-            case s: StringNode[T] => StringNode(s.value.stripMargin(marginChar))
+            case s: StringNode => StringNode(s.value.stripMargin(marginChar))
           })
       }
     }
@@ -122,11 +122,11 @@ object TextTree {
         .zip(args)
         .flatMap {
           case (t, v) =>
-            List(StringNode[T](t), v.asNode)
+            List(StringNode(t), v.asNode)
         }
         .reverse
 
-      Node(NEList(StringNode[T](sc.parts.last), seq).reverse)
+      Node(NEList(StringNode(sc.parts.last), seq).reverse)
     }
   }
 
