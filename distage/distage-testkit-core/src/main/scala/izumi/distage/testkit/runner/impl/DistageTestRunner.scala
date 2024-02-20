@@ -128,9 +128,7 @@ class DistageTestRunner[F[_]: TagK, G[_]](
     testRunnerLogger.info(
       s"Created ${memoizationTreesNum -> "memoization trees"} with ${envs.iterator.flatMap(_._2.allTests).size -> "tests"} using ${TagK[F].tag -> "monad"}"
     )
-    if (originalEnvSize != memoizationTreesNum) {
-      testRunnerLogger.info(s"Merged together ${(originalEnvSize - memoizationTreesNum) -> "raw environments"}")
-    }
+    testRunnerLogger.info(s"Merged together ${(originalEnvSize - memoizationTreesNum) -> "raw environments"}")
 
     envs.foreach {
       case (PreparedTestEnv(_, runtimePlan, _, debugOutput), testTree) =>
