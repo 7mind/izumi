@@ -168,7 +168,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
       }
 
       private[this] def specificResourceConfigLoader(classLoader: ClassLoader, resourceName: String): ConfigLoader = {
-        () =>
+        (_: String) =>
           val cfg = ConfigFactory.parseResources(classLoader, resourceName).resolve()
           if (cfg.origin().resource() eq null) {
             throw new DIConfigReadException(s"Couldn't find a config resource with name `$resourceName` - file not found", null)

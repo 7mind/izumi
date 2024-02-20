@@ -51,13 +51,14 @@ trait ConfigLoader extends AbstractConfigLoader
 
 @nowarn("msg=Unused import")
 object ConfigLoader {
-  def empty: ConfigLoader = () => AppConfig(ConfigFactory.empty(), List.empty, List.empty)
+  def empty: ConfigLoader = (_: String) => AppConfig(ConfigFactory.empty(), List.empty, List.empty)
 
   import scala.collection.compat.*
 
   final case class Args(
     global: Option[File],
     configs: List[RoleConfig],
+    alwaysIncludeReferenceRoleConfigs: Boolean,
   )
   final class ConfigLoaderException(message: String, val failures: List[Throwable]) extends DIException(message)
 
@@ -69,16 +70,22 @@ object ConfigLoader {
   ) extends ConfigLoader {
     protected def resourceClassLoader: ClassLoader = getClass.getClassLoader
 
-    def loadConfig(): AppConfig = {
+    def loadConfig(clue: String): AppConfig = {
       val configArgs = args.args()
 
       val maybeLoadedRoleConfigs = configArgs.configs.map {
         rc =>
+          val defaults = configLocation.forRole(rc.role).map(loadConfigSource)
           val loaded = rc.configSource match {
             case GenericConfigSource.ConfigFile(file) =>
-              Seq(loadConfigSource(ConfigSource.File(file)))
+              val provided = Seq(loadConfigSource(ConfigSource.File(file)))
+              if (configArgs.alwaysIncludeReferenceRoleConfigs) {
+                provided ++ defaults
+              } else {
+                provided
+              }
             case GenericConfigSource.ConfigDefault =>
-              configLocation.forRole(rc.role).map(loadConfigSource)
+              defaults
           }
           (rc, loaded)
       }
@@ -110,7 +117,7 @@ object ConfigLoader {
           logger.error(s"Cannot load configuration: ${failures.toList.niceList() -> "failures"}")
           throw new ConfigLoaderException(s"Cannot load configuration: ${failures.toList.niceList()}", value.map(_.failure).toList)
         case Right((shared, role)) =>
-          val merged = merger.addSystemProps(merger.merge(shared, role))
+          val merged = merger.addSystemProps(merger.merge(shared, role, clue))
           AppConfig(merged, shared, role)
       }
 

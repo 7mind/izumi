@@ -1,13 +1,15 @@
 package com.github.pshirshov.test.plugins
 
 import com.github.pshirshov.test.plugins.StaticTestMain.staticTestMainPlugin
-import distage.{ClassConstructor, TagK}
-import izumi.functional.quasi.QuasiApplicative
+import distage.{ClassConstructor, ModuleDef, TagK}
+import izumi.distage.model.definition.Module
 import izumi.distage.modules.DefaultModule2
 import izumi.distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.roles.RoleAppMain
+import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.functional.bio.Async2
+import izumi.functional.quasi.QuasiApplicative
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagKK
 import logstage.LogIO2
@@ -29,6 +31,11 @@ object StaticTestMainBadEffect extends RoleAppMain.LauncherIdentity {
 }
 
 class StaticTestMainLogIO2[F[+_, +_]: TagKK: Async2: DefaultModule2] extends RoleAppMain.LauncherBIO[F] {
+
+  override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
+    make[Boolean].named("distage.roles.always-include-reference-role-configs").fromValue(true)
+  }
+
   override protected def pluginConfig: PluginConfig =
     PluginConfig
       .cached("com.github.pshirshov.test.plugins")

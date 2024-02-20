@@ -76,7 +76,7 @@ final class ConfigWriter[F[_]](
           val loaded = index(roleId)
 
           // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
-          val mergedRoleConfig = configMerger.mergeFilter(appConfig.shared, List(loaded), _ => true)
+          val mergedRoleConfig = configMerger.mergeFilter(appConfig.shared, List(loaded), _ => true, "configwriter")
           writeConfig(options, fileNameFull, mergedRoleConfig, subLogger)
 
           minimizedConfig(mergedRoleConfig, role)
@@ -108,7 +108,7 @@ final class ConfigWriter[F[_]](
 
     // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
     // TODO: here we accept all the role configs regardless of them being active or not, that might resolve cross-role conflicts in unpredictable manner
-    val fullConfig = configMerger.mergeFilter(appConfig.shared, roleConfigs, _ => true)
+    val fullConfig = configMerger.mergeFilter(appConfig.shared, roleConfigs, _ => true, "configwriter")
     val correctedAppConfig = appConfig.copy(config = fullConfig, roles = roleConfigs)
 
     val bootstrapOverride = new BootstrapModuleDef {

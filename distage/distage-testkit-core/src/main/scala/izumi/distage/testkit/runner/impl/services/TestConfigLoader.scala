@@ -31,7 +31,7 @@ object TestConfigLoader {
                       appConfig
                   }
               }
-            configLoader.loadConfig()
+            configLoader.loadConfig("testkit startup")
           },
         )
     }

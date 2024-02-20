@@ -190,7 +190,7 @@ object Izumi {
       language = targetScala3,
       settings = Seq(
         "coverageEnabled" := false,
-        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
+        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }".raw,
       ),
     )
 
@@ -365,6 +365,7 @@ object Izumi {
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkitCore = ArtifactId("distage-testkit-core")
       final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
+      final lazy val testkitScalatestSbtModuleFilteringTest = ArtifactId("distage-testkit-scalatest-sbt-module-filtering-test")
       final lazy val extensionLogstage = ArtifactId("distage-extension-logstage")
     }
 
@@ -633,6 +634,17 @@ object Izumi {
           // and scoverage requires scala-xml v1 on Scala 2.12,
           // introduced when updating scoverage to 2.0.0 https://github.com/7mind/izumi/pull/1754
           "libraryDependencySchemes" += """"org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always""".raw
+        ),
+      ),
+      Artifact(
+        name = Projects.distage.testkitScalatestSbtModuleFilteringTest,
+        libs = Nil,
+        depends = Seq(
+          Projects.distage.testkitScalatest tin Scope.Test.all
+        ),
+        platforms = Targets.jvm3,
+        settings = Seq(
+          "skip" in SettingScope.Raw("publish") := true
         ),
       ),
     ),
