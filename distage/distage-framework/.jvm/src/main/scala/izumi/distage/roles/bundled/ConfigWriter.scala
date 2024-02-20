@@ -3,12 +3,12 @@ package izumi.distage.roles.bundled
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import distage.config.AppConfig
 import distage.{BootstrapModuleDef, Plan}
+import izumi.distage.config.codec.ConfigMeta
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.services.{ConfigMerger, RoleAppPlanner}
 import izumi.distage.model.definition.Id
-import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ExtractConfigPath, WriteReference}
+import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
@@ -119,9 +119,38 @@ final class ConfigWriter[F[_]](
       .reboot(bootstrapOverride, Some(correctedAppConfig))
       .makePlan(Set(roleDIKey))
 
-    def getConfig(plan: Plan): Iterator[ConfigPath] = {
-      plan.stepsUnordered.iterator.collect {
-        case ExtractConfigPath(path) => path
+    def getConfig(plan: Plan): Seq[ConfigPath] = {
+      val configTags = plan.stepsUnordered.toSeq.flatMap {
+        op =>
+          op.origin.value match {
+            case defined: OperationOrigin.Defined =>
+              defined.binding.tags.collect {
+                case t: ConfTag =>
+                  t
+              }
+            case _ =>
+              Seq.empty
+          }
+      }
+
+      val paths = configTags.flatMap(t => unpack(Seq(t.confPath), t.fieldsMeta))
+      paths
+    }
+
+    def unpack(path: Seq[String], meta: ConfigMeta): Seq[ConfigPath] = {
+      meta match {
+        case ConfigMeta.ConfigMetaCaseClass(fields) =>
+          fields.flatMap {
+            case (name, meta) =>
+              unpack(path :+ name, meta)
+          }
+        case ConfigMeta.ConfigMetaSealedTrait(branches) =>
+          branches.toSeq.flatMap {
+            case (name, meta) =>
+              unpack(path :+ name, meta)
+          }
+        case ConfigMeta.ConfigMetaEmpty() => Seq(ConfigPath(path.mkString(".")))
+        case ConfigMeta.ConfigMetaUnknown() => Seq(ConfigPath(path.mkString(".")))
       }
     }
 
@@ -135,49 +164,6 @@ final class ConfigWriter[F[_]](
       None
     }
   }
-
-  //  private[this] def buildConfig(config: WriteReference, cmp: ConfigurableComponent): Config = {
-  //    val referenceConfig = s"${cmp.roleId}-reference.conf"
-  //    logger.info(s"[${cmp.roleId}] Resolving $referenceConfig... with ${config.includeCommon -> "shared sections"}")
-  //
-  //    val reference = Value(ConfigFactory.parseResourcesAnySyntax(referenceConfig))
-  //      .mut(cmp.parent.filter(_ => config.includeCommon))(_.withFallback(_))
-  //      .get
-  //      .resolve()
-  //
-  //    if (reference.isEmpty) {
-  //      logger.warn(s"[${cmp.roleId}] Reference config is empty.")
-  //    }
-  //
-  //    val resolved = ConfigFactory
-  //      .systemProperties()
-  //      .withFallback(reference)
-  //      .resolve()
-  //
-  //    val filtered = cleanupEffectiveAppConfig(resolved, reference)
-  //    filtered.checkValid(reference)
-  //    filtered
-  //  }
-  //
-  //
-  //
-  //  // TODO: sdk?
-  //  @nowarn("msg=Unused import")
-  //  private[this] def cleanupEffectiveAppConfig(effectiveAppConfig: Config, reference: Config): Config = {
-  //    import scala.collection.compat._
-  //    import scala.jdk.CollectionConverters._
-  //
-  //    ConfigFactory.parseMap(effectiveAppConfig.root().unwrapped().asScala.view.filterKeys(reference.hasPath).toMap.asJava)
-  //  }
-  //
-  //  private[this] def outputFileName(service: String, version: Option[ArtifactVersion], asJson: Boolean, suffix: Option[String]): String = {
-  //    val extension = if (asJson) "json" else "conf"
-  //    val vstr = version.map(_.version).getOrElse("0.0.0-UNKNOWN")
-  //    val suffixStr = suffix.fold("")("-" + _)
-  //
-  //    s"$service$suffixStr-$vstr.$extension"
-  //  }
-  //
 
   private[this] def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, subLogger: IzLogger): Try[Unit] = {
     val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
@@ -252,22 +238,13 @@ object ConfigWriter extends RoleDescriptor {
       source
         .root().unwrapped().asScala
         .view
-        .filterKeys(key => paths.exists(_.startsWith(key)))
+        .filterKeys {
+          key =>
+            println(s"testing $key against $paths")
+            paths.exists(_.startsWith(key))
+        }
         .toMap
         .asJava
-    }
-  }
-
-  object ExtractConfigPath {
-    def unapply(op: ExecutableOp): Option[ConfigPath] = {
-      op.origin.value match {
-        case defined: OperationOrigin.Defined =>
-          defined.binding.tags.collectFirst {
-            case ConfTag(path) => ConfigPath(path)
-          }
-        case _ =>
-          None
-      }
     }
   }
 
