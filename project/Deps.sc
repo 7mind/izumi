@@ -218,7 +218,7 @@ object Izumi {
   object Projects {
 
     final val plugins = Plugins(
-      Seq.empty,
+      Seq(Plugin("SitePreviewPlugin")),
       Seq(assemblyPluginJs, assemblyPluginJvm),
     )
 
@@ -751,7 +751,7 @@ object Izumi {
               .value
           }""".raw,
           "version" in SettingScope.Raw("(Compile / paradox)") := "version.value".raw,
-          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Compile)"),
+          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings"),
           SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
@@ -869,11 +869,13 @@ object Izumi {
       SbtPlugin("com.eed3si9n", "sbt-assembly", PV.sbt_assembly),
       SbtPlugin("com.jsuereth", "sbt-pgp", PV.sbt_pgp),
       SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
-      SbtPlugin("com.eed3si9n", "sbt-unidoc", PV.sbt_unidoc),
-      SbtPlugin("com.typesafe.sbt", "sbt-site", PV.sbt_site),
+      SbtPlugin("com.github.sbt", "sbt-unidoc", PV.sbt_unidoc),
+      SbtPlugin("com.github.sbt", "sbt-site", PV.sbt_site),
+      SbtPlugin("com.github.sbt", "sbt-site-paradox", PV.sbt_site),
       SbtPlugin("com.github.sbt", "sbt-ghpages", PV.sbt_ghpages),
       SbtPlugin("com.lightbend.paradox", "sbt-paradox", PV.sbt_paradox),
-      SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
+      SbtPlugin("com.lightbend.paradox", "sbt-paradox-theme", PV.sbt_paradox),
+      SbtPlugin("com.github.sbt", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
       SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
     ),
   )

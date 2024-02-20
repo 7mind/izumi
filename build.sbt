@@ -168,6 +168,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals-collections"))
@@ -332,6 +333,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-literals"))
@@ -494,6 +496,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orphans"))
@@ -664,6 +667,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       case (_, _) => (Compile / doc / sources).value
     } }
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-language"))
@@ -837,6 +841,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-platform"))
@@ -1004,6 +1009,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-json-circe"))
@@ -1184,6 +1190,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     Compile / libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
     Compile / libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-reflection"))
@@ -1350,6 +1357,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
@@ -1532,6 +1540,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       case (_, _) => (Compile / doc / sources).value
     } }
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
@@ -1708,6 +1717,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-proxy-bytebuddy"))
@@ -1873,6 +1883,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-framework-api` = project.in(file("distage/distage-framework-api"))
@@ -2038,6 +2049,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-core` = project.in(file("distage/distage-core"))
@@ -2210,6 +2222,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-extension-config` = project.in(file("distage/distage-extension-config"))
@@ -2379,6 +2392,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-extension-logstage` = project.in(file("distage/distage-extension-logstage"))
@@ -2547,6 +2561,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-extension-plugins` = project.in(file("distage/distage-extension-plugins"))
@@ -2720,6 +2735,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-framework` = project.in(file("distage/distage-framework"))
@@ -2905,6 +2921,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-framework-docker` = project.in(file("distage/distage-framework-docker"))
@@ -3079,6 +3096,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"))
@@ -3243,6 +3261,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-scalatest"))
@@ -3417,6 +3436,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     Test / packageDoc / publishArtifact := false,
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file("distage/distage-testkit-scalatest-sbt-module-filtering-test"))
@@ -3582,6 +3602,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     Test / packageDoc / publishArtifact := false,
     publish / skip := true
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
@@ -3752,6 +3773,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-rendering-circe"))
@@ -3922,6 +3944,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-slf4j"))
@@ -4090,6 +4113,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     Test / compileOrder := CompileOrder.Mixed,
     Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j"))
@@ -4256,6 +4280,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     } },
     Test / packageDoc / publishArtifact := false
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
 lazy val `microsite` = project.in(file("doc/microsite"))
@@ -4475,7 +4500,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                   .value
               },
     (Compile / paradox) / version := version.value,
-    ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Compile),
+    ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings,
     addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
     ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true),
     Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
@@ -4517,7 +4542,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                 },
     libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.99"
   )
-  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin)
+  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin, SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
 
 lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
@@ -4680,6 +4705,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     sbtPlugin := true,
     withBuildInfo("izumi.sbt.deps", "Izumi")
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
 
 lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
@@ -4687,6 +4713,7 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
     publish / skip := true,
     crossScalaVersions := Nil
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `fundamentals-functional`,
@@ -4723,6 +4750,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     publish / skip := true,
     crossScalaVersions := Nil
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `distage-core-api`,
@@ -4765,6 +4793,7 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
     publish / skip := true,
     crossScalaVersions := Nil
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `logstage-core`,
@@ -4791,6 +4820,7 @@ lazy val `docs` = (project in file(".agg/doc-docs"))
     publish / skip := true,
     crossScalaVersions := Nil
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `microsite`
@@ -4811,6 +4841,7 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
     publish / skip := true,
     crossScalaVersions := Nil
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `sbt-izumi-deps`
@@ -4907,6 +4938,7 @@ lazy val `izumi` = (project in file("."))
             ),
     ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
   )
+  .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `fundamentals`,
