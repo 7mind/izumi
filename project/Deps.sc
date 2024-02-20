@@ -873,7 +873,7 @@ object Izumi {
       SbtPlugin("com.typesafe.sbt", "sbt-site", PV.sbt_site),
       SbtPlugin("com.github.sbt", "sbt-ghpages", PV.sbt_ghpages),
       SbtPlugin("com.lightbend.paradox", "sbt-paradox", PV.sbt_paradox),
-      SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
+      SbtPlugin("com.github.sbt", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
       SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
     ),
   )
