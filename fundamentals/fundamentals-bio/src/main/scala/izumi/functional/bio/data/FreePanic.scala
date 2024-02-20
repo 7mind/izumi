@@ -39,7 +39,7 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
   @inline final def void: FreePanic[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreePanic[T, E, A] = {
-    foldMap[S1, FreePanic[T, +_, +_]](Morphism2(FreePanic lift f(_)))
+    foldMap[S1, FreePanic[T, +_, +_]](Morphism2(FreePanic `lift` f(_)))
   }
 
   // FIXME: Scala 3.1.4 bug: false unexhaustive match warning

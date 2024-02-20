@@ -49,7 +49,7 @@ class ConstructorContext[R0, Q <: Quotes, U <: ConstructorUtil[Q]](using val rTy
         resTpe => {
           util
             .findRequiredImplParents(resTpe.typeSymbol, resTpe)
-            .map(resTpe baseType _)
+            .map(resTpe.baseType(_))
         }
       ).distinct
   }

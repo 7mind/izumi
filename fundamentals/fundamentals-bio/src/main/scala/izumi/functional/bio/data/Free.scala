@@ -14,7 +14,7 @@ sealed abstract class Free[+S[_, _], +E, +A] {
   @inline final def void: Free[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): Free[T, E, A] = {
-    foldMap[S1, Free[T, +_, +_]](Morphism2(Free Suspend f(_)))
+    foldMap[S1, Free[T, +_, +_]](Morphism2(Free `Suspend` f(_)))
   }
 
   // FIXME: Scala 3.1.4 bug: false unexhaustive match warning

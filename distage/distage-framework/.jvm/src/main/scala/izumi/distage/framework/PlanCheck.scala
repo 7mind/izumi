@@ -338,7 +338,7 @@ object PlanCheck {
 
     private[this] def parseActivations(s: String): Set[NESet[AxisPoint]] = {
       s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
-          NESet from _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
+          NESet `from` _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
         }.toSet
     }
 

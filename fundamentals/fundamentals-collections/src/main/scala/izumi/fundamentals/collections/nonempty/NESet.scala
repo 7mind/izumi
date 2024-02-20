@@ -229,7 +229,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     * @param elem the element to look for
     * @return true if this <code>NESet</code> has an element that is equal (as determined by <code>==)</code> to <code>elem</code>, false otherwise.
     */
-  def contains(elem: T): Boolean = toSet.contains(elem)
+  infix def contains(elem: T): Boolean = toSet.contains(elem)
 
   /**
     * Copies values of this <code>NESet</code> to an array. Fills the given array <code>arr</code> with values of this <code>NESet</code>. Copying
@@ -762,7 +762,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     */
   def stringPrefix: String = "NESet"
 
-  def subsetOf(that: Set[T]): Boolean = toSet.subsetOf(that)
+  infix def subsetOf(that: Set[T]): Boolean = toSet.subsetOf(that)
 
   /**
     * The result of summing all the elements of this <code>NESet</code>.
@@ -888,7 +888,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     * @param that the <code>Vector</code> to add.
     * @return a new <code>NESet</code> that contains all elements of this <code>NESet</code> followed by all elements of <code>that</code> <code>Vector</code>.
     */
-  def union(that: Vector[T]): NESet[T] = new NESet(toSet union that.toSet)
+  infix def union(that: Vector[T]): NESet[T] = new NESet(toSet union that.toSet)
 
   /**
     * Produces a new <code>NESet</code> that contains all elements of this <code>NESet</code> and also all elements of a given <code>NESet</code>.
@@ -906,7 +906,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     * @param that the <code>NESet</code> to add.
     * @return a new <code>NESet</code> that contains all elements of this <code>NESet</code> followed by all elements of <code>that</code>.
     */
-  def union(that: NESet[T]): NESet[T] = new NESet(toSet union that.toSet)
+  infix def union(that: NESet[T]): NESet[T] = new NESet(toSet union that.toSet)
 
   /**
     * Produces a new <code>NESet</code> that contains all elements of this <code>NESet</code> and also all elements of a given <code>GenSeq</code>.
@@ -924,7 +924,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     * @param that the <code>Set</code> to add.
     * @return a new <code>NESet</code> that contains all elements of this <code>NESet</code> followed by all elements of <code>that</code> <code>GenSeq</code>.
     */
-  def union(that: Set[T])(implicit dummyImplicit: DummyImplicit): NESet[T] = new NESet(toSet.union(that))
+  infix def union(that: Set[T])(implicit dummyImplicit: DummyImplicit): NESet[T] = new NESet(toSet.union(that))
 
   /**
     * Converts this <code>NESet</code> of pairs into two <code>NESet</code>s of the first and second half of each pair.
