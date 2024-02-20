@@ -527,6 +527,7 @@ object CatsConversions {
               case Some(canceler) => F.guaranteeOnInterrupt(restore(get), _ => F.orTerminate(canceler))
               case None =>
                 // This should become uninterruptible in CE 3.5.0 ??? https://github.com/typelevel/cats-effect/releases/tag/v3.5.0
+                // Yes, exactly, according to https://github.com/typelevel/cats-effect/issues/3725
                 F.uninterruptible(restore(get))
             }
         )
