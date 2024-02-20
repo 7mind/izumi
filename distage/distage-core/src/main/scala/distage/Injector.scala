@@ -85,7 +85,7 @@ object Injector extends InjectorFactory {
   }
 
   override def providedKeys[F[_]: DefaultModule](overrides: BootstrapModule*): Set[DIKey] = {
-    providedKeys[F](defaultBootstrap, overrides: _*)
+    providedKeys[F](defaultBootstrap, overrides*)
   }
 
   override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
@@ -142,11 +142,11 @@ object Injector extends InjectorFactory {
     }
 
     override def providedKeys[F[_]: DefaultModule](overrides: BootstrapModule*): Set[DIKey] = {
-      Injector.providedKeys[F](overrides: _*)
+      Injector.providedKeys[F](overrides*)
     }
 
     override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
-      Injector.providedKeys[F](bootstrapBase, overrides: _*)
+      Injector.providedKeys[F](bootstrapBase, overrides*)
     }
 
     override protected[this] final def defaultBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap

@@ -103,7 +103,7 @@ class LogstageCirceRenderingPolicy(
     }
     val multiparamsMap = multiple.map {
       kv =>
-        kv._1 -> Json.arr(kv._2.map(repr): _*)
+        kv._1 -> Json.arr(kv._2.map(repr)*)
     }
     paramsMap ++ multiparamsMap
   }
@@ -115,7 +115,7 @@ class LogstageCirceRenderingPolicy(
           v =>
             mapListElement.apply(v)
         }.toList
-        Json.arr(params: _*)
+        Json.arr(params*)
       case _ =>
         Json.fromString(parameter.repr)
     }

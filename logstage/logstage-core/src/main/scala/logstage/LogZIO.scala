@@ -137,7 +137,7 @@ object LogZIO {
     * @return effect with the passed context
     */
   def withCustomContext[R: Tag, E, A](context: (String, AnyEncoded)*)(thunk: ZIO[R, E, A]): ZIO[R with logstage.LogZIO, E, A] = {
-    withCustomContext[R, E, A](CustomContext(context: _*))(thunk)
+    withCustomContext[R, E, A](CustomContext(context*))(thunk)
   }
 
   /**

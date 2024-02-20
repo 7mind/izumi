@@ -329,7 +329,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val def1 = new ModuleDef {
         makeTrait[TestDependency0].tagged("a").tagged("b")
 
-        tag(tags12: _*)
+        tag(tags12*)
       }
 
       val def2 = new ModuleDef {

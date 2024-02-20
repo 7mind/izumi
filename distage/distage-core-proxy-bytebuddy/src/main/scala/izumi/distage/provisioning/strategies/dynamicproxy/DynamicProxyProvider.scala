@@ -62,8 +62,8 @@ object DynamicProxyProvider extends ProxyProvider {
             case Empty =>
               Right(constructedProxyClass.getDeclaredConstructor().newInstance())
             case Params(types, values) =>
-              val c = constructedProxyClass.getDeclaredConstructor(types: _*)
-              Right(c.newInstance(values.map(_.asInstanceOf[AnyRef]): _*))
+              val c = constructedProxyClass.getDeclaredConstructor(types*)
+              Right(c.newInstance(values.map(_.asInstanceOf[AnyRef])*))
           }
         } catch {
           case f: Throwable =>
