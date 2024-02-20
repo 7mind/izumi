@@ -7,7 +7,7 @@ object V {
 
   val kind_projector = "0.13.2"
 
-  val scalatest = "3.2.17"
+  val scalatest = "3.2.18"
 
   val cats = "2.8.0"
   val cats_effect = "3.5.3"
@@ -24,7 +24,7 @@ object V {
   val circe = "0.14.6"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.17.4"
-  val magnolia = "1.1.6"
+  val magnolia = "1.1.8"
   val jawn = "1.5.1"
 
   // good to drop - scala
@@ -36,7 +36,7 @@ object V {
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.14.10"
+  val bytebuddy = "1.14.12"
   val docker_java = "3.3.4"
 
   // microsite-only
