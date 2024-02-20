@@ -6,7 +6,7 @@ import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
 import distage.config.AppConfig
-import distage.plugins.{PluginBase, PluginDef}
+import distage.plugins.PluginBase
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.provisioning.IntegrationCheck
@@ -41,7 +41,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     "testservice.systemPropList.1" -> "222",
   )
 
-  class XXX_TestWhiteboxProbe extends PluginDef {
+  class XXX_TestWhiteboxProbe extends izumi.distage.plugins.PluginDef {
     val resources = new XXX_ResourceEffectsRecorder[IO]
     private var locator0: LocatorRef = null
     lazy val locator: Locator = locator0.get
@@ -92,7 +92,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               new TestPluginCatsIO,
               new AdaptedAutocloseablesCasePlugin,
               probe,
-              new PluginDef {
+              new izumi.distage.plugins.PluginDef {
                 make[TestResource[IO]].from[IntegrationResource0[IO]]
                 many[TestResource[IO]]
                   .ref[TestResource[IO]]
