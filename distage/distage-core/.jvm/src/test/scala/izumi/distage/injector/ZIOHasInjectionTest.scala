@@ -21,7 +21,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
 
   type HasInt = Int
   type HasX[B] = B
-  type HasIntBool = HasInt with HasX[Boolean]
+  type HasIntBool = HasInt & HasX[Boolean]
 
   def trait1(d1: Dependency1): Trait1 = new Trait1 { override def dep1: Dependency1 = d1 }
 
@@ -43,7 +43,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
   "ZEnvConstructor" should {
 
     "construct Has with tricky type aliases" in {
-      val hasCtor = ZEnvConstructor[HasIntBool with Any].get
+      val hasCtor = ZEnvConstructor[HasIntBool & Any].get
 
       val value = hasCtor.unsafeApply(Seq(TypedRef(5), TypedRef(false))).asInstanceOf[ZEnvironment[HasIntBool]]
 
@@ -167,7 +167,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
     }
 
     "handle multi-parameter Has with mixed args & env injection and a refinement return" in {
-      import TraitCase2._
+      import TraitCase2.*
       import scala.language.reflectiveCalls
 
       def getDep1: URIO[Dependency1, Dependency1] = ZIO.environmentWith[Dependency1](_.get)
@@ -292,7 +292,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
 
       object MyPlugin extends ModuleDef {
         make[MyClient].fromZIOEnv {
-          ZIO.succeed(???): ZIO[OpenTracingService with MyPublisher with SttpBackend[Task, ZioStreams with WebSockets] with MyEndpoints[IO], Nothing, MyClient]
+          ZIO.succeed(???): ZIO[OpenTracingService & MyPublisher & SttpBackend[Task, ZioStreams & WebSockets] & MyEndpoints[IO], Nothing, MyClient]
         }
       }
       val _ = MyPlugin

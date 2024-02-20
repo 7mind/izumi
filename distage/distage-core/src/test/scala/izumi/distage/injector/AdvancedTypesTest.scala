@@ -14,7 +14,7 @@ import scala.language.reflectiveCalls
 class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "support generics" in {
-    import TypesCase1._
+    import TypesCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[List[Dep]].named("As").from(List(DepA()))
@@ -34,7 +34,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "support classes with typealiases" in {
-    import TypesCase1._
+    import TypesCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[DepA]
@@ -49,7 +49,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "support traits with typealiases" in {
-    import TypesCase1._
+    import TypesCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[DepA]
@@ -64,7 +64,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "type annotations in di keys do not result in different keys" in {
-    import TraitCase2._
+    import TraitCase2.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency1 @Id("special")]
@@ -82,25 +82,25 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "handle `with` types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
-      make[Trait2 with Trait1].fromTrait[Trait6]
+      make[Trait2 & Trait1].fromTrait[Trait6]
     })
 
     val injector = mkInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val instantiated = context.get[Trait2 with Trait1]
+    val instantiated = context.get[Trait2 & Trait1]
 
     assert(instantiated.dep == context.get[Dep])
   }
 
   "light type tags can handle refinement & structural types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep]
@@ -124,7 +124,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "handle function local type aliases" in {
-    import TypesCase4._
+    import TypesCase4.*
 
     class Definition[T: Tag] extends ModuleDef {
       make[Dep]
@@ -146,7 +146,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "light type tags can handle abstract structural refinement types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
     class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag: TraitConstructor] extends ModuleDef {
       make[Dep]
@@ -167,12 +167,12 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "handle abstract `with` types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
-    class Definition[T: Tag, G <: T with Trait1: Tag: TraitConstructor, C <: T with Trait4: Tag: TraitConstructor] extends ModuleDef {
+    class Definition[T: Tag, G <: T & Trait1: Tag: TraitConstructor, C <: T & Trait4: Tag: TraitConstructor] extends ModuleDef {
       make[Dep]
-      make[T with Trait4].from(TraitConstructor[C])
-      make[T with Trait1].from(TraitConstructor[G])
+      make[T & Trait4].from(TraitConstructor[C])
+      make[T & Trait1].from(TraitConstructor[G])
     }
 
     val definition = PlannerInput.everything(new Definition[Trait3[Dep], Trait3[Dep], Trait5[Dep]])
@@ -182,8 +182,8 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     val context = injector.produce(plan).unsafeGet()
 
     brokenOnScala3 {
-      val instantiated = context.get[Trait3[Dep] with Trait1]
-      val instantiated2 = context.get[Trait3[Dep] with Trait4]
+      val instantiated = context.get[Trait3[Dep] & Trait1]
+      val instantiated2 = context.get[Trait3[Dep] & Trait4]
 
       assert(instantiated.dep == context.get[Dep])
       assert(instantiated.isInstanceOf[Trait1])
@@ -196,11 +196,11 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "handle generic parameters in abstract `with` types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
     class Definition[T <: Dep: Tag: ClassConstructor, K >: Trait5[T]: Tag] extends ModuleDef {
       make[T]
-      make[Trait3[T] with K].fromTrait[Trait5[T]]
+      make[Trait3[T] & K].fromTrait[Trait5[T]]
     }
 
     val definition = PlannerInput.everything(new Definition[Dep, Trait4])
@@ -208,13 +208,13 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     val injector = mkInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
-    val instantiated = context.get[Trait3[Dep] with Trait4]
+    val instantiated = context.get[Trait3[Dep] & Trait4]
 
     assert(instantiated.dep == context.get[Dep])
   }
 
   "support newtypes" in {
-    import TypesCase5._
+    import TypesCase5.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[WidgetId].from(WidgetId(1))
@@ -230,7 +230,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "empty refinements are supported in class strategy" in {
-    import TypesCase4._
+    import TypesCase4.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep {}]
@@ -259,9 +259,9 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import cats.effect.IO
 
     object x {
-      type SrcContextProcessor[F[_]] = SrcProcessor with ContextProcessor[F]
+      type SrcContextProcessor[F[_]] = SrcProcessor & ContextProcessor[F]
     }
-    import x._
+    import x.*
     trait SrcProcessor
     trait ContextProcessor[F[_]]
 
