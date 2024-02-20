@@ -7,7 +7,6 @@ import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.{InjectorDefaultImpl, InjectorFactory}
-import izumi.fundamentals.platform.functional.Identity
 
 object Injector extends InjectorFactory {
 
