@@ -72,7 +72,7 @@ class LogstageCirceRenderingPolicy(
         "file" -> Json.fromString(entry.context.static.position.file),
         "level" -> Json.fromString(entry.context.dynamic.level.toString.toLowerCase),
         "timestamp" -> Json.fromLong(entry.context.dynamic.tsMillis),
-        "datetime" -> Json.fromString(entry.context.dynamic.tsMillis.asEpochMillisUtc.isoFormatUtc),
+        "datetime" -> Json.fromString(entry.context.dynamic.tsMillis.asEpochMillisUtcZoned.isoFormatUtc),
         "thread" -> Json.fromFields(
           Seq(
             "id" -> Json.fromLong(entry.context.dynamic.threadData.threadId),

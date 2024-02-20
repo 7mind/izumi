@@ -368,11 +368,11 @@ class SyntaxTest extends AnyWordSpec {
     import izumi.functional.bio.{F, Functor2, Temporal2, Clock2, Entropy2}
 
     def x[F[+_, +_]: Temporal2: Clock2] = {
-      F.clock.now()
+      F.clock.nowZoned()
     }
 
     def y[F[+_, +_]: Functor2: Clock2] = {
-      F.clock.now()
+      F.clock.nowZoned()
     }
 
     def z[F[+_, +_]: Functor2: Entropy2] = {
@@ -382,7 +382,7 @@ class SyntaxTest extends AnyWordSpec {
     x[zio.IO]
     y[zio.IO]
     z[zio.IO]
-    F.clock.now()
+    F.clock.nowZoned()
   }
 
 }
