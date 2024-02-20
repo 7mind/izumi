@@ -9,8 +9,10 @@ import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.Ordering.Implicits.infixOrderingOps
+import scala.annotation.nowarn
 import scala.language.reflectiveCalls
 
+@nowarn("msg=reflectiveSelectable")
 class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "support generics" in {

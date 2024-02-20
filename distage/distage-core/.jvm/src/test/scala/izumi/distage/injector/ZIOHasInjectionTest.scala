@@ -13,8 +13,10 @@ import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.wordspec.AnyWordSpec
 import zio.*
 
+import scala.annotation.nowarn
 import scala.util.Try
 
+@nowarn("msg=reflectiveSelectable")
 class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with ScalatestGuards {
 
   import izumi.distage.fixtures.TraitCases.TraitCase2.*

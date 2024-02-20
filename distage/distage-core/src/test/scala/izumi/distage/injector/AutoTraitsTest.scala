@@ -9,8 +9,10 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.reflection.TypedRef
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.nowarn
 import scala.language.reflectiveCalls
 
+@nowarn("msg=reflectiveSelectable")
 class AutoTraitsTest extends AnyWordSpec with MkInjector {
 
   trait Aaa {

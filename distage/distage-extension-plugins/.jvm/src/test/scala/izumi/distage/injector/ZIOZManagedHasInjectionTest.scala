@@ -10,6 +10,9 @@ import org.scalatest.wordspec.AnyWordSpec
 import zio.*
 import zio.managed.ZManaged
 
+import scala.annotation.nowarn
+
+@nowarn("msg=reflectiveSelectable")
 class ZIOZManagedHasInjectionTest extends AnyWordSpec with ScalatestGuards {
 
   protected def unsafeRun[E, A](eff: => ZIO[Any, E, A]): A = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(eff).getOrThrowFiberFailure())
