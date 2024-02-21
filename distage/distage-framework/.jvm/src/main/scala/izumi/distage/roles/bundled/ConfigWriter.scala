@@ -76,6 +76,7 @@ final class ConfigWriter[F[_]](
           val loaded = index(roleId)
 
           // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
+          subLogger.info(s"About to output configs...")
           val mergedRoleConfig = configMerger.mergeFilter(appConfig.shared, List(loaded), _ => true, "configwriter")
           writeConfig(options, fileNameFull, mergedRoleConfig, subLogger)
 
@@ -120,8 +121,6 @@ final class ConfigWriter[F[_]](
       .makePlan(Set(roleDIKey))
 
     def getConfig(plan: Plan): Seq[ConfigPath] = {
-      import izumi.fundamentals.platform.strings.IzString.*
-//      println(s"getConfig: ${plan.stepsUnordered.toSeq.map(_.origin.value).niceList()}")
       val configTags = plan.stepsUnordered.toSeq.flatMap {
         op =>
           op.origin.value match {
@@ -238,35 +237,22 @@ object ConfigWriter extends RoleDescriptor {
     def filter(path: Seq[String], config: ConfigObject): ConfigObject = {
       config.entrySet().asScala.foldLeft(config) {
         case (c, e) =>
-          val npath = path :+ e.getKey
-          val key = npath.mkString(".")
-//          println(s"Testing $key against $paths: ${paths.contains(key)}")
-          if (paths.contains(key)) {
-            c
-          } else {
+          val key = e.getKey
+          val npath = path :+ key
+          val pathKey = npath.mkString(".")
+          if (paths.contains(pathKey) || paths.exists(p => p.startsWith(pathKey + "."))) {
             e.getValue match {
-              case configObject: ConfigObject => filter(npath, configObject)
-              case _ => c.withoutKey(e.getKey)
+              case configObject: ConfigObject => c.withValue(key, filter(npath, configObject))
+              case _ => c
             }
-
+          } else {
+            c.withoutKey(key)
           }
       }
     }
 
     val filtered = filter(Seq.empty, source.root()).toConfig
     filtered
-//    ConfigFactory.parseMap {
-//      source
-//        .root().unwrapped().asScala
-//        .view
-//        .filter {
-//          case (key, value) =>
-//            println(s"testing $key against $paths;; ${value.getClass}")
-//            paths.exists(_.startsWith(key))
-//        }
-//        .toMap
-//        .asJava
-//    }
   }
 
   final case class ConfigPath(parts: Seq[String]) {
