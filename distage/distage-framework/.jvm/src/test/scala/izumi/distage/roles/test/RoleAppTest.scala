@@ -314,7 +314,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role0CfgMin.exists(), s"$role0CfgMin exists")
       assert(role0Cfg.length() > role0CfgMin.length())
 
-      val role0CfgMinParsed = ConfigFactory.parseString(new String(Files.readAllBytes(role0CfgMin.toPath), UTF_8))
+      val cfgContent = new String(Files.readAllBytes(role0CfgMin.toPath), UTF_8)
+      println(s"content: $cfgContent")
+      val role0CfgMinParsed = ConfigFactory.parseString(cfgContent)
 
       assert(!role0CfgMinParsed.hasPath("unrequiredEntry"))
       assert(!role0CfgMinParsed.hasPath("logger"))

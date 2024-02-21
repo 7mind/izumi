@@ -1,6 +1,6 @@
 package izumi.distage.roles.bundled
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import distage.config.AppConfig
 import distage.{BootstrapModuleDef, Plan}
 import izumi.distage.config.codec.ConfigMeta
@@ -120,6 +120,8 @@ final class ConfigWriter[F[_]](
       .makePlan(Set(roleDIKey))
 
     def getConfig(plan: Plan): Seq[ConfigPath] = {
+      import izumi.fundamentals.platform.strings.IzString.*
+//      println(s"getConfig: ${plan.stepsUnordered.toSeq.map(_.origin.value).niceList()}")
       val configTags = plan.stepsUnordered.toSeq.flatMap {
         op =>
           op.origin.value match {
@@ -229,23 +231,42 @@ object ConfigWriter extends RoleDescriptor {
 
   @nowarn("msg=Unused import")
   def minimized(requiredPaths: Set[ConfigPath], source: Config): Config = {
-    import scala.collection.compat.*
     import scala.jdk.CollectionConverters.*
 
     val paths = requiredPaths.map(_.toPath)
 
-    ConfigFactory.parseMap {
-      source
-        .root().unwrapped().asScala
-        .view
-        .filterKeys {
-          key =>
-            println(s"testing $key against $paths")
-            paths.exists(_.startsWith(key))
-        }
-        .toMap
-        .asJava
+    def filter(path: Seq[String], config: ConfigObject): ConfigObject = {
+      config.entrySet().asScala.foldLeft(config) {
+        case (c, e) =>
+          val npath = path :+ e.getKey
+          val key = npath.mkString(".")
+//          println(s"Testing $key against $paths: ${paths.contains(key)}")
+          if (paths.contains(key)) {
+            c
+          } else {
+            e.getValue match {
+              case configObject: ConfigObject => filter(npath, configObject)
+              case _ => c.withoutKey(e.getKey)
+            }
+
+          }
+      }
     }
+
+    val filtered = filter(Seq.empty, source.root()).toConfig
+    filtered
+//    ConfigFactory.parseMap {
+//      source
+//        .root().unwrapped().asScala
+//        .view
+//        .filter {
+//          case (key, value) =>
+//            println(s"testing $key against $paths;; ${value.getClass}")
+//            paths.exists(_.startsWith(key))
+//        }
+//        .toMap
+//        .asJava
+//    }
   }
 
   final case class ConfigPath(parts: Seq[String]) {
