@@ -22,8 +22,8 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -64,7 +64,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -108,11 +108,11 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -156,11 +156,11 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -187,8 +187,8 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -229,7 +229,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -273,11 +273,11 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -321,11 +321,11 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -350,8 +350,8 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -392,7 +392,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -436,11 +436,11 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -484,11 +484,11 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -517,8 +517,8 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -559,7 +559,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -603,11 +603,11 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -651,11 +651,11 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -695,8 +695,8 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -737,7 +737,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -781,11 +781,11 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -829,11 +829,11 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -863,8 +863,8 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -905,7 +905,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -949,11 +949,11 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -997,11 +997,11 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1042,8 +1042,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1084,7 +1084,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1128,11 +1128,11 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1176,11 +1176,11 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1211,8 +1211,8 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1253,7 +1253,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1297,11 +1297,11 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1345,11 +1345,11 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1390,8 +1390,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1432,7 +1432,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1476,11 +1476,11 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1524,11 +1524,11 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1571,8 +1571,8 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1613,7 +1613,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1657,11 +1657,11 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1705,11 +1705,11 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1737,8 +1737,8 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1779,7 +1779,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1823,11 +1823,11 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1871,11 +1871,11 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1903,8 +1903,8 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -1945,7 +1945,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1989,11 +1989,11 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2037,11 +2037,11 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2076,8 +2076,8 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2118,7 +2118,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2162,11 +2162,11 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2210,11 +2210,11 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2246,8 +2246,8 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2288,7 +2288,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2332,11 +2332,11 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2380,11 +2380,11 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2415,8 +2415,8 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2457,7 +2457,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2501,11 +2501,11 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2549,11 +2549,11 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2589,8 +2589,8 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2631,7 +2631,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2675,11 +2675,11 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2723,11 +2723,11 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2775,8 +2775,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2817,7 +2817,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2861,11 +2861,11 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2909,11 +2909,11 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2950,8 +2950,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2992,7 +2992,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3036,11 +3036,11 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3084,11 +3084,11 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3115,8 +3115,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -3157,7 +3157,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3201,11 +3201,11 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3249,11 +3249,11 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3289,8 +3289,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -3331,7 +3331,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3375,11 +3375,11 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3423,11 +3423,11 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3455,8 +3455,8 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -3497,7 +3497,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3541,11 +3541,11 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3589,11 +3589,11 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3627,8 +3627,8 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -3669,7 +3669,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3713,11 +3713,11 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3761,11 +3761,11 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3798,8 +3798,8 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -3840,7 +3840,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3884,11 +3884,11 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3932,11 +3932,11 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3964,8 +3964,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -4006,7 +4006,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4050,11 +4050,11 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -4098,11 +4098,11 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4134,8 +4134,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   .settings(
     crossScalaVersions := Seq(
       "3.2.2",
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -4176,7 +4176,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4220,11 +4220,11 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -4268,11 +4268,11 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4331,8 +4331,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.12",
-      "2.12.18"
+      "2.13.13",
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -4373,7 +4373,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4417,11 +4417,11 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -4465,11 +4465,11 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4540,7 +4540,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                       )
                   }
                 },
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.99"
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.100"
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin, SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
@@ -4557,7 +4557,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.12.18"
+      "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -4599,7 +4599,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.18") => Seq(
+      case (_, "2.12.19") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4643,11 +4643,11 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.12") => Seq(
+      case (_, "2.13.13") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
+        "-Xsource:3-cross",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -4691,11 +4691,11 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.18") => Seq(
+      case (false, "2.12.19") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.12") => Seq(
+      case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
