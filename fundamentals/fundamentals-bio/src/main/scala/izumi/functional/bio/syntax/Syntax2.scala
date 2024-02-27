@@ -1,7 +1,6 @@
 package izumi.functional.bio.syntax
 
 import izumi.functional.bio.*
-import izumi.functional.bio.syntax.Syntax2.ImplicitPuns
 import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
 
 import scala.annotation.unused
@@ -39,7 +38,7 @@ import scala.language.implicitConversions
   *       This is because, due to the priority order being from most-specific to least-specific, the `Monad2` syntax
   *       will be used in such a case, where the `Monad2[F]` implicit is actually unambiguous.
   */
-trait Syntax2 extends ImplicitPuns {
+trait Syntax2 extends Syntax2.ImplicitPuns {
   /**
     * A convenient dependent summoner for BIO hierarchy.
     * Auto-narrows to the most powerful available class:
