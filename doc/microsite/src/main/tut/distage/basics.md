@@ -60,6 +60,16 @@ If you're using Scala 3 you **must** enable `-Yretain-trees` for this library to
 scalacOptions += "-Yretain-trees"
 ```
 
+If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and either `-Xsource:2.13` or `-Xsource:3` for this library to work correctly:
+
+```scala
+// REQUIRED options for Scala 2.12
+scalacOptions += "-Ypartial-unification"
+scalacOptions += "-Xsource:2.13" // either this
+// scalacOptions += "-Xsource:3" // or this
+```
+
+
 ### Hello World example
 
 Suppose we have an abstract `Greeter` component, and some other components that depend on it:
