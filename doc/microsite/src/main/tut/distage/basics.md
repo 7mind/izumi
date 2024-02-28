@@ -189,7 +189,7 @@ def negateByer(otherByer: Byer): Byer = {
 new ModuleDef {
   make[Byer].named("byer-1").from[PrintByer]
   make[Byer].named("byer-2").from {
-    otherByer: Byer @Id("byer-1") =>
+    (otherByer: Byer @Id("byer-1")) =>
       negateByer(otherByer)
   }
 }
@@ -353,7 +353,7 @@ def TestModule = new ModuleDef {
 def runWith(activation: Activation) = {
   runner.unsafeRun {
     Injector().produceRun(TestModule, activation) {
-      greeter: Greeter => greeter.hello("$USERNAME")
+      (greeter: Greeter) => greeter.hello("$USERNAME")
     }
   }
 }
@@ -763,7 +763,7 @@ If we rewire the app without `SubtractionModule`, it will expectedly lose the ab
 
 ```scala mdoc:override:to-string
 Injector().HACK_OVERRIDE_produceRun(AppModule -- SubtractionModule.keys) {
-  app: App =>
+  (app: App) =>
     app.interpret("10 - 1")
 }
 ```
@@ -800,7 +800,7 @@ def incrementWithDep = new ModuleDef {
 
   // mutators may use other components and add additional dependencies
   modify[Int].by(_.flatAp {
-    (s: String, few: Int @Id("a-few")) => currentInt: Int =>
+    (s: String, few: Int @Id("a-few")) => (currentInt: Int) =>
       s.length + few + currentInt
   }) // 5 + 2 + 3
 }
@@ -913,7 +913,7 @@ def kvStoreModule = new ModuleDef {
 
 val io = Injector[Task]()
   .produceRun[String](kvStoreModule) {
-    kv: KVStore[IO] =>
+    (kv: KVStore[IO]) =>
       for {
         _    <- kv.put("apple", "pie")
         res1 <- kv.get("apple")
@@ -1216,7 +1216,7 @@ def module = new ModuleDef {
 }
 
 Injector().produceRun(module) {
-  plusedInt: PlusedInt =>
+  (plusedInt: PlusedInt) =>
     plusedInt.result()
 }
 ```
@@ -1268,7 +1268,7 @@ a trait from it instead. Example:
 Injector().produceRun(module overriddenBy new ModuleDef {
   make[PlusedInt].fromTrait[OverridenPlusedIntImpl]
 }) {
-  plusedInt: PlusedInt =>
+  (plusedInt: PlusedInt) =>
     plusedInt.result()
 }
 ```

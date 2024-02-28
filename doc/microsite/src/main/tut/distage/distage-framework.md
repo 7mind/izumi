@@ -288,7 +288,7 @@ val module = new ConfigModuleDef {
 }
 
 Injector().produceRun(module) {
-  configPrinter: ConfigPrinter =>
+  (configPrinter: ConfigPrinter) =>
     configPrinter.print()
 }
 ```
