@@ -41,8 +41,13 @@ function test {
 }
 
 function site-publish {
-  echo "Publishing site from branch=$CI_BRANCH; tag=$CI_BRANCH_TAG"
-  csbt "'project docs'" +clean "'${VERSION_COMMAND}ghpagesSynchLocal'" "'${VERSION_COMMAND}ghpagesPushSite'" || exit 1
+  if [[ "$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ]] ; then
+    echo "Publishing site from branch=$CI_BRANCH; tag=$CI_BRANCH_TAG"
+    csbt "'project docs'" +clean "'${VERSION_COMMAND}ghpagesSynchLocal'" "'${VERSION_COMMAND}ghpagesPushSite'" || exit 1
+  else
+    echo "Skipping publishing site, because $CI_BRANCH is not 'develop' nor a tag"
+    return 0
+  fi
 }
 
 function site-test {
