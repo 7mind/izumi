@@ -16,8 +16,8 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     import CircularCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[CircularBad1]
-      make[CircularBad2]
+      makeTrait[CircularBad1]
+      makeTrait[CircularBad2]
     })
 
     val injector = mkInjector()
@@ -35,10 +35,10 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     import CircularCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Circular3]
-      make[Circular1]
-      make[Circular2]
-      make[Circular5]
+      makeTrait[Circular3]
+      makeTrait[Circular1]
+      makeTrait[Circular2]
+      makeTrait[Circular5]
       makeFactory[Circular4]
     })
 
@@ -82,7 +82,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     import CircularCase3._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TraitSelfReference]
+      makeTrait[TraitSelfReference]
     })
 
     val injector = mkNoProxiesInjector()

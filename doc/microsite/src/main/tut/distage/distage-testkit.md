@@ -6,7 +6,7 @@
 
 `distage-testkit` simplifies pragmatic purely-functional program testing providing `Spec*`
 [ScalaTest](https://www.scalatest.org/) base classes for any existing Scala effect type with kind `F[_]`,
-`F[+_, +_]`, `F[-_, +_, +_]` or `Identity`. `Spec`s provide an interface similar to ScalaTest's
+`F[+_, +_]`, `ZIO[-R, +E, +A]` or `Identity`. `Spec`s provide an interface similar to ScalaTest's
 [`WordSpec`](http://doc.scalatest.org/3.1.0/org/scalatest/wordspec/AnyWordSpec.html), however
 `distage-testkit` adds additional capabilities such as: first class support for effect types; dependency injection; and
 parallel execution.
@@ -18,7 +18,7 @@ Usage of `distage-testkit` generally follows these steps:
     - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1), for monofunctors (`cats.effect.IO`
       , `monix`)
     - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2), for bifunctors (`ZIO`, `monix-bio`)
-    - `F[-_, +_, +_]` - @scaladoc[`Spec3[F]`](izumi.distage.testkit.scalatest.Spec3) for trifunctors (`ZIO`)
+    - `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO) for `ZIO` with environment support in tests
 2. Override `def config: TestConfig` to customize the @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig)
 3. Establish test case contexts
    using [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html),
@@ -32,7 +32,7 @@ Usage of `distage-testkit` generally follows these steps:
       @scaladoc[`in`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$LowPriorityIdentityOverloads)
     - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper)
     - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper2)
-    - @scaladoc[`in` for `F[-_, +_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
+    - @scaladoc[`in` for `ZIO[-R, +E, +A]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapperZIO)
     - Test cases dependent on injectables: @scaladoc[`Functoid`](izumi.distage.model.providers.Functoid)
 
 ### API Overview
@@ -101,12 +101,12 @@ matches our application's effect type from the following:
 - No effect type, imperative usage - @scaladoc[`SpecIdentity`](izumi.distage.testkit.scalatest.SpecIdentity)
 - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1)
 - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2)
-- `F[-_, +_, +_]` - @scaladoc[`Spec3[F]`](izumi.distage.testkit.scalatest.Spec3)
+- `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO)
 
 The effect monad is expected to support sync and async effects. `distage-testkit` provides this support for `Identity`
 , `monix`, `monix-bio`, `ZIO`, and monads wth instances of `cats-effect` or @ref[BIO](../bio/00_bio.md) typeclasses. For
 our demonstration application, the tests will use the `ZIO[-R, +E, +A]` effect type. This means we'll be
-using `Spec3[ZIO]` for the test suite base class.
+using `SpecZIO` for the test suite base class.
 
 The default config (`super.config`) has `pluginConfig`, which by default will scan the package the test is defined in
 for defined Plugin modules. See the @ref:[`distage-extension-plugins`](./distage-framework.md#plugins) documentation for
@@ -119,11 +119,10 @@ classpath scanning, like so:
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
-import com.typesafe.config.ConfigFactory
 import distage.ModuleDef
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
+import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 
-abstract class Test extends Spec3[ZIO] with AssertZIO {
+abstract class Test extends SpecZIO with AssertZIO {
   val defaultConfig = Config(
     starValue = 10,
     mangoValue = 256,
@@ -164,7 +163,7 @@ object MdocTest {
 }
 
 final case class SuiteCtor(construct: () => org.scalatest.Suite)
-implicit def suiteCtor(s: => org.scalatest.Suite) = SuiteCtor(() => s)
+implicit def suiteCtor(s: => org.scalatest.Suite): SuiteCtor = SuiteCtor(() => s)
 
 def __runTest__(suiteCtors: SuiteCtor*) = {
   // remove all previous tests from registry
@@ -211,6 +210,7 @@ The assertion methods are the same as ScalaTest as the base classes extend
 ```scala mdoc:invisible
 // minimal check for that scalatest reference
 import org.scalatest.Assertions
+new Assertions {}
 ```
 
 Let's now create a simple test for our demonstration application:
@@ -234,7 +234,7 @@ class ScoreSimpleTest extends Test {
 
     // Use `Config` from the module in the `Test` class above
     "increase by config star value from DI" in {
-      config: Config =>
+      (config: Config) =>
         val expected = Score(defaultConfig.starValue)
         val actual = Score.addStar(config, Score.zero)
         assert(actual == expected)
@@ -258,7 +258,7 @@ The different effect types fix the `F[_]` argument for this syntax:
 
 - `Spec1`: `F[_]`
 - `Spec2`: `F[Throwable, _]`
-- `Spec3`: `F[Any, Throwable, _]`
+- `SpecZIO`: `ZIO[R, Any, _]`
 
 With our demonstration application we'll use this to verify the `Score.echoConfig` method. The `Config` required is from
 the `distage` object graph defined in `moduleOverrides`.
@@ -296,7 +296,7 @@ __runTest__(new ScoreEffectsTest with MdocTest { def name = "ScoreEffectsTest" }
 
 #### Assertions with Effects with Environments
 
-@scaladoc[The `in` method for `F[_, _, _]` effect types](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
+@scaladoc[The `in` method for `ZIO`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapperZIO)
 supports injection of environments from the object graph in addition to simple assertions and assertions with effects.
 
 A test that verifies the `BonusService` in our demonstration would be:
@@ -527,7 +527,7 @@ For `F[_]`, including `Identity`:
   and `b` will be injected from the object graph. The test case will fail if the effect fails or produces a failure
   assertion.
 
-For `F[-_, +_, +_]`, it's same with `F[Any, _, _]`:
+For `ZIO[-R, +E, +A]` in `SpecZIO`:
 
 - `in { ???: ZIO[C with D, _, Unit] }`: The test case is an effect requiring an environment. The test
   case will fail if the effect fails. The environment will be injected from the object graph.
@@ -535,7 +535,7 @@ For `F[-_, +_, +_]`, it's same with `F[Any, _, _]`:
   test case will fail if the effect fails or produces a failure assertion. The environment will be injected from the
   object graph.
 - `in { (a: A, b: B) => ZIO[C with D, _, Assertion] }`: The test case is a function producing an
-  effect requiring an environment. All of `a: A`, `b: B`, `zio.ZEnvironment[C]` and `zio.ZEnvironment[D]`
+  effect requiring an environment. All of `a: A`, `b: B`, and `zio.ZEnvironment[C with D]`
   will be injected from the object graph.
 
 Provided by trait @scaladoc[AssertZIO](izumi.distage.testkit.scalatest.AssertZIO):
@@ -654,7 +654,7 @@ class MemoizedLevel3
 ```
 
 ```scala mdoc:to-string
-class SameLevel_1_WithActivationsOverride extends Spec3[ZIO] {
+class SameLevel_1_WithActivationsOverride extends SpecZIO {
   override protected def config: TestConfig = {
     super.config.copy(
         memoizationRoots = Map(
@@ -957,13 +957,13 @@ import distage.{Activation, DIKey, ModuleDef}
 import distage.StandardAxis.{Scene, Repo}
 import distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
+import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.model.{Score, UserId}
 import leaderboard.repo.{Ladder, Profiles}
 import leaderboard.zioenv.{ladder, rnd}
 import zio.{ZIO, IO}
 
-abstract class LeaderboardTest extends Spec3[ZIO] with AssertZIO {
+abstract class LeaderboardTest extends SpecZIO with AssertZIO {
   override def config = TestConfig(
     pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = new ModuleDef {
@@ -1038,7 +1038,7 @@ abstract class LadderTest extends LeaderboardTest {
 
     // you can also mix arguments and env at the same time
     "assign a higher position in the list to a higher score 2" in {
-      ladder: Ladder[IO] =>
+      (ladder: Ladder[IO]) =>
           for {
             user1  <- rnd[UserId]
             score1 <- rnd[Score]

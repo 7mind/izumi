@@ -1,21 +1,65 @@
 package izumi.functional.bio.syntax
 
 import izumi.functional.bio.*
-import izumi.functional.bio.syntax.Syntax2.ImplicitPuns
 import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
 
 import scala.annotation.unused
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
-trait Syntax2 extends ImplicitPuns
+/**
+  * All implicit syntax in BIO is available automatically without wildcard imports
+  * with the help of so-called "implicit punning", as in the following example:
+  *
+  * {{{
+  *   import izumi.functional.bio.Monad2
+  *
+  *   def loop[F[+_, +_]: Monad2]: F[Nothing, Nothing] = {
+  *     val unitEffect: F[Nothing, Unit] = Monad2[F].unit
+  *     unitEffect.flatMap(loop)
+  *   }
+  * }}}
+  *
+  * Note that a `.flatMap` method is available on the `unitEffect` value of an abstract type parameter `F`,
+  * even though we did not import any syntax implicits using a wildcard import.
+  *
+  * The `flatMap` method was added by the implicit punning on the `Monad2` name.
+  * In short, implicit punning just means that instead of creating a companion object for a type with the same name as the type,
+  * we create "companion" implicit conversions with the same name. So that whenever you import the type,
+  * you are also always importing the syntax-providing implicit conversions.
+  *
+  * This happens to be a great fit for Tagless Final Style, since nearly all TF code will import the names of the used typeclasses.
+  *
+  * Implicit Punning for typeclass syntax relieves the programmer from having to manually import syntax implicits in every file in their codebase.
+  *
+  * @note The order of conversions is such to allow otherwise conflicting type classes to not conflict,
+  *       e.g. code using constraints such as `def x[F[+_, +_]: Functor2: Applicative2: Monad2]` will compile and run
+  *       normally when using syntax, despite ambiguity of implicits caused by all 3 implicits inheriting from Functor2.
+  *       This is because, due to the priority order being from most-specific to least-specific, the `Monad2` syntax
+  *       will be used in such a case, where the `Monad2[F]` implicit is actually unambiguous.
+  */
+trait Syntax2 extends Syntax2.ImplicitPuns {
+  /**
+    * A convenient dependent summoner for BIO hierarchy.
+    * Auto-narrows to the most powerful available class:
+    *
+    * {{{
+    *   import izumi.functional.bio.{F, Temporal2}
+    *
+    *   def y[F[+_, +_]: Temporal2] = {
+    *     F.timeout(5.seconds)(F.forever(F.unit))
+    *   }
+    * }}}
+    */
+  def F[F[+_, +_]](implicit F: Functor2[F]): F.type = F
+}
 
 object Syntax2 {
 
   class FunctorOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Functor2[F]) {
     @inline final def map[B](f: A => B): F[E, B] = F.map(r)(f)
 
-    @inline final def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
+    @inline final infix def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
     @inline final def void: F[E, Unit] = F.void(r)
     @inline final def widen[A1](implicit @unused ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
 
@@ -39,7 +83,7 @@ object Syntax2 {
     @inline final def <*[E1 >: E, B](f0: => F[E1, B]): F[E1, A] = F.<*(r, f0)
 
     /** execute two operations in order, return result of both operations */
-    @inline final def zip[E2 >: E, B, C](r2: => F[E2, B]): F[E2, (A, B)] = F.map2(r, r2)(_ -> _)
+    @inline final infix def zip[E2 >: E, B, C](r2: => F[E2, B]): F[E2, (A, B)] = F.map2(r, r2)(_ -> _)
 
     /** execute two operations in order, map their results */
     @inline final def map2[E2 >: E, B, C](r2: => F[E2, B])(f: (A, B) => C): F[E2, C] = F.map2(r, r2)(f)
@@ -64,7 +108,7 @@ object Syntax2 {
   }
 
   final class MonadOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Monad2[F]) extends ApplicativeOps(r)(F) {
-    @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E1, A, B](r)(f0)
+    @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E1, A, B](r)(f0)
     @inline final def tap[E1 >: E](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
@@ -77,7 +121,7 @@ object Syntax2 {
 
   class ErrorOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Error2[F]) extends ApplicativeErrorOps(r)(F) {
     // duplicated from MonadOps
-    @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[Any, E1, A, B](r)(f0)
+    @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E1, A, B](r)(f0)
     @inline final def tap[E1 >: E](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
@@ -88,22 +132,22 @@ object Syntax2 {
     @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(implicit ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
     // duplicated from MonadOps
 
-    @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[Any, E, A2, E2](r)(h)
-    @inline final def catchSome[E1 >: E, A2 >: A](h: PartialFunction[E, F[E1, A2]]): F[E1, A2] = F.catchSome[Any, E, A2, E1](r)(h)
+    @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[E, A2, E2](r)(h)
+    @inline final def catchSome[E1 >: E, A2 >: A](h: PartialFunction[E, F[E1, A2]]): F[E1, A2] = F.catchSome[E, A2, E1](r)(h)
 
-    @inline final def redeem[E2, B](err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B] = F.redeem[Any, E, A, E2, B](r)(err, succ)
+    @inline final def redeem[E2, B](err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B] = F.redeem[E, A, E2, B](r)(err, succ)
     @inline final def redeemPure[B](err: E => B, succ: A => B): F[Nothing, B] = F.redeemPure(r)(err, succ)
 
     @inline final def attempt: F[Nothing, Either[E, A]] = F.attempt(r)
 
-    @inline final def tapError[E1 >: E](f: E => F[E1, Unit]): F[E1, A] = F.tapError[Any, E, A, E1](r)(f)
+    @inline final def tapError[E1 >: E](f: E => F[E1, Unit]): F[E1, A] = F.tapError[E, A, E1](r)(f)
 
     @inline final def leftFlatMap[E2](f: E => F[Nothing, E2]): F[E2, A] = F.leftFlatMap(r)(f)
     @inline final def flip: F[A, E] = F.flip(r)
 
-    @inline final def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E2, A] = F.tapBoth[Any, E, A, E2](r)(err, succ)
+    @inline final def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E2, A] = F.tapBoth[E, A, E2](r)(err, succ)
 
-    @inline final def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): F[E1, A1] = F.flatMap[Any, E1, A, A1](r)(F.fromEither[E1, A1](_))
+    @inline final def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): F[E1, A1] = F.flatMap[E1, A, A1](r)(F.fromEither[E1, A1](_))
     @inline final def fromOption[E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.fromOption(errorOnNone, r.widen)
 
     @inline final def retryWhile(f: E => Boolean): F[E, A] = F.retryWhile(r)(f)
@@ -130,7 +174,7 @@ object Syntax2 {
       * }}}
       */
     @inline final def withFilter[A1 >: A, E1 >: E](predicate: A => Boolean)(implicit filter: WithFilter[E1], pos: SourceFilePositionMaterializer): F[E1, A] =
-      F.withFilter[Any, E1, A](r)(predicate)
+      F.withFilter[E1, A](r)(predicate)
   }
 
   class BracketOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Bracket2[F]) extends ErrorOps(r)(F) {
@@ -173,29 +217,29 @@ object Syntax2 {
 
   class IOOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: IO2[F]) extends PanicOps(r)(F) {
     @inline final def bracketAuto[E1 >: E, B](use: A => F[E1, B])(implicit ev: A <:< AutoCloseable): F[E1, B] =
-      F.bracket[Any, E1, A, B](r)(c => F.sync(c.close()))(use)
+      F.bracket[E1, A, B](r)(c => F.sync(c.close()))(use)
   }
 
   class ParallelOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Parallel2[F]) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
-    @inline final def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
-    @inline final def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
-    @inline final def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
+    @inline final infix def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
+    @inline final infix def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
+    @inline final infix def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
   }
   final class ConcurrentOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Concurrent2[F])
     extends ParallelOps(r)(F) {
-    @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
+    @inline final infix def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
     @inline final def racePairUnsafe[E1 >: E, A1 >: A](
       that: F[E1, A1]
     ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
   class AsyncOps[F[+_, +_], +E, +A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: Async2[F]) extends IOOps(r)(F) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
-    @inline final def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
-    @inline final def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
-    @inline final def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
+    @inline final infix def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
+    @inline final infix def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
+    @inline final infix def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
 
-    @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
+    @inline final infix def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
     @inline final def racePairUnsafe[E1 >: E, A1 >: A](
       that: F[E1, A1]
     ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
@@ -203,7 +247,7 @@ object Syntax2 {
 
   final class TemporalOps[F[+_, +_], +E, +A](protected[this] val r: F[E, A])(implicit protected[this] val F: Temporal2[F]) {
     @inline final def repeatUntil[E2 >: E, A2](tooManyAttemptsError: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
-      F.repeatUntil[Any, E2, A2](new FunctorOps(r)(F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
+      F.repeatUntil[E2, A2](new FunctorOps(r)(F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
 
     @inline final def timeout(duration: Duration): F[E, Option[A]] = F.timeout(duration)(r)
     @inline final def timeoutFail[E1 >: E](e: => E1)(duration: Duration): F[E1, A] = F.timeoutFail(duration)(e, r)
@@ -238,7 +282,7 @@ object Syntax2 {
   trait ImplicitPuns4 extends ImplicitPuns5 {
     @inline implicit final def IO2[F[+_, +_]: IO2, E, A](self: F[E, A]): IOOps[F, E, A] = new IOOps[F, E, A](self)
     /**
-      * Shorthand for [[IO3#syncThrowable]]
+      * Shorthand for [[IO2#syncThrowable]]
       *
       * {{{
       *   IO2(println("Hello world!"))
@@ -283,6 +327,14 @@ object Syntax2 {
   trait ImplicitPuns13 {
     @inline implicit final def Functor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Functor2[F[+_, +_]: Functor2]: Functor2[F] = implicitly
+  }
+
+  final class ClockAccessor[F[+_, +_]](@unused private val dummy: Boolean = false) extends AnyVal {
+    def clock(implicit clock: Clock2[F]): clock.type = clock
+  }
+
+  final class EntropyAccessor[F[+_, +_]](@unused private val dummy: Boolean = false) extends AnyVal {
+    def entropy(implicit entropy: Entropy2[F]): entropy.type = entropy
   }
 
 }

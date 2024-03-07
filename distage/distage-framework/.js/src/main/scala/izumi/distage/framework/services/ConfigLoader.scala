@@ -1,7 +1,9 @@
 package izumi.distage.framework.services
 
-trait ConfigLoader extends AbstractConfigLoader {}
+import distage.config.AppConfig
+
+trait ConfigLoader extends AbstractConfigLoader
 
 object ConfigLoader {
-  def empty: ConfigLoader = () => ???
+  def empty: ConfigLoader = (_: String) => AppConfig.empty
 }

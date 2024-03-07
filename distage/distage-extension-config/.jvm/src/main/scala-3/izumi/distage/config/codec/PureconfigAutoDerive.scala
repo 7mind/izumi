@@ -35,7 +35,9 @@ import scala.language.implicitConversions
   *   }
   * }}}
   */
-final class PureconfigAutoDerive[A](val value: ConfigReader[A]) extends AnyVal
+final class PureconfigAutoDerive[A](val value: ConfigReader[A]) extends AnyVal {
+  def fieldsMeta: ConfigMeta = ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader(value)
+}
 
 object PureconfigAutoDerive {
   @inline def apply[A](implicit ev: PureconfigAutoDerive[A]): ConfigReader[A] = ev.value
@@ -44,7 +46,7 @@ object PureconfigAutoDerive {
 
   inline implicit def materialize[A](implicit m: Mirror.Of[A]): PureconfigAutoDerive[A] = {
     import izumi.distage.config.codec.PureconfigInstances.auto.exportDerivedConfigReader
-    import izumi.distage.config.codec.PureconfigInstances.configReaderDerivation
-    new PureconfigAutoDerive[A](configReaderDerivation.derived[A](using m))
+    import izumi.distage.config.codec.PureconfigInstances.given
+    new PureconfigAutoDerive[A](izumi.distage.config.codec.PureconfigInstances.configReaderDerivation.derived[A](using m))
   }
 }

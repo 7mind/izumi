@@ -2,12 +2,10 @@ package izumi.distage.model.definition
 
 import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
-import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.orphans.{`cats.kernel.BoundedSemilattice`, `cats.kernel.PartialOrder with cats.kernel.Hash`}
 import izumi.fundamentals.platform.cache.CachedHashcode
-import izumi.reflect.Tag
 
 import scala.annotation.unused
 
@@ -76,10 +74,6 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
     def flatMap[T <: ModuleBase](f: Binding => Iterable[Binding])(implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(module.bindings.flatMap(f))
     }
-
-    def running[R](function: Functoid[R]): LocalContextDef[R] = LocalContextDef(module, function)
-
-    def exporting[R: Tag]: LocalContextDef[R] = LocalContextDef(module, Functoid.identity[R])
   }
 
   implicit final class ModuleDefMorph(private val module: ModuleBase) extends AnyVal {
@@ -133,7 +127,7 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
       T.make(module.bindings.filterNot(_.key == ignored))
     }
 
-    def overriddenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
+    infix def overriddenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(overrideImpl(module.iterator, that.iterator).toSet)
     }
 

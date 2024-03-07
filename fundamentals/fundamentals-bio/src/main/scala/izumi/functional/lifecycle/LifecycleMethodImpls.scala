@@ -49,7 +49,7 @@ private[lifecycle] object LifecycleMethodImpls {
         bracketAppendFinalizer(finalizers)(self) {
           (inner1: self.InnerResource) =>
             F.suspendF {
-              self.extract(inner1).fold(_.map(f), F pure f(_)).flatMap {
+              self.extract(inner1).fold(_.map(f), F `pure` f(_)).flatMap {
                 (that: Lifecycle[F, B]) =>
                   bracketAppendFinalizer(finalizers)(that) {
                     (inner2: that.InnerResource) =>

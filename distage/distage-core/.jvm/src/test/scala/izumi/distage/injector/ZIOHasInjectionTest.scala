@@ -13,35 +13,19 @@ import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.wordspec.AnyWordSpec
 import zio.*
 
+import scala.annotation.nowarn
 import scala.util.Try
 
+@nowarn("msg=reflectiveSelectable")
 class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with ScalatestGuards {
 
   import izumi.distage.fixtures.TraitCases.TraitCase2.*
 
   type HasInt = Int
   type HasX[B] = B
-  type HasIntBool = HasInt with HasX[Boolean]
+  type HasIntBool = HasInt & HasX[Boolean]
 
   def trait1(d1: Dependency1): Trait1 = new Trait1 { override def dep1: Dependency1 = d1 }
-
-  // FIXME wtf
-//  def getDep1[F[-_, +_, +_]: Ask3]: F[Has[Dependency1], Nothing, Dependency1] =
-//    F.askWith((_: Has[Dependency1]).get)
-//  def getDep2[F[-_, +_, +_]: Ask3]: F[Has[Dependency2], Nothing, Dependency2] =
-//    F.askWith((_: Has[Dependency2]).get)
-//
-//  final class ResourceHasImpl[F[-_, +_, +_]: Local3](
-//  ) extends Lifecycle.LiftF(for {
-//      d1 <- getDep1
-//      d2 <- getDep2
-//    } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
-//
-//  final class ResourceEmptyHasImpl[F[+_, +_]: Applicative2](
-//    d1: Dependency1
-//  ) extends Lifecycle.LiftF[F[Throwable, _], Trait1](
-//      F.pure(trait1(d1))
-//    )
 
   def getDep1: URIO[Dependency1, Dependency1] = ZIO.service[Dependency1]
   def getDep2: URIO[Dependency2, Dependency2] = ZIO.service[Dependency2]
@@ -61,7 +45,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
   "ZEnvConstructor" should {
 
     "construct Has with tricky type aliases" in {
-      val hasCtor = ZEnvConstructor[HasIntBool with Any].get
+      val hasCtor = ZEnvConstructor[HasIntBool & Any].get
 
       val value = hasCtor.unsafeApply(Seq(TypedRef(5), TypedRef(false))).asInstanceOf[ZEnvironment[HasIntBool]]
 
@@ -185,7 +169,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
     }
 
     "handle multi-parameter Has with mixed args & env injection and a refinement return" in {
-      import TraitCase2._
+      import TraitCase2.*
       import scala.language.reflectiveCalls
 
       def getDep1: URIO[Dependency1, Dependency1] = ZIO.environmentWith[Dependency1](_.get)
@@ -269,60 +253,6 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       assert(!instantiated.acquired)
     }
 
-    // FIXME wtf
-//    "polymorphic ZIOHas injection" in {
-//      import TraitCase2._
-//
-//      def definition[F[-_, +_, +_]: TagK3: Local3] = PlannerInput.everything(new ModuleDef {
-//        make[Dependency1]
-//        make[Dependency2]
-//        make[Dependency3]
-//        addImplicit[Local3[F]]
-//        addImplicit[Applicative2[F[Any, +_, +_]]]
-//        make[Trait3 { def dep1: Dependency1 }].fromZEnv(
-//          (d3: Dependency3) =>
-//            (for {
-//              d1 <- getDep1
-//              d2 <- getDep2
-//            } yield new Trait3 {
-//              override val dep1 = d1
-//              override val dep2 = d2
-//              override val dep3 = d3
-//            }): F[Has[Dependency1] with Has[Dependency2], Nothing, Trait3]
-//        )
-//        make[Trait2].fromZEnv[ResourceHasImpl[F]]
-//        make[Trait1].fromZEnv[ResourceEmptyHasImpl[F[Any, +_, +_]]]
-//
-//        many[Trait2].addZEnv[ResourceHasImpl[F]]
-//        many[Trait1].addZEnv[ResourceEmptyHasImpl[F[Any, +_, +_]]]
-//      })
-//
-//      val injector = mkNoCyclesInjector()
-//      val plan = injector.planUnsafe(definition[ZIO])
-//      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
-//
-//      val instantiated = context.get[Trait3 { def dep1: Dependency1 }]
-//
-//      assert(instantiated.dep1 eq context.get[Dependency1])
-//      assert(instantiated.dep2 eq context.get[Dependency2])
-//      assert(instantiated.dep3 eq context.get[Dependency3])
-//
-//      val instantiated1 = context.get[Trait3 { def dep1: Dependency1 }]
-//      assert(instantiated1.dep2 eq context.get[Dependency2])
-//
-//      val instantiated10 = context.get[Trait2]
-//      assert(instantiated10.dep2 eq context.get[Dependency2])
-//
-//      val instantiated2 = context.get[Trait1]
-//      assert(instantiated2 ne null)
-//
-//      val instantiated3 = context.get[Set[Trait2]].head
-//      assert(instantiated3.dep2 eq context.get[Dependency2])
-//
-//      val instantiated4 = context.get[Set[Trait1]].head
-//      assert(instantiated4 ne null)
-//    }
-
     "can handle AnyVals" in {
       import TraitCase6.*
 
@@ -364,7 +294,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
 
       object MyPlugin extends ModuleDef {
         make[MyClient].fromZIOEnv {
-          ZIO.succeed(???): ZIO[OpenTracingService with MyPublisher with SttpBackend[Task, ZioStreams with WebSockets] with MyEndpoints[IO], Nothing, MyClient]
+          ZIO.succeed(???): ZIO[OpenTracingService & MyPublisher & SttpBackend[Task, ZioStreams & WebSockets] & MyEndpoints[IO], Nothing, MyClient]
         }
       }
       val _ = MyPlugin

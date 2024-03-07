@@ -255,7 +255,7 @@ object TagExpr {
   object Strings extends For[String] {
 
     implicit class C(val sc: StringContext) {
-      def t(args: Any*): Expr = Has(sc.s(args: _*))
+      def t(args: Any*): Expr = Has(sc.s(args*))
     }
 
   }

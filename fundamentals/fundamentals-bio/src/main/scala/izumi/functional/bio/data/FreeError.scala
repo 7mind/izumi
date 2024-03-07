@@ -30,7 +30,7 @@ sealed abstract class FreeError[+S[_, _], +E, +A] {
   @inline final def void: FreeError[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreeError[T, E, A] = {
-    foldMap[S1, FreeError[T, +_, +_]](Morphism2(FreeError lift f(_)))
+    foldMap[S1, FreeError[T, +_, +_]](Morphism2(FreeError `lift` f(_)))
   }
 
   // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
@@ -81,17 +81,17 @@ object FreeError {
 
   object Error2Instance extends Error2Instance[Nothing]
   class Error2Instance[S[_, _]] extends Error2[FreeError[S, +_, +_]] {
-    @inline override final def flatMap[R, E, A, B](r: FreeError[S, E, A])(f: A => FreeError[S, E, B]): FreeError[S, E, B] = r.flatMap(f)
-    @inline override final def *>[R, E, A, B](f: FreeError[S, E, A], next: => FreeError[S, E, B]): FreeError[S, E, B] = f *> next
-    @inline override final def <*[R, E, A, B](f: FreeError[S, E, A], next: => FreeError[S, E, B]): FreeError[S, E, A] = f <* next
-    @inline override final def as[R, E, A, B](r: FreeError[S, E, A])(v: => B): FreeError[S, E, B] = r.as(v)
-    @inline override final def void[R, E, A](r: FreeError[S, E, A]): FreeError[S, E, Unit] = r.void
-    @inline override final def catchAll[R, E, A, E2](r: FreeError[S, E, A])(f: E => FreeError[S, E2, A]): FreeError[S, E2, A] = r.catchAll(f)
-    @inline override final def catchSome[R, E, A, E1 >: E](r: FreeError[S, E, A])(f: PartialFunction[E, FreeError[S, E1, A]]): FreeError[S, E1, A] = r.catchSome(f)
+    @inline override final def flatMap[E, A, B](r: FreeError[S, E, A])(f: A => FreeError[S, E, B]): FreeError[S, E, B] = r.flatMap(f)
+    @inline override final def *>[E, A, B](f: FreeError[S, E, A], next: => FreeError[S, E, B]): FreeError[S, E, B] = f *> next
+    @inline override final def <*[E, A, B](f: FreeError[S, E, A], next: => FreeError[S, E, B]): FreeError[S, E, A] = f <* next
+    @inline override final def as[E, A, B](r: FreeError[S, E, A])(v: => B): FreeError[S, E, B] = r.as(v)
+    @inline override final def void[E, A](r: FreeError[S, E, A]): FreeError[S, E, Unit] = r.void
+    @inline override final def catchAll[E, A, E2](r: FreeError[S, E, A])(f: E => FreeError[S, E2, A]): FreeError[S, E2, A] = r.catchAll(f)
+    @inline override final def catchSome[E, A, E1 >: E](r: FreeError[S, E, A])(f: PartialFunction[E, FreeError[S, E1, A]]): FreeError[S, E1, A] = r.catchSome(f)
 
     @inline override final def pure[A](a: A): FreeError[S, Nothing, A] = FreeError.pure(a)
     @inline override final def fail[E](v: => E): FreeError[S, E, Nothing] = FreeError.fail(v)
-    @inline override final def guarantee[R, E, A](f: FreeError[S, E, A], cleanup: FreeError[S, Nothing, Unit]): FreeError[S, E, A] = {
+    @inline override final def guarantee[E, A](f: FreeError[S, E, A], cleanup: FreeError[S, Nothing, Unit]): FreeError[S, E, A] = {
       f.redeem(e => cleanup *> fail(e), cleanup.as(_))
     }
 

@@ -6,6 +6,7 @@ import izumi.distage.model.reflection.Provider.ProviderType
 import scala.quoted.{Expr, Quotes, Type}
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 
+import scala.annotation.experimental
 import scala.collection.immutable.ArraySeq
 
 object ClassConstructorMacro {
@@ -16,14 +17,44 @@ object ClassConstructorMacro {
     val util = new ConstructorUtil[qctx.type]()
     util.requireConcreteTypeConstructor(TypeRepr.of[R], "ClassConstructor")
 
-    makeImpl[R](util)
+    val typeRepr = TypeRepr.of[R].dealias.simplified
+    val typeSymbol = typeRepr.typeSymbol
+    val tpeDeref = util.dereferenceTypeRef(typeRepr)
+
+    // FIXME remove redundant check across macros
+    lazy val context = new ConstructorContext[R, qctx.type, util.type](util)
+
+    val isConcrete =
+      (typeRepr.classSymbol.isDefined && !util.symbolIsTraitOrAbstract(typeSymbol) && !isRefinement(tpeDeref))
+      || isSingleton(tpeDeref)
+
+    if (isConcrete) {
+      makeImpl[R](util, typeRepr, tpeDeref)
+    } else if (context.isWireableTrait) {
+      report.errorAndAbort(
+        s"ClassConstructor failure: ${Type.show[R]} is a trait or an abstract class, use `makeTrait` or `make[X].fromTrait` to wire traits."
+      )
+    } else if (context.isFactoryOrTrait) {
+      report.errorAndAbort(
+        s"ClassConstructor failure: ${Type.show[R]} is a Factory, use `makeFactory` or `make[X].fromFactory` to wire factories."
+      )
+    } else {
+      report.errorAndAbort(
+        s"""ClassConstructor failure: couldn't derive a constructor for ${Type.show[R]}!
+           |It's neither a concrete class, nor a wireable trait or abstract class!""".stripMargin
+      )
+    }
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
-  def makeImpl[R: Type](using qctx: Quotes)(util: ConstructorUtil[qctx.type]): Expr[ClassConstructor[R]] = {
+  def makeImpl[R: Type](
+    using qctx: Quotes
+  )(util: ConstructorUtil[qctx.type],
+    typeRepr: qctx.reflect.TypeRepr,
+    tpeDeref: qctx.reflect.TypeRepr,
+  ): Expr[ClassConstructor[R]] = {
     import qctx.reflect.*
 
-    val typeRepr = TypeRepr.of[R].dealias.simplified
-    util.dereferenceTypeRef(typeRepr) match {
+    tpeDeref match {
       case c: ConstantType =>
         singletonClassConstructor[R](Literal(c.constant))
 
@@ -31,12 +62,6 @@ object ClassConstructorMacro {
         singletonClassConstructor[R](Ident(t))
 
       case _ =>
-        if (util.symbolIsTraitOrAbstract(typeRepr.typeSymbol)) {
-          report.errorAndAbort(
-            s"Cannot create ClassConstructor for type ${Type.show[R]} - it's a trait or an abstract class, not a concrete class. It cannot be constructed with `new`"
-          )
-        }
-
         typeRepr.classSymbol match {
           case Some(_) =>
             val ctorTreeParameterized = util.buildConstructorTermAppliedToTypeParameters(typeRepr)
@@ -49,6 +74,20 @@ object ClassConstructorMacro {
           case None =>
             report.errorAndAbort(s"No class symbol defined for $typeRepr")
         }
+    }
+  }
+
+  private def isSingleton(using qctx: Quotes)(tpeDeref: qctx.reflect.TypeRepr): Boolean = {
+    tpeDeref match {
+      case _: qctx.reflect.ConstantType | _: qctx.reflect.TermRef => true
+      case _ => false
+    }
+  }
+
+  private def isRefinement(using qctx: Quotes)(tpeDeref: qctx.reflect.TypeRepr): Boolean = {
+    tpeDeref match {
+      case _: qctx.reflect.Refinement => true
+      case _ => false
     }
   }
 

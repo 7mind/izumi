@@ -6,7 +6,7 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.distagesuite.fixtures.*
 import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, Spec3}
+import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, SpecZIO}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
@@ -42,7 +42,7 @@ class DistageTestExampleBIO extends Spec2[zio.IO] with DistageMemoizeExample[Tas
 
 }
 
-class DistageTestExampleBIOEnv extends Spec3[ZIO] with DistageMemoizeExample[Task] with AssertZIO {
+class DistageTestExampleBIOEnv extends SpecZIO with DistageMemoizeExample[Task] with AssertZIO {
 
   val service = ZIO.environmentWith[MockUserRepository[Task]](_.get)
 
@@ -140,7 +140,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         F.maybeSuspend(assert(set.size == 4))
     }
 
-    "support unmemoized named weak sets with memoized elements" in {
+    "support unmemoized named weak sets with memoized elements (3)" in {
       (
         set: Set[SetElement] @Id("unmemoized-set"),
         s1: SetElement1,
@@ -151,7 +151,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         F.maybeSuspend(assert(set.size == 4))
     }
 
-    "support unmemoized named weak sets with memoized elements" in {
+    "support unmemoized named weak sets with memoized elements (4)" in {
       (
         set: Set[SetElement] @Id("unmemoized-set"),
         s1: SetElement1,

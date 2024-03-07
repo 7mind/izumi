@@ -26,12 +26,12 @@ object TestConfigLoader {
                 appConfig =>
                   env.configOverrides match {
                     case Some(overrides) =>
-                      AppConfig(overrides.config.withFallback(appConfig.config).resolve())
+                      AppConfig.provided(overrides.config.withFallback(appConfig.config).resolve())
                     case None =>
                       appConfig
                   }
               }
-            configLoader.loadConfig()
+            configLoader.loadConfig("testkit startup")
           },
         )
     }

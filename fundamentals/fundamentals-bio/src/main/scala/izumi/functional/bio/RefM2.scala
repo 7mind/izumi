@@ -3,7 +3,7 @@ package izumi.functional.bio
 import izumi.functional.bio.data.Isomorphism2
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import zio.internal.stacktracer.{InteropTracer, Tracer}
-import zio.{IO, Ref}
+import zio.{Ref, ZIO}
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 trait RefM2[F[+_, +_], A] {
@@ -16,13 +16,13 @@ trait RefM2[F[+_, +_], A] {
 }
 
 object RefM2 {
-  def fromZIO[A](ref: Ref.Synchronized[A]): RefM2[IO, A] =
-    new RefM2[IO, A] {
-      override def get: IO[Nothing, A] = ref.get(Tracer.newTrace)
-      override def set(a: A): IO[Nothing, Unit] = ref.set(a)(Tracer.newTrace)
-      override def modify[E, B](f: A => IO[E, (B, A)]): IO[E, B] = ref.modifyZIO(f)(InteropTracer.newTrace(f))
-      override def update[E](f: A => IO[E, A]): IO[E, A] = ref.updateAndGetZIO(f)(InteropTracer.newTrace(f))
-      override def update_[E](f: A => IO[E, A]): IO[E, Unit] = ref.updateZIO(f)(InteropTracer.newTrace(f))
+  def fromZIO[R, A](ref: Ref.Synchronized[A]): RefM2[ZIO[R, +_, +_], A] =
+    new RefM2[ZIO[R, +_, +_], A] {
+      override def get: ZIO[R, Nothing, A] = ref.get(Tracer.newTrace)
+      override def set(a: A): ZIO[R, Nothing, Unit] = ref.set(a)(Tracer.newTrace)
+      override def modify[E, B](f: A => ZIO[R, E, (B, A)]): ZIO[R, E, B] = ref.modifyZIO(f)(InteropTracer.newTrace(f))
+      override def update[E](f: A => ZIO[R, E, A]): ZIO[R, E, A] = ref.updateAndGetZIO(f)(InteropTracer.newTrace(f))
+      override def update_[E](f: A => ZIO[R, E, A]): ZIO[R, E, Unit] = ref.updateZIO(f)(InteropTracer.newTrace(f))
     }
 
   def createFromBIO[F[+_, +_]: Bracket2: Primitives2, A](a: A): F[Nothing, RefM2[F, A]] = {
@@ -58,7 +58,7 @@ object RefM2 {
   }
 
   implicit final class RefM2Ops[F[+_, +_], A](private val self: RefM2[F, A]) extends AnyVal {
-    def imapK[G[+_, +_]](fg: F Isomorphism2 G): RefM2[G, A] = new RefM2[G, A] {
+    def imapK[G[+_, +_]](fg: F `Isomorphism2` G): RefM2[G, A] = new RefM2[G, A] {
       override def get: G[Nothing, A] = fg.to(self.get)
       override def set(a: A): G[Nothing, Unit] = fg.to(self.set(a))
       override def modify[E, B](f: A => G[E, (B, A)]): G[E, B] = fg.to(self.modify(a => fg.from(f(a))))

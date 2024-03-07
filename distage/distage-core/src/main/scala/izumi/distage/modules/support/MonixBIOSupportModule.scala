@@ -33,7 +33,7 @@
 //  */
 //trait MonixBIOSupportModule extends ModuleDef with MonixBIOPlatformDependentSupportModule {
 //  // QuasiIO & BIO instances
-//  include(AnyBIO2SupportModule[IO])
+//  include(AnyBIOSupportModule[IO])
 //  // cats-effect instances
 //  include(CatsEffectInstancesModule[Task])
 //

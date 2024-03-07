@@ -7,7 +7,6 @@ import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.{InjectorDefaultImpl, InjectorFactory}
-import izumi.fundamentals.platform.functional.Identity
 
 object Injector extends InjectorFactory {
 
@@ -52,7 +51,7 @@ object Injector extends InjectorFactory {
   ): Injector[F] = {
     bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides)
   }
-  
+
   /**
     * Create a default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
     *
@@ -86,7 +85,7 @@ object Injector extends InjectorFactory {
   }
 
   override def providedKeys[F[_]: DefaultModule](overrides: BootstrapModule*): Set[DIKey] = {
-    providedKeys[F](defaultBootstrap, overrides: _*)
+    providedKeys[F](defaultBootstrap, overrides*)
   }
 
   override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
@@ -107,10 +106,10 @@ object Injector extends InjectorFactory {
     super.bootloader(bootstrapModule, bootstrapActivation, defaultModule, input)
   }
 
-  /** Enable cglib proxies, but try to resolve cycles using by-name parameters if they can be used */
+  /** Enable bytebuddy proxies, but try to resolve cycles using by-name parameters if they can be used */
   def Standard: Injector.type = this
 
-  /** Disable cglib proxies, allow only by-name parameters to resolve cycles */
+  /** Disable bytebuddy proxies, allow only by-name parameters to resolve cycles */
   object NoProxies extends InjectorBootstrap(Cycles.Byname)
 
   /** Disable all cycle resolution, immediately throw when circular dependencies are found, whether by-name or not */
@@ -143,11 +142,11 @@ object Injector extends InjectorFactory {
     }
 
     override def providedKeys[F[_]: DefaultModule](overrides: BootstrapModule*): Set[DIKey] = {
-      Injector.providedKeys[F](overrides: _*)
+      Injector.providedKeys[F](overrides*)
     }
 
     override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
-      Injector.providedKeys[F](bootstrapBase, overrides: _*)
+      Injector.providedKeys[F](bootstrapBase, overrides*)
     }
 
     override protected[this] final def defaultBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap

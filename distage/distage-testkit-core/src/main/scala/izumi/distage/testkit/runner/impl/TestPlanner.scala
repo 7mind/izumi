@@ -69,7 +69,9 @@ object TestPlanner {
     final case class DIErrors(errors: NEList[DIError]) extends PlanningFailure
   }
 
-  final case class PlannedTestEnvs[F[_]](envs: Map[PreparedTestEnv, TestTree[F]])
+  final case class PlannedTestEnvs[F[_]](
+    envs: Map[PreparedTestEnv, TestTree[F]]
+  )
   final case class PlannedTests[F[_]](
     good: Seq[PlannedTestEnvs[F]], // in fact there should always be just one element
     bad: Seq[(Seq[DistageTest[F]], PlanningFailure)],
@@ -138,7 +140,8 @@ class TestPlanner[F[_]: TagK: DefaultModule](
             // merge environments together by equality of their shared & runtime plans
             // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
             // so this saves a lot of reallocation of memoized resources
-            val goodTrees: Map[PreparedTestEnv, TestTree[F]] = good.groupBy(_.envMergeCriteria).map {
+            val envsGroupedByPlanEquality = good.groupBy(_.envMergeCriteria)
+            val goodTrees: Map[PreparedTestEnv, TestTree[F]] = envsGroupedByPlanEquality.map {
               case (criteria, packedEnv) =>
                 // injectors do NOT provide equality but we defined custom injector equvalence for the purpose
                 // any injector from the group would do
@@ -212,14 +215,13 @@ class TestPlanner[F[_]: TagK: DefaultModule](
         val activationParser = new ActivationParser.Impl(
           roleAppActivationParser,
           RawAppArgs.empty,
-          config,
           env.activationInfo,
           env.activation,
           Activation.empty,
           lateLogger,
           warnUnset,
         )
-        val configActivation = activationParser.parseActivation()
+        val configActivation = activationParser.parseActivation(config)
 
         configActivation ++ env.activation
     }
@@ -278,17 +280,23 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       reducedAppModule = appModule.drop(runtimeKeys)
 
       // produce plan for each test
-      testPlans <- tests.map {
-        distageTest =>
-          val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
-          val testRoots = distageTest.test.get.diKeys.toSet ++ forcedRoots
-          for {
-            plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, fullActivation, testRoots)) else Right(Plan.empty)
-            _ <- Right(planChecker.showProxyWarnings(plan))
-          } yield {
-            AlmostPreparedTest(distageTest, reducedAppModule, plan.keys, fullActivation)
-          }
-      }.biSequence
+      testPlans <- tests
+        .groupBy {
+          distageTest =>
+            val forcedRoots = env.forcedRoots.getActiveKeys(fullActivation)
+            val testRoots = forcedRoots ++ distageTest.test.get.diKeys
+            testRoots
+        }
+        .toSeq
+        .map {
+          case (testRoots, distageTests) =>
+            for {
+              plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, fullActivation, testRoots)) else Right(Plan.empty)
+              _ <- Right(planChecker.showProxyWarnings(plan))
+            } yield {
+              distageTests.map(AlmostPreparedTest(_, reducedAppModule, plan.keys, fullActivation))
+            }
+        }.biFlatten
       envKeys = testPlans.flatMap(_.targetKeys).toSet
 
       // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they

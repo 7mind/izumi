@@ -196,7 +196,7 @@ private[quasi] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuasi
       }
       override def fail[A](t: => E): F[E, A] = F.fail(t)
       override def bracketCase[A, B](acquire: => F[E, A])(release: (A, Option[E]) => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
-        F.bracketCase[Any, E, A, B](acquire = F.suspend(acquire))(release = {
+        F.bracketCase[E, A, B](acquire = F.suspend(acquire))(release = {
           case (a, exit) =>
             exit match {
               case Exit.Success(_) => release(a, None).orTerminate

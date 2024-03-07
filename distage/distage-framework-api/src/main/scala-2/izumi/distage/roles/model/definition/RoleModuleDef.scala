@@ -1,6 +1,6 @@
 package izumi.distage.roles.model.definition
 
-import izumi.distage.constructors.macros.AnyConstructorMacro
+import izumi.distage.constructors.macros.MakeMacro
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSL
 import izumi.distage.roles.model.RoleDescriptor.GetRoleDescriptor
@@ -18,7 +18,7 @@ object RoleModuleDef {
   object RoleModuleDefMacros {
     def makeRole[T: c.WeakTypeTag](c: blackbox.Context)(getRoleDescriptor: c.Expr[GetRoleDescriptor[T]]): c.Expr[MakeDSL[T]] = {
       c.universe.reify {
-        AnyConstructorMacro.make[MakeDSL, T](c).splice.tagged(RoleTag(getRoleDescriptor.splice.roleDescriptor))
+        MakeMacro.make[MakeDSL, T](c).splice.tagged(RoleTag(getRoleDescriptor.splice.roleDescriptor))
       }
     }
   }

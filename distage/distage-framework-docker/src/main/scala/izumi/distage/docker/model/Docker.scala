@@ -1,6 +1,6 @@
 package izumi.distage.docker.model
 
-import izumi.distage.config.codec.{DIConfigReader, PureconfigAutoDerive}
+import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.model.Docker.ClientConfig.parseReusePolicy
@@ -246,8 +246,7 @@ object Docker {
   }
 
   object ClientConfig {
-    implicit val configReader: ConfigReader[ClientConfig] = PureconfigAutoDerive.derived
-    implicit val diConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.deriveFromPureconfigConfigReader
+    implicit val diConfigReader: DIConfigReader[ClientConfig] = DIConfigReader.deriveFromPureconfigAutoDerive[ClientConfig]
 
     val defaultReusePolicy: DockerReusePolicy = {
       DebugProperties.`izumi.distage.docker.reuse`

@@ -39,7 +39,7 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
   @inline final def void: FreePanic[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreePanic[T, E, A] = {
-    foldMap[S1, FreePanic[T, +_, +_]](Morphism2(FreePanic lift f(_)))
+    foldMap[S1, FreePanic[T, +_, +_]](Morphism2(FreePanic `lift` f(_)))
   }
 
   // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
@@ -74,8 +74,8 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
         G.uninterruptible(sub.foldMap(transform))
       case s: FreePanic.BracketCase[S, E, ?, A] @unchecked =>
         s.acquire.foldMap[S1, G](transform).bracketCase[E, A]((a, e: Exit[E, A]) => s.release(a, e).foldMap[S1, G](transform))(a => s.use(a).foldMap[S1, G](transform))
-      case FreePanic.UninterruptibleExcept(sub) =>
-        G.uninterruptibleExcept((r: RestoreInterruption2[G]) => sub(FreePanic.CapturedRestoreInterruption.captureRestore(r)).foldMap(transform))
+      case s: FreePanic.UninterruptibleExcept[S, E, A] @unchecked =>
+        G.uninterruptibleExcept((r: RestoreInterruption2[G]) => s.sub(FreePanic.CapturedRestoreInterruption.captureRestore(r)).foldMap(transform))
       case s: FreePanic.BracketExcept[S, E, ?, A] @unchecked =>
         G.bracketExcept(r => s.acquire(FreePanic.CapturedRestoreInterruption.captureRestore(r)).foldMap(transform))(
           (a, e: Exit[E, A]) => s.release(a, e).foldMap(transform)
@@ -191,24 +191,24 @@ object FreePanic {
 
   object Panic2Instance extends Panic2Instance[Nothing]
   class Panic2Instance[S[_, _]] extends Panic2[FreePanic[S, +_, +_]] {
-    @inline override final def flatMap[R, E, A, B](r: FreePanic[S, E, A])(f: A => FreePanic[S, E, B]): FreePanic[S, E, B] = r.flatMap(f)
-    @inline override final def *>[R, E, A, B](f: FreePanic[S, E, A], next: => FreePanic[S, E, B]): FreePanic[S, E, B] = f *> next
-    @inline override final def <*[R, E, A, B](f: FreePanic[S, E, A], next: => FreePanic[S, E, B]): FreePanic[S, E, A] = f <* next
-    @inline override final def as[R, E, A, B](r: FreePanic[S, E, A])(v: => B): FreePanic[S, E, B] = r.as(v)
-    @inline override final def void[R, E, A](r: FreePanic[S, E, A]): FreePanic[S, E, Unit] = r.void
-    @inline override final def sandbox[R, E, A](r: FreePanic[S, E, A]): FreePanic[S, Exit.Failure[E], A] = r.sandbox
-    @inline override final def catchAll[R, E, A, E2](r: FreePanic[S, E, A])(f: E => FreePanic[S, E2, A]): FreePanic[S, E2, A] = r.catchAll(f)
-    @inline override final def catchSome[R, E, A, E1 >: E](r: FreePanic[S, E, A])(f: PartialFunction[E, FreePanic[S, E1, A]]): FreePanic[S, E1, A] = r.catchSome(f)
-    @inline override final def bracketCase[R, E, A, B](
+    @inline override final def flatMap[E, A, B](r: FreePanic[S, E, A])(f: A => FreePanic[S, E, B]): FreePanic[S, E, B] = r.flatMap(f)
+    @inline override final def *>[E, A, B](f: FreePanic[S, E, A], next: => FreePanic[S, E, B]): FreePanic[S, E, B] = f *> next
+    @inline override final def <*[E, A, B](f: FreePanic[S, E, A], next: => FreePanic[S, E, B]): FreePanic[S, E, A] = f <* next
+    @inline override final def as[E, A, B](r: FreePanic[S, E, A])(v: => B): FreePanic[S, E, B] = r.as(v)
+    @inline override final def void[E, A](r: FreePanic[S, E, A]): FreePanic[S, E, Unit] = r.void
+    @inline override final def sandbox[E, A](r: FreePanic[S, E, A]): FreePanic[S, Exit.Failure[E], A] = r.sandbox
+    @inline override final def catchAll[E, A, E2](r: FreePanic[S, E, A])(f: E => FreePanic[S, E2, A]): FreePanic[S, E2, A] = r.catchAll(f)
+    @inline override final def catchSome[E, A, E1 >: E](r: FreePanic[S, E, A])(f: PartialFunction[E, FreePanic[S, E1, A]]): FreePanic[S, E1, A] = r.catchSome(f)
+    @inline override final def bracketCase[E, A, B](
       acquire: FreePanic[S, E, A]
     )(release: (A, Exit[E, B]) => FreePanic[S, Nothing, Unit]
     )(use: A => FreePanic[S, E, B]
     ): FreePanic[S, E, B] = acquire.bracketCase(release)(use)
-    @inline override final def guarantee[R, E, A](f: FreePanic[S, E, A], cleanup: FreePanic[S, Nothing, Unit]): FreePanic[S, E, A] = f.guarantee(cleanup)
-    @inline override final def uninterruptible[R, E, A](r: FreePanic[S, E, A]): FreePanic[S, E, A] = FreePanic.Uninterruptible(r)
-    @inline override final def uninterruptibleExcept[R, E, A](r: RestoreInterruption2[FreePanic[S, +_, +_]] => FreePanic[S, E, A]): FreePanic[S, E, A] =
+    @inline override final def guarantee[E, A](f: FreePanic[S, E, A], cleanup: FreePanic[S, Nothing, Unit]): FreePanic[S, E, A] = f.guarantee(cleanup)
+    @inline override final def uninterruptible[E, A](r: FreePanic[S, E, A]): FreePanic[S, E, A] = FreePanic.Uninterruptible(r)
+    @inline override final def uninterruptibleExcept[E, A](r: RestoreInterruption2[FreePanic[S, +_, +_]] => FreePanic[S, E, A]): FreePanic[S, E, A] =
       FreePanic.UninterruptibleExcept(r)
-    @inline override final def bracketExcept[R, E, A, B](
+    @inline override final def bracketExcept[E, A, B](
       acquire: RestoreInterruption2[FreePanic[S, +_, +_]] => FreePanic[S, E, A]
     )(release: (A, Exit[E, B]) => FreePanic[S, Nothing, Unit]
     )(use: A => FreePanic[S, E, B]

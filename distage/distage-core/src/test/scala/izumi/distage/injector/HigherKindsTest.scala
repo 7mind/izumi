@@ -16,7 +16,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
 
       make[TestTrait].from[TestServiceClass[F]]
       make[TestServiceClass[F]]
-      make[TestServiceTrait[F]]
+      makeTrait[TestServiceTrait[F]]
       make[Int].named("TestService").from(getResult)
       make[F[String]].from {
         (res: Int @Id("TestService")) => Pointed[F].point(s"Hello $res!")

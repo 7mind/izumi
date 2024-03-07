@@ -3,11 +3,12 @@ package izumi.distage.modules.support
 import cats.Parallel
 import cats.effect.kernel.{Async, GenTemporal, Sync}
 import cats.effect.std.Dispatcher
-import distage.{ModuleDef, TagK}
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.bio.{Clock1, Entropy1, SyncSafe1}
 import izumi.functional.quasi.*
 import izumi.fundamentals.platform.functional.Identity
+import izumi.reflect.TagK
 
 /**
   * Any `cats-effect` effect type support for `distage` resources, effects, roles & tests.

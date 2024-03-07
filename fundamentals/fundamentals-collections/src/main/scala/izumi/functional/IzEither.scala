@@ -85,10 +85,10 @@ object IzEither extends IzEither {
   }
 
   final class EitherBiAggregate[L, R, ColL[_], ColR[x] <: IterableOnce[x]](private val col: ColR[Either[ColL[L], R]]) extends AnyVal {
-    /** `sequence` with error accumulation */
     @deprecated("use .biSequence")
     def biAggregate(implicit iterL: ColL[L] => IterableOnce[L], buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]]): Either[ColL[L], ColR[R]] = { biSequence }
 
+    /** `sequence` with error accumulation */
     def biSequence(implicit iterL: ColL[L] => IterableOnce[L], buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]]): Either[ColL[L], ColR[R]] = {
       val good = buildR.newBuilder
       col.accumulateErrors(identity, (l: ColL[L]) => iterL(l), (v: R) => good += v, () => good.result())
@@ -105,16 +105,16 @@ object IzEither extends IzEither {
     }
   }
 
-  /** `sequence` with error accumulation */
   final class EitherScalarOps[L, R, ColR[x] <: IterableOnce[x]](private val col: ColR[Either[L, R]]) extends AnyVal {
     @deprecated("use .biSequenceScalar")
     def biAggregateScalar(implicit buildR: Factory[R, ColR[R]]): Either[NEList[L], ColR[R]] = {
       biSequenceScalar
     }
 
+    /** `sequence` with error accumulation */
     def biSequenceScalar(implicit buildR: Factory[R, ColR[R]]): Either[NEList[L], ColR[R]] = {
       val good = buildR.newBuilder
-      col.accumulateErrors(identity, (l: L) => Seq(l), (v: R) => good ++= Seq(v), () => good.result())
+      col.accumulateErrors(identity, (l: L) => Seq(l), (v: R) => good += v, () => good.result())
     }
   }
 
@@ -175,8 +175,6 @@ object IzEither extends IzEither {
   }
 
   final class EitherBiFlatMapAggregate[ColR[x] <: IterableOnce[x], T](private val col: ColR[T]) extends AnyVal {
-    /** `flatTraverse` with error accumulation */
-
     @deprecated("use .biFlatTraverse")
     def biFlatMapAggregate[ColL[_], L, A](
       f: T => Either[ColL[L], IterableOnce[A]]
@@ -187,6 +185,7 @@ object IzEither extends IzEither {
       biFlatTraverse(f)
     }
 
+    /** `flatTraverse` with error accumulation */
     def biFlatTraverse[ColL[_], L, A](
       f: T => Either[ColL[L], IterableOnce[A]]
     )(implicit buildR: Factory[A, ColR[A]],
@@ -211,11 +210,11 @@ object IzEither extends IzEither {
 
   final class EitherBiFlatAggregate[L, R, ColR[x] <: IterableOnce[x], ColIn[x] <: IterableOnce[x], ColL[_]](private val col: ColR[Either[ColL[L], ColIn[R]]])
     extends AnyVal {
-    /** `flatSequence` with error accumulation */
     @deprecated("use .biFlatten")
     def biFlatAggregate(implicit buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]], iterL: ColL[L] => IterableOnce[L]): Either[ColL[L], ColR[R]] =
       biFlatten
 
+    /** `flatSequence` with error accumulation */
     def biFlatten(implicit buildR: Factory[R, ColR[R]], buildL: Factory[L, ColL[L]], iterL: ColL[L] => IterableOnce[L]): Either[ColL[L], ColR[R]] = {
       col.biFlatTraverse(identity)
     }
@@ -238,7 +237,7 @@ object IzEither extends IzEither {
       Right(None)
     }
 
-    /** monadic `foldLeft` with error accumulation */
+    /** monadic `foldLeft` with short-circuiting error */
     def biFoldLeft[E, A](z: A)(op: (A, T) => Either[E, A]): Either[E, A] = {
       val i = col.iterator
       var acc: Either[E, A] = Right(z)

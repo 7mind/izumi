@@ -25,9 +25,6 @@ object LogZIO {
     *   }
     * }}}
     */
-  // FIXME wtf
-//  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](_.get[LogIO3[ZIO]])
-//  object log extends LogIO3Ask.LogIO3AskImpl[ZIO](identity)
   object log extends LogZIOImpl(identity)
 
   private[LogZIO] class LogZIOImpl(get: LogIO3[ZIO] => LogIO3[ZIO]) extends LogIO3Ask[ZIO] {
@@ -139,8 +136,8 @@ object LogZIO {
     * @param thunk the effect for which context will be passed
     * @return effect with the passed context
     */
-  def withCustomContext[R: Tag, E, A](context: (String, AnyEncoded)*)(thunk: ZIO[R, E, A]): ZIO[R with logstage.LogZIO, E, A] = {
-    withCustomContext[R, E, A](CustomContext(context: _*))(thunk)
+  def withCustomContext[R: Tag, E, A](context: (String, AnyEncoded)*)(thunk: ZIO[R, E, A]): ZIO[R & logstage.LogZIO, E, A] = {
+    withCustomContext[R, E, A](CustomContext(context*))(thunk)
   }
 
   /**
@@ -171,7 +168,7 @@ object LogZIO {
     * @param thunk the effect for which context will be passed
     * @return effect with the passed context
     */
-  def withCustomContext[R: Tag, E, A](context: CustomContext)(thunk: ZIO[R, E, A]): ZIO[R with logstage.LogZIO, E, A] = {
+  def withCustomContext[R: Tag, E, A](context: CustomContext)(thunk: ZIO[R, E, A]): ZIO[R & logstage.LogZIO, E, A] = {
     thunk.updateService((logZIO: Service) => logZIO(context))
   }
 }

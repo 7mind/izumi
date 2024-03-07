@@ -5,7 +5,7 @@ import cats.effect.kernel
 import cats.effect.kernel.{GenConcurrent, Resource, Sync}
 import izumi.functional.quasi.*
 import izumi.functional.bio.data.Morphism1
-import izumi.functional.bio.{Fiber2, Fork2, Functor2, Functor3}
+import izumi.functional.bio.{Fiber2, Fork2, Functor2, Monad2}
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
@@ -520,7 +520,7 @@ object Lifecycle extends LifecycleInstances {
     */
   def fromZIO[R]: SyntaxLifecycleFromZIO[R] = new SyntaxLifecycleFromZIO[R]()
   final class SyntaxLifecycleFromZIO[R](private val dummy: Boolean = false) extends AnyVal {
-    def apply[E, A](f: ZIO[Scope with R, E, A]): Lifecycle.FromZIO[R, E, A] = {
+    def apply[E, A](f: ZIO[Scope & R, E, A]): Lifecycle.FromZIO[R, E, A] = {
       implicit val trace: zio.Trace = Tracer.instance.empty
 
       new FromZIO.FromZIOScoped[R, E, A] {
@@ -581,7 +581,7 @@ object Lifecycle extends LifecycleInstances {
 
   implicit final class SyntaxLifecycleZIO[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
     /** Convert [[Lifecycle]] to scoped [[zio.ZIO]] */
-    def toZIO: ZIO[Scope with R, E, A] = {
+    def toZIO: ZIO[Scope & R, E, A] = {
       implicit val trace: zio.Trace = Tracer.instance.empty
 
       ZIO.uninterruptibleMask {
@@ -679,7 +679,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class OfZIO[-R, +E, +A](inner: => ZIO[Scope with R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO[R](inner))
+  open class OfZIO[-R, +E, +A](inner: => ZIO[Scope & R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO[R](inner))
 
   /**
     * Class-based proxy over a [[zio.managed.ZManaged]] value
@@ -925,18 +925,17 @@ object Lifecycle extends LifecycleInstances {
 }
 
 private[izumi] sealed trait LifecycleInstances extends LifecycleCatsInstances {
-  implicit final def functor2ForLifecycle[F[+_, +_]: Functor2]: Functor2[Lifecycle2[F, +_, +_]] = new Functor2[Lifecycle2[F, +_, +_]] {
-    override def map[R, E, A, B](r: Lifecycle[F[E, _], A])(f: A => B): Lifecycle[F[E, _], B] = r.map(f)
-  }
-
-  implicit final def functor3ForLifecycle[F[-_, +_, +_]: Functor3]: Functor3[Lifecycle3[F, -_, +_, +_]] = new Functor3[Lifecycle3[F, -_, +_, +_]] {
-    override def map[R, E, A, B](r: Lifecycle[F[R, E, _], A])(f: A => B): Lifecycle[F[R, E, _], B] = r.map(f)
-  }
+  implicit final def monad2ForLifecycle[F[+_, +_]: Functor2](implicit P: QuasiPrimitives[F[Any, +_]]): Monad2[Lifecycle2[F, +_, +_]] =
+    new Monad2[Lifecycle2[F, +_, +_]] {
+      override def map[E, A, B](r: Lifecycle[F[E, _], A])(f: A => B): Lifecycle[F[E, _], B] = r.map(f)
+      override def flatMap[E, A, B](r: Lifecycle2[F, E, A])(f: A => Lifecycle2[F, E, B]): Lifecycle2[F, E, B] = r.flatMap(f)(P.asInstanceOf[QuasiPrimitives[F[E, +_]]])
+      override def pure[A](a: A): Lifecycle2[F, Nothing, A] = Lifecycle.pure[F[Nothing, _]](a)(P.asInstanceOf[QuasiPrimitives[F[Nothing, +_]]])
+    }
 }
 
 private[izumi] sealed trait LifecycleCatsInstances extends LifecycleCatsInstancesLowPriority {
   implicit final def catsMonadForLifecycle[Monad[_[_]]: `cats.Monad`, F[_]](
-    implicit F: QuasiPrimitives[F]
+    implicit P: QuasiPrimitives[F]
   ): Monad[Lifecycle[F, _]] = {
     new cats.StackSafeMonad[Lifecycle[F, _]] {
       override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F](x)
