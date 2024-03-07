@@ -1,7 +1,6 @@
 package izumi.logstage.sink
 
 import izumi.functional.bio.SyncSafe1
-import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.IzScala
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.rendering.LogstageCodec
@@ -14,7 +13,6 @@ import org.scalatest.exceptions.TestFailedException
 import scala.annotation.nowarn
 import scala.util.Random
 
-@ExposedTestScope
 @nowarn("msg=[Ee]xpression.*logger")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"

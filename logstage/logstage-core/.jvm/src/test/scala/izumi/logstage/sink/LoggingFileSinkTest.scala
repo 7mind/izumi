@@ -1,7 +1,6 @@
 package izumi.logstage.sink
 
 import izumi.dummy.{DummyFile, DummyFileServiceImpl}
-import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.rendering.RenderingPolicy
@@ -39,7 +38,6 @@ object FileServiceUtils {
 
 }
 
-@ExposedTestScope
 trait LoggingFileSinkTest[T <: LogFile] extends AnyWordSpec with GivenWhenThen {
 
   def fileSvcUtils: FileServiceUtils[T]
