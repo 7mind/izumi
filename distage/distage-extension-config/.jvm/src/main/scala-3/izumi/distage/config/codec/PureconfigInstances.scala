@@ -3,7 +3,7 @@ package izumi.distage.config.codec
 import com.typesafe.config.{ConfigRenderOptions, ConfigValue}
 import pureconfig.*
 import pureconfig.error.{CannotConvert, ConfigReaderFailures, FailureReason, KeyNotFound, ThrowableFailure, WrongSizeList}
-import pureconfig.generic.derivation.{ConfigReaderDerivation, CoproductConfigReaderDerivation, Labels, ProductConfigReaderDerivation, WidenType}
+import pureconfig.generic.derivation.{ConfigReaderDerivation, CoproductConfigReaderDerivation, ProductConfigReaderDerivation, Utils}
 
 import scala.reflect.classTag
 import scala.util.control.NonFatal
@@ -62,7 +62,7 @@ object PureconfigInstances extends PureconfigInstances {
 
         case _ =>
           new ConfigReaderWithConfigMeta[A] {
-            val labels: Array[String] = Labels.transformed[m.MirroredElemLabels](fieldMapping).toArray
+            val labels: Array[String] = Utils.transformedLabels[m.MirroredElemLabels](fieldMapping).toArray
             val (fieldsMeta, tupleReader) = {
               val (codecs, tupleReader) = readTuple[m.MirroredElemTypes, 0]
               val fieldMeta = ConfigMeta.ConfigMetaCaseClass(
@@ -104,7 +104,7 @@ object PureconfigInstances extends PureconfigInstances {
                 val t = nt(cursors, keyNotFound)
 
                 (h, t) match {
-                  case (Right(h), Right(t)) => Right(WidenType.widen[h *: t, T](h *: t))
+                  case (Right(h), Right(t)) => Right(Utils.widen[h *: t, T](h *: t))
                   case (Left(h), Left(t)) => Left(h ++ t)
                   case (_, Left(failures)) => Left(failures)
                   case (Left(failures), _) => Left(failures)
@@ -115,7 +115,7 @@ object PureconfigInstances extends PureconfigInstances {
         case _: EmptyTuple =>
           (
             Nil,
-            (_: Array[ConfigCursor], _: Array[KeyNotFound]) => Right(WidenType.widen[EmptyTuple, T](EmptyTuple)),
+            (_: Array[ConfigCursor], _: Array[KeyNotFound]) => Right(Utils.widen[EmptyTuple, T](EmptyTuple)),
           )
       }
 
@@ -147,8 +147,8 @@ object PureconfigInstances extends PureconfigInstances {
     inline def derivedSum[A](using m: Mirror.SumOf[A]): ConfigReader[A] = {
       new ConfigReaderWithConfigMeta[A] {
         val options: Map[String, ConfigReader[A]] =
-          Labels
-            .transformed[m.MirroredElemLabels](fieldMapping)
+          Utils
+            .transformedLabels[m.MirroredElemLabels](fieldMapping)
             .zip(deriveForSubtypes[m.MirroredElemTypes, A])
             .toMap
 
