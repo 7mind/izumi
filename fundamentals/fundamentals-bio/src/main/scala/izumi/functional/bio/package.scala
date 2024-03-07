@@ -116,7 +116,7 @@ package object bio extends Syntax2 {
     */
   @inline override final def F[F[+_, +_]](implicit F: Functor2[F]): F.type = F
 
-  @inline final def MoreCursedF[F[+_, +_]](implicit FR: NotPredefined.Of[Functor2[FR]] = CursedPower.cursedManifestation): FR.type = FR
+  @inline final def MoreCursedF[F[+_, +_]](implicit F: NotPredefined.Of[Functor2[F]] = CursedPower.cursedManifestation): F.type = F
 
   object CursedPower {
     type CursedPower <: Functor2[Nothing]
