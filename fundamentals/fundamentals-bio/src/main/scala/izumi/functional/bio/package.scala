@@ -2,6 +2,7 @@ package izumi.functional
 
 import izumi.functional.bio.PredefinedHelper.NotPredefined
 import izumi.functional.bio.data.Isomorphism2
+import izumi.functional.bio.retry.Scheduler2
 import izumi.functional.bio.syntax.Syntax2
 
 import scala.annotation.unused
@@ -118,12 +119,49 @@ package object bio extends Syntax2 {
 
   @inline final def MoreCursedF[F[+_, +_]](implicit F: NotPredefined.Of[Functor2[F]] = CursedPower.cursedManifestation): F.type = F
 
-  object CursedPower {
-    type CursedPower <: Functor2[Nothing]
+  object CursedPower extends CursedPowerInstancesLowPriority1 {
+    type FNothing[+_, +_] = Nothing
+    type CursedPower <: Functor2[FNothing]
     val cursedManifestation: CursedPower = null.asInstanceOf[CursedPower]
 
-    implicit final def CursedAttachPrimitives2[F[+_, +_]](@unused bearerOfTheCurse: CursedPower)(implicit Primitives: Primitives2[F]): Primitives.type =
+//    @inline implicit final def ConvertFromConcurrent[F[+_, +_]](
+//      @unused self: CursedPower
+//    )(implicit Concurrent: NotPredefined.Of[Concurrent2[F]]
+//    ): Predefined.Of[Panic2[F] & SpecificityHelper.S1] =
+//      Predefined(SpecificityHelper.S1(Concurrent.InnerF))
+
+    @inline implicit final def AttachPrimitives2[F[+_, +_]](@unused self: CursedPower)(implicit Primitives: Primitives2[F]): Primitives.type =
       Primitives
+//    @inline implicit final def AttachScheduler[F[+_, +_]](@unused self: CursedPower)(implicit Scheduler: Scheduler2[F]): Scheduler.type = Scheduler
+    @inline implicit final def AttachPrimitivesM[F[+_, +_]](@unused self: CursedPower)(implicit PrimitivesM: PrimitivesM2[F]): PrimitivesM.type =
+      PrimitivesM
+    @inline implicit final def AttachFork[F[+_, +_]](@unused self: CursedPower)(implicit Fork: Fork2[F]): Fork.type = Fork
+    @inline implicit final def AttachBlockingIO[F[+_, +_]](@unused self: CursedPower)(implicit BlockingIO: BlockingIO2[F]): BlockingIO.type = BlockingIO
+    @inline implicit final def AttachClockAccessor[F[+_, +_]](@unused self: CursedPower): Syntax2.ClockAccessor[F] = new Syntax2.ClockAccessor[F](false)
+    @inline implicit final def AttachEntropyAccessor[F[+_, +_]](@unused self: CursedPower): Syntax2.EntropyAccessor[F] = new Syntax2.EntropyAccessor[F](false)
+
+    // ???
+    @inline implicit final def ConvertFromParallel[F[+_, +_]](
+      @unused self: CursedPower
+    )(implicit Parallel: NotPredefined.Of[Parallel2[F]]
+    ): PredefinedHelper.Predefined.Of[Monad2[F] & SpecificityHelper.S3] =
+      PredefinedHelper.Predefined(SpecificityHelper.S3(Parallel.InnerF))
+  }
+  import CursedPower.CursedPower
+  sealed trait CursedPowerInstancesLowPriority1 extends CursedPowerInstancesLowPriority2 {
+    @inline implicit final def AttachBifunctor[F[+_, +_]](@unused self: CursedPower)(implicit Bifunctor: Bifunctor2[F]): Bifunctor.type =
+      Bifunctor
+    @inline implicit final def AttachConcurrent[F[+_, +_]](@unused self: CursedPower)(implicit Concurrent: Concurrent2[F]): Concurrent.type =
+      Concurrent
+  }
+  sealed trait CursedPowerInstancesLowPriority2 extends CursedPowerInstancesLowPriority3 {
+    @inline implicit final def AttachParallel[F[+_, +_]](@unused self: CursedPower)(implicit Parallel: Parallel2[F]): Parallel.type = Parallel
+  }
+  sealed trait CursedPowerInstancesLowPriority3 extends CursedPowerInstancesLowPriority4 {
+    @inline implicit final def AttachTemporal[F[+_, +_]](@unused self: CursedPower)(implicit Temporal: Temporal2[F]): Temporal2[F] = Temporal
+  }
+  sealed trait CursedPowerInstancesLowPriority4 {
+//    @inline implicit final def AttachFunctor[F[+_, +_]](@unused self: CursedPower)(implicit Temporal: Functor2[F]): Functor2[F] = Temporal
   }
 
   type TransZio[F[_, _]] = Isomorphism2[F, zio.IO]

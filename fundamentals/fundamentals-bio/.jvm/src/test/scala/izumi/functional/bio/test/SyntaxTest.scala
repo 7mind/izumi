@@ -5,6 +5,7 @@ import izumi.functional.bio.retry.{RetryPolicy, Scheduler2}
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.unused
 import scala.concurrent.duration.*
 
 class SyntaxTest extends AnyWordSpec {
@@ -388,7 +389,7 @@ class SyntaxTest extends AnyWordSpec {
   "Use F.mkRef magic method even without a Functor2[F] instance in scope by using accursed power" in {
     import izumi.functional.bio.{MoreCursedF, Monad2, Primitives2, Ref2}
 
-    def x[F[+_, +_]: Primitives2]: F[Nothing, Ref3[F, Int]] = {
+    def x[F[+_, +_]: Primitives2]: F[Nothing, Ref2[F, Int]] = {
       MoreCursedF.mkRef(1)
     }
 
@@ -396,8 +397,73 @@ class SyntaxTest extends AnyWordSpec {
       MoreCursedF.mkRef(1).flatMap(_.get).map(_ + 1)
     }
 
-    x[zio.ZIO]
-    y[zio.ZIO]
+    x[zio.IO]
+    y[zio.IO]
+  }
+
+  "MoreCursedF Parallel attachment works instead of F conversion" in {
+    import izumi.functional.bio.{Parallel2, MoreCursedF}
+
+    def x[F[+_, +_]: Parallel2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
+      a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b).flatMap(_ => MoreCursedF.unit)
+      MoreCursedF.unit: F[Nothing, Unit]
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+  }
+
+  "MoreCursedF Concurrent attachment works instead of F conversion" in {
+    import izumi.functional.bio.{Concurrent2, MoreCursedF}
+
+    def x[F[+_, +_]: Concurrent2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
+      a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b).flatMap(_ => MoreCursedF.unit)
+      a.guaranteeCase(_ => a.race(b).widenError[Throwable].catchAll(_ => MoreCursedF.unit `orElse` MoreCursedF.uninterruptible(MoreCursedF.race(a, b))).void)
+      MoreCursedF.unit: F[Nothing, Unit]
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+  }
+
+  "MoreCursedF Temporal attachment works instead of F conversion" in {
+    import izumi.functional.bio.{Temporal2, MoreCursedF}
+
+    def x[F[+_, +_]: Temporal2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+      a.flatMap(_ => b).flatMap(_ => MoreCursedF.unit)
+      a.widenError[Throwable].catchAll(_ => MoreCursedF.unit `orElse` b).void
+      MoreCursedF.unit: F[Nothing, Unit]
+
+      MoreCursedF.sleep(5.seconds): F[Nothing, Unit]
+      MoreCursedF.timeout(5.seconds)(MoreCursedF.forever(MoreCursedF.unit)): F[Nothing, Option[Unit]]
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+  }
+
+  "MoreCursedF Concurrent attachment works instead of F conversion in presence of BIOParallel/BIOTemporal, overrides BIOParallel" in {
+    import izumi.functional.bio.{Concurrent2, Parallel2, Temporal2, MoreCursedF}
+
+    def x[F[+_, +_]: Concurrent2: Temporal2](a: F[Nothing, Unit], b: F[Nothing, Unit])(implicit @unused P: Parallel2[F]) = {
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
+      a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b).flatMap(_ => MoreCursedF.unit)
+      a.guaranteeCase(_ => a.race(b).widenError[Throwable].catchAll(_ => MoreCursedF.unit `orElse` MoreCursedF.uninterruptible(MoreCursedF.race(a, b))).void)
+      MoreCursedF.unit: F[Nothing, Unit]
+
+      MoreCursedF.sleep(5.seconds): F[Nothing, Unit]
+      MoreCursedF.timeout(5.seconds)(MoreCursedF.forever(MoreCursedF.unit)): F[Nothing, Option[Unit]]
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
   }
 
 }
