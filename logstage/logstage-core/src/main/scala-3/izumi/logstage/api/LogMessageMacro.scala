@@ -12,7 +12,7 @@ object LogMessageMacro {
 
     def matchExpr(message: Expr[String], multiline: Boolean): Expr[Message] = {
       message match {
-        case sc @ '{ StringContext.apply($parts: _*).s($args: _*) } =>
+        case sc @ '{ StringContext.apply($parts*).s($args*) } =>
           import scala.quoted.Varargs
           val partsSeq = parts match {
             case Varargs(a) =>
@@ -125,7 +125,7 @@ object LogMessageMacro {
         parts
       })
 
-      val sc: Expr[StringContext] = '{ StringContext($scparts: _*) }
+      val sc: Expr[StringContext] = '{ StringContext($scparts*) }
       '{ Message($sc, ${ Expr.ofSeq(args) }) }
     }
 

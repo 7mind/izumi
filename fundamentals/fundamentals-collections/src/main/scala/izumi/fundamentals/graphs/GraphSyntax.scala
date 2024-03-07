@@ -9,7 +9,7 @@ trait GraphSyntax[G[n, m] <: AbstractGraph[n, m]] {
 
   protected def unsafeFactory[N, M](predecessors: IncidenceMatrix[N], meta: GraphMeta[N, M]): G[N, M]
 
-  implicit class DGExt[N, M](g: AbstractGraph[N, M] with DirectedGraphPred[N, M]) {
+  implicit class DGExt[N, M](g: AbstractGraph[N, M] & DirectedGraphPred[N, M]) {
     def gc(roots: Set[N], weak: Set[WeakEdge[N]]): Either[Nothing, G[N, M]] = {
       for {
         collected <- new GC.GCTracer[N].collect(GCInput(g.predecessors, roots, weak))

@@ -9,7 +9,7 @@ object IdContract {
 
   implicit val stringIdContract: IdContract[String] = new IdContractImpl[String]
 
-  implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = new IdContractImpl[S]
+  implicit def singletonStringIdContract[S <: String & Singleton]: IdContract[S] = new IdContractImpl[S]
 
   final class IdContractImpl[T] extends IdContract[T] {
     override def repr(value: T): String = value.toString

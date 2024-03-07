@@ -44,12 +44,12 @@ trait ContainerDef {
   final def make[F[_]: TagK](
     implicit tag: distage.Tag[Tag],
     mutateModule: ModuleDefDSL#MutationContext,
-  ): Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = {
+  ): Functoid[ContainerResource[F, Tag] & Lifecycle[F, Container]] = {
     tag.discard()
     new mutateModule.dsl {
       many[DockerContainer[Any]].named(DependencyTag.get[Tag])
     }
-    val f: Functoid[ContainerResource[F, Tag] with Lifecycle[F, Container]] = DockerContainer.resource[F](this)
+    val f: Functoid[ContainerResource[F, Tag] & Lifecycle[F, Container]] = DockerContainer.resource[F](this)
     f.annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[Tag])
   }
 

@@ -18,12 +18,12 @@ private[distage] class ByteBuddyAtomicRefDispatcher(
           Boolean.box(getRef == r._distageProxyReference)
 
         case _ =>
-          method.invoke(getRef, objects: _*)
+          method.invoke(getRef, objects*)
       }
     } else if (methodName == "_distageProxyReference" && method.getParameterCount == 0) {
       getRef
     } else {
-      method.invoke(getRef, objects: _*)
+      method.invoke(getRef, objects*)
     }
   }
 
