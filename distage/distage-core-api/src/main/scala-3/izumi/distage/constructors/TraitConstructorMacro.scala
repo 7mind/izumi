@@ -5,14 +5,12 @@ import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.reflect.WeakTag
 
-import scala.annotation.experimental
 import scala.collection.immutable.{ArraySeq, Queue}
 import scala.collection.mutable
 import scala.quoted.{Expr, Quotes, Type}
 
 object TraitConstructorMacro {
 
-  @experimental
   def make[R: Type](using qctx: Quotes): Expr[TraitConstructor[R]] = try {
     import qctx.reflect.*
 
@@ -25,7 +23,6 @@ object TraitConstructorMacro {
     makeImpl[R](util, context)
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
-  @experimental
   def makeImpl[R: Type](using qctx: Quotes)(util: ConstructorUtil[qctx.type], context: ConstructorContext[R, qctx.type, util.type]): Expr[TraitConstructor[R]] = {
     import qctx.reflect.*
     import util.{MemberRepr, ParamRepr}

@@ -246,7 +246,7 @@ final class NEString private (val theString: String) extends AnyVal {
     * @param c the element to look for
     * @return true if this <code>NEString</code> has an character that is equal (as determined by <code>==)</code> to <code>c</code>, false otherwise.
     */
-  def contains(c: Char): Boolean = theString.contains(c)
+  infix def contains(c: Char): Boolean = theString.contains(c)
 
   /**
     * Indicates whether this <code>NEString</code> contains a given <code>Seq</code> of characters as a slice.

@@ -64,7 +64,7 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler wit
 
     val level = toLevel(record)
     Log.Entry(
-      Log.Message(StringContext(ArraySeq.unsafeWrapArray(template): _*), messageArgs),
+      Log.Message(StringContext(ArraySeq.unsafeWrapArray(template)*), messageArgs),
       Log.Context(
         ctx,
         Log.DynamicContext(level, threadData, System.currentTimeMillis()),

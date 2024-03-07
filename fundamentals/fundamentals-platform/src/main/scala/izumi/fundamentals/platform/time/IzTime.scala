@@ -87,13 +87,15 @@ trait IzTime extends IzTimeSafe {
   // parsers
   @inline implicit final def toRichLong(value: Long): IzLongParsers = new IzLongParsers(value)
   @inline implicit final def stringToParseableTime(value: String): IzTimeParsers = new IzTimeParsers(value)
-  @inline implicit final def maybeStringToParseableTime(value: Option[String]): IzOptionalTimeParsers = new IzOptionalTimeParsers(value)
 
   // current time
+  @deprecated("use Clock1.Standard.now")
   def utcNow: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
 
+  @deprecated("use Clock1.Standard.nowOffset")
   def utcNowOffset: OffsetDateTime = OffsetDateTime.now(TZ_UTC)
 
+  @deprecated("use Clock1.Standard.utcNow.isoFormat")
   def isoNow: String = utcNow.isoFormat
 
   final lazy val ISO_ZONED_DATE_TIME_3NANO: DateTimeFormatter = {

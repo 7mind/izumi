@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.99`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.100`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -148,9 +148,9 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.18")
-  final val scala213 = ScalaVersion("2.13.12")
-  final val scala300 = ScalaVersion("3.2.2")
+  final val scala212 = ScalaVersion("2.12.19")
+  final val scala213 = ScalaVersion("2.13.13")
+  final val scala300 = ScalaVersion("3.4.0")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -190,7 +190,7 @@ object Izumi {
       language = targetScala3,
       settings = Seq(
         "coverageEnabled" := false,
-        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
+        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }".raw,
       ),
     )
 
@@ -218,7 +218,7 @@ object Izumi {
   object Projects {
 
     final val plugins = Plugins(
-      Seq.empty,
+      Seq(Plugin("SitePreviewPlugin")),
       Seq(assemblyPluginJs, assemblyPluginJvm),
     )
 
@@ -286,27 +286,45 @@ object Izumi {
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
       )
 
+      val scala2Wconf = Seq(
+        "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+      )
+      val scala3Wconf = Seq(
+        "-Wconf:any:verbose",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+      )
+
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
-          SettingKey(Some(scala212), None) := Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options,
-          SettingKey(Some(scala213), None) := Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const](
-            "-Wunused:-synthetics"
-          ),
-          SettingKey(Some(scala300), None) := Seq[Const](
-            "-Yretain-trees", // FIXME required
-            "-language:3.2",
-          ) ++ Defaults.Scala3Options,
+          SettingKey(Some(scala212), None) :=
+            Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options,
+          SettingKey(Some(scala213), None) :=
+            Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics"),
+          SettingKey(Some(scala300), None) :=
+            Seq[Const](
+              "-Yretain-trees", // FIXME required
+              "-language:3.4",
+            ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
+        ),
+        "scalacOptions" ++= Seq(
+          SettingKey(Some(scala300), None) := scala3Wconf,
+          SettingKey.Default := scala2Wconf,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
         "scalacOptions" += "-Wconf:msg=legacy-binding:silent",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
-        "scalacOptions" += "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
-        "scalacOptions" += "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
-        "scalacOptions" += "-Wconf:cat=lint-eta-sam:silent",
         "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
@@ -365,6 +383,7 @@ object Izumi {
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkitCore = ArtifactId("distage-testkit-core")
       final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
+      final lazy val testkitScalatestSbtModuleFilteringTest = ArtifactId("distage-testkit-scalatest-sbt-module-filtering-test")
       final lazy val extensionLogstage = ArtifactId("distage-extension-logstage")
     }
 
@@ -635,6 +654,17 @@ object Izumi {
           "libraryDependencySchemes" += """"org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always""".raw
         ),
       ),
+      Artifact(
+        name = Projects.distage.testkitScalatestSbtModuleFilteringTest,
+        libs = Nil,
+        depends = Seq(
+          Projects.distage.testkitScalatest tin Scope.Test.all
+        ),
+        platforms = Targets.jvm3,
+        settings = Seq(
+          "skip" in SettingScope.Raw("publish") := true
+        ),
+      ),
     ),
     pathPrefix = Projects.distage.basePath,
     defaultPlatforms = Targets.cross3,
@@ -739,7 +769,7 @@ object Izumi {
               .value
           }""".raw,
           "version" in SettingScope.Raw("(Compile / paradox)") := "version.value".raw,
-          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Compile)"),
+          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings"),
           SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
@@ -857,11 +887,13 @@ object Izumi {
       SbtPlugin("com.eed3si9n", "sbt-assembly", PV.sbt_assembly),
       SbtPlugin("com.jsuereth", "sbt-pgp", PV.sbt_pgp),
       SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
-      SbtPlugin("com.eed3si9n", "sbt-unidoc", PV.sbt_unidoc),
-      SbtPlugin("com.typesafe.sbt", "sbt-site", PV.sbt_site),
+      SbtPlugin("com.github.sbt", "sbt-unidoc", PV.sbt_unidoc),
+      SbtPlugin("com.github.sbt", "sbt-site", PV.sbt_site),
+      SbtPlugin("com.github.sbt", "sbt-site-paradox", PV.sbt_site),
       SbtPlugin("com.github.sbt", "sbt-ghpages", PV.sbt_ghpages),
       SbtPlugin("com.lightbend.paradox", "sbt-paradox", PV.sbt_paradox),
-      SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
+      SbtPlugin("com.lightbend.paradox", "sbt-paradox-theme", PV.sbt_paradox),
+      SbtPlugin("com.github.sbt", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
       SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
     ),
   )

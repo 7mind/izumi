@@ -181,7 +181,7 @@ object OpFormatter {
       s"${provider.funString}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
     }
 
-    private def formatOpName(name: String, color: String with Singleton = c.YELLOW) = {
+    private def formatOpName(name: String, color: String & Singleton = c.YELLOW) = {
       styled(name, c.UNDERLINED, color)
     }
 

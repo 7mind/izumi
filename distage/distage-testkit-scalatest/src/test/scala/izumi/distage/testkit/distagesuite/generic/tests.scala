@@ -140,7 +140,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         F.maybeSuspend(assert(set.size == 4))
     }
 
-    "support unmemoized named weak sets with memoized elements" in {
+    "support unmemoized named weak sets with memoized elements (3)" in {
       (
         set: Set[SetElement] @Id("unmemoized-set"),
         s1: SetElement1,
@@ -151,7 +151,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         F.maybeSuspend(assert(set.size == 4))
     }
 
-    "support unmemoized named weak sets with memoized elements" in {
+    "support unmemoized named weak sets with memoized elements (4)" in {
       (
         set: Set[SetElement] @Id("unmemoized-set"),
         s1: SetElement1,

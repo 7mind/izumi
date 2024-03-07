@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 
 trait WithProperties {
   final def withProperties(properties: Map[String, String])(f: => Unit): Unit = {
-    withProperties(properties.toSeq: _*)(f)
+    withProperties(properties.toSeq*)(f)
   }
 
   final def withProperties(properties: (String, String)*)(f: => Unit): Unit = synchronized {

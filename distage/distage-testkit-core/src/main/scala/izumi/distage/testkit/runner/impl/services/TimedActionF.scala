@@ -1,9 +1,9 @@
 package izumi.distage.testkit.runner.impl.services
 
 import distage.*
+import izumi.functional.bio.Clock1
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.fundamentals.platform.time.IzTime
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -39,9 +39,9 @@ trait TimedAction {
 object TimedAction {
   class TimedActionImpl() extends TimedAction {
     override def apply[A](action: => A): Timed[A] = {
-      val before = IzTime.utcNowOffset
+      val before = Clock1.Standard.nowOffset()
       val value = action
-      val after = IzTime.utcNowOffset
+      val after = Clock1.Standard.nowOffset()
       Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
     }
   }
@@ -56,9 +56,9 @@ object TimedActionF {
   class TimedActionFImpl[F[_]]()(implicit F: QuasiIO[F]) extends TimedActionF[F] {
     override def apply[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]] = {
       for {
-        before <- Lifecycle.liftF(F.maybeSuspend(IzTime.utcNowOffset))
+        before <- Lifecycle.liftF(F.maybeSuspend(Clock1.Standard.nowOffset()))
         value <- action
-        after <- Lifecycle.liftF(F.maybeSuspend(IzTime.utcNowOffset))
+        after <- Lifecycle.liftF(F.maybeSuspend(Clock1.Standard.nowOffset()))
       } yield {
         Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
       }
@@ -66,9 +66,9 @@ object TimedActionF {
 
     override def apply[A](action: => F[A]): F[Timed[A]] = {
       for {
-        before <- F.maybeSuspend(IzTime.utcNowOffset)
+        before <- F.maybeSuspend(Clock1.Standard.nowOffset())
         value <- action
-        after <- F.maybeSuspend(IzTime.utcNowOffset)
+        after <- F.maybeSuspend(Clock1.Standard.nowOffset())
       } yield {
         Timed(value, Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS)))
       }

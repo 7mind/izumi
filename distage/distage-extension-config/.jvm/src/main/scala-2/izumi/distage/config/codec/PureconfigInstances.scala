@@ -1,13 +1,17 @@
 package izumi.distage.config.codec
 
-import com.typesafe.config.ConfigValue
+import com.typesafe.config.{ConfigValue, ConfigValueFactory}
+import magnolia1.{CaseClass, SealedTrait}
 import pureconfig.*
 import pureconfig.ConfigReader.Result
 import pureconfig.error.{ConfigReaderFailures, ThrowableFailure}
 import pureconfig.generic.error.{InvalidCoproductOption, NoValidCoproductOptionFound}
 import pureconfig.generic.{CoproductHint, ProductHint}
+import pureconfig.module.magnolia.{ExportedMagnolia, MagnoliaConfigReader}
 
-trait PureconfigInstances {
+import scala.language.experimental.macros
+
+trait PureconfigInstances extends PureconfigSharedInstances {
 
   /** Override pureconfig's default `kebab-case` fields – force CamelCase product-hint */
   @inline implicit final def forceCamelCaseProductHint[T]: ProductHint[T] = PureconfigInstances.camelCaseProductHint.asInstanceOf[ProductHint[T]]
@@ -36,6 +40,64 @@ trait PureconfigInstances {
 }
 
 object PureconfigInstances extends PureconfigInstances {
+
+  object auto {
+    implicit def exportReader[A]: Exported[ConfigReader[A]] = macro ExportedMagnolia.exportedMagnolia[ConfigReader, A]
+
+    type Typeclass[A] = ConfigReader[A]
+
+    def join[A](ctx: CaseClass[ConfigReader, A])(implicit productHint: ProductHint[A]): ConfigReader[A] = {
+      val magnoliaConfigReader = MagnoliaConfigReader.join(ctx)
+      val fields = configMetaJoin(ctx, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader)
+      new ConfigReaderWithConfigMeta[A] {
+        override def from(cur: ConfigCursor): Result[A] = magnoliaConfigReader.from(cur)
+        override def fieldsMeta: ConfigMeta = fields
+      }
+    }
+
+    def split[A](ctx: SealedTrait[ConfigReader, A])(implicit coproductHint: CoproductHint[A]): ConfigReader[A] = {
+      val magnoliaConfigReader = MagnoliaConfigReader.split(ctx)
+      val fields = configMetaSplit(ctx, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader)
+      new ConfigReaderWithConfigMeta[A] {
+        override def from(cur: ConfigCursor): Result[A] = magnoliaConfigReader.from(cur)
+        override def fieldsMeta: ConfigMeta = fields
+      }
+    }
+
+    def configMetaJoin[TC[_], A](ctx: CaseClass[TC, A], toConfigMeta: TC[Any] => ConfigMeta)(implicit productHint: ProductHint[A]): ConfigMeta = {
+      def fields0: ConfigMeta.ConfigMetaCaseClass = ConfigMeta.ConfigMetaCaseClass(
+        ctx.parameters.map(
+          p => {
+            val realLabel = {
+              productHint.to(Some(ConfigValueFactory.fromAnyRef("x")), p.label) match {
+                case Some((processedLabel, _)) => processedLabel
+                case None => p.label
+              }
+            }
+            (realLabel, toConfigMeta(p.typeclass.asInstanceOf[TC[Any]]))
+          }
+        )
+      )
+      if (ctx.typeName.full.startsWith("scala.Tuple")) ConfigMeta.ConfigMetaUnknown()
+      else if (ctx.isValueClass) fields0.fields.head._2 /* NB: AnyVal codecs are not supported on Scala 3 */
+      else fields0
+    }
+
+    def configMetaSplit[TC[_], A](ctx: SealedTrait[TC, A], toConfigMeta: TC[Any] => ConfigMeta)(implicit coproductHint: CoproductHint[A]): ConfigMeta = {
+      // Only support Circe-like sealed trait encoding
+      if (coproductHint == PureconfigInstances.circeLikeCoproductHint) {
+        ConfigMeta.ConfigMetaSealedTrait(
+          ctx.subtypes.map {
+            s =>
+              val realLabel = s.typeName.short // no processing is required for Circe-like hint
+              (realLabel, toConfigMeta(s.typeclass.asInstanceOf[TC[Any]]))
+          }.toSet
+        )
+      } else {
+        ConfigMeta.ConfigMetaUnknown()
+      }
+    }
+  }
 
   private[config] final val camelCaseProductHint: ProductHint[Any] = ProductHint(ConfigFieldMapping(CamelCase, CamelCase))
 

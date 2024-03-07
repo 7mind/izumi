@@ -312,7 +312,7 @@ private[providers] trait FunctoidLifecycleAdapters {
     * Allows you to bind Scoped [[zio.ZIO]]-based constructors in `ModuleDef`:
     */
   implicit final def providerFromZIOScoped[R, E, A](
-    scoped: => ZIO[Scope with R, E, A]
+    scoped: => ZIO[Scope & R, E, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
     Functoid.lift(Lifecycle.fromZIO[R](scoped))
@@ -323,7 +323,7 @@ private[providers] trait FunctoidLifecycleAdapters {
     */
   // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
   implicit final def providerFromZIOScopedNothing[R, A](
-    scoped: => ZIO[Scope with R, Nothing, A]
+    scoped: => ZIO[Scope & R, Nothing, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
     Functoid.lift(Lifecycle.fromZIO[R](scoped))

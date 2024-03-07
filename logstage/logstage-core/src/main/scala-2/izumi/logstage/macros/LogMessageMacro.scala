@@ -174,7 +174,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
             TermName("stripMargin"),
           ) =>
         val namedArgs = nameExtractor.recoverArgNames(args)
-        val sc = q"""_root_.scala.StringContext($stringContext.parts.map(_.stripMargin): _*)"""
+        val sc = q"""_root_.scala.StringContext($stringContext.parts.map(_.stripMargin)*)"""
         createMessageExpr(sc, namedArgs)
 
       // support .stripMargin in scala 2.13 and 2.13.10

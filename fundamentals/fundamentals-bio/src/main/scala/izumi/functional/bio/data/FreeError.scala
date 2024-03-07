@@ -30,7 +30,7 @@ sealed abstract class FreeError[+S[_, _], +E, +A] {
   @inline final def void: FreeError[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): FreeError[T, E, A] = {
-    foldMap[S1, FreeError[T, +_, +_]](Morphism2(FreeError lift f(_)))
+    foldMap[S1, FreeError[T, +_, +_]](Morphism2(FreeError `lift` f(_)))
   }
 
   // FIXME: Scala 3.1.4 bug: false unexhaustive match warning

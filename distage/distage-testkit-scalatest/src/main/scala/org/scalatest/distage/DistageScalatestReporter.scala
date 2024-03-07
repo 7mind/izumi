@@ -75,7 +75,7 @@ class DistageScalatestReporter extends TestReporter {
           testName,
           recordedEvents = Vector.empty,
           analysis = Vector.empty,
-          // use .toThrowable instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
+          // use .toThrowable to obtain a zio.FiberFailure instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
           // does not display suppressed exceptions (which is how zio attaches trace)
           throwable = Some(trace.toThrowable),
           duration = Some(duration.toMillis),

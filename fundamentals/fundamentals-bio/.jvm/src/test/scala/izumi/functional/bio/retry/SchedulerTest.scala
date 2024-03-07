@@ -385,7 +385,7 @@ class SchedulerTest extends AnyWordSpec {
         if (iter <= 0) F.pure(acc)
         else {
           (for {
-            now <- F.clock.now(ClockAccuracy.MILLIS)
+            now <- F.clock.nowZoned(ClockAccuracy.MILLIS)
             dec <- makeDecision(now, in)
             res = dec match {
               case _: ControllerDecision.Stop[B] @unchecked => F.pure(acc)

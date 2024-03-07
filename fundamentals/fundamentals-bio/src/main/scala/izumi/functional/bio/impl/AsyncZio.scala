@@ -209,7 +209,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
   @inline override final def sandbox[E, A](r: ZIO[R, E, A]): ZIO[R, Exit.Failure[E], A] = {
     implicit val trace: zio.Trace = Tracer.instance.empty
 
-    r.sandbox.flatMapError(ZIOExit withIsInterrupted ZIOExit.toExit(_))
+    r.sandbox.flatMapError(ZIOExit `withIsInterrupted` ZIOExit.toExit(_))
   }
 
   @inline override final def yieldNow: ZIO[Any, Nothing, Unit] = ZIO.yieldNow(Tracer.instance.empty)
