@@ -62,7 +62,7 @@ object PureconfigInstances extends PureconfigInstances {
 
         case _ =>
           new ConfigReaderWithConfigMeta[A] {
-            val labels: Array[String] = Utils.transformedLabels[m.MirroredElemLabels](fieldMapping).toArray
+            val labels: Array[String] = Utils.transformedLabels[A](fieldMapping).toArray
             val (fieldsMeta, tupleReader) = {
               val (codecs, tupleReader) = readTuple[m.MirroredElemTypes, 0]
               val fieldMeta = ConfigMeta.ConfigMetaCaseClass(
@@ -148,7 +148,7 @@ object PureconfigInstances extends PureconfigInstances {
       new ConfigReaderWithConfigMeta[A] {
         val options: Map[String, ConfigReader[A]] =
           Utils
-            .transformedLabels[m.MirroredElemLabels](fieldMapping)
+            .transformedLabels[A](fieldMapping)
             .zip(deriveForSubtypes[m.MirroredElemTypes, A])
             .toMap
 
