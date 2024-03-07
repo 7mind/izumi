@@ -61,7 +61,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
     val template = message.split("\\{\\}", -1).map(_.replace("\\", "\\\\"))
 
     Entry(
-      Message(StringContext(ArraySeq.unsafeWrapArray(template): _*), messageArgs),
+      Message(StringContext(ArraySeq.unsafeWrapArray(template)*), messageArgs),
       Context(
         ctx,
         DynamicContext(level, threadData, System.currentTimeMillis()),

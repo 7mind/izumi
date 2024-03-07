@@ -8,8 +8,10 @@ import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.nowarn
 import scala.language.reflectiveCalls
 
+@nowarn("msg=reflectiveSelectable")
 class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "handle factory injections" in {

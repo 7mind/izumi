@@ -119,7 +119,6 @@ classpath scanning, like so:
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
-import com.typesafe.config.ConfigFactory
 import distage.ModuleDef
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 
@@ -164,7 +163,7 @@ object MdocTest {
 }
 
 final case class SuiteCtor(construct: () => org.scalatest.Suite)
-implicit def suiteCtor(s: => org.scalatest.Suite) = SuiteCtor(() => s)
+implicit def suiteCtor(s: => org.scalatest.Suite): SuiteCtor = SuiteCtor(() => s)
 
 def __runTest__(suiteCtors: SuiteCtor*) = {
   // remove all previous tests from registry
@@ -211,6 +210,7 @@ The assertion methods are the same as ScalaTest as the base classes extend
 ```scala mdoc:invisible
 // minimal check for that scalatest reference
 import org.scalatest.Assertions
+new Assertions {}
 ```
 
 Let's now create a simple test for our demonstration application:
@@ -234,7 +234,7 @@ class ScoreSimpleTest extends Test {
 
     // Use `Config` from the module in the `Test` class above
     "increase by config star value from DI" in {
-      config: Config =>
+      (config: Config) =>
         val expected = Score(defaultConfig.starValue)
         val actual = Score.addStar(config, Score.zero)
         assert(actual == expected)
@@ -1038,7 +1038,7 @@ abstract class LadderTest extends LeaderboardTest {
 
     // you can also mix arguments and env at the same time
     "assign a higher position in the list to a higher score 2" in {
-      ladder: Ladder[IO] =>
+      (ladder: Ladder[IO]) =>
           for {
             user1  <- rnd[UserId]
             score1 <- rnd[Score]

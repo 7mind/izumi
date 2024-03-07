@@ -117,7 +117,7 @@ def minimalExample = {
   }
 
   Injector[IO]().produceRun(applicationModules) {
-    container: PostgresDocker.Container =>
+    (container: PostgresDocker.Container) =>
       val port = container.availablePorts.first(PostgresDocker.primaryPort)
       IO(println(s"postgres is available on port ${port}"))
   }
@@ -298,7 +298,7 @@ An integration test would use a module that provides the `PostgresServerConfig` 
 ```scala mdoc:to-string
 object PostgresUsingDockerModule extends ModuleDef {
   make[PostgresServerConfig].from {
-    container: PostgresDocker.Container => {
+    (container: PostgresDocker.Container) => {
       val knownAddress = container.availablePorts.first(PostgresDocker.primaryPort)
       PostgresServerConfig(
         host     = knownAddress.hostString,
@@ -338,7 +338,7 @@ class PostgresExampleAppIntegrationTest extends Spec1[IO] with AssertCIO {
   "distage docker" should {
 
     "support integration tests using containers" in {
-      app: PostgresExampleApp =>
+      (app: PostgresExampleApp) =>
         for {
           v <- app.plusOne(1)
           _ <- assertIO(v == 2)
@@ -363,7 +363,7 @@ def postgresDockerIntegrationExample = {
   }
 
   Injector[IO]().produceRun(applicationModules) {
-    app: PostgresExampleApp =>
+    (app: PostgresExampleApp) =>
       app.run
   }
 }
@@ -572,12 +572,12 @@ class NoReuseByMemoizationExampleTest extends Spec1[IO] {
   )
 
   "distage docker" should {
-    "provide a fresh container resource" in { c: PostgresDocker.Container =>
+    "provide a fresh container resource" in { (c: PostgresDocker.Container) =>
       val port = c.availablePorts.first(PostgresDocker.primaryPort)
       IO(println(s"port ${port}"))
     }
 
-    "provide the same resource" in { c: PostgresDocker.Container =>
+    "provide the same resource" in { (c: PostgresDocker.Container) =>
       val port = c.availablePorts.first(PostgresDocker.primaryPort)
       IO(println(s"port ${port}"))
     }

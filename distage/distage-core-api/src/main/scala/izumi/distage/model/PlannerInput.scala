@@ -47,7 +47,7 @@ object PlannerInput {
     *
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph that can be described by `bindings`
     */
-  def apply(bindings: ModuleBase, activation: Activation, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, activation, Roots(root, roots: _*))
+  def apply(bindings: ModuleBase, activation: Activation, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, activation, Roots(root, roots*))
 
   /** Instantiate `T` and the dependencies of `T`, discarding bindings that are unrelated.
     *

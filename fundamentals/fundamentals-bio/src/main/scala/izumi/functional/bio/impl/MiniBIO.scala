@@ -118,7 +118,7 @@ object MiniBIO {
   final case class FlatMap[E, A, +E1 >: E, +B](io: MiniBIO[E, A], f: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
   final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: Exit.Failure[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
 
-  implicit val BIOMiniBIO: IO2[MiniBIO] with BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
+  implicit val BIOMiniBIO: IO2[MiniBIO] & BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
     override def pure[A](a: A): MiniBIO[Nothing, A] = sync(a)
     override def flatMap[E, A, B](r: MiniBIO[E, A])(f: A => MiniBIO[E, B]): MiniBIO[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.forTypedError(v)))

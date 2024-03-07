@@ -242,7 +242,7 @@ final class NEMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * @param key the key to look for
     * @return true if this <code>NEMap</code> has a binding that is equal (as determined by <code>==)</code> to <code>key</code>, false otherwise.
     */
-  def contains(key: K): Boolean = toMap.contains(key)
+  infix def contains(key: K): Boolean = toMap.contains(key)
 
   /**
     * Copies entries of this <code>NEMap</code> to an array. Fills the given array <code>arr</code> with entries of this <code>NEMap</code>. Copying

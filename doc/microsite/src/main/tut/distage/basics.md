@@ -60,6 +60,16 @@ If you're using Scala 3 you **must** enable `-Yretain-trees` for this library to
 scalacOptions += "-Yretain-trees"
 ```
 
+If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and either `-Xsource:2.13` or `-Xsource:3` for this library to work correctly:
+
+```scala
+// REQUIRED options for Scala 2.12
+scalacOptions += "-Ypartial-unification"
+scalacOptions += "-Xsource:2.13" // either this
+// scalacOptions += "-Xsource:3" // or this
+```
+
+
 ### Hello World example
 
 Suppose we have an abstract `Greeter` component, and some other components that depend on it:
@@ -189,7 +199,7 @@ def negateByer(otherByer: Byer): Byer = {
 new ModuleDef {
   make[Byer].named("byer-1").from[PrintByer]
   make[Byer].named("byer-2").from {
-    otherByer: Byer @Id("byer-1") =>
+    (otherByer: Byer @Id("byer-1")) =>
       negateByer(otherByer)
   }
 }
@@ -353,7 +363,7 @@ def TestModule = new ModuleDef {
 def runWith(activation: Activation) = {
   runner.unsafeRun {
     Injector().produceRun(TestModule, activation) {
-      greeter: Greeter => greeter.hello("$USERNAME")
+      (greeter: Greeter) => greeter.hello("$USERNAME")
     }
   }
 }
@@ -763,7 +773,7 @@ If we rewire the app without `SubtractionModule`, it will expectedly lose the ab
 
 ```scala mdoc:override:to-string
 Injector().HACK_OVERRIDE_produceRun(AppModule -- SubtractionModule.keys) {
-  app: App =>
+  (app: App) =>
     app.interpret("10 - 1")
 }
 ```
@@ -800,7 +810,7 @@ def incrementWithDep = new ModuleDef {
 
   // mutators may use other components and add additional dependencies
   modify[Int].by(_.flatAp {
-    (s: String, few: Int @Id("a-few")) => currentInt: Int =>
+    (s: String, few: Int @Id("a-few")) => (currentInt: Int) =>
       s.length + few + currentInt
   }) // 5 + 2 + 3
 }
@@ -913,7 +923,7 @@ def kvStoreModule = new ModuleDef {
 
 val io = Injector[Task]()
   .produceRun[String](kvStoreModule) {
-    kv: KVStore[IO] =>
+    (kv: KVStore[IO]) =>
       for {
         _    <- kv.put("apple", "pie")
         res1 <- kv.get("apple")
@@ -1216,7 +1226,7 @@ def module = new ModuleDef {
 }
 
 Injector().produceRun(module) {
-  plusedInt: PlusedInt =>
+  (plusedInt: PlusedInt) =>
     plusedInt.result()
 }
 ```
@@ -1268,7 +1278,7 @@ a trait from it instead. Example:
 Injector().produceRun(module overriddenBy new ModuleDef {
   make[PlusedInt].fromTrait[OverridenPlusedIntImpl]
 }) {
-  plusedInt: PlusedInt =>
+  (plusedInt: PlusedInt) =>
     plusedInt.result()
 }
 ```

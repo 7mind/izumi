@@ -5,12 +5,12 @@ object V {
   // foundation
   val collection_compat = "2.11.0"
 
-  val kind_projector = "0.13.2"
+  val kind_projector = "0.13.3"
 
   val scalatest = "3.2.18"
 
   val cats = "2.8.0"
-  val cats_effect = "3.5.3"
+  val cats_effect = "3.5.4"
 
   val discipline = "1.5.1"
   val discipline_scalatest = "2.2.0"
@@ -31,13 +31,13 @@ object V {
   val scala_java_time = "2.5.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.165"
+  val classgraph = "4.8.167"
   val slf4j = "2.0.9"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
   val bytebuddy = "1.14.12"
-  val docker_java = "3.3.4"
+  val docker_java = "3.3.6"
 
   // microsite-only
   val doobie = "1.0.0-RC2"

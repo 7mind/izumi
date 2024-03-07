@@ -293,7 +293,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   }
 
   "check subcontext submodule fails for missing bindings" in {
-    val Some(issues) = PlanCheck.runtime.checkApp(Fixture4.TestMainBad).issues
+    val Some(issues) = PlanCheck.runtime.checkApp(Fixture4.TestMainBad).issues: @unchecked
     assert(issues.size == 1)
     assert(issues.forall(_.isInstanceOf[PlanIssue.MissingImport]))
     assert(issues.forall(_.asInstanceOf[PlanIssue.MissingImport].key == DIKey[Fixture4.MissingDep]))

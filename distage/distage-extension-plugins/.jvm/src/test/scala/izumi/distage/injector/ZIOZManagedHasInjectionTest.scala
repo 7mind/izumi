@@ -10,6 +10,9 @@ import org.scalatest.wordspec.AnyWordSpec
 import zio.*
 import zio.managed.ZManaged
 
+import scala.annotation.nowarn
+
+@nowarn("msg=reflectiveSelectable")
 class ZIOZManagedHasInjectionTest extends AnyWordSpec with ScalatestGuards {
 
   protected def unsafeRun[E, A](eff: => ZIO[Any, E, A]): A = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(eff).getOrThrowFiberFailure())
@@ -48,7 +51,7 @@ class ZIOZManagedHasInjectionTest extends AnyWordSpec with ScalatestGuards {
 
   type HasInt = Int
   type HasX[B] = B
-  type HasIntBool = HasInt with HasX[Boolean]
+  type HasIntBool = HasInt & HasX[Boolean]
 
   def trait1(d1: Dependency1): Trait1 = new Trait1 { override def dep1: Dependency1 = d1 }
 

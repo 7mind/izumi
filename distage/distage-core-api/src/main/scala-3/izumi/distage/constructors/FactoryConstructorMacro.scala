@@ -3,8 +3,8 @@ package izumi.distage.constructors
 import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
+import izumi.fundamentals.reflection.ReflectiveCall
 
-import scala.annotation.experimental
 import scala.collection.immutable.{ArraySeq, Queue}
 import scala.collection.mutable
 import scala.quoted.{Expr, Quotes, Type}
@@ -12,7 +12,6 @@ import scala.util.control.NonFatal
 
 object FactoryConstructorMacro {
 
-  @experimental
   def make[R: Type](using qctx: Quotes): Expr[FactoryConstructor[R]] = try {
     import qctx.reflect.*
 
@@ -58,25 +57,33 @@ object FactoryConstructorMacro {
 
         val name: String = s"${resultTpeSyms.map(_.name).mkString("With")}FactoryAutoImpl"
         var methodSymbols: List[Symbol] = null
-        val clsSym = Symbol.newClass(
-          parent = lamSym,
-          name = name,
-          parents = factoryContext.parentTypesParameterized,
-          decls = {
-            s =>
-              val methodSyms = factoryContext.methodDecls.generateDeclSymbols(s)
-              methodSymbols = methodSyms
-              methodSyms
-          },
-          selfType = None,
-        )
+        val clsSym = {
+          // def newClass(parent: Symbol, name: String, parents: List[TypeRepr], decls: Symbol => List[Symbol], selfType: Option[TypeRepr]): Symbol
+          ReflectiveCall.call[Symbol](
+            Symbol,
+            "newClass",
+            lamSym,
+            name,
+            factoryContext.parentTypesParameterized,
+            {
+              (s: Symbol) =>
+                val methodSyms = factoryContext.methodDecls.generateDeclSymbols(s)
+                methodSymbols = methodSyms
+                methodSyms
+            },
+            None,
+          )
+        }
 
         val defs = factoryProductData.zip(methodSymbols).map {
           case (factoryProductData, methodSym) =>
             factoryUtil.implementFactoryMethod(lambdaArgs, factoryProductData, methodSym, indexShift)
         }
 
-        val clsDef = ClassDef(clsSym, parents.toList, body = defs)
+        val clsDef = {
+//          ClassDef(clsSym, parents.toList, body = defs)
+          ReflectiveCall.call[ClassDef](ClassDef, "apply", clsSym, parents.toList, defs)
+        }
         val newCls = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
         val block = Block(List(clsDef), newCls)
         Typed(block, resultTpeTree)

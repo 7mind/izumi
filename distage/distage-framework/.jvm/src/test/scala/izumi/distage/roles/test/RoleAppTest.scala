@@ -248,10 +248,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val definition = new ResourcesPluginBase {
         make[IntegrationResource0[Identity]]
         make[TestResource[Identity]].using[IntegrationResource0[Identity]]
-        make[TestResource[Identity] with AutoCloseable].using[IntegrationResource0[Identity]]
+        make[TestResource[Identity] & AutoCloseable].using[IntegrationResource0[Identity]]
         many[TestResource[Identity]]
           .ref[TestResource[Identity]]
-          .ref[TestResource[Identity] with AutoCloseable]
+          .ref[TestResource[Identity] & AutoCloseable]
         make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
         make[XXX_ResourceEffectsRecorder[Identity]].fromValue(initCounterIdentity)
       } ++

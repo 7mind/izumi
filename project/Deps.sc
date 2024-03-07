@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.99`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.100`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -148,9 +148,9 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.18")
-  final val scala213 = ScalaVersion("2.13.12")
-  final val scala300 = ScalaVersion("3.2.2")
+  final val scala212 = ScalaVersion("2.12.19")
+  final val scala213 = ScalaVersion("2.13.13")
+  final val scala300 = ScalaVersion("3.4.0")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -286,27 +286,45 @@ object Izumi {
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
       )
 
+      val scala2Wconf = Seq(
+        "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+      )
+      val scala3Wconf = Seq(
+        "-Wconf:any:verbose",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+      )
+
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
-          SettingKey(Some(scala212), None) := Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options,
-          SettingKey(Some(scala213), None) := Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const](
-            "-Wunused:-synthetics"
-          ),
-          SettingKey(Some(scala300), None) := Seq[Const](
-            "-Yretain-trees", // FIXME required
-            "-language:3.2",
-          ) ++ Defaults.Scala3Options,
+          SettingKey(Some(scala212), None) :=
+            Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options,
+          SettingKey(Some(scala213), None) :=
+            Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics"),
+          SettingKey(Some(scala300), None) :=
+            Seq[Const](
+              "-Yretain-trees", // FIXME required
+              "-language:3.4",
+            ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
+        ),
+        "scalacOptions" ++= Seq(
+          SettingKey(Some(scala300), None) := scala3Wconf,
+          SettingKey.Default := scala2Wconf,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
         "scalacOptions" += "-Wconf:msg=legacy-binding:silent",
         "scalacOptions" += "-Wconf:msg=nowarn:silent",
-        "scalacOptions" += "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
-        "scalacOptions" += "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "scalacOptions" += "-Wconf:msg=package.object.inheritance:silent",
-        "scalacOptions" += "-Wconf:cat=lint-eta-sam:silent",
         "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
         "scalacOptions" ++= Seq(
           """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,

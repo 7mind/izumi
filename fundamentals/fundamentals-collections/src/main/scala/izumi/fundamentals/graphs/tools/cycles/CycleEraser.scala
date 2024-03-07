@@ -19,7 +19,7 @@ final class CycleEraser[N](predecessorsMatrix: IncidenceMatrix[N], breaker: Loop
 
     if (noPreds.isEmpty) {
       if (hasPreds.isEmpty) {
-        Right(IncidenceMatrix(output.toSeq: _*))
+        Right(IncidenceMatrix(output.toSeq*))
       } else {
         val asMatrix = IncidenceMatrix(hasPreds.view.mapValues(_.toSet).toMap)
 

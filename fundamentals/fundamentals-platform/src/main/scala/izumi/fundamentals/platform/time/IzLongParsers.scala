@@ -34,13 +34,13 @@ final class IzLongParsers(private val t: Long) extends AnyVal {
     OffsetDateTime.ofInstant(instant, TZ_UTC)
   }
 
-  @deprecated("use asEpochSecondZonedsUtc")
+  @deprecated("use asEpochSecondUtcZoned")
   def asEpochSecondsUtc: ZonedDateTime = {
     val instant = Instant.ofEpochSecond(t)
     ZonedDateTime.ofInstant(instant, TZ_UTC)
   }
 
-  @deprecated("use asEpochMillisZonedUtc")
+  @deprecated("use asEpochMillisUtcZoned")
   def asEpochMillisUtc: ZonedDateTime = {
     val instant = Instant.ofEpochMilli(t)
     ZonedDateTime.ofInstant(instant, TZ_UTC)
