@@ -16,14 +16,14 @@ object V {
   val discipline_scalatest = "2.2.0"
 
   val zio = "2.0.21"
-  val zio_interop_cats = "23.0.0.8"
+  val zio_interop_cats = "23.1.0.1"
 
   val monix = "3.4.0"
   val monix_bio = "1.2.0"
 
   val circe = "0.14.6"
   val circe_derivation = "0.13.0-M5"
-  val pureconfig = "0.17.4"
+  val pureconfig = "0.17.6"
   val magnolia = "1.1.8"
   val jawn = "1.5.1"
 
