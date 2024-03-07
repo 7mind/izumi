@@ -122,7 +122,7 @@ package object bio extends Syntax2 {
     type CursedPower <: Functor2[Nothing]
     val cursedManifestation: CursedPower = null.asInstanceOf[CursedPower]
 
-    implicit final def CursedAttachPrimitives2[FR[-_, +_, +_]](@unused bearerOfTheCurse: CursedPower)(implicit Primitives: Primitives2[FR]): Primitives.type =
+    implicit final def CursedAttachPrimitives2[F[+_, +_]](@unused bearerOfTheCurse: CursedPower)(implicit Primitives: Primitives2[F]): Primitives.type =
       Primitives
   }
 
