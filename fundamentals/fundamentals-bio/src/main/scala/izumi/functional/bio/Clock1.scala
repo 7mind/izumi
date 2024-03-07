@@ -6,7 +6,7 @@ import izumi.fundamentals.platform.functional.Identity
 
 import java.time.temporal.{ChronoUnit, TemporalUnit}
 import java.time.{LocalDateTime, OffsetDateTime, ZoneId, ZonedDateTime}
-import scala.annotation.unused
+import scala.annotation.{nowarn, unused}
 import scala.language.implicitConversions
 
 trait Clock1[F[_]] extends DivergenceHelper {
@@ -104,6 +104,7 @@ object Clock1 extends LowPriorityClockInstances {
   }
 
   sealed trait ClockAccuracy
+  @nowarn("msg=deprecated")
   object ClockAccuracy {
     @deprecated("Use ClockAccuracy.RAW (but better set the limit explicitly!)")
     private[izumi] case object DEFAULT extends ClockAccuracy

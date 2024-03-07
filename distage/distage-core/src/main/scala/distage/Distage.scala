@@ -42,6 +42,9 @@ trait Distage {
   type With[T] = model.definition.With[T]
   type impl = model.definition.impl
 
+  type Identity[+A] = izumi.fundamentals.platform.functional.Identity[A]
+  val Identity: izumi.fundamentals.platform.functional.Identity.type = izumi.fundamentals.platform.functional.Identity
+
   type Tag[T] = izumi.reflect.Tag[T]
   val Tag: izumi.reflect.Tag.type = izumi.reflect.Tag
 

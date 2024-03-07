@@ -131,7 +131,7 @@ object LifecycleAdapters {
   object LifecycleTag extends LifecycleTagLowPriority {
     @inline def apply[A: LifecycleTag]: LifecycleTag[A] = implicitly
 
-    implicit def resourceTag[R <: Lifecycle[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: LifecycleTag[R with Lifecycle[F0, A0]] { type F[X] = F0[X]; type A = A0 } = {
+    implicit def resourceTag[R <: Lifecycle[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: LifecycleTag[R & Lifecycle[F0, A0]] { type F[X] = F0[X]; type A = A0 } = {
       new LifecycleTag[R] {
         type F[X] = F0[X]
         type A = A0
@@ -161,7 +161,7 @@ object LifecycleAdapters {
       E0 >: DottyNothing: Tag,
       A0 <: A1: Tag,
       A1,
-    ]: ZIOEnvLifecycleTag[R1 with Lifecycle[F0[R0, E0, _], A0], A1] {
+    ]: ZIOEnvLifecycleTag[R1 & Lifecycle[F0[R0, E0, _], A0], A1] {
       type R = R0
       type E = E0
       type A = A0
@@ -189,7 +189,7 @@ object LifecycleAdapters {
       R0: ZEnvConstructor,
       A0 <: A1: Tag,
       A1,
-    ]: ZIOEnvLifecycleTag[R1 with Lifecycle[F0[R0, DottyNothing, _], A0], A1] {
+    ]: ZIOEnvLifecycleTag[R1 & Lifecycle[F0[R0, DottyNothing, _], A0], A1] {
       type R = R0
       type E = DottyNothing
       type A = A0

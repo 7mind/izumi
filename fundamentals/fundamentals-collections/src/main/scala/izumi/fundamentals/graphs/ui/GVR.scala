@@ -26,7 +26,7 @@
 //
 //    val nodes: util.List[LinkSource] = input.successors.links.map {
 //      case (p, s) =>
-//        node(NS.show(p)).link(s.map(NS.show).toSeq: _*).asInstanceOf[LinkSource]
+//        node(NS.show(p)).link(s.map(NS.show).toSeq*).asInstanceOf[LinkSource]
 //    }.toList.asJava
 //
 //    val fg = Color.rgb("dddddd")

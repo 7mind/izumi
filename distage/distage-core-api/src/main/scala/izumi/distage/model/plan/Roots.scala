@@ -33,7 +33,7 @@ sealed trait Roots {
 
 object Roots {
   def apply(root: DIKey, roots: DIKey*): Roots = {
-    Roots.Of(NESet(root, roots: _*))
+    Roots.Of(NESet(root, roots*))
   }
   def apply(roots: NESet[? <: DIKey]): Roots = {
     Roots.Of(roots.widen)

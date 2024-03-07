@@ -175,7 +175,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     * @param elem the element to look for
     * @return true if this <code>NEList</code> has an element that is equal (as determined by <code>==)</code> to <code>elem</code>, false otherwise.
     */
-  def contains(elem: Any): Boolean = toList.contains(elem)
+  infix def contains(elem: Any): Boolean = toList.contains(elem)
 
   /**
     * Indicates whether this <code>NEList</code> contains a given <code>Seq</code> as a slice.

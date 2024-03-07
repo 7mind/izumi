@@ -91,7 +91,7 @@ object Log {
     }
 
     def apply(args: (String, AnyEncoded)*)(implicit dummy: DummyImplicit): CustomContext = {
-      CustomContext.fromMap(Map(args: _*))
+      CustomContext.fromMap(Map(args*))
     }
 
     val empty: CustomContext = CustomContext(Nil)
@@ -180,7 +180,7 @@ object Log {
         val thatHead = thatHeads.head
 
         val parts = (thisInit :+ (thisTail + thatHead)) ++ thatTail
-        Message(StringContext(parts: _*), args ++ that.args)
+        Message(StringContext(parts*), args ++ that.args)
       }
     }
     def +(that: Message): Message = ++(that)

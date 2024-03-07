@@ -142,7 +142,7 @@ class PlanVerifier(
               val ac = ActivationChoices(currentActivation)
 
               val withoutCurrentActivations = {
-                val withoutImpossibleActivationsIter = ops.iterator.filter(ac allValid _._2)
+                val withoutImpossibleActivationsIter = ops.iterator.filter(ac `allValid` _._2)
                 withoutImpossibleActivationsIter.map {
                   case (op, activations) =>
                     (op, activations diff currentActivation, activations)
@@ -201,7 +201,7 @@ class PlanVerifier(
               } yield {
                 allVisited.add((key, currentActivation))
 
-                val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac allValid _._2).flatMap(m => depsOf(execOpIndex)(m._1)).toSeq
+                val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac `allValid` _._2).flatMap(m => depsOf(execOpIndex)(m._1)).toSeq
 
                 val goNext = next.iterator.map {
                   case (nextActivation, nextDeps) =>
@@ -337,7 +337,7 @@ class PlanVerifier(
     val duplicateAxisMap = ops
       .groupBy(_._3)
       .filter(_._2.sizeIs > 1)
-      .view.mapValues(NESet unsafeFrom _.map(_._1.origin.value))
+      .view.mapValues(NESet `unsafeFrom` _.map(_._1.origin.value))
       .toMap
 
     NEMap

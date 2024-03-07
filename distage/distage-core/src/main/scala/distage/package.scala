@@ -38,6 +38,9 @@ package object distage extends Distage {
   override type With[T] = model.definition.With[T]
   override type impl = model.definition.impl
 
+  override type Identity[+A] = izumi.fundamentals.platform.functional.Identity[A]
+  override val Identity: izumi.fundamentals.platform.functional.Identity.type = izumi.fundamentals.platform.functional.Identity
+
   override type Tag[T] = izumi.reflect.Tag[T]
   override val Tag: izumi.reflect.Tag.type = izumi.reflect.Tag
 

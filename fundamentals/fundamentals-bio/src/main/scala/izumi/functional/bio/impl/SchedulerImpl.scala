@@ -31,7 +31,7 @@ open class SchedulerImpl[F[+_, +_]: Temporal2](implicit clock: Clock2[F]) extend
   )(repeater: (A => F[E, B]) => F[E, B]
   ): F[E, B] = {
     (for {
-      now <- F.clock.now(ClockAccuracy.MILLIS)
+      now <- F.clock.nowZoned(ClockAccuracy.MILLIS)
       dec <- makeDecision(now, in)
       next = dec match {
         case ControllerDecision.Repeat(_, interval, action) =>
@@ -48,14 +48,14 @@ open class SchedulerImpl[F[+_, +_]: Temporal2](implicit clock: Clock2[F]) extend
       F.redeem[E, A, E2, A](r)(
         err = error =>
           F.flatMap[E2, ZonedDateTime, A](
-            clock.now(ClockAccuracy.MILLIS)
+            clock.nowZoned(ClockAccuracy.MILLIS)
           )(now => if (now.isBefore(maxTime)) loop(maxTime) else orElse(error)),
         succ = F.pure(_),
       )
     }
 
     F.flatMap[E2, ZonedDateTime, A](
-      clock.now(ClockAccuracy.MILLIS)
+      clock.nowZoned(ClockAccuracy.MILLIS)
     )(now => loop(maxTime = now.plus(duration.toMillis, ChronoUnit.MILLIS)))
   }
 

@@ -103,7 +103,7 @@ class ExampleService(logger: IzLogger) {
     final case class NoInstance(x: Int)
     final case class YesInstance(x: Int)
     object YesInstance {
-      implicit val codec: LogstageCodec[YesInstance] = _ write _.x
+      implicit val codec: LogstageCodec[YesInstance] = _ `write` _.x
     }
     sealed trait Sealed
     object Sealed {

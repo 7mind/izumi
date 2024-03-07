@@ -23,7 +23,7 @@ object Mutex2 {
   }
 
   implicit final class Mutex2Ops[F[+_, +_]](private val self: Mutex2[F]) extends AnyVal {
-    def imapK[G[+_, +_]](fg: F Isomorphism2 G): Mutex2[G] = new Mutex2[G] {
+    def imapK[G[+_, +_]](fg: F `Isomorphism2` G): Mutex2[G] = new Mutex2[G] {
       override def bracket[E, A](f: G[E, A]): G[E, A] = fg.to(self.bracket(fg.from(f)))
       override def bracket_[E, A](f: G[E, A]): G[E, Unit] = fg.to(self.bracket_(fg.from(f)))
     }

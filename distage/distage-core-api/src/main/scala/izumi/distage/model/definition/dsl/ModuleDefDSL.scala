@@ -283,12 +283,12 @@ object ModuleDefDSL {
       fromResource(ClassConstructor[R])
     }
 
-    final def fromResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R]): AfterBind = {
+    final def fromResource[R](instance: R & Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R]): AfterBind = {
       import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
     }
 
-    final def fromResource[R](function: Functoid[R with Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R], d: DummyImplicit): AfterBind = {
+    final def fromResource[R](function: Functoid[R & Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R], d: DummyImplicit): AfterBind = {
       import tag.*
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
     }
@@ -405,13 +405,13 @@ object ModuleDefDSL {
     final def addResource[R <: Lifecycle[LifecycleF, T]: ClassConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
       addResource[R](ClassConstructor[R])
 
-    final def addResource[R](instance: R with Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def addResource[R](instance: R & Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag.*
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
     }
 
     final def addResource[R](
-      function: Functoid[R with Lifecycle[LifecycleF, T]]
+      function: Functoid[R & Lifecycle[LifecycleF, T]]
     )(implicit tag: LifecycleTag[R],
       pos: CodePositionMaterializer,
       d: DummyImplicit,
@@ -491,7 +491,7 @@ object ModuleDefDSL {
 
     implicit final class MakeFromZIOZEnv[T, AfterBind](protected val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal {
 
-      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](effect: ZIO[Scope with R, E, I]): AfterBind = {
+      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](effect: ZIO[Scope & R, E, I]): AfterBind = {
         val provider: Functoid[Lifecycle.FromZIO[Any, E, I]] = ZEnvConstructor[R]
           .map(r => effect.provideSomeEnvironment[Scope](_.unionAll[R](r)))
           .map(Lifecycle.fromZIO[Any](_))
@@ -499,7 +499,7 @@ object ModuleDefDSL {
         dsl.fromResource(provider)
       }
 
-      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZIO[Scope with R, E, I]]): AfterBind = {
+      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZIO[Scope & R, E, I]]): AfterBind = {
         val provider: Functoid[Lifecycle.FromZIO[Any, E, I]] = function
           .map2(ZEnvConstructor[R])((zio, r) => zio.provideSomeEnvironment[Scope](_.unionAll[R](r)))
           .map(Lifecycle.fromZIO[Any](_))

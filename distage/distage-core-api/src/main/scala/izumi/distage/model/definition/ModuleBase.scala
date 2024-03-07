@@ -127,7 +127,7 @@ object ModuleBase extends ModuleBaseLowPriorityInstances {
       T.make(module.bindings.filterNot(_.key == ignored))
     }
 
-    def overriddenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
+    infix def overriddenBy[T <: ModuleBase](that: ModuleBase)(implicit T: ModuleMake.Aux[S, T]): T = {
       T.make(overrideImpl(module.iterator, that.iterator).toSet)
     }
 
