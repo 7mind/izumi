@@ -31,9 +31,6 @@ object Root extends RootInstancesLowPriority1 {
 sealed trait RootInstancesLowPriority1 extends RootInstancesLowPriority2 {
   @inline implicit final def ConvertFromTemporal[F[+_, +_]](implicit Temporal: NotPredefined.Of[Temporal2[F]]): Predefined.Of[Error2[F] & S2] =
     Predefined(S2(Temporal.InnerF))
-
-  @inline implicit final def AttachConcurrent[F[+_, +_]](@unused self: Concurrent2[F])(implicit Concurrent: Concurrent2[F]): Concurrent.type =
-    Concurrent
 }
 
 sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
