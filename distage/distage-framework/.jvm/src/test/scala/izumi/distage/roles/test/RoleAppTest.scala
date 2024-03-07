@@ -5,6 +5,7 @@ import cats.effect.unsafe.IORuntime
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
+import distage.config.AppConfig
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
@@ -15,6 +16,7 @@ import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.DebugProperties
+import izumi.distage.roles.launcher.ActivationParser
 import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
@@ -179,6 +181,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
+        parser = new ActivationParser {
+          override def parseActivation(config: AppConfig): Activation = ???
+        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -216,6 +221,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
+        parser = new ActivationParser {
+          override def parseActivation(config: AppConfig): Activation = ???
+        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -240,10 +248,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val definition = new ResourcesPluginBase {
         make[IntegrationResource0[Identity]]
         make[TestResource[Identity]].using[IntegrationResource0[Identity]]
-        make[TestResource[Identity] with AutoCloseable].using[IntegrationResource0[Identity]]
+        make[TestResource[Identity] & AutoCloseable].using[IntegrationResource0[Identity]]
         many[TestResource[Identity]]
           .ref[TestResource[Identity]]
-          .ref[TestResource[Identity] with AutoCloseable]
+          .ref[TestResource[Identity] & AutoCloseable]
         make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
         make[XXX_ResourceEffectsRecorder[Identity]].fromValue(initCounterIdentity)
       } ++
@@ -257,6 +265,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
+        parser = new ActivationParser {
+          override def parseActivation(config: AppConfig): Activation = ???
+        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -289,25 +300,27 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         TestEntrypoint.main(Array("-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
       }
 
-      val cwCfg = cfg("configwriter", version)
+      val cwCfg = cfg("configwriter-full", version)
       val cwCfgMin = cfg("configwriter-minimized", version)
 
       assert(cwCfg.exists(), s"$cwCfg exists")
       assert(cwCfgMin.exists(), s"$cwCfgMin exists")
       assert(cwCfg.length() > cwCfgMin.length())
 
-      val role0Cfg = cfg("testrole00", version)
+      val role0Cfg = cfg("testrole00-full", version)
       val role0CfgMin = cfg("testrole00-minimized", version)
 
       assert(role0Cfg.exists(), s"$role0Cfg exists")
       assert(role0CfgMin.exists(), s"$role0CfgMin exists")
       assert(role0Cfg.length() > role0CfgMin.length())
 
-      val role0CfgMinParsed = ConfigFactory.parseString(new String(Files.readAllBytes(role0CfgMin.toPath), UTF_8))
+      val cfgContent = new String(Files.readAllBytes(role0CfgMin.toPath), UTF_8)
+      val role0CfgMinParsed = ConfigFactory.parseString(cfgContent)
 
       assert(!role0CfgMinParsed.hasPath("unrequiredEntry"))
       assert(!role0CfgMinParsed.hasPath("logger"))
       assert(!role0CfgMinParsed.hasPath("listconf"))
+      assert(!role0CfgMinParsed.hasPath("testservice.unrequiredEntry"))
 
       assert(role0CfgMinParsed.hasPath("integrationOnlyCfg"))
       assert(role0CfgMinParsed.hasPath("integrationOnlyCfg2"))
@@ -316,11 +329,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role0CfgMinParsed.hasPath("testservice"))
 
       assert(role0CfgMinParsed.getString("testservice2.strval") == "xxx")
-      assert(role0CfgMinParsed.getString("testservice.overridenInt") == "111")
-      assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 265)
-      assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List("111", "222"))
+      assert(role0CfgMinParsed.getString("testservice.overridenInt") == "555")
 
-      val role4Cfg = cfg("testrole04", version)
+      // ConfigWriter DOES NOT consider system properties!
+      assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 222)
+      assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List(1, 2, 3))
+
+      val role4Cfg = cfg("testrole04-full", version)
       val role4CfgMin = cfg("testrole04-minimized", version)
 
       assert(role4Cfg.exists(), s"$role4Cfg exists")
@@ -387,9 +402,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name -> "true",
         DebugProperties.`izumi.distage.roles.activation.warn-unset`.name -> "false",
       ) {
-        val checkTestGoodResouce = getClass.getResource("/check-test-good.conf").getPath
-        new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
-//        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodResouce, ":" + StaticTestRole.id))
+        val checkTestGoodRes = getClass.getResource("/check-test-good.conf").getPath
+        val customRoleConfigRes = getClass.getResource("/custom-role.conf").getPath
+        new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id, "-c", customRoleConfigRes))
+//        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id))
       }
     }
   }

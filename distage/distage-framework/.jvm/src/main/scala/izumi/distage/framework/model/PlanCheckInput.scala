@@ -1,8 +1,8 @@
 package izumi.distage.framework.model
 
 import distage.Injector
-import izumi.distage.framework.services.ConfigLoader
-import izumi.distage.framework.services.ConfigLoader.ConfigLocation
+import izumi.distage.framework.services.ConfigMerger.ConfigMergerImpl
+import izumi.distage.framework.services.{ConfigArgsProvider, ConfigLoader, ConfigLocationProvider}
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.reflection.DIKey
@@ -22,11 +22,17 @@ final case class PlanCheckInput[F[_]](
   bsPlugins: LoadedPlugins,
 )
 object PlanCheckInput {
+  private val emptyConfigArgs = ConfigArgsProvider.const(ConfigLoader.Args(None, List.empty, alwaysIncludeReferenceRoleConfigs = true))
+
   def apply[F[_]](
     module: ModuleBase,
     roots: Roots,
     roleNames: Set[String] = Set.empty,
-    configLoader: ConfigLoader = new ConfigLoader.LocalFSImpl(IzLogger(), ConfigLocation.Default, ConfigLoader.Args.empty),
+    configLoader: ConfigLoader = {
+      val logger = IzLogger()
+      val merger = new ConfigMergerImpl(logger)
+      new ConfigLoader.LocalFSImpl(logger, merger, ConfigLocationProvider.Default, emptyConfigArgs)
+    },
     appPlugins: LoadedPlugins = LoadedPlugins.empty,
     bsPlugins: LoadedPlugins = LoadedPlugins.empty,
   )(implicit effectType: TagK[F],

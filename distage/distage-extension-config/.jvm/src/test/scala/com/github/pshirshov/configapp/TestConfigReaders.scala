@@ -11,7 +11,7 @@ case class MapCaseClass(mymap: Map[String, HostPort])
 
 case class ListCaseClass(mylist: IndexedSeq[ListSet[Wrapper[HostPort]]])
 
-case class OptionCaseClass(optInt: Option[Int])
+case class OptionCaseClass(optInt: Option[Int], optCustomObject: Option[NestedObject])
 
 case class BackticksCaseClass(`boo-lean`: Boolean)
 
@@ -20,9 +20,9 @@ case class SealedCaseClass(sealedTrait1: SealedTrait1)
 case class TupleCaseClass(tuple: (Int, String, Boolean, Option[Either[Boolean, List[String]]]))
 
 case class CustomCaseClass(
-  customObject: CustomObject,
-  mapCustomObject: Map[String, CustomObject],
-  mapListCustomObject: Map[String, List[CustomObject]],
+  customObject: CustomCodecObject,
+  mapCustomObject: Map[String, CustomCodecObject],
+  mapListCustomObject: Map[String, List[CustomCodecObject]],
 )
 
 case class PrivateCaseClass(
@@ -37,12 +37,14 @@ case class PartiallyPrivateCaseClass(
   val customFieldName = `private-custom-field-name`
 }
 
-case class CustomObject(value: Int)
-object CustomObject {
-  implicit val pureconfigReader: ConfigReader[CustomObject] = ConfigReader.fromStringOpt {
-    case "eaaxacaca" => Some(CustomObject(453))
-    case "a" => Some(CustomObject(45))
-    case _ => Some(CustomObject(1))
+case class NestedObject(value: Int)
+
+case class CustomCodecObject(value: Int)
+object CustomCodecObject {
+  implicit val pureconfigReader: ConfigReader[CustomCodecObject] = ConfigReader.fromStringOpt {
+    case "eaaxacaca" => Some(CustomCodecObject(453))
+    case "a" => Some(CustomCodecObject(45))
+    case _ => Some(CustomCodecObject(1))
   }
 }
 
@@ -60,6 +62,10 @@ object SealedTrait2 {
 
 case class Wrapper[A](wrap: A)
 case class Service[A](conf: A)
+
+case class AnyValClass(anyValInt: AnyValInt)
+
+final class AnyValInt(val int: Int) extends AnyVal
 
 object TestConfigReaders {
   final val mapDefinition = PlannerInput.everything(new ConfigModuleDef {
@@ -106,4 +112,11 @@ object TestConfigReaders {
     make[Service[PartiallyPrivateCaseClass]]
     makeConfig[PartiallyPrivateCaseClass]("PartiallyPrivateCaseClass")
   })
+
+  // Derivation for AnyVals is not supported on Scala 3, requires a custom macro / library like
+  // https://github.com/softwaremill/tapir/blob/84e4b3cb3bb209ac6c4fde3aecb13ca71afe6609/core/src/main/scala-3/sttp/tapir/internal/CodecValueClassMacro.scala
+//  final val anyvalCodecDefinition = PlannerInput.everything(new ConfigModuleDef {
+//    make[Service[AnyValClass]]
+//    makeConfig[AnyValClass]("AnyValClass")
+//  })
 }

@@ -8,8 +8,10 @@ import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.nowarn
 import scala.language.reflectiveCalls
 
+@nowarn("msg=reflectiveSelectable")
 class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "handle factory injections" in {
@@ -17,7 +19,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[Factory]
-      make[Dependency]
+      makeTrait[Dependency]
       makeFactory[OverridingFactory]
       makeFactory[AssistedFactory]
       makeFactory[AbstractFactory]
@@ -74,7 +76,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[NamedAssistedFactory]
-      make[Dependency]
+      makeTrait[Dependency]
       make[Dependency].named("special").from(SpecialDep())
       make[Dependency].named("veryspecial").from(VerySpecialDep())
     })
@@ -100,7 +102,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[MixedAssistendNonAssisted]
-      make[Dependency]
+      makeTrait[Dependency]
     })
 
     val injector = mkInjector()
@@ -239,7 +241,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency]
+      makeTrait[Dependency]
       make[TestClass]
       makeFactory[Factory]
     })
@@ -290,7 +292,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import FactoryCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency]
+      makeTrait[Dependency]
       make[TestClass]
       makeFactory[AbstractClassFactory]
     })

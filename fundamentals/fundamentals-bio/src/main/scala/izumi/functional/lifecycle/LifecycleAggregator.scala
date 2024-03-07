@@ -46,7 +46,7 @@ final class LifecycleAggregator[F[+_, +_], E](
         .map(_._2)
         .foldLeft(F.unit) {
           // use `guarantee` to make all finalizers execute even if previous finalizer failed
-          _ guarantee _.catchAll {
+          _ `guarantee` _.catchAll {
             case e: Throwable => F.terminate(e)
             case e => F.terminate(TypedError(e))
           }

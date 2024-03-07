@@ -60,6 +60,16 @@ If you're using Scala 3 you **must** enable `-Yretain-trees` for this library to
 scalacOptions += "-Yretain-trees"
 ```
 
+If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and either `-Xsource:2.13` or `-Xsource:3` for this library to work correctly:
+
+```scala
+// REQUIRED options for Scala 2.12
+scalacOptions += "-Ypartial-unification"
+scalacOptions += "-Xsource:2.13" // either this
+// scalacOptions += "-Xsource:3" // or this
+```
+
+
 ### Hello World example
 
 Suppose we have an abstract `Greeter` component, and some other components that depend on it:
@@ -189,7 +199,7 @@ def negateByer(otherByer: Byer): Byer = {
 new ModuleDef {
   make[Byer].named("byer-1").from[PrintByer]
   make[Byer].named("byer-2").from {
-    otherByer: Byer @Id("byer-1") =>
+    (otherByer: Byer @Id("byer-1")) =>
       negateByer(otherByer)
   }
 }
@@ -220,7 +230,7 @@ object Ids {
 
 You cannot embed non-singletons into the object graph, but you may create them as normal using factories. `distage`'s @ref[Auto-Factories](#auto-factories) can generate implementations for your factories, removing the associated boilerplate.
 
-While Auto-Factories may remove the boilerplate of generating factories for singular components, if you need to create a new non-trivial subgraph dynamically, you'll need to run `Injector` again – you may use `Injector.inherit` to reuse components from the outer object graph in your new nested object graph, see @ref[Injector Inheritance](advanced-features.md#injector-inheritance). It's safe, performance-wise, to run `Injector` to create nested graphs, it's extremely fast.
+While Auto-Factories may remove the boilerplate of generating factories for singular components, if you need to create a new non-trivial subgraph dynamically, you'll need to run `Injector` again. @ref[Subcontexts](#subcontexts) feature automates running nested Injectors and makes it easier to define nested object graphs. You may also manually use `Injector.inherit` to reuse components from the outer object graph in your new nested object graph, see @ref[Injector Inheritance](advanced-features.md#injector-inheritance).
 
 ## Real-world example
 
@@ -353,7 +363,7 @@ def TestModule = new ModuleDef {
 def runWith(activation: Activation) = {
   runner.unsafeRun {
     Injector().produceRun(TestModule, activation) {
-      greeter: Greeter => greeter.hello("$USERNAME")
+      (greeter: Greeter) => greeter.hello("$USERNAME")
     }
   }
 }
@@ -426,7 +436,7 @@ Try { Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal)
 
 ## Resource Bindings, Lifecycle
 
-You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.distage.model.definition.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html), [scoped zio.ZIO](https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1), [zio.ZLayer](https://zio.dev/reference/contextual/zlayer) or
+You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.functional.lifecycle.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/docs/std/resource), [scoped zio.ZIO](https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1), [zio.ZLayer](https://zio.dev/reference/contextual/zlayer) or
 [zio.managed.ZManaged](https://zio.dev/1.0.18/reference/resource/zmanaged/)
 values specifying the allocation and finalization actions of an object.
 
@@ -528,33 +538,34 @@ and between a `Lifecycle` and scoped `zio.ZIO`/`zio.managed.ZManaged`/`zio.ZLaye
 
 ### Inheritance helpers
 
-The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax:
+The following helpers allow defining `Lifecycle` subclasses using expression-like syntax:
 
-- @scaladoc[Lifecycle.Of](izumi.distage.model.definition.Lifecycle$$Of)
-- @scaladoc[Lifecycle.OfInner](izumi.distage.model.definition.Lifecycle$$OfInner)
-- @scaladoc[Lifecycle.OfCats](izumi.distage.model.definition.Lifecycle$$OfCats)
-- @scaladoc[Lifecycle.OfZIO](izumi.distage.model.definition.Lifecycle$$OfZIO)
-- @scaladoc[Lifecycle.OfZManaged](izumi.distage.model.definition.Lifecycle$$OfZManaged)
-- @scaladoc[Lifecycle.OfZLayer](izumi.distage.model.definition.Lifecycle$$OfZLayer)
-- @scaladoc[Lifecycle.LiftF](izumi.distage.model.definition.Lifecycle$$LiftF)
-- @scaladoc[Lifecycle.Make](izumi.distage.model.definition.Lifecycle$$Make)
-- @scaladoc[Lifecycle.Make_](izumi.distage.model.definition.Lifecycle$$Make_)
-- @scaladoc[Lifecycle.MakePair](izumi.distage.model.definition.Lifecycle$$MakePair)
-- @scaladoc[Lifecycle.FromAutoCloseable](izumi.distage.model.definition.Lifecycle$$FromAutoCloseable)
-- @scaladoc[Lifecycle.SelfOf](izumi.distage.model.definition.Lifecycle$$SelfOf)
-- @scaladoc[Lifecycle.MutableOf](izumi.distage.model.definition.Lifecycle$$MutableOf)
+- @scaladoc[Lifecycle.Of](izumi.functional.lifecycle.Lifecycle$$Of)
+- @scaladoc[Lifecycle.OfInner](izumi.functional.lifecycle.Lifecycle$$OfInner)
+- @scaladoc[Lifecycle.OfCats](izumi.functional.lifecycle.Lifecycle$$OfCats)
+- @scaladoc[Lifecycle.OfZIO](izumi.functional.lifecycle.Lifecycle$$OfZIO)
+- @scaladoc[Lifecycle.OfZManaged](izumi.functional.lifecycle.Lifecycle$$OfZManaged)
+- @scaladoc[Lifecycle.OfZLayer](izumi.functional.lifecycle.Lifecycle$$OfZLayer)
+- @scaladoc[Lifecycle.LiftF](izumi.functional.lifecycle.Lifecycle$$LiftF)
+- @scaladoc[Lifecycle.Make](izumi.functional.lifecycle.Lifecycle$$Make)
+- @scaladoc[Lifecycle.Make_](izumi.functional.lifecycle.Lifecycle$$Make_)
+- @scaladoc[Lifecycle.MakePair](izumi.functional.lifecycle.Lifecycle$$MakePair)
+- @scaladoc[Lifecycle.FromAutoCloseable](izumi.functional.lifecycle.Lifecycle$$FromAutoCloseable)
+- @scaladoc[Lifecycle.SelfOf](izumi.functional.lifecycle.Lifecycle$$SelfOf)
+- @scaladoc[Lifecycle.MutableOf](izumi.functional.lifecycle.Lifecycle$$MutableOf)
 
-The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion — when converting a method to a function value,
+The main reason to employ them is to work around a limitation in Scala 2's eta-expansion — when converting a method to a function value,
 Scala always tries to fulfill implicit parameters eagerly instead of making them parameters of the function value,
 this limitation makes it harder to inject implicits using `distage`.
 
 However, when using `distage`'s type-based syntax: `make[A].fromResource[A.Resource[F]]` —
 this limitation does not apply and implicits inject successfully.
 
-So to workaround this limitation you can convert an expression based resource-constructor:
+So to work around this limitation you can convert an expression based resource constructor:
 
 ```scala mdoc:reset:to-string
-import distage.Lifecycle, cats.Monad
+import distage.{Lifecycle, ModuleDef}
+import cats.Monad
 
 class A(val n: Int)
 
@@ -564,12 +575,18 @@ object A {
     Lifecycle.pure[F](new A(1))
 
 }
+
+def module = new ModuleDef {
+  // Bad: summons Monad[cats.effect.IO] immediately, instead of getting it from the object graph
+  make[A].fromResource(A.resource[cats.effect.IO])
+}
 ```
 
 Into a class-based form:
 
 ```scala mdoc:reset:to-string
-import distage.Lifecycle, cats.Monad
+import distage.{Lifecycle, ModuleDef}
+import cats.Monad
 
 class A(val n: Int)
 
@@ -581,19 +598,25 @@ object A {
     )
 
 }
+
+def module = new ModuleDef {
+  // Good: implicit Monad[cats.effect.IO] parameter is wired from the object graph, same as the non-implicit parameters
+  make[A].fromResource[A.Resource[cats.effect.IO]]
+  addImplicit[Monad[cats.effect.IO]]
+}
 ```
 
 And inject successfully using `make[A].fromResource[A.Resource[F]]` syntax of @scaladoc[ModuleDefDSL](izumi.distage.model.definition.dsl.ModuleDefDSL).
 
-The following helpers ease defining `Lifecycle` sub-classes using traditional inheritance where `acquire`/`release` parts are defined as methods:
+The following helpers ease defining `Lifecycle` subclasses using traditional inheritance where `acquire`/`release` parts are defined as methods:
 
-- @scaladoc[Lifecycle.Basic](izumi.distage.model.definition.Lifecycle$$Basic)
-- @scaladoc[Lifecycle.Simple](izumi.distage.model.definition.Lifecycle$$Simple)
-- @scaladoc[Lifecycle.Mutable](izumi.distage.model.definition.Lifecycle$$Mutable)
-- @scaladoc[Lifecycle.MutableNoClose](izumi.distage.model.definition.Lifecycle$$MutableNoClose)
-- @scaladoc[Lifecycle.Self](izumi.distage.model.definition.Lifecycle$$Self)
-- @scaladoc[Lifecycle.SelfNoClose](izumi.distage.model.definition.Lifecycle$$SelfNoClose)
-- @scaladoc[Lifecycle.NoClose](izumi.distage.model.definition.Lifecycle$$NoClose)
+- @scaladoc[Lifecycle.Basic](izumi.functional.lifecycle.Lifecycle$$Basic)
+- @scaladoc[Lifecycle.Simple](izumi.functional.lifecycle.Lifecycle$$Simple)
+- @scaladoc[Lifecycle.Mutable](izumi.functional.lifecycle.Lifecycle$$Mutable)
+- @scaladoc[Lifecycle.MutableNoClose](izumi.functional.lifecycle.Lifecycle$$MutableNoClose)
+- @scaladoc[Lifecycle.Self](izumi.functional.lifecycle.Lifecycle$$Self)
+- @scaladoc[Lifecycle.SelfNoClose](izumi.functional.lifecycle.Lifecycle$$SelfNoClose)
+- @scaladoc[Lifecycle.NoClose](izumi.functional.lifecycle.Lifecycle$$NoClose)
 
 ## Out-of-the-box typeclass instances
 
@@ -750,7 +773,7 @@ If we rewire the app without `SubtractionModule`, it will expectedly lose the ab
 
 ```scala mdoc:override:to-string
 Injector().HACK_OVERRIDE_produceRun(AppModule -- SubtractionModule.keys) {
-  app: App =>
+  (app: App) =>
     app.interpret("10 - 1")
 }
 ```
@@ -787,7 +810,7 @@ def incrementWithDep = new ModuleDef {
 
   // mutators may use other components and add additional dependencies
   modify[Int].by(_.flatAp {
-    (s: String, few: Int @Id("a-few")) => currentInt: Int =>
+    (s: String, few: Int @Id("a-few")) => (currentInt: Int) =>
       s.length + few + currentInt
   }) // 5 + 2 + 3
 }
@@ -900,7 +923,7 @@ def kvStoreModule = new ModuleDef {
 
 val io = Injector[Task]()
   .produceRun[String](kvStoreModule) {
-    kv: KVStore[IO] =>
+    (kv: KVStore[IO]) =>
       for {
         _    <- kv.put("apple", "pie")
         res1 <- kv.get("apple")
@@ -916,7 +939,11 @@ val runtime = UnsafeRun2.createZIO()
 runtime.unsafeRun(io)
 ```
 
-You need to specify your effect type when constructing `Injector`, as in `Injector[F]()`, to use effect bindings in chosen `F[_]`.
+You must specify your effect type when constructing an `Injector`, as in `Injector[F]()`, to use effect bindings in the chosen `F[_]` type.
+
+You may want to use @scaladoc[Lifecycle.LiftF](izumi.functional.lifecycle.Lifecycle$$LiftF) to convert effect methods
+with implicit parameters into a class-based form to ensure that implicit parameters are wired from the object graph, not
+from the surrounding implicit scope. (See @ref[Inheritance Helpers](#inheritance-helpers))
 
 ## ZIO Environment bindings
 
@@ -1125,12 +1152,11 @@ runtime.unsafeRun {
 
 ## Auto-Traits
 
-distage can instantiate traits and structural types. All unimplemented fields in a trait, or a refinement are filled in from the object graph.
+distage can instantiate traits and structural types.
 
-Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro
-and can be summoned at need.
+Use `makeTrait[X]` or `make[X].fromTrait[Y]` to wire traits, abstract classes or a structural types.
 
-If a suitable trait is specified as an implementation class for a binding, `TraitConstructor` will be used automatically:
+All unimplemented fields in a trait, or a refinement are filled in from the object graph. Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro and can be summoned at need.
 
 Example:
 
@@ -1195,12 +1221,12 @@ object PlusedInt {
 def module = new ModuleDef {
   make[Int].named("a").from(1)
   make[Int].named("b").from(2)
-  make[Pluser]
-  make[PlusedInt].from[PlusedInt.Impl]
+  makeTrait[Pluser]
+  make[PlusedInt].fromTrait[PlusedInt.Impl]
 }
 
 Injector().produceRun(module) {
-  plusedInt: PlusedInt =>
+  (plusedInt: PlusedInt) =>
     plusedInt.result()
 }
 ```
@@ -1225,8 +1251,8 @@ import distage.impl
 
 ### Avoiding constructors even further
 
-When overriding behavior of a class, you may avoid writing a repeat of its constructor in your sub-class by inheriting
-it with a trait instead. Example:
+When overriding behavior of a class, you may avoid writing a repeat of its constructor in your subclass by inheriting
+a trait from it instead. Example:
 
 ```scala mdoc:to-string
 /**
@@ -1250,9 +1276,9 @@ it with a trait instead. Example:
 }
 
 Injector().produceRun(module overriddenBy new ModuleDef {
-  make[PlusedInt].from[OverridenPlusedIntImpl]
+  make[PlusedInt].fromTrait[OverridenPlusedIntImpl]
 }) {
-  plusedInt: PlusedInt =>
+  (plusedInt: PlusedInt) =>
     plusedInt.result()
 }
 ```
@@ -1299,6 +1325,23 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 }
 ```
 
+Note that ordinary function types conform to distage's definition of a 'factory', since they are just traits with an unimplemented method.
+Sometimes declaring a separate named factory trait isn't worth it, in these cases you can use `makeFactory` to generate ordinary function types:
+
+```scala mdoc:to-string
+object UserActor {
+  type Factory = UUID => UserActor
+}
+
+class ActorFunctionModule extends ModuleDef {
+  makeFactory[UserActor.Factory]
+}
+```
+
+You can use this feature to concisely provide non-Singleton semantics for some of your components.
+
+Factory implementations are derived at compile-time by @scaladoc[FactoryConstructor](izumi.distage.constructors.FactoryConstructor) macro and can be summoned at need.
+
 Since `distage` version `1.1.0` you have to bind factories explicitly using `makeFactory` and `fromFactory` methods, not implicitly via `make`; parameterless methods in factories now produce new instances instead of summoning a dependency.
 
 ### @With annotation
@@ -1318,7 +1361,7 @@ object Actor {
   }
 
   final class Impl(id: String, config: Actor.Configuration) extends Actor {
-    def receive(msg: Any) = {
+    def receive(msg: Any): Unit = {
       val response = s"Actor `$id` received a message: $msg"
       println(if (config.allCaps) response.toUpperCase else response)
     }
@@ -1337,11 +1380,260 @@ Injector()
   .use(_.newActor("Martin Odersky").receive("ping"))
 ```
 
-You can use this feature to concisely provide non-Singleton semantics for some of your components.
+## Subcontexts
 
-Factory implementations are derived at compile-time by
-@scaladoc[FactoryConstructor](izumi.distage.constructors.FactoryConstructor) macro
-and can be summoned at need.
+Sometimes multiple components depend on the same piece of data that appears locally, after all the components were already wired.
+This data may need to be passed around repeatedly, possibly across the entire application. To do this, we may have to add an argument
+to most methods of an application, or have to use a Reader monad everywhere.
+
+For example, we could be adding distributed tracing to our application - after getting a RequestId from a request, we may
+need to carry it everywhere to add it to logs and metrics.
+
+Ideally, instead of adding the same argument to our methods, we'd want to just move that argument data out to the class constructor -
+passing the argument just once during the construction of a class. However, we'd lose the ability to automatically wire our objects,
+since we can only get a RequestId from a request, it's not available when we initially wire our object graph.
+
+Since 1.2.0 this problem is addressed in distage using `Subcontext`s - using them we can define a wireable sub-graph of
+our components that depend on local data unavailable during wiring, but that we can then finish wiring once we pass them the data.
+
+Starting with a graph that has no local dependencies:
+
+```scala mdoc:reset:invisible:to-string
+class PetStoreRepository[F[+_, +_]]
+
+class Pet
+class PetId
+class RequestId
+def RequestId(): RequestId = ???
+```
+
+```scala mdoc:to-string
+import izumi.functional.bio.IO2
+import distage.{ModuleDef, Subcontext, TagKK}
+
+class PetStoreBusinessLogic[F[+_, +_]] {
+  // requestId is a method parameter
+  def buyPetLogic(requestId: RequestId, petId: PetId, payment: Int): F[Throwable, Pet] = ???
+}
+
+def module1[F[+_, +_]: TagKK] = new ModuleDef {
+  make[PetStoreAPIHandler[F]]
+
+  make[PetStoreRepository[F]]
+  make[PetStoreBusinessLogic[F]]
+}
+
+class PetStoreAPIHandler[F[+_, +_]: IO2](
+  petStoreBusinessLogic: PetStoreBusinessLogic[F]
+) {
+  def buyPet(petId: PetId, payment: Int): F[Throwable, Pet] = {
+    petStoreBusinessLogic.buyPetLogic(RequestId(), petId, payment)
+  }
+}
+```
+
+We use `makeSubcontext` to delineate a portion of the graph that requires a `RequestId` to be wired:
+
+```scala mdoc:override:to-string
+class HACK_OVERRIDE_PetStoreBusinessLogic[F[+_, +_]](
+  // requestId is a now a class parameter
+  requestId: RequestId
+) {
+  def buyPetLogic(petId: PetId, payment: Int): F[Throwable, Pet] = ???
+}
+
+def module2[F[+_, +_] : TagKK] = new ModuleDef {
+  make[HACK_OVERRIDE_PetStoreAPIHandler[F]]
+
+  makeSubcontext[PetStoreBusinessLogic[F]]
+    .withSubmodule(new ModuleDef {
+      make[PetStoreRepository[F]]
+      make[HACK_OVERRIDE_PetStoreBusinessLogic[F]]
+    })
+    .localDependency[RequestId]
+}
+
+class HACK_OVERRIDE_PetStoreAPIHandler[F[+_, +_]: IO2: TagKK](
+  petStoreBusinessLogic: Subcontext[HACK_OVERRIDE_PetStoreBusinessLogic[F]]
+) {
+  def buyPet(petId: PetId, payment: Int): F[Throwable, Pet] = {
+    // we have to pass the parameter and create the component now, since it's not already wired.
+    petStoreBusinessLogic
+      .provide[RequestId](RequestId())
+      .produceRun {
+        _.buyPetLogic(petId, payment)
+      }
+  }
+}
+```
+
+We managed to move RequestId from a method parameter that polluted every method signature, to a class parameter, that we pass to the subgraph just once - when the RequestId is generated.
+
+Full example:
+
+```scala mdoc:reset:invisible:to-string
+def HACK_OVERRIDE_IzLogger(): logstage.IzLogger = {
+  logstage.IzLogger(sink = new izumi.logstage.api.logger.LogSink {
+    val policy = izumi.logstage.api.rendering.RenderingPolicy.simplePolicy()
+
+    override def flush(e: logstage.Log.Entry): Unit = {
+      val rendered = policy.render(e)
+      println(rendered)
+    }
+
+    override def sync(): Unit = {
+      print("")
+    }
+  })
+}
+```
+
+```scala mdoc:override:to-string
+import distage.{Injector, Lifecycle, ModuleDef, Subcontext, TagKK}
+import izumi.functional.bio.{Error2, F, IO2, Monad2, Primitives2}
+import izumi.functional.bio.data.Morphism1
+import logstage.{IzLogger, LogIO2}
+import izumi.logstage.distage.LogIO2Module
+
+import java.util.UUID
+
+final case class PetId(petId: UUID)
+final case class RequestId(requestId: UUID)
+
+sealed trait TransactionFailure
+object TransactionFailure {
+  case object NoSuchPet extends TransactionFailure
+  case object InsufficientFunds extends TransactionFailure
+}
+
+final case class Pet(name: String, species: String, price: Int)
+
+final class PetStoreAPIHandler[F[+_, +_]: IO2: TagKK](
+  petStoreBusinessLogic: Subcontext[PetStoreBusinessLogic[F]]
+) {
+  def buyPet(petId: PetId, payment: Int): F[TransactionFailure, Pet] = {
+    for {
+      requestId <- F.sync(RequestId(UUID.randomUUID()))
+      pet <- petStoreBusinessLogic
+              .provide[RequestId](requestId)
+              .produce[F[Throwable, _]]()
+              .mapK[F[Throwable, _], F[TransactionFailure, _]](Morphism1(_.orTerminate))
+              .use {
+                component =>
+                  component.buyPetLogic(petId, payment)
+              }
+    } yield pet
+  }
+}
+
+final class PetStoreBusinessLogic[F[+_, +_]: Error2](
+  requestId: RequestId,
+  petStoreReposistory: PetStoreReposistory[F],
+  log: LogIO2[F],
+) {
+  private val contextLog = log.withCustomContext("requestId" -> requestId)
+
+  def buyPetLogic(petId: PetId, payment: Int): F[TransactionFailure, Pet] = {
+    for {
+      pet <- petStoreReposistory.findPet(petId).fromOption(TransactionFailure.NoSuchPet)
+      _   <- if (payment < pet.price) {
+          contextLog.error(s"Insufficient $payment, couldn't afford ${pet.price}") *>
+          F.fail(TransactionFailure.InsufficientFunds)
+        } else {
+          for {
+            result <- petStoreReposistory.removePet(petId)
+            _      <- F.when(!result)(F.fail(TransactionFailure.NoSuchPet))
+            _      <- contextLog.info(s"Successfully bought $pet with $petId for $payment! ${payment - pet.price -> "overpaid"}")
+          } yield ()
+        }
+    } yield pet
+  }
+}
+
+trait PetStoreReposistory[F[+_, +_]] {
+  def findPet(petId: PetId): F[Nothing, Option[Pet]]
+  def removePet(petId: PetId): F[Nothing, Boolean]
+}
+object PetStoreReposistory {
+  final class Impl[F[+_, +_]: Monad2: Primitives2](
+    requestId: RequestId,
+    log: LogIO2[F],
+  ) extends Lifecycle.LiftF[F[Nothing, _], PetStoreReposistory[F]](for {
+    state <- F.mkRef(Pets.builtinPetMap)
+  } yield new PetStoreReposistory[F] {
+    private val contextLog = log("requestId" -> requestId)
+
+    override def findPet(petId: PetId): F[Nothing, Option[Pet]] = {
+      for {
+        _        <- contextLog.info(s"Looking up $petId")
+        maybePet <- state.get.map(_.get(petId))
+        _        <- contextLog.info(s"Got $maybePet")
+      } yield maybePet
+    }
+
+    override def removePet(petId: PetId): F[Nothing, Boolean] = {
+      for {
+        success <- state.get.map(_.contains(petId))
+        _       <- state.get.map(_ - petId)
+        _       <- contextLog.info(s"Tried to remove $petId, $success")
+      } yield success
+
+    }
+  })
+}
+
+object Pets {
+  val arnoldId = PetId(UUID.randomUUID())
+  val buckId   = PetId(UUID.randomUUID())
+  val chipId   = PetId(UUID.randomUUID())
+  val derryId  = PetId(UUID.randomUUID())
+  val emmyId   = PetId(UUID.randomUUID())
+
+  val builtinPetMap = Map[PetId, Pet](
+    arnoldId -> Pet("Arnold", "Dog", 99),
+    buckId   -> Pet("Buck", "Rabbit", 60),
+    chipId   -> Pet("Chip", "Cat", 75),
+    derryId  -> Pet("Derry", "Dog", 250),
+    emmyId   -> Pet("Emmy", "Guinea Pig", 20)
+  )
+}
+
+object Module extends ModuleDef {
+  include(module[zio.IO])
+
+  def module[F[+_, +_]: TagKK] = new ModuleDef {
+    make[PetStoreAPIHandler[F]]
+
+    make[IzLogger].from(HACK_OVERRIDE_IzLogger())
+    include(LogIO2Module[F]())
+
+    addImplicit[TagKK[F]]
+
+    makeSubcontext[PetStoreBusinessLogic[F]]
+      .withSubmodule(new ModuleDef {
+        make[PetStoreReposistory[F]].fromResource[PetStoreReposistory.Impl[F]]
+        make[PetStoreBusinessLogic[F]]
+      })
+      .localDependency[RequestId]
+  }
+}
+
+import izumi.functional.bio.UnsafeRun2
+
+val runner = UnsafeRun2.createZIO()
+
+val result = runner.unsafeRun {
+  Injector[zio.Task]()
+    .produceRun(Module) {
+      (p: PetStoreAPIHandler[zio.IO]) =>
+        p.buyPet(Pets.arnoldId, 100).attempt
+    }
+}
+```
+
+Using subcontexts is more efficient than @ref[nesting Injectors](advanced-features.md#depending-on-locator) manually, since subcontexts are planned ahead of time - there's no planning step for subcontexts, only execution step.
+
+Note: When your subcontext's submodule only contains one binding, you may be able to achieve the same result using an @ref[Auto-Factory](#auto-factories) instead.
 
 ## Tagless Final Style
 
@@ -1493,11 +1785,7 @@ class BifunctorIOModule[F[_, _]: TagKK] extends ModuleDef
 Or use `Tag.auto.T` to abstract over any kind:
 
 ```scala mdoc:to-string
-class MonadTransModule[F[_[_], _]: Tag.auto.T] extends ModuleDef
-```
-
-```scala mdoc:to-string
-class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
+class MonadTransformerModule[F[_[_], _]: Tag.auto.T] extends ModuleDef
 ```
 
 ```scala mdoc:to-string

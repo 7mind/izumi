@@ -31,7 +31,7 @@ open class SchedulerImpl[F[+_, +_]: Temporal2](implicit clock: Clock2[F]) extend
   )(repeater: (A => F[E, B]) => F[E, B]
   ): F[E, B] = {
     (for {
-      now <- F.clock.now(ClockAccuracy.MILLIS)
+      now <- F.clock.nowZoned(ClockAccuracy.MILLIS)
       dec <- makeDecision(now, in)
       next = dec match {
         case ControllerDecision.Repeat(_, interval, action) =>
@@ -45,17 +45,17 @@ open class SchedulerImpl[F[+_, +_]: Temporal2](implicit clock: Clock2[F]) extend
 
   override def retryOrElseUntil[E, A, E2](r: F[E, A])(duration: FiniteDuration, orElse: E => F[E2, A]): F[E2, A] = {
     def loop(maxTime: ZonedDateTime): F[E2, A] = {
-      F.redeem[Any, E, A, E2, A](r)(
+      F.redeem[E, A, E2, A](r)(
         err = error =>
-          F.flatMap[Any, E2, ZonedDateTime, A](
-            clock.now(ClockAccuracy.MILLIS)
+          F.flatMap[E2, ZonedDateTime, A](
+            clock.nowZoned(ClockAccuracy.MILLIS)
           )(now => if (now.isBefore(maxTime)) loop(maxTime) else orElse(error)),
         succ = F.pure(_),
       )
     }
 
-    F.flatMap[Any, E2, ZonedDateTime, A](
-      clock.now(ClockAccuracy.MILLIS)
+    F.flatMap[E2, ZonedDateTime, A](
+      clock.nowZoned(ClockAccuracy.MILLIS)
     )(now => loop(maxTime = now.plus(duration.toMillis, ChronoUnit.MILLIS)))
   }
 

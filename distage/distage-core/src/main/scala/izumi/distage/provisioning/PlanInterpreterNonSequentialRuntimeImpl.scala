@@ -1,17 +1,17 @@
 package izumi.distage.provisioning
 
-import distage.{DIKey, Id, Roots, SafeType}
 import izumi.distage.LocatorDefaultImpl
-import izumi.distage.model.definition.Lifecycle
+import izumi.distage.model.definition.{Id, Lifecycle}
 import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.definition.errors.ProvisionerIssue.IncompatibleEffectTypes
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp.*
-import izumi.distage.model.plan.{ExecutableOp, Plan}
+import izumi.distage.model.plan.{ExecutableOp, Plan, Roots}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionInternal, FinalizerFilter}
 import izumi.distage.model.provisioning.strategies.*
+import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.model.{Locator, Planner}
 import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
 import izumi.functional.quasi.QuasiIO

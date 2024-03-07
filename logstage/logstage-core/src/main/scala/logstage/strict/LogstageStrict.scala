@@ -12,8 +12,6 @@ trait LogstageStrict {
   val LogIOStrict2: LogIO2Strict.type = LogIO2Strict
   type LogIOStrict3[F[_, _, _]] = LogIO3Strict[F]
   val LogIOStrict3: LogIO3Strict.type = LogIO3Strict
-  type LogIOStrict3Ask[F[_, _, _]] = LogIO3AskStrict[F]
-  val LogIOStrict3Ask: LogIO3AskStrict.type = LogIO3AskStrict
 
   type LogZIOStrict = LogIO3Strict[ZIO]
 

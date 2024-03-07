@@ -4,13 +4,13 @@ import izumi.distage.model.definition.{Module, ModuleDef}
 import izumi.functional.quasi.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives, QuasiTemporal}
 import izumi.distage.modules.support.*
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
-import izumi.functional.bio.retry.{Scheduler2, Scheduler3}
-import izumi.functional.bio.{Async2, Async3, Fork2, Fork3, Local3, Primitives2, Primitives3, Temporal2, Temporal3, UnsafeRun2, UnsafeRun3}
+import izumi.functional.bio.retry.Scheduler2
+import izumi.functional.bio.{Async2, Fork2, Primitives2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.orphans.*
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.annotation.unused
-import izumi.reflect.{Tag, TagK, TagK3, TagKK}
+import izumi.reflect.{Tag, TagK, TagKK}
 
 /**
   * Implicitly available effect type support for `distage` resources, effects, roles & tests.
@@ -120,20 +120,13 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModulesInstances4 {
-  /** @see [[izumi.distage.modules.support.AnyBIO2SupportModule]] */
-  implicit final def fromBIO2[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: Scheduler2]: DefaultModule2[F] = {
-    DefaultModule(AnyBIO2SupportModule.withImplicits[F])
+  /** @see [[izumi.distage.modules.support.AnyBIOSupportModule]] */
+  implicit final def fromBIO[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: Scheduler2]: DefaultModule2[F] = {
+    DefaultModule(AnyBIOSupportModule.withImplicits[F])
   }
 }
 
 sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModulesInstances5 {
-  /** @see [[izumi.distage.modules.support.AnyBIO3SupportModule]] */
-  implicit final def fromBIO3[F[-_, +_, +_]: TagK3: Async3: Temporal3: Local3: UnsafeRun3: Fork3: Primitives3: Scheduler3]: DefaultModule3[F] = {
-    DefaultModule(AnyBIO3SupportModule.withImplicits[F, Any])
-  }
-}
-
-sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModulesInstances6 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
@@ -154,7 +147,7 @@ sealed trait LowPriorityDefaultModulesInstances5 extends LowPriorityDefaultModul
   }
 }
 
-sealed trait LowPriorityDefaultModulesInstances6 {
+sealed trait LowPriorityDefaultModulesInstances5 {
   implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiTemporal: QuasiIORunner]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
       addImplicit[QuasiFunctor[F]]

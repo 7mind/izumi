@@ -51,10 +51,15 @@ object PlanCheck {
     discard(app, cfg)
 
     def main(@unused args: Array[String]): Unit = {
-      assertAtRuntime()
+      assertAgainAtRuntime()
     }
 
+    def assertAgainAtRuntime(): Unit = planCheck.assertAgainAtRuntime()
+    def checkAgainAtRuntime(): PlanCheckResult = planCheck.checkAgainAtRuntime()
+
+    @deprecated("Renamed to `assertAgainAtRuntime`", "1.2.0")
     def assertAtRuntime(): Unit = planCheck.assertAgainAtRuntime()
+    @deprecated("Renamed to `checkAgainAtRuntime`", "1.2.0")
     def checkAtRuntime(): PlanCheckResult = planCheck.checkAgainAtRuntime()
   }
 
@@ -257,7 +262,7 @@ object PlanCheck {
       val reachableKeys = providedKeys ++ planVerifierResult.visitedKeys
 
       val configIssues = if (checkConfig) {
-        val realAppConfig = configLoader.loadConfig()
+        val realAppConfig = configLoader.loadConfig("compile-time validation")
         reportEffectiveConfig(realAppConfig.config.origin().toString)
 
         module.iterator
@@ -333,7 +338,7 @@ object PlanCheck {
 
     private[this] def parseActivations(s: String): Set[NESet[AxisPoint]] = {
       s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
-          NESet from _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
+          NESet `from` _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
         }.toSet
     }
 

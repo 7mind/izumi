@@ -41,10 +41,10 @@ class ConfigurableLogRouter(
 
 object ConfigurableLogRouter {
   def apply(
-             threshold: Log.Level = Log.Level.Trace,
-             sink: LogSink = ConsoleSink.ColoredConsoleSink,
-             levels: Map[String, Log.Level] = Map.empty,
-             buffer: LogQueue = LogQueue.Immediate,
+    threshold: Log.Level = Log.Level.Trace,
+    sink: LogSink = ConsoleSink.ColoredConsoleSink,
+    levels: Map[String, Log.Level] = Map.empty,
+    buffer: LogQueue = LogQueue.Immediate,
   ): ConfigurableLogRouter = {
     ConfigurableLogRouter(threshold, Seq(sink), levels, buffer)
   }

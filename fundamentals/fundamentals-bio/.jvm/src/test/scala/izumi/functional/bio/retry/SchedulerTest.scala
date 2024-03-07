@@ -3,10 +3,10 @@ package izumi.functional.bio.retry
 import izumi.functional.bio.Clock1.ClockAccuracy
 import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
-import izumi.functional.bio.{Clock2, Clock3, Error2, F, Functor2, IO2, Monad2, Primitives2, Ref2, Root, Temporal2, Temporal3, TemporalInstances, UnsafeRun2}
+import izumi.functional.bio.{Clock2, Error2, F, Functor2, IO2, Monad2, Primitives2, Ref2, Temporal2, TemporalInstances, UnsafeRun2}
 import org.scalatest.Assertion
 import org.scalatest.wordspec.AnyWordSpec
-import zio.ZIO
+import zio.IO
 
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import scala.annotation.tailrec
@@ -18,15 +18,15 @@ class SchedulerTest extends AnyWordSpec {
 //  private val monixRunner: UnsafeRun2[bio.IO] = UnsafeRun2.createMonixBIO(Scheduler.global, bio.IO.defaultOptions)
 //  private val monixScheduler: Scheduler2[bio.IO] = new SchedulerMonix(implicitly[cats.effect.kernel.Clock[bio.UIO]])
 
-  private val zioClock: Clock3[ZIO] = Clock3[ZIO]
-  private val zioTemporal: Temporal3[ZIO] = TemporalInstances.Temporal3Zio
-  private val zioScheduler: Scheduler2[zio.IO] = SchedulerInstances.SchedulerFromTemporalAndClock(Root.Convert3To2(zioTemporal), zioClock)
-  private val zioRunner: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO[Any]()
+  private val zioClock: Clock2[IO] = Clock2[IO]
+  private val zioTemporal: Temporal2[IO] = TemporalInstances.Temporal2Zio
+  private val zioScheduler: Scheduler2[IO] = SchedulerInstances.SchedulerFromTemporalAndClock(zioTemporal, zioClock)
+  private val zioRunner: UnsafeRun2[IO] = UnsafeRun2.createZIO[Any]()
 
   private object implicits {
-    implicit val zioClockImplicit: Clock3[ZIO] = zioClock
-    implicit val zioTemporalImplicit: Temporal3[ZIO] = zioTemporal
-    implicit val zioSchedulerImplicit: Scheduler2[zio.IO] = zioScheduler
+    implicit val zioClockImplicit: Clock2[IO] = zioClock
+    implicit val zioTemporalImplicit: Temporal2[IO] = zioTemporal
+    implicit val zioSchedulerImplicit: Scheduler2[IO] = zioScheduler
   }
 
   def toZonedDateTime(epochMillis: Long): ZonedDateTime = {
@@ -36,8 +36,8 @@ class SchedulerTest extends AnyWordSpec {
   "Scheduler" should {
 
     "recurs with zero or negative argument repeats effect 0 additional time" in {
-      val zio1 = zioRunner.unsafeRun(simpleCounter[zio.IO, Long](zioScheduler)(RetryPolicy.recurs[zio.IO](0)))
-      val zio2 = zioRunner.unsafeRun(simpleCounter[zio.IO, Long](zioScheduler)(RetryPolicy.recurs[zio.IO](-5)))
+      val zio1 = zioRunner.unsafeRun(simpleCounter[IO, Long](zioScheduler)(RetryPolicy.recurs[IO](0)))
+      val zio2 = zioRunner.unsafeRun(simpleCounter[IO, Long](zioScheduler)(RetryPolicy.recurs[IO](-5)))
 
 //      val m1 = monixRunner.unsafeRun(simpleCounter[bio.IO, Long](monixScheduler)(RetryPolicy.recurs[bio.IO](0)))
 //      val m2 = monixRunner.unsafeRun(simpleCounter[bio.IO, Long](monixScheduler)(RetryPolicy.recurs[bio.IO](-283)))
@@ -49,14 +49,14 @@ class SchedulerTest extends AnyWordSpec {
     }
 
     "recur N times" in {
-      val res1 = zioRunner.unsafeRun(simpleCounter[zio.IO, Long](zioScheduler)(RetryPolicy.recurs[zio.IO](3)))
+      val res1 = zioRunner.unsafeRun(simpleCounter[IO, Long](zioScheduler)(RetryPolicy.recurs[IO](3)))
 //      val res2 = monixRunner.unsafeRun(simpleCounter[bio.IO, Long](monixScheduler)(RetryPolicy.recurs[bio.IO](3)))
       assert(res1 == 4)
 //      assert(res2 == 4)
     }
 
     "recur while predicate is true" in {
-      val res1 = zioRunner.unsafeRun(simpleCounter[zio.IO, Int](zioScheduler)(RetryPolicy.recursWhile[zio.IO, Int](_ < 3)))
+      val res1 = zioRunner.unsafeRun(simpleCounter[IO, Int](zioScheduler)(RetryPolicy.recursWhile[IO, Int](_ < 3)))
 //      val res2 = monixRunner.unsafeRun(simpleCounter[bio.IO, Int](monixScheduler)(RetryPolicy.recursWhile[bio.IO, Int](_ < 3)))
       assert(res1 == 3)
 //      assert(res2 == 3)
@@ -106,7 +106,7 @@ class SchedulerTest extends AnyWordSpec {
       }
 
       val expected = List(0, 1, 2, 3).map(i => (i * 100).millis)
-      val zioTest = test(zioRunner)(policy[zio.IO].action, ZonedDateTime.now(), 4)
+      val zioTest = test(zioRunner)(policy[IO].action, ZonedDateTime.now(), 4)
       assert(zioTest == expected)
 
 //      val monixTest = test(monixRunner)(policy[bio.IO].action, ZonedDateTime.now(), 4)
@@ -127,7 +127,7 @@ class SchedulerTest extends AnyWordSpec {
 
     "compute exponential backoff intervals correctly" in {
       val baseDelay = 100
-      val policy1 = RetryPolicy.exponential[zio.IO](baseDelay.millis)
+      val policy1 = RetryPolicy.exponential[IO](baseDelay.millis)
 //      val policy2 = RetryPolicy.exponential[bio.IO](baseDelay.millis)
 
       def test[F[+_, +_]](runner: UnsafeRun2[F])(rf: RetryFunction[F, Any, FiniteDuration], numOfRetries: Int): Unit = {
@@ -151,7 +151,7 @@ class SchedulerTest extends AnyWordSpec {
     }
 
     "compute fixed intervals correctly" in {
-      val policy1 = RetryPolicy.fixed[zio.IO](100.millis)
+      val policy1 = RetryPolicy.fixed[IO](100.millis)
 //      val policy2 = RetryPolicy.fixed[bio.IO](100.millis)
 
       def test[F[+_, +_]](runner: UnsafeRun2[F])(rf: RetryFunction[F, Any, Long], numOfTries: Int): mutable.Seq[Long] = {
@@ -177,8 +177,8 @@ class SchedulerTest extends AnyWordSpec {
 
     "combine different policies properly" in {
       import implicits.*
-      val intersectPZio = RetryPolicy.recursWhile[zio.IO, Boolean](identity) && RetryPolicy.recurs(4)
-      val unionPZio = RetryPolicy.recursWhile[zio.IO, Boolean](identity) || RetryPolicy.recurs(4)
+      val intersectPZio = RetryPolicy.recursWhile[IO, Boolean](identity) && RetryPolicy.recurs(4)
+      val unionPZio = RetryPolicy.recursWhile[IO, Boolean](identity) || RetryPolicy.recurs(4)
       val effZio = (counter: zio.Ref[Int]) => counter.updateAndGet(_ + 1).map(_ < 3)
 
 //      val intersectPMonix = RetryPolicy.recursWhile[bio.IO, Boolean](identity) && RetryPolicy.recurs(4)
@@ -197,11 +197,11 @@ class SchedulerTest extends AnyWordSpec {
         res2 <- counter2.get
         _ = assert(res2 == 5)
 
-        np1 = RetryPolicy.spaced[zio.IO](300.millis) && RetryPolicy.spaced[zio.IO](200.millis)
+        np1 = RetryPolicy.spaced[IO](300.millis) && RetryPolicy.spaced[IO](200.millis)
         delays1 <- testTimedScheduler(zio.ZIO.unit)(np1, 1)
         _ = assert(delays1 == Vector(300.millis))
 
-        np2 = RetryPolicy.spaced[zio.IO](300.millis) || RetryPolicy.spaced[zio.IO](200.millis)
+        np2 = RetryPolicy.spaced[IO](300.millis) || RetryPolicy.spaced[IO](200.millis)
         delays2 <- testTimedScheduler(zio.ZIO.unit)(np2, 1)
         _ = assert(delays2 == Vector(200.millis))
       } yield ()
@@ -279,7 +279,7 @@ class SchedulerTest extends AnyWordSpec {
 
       import implicits.*
 
-      val zioRetries = zioRunner.unsafeRun(test[zio.IO]())
+      val zioRetries = zioRunner.unsafeRun(test[IO]())
       assert(zioRetries == ((10, 10)))
     }
 
@@ -309,8 +309,8 @@ class SchedulerTest extends AnyWordSpec {
 
       zioRunner.unsafeRun {
         for {
-          _ <- test[zio.IO](2, 3)
-          _ <- test[zio.IO](1, -1)
+          _ <- test[IO](2, 3)
+          _ <- test[IO](1, -1)
         } yield ()
       }
 
@@ -385,7 +385,7 @@ class SchedulerTest extends AnyWordSpec {
         if (iter <= 0) F.pure(acc)
         else {
           (for {
-            now <- F.clock.now(ClockAccuracy.MILLIS)
+            now <- F.clock.nowZoned(ClockAccuracy.MILLIS)
             dec <- makeDecision(now, in)
             res = dec match {
               case _: ControllerDecision.Stop[B] @unchecked => F.pure(acc)

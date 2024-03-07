@@ -57,7 +57,7 @@ import distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain
 import zio.IO
 
-object ExampleLauncher extends RoleAppMain.LauncherBIO2[IO] {
+object ExampleLauncher extends RoleAppMain.LauncherBIO[IO] {
   override def pluginConfig = {
     PluginConfig.const(
       // add the plugin with ExampleRoleTask
@@ -88,7 +88,29 @@ I 2020-12-14T10:00:16.267       (RoleAppEntrypoint.scala:106)  ….R.I.r.1.logge
 Only the components required by the specified roles will be created, everything else will be pruned. (see:
 @ref[Dependency Pruning](advanced-features.md#dependency-pruning))
 
-@scaladoc[BundledRolesModule](izumi.distage.roles.bundled.BundledRolesModule) contains two example roles:
+Further reading:
+
+- [distage-example](https://github.com/7mind/distage-example) - Example web service using roles
+- [Roles: a viable alternative to Microservices and Monoliths](https://github.com/7mind/slides/blob/master/02-roles/roles.pdf)
+
+### Inspecting components in REPL
+
+Use `.replLocator` method of a `RoleAppMain` to obtain an object graph of the application inspectable in the REPL:
+
+```scala mdoc:to-string
+import izumi.functional.bio.UnsafeRun2
+
+val runner = UnsafeRun2.createZIO()
+
+val objects = runner.unsafeRun(ExampleLauncher.replLocator(":exampletask"))
+
+// inspecting a component inside the application
+val logger = objects.get[LogIO[UIO]]
+```
+
+### Bundled roles
+
+@scaladoc[BundledRolesModule](izumi.distage.roles.bundled.BundledRolesModule) contains two bundled roles:
 
 - @scaladoc[Help](izumi.distage.roles.bundled.Help) - prints help message when launched `./launcher :help`
 - @scaladoc[ConfigWriter](izumi.distage.roles.bundled.ConfigWriter) - writes reference config into files, split by
@@ -105,11 +127,6 @@ object RolesPlugin extends PluginDef {
   include(BundledRolesModule[Task](version = "1.0"))
 }
 ```
-
-Further reading:
-
-- [distage-example](https://github.com/7mind/distage-example) - Example web service using roles
-- [Roles: a viable alternative to Microservices and Monoliths](https://github.com/7mind/slides/blob/master/02-roles/roles.pdf)
 
 ## Compile-time checks
 
@@ -259,7 +276,7 @@ val module = new ConfigModuleDef {
   makeConfig[OtherConf]("conf").named("other")
 
   // add config instance
-  make[AppConfig].from(AppConfig(
+  make[AppConfig].from(AppConfig.provided(
     ConfigFactory.parseString(
       """conf {
         |  name = "John"
@@ -271,7 +288,7 @@ val module = new ConfigModuleDef {
 }
 
 Injector().produceRun(module) {
-  configPrinter: ConfigPrinter =>
+  (configPrinter: ConfigPrinter) =>
     configPrinter.print()
 }
 ```

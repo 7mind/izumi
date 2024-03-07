@@ -53,9 +53,9 @@ object PluginLoaderDefaultImpl {
 
   def doLoad[T](base: String, whitelistClasses: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
     val scanResult = new ClassGraph()
-      .acceptPackages(enabledPackages: _*)
-      .acceptClasses(whitelistClasses :+ base: _*)
-      .rejectPackages(disabledPackages: _*)
+      .acceptPackages(enabledPackages*)
+      .acceptClasses((whitelistClasses :+ base)*)
+      .rejectPackages(disabledPackages*)
       .enableExternalClasses()
       .pipe(if (debug) _.verbose() else identity)
       .scan()

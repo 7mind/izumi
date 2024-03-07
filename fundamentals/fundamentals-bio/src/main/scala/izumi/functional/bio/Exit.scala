@@ -221,7 +221,7 @@ object Exit {
 //  object MonixExit {
 //    def toExit[E, A](exit: Either[Option[bio.Cause[E]], A]): Exit[E, A] = {
 //      exit match {
-//        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.empty)
+//        case Left(None) => Interruption(new InterruptedException("The task was cancelled."), Trace.forUnknownError)
 //        case Left(Some(error)) => toExit(error)
 //        case Right(value) => Success(value)
 //      }
@@ -236,8 +236,8 @@ object Exit {
 //
 //    def toExit[E](cause: bio.Cause[E]): Exit.Failure[E] = {
 //      cause match {
-//        case bio.Cause.Error(value) => Exit.Error(value, Trace.empty)
-//        case bio.Cause.Termination(value) => Exit.Termination(value, Trace.empty)
+//        case bio.Cause.Error(value) => Exit.Error(value, Trace.forUnknownError)
+//        case bio.Cause.Termination(value) => Exit.Termination(value, Trace.forUnknownError)
 //      }
 //    }
 //  }
@@ -257,10 +257,10 @@ object Exit {
   implicit lazy val ExitInstances: Monad2[Exit] & Bifunctor2[Exit] = new Monad2[Exit] with Bifunctor2[Exit] {
     override final val InnerF: Functor2[Exit] = this
     override final def pure[A](a: A): Exit[Nothing, A] = Exit.Success(a)
-    override final def map[R, E, A, B](r: Exit[E, A])(f: A => B): Exit[E, B] = r.map(f)
-    override final def bimap[R, E, A, E2, A2](r: Exit[E, A])(f: E => E2, g: A => A2): Exit[E2, A2] = r.leftMap(f).map(g)
-    override final def leftMap[R, E, A, E2](r: Exit[E, A])(f: E => E2): Exit[E2, A] = r.leftMap(f)
-    override final def flatMap[R, E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
+    override final def map[E, A, B](r: Exit[E, A])(f: A => B): Exit[E, B] = r.map(f)
+    override final def bimap[E, A, E2, A2](r: Exit[E, A])(f: E => E2, g: A => A2): Exit[E2, A2] = r.leftMap(f).map(g)
+    override final def leftMap[E, A, E2](r: Exit[E, A])(f: E => E2): Exit[E2, A] = r.leftMap(f)
+    override final def flatMap[E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
   }
 
   disableAutoTrace.discard()

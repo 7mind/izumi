@@ -131,7 +131,7 @@ object LifecycleAdapters {
   object LifecycleTag extends LifecycleTagLowPriority {
     @inline def apply[A: LifecycleTag]: LifecycleTag[A] = implicitly
 
-    implicit def resourceTag[R <: Lifecycle[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: LifecycleTag[R with Lifecycle[F0, A0]] { type F[X] = F0[X]; type A = A0 } = {
+    implicit def resourceTag[R <: Lifecycle[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: LifecycleTag[R & Lifecycle[F0, A0]] { type F[X] = F0[X]; type A = A0 } = {
       new LifecycleTag[R] {
         type F[X] = F0[X]
         type A = A0
@@ -141,71 +141,6 @@ object LifecycleAdapters {
       }
     }
   }
-
-  // FIXME wtf there's no Local3 anymore
-//  trait TrifunctorHasLifecycleTag[R0, T] {
-//    type F[-RR, +EE, +AA]
-//    type R
-//    type E
-//    type A <: T
-//
-//    implicit def tagFull: Tag[Lifecycle[F[Any, E, _], A]]
-//    implicit def ctorR: ZEnvConstructor[R]
-//    implicit def ev: R0 <:< Lifecycle[F[R, E, _], A]
-//    implicit def resourceTag: LifecycleTag[Lifecycle[F[Any, E, _], A]]
-//  }
-//
-//  object TrifunctorHasLifecycleTag extends TrifunctorHasLifecycleTagLowPriority {
-//
-//    import scala.annotation.unchecked.uncheckedVariance as v
-//
-//    implicit def trifunctorResourceTag[
-//      R1 <: Lifecycle[F0[R0, E0, _], A0],
-//      F0[_, _, _]: TagK3,
-//      R0: ZEnvConstructor,
-//      E0: Tag,
-//      A0 <: A1: Tag,
-//      A1,
-//    ]: TrifunctorHasLifecycleTag[R1 with Lifecycle[F0[R0, E0, _], A0], A1] {
-//      type R = R0
-//      type E = E0
-//      type A = A0
-//      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
-//    } = new TrifunctorHasLifecycleTag[R1, A1] { self =>
-//      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v]
-//      type R = R0
-//      type E = E0
-//      type A = A0
-//      val ctorR: ZEnvConstructor[R0] = implicitly
-//      val tagFull: Tag[Lifecycle[F0[Any, E0, _], A0]] = implicitly
-//      val ev: R1 <:< Lifecycle[F0[R0, E0, _], A0] = implicitly
-//      val resourceTag: LifecycleTag[Lifecycle[F0[Any, E0, _], A0]] = new LifecycleTag[Lifecycle[F0[Any, E0, _], A0]] {
-//        type F[AA] = F0[Any, E0, AA]
-//        type A = A0
-//        val tagFull: Tag[Lifecycle[F0[Any, E0, _], A0]] = self.tagFull
-//        val tagK: TagK[F0[Any, E0, _]] = TagK[F0[Any, E0, _]]
-//        val tagA: Tag[A0] = implicitly
-//      }
-//    }
-//  }
-//
-//  private[definition] sealed trait TrifunctorHasLifecycleTagLowPriority extends TrifunctorHasLifecycleTagLowPriority1 {
-//
-//    import scala.annotation.unchecked.uncheckedVariance as v
-//
-//    implicit def trifunctorResourceTagNothing[
-//      R1 <: Lifecycle[F0[R0, Nothing, _], A0],
-//      F0[_, _, _]: TagK3,
-//      R0: ZEnvConstructor,
-//      A0 <: A1: Tag,
-//      A1,
-//    ]: TrifunctorHasLifecycleTag[R1 with Lifecycle[F0[R0, Nothing, _], A0], A1] {
-//      type R = R0
-//      type E = Nothing
-//      type A = A0
-//      type F[-RR, +EE, +AA] = F0[RR @v, EE @v, AA @v] @v
-//    } = TrifunctorHasLifecycleTag.trifunctorResourceTag[R1, F0, R0, Nothing, A0, A1]
-//  }
 
   trait ZIOEnvLifecycleTag[R0, T] {
     type R
@@ -226,7 +161,7 @@ object LifecycleAdapters {
       E0 >: DottyNothing: Tag,
       A0 <: A1: Tag,
       A1,
-    ]: ZIOEnvLifecycleTag[R1 with Lifecycle[F0[R0, E0, _], A0], A1] {
+    ]: ZIOEnvLifecycleTag[R1 & Lifecycle[F0[R0, E0, _], A0], A1] {
       type R = R0
       type E = E0
       type A = A0
@@ -254,7 +189,7 @@ object LifecycleAdapters {
       R0: ZEnvConstructor,
       A0 <: A1: Tag,
       A1,
-    ]: ZIOEnvLifecycleTag[R1 with Lifecycle[F0[R0, DottyNothing, _], A0], A1] {
+    ]: ZIOEnvLifecycleTag[R1 & Lifecycle[F0[R0, DottyNothing, _], A0], A1] {
       type R = R0
       type E = DottyNothing
       type A = A0

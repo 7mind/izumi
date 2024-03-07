@@ -20,7 +20,7 @@ final class ConfigTest extends AnyWordSpec {
   }
 
   def mkModule(config: Config): AppConfigModule = {
-    val appConfig = AppConfig(config)
+    val appConfig = AppConfig(config, List.empty, List.empty)
     new AppConfigModule(appConfig)
   }
 
@@ -87,7 +87,7 @@ final class ConfigTest extends AnyWordSpec {
 
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
+      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None, optCustomObject = None))
     }
 
     "resolve config tuples" in {
@@ -103,9 +103,9 @@ final class ConfigTest extends AnyWordSpec {
 
       assert(
         context.get[Service[CustomCaseClass]].conf == CustomCaseClass(
-          CustomObject(453),
-          Map("a" -> CustomObject(453), "b" -> CustomObject(45)),
-          Map("x" -> List(CustomObject(45), CustomObject(453), CustomObject(1))),
+          CustomCodecObject(453),
+          Map("a" -> CustomCodecObject(453), "b" -> CustomCodecObject(45)),
+          Map("x" -> List(CustomCodecObject(45), CustomCodecObject(453), CustomCodecObject(1))),
         )
       )
     }
@@ -116,7 +116,7 @@ final class ConfigTest extends AnyWordSpec {
 
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
+      assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None, optCustomObject = None))
     }
 
     "resolve backticks" in {
@@ -139,6 +139,15 @@ final class ConfigTest extends AnyWordSpec {
 
       assert(context.get[Service[PartiallyPrivateCaseClass]].conf == PartiallyPrivateCaseClass("super secret value", true))
     }
+
+    // Derivation for AnyVals is not supported on Scala 3, requires a custom macro / library like
+    // https://github.com/softwaremill/tapir/blob/84e4b3cb3bb209ac6c4fde3aecb13ca71afe6609/core/src/main/scala-3/sttp/tapir/internal/CodecValueClassMacro.scala
+//    "resolve case classes with AnyVal fields" in {
+//      val context = Injector()
+//        .produce(mkConfigModule("anyval-test.conf")(TestConfigReaders.anyvalCodecDefinition)).unsafeGet()
+//
+//      assert(context.get[Service[AnyValClass]].conf == AnyValClass(new AnyValInt(5)))
+//    }
 
     "resolve config sealed traits (with progression test for https://github.com/scala/bug/issues/11645)" in {
       // FIXME: pureconfig-magnolia can't read enumerations properly

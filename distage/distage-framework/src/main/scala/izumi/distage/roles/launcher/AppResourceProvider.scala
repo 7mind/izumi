@@ -43,7 +43,7 @@ object AppResourceProvider {
             val runner = runtimeLocator.get[QuasiIORunner[F]]
             val F = runtimeLocator.get[QuasiIO[F]]
 
-            PreparedApp(prepareMainResource(runtimeLocator)(F), runner, F)
+            PreparedApp(prepareMainResource(runtimeLocator)(F), entrypoint, runner, F)
         }
     }
 
@@ -51,7 +51,6 @@ object AppResourceProvider {
       injectorFactory
         .inherit(runtimeLocator)
         .produceFX[F](appPlan.app, filters.filterF)
-        .evalTap(entrypoint.runTasksAndRoles(_, F))
         .wrapRelease((r, a) => r(a).guarantee(F.maybeSuspend(hook.finishShutdown())))
     }
   }

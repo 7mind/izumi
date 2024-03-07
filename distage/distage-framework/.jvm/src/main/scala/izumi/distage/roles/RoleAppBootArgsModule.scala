@@ -1,5 +1,6 @@
 package izumi.distage.roles
 
+import distage.config.AppConfig
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.RoleAppMain.ArgV
@@ -38,8 +39,8 @@ class RoleAppBootArgsModule[F[_]: TagK: DefaultModule](
   make[RoleAppActivationParser].from[RoleAppActivationParser.Impl]
   make[ActivationParser].from[ActivationParser.Impl]
   make[Activation].named("roleapp").from {
-    (parser: ActivationParser) =>
-      parser.parseActivation()
+    (parser: ActivationParser, config: AppConfig) =>
+      parser.parseActivation(config)
   }
 
   make[AppArgsInterceptor].from[AppArgsInterceptor.Impl]

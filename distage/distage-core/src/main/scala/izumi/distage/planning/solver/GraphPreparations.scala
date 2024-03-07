@@ -8,7 +8,7 @@ import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
-import izumi.distage.planning.{BindingTranslator, LocalContextHandler}
+import izumi.distage.planning.{BindingTranslator, SubcontextHandler}
 import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.MutableMultiMap
 import izumi.fundamentals.collections.nonempty.NEList
@@ -110,7 +110,7 @@ class GraphPreparations(
   }
 
   def computeOperationsUnsafe[Err](
-    handler: LocalContextHandler[Err],
+    handler: SubcontextHandler[Err],
     bindings: ModuleBase,
   ): Either[NEList[Err], Iterator[(Annotated[DIKey], InstantiationOp, Binding)]] = {
 

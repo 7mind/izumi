@@ -1,19 +1,19 @@
 package izumi.distage.roles.bundled
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
+import distage.config.AppConfig
+import distage.{BootstrapModuleDef, Plan}
+import izumi.distage.config.codec.ConfigMeta
 import izumi.distage.config.model.ConfTag
-import izumi.distage.framework.services.RoleAppPlanner
+import izumi.distage.framework.services.{ConfigMerger, RoleAppPlanner}
 import izumi.distage.model.definition.Id
-import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.plan.{ExecutableOp, Plan}
-import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, ConfigurableComponent, ExtractConfigPath, WriteReference}
+import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.functional.Value
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
-import scala.annotation.unused
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
@@ -21,7 +21,7 @@ import izumi.logstage.distage.LogstageModule
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import scala.annotation.nowarn
+import scala.annotation.{nowarn, unused}
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.Try
 
@@ -30,6 +30,7 @@ final class ConfigWriter[F[_]](
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
   roleAppPlanner: RoleAppPlanner,
+  appConfig: AppConfig,
   F: QuasiIO[F],
 ) extends RoleTask[F]
   with BundledTask {
@@ -38,6 +39,7 @@ final class ConfigWriter[F[_]](
   //  should've been unnecessary after https://github.com/7mind/izumi/issues/779
   //  but, the contents of the MainAppModule (including `"activation"` config read) are not accessible here from `RoleAppPlanner` yet...
   private[this] val _HackyMandatorySection = ConfigPath("activation")
+  private val configMerger = new ConfigMerger.ConfigMergerImpl(logger)
 
   override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
     F.maybeSuspend {
@@ -56,29 +58,33 @@ final class ConfigWriter[F[_]](
 
     logger.info(s"Going to process ${roleInfo.availableRoleBindings.size -> "roles"}")
 
-    val commonComponent = ConfigurableComponent("common", Some(launcherVersion), None)
-    val commonConfig = buildConfig(options, commonComponent)
-
-    if (!options.includeCommon) {
-      writeConfig(options, commonComponent, None, commonConfig)
-    }
+    val index = appConfig.roles.map(c => (c.roleConfig.role, c)).toMap
+    assert(roleInfo.availableRoleNames == index.keySet)
 
     roleInfo.availableRoleBindings.foreach {
       role =>
-        val component = ConfigurableComponent(role.descriptor.id, role.descriptor.artifact.map(_.version), Some(commonConfig))
-        val refConfig = buildConfig(options, component)
-        val versionedComponent = if (options.useLauncherVersion) {
-          component.copy(version = Some(ArtifactVersion(launcherVersion.version)))
-        } else {
-          component
-        }
-
         try {
-          writeConfig(options, versionedComponent, None, refConfig)
-          minimizedConfig(refConfig, role)
+          val roleId = role.descriptor.id
+          val roleVersion = if (options.useLauncherVersion) {
+            Some(launcherVersion.version)
+          } else {
+            role.descriptor.artifact.map(_.version).map(_.version)
+          }
+          val subLogger = logger("role" -> roleId)
+          val fileNameFull = outputFileName(roleId, roleVersion, options.asJson, Some("full"))
+
+          val loaded = index(roleId)
+
+          // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
+          subLogger.info(s"About to output configs...")
+          val mergedRoleConfig = configMerger.mergeFilter(appConfig.shared, List(loaded), _ => true, "configwriter")
+          writeConfig(options, fileNameFull, mergedRoleConfig, subLogger)
+
+          minimizedConfig(mergedRoleConfig, role)
             .foreach {
               cfg =>
-                writeConfig(options, versionedComponent, Some("minimized"), cfg)
+                val fileNameMinimized = outputFileName(roleId, roleVersion, options.asJson, Some("minimized"))
+                writeConfig(options, fileNameMinimized, cfg, subLogger)
             }
         } catch {
           case exception: Throwable =>
@@ -88,41 +94,64 @@ final class ConfigWriter[F[_]](
     }
   }
 
-  private[this] def buildConfig(config: WriteReference, cmp: ConfigurableComponent): Config = {
-    val referenceConfig = s"${cmp.roleId}-reference.conf"
-    logger.info(s"[${cmp.roleId}] Resolving $referenceConfig... with ${config.includeCommon -> "shared sections"}")
+  private[this] def outputFileName(service: String, version: Option[String], asJson: Boolean, suffix: Option[String]): String = {
+    val extension = if (asJson) "json" else "conf"
+    val vstr = version.getOrElse("0.0.0-UNKNOWN")
+    val suffixStr = suffix.fold("")("-" + _)
 
-    val reference = Value(ConfigFactory.parseResourcesAnySyntax(referenceConfig))
-      .mut(cmp.parent.filter(_ => config.includeCommon))(_.withFallback(_))
-      .get
-      .resolve()
-
-    if (reference.isEmpty) {
-      logger.warn(s"[${cmp.roleId}] Reference config is empty.")
-    }
-
-    val resolved = ConfigFactory
-      .systemProperties()
-      .withFallback(reference)
-      .resolve()
-
-    val filtered = cleanupEffectiveAppConfig(resolved, reference)
-    filtered.checkValid(reference)
-    filtered
+    s"$service$suffixStr-$vstr.$extension"
   }
 
-  private[this] def minimizedConfig(config: Config, role: RoleBinding): Option[Config] = {
+  private[this] def minimizedConfig(roleConfig: Config, role: RoleBinding): Option[Config] = {
     val roleDIKey = role.binding.key
 
-    val bootstrapOverride = new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false)
+    val roleConfigs = appConfig.roles.map(lrc => lrc.copy(roleConfig = lrc.roleConfig.copy(active = lrc.roleConfig.role == role.descriptor.id)))
+
+    // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
+    // TODO: here we accept all the role configs regardless of them being active or not, that might resolve cross-role conflicts in unpredictable manner
+    val fullConfig = configMerger.mergeFilter(appConfig.shared, roleConfigs, _ => true, "configwriter")
+    val correctedAppConfig = appConfig.copy(config = fullConfig, roles = roleConfigs)
+
+    val bootstrapOverride = new BootstrapModuleDef {
+      include(new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false))
+    }
 
     val plans = roleAppPlanner
-      .reboot(bootstrapOverride)
+      .reboot(bootstrapOverride, Some(correctedAppConfig))
       .makePlan(Set(roleDIKey))
 
-    def getConfig(plan: Plan): Iterator[ConfigPath] = {
-      plan.stepsUnordered.iterator.collect {
-        case ExtractConfigPath(path) => path
+    def getConfig(plan: Plan): Seq[ConfigPath] = {
+      val configTags = plan.stepsUnordered.toSeq.flatMap {
+        op =>
+          op.origin.value match {
+            case defined: OperationOrigin.Defined =>
+              defined.binding.tags.collect {
+                case t: ConfTag =>
+                  t
+              }
+            case _ =>
+              Seq.empty
+          }
+      }
+
+      val paths = configTags.flatMap(t => unpack(Seq(t.confPath), t.fieldsMeta))
+      paths
+    }
+
+    def unpack(path: Seq[String], meta: ConfigMeta): Seq[ConfigPath] = {
+      meta match {
+        case ConfigMeta.ConfigMetaCaseClass(fields) =>
+          fields.flatMap {
+            case (name, meta) =>
+              unpack(path :+ name, meta)
+          }
+        case ConfigMeta.ConfigMetaSealedTrait(branches) =>
+          branches.toSeq.flatMap {
+            case (name, meta) =>
+              unpack(path :+ name, meta)
+          }
+        case ConfigMeta.ConfigMetaEmpty() => Seq(ConfigPath(path.mkString(".")))
+        case ConfigMeta.ConfigMetaUnknown() => Seq(ConfigPath(path.mkString(".")))
       }
     }
 
@@ -130,46 +159,27 @@ final class ConfigWriter[F[_]](
       getConfig(plans.app).toSet + _HackyMandatorySection
 
     if (plans.app.stepsUnordered.exists(_.target == roleDIKey)) {
-      Some(ConfigWriter.minimized(resolvedConfig, config))
+      Some(ConfigWriter.minimized(resolvedConfig, roleConfig))
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")
       None
     }
   }
 
-  private[this] def writeConfig(config: WriteReference, cmp: ConfigurableComponent, suffix: Option[String], typesafeConfig: Config): Try[Unit] = {
-    val fileName = outputFileName(cmp.roleId, cmp.version, config.asJson, suffix)
-    val target = Paths.get(config.targetDir, fileName)
+  private[this] def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, subLogger: IzLogger): Try[Unit] = {
+    val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
 
+    val target = Paths.get(options.targetDir, fileName)
     Try {
-      val cfg = typesafeConfig.root().render(configRenderOptions.setJson(config.asJson))
+      val cfg = typesafeConfig.root().render(configRenderOptions.setJson(options.asJson))
       val bytes = cfg.getBytes(StandardCharsets.UTF_8)
       Files.write(target, bytes)
-      logger.info(s"[${cmp.roleId}] Reference config saved -> $target (${bytes.size} bytes)")
+      subLogger.info(s"Reference config saved -> $target (${bytes.size} bytes)")
     }.recover {
       case error: Throwable =>
-        logger.error(s"[${cmp.roleId -> "component id" -> null}] Can't write reference config to $target, $error")
+        subLogger.error(s"Can't write reference config to $target, $error")
     }
   }
-
-  // TODO: sdk?
-  @nowarn("msg=Unused import")
-  private[this] def cleanupEffectiveAppConfig(effectiveAppConfig: Config, reference: Config): Config = {
-    import scala.collection.compat._
-    import scala.jdk.CollectionConverters._
-
-    ConfigFactory.parseMap(effectiveAppConfig.root().unwrapped().asScala.view.filterKeys(reference.hasPath).toMap.asJava)
-  }
-
-  private[this] def outputFileName(service: String, version: Option[ArtifactVersion], asJson: Boolean, suffix: Option[String]): String = {
-    val extension = if (asJson) "json" else "conf"
-    val vstr = version.map(_.version).getOrElse("0.0.0-UNKNOWN")
-    val suffixStr = suffix.fold("")("-" + _)
-
-    s"$service$suffixStr-$vstr.$extension"
-  }
-
-  private[this] final val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
 }
 
 object ConfigWriter extends RoleDescriptor {
@@ -220,32 +230,29 @@ object ConfigWriter extends RoleDescriptor {
 
   @nowarn("msg=Unused import")
   def minimized(requiredPaths: Set[ConfigPath], source: Config): Config = {
-    import scala.collection.compat._
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
 
     val paths = requiredPaths.map(_.toPath)
 
-    ConfigFactory.parseMap {
-      source
-        .root().unwrapped().asScala
-        .view
-        .filterKeys(key => paths.exists(_.startsWith(key)))
-        .toMap
-        .asJava
-    }
-  }
-
-  object ExtractConfigPath {
-    def unapply(op: ExecutableOp): Option[ConfigPath] = {
-      op.origin.value match {
-        case defined: OperationOrigin.Defined =>
-          defined.binding.tags.collectFirst {
-            case ConfTag(path) => ConfigPath(path)
+    def filter(path: Seq[String], config: ConfigObject): ConfigObject = {
+      config.entrySet().asScala.foldLeft(config) {
+        case (c, e) =>
+          val key = e.getKey
+          val npath = path :+ key
+          val pathKey = npath.mkString(".")
+          if (paths.contains(pathKey) || paths.exists(p => p.startsWith(pathKey + "."))) {
+            e.getValue match {
+              case configObject: ConfigObject => c.withValue(key, filter(npath, configObject))
+              case _ => c
+            }
+          } else {
+            c.withoutKey(key)
           }
-        case _ =>
-          None
       }
     }
+
+    val filtered = filter(Seq.empty, source.root()).toConfig
+    filtered
   }
 
   final case class ConfigPath(parts: Seq[String]) {

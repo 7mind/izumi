@@ -118,9 +118,9 @@ object MiniBIO {
   final case class FlatMap[E, A, +E1 >: E, +B](io: MiniBIO[E, A], f: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
   final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: Exit.Failure[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
 
-  implicit val BIOMiniBIO: IO2[MiniBIO] with BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
+  implicit val BIOMiniBIO: IO2[MiniBIO] & BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
     override def pure[A](a: A): MiniBIO[Nothing, A] = sync(a)
-    override def flatMap[R, E, A, B](r: MiniBIO[E, A])(f: A => MiniBIO[E, B]): MiniBIO[E, B] = FlatMap(r, f)
+    override def flatMap[E, A, B](r: MiniBIO[E, A])(f: A => MiniBIO[E, B]): MiniBIO[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.forTypedError(v)))
     override def terminate(v: => Throwable): MiniBIO[Nothing, Nothing] = Fail.terminate(v)
     override def sendInterruptToSelf: MiniBIO[Nothing, Unit] = unit
@@ -133,7 +133,7 @@ object MiniBIO {
     }
     override def sync[A](effect: => A): MiniBIO[Nothing, A] = Sync(() => Exit.Success(effect))
 
-    override def redeem[R, E, A, E2, B](r: MiniBIO[E, A])(err: E => MiniBIO[E2, B], succ: A => MiniBIO[E2, B]): MiniBIO[E2, B] = {
+    override def redeem[E, A, E2, B](r: MiniBIO[E, A])(err: E => MiniBIO[E2, B], succ: A => MiniBIO[E2, B]): MiniBIO[E2, B] = {
       Redeem[E, A, E2, B](
         r,
         {
@@ -145,9 +145,9 @@ object MiniBIO {
       )
     }
 
-    override def catchAll[R, E, A, E2](r: MiniBIO[E, A])(f: E => MiniBIO[E2, A]): MiniBIO[E2, A] = redeem(r)(f, pure)
+    override def catchAll[E, A, E2](r: MiniBIO[E, A])(f: E => MiniBIO[E2, A]): MiniBIO[E2, A] = redeem(r)(f, pure)
 
-    override def bracketCase[R, E, A, B](acquire: MiniBIO[E, A])(release: (A, Exit[E, B]) => MiniBIO[Nothing, Unit])(use: A => MiniBIO[E, B]): MiniBIO[E, B] = {
+    override def bracketCase[E, A, B](acquire: MiniBIO[E, A])(release: (A, Exit[E, B]) => MiniBIO[Nothing, Unit])(use: A => MiniBIO[E, B]): MiniBIO[E, B] = {
       // does not propagate error raised in release if `use` failed, in that case only error from `use` is preserved
       flatMap(acquire)(
         a =>
@@ -159,11 +159,11 @@ object MiniBIO {
       )
     }
 
-    override def sandbox[R, E, A](r: MiniBIO[E, A]): MiniBIO[Exit.Failure[E], A] = {
+    override def sandbox[E, A](r: MiniBIO[E, A]): MiniBIO[Exit.Failure[E], A] = {
       Redeem[E, A, Exit.Failure[E], A](r, e => fail(e), pure)
     }
 
-    override def traverse[R, E, A, B](l: Iterable[A])(f: A => MiniBIO[E, B]): MiniBIO[E, List[B]] = {
+    override def traverse[E, A, B](l: Iterable[A])(f: A => MiniBIO[E, B]): MiniBIO[E, List[B]] = {
       val x = l.foldLeft(pure(Nil): MiniBIO[E, List[B]]) {
         (acc, a) =>
           flatMap(acc)(list => map(f(a))(_ :: list))
@@ -171,14 +171,14 @@ object MiniBIO {
       map(x)(_.reverse)
     }
 
-    override def shiftBlocking[R, E, A](f: MiniBIO[E, A]): MiniBIO[E, A] = f
+    override def shiftBlocking[E, A](f: MiniBIO[E, A]): MiniBIO[E, A] = f
 
     override def syncBlocking[A](f: => A): MiniBIO[Throwable, A] = sync(f)
 
     override def syncInterruptibleBlocking[A](f: => A): MiniBIO[Throwable, A] = sync(f)
-    override def uninterruptible[R, E, A](r: MiniBIO[E, A]): MiniBIO[E, A] = r
-    override def uninterruptibleExcept[R, E, A](r: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]): MiniBIO[E, A] = r(Morphism2(identity(_)))
-    override def bracketExcept[R, E, A, B](
+    override def uninterruptible[E, A](r: MiniBIO[E, A]): MiniBIO[E, A] = r
+    override def uninterruptibleExcept[E, A](r: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]): MiniBIO[E, A] = r(Morphism2(identity(_)))
+    override def bracketExcept[E, A, B](
       acquire: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]
     )(release: (A, Exit[E, B]) => MiniBIO[Nothing, Unit]
     )(use: A => MiniBIO[E, B]

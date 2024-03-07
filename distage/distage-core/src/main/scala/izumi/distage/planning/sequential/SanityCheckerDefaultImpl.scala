@@ -1,8 +1,7 @@
 package izumi.distage.planning.sequential
 
-import distage.Roots
 import izumi.distage.model.definition.errors.DIError
-import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.planning.SanityChecker
 import izumi.distage.model.reflection.DIKey

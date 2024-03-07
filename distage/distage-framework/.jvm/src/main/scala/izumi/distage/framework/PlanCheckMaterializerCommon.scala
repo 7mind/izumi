@@ -15,7 +15,7 @@ private[framework] trait PlanCheckMaterializerCommon {
     */
   protected def filterReferencablePlugins(checkedLoadedPlugins: LoadedPlugins): Seq[ModuleBase] = {
     checkedLoadedPlugins.allRaw
-      .filterNot(TypeUtil isAnonymous _.getClass)
+      .filterNot(TypeUtil `isAnonymous` _.getClass)
       .filter(p => TypeUtil.isObject(p.getClass).isDefined || TypeUtil.isZeroArgClass(p.getClass).isDefined)
   }
 

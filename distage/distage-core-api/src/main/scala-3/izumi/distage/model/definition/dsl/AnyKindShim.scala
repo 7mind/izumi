@@ -1,7 +1,5 @@
 package izumi.distage.model.definition.dsl
 
-trait AnyKindShim {
+object AnyKindShim {
   type LifecycleF = [_] =>> Any
 }
-
-object AnyKindShim extends AnyKindShim {}

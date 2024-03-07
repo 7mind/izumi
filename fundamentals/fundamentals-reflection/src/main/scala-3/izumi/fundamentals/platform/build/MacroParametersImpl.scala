@@ -1,11 +1,7 @@
 package izumi.fundamentals.platform.build
 
-import izumi.fundamentals.reflection.ReflectiveCall
-
-import scala.annotation.experimental
 import scala.quoted.{Expr, Quotes, Type}
 
-@experimental
 object MacroParametersImpl {
 
   def extractString(name: Expr[String])(using quotes: Quotes): Expr[Option[String]] = {
@@ -20,8 +16,9 @@ object MacroParametersImpl {
 
   private def extract(name: String)(using quotes: Quotes): Option[String] = {
     import quotes.reflect.*
+    import scala.reflect.Selectable.reflectiveSelectable
     val prefix = s"$name="
-    val value = CompilationInfo.XmacroSettings.filter(_.startsWith(prefix)).map(_.stripPrefix(prefix)).lastOption
+    val value = CompilationInfo.asInstanceOf[{ def XmacroSettings: List[String] }].XmacroSettings.filter(_.startsWith(prefix)).map(_.stripPrefix(prefix)).lastOption
     if (value.isEmpty) {
       report.info(s"Undefined macro parameter $name, add `-Xmacro-settings:$prefix<value>` into `scalac` options")
     }

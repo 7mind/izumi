@@ -22,7 +22,11 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
   *
   * Singleton bindings:
   *   - `make[X]` = create X using its constructor
+  *   - `makeTrait[X]` = create an abstract class or a trait `X` using [[izumi.distage.constructors.TraitConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]])
+  *   - `makeFactory[X]` = create a "factory-like" abstract class or a trait `X` using [[izumi.distage.constructors.FactoryConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]])
   *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
+  *   - `make[X].fromTrait[XImpl]` = bind X to its abstract class or a trait subtype XImpl, deriving constructor using [[izumi.distage.constructors.TraitConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]])
+  *   - `make[X].fromFactory[XImpl]` = bind X to its "factory-like" abstract class or a trait subtype XImpl, deriving constructor using [[izumi.distage.constructors.FactoryConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]])
   *   - `make[X].from(myX)` = bind X to an already existing instance `myX`
   *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]] requesting an Y parameter
   *   - `make[X].from { y: Y @Id("special") => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]], requesting a named "special" Y parameter

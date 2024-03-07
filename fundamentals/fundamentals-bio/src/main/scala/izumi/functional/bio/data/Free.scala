@@ -14,7 +14,7 @@ sealed abstract class Free[+S[_, _], +E, +A] {
   @inline final def void: Free[S, E, Unit] = map(_ => ())
 
   @inline final def mapK[S1[e, a] >: S[e, a], T[_, _]](f: S1 ~>> T): Free[T, E, A] = {
-    foldMap[S1, Free[T, +_, +_]](Morphism2(Free Suspend f(_)))
+    foldMap[S1, Free[T, +_, +_]](Morphism2(Free `Suspend` f(_)))
   }
 
   // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
@@ -50,11 +50,11 @@ object Free {
 
   object Monad2Instance extends Monad2Instance[Nothing]
   class Monad2Instance[S[_, _]] extends Monad2[Free[S, +_, +_]] {
-    @inline override def flatMap[R, E, A, B](r: Free[S, E, A])(f: A => Free[S, E, B]): Free[S, E, B] = r.flatMap(f)
+    @inline override def flatMap[E, A, B](r: Free[S, E, A])(f: A => Free[S, E, B]): Free[S, E, B] = r.flatMap(f)
     @inline override def pure[A](a: A): Free[S, Nothing, A] = Free.pure(a)
-    @inline override def *>[R, E, A, B](f: Free[S, E, A], next: => Free[S, E, B]): Free[S, E, B] = f *> next
-    @inline override def <*[R, E, A, B](f: Free[S, E, A], next: => Free[S, E, B]): Free[S, E, A] = f <* next
-    @inline override def as[R, E, A, B](r: Free[S, E, A])(v: => B): Free[S, E, B] = r.as(v)
-    @inline override def void[R, E, A](r: Free[S, E, A]): Free[S, E, Unit] = r.void
+    @inline override def *>[E, A, B](f: Free[S, E, A], next: => Free[S, E, B]): Free[S, E, B] = f *> next
+    @inline override def <*[E, A, B](f: Free[S, E, A], next: => Free[S, E, B]): Free[S, E, A] = f <* next
+    @inline override def as[E, A, B](r: Free[S, E, A])(v: => B): Free[S, E, B] = r.as(v)
+    @inline override def void[E, A](r: Free[S, E, A]): Free[S, E, Unit] = r.void
   }
 }

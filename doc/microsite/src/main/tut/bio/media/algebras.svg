@@ -1,85 +1,257 @@
-<svg version="1.1" baseProfile="full" width="1016.75" height="199" viewbox="0 0 1016.75 199" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" style="font:bold normal 12pt Helvetica, Helvetica, sans-serif;;stroke-linejoin:round;stroke-linecap:round">
-  <title >nomnoml</title>
-  <desc >[cats.effect.*]&lt;:--[CatsConversions]
-
-[Fork3]&lt;:--[Fiber3]
-
-[BlockingIO3]&lt;:--[BlockingIO2]
-
-[Primitives2]&lt;:--[Primitives3]
-[Primitives3]&lt;:--[Ref3]
-[Primitives3]&lt;:--[Semaphore3]
-[Primitives3]&lt;:--[Promise3]
-
-[Entropy]&lt;:--[Entropy2]
-[Entropy2]&lt;:--[Entropy3]
-
-[Clock]&lt;:--[Clock2]
-[Clock2]&lt;:--[Clock3]
-
-[UnsafeRun2]&lt;:--[UnsafeRun3]
-</desc>
-  <rect x="0" y="0" height="199" width="1016.75" style="stroke:none; fill:transparent;"></rect>
-  <path d="M87.5 44.5 L87.5 64.5 L87.5 84.5 L87.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M92.8 57.8 L87.5 57.8 L82.2 57.8 L87.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M233.5 44.5 L233.5 64.5 L233.5 84.5 L233.5 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M238.8 57.8 L233.5 57.8 L228.2 57.8 L233.5 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M360 44.5 L360 64.5 L360 84.5 L360 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M365.3 57.8 L360 57.8 L354.7 57.8 L360 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M505 44.5 L505 64.5 L505 84.5 L505 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M510.3 57.8 L505 57.8 L499.7 57.8 L505 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M454.5 109.5 L316.8 135.5 L316.8 155.5 L316.8 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M442.4 117.2 L441.4 112 L440.4 106.8 L454.5 109.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M475.9 115.5 L438.3 135.5 L438.3 155.5 L438.3 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M466.6 126.5 L464.1 121.8 L461.6 117.1 L475.9 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M537 115.5 L578.3 135.5 L578.3 155.5 L578.3 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M551.3 116.5 L549 121.3 L546.7 126.1 L537 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M704.8 44.5 L704.8 64.5 L704.8 84.5 L704.8 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M710.1 57.8 L704.8 57.8 L699.4 57.8 L704.8 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M704.8 115.5 L704.8 135.5 L704.8 155.5 L704.8 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M710.1 128.8 L704.8 128.8 L699.4 128.8 L704.8 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M821.3 44.5 L821.3 64.5 L821.3 84.5 L821.3 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M826.6 57.8 L821.3 57.8 L815.9 57.8 L821.3 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M821.3 115.5 L821.3 135.5 L821.3 155.5 L821.3 155.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M826.6 128.8 L821.3 128.8 L815.9 128.8 L821.3 115.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <path d="M949.8 44.5 L949.8 64.5 L949.8 84.5 L949.8 84.5 " style="stroke:#33322E;fill:none;stroke-dasharray:6 6;stroke-width:3;"></path>
-  <path d="M955.1 57.8 L949.8 57.8 L944.4 57.8 L949.8 44.5 Z" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></path>
-  <rect x="34.5" y="13.5" height="31" width="106" data-name="cats.effect.*" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="87.5" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="cats.effect.*">cats.effect.*</text>
-  <rect x="13.5" y="84.5" height="31" width="148" data-name="CatsConversions" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="87.5" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="CatsConversions">CatsConversions</text>
-  <rect x="203.5" y="13.5" height="31" width="60" data-name="Fork3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="233.5" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Fork3">Fork3</text>
-  <rect x="201.5" y="84.5" height="31" width="64" data-name="Fiber3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="233.5" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Fiber3">Fiber3</text>
-  <rect x="305.5" y="13.5" height="31" width="109" data-name="BlockingIO3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="360" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BlockingIO3">BlockingIO3</text>
-  <rect x="305.5" y="84.5" height="31" width="109" data-name="BlockingIO2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="360" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="BlockingIO2">BlockingIO2</text>
-  <rect x="454.5" y="13.5" height="31" width="101" data-name="Primitives2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="505" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Primitives2">Primitives2</text>
-  <rect x="454.5" y="84.5" height="31" width="101" data-name="Primitives3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="505" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Primitives3">Primitives3</text>
-  <rect x="291.5" y="155.5" height="31" width="51" data-name="Ref3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="317" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Ref3">Ref3</text>
-  <rect x="382.5" y="155.5" height="31" width="112" data-name="Semaphore3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="438.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Semaphore3">Semaphore3</text>
-  <rect x="534.5" y="155.5" height="31" width="88" data-name="Promise3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="578.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Promise3">Promise3</text>
-  <rect x="666.5" y="13.5" height="31" width="76" data-name="Entropy" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="704.5" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Entropy">Entropy</text>
-  <rect x="662.5" y="84.5" height="31" width="85" data-name="Entropy2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="705" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Entropy2">Entropy2</text>
-  <rect x="662.5" y="155.5" height="31" width="85" data-name="Entropy3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="705" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Entropy3">Entropy3</text>
-  <rect x="791.5" y="13.5" height="31" width="60" data-name="Clock" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="821.5" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Clock">Clock</text>
-  <rect x="787.5" y="84.5" height="31" width="68" data-name="Clock2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="821.5" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Clock2">Clock2</text>
-  <rect x="787.5" y="155.5" height="31" width="68" data-name="Clock3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="821.5" y="177" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="Clock3">Clock3</text>
-  <rect x="895.5" y="13.5" height="31" width="109" data-name="UnsafeRun2" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="950" y="35" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="UnsafeRun2">UnsafeRun2</text>
-  <rect x="895.5" y="84.5" height="31" width="109" data-name="UnsafeRun3" style="stroke:#33322E;fill:#eee8d5;stroke-dasharray:none;stroke-width:3;"></rect>
-  <text x="950" y="106" style="fill: #33322E;font:bold  12pt Helvetica, Helvetica, sans-serif;text-anchor: middle;" data-name="UnsafeRun3">UnsafeRun3</text>
-</svg>
+<svg version="1.1" baseProfile="full" width="1312.3" height="158.0" viewbox="0 0 1312.25 158" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+		<desc >[cats.effect.*]&lt;:--[CatsConversions]
+	
+	[Fork2]&lt;:--[Fiber2]
+	
+	[BlockingIO2]
+	
+	[Primitives2]
+	
+	[Primitives2]&lt;:--[Ref2]
+	[Primitives2]&lt;:--[Semaphore2]
+	[Primitives2]&lt;:--[Promise2]
+	
+	[PrimitivesM2]
+	[PrimitivesM2]&lt;:--[RefM2]
+	[PrimitivesM2]&lt;:--[Mutex2]
+	
+	[Entropy1]&lt;:--[Entropy2]
+	[Clock1]&lt;:--[Clock2]
+	
+	[UnsafeRun2]
+	</desc>
+	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="bold" font-style="normal">
+			<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="3.0" stroke-linejoin="round" stroke-linecap="round" stroke="#33322E">
+				<g stroke="transparent" fill="transparent">
+					<rect x="0.0" y="0.0" height="158.0" width="1312.3" stroke="none"></rect>
+				</g>
+			<g transform="translate(8, 8)" fill="#33322E">
+					<g transform="translate(20, 20)" fill="#eee8d5" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal">
+						<g stroke-dasharray="6 6">
+							<path d="M74.0 44.3 L74 51 L74 71 L74.0 71.0 " fill="none"></path>
+						</g>
+					<path d="M79.3 44.3 L74.0 44.3 L68.7 44.3 L74.0 31.0 Z"></path>
+					<g stroke-dasharray="6 6">
+							<path d="M220.0 44.3 L220 51 L220 71 L220.0 71.0 " fill="none"></path>
+						</g>
+					<path d="M225.3 44.3 L220.0 44.3 L214.7 44.3 L220.0 31.0 Z"></path>
+					<g stroke-dasharray="6 6">
+							<path d="M426.0 30.9 L342.75 51 L342.75 71 L342.8 71.0 " fill="none"></path>
+						</g>
+					<path d="M427.3 36.0 L426.0 30.9 L424.8 25.7 L439.0 27.7 Z"></path>
+					<g stroke-dasharray="6 6">
+							<path d="M470.7 41.9 L464.25 51 L464.25 71 L464.3 71.0 " fill="none"></path>
+						</g>
+					<path d="M475.1 45.0 L470.7 41.9 L466.4 38.8 L478.5 31.0 Z"></path>
+					<g stroke-dasharray="6 6">
+							<path d="M552.3 34.9 L604.25 51 L604.25 71 L604.3 71.0 " fill="none"></path>
+						</g>
+					<path d="M553.9 29.8 L552.3 34.9 L550.8 40.0 L539.6 31.0 Z"></path>
+					<g stroke-dasharray="6 6">
+							<path d="M754.3 36.3 L720.25 51 L720.25 71 L720.3 71.0 " fill="none"></path>
+						</g>
+					<path d="M756.5 41.2 L754.3 36.3 L752.2 31.4 L766.6 31.0 Z"></path>
+					<g stroke-dasharray="6 6">
+							<path d="M821.3 41.9 L827.75 51 L827.75 71 L827.8 71.0 " fill="none"></path>
+						</g>
+					<path d="M825.6 38.8 L821.3 41.9 L816.9 45.0 L813.5 31.0 Z"></path>
+					<g stroke-dasharray="6 6">
+							<path d="M956.8 44.3 L956.75 51 L956.75 71 L956.8 71.0 " fill="none"></path>
+						</g>
+					<path d="M962.1 44.3 L956.8 44.3 L951.4 44.3 L956.8 31.0 Z"></path>
+					<g stroke-dasharray="6 6">
+							<path d="M1073.3 44.3 L1073.25 51 L1073.25 71 L1073.3 71.0 " fill="none"></path>
+						</g>
+					<path d="M1078.6 44.3 L1073.3 44.3 L1067.9 44.3 L1073.3 31.0 Z"></path>
+					<g data-name="cats.effect.*">
+							<g fill="#eee8d5" stroke="#33322E" data-name="cats.effect.*">
+								<rect x="21.0" y="0.0" height="31.0" width="106.0" data-name="cats.effect.*"></rect>
+							</g>
+						<g transform="translate(21, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="cats.effect.*">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="cats.effect.*">
+									<text x="45.0" y="13.5" stroke="none" text-anchor="middle" data-name="cats.effect.*">cats.effect.*</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="CatsConversions">
+							<g fill="#eee8d5" stroke="#33322E" data-name="CatsConversions">
+								<rect x="0.0" y="71.0" height="31.0" width="148.0" data-name="CatsConversions"></rect>
+							</g>
+						<g transform="translate(0, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="CatsConversions">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="CatsConversions">
+									<text x="66.0" y="13.5" stroke="none" text-anchor="middle" data-name="CatsConversions">CatsConversions</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Fork2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Fork2">
+								<rect x="190.0" y="0.0" height="31.0" width="60.0" data-name="Fork2"></rect>
+							</g>
+						<g transform="translate(190, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Fork2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Fork2">
+									<text x="22.0" y="13.5" stroke="none" text-anchor="middle" data-name="Fork2">Fork2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Fiber2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Fiber2">
+								<rect x="188.0" y="71.0" height="31.0" width="64.0" data-name="Fiber2"></rect>
+							</g>
+						<g transform="translate(188, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Fiber2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Fiber2">
+									<text x="24.0" y="13.5" stroke="none" text-anchor="middle" data-name="Fiber2">Fiber2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="BlockingIO2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="BlockingIO2">
+								<rect x="290.0" y="0.0" height="31.0" width="109.0" data-name="BlockingIO2"></rect>
+							</g>
+						<g transform="translate(290, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="BlockingIO2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="BlockingIO2">
+									<text x="46.5" y="13.5" stroke="none" text-anchor="middle" data-name="BlockingIO2">BlockingIO2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Primitives2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Primitives2">
+								<rect x="439.0" y="0.0" height="31.0" width="101.0" data-name="Primitives2"></rect>
+							</g>
+						<g transform="translate(439, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Primitives2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Primitives2">
+									<text x="42.5" y="13.5" stroke="none" text-anchor="middle" data-name="Primitives2">Primitives2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Ref2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Ref2">
+								<rect x="317.3" y="71.0" height="31.0" width="51.0" data-name="Ref2"></rect>
+							</g>
+						<g transform="translate(317.25, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Ref2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Ref2">
+									<text x="17.5" y="13.5" stroke="none" text-anchor="middle" data-name="Ref2">Ref2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Semaphore2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Semaphore2">
+								<rect x="408.3" y="71.0" height="31.0" width="112.0" data-name="Semaphore2"></rect>
+							</g>
+						<g transform="translate(408.25, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Semaphore2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Semaphore2">
+									<text x="48.0" y="13.5" stroke="none" text-anchor="middle" data-name="Semaphore2">Semaphore2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Promise2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Promise2">
+								<rect x="560.3" y="71.0" height="31.0" width="88.0" data-name="Promise2"></rect>
+							</g>
+						<g transform="translate(560.25, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Promise2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Promise2">
+									<text x="36.0" y="13.5" stroke="none" text-anchor="middle" data-name="Promise2">Promise2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="PrimitivesM2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="PrimitivesM2">
+								<rect x="745.0" y="0.0" height="31.0" width="115.0" data-name="PrimitivesM2"></rect>
+							</g>
+						<g transform="translate(745, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="PrimitivesM2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="PrimitivesM2">
+									<text x="49.5" y="13.5" stroke="none" text-anchor="middle" data-name="PrimitivesM2">PrimitivesM2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="RefM2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="RefM2">
+								<rect x="688.3" y="71.0" height="31.0" width="64.0" data-name="RefM2"></rect>
+							</g>
+						<g transform="translate(688.25, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="RefM2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="RefM2">
+									<text x="24.0" y="13.5" stroke="none" text-anchor="middle" data-name="RefM2">RefM2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Mutex2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Mutex2">
+								<rect x="792.3" y="71.0" height="31.0" width="71.0" data-name="Mutex2"></rect>
+							</g>
+						<g transform="translate(792.25, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Mutex2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Mutex2">
+									<text x="27.5" y="13.5" stroke="none" text-anchor="middle" data-name="Mutex2">Mutex2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Entropy1">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Entropy1">
+								<rect x="914.3" y="0.0" height="31.0" width="85.0" data-name="Entropy1"></rect>
+							</g>
+						<g transform="translate(914.25, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Entropy1">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Entropy1">
+									<text x="34.5" y="13.5" stroke="none" text-anchor="middle" data-name="Entropy1">Entropy1</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Entropy2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Entropy2">
+								<rect x="914.3" y="71.0" height="31.0" width="85.0" data-name="Entropy2"></rect>
+							</g>
+						<g transform="translate(914.25, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Entropy2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Entropy2">
+									<text x="34.5" y="13.5" stroke="none" text-anchor="middle" data-name="Entropy2">Entropy2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Clock1">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Clock1">
+								<rect x="1039.3" y="0.0" height="31.0" width="68.0" data-name="Clock1"></rect>
+							</g>
+						<g transform="translate(1039.25, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Clock1">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Clock1">
+									<text x="26.0" y="13.5" stroke="none" text-anchor="middle" data-name="Clock1">Clock1</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="Clock2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="Clock2">
+								<rect x="1039.3" y="71.0" height="31.0" width="68.0" data-name="Clock2"></rect>
+							</g>
+						<g transform="translate(1039.25, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Clock2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Clock2">
+									<text x="26.0" y="13.5" stroke="none" text-anchor="middle" data-name="Clock2">Clock2</text>
+								
+								</g>
+							</g>
+						</g>
+					<g data-name="UnsafeRun2">
+							<g fill="#eee8d5" stroke="#33322E" data-name="UnsafeRun2">
+								<rect x="1147.3" y="0.0" height="31.0" width="109.0" data-name="UnsafeRun2"></rect>
+							</g>
+						<g transform="translate(1147.25, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="UnsafeRun2">
+								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="UnsafeRun2">
+									<text x="46.5" y="13.5" stroke="none" text-anchor="middle" data-name="UnsafeRun2">UnsafeRun2</text>
+								
+								</g>
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</svg>

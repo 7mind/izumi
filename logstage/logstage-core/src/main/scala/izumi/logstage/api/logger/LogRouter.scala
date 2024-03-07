@@ -16,10 +16,10 @@ trait LogRouter extends AutoCloseable {
 
 object LogRouter {
   def apply(
-             threshold: Log.Level = Log.Level.Trace,
-             sink: LogSink = ConsoleSink.ColoredConsoleSink,
-             levels: Map[String, Log.Level] = Map.empty,
-             buffer: LogQueue = LogQueue.Immediate,
+    threshold: Log.Level = Log.Level.Trace,
+    sink: LogSink = ConsoleSink.ColoredConsoleSink,
+    levels: Map[String, Log.Level] = Map.empty,
+    buffer: LogQueue = LogQueue.Immediate,
   ): ConfigurableLogRouter = {
     ConfigurableLogRouter(threshold, Seq(sink), levels, buffer)
   }
@@ -30,7 +30,7 @@ object LogRouter {
     override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = true
 
     override def log(entry: Log.Entry): Unit = {
-      fallback.log(entry.message.template.raw(entry.message.args.map(_.value): _*) + s"\n{{ ${entry.toString} }}\n")
+      fallback.log(entry.message.template.raw(entry.message.args.map(_.value)*) + s"\n{{ ${entry.toString} }}\n")
     }
   }
 

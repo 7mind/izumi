@@ -363,11 +363,11 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       import BasicCase1._
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[NotInContext]
+        makeTrait[NotInContext]
         make[TestClass]
-        make[TestDependency3]
+        makeTrait[TestDependency3]
         make[TestDependency0].from[TestImpl0]
-        make[TestDependency1]
+        makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
         make[TestInstanceBinding].fromResource(new Lifecycle.Basic[Option, TestInstanceBinding] {
