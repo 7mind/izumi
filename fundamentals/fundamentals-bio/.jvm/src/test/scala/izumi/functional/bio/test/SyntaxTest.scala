@@ -5,25 +5,27 @@ import izumi.functional.bio.retry.{RetryPolicy, Scheduler2}
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.unused
 import scala.concurrent.duration.*
 
 class SyntaxTest extends AnyWordSpec {
 
-  "BIOParallel.zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
-    import izumi.functional.bio.Parallel2
+  "BIOParallel attachment/conversion works zipPar/zipParLeft/zipParRight/zipWithPar is callable" in {
+    import izumi.functional.bio.{Parallel2, F}
 
     def x[F[+_, +_]: Parallel2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
       a.zipPar(b)
       a.zipParLeft(b)
       a.zipParRight(b)
       a.zipWithPar(b)((a, b) => (a, b))
-      a.flatMap(_ => b)
+      a.flatMap(_ => b).flatMap(_ => F.unit)
+      F.unit: F[Nothing, Unit]
     }
 
     x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
   }
 
-  "BIOConcurrent syntax / attachment / conversion works" in {
+  "BIOConcurrent attachment/conversion works" in {
     import izumi.functional.bio.{Concurrent2, F}
 
     def x[F[+_, +_]: Concurrent2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
@@ -31,9 +33,43 @@ class SyntaxTest extends AnyWordSpec {
       a.zipParLeft(b)
       a.zipParRight(b)
       a.zipWithPar(b)((a, b) => (a, b))
-      a.flatMap(_ => b)
+      a.flatMap(_ => b).flatMap(_ => F.unit)
       a.guaranteeCase(_ => a.race(b).widenError[Throwable].catchAll(_ => F.unit `orElse` F.uninterruptible(F.race(a, b))).void)
-      F.unit
+      F.unit: F[Nothing, Unit]
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+  }
+
+  "BIOTemporal attachment/conversion works" in {
+    import izumi.functional.bio.{Temporal2, F}
+
+    def x[F[+_, +_]: Temporal2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+      a.flatMap(_ => b).flatMap(_ => F.unit)
+      a.widenError[Throwable].catchAll(_ => F.unit `orElse` b).void
+      F.unit: F[Nothing, Unit]
+
+      F.sleep(5.seconds): F[Nothing, Unit]
+      F.timeout(5.seconds)(F.forever(F.unit)): F[Nothing, Option[Unit]]
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+  }
+
+  "BIOConcurrent conversion works in presence of BIOParallel/BIOTemporal, overrides BIOParallel" in {
+    import izumi.functional.bio.{Concurrent2, Parallel2, Temporal2, F}
+
+    def x[F[+_, +_]: Concurrent2: Temporal2](a: F[Nothing, Unit], b: F[Nothing, Unit])(implicit @unused P: Parallel2[F]) = {
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
+      a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b).flatMap(_ => F.unit)
+      a.guaranteeCase(_ => a.race(b).widenError[Throwable].catchAll(_ => F.unit `orElse` F.uninterruptible(F.race(a, b))).void)
+      F.unit: F[Nothing, Unit]
+
+      F.sleep(5.seconds): F[Nothing, Unit]
+      F.timeout(5.seconds)(F.forever(F.unit)): F[Nothing, Option[Unit]]
     }
 
     x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
