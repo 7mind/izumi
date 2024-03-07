@@ -148,6 +148,6 @@ jobs:
           bash .build.sh ${{ matrix.scala }} secrets publishScala
   all-good:
     runs-on: ubuntu-latest
-    needs: [ 'build-jvm', 'build-js', 'test-site' ]
+    needs: [ 'build-jvm', 'build-js', 'test-site', 'publish-site' ]
     steps:
       - run: 'echo "No build required"'

@@ -72,7 +72,7 @@ class LogstageCirceRenderingPolicy(
         "file" -> Json.fromString(entry.context.static.position.file),
         "level" -> Json.fromString(entry.context.dynamic.level.toString.toLowerCase),
         "timestamp" -> Json.fromLong(entry.context.dynamic.tsMillis),
-        "datetime" -> Json.fromString(entry.context.dynamic.tsMillis.asEpochMillisUtc.isoFormatUtc),
+        "datetime" -> Json.fromString(entry.context.dynamic.tsMillis.asEpochMillisUtcZoned.isoFormatUtc),
         "thread" -> Json.fromFields(
           Seq(
             "id" -> Json.fromLong(entry.context.dynamic.threadData.threadId),
@@ -103,7 +103,7 @@ class LogstageCirceRenderingPolicy(
     }
     val multiparamsMap = multiple.map {
       kv =>
-        kv._1 -> Json.arr(kv._2.map(repr): _*)
+        kv._1 -> Json.arr(kv._2.map(repr)*)
     }
     paramsMap ++ multiparamsMap
   }
@@ -115,7 +115,7 @@ class LogstageCirceRenderingPolicy(
           v =>
             mapListElement.apply(v)
         }.toList
-        Json.arr(params: _*)
+        Json.arr(params*)
       case _ =>
         Json.fromString(parameter.repr)
     }

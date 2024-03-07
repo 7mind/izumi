@@ -165,7 +165,7 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
     val newProvider: Functoid[T] = f(Functoid.identityKey(key).asInstanceOf[Functoid[T]])
     val binding = SingletonBinding(tpeKey, ImplDef.ProviderImpl(newProvider.get.ret, newProvider.get), Set.empty, pos.get.position, isMutator = true)
     val ref = _registered(new SingletonRef(binding))
-    maybeId.foreach(ref append SetId(_))
+    maybeId.foreach(ref `append` SetId(_))
     ref
   }
 

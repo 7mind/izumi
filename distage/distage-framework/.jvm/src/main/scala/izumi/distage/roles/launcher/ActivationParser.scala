@@ -28,7 +28,7 @@ object ActivationParser {
   ) extends ActivationParser {
 
     def parseActivation(config: AppConfig): Activation = {
-      val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(AxisPoint parseAxisPoint _.value)
+      val cmdChoices = parameters.globalParameters.findValues(RoleAppMain.Options.use).map(AxisPoint `parseAxisPoint` _.value)
       val cmdActivations = parser.parseActivation(cmdChoices, activationInfo)
 
       // println(s"PARSEACT: ${config.config}")

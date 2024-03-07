@@ -15,18 +15,15 @@ import scala.language.implicitConversions
 trait ConfigModuleDef extends ModuleDef {
   final def makeConfig[T: Tag: DIConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
     pos.discard() // usage in `make[T]` not detected
-    val parser = ConfigModuleDef.wireConfig[T](path)
-    make[T].tagged(ConfTag(path)(parser)).from(parser)
+    make[T].fromConfig(path)
   }
   final def makeConfigNamed[T: Tag: DIConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLNamedAfterFrom[T] = {
     pos.discard()
-    val parser = ConfigModuleDef.wireConfig[T](path)
-    make[T].named(path).tagged(ConfTag(path)(parser)).from(parser)
+    make[T].fromConfigNamed(path)
   }
   final def makeConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
     pos.discard()
-    val parser = ConfigModuleDef.wireConfigWithDefault[T](path)(default)
-    make[T].tagged(ConfTag(path)(parser)).from(parser)
+    make[T].fromConfigWithDefault(path)(default)
   }
 
   @inline final def wireConfig[T: Tag: DIConfigReader](path: String): Functoid[T] = {
@@ -43,11 +40,15 @@ object ConfigModuleDef {
   final class FromConfig[T](private val make: MakeDSL[T]) extends AnyVal {
     def fromConfig(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T]): MakeDSLUnnamedAfterFrom[T] = {
       val parser = wireConfig[T](path)
-      make.tagged(ConfTag(path)(parser)).from(parser)
+      make.tagged(ConfTag(path)(parser, dec.fieldsMeta)).from(parser)
     }
     def fromConfigNamed(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T]): MakeDSLNamedAfterFrom[T] = {
       val parser = wireConfig[T](path)
-      make.named(path).tagged(ConfTag(path)(parser)).from(parser)
+      make.named(path).tagged(ConfTag(path)(parser, dec.fieldsMeta)).from(parser)
+    }
+    def fromConfigWithDefault(path: String)(default: => T)(implicit tag: Tag[T], dec: DIConfigReader[T]): MakeDSLUnnamedAfterFrom[T] = {
+      val parser = wireConfigWithDefault[T](path)(default)
+      make.tagged(ConfTag(path)(parser, dec.fieldsMeta)).from(parser)
     }
   }
 

@@ -58,7 +58,7 @@ object RefM2 {
   }
 
   implicit final class RefM2Ops[F[+_, +_], A](private val self: RefM2[F, A]) extends AnyVal {
-    def imapK[G[+_, +_]](fg: F Isomorphism2 G): RefM2[G, A] = new RefM2[G, A] {
+    def imapK[G[+_, +_]](fg: F `Isomorphism2` G): RefM2[G, A] = new RefM2[G, A] {
       override def get: G[Nothing, A] = fg.to(self.get)
       override def set(a: A): G[Nothing, Unit] = fg.to(self.set(a))
       override def modify[E, B](f: A => G[E, (B, A)]): G[E, B] = fg.to(self.modify(a => fg.from(f(a))))

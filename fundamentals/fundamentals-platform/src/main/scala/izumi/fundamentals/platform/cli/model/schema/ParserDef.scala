@@ -71,7 +71,7 @@ object ParserDef {
   final case class ArgNameDef private[cli] (long: String, short: Option[String]) {
     def all: Set[String] = Set(long) ++ short.toSet
 
-    def matches(name: String): Boolean = all.contains(name)
+    infix def matches(name: String): Boolean = all.contains(name)
 
     def format: String = {
       short match {

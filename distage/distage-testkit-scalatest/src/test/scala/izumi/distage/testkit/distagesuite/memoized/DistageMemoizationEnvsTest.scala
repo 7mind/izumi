@@ -12,13 +12,37 @@ import zio.IO
 
 import java.util.UUID
 
-// TODO: for some mysterious reason these tests fail on Scala 3. That must be fixed.
+/*
+╗ [Level 0; 0 current tests + 16 nested tests] roots: [ {type.QuasiIORunner[=λ %0 → ZIO[-Any,+Throwable,+0]]}, {type.TestTreeRunner[=λ %0 → ZIO[-Any,+Throwable,+0]]} ]
+║
+╠════╗ [Level 1; 0 current tests + 2 nested tests] roots: [ {type.MemoizationEnv::MemoizedInstance}, {type.MemoizationEnv::MemoizedLevel1} ] transitive: ø
+║    ║
+║    ╠════╗ [Level 2; 1 current tests + 0 nested tests] roots: [ {type.MemoizationEnv::MemoizedLevel2} ] transitive: ø
+║    ║    ╠══* DifferentLevelsWithLevel1InstanceOverride2
+║    ║
+║    ╚════╗ [Level 2; 1 current tests + 0 nested tests] roots: [ {type.MemoizationEnv::MemoizedLevel2} ] transitive: ø
+║         ╠══* DifferentLevelsWithLevel1InstanceOverride1
+║
+╚════╗ [Level 1; 6 current tests + 8 nested tests] roots: [ {type.MemoizationEnv::MemoizedInstance}, {type.MemoizationEnv::MemoizedLevel1} ] transitive: ø
+     ╠══* SameLevel_1_WithActivationsOverride
+     ╠══* SameLevel_1_WithAdditionalButNotUsedMemoizedRoots
+     ╠══* SameLevel_1_WithLevel2InstanceOverride
+     ╠══* SameLevel_1_WithModuleOverride
+     ╠══* SameLevel_1_WithoutLastMemoizationLevel
+     ║
+     ╚════╗ [Level 2; 6 current tests + 2 nested tests] roots: [ {type.MemoizationEnv::MemoizedLevel2} ] transitive: ø
+          ╠══* SameLevel_1_2_First
+          ╠══* SameLevel_1_2_Second
+          ║
+          ╚════╗ [Level 3; 2 current tests + 0 nested tests] roots: [ {type.MemoizationEnv::MemoizedLevel3} ] transitive: ø
+               ╠══* SameLevel_1_2_WithAdditionalLevel3
+ */
 abstract class DistageMemoizationEnvsTest extends SpecZIO with AssertZIO {
   override protected def config: TestConfig = {
     super.config
       .copy(
         memoizationRoots = Map(
-          1 -> Set(DIKey[MemoizedInstance], DIKey.get[MemoizedLevel1]),
+          1 -> Set(DIKey[MemoizedInstance], DIKey[MemoizedLevel1]),
           2 -> Set(DIKey[MemoizedLevel2]),
         ),
         pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
@@ -36,7 +60,7 @@ abstract class DistageMemoizationEnvsTest extends SpecZIO with AssertZIO {
           }
           make[TestInstance].from(TestInstance(UUID.randomUUID()))
         },
-        forcedRoots = Set(DIKey.get[MemoizedInstance], DIKey.get[MemoizedLevel1]),
+        forcedRoots = Set(DIKey[MemoizedInstance], DIKey[MemoizedLevel1]),
         activation = distage.Activation(Repo -> Repo.Prod),
       )
   }

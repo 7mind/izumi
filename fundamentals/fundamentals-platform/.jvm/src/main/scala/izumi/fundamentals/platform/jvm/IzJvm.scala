@@ -19,7 +19,7 @@ trait IzJvm {
 
   def uptime: Duration = Duration(getUptime, scala.concurrent.duration.MILLISECONDS)
 
-  def startTime: ZonedDateTime = getStartTime.asEpochMillisUtc
+  def startTime: ZonedDateTime = getStartTime.asEpochMillisUtcZoned
 
   def tempDir: Path = Paths.get(System.getProperty("java.io.tmpdir"))
 

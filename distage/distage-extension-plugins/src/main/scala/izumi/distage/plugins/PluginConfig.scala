@@ -21,8 +21,8 @@ final case class PluginConfig(
   def ++(plugins: Seq[ModuleBase]): PluginConfig = copy(merges = merges ++ plugins)
   def ++(plugin: ModuleBase): PluginConfig = copy(merges = merges ++ Seq(plugin))
 
-  def overriddenBy(plugins: Seq[ModuleBase]): PluginConfig = copy(overrides = overrides ++ plugins)
-  def overriddenBy(plugin: ModuleBase): PluginConfig = copy(overrides = overrides ++ Seq(plugin))
+  infix def overriddenBy(plugins: Seq[ModuleBase]): PluginConfig = copy(overrides = overrides ++ plugins)
+  infix def overriddenBy(plugin: ModuleBase): PluginConfig = copy(overrides = overrides ++ Seq(plugin))
 
   def cachePackages(cachePackages: Boolean): PluginConfig = copy(cachePackages = cachePackages)
   def debug(debug: Boolean): PluginConfig = copy(debug = debug)

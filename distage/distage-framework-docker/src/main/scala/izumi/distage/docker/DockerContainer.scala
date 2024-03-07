@@ -136,7 +136,7 @@ object DockerContainer {
       mutateModule: ModuleDefDSL#MutationContext,
     ): Functoid[ContainerResource[F, T]] = {
       containerDecl.discard()
-      dependOnContainerPorts[containerDecl.Tag](ports: _*)
+      dependOnContainerPorts[containerDecl.Tag](ports*)
     }
 
     def dependOnContainerPorts[T2](

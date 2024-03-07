@@ -520,7 +520,7 @@ object Lifecycle extends LifecycleInstances {
     */
   def fromZIO[R]: SyntaxLifecycleFromZIO[R] = new SyntaxLifecycleFromZIO[R]()
   final class SyntaxLifecycleFromZIO[R](private val dummy: Boolean = false) extends AnyVal {
-    def apply[E, A](f: ZIO[Scope with R, E, A]): Lifecycle.FromZIO[R, E, A] = {
+    def apply[E, A](f: ZIO[Scope & R, E, A]): Lifecycle.FromZIO[R, E, A] = {
       implicit val trace: zio.Trace = Tracer.instance.empty
 
       new FromZIO.FromZIOScoped[R, E, A] {
@@ -581,7 +581,7 @@ object Lifecycle extends LifecycleInstances {
 
   implicit final class SyntaxLifecycleZIO[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
     /** Convert [[Lifecycle]] to scoped [[zio.ZIO]] */
-    def toZIO: ZIO[Scope with R, E, A] = {
+    def toZIO: ZIO[Scope & R, E, A] = {
       implicit val trace: zio.Trace = Tracer.instance.empty
 
       ZIO.uninterruptibleMask {
@@ -679,7 +679,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class OfZIO[-R, +E, +A](inner: => ZIO[Scope with R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO[R](inner))
+  open class OfZIO[-R, +E, +A](inner: => ZIO[Scope & R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO[R](inner))
 
   /**
     * Class-based proxy over a [[zio.managed.ZManaged]] value

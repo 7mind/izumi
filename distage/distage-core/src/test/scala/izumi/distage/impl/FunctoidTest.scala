@@ -130,20 +130,20 @@ class FunctoidTest extends AnyWordSpec with ScalatestGuards {
       assert(fn.diKeys contains DIKey.get[Int].named("defargann2"))
     }
 
-    "handle opaque references with argument annotations 2" in brokenOnScala3 {
+    "handle opaque references with argument annotations 2" in {
       val fn = Functoid.apply(defargannfn(_, _)).get
 
       assert(fn.diKeys contains DIKey.get[String].named("defargann"))
       assert(fn.diKeys contains DIKey.get[Int].named("defargann2"))
     }
 
-    "do not get confused by a swap lambda method reference with argument annotations" in brokenOnScala3 {
+    "do not get confused by a swap lambda method reference with argument annotations" in {
       val fn = Functoid.apply((x, y) => defargannfn(y, x)).get
 
       assert(fn.diKeys == Seq(DIKey.get[Int], DIKey.get[String]))
     }
 
-    "handle polymorphic functions" in brokenOnScala3 {
+    "handle polymorphic functions" in {
       val fn1 = Functoid.apply(poly[List] _).get
 
       assert(fn1.diKeys.headOption contains DIKey.get[List[Int]])
@@ -171,21 +171,21 @@ class FunctoidTest extends AnyWordSpec with ScalatestGuards {
       //      assert(Functoid(testProviderModule.implType _).get.ret <:< SafeType.get[TestProviderModule#TestClass])
     }
 
-    "handle constructor references with argument annotations" in brokenOnScala3 {
+    "handle constructor references with argument annotations" in {
       val fn = Functoid.apply(new ClassArgAnn(_, _)).get
 
       assert(fn.diKeys contains DIKey.get[String].named("classargann1"))
       assert(fn.diKeys contains DIKey.get[Int].named("classargann2"))
     }
 
-    "handle constructor references with type annotations" in brokenOnScala3 {
+    "handle constructor references with type annotations" in {
       val fn = Functoid.apply(new ClassTypeAnn(_, _)).get
 
       assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
     }
 
-    "handle opaque references with generic parameters" in brokenOnScala3 {
+    "handle opaque references with generic parameters" in {
       def locgenfn[T](t: T): Option[T] = Option(t)
 
       val fn = Functoid.apply(locgenfn[Int](_)).get
@@ -193,7 +193,7 @@ class FunctoidTest extends AnyWordSpec with ScalatestGuards {
       assert(fn.diKeys contains DIKey.get[Int])
     }
 
-    "handle opaque references with annotations and generic parameters" in brokenOnScala3 {
+    "handle opaque references with annotations and generic parameters" in {
       def locgenfn[T](@Id("x") t: T): Option[T] = Option(t)
 
       val fn = Functoid.apply(locgenfn[Int](_)).get
@@ -211,21 +211,21 @@ class FunctoidTest extends AnyWordSpec with ScalatestGuards {
       assert(fn.diKeys contains DIKey.get[Int].named("x"))
     }
 
-    "handle constructor references with argument annotations with a lossy wrapper lambda" in brokenOnScala3 {
+    "handle constructor references with argument annotations with a lossy wrapper lambda" in {
       val fn = Functoid.apply((x, y) => new ClassArgAnn(x, y)).get
 
       assert(fn.diKeys contains DIKey.get[String].named("classargann1"))
       assert(fn.diKeys contains DIKey.get[Int].named("classargann2"))
     }
 
-    "handle constructor references with by-name type annotations with a lossy wrapper lambda" in brokenOnScala3 {
+    "handle constructor references with by-name type annotations with a lossy wrapper lambda" in {
       val fn = Functoid.apply((x, y) => new ClassTypeAnn(x, y)).get
 
       assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
     }
 
-    "handle constructor references with type annotations with a lossy wrapper lambda" in brokenOnScala3 {
+    "handle constructor references with type annotations with a lossy wrapper lambda" in {
       val fn = Functoid.apply((x, y) => new ClassTypeAnnByName(x, y)).get
 
       assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))

@@ -41,12 +41,12 @@ final case class PlanCheckConfig[Roles <: String, ExcludeActivations <: String, 
 
 object PlanCheckConfig {
   def apply[
-    Roles <: String with Singleton,
-    ExcludeActivations <: String with Singleton,
-    Config <: String with Singleton,
-    CheckConfig <: Boolean with Singleton,
-    PrintBindings <: Boolean with Singleton,
-    OnlyWarn <: Boolean with Singleton,
+    Roles <: String & Singleton,
+    ExcludeActivations <: String & Singleton,
+    Config <: String & Singleton,
+    CheckConfig <: Boolean & Singleton,
+    PrintBindings <: Boolean & Singleton,
+    OnlyWarn <: Boolean & Singleton,
   ](roles: Roles = "*",
     excludeActivations: ExcludeActivations = "",
     config: Config = "*",
@@ -68,7 +68,7 @@ object PlanCheckConfig {
 
   type Any = PlanCheckConfig[? <: String, ? <: String, ? <: String, ? <: Boolean, ? <: Boolean, ? <: Boolean]
 
-  type Unset <: Boolean with Singleton
+  type Unset <: Boolean & Singleton
 
   /**
     * A type corresponding to an unset option.

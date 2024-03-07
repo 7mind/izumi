@@ -6,7 +6,6 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSL
 import izumi.distage.roles.model.RoleDescriptor.GetRoleDescriptor
 import izumi.distage.roles.model.definition.RoleModuleDef.RoleModuleDefMacros
 
-import scala.annotation.experimental
 import scala.quoted.{Expr, Quotes, Type}
 
 trait RoleModuleDef extends ModuleDef {
@@ -16,7 +15,6 @@ trait RoleModuleDef extends ModuleDef {
 
 object RoleModuleDef {
 
-  @experimental
   object RoleModuleDefMacros {
     def makeRole[T: Type](getRoleDescriptor: Expr[GetRoleDescriptor[T]])(using qctx: Quotes): Expr[MakeDSL[T]] = {
       '{
