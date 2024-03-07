@@ -34,6 +34,7 @@ object Root extends RootInstancesLowPriority1 {
 sealed trait RootInstancesLowPriority1 extends RootInstancesLowPriority2 {
   @inline implicit final def ConvertFromTemporal[F[+_, +_]](implicit Temporal: NotPredefined.Of[Temporal2[F]]): Predefined.Of[Error2[F] & S2] =
     Predefined(S2(Temporal.InnerF))
+
   @inline implicit final def AttachBifunctor[F[+_, +_]](@unused self: Functor2[F])(implicit Bifunctor: Bifunctor2[F]): Bifunctor.type =
     Bifunctor
   @inline implicit final def AttachConcurrent[F[+_, +_]](@unused self: Functor2[F])(implicit Concurrent: Concurrent2[F]): Concurrent.type =
@@ -47,7 +48,7 @@ sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
   @inline implicit final def AttachParallel[F[+_, +_]](@unused self: Functor2[F])(implicit Parallel: Parallel2[F]): Parallel.type = Parallel
 }
 
-sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority8 {
+sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
   @inline implicit final def ConvertFromBifunctor[F[+_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor2[F]]): Predefined.Of[Functor2[F] & S7] =
     Predefined(S7(Bifunctor.InnerF))
 
