@@ -6,9 +6,9 @@ import izumi.functional.bio.data.RestoreInterruption2
 trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
   def terminate(v: => Throwable): F[Nothing, Nothing]
 
-  /** @note Will return either [[Exit.Success]], [[Exit.Error]] or [[Exit.Termination]].
+  /** @note Will return either [[Exit.Error]] or [[Exit.Termination]] in the error channel.
    *       [[Exit.Interruption]] cannot be sandboxed. Use [[guaranteeOnInterrupt]] for cleanups on interruptions. */
-  def sandbox[E, A](r: F[E, A]): F[Exit.FailureUninterrupted[E], A]
+  def sandbox[E, A](r: F[E, A]): F[Exit.Failure[E], A]
 
   /**
     * Signal interruption to this fiber.
@@ -91,9 +91,9 @@ trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
     catchAll(r)(terminate(_))
   }
 
-  /** @note Will return either [[Exit.Success]], [[Exit.Error]] or [[Exit.Termination]].
-   *       [[Exit.Interruption]] cannot be sandboxed. Use [[guaranteeOnInterrupt]] for cleanups on interruptions. */
-  @inline final def sandboxExit[E, A](r: F[E, A]): F[Nothing, Exit.Uninterrupted[E, A]] = {
+  /** @note Will return either [[Exit.Error]] or [[Exit.Termination]]. [[Exit.Interruption]] cannot be sandboxed.
+   *       Use [[guaranteeOnInterrupt]] for cleanups on interruptions. */
+  @inline final def sandboxExit[E, A](r: F[E, A]): F[Nothing, Exit[E, A]] = {
     redeemPure(sandbox(r))(identity, Exit.Success(_))
   }
 }

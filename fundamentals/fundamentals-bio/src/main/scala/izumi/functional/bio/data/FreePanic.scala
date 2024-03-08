@@ -12,7 +12,7 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
   @inline final def *>[S1[e, a] >: S[e, a], B, E1 >: E](sc: FreePanic[S1, E1, B]): FreePanic[S1, E1, B] = flatMap(_ => sc)
   @inline final def <*[S1[e, a] >: S[e, a], B, E1 >: E](sc: FreePanic[S1, E1, B]): FreePanic[S1, E1, A] = flatMap(r => sc.as(r))
 
-  @inline final def sandbox: FreePanic[S, Exit.FailureUninterrupted[E], A] =
+  @inline final def sandbox: FreePanic[S, Exit.Failure[E], A] =
     FreePanic.Sandbox(this)
 
   @inline final def redeem[S1[e, a] >: S[e, a], B, E1](err: E => FreePanic[S1, E1, B], succ: A => FreePanic[S1, E1, B]): FreePanic[S1, E1, B] =
@@ -160,7 +160,7 @@ object FreePanic {
   final case class FlatMapped[S[_, _], E, E1 >: E, A, B](sub: FreePanic[S, E, A], cont: A => FreePanic[S, E1, B]) extends FreePanic[S, E1, B] {
     override def toString: String = s"FlatMapped:[sub=$sub]"
   }
-  final case class Sandbox[S[_, _], E, A](sub: FreePanic[S, E, A]) extends FreePanic[S, Exit.FailureUninterrupted[E], A] {
+  final case class Sandbox[S[_, _], E, A](sub: FreePanic[S, E, A]) extends FreePanic[S, Exit.Failure[E], A] {
     override def toString: String = s"Sandbox:[sub=$sub]"
   }
   final case class Redeem[S[_, _], E, E1, A, B](sub: FreePanic[S, E, A], err: E => FreePanic[S, E1, B], suc: A => FreePanic[S, E1, B]) extends FreePanic[S, E1, B] {
@@ -196,7 +196,7 @@ object FreePanic {
     @inline override final def <*[E, A, B](f: FreePanic[S, E, A], next: => FreePanic[S, E, B]): FreePanic[S, E, A] = f <* next
     @inline override final def as[E, A, B](r: FreePanic[S, E, A])(v: => B): FreePanic[S, E, B] = r.as(v)
     @inline override final def void[E, A](r: FreePanic[S, E, A]): FreePanic[S, E, Unit] = r.void
-    @inline override final def sandbox[E, A](r: FreePanic[S, E, A]): FreePanic[S, Exit.FailureUninterrupted[E], A] = r.sandbox
+    @inline override final def sandbox[E, A](r: FreePanic[S, E, A]): FreePanic[S, Exit.Failure[E], A] = r.sandbox
     @inline override final def catchAll[E, A, E2](r: FreePanic[S, E, A])(f: E => FreePanic[S, E2, A]): FreePanic[S, E2, A] = r.catchAll(f)
     @inline override final def catchSome[E, A, E1 >: E](r: FreePanic[S, E, A])(f: PartialFunction[E, FreePanic[S, E1, A]]): FreePanic[S, E1, A] = r.catchSome(f)
     @inline override final def bracketCase[E, A, B](

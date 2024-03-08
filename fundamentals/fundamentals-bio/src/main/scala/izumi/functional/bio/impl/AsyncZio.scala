@@ -206,15 +206,10 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
     ZIO.collectFirst(l)(f)(InteropTracer.newTrace(f))
   }
 
-  @inline override final def sandbox[E, A](r: ZIO[R, E, A]): ZIO[R, Exit.FailureUninterrupted[E], A] = {
+  @inline override final def sandbox[E, A](r: ZIO[R, E, A]): ZIO[R, Exit.Failure[E], A] = {
     implicit val trace: zio.Trace = Tracer.instance.empty
 
-    // Assume no *external* interruption:
-    // either we're interrupted here - ergo we don't return from here anyway,
-    // or we're in an uninterruptible region - ergo we're not interrupted.
-    // In BIO (and cats-effect), only external interruption counts as 'interruption'
-    // Internal interruption is not a valid state (and is treated as a defect - Exit.Termination)
-    r.sandbox.mapError(ZIOExit.toExitUninterrupted)
+    r.sandbox.flatMapError(ZIOExit `withIsInterrupted` ZIOExit.toExit(_))
   }
 
   @inline override final def yieldNow: ZIO[Any, Nothing, Unit] = ZIO.yieldNow(Tracer.instance.empty)

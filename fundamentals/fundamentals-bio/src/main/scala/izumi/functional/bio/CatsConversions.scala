@@ -202,7 +202,14 @@ object CatsConversions {
     }
 
     @inline override final def forceR[A, B](fa: F[Throwable, A])(fb: F[Throwable, B]): F[Throwable, B] = {
-      F.redeem(F.sandbox(fa))(_ => fb, _ => fb)
+      F.redeem(F.sandbox(fa))(
+        {
+          case exit: Exit.Interruption =>
+            F.terminate(new RuntimeException(s"Bad state: Interrupted in forceR, F.sandbox shouldn't be able to catch interruption. exit=$exit", exit.compoundException))
+          case _ => fb
+        },
+        _ => fb,
+      )
     }
 
     @inline override final def uncancelable[A](body: Poll[F[Throwable, _]] => F[Throwable, A]): F[Throwable, A] = {
