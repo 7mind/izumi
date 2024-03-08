@@ -31,10 +31,10 @@ import scala.language.implicitConversions
   * }}}
   */
 sealed trait MiniBIO[+E, +A] {
-  final def run(): Exit[E, A] = {
+  final def run(): Exit.Uninterrupted[E, A] = {
 
     final class Catcher[E0, A0, E1, B](
-      val recover: Exit.Failure[E0] => MiniBIO[E1, B],
+      val recover: Exit.FailureUninterrupted[E0] => MiniBIO[E1, B],
       f: A0 => MiniBIO[E1, B],
     ) extends (A0 => MiniBIO[E1, B]) {
       override def apply(a: A0): MiniBIO[E1, B] = f(a)
@@ -42,7 +42,7 @@ sealed trait MiniBIO[+E, +A] {
 
     // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
     @nowarn("msg=pattern case: MiniBIO.FlatMap")
-    @tailrec def runner(op: MiniBIO[Any, Any], stack: List[Any => MiniBIO[Any, Any]]): Exit[Any, Any] = op match {
+    @tailrec def runner(op: MiniBIO[Any, Any], stack: List[Any => MiniBIO[Any, Any]]): Exit.Uninterrupted[Any, Any] = op match {
 
       case MiniBIO.FlatMap(io, f) =>
         runner(io, f.asInstanceOf[Any => MiniBIO[Any, Any]] :: stack)
@@ -73,7 +73,7 @@ sealed trait MiniBIO[+E, +A] {
                 exit
             }
 
-          case failure: Exit.Failure[?] =>
+          case failure: Exit.FailureUninterrupted[?] =>
             runner(Fail.halt(failure), stack)
         }
       case MiniBIO.Fail(e) =>
@@ -93,7 +93,7 @@ sealed trait MiniBIO[+E, +A] {
         }
     }
 
-    runner(this, Nil).asInstanceOf[Exit[E, A]]
+    runner(this, Nil).asInstanceOf[Exit.Uninterrupted[E, A]]
   }
 }
 
@@ -102,21 +102,21 @@ object MiniBIO {
     implicit def autoRunAlways[A](f: MiniBIO[Throwable, A]): A = f.run() match {
       case Exit.Success(value) =>
         value
-      case failure: Exit.Failure[Throwable] =>
+      case failure: Exit.FailureUninterrupted[Throwable] =>
         throw failure.toThrowable
     }
 
     implicit def BIOMiniBIOHighPriority: IO2[MiniBIO] = BIOMiniBIO
   }
 
-  final case class Fail[+E](e: () => Exit.Failure[E]) extends MiniBIO[E, Nothing]
+  final case class Fail[+E](e: () => Exit.FailureUninterrupted[E]) extends MiniBIO[E, Nothing]
   object Fail {
     def terminate(t: Throwable): Fail[Nothing] = Fail(() => Exit.Termination(t, Trace.ThrowableTrace(t)))
-    def halt[E](e: => Exit.Failure[E]): Fail[E] = Fail(() => e)
+    def halt[E](e: => Exit.FailureUninterrupted[E]): Fail[E] = Fail(() => e)
   }
-  final case class Sync[+E, +A](a: () => Exit[E, A]) extends MiniBIO[E, A]
+  final case class Sync[+E, +A](a: () => Exit.Uninterrupted[E, A]) extends MiniBIO[E, A]
   final case class FlatMap[E, A, +E1 >: E, +B](io: MiniBIO[E, A], f: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
-  final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: Exit.Failure[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
+  final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: Exit.FailureUninterrupted[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
 
   implicit val BIOMiniBIO: IO2[MiniBIO] & BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
     override def pure[A](a: A): MiniBIO[Nothing, A] = sync(a)
@@ -137,7 +137,6 @@ object MiniBIO {
       Redeem[E, A, E2, B](
         r,
         {
-          case e: Exit.Interruption => Fail.halt(e)
           case e: Exit.Termination => Fail.halt(e)
           case Exit.Error(e, _) => err(e)
         },
@@ -159,8 +158,8 @@ object MiniBIO {
       )
     }
 
-    override def sandbox[E, A](r: MiniBIO[E, A]): MiniBIO[Exit.Failure[E], A] = {
-      Redeem[E, A, Exit.Failure[E], A](r, e => fail(e), pure)
+    override def sandbox[E, A](r: MiniBIO[E, A]): MiniBIO[Exit.FailureUninterrupted[E], A] = {
+      Redeem[E, A, Exit.FailureUninterrupted[E], A](r, e => fail(e), pure)
     }
 
     override def traverse[E, A, B](l: Iterable[A])(f: A => MiniBIO[E, B]): MiniBIO[E, List[B]] = {
