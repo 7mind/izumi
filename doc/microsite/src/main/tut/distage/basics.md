@@ -1573,8 +1573,7 @@ object PetStoreReposistory {
 
     override def removePet(petId: PetId): F[Nothing, Boolean] = {
       for {
-        success <- state.get.map(_.contains(petId))
-        _       <- state.get.map(_ - petId)
+        success <- state.modify(s => (s.contains(petId), s - petId))
         _       <- contextLog.info(s"Tried to remove $petId, $success")
       } yield success
 
