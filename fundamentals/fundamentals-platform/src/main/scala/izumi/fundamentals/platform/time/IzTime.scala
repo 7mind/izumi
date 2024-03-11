@@ -89,7 +89,7 @@ trait IzTime extends IzTimeSafe {
   @inline implicit final def stringToParseableTime(value: String): IzTimeParsers = new IzTimeParsers(value)
 
   // current time
-  @deprecated("use Clock1.Standard.now")
+  @deprecated("use Clock1.Standard.nowZoned")
   def utcNow: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
 
   @deprecated("use Clock1.Standard.nowOffset")
