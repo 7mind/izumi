@@ -1,12 +1,14 @@
 package izumi.distage.roles.test.fixtures
 
-import distage.LocatorRef
-import izumi.distage.model.provisioning.IntegrationCheck
+import distage.config.ConfigModuleDef
+import distage.{LocatorRef, Tag}
+import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.model.definition.Axis
-import izumi.functional.quasi.QuasiIO
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.roles.test.fixtures.roles.TestRole00.SetElementOnlyCfg
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 
 import scala.collection.mutable
 
@@ -16,8 +18,20 @@ object Fixture {
   trait SetElement
   final case class SetElement1(setElementOnlyCfg: SetElementOnlyCfg) extends SetElement
 
+  trait GenericServiceConf {
+    def genericField: Int
+  }
+  object GenericServiceConf {
+    case class Impl(genericField: Int, addedField: Int) extends GenericServiceConf
+    def module[Conf <: GenericServiceConf: Tag: DIConfigReader](path: String): ConfigModuleDef = new ConfigModuleDef {
+      makeConfig[Conf](path)
+    }
+  }
+
   case class TestServiceConf2(
-    strval: String
+    strval: String,
+    map: Map[String, String],
+    list: List[String],
   )
 
   case class TestServiceConf(

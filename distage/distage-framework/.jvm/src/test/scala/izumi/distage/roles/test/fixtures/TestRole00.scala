@@ -38,6 +38,7 @@ object roles {
     notCloseable: NotCloseable,
     val conf: TestServiceConf,
     val conf2: TestServiceConf2,
+    val genconf: GenericServiceConf.Impl,
     val dummies: Set[Dummy],
     val setElems: Set[SetElement],
     val resource: TestRole00Resource[F],
