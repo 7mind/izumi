@@ -309,9 +309,15 @@ object Izumi {
           SettingKey(Some(scala212), None) :=
             Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options,
           SettingKey(Some(scala213), None) :=
-            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).map {
-              case Const.CString("-Xsource:3-cross") => Const.CString("-Xsource:3")
-              case x => x
+            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).flatMap {
+              case Const.CString("-Xsource:3-cross") =>
+                Seq(
+                  Const.CString("-Xsource:3"),
+                  Const.CString("-Xmigration"),
+                  Const.CString("-Wconf:cat=scala3-migration:silent"),
+                  Const.CString("-Wconf:cat=other-migration:silent"),
+                )
+              case x => Seq(x)
             },
           SettingKey(Some(scala300), None) :=
             Seq[Const](
