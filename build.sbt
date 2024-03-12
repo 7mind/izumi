@@ -112,10 +112,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -180,6 +176,15 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -294,10 +299,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -362,6 +363,15 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -474,10 +484,6 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -542,6 +548,15 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -658,10 +673,6 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -726,6 +737,15 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -853,10 +873,6 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -921,6 +937,15 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1038,10 +1063,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1106,6 +1127,15 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1234,10 +1264,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1302,6 +1328,15 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1420,10 +1455,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1488,6 +1519,15 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1616,10 +1656,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1684,6 +1720,15 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1814,10 +1859,6 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -1882,6 +1923,15 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1997,10 +2047,6 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2065,6 +2111,15 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2180,10 +2235,6 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2248,6 +2299,15 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2370,10 +2430,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2438,6 +2494,15 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2557,10 +2622,6 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2625,6 +2686,15 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2743,10 +2813,6 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -2811,6 +2877,15 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2934,10 +3009,6 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3002,6 +3073,15 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3137,10 +3217,6 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3205,6 +3281,15 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3329,10 +3414,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3397,6 +3478,15 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3511,10 +3601,6 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3579,6 +3665,15 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3702,10 +3797,6 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3770,6 +3861,15 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3885,10 +3985,6 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -3953,6 +4049,15 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4074,10 +4179,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -4142,6 +4243,15 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4262,10 +4372,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -4330,6 +4436,15 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4445,10 +4560,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -4513,6 +4624,15 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4632,10 +4752,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -4700,6 +4816,15 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4846,10 +4971,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -4914,6 +5035,15 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -5089,10 +5219,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wconf:cat=optimizer:warning",
@@ -5157,6 +5283,15 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       case (false, "2.13.13") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.13") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
       )
       case (_, _) => Seq.empty
     } },
