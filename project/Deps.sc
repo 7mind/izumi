@@ -309,7 +309,10 @@ object Izumi {
           SettingKey(Some(scala212), None) :=
             Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options,
           SettingKey(Some(scala213), None) :=
-            Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics"),
+            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).map {
+              case Const.CString("-Xsource:3-cross") => Const.CString("-Xsource:3")
+              case x => x
+            },
           SettingKey(Some(scala300), None) :=
             Seq[Const](
               "-Yretain-trees", // FIXME required
