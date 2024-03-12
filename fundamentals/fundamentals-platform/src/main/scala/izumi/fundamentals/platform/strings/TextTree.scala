@@ -12,6 +12,10 @@ import scala.language.implicitConversions
 sealed trait TextTree[+T]
 
 object TextTree {
+  def value[T](value: T): TextTree[T] = ValueNode(value)
+
+  def text[T](value: String): TextTree[T] = StringNode(value)
+
   case class ValueNode[+T](value: T) extends TextTree[T]
 
   case class StringNode(value: String) extends TextTree[Nothing]
@@ -35,15 +39,28 @@ object TextTree {
         }
       }
     }
+
+    def join(begin: String, sep: String, end: String, shift: Option[Int] = Some(2)): TextTree[T] = {
+      val joined = target.join(sep)
+      val middle = shift match {
+        case Some(value) => joined.shift(value)
+        case None => joined
+      }
+      q"$begin$middle$end"
+    }
   }
 
   implicit final class TextTreeGenericOps[T](private val target: TextTree[T]) {
+    def as[W](implicit conv: T => W): TextTree[W] = {
+      target.map(conv)
+    }
+
     def dump: String = mapRender(_.toString)
 
     def mapRender(f: T => String): String = {
       target match {
         case v: ValueNode[T] => f(v.value)
-        case s: StringNode => s.value
+        case s: StringNode => StringContext.processEscapes(s.value)
         case s: Shift[T] => s.nested.mapRender(f).shift(s.shift)
         case t: Trim[T] => t.nested.mapRender(f).trim
         case n: Node[T] => n.chunks.map(_.mapRender(f)).mkString
@@ -73,6 +90,16 @@ object TextTree {
         case s: Shift[T] => Shift(s.nested.map(f), s.shift)
         case s: Trim[T] => Trim(s.nested.map(f))
         case n: Node[T] => Node(n.chunks.map(_.map(f)))
+      }
+    }
+
+    def foreach(f: T => Unit): Unit = {
+      target match {
+        case v: ValueNode[T] => f(v.value)
+        case _: StringNode => ()
+        case s: Shift[T] => s.nested.foreach(f)
+        case s: Trim[T] => s.nested.foreach(f)
+        case n: Node[T] => n.chunks.foreach(_.foreach(f))
       }
     }
 
@@ -115,9 +142,8 @@ object TextTree {
   }
 
   implicit class Quote(val sc: StringContext) extends AnyVal {
-    def q[T](args: InterpolationArg[T]*): Node[T] = {
+    def q[T](args: InterpolationArg[T]*): TextTree[T] = {
       assert(sc.parts.length == args.length + 1)
-
       val seq = sc.parts
         .zip(args)
         .flatMap {
@@ -134,30 +160,27 @@ object TextTree {
     def asNode: TextTree[T]
   }
 
-  trait LowPrioInterpolationArg {
-    implicit def forT[T](t: T): InterpolationArg[T] = new InterpolationArg[T] {
+  object InterpolationArg extends LowPrioInterpolationArg_1 {}
+
+  trait LowPrioInterpolationArg_1 extends LowPrioInterpolationArg_2 {
+    implicit def arg_from_String[T](t: String): InterpolationArg[T] = new InterpolationArg[T] {
+      override def asNode: TextTree[T] = StringNode(t)
+    }
+
+    implicit def arg_from_Nothing[T](
+      node: TextTree[Nothing]
+    ): InterpolationArg[T] = new InterpolationArg[T] {
+      override def asNode: TextTree[T] = node.asInstanceOf[TextTree[T]]
+    }
+  }
+
+  trait LowPrioInterpolationArg_2 {
+    implicit def value[T](t: T): InterpolationArg[T] = new InterpolationArg[T] {
       override def asNode: TextTree[T] = ValueNode(t)
     }
 
-    implicit def forNodeT[T](node: TextTree[T]): InterpolationArg[T] =
-      new InterpolationArg[T] {
-        override def asNode: TextTree[T] = node
-      }
-
-  }
-
-  object InterpolationArg extends LowPrioInterpolationArg {
-    implicit def forString[T](t: String): InterpolationArg[T] =
-      new InterpolationArg[T] {
-        override def asNode: TextTree[T] = StringNode(t)
-      }
-
-    implicit def forNodeNothing[T](
-      node: TextTree[Nothing]
-    ): InterpolationArg[T] =
-      new InterpolationArg[T] {
-        override def asNode: TextTree[T] = node.asInstanceOf[TextTree[T]]
-      }
-
+    implicit def subtree[T](node: TextTree[T]): InterpolationArg[T] = new InterpolationArg[T] {
+      override def asNode: TextTree[T] = node
+    }
   }
 }
