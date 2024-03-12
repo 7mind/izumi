@@ -2,6 +2,7 @@ package izumi.fundamentals.platform.strings
 
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.strings.IzString.*
+import izumi.fundamentals.platform.strings.TextTree.{InterpolationArg, StringNode, ValueNode}
 
 import scala.language.implicitConversions
 
@@ -11,7 +12,7 @@ import scala.language.implicitConversions
   */
 sealed trait TextTree[+T]
 
-object TextTree {
+object TextTree extends TextTreeImpl.LowPrio_TextTree {
   def value[T](value: T): TextTree[T] = ValueNode(value)
 
   def text[T](value: String): TextTree[T] = StringNode(value)
@@ -160,9 +161,23 @@ object TextTree {
     def asNode: TextTree[T]
   }
 
-  object InterpolationArg extends LowPrioInterpolationArg_1 {}
+  object InterpolationArg extends TextTreeImpl.LowPrioInterpolationArg_1 {}
+}
 
-  trait LowPrioInterpolationArg_1 extends LowPrioInterpolationArg_2 {
+object TextTreeImpl {
+  sealed trait LowPrio_TextTree {}
+
+  trait X {
+    implicit def arg_from_value[T](t: T): InterpolationArg[T] = new InterpolationArg[T] {
+      override def asNode: TextTree[T] = ValueNode(t)
+    }
+
+    implicit def arg_from_subtree[T](node: TextTree[T]): InterpolationArg[T] = new InterpolationArg[T] {
+      override def asNode: TextTree[T] = node
+    }
+  }
+
+  trait LowPrioInterpolationArg_1 extends X {
     implicit def arg_from_String[T](t: String): InterpolationArg[T] = new InterpolationArg[T] {
       override def asNode: TextTree[T] = StringNode(t)
     }
@@ -171,16 +186,6 @@ object TextTree {
       node: TextTree[Nothing]
     ): InterpolationArg[T] = new InterpolationArg[T] {
       override def asNode: TextTree[T] = node.asInstanceOf[TextTree[T]]
-    }
-  }
-
-  trait LowPrioInterpolationArg_2 {
-    implicit def value[T](t: T): InterpolationArg[T] = new InterpolationArg[T] {
-      override def asNode: TextTree[T] = ValueNode(t)
-    }
-
-    implicit def subtree[T](node: TextTree[T]): InterpolationArg[T] = new InterpolationArg[T] {
-      override def asNode: TextTree[T] = node
     }
   }
 }
