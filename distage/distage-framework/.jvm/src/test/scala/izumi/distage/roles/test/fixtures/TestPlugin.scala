@@ -69,9 +69,11 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   makeConfig[TestServiceConf2]("testservice2")
   modify[TestServiceConf2] {
     (conf: TestServiceConf2) =>
-      TestServiceConf2(conf.strval + ":updated")
+      TestServiceConf2(conf.strval + ":updated", conf.map, conf.list)
   }
   makeConfig[ListConf]("listconf")
+  
+  include(GenericServiceConf.module[GenericServiceConf.Impl]("genericservice"))
 }
 
 class TestPluginCatsIO extends TestPluginBase[IO]

@@ -120,43 +120,9 @@ final class ConfigWriter[F[_]](
       .reboot(bootstrapOverride, Some(correctedAppConfig))
       .makePlan(Set(roleDIKey))
 
-    def getConfig(plan: Plan): Seq[ConfigPath] = {
-      val configTags = plan.stepsUnordered.toSeq.flatMap {
-        op =>
-          op.origin.value match {
-            case defined: OperationOrigin.Defined =>
-              defined.binding.tags.collect {
-                case t: ConfTag =>
-                  t
-              }
-            case _ =>
-              Seq.empty
-          }
-      }
-
-      val paths = configTags.flatMap(t => unpack(Seq(t.confPath), t.fieldsMeta))
-      paths
-    }
-
-    def unpack(path: Seq[String], meta: ConfigMeta): Seq[ConfigPath] = {
-      meta match {
-        case ConfigMeta.ConfigMetaCaseClass(fields) =>
-          fields.flatMap {
-            case (name, meta) =>
-              unpack(path :+ name, meta)
-          }
-        case ConfigMeta.ConfigMetaSealedTrait(branches) =>
-          branches.toSeq.flatMap {
-            case (name, meta) =>
-              unpack(path :+ name, meta)
-          }
-        case ConfigMeta.ConfigMetaEmpty() => Seq(ConfigPath(path.mkString(".")))
-        case ConfigMeta.ConfigMetaUnknown() => Seq(ConfigPath(path.mkString(".")))
-      }
-    }
-
-    val resolvedConfig =
+    val resolvedConfig = {
       getConfig(plans.app).toSet + _HackyMandatorySection
+    }
 
     if (plans.app.stepsUnordered.exists(_.target == roleDIKey)) {
       Some(ConfigWriter.minimized(resolvedConfig, roleConfig))
@@ -180,6 +146,41 @@ final class ConfigWriter[F[_]](
         subLogger.error(s"Can't write reference config to $target, $error")
     }
   }
+
+  private def getConfig(plan: Plan): Seq[ConfigPath] = {
+    val configTags = plan.stepsUnordered.toSeq.flatMap {
+      op =>
+        op.origin.value match {
+          case defined: OperationOrigin.Defined =>
+            defined.binding.tags.collect {
+              case t: ConfTag =>
+                t
+            }
+          case _ =>
+            Seq.empty
+        }
+    }
+
+    configTags.flatMap(t => unpack(Seq(t.confPath), t.fieldsMeta))
+  }
+
+  private def unpack(path: Seq[String], meta0: ConfigMeta): Seq[ConfigPath] = {
+    meta0 match {
+      case ConfigMeta.ConfigMetaCaseClass(fields) =>
+        fields.flatMap {
+          case (name, meta) =>
+            unpack(path :+ name, meta)
+        }
+      case ConfigMeta.ConfigMetaSealedTrait(branches) =>
+        branches.toSeq.flatMap {
+          case (name, meta) =>
+            unpack(path :+ name, meta)
+        }
+      case ConfigMeta.ConfigMetaEmpty() => Seq(ConfigPath(path.mkString(".")))
+      case ConfigMeta.ConfigMetaUnknown() => Seq(ConfigPath(path.mkString("."), wildcard = true))
+    }
+  }
+
 }
 
 object ConfigWriter extends RoleDescriptor {
@@ -199,12 +200,6 @@ object ConfigWriter extends RoleDescriptor {
     targetDir: String,
     includeCommon: Boolean,
     useLauncherVersion: Boolean,
-  )
-
-  final case class ConfigurableComponent(
-    roleId: String,
-    version: Option[ArtifactVersion],
-    parent: Option[Config],
   )
 
   object Options extends ParserDef {
@@ -233,6 +228,7 @@ object ConfigWriter extends RoleDescriptor {
     import scala.jdk.CollectionConverters.*
 
     val paths = requiredPaths.map(_.toPath)
+    val wildcards = requiredPaths.collect { case c if c.wildcard => c.toPath }
 
     def filter(path: Seq[String], config: ConfigObject): ConfigObject = {
       config.entrySet().asScala.foldLeft(config) {
@@ -240,7 +236,7 @@ object ConfigWriter extends RoleDescriptor {
           val key = e.getKey
           val npath = path :+ key
           val pathKey = npath.mkString(".")
-          if (paths.contains(pathKey) || paths.exists(p => p.startsWith(pathKey + "."))) {
+          if (paths.contains(pathKey) || paths.exists(_.startsWith(pathKey + ".")) || wildcards.exists(pathKey.startsWith)) {
             e.getValue match {
               case configObject: ConfigObject => c.withValue(key, filter(npath, configObject))
               case _ => c
@@ -255,11 +251,11 @@ object ConfigWriter extends RoleDescriptor {
     filtered
   }
 
-  final case class ConfigPath(parts: Seq[String]) {
+  final case class ConfigPath(parts: Seq[String], wildcard: Boolean) {
     def toPath: String = parts.mkString(".")
   }
   object ConfigPath {
-    def apply(path: String): ConfigPath = new ConfigPath(ArraySeq.unsafeWrapArray(path.split('.')))
+    def apply(path: String, wildcard: Boolean = false): ConfigPath = new ConfigPath(ArraySeq.unsafeWrapArray(path.split('.')), wildcard)
   }
 
 }

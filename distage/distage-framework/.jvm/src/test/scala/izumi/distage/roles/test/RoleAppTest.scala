@@ -9,10 +9,10 @@ import distage.config.AppConfig
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.DebugProperties
@@ -327,7 +327,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role0CfgMinParsed.hasPath("setElementConfig"))
       assert(role0CfgMinParsed.hasPath("testservice2"))
       assert(role0CfgMinParsed.hasPath("testservice"))
+      assert(role0CfgMinParsed.hasPath("genericservice"))
 
+      assert(role0CfgMinParsed.hasPath("genericservice.genericField"))
+      assert(role0CfgMinParsed.hasPath("genericservice.addedField"))
+
+      assert(role0CfgMinParsed.getList("testservice2.list").unwrapped().asScala.toList == List("requiredEntry"))
+      assert(role0CfgMinParsed.getString("testservice2.map.requiredEntry") == "entry")
       assert(role0CfgMinParsed.getString("testservice2.strval") == "xxx")
       assert(role0CfgMinParsed.getString("testservice.overridenInt") == "555")
 
