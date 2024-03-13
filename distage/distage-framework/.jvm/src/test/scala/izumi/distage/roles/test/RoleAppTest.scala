@@ -341,6 +341,19 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 222)
       assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List(1, 2, 3))
 
+      val role3 = cfg("testrole03-full", version)
+      val role3Min = cfg("testrole03-minimized", version)
+
+      assert(role3.exists(), s"$role3 exists")
+      assert(role3Min.exists(), s"$role3Min exists")
+      assert(role3.length() > role3Min.length())
+
+      val role3CfgMinParsed = ConfigFactory.parseString(new String(Files.readAllBytes(role3Min.toPath), UTF_8))
+
+      assert(role3CfgMinParsed.hasPath("activation"))
+      assert(role3CfgMinParsed.hasPath("activation.axiscomponentaxis"))
+      assert(!role3CfgMinParsed.hasPath("activation.role05localaxis"))
+
       val role4Cfg = cfg("testrole04-full", version)
       val role4CfgMin = cfg("testrole04-minimized", version)
 
@@ -361,7 +374,20 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role4CfgMinParsed.hasPath("listconf"))
 
       assert(role0CfgMinParsed.hasPath("activation"))
-      assert(role4CfgMinParsed.hasPath("activation"))
+      assert(role0CfgMinParsed.getObject("activation").keySet().isEmpty)
+
+      val role5 = cfg("testrole05-full", version)
+      val role5Min = cfg("testrole05-minimized", version)
+
+      assert(role5.exists(), s"$role5 exists")
+      assert(role5Min.exists(), s"$role5Min exists")
+      assert(role5.length() > role5Min.length())
+
+      val role5CfgMinParsed = ConfigFactory.parseString(new String(Files.readAllBytes(role5Min.toPath), UTF_8))
+
+      assert(role5CfgMinParsed.hasPath("activation"))
+      assert(!role5CfgMinParsed.hasPath("activation.axiscomponentaxis"))
+      assert(role5CfgMinParsed.hasPath("activation.role05localaxis"))
     }
 
     "roles do not have access to components from MainAppModule" in {

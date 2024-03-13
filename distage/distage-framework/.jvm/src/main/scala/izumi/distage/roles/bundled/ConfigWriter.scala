@@ -38,7 +38,7 @@ final class ConfigWriter[F[_]](
   // fixme: always include `activation` section in configs (Used in RoleAppLauncherImpl#configActivationSection, but not seen in config bindings, since it's not read by DI)
   //  should've been unnecessary after https://github.com/7mind/izumi/issues/779
   //  but, the contents of the MainAppModule (including `"activation"` config read) are not accessible here from `RoleAppPlanner` yet...
-  private[this] val _HackyMandatorySection = ConfigPath("activation")
+  private[this] val _HackyMandatorySection = ConfigPath("activation", wildcard = true)
   private val configMerger = new ConfigMerger.ConfigMergerImpl(logger)
 
   override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
