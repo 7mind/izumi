@@ -111,7 +111,7 @@ objects.get[C] eq objects.get[C].c
 
 #### Automatic Resolution with generated proxies
 
-The above strategy depends on `distage-core-proxy-cglib` module and is enabled by default.
+The above strategy depends on `distage-core-proxy-bytebuddy` module and is enabled by default.
 
 If you want to disable it, use `NoProxies` bootstrap configuration:
 
@@ -152,14 +152,14 @@ val locator = Injector.NoProxies()
   .produce(module, Roots(DIKey[A], DIKey[C]))
   .unsafeGet()
 
-locator.get[A].b eq locator.get[B]
+assert(locator.get[A].b eq locator.get[B])
 
-locator.get[B].a eq locator.get[A]
+assert(locator.get[B].a eq locator.get[A])
 
-locator.get[C].c eq locator.get[C]
+assert(locator.get[C].c eq locator.get[C])
 ```
 
-The proxy generation via `cglib` is enabled by default, because in scenarios with extreme late-binding cycles can emerge unexpectedly,
+The proxy generation via `bytebuddy` is enabled by default, because in scenarios with extreme late-binding cycles can emerge unexpectedly,
 out of control of the origin module.
 
 Note: Currently a limitation applies to by-names - ALL dependencies of a class engaged in a by-name circular dependency must
@@ -280,7 +280,7 @@ class C(val b: B) extends PrintResource("C")
 
 def bootstrapModule = new BootstrapModuleDef {
   many[PlanningHook]
-    .add(new AutoSetHook[PrintResource, PrintResource])
+    .add(AutoSetHook[PrintResource])
 }
 
 def appModule = new ModuleDef {
@@ -344,19 +344,22 @@ val thatC = objects.get[A].c
 assert(thisC == thatC)
 ```
 
-Locator contains metadata about the plan and the bindings from which it was ultimately created:
+Locator contains metadata about the plan, and the bindings from which it was ultimately created:
 
 ```scala mdoc:to-string
-import distage.{OrderedPlan, ModuleBase}
+import distage.{Plan, ModuleBase}
 
-// Plan that created this locator (after GC)
+// Plan that created this locator
 
-val plan: OrderedPlan = objects.plan
+val plan: Plan = objects.plan
 
 // Bindings from which the Plan was built (after GC)
 
 val bindings: ModuleBase = plan.definition
 ```
+
+Directly depending on `Locator` is a low-level API. If you only need to wire a subgraph within a larger object graph,
+you may be able to do this using a high-level @ref[Subcontexts](basics.md#subcontexts) API.
 
 #### Injector inheritance
 
@@ -366,7 +369,7 @@ You may run a new planning cycle, inheriting the instances from an existing `Loc
 val childInjector = Injector.inherit(objects)
 
 class Printer(a: A, b: B, c: C) {
-  def printEm() =
+  def printEm(): Unit =
     println(s"I've got A=$a, B=$b, C=$c, all here!")
 }
 
@@ -374,6 +377,8 @@ childInjector.produceRun(new ModuleDef { make[Printer] }) {
   (_: Printer).printEm()
 }
 ```
+
+It's safe, performance-wise, to run `Injector` to create nested graphs – `Injector` is extremely fast.
 
 #### Bootloader
 

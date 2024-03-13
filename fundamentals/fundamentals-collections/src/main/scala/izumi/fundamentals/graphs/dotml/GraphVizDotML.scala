@@ -54,12 +54,12 @@ abstract class GraphVizDotML(
     if (label != null) {
       s"""[label=${quote(label)} """ +
       s"""${(tmpAttr foldLeft "") {
-        (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"
-      }}]"""
+          (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"
+        }}]"""
     } else {
       s"""[${(tmpAttr foldLeft "") {
-        (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"
-      }}]"""
+          (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"
+        }}]"""
     }
   }
 

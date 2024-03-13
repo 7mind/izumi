@@ -1,9 +1,7 @@
 package izumi.distage.fixtures
 
 import izumi.distage.model.definition.Id
-import izumi.fundamentals.platform.build.ExposedTestScope
 
-@ExposedTestScope
 object SetCases {
 
   object SetCase1 {
@@ -61,4 +59,11 @@ object SetCases {
     }
   }
 
+  object SetCase4 {
+    trait Service
+
+    class Service1 extends Service
+
+    class Service2 extends Service
+  }
 }

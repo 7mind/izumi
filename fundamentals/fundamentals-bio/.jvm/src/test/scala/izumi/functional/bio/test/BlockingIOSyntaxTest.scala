@@ -1,24 +1,17 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.{BlockingIO2, BlockingIO3, BlockingIOInstances, F, Functor2, Monad3}
+import izumi.functional.bio.{BlockingIO2, F, Functor2}
 import org.scalatest.wordspec.AnyWordSpec
-import zio.blocking.Blocking
-import zio.{Has, ZIO}
+import zio.{IO, ZIO}
 
 class BlockingIOSyntaxTest extends AnyWordSpec {
 
-  def `attach BlockingIO methods to a trifunctor BIO`[F[-_, +_, +_]: Monad3: BlockingIO3]: F[Any, Throwable, Int] = {
-    F.syncBlocking(2)
-  }
   def `attach BlockingIO methods to a bifunctor BIO`[F[+_, +_]: Functor2: BlockingIO2]: F[Throwable, Int] = {
     F.syncBlocking(2)
   }
   locally {
-    val _: ZIO[Blocking, Throwable, Int] = {
-      implicit val blocking: Blocking = Has(Blocking.Service.live)
-      `attach BlockingIO methods to a trifunctor BIO`[ZIO]
-      `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
-      `attach BlockingIO methods to a bifunctor BIO`[BlockingIOInstances.ZIOWithBlocking[Any, +_, +_]]
+    val _: ZIO[Any, Throwable, Int] = {
+      `attach BlockingIO methods to a bifunctor BIO`[IO]
     }
   }
 
@@ -26,16 +19,20 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
     class X[F[+_, +_]: BlockingIO2] {
       def hello = BlockingIO2[F].syncBlocking(println("hello world!"))
     }
-    class X3[F[-_, +_, +_]: BlockingIO3] {
-      def hello = BlockingIO3[F].syncBlocking(println("hello world!"))
+    def zioBlockingApply2(): ZIO[Any, Throwable, Unit] = BlockingIO2.apply[zio.IO].syncBlocking(())
+    def zioBlockingApply3(): ZIO[Any, Throwable, Unit] = BlockingIO2.apply.syncBlocking(())
+
+    assert(new X[zio.ZIO[Any, +_, +_]].hello != null)
+    locally {
+      assert(new X[IO].hello != null)
     }
 
-    assert(new X[zio.ZIO[Blocking, +_, +_]].hello != null)
-    locally {
-      implicit val blocking: Blocking = Has(Blocking.Service.live)
-      assert(new X[zio.IO].hello != null)
-    }
-    assert(new X3[BlockingIOInstances.ZIOWithBlocking].hello != null)
+    assert(summonOrNull[BlockingIO2[IO]] != null)
+
+    assert(zioBlockingApply2() != null)
+    assert(zioBlockingApply3() != null)
   }
+
+  def summonOrNull[A](implicit a: A = null): A = a
 
 }

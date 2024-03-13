@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import izumi.functional.bio.data.~>>
+import izumi.functional.bio.data.{Morphism1, ~>>}
 import izumi.functional.bio.impl.PrimitivesFromBIOAndCats
 import izumi.fundamentals.orphans.`zio.ZIO`
 
@@ -15,18 +15,20 @@ object Primitives2 {
 
   implicit final class Primitives2Ops[F[+_, +_]](private val self: Primitives2[F]) extends AnyVal {
     def mapK[G[+_, +_]](fg: F ~>> G)(implicit G: Functor2[G]): Primitives2[G] = new Primitives2[G] {
-      override def mkRef[A](a: A): G[Nothing, Ref2[G, A]] = fg(self.mkRef(a)).map(_.mapK(fg))
+      override def mkRef[A](a: A): G[Nothing, Ref2[G, A]] = fg(self.mkRef(a)).map(_.mapK(fg: Morphism1[F[Nothing, _], G[Nothing, _]]))
       override def mkPromise[E, A]: G[Nothing, Promise2[G, E, A]] = fg(self.mkPromise[E, A]).map(_.mapK(fg))
-      override def mkSemaphore(permits: Long): G[Nothing, Semaphore2[G]] = fg(self.mkSemaphore(permits)).map(_.mapK(fg))
+      override def mkSemaphore(permits: Long): G[Nothing, Semaphore2[G]] = fg(self.mkSemaphore(permits)).map(_.mapK(fg: Morphism1[F[Nothing, _], G[Nothing, _]]))
     }
   }
+
+  @inline def PrimitivesFromCatsPrimitives[F[+_, +_]: Async2: Fork2]: Primitives2[F] = new PrimitivesFromBIOAndCats[F]
 }
 
 private[bio] sealed trait PrimitivesInstances
-object PrimitivesInstances extends PrimitivesLowPriorityInstances {
-  @inline implicit def PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: Primitives3[F] = impl.PrimitivesZio.asInstanceOf[Primitives3[F]]
+object PrimitivesInstances extends PrimitivesInstancesLowPriority {
+  @inline implicit def PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: Primitives2[F[Any, +_, +_]] = impl.PrimitivesZio.asInstanceOf[Primitives2[F[Any, +_, +_]]]
 }
 
-sealed trait PrimitivesLowPriorityInstances {
-  @inline implicit def PrimitivesFromCatsPrimitives[F[+_, +_]: Async2: Fork2]: Primitives2[F] = new PrimitivesFromBIOAndCats[F]
+sealed trait PrimitivesInstancesLowPriority {
+  @inline implicit def PrimitivesZioR[F[-_, +_, +_]: `zio.ZIO`, R]: Primitives2[F[R, +_, +_]] = impl.PrimitivesZio.asInstanceOf[Primitives2[F[R, +_, +_]]]
 }

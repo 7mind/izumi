@@ -6,6 +6,8 @@
 /config
 .agg
 .vscode
+package-lock.json
+.fleet
 
 # we cannot exclude build.sbt - scala steward wouldn't work without it
 #build.sbt
@@ -17,7 +19,7 @@ secrets.tar
 build/project
 .DS_Store
 .metals
-project/metals.sbt
+**/metals.sbt
 .bloop
 .bsp
 .java-version

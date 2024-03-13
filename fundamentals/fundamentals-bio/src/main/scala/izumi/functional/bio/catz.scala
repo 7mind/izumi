@@ -5,7 +5,7 @@ package izumi.functional.bio
   *
   * {{{
   *   import izumi.functional.bio.IO2
-  *   import izumi.functional.bio.catz._
+  *   import izumi.functional.bio.catz.*
   *   import cats.effect.Sync
   *
   *   def divideByZero[F[+_, +_]: IO2]: F[Throwable, Int] = {

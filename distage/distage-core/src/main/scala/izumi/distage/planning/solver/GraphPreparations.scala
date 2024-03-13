@@ -7,9 +7,14 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, Monadi
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.BindingTranslator
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
+import izumi.distage.planning.{BindingTranslator, SubcontextHandler}
+import izumi.functional.IzEither.*
+import izumi.fundamentals.collections.MutableMultiMap
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.WeakEdge
+import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.tools.gc.Tracer
 
 import scala.annotation.nowarn
 
@@ -17,21 +22,15 @@ import scala.annotation.nowarn
 class GraphPreparations(
   bindingTranslator: BindingTranslator
 ) {
-  import scala.collection.compat._
+
+  import scala.collection.compat.*
 
   def findWeakSetMembers(
-    sets: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
-    matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp],
+    setOps: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
     roots: Set[DIKey],
   ): Set[WeakEdge[DIKey]] = {
-    import izumi.fundamentals.collections.IzCollections._
-
-    val indexed = matrix.links.map {
-      case (successor, node) =>
-        (successor.key, node.meta)
-    }.toMultimapMut
-
-    val setDefs = sets
+    val setDefs = setOps
       .collect {
         case (target, Node(_, s: CreateSet)) =>
           (target, s.members)
@@ -43,21 +42,57 @@ class GraphPreparations(
           .diff(roots)
           .flatMap {
             member =>
-              indexed.get(member).toSeq.flatten.collect {
-                case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
-                  WeakEdge(referenced, member)
-              }
+              getSetElementWeakEdges(execOpIndex, member)
           }
     }.toSet
   }
 
+  def executableOpIndex(matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp]): MutableMultiMap[DIKey, InstantiationOp] = {
+    import izumi.fundamentals.collections.IzCollections.*
+
+    matrix.links.map {
+      case (successor, node) =>
+        (successor.key, node.meta)
+    }.toMultimapMut
+  }
+
+  def getSetElementWeakEdges(execOpIndex: MutableMultiMap[DIKey, InstantiationOp], member: DIKey): Iterator[WeakEdge[DIKey]] = {
+    execOpIndex.getOrElse(member, Nil).iterator.collect {
+      case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, referenced, true), _) =>
+        WeakEdge(referenced, member)
+    }
+  }
+
   def getRoots(input: Roots, allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Set[DIKey] = {
-    input match {
+    val effective = input match {
       case Roots.Of(roots) =>
+        // TODO: should we remove roots which are retained by effective roots? see #1476
         roots.toSet
       case Roots.Everything =>
-        allOps.iterator.map(_._1.key).toSet
+        import izumi.fundamentals.collections.IzCollections.*
+        // this somehow duplicates plan.noSuccessors, though this happens BEFORE planning
+        val dependees = allOps.flatMap {
+          case (k, op) =>
+            val reqs = op match {
+              case op: CreateSet =>
+                op.members
+              case op: WiringOp =>
+                op.wiring.requiredKeys
+              case op: MonadicOp =>
+                Set(op.effectKey)
+            }
+            reqs.map(r => (r, Option(k.key))) ++ Set((k.key, None: Option[DIKey]))
+        }.toMultimap
+
+        val noDependencies = dependees.filter(_._2.forall(_.isEmpty)).keySet
+
+        val depmatrix = IncidenceMatrix(dependees.map { case (prev, succs) => (prev, succs.flatten) })
+        val reachable = new Tracer[DIKey]().trace(depmatrix, Set.empty, noDependencies)
+
+        val allKeys = allOps.map(_._1.key).toSet
+        (allKeys -- reachable) ++ noDependencies
     }
+    effective
   }
 
   def toDeps(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = {
@@ -74,34 +109,37 @@ class GraphPreparations(
       Node(Set(op.effectKey), op: InstantiationOp)
   }
 
-  def computeOperationsUnsafe(bindings: ModuleBase): Iterator[(Annotated[DIKey], InstantiationOp, Binding)] = {
-    bindings.iterator
-      // this is a minor optimization but it makes some conflict resolution strategies impossible
-      //.filter(b => activationChoices.allValid(toAxis(b)))
-      .flatMap {
-        b =>
-          val next = bindingTranslator.computeProvisioning(b)
-          (next.provisions ++ next.sets.values).map((b, _))
-      }
-      .zipWithIndex
-      .map {
-        case ((b, n), idx) =>
-          val mutIndex = b match {
-            case Binding.SingletonBinding(_, _, _, _, true) =>
-              Some(idx)
-            case _ =>
-              None
-          }
+  def computeOperationsUnsafe[Err](
+    handler: SubcontextHandler[Err],
+    bindings: ModuleBase,
+  ): Either[NEList[Err], Iterator[(Annotated[DIKey], InstantiationOp, Binding)]] = {
 
-          val axis = n match {
-            case _: CreateSet =>
-              Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
-            case _ =>
-              getAxisPoints(b)
-          }
+    for {
+      translated <- bindings.iterator
+        // this is a minor optimization but it makes some conflict resolution strategies impossible
+        // .filter(b => activationChoices.allValid(toAxis(b)))
+        .map(b => bindingTranslator.computeProvisioning(handler, b).map(next => (b, next))).biSequenceScalar
+      bindingsToOps = translated.flatMap { case (b, next) => (next.provisions ++ next.sets.values).map((b, _)) }
+    } yield {
+      bindingsToOps.zipWithIndex
+        .map {
+          case ((b, n), idx) =>
+            val mutIndex = b match {
+              case Binding.SingletonBinding(_, _, _, _, true) =>
+                Some(idx)
+              case _ =>
+                None
+            }
 
-          (Annotated(n.target, mutIndex, axis), n, b)
-      }
+            val axis = n match {
+              case _: CreateSet =>
+                Set.empty[AxisPoint] // actually axis marking makes no sense in case of sets
+              case _ =>
+                getAxisPoints(b)
+            }
+            (Annotated(n.target, mutIndex, axis), n, b)
+        }
+    }
   }
 
   def computeSetsUnsafe(allOps: Seq[(Annotated[DIKey], InstantiationOp)]): Iterator[(DIKey, (CreateSet, Set[DIKey]))] = {

@@ -1,9 +1,9 @@
 package izumi.functional.bio
 
-import cats.effect.concurrent.Semaphore
+import cats.effect.std.Semaphore
 import izumi.functional.bio.data.~>
 import zio.ZIO
-import zio.stm.{USTM, ZSTM}
+import zio.stm.USTM
 
 trait Semaphore1[+F[_]] {
   def acquire: F[Unit]
@@ -22,14 +22,14 @@ object Semaphore1 {
     override def releaseN(n: Long): F[Nothing, Unit] = semaphore.releaseN(n).orTerminate
   }
 
-  def fromZIO(tSemaphore: zio.stm.TSemaphore): Semaphore3[ZIO] = new Semaphore3[ZIO] {
+  def fromZIO(tSemaphore: zio.stm.TSemaphore): Semaphore2[zio.IO] = new Semaphore2[zio.IO] {
     override def acquire: ZIO[Any, Nothing, Unit] = tSemaphore.acquire.commit
     override def release: ZIO[Any, Nothing, Unit] = tSemaphore.release.commit
     override def acquireN(n: Long): ZIO[Any, Nothing, Unit] = tSemaphore.acquireN(n).commit
     override def releaseN(n: Long): ZIO[Any, Nothing, Unit] = tSemaphore.releaseN(n).commit
   }
 
-  def fromSTM(tSemaphore: zio.stm.TSemaphore): Semaphore3[ZSTM] = new Semaphore3[ZSTM] {
+  def fromSTM(tSemaphore: zio.stm.TSemaphore): Semaphore2[zio.stm.STM] = new Semaphore2[zio.stm.STM] {
     override def acquire: USTM[Unit] = tSemaphore.acquire
     override def release: USTM[Unit] = tSemaphore.release
     override def acquireN(n: Long): USTM[Unit] = tSemaphore.acquireN(n)

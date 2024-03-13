@@ -1,13 +1,15 @@
 package izumi.distage
 
-import izumi.distage.model._
+import izumi.distage.model.*
+import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle, Module, ModuleBase, ModuleDef}
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
-import izumi.distage.model.recursive.{Bootloader, LocatorRef}
+import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
+import izumi.functional.quasi.QuasiIO
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.reflect.TagK
 
 /**
@@ -32,11 +34,11 @@ final class InjectorDefaultImpl[F[_]](
   // passed-through into `Bootloader`
   private[this] val bsModule: BootstrapModule = bootstrapLocator.get[BootstrapModule]
 
-  override def plan(input: PlannerInput): OrderedPlan = {
+  override def plan(input: PlannerInput): Either[NEList[DIError], Plan] = {
     planner.plan(addSelfInfo(input))
   }
 
-  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+  override def planNoRewrite(input: PlannerInput): Either[NEList[DIError], Plan] = {
     planner.planNoRewrite(addSelfInfo(input))
   }
 
@@ -45,12 +47,13 @@ final class InjectorDefaultImpl[F[_]](
   }
 
   override private[distage] def produceDetailedFX[G[_]: TagK: QuasiIO](
-    plan: OrderedPlan,
+    plan: Plan,
     filter: FinalizerFilter[G],
-  ): Lifecycle[G, Either[FailedProvision[G], Locator]] = {
-    interpreter.instantiate[G](plan, bootstrapLocator, filter)
+  ): Lifecycle[G, Either[FailedProvision, Locator]] = {
+    interpreter.run[G](plan, bootstrapLocator, filter)
   }
 
+  // TODO: probably this should be a part of the Planner itself
   private[this] def addSelfInfo(input: PlannerInput): PlannerInput = {
     val selfReflectionModule = InjectorDefaultImpl.selfReflectionModule(parentFactory, bsModule, defaultModule, input.activation, input)
 
@@ -112,12 +115,14 @@ object InjectorDefaultImpl {
   }
 
   private[this] lazy val selfReflectionKeys: Set[DIKey] = {
-    // passing nulls to prevent key list getting out of sync
-    selfReflectionModule(null, null, null, null.asInstanceOf[Activation], null).keys
+    // passing nulls as values to prevent key list getting out of sync
+    val reflectModule = selfReflectionModule(null, null, null, null.asInstanceOf[Activation], null)
+    val onlyKeys = reflectModule.keys
+    onlyKeys
   }
 
   lazy val providedKeys: Set[DIKey] = {
     selfReflectionKeys +
-    DIKey[LocatorRef] // magic import, always available
+    ExecutableOp.AddRecursiveLocatorRef.magicLocatorKey // magic import, always available WHEN REQUESTED
   }
 }

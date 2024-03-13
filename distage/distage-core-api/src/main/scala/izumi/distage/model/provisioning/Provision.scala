@@ -26,8 +26,8 @@ trait Provision[+F[_]] {
 
   @nowarn("msg=Unused import")
   def enumerate: immutable.Seq[IdentifiedRef] = {
-    import scala.collection.compat._
-    instances.map(IdentifiedRef.tupled).to(scala.collection.immutable.Seq)
+    import scala.collection.compat.*
+    instances.map { case (k, v) => IdentifiedRef(k, v) }.to(scala.collection.immutable.Seq)
   }
   def index: immutable.Map[DIKey, Any] = {
     enumerate.map(i => i.key -> i.value).toMap
@@ -35,20 +35,10 @@ trait Provision[+F[_]] {
 }
 
 object Provision {
-
-  final case class ProvisionMutable[F[_]]() extends Provision[F] {
-    override val instances: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any]()
-    override val imports: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any]()
-    override val finalizers: mutable.ListBuffer[Finalizer[F]] = mutable.ListBuffer[Finalizer[F]]()
-
-    def toImmutable: ProvisionImmutable[F] = {
-      ProvisionImmutable(instances, imports, finalizers)
-    }
-
-    override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {
-      toImmutable.narrow(allRequiredKeys)
-    }
-  }
+  final case class ProvisionInstances(
+    instances: Map[DIKey, Any],
+    imports: Map[DIKey, Any],
+  )
 
   final case class ProvisionImmutable[+F[_]](
     // LinkedHashMap for ordering
@@ -56,13 +46,14 @@ object Provision {
     imports: Map[DIKey, Any],
     finalizers: Seq[Finalizer[F]],
   ) extends Provision[F] {
+    def raw: ProvisionInstances = ProvisionInstances(instances, imports)
     override def instances: Map[DIKey, Any] = instancesImpl
     override lazy val enumerate: immutable.Seq[IdentifiedRef] = super.enumerate
     override lazy val index: immutable.Map[DIKey, Any] = super.index
 
     @nowarn("msg=Unused import")
     override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {
-      import scala.collection.compat._
+      import scala.collection.compat.*
       ProvisionImmutable(
         instancesImpl.filter(kv => allRequiredKeys.contains(kv._1)), // 2.13 compat
         imports.view.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat
@@ -70,5 +61,4 @@ object Provision {
       )
     }
   }
-
 }

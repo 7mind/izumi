@@ -4,6 +4,10 @@ import GraphProperty._
 import GraphImpl._
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 
+/**
+  * @param successors Dependees as values, dependencies as keys (e.g. `before -> Set(after)`
+  * @param predecessors Dependencies as values, dependees as keys (e.g. `after -> Set(before)`)
+  */
 final case class DG[N, M] private[izumi] (
   successors: IncidenceMatrix[N],
   predecessors: IncidenceMatrix[N],

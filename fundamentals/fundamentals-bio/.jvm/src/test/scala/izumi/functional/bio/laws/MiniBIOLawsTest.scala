@@ -1,16 +1,15 @@
 package izumi.functional.bio.laws
 
-import cats.effect.Sync
-import cats.effect.laws.SyncLaws
-import cats.effect.laws.discipline.SyncTests
+import cats.effect.kernel.Sync
+import cats.effect.laws.{SyncLaws, SyncTests}
 import izumi.functional.bio.catz.BIOToSync
 import izumi.functional.bio.impl.MiniBIO
 import izumi.functional.bio.laws.env.MiniBIOEnv
 
 class MiniBIOLawsTest extends CatsLawsTestBase with MiniBIOEnv {
   val syncTests: SyncTests[MiniBIO[Throwable, _]] = new SyncTests[MiniBIO[Throwable, _]] {
-    override val laws = new SyncLaws[MiniBIO[Throwable, _]] {
-      override val F = Sync[MiniBIO[Throwable, _]]
+    override val laws: SyncLaws[MiniBIO[Throwable, _]] = new SyncLaws[MiniBIO[Throwable, _]] {
+      override val F: Sync[MiniBIO[Throwable, _]] = Sync[MiniBIO[Throwable, _]]
     }
   }
 

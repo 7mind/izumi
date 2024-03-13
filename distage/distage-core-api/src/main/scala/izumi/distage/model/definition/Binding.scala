@@ -1,10 +1,11 @@
 package izumi.distage.model.definition
 
-import izumi.distage.constructors.AnyConstructor
+import izumi.distage.constructors.{ClassConstructor}
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.plan.repr.{BindingFormatter, KeyFormatter}
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
+import izumi.fundamentals.platform.cache.CachedProductHashcode
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.reflect.Tag
 
@@ -33,9 +34,7 @@ sealed trait Binding {
 
 object Binding {
 
-  sealed trait GroupingKey {
-    override final lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
-  }
+  sealed abstract class GroupingKey extends Product with CachedProductHashcode
   object GroupingKey {
     final case class KeyImpl(key: DIKey, impl: ImplDef) extends GroupingKey
     final case class Key(key: DIKey) extends GroupingKey
@@ -84,8 +83,8 @@ object Binding {
   }
 
   implicit final class WithImplementation[R](private val binding: ImplBinding { def withImplDef(implDef: ImplDef): R }) extends AnyVal {
-    def withImpl[T: Tag: AnyConstructor]: R =
-      withImpl[T](AnyConstructor[T])
+    def withImpl[T: Tag: ClassConstructor]: R =
+      withImpl[T](ClassConstructor[T])
 
     def withImpl[T: Tag](instance: T): R =
       binding.withImplDef(ImplDef.InstanceImpl(SafeType.get[T], instance))

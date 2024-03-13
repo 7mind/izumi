@@ -1,7 +1,10 @@
 package izumi.distage.model.planning
 
-import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
-import izumi.fundamentals.platform.language.unused
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.reflection.DIKey
+import izumi.fundamentals.graphs.DG
+import scala.annotation.unused
 
 /**
   * Execute side-effects to observe planning algorithm execution, e.g. log, write GraphViz files, etc.
@@ -9,6 +12,5 @@ import izumi.fundamentals.platform.language.unused
   * @see GraphDumpObserver
   */
 trait PlanningObserver {
-  def onPhase10PostGC(@unused plan: SemiPlan): Unit = {}
-  def onPhase90AfterForwarding(@unused finalPlan: OrderedPlan): Unit = {}
+  def onPlanningFinished(@unused input: PlannerInput, @unused plan: DG[DIKey, ExecutableOp]): Unit = {}
 }

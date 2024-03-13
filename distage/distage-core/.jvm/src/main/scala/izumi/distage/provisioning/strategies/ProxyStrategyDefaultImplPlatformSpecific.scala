@@ -1,6 +1,6 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.{MissingRefException, NoRuntimeClassException, UnsupportedOpException}
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
 import izumi.distage.model.plan.Wiring
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
@@ -15,63 +15,96 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
   mirrorProvider: MirrorProvider,
 ) {
 
-  protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, op: ProxyOp.MakeProxy): DeferredInit = {
-    val runtimeClass = mirrorProvider.runtimeClass(tpe).getOrElse(throw new NoRuntimeClassException(op.target))
-
-    val classConstructorParams = if (noArgsConstructor(tpe)) {
-      ProxyParams.Empty
-    } else {
-      val allArgsAsNull: Array[(Class[?], Any)] = {
-        op.op match {
-          case WiringOp.CallProvider(_, f: Wiring.SingletonWiring.Function, _) if f.provider.providerType eq ProviderType.Class =>
-            // for class constructors, try to fetch known dependencies from the object graph
-            f.associations.map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a)).toArray
-          case _ =>
-            // otherwise fill everything with nulls
-            runtimeClass.getConstructors.head.getParameterTypes
-              .map(clazz => clazz -> TypeUtil.defaultValue(clazz))
+  protected def makeCogenProxy(
+    context: ProvisioningKeyProvider,
+    tpe: SafeType,
+    op: ProxyOp.MakeProxy,
+  ): Either[ProvisionerIssue, DeferredInit] = {
+    for {
+      runtimeClass <- mirrorProvider.runtimeClass(tpe).toRight(ProvisionerIssue.NoRuntimeClass(op.target))
+      classConstructorParams <-
+        if (noArgsConstructor(tpe)) {
+          Right(ProxyParams.Empty)
+        } else {
+          for {
+            allArgsAsNull <- {
+              op.op match {
+                case WiringOp.CallProvider(_, f: Wiring.SingletonWiring.Function, _) if f.provider.providerType eq ProviderType.Class =>
+                  // for class constructors, try to fetch known dependencies from the object graph
+                  import izumi.functional.IzEither.*
+                  f.associations
+                    .map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a))
+                    .biSequence
+                    .map(_.toArray: Array[(Class[?], Any)])
+                    .left
+                    .map(
+                      missing =>
+                        ProvisionerIssue.MissingRef(op.target, "Proxy precondition failed: non-forwarding key expected to be in context but wasn't", missing.toSet)
+                    )
+                case _ =>
+                  // otherwise fill everything with nulls
+                  Right(
+                    runtimeClass.getConstructors.head.getParameterTypes
+                      .map(clazz => clazz -> TypeUtil.defaultValue(clazz)): Array[(Class[?], Any)]
+                  )
+              }
+            }
+          } yield {
+            val (argClasses, argValues) = allArgsAsNull.unzip
+            ProxyParams.Params(argClasses, argValues)
+          }
         }
-      }
-      val (argClasses, argValues) = allArgsAsNull.unzip
-      ProxyParams.Params(argClasses, argValues)
+      proxyContext = ProxyContext(runtimeClass, op, classConstructorParams)
+      proxy <- proxyProvider.makeCycleProxy(op.target, proxyContext)
+    } yield {
+      proxy
     }
-
-    val proxyContext = ProxyContext(runtimeClass, op, classConstructorParams)
-
-    proxyProvider.makeCycleProxy(op.target, proxyContext)
   }
 
-  protected def failCogenProxy(tpe: SafeType, op: ProxyOp.MakeProxy): Nothing = {
-    throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", op)
+  protected def failCogenProxy(tpe: SafeType, op: ProxyOp.MakeProxy): Left[ProvisionerIssue, Unit] = {
+    Left(ProvisionerIssue.UnsupportedOp(tpe, op, "tried to make proxy of non-proxyable (final?) class"))
   }
 
-  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: LinkedParameter): (Class[?], Any) = {
+  private def fetchNonforwardRefParamWithClass(
+    context: ProvisioningKeyProvider,
+    forwardRefs: Set[DIKey],
+    param: LinkedParameter,
+  ): Either[List[DIKey], (Class[?], Any)] = {
     val clazz: Class[?] = if (param.isByName) {
       classOf[Function0[?]]
     } else if (param.wasGeneric) {
       classOf[Any]
     } else {
-      param.key.tpe.cls
+      param.key.tpe.closestClass
     }
 
-    val value = param match {
-      case param if forwardRefs.contains(param.key) =>
+    val declaredKey = param.key
+    // see keep proxies alive in case of intersecting loops
+    // there may be a situation when we have intersecting loops resolved independently and real implementation may be not available yet, so fallback is necessary
+    val realKey = declaredKey match {
+      case DIKey.ProxyInitKey(proxied) =>
+        proxied
+      case key =>
+        key
+    }
+
+    param match {
+      case param if forwardRefs.contains(realKey) || forwardRefs.contains(declaredKey) =>
         // substitute forward references by `null`
-        TypeUtil.defaultValue(param.key.tpe.cls)
+        Right((clazz, TypeUtil.defaultValue(param.key.tpe.closestClass)))
       case param =>
-        context.fetchKey(param.key, param.isByName) match {
+        context.fetchKey(declaredKey, param.isByName) match {
           case Some(v) =>
-            v.asInstanceOf[Any]
+            Right((clazz, v.asInstanceOf[Any]))
+
           case None =>
-            throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${param.key}", Set(param.key), None)
+            Left(List(param.key))
         }
     }
-
-    (clazz, value)
   }
 
   private def noArgsConstructor(tpe: SafeType): Boolean = {
-    val constructors = tpe.cls.getConstructors
+    val constructors = tpe.closestClass.getConstructors
     constructors.isEmpty || constructors.exists(_.getParameters.isEmpty)
   }
 

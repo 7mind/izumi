@@ -274,7 +274,7 @@ object UUIDGen {
     val localAddresses: Set[InetAddress] = new HashSet[InetAddress]()
     val nets: Enumeration[NetworkInterface] =
       NetworkInterface.getNetworkInterfaces
-    if (nets != null) {
+    if (nets ne null) {
       while (nets.hasMoreElements()) localAddresses.addAll(Collections.list(nets.nextElement().getInetAddresses))
     }
     localAddresses
@@ -321,7 +321,7 @@ object UUIDGen {
 /**
   * The goods are here: www.ietf.org/rfc/rfc4122.txt.
   */
-class UUIDGen protected () {
+open class UUIDGen protected () {
 
   private var lastNanos: Long = _
 

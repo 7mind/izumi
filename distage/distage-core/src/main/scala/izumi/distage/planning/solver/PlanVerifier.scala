@@ -1,25 +1,25 @@
 package izumi.distage.planning.solver
 
-import distage.TagK
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
-import izumi.distage.model.exceptions.{MissingInstanceException, PlanVerificationException}
+import izumi.distage.model.exceptions.PlanVerificationException
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}
-import izumi.distage.model.planning.{ActivationChoices, AxisPoint}
+import izumi.distage.model.planning.PlanIssue.*
+import izumi.distage.model.planning.{ActivationChoices, AxisPoint, PlanIssue}
 import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.distage.planning.BindingTranslator
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue._
-import izumi.distage.planning.solver.PlanVerifier.{PlanIssue, PlanVerifierResult}
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
-import izumi.functional.IzEither._
-import izumi.fundamentals.collections.ImmutableMultiMap
-import izumi.fundamentals.collections.IzCollections._
-import izumi.fundamentals.collections.nonempty.{NonEmptyList, NonEmptyMap, NonEmptySet}
-import izumi.fundamentals.graphs.WeakEdge
+import izumi.distage.planning.{BindingTranslator, SubcontextHandler}
+import izumi.distage.provisioning.strategies.ImportStrategyDefaultImpl
+import izumi.functional.IzEither.*
+import izumi.fundamentals.collections.IzCollections.*
+import izumi.fundamentals.collections.nonempty.{NEList, NEMap, NESet}
+import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
+import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
 import scala.annotation.{nowarn, tailrec}
@@ -31,77 +31,91 @@ import scala.concurrent.duration.FiniteDuration
 class PlanVerifier(
   preps: GraphPreparations
 ) {
-  import scala.collection.compat._
+  import scala.collection.compat.*
 
   def verify[F[_]: TagK](
     bindings: ModuleBase,
     roots: Roots,
     providedKeys: DIKey => Boolean,
-    excludedActivations: Set[NonEmptySet[AxisPoint]],
+    excludedActivations: Set[NESet[AxisPoint]],
   ): PlanVerifierResult = {
-    val ops = preps.computeOperationsUnsafe(bindings).toSeq
-    val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
-      case (axis, points) =>
-        (axis, points.map(_.value).toSet)
-    }
-    val (mutators, defns) = ops.partition(_._3.isMutator)
-    val justOps = defns.map { case (k, op, _) => k -> op }
-
-    val setOps = preps
-      .computeSetsUnsafe(justOps)
-      .map {
-        case (k, (s, _)) =>
-          (Annotated(k, None, Set.empty), Node(s.members, s))
-
-      }.toMultimapView
-      .map {
-        case (k, v) =>
-          val members = v.flatMap(_.deps).toSet
-          (k, Node(members, v.head.meta.copy(members = members): InstantiationOp))
-      }
-      .toSeq
-
-    val opsMatrix: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps.toDeps(justOps)
-
-    val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(opsMatrix ++ setOps)
-
-    val matrixToTrace = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
-    val justMutators = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
-
-    val rootKeys: Set[DIKey] = preps.getRoots(roots, justOps)
-    val weakSetMembers: Set[WeakEdge[DIKey]] = preps.findWeakSetMembers(setOps.toMap, matrix, rootKeys)
-
-    val mutVisited = mutable.HashSet.empty[(DIKey, Set[AxisPoint])]
-    val effectType = SafeType.getK[F]
-
     val before = System.currentTimeMillis()
     var after = before
-    val issues =
-      try {
-        trace(allAxis, mutVisited, matrixToTrace, weakSetMembers, justMutators, providedKeys, excludedActivations, rootKeys, effectType)
-      } finally {
-        after = System.currentTimeMillis()
+
+    val verificationHandler = new SubcontextHandler.VerificationHandler(this, excludedActivations)
+    (for {
+      ops <- preps.computeOperationsUnsafe(verificationHandler, bindings).map(_.toSeq)
+    } yield {
+      val allAxis: Map[String, Set[String]] = ops.flatMap(_._1.axis).groupBy(_.axis).map {
+        case (axis, points) =>
+          (axis, points.map(_.value).toSet)
       }
+      val (mutators, defns) = ops.partition(_._3.isMutator)
+      val justOps = defns.map { case (k, op, _) => k -> op }
 
-    val visitedKeys = mutVisited.map(_._1).toSet
-    val time = FiniteDuration(after - before, TimeUnit.MILLISECONDS)
+      val setOps = preps
+        .computeSetsUnsafe(justOps)
+        .map {
+          case (k, (s, _)) =>
+            (Annotated(k, None, Set.empty), Node(s.members, s))
 
-    NonEmptySet.from(issues) match {
-      case issues @ Some(_) => PlanVerifierResult.Incorrect(issues, visitedKeys, time)
-      case None => PlanVerifierResult.Correct(visitedKeys, time)
+        }.toMultimapView
+        .map {
+          case (k, v) =>
+            val members = v.flatMap(_.deps).toSet
+            (k, Node(members, v.head.meta.copy(members = members): InstantiationOp))
+        }
+        .toSeq
+
+      val opsMatrix: Seq[(Annotated[DIKey], Node[DIKey, InstantiationOp])] = preps.toDeps(justOps)
+
+      val matrix: SemiEdgeSeq[Annotated[DIKey], DIKey, InstantiationOp] = SemiEdgeSeq(opsMatrix ++ setOps)
+
+      val matrixToTrace = defns.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
+      val justMutators = mutators.map { case (k, op, _) => (k.key, (op, k.axis)) }.toMultimap
+
+      val rootKeys: Set[DIKey] = preps.getRoots(roots, justOps)
+      val execOpIndex: MutableMultiMap[DIKey, InstantiationOp] = preps.executableOpIndex(matrix)
+
+      val mutVisited = mutable.HashSet.empty[(DIKey, Set[AxisPoint])]
+      val effectType = SafeType.getK[F]
+
+      val issues =
+        try {
+          trace(allAxis, mutVisited, matrixToTrace, execOpIndex, justMutators, providedKeys, excludedActivations, rootKeys, effectType, bindings)
+        } finally {
+          after = System.currentTimeMillis()
+        }
+
+      val visitedKeys = mutVisited.map(_._1).toSet
+      val time = FiniteDuration(after - before, TimeUnit.MILLISECONDS)
+
+      NESet.from(issues) match {
+        case issues @ Some(_) => PlanVerifierResult.Incorrect(issues, visitedKeys, time)
+        case None => PlanVerifierResult.Correct(visitedKeys, time)
+      }
+    }) match {
+      case Left(errors) =>
+        after = System.currentTimeMillis()
+        val time = FiniteDuration(after - before, TimeUnit.MILLISECONDS)
+        val issues = errors.map(f => PlanIssue.CantVerifyLocalContext(f)).toSet[PlanIssue]
+        PlanVerifierResult.Incorrect(Some(NESet.unsafeFrom(issues)), Set.empty, time)
+      case Right(value) => value
     }
+
   }
 
   protected[this] def trace(
     allAxis: Map[String, Set[String]],
     allVisited: mutable.HashSet[(DIKey, Set[AxisPoint])],
     matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
-    weakSetMembers: Set[WeakEdge[DIKey]],
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
     justMutators: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
     providedKeys: DIKey => Boolean,
-    excludedActivations: Set[NonEmptySet[AxisPoint]],
+    excludedActivations: Set[NESet[AxisPoint]],
     rootKeys: Set[DIKey],
     effectType: SafeType,
+    bindings: ModuleBase,
   ): Set[PlanIssue] = {
 
     @inline def go(visited: Set[DIKey], current: Set[(DIKey, DIKey)], currentActivation: Set[AxisPoint]): RecursionResult = RecursionResult(current.iterator.map {
@@ -109,11 +123,13 @@ class PlanVerifier(
         if (visited.contains(key) || allVisited.contains((key, currentActivation))) {
           Right(Iterator.empty)
         } else {
-          @inline def reportMissing[A](key: DIKey, dependee: DIKey): Left[List[MissingImport], Nothing] = {
-            Left(List(MissingImport(key, dependee, allImportingBindings(matrix, currentActivation)(key, dependee))))
+          @inline def reportMissing[A](key: DIKey, dependee: DIKey): Left[NEList[MissingImport], Nothing] = {
+            val origins = allImportingBindings(matrix, currentActivation)(key, dependee)
+            val similarBindings = ImportStrategyDefaultImpl.findSimilarImports(bindings, key)
+            Left(NEList(MissingImport(key, dependee, origins, similarBindings.similarSame, similarBindings.similarSub)))
           }
 
-          @inline def reportMissingIfNotProvided[A](key: DIKey, dependee: DIKey)(orElse: => Either[List[PlanIssue], A]): Either[List[PlanIssue], A] = {
+          @inline def reportMissingIfNotProvided[A](key: DIKey, dependee: DIKey)(orElse: => Either[NEList[PlanIssue], A]): Either[NEList[PlanIssue], A] = {
             if (providedKeys(key)) orElse else reportMissing(key, dependee)
           }
 
@@ -126,7 +142,7 @@ class PlanVerifier(
               val ac = ActivationChoices(currentActivation)
 
               val withoutCurrentActivations = {
-                val withoutImpossibleActivationsIter = ops.iterator.filter(ac allValid _._2)
+                val withoutImpossibleActivationsIter = ops.iterator.filter(ac `allValid` _._2)
                 withoutImpossibleActivationsIter.map {
                   case (op, activations) =>
                     (op, activations diff currentActivation, activations)
@@ -141,23 +157,25 @@ class PlanVerifier(
                     case a => Right(a)
                   }
                   for {
-                    mergedSets <- setOps.groupBy(_.target).values.biMapAggregate {
+                    mergedSets <- setOps.groupBy(_.target).values.biTraverse {
                       ops =>
                         for {
                           members <- ops.iterator
                             .flatMap(_.members)
-                            .biFlatMapAggregateTo {
+                            .biFlatTraverse {
                               memberKey =>
                                 matrix.get(memberKey) match {
                                   case Some(value) if value.sizeIs == 1 =>
                                     if (ac.allValid(value.head._2)) Right(List(memberKey)) else Right(Nil)
                                   case Some(value) =>
-                                    Left(List(InconsistentSetMembers(memberKey, NonEmptyList.unsafeFrom(value.iterator.map(_._1.origin.value).toList))))
+                                    Left(NEList(InconsistentSetMembers(memberKey, NEList.unsafeFrom(value.iterator.map(_._1.origin.value).toList))))
                                   case None =>
                                     reportMissingIfNotProvided(memberKey, key)(Right(List(memberKey)))
                                 }
-                            }(Set)
-                        } yield (ops.head.copy(members = members), Set.empty[AxisPoint], Set.empty[AxisPoint])
+                            }.to(Set)
+                        } yield {
+                          (ops.head.copy(members = members), Set.empty[AxisPoint], Set.empty[AxisPoint])
+                        }
                     }
                   } yield otherOps ++ mergedSets
                 }
@@ -166,7 +184,7 @@ class PlanVerifier(
                     val allDefinedPoints = ops.flatMap(_._2).groupBy(_.axis)
                     val probablyUnsaturatedAxis = allDefinedPoints.iterator.flatMap {
                       case (axis, definedPoints) =>
-                        NonEmptySet
+                        NESet
                           .from(currentActivation.filter(_.axis == axis).diff(definedPoints))
                           .map(UnsaturatedAxis(key, axis, _))
                     }.toList
@@ -174,16 +192,16 @@ class PlanVerifier(
                     if (probablyUnsaturatedAxis.isEmpty) {
                       reportMissing(key, dependee)
                     } else {
-                      Left(probablyUnsaturatedAxis)
+                      Left(NEList.unsafeFrom(probablyUnsaturatedAxis))
                     }
                   } else {
                     Right(())
                   }
-                next <- checkConflicts(allAxis, opsWithMergedSets, weakSetMembers, excludedActivations, effectType)
+                next <- checkConflicts(allAxis, opsWithMergedSets, execOpIndex, excludedActivations, effectType)
               } yield {
                 allVisited.add((key, currentActivation))
 
-                val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac allValid _._2).flatMap(m => depsOf(weakSetMembers)(m._1)).toSeq
+                val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac `allValid` _._2).flatMap(m => depsOf(execOpIndex)(m._1)).toSeq
 
                 val goNext = next.iterator.map {
                   case (nextActivation, nextDeps) =>
@@ -203,10 +221,10 @@ class PlanVerifier(
 
     // for trampoline
     sealed trait RecResult {
-      type RecursionResult <: Iterator[Either[List[PlanIssue], Iterator[() => RecursionResult]]]
+      type RecursionResult <: Iterator[Either[NEList[PlanIssue], Iterator[() => RecursionResult]]]
     }
     type RecursionResult = RecResult#RecursionResult
-    @inline def RecursionResult(a: Iterator[Either[List[PlanIssue], Iterator[() => RecursionResult]]]): RecursionResult = a.asInstanceOf[RecursionResult]
+    @inline def RecursionResult(a: Iterator[Either[NEList[PlanIssue], Iterator[() => RecursionResult]]]): RecursionResult = a.asInstanceOf[RecursionResult]
 
     // trampoline
     val errors = Set.newBuilder[PlanIssue]
@@ -249,10 +267,10 @@ class PlanVerifier(
   protected[this] def checkConflicts(
     allAxis: Map[String, Set[String]],
     withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
-    weakSetMembers: Set[WeakEdge[DIKey]],
-    excludedActivations: Set[NonEmptySet[AxisPoint]],
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
+    excludedActivations: Set[NESet[AxisPoint]],
     effectType: SafeType,
-  ): Either[List[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
+  ): Either[NEList[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
     val issues =
       checkForUnsaturatedAxis(allAxis, withoutCurrentActivations, excludedActivations) ++
       checkForShadowedActivations(allAxis, withoutCurrentActivations) ++
@@ -262,12 +280,12 @@ class PlanVerifier(
       checkForIncompatibleEffectType(effectType, withoutCurrentActivations)
 
     if (issues.nonEmpty) {
-      Left(issues)
+      Left(NEList.unsafeFrom(issues))
     } else {
       val next = withoutCurrentActivations.iterator.map {
         case (op, activations, _) =>
           // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
-          val deps = depsOf(weakSetMembers)(op)
+          val deps = depsOf(execOpIndex)(op)
           val acts = op match {
             case _: ExecutableOp.CreateSet =>
               Set.empty[AxisPoint]
@@ -280,13 +298,16 @@ class PlanVerifier(
     }
   }
 
-  protected[this] final def depsOf(weakSetMembers: Set[WeakEdge[DIKey]])(op: InstantiationOp): Set[DIKey] = {
+  protected[this] final def depsOf(
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp]
+  )(op: InstantiationOp
+  ): Set[DIKey] = {
     op match {
       case cs: CreateSet =>
         // we completely ignore weak members, they don't make any difference in case they are unreachable through other paths
         val members = cs.members.filter {
           case m: SetElementKey =>
-            !weakSetMembers.contains(WeakEdge(m.reference, m))
+            preps.getSetElementWeakEdges(execOpIndex, m).isEmpty
           case _ =>
             true
         }
@@ -303,7 +324,7 @@ class PlanVerifier(
   ): List[ConflictingAxisChoices] = {
     ops.iterator.flatMap {
       case (op, activation, _) =>
-        NonEmptyMap
+        NEMap
           .from(activation.groupBy(_.axis).filter(_._2.sizeIs > 1))
           .map(ConflictingAxisChoices(op.target, op.origin.value, _))
     }.toList
@@ -316,10 +337,10 @@ class PlanVerifier(
     val duplicateAxisMap = ops
       .groupBy(_._3)
       .filter(_._2.sizeIs > 1)
-      .view.mapValues(NonEmptySet unsafeFrom _.map(_._1.origin.value))
+      .view.mapValues(NESet `unsafeFrom` _.map(_._1.origin.value))
       .toMap
 
-    NonEmptyMap
+    NEMap
       .from(duplicateAxisMap)
       .map(DuplicateActivations(ops.head._1.target, _))
       .toList
@@ -334,7 +355,7 @@ class PlanVerifier(
       case None => Nil
       case Some(commonAxes) =>
         if (commonAxes.isEmpty) {
-          List(UnsolvableConflict(ops.head._1.target, NonEmptySet.unsafeFrom(ops.map(t => t._1.origin.value -> t._3))))
+          List(UnsolvableConflict(ops.head._1.target, NESet.unsafeFrom(ops.map(t => t._1.origin.value -> t._3))))
         } else {
           checkForUnsolvableConflicts(ops.map { case (op, cutActs, fullActs) => (op, cutActs, fullActs.filterNot(commonAxes contains _.axis)) })
         }
@@ -345,7 +366,7 @@ class PlanVerifier(
   protected[this] final def checkForUnsaturatedAxis(
     allAxis: Map[String, Set[String]],
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
-    excludedActivations: Set[NonEmptySet[AxisPoint]],
+    excludedActivations: Set[NESet[AxisPoint]],
   ): List[UnsaturatedAxis] = {
     val withoutSetMembers = ops.filterNot(_._1.target.isInstanceOf[SetElementKey])
     val currentAxes: List[String] = withoutSetMembers.iterator.flatMap(_._2.iterator.map(_.axis)).toList
@@ -360,7 +381,7 @@ class PlanVerifier(
         if (unsaturatedChoices.nonEmpty && !isIgnoredActivation(excludedActivations)(unsaturatedChoices)) {
           // TODO: quadratic
           if (opAxisSets.forall(_ contains currentAxis)) {
-            Some(UnsaturatedAxis(withoutSetMembers.head._1.target, currentAxis, NonEmptySet.unsafeFrom(unsaturatedChoices)))
+            Some(UnsaturatedAxis(withoutSetMembers.head._1.target, currentAxis, NESet.unsafeFrom(unsaturatedChoices)))
           } else None
         } else None
     }
@@ -378,7 +399,7 @@ class PlanVerifier(
             (thatAxis, op.origin.value)
         }.toMap
 
-        NonEmptyMap.from(bigger) match {
+        NEMap.from(bigger) match {
           case None => Nil
           case Some(strictlyBiggerActivations) =>
             val axisAxes = axis.map(_.axis)
@@ -402,7 +423,7 @@ class PlanVerifier(
     }.toList
   }
 
-  protected[this] def isIgnoredActivation(excludedActivations: Set[NonEmptySet[AxisPoint]])(activation: Set[AxisPoint]): Boolean = {
+  protected[this] def isIgnoredActivation(excludedActivations: Set[NESet[AxisPoint]])(activation: Set[AxisPoint]): Boolean = {
     excludedActivations.exists(_ subsetOf activation)
   }
 
@@ -415,7 +436,7 @@ object PlanVerifier {
   private[this] object Default extends PlanVerifier(new GraphPreparations(new BindingTranslator.Impl))
 
   sealed abstract class PlanVerifierResult {
-    def issues: Option[NonEmptySet[PlanIssue]]
+    def issues: Option[NESet[PlanIssue]]
     def visitedKeys: Set[DIKey]
     def time: FiniteDuration
 
@@ -427,7 +448,7 @@ object PlanVerifier {
         throw new PlanVerificationException(
           s"""Plan verification failed, issues were:
              |
-             |${incorrect.issues.fromNonEmptySet.niceList()}
+             |${incorrect.issues.fromNESet.niceList()}
              |
              |Visited keys:
              |
@@ -439,51 +460,7 @@ object PlanVerifier {
     }
   }
   object PlanVerifierResult {
-    final case class Incorrect(issues: Some[NonEmptySet[PlanIssue]], visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult
+    final case class Incorrect(issues: Some[NESet[PlanIssue]], visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult
     final case class Correct(visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult { override def issues: None.type = None }
-  }
-
-  sealed abstract class PlanIssue {
-    def key: DIKey
-  }
-  object PlanIssue {
-    final case class MissingImport(key: DIKey, dependee: DIKey, origins: Set[OperationOrigin]) extends PlanIssue {
-      override def toString: String = {
-        // FIXME: reuse formatting from conflictingAxisTagsHint [show multiple origins with different axes]
-        MissingInstanceException.format(key, Set(dependee))
-      }
-    }
-
-    /** There are reachable axis choices for which there is no binding for this key */
-    final case class UnsaturatedAxis(key: DIKey, axis: String, missingAxisValues: NonEmptySet[AxisPoint]) extends PlanIssue
-
-    /** Binding contains multiple axis choices for the same axis */
-    final case class ConflictingAxisChoices(key: DIKey, op: OperationOrigin, bad: NonEmptyMap[String, Set[AxisPoint]]) extends PlanIssue
-
-    /** Multiple bindings contain identical axis choices */
-    final case class DuplicateActivations(key: DIKey, ops: NonEmptyMap[Set[AxisPoint], NonEmptySet[OperationOrigin]]) extends PlanIssue
-
-    /** There is a binding with an activation that is completely shadowed by other bindings with larger activations and cannot be chosen */
-    final case class ShadowedActivation(
-      key: DIKey,
-      op: OperationOrigin,
-      activation: Set[AxisPoint],
-      allPossibleAxisChoices: Map[String, Set[String]],
-      shadowingBindings: NonEmptyMap[Set[AxisPoint], OperationOrigin],
-    ) extends PlanIssue
-
-    /** There is no possible activation that could choose a unique binding among these contradictory axes */
-    final case class UnsolvableConflict(key: DIKey, ops: NonEmptySet[(OperationOrigin, Set[AxisPoint])]) extends PlanIssue
-
-    /**
-      * A config binding (from `distage-extension-config` module) could not be parsed from the reference config using configured binding.
-      * @note [[PlanVerifier]] will not detect this issue, but it may be returned by [[izumi.distage.framework.PlanCheck]]
-      */
-    final case class UnparseableConfigBinding(key: DIKey, op: OperationOrigin, exception: Throwable) extends PlanIssue
-
-    /** A distage bug, should never happen (bindings machinery guarantees a unique key for each set member, they cannot have the same key by construction) */
-    final case class InconsistentSetMembers(key: DIKey, ops: NonEmptyList[OperationOrigin]) extends PlanIssue
-
-    final case class IncompatibleEffectType(key: DIKey, op: MonadicOp, provisionerEffectType: SafeType, actionEffectType: SafeType) extends PlanIssue
   }
 }

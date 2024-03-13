@@ -1,28 +1,31 @@
 package izumi.functional.bio.impl
 
-import izumi.functional.bio.Temporal3
-import zio.clock.Clock
-import zio.duration.Duration.fromScala
-import zio.{Schedule, ZIO}
+import izumi.functional.bio.Temporal2
+import izumi.fundamentals.platform.language.Quirks.Discarder
+import zio.Duration.fromScala
+import zio.ZIO
+import zio.internal.stacktracer.Tracer
+import zio.stacktracer.TracingImplicits.disableAutoTrace
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 
-class TemporalZio(clock: Clock) extends AsyncZio with Temporal3[ZIO] {
-  @inline override final def sleep(duration: Duration): ZIO[Any, Nothing, Unit] = {
-    ZIO.sleep(fromScala(duration)).provide(clock)
+object TemporalZio extends TemporalZio[Any]
+
+open class TemporalZio[R]
+  extends AsyncZio[R] // use own implementation of timeout to match CE race behavior
+  with Temporal2[ZIO[R, +_, +_]] {
+
+  @inline override final def sleep(duration: Duration): ZIO[R, Nothing, Unit] = {
+    implicit val trace: zio.Trace = Tracer.newTrace
+
+    zio.Clock.sleep(fromScala(duration))
   }
 
-  @inline override final def retryOrElse[R, E, A, E2](r: ZIO[R, E, A])(duration: FiniteDuration, orElse: => ZIO[R, E2, A]): ZIO[R, E2, A] =
-    ZIO.accessM {
-      env =>
-        val zioDuration = Schedule.duration(fromScala(duration))
+  @inline override final def timeout[E, A](duration: Duration)(r: ZIO[R, E, A]): ZIO[R, E, Option[A]] = {
+    implicit val trace: zio.Trace = Tracer.newTrace
 
-        r.provide(env)
-          .retryOrElse(zioDuration, (_: Any, _: Any) => orElse.provide(env))
-          .provide(clock)
-    }
-
-  @inline override final def timeout[R, E, A](duration: Duration)(r: ZIO[R, E, A]): ZIO[R, E, Option[A]] = {
-    ZIO.accessM[R](e => race(r.provide(e).map(Some(_)).interruptible, sleep(duration).as(None).interruptible))
+    this.race(r.map(Some(_)).interruptible, this.sleep(duration).as(None).interruptible)
   }
+
+  disableAutoTrace.discard()
 }

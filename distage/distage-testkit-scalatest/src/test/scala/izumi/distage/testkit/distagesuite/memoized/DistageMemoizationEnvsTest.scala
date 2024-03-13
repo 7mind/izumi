@@ -1,73 +1,72 @@
 package izumi.distage.testkit.distagesuite.memoized
 
-import java.util.UUID
-
 import distage.DIKey
 import distage.plugins.PluginDef
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.providers.Functoid
-import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.{MemoizedInstance, MemoizedLevel1, MemoizedLevel2, MemoizedLevel3, TestInstance}
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
+import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.*
+import izumi.distage.testkit.model.TestConfig
+import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import org.scalatest.Assertion
-import zio.{IO, ZIO}
+import zio.IO
 
-import scala.collection.mutable
+import java.util.UUID
 
-object MemoizationEnv {
-  final case class MemoizedInstance(uuid: UUID)
-  final case class TestInstance(uuid: UUID)
-  final val anotherTestInstance: TestInstance = TestInstance(UUID.randomUUID())
-  final val memoizedInstance: mutable.HashSet[MemoizedInstance] = mutable.HashSet.empty
-
-  final case class MemoizedLevel1(UUID: UUID)
-  final val memoizedLevel1: mutable.HashSet[MemoizedLevel1] = mutable.HashSet.empty
-
-  final case class MemoizedLevel2(UUID: UUID)
-  final val memoizedLevel2: mutable.HashSet[MemoizedLevel2] = mutable.HashSet.empty
-
-  final case class MemoizedLevel3(UUID: UUID)
-  final val memoizedLevel3: mutable.HashSet[MemoizedLevel3] = mutable.HashSet.empty
-
-  def makeInstance[T](set: mutable.HashSet[T])(ctor: UUID => T): T = {
-    val instance = ctor(UUID.randomUUID())
-    set.synchronized {
-      set += instance
-    }
-    instance
-  }
-}
-
-abstract class DistageMemoizationEnvsTest extends Spec3[ZIO] with AssertZIO {
+/*
+╗ [Level 0; 0 current tests + 16 nested tests] roots: [ {type.QuasiIORunner[=λ %0 → ZIO[-Any,+Throwable,+0]]}, {type.TestTreeRunner[=λ %0 → ZIO[-Any,+Throwable,+0]]} ]
+║
+╠════╗ [Level 1; 0 current tests + 2 nested tests] roots: [ {type.MemoizationEnv::MemoizedInstance}, {type.MemoizationEnv::MemoizedLevel1} ] transitive: ø
+║    ║
+║    ╠════╗ [Level 2; 1 current tests + 0 nested tests] roots: [ {type.MemoizationEnv::MemoizedLevel2} ] transitive: ø
+║    ║    ╠══* DifferentLevelsWithLevel1InstanceOverride2
+║    ║
+║    ╚════╗ [Level 2; 1 current tests + 0 nested tests] roots: [ {type.MemoizationEnv::MemoizedLevel2} ] transitive: ø
+║         ╠══* DifferentLevelsWithLevel1InstanceOverride1
+║
+╚════╗ [Level 1; 6 current tests + 8 nested tests] roots: [ {type.MemoizationEnv::MemoizedInstance}, {type.MemoizationEnv::MemoizedLevel1} ] transitive: ø
+     ╠══* SameLevel_1_WithActivationsOverride
+     ╠══* SameLevel_1_WithAdditionalButNotUsedMemoizedRoots
+     ╠══* SameLevel_1_WithLevel2InstanceOverride
+     ╠══* SameLevel_1_WithModuleOverride
+     ╠══* SameLevel_1_WithoutLastMemoizationLevel
+     ║
+     ╚════╗ [Level 2; 6 current tests + 2 nested tests] roots: [ {type.MemoizationEnv::MemoizedLevel2} ] transitive: ø
+          ╠══* SameLevel_1_2_First
+          ╠══* SameLevel_1_2_Second
+          ║
+          ╚════╗ [Level 3; 2 current tests + 0 nested tests] roots: [ {type.MemoizationEnv::MemoizedLevel3} ] transitive: ø
+               ╠══* SameLevel_1_2_WithAdditionalLevel3
+ */
+abstract class DistageMemoizationEnvsTest extends SpecZIO with AssertZIO {
   override protected def config: TestConfig = {
     super.config
       .copy(
         memoizationRoots = Map(
-          1 -> Set(DIKey[MemoizedInstance], DIKey.get[MemoizedLevel1]),
+          1 -> Set(DIKey[MemoizedInstance], DIKey[MemoizedLevel1]),
           2 -> Set(DIKey[MemoizedLevel2]),
         ),
         pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
           make[MemoizedInstance].from {
-            MemoizationEnv.makeInstance(MemoizationEnv.memoizedInstance)(MemoizationEnv.MemoizedInstance)
+            MemoizationEnv.makeInstance(MemoizationEnv.memoizedInstance)(MemoizationEnv.MemoizedInstance.apply)
           }
           make[MemoizedLevel1].from {
-            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel1)(MemoizationEnv.MemoizedLevel1)
+            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel1)(MemoizationEnv.MemoizedLevel1.apply)
           }
           make[MemoizedLevel2].from {
-            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel2)(MemoizationEnv.MemoizedLevel2)
+            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel2)(MemoizationEnv.MemoizedLevel2.apply)
           }
           make[MemoizedLevel3].from {
-            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel3)(MemoizationEnv.MemoizedLevel3)
+            MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel3)(MemoizationEnv.MemoizedLevel3.apply)
           }
           make[TestInstance].from(TestInstance(UUID.randomUUID()))
         },
-        forcedRoots = Set(DIKey.get[MemoizedInstance], DIKey.get[MemoizedLevel1]),
+        forcedRoots = Set(DIKey[MemoizedInstance], DIKey[MemoizedLevel1]),
         activation = distage.Activation(Repo -> Repo.Prod),
       )
   }
 
   val assertion: Functoid[IO[Nothing, Assertion]] = Functoid {
-    memoized: MemoizedInstance =>
+    (memoized: MemoizedInstance) =>
       assertIO(MemoizationEnv.memoizedInstance.toSet == Set(memoized))
   }
 }

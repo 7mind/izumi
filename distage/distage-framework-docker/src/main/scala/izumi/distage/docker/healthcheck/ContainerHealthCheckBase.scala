@@ -1,10 +1,10 @@
 package izumi.distage.docker.healthcheck
 
-import izumi.distage.docker.Docker.{AvailablePort, _}
+import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{AvailablePorts, HealthCheckResult}
 import izumi.distage.docker.healthcheck.ContainerHealthCheckBase.PortCandidate
-import izumi.fundamentals.collections.nonempty.NonEmptyList
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
@@ -12,19 +12,19 @@ abstract class ContainerHealthCheckBase extends ContainerHealthCheck {
   protected def perform(
     logger: IzLogger,
     container: DockerContainer[?],
-    tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]],
-    udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]],
+    tcpPorts: Map[DockerPort.TCPBase, NEList[ServicePort]],
+    udpPorts: Map[DockerPort.UDPBase, NEList[ServicePort]],
   ): HealthCheckResult
 
   override final def check(logger: IzLogger, container: DockerContainer[?], state: ContainerState): HealthCheckResult = {
     HealthCheckResult.onRunning(state) {
-      val tcpPorts: Map[DockerPort.TCPBase, NonEmptyList[ServicePort]] =
+      val tcpPorts: Map[DockerPort.TCPBase, NEList[ServicePort]] =
         container.connectivity.dockerPorts.collect {
           case (port: DockerPort.TCPBase, bindings) =>
             (port, bindings)
         }
 
-      val udpPorts: Map[DockerPort.UDPBase, NonEmptyList[ServicePort]] =
+      val udpPorts: Map[DockerPort.UDPBase, NEList[ServicePort]] =
         container.connectivity.dockerPorts.collect {
           case (port: DockerPort.UDP, bindings) =>
             (port, bindings)
@@ -34,7 +34,7 @@ abstract class ContainerHealthCheckBase extends ContainerHealthCheck {
     }
   }
 
-  protected def findContainerInternalCandidates[P <: DockerPort](container: DockerContainer[?], ports: Map[P, NonEmptyList[ServicePort]]): Seq[PortCandidate[P]] = {
+  protected def findContainerInternalCandidates[P <: DockerPort](container: DockerContainer[?], ports: Map[P, NEList[ServicePort]]): Seq[PortCandidate[P]] = {
     val labels = container.labels
     val addresses = container.connectivity.containerAddresses
     ports.toSeq.flatMap {
@@ -54,7 +54,7 @@ abstract class ContainerHealthCheckBase extends ContainerHealthCheck {
     }
   }
 
-  protected def findDockerHostCandidates[P <: DockerPort](container: DockerContainer[?], ports: Map[P, NonEmptyList[ServicePort]]): Seq[PortCandidate[P]] = {
+  protected def findDockerHostCandidates[P <: DockerPort](container: DockerContainer[?], ports: Map[P, NEList[ServicePort]]): Seq[PortCandidate[P]] = {
     ports.toSeq.flatMap {
       case (mappedPort, internalBindings) =>
         internalBindings.toList.flatMap {

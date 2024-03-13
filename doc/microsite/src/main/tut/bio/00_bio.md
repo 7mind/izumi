@@ -5,7 +5,7 @@ out: index.html
 BIO Hierarchy
 =============
 
-**BIO** is a set of typeclasses and algebras for programming in tagless final style using bifunctor or trifunctor effect types with variance.
+**BIO** is a set of typeclasses and algebras for programming in tagless final style using bifunctor effect types with variance.
 
 Key syntactic features:
 
@@ -15,35 +15,20 @@ Key syntactic features:
 These syntactic features allow you to write in a low ceremony, IDE-friendly and newcomer-friendly style:
 
 ```scala mdoc:to-string
-import izumi.functional.bio.{F, Monad2, MonadAsk3, Primitives2, Ref3}
+import izumi.functional.bio.{F, Monad2, Primitives2}
 
 def adder[F[+_, +_]: Monad2: Primitives2](i: Int): F[Nothing, Int] =
   F.mkRef(0)
    .flatMap(ref => ref.update(_ + i) *> ref.get)
-
-// update ref from the environment and return result
-def adderEnv[F[-_, +_, +_]: MonadAsk3](i: Int): F[Ref3[F, Int], Nothing, Int] =
-  F.access {
-    ref =>
-      for {
-        _   <- ref.update(_ + i)
-        res <- ref.get
-      } yield res
-  }
 ```
 
 Key semantic features:
 
 1. Typed error handling with bifunctor effect types
 2. Automatic conversions to equivalent `cats.effect` instances using `import izumi.functional.bio.catz._`
-3. Automatic adaptation of trifunctor typeclasses to bifunctor typeclasses when required
-4. No ambiguous implicit errors. It's legal to have both `Monad3` and `MonadAsk3` as constraints,
-   despite the fact that `MonadAsk3` provides a `Monad3`:
-   ```scala
-import izumi.functional.bio.{Monad3, MonadAsk3}
-   def adderEnv[F[-_, +_, +_]: Monad3: MonadAsk3] // would still work
-   ```
-5. Primitive concurrent data structures: `Ref`, `Promise`, `Semaphore`
+3. No ambiguous implicit errors. It's legal to have both `Monad2` and `Applicative2` as constraints,
+   despite the fact that `Monad2` provides an `Applicative2`.
+4. Primitive concurrent data structures: `Ref`, `Promise`, `Semaphore`
 
 To use it, add `fundamentals-bio` library:
 
@@ -56,23 +41,24 @@ libraryDependencies += "io.7mind.izumi" %% "fundamentals-bio" % "$izumi.version$
 @@@
 
 
-If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and `-Xsource:2.13` for this library to work correctly:
+If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and either `-Xsource:2.13` or `-Xsource:3` for this library to work correctly:
 
 ```scala
 // REQUIRED options for Scala 2.12
 scalacOptions += "-Ypartial-unification"
-scalacOptions += "-Xsource:2.13"
+scalacOptions += "-Xsource:2.13" // either this
+// scalacOptions += "-Xsource:3" // or this
 ```
 
 Most likely you’ll also need to add [Kind Projector](https://github.com/typelevel/kind-projector) plugin:
 
 ```scala
-addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
 ```
 
 ## Overview
 
-The following graphic shows the current `BIO` hierarchy. Note that all the trifunctor typeclasses ending in `*3` typeclasses have bifunctor counterparts ending in `*2`.
+The following graphic shows the current `BIO` hierarchy.
 
 ![BIO-relationship-hierarchy](media/bio-relationship-hierarchy.svg)
 
@@ -123,8 +109,8 @@ Import `izumi.functional.bio.catz._` for shim compatibilty with cats-effect. You
 
 ## Data Types
 
-`Ref2/3`, `Promise2/3` and `Semaphore2/3` provide basic concurrent mutable state primitives. They require a `Primitives2/3` capability to create.
-With `Primitiives*[F]` in implicit scope, use `F.mkRef`/`F.mkPromise`/`F.mkSemaphore` respectively. (See also example at top of the page)
+`Ref2`, `Promise2` and `Semaphore2` provide basic concurrent mutable state primitives. They require a `Primitives2` capability to create.
+With `Primitiives2[F]` in implicit scope, use `F.mkRef`/`F.mkPromise`/`F.mkSemaphore` respectively. (See also example at top of the page)
 
 `Free` monad, as well as `FreeError` and `FreePanic`  provide building blocks for DSLs when combined with a DSL describing functor.
 
@@ -136,10 +122,16 @@ With `Primitiives*[F]` in implicit scope, use `F.mkRef`/`F.mkPromise`/`F.mkSemap
 
 `Entropy1/2/3` models random numbers.
 
-`UnsafeRun2/3` allows executing effects (it is required for conversion to cats' `ConcurrentEffect` which also allows unsafe running)
+`UnsafeRun2` allows executing effects (it is required for conversion to cats' `ConcurrentEffect` which also allows unsafe running)
 
 ## Examples
 
 [distage-example](https://github.com/7mind/distage-example) is a full example application written in Tagless Final Style using BIO typeclasses.
 
 You may also find a video walkthrough of using BIO on Youtube by [DevInsideYou — Tagless Final with BIO](https://www.youtube.com/watch?v=ZdGK1uedAE0&t=580s)
+
+## Removal of trifunctor hierarchy
+
+Since version 1.2.0 the trifunctor hierarchy has been removed, due to the fact that since ZIO version 2.0 they cannot be implemented for ZIO and also because of lack of use.
+
+See details in https://github.com/7mind/izumi/issues/2026

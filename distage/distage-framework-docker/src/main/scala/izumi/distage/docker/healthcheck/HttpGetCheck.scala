@@ -1,6 +1,6 @@
 package izumi.distage.docker.healthcheck
 
-import izumi.distage.docker.Docker.{ContainerState, DockerPort}
+import izumi.distage.docker.model.Docker.{ContainerState, DockerPort}
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.logstage.api.IzLogger

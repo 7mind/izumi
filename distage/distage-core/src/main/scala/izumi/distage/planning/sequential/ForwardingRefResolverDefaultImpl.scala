@@ -1,110 +1,205 @@
 package izumi.distage.planning.sequential
 
-import distage.Id
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
-import izumi.distage.model.reflection._
+import izumi.distage.model.definition.errors.DIError.LoopResolutionError
+import izumi.distage.model.definition.errors.DIError.LoopResolutionError.BUG_UnableToFindLoop
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.ExecutableOp.{InstantiationOp, ProxyOp}
+import izumi.distage.model.planning.ForwardingRefResolver
+import izumi.distage.model.reflection.*
+import izumi.distage.planning.sequential.FwdrefLoopBreaker.BreakAt
+import izumi.fundamentals.collections.nonempty.NEList
+import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.tools.cycles.LoopDetector
+import izumi.fundamentals.graphs.{DG, GraphMeta}
 
+import scala.annotation.{nowarn, tailrec}
 import scala.collection.mutable
 
-class ForwardingRefResolverDefaultImpl(
-  protected val planAnalyzer: PlanAnalyzer,
-  initProxiesAsap: Boolean @Id("distage.init-proxies-asap"),
-) extends ForwardingRefResolver {
+object ForwardingRefResolverDefaultImpl {
 
-  override def resolve(plan: OrderedPlan): OrderedPlan = {
-    val reftable = planAnalyzer.topologyFwdRefs(plan.steps)
+  class FwdRefResolutionContext(plan: DG[DIKey, ExecutableOp.SemiplanOp]) {
+    val updatedPlan = mutable.HashMap.empty[DIKey, ExecutableOp]
+    val updatedPredcessors = mutable.HashMap.empty[DIKey, mutable.HashSet[DIKey]]
+    val replacements = mutable.HashMap.empty[DIKey, mutable.HashSet[(DIKey, DIKey)]]
+    val knownLoops = mutable.HashMap.empty[DIKey, Set[DIKey]]
 
-    lazy val usagesTable = planAnalyzer.topology(plan.steps)
-    lazy val index = plan.steps.groupBy(_.target)
+    def register(dependee: DIKey, deps: Set[DIKey]): Unit = {
+      updatedPredcessors.getOrElseUpdate(dependee, mutable.HashSet.empty) ++= deps
+      ()
+    }
 
-    val proxies = mutable.Stack[ProxyOp.MakeProxy]()
+    def processLoopResolution(
+      unprocessedPredecessors: Map[DIKey, Set[DIKey]],
+      resolution: BreakAt,
+    ): Unit = {
+      /*
+      Our goal is to introduce two operations, MakeProxy and InitProxy.
+      All the usages outside of the referential loop will reference InitProxy by its synthetic key, thus we will maintain proper ordering
+      MakeProxy will use original key and only ops involved into the loop will dereference it
+       */
+      val dependee = resolution.dependee
+      val dependencies = resolution.dependencies
+      val originalOp = plan.meta.nodes(dependee)
+      assert(originalOp != null)
+      assert(originalOp.target == dependee)
 
-    val resolvedSteps = plan.toSemi.steps
-      .collect { case i: InstantiationOp => i }
-      .flatMap {
-        case step if reftable.dependencies.contains(step.target) =>
-          val target = step.target
-          val allDependees = usagesTable.dependees.direct(target)
+      val badDeps = dependencies.intersect(unprocessedPredecessors.keySet)
+      val op = ProxyOp.MakeProxy(originalOp.asInstanceOf[InstantiationOp], badDeps, originalOp.origin, byNameAllowed = resolution.byNameOnly)
+      val initOpKey = DIKey.ProxyInitKey(op.target)
 
-          val onlyByNameUsages = allUsagesAreByName(index, target, allDependees)
-          val byNameAllowed = onlyByNameUsages
+      // this is a performance optimization which is equivalent to the following lines:
+      //
+      //      val loops = LoopDetector.Impl.findCyclesForNode(dependee, plan.predecessors)
+      //      val loopUsers = loops.toList.flatMap(_.loops.flatMap(_.loop)).toSet
+      //
+      // There is another idea on how to handle the loops:
+      //
+      //      val loops = LoopDetector.Impl.findCyclesForNode(dependee, IncidenceMatrix(unprocessedPredecessors))
+      //      val loopUsers = loops.toList.flatMap(_.loops.flatMap(_.loop)).toSet
+      //
+      // though it changes the way we handle nested loops
+      //
+      // So, now we cache first (thus broadest) loop trace though we always rely on unprocessed dependencies only,
+      // which is lot more performant but equivalent to the previous logic
+      //
+      // TODO: it may be a good idea to explore more options here
 
-          val missingDeps = reftable.dependencies.direct(target)
-          val op = ProxyOp.MakeProxy(step, missingDeps, step.origin, byNameAllowed)
-
-          proxies.push(op)
-          Seq(op)
-
-        case step =>
-          Seq(step)
+      val loopUsers = knownLoops.get(dependee) match {
+        case Some(value) =>
+          value
+        case None =>
+          val loop = LoopDetector.Impl.findCyclesForNode(dependee, IncidenceMatrix(unprocessedPredecessors)).toList.flatMap(_.loops.flatMap(_.loop)).toSet
+          loop.foreach {
+            k =>
+              knownLoops.put(k, loop)
+          }
+          loop
       }
 
-    val proxyOps = if (initProxiesAsap) {
-      iniProxiesJustInTime(mutable.HashSet.newBuilder.++=(proxies).result(), resolvedSteps)
+      import CycleTools.*
+      val toRewrite = plan.allDirectUsers(dependee) -- loopUsers - dependee
+
+      toRewrite.foreach {
+        k =>
+          replacements.getOrElseUpdate(k, mutable.HashSet.empty) += ((dependee, initOpKey: DIKey))
+      }
+
+      val goodDeps = dependencies -- badDeps
+
+      register(dependee, goodDeps)
+      register(initOpKey, badDeps ++ Set(dependee))
+
+      updatedPlan.put(dependee, op)
+      updatedPlan.put(initOpKey, ProxyOp.InitProxy(initOpKey, badDeps, op, op.origin))
+      ()
+    }
+
+  }
+}
+
+@nowarn("msg=Unused import")
+class ForwardingRefResolverDefaultImpl(
+  breaker: FwdrefLoopBreaker
+) extends ForwardingRefResolver {
+
+  import ForwardingRefResolverDefaultImpl.*
+
+  import scala.collection.compat.*
+
+  /** This solution is lot more performant and sound than it was in the early days,
+    * but still there are some expensive ideas of the further improvement
+    * ( see https://github.com/7mind/izumi/issues/1219 )
+    *
+    * There is no reason to touch this code unless we uncover some other soundness problems
+    */
+  override def resolveMatrix(plan: DG[DIKey, ExecutableOp.SemiplanOp]): Either[NEList[LoopResolutionError], DG[DIKey, ExecutableOp]] = {
+    val context = new FwdRefResolutionContext(plan)
+
+    @tailrec
+    def next(predcessors: Map[DIKey, Set[DIKey]]): Either[NEList[LoopResolutionError], Unit] = {
+      val resolved = predcessors.filter(kv => kv._2.forall(context.updatedPredcessors.contains))
+      if (resolved.nonEmpty) {
+        resolved.foreach {
+          case (r, d) =>
+            context.register(r, d)
+            assert(plan.meta.nodes.contains(r))
+            context.updatedPlan.put(r, plan.meta.nodes(r))
+        }
+
+        val reduced = predcessors -- resolved.keySet
+        next(reduced)
+      } else if (predcessors.nonEmpty) {
+        val loopMembers = predcessors.view.filterKeys(isInvolvedIntoCycle(predcessors)).toMap
+
+        if (loopMembers.isEmpty) {
+          Left(NEList(BUG_UnableToFindLoop(predcessors)))
+        } else {
+          breaker.breakLoop(loopMembers, plan) match {
+            case Left(value) =>
+              Left(value)
+            case Right(resolution) =>
+              context.processLoopResolution(predcessors, resolution)
+              next(predcessors -- Set(resolution.dependee))
+          }
+        }
+      } else {
+        Right(())
+      }
+    }
+
+    import izumi.functional.IzEither.*
+    for {
+      _ <- next(plan.predecessors.links)
+      _ <- context.replacements.map {
+        case (in, repls) =>
+          val orig = context.updatedPlan(in)
+          assert(orig != null)
+
+          val maybeIdx = repls.groupBy(_._1) // TODO: check uniq
+          assert(maybeIdx.forall(_._2.size == 1))
+          val idx = repls.toMap
+
+          for {
+            upd <- orig match {
+              case op: InstantiationOp =>
+                Right(op.replaceKeys(identity, k => idx.getOrElse(k, k)))
+              case mp: ProxyOp.MakeProxy =>
+                Right(mp.copy(op = mp.op.replaceKeys(identity, k => idx.getOrElse(k, k))))
+              case o =>
+                Left(NEList(LoopResolutionError.BUG_NotALoopMember(o)))
+            }
+          } yield {
+            val preds = context.updatedPredcessors(in)
+            context.updatedPredcessors.put(in, preds.map(k => idx.getOrElse(k, k)))
+            context.updatedPlan.put(in, upd)
+            ()
+          }
+      }.biSequence
+    } yield {
+      val p = IncidenceMatrix(context.updatedPredcessors.view.mapValues(_.toSet).toMap)
+      DG.fromPred(p, GraphMeta(context.updatedPlan.toMap))
+    }
+  }
+
+  private[this] def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
+    test(toPreds, Set.empty, key, key)
+  }
+
+  private[this] def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
+    val deps = toPreds.getOrElse(toTest, Set.empty)
+
+    if (deps.contains(needle)) {
+      true
     } else {
-      initProxiesAtTheEnd(proxies.toList, resolvedSteps)
+      deps.exists {
+        d =>
+          if (stack.contains(d)) {
+            false
+          } else {
+            test(toPreds, stack + d, d, needle)
+          }
+      }
     }
-
-    val imports = plan.steps.collect { case i: ImportDependency => i }
-    OrderedPlan(imports ++ proxyOps, plan.declaredRoots, plan.topology)
-  }
-
-  protected def initProxiesAtTheEnd(proxies: List[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {
-    resolvedSteps ++ proxies.map {
-      proxyDep =>
-        val key = proxyDep.target
-        ProxyOp.InitProxy(key, proxyDep.forwardRefs, proxyDep, proxyDep.origin)
-    }
-  }
-
-  protected def iniProxiesJustInTime(proxies: mutable.HashSet[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {
-    // more expensive eager just-in-time policy
-    val passed = mutable.HashSet[DIKey]()
-    val proxyOps = resolvedSteps.flatMap {
-      op =>
-        passed.add(op.target)
-
-        val completedProxies = proxies.filter(_.forwardRefs.diff(passed).isEmpty)
-        val inits = completedProxies.map {
-          proxy =>
-            ProxyOp.InitProxy(proxy.target, proxy.forwardRefs, proxy, op.origin)
-        }.toVector
-
-        completedProxies.foreach {
-          i =>
-            proxies.remove(i)
-        }
-
-        op +: inits
-    }
-    assert(proxies.isEmpty)
-    proxyOps
-  }
-
-  protected def allUsagesAreByName(index: Map[DIKey, Vector[ExecutableOp]], target: DIKey, usages: Set[DIKey]): Boolean = {
-    val usedByOps = (usages + target).flatMap(index.apply)
-    val associations = usedByOps.flatMap {
-      case op: InstantiationOp =>
-        op match {
-          case ExecutableOp.CreateSet(_, members, _) =>
-            members.map(m => m -> false)
-          case _: ExecutableOp.WiringOp.ReferenceKey =>
-            Seq(target -> false)
-          case w: ExecutableOp.WiringOp =>
-            w.wiring.associations.map(a => a.key -> a.isByName)
-          case w: ExecutableOp.MonadicOp =>
-            Seq(w.effectKey -> false)
-        }
-      case _: ImportDependency =>
-        Seq.empty
-      case _: ProxyOp =>
-        Seq.empty // shouldn't happen
-    }
-
-    val onlyByNameUsages = associations.filter(_._1 == target).forall(_._2)
-    onlyByNameUsages
   }
 
 }

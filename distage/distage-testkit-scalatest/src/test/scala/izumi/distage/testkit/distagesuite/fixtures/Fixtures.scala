@@ -4,10 +4,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.{IO => CIO}
 import distage.TagK
-import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.StandardAxis.Mode
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -18,6 +18,7 @@ import scala.collection.mutable
 object MockAppCatsIOPlugin extends MockAppPlugin[CIO]
 object MockAppZioPlugin extends MockAppPlugin[Task]
 object MockAppIdPlugin extends MockAppPlugin[Identity]
+object MockAppZioZEnvPlugin extends MockAppPlugin[zio.ZIO[Int, Throwable, +_]]
 
 abstract class MockAppPlugin[F[_]: TagK] extends PluginDef {
   make[MockPostgresDriver[F]]
@@ -60,7 +61,7 @@ object MockCache {
 }
 
 class ApplePaymentProvider[F[_]: QuasiIO] extends IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.ResourceUnavailable("Test", None))
+  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.ResourceUnavailable("Dummy unavailable resource for testing purposes", None))
 }
 
 class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: MockCache[F])

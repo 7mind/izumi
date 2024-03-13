@@ -1,17 +1,22 @@
 package izumi.distage.docker.bundled
 
 import izumi.distage.docker.ContainerDef
-import izumi.distage.docker.Docker.DockerPort
+import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
 
+/**
+  * Example postgres docker. It's sufficient for most usages.
+  * You're encouraged to use this definition as a template and modify it to your needs.
+  */
 object PostgresDocker extends ContainerDef {
   val primaryPort: DockerPort = DockerPort.TCP(5432)
 
   override def config: Config = {
     Config(
-      image = "library/postgres:12.3",
+      registry = Some("public.ecr.aws"),
+      image = "docker/library/postgres:12.6",
       ports = Seq(primaryPort),
       env = Map("POSTGRES_PASSWORD" -> "postgres"),
       healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck(primaryPort, "postgres", "postgres"),

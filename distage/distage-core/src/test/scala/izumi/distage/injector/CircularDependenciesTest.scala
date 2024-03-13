@@ -1,28 +1,27 @@
 package izumi.distage.injector
 
-import distage._
+import distage.*
 import izumi.distage.constructors.FactoryConstructor
-import izumi.distage.fixtures.CircularCases._
+import izumi.distage.fixtures.CircularCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
-import izumi.distage.model.plan.ExecutableOp.InstantiationOp
-import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
-import izumi.distage.model.provisioning.proxies.ProxyDispatcher
+import izumi.distage.model.exceptions.macros.TraitInitializationFailedException
+import izumi.distage.model.exceptions.runtime.ProvisioningException
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.wordspec.AnyWordSpec
 
-class CircularDependenciesTest extends AnyWordSpec with MkInjector {
+class CircularDependenciesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "support trait initialization" in {
     import CircularCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[CircularBad1]
-      make[CircularBad2]
+      makeTrait[CircularBad1]
+      makeTrait[CircularBad2]
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
 
     val exc = intercept[ProvisioningException] {
       injector.produce(plan).unsafeGet()
@@ -32,21 +31,25 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     assert(exc.getSuppressed.head.getCause.isInstanceOf[RuntimeException])
   }
 
-  "support complex circular dependencies" in {
+  "support complex circular dependencies" in brokenOnScala3 {
     import CircularCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Circular3]
-      make[Circular1]
-      make[Circular2]
-      make[Circular5]
-      make[Circular4]
+      makeTrait[Circular3]
+      makeTrait[Circular1]
+      makeTrait[Circular2]
+      makeTrait[Circular5]
+      makeFactory[Circular4]
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
-    assert(plan.topology.dependencies.tree(DIKey.get[Circular1], Some(3)).children.size == 1)
-    assert(plan.topology.dependees.tree(DIKey.get[Circular1], Some(3)).children.size == 2)
+    val plan = injector.planUnsafe(definition)
+
+    assert(plan.plan.successors.links(DIKey.get[Circular1]).size == 2)
+    assert(!plan.plan.successors.links.contains(DIKey.ProxyInitKey(DIKey.get[Circular1])))
+
+    assert(plan.plan.predecessors.links(DIKey.get[Circular1]).size == 1)
+    assert(!plan.plan.predecessors.links.contains(DIKey.ProxyInitKey(DIKey.get[Circular1])))
 
     val context = injector.produce(plan).unsafeGet()
     val c3 = context.get[Circular3]
@@ -66,8 +69,8 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
       make[ByNameSelfReference]
     })
 
-    val injector = mkNoCglibInjector()
-    val plan = injector.plan(definition)
+    val injector = mkNoProxiesInjector()
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instance = context.get[ByNameSelfReference]
@@ -79,11 +82,11 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     import CircularCase3._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TraitSelfReference]
+      makeTrait[TraitSelfReference]
     })
 
-    val injector = mkNoCglibInjector()
-    val plan = injector.plan(definition)
+    val injector = mkNoProxiesInjector()
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instance = context.get[TraitSelfReference]
@@ -98,16 +101,16 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[ByNameSelfReference]
-      make[FactorySelfReference]
+      makeFactory[FactorySelfReference]
     })
 
-    val injector = mkNoCglibInjector()
-    val plan = injector.plan(definition)
+    val injector = mkNoProxiesInjector()
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instance = context.get[FactorySelfReference]
 
-    assert(instance eq instance.self)
+//    assert(instance eq instance.self) // TODO: commented out to fit into scala3 factoryconstructor restrictions
 
     val instance1 = instance.mkByNameSelfReference(context.get[ByNameSelfReference])
     assert(instance1.self eq context.get[ByNameSelfReference])
@@ -124,37 +127,40 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
     assert(counter == 0)
   }
 
-  "Locator.instances returns instances in the order they were created in" in {
-    import CircularCase2._
-
-    val definition = PlannerInput.everything(new ModuleDef {
-      make[Circular3]
-      make[Circular1]
-      make[Circular2]
-      make[Circular5]
-      make[Circular4]
-    })
-
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-    val context = injector.produce(plan).unsafeGet()
-
-    val planTypes: Seq[SafeType] = plan.steps
-      .collect {
-        case i: InstantiationOp => i
-        case i: MakeProxy => i
-      }
-      .map(_.target.tpe)
-    val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
-    val instanceTypes = context.instances
-      .map(_.key.tpe)
-      .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
-
-    assert(instanceTypes == planTypes)
-
-    // whitebox test: ensure that plan ops are in a non-lazy collection
-    assert(plan.steps.isInstanceOf[Vector[?]])
-  }
+  // this test makes no sense because the order is not enforced anymore
+//  "Locator.instances returns instances in the order they were created in" in {
+//    import CircularCase2._
+//
+//    val definition = PlannerInput.everything(new ModuleDef {
+//      make[Circular3]
+//      make[Circular1]
+//      make[Circular2]
+//      make[Circular5]
+//      make[Circular4]
+//    })
+//
+//    val injector = mkInjector()
+//    val plan = injector.plan(definition)
+//    val context = injector.produce(plan).unsafeGet()
+//
+//    val planTypes: Seq[SafeType] = plan.steps
+//      .collect {
+//        case i: InstantiationOp => i
+//        case i: MakeProxy => i
+//        case i: InitProxy => i
+//      }
+//      .map(_.target.tpe)
+//    val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
+//    val instanceTypes = context.instances
+//      .map(_.key.tpe)
+//      .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
+//
+//    assert(instanceTypes.size == planTypes.size) // proxy creates TWO keys instead of one
+//    assert(instanceTypes == planTypes)
+//
+//    // whitebox test: ensure that plan ops are in a non-lazy collection
+//    assert(plan.steps.isInstanceOf[Vector[_]])
+//  }
 
   "support by-name circular dependencies" in {
     import ByNameCycle._
@@ -165,8 +171,8 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector {
       make[Int].from(1)
     })
 
-    val injector = mkNoCglibInjector()
-    val plan = injector.plan(definition)
+    val injector = mkNoProxiesInjector()
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[Circular1] != null)

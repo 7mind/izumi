@@ -4,13 +4,15 @@ import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.ResourceRewriter.RewriteRules
-import izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, Id, Module, ModuleDef}
-import izumi.distage.model.planning.PlanningHook
+import izumi.distage.model.definition.{Binding, BootstrapModule, BootstrapModuleDef, Id, Module, ModuleDef}
 import izumi.distage.model.recursive.LocatorRef
-import izumi.distage.planning.extensions.GraphDumpBootstrapModule
+import izumi.distage.model.reflection.SafeType
+import izumi.distage.planning.AutoSetHook.InclusionPredicate
+import izumi.distage.planning.AutoSetModule
+import izumi.distage.roles.bundled.BundledService
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.model.{RoleService, RoleTask}
 import izumi.functional.bio.Exit
 import izumi.functional.bio.UnsafeRun2.FailureHandler
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -51,6 +53,12 @@ trait ModuleProvider { self =>
 
 object ModuleProvider {
 
+  private object AutoSetFilterBundledService extends InclusionPredicate {
+    override def filter(b: Binding.ImplBinding): Boolean = {
+      !(b.key.tpe <:< SafeType.get[BundledService])
+    }
+  }
+
   class Impl[F[_]: TagK](
     logRouter: LogRouter,
     options: PlanningOptions,
@@ -73,23 +81,17 @@ object ModuleProvider {
 
       val loggerModule = new LogstageModule(logRouter, true)
 
-      val resourceRewriter = new BootstrapModuleDef {
-        make[RewriteRules]
-          .fromValue(options.rewriteRules)
-        many[PlanningHook]
-          .add[ResourceRewriter]
-      }
-
-      val graphvizDumpModule = if (options.addGraphVizDump) new GraphDumpBootstrapModule() else BootstrapModule.empty
+      val platformModule = new BootstrapPlatformModule(options)
 
       val appConfigModule: BootstrapModule = AppConfigModule(config).morph[BootstrapModule]
 
       Seq(
         roleInfoModule,
-        resourceRewriter,
+        platformModule,
         loggerModule,
-        graphvizDumpModule,
         appConfigModule, // make config available for bootstrap plugins
+        AutoSetModule("all-custom-roles").registerOnly[RoleService[F]](AutoSetFilterBundledService),
+        AutoSetModule("all-custom-tasks").registerOnly[RoleTask[F]](AutoSetFilterBundledService),
       )
     }
 
@@ -110,11 +112,11 @@ object ModuleProvider {
 
   object LogstageFailureHandlerModule extends ModuleDef {
     make[FailureHandler].from {
-      logger: IzLogger =>
+      (logger: IzLogger) =>
         FailureHandler.Custom {
           case Exit.Error(error, trace) =>
             logger.warn(s"Fiber errored out due to unhandled $error $trace")
-          case Exit.Interruption(interrupt, trace) =>
+          case Exit.Interruption(interrupt, _, trace) =>
             logger.trace(s"Fiber interrupted with $interrupt $trace")
           case Exit.Termination(defect, _, trace) =>
             logger.warn(s"Fiber terminated erroneously with unhandled $defect $trace")

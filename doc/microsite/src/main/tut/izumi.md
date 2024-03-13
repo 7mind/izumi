@@ -10,12 +10,12 @@ Izumi (*jp. 泉水, spring*) is an ecosystem of independent libraries and framew
 
 including the following components:
 
-1. @ref[**distage**](distage/00_distage.md) – Compile-time safe, transparent and debuggable Dependency Injection framework for pure FP Scala,
+1. @ref[**distage**](distage/00_distage.md) – Compile-time safe, transparent and debuggable multi-modal Dependency Injection framework for pure FP Scala,
 2. @ref[**distage-testkit**](distage/distage-testkit.md) – Hyper-pragmatic pure FP Test framework. Shares heavy resources globally across all test suites; lets you easily swap implementations of component; uses your effect type for parallelism.
 3. @ref[**distage-framework-docker**](distage/distage-framework-docker.md) – A distage extension for using docker containers in tests or for local application runs, comes with example Postgres, Cassandra, Kafka & DynamoDB containers.
 4. @ref[**LogStage**](logstage/00_logstage.md) – Automatic structural logs from Scala string interpolations,
-5. @ref[**BIO**](bio/00_bio.md) - A typeclass hierarchy for tagless final style with Bifunctor and Trifunctor effect types. Focused on ergonomics and ease of use with zero boilerplate.
-6. [**izumi-reflect**](https://github.com/zio/izumi-reflect) (moved to [zio/izumi-reflect](https://github.com/zio/izumi-reflect)) - Portable, lightweight and kind-polymorphic alternative to `scala-reflect`'s Typetag for Scala, Scala.js, Scala Native and ([soon](https://github.com/7mind/dotty-typetag-research)) Dotty
+5. @ref[**BIO**](bio/00_bio.md) - A typeclass hierarchy for tagless final style with Bifunctor effect types. Focused on ergonomics and ease of use with zero boilerplate.
+6. [**izumi-reflect**](https://github.com/zio/izumi-reflect) (moved to [zio/izumi-reflect](https://github.com/zio/izumi-reflect)) - Portable, lightweight and kind-polymorphic alternative to `scala-reflect`'s Typetag for Scala, Scala.js, Scala Native and Scala 3
 7. @ref[**IdeaLingua**](idealingua/00_idealingua.md) (moved to [7mind/idealingua-v1](https://github.com/7mind/idealingua-v1)) – API Definition, Data Modeling and RPC language, optimized for fast prototyping – like gRPC or Swagger, but with a human face. Generates RPC servers and clients for Go, TypeScript, C# and Scala,
 8. @ref[**Opinionated SBT plugins**](sbt/00_sbt.md) (moved to [7mind/sbtgen](https://github.com/7mind/sbtgen)) – Reduces verbosity of SBT builds and introduces new features – inter-project shared test scopes and BOM plugins (from Maven)
 9. @ref[**Percept-Plan-Execute-Repeat (PPER)**](pper/00_pper.md) – A pattern that enables modeling very complex domains and orchestrate deadly complex processes a lot easier than you're used to.
@@ -64,9 +64,10 @@ Development
 Documentation
 -------------
 
-* @scaladoc[Scaladoc](izumi.index)
 * [Documentation](https://izumi.7mind.io/)
 * SNAPSHOT [Documentation](https://izumi.7mind.io/latest/snapshot/)
+* @scaladoc[Scaladoc](izumi.index)
+
 
 Further reading
 ---------------
@@ -79,8 +80,9 @@ Example projects:
 Support Chats:
 
 * [Izumi on Gitter](https://gitter.im/7mind/izumi)
-* [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
+* [Izumi User Group [RU] on Telegram](https://t.me/scala_any/708)
 * [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
+* [Discussions on Github](https://github.com/7mind/izumi/discussions)
 
 Videos:
 
@@ -114,9 +116,11 @@ YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/p
 
 @@@ index
 
-* [distage](distage/00_distage.md)
-* [LogStage](logstage/00_logstage.md)
+* [Glossary](glossary.md)
+* [Izumi Best Practices](guidelines.md)
 * [BIO](bio/00_bio.md)
+* [LogStage](logstage/00_logstage.md)
+* [DIStage](distage/00_distage.md)
 * [Idealingua](idealingua/00_idealingua.md)
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)

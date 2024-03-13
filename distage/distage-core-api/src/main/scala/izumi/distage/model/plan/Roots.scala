@@ -1,7 +1,7 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.reflection._
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.reflect.Tag
 
 /**
@@ -33,23 +33,32 @@ sealed trait Roots {
 
 object Roots {
   def apply(root: DIKey, roots: DIKey*): Roots = {
-    Roots.Of(NonEmptySet(root, roots: _*))
+    Roots.Of(NESet(root, roots*))
   }
-  def apply(roots: NonEmptySet[? <: DIKey]): Roots = {
+  def apply(roots: NESet[? <: DIKey]): Roots = {
     Roots.Of(roots.widen)
   }
   def apply(roots: Set[? <: DIKey])(implicit d: DummyImplicit): Roots = {
     require(roots.nonEmpty, "GC roots set cannot be empty")
-    Roots.Of(NonEmptySet.from(roots).get.widen)
+    Roots.Of(NESet.from(roots).get.widen)
   }
-  def target[T: Tag]: Roots = Roots(NonEmptySet(DIKey.get[T]))
-  def target[T: Tag](name: String): Roots = Roots(NonEmptySet(DIKey.get[T].named(name)))
+  def target[T: Tag]: Roots = Roots(NESet(DIKey.get[T]))
+  def target[T: Tag](name: String): Roots = Roots(NESet(DIKey.get[T].named(name)))
 
-  final case class Of(roots: NonEmptySet[DIKey]) extends Roots
+  final case class Of(roots: NESet[DIKey]) extends Roots
 
-  /** Disable garbage collection and try to instantiate every single binding. There's almost always a better way to model things though. */
+  /** Disable garbage collection and try to instantiate every single binding.
+    *
+    * There's almost always a better way to model things though.
+    *
+    * This setting effectively disables Garbage Collection.
+    *
+    * Try to avoid it.
+    *
+    * In some cases (involving circular dependencies) it may be very hard to determine what are actual "root"
+    * components you want to produce, so the behaviour may be somehow heuristical and unsound.
+    *
+    * Also this mode is slower, because an additional tracing pass is required to determine actual root components.
+    */
   case object Everything extends Roots
-
-  @deprecated("GCMode.NoGC has been renamed to `Roots.Everything`", "old name will be deleted in 1.1.1")
-  lazy val NoGC: Everything.type = Everything
 }

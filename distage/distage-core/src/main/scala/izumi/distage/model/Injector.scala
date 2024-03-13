@@ -2,25 +2,24 @@ package izumi.distage.model
 
 import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, ModuleBase}
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.plan.{OrderedPlan, Roots}
+import izumi.functional.quasi.QuasiIO
+import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}
 
 /**
-  * Injector creates object graphs ([[izumi.distage.model.Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.OrderedPlan]]
+  * Injector creates object graphs ([[izumi.distage.model.Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.Plan]]
   *
   * @see [[izumi.distage.model.Planner]]
   * @see [[izumi.distage.model.Producer]]
   */
 trait Injector[F[_]] extends Planner with Producer {
-
   /**
     * Create an an object graph described by the `input` module,
     * designate all arguments of the provided function as roots of the graph,
@@ -61,7 +60,8 @@ trait Injector[F[_]] extends Planner with Producer {
     activation: Activation = Activation.empty,
   )(function: Functoid[F[A]]
   ): F[A] = {
-    produceCustomF(plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).use(_.run(function))
+    produce(PlannerInput(bindings, activation, function.get.diKeys.toSet))
+      .use(_.run(function))
   }
 
   /**
@@ -109,7 +109,8 @@ trait Injector[F[_]] extends Planner with Producer {
     activation: Activation = Activation.empty,
   )(function: Functoid[F[A]]
   ): Lifecycle[F, A] = {
-    produceCustomF(plan(PlannerInput(bindings, activation, function.get.diKeys.toSet))).evalMap(_.run(function))
+    produce(PlannerInput(bindings, activation, function.get.diKeys.toSet))
+      .evalMap(_.run(function))
   }
 
   /**
@@ -144,13 +145,15 @@ trait Injector[F[_]] extends Planner with Producer {
     * @param activation A map of axes of configuration to choices along these axes
     */
   final def produceGet[A: Tag](bindings: ModuleBase, activation: Activation): Lifecycle[F, A] = {
-    produceCustomF(plan(PlannerInput(bindings, activation, DIKey.get[A]))).map(_.get[A])
+    produce(PlannerInput(bindings, activation, DIKey.get[A]))
+      .map(_.get[A])
   }
   final def produceGet[A: Tag](bindings: ModuleBase): Lifecycle[F, A] = {
     produceGet[A](bindings, Activation.empty)
   }
   final def produceGet[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): Lifecycle[F, A] = {
-    produceCustomF(plan(PlannerInput(bindings, activation, DIKey.get[A].named(name)))).map(_.get[A](name))
+    produce(PlannerInput(bindings, activation, DIKey.get[A].named(name)))
+      .map(_.get[A](name))
   }
 
   /**
@@ -184,10 +187,10 @@ trait Injector[F[_]] extends Planner with Producer {
     * @return A Resource value that encapsulates allocation and cleanup of the object graph described by `input`
     */
   final def produce(input: PlannerInput): Lifecycle[F, Locator] = {
-    produceCustomF[F](plan(input))
+    produceCustomF[F](input)
   }
   final def produce(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): Lifecycle[F, Locator] = {
-    produceCustomF[F](plan(PlannerInput(bindings, activation, roots)))
+    produce(PlannerInput(bindings, activation, roots))
   }
 
   /**
@@ -207,7 +210,7 @@ trait Injector[F[_]] extends Planner with Producer {
     *       },
     *       activation = Activation.empty,
     *       roots = Roots.target[HelloWorld],
-    *     ))
+    *     )).getOrThrow()
     *
     *   injector
     *     .produce(plan)
@@ -215,56 +218,30 @@ trait Injector[F[_]] extends Planner with Producer {
     * }}}
     *
     * @param plan Computed wiring plan, may be produced by calling the [[plan]] method
-    *
     * @return A Resource value that encapsulates allocation and cleanup of the object graph described by `input`
     */
-  final def produce(plan: OrderedPlan): Lifecycle[F, Locator] = {
+  final def produce(plan: Plan): Lifecycle[F, Locator] = {
     produceCustomF[F](plan)
   }
 
   /** Produce [[izumi.distage.model.Locator]] interpreting effect and resource bindings into the provided effect type */
-  final def produceCustomF[G[_]: TagK: QuasiIO](plannerInput: PlannerInput): Lifecycle[G, Locator] = {
-    produceCustomF[G](plan(plannerInput))
+  final def produceCustomF[G[_]: TagK](input: PlannerInput)(implicit G: QuasiIO[G]): Lifecycle[G, Locator] = {
+    Lifecycle
+      .liftF(G.maybeSuspendEither(plan(input).aggregateErrors))
+      .flatMap(produceCustomF[G])
   }
-  final def produceDetailedCustomF[G[_]: TagK: QuasiIO](plannerInput: PlannerInput): Lifecycle[G, Either[FailedProvision[G], Locator]] = {
-    produceDetailedCustomF[G](plan(plannerInput))
+  final def produceDetailedCustomF[G[_]: TagK](input: PlannerInput)(implicit G: QuasiIO[G]): Lifecycle[G, Either[FailedProvision, Locator]] = {
+    Lifecycle
+      .liftF(G.maybeSuspendEither(plan(input).aggregateErrors))
+      .flatMap(produceDetailedCustomF[G])
   }
 
   /** Produce [[izumi.distage.model.Locator]], supporting only effect and resource bindings in `Identity` */
-  final def produceCustomIdentity(plannerInput: PlannerInput): Lifecycle[Identity, Locator] = {
-    produceCustomF[Identity](plan(plannerInput))
+  final def produceCustomIdentity(input: PlannerInput): Lifecycle[Identity, Locator] = {
+    produceCustomF[Identity](input)
   }
-  final def produceDetailedIdentity(plannerInput: PlannerInput): Lifecycle[Identity, Either[FailedProvision[Identity], Locator]] = {
-    produceDetailedCustomF[Identity](plan(plannerInput))
-  }
-
-  @deprecated("Use .produceRun. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceRunF[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): F[A] =
-    produceRun[A](bindings, activation)(function)
-  @deprecated("Use .produceEval. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceEvalF[A: Tag](bindings: ModuleBase, activation: Activation = Activation.empty)(function: Functoid[F[A]]): Lifecycle[F, A] =
-    produceEval[A](bindings, activation)(function)
-
-  @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceGetF[A: Tag](bindings: ModuleBase, activation: Activation): Lifecycle[F, A] =
-    produceGet[A](bindings, activation)
-  @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceGetF[A: Tag](bindings: ModuleBase): Lifecycle[F, A] =
-    produceGet[A](bindings)
-  @deprecated("Use .produceGet. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceGetF[A: Tag](name: Identifier)(bindings: ModuleBase, activation: Activation = Activation.empty): Lifecycle[F, A] =
-    produceGet[A](name)(bindings, activation)
-
-  @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(input: PlannerInput): Lifecycle[F, Locator] =
-    produce(input)
-  @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): Lifecycle[F, Locator] =
-    produce(bindings, roots, activation)
-
-  @deprecated("Use .produce. Parameterize Injector with `F` on creation: `Injector[F]()`", "1.0")
-  final def produceF(plan: OrderedPlan): Lifecycle[F, Locator] = {
-    produceCustomF[F](plan)
+  final def produceDetailedIdentity(input: PlannerInput): Lifecycle[Identity, Either[FailedProvision, Locator]] = {
+    produceDetailedCustomF[Identity](input)
   }
 
   /**
@@ -276,12 +253,13 @@ trait Injector[F[_]] extends Planner with Producer {
     *
     * @see [[https://izumi.7mind.io/distage/distage-framework.html#compile-time-checks Compile-Time Checks]]
     *
+    * @return Unit
     * @throws PlanCheckException on found issues
     */
   final def assert(
     bindings: ModuleBase,
     roots: Roots,
-    excludedActivations: Set[NonEmptySet[AxisChoice]] = Set.empty,
+    excludedActivations: Set[NESet[AxisChoice]] = Set.empty,
   ): Unit = {
     PlanVerifier()
       .verify[F](
@@ -302,12 +280,12 @@ trait Injector[F[_]] extends Planner with Producer {
     * @see [[https://izumi.7mind.io/distage/distage-framework.html#compile-time-checks Compile-Time Checks]]
     *
     * @return Set of issues if any.
-    *         Does not throw.
+    * @throws Nothing Does not throw.
     */
   final def verify(
     bindings: ModuleBase,
     roots: Roots,
-    excludedActivations: Set[NonEmptySet[AxisChoice]] = Set.empty,
+    excludedActivations: Set[NESet[AxisChoice]] = Set.empty,
   ): PlanVerifierResult = {
     PlanVerifier()
       .verify[F](

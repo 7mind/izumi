@@ -1,21 +1,22 @@
 package izumi.distage.injector
 
-import distage._
-import izumi.distage.constructors.AnyConstructor
-import izumi.distage.fixtures.TraitCases._
-import izumi.distage.fixtures.TypesCases._
+import distage.*
+import izumi.distage.fixtures.TraitCases.*
+import izumi.distage.fixtures.TypesCases.*
 import izumi.distage.model.PlannerInput
-import izumi.fundamentals.platform.build.MacroParameters
-import izumi.fundamentals.platform.language.IzScala.ScalaRelease
+import izumi.fundamentals.platform.assertions.ScalatestGuards
+import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.Ordering.Implicits.infixOrderingOps
+import scala.annotation.nowarn
 import scala.language.reflectiveCalls
 
-class AdvancedTypesTest extends AnyWordSpec with MkInjector {
+@nowarn("msg=reflectiveSelectable")
+class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "support generics" in {
-    import TypesCase1._
+    import TypesCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[List[Dep]].named("As").from(List(DepA()))
@@ -25,7 +26,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[List[Dep]]("As").forall(_.isInstanceOf[DepA]))
@@ -35,7 +36,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   }
 
   "support classes with typealiases" in {
-    import TypesCase1._
+    import TypesCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[DepA]
@@ -43,37 +44,37 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestClass2[TypeAliasDepA]].inner.isInstanceOf[TypeAliasDepA])
   }
 
   "support traits with typealiases" in {
-    import TypesCase1._
+    import TypesCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[DepA]
-      make[TestTrait]
+      makeTrait[TestTrait]
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestTrait].dep.isInstanceOf[TypeAliasDepA])
   }
 
   "type annotations in di keys do not result in different keys" in {
-    import TraitCase2._
+    import TraitCase2.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency1 @Id("special")]
-      make[Trait1]
+      makeTrait[Trait1]
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Dependency1]
@@ -83,36 +84,36 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   }
 
   "handle `with` types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
-      make[Trait2 with Trait1].from[Trait6]
+      make[Trait2 & Trait1].fromTrait[Trait6]
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val instantiated = context.get[Trait2 with Trait1]
+    val instantiated = context.get[Trait2 & Trait1]
 
     assert(instantiated.dep == context.get[Dep])
   }
 
   "light type tags can handle refinement & structural types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
-      make[Trait1 { def dep: Dep2 }].from[Trait3[Dep2]]
-      make[Trait1 { def dep: Dep }].from[Trait3[Dep]]
-      make[{ def dep: Dep }].from[Trait6]
+      make[Trait1 { def dep: Dep2 }].fromTrait[Trait3[Dep2]]
+      make[Trait1 { def dep: Dep }].fromTrait[Trait3[Dep]]
+      make[{ def dep: Dep }].fromTrait[Trait6]
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated1 = context.get[Trait1 { def dep: Dep2 }]
@@ -125,19 +126,19 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   }
 
   "handle function local type aliases" in {
-    import TypesCase4._
+    import TypesCase4.*
 
     class Definition[T: Tag] extends ModuleDef {
       make[Dep]
       make[Dep2]
       locally {
         type X[A] = Trait1[Dep, A]
-        make[X[T]]
+        makeTrait[X[T]]
       }
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(PlannerInput.everything(new Definition[Dep2]))
+    val plan = injector.planUnsafe(PlannerInput.everything(new Definition[Dep2]))
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait1[Dep, Dep2]]
@@ -147,18 +148,18 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   }
 
   "light type tags can handle abstract structural refinement types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
-    class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag: AnyConstructor] extends ModuleDef {
+    class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag: TraitConstructor] extends ModuleDef {
       make[Dep]
-      make[T { def dep2: Dep }].from(() => null: T { def dep2: Dep })
-      make[T { def dep: Dep }].from[G]
+      make[T { def dep2: Dep }].from(() => null.asInstanceOf[T { def dep2: Dep }])
+      make[T { def dep: Dep }].from(TraitConstructor[G])
     }
 
     val definition = PlannerInput.everything(new Definition[Trait1, Trait1])
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val instantiated = context.get[Trait1 { def dep: Dep }]
@@ -168,52 +169,54 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   }
 
   "handle abstract `with` types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
-    class Definition[T: Tag, G <: T with Trait1: Tag: AnyConstructor, C <: T with Trait4: Tag: AnyConstructor] extends ModuleDef {
+    class Definition[T: Tag, G <: T & Trait1: Tag: TraitConstructor, C <: T & Trait4: Tag: TraitConstructor] extends ModuleDef {
       make[Dep]
-      make[T with Trait4].from[C]
-      make[T with Trait1].from[G]
+      make[T & Trait4].from(TraitConstructor[C])
+      make[T & Trait1].from(TraitConstructor[G])
     }
 
     val definition = PlannerInput.everything(new Definition[Trait3[Dep], Trait3[Dep], Trait5[Dep]])
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val instantiated = context.get[Trait3[Dep] with Trait1]
-    val instantiated2 = context.get[Trait3[Dep] with Trait4]
+    brokenOnScala3 {
+      val instantiated = context.get[Trait3[Dep] & Trait1]
+      val instantiated2 = context.get[Trait3[Dep] & Trait4]
 
-    assert(instantiated.dep == context.get[Dep])
-    assert(instantiated.isInstanceOf[Trait1])
-    assert(!instantiated.isInstanceOf[Trait4])
+      assert(instantiated.dep == context.get[Dep])
+      assert(instantiated.isInstanceOf[Trait1])
+      assert(!instantiated.isInstanceOf[Trait4])
 
-    assert(instantiated2.dep == context.get[Dep])
-    assert(instantiated2.isInstanceOf[Trait1])
-    assert(instantiated2.isInstanceOf[Trait4])
+      assert(instantiated2.dep == context.get[Dep])
+      assert(instantiated2.isInstanceOf[Trait1])
+      assert(instantiated2.isInstanceOf[Trait4])
+    }
   }
 
   "handle generic parameters in abstract `with` types" in {
-    import TypesCase3._
+    import TypesCase3.*
 
-    class Definition[T <: Dep: Tag: AnyConstructor, K >: Trait5[T]: Tag] extends ModuleDef {
+    class Definition[T <: Dep: Tag: ClassConstructor, K >: Trait5[T]: Tag] extends ModuleDef {
       make[T]
-      make[Trait3[T] with K].from[Trait5[T]]
+      make[Trait3[T] & K].fromTrait[Trait5[T]]
     }
 
     val definition = PlannerInput.everything(new Definition[Dep, Trait4])
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
-    val instantiated = context.get[Trait3[Dep] with Trait4]
+    val instantiated = context.get[Trait3[Dep] & Trait4]
 
     assert(instantiated.dep == context.get[Dep])
   }
 
   "support newtypes" in {
-    import TypesCase5._
+    import TypesCase5.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[WidgetId].from(WidgetId(1))
@@ -229,7 +232,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   }
 
   "empty refinements are supported in class strategy" in {
-    import TypesCase4._
+    import TypesCase4.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep {}]
@@ -242,14 +245,35 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector {
   }
 
   "support constant types in class strategy" in {
-    assume(ScalaRelease.parse(MacroParameters.scalaVersion().get) >= ScalaRelease.`2_13`(0))
-    assertCompiles(
-      """
+    assume(IzScala.scalaRelease >= ScalaRelease.`2_13`(0))
+    brokenOnScala3 {
+      assertCompiles(
+        """
         new ModuleDef {
           make[5]
         }
       """
-    )
+      )
+    }
+  }
+
+  "regression test for https://github.com/7mind/izumi/issues/1523 Parameterization failure with Set of intersection type alias" in {
+    import cats.effect.IO
+
+    object x {
+      type SrcContextProcessor[F[_]] = SrcProcessor & ContextProcessor[F]
+    }
+    import x.*
+    trait SrcProcessor
+    trait ContextProcessor[F[_]]
+
+    def tag[F[_]: TagK] = Tag[SrcContextProcessor[F]]
+    def setTag[F[_]: TagK] = Tag[Set[SrcContextProcessor[F]]]
+
+    val tag1 = tag[IO].tag
+    val tag2 = Tag[SrcContextProcessor[IO]].tag
+    assert(tag1 == tag2)
+    assert(setTag[IO].tag == Tag[Set[SrcContextProcessor[IO]]].tag)
   }
 
 }

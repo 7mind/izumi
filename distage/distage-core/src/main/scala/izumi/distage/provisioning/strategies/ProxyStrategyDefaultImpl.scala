@@ -1,18 +1,17 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
-import izumi.distage.model.exceptions._
+import izumi.distage.model.definition.errors.ProvisionerIssue
+import izumi.functional.quasi.QuasiIO
+import izumi.functional.quasi.QuasiIO.syntax.*
+import ProvisionerIssue.{MissingProxyAdapter, UnexpectedProvisionResult, UnsupportedProxyOp}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.proxies.ProxyProvider.DeferredInit
 import izumi.distage.model.provisioning.proxies.{ProxyDispatcher, ProxyProvider}
-import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider, WiringExecutor}
-import izumi.distage.model.reflection.MirrorProvider
-import izumi.distage.model.reflection._
+import izumi.distage.model.provisioning.strategies.*
+import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.*
 import izumi.distage.provisioning.strategies.ProxyStrategyDefaultImpl.FakeSet
-import izumi.fundamentals.platform.language.unused
 import izumi.reflect.TagK
 
 /**
@@ -26,24 +25,40 @@ class ProxyStrategyDefaultImpl(
 ) extends ProxyStrategyDefaultImplPlatformSpecific(proxyProvider, mirrorProvider)
   with ProxyStrategy {
 
-  override def makeProxy(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
+  override def makeProxy[F[_]: TagK](
+    context: ProvisioningKeyProvider,
+    makeProxy: ProxyOp.MakeProxy,
+  )(implicit F: QuasiIO[F]
+  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val cogenNotRequired = makeProxy.byNameAllowed
 
-    val proxyInstance = if (cogenNotRequired) {
-      val proxy = new ByNameDispatcher(makeProxy.target)
-      DeferredInit(proxy, proxy)
-    } else {
-      val tpe = proxyTargetType(makeProxy)
-      if (!mirrorProvider.canBeProxied(tpe)) {
-        failCogenProxy(tpe, makeProxy)
+    F.maybeSuspend {
+      for {
+        proxyInstance <-
+          if (cogenNotRequired) {
+            val proxy = new ByNameDispatcher(makeProxy.target)
+            Right(DeferredInit(proxy, proxy))
+          } else {
+            for {
+              tpe <- proxyTargetType(makeProxy)
+              _ <-
+                if (!mirrorProvider.canBeProxied(tpe)) {
+                  failCogenProxy(tpe, makeProxy)
+                } else {
+                  Right(())
+                }
+              proxy <- makeCogenProxy(context, tpe, makeProxy)
+            } yield {
+              proxy
+            }
+          }
+      } yield {
+        Seq(
+          NewObjectOp.UseInstance(makeProxy.target, proxyInstance.proxy),
+          NewObjectOp.UseInstance(proxyControllerKey(makeProxy.target), proxyInstance.dispatcher),
+        )
       }
-      makeCogenProxy(context, tpe, makeProxy)
     }
-
-    Seq(
-      NewObjectOp.NewInstance(makeProxy.target, proxyInstance.proxy),
-      NewObjectOp.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher),
-    )
   }
 
   override def initProxy[F[_]: TagK](
@@ -51,52 +66,85 @@ class ProxyStrategyDefaultImpl(
     executor: OperationExecutor,
     initProxy: ProxyOp.InitProxy,
   )(implicit F: QuasiIO[F]
-  ): F[Seq[NewObjectOp]] = {
-    val target = initProxy.target
-    val key = proxyKey(target)
+  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+    val target = initProxy.proxy.target
+    val key = proxyControllerKey(target)
 
     context.fetchUnsafe(key) match {
       case Some(dispatcher: ProxyDispatcher) =>
         executor
           .execute(context, initProxy.proxy.op)
-          .flatMap(_.toList match {
-            case NewObjectOp.NewInstance(_, instance) :: Nil =>
-              F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
-                .map(_ => Seq.empty)
+          .flatMap {
+            case Left(value) =>
+              F.pure(Left(value))
+            case Right(value) =>
+              value.toList match {
+                case NewObjectOp.UseInstance(_, instance) :: Nil =>
+                  F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+                    .map(
+                      _ =>
+                        Right(
+                          Seq(
+                            NewObjectOp.UseInstance(initProxy.target, instance)
+                          )
+                        )
+                    )
+                case NewObjectOp.NewInstance(_, tpe, instance) :: Nil =>
+                  F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+                    .map(
+                      _ =>
+                        Right(
+                          Seq(
+                            NewObjectOp.NewInstance(initProxy.target, tpe, instance)
+                          )
+                        )
+                    )
 
-            case (r @ NewObjectOp.NewResource(_, instance, _)) :: Nil =>
-              val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-              F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
-                .map(_ => Seq(NewObjectOp.NewFinalizer(target, finalizer)))
+                case (r @ NewObjectOp.NewResource(_, tpe, instance, _)) :: Nil =>
+                  val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
+                  F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+                    .map(
+                      _ =>
+                        Right(
+                          Seq(
+                            NewObjectOp.NewInstance(initProxy.target, tpe, instance),
+                            NewObjectOp.NewFinalizer(target, finalizer),
+                          )
+                        )
+                    )
 
-            case r =>
-              throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
-          })
+                case r =>
+                  F.pure(Left(UnexpectedProvisionResult(key, r)))
+              }
+          }
+
       case _ =>
-        throw new MissingProxyAdapterException(s"Cannot get dispatcher $key for $initProxy", key, initProxy)
+        F.pure(Left(MissingProxyAdapter(key, initProxy)))
     }
   }
 
-  protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
+  protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): Either[ProvisionerIssue, SafeType] = {
     makeProxy.op match {
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
-        SafeType.get[FakeSet[?]]
+        Right(SafeType.get[FakeSet[?]])
       case op: WiringOp.CallProvider =>
-        op.target.tpe
+        Right(op.target.tpe)
       case op: MonadicOp.AllocateResource =>
-        op.target.tpe
+        Right(op.target.tpe)
       case op: MonadicOp.ExecuteEffect =>
-        op.target.tpe
+        Right(op.target.tpe)
       case op: WiringOp.UseInstance =>
-        throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
+        Left(UnsupportedProxyOp(op))
+      case op: WiringOp.CreateSubcontext =>
+        Left(UnsupportedProxyOp(op))
       case op: WiringOp.ReferenceKey =>
-        throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
+        Left(UnsupportedProxyOp(op))
     }
   }
 
-  protected def proxyKey(m: DIKey): DIKey = {
-    DIKey.ProxyElementKey(m, SafeType.get[ProxyDispatcher])
+  protected def proxyControllerKey(m: DIKey): DIKey = {
+    DIKey.ProxyControllerKey(m, SafeType.get[ProxyDispatcher])
   }
 
 }

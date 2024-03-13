@@ -1,18 +1,24 @@
 package izumi.distage.model.provisioning.proxies
 
-import izumi.distage.model.exceptions.NoopProvisionerImplCalled
+import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext}
 import izumi.distage.model.reflection.DIKey
 
 trait ProxyProvider {
-  def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit
+  def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): Either[ProvisionerIssue, DeferredInit]
 }
 
 object ProxyProvider {
-  class ProxyProviderFailingImpl extends ProxyProvider {
-    override def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit = {
-      throw new NoopProvisionerImplCalled(s"ProxyProviderFailingImpl can't create cycle-breaking proxies, failed op: ${proxyContext.op}", this)
+  class ProxyProviderFailingImpl(cause: ProvisionerIssue.ProxyFailureCause) extends ProxyProvider {
+    def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): Either[ProvisionerIssue, DeferredInit] = {
+      Left(
+        ProvisionerIssue.ProxyProviderFailingImplCalled(
+          deferredKey,
+          this,
+          cause,
+        )
+      )
     }
   }
 
@@ -20,7 +26,7 @@ object ProxyProvider {
 
   sealed trait ProxyParams
   object ProxyParams {
-    final case object Empty extends ProxyParams
+    case object Empty extends ProxyParams
     final case class Params(types: Array[Class[?]], values: Array[Any]) extends ProxyParams {
       override def toString: String = s"Params(${types.mkString("[", ",", "]")}, ${values.mkString("[", ",", "]")})"
     }

@@ -2,8 +2,9 @@ package izumi.distage.gc
 
 import distage.DIKey
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.errors.DIError.LoopResolutionError
 import izumi.distage.model.definition.{Activation, ModuleDef}
-import izumi.distage.model.exceptions.UnsupportedOpException
+import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Roots
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -14,8 +15,8 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
       import GcCases.InjectorCase10._
 
       val injector = mkInjector()
-      intercept[UnsupportedOpException] {
-        injector.plan(
+      val exc = intercept[InjectorFailed] {
+        injector.planUnsafe(
           PlannerInput(
             new ModuleDef {
               make[Circular1]
@@ -26,13 +27,15 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
           )
         )
       }
+
+      assert(exc.errors.size == 1 && exc.errors.head.isInstanceOf[LoopResolutionError.NoAppropriateResolutionFound])
     }
 
     "handle by-name circular dependencies with sets through refs/2" in {
       import GcCases.InjectorCase13._
 
-      val injector = mkNoCglibInjector()
-      val plan = injector.plan(
+      val injector = mkNoProxiesInjector()
+      val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
             make[Circular1]

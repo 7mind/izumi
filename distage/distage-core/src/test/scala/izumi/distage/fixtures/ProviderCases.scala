@@ -1,11 +1,9 @@
 package izumi.distage.fixtures
 
 import izumi.distage.model.definition.Id
-import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 
-@ExposedTestScope
 object ProviderCases {
 
   object ProviderCase1 {
@@ -23,11 +21,11 @@ object ProviderCases {
     val testVal: (String @Id("valsigtypeann1"), Int @Id("valsigtypeann2")) => String = (x, _) => x
 
     val testVal2: Boolean => String = {
-      x: Boolean @Id("valbodytypeann") => x.toString
+      (x: Boolean @Id("valbodytypeann")) => x.toString
     }
 
     val testVal3: Long @Id("valsbtypeann1") => String @Id("valsbtypeann2") => Long = {
-      x: Long @Id("valsbtypeann3") => _ => x
+      (x: Long @Id("valsbtypeann3")) => _ => x
     }
 
     val testValByName: (=> Any) => Unit = _ => ()

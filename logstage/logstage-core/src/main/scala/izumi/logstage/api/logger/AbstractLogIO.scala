@@ -1,8 +1,10 @@
 package izumi.logstage.api.logger
 
-import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{CustomContext, Entry, Level, Message}
 import logstage.UnsafeLogIO
+
+import scala.annotation.unused
 
 trait AbstractLogIO[F[_]] extends UnsafeLogIO[F] {
   type Self[f[_]] <: AbstractLogIO[f]
@@ -13,5 +15,5 @@ trait AbstractLogIO[F[_]] extends UnsafeLogIO[F] {
   def withCustomContext(context: CustomContext): Self[F]
   final def apply(context: CustomContext): Self[F] = withCustomContext(context)
 
-  override def widen[G[_]](implicit @unused ev: F[?] <:< G[?]): AbstractLogIO[G] = this.asInstanceOf[AbstractLogIO[G]]
+  override def widen[G[_]](implicit @unused ev: F[AnyRef] <:< G[AnyRef]): AbstractLogIO[G] = this.asInstanceOf[AbstractLogIO[G]]
 }

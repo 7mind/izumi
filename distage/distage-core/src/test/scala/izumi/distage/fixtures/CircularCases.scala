@@ -1,11 +1,9 @@
 package izumi.distage.fixtures
 
-import izumi.fundamentals.platform.build.ExposedTestScope
 import distage.Id
 
 import scala.util.Random
 
-@ExposedTestScope
 object CircularCases {
 
   object CircularCase1 {
@@ -89,7 +87,7 @@ object CircularCases {
     }
 
     trait FactorySelfReference {
-      def self: FactorySelfReference
+//      def self: FactorySelfReference // TODO: commented out to fit into scala3 factoryconstructor restrictions
       def mkByNameSelfReference(inner: ByNameSelfReference): ByNameSelfReference
       def mkByNameSelfReferenceByName(inner: => ByNameSelfReference): ByNameSelfReference
     }
@@ -252,4 +250,47 @@ object CircularCases {
     }
   }
 
+  object CircularCase11 {
+
+    trait Service
+    trait T1 extends Service
+    trait T2 extends Service
+
+    final class Circular1Impl(val arg: T2) extends Service with T1
+
+    final class Circular2Impl(val arg: T1) extends Service with T2
+
+  }
+
+  object CircularCase12 {
+
+    trait Service {
+      def arg: Set[Service]
+    }
+
+    trait T1 extends Service
+
+    trait T2 extends Service
+
+    final class Circular1Impl(val arg: Set[Service]) extends Service with T1
+
+    final class Circular2Impl(val arg: Set[Service]) extends Service with T2
+
+  }
+
+  object CircularCase13 {
+
+    trait Service {
+      def arg: Set[Service]
+    }
+
+    trait T1 extends Service
+
+    trait T2 extends Service
+
+    final case class Circular1Impl(val arg: Set[Service]) extends Service with T1
+
+    final case class Circular2Impl(val arg: Set[Service]) extends Service with T2
+
+  }
 }

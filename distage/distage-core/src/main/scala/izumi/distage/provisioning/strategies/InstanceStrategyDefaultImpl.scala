@@ -1,23 +1,24 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.MissingInstanceException
+import izumi.distage.model.definition.errors.ProvisionerIssue
+import izumi.functional.quasi.QuasiIO
+import ProvisionerIssue.MissingInstance
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.provisioning.strategies.InstanceStrategy
-import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
-import izumi.fundamentals.platform.language.unused
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
+import izumi.reflect.TagK
 
 class InstanceStrategyDefaultImpl extends InstanceStrategy {
-  def getInstance(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: WiringOp.UseInstance): Seq[NewObjectOp] = {
-    Seq(NewObjectOp.NewInstance(op.target, op.wiring.instance))
+  def getInstance[F[_]: TagK](context: ProvisioningKeyProvider, op: WiringOp.UseInstance)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+    F.pure(Right(Seq(NewObjectOp.NewInstance(op.target, op.instanceType, op.wiring.instance))))
   }
-
-  def getInstance(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: WiringOp.ReferenceKey): Seq[NewObjectOp] = {
+  def getInstance[F[_]: TagK](context: ProvisioningKeyProvider, op: WiringOp.ReferenceKey)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     context.fetchKey(op.wiring.key, makeByName = false) match {
       case Some(value) =>
-        Seq(NewObjectOp.NewInstance(op.target, value))
+        F.pure(Right(Seq(NewObjectOp.UseInstance(op.target, value))))
 
       case None =>
-        throw new MissingInstanceException(s"Cannot find ${op.wiring.key} in the object graph", op.wiring.key)
+        F.pure(Left(MissingInstance(op.wiring.key)))
     }
   }
 }

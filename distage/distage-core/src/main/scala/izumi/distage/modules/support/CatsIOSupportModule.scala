@@ -1,20 +1,20 @@
 package izumi.distage.modules.support
 
 import cats.Parallel
-import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Timer}
-import izumi.distage.model.definition.ModuleDef
+import cats.effect.IO
+import cats.effect.kernel.Async
+import cats.effect.unsafe.{IORuntimeConfig, Scheduler}
+import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
+import izumi.functional.quasi.QuasiIORunner
 
 object CatsIOSupportModule extends CatsIOSupportModule
 
 /**
   * `cats.effect.IO` effect type support for `distage` resources, effects, roles & tests
   *
-  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds `cats-effect` typeclass instances for `cats.effect.IO`
-  *
-  * Will also add the following components:
-  *   - [[cats.effect.Blocker]] by using [[cats.effect.Blocker.apply]]
   *
   * Added into scope by [[izumi.distage.modules.DefaultModule]].
   *
@@ -24,16 +24,17 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
   // QuasiIO & cats-effect instances
   include(AnyCatsEffectSupportModule[IO])
 
-  make[ConcurrentEffect[IO]].from(IO.ioConcurrentEffect(_: ContextShift[IO]))
-  make[Parallel[IO]].from(IO.ioParallel(_: ContextShift[IO]))
+  make[QuasiIORunner[IO]].from(QuasiIORunner.mkFromCatsIORuntime _)
 
-  make[ContextShift[IO]].from((_: PublicIOApp).contextShift)
-  make[Timer[IO]].from((_: PublicIOApp).timer)
-  make[PublicIOApp]
-}
+  make[Async[IO]].from(IO.asyncForIO)
+  make[Parallel[IO]].from(IO.parallelForIO)
 
-private[support] trait PublicIOApp extends IOApp {
-  override def contextShift: ContextShift[IO] = super.contextShift
-  override def timer: Timer[IO] = super.timer
-  override def run(args: List[String]): IO[ExitCode] = IO.pure(ExitCode(0))
+  make[IORuntimeConfig].from(IORuntimeConfig())
+
+  make[Scheduler].fromResource {
+    Lifecycle
+      .makeSimple(
+        acquire = Scheduler.createDefaultScheduler()
+      )(release = _._2.apply()).map(_._1)
+  }
 }

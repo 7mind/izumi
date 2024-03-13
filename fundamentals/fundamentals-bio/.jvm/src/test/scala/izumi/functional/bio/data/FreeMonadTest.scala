@@ -1,14 +1,13 @@
 package izumi.functional.bio.data
 
-import java.util.concurrent.atomic.AtomicReference
-
 import izumi.functional.bio.{F, IO2, UnsafeRun2}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.IO
-import zio.internal.Platform
+
+import java.util.concurrent.atomic.AtomicReference
 
 class FreeMonadTest extends AnyWordSpec {
-  import FreeMonadTest._
+  import FreeMonadTest.*
   val syntax = new TestFreeSyntax[IO]
   val simpleExecution: FreePanic[TestFreeChoice, Nothing, Unit] = {
     for {
@@ -28,9 +27,9 @@ class FreeMonadTest extends AnyWordSpec {
   val nested: FreePanic[TestFreeChoice, Nothing, Unit] = List.fill(100000)(simpleExecution).reduce((f1, f2) => f1.flatMap(_ => f2))
 
   "Interpret Free and run it via bio" in {
-    val runner = UnsafeRun2.createZIO(Platform.default)
-    runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(simpleExecution.foldMap(_)))
-    runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(nested.foldMap(_)))
+    val runner = UnsafeRun2.createZIO[Any]()
+    runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(simpleExecution.foldMap(_): IO[Nothing, Unit])) // type annotation required for Scala 3: https://github.com/lampepfl/dotty/issues/15888
+    runner.unsafeRun(FreeMonadTest.compiler[IO].flatMap(nested.foldMap(_): IO[Nothing, Unit])) // type annotation required for Scala 3: https://github.com/lampepfl/dotty/issues/15888
   }
 }
 
@@ -39,15 +38,11 @@ object FreeMonadTest {
     def interpret[F[+_, +_]: IO2](scope: AtomicReference[Int]): F[E, A] = TestFreeChoice.interpret[F, E, A](scope)(this)
   }
   object TestFreeChoice {
-    final case class Pure[+A](execution: A) extends TestFreeChoice[Nothing, A]
-    final case class Fail[+E](error: E) extends TestFreeChoice[E, Nothing]
     final case class Sync[+A](execution: () => A) extends TestFreeChoice[Nothing, A]
     final case class ScopeUpdate(update: Int => Int) extends TestFreeChoice[Nothing, Unit]
     final case class ScopeAccess[+A](execution: Int => A) extends TestFreeChoice[Nothing, A]
 
     private def interpret[F[+_, +_]: IO2, E, A](scope: AtomicReference[Int])(op: TestFreeChoice[E, A]): F[E, A] = op match {
-      case TestFreeChoice.Pure(execution) => F.pure(execution)
-      case TestFreeChoice.Fail(err) => F.fail(err)
       case TestFreeChoice.Sync(execution) => F.sync(execution())
       case TestFreeChoice.ScopeUpdate(update) => F.sync(scope.updateAndGet(update(_))).void
       case TestFreeChoice.ScopeAccess(execution) => F.sync(execution(scope.get))
@@ -55,9 +50,9 @@ object FreeMonadTest {
   }
 
   final class TestFreeSyntax[F[+_, +_]] {
-    def pure[A](a: A): FreePanic[TestFreeChoice, Nothing, A] = FreePanic.lift(TestFreeChoice.Pure(a))
-    def unit: FreePanic[TestFreeChoice, Nothing, Unit] = FreePanic.lift(TestFreeChoice.Pure(()))
-    def fail[E](a: E): FreePanic[TestFreeChoice, E, Nothing] = FreePanic.lift(TestFreeChoice.Fail(a))
+    def pure[A](a: A): FreePanic[TestFreeChoice, Nothing, A] = FreePanic.pure(a)
+    def unit: FreePanic[TestFreeChoice, Nothing, Unit] = FreePanic.pure(())
+    def fail[E](a: E): FreePanic[TestFreeChoice, E, Nothing] = FreePanic.fail(a)
     def sync[A](execution: => A): FreePanic[TestFreeChoice, Nothing, A] = FreePanic.lift(TestFreeChoice.Sync(() => execution))
     def scopeUpdate(update: Int => Int): FreePanic[TestFreeChoice, Nothing, Unit] = FreePanic.lift(TestFreeChoice.ScopeUpdate(update))
     def scopeAccess[A](execution: Int => A): FreePanic[TestFreeChoice, Nothing, A] = FreePanic.lift(TestFreeChoice.ScopeAccess(execution))

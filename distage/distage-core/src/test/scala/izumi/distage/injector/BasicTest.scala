@@ -1,29 +1,32 @@
 package izumi.distage.injector
 
-import distage._
-import izumi.distage.fixtures.BasicCases._
-import izumi.distage.fixtures.SetCases._
+import distage.*
+import izumi.distage.fixtures.BasicCases.*
+import izumi.distage.fixtures.SetCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.definition.StandardAxis.Repo
-import izumi.distage.model.definition.conflicts.ConflictResolutionError
-import izumi.distage.model.exceptions.{BadMutatorAxis, ConflictResolutionException, ProvisioningException}
+import izumi.distage.model.definition.dsl.ModuleDefDSL
+import izumi.distage.model.definition.errors.{ConflictResolutionError, DIError}
+import izumi.distage.model.exceptions.planning.InjectorFailed
+import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.fundamentals.collections.nonempty.NEList
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
-class BasicTest extends AnyWordSpec with MkInjector {
-
+class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "maintain correct operation order" in {
-    import BasicCase1._
+    import BasicCase1.*
     val definition = PlannerInput(
       new ModuleDef {
         make[TestClass]
-        make[TestDependency3]
+        makeTrait[TestDependency3]
         make[TestDependency0].from[TestImpl0]
-        make[TestDependency1]
+        makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
         make[TestInstanceBinding].from(TestInstanceBinding())
@@ -34,14 +37,14 @@ class BasicTest extends AnyWordSpec with MkInjector {
     )
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
-    assert(plan.steps.exists(_.isInstanceOf[ImportDependency]))
+    val plan = injector.planUnsafe(definition)
+    assert(plan.stepsUnordered.exists(_.isInstanceOf[ImportDependency]))
 
     val exc = intercept[ProvisioningException] {
       injector.produce(plan).unsafeGet()
     }
 
-    assert(exc.getMessage.linesIterator.toList.head == "Provisioner failed on 1 of 4 required operations, just 1 succeeded:")
+    assert(exc.getMessage.linesIterator.toList.head == "Interpreter stopped; out of 4 operations: 1 failed, 2 succeeded, 1 ignored")
 
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}
@@ -51,7 +54,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "correctly handle empty typed sets" in {
-    import SetCase1._
+    import SetCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[TypedService[Int]].from[ServiceWithTypedSet]
@@ -59,7 +62,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val s = context.get[TypedService[Int]]
@@ -69,7 +72,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "provide LocatorRef during initialization" in {
-    import BasicCase1._
+    import BasicCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestClass0]
@@ -83,7 +86,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val t = context.get[TestClass2]
@@ -96,8 +99,8 @@ class BasicTest extends AnyWordSpec with MkInjector {
       assertCompiles("""
         import BadAnnotationsCase._
 
-        val definition = PlannerInput.noGc(new ModuleDef {
-          make[TestDependency0]
+        val definition = PlannerInput.everything(new ModuleDef {
+          makeTrait[TestDependency0]
           make[TestClass]
         })
 
@@ -105,17 +108,19 @@ class BasicTest extends AnyWordSpec with MkInjector {
         injector.produce(injector.plan(definition)).unsafeGet().get[TestClass]
         """)
     }
-    assert(res.getMessage.contains("BadIdAnnotationException"))
+    brokenOnScala3 {
+      assert(res.getMessage.contains("BadIdAnnotationException"))
+    }
   }
 
   "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {
-    import BasicCaseIssue762._
+    import BasicCaseIssue762.*
 
     val definition = PlannerInput.everything(MyClassModule ++ ConfigModule)
 
     val injector = mkInjector()
 
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[MyClass].a eq context.get[String]("a"))
@@ -123,12 +128,12 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "support multiple bindings" in {
-    import BasicCase1._
+    import BasicCase1.*
     val definition = PlannerInput.everything(new ModuleDef {
       many[JustTrait].named("named.empty.set")
 
       many[JustTrait]
-        .add[JustTrait]
+        .addTrait[JustTrait]
         .add(new Impl1)
 
       many[JustTrait]
@@ -141,7 +146,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[Set[JustTrait]].size == 2)
@@ -151,18 +156,18 @@ class BasicTest extends AnyWordSpec with MkInjector {
 
   "support nested multiple bindings" in {
     // https://github.com/7mind/izumi/issues/261
-    import BasicCase1._
+    import BasicCase1.*
     val definition = PlannerInput.everything(new ModuleDef {
       many[JustTrait]
         .add(new Impl1)
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     val sub = Injector.inherit[Identity](context)
-    val subplan = sub.plan(definition)
+    val subplan = sub.planUnsafe(definition)
     val subcontext = injector.produce(subplan).unsafeGet()
 
     assert(context.get[Set[JustTrait]].size == 1)
@@ -170,7 +175,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "support named bindings" in {
-    import BasicCase2._
+    import BasicCase2.*
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestClass]
         .named("named.test.class")
@@ -190,14 +195,14 @@ class BasicTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestClass]("named.test.class").correctWired())
   }
 
   "fail on unsolvable conflicts" in {
-    import BasicCase3._
+    import BasicCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dependency].from[Impl1]
@@ -205,29 +210,31 @@ class BasicTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val exc = intercept[ConflictResolutionException] {
-      injector.plan(definition)
+    val exc = intercept[InjectorFailed] {
+      injector.planUnsafe(definition)
     }
-    assert(exc.conflicts.size == 1)
+    assert(exc.errors.size == 1)
     assert(
-      exc.conflicts.exists(
+      exc.errors.exists(
         e =>
-          e.isInstanceOf[ConflictResolutionError.ConflictingDefs[?, ?]] &&
-          e.asInstanceOf[ConflictResolutionError.ConflictingDefs[DIKey, Nothing]].defs.keySet.exists(_.key == DIKey.get[Dependency])
+          e.isInstanceOf[DIError.ConflictResolutionFailed] &&
+          e.asInstanceOf[DIError.ConflictResolutionFailed].error.asInstanceOf[ConflictResolutionError.ConflictingDefs[DIKey, Nothing]].defs.keySet.exists(
+              _.key == DIKey.get[Dependency]
+            )
       )
     )
   }
 
   // BasicProvisionerTest
   "instantiate simple class" in {
-    import BasicCase1._
+    import BasicCase1.*
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestCaseClass2]
       make[TestInstanceBinding].from(new TestInstanceBinding)
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
     val instantiated = context.get[TestCaseClass2]
 
@@ -235,7 +242,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "handle set bindings" in {
-    import SetCase1._
+    import SetCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Service2]
@@ -268,7 +275,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
 
     val context = injector.produce(plan).unsafeGet()
 
@@ -303,16 +310,16 @@ class BasicTest extends AnyWordSpec with MkInjector {
 //  }
 
   "preserve type annotations" in {
-    import BasicCase4._
+    import BasicCase4.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency].named("special")
+      makeTrait[Dependency].named("special")
       make[TestClass]
     })
 
     val injector = mkInjector()
 
-    val plan = injector.plan(definition)
+    val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[TestClass] != null)
@@ -346,10 +353,10 @@ class BasicTest extends AnyWordSpec with MkInjector {
       many[Int].add(5)
 
       many[Int].add {
-        i: Int => i - 1
+        (i: Int) => i - 1
       } // 6
       many[Int].addSet { // 7, 8, 9
-        i: Int =>
+        (i: Int) =>
           Set(i, i + 1, i + 2)
       }
     })
@@ -359,7 +366,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "support empty sets" in {
-    import BasicCase5._
+    import BasicCase5.*
     val definition = PlannerInput.everything(new ModuleDef {
       many[TestDependency]
       make[TestImpl1]
@@ -371,7 +378,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "preserve tags in multi set bindings" in {
-    import izumi.distage.dsl.TestTagOps._
+    import izumi.distage.dsl.TestTagOps.*
     val definition = PlannerInput.everything(new ModuleDef {
       many[Int]
         .named("zzz")
@@ -388,7 +395,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "Can abstract over Id annotations with type aliases" in {
-    import BasicCase7._
+    import BasicCase7.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].named("port").from(80)
@@ -396,14 +403,16 @@ class BasicTest extends AnyWordSpec with MkInjector {
       make[ServerConfig].from(ServerConfig)
     })
 
-    val context = mkInjector().produce(definition).unsafeGet()
+    brokenOnScala3 {
+      val context = mkInjector().produce(definition).unsafeGet()
 
-    assert(context.get[ServerConfig].port == context.get[Int]("port"))
-    assert(context.get[ServerConfig].address == context.get[String]("address"))
+      assert(context.get[ServerConfig].port == context.get[Int]("port"))
+      assert(context.get[ServerConfig].address == context.get[String]("address"))
+    }
   }
 
   "support mutations" in {
-    import Mutations01._
+    import Mutations01.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[SomethingUseful].fromValue(SomethingUseful("x"))
@@ -422,7 +431,7 @@ class BasicTest extends AnyWordSpec with MkInjector {
   }
 
   "support mutations with axis tags when axis is configured" in {
-    import Mutations01._
+    import Mutations01.*
 
     val definition = PlannerInput.everything(
       new ModuleDef {
@@ -441,13 +450,16 @@ class BasicTest extends AnyWordSpec with MkInjector {
           .named("x") {
             (m: Mutable) =>
               m.copy(a = m.a + 10)
-          }.tagged(Repo.Prod)
+          }
+          .tagged(Repo.Prod)
 
         modify[Mutable]
           .named("x") {
             (m: Mutable) =>
-              m.copy(a = m.a + 20)
-          }.tagged(Repo.Dummy)
+              m.copy(a = m.a + 10)
+          }
+          .tagged(Repo.Dummy)
+          .modify((m: Mutable) => m.copy(a = m.a + 10))
       },
       Activation(Repo -> Repo.Prod),
     )
@@ -457,8 +469,8 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(context.get[Mutable]("x") == Mutable(11, Some(SomethingUseful("x"))))
   }
 
-  "support mutations with axis tags when axis is unconfigured" in {
-    import Mutations01._
+  "fail mutations with axis tags when axis is unconfigured" in {
+    import Mutations01.*
 
     val definition = PlannerInput.everything(
       new ModuleDef {
@@ -492,9 +504,13 @@ class BasicTest extends AnyWordSpec with MkInjector {
       Activation.empty,
     )
 
-    intercept[BadMutatorAxis] {
+    val failure = intercept[InjectorFailed] {
       mkInjector().produce(definition).unsafeGet()
     }
+    assert(failure.errors.exists {
+      case DIError.ConflictResolutionFailed(ConflictResolutionError.UnconfiguredAxisInMutators(NEList(a @ _, b @ _))) => true
+      case _ => false
+    })
   }
 
   "regression test: imports correctly specify which binding they are required by when missing" in {
@@ -506,4 +522,77 @@ class BasicTest extends AnyWordSpec with MkInjector {
     assert(error.getMessage.contains("String"))
   }
 
+  "Can use mutation contexts" in {
+    trait RegisteredComponent
+    class RegisteredComponentImpl1 extends RegisteredComponent
+    class RegisteredComponentImpl2 extends RegisteredComponent
+
+    def addAndRegister[T <: RegisteredComponent: Tag: ClassConstructor](implicit mutateModule: ModuleDefDSL#MutationContext): Unit = {
+      new mutateModule.dsl {
+        make[T]
+          .named("xyz")
+          .aliased[T]("abc")
+
+        many[RegisteredComponent]
+          .weak[T]("xyz")
+      }.discard()
+    }
+
+    val definition = new ModuleDef {
+      addAndRegister[RegisteredComponentImpl1]
+      addAndRegister[RegisteredComponentImpl2]
+    }
+
+    val locator = mkInjector().produce(definition, Roots.Everything).unsafeGet()
+    val xyz1: RegisteredComponent = locator.get[RegisteredComponentImpl1]("xyz")
+    val xyz2: RegisteredComponent = locator.get[RegisteredComponentImpl2]("xyz")
+
+    assert(xyz1 ne xyz2)
+    assert(xyz1 eq locator.get[RegisteredComponentImpl1]("abc"))
+    assert(xyz2 eq locator.get[RegisteredComponentImpl2]("abc"))
+
+    val set = locator.get[Set[RegisteredComponent]]
+    assert(set.size == 2)
+    assert(set.contains(xyz1))
+    assert(set.contains(xyz2))
+    assert(set.exists(_ != xyz1))
+    assert(set.exists(_ != xyz2))
+  }
+
+  "stack does not overflow when producing very large dependency chains" in {
+    val max = 4000
+    val definition = new ModuleDef {
+      make[Int].named("0").fromValue(0)
+      for (i <- 1 to max) {
+        make[Int].named(s"$i").from((_: Int) + 1).annotateParameter[Int](s"${i - 1}")
+      }
+    }
+
+    val instance = mkInjector().produceGet[Int](s"$max")(definition).unsafeGet()
+    assert(instance == max)
+  }
+
+  "provide reasonable hints for missing dependencies" in {
+    import BasicCase9.*
+    val definition = PlannerInput(
+      new ModuleDef {
+        make[Out]
+        make[Dep1]
+        make[T2].named("wrong").from[Dep2]
+      },
+      Activation.empty,
+      DIKey[Out],
+    )
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    assert(plan.stepsUnordered.exists(_.isInstanceOf[ImportDependency]))
+
+    val exc = intercept[ProvisioningException] {
+      injector.produce(plan).unsafeGet()
+    }
+
+    assert(exc.getMessage.contains("related subtypes"))
+    assert(exc.getMessage.contains("same type"))
+  }
 }

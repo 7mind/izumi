@@ -1,25 +1,24 @@
 package izumi.distage.model.definition
 
 import izumi.distage.AbstractLocator
-import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.ImplDef.InstanceImpl
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.SetIdAll
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AliasTo, SetId, SetImpl}
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
+import izumi.distage.model.exceptions.dsl.LocatorDefUninstantiatedBindingException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.Wiring.SingletonWiring.Instance
-import izumi.distage.model.plan._
+import izumi.distage.model.plan.*
 import izumi.distage.model.plan.operations.OperationOrigin
-import izumi.distage.model.plan.topology.DependencyGraph
-import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
-import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
+import izumi.distage.model.{Locator, PlannerInput}
+import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.{Tag, TagK}
 
@@ -32,9 +31,8 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
 
   override def finalizers[F[_]: TagK]: immutable.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
-  override private[definition] final def _bindDSL[T](ref: SingletonRef): LocatorDef.BindDSL[T] = new LocatorDef.BindDSL[T](ref, ref.key)
-  override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): LocatorDef.BindDSLUnnamedAfterFrom[T] =
-    new LocatorDef.BindDSLUnnamedAfterFrom(ref, ref.key)
+  override private[definition] final def _bindDSL[T](ref: SingletonRef): LocatorDef.BindDSL[T] = new LocatorDef.BindDSL[T](ref)
+  override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): LocatorDef.BindDSLUnnamedAfterFrom[T] = new LocatorDef.BindDSLUnnamedAfterFrom(ref)
   override private[definition] final def _setDSL[T](ref: SetRef): LocatorDef.SetDSL[T] = new LocatorDef.SetDSL[T](ref)
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
@@ -46,16 +44,18 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
   override def instances: immutable.Seq[IdentifiedRef] = frozenInstances
   override def index: Map[DIKey, Any] = frozenMap
 
-  override lazy val plan: OrderedPlan = {
-    val topology = PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Required), DependencyGraph(Map.empty, DependencyKind.Depends))
-
+  /** The plan that produced this object graph */
+  override def plan: Plan = {
     val ops = frozenInstances.map {
       case IdentifiedRef(key, value) =>
-        val origin = OperationOrigin.SyntheticBinding(Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown))
-        UseInstance(key, Instance(key.tpe, value), origin)
+        val binding = Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown)
+        val origin = OperationOrigin.SyntheticBinding(binding)
+        (UseInstance(key, Instance(key.tpe, value), origin), binding)
     }.toVector
 
-    OrderedPlan(ops, ops.iterator.map(_.target).toSet, topology)
+    val s = IncidenceMatrix(ops.map(op => (op._1.target, Set.empty[DIKey])).toMap)
+    val nodes = ops.map(op => (op._1.target, op._1))
+    Plan(DG(s, s.transposed, GraphMeta(nodes.toMap)), PlannerInput(Module.make(ops.map(_._2).toSet), Activation.empty, Roots.Everything))
   }
 
   override def parent: Option[Locator] = None
@@ -69,7 +69,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
       case SetElementBinding(key, InstanceImpl(_, instance), _, _) =>
         val setKey = key.set
         map += (setKey -> (map.getOrElse(setKey, Set.empty[Any]).asInstanceOf[Set[Any]] + instance))
-      case e: EmptySetBinding[_] =>
+      case e: EmptySetBinding[?] =>
         map.getOrElseUpdate(e.key, Set.empty[Any])
       case b =>
         throw new LocatorDefUninstantiatedBindingException(
@@ -79,7 +79,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
         )
     }
 
-    map.toMap -> map.iterator.map(IdentifiedRef.tupled).toList
+    map.toMap -> map.iterator.map { case (k, v) => IdentifiedRef(k, v) }.toList
   }
 }
 
@@ -87,41 +87,36 @@ object LocatorDef {
 
   // DSL state machine
 
-  final class BindDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.TypeKey)
-    extends BindDSLBase[T, BindDSLUnnamedAfterFrom[T]]
-    with BindDSLMutBase[T] {
+  final class BindDSL[T](protected val mutableState: SingletonRef) extends BindDSLBase[T, BindDSLUnnamedAfterFrom[T]] with BindDSLMutBase[T] {
     def named(name: Identifier): BindNamedDSL[T] =
-      addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
+      addOp(SetId(name))(new BindNamedDSL[T](_))
 
     override protected def bind(impl: ImplDef): BindDSLUnnamedAfterFrom[T] =
-      addOp(SetImpl(impl))(new BindDSLUnnamedAfterFrom[T](_, key))
+      addOp(SetImpl(impl))(new BindDSLUnnamedAfterFrom[T](_))
   }
 
-  final class BindNamedDSL[T](protected val mutableState: SingletonRef, protected val key: DIKey.IdKey[?])
-    extends BindDSLBase[T, BindDSLNamedAfterFrom[T]]
-    with BindDSLMutBase[T] {
+  final class BindNamedDSL[T](protected val mutableState: SingletonRef) extends BindDSLBase[T, BindDSLNamedAfterFrom[T]] with BindDSLMutBase[T] {
     override protected def bind(impl: ImplDef): BindDSLNamedAfterFrom[T] =
-      addOp(SetImpl(impl))(new BindDSLNamedAfterFrom[T](_, key))
+      addOp(SetImpl(impl))(new BindDSLNamedAfterFrom[T](_))
   }
 
-  final class BindDSLUnnamedAfterFrom[T](override protected val mutableState: SingletonRef, override protected val key: DIKey.TypeKey) extends BindDSLMutBase[T] {
+  final class BindDSLUnnamedAfterFrom[T](override protected val mutableState: SingletonRef) extends BindDSLMutBase[T] {
     def named(name: Identifier): BindNamedDSL[T] =
-      addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
+      addOp(SetId(name))(new BindNamedDSL[T](_))
   }
 
-  final class BindDSLNamedAfterFrom[T](override protected val mutableState: SingletonRef, override protected val key: DIKey.IdKey[?]) extends BindDSLMutBase[T]
-  final class BindDSLAfterAlias[T](override protected val mutableState: SingletonRef, override protected val key: DIKey) extends BindDSLMutBase[T]
+  final class BindDSLNamedAfterFrom[T](override protected val mutableState: SingletonRef) extends BindDSLMutBase[T]
+  final class BindDSLAfterAlias[T](override protected val mutableState: SingletonRef) extends BindDSLMutBase[T]
 
   sealed trait BindDSLMutBase[T] {
     protected[this] def mutableState: SingletonRef
-    protected[this] def key: DIKey
 
     def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): BindDSLAfterAlias[T] = {
-      addOp(AliasTo(DIKey.get[T1], pos.get.position))(new BindDSLAfterAlias[T](_, key))
+      addOp(AliasTo(DIKey.get[T1], pos.get.position))(new BindDSLAfterAlias[T](_))
     }
 
     def aliased[T1 >: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): BindDSLAfterAlias[T] = {
-      addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new BindDSLAfterAlias[T](_, key))
+      addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new BindDSLAfterAlias[T](_))
     }
 
     protected[this] final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {

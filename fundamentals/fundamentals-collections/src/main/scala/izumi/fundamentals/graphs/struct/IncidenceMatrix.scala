@@ -16,7 +16,7 @@ final case class IncidenceMatrix[N] private (links: Map[N, Set[N]]) extends AnyV
             output.getOrElseUpdate(l, mutable.LinkedHashSet.empty[N]) += n
         }
     }
-    new IncidenceMatrix(output.view.mapValues(_.to(Set)).toMap)
+    new IncidenceMatrix(output.view.mapValues(_.toSet).toMap)
   }
 
   def map[N1](f: N => N1): IncidenceMatrix[N1] = {
@@ -46,6 +46,7 @@ final case class IncidenceMatrix[N] private (links: Map[N, Set[N]]) extends AnyV
 }
 
 object IncidenceMatrix {
+  def empty[N]: IncidenceMatrix[N] = apply(Map.empty[N, Set[N]])
   def apply[N](links: (N, IterableOnce[N])*): IncidenceMatrix[N] = {
     apply(links.toMap.view.mapValues(_.iterator.toSet).toMap)
   }

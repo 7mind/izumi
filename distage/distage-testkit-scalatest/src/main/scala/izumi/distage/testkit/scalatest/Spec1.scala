@@ -11,7 +11,7 @@ import scala.language.implicitConversions
 abstract class Spec1[F[_]: TagK: DefaultModule] extends DistageScalatestTestSuiteRunner[F] with DistageAbstractScalatestSpec[F] {
 
   protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
-    new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, s, this, testEnv)
+    new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, Seq(s), this, testEnv)
   }
 
 }
