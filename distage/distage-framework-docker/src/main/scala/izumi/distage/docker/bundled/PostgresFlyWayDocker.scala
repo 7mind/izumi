@@ -10,6 +10,7 @@ import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
   * You're encouraged to use this definition as a template and modify it to your needs.
   */
 object PostgresFlyWayDocker extends ContainerDef {
+
   /** @param flyWaySqlPath path to the migrations directory, by default `/sql` in current resource directory if exists */
   final case class Cfg(
     flyWaySqlPath: String = Cfg.defaultMigrationsResource,
@@ -86,43 +87,45 @@ object PostgresFlyWayDocker extends ContainerDef {
 class PostgresFlyWayDockerModule[F[_]: TagK](
   cfg: => PostgresFlyWayDocker.Cfg = PostgresFlyWayDocker.Cfg()
 ) extends ModuleDef {
+
   make[PostgresFlyWayDocker.Cfg].from(cfg)
+
   // Network binding, to be able to access Postgres container from the FlyWay container
   make[PostgresFlyWayDocker.FlyWayNetwork.Network].fromResource {
     PostgresFlyWayDocker.FlyWayNetwork.make[F]
   }
+
   // Binding of the Postgres container.
   // Here we are going to bind the proxy instance so that we setup postgres DB before flyway,
   // later we'll just return the running container here as the real instance, after FlyWay container has run.
-
-//  implicit val t: Tag[izumi.distage.docker.bundled.PostgresFlyWayDocker.Config => izumi.distage.docker.bundled.PostgresFlyWayDocker.Config] = Tag[izumi.distage.docker.bundled.PostgresFlyWayDocker.Config => izumi.distage.docker.bundled.PostgresFlyWayDocker.Config]
   make[PostgresFlyWayDocker.Container].named("postgres-flyway-proxy").fromResource {
     PostgresFlyWayDocker
       .make[F]
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
-      .modifyConfig(
-        PostgresFlyWayDocker.applyCfg(cfg): PostgresFlyWayDocker.Config => PostgresFlyWayDocker.Config
-      ) // TODO: https://github.com/lampepfl/dotty/issues/16107 / 16108
+      .modifyConfig {
+        (cfg: PostgresFlyWayDocker.Cfg) =>
+          PostgresFlyWayDocker.applyCfg(cfg)
+      }
   }
+
   // FlyWay container binding with modification of container parameters (to pass Postgres container address into config).
   make[PostgresFlyWayDocker.FlyWay.Container].fromResource {
     PostgresFlyWayDocker.FlyWay
       .make[F]
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
       .modifyConfig {
-        Functoid.apply { // TODO: https://github.com/lampepfl/dotty/issues/16108
+        Functoid { // FIXME: explicit `Functoid` application required on Scala 3 due to https://github.com/lampepfl/dotty/issues/16108
           (postgresContainer: PostgresFlyWayDocker.Container @Id("postgres-flyway-proxy"), cfg: PostgresFlyWayDocker.Cfg) =>
-            (config: PostgresFlyWayDocker.FlyWay.Config) =>
-              PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg)(
-                config
-              ): PostgresFlyWayDocker.FlyWay.Config // TODO: https://github.com/lampepfl/dotty/issues/16107 / 16108
+            PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg)
         }
       }
   }
+
   // Binding of the actual Postgres container with the FlyWay container dependency.
   make[PostgresFlyWayDocker.Container]
     .using[PostgresFlyWayDocker.Container]("postgres-flyway-proxy")
     .addDependency[PostgresFlyWayDocker.FlyWay.Container]
+
 }
 
 object PostgresFlyWayDockerModule {
