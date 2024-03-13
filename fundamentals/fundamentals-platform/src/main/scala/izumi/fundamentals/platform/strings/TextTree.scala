@@ -167,7 +167,14 @@ object TextTree extends TextTreeImpl.LowPrio_TextTree {
 object TextTreeImpl {
   sealed trait LowPrio_TextTree {}
 
-  trait X {
+  @scala.annotation.implicitNotFound("${A} must not be a subtype of ${B}")
+  trait <:!<[A, B] extends Serializable
+
+  implicit def nsub[A, B]: A <:!< B = new <:!<[A, B] {}
+  implicit def nsubAmbig1[A, B >: A]: A <:!< B = ???
+  implicit def nsubAmbig2[A, B >: A]: A <:!< B = ???
+  trait Y {}
+  trait X extends Y {
     implicit def arg_from_value[T](t: T): InterpolationArg[T] = new InterpolationArg[T] {
       override def asNode: TextTree[T] = ValueNode(t)
     }
@@ -175,6 +182,7 @@ object TextTreeImpl {
     implicit def arg_from_subtree[T](node: TextTree[T]): InterpolationArg[T] = new InterpolationArg[T] {
       override def asNode: TextTree[T] = node
     }
+
   }
 
   trait LowPrioInterpolationArg_1 extends X {
@@ -186,6 +194,12 @@ object TextTreeImpl {
       node: TextTree[Nothing]
     ): InterpolationArg[T] = new InterpolationArg[T] {
       override def asNode: TextTree[T] = node.asInstanceOf[TextTree[T]]
+    }
+    implicit def arg_from_sub[T, U](sub: T)(implicit conv: InterpolationArg[T] => InterpolationArg[U], ev: T <:!< U): InterpolationArg[U] = new InterpolationArg[U] {
+      override def asNode: TextTree[U] = {
+        println((sub, conv, ev))
+        ???
+      }
     }
   }
 }
