@@ -21,10 +21,15 @@ object PostgresFlyWayDocker extends ContainerDef {
 
   val primaryPort: DockerPort = DockerPort.TCP(5432)
 
-  def applyCfg(cfg: Cfg): Config => Config = _.copy(
-    env = Map("POSTGRES_PASSWORD" -> cfg.password),
-    healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck(primaryPort, cfg.user, cfg.password),
-  )
+  def applyCfg(cfg: Cfg): Config => Config = c =>
+    c.copy(
+      env = c.env ++ Map(
+        "POSTGRES_USER" -> cfg.user,
+        "POSTGRES_PASSWORD" -> cfg.password,
+        "POSTGRES_DB" -> cfg.database,
+      ),
+      healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck(primaryPort, cfg.user, cfg.password),
+    )
 
   override def config: Config = PostgresFlyWayDocker.applyCfg(Cfg.default)(
     Config(
