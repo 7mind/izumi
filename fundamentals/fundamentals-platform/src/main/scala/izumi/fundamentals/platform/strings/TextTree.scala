@@ -162,7 +162,7 @@ object TextTree {
 
   object InterpolationArg extends LowPrioInterpolationArg_1 {}
 
-  trait LowPrioInterpolationArg_1 extends LowPrioInterpolationArg_2 {
+  protected trait LowPrioInterpolationArg_1 extends LowPrioInterpolationArg_2 {
     implicit def arg_from_String[T](t: String): InterpolationArg[T] = new InterpolationArg[T] {
       override def asNode: TextTree[T] = StringNode(t)
     }
@@ -174,7 +174,7 @@ object TextTree {
     }
   }
 
-  trait LowPrioInterpolationArg_2 {
+  protected trait LowPrioInterpolationArg_2 {
     implicit def value[T](t: T): InterpolationArg[T] = new InterpolationArg[T] {
       override def asNode: TextTree[T] = ValueNode(t)
     }

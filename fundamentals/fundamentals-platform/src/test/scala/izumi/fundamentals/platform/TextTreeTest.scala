@@ -73,16 +73,31 @@ class TextTreeTest extends AnyWordSpec {
     }
 
     "support upcasts" in {
+      def accept(t: TextTree[Wrap]) = assert(t.dump.nonEmpty)
+
       val v = Sub1()
 
       val t1 = q"$v".as[Wrap]
-      assert(t1.dump.nonEmpty)
+      accept(t1)
 
-      val t2: TextTree[Wrap] = q"$v"
-      assert(t2.dump.nonEmpty)
+      val t3 = q"${v: Wrap}"
+      accept(t3)
 
-      val vv1 = v: InterpolationArg[Wrap]
-      assert(vv1.asNode.dump.nonEmpty)
+      {
+        import Wrap.conversion.*
+
+        val t2: TextTree[Wrap] = q"$v"
+        accept(t2)
+
+        val vv1 = v: InterpolationArg[Wrap]
+        assert(vv1.asNode.dump.nonEmpty)
+
+        val t4: TextTree[Wrap] = q"$v ${WSub(v)}"
+        accept(t4)
+
+        val t5 = q"$v ${WSub(v)}"
+        accept(t5)
+      }
     }
   }
 }
@@ -99,8 +114,11 @@ object TextTreeTest {
 
   object Wrap {
     implicit def upcast_sub(sub: Sub): Wrap = WSub(sub)
-    implicit def arg_from_sub[T](sub: T)(implicit conv: T => Wrap): InterpolationArg[Wrap] = new InterpolationArg[Wrap] {
-      override def asNode: TextTree[Wrap] = ValueNode[Wrap](conv(sub))
+
+    object conversion {
+      implicit def arg_from_sub[T](sub: T)(implicit conv: T => Wrap): InterpolationArg[Wrap] = new InterpolationArg[Wrap] {
+        override def asNode: TextTree[Wrap] = ValueNode[Wrap](conv(sub))
+      }
     }
   }
 
