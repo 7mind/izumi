@@ -6,6 +6,10 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
 
+/**
+  * Example Elastic MQ docker.
+  * You're encouraged to use this definition as a template and modify it to your needs.
+  */
 object ElasticMQDocker extends ContainerDef {
   val primaryPort: DockerPort = DockerPort.TCP(9324)
 

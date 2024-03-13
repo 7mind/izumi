@@ -5,6 +5,10 @@ import izumi.distage.docker.model.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
 
+/**
+  * Example postgres docker with flyway. It's sufficient to apply simple migrations on start.
+  * You're encouraged to use this definition as a template and modify it to your needs.
+  */
 object PostgresFlyWayDocker extends ContainerDef {
   /** @param flyWaySqlPath path to the migrations directory, by default `/sql` in current resource directory if exists */
   final case class Cfg(

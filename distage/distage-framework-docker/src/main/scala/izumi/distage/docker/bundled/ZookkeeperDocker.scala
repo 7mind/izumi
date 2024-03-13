@@ -4,6 +4,11 @@ import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.DockerPort
 
+/**
+  * Example zookeeper docker.
+  *  In addition to Zookeeper docker, sets up on [[KafkaZookeeperNetwork.Network]] for [[KafkaDocker]]
+  * You're encouraged to use this definition as a template and modify it to your needs.
+  */
 object ZookeeperDocker extends ContainerDef {
   override def config: Config = {
     Config(

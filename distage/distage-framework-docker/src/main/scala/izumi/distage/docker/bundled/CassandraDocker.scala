@@ -5,6 +5,10 @@ import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
 
+/**
+  * Example Cassandra docker.
+  * You're encouraged to use this definition as a template and modify it to your needs.
+  */
 object CassandraDocker extends ContainerDef {
   val primaryPort: DockerPort = DockerPort.TCP(9042)
 

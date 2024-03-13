@@ -6,6 +6,10 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.model.definition.ModuleDef
 import izumi.reflect.TagK
 
+/**
+  * Example postgres docker. It's sufficient for most usages.
+  * You're encouraged to use this definition as a template and modify it to your needs.
+  */
 object PostgresDocker extends ContainerDef {
   val primaryPort: DockerPort = DockerPort.TCP(5432)
 

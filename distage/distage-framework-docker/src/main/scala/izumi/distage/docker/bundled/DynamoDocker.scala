@@ -4,6 +4,10 @@ import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.DockerPort
 
+/**
+  * Example AWS DynamoDB Local docker.
+  * You're encouraged to use this definition as a template and modify it to your needs.
+  */
 object DynamoDocker extends ContainerDef {
   val primaryPort: DockerPort = DockerPort.TCP(8000)
 
