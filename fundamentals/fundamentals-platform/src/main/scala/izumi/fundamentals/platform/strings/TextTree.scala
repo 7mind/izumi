@@ -67,6 +67,19 @@ object TextTree {
       }
     }
 
+    def isEmpty: Boolean = {
+      target match {
+        case _: ValueNode[T] => false
+        case s: StringNode => s.value.isEmpty
+        case s: Shift[T] => s.nested.isEmpty
+        case t: Trim[T] => t.nested.isEmpty
+        case n: Node[T] =>
+          n.chunks.forall(_.isEmpty)
+      }
+    }
+
+    def nonEmpty: Boolean = !isEmpty
+
     def flatten: TextTree[T] = {
       target match {
         case v: ValueNode[T] => Node(NEList(v))

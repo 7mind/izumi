@@ -99,6 +99,17 @@ class TextTreeTest extends AnyWordSpec {
         accept(t5)
       }
     }
+
+    "support emptiness check" in {
+      val q1 = q""
+      val q2 = q"$q1"
+      val q3 = q"x$q1"
+
+      assert(q1.isEmpty)
+      assert(q2.isEmpty)
+      assert(q3.nonEmpty)
+
+    }
   }
 }
 
