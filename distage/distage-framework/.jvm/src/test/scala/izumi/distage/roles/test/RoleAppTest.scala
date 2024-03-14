@@ -388,6 +388,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role5CfgMinParsed.hasPath("activation"))
       assert(!role5CfgMinParsed.hasPath("activation.axiscomponentaxis"))
       assert(role5CfgMinParsed.hasPath("activation.role05localaxis"))
+
+      assert(role5CfgMinParsed.hasPath("rolelocal2"))
+      assert(role5CfgMinParsed.hasPath("rolelocal2.bool"))
     }
 
     "roles do not have access to components from MainAppModule" in {
