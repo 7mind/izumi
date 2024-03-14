@@ -1,23 +1,24 @@
 package izumi.distage.roles.bundled
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
+import distage.TagK
 import distage.config.AppConfig
-import distage.{BootstrapModuleDef, Plan}
 import izumi.distage.config.codec.ConfigMeta
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.services.{ConfigMerger, RoleAppPlanner}
-import izumi.distage.model.definition.Id
-import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.definition.{Binding, Id}
+import izumi.distage.model.plan.Roots
+import izumi.distage.model.planning.AxisPoint
+import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
-import izumi.logstage.api.logger.LogRouter
-import izumi.logstage.distage.LogstageModule
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
@@ -25,7 +26,7 @@ import scala.annotation.{nowarn, unused}
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.Try
 
-final class ConfigWriter[F[_]](
+final class ConfigWriter[F[_]: TagK](
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
@@ -56,12 +57,14 @@ final class ConfigWriter[F[_]](
       configPath.mkdir()
     }
 
-    logger.info(s"Going to process ${roleInfo.availableRoleBindings.size -> "roles"}")
+    val allRoles = roleInfo.availableRoleBindings
+
+    logger.info(s"Going to process ${allRoles.size -> "roles"}")
 
     val index = appConfig.roles.map(c => (c.roleConfig.role, c)).toMap
     assert(roleInfo.availableRoleNames == index.keySet)
 
-    roleInfo.availableRoleBindings.foreach {
+    allRoles.foreach {
       role =>
         try {
           val roleId = role.descriptor.id
@@ -103,33 +106,19 @@ final class ConfigWriter[F[_]](
   }
 
   private[this] def minimizedConfig(roleConfig: Config, role: RoleBinding): Option[Config] = {
-    val roleDIKey = role.binding.key
+    val excludedActivations = Set.empty[NESet[AxisPoint]] // TODO: val chosenActivations = parseActivations(cfg.excludeActivations)
+    val bindings = roleAppPlanner.bootloader.input.bindings
+    val verifier = PlanVerifier()
+    val v = verifier.traceReachables[F](bindings, Roots(NESet(role.binding.key)), _ => true, excludedActivations)
+    val reachable = v.visitedKeys
 
-    val roleConfigs = appConfig.roles.map(lrc => lrc.copy(roleConfig = lrc.roleConfig.copy(active = lrc.roleConfig.role == role.descriptor.id)))
-
-    // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
-    // TODO: here we accept all the role configs regardless of them being active or not, that might resolve cross-role conflicts in unpredictable manner
-    val fullConfig = configMerger.mergeFilter(appConfig.shared, roleConfigs, _ => true, "configwriter")
-    val correctedAppConfig = appConfig.copy(config = fullConfig, roles = roleConfigs)
-
-    val bootstrapOverride = new BootstrapModuleDef {
-      include(new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false))
-    }
-
-    val plans = roleAppPlanner
-      .reboot(bootstrapOverride, Some(correctedAppConfig))
-      .makePlan(Set(roleDIKey))
+    val filteredModule = bindings.filter(reachable.contains)
 
     val resolvedConfig = {
-      getConfig(plans.app).toSet + _HackyMandatorySection
+      getConfig(filteredModule.bindings).toSet + _HackyMandatorySection
     }
-
-    if (plans.app.stepsUnordered.exists(_.target == roleDIKey)) {
-      Some(ConfigWriter.minimized(resolvedConfig, roleConfig))
-    } else {
-      logger.warn(s"$roleDIKey is not in the refined plan")
-      None
-    }
+    val out = ConfigWriter.minimized(resolvedConfig, roleConfig)
+    Some(out)
   }
 
   private[this] def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, subLogger: IzLogger): Try[Unit] = {
@@ -147,20 +136,11 @@ final class ConfigWriter[F[_]](
     }
   }
 
-  private def getConfig(plan: Plan): Seq[ConfigPath] = {
-    val configTags = plan.stepsUnordered.toSeq.flatMap {
-      op =>
-        op.origin.value match {
-          case defined: OperationOrigin.Defined =>
-            defined.binding.tags.collect {
-              case t: ConfTag =>
-                t
-            }
-          case _ =>
-            Seq.empty
-        }
+  private def getConfig(bindings: Set[Binding]): Seq[ConfigPath] = {
+    val configTags = bindings.toSeq.flatMap(_.tags).collect {
+      case t: ConfTag =>
+        t
     }
-
     configTags.flatMap(t => unpack(Seq(t.confPath), t.fieldsMeta))
   }
 

@@ -39,6 +39,25 @@ class PlanVerifier(
     providedKeys: DIKey => Boolean,
     excludedActivations: Set[NESet[AxisPoint]],
   ): PlanVerifierResult = {
+    traverse[F](bindings, roots, providedKeys, excludedActivations, ignoreIssues = false)
+  }
+
+  def traceReachables[F[_]: TagK](
+    bindings: ModuleBase,
+    roots: Roots,
+    providedKeys: DIKey => Boolean,
+    excludedActivations: Set[NESet[AxisPoint]],
+  ): PlanVerifierResult = {
+    traverse[F](bindings, roots, providedKeys, excludedActivations, ignoreIssues = true)
+  }
+
+  private def traverse[F[_]: TagK](
+    bindings: ModuleBase,
+    roots: Roots,
+    providedKeys: DIKey => Boolean,
+    excludedActivations: Set[NESet[AxisPoint]],
+    ignoreIssues: Boolean,
+  ): PlanVerifierResult = {
     val before = System.currentTimeMillis()
     var after = before
 
@@ -82,7 +101,7 @@ class PlanVerifier(
 
       val issues =
         try {
-          trace(allAxis, mutVisited, matrixToTrace, execOpIndex, justMutators, providedKeys, excludedActivations, rootKeys, effectType, bindings)
+          trace(allAxis, mutVisited, matrixToTrace, execOpIndex, justMutators, providedKeys, excludedActivations, rootKeys, effectType, bindings, ignoreIssues)
         } finally {
           after = System.currentTimeMillis()
         }
@@ -116,6 +135,7 @@ class PlanVerifier(
     rootKeys: Set[DIKey],
     effectType: SafeType,
     bindings: ModuleBase,
+    ignoreIssues: Boolean,
   ): Set[PlanIssue] = {
 
     @inline def go(visited: Set[DIKey], current: Set[(DIKey, DIKey)], currentActivation: Set[AxisPoint]): RecursionResult = RecursionResult(current.iterator.map {
@@ -180,7 +200,7 @@ class PlanVerifier(
                   } yield otherOps ++ mergedSets
                 }
                 _ <-
-                  if (opsWithMergedSets.isEmpty && !providedKeys(key)) { // provided key cannot have unsaturated axis
+                  if (!ignoreIssues && opsWithMergedSets.isEmpty && !providedKeys(key)) { // provided key cannot have unsaturated axis
                     val allDefinedPoints = ops.flatMap(_._2).groupBy(_.axis)
                     val probablyUnsaturatedAxis = allDefinedPoints.iterator.flatMap {
                       case (axis, definedPoints) =>
@@ -197,7 +217,7 @@ class PlanVerifier(
                   } else {
                     Right(())
                   }
-                next <- checkConflicts(allAxis, opsWithMergedSets, execOpIndex, excludedActivations, effectType)
+                next <- checkConflicts(allAxis, opsWithMergedSets, execOpIndex, excludedActivations, effectType, ignoreIssues)
               } yield {
                 allVisited.add((key, currentActivation))
 
@@ -270,14 +290,18 @@ class PlanVerifier(
     execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
     excludedActivations: Set[NESet[AxisPoint]],
     effectType: SafeType,
+    ignoreIssues: Boolean,
   ): Either[NEList[PlanIssue], Seq[(Set[AxisPoint], Set[DIKey])]] = {
-    val issues =
+    val issues = if (ignoreIssues) {
+      List.empty
+    } else {
       checkForUnsaturatedAxis(allAxis, withoutCurrentActivations, excludedActivations) ++
       checkForShadowedActivations(allAxis, withoutCurrentActivations) ++
       checkForConflictingAxisChoices(withoutCurrentActivations) ++
       checkForDuplicateActivations(withoutCurrentActivations) ++
       checkForUnsolvableConflicts(withoutCurrentActivations) ++
       checkForIncompatibleEffectType(effectType, withoutCurrentActivations)
+    }
 
     if (issues.nonEmpty) {
       Left(NEList.unsafeFrom(issues))

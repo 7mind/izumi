@@ -26,7 +26,7 @@ object TestRole05 extends RoleDescriptor {
 
   trait TestRole05Dependency
 
-  class TestRole05DependencyImpl1 extends TestRole05Dependency
+  class TestRole05DependencyImpl1(val roleSpecificConfig: Rolelocal1SpecificConfig) extends TestRole05Dependency
 
   class TestRole05DependencyImpl2(val roleSpecificConfig: Rolelocal2SpecificConfig) extends TestRole05Dependency
 
@@ -36,11 +36,13 @@ object TestRole05 extends RoleDescriptor {
   }
 
   final case class Rolelocal2SpecificConfig(bool: Boolean)
+  final case class Rolelocal1SpecificConfig(str: String)
 
   class Role05Module[F[_]: TagK] extends ModuleDef with ConfigModuleDef with RoleModuleDef {
     makeRole[TestRole05[F]]
     make[TestRole05Dependency].from[TestRole05DependencyImpl1].tagged(Role05LocalAxis.Rolelocal1)
     make[TestRole05Dependency].from[TestRole05DependencyImpl2].tagged(Role05LocalAxis.Rolelocal2)
+    makeConfig[Rolelocal1SpecificConfig]("rolelocal1")
     makeConfig[Rolelocal2SpecificConfig]("rolelocal2")
   }
 
