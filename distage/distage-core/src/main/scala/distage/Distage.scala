@@ -22,6 +22,8 @@ trait Distage {
 
   type LocatorRef = model.recursive.LocatorRef
 
+  type Subcontext[A] = izumi.distage.Subcontext[A]
+
   type PlanVerifier = solver.PlanVerifier
   val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
@@ -39,6 +41,9 @@ trait Distage {
   type Id = model.definition.Id
   type With[T] = model.definition.With[T]
   type impl = model.definition.impl
+
+  type Identity[+A] = izumi.fundamentals.platform.functional.Identity[A]
+  val Identity: izumi.fundamentals.platform.functional.Identity.type = izumi.fundamentals.platform.functional.Identity
 
   type Tag[T] = izumi.reflect.Tag[T]
   val Tag: izumi.reflect.Tag.type = izumi.reflect.Tag
@@ -68,7 +73,9 @@ trait Distage {
   type Functoid[+A] = model.providers.Functoid[A]
   val Functoid: model.providers.Functoid.type = model.providers.Functoid
 
+  @deprecated("Removed since 1.2.0. Use ClassConstructor instead.")
   type AnyConstructor[T] = constructors.AnyConstructor[T]
+  @deprecated("Removed since 1.2.0. Use ClassConstructor instead.")
   val AnyConstructor: constructors.AnyConstructor.type = constructors.AnyConstructor
 
   type ClassConstructor[T] = constructors.ClassConstructor[T]
@@ -80,8 +87,8 @@ trait Distage {
   type FactoryConstructor[T] = constructors.FactoryConstructor[T]
   val FactoryConstructor: constructors.FactoryConstructor.type = constructors.FactoryConstructor
 
-  type HasConstructor[T] = constructors.HasConstructor[T]
-  val HasConstructor: constructors.HasConstructor.type = constructors.HasConstructor
+  type ZEnvConstructor[T] = constructors.ZEnvConstructor[T]
+  val ZEnvConstructor: constructors.ZEnvConstructor.type = constructors.ZEnvConstructor
 
   type BindingTag = model.definition.BindingTag
   val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag
@@ -95,8 +102,8 @@ trait Distage {
   type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
   val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
 
-  type DIPlan = model.plan.DIPlan
-  val DIPlan: model.plan.DIPlan.type = model.plan.DIPlan
+  type Plan = model.plan.Plan
+  val Plan: model.plan.Plan.type = model.plan.Plan
 
   type SafeType = model.reflection.SafeType
   val SafeType: model.reflection.SafeType.type = model.reflection.SafeType
@@ -132,23 +139,4 @@ trait Distage {
 
   type TagTK3[T[_[_], _, _, _]] = izumi.reflect.TagTK3[T]
   val TagTK3: izumi.reflect.TagTK3.type = izumi.reflect.TagTK3
-
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "1.0")
-  type ProviderMagnet[+A] = Functoid[A]
-  @deprecated("Use `distage.Functoid` instead of `distage.ProviderMagnet`", "1.0")
-  val ProviderMagnet: model.providers.Functoid.type = model.providers.Functoid
-
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 1.1.1")
-  type GCMode = model.plan.Roots
-  @deprecated("GCMode has been renamed to `Roots`", "old name will be deleted in 1.1.1")
-  val GCMode: model.plan.Roots.type = model.plan.Roots
-
-  @deprecated("Use distage.Lifecycle.Basic", "1.0")
-  type DIResource[+F[_], Resource] = model.definition.Lifecycle.Basic[F, Resource]
-  @deprecated("Use distage.Lifecycle", "1.0")
-  val DIResource: model.definition.Lifecycle.type = model.definition.Lifecycle
-
-  @deprecated("Use distage.Lifecycle", "1.0")
-  type DIResourceBase[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
-
 }

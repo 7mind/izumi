@@ -3,7 +3,11 @@ package izumi.distage.roles
 import izumi.fundamentals.platform.properties
 
 object DebugProperties extends properties.DebugProperties {
-  /** Do not print warnings if user passes an unknown activation axis or choice on the command-line. Default: `false` */
+  /**
+    * Do not print warnings if user passes an unknown activation axis or choice on the command-line.
+    *
+    * Default: `false`
+    */
   final val `izumi.distage.roles.activation.ignore-unknown` = BoolProperty("izumi.distage.roles.activation.ignore-unknown")
 
   /**
@@ -14,7 +18,11 @@ object DebugProperties extends properties.DebugProperties {
     */
   final val `izumi.distage.roles.activation.warn-unset` = BoolProperty("izumi.distage.roles.activation.warn-unset")
 
-  /** Do not print warnings when roles with an incompatible effect type are discovered and discarded. Default: `false` */
+  /**
+    * Do not print warnings when roles with an incompatible effect type are discovered and discarded.
+    *
+    * Default: `false`
+    */
   final val `izumi.distage.roles.ignore-mismatched-effect` = BoolProperty("izumi.distage.roles.ignore-mismatched-effect")
 
   /**
@@ -26,7 +34,7 @@ object DebugProperties extends properties.DebugProperties {
     *          however, reflective instantiation of role companions is deprecated and will be removed in the future,
     *          you are advised to use `RoleModuleDef` instead.
     *
-    * @note Flipping this or corresponding `Boolean @Id("distage.roles.reflection")` component to `false` will speed up launch times
+    * @note Flipping this or the corresponding `Boolean @Id("distage.roles.reflection")` component to `false` will speed up launch times
     *
     * @deprecated since 1.0.1
     */

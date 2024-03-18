@@ -1,27 +1,15 @@
--Xmx6G
--XX:ReservedCodeCacheSize=256m
--XX:MaxMetaspaceSize=3G
+# this is for local development only, see .build.sh for CI settings
+-Xmx16G
+-XX:ReservedCodeCacheSize=256M
+-XX:MaxMetaspaceSize=4G
 
 -XX:+OmitStackTraceInFastThrow
 -XX:SoftRefLRUPolicyMSPerMB=50
 -Dsun.io.useCanonCaches=false
 -server
 
-#-Xshare:on
-
-#-Xshare:dump
-#-Xlog:class+load=info
-
 -XX:+UseG1GC
-
-# Enable ZGC
-#-XX:+UnlockExperimentalVMOptions
 #-XX:+UseZGC
-
-# Enable Graal JIT
-#-XX:+UnlockExperimentalVMOptions
-#-XX:+EnableJVMCI
-#-XX:+UseJVMCICompiler
 
 # Bumping JIT inline-level increases performance of Scala code
 #   https://www.reddit.com/r/scala/comments/cigh0t/these_go_to_eighteen_c_jon_pretty/

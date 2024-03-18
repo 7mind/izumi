@@ -1,7 +1,7 @@
 package izumi.distage
 
 import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule}
-import izumi.distage.model.effect.QuasiIO
+import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, PlannerInput}
@@ -54,7 +54,7 @@ trait InjectorFactory {
     */
   // Note: this method exists only because of Scala 2.12's sub-par implicit handling,
   // 2.12 fails to default to `QuasiIO.quasiIOIdentity` when writing `Injector()` if cats-effect
-  // is on the classpath because of recursive (on 2.12: diverging) instances in `cats.effect.Sync` object
+  // is on the classpath because of recursive (on 2.12: diverging) instances in `cats.effect.kernel.Sync` object
   def apply(): Injector[Identity]
 
   /**

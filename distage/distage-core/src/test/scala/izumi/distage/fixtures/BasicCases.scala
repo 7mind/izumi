@@ -2,10 +2,8 @@ package izumi.distage.fixtures
 
 import distage.{LocatorRef, ModuleDef}
 import izumi.distage.model.definition.Id
-import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks
 
-@ExposedTestScope
 object BasicCases {
 
   object BasicCase1 {
@@ -15,6 +13,7 @@ object BasicCases {
     }
 
     class TestImpl0 extends TestDependency0
+    class TestImpl00 extends TestDependency0
 
     trait NotInContext
 
@@ -119,7 +118,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     object ConfigModule extends ModuleDef {
       make[scala.Predef.String].named("a").from("applicationId")
       make[Predef.String].named("b").from {
-        a: String @Id("a") => a
+        (a: String @Id("a")) => a
       }
     }
   }
@@ -182,6 +181,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     type Address = String @Id(address)
 
     final case class ServerConfig(port: Port, address: Address)
+    object ServerConfig extends ((Port, Address) => ServerConfig)
 
     type ComponentSpecial[F[_]] = Component[F] @Id("special")
     final case class Component[F[_]](s: F[String])
@@ -243,6 +243,15 @@ Forest fire, climbin' higher, real life, it can wait""")
     class NoArgClass
     trait NoArgTrait
     abstract class NoArgAbstractClass
+  }
+
+  object BasicCase9 {
+    trait T1
+    class Dep1() extends T1
+    trait T2
+    class Dep2() extends T2
+
+    class Out(val dep1: T1, val dep2: T2)
   }
 
 }

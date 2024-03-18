@@ -3,7 +3,7 @@ package izumi.distage.model
 import izumi.distage.model.definition.{Activation, ModuleBase}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.reflect.Tag
 
 /**
@@ -33,7 +33,7 @@ object PlannerInput {
     *
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph that can be described by `bindings`
     */
-  def apply(bindings: ModuleBase, activation: Activation, roots: NonEmptySet[? <: DIKey]): PlannerInput = PlannerInput(bindings, activation, Roots(roots))
+  def apply(bindings: ModuleBase, activation: Activation, roots: NESet[? <: DIKey]): PlannerInput = PlannerInput(bindings, activation, Roots(roots))
 
   /**
     * Instantiate `roots` and the dependencies of `roots`, discarding bindings that are unrelated.
@@ -47,7 +47,7 @@ object PlannerInput {
     *
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph that can be described by `bindings`
     */
-  def apply(bindings: ModuleBase, activation: Activation, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, activation, Roots(root, roots: _*))
+  def apply(bindings: ModuleBase, activation: Activation, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, activation, Roots(root, roots*))
 
   /** Instantiate `T` and the dependencies of `T`, discarding bindings that are unrelated.
     *
@@ -65,12 +65,4 @@ object PlannerInput {
 
   /** Disable all dependency pruning. Every binding in `bindings` will be instantiated, without selection of the root components. There's almost always a better way to model things though. */
   def everything(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
-
-  /** Disable all dependency pruning. Every binding in `bindings` will be instantiated, without selection of the root components. There's almost always a better way to model things though. */
-  @deprecated("renamed to .everything", "old name will be removed in 0.11.1")
-  def noGC(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
-
-  /** Disable all dependency pruning. Every binding in `bindings` will be instantiated, without selection of the root components. There's almost always a better way to model things though. */
-  @deprecated("renamed to .everything", "old name  will be removed in 0.11.1")
-  def noGc(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
 }

@@ -5,14 +5,13 @@ import com.github.pshirshov.test2.plugins.Fixture2
 import com.github.pshirshov.test2.plugins.Fixture2.{Dep, MissingDep}
 import com.github.pshirshov.test3.bootstrap.BootstrapFixture3.{BasicConfig, BootstrapComponent, UnsatisfiedDep}
 import com.github.pshirshov.test3.plugins.Fixture3
+import com.github.pshirshov.test4.Fixture4
 import izumi.distage.framework.model.exceptions.PlanCheckException
 import izumi.distage.framework.{PlanCheck, PlanCheckConfig}
-import izumi.distage.model.planning.AxisPoint
+import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue
-import izumi.distage.planning.solver.PlanVerifier.PlanIssue.UnsaturatedAxis
 import izumi.distage.roles.test.{TestEntrypoint, TestEntrypointPatchedLeak}
-import izumi.fundamentals.collections.nonempty.NonEmptySet
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.language.literals.{LiteralBoolean, LiteralString}
 import logstage.LogIO2
 import org.scalatest.GivenWhenThen
@@ -68,7 +67,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
   "Check with invalid role produces error" in {
     val result = PlanCheck.runtime.checkApp(StaticTestMain, PlanCheckConfig("unknownrole"))
     assert(result.maybeErrorMessage.exists(_.contains("Unknown roles:")))
-    assert(result.issues.fromNonEmptySet.isEmpty)
+    assert(result.issues.fromNESet.isEmpty)
 
     val err = intercept[TestFailedException](assertCompiles("""
       PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("unknownrole"))
@@ -87,8 +86,9 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
           PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", config = "check-test-bad.conf", onlyWarn = false))
           """
         )
-      ).getMessage contains "UnparseableConfigBinding"
+      ).getMessage contains "cannot parse configuration"
     )
+    // FIXME this causes error output during build, would be great to find a way to silence this
     assertCompiles(
       """
       PlanCheck.assertAppCompileTime(StaticTestMain, PlanCheckConfig("statictestrole", config = "check-test-bad.conf", onlyWarn = true))
@@ -114,9 +114,9 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
       PlanCheck.runtime.assertApp(Fixture2.TestRoleAppMain)
     }
     assert(err.cause.isRight)
-    assert(err.issues.fromNonEmptySet.forall(_.isInstanceOf[PlanIssue.MissingImport]))
-    assert(err.issues.fromNonEmptySet.head.asInstanceOf[PlanIssue.MissingImport].key == DIKey[MissingDep])
-    assert(err.issues.fromNonEmptySet.head.asInstanceOf[PlanIssue.MissingImport].dependee == DIKey[Dep])
+    assert(err.issues.fromNESet.forall(_.isInstanceOf[PlanIssue.MissingImport]))
+    assert(err.issues.fromNESet.head.asInstanceOf[PlanIssue.MissingImport].key == DIKey[MissingDep])
+    assert(err.issues.fromNESet.head.asInstanceOf[PlanIssue.MissingImport].dependee == DIKey[Dep])
   }
 
   "Check config parsing in bootstrap plugins" in {
@@ -131,7 +131,7 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
           PlanCheck.assertAppCompileTime(Fixture3.TestRoleAppMain, PlanCheckConfig(config = "common-reference.conf"))
           """
         )
-      ).getMessage contains "UnparseableConfigBinding"
+      ).getMessage contains "cannot parse configuration"
     )
     val err = intercept[PlanCheckException] {
       PlanCheck.runtime.assertApp(Fixture3.TestRoleAppMain, PlanCheckConfig(config = "common-reference.conf"))
@@ -154,10 +154,10 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     assert(err.getMessage contains "BootstrapComponent")
 
     val res = PlanCheck.runtime.checkApp(Fixture3.TestRoleAppMainFailing)
-    assert(res.issues.fromNonEmptySet.size == 1)
-    assert(res.issues.fromNonEmptySet.head.asInstanceOf[PlanIssue.MissingImport].key == DIKey[UnsatisfiedDep])
+    assert(res.issues.fromNESet.size == 1)
+    assert(res.issues.fromNESet.head.asInstanceOf[PlanIssue.MissingImport].key == DIKey[UnsatisfiedDep])
     // BootstrapComponent is a root, despite not being reachable from role roots because it's defined in a Bootstrap Plugin
-    assert(res.issues.fromNonEmptySet.head.asInstanceOf[PlanIssue.MissingImport].dependee == DIKey[BootstrapComponent])
+    assert(res.issues.fromNESet.head.asInstanceOf[PlanIssue.MissingImport].dependee == DIKey[BootstrapComponent])
   }
 
   "role app configwriter role passes check" in {
@@ -278,17 +278,34 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
 
   "report error on invalid effect type" in {
     val result = PlanCheck.runtime.checkApp(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false))
-    assert(result.issues.fromNonEmptySet.map(_.getClass) == Set(classOf[PlanIssue.IncompatibleEffectType]))
+    assert(result.issues.fromNESet.map(_.getClass) == Set(classOf[PlanIssue.IncompatibleEffectType]))
 
     val err = intercept[TestFailedException](assertCompiles("""
-      PlanCheck.assertAppCompileTime(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false)).assertAtRuntime()
+      PlanCheck.assertAppCompileTime(StaticTestMainBadEffect, PlanCheckConfig("statictestrole", checkConfig = false)).assertAgainAtRuntime()
       """))
-    assert(err.getMessage.contains("IncompatibleEffectType"))
+
+    assert(err.getMessage.contains("injector uses effect λ %0 → 0 but binding uses incompatible effect λ %0 → cats.effect.IO[+0]"))
   }
 
   "StaticTestMainLogIO2 check passes with a LogIO2 dependency" in {
     val res = PlanCheck.runtime.checkApp(new StaticTestMainLogIO2[zio.IO], PlanCheckConfig(config = "check-test-good.conf"))
     assert(res.visitedKeys contains DIKey[LogIO2[zio.IO]])
+  }
+
+  "check subcontext submodule fails for missing bindings" in {
+    val Some(issues) = PlanCheck.runtime.checkApp(Fixture4.TestMainBad).issues: @unchecked
+    assert(issues.size == 1)
+    assert(issues.forall(_.isInstanceOf[PlanIssue.MissingImport]))
+    assert(issues.forall(_.asInstanceOf[PlanIssue.MissingImport].key == DIKey[Fixture4.MissingDep]))
+  }
+
+  "check passes for subcontext submodule if missing binding is marked as a local dependency" in {
+    new PlanCheck.Main(Fixture4.TestMainGood)
+      .assertAgainAtRuntime()
+    val (loc, close) = Fixture4.TestMainGood.replLocatorWithClose(":target")
+    val dep = loc.get[Fixture4.TargetRole].mkDep()
+    close()
+    assert(dep != null)
   }
 
   "progression test: role app fails check for excluded compound activations that are equivalent to just excluding `mode:test`" in {
@@ -301,8 +318,8 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     )
     assert(res.verificationFailed)
     assert(res.maybeError.get.isRight)
-    assert(res.issues.fromNonEmptySet.forall {
-      case UnsaturatedAxis(_, _, missingAxisValues) => missingAxisValues == NonEmptySet(AxisPoint("mode" -> "test"))
+    assert(res.issues.fromNESet.forall {
+      case PlanIssue.UnsaturatedAxis(_, _, missingAxisValues) => missingAxisValues == NESet(AxisPoint("mode" -> "test"))
       case _ => false
     })
   }

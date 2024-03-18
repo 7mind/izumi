@@ -42,10 +42,15 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
       case Some(m) =>
         import scala.jdk.CollectionConverters._
         val markers = m.iterator().asScala.toSeq.map(_.getName)
-        CustomContext(Seq(LogArg(Seq("markers"), markers, hiddenName = false, None)))
+        CustomContext(
+          Seq(
+            LogArg(Seq("markers"), markers, hiddenName = false, None),
+            LogArg(Seq("bridge"), "slf4j", hiddenName = false, None),
+          )
+        )
 
       case None =>
-        CustomContext(Seq.empty)
+        CustomContext(("bridge", "slf4j"))
     }
 
     val messageArgs = args.zipWithIndex.map {
@@ -56,7 +61,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
     val template = message.split("\\{\\}", -1).map(_.replace("\\", "\\\\"))
 
     Entry(
-      Message(StringContext(ArraySeq.unsafeWrapArray(template): _*), messageArgs),
+      Message(StringContext(ArraySeq.unsafeWrapArray(template)*), messageArgs),
       Context(
         ctx,
         DynamicContext(level, threadData, System.currentTimeMillis()),

@@ -1,19 +1,21 @@
 package izumi.distage.testkit.distagesuite.parallel
 
-import java.util.concurrent.atomic.AtomicInteger
-
-import cats.effect.{IO => CIO}
+import cats.effect.IO as CIO
 import distage.{DIKey, TagK}
-import izumi.distage.model.effect.QuasiIO
 import izumi.distage.modules.DefaultModule
-import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.TestConfig.ParallelLevel
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstance
+import izumi.distage.testkit.model.TestConfig
+import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.scalatest.Spec1
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.Log
-import org.scalatest.Assertion
 import zio.Task
+
+import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.duration.DurationInt
 
 object DistageParallelLevelTest {
   val idCounter = new AtomicInteger(0)
@@ -22,30 +24,49 @@ object DistageParallelLevelTest {
   val monixCounter = new AtomicInteger(0)
 }
 
-abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](suitesCounter: AtomicInteger)(implicit F: QuasiIO[F]) extends Spec1[F] {
-  private[this] val maxSuites = 3
-  private[this] val maxTests = 2
-  private[this] val maxTestsOverSuites = maxTests * maxSuites
-  private[this] val testsCounter = new AtomicInteger(0)
+sealed abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](
+  suitesCounter: AtomicInteger
+)(implicit F: QuasiIO[F]
+) extends Spec1[F] {
+  private[this] final val maxSuites = 3
+  private[this] final val maxTests = 2
+  private[this] final val testsCounter = new AtomicInteger(0)
 
   override protected def config: TestConfig = {
     super.config.copy(
       memoizationRoots = Set(DIKey.get[MemoizedInstance]),
-      pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite"),
-      parallelTests = ParallelLevel.Fixed(maxTests),
-      parallelSuites = ParallelLevel.Fixed(maxSuites),
-      parallelEnvs = ParallelLevel.Sequential,
+      pluginConfig = PluginConfig.empty,
+      parallelTests = Parallelism.Fixed(maxTests),
+      parallelSuites = Parallelism.Fixed(maxSuites),
+      parallelEnvs = Parallelism.Sequential,
       logLevel = Log.Level.Error,
     )
   }
 
-  private[this] def checkCounters: F[Assertion] = F.maybeSuspend {
-    val suitesCounterVal = suitesCounter.addAndGet(1)
-    val testsCounterVal = testsCounter.addAndGet(1)
-    Thread.sleep(500)
-    suitesCounter.decrementAndGet()
-    testsCounter.decrementAndGet()
-    assert(suitesCounterVal <= maxTestsOverSuites && testsCounterVal <= maxTests)
+  private[this] def checkCounters: QuasiTemporal[F] => F[Unit] = {
+    FT =>
+      F.suspendF {
+        val testsCounterVal = testsCounter.addAndGet(1)
+        val suitesCounterVal =
+          if (testsCounterVal == 1) {
+            suitesCounter.addAndGet(1)
+          } else {
+            suitesCounter.get()
+          }
+
+        assert(suitesCounterVal <= maxSuites && testsCounterVal <= maxTests)
+
+        FT.sleep(500.millis).flatMap {
+          _ =>
+            F.maybeSuspend {
+              val newTestsCounter = testsCounter.decrementAndGet()
+              if (newTestsCounter == 0) {
+                suitesCounter.decrementAndGet()
+              }
+              ()
+            }
+        }
+      }
   }
 
   "parallel test level should be bounded by config 1" in checkCounters
@@ -77,13 +98,15 @@ final class DistageParallelLevelTestZIO2 extends DistageParallelLevelTest[Task](
 final class DistageParallelLevelTestZIO3 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
 final class DistageParallelLevelTestZIO4 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
 final class DistageParallelLevelTestZIO5 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
-final class DistageParallelLevelTestZIO6 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
-
-final class DistageParallelLevelTestMonixBIO1 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestMonixBIO2 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestMonixBIO3 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestMonixBIO4 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestMonixBIO5 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-final class DistageParallelLevelTestMonixBIO6 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter) {
+final class DistageParallelLevelTestZIO6 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter) {
   override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
 }
+
+//final class DistageParallelLevelTestMonixBIO1 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+//final class DistageParallelLevelTestMonixBIO2 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+//final class DistageParallelLevelTestMonixBIO3 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+//final class DistageParallelLevelTestMonixBIO4 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+//final class DistageParallelLevelTestMonixBIO5 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
+//final class DistageParallelLevelTestMonixBIO6 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter) {
+//  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
+//}

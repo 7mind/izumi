@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.language.unused
+import scala.annotation.unused
 import org.scalatest.wordspec.AnyWordSpec
 
 class QuirksTest extends AnyWordSpec {

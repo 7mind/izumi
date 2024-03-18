@@ -35,7 +35,7 @@ class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
         Injector()
       }
 
-      val plan = injector.plan(definition)
+      val plan = injector.planUnsafe(definition)
 
       if (debug) {
         println()

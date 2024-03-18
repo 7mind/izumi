@@ -20,6 +20,8 @@ package object distage extends Distage {
 
   override type LocatorRef = model.recursive.LocatorRef
 
+  override type Subcontext[A] = izumi.distage.Subcontext[A]
+
   override type PlanVerifier = solver.PlanVerifier
   override val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
@@ -37,6 +39,9 @@ package object distage extends Distage {
   override type Id = model.definition.Id
   override type With[T] = model.definition.With[T]
   override type impl = model.definition.impl
+
+  override type Identity[+A] = izumi.fundamentals.platform.functional.Identity[A]
+  override val Identity: izumi.fundamentals.platform.functional.Identity.type = izumi.fundamentals.platform.functional.Identity
 
   override type Tag[T] = izumi.reflect.Tag[T]
   override val Tag: izumi.reflect.Tag.type = izumi.reflect.Tag
@@ -66,7 +71,9 @@ package object distage extends Distage {
   override type Functoid[+A] = model.providers.Functoid[A]
   override val Functoid: model.providers.Functoid.type = model.providers.Functoid
 
+  @deprecated("Removed since 1.2.0. Use ClassConstructor instead.")
   override type AnyConstructor[T] = constructors.AnyConstructor[T]
+  @deprecated("Removed since 1.2.0. Use ClassConstructor instead.")
   override val AnyConstructor: constructors.AnyConstructor.type = constructors.AnyConstructor
 
   override type ClassConstructor[T] = constructors.ClassConstructor[T]
@@ -78,8 +85,8 @@ package object distage extends Distage {
   override type FactoryConstructor[T] = constructors.FactoryConstructor[T]
   override val FactoryConstructor: constructors.FactoryConstructor.type = constructors.FactoryConstructor
 
-  override type HasConstructor[T] = constructors.HasConstructor[T]
-  override val HasConstructor: constructors.HasConstructor.type = constructors.HasConstructor
+  override type ZEnvConstructor[T] = constructors.ZEnvConstructor[T]
+  override val ZEnvConstructor: constructors.ZEnvConstructor.type = constructors.ZEnvConstructor
 
   override type BindingTag = model.definition.BindingTag
   override val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag
@@ -93,8 +100,8 @@ package object distage extends Distage {
   override type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
   override val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
 
-  override type DIPlan = model.plan.DIPlan
-  override val DIPlan: model.plan.DIPlan.type = model.plan.DIPlan
+  override type Plan = model.plan.Plan
+  override val Plan: model.plan.Plan.type = model.plan.Plan
 
   override type SafeType = model.reflection.SafeType
   override val SafeType: model.reflection.SafeType.type = model.reflection.SafeType

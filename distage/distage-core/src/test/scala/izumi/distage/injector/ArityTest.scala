@@ -25,7 +25,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
-      make[BopTrait[Int]]
+      makeTrait[BopTrait[Int]]
     })
 
     val context = Injector.Standard().produce(definition).unsafeGet()
@@ -39,7 +39,7 @@ class ArityTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
-      make[BopAbstractClass[Int]]
+      makeTrait[BopAbstractClass[Int]]
     })
 
     val context = Injector.Standard().produce(definition).unsafeGet()
@@ -54,15 +54,17 @@ class ArityTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
-      make[BopFactory[Int]]
+      makeFactory[BopFactory[Int]]
     })
 
     val context = Injector.Standard().produce(definition).unsafeGet()
 
     assert(context.get[BopFactory[Int]].x(5) == BeepDependency1(5)(context.get[Beep[Int]]))
     assert(context.get[BopFactory[Int]].x() == BeepDependency()(context.get[Beep[Int]]))
-    assert(context.get[BopFactory[Int]].beep0 == context.get[Beep[Int]])
-    assert(context.get[BopFactory[Int]].beep29 == context.get[Beep[Int]])
+
+    // makeFactory - change of semantics!
+    assert(context.get[BopFactory[Int]].beep0 != context.get[Beep[Int]])
+    assert(context.get[BopFactory[Int]].beep29 != context.get[Beep[Int]])
   }
 
   "Support types with no parameters" in {
@@ -70,8 +72,8 @@ class ArityTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[NoArgClass]
-      make[NoArgTrait]
-      make[NoArgAbstractClass]
+      makeTrait[NoArgTrait]
+      makeTrait[NoArgAbstractClass]
     })
 
     val context = Injector.Standard().produce(definition).unsafeGet()

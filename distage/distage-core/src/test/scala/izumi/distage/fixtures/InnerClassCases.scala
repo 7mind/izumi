@@ -1,18 +1,16 @@
 package izumi.distage.fixtures
 
-import izumi.fundamentals.platform.build.ExposedTestScope
 
-@ExposedTestScope
 object InnerClassCases {
 
   object InnerClassUnstablePathsCase {
     class TestModule {
       case class TestDependency()
 
-      case class TestClass(a: TestDependency)
+      open case class TestClass[T <: TestModule](a: TestDependency, t: T)
 
       trait TestFactory {
-        def mk(testDependency: TestDependency): TestClass
+        def mk(testDependency: TestDependency): TestClass[TestModule.this.type]
       }
 
       case class Circular1(circular2: Circular2)
@@ -24,7 +22,7 @@ object InnerClassCases {
     class TestModule {
       class TestDependency
 
-      class TestClass(a: => TestDependency) {
+      class TestClass[T <: TestModule](a: => TestDependency, val t: T) {
         def aValue: TestDependency = a
       }
     }

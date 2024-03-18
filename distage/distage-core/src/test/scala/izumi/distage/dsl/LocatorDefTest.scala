@@ -2,7 +2,7 @@ package izumi.distage.dsl
 
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.model.definition.{Id, LocatorDef}
-import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
+import izumi.distage.model.exceptions.dsl.LocatorDefUninstantiatedBindingException
 import org.scalatest.wordspec.AnyWordSpec
 
 class LocatorDefTest extends AnyWordSpec {
@@ -102,13 +102,13 @@ class LocatorDefTest extends AnyWordSpec {
       }
 
       assert(ctx.run {
-        i: Int => i + 5
+        (i: Int) => i + 5
       } == 10)
       assert(ctx.runOption {
-        i: Int => i + 5
+        (i: Int) => i + 5
       } == Some(10))
       assert(ctx.runOption {
-        i: Int @Id("special") => i
+        (i: Int @Id("special")) => i
       }.isEmpty)
     }
 

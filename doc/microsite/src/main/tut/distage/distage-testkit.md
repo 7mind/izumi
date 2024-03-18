@@ -6,7 +6,7 @@
 
 `distage-testkit` simplifies pragmatic purely-functional program testing providing `Spec*`
 [ScalaTest](https://www.scalatest.org/) base classes for any existing Scala effect type with kind `F[_]`,
-`F[+_, +_]`, `F[-_, +_, +_]` or `Identity`. `Spec`s provide an interface similar to ScalaTest's
+`F[+_, +_]`, `ZIO[-R, +E, +A]` or `Identity`. `Spec`s provide an interface similar to ScalaTest's
 [`WordSpec`](http://doc.scalatest.org/3.1.0/org/scalatest/wordspec/AnyWordSpec.html), however
 `distage-testkit` adds additional capabilities such as: first class support for effect types; dependency injection; and
 parallel execution.
@@ -18,7 +18,7 @@ Usage of `distage-testkit` generally follows these steps:
     - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1), for monofunctors (`cats.effect.IO`
       , `monix`)
     - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2), for bifunctors (`ZIO`, `monix-bio`)
-    - `F[-_, +_, +_]` - @scaladoc[`Spec3[F]`](izumi.distage.testkit.scalatest.Spec3) for trifunctors (`ZIO`)
+    - `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO) for `ZIO` with environment support in tests
 2. Override `def config: TestConfig` to customize the @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig)
 3. Establish test case contexts
    using [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html),
@@ -32,7 +32,7 @@ Usage of `distage-testkit` generally follows these steps:
       @scaladoc[`in`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$LowPriorityIdentityOverloads)
     - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper)
     - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper2)
-    - @scaladoc[`in` for `F[-_, +_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
+    - @scaladoc[`in` for `ZIO[-R, +E, +A]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapperZIO)
     - Test cases dependent on injectables: @scaladoc[`Functoid`](izumi.distage.model.providers.Functoid)
 
 ### API Overview
@@ -50,7 +50,8 @@ We'll start with the following model and service interface for the game score sy
 "fakepackage app": Unit
 
 import zio._
-import zio.console.{Console, putStrLn}
+import zio.managed._
+import zio.Console
 
 final case class Score(
   value: Int
@@ -73,14 +74,14 @@ object Score {
   def addStar(config: Config, score: Score) =
     score.copy(value = score.value + config.starValue)
 
-  def echoConfig(config: Config): RIO[Has[Console.Service], Config] =
+  def echoConfig(config: Config): Task[Config] =
     for {
-      _ <- putStrLn(config.toString)
+      _ <- Console.printLine(config.toString)
     } yield config
 
-  def addMango(config: Config, score: Score): RIO[Has[Console.Service] with Has[BonusService], Score] =
+  def addMango(config: Config, score: Score): RIO[BonusService, Score] =
     for {
-      bonusService <- RIO.service[BonusService]
+      bonusService <- ZIO.service[BonusService]
       currentBonus <- bonusService.queryCurrentBonus
     } yield {
       val value = score.value + config.mangoValue + currentBonus
@@ -100,12 +101,12 @@ matches our application's effect type from the following:
 - No effect type, imperative usage - @scaladoc[`SpecIdentity`](izumi.distage.testkit.scalatest.SpecIdentity)
 - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1)
 - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2)
-- `F[-_, +_, +_]` - @scaladoc[`Spec3[F]`](izumi.distage.testkit.scalatest.Spec3)
+- `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO)
 
 The effect monad is expected to support sync and async effects. `distage-testkit` provides this support for `Identity`
 , `monix`, `monix-bio`, `ZIO`, and monads wth instances of `cats-effect` or @ref[BIO](../bio/00_bio.md) typeclasses. For
 our demonstration application, the tests will use the `ZIO[-R, +E, +A]` effect type. This means we'll be
-using `Spec3[ZIO]` for the test suite base class.
+using `SpecZIO` for the test suite base class.
 
 The default config (`super.config`) has `pluginConfig`, which by default will scan the package the test is defined in
 for defined Plugin modules. See the @ref:[`distage-extension-plugins`](./distage-framework.md#plugins) documentation for
@@ -118,11 +119,10 @@ classpath scanning, like so:
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
-import com.typesafe.config.ConfigFactory
 import distage.ModuleDef
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
+import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 
-abstract class Test extends Spec3[ZIO] with AssertZIO {
+abstract class Test extends SpecZIO with AssertZIO {
   val defaultConfig = Config(
     starValue = 10,
     mangoValue = 256,
@@ -163,7 +163,7 @@ object MdocTest {
 }
 
 final case class SuiteCtor(construct: () => org.scalatest.Suite)
-implicit def suiteCtor(s: => org.scalatest.Suite) = SuiteCtor(() => s)
+implicit def suiteCtor(s: => org.scalatest.Suite): SuiteCtor = SuiteCtor(() => s)
 
 def __runTest__(suiteCtors: SuiteCtor*) = {
   // remove all previous tests from registry
@@ -210,6 +210,7 @@ The assertion methods are the same as ScalaTest as the base classes extend
 ```scala mdoc:invisible
 // minimal check for that scalatest reference
 import org.scalatest.Assertions
+new Assertions {}
 ```
 
 Let's now create a simple test for our demonstration application:
@@ -233,7 +234,7 @@ class ScoreSimpleTest extends Test {
 
     // Use `Config` from the module in the `Test` class above
     "increase by config star value from DI" in {
-      config: Config =>
+      (config: Config) =>
         val expected = Score(defaultConfig.starValue)
         val actual = Score.addStar(config, Score.zero)
         assert(actual == expected)
@@ -257,7 +258,7 @@ The different effect types fix the `F[_]` argument for this syntax:
 
 - `Spec1`: `F[_]`
 - `Spec2`: `F[Throwable, _]`
-- `Spec3`: `F[Any, Throwable, _]`
+- `SpecZIO`: `ZIO[R, Any, _]`
 
 With our demonstration application we'll use this to verify the `Score.echoConfig` method. The `Config` required is from
 the `distage` object graph defined in `moduleOverrides`.
@@ -295,7 +296,7 @@ __runTest__(new ScoreEffectsTest with MdocTest { def name = "ScoreEffectsTest" }
 
 #### Assertions with Effects with Environments
 
-@scaladoc[The `in` method for `F[_, _, _]` effect types](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper3)
+@scaladoc[The `in` method for `ZIO`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapperZIO)
 supports injection of environments from the object graph in addition to simple assertions and assertions with effects.
 
 A test that verifies the `BonusService` in our demonstration would be:
@@ -310,14 +311,14 @@ abstract class BonusServiceTest extends Test {
       for {
         bonusService <- ZIO.service[BonusService]
         currentBonus <- bonusService.queryCurrentBonus
-        _            <- putStrLn(s"currentBonus = $currentBonus")
+        _            <- Console.printLine(s"currentBonus = $currentBonus")
         _            <- assertIO(currentBonus == defaultConfig.defaultBonus)
       } yield ()
     }
 
     "increment by delta" in {
       for {
-        delta        <- zio.random.nextInt
+        delta        <- zio.Random.nextInt
         bonusService <- ZIO.service[BonusService]
         initialBonus <- bonusService.queryCurrentBonus
         actualBonus  <- bonusService.increaseCurrentBonus(delta)
@@ -330,7 +331,7 @@ abstract class BonusServiceTest extends Test {
 }
 ```
 
-The @ref[ZIO Has injection](basics.md#zio-has-bindings) support extends to the test cases, here we request two components implicitly using the ZIO environment:
+The @ref[ZIO Environment injection](basics.md#zio-environment-bindings) support extends to the test cases, here we request two components implicitly using the ZIO environment:
 
 - `BonusService` - is requested by `ZIO.service[BonusService]`
 - `zio.Random.Service` - is requested by `zio.random.nextInt`
@@ -364,10 +365,10 @@ object DummyBonusService {
     impl = new Impl(ref)
   } yield impl
 
-  val release: UIO[Unit] = UIO.unit
+  val release: UIO[Unit] = ZIO.unit
 
   val managed: TaskManaged[DummyBonusService.Impl] =
-    acquire.toManaged(_ => release)
+    acquire.toManagedWith(_ => release)
 }
 ```
 
@@ -383,28 +384,28 @@ unimplemented for our demonstration:
 object ProdBonusService {
 
   class Impl(
-    console: Console.Service,
+    console: Console,
     url: String,
   ) extends BonusService {
 
     override def queryCurrentBonus = for {
-      _ <- console.putStrLn(s"querying $url")
+      _ <- console.printLine(s"querying $url")
     } yield ???
 
     override def increaseCurrentBonus(delta: Int) = for {
-      _ <- console.putStrLn(s"post to $url")
+      _ <- console.printLine(s"post to $url")
     } yield ???
   }
 
-  val acquire: RIO[Has[Console.Service], ProdBonusService.Impl] = for {
-    console <- ZIO.service[Console.Service]
+  val acquire: RIO[Console, ProdBonusService.Impl] = for {
+    console <- ZIO.service[Console]
     impl      = new Impl(console, "https://my-bonus-server/current-bonus.json")
   } yield impl
 
-  val release: UIO[Unit] = UIO.unit
+  val release: UIO[Unit] = ZIO.unit
 
-  val managed: RManaged[Has[Console.Service], ProdBonusService.Impl] =
-    acquire.toManaged(_ => release)
+  val managed: RManaged[Console, ProdBonusService.Impl] =
+    acquire.toManagedWith(_ => release)
 }
 ```
 
@@ -415,7 +416,7 @@ The testing of `BonusService` in our demonstration application will follow the D
 post [Unit, Functional, Integration? You are doing it wrong](https://blog.7mind.io/constructive-test-taxonomy.html) for
 a discussion of test taxonomy and the value of this tactic.
 
-A binding for the implementation of `BonusService` must be passed to `distage`, to be able to build a `Has[BonusService]` to inject into the `ZIO` environment of the test.
+A binding for the implementation of `BonusService` must be passed to `distage`, to be able to build a `zio.ZEnvironment[BonusService]` to inject into the `ZIO` environment of the test.
 
 But note that we have two implementations, to use both one option is to define separate modules for the dummy and production implementations.
 One module would be used by tests and the other only by production.
@@ -438,18 +439,17 @@ import distage.StandardAxis.Repo
 
 object BonusServicePlugin extends PluginDef {
   make[BonusService]
-    .fromHas(DummyBonusService.managed)
+    .fromZManagedEnv(DummyBonusService.managed)
     .tagged(Repo.Dummy)
 
   make[BonusService]
-    .fromHas(ProdBonusService.managed)
+    .fromZManagedEnv(ProdBonusService.managed)
     .tagged(Repo.Prod)
 }
 ```
 
-Here we used @ref[ZIO Has injection](basics.md#zio-has-bindings) `.fromHas` to supply the environment dependencies for `ProdBonusService.managed`, namely `Has[Console.Service]`.
-(Implementation for `Console.Service` is provided by default from @scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule))
-`.fromHas` can be used with `ZLayer`, `ZManaged` `ZIO` or any `F[-_, +_, +_]: Local3` (from @ref[BIO](../bio/00_bio.md) typeclasses).
+Here we used @ref[ZIO Environment injection](basics.md#zio-environment-bindings) `.fromZManagedEnv` to supply the environment dependencies for `ProdBonusService.managed`, namely `Console`.
+`.fromZIOEnv`+ methods can be used with `ZLayer`, `ZManaged` `ZIO` or `Lifecycle[ZIO[R, E, _], _]`.
 
 Note that the `BonusServicePlugin` is not explicitly added to the `Test.config`:
 But, this `PluginDef` class is defined in the same package as the test, namely in `app`. By default the `pluginConfig`
@@ -527,15 +527,15 @@ For `F[_]`, including `Identity`:
   and `b` will be injected from the object graph. The test case will fail if the effect fails or produces a failure
   assertion.
 
-For `F[-_, +_, +_]`, it's same with `F[Any, _, _]`:
+For `ZIO[-R, +E, +A]` in `SpecZIO`:
 
-- `in { ???: F[zio.Has[C] with zio.Has[D], _, Unit] }`: The test case is an effect requiring an environment. The test
+- `in { ???: ZIO[C with D, _, Unit] }`: The test case is an effect requiring an environment. The test
   case will fail if the effect fails. The environment will be injected from the object graph.
-- `in { ???: F[zio.Has[C] with zio.Has[D], _, Assertion] }`: The test case is an effect requiring an environment. The
+- `in { ???: ZIO[C with D, _, Assertion] }`: The test case is an effect requiring an environment. The
   test case will fail if the effect fails or produces a failure assertion. The environment will be injected from the
   object graph.
-- `in { (a: A, b: B) => ???: F[zio.Has[C] with zio.Has[D], _, Assertion] }`: The test case is a function producing an
-  effect requiring an environment. All of `a: A`, `b: B`, `Has[C]` and `Has[D]`
+- `in { (a: A, b: B) => ZIO[C with D, _, Assertion] }`: The test case is a function producing an
+  effect requiring an environment. All of `a: A`, `b: B`, and `zio.ZEnvironment[C with D]`
   will be injected from the object graph.
 
 Provided by trait @scaladoc[AssertZIO](izumi.distage.testkit.scalatest.AssertZIO):
@@ -579,9 +579,9 @@ The execution of tests is grouped into:
 The default is to run all of these in parallel.
 
 The @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) has options to change the behavior for each of these groups.
-The default is @scaladoc[`ParallelLevel.Unlimited`](izumi.distage.testkit.TestConfig$$ParallelLevel$$Unlimited$) which does not constrain the number of parallel tests.
-`ParallelLevel.Fixed(n: Int)` limits the execution to at most `n` test cases.
-While `ParallelLevel.Sequential` executes the test cases one at a time.
+The default is @scaladoc[`Parallelism.Unlimited`](izumi.distage.testkit.TestConfig$$Parallelism$$Unlimited$) which does not constrain the number of parallel tests.
+`Parallelism.Fixed(n: Int)` limits the execution to at most `n` test cases.
+While `Parallelism.Sequential` executes the test cases one at a time.
 
 - `parallelEnvs` - Parallelism level for distinct memoization environments.
 - `parallelSuites` - Parallelism level for test suites.
@@ -654,7 +654,7 @@ class MemoizedLevel3
 ```
 
 ```scala mdoc:to-string
-class SameLevel_1_WithActivationsOverride extends Spec3[ZIO] {
+class SameLevel_1_WithActivationsOverride extends SpecZIO {
   override protected def config: TestConfig = {
     super.config.copy(
         memoizationRoots = Map(
@@ -697,16 +697,16 @@ class NotUsingMemoTest extends DummyTest {
   override def config = super
     .config.copy(
       // this demo requires the tests to run sequentially
-      parallelTests = TestConfig.ParallelLevel.Sequential
+      parallelTests = TestConfig.Parallelism.Sequential
     )
 
   "Not memoizing BonusService" should {
     "use a new instance in the first case" in {
-      val delta = util.Random.nextInt()
-
       for {
+        delta        <- zio.Random.nextInt
+
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
 
         // change the bonus service state
         currentBonus <- bonusService.increaseCurrentBonus(delta)
@@ -719,7 +719,7 @@ class NotUsingMemoTest extends DummyTest {
     "use a new instance in the second case" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
 
         currentBonus <- bonusService.queryCurrentBonus
 
@@ -751,7 +751,7 @@ class UsingMemoTest extends DummyTest {
     .config.copy(
       memoizationRoots = super.config.memoizationRoots ++ Set(DIKey[BonusService]),
       // this demo requires the test cases to run sequentially
-      parallelTests = TestConfig.ParallelLevel.Sequential
+      parallelTests = TestConfig.Parallelism.Sequential
     )
 
   val delta = util.Random.nextInt()
@@ -760,7 +760,7 @@ class UsingMemoTest extends DummyTest {
     "use a new instance in the first case" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
 
         // change the bonus service state
         currentBonus <- bonusService.increaseCurrentBonus(delta)
@@ -773,7 +773,7 @@ class UsingMemoTest extends DummyTest {
     "use the same instance in the second case" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
 
         currentBonus <- bonusService.queryCurrentBonus
         expectedBonus = defaultConfig.defaultBonus + delta
@@ -808,16 +808,16 @@ class AnotherUsingMemoTest extends DummyTest {
     .config.copy(
       memoizationRoots = super.config.memoizationRoots ++ Set(DIKey[BonusService]),
       // this demo requires the test cases to run sequentially
-      parallelTests = TestConfig.ParallelLevel.Sequential
+      parallelTests = TestConfig.Parallelism.Sequential
     )
 
   "Another test using BonusService" should {
     "use the same instance" in {
       for {
         bonusService <- ZIO.service[BonusService]
-        _            <- console.putStrLn(s"\n bonusService = ${bonusService} \n")
+        _            <- Console.printLine(s"\n bonusService = ${bonusService} \n")
         currentBonus <- bonusService.queryCurrentBonus
-        _            <- console.putStrLn(s"currentBonus = ${currentBonus}")
+        _            <- Console.printLine(s"currentBonus = ${currentBonus}")
       } yield ()
     }
   }
@@ -873,9 +873,9 @@ Forced roots may be configured per-activation / combination of activations, e.g.
 
 #### Using `IntegrationCheck`
 
-Implementation classes that inherit from @scaladoc[`izumi.distage.framework.model.IntegrationCheck`](izumi.distage.framework.model.IntegrationCheck)
+Implementation classes that inherit from @scaladoc[`izumi.distage.model.provisioning.IntegrationCheck`](izumi.distage.model.provisioning.IntegrationCheck)
 will have their `resourceCheck()` method called before the test instantiation to check if external test dependencies —
-such as Docker containers in @ref[distage-framework-docker](distage-framework-docker.md#docker-test-resources) —
+such as Docker containers in @ref[distage-framework-docker](distage-framework-docker.md) —
 are available for the test (or for the role when in main scope).
 
 If not, the test will be canceled/ignored.
@@ -930,16 +930,16 @@ object leaderboard {
   }
 
   object zioenv {
-    import zio.{IO, ZIO, URIO, Has}
+    import zio.{IO, ZIO, URIO}
     import repo.Ladder
-    type LadderEnv = Has[Ladder[IO]]
-    type RndEnv = Has[Rnd[IO]]
+    type LadderEnv = Ladder[IO]
+    type RndEnv = Rnd[IO]
     object ladder extends Ladder[ZIO[LadderEnv, _, _]] {
-      def submitScore(userId: UserId, score: Score): ZIO[LadderEnv, QueryFailure, Unit] = ZIO.accessM(_.get.submitScore(userId, score))
-      def getScores: ZIO[LadderEnv, QueryFailure, List[(UserId, Score)]]                = ZIO.accessM(_.get.getScores)
+      def submitScore(userId: UserId, score: Score): ZIO[LadderEnv, QueryFailure, Unit] = ZIO.serviceWithZIO(_.submitScore(userId, score))
+      def getScores: ZIO[LadderEnv, QueryFailure, List[(UserId, Score)]]                = ZIO.serviceWithZIO(_.getScores)
     }
     object rnd extends Rnd[ZIO[RndEnv, _, _]] {
-      override def apply[A]: URIO[RndEnv, A] = ZIO.accessM(_.get.apply[A])
+      override def apply[A]: URIO[RndEnv, A] = ZIO.serviceWithZIO(_.apply[A])
     }
   }
 }
@@ -957,13 +957,13 @@ import distage.{Activation, DIKey, ModuleDef}
 import distage.StandardAxis.{Scene, Repo}
 import distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec3}
+import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.model.{Score, UserId}
 import leaderboard.repo.{Ladder, Profiles}
 import leaderboard.zioenv.{ladder, rnd}
 import zio.{ZIO, IO}
 
-abstract class LeaderboardTest extends Spec3[ZIO] with AssertZIO {
+abstract class LeaderboardTest extends SpecZIO with AssertZIO {
   override def config = TestConfig(
     pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = new ModuleDef {
@@ -1032,13 +1032,13 @@ abstract class LadderTest extends LeaderboardTest {
           assertIO(user1Rank < user2Rank)
         } else if (score2 > score1) {
           assertIO(user2Rank < user1Rank)
-        } else IO.unit
+        } else ZIO.unit
       } yield ()
     }
 
     // you can also mix arguments and env at the same time
     "assign a higher position in the list to a higher score 2" in {
-      ladder: Ladder[IO] =>
+      (ladder: Ladder[IO]) =>
           for {
             user1  <- rnd[UserId]
             score1 <- rnd[Score]
@@ -1056,7 +1056,7 @@ abstract class LadderTest extends LeaderboardTest {
               assertIO(user1Rank < user2Rank)
             } else if (score2 > score1) {
               assertIO(user2Rank < user1Rank)
-            } else IO.unit
+            } else ZIO.unit
           } yield ()
     }
   }

@@ -1,8 +1,6 @@
 package izumi.distage.fixtures
 
-import izumi.fundamentals.platform.build.ExposedTestScope
 
-@ExposedTestScope
 object TypesCases {
 
   object TypesCase1 {
@@ -18,6 +16,8 @@ object TypesCases {
     final case class TestClass[D](inner: List[D])
 
     final case class TestClass2[D](inner: D)
+
+    final case class TestClass3[D](a: D, b: D)
 
     trait TestTrait {
       def dep: TypeAliasDepA
@@ -79,7 +79,7 @@ object TypesCases {
       type Repr = Int
       type Base = Any { type WidgetId$newtype }
       trait Tag extends Any
-      type Type <: Base with Tag
+      type Type <: Base & Tag
 
       def apply(x: Int): WidgetId = x.asInstanceOf[WidgetId]
       implicit final class Ops$newtype(val $this$ : Type) extends AnyVal {
@@ -88,6 +88,20 @@ object TypesCases {
     }
 
     class Dep(val widgetId: WidgetId)
+  }
+
+  object TypesCase6 {
+    class Dep
+
+    class Dep2 extends Dep
+
+    trait Trait1 {
+      def dep: Dep
+    }
+
+    trait Trait2 {
+      def dep: Dep2
+    }
   }
 
 }

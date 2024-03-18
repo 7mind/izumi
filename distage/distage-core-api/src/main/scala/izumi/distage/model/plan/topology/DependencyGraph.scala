@@ -44,7 +44,7 @@ final case class DependencyGraph(matrix: IncidenceMatrix[DIKey], kind: Dependenc
 object DependencyGraph {
   sealed trait DependencyKind
   object DependencyKind {
-    final case object Depends extends DependencyKind
-    final case object Required extends DependencyKind
+    case object Depends extends DependencyKind
+    case object Required extends DependencyKind
   }
 }

@@ -2,11 +2,15 @@
 out: index.html
 ---
 
-# distage: Staged Dependency Injection
+# DIStage
+
+```scala mdoc:reset:invisible:to-string
+System.setProperty(izumi.fundamentals.platform.PlatformProperties.`izumi.app.disable-terminal-colors`.name, "true")
+```
 
 `distage` is a pragmatic module system for Scala and Scala.js. It combines the simplicity and expressiveness of pure FP with the flexibility and extreme late-binding, traditionally associated with Java dependency injection frameworks, such as Guice.
 
-`distage` supports any Scala style, whether it's @ref[Tagless Final Style](basics.md#tagless-final-style), @ref[ZIO Layer](basics.md#zio-has-bindings), ordinary FP, actor-based or imperative Scala.
+`distage` supports any Scala style, whether it's @ref[Tagless Final Style](basics.md#tagless-final-style), @ref[ZIO Layer](basics.md#zio-environment-bindings), ordinary FP, actor-based or imperative Scala.
 
 ## Getting started
 
@@ -100,8 +104,9 @@ Example projects:
 Support Chats:
 
 * [Izumi on Gitter](https://gitter.im/7mind/izumi)
-* [Izumi User Group [RU] on Telegram](https://t.me/izumi_ru)
+* [Izumi User Group [RU] on Telegram](https://t.me/scala_any/708)
 * [Izumi User Group [EN] on Telegram](https://t.me/izumi_en)
+* [Discussions on Github](https://github.com/7mind/izumi/discussions)
 
 Videos:
 

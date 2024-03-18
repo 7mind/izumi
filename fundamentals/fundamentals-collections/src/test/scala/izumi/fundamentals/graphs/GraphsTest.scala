@@ -81,10 +81,10 @@ class GraphsTest extends AnyWordSpec {
   "DAG" should {
     "not break on acyclic matrices" in {
       assert(DAG.fromSucc(dag, GraphMeta.empty).map {
-        d: DAG[Int, String] => d.successors
+        (d: DAG[Int, String]) => d.successors
       } == Right(dag))
       assert(DAG.fromSucc(acyclic, GraphMeta.empty).map {
-        d: DAG[Int, Nothing] => d.successors
+        (d: DAG[Int, Nothing]) => d.successors
       } == Right(acyclic))
     }
 
@@ -106,7 +106,7 @@ class GraphsTest extends AnyWordSpec {
         }
       }
       assert(DAG.fromSucc(cyclic, GraphMeta.empty, breaker).map {
-        d: DAG[Int, Nothing] => d.successors
+        (d: DAG[Int, Nothing]) => d.successors
       } == Right(acyclic))
     }
   }

@@ -1,21 +1,21 @@
 package izumi.distage.docker
 
-import java.util.UUID
-
 import izumi.distage.docker.ContainerNetworkDef.{ContainerNetwork, ContainerNetworkConfig}
-import izumi.distage.docker.Docker.DockerReusePolicy
-import izumi.distage.framework.model.exceptions.IntegrationCheckException
+import izumi.distage.docker.impl.{DockerClientWrapper, FileLockMutex}
+import izumi.distage.docker.model.Docker.DockerReusePolicy
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
+import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.providers.Functoid
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.language.Quirks.*
+import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
-import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
+import java.util.UUID
+import scala.concurrent.duration.*
+import scala.jdk.CollectionConverters.*
 
 trait ContainerNetworkDef {
   // `ContainerNetworkDef`s must be top-level objects, otherwise `.Network` and `.Config` won't be referencable in ModuleDef
@@ -39,8 +39,11 @@ trait ContainerNetworkDef {
 object ContainerNetworkDef {
   type Aux[T] = ContainerNetworkDef { type Tag = T }
 
-  def resource[F[_]](conf: ContainerNetworkDef, prefix: String): (DockerClientWrapper[F], IzLogger, QuasiIO[F], QuasiAsync[F]) => Lifecycle[F, conf.Network] = {
-    new NetworkResource(conf.config, _, prefix, _)(_, _)
+  def resource[F[_]](
+    conf: ContainerNetworkDef,
+    prefix: String,
+  ): (DockerClientWrapper[F], IzLogger, QuasiIO[F], QuasiAsync[F], QuasiTemporal[F]) => Lifecycle[F, conf.Network] = {
+    new NetworkResource(conf.config, _, prefix, _)(_, _, _)
   }
 
   final class NetworkResource[F[_], T](
@@ -51,6 +54,7 @@ object ContainerNetworkDef {
   )(implicit
     F: QuasiIO[F],
     P: QuasiAsync[F],
+    T: QuasiTemporal[F],
   ) extends Lifecycle.Basic[F, ContainerNetwork[T]] {
     import client.rawClient
 
@@ -64,9 +68,17 @@ object ContainerNetworkDef {
     override def acquire: F[ContainerNetwork[T]] = {
       integrationCheckHack {
         if (Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse)) {
-          val maxAttempts = 50
+          val retryWait = 200.millis
+          val maxWait = 10.seconds
+          val maxAttempts = (maxWait / retryWait).toInt
+
           logger.info(s"About to start or find ${prefix -> "network"}, ${maxAttempts -> "max lock retries"}...")
-          FileLockMutex.withLocalMutex(logger)(s"distage-container-network-def-$prefix", waitFor = 200.millis, maxAttempts = maxAttempts) {
+
+          FileLockMutex.withLocalMutex(logger)(
+            s"distage-container-network-def-$prefix",
+            retryWait = retryWait,
+            maxAttempts = maxAttempts,
+          ) {
             val labelsSet = networkLabels.toSet
             val existingNetworks = rawClient
               .listNetworksCmd().exec().asScala.toList
@@ -120,8 +132,8 @@ object ContainerNetworkDef {
 
     private[this] def integrationCheckHack[A](f: => F[A]): F[A] = {
       // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
-      F.definitelyRecover(f) {
-        c: Throwable =>
+      F.definitelyRecoverUnsafeIgnoreTrace(f) {
+        (c: Throwable) =>
           F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
       }
     }

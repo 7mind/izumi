@@ -1,9 +1,9 @@
 package izumi.distage.compat
 
-import cats.syntax.all._
-import izumi.distage.fixtures.BasicCases._
-import izumi.distage.model.definition.Bindings.binding
-import izumi.distage.model.definition._
+import cats.syntax.all.*
+import izumi.distage.fixtures.BasicCases.*
+import izumi.distage.model.definition.Bindings.{binding, bindingTrait}
+import izumi.distage.model.definition.*
 import org.scalatest.wordspec.AnyWordSpec
 
 final class ModuleBaseInstancesTest extends AnyWordSpec {
@@ -20,12 +20,12 @@ final class ModuleBaseInstancesTest extends AnyWordSpec {
       }
 
       val mod3_1: Module = new ModuleDef {
-        make[TestDependency1]
+        makeTrait[TestDependency1]
       }
 
       val mod3_2 = Module.empty
 
-      val mod3 = (mod3_1 |+| mod3_2) :+ binding[NotInContext]
+      val mod3 = (mod3_1 |+| mod3_2) :+ bindingTrait[NotInContext]
 
       val mod4 = Module.make(
         Set(

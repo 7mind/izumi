@@ -1,7 +1,7 @@
 package izumi.logstage.distage
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.functional.mono.SyncSafe
+import izumi.functional.bio.SyncSafe1
 import izumi.logstage.api.IzLogger
 import izumi.reflect.{TagK, TagK3, TagKK}
 import logstage.{LogCreateIO, LogIO, LogRouter, UnsafeLogIO}
@@ -10,10 +10,12 @@ import logstage.{LogCreateIO, LogIO, LogRouter, UnsafeLogIO}
   * Add a `LogIO[F]` component and others, depending on an existing `IzLogger`
   *
   * To setup `IzLogger` at the same time, use `apply` with parameters
+  *
+  * Depends on `IzLogger`
   */
 class LogIOModule[F[_]: TagK] extends ModuleDef {
   make[LogIO[F]]
-    .from(LogIO.fromLogger[F](_: IzLogger)(_: SyncSafe[F]))
+    .from(LogIO.fromLogger[F](_: IzLogger)(_: SyncSafe1[F]))
     .aliased[UnsafeLogIO[F]]
     .aliased[LogCreateIO[F]]
 }
@@ -31,7 +33,10 @@ object LogIOModule {
   }
 }
 
-/** [[LogIOModule]] for bifunctors */
+/** [[LogIOModule]] for bifunctors
+  *
+  * Depends on `IzLogger`
+  */
 class LogIO2Module[F[_, _]: TagKK] extends LogIOModule[F[Nothing, _]]
 
 object LogIO2Module {
@@ -41,7 +46,10 @@ object LogIO2Module {
   }
 }
 
-/** [[LogIOModule]] for trifunctors */
+/** [[LogIOModule]] for trifunctors
+  *
+  * Depends on `IzLogger`
+  */
 class LogIO3Module[F[_, _, _]: TagK3] extends LogIOModule[F[Any, Nothing, _]]
 
 object LogIO3Module {

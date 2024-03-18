@@ -28,7 +28,9 @@ object OpFormatter {
     }
   }
 
-  def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter, colors: Boolean): OpFormatter = new OpFormatter.Impl(keyFormatter, typeFormatter, colors)
+  def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter, colors: Boolean): OpFormatter = {
+    new OpFormatter.Impl(keyFormatter, typeFormatter, colors)
+  }
 
   class Impl(
     keyFormatter: KeyFormatter,
@@ -41,10 +43,9 @@ object OpFormatter {
 
     override protected def colorsEnabled(): Boolean = colors
 
-    override def format(op: ExecutableOp): String = {
-      format(op, Set.empty)
-    }
-    def format(op: ExecutableOp, deferred: Set[DIKey]): String = {
+    override def format(op: ExecutableOp): String = format(op, Set.empty)
+
+    protected def format(op: ExecutableOp, deferred: Set[DIKey]): String = {
       op match {
         case i: InstantiationOp =>
           i match {
@@ -63,6 +64,8 @@ object OpFormatter {
 
             case w: WiringOp =>
               w match {
+                case CreateSubcontext(target, wiring, origin) =>
+                  formatProviderOp(target, wiring, origin, deferred)
                 case CallProvider(target, wiring, origin) =>
                   formatProviderOp(target, wiring, origin, deferred)
                 case UseInstance(target, wiring, origin) =>
@@ -88,6 +91,17 @@ object OpFormatter {
 
           val hint = styled(hintBase, c.CYAN)
           formatDefn(target, pos, s"${formatOpName("import")} ${formatKey(target)} $hint")
+
+        case ref: AddRecursiveLocatorRef =>
+          val pos = formatBindingPosition(ref.origin)
+          val hintBase = if (ref.references.nonEmpty) {
+            s"// required for ${ref.references.map(formatKey).mkString(" and ")}"
+          } else { // this should never happen actually
+            " // no dependees"
+          }
+
+          val hint = styled(hintBase, c.CYAN)
+          formatDefn(ref.target, pos, s"${formatOpName("locator")} ${formatKey(ref.target)} $hint")
 
         case p: ProxyOp =>
           p match {
@@ -136,6 +150,9 @@ object OpFormatter {
         case f: Function =>
           doFormat(formatFunction(f.provider), f.associations.map(formatDependency(deferred)), "call", ('(', ')'), ('{', '}'))
 
+        case f: PrepareSubcontext =>
+          doFormat(formatFunction(f.provider), f.associations.map(formatDependency(deferred)), "subcontext", ('(', ')'), ('{', '}'))
+
         case other @ (_: Effect | _: Resource | _: Instance | _: Reference) =>
           s"UNEXPECTED WIREABLE: $other"
       }
@@ -164,7 +181,7 @@ object OpFormatter {
       s"${provider.funString}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
     }
 
-    private def formatOpName(name: String, color: String with Singleton = c.YELLOW) = {
+    private def formatOpName(name: String, color: String & Singleton = c.YELLOW) = {
       styled(name, c.UNDERLINED, color)
     }
 

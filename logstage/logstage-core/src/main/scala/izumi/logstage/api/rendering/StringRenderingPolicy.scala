@@ -1,7 +1,7 @@
 package izumi.logstage.api.rendering
 
-import izumi.fundamentals.platform.basics.IzBoolean._
-import izumi.fundamentals.platform.jvm.IzJvm
+import izumi.fundamentals.platform.IzPlatform
+import izumi.fundamentals.platform.basics.IzBoolean.*
 import izumi.fundamentals.platform.time.IzTimeSafe
 import izumi.logstage.DebugProperties
 import izumi.logstage.api.rendering.logunits.Styler.{PadType, TrimType}
@@ -20,7 +20,7 @@ class StringRenderingPolicy(
       all(
         options.colored,
         DebugProperties.`izumi.logstage.rendering.colored`.boolValue(true),
-        IzJvm.terminalColorsEnabled,
+        IzPlatform.terminalColorsEnabled,
       ),
       DebugProperties.`izumi.logstage.rendering.colored.forced`.boolValue(false),
     )
@@ -52,7 +52,7 @@ object StringRenderingPolicy {
       ),
       Extractor.Space,
       new Styler.Colored(
-        Console.BLACK_B,
+        Console.BLUE,
         Seq(
           new Styler.AdaptivePad(Seq(new Extractor.SourcePosition()), 8, PadType.Left, ' ')
         ),

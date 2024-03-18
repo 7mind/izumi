@@ -3,8 +3,8 @@ package izumi.distage.roles.launcher
 import distage.TagK
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
-import izumi.distage.model.effect.QuasiIO
-import izumi.distage.model.effect.QuasiIO.syntax._
+import izumi.functional.quasi.QuasiIO
+import izumi.functional.quasi.QuasiIO.syntax._
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
@@ -40,8 +40,6 @@ object RoleAppEntrypoint {
               Seq.empty
             case Some(value: RoleService[F]) =>
               Seq(value -> r)
-            case Some(v) =>
-              throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
             case None =>
               throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
           }
@@ -89,8 +87,6 @@ object RoleAppEntrypoint {
               Seq(value -> r)
             case Some(_: RoleService[F]) =>
               Seq.empty
-            case Some(v) =>
-              throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
             case None =>
               throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
           }
@@ -106,10 +102,10 @@ object RoleAppEntrypoint {
             _ <- F.maybeSuspend(lateLogger.info(s"Task finished: $task"))
           } yield ()
 
-          F.definitelyRecover(loggedTask) {
-            error =>
+          F.definitelyRecoverWithTrace(loggedTask) {
+            (error, trace) =>
               for {
-                _ <- F.maybeSuspend(lateLogger.error(s"Task failed: $task, $error"))
+                _ <- F.maybeSuspend(lateLogger.error(s"Task failed: $task, $error, $trace"))
                 _ <- F.fail[Unit](error)
               } yield ()
           }

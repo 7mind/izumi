@@ -14,7 +14,7 @@ class B
 
 def badModule = new ModuleDef {
   make[A]
-  make[B].fromEffect(zio.Task { ??? })
+  make[B].fromEffect(zio.ZIO.attempt { ??? })
 }
 ```
 
@@ -43,6 +43,8 @@ You can print the output of `plan.render()` to get detailed info on what will ha
 and line numbers so your IDE can show you where the binding was defined!
 
 ```scala mdoc:to-string
+val plan = Injector().plan(goodModule, Roots.target[A]).getOrThrow()
+
 println(plan.render())
 ```
 
@@ -77,7 +79,7 @@ To debug macros used by `distage` you may use the following Java Properties:
 
 ### Graphviz rendering
 
-Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable writing GraphViz files with a graphical representation of the `OrderedPlan`. Data will be saved to `./target/plan-last-full.gv` and `./target/plan-last-nogc.gv` in the current working directory.
+Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable writing GraphViz files with a graphical representation of `distage.Plan`. Data will be saved to `./target/plan-last-full.gv` and `./target/plan-last-nogc.gv` in the current working directory.
 
 ```scala mdoc:reset:to-string
 import distage.{GraphDumpBootstrapModule, Injector}
@@ -92,3 +94,46 @@ dot -Tpng target/plan-last-nogc.gv -o out.png
 ```
 
 ![plan-graph](media/plan-graph.png)
+
+#### Command-line activation
+
+You may activate GraphViz dump for a `distage-framework` @ref[Role-based application](distage-framework.md#roles) by passing a `--debug-dump-graph` option:
+
+```
+./launcher --debug-dump-graph :myrole
+```
+
+#### Testkit activation
+
+You may activate GraphViz dump in `distage-testkit` tests by setting `PlanningOptions(addGraphVizDump = true)` in `config`:
+
+```scala mdoc:reset
+import izumi.distage.testkit.scalatest.Spec2
+import izumi.distage.testkit.TestConfig
+import izumi.distage.framework.config.PlanningOptions
+
+final class MyTest extends Spec2[zio.IO] {
+  override def config: TestConfig = super.config.copy(
+    planningOptions = PlanningOptions(
+      addGraphVizDump = true,
+    )
+  )
+}
+```
+
+##### Launcher activation
+
+PlanningOptions are also modifiable in `distage-framework` applications:
+
+```scala mdoc:reset
+import distage.{Module, ModuleDef}
+import izumi.distage.framework.config.PlanningOptions
+import izumi.distage.roles.RoleAppMain
+import zio.IO
+
+abstract class MyRoleLauncher extends RoleAppMain.LauncherBIO[IO] {
+  override protected def roleAppBootOverrides(argv: RoleAppMain.ArgV): Module = new ModuleDef {
+    make[PlanningOptions].from(PlanningOptions(addGraphVizDump = true))
+  }
+}
+```

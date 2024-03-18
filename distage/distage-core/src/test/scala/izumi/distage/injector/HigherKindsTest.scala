@@ -1,7 +1,7 @@
 package izumi.distage.injector
 
-import distage._
-import izumi.distage.fixtures.HigherKindCases._
+import distage.*
+import izumi.distage.fixtures.HigherKindCases.*
 import izumi.distage.model.PlannerInput
 import izumi.reflect.macrortti.LTag
 import org.scalatest.wordspec.AnyWordSpec
@@ -9,17 +9,17 @@ import org.scalatest.wordspec.AnyWordSpec
 class HigherKindsTest extends AnyWordSpec with MkInjector {
 
   "support tagless final style module definitions" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
       addImplicit[Pointed[F]]
 
       make[TestTrait].from[TestServiceClass[F]]
       make[TestServiceClass[F]]
-      make[TestServiceTrait[F]]
+      makeTrait[TestServiceTrait[F]]
       make[Int].named("TestService").from(getResult)
       make[F[String]].from {
-        res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!")
+        (res: Int @Id("TestService")) => Pointed[F].point(s"Hello $res!")
       }
       make[Either[String, Boolean]].from(Right(true))
 
@@ -29,13 +29,13 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
       make[F[Any]].from(Pointed[F].point(1: Any))
 
       make[Either[String, F[Int]]].from {
-        fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]])
+        (fAnyInt: F[Any]) => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]])
       }
       make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
     }
 
     val listInjector = mkInjector()
-    val listPlan = listInjector.plan(PlannerInput.everything(Definition[List](5)))
+    val listPlan = listInjector.planUnsafe(PlannerInput.everything(Definition[List](5)))
     val listContext = listInjector.produce(listPlan).unsafeGet()
 
     assert(listContext.get[TestTrait].get == List(5))
@@ -48,7 +48,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
     val optionTInjector = mkInjector()
-    val optionTPlan = optionTInjector.plan(PlannerInput.everything(Definition[OptionT[List, _]](5)))
+    val optionTPlan = optionTInjector.planUnsafe(PlannerInput.everything(Definition[OptionT[List, _]](5)))
     val optionTContext = optionTInjector.produce(optionTPlan).unsafeGet()
 
     assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
@@ -57,7 +57,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
     val eitherInjector = mkInjector()
-    val eitherPlan = eitherInjector.plan(PlannerInput.everything(Definition[Either[String, _]](5)))
+    val eitherPlan = eitherInjector.planUnsafe(PlannerInput.everything(Definition[Either[String, _]](5)))
 
     val eitherContext = eitherInjector.produce(eitherPlan).unsafeGet()
 
@@ -71,7 +71,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     )
 
     val idInjector = mkInjector()
-    val idPlan = idInjector.plan(PlannerInput.everything(Definition[id](5)))
+    val idPlan = idInjector.planUnsafe(PlannerInput.everything(Definition[id](5)))
     val idContext = idInjector.produce(idPlan).unsafeGet()
 
     assert(idContext.get[TestTrait].get == 5)
@@ -91,7 +91,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "Support [A, F[_]] type shape" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     abstract class Parent[C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
       make[TestProvider[C, R]]
@@ -101,7 +101,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "Support [A, A, F[_]] type shape" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     abstract class Parent[A: Tag, C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
       make[TestProvider0[A, C, R]]
@@ -111,7 +111,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "support [A, F[_], G[_]] type shape" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     abstract class Parent[A: Tag, F[_]: TagK, R[_]: TagK: Pointed] extends ModuleDef {
       make[TestProvider1[A, F, R]]
@@ -121,7 +121,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "support [F[_], G[_], A] type shape" in {
-    import HigherKindsCase1._
+    import HigherKindsCase1.*
 
     abstract class Parent[F[_]: TagK, R[_]: TagK: Pointed, A: Tag] extends ModuleDef {
       make[TestProvider2[F, R, A]]
@@ -131,7 +131,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
   }
 
   "TagKK works" in {
-    import izumi.distage.fixtures.HigherKindCases.HigherKindsCase2._
+    import izumi.distage.fixtures.HigherKindCases.HigherKindsCase2.*
 
     class Definition[F[+_, +_]: TagKK: TestCovariantTC, G[_]: TagK, A: Tag](v: F[String, Int]) extends ModuleDef {
       make[TestCovariantTC[F]]

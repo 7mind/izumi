@@ -12,7 +12,7 @@ class PngWindow(image: BufferedImage, onClose: () => Unit = () => (), title: Opt
   locally {
     title.foreach(this.setTitle)
     this.getContentPane.add(imageView, BorderLayout.CENTER)
-    //this.pack()
+    // this.pack()
     this.setSize(image.getWidth, image.getHeight)
   }
 

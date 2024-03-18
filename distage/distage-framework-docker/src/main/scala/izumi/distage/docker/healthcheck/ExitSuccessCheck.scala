@@ -1,8 +1,9 @@
 package izumi.distage.docker.healthcheck
 
-import izumi.distage.docker.Docker.ContainerState
+import izumi.distage.docker.model.Docker.ContainerState
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
-import izumi.distage.docker.{Docker, DockerContainer}
+import izumi.distage.docker.DockerContainer
+import izumi.distage.docker.model.Docker
 import izumi.logstage.api.IzLogger
 
 final class ExitSuccessCheck(exitCode: Int) extends ContainerHealthCheck {

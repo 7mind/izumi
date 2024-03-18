@@ -2,9 +2,8 @@ package izumi.distage.impl
 
 import distage.{Activation, DIKey}
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
-import izumi.distage.model.exceptions.MissingInstanceException
-import izumi.distage.model.planning.PlanAnalyzer
-import izumi.distage.planning.PlanAnalyzerDefaultImpl
+import izumi.distage.model.exceptions.runtime.MissingInstanceException
+import izumi.distage.planning.solver.PlanSolver
 import org.scalatest.wordspec.AnyWordSpec
 
 class BootstrapTest extends AnyWordSpec {
@@ -13,25 +12,25 @@ class BootstrapTest extends AnyWordSpec {
     "contain expected definitions" in {
       val context = BootstrapLocator.bootstrap(BootstrapLocator.defaultBootstrap, Activation(Cycles -> Cycles.Byname), Nil, None)
 
-      val maybeRef = context.find[PlanAnalyzer]
-      val ref = context.lookupLocal[PlanAnalyzer](DIKey.get[PlanAnalyzer])
-      val refBySuper = context.lookupLocal[Any](DIKey.get[PlanAnalyzer])
+      val maybeRef = context.find[PlanSolver]
+      val ref = context.lookupLocal[PlanSolver](DIKey.get[PlanSolver])
+      val refBySuper = context.lookupLocal[Any](DIKey.get[PlanSolver])
 
-      assert(maybeRef.exists(_.isInstanceOf[PlanAnalyzerDefaultImpl]))
-      assert(ref.exists(_.value.isInstanceOf[PlanAnalyzerDefaultImpl]))
-      assert(refBySuper.exists(_.value.isInstanceOf[PlanAnalyzerDefaultImpl]))
+      assert(maybeRef.exists(_.isInstanceOf[PlanSolver.Impl]))
+      assert(ref.exists(_.value.isInstanceOf[PlanSolver.Impl]))
+      assert(refBySuper.exists(_.value.isInstanceOf[PlanSolver.Impl]))
 
-      assert(context.get[PlanAnalyzer].isInstanceOf[PlanAnalyzerDefaultImpl])
+      assert(context.get[PlanSolver].isInstanceOf[PlanSolver.Impl])
 
       intercept[MissingInstanceException] {
-        context.get[PlanAnalyzer]("another.one")
+        context.get[PlanSolver]("another.one")
       }
 
       intercept[IllegalArgumentException] {
-        context.lookupLocal[Long](DIKey.get[PlanAnalyzer])
+        context.lookupLocal[Long](DIKey.get[PlanSolver])
       }
 
-      val noRef = context.find[PlanAnalyzer]("another.one")
+      val noRef = context.find[PlanSolver]("another.one")
       assert(noRef.isEmpty)
 
     }

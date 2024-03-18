@@ -1,26 +1,28 @@
 package izumi.distage.modules.support
 
-import distage.TagK3
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.Id
 import izumi.distage.modules.platform.ZIOPlatformDependentSupportModule
-import izumi.functional.bio._
-import izumi.reflect.{TagK, TagKK}
-import zio.{Has, IO, Task, ZEnv, ZIO}
+import izumi.functional.bio.*
+import izumi.functional.bio.UnsafeRun2.{FailureHandler, ZIORunner}
+import izumi.functional.bio.retry.{Scheduler2, SchedulerInstances}
+import izumi.reflect.Tag
+import zio.{Executor, IO, Runtime, ZEnvironment, ZIO, ZLayer}
 
-object ZIOSupportModule extends ZIOSupportModule
+import scala.concurrent.ExecutionContext
+
+object ZIOSupportModule {
+  def apply[R: Tag]: ZIOSupportModule[R] = new ZIOSupportModule[R]
+}
 
 /**
   * `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
   *
-  *  - Adds [[izumi.distage.model.effect.QuasiIO]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds [[izumi.functional.bio]] typeclass instances for ZIO
   *
   * Will also add the following components:
-  *   - `ThreadPoolExecutor @Id("zio.cpu")` for CPU-bound tasks (will be used for all tasks by default by [[zio.Runtime]])
-  *   - `ThreadPoolExecutor @Id("zio.io")` and blocking IO tasks (tasks can be scheduled to it via [[izumi.functional.bio.BlockingIO]] or [[zio.blocking.blocking]])
-  *   - `ExecutionContext @Id("zio.cpu")` & `ExecutionContext @Id("zio.io")` respectively
-  *   - [[zio.internal.tracing.TracingConfig]] will be set to [[zio.internal.tracing.TracingConfig.enabled]] by default
-  *   - Standard ZIO services: [[zio.console.Console]], [[zio.clock.Clock]], [[zio.system.System]], [[zio.random.Random]] and corresponding `.Service` types
+  *   - `ExecutionContext @Id("cpu")` for CPU-bound tasks (will be used for all tasks by default by [[zio.Runtime]])
+  *   - `ExecutionContext @Id("io")` for blocking IO tasks (tasks can be scheduled to it via [[izumi.functional.bio.BlockingIO2]] or [[zio.ZIO.blocking]])
   *
   * Added into scope by [[izumi.distage.modules.DefaultModule]].
   * If [[https://github.com/zio/interop-cats/ interop-cats]] library is on the classpath during compilation,
@@ -29,34 +31,66 @@ object ZIOSupportModule extends ZIOSupportModule
   *
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
-trait ZIOSupportModule extends ModuleDef with ZIOPlatformDependentSupportModule {
-  include(AnyBIO3SupportModule[ZIO])
-
+class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
+  include(AnyBIOSupportModule[ZIO[Any, +_, +_]])
+  if (!(Tag[R] =:= Tag[Any])) {
+    include(AnyBIOSupportModule[ZIO[R, +_, +_]])
   addImplicit[TagK[Task]]
   addImplicit[TagKK[IO]]
   addImplicit[TagK3[ZIO]]
   addImplicit[Async3[ZIO]]
-  make[Temporal3[ZIO]].from {
-    implicit r: zio.clock.Clock =>
-      implicitly[Temporal3[ZIO]]
   }
-  addImplicit[Local3[ZIO]]
-  addImplicit[Fork3[ZIO]]
-  addImplicit[Primitives3[ZIO]]
+
+  // assume default environment is `Any`, otherwise let the error message guide the user here.
+  make[ZEnvironment[Any]].named("zio-initial-env").fromValue(ZEnvironment.empty)
+
+  make[UnsafeRun2[ZIO[R, _, _]]].using[ZIORunner[R]]
+
+  make[BlockingIO2[ZIO[R, +_, +_]]].from(BlockingIOInstances.BlockingZIODefaultR[ZIO, R])
+
+  make[ZIORunner[R]].from {
+    (
+      cpuPool: Executor @Id("cpu"),
+      blockingPool: Executor @Id("io"),
+      handler: FailureHandler,
+      runtimeConfiguration: List[ZLayer[Any, Nothing, Any]] @Id("zio-runtime-configuration"),
+      initialEnv: ZEnvironment[R] @Id("zio-initial-env"),
+    ) =>
+      UnsafeRun2.createZIO(
+        customCpuPool = Some(cpuPool),
+        customBlockingPool = Some(blockingPool),
+        handler = handler,
+        otherRuntimeConfiguration = runtimeConfiguration,
+        initialEnv = initialEnv,
+      )
+  }
+  make[FailureHandler].fromValue(FailureHandler.Default)
+  make[List[ZLayer[Any, Nothing, Any]]].named("zio-runtime-configuration").fromValue(Nil)
+
+  make[Executor].named("io").from {
+    // no reason to use custom blocking pool, since this one is hardcoded in zio.internal.ZScheduler.submitBlocking
+    Runtime.defaultBlockingExecutor
+  }
+
+  make[ExecutionContext].named("cpu").from((_: Executor @Id("cpu")).asExecutionContext)
+  make[ExecutionContext].named("io").from((_: Executor @Id("io")).asExecutionContext)
+
+  addImplicit[Async2[zio.IO]]
+  addImplicit[Temporal2[zio.IO]]
+  addImplicit[Fork2[zio.IO]]
+  addImplicit[Primitives2[zio.IO]]
+  addImplicit[PrimitivesM2[zio.IO]]
+  if (!(Tag[R] =:= Tag[Any])) {
+    addImplicit[Async2[ZIO[R, +_, +_]]]
+    addImplicit[Temporal2[ZIO[R, +_, +_]]]
+    addImplicit[Fork2[ZIO[R, +_, +_]]]
+    addImplicit[Primitives2[ZIO[R, +_, +_]]]
+    addImplicit[PrimitivesM2[ZIO[R, +_, +_]]]
+  }
+
+  make[Scheduler2[ZIO[R, +_, +_]]].from {
+    SchedulerInstances.SchedulerFromTemporalAndClock(_: Temporal2[ZIO[R, +_, +_]], _: Clock2[ZIO[R, +_, +_]])
+  }
 
   addImplicit[TransZio[IO]]
-
-  make[zio.Runtime[ZEnv]].from((r: zio.Runtime[Any], zenv: ZEnv) => r.map(_ => zenv))
-
-  make[zio.clock.Clock].from(Has(_: zio.clock.Clock.Service))
-  make[zio.clock.Clock.Service].from(zio.clock.Clock.Service.live)
-
-  make[zio.console.Console].from(Has(_: zio.console.Console.Service))
-  make[zio.console.Console.Service].from(zio.console.Console.Service.live)
-
-  make[zio.system.System].from(Has(_: zio.system.System.Service))
-  make[zio.system.System.Service].from(zio.system.System.Service.live)
-
-  make[zio.random.Random].from(Has(_: zio.random.Random.Service))
-  make[zio.random.Random.Service].from(zio.random.Random.Service.live)
 }

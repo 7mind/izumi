@@ -1,11 +1,9 @@
 package izumi.distage.dsl
 
 import izumi.distage.model.definition.{Axis, BindingTag}
-import izumi.fundamentals.platform.build.ExposedTestScope
 
 import scala.language.implicitConversions
 
-@ExposedTestScope
 object TestTagOps {
 
   implicit def apply(tag: String): BindingTag = TestAxis.TestTag(tag)

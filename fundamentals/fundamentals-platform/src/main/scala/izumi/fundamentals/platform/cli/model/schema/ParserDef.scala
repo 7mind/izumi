@@ -5,6 +5,19 @@ import izumi.fundamentals.platform.cli.model.schema.ParserDef._
 
 import scala.collection.mutable
 
+/**
+  * Example:
+  *
+  * {{{
+  * object Options extends ParserDef {
+  *   final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
+  *   final val logFormatParam = arg("log-format", "lf", "log format", "{text|json}")
+  *   final val configParam = arg("config", "c", "path to config file", "<path>")
+  *   final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
+  *   final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
+  * }
+  * }}}
+  */
 trait ParserDef {
   private[this] val _all: mutable.LinkedHashMap[String, ArgDef] = mutable.LinkedHashMap[String, ArgDef]()
 
@@ -58,7 +71,7 @@ object ParserDef {
   final case class ArgNameDef private[cli] (long: String, short: Option[String]) {
     def all: Set[String] = Set(long) ++ short.toSet
 
-    def matches(name: String): Boolean = all.contains(name)
+    infix def matches(name: String): Boolean = all.contains(name)
 
     def format: String = {
       short match {

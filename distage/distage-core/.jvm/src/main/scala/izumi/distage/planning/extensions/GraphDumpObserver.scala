@@ -32,7 +32,7 @@ final class GraphDumpObserver() extends PlanningObserver {
     }
 
     val main = new Digraph("cluster_main", graphAttr = mutable.Map("label" -> "Context", "shape" -> "box"))
-    //val collected = new Digraph("cluster_collected", graphAttr = mutable.Map("label" -> "Collected", "style" -> "dotted"))
+    // val collected = new Digraph("cluster_collected", graphAttr = mutable.Map("label" -> "Collected", "style" -> "dotted"))
 
     //    val preGcPlan = beforeFinalization.get()
     //    val preTopology = planAnalyzer.topology(preGcPlan.steps)
@@ -105,7 +105,7 @@ final class GraphDumpObserver() extends PlanningObserver {
     val res = g.source()
     val dotfileMin = new RenderedDot(res)
 
-    //save(dotfileFull, "full")
+    // save(dotfileFull, "full")
     save(dotfileMin, "aftergc")
   }
 
@@ -129,6 +129,8 @@ final class GraphDumpObserver() extends PlanningObserver {
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {
+              case _: Wiring.SingletonWiring.PrepareSubcontext =>
+                "subcontext"
               case Wiring.SingletonWiring.Function(_) =>
                 "lambda"
               case Wiring.SingletonWiring.Instance(_, _) =>
@@ -150,6 +152,9 @@ final class GraphDumpObserver() extends PlanningObserver {
 
       case ExecutableOp.ImportDependency(_, _, _) =>
         "import"
+
+      case ExecutableOp.AddRecursiveLocatorRef(_, _) =>
+        "locator"
 
       case op: ExecutableOp.ProxyOp =>
         op match {

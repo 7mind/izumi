@@ -1,9 +1,7 @@
 package izumi.distage.fixtures
 
 import izumi.distage.model.definition.{Id, With}
-import izumi.fundamentals.platform.build.ExposedTestScope
 
-@ExposedTestScope
 object FactoryCases {
 
   object FactoryCase1 {
@@ -123,6 +121,73 @@ object FactoryCases {
     trait InvalidImplicitFactory {
       def x[T: TC: UnrelatedTC](dep1: Dep1): TestClass[T]
     }
+  }
+
+  object FactoryCase4 {
+    case class Dep()
+    trait IFactory {
+      def dep(): Dep
+    }
+
+    trait IFactory1 {
+      def dep1(): Dep
+    }
+
+    trait IFactoryImpl extends IFactory with IFactory1
+  }
+
+  object FactoryCase5 {
+    case class Dep()
+
+    trait IFactory {
+      def dep(): Dep
+    }
+
+    trait IFactory1 extends IFactory {
+      def dep1(): Dep
+    }
+
+    trait IFactoryImpl extends IFactory1 {}
+  }
+
+  object FactoryCase6 {
+    trait IDep
+    case class Dep() extends IDep
+
+    trait IFactory {
+      def dep(): IDep
+    }
+
+    trait IFactoryImpl extends IFactory {
+      def dep(): Dep
+    }
+  }
+
+  object FactoryCase7 {
+    trait IDep
+    case class Dep() extends IDep
+
+    trait IFactory1 {
+      def dep(): IDep
+    }
+
+    trait IFactory2 {
+      def dep(): Dep
+    }
+  }
+
+  object FactoryCase8 {
+    class XProduct[F[+_, +_]]
+
+    trait XFactory[F[+_, +_]] {
+      def create(xparam: XParam[F]): XProduct[F] @With[XImpl[F]]
+    }
+
+    class XParam[F[+_, +_]]
+
+    final case class XImpl[F[+_, +_]](xContext: XContext[F], xparam: XParam[F]) extends XProduct[F]
+
+    class XContext[F[+_, +_]]
   }
 
 }

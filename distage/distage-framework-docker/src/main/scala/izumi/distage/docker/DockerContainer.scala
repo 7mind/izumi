@@ -1,31 +1,33 @@
 package izumi.distage.docker
 
+import distage.Tag
 import izumi.distage.docker.ContainerNetworkDef.ContainerNetwork
-import izumi.distage.docker.Docker._
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerConnectivity
-import izumi.distage.model.effect.{QuasiAsync, QuasiIO}
+import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
+import izumi.distage.docker.model.Docker.*
+import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.model.reflection.{IdContract, SafeType}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.IzLogger
 
-final case class DockerContainer[+Tag](
+final case class DockerContainer[+T](
   id: ContainerId,
   name: String,
   hostName: String,
   labels: Map[String, String],
-  containerConfig: ContainerConfig[Tag],
+  containerConfig: ContainerConfig[T],
   clientConfig: ClientConfig,
   connectivity: ReportedContainerConnectivity,
   availablePorts: VerifiedContainerConnectivity,
 ) {
   override def toString: String = {
     val out = new StringBuilder()
-    out.append(s"$name/${containerConfig.image}@${connectivity.dockerHost.getOrElse("localhost")}")
+    out.append(s"docker://${connectivity.dockerHost.getOrElse("localhost")}/{${containerConfig.image}}$name")
     availablePorts match {
       case VerifiedContainerConnectivity.HasAvailablePorts(availablePorts) =>
-        out.append(" {")
-        out.append(availablePorts.toString)
-        out.append('}')
+        out.append(availablePorts.availablePorts.toSeq.map { case (p, m) => s"$p=${m.mkString(",")}" }.mkString("?ports={", ";", "}"))
       case VerifiedContainerConnectivity.NoAvailablePorts() =>
     }
 
@@ -34,13 +36,24 @@ final case class DockerContainer[+Tag](
 }
 
 object DockerContainer {
-  def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, QuasiIO[F], QuasiAsync[F]) => ContainerResource[F, conf.Tag] = {
-    new ContainerResource[F, conf.Tag](conf.config, _, _)(_, _)
+  case class DependencyTag(tpe: SafeType)
+
+  object DependencyTag {
+    def get[T](implicit tag: Tag[DockerContainer[T]]): DependencyTag = DependencyTag(SafeType.get[DockerContainer[T]])
+
+    implicit def tagIdContract: IdContract[DependencyTag] = new IdContract[DependencyTag] {
+      override def repr(v: DependencyTag): String = s"container:${v.tpe}"
+    }
+  }
+  def resource[F[_]](
+    conf: ContainerDef
+  ): (DockerClientWrapper[F], IzLogger, Set[DockerContainer[Any]], QuasiIO[F], QuasiAsync[F], QuasiTemporal[F]) => ContainerResource[F, conf.Tag] = {
+    new ContainerResource[F, conf.Tag](conf.config, _, _, _)(_, _, _)
   }
 
   implicit final class DockerProviderExtensions[F[_], T](private val self: Functoid[ContainerResource[F, T]]) extends AnyVal {
     /**
-      * Allows you to modify [[izumi.distage.docker.Docker.ContainerConfig]] while summoning additional dependencies from the object graph using [[izumi.distage.model.providers.Functoid]].
+      * Allows you to modify [[Docker.ContainerConfig]] while summoning additional dependencies from the object graph using [[izumi.distage.model.providers.Functoid]].
       *
       * Example:
       *
@@ -62,7 +75,6 @@ object DockerContainer {
     ): Functoid[ContainerResource[F, T]] = {
       self.zip(modify).map {
         case (self, f) =>
-          import self.{F, P}
           self.copy(config = f(self.config))
       }
     }
@@ -72,17 +84,31 @@ object DockerContainer {
     ): Functoid[ContainerResource[F, T]] = {
       self.mapSame {
         self =>
-          import self.{F, P}
           self.copy(config = modify(self.config))
       }
     }
 
-    def dependOnContainer(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): Functoid[ContainerResource[F, T]] = {
-      self.addDependency[DockerContainer[containerDecl.Tag]]
+    def dependOnContainer(
+      containerDecl: ContainerDef
+    )(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]],
+      selfTag: distage.Tag[DockerContainer[T]],
+      mutateModule: ModuleDefDSL#MutationContext,
+    ): Functoid[ContainerResource[F, T]] = {
+      addContainerDependency[containerDecl.Tag]
+      self
+        .addDependency[DockerContainer[containerDecl.Tag]]
+        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[containerDecl.Tag])
     }
 
-    def dependOnContainer[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = {
-      self.addDependency[DockerContainer[T2]]
+    def dependOnContainer[T2](
+      implicit tag: distage.Tag[DockerContainer[T2]],
+      selfTag: distage.Tag[DockerContainer[T]],
+      mutateModule: ModuleDefDSL#MutationContext,
+    ): Functoid[ContainerResource[F, T]] = {
+      addContainerDependency[T2]
+      self
+        .addDependency[DockerContainer[T2]]
+        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[T2])
     }
 
     /**
@@ -106,9 +132,11 @@ object DockerContainer {
     )(implicit tag1: distage.Tag[DockerContainer[containerDecl.Tag]],
       tag2: distage.Tag[ContainerResource[F, T]],
       tag3: distage.Tag[Docker.ContainerConfig[T]],
+      selfTag: distage.Tag[DockerContainer[T]],
+      mutateModule: ModuleDefDSL#MutationContext,
     ): Functoid[ContainerResource[F, T]] = {
       containerDecl.discard()
-      dependOnContainerPorts[containerDecl.Tag](ports: _*)
+      dependOnContainerPorts[containerDecl.Tag](ports*)
     }
 
     def dependOnContainerPorts[T2](
@@ -116,17 +144,21 @@ object DockerContainer {
     )(implicit tag1: distage.Tag[DockerContainer[T2]],
       tag2: distage.Tag[ContainerResource[F, T]],
       tag3: distage.Tag[Docker.ContainerConfig[T]],
+      selfTag: distage.Tag[DockerContainer[T]],
+      mutateModule: ModuleDefDSL#MutationContext,
     ): Functoid[ContainerResource[F, T]] = {
       discard(tag1, tag3)
-      modifyConfig {
-        original: DockerContainer[T2] => old: Docker.ContainerConfig[T] =>
-          val mapping = ports.map {
-            case (port, envvar) =>
-              (envvar, s"${original.hostName}:$port")
-          }
-          val newEnv = old.env ++ mapping
-          old.copy(env = newEnv)
-      }
+
+      dependOnContainer[T2]
+        .modifyConfig {
+          (original: DockerContainer[T2]) => (old: Docker.ContainerConfig[T]) =>
+            val mapping = ports.map {
+              case (port, envvar) =>
+                (envvar, s"${original.hostName}:$port")
+            }
+            val newEnv = old.env ++ mapping
+            old.copy(env = newEnv)
+        }
     }
 
     def connectToNetwork(
@@ -146,17 +178,23 @@ object DockerContainer {
     ): Functoid[ContainerResource[F, T]] = {
       discard(tag1, tag3)
       modifyConfig {
-        net: ContainerNetwork[T2] => old: Docker.ContainerConfig[T] =>
+        (net: ContainerNetwork[T2]) => (old: Docker.ContainerConfig[T]) =>
           old.copy(networks = old.networks + net)
       }
     }
 
-    @deprecated("Renamed to `dependOnContainer`", "1.0.2")
-    def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): Functoid[ContainerResource[F, T]] =
-      dependOnContainer[containerDecl.Tag]
-
-    @deprecated("Renamed to `dependOnContainer`", "1.0.2")
-    def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): Functoid[ContainerResource[F, T]] = dependOnContainer[T2]
+    private[this] def addContainerDependency[T2](
+      implicit tag: distage.Tag[DockerContainer[T2]],
+      selfTag: distage.Tag[DockerContainer[T]],
+      mutateModule: ModuleDefDSL#MutationContext,
+    ): Unit = {
+      new mutateModule.dsl {
+        many[DockerContainer[Any]]
+          .named(DependencyTag.get[T])
+          .ref[DockerContainer[T2]]
+      }
+      ()
+    }
   }
 
 }

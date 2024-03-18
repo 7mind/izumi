@@ -1,27 +1,20 @@
 package logstage.strict
 
 import izumi.logstage.api
-import zio.Has
+import zio.ZIO
 
 trait LogstageStrict {
+  type LogIO2Strict[F[_, _]] = LogIOStrict[F[Nothing, _]]
+  type LogIO3Strict[F[_, _, _]] = LogIOStrict[F[Any, Nothing, _]]
+  type LogIO3AskStrict[F[_, _, _]] = LogIOStrict[F[LogIO3Strict[F], Nothing, _]]
+
+  type LogIOStrict2[F[_, _]] = LogIO2Strict[F]
+  val LogIOStrict2: LogIO2Strict.type = LogIO2Strict
+  type LogIOStrict3[F[_, _, _]] = LogIO3Strict[F]
+  val LogIOStrict3: LogIO3Strict.type = LogIO3Strict
+
+  type LogZIOStrict = LogIO3Strict[ZIO]
+
   type IzStrictLogger = api.strict.IzStrictLogger
   val IzStrictLogger: api.strict.IzStrictLogger.type = api.strict.IzStrictLogger
-
-  @deprecated("renamed to `LogIO3AskStrict.LogIO3AskStrictImpl`", "1.0")
-  type LogBIOEnvStrictInstance[F[-_, +_, +_]] = LogIO3AskStrict.LogIO3AskStrictImpl[F]
-
-  @deprecated("renamed to LogIO2Strict", "1.0")
-  type LogBIOStrict[F[_, _]] = LogIOStrict[F[Nothing, _]]
-  @deprecated("renamed to LogIO2Strict", "1.0")
-  lazy val LogBIOStrict: LogIO2Strict.type = LogIO2Strict
-
-  @deprecated("renamed to LogIO3Strict", "1.0")
-  type LogBIO3Strict[F[_, _, _]] = LogIOStrict[F[Any, Nothing, _]]
-  @deprecated("renamed to LogIO3Strict", "1.0")
-  lazy val LogBIO3Strict: LogIO3Strict.type = LogIO3Strict
-
-  @deprecated("renamed to LogIO3AskStrict", "1.0")
-  type LogBIOEnvStrict[F[_, _, _]] = LogIOStrict[F[Has[LogIO3Strict[F]], Nothing, _]]
-  @deprecated("renamed to LogIO3AskStrict", "1.0")
-  lazy val LogBIOEnvStrict: LogIO3AskStrict.type = LogIO3AskStrict
 }

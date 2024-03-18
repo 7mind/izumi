@@ -22,6 +22,8 @@ object RawRoleParams {
   def apply(role: String): RawRoleParams = RawRoleParams(role, RawEntrypointParams.empty, Vector.empty)
 }
 
+final case class RequiredRoles(requiredRoles: Vector[RawRoleParams])
+
 final case class RawEntrypointParams(
   flags: Vector[RawFlag],
   values: Vector[RawValue],

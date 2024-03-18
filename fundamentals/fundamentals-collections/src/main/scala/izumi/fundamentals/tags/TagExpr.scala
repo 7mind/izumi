@@ -1,7 +1,6 @@
 package izumi.fundamentals.tags
 
 import scala.annotation.tailrec
-import scala.reflect.ClassTag
 
 object TagExpr {
 
@@ -122,15 +121,15 @@ object TagExpr {
     }
 
     def any(head: T, tail: T*): Or = {
-      Or((head +: tail).toSet.map(Has))
+      Or((head +: tail).toSet.map(Has.apply))
     }
 
     def all(head: T, tail: T*): And = {
-      And((head +: tail).toSet.map(Has))
+      And((head +: tail).toSet.map(Has.apply))
     }
 
     def one(head: T, tail: T*): Xor = {
-      Xor((head +: tail).toSet.map(Has))
+      Xor((head +: tail).toSet.map(Has.apply))
     }
 
     object TagDNF {
@@ -206,15 +205,24 @@ object TagExpr {
           case True => False
           case False => True
           case se: Not => se.expr
-          case se: Or => doAnd(se.all.map(Not))
-          case se: And => doOr(se.all.map(Not))
+          case se: Or => doAnd(se.all.map(Not.apply))
+          case se: And => doOr(se.all.map(Not.apply))
           case se: Xor => distributionLaw(Not(xorExplode(se)))
         }
       }
 
       @inline private def doAnd(all: Set[Expr]): Expr = {
         val withoutTrue = all.filterNot(_ == True)
-        doAgg[And](withoutTrue, v => And(v)) match {
+
+        val aggregated = withoutTrue.flatMap {
+          case a: And => a.all
+          case v => Set(v)
+        } match {
+          case e if e.size == 1 => e.head
+          case e => And(e)
+        }
+
+        aggregated match {
           case v: And if containsPair(v) => False
           case v => v
         }
@@ -222,7 +230,16 @@ object TagExpr {
 
       @inline private def doOr(all: Set[Expr]): Expr = {
         val withoutFalse = all.filterNot(_ == False)
-        doAgg[Or](withoutFalse, v => Or(v)) match {
+
+        val aggregated = withoutFalse.flatMap {
+          case a: Or => a.all
+          case v => Set(v)
+        } match {
+          case e if e.size == 1 => e.head
+          case e => Or(e)
+        }
+
+        aggregated match {
           case v: Or if containsPair(v) => True
           case v => v
         }
@@ -231,16 +248,6 @@ object TagExpr {
       @inline private def containsPair(a: Composite): Boolean = {
         a.all.exists(e => a.all.contains(Not(e)))
       }
-
-      @inline private def doAgg[TT <: Composite: ClassTag](all: Set[Expr], c: Set[Expr] => TT): Expr = {
-        all.flatMap {
-          case a: TT => a.all
-          case v => Set(v)
-        } match {
-          case e if e.size == 1 => e.head
-          case e => c(e)
-        }
-      }
     }
 
   }
@@ -248,7 +255,7 @@ object TagExpr {
   object Strings extends For[String] {
 
     implicit class C(val sc: StringContext) {
-      def t(args: Any*): Expr = Has(sc.s(args: _*))
+      def t(args: Any*): Expr = Has(sc.s(args*))
     }
 
   }

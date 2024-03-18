@@ -1,6 +1,6 @@
 package izumi.distage.docker.healthcheck
 
-import izumi.distage.docker.Docker.{ContainerState, DockerPort}
+import izumi.distage.docker.model.Docker.{ContainerState, DockerPort}
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.fundamentals.platform.strings.IzString._
@@ -23,7 +23,7 @@ final class PostgreSqlProtocolCheck(
           val socket = new Socket()
           try {
             socket.connect(new InetSocketAddress(availablePort.host.address, availablePort.port), container.containerConfig.portProbeTimeout.toMillis.toInt)
-            logger.info(s"Checking PostgreSQL protocol on $port for $container. ${startupMessage.toIterable.toHex -> "Startup message"}.")
+            logger.info(s"Checking PostgreSQL protocol on $port for $container. ${(startupMessage: Iterable[Byte]).toHex -> "Startup message"}.")
             val out = socket.getOutputStream
             val in = socket.getInputStream
             out.write(startupMessage)

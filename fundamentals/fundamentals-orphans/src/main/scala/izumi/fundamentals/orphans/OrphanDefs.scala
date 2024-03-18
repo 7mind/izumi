@@ -1,5 +1,7 @@
 package izumi.fundamentals.orphans
 
+import scala.annotation.unused
+
 /**
   * `No More Orphans` type providers. See detail https://blog.7mind.io/no-more-orphans.html
   *
@@ -7,31 +9,26 @@ package izumi.fundamentals.orphans
   * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  *
+  * @note For Scala 2, it appears necessary for the type in question to be higher-kinded and
+  *       be top-level to not provoke compile failures when it's not found.
   */
 
 // cats-kernel
 
-final abstract class `cats.kernel.BoundedSemilattice`[K[_]]
-object `cats.kernel.BoundedSemilattice` {
-  @inline implicit final def get: `cats.kernel.BoundedSemilattice`[cats.kernel.BoundedSemilattice] = null
-}
-
-/**
-  * This instance uses 'no more orphans' trick to provide an Optional instance
-  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
-  *
-  * Optional instance via https://blog.7mind.io/no-more-orphans.html
-  */
-final abstract class `cats.kernel.Monoid`[K[_]]
-object `cats.kernel.Monoid` {
-  @inline implicit final def get: `cats.kernel.Monoid`[cats.kernel.Monoid] = null
+final abstract class `cats.kernel.PartialOrder with cats.kernel.Hash`[K[_]]
+object `cats.kernel.PartialOrder with cats.kernel.Hash` {
+  type PartialOrderHashType[T] = cats.kernel.PartialOrder[T] & cats.kernel.Hash[T]
+  @inline implicit final def get[K[_]](
+    implicit @unused guard: `cats.kernel.BoundedSemilattice`[K]
+  ): `cats.kernel.PartialOrder with cats.kernel.Hash`[PartialOrderHashType] = null
 }
 
 // cats-core
 
 /**
   * This instance uses 'no more orphans' trick to provide an Optional instance
-  * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
   */
@@ -51,16 +48,23 @@ object `cats.Applicative` {
   @inline implicit final def get: `cats.Applicative`[cats.Applicative] = null
 }
 
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
 final abstract class `cats.Monad`[M[_[_]]]
 object `cats.Monad` {
   @inline implicit final def get: `cats.Monad`[cats.Monad] = null
 }
 
-final abstract class `cats.Semigroup`[S[_]]
-object `cats.Semigroup` {
-  @inline implicit final def get: `cats.Semigroup`[cats.Semigroup] = null
-}
-
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
 final abstract class `cats.Parallel`[K[_[_]]]
 object `cats.Parallel` {
   @inline implicit final def get: `cats.Parallel`[cats.Parallel] = null
@@ -74,19 +78,9 @@ object `cats.Parallel` {
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
   */
-final abstract class `cats.effect.Sync`[R[_[_]]]
-object `cats.effect.Sync` {
-  @inline implicit final def get: `cats.effect.Sync`[cats.effect.Sync] = null
-}
-
-final abstract class `cats.effect.Bracket`[R[_[_], E]]
-object `cats.effect.Bracket` {
-  @inline implicit final def get: `cats.effect.Bracket`[cats.effect.Bracket] = null
-}
-
-final abstract class `cats.effect.Concurrent`[K[_[_]]]
-object `cats.effect.Concurrent` {
-  @inline implicit final def get: `cats.effect.Concurrent`[cats.effect.Concurrent] = null
+final abstract class `cats.effect.kernel.Sync`[R[_[_]]]
+object `cats.effect.kernel.Sync` {
+  @inline implicit final def get: `cats.effect.kernel.Sync`[cats.effect.kernel.Sync] = null
 }
 
 /**
@@ -95,33 +89,63 @@ object `cats.effect.Concurrent` {
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html
   */
-final abstract class `cats.effect.Effect`[R[_[_]]]
-object `cats.effect.Effect` {
-  @inline implicit final def get: `cats.effect.Effect`[cats.effect.Effect] = null
+final abstract class `cats.effect.kernel.Async`[R[_[_]]]
+object `cats.effect.kernel.Async` {
+  @inline implicit final def get: `cats.effect.kernel.Async`[cats.effect.kernel.Async] = null
 }
 
-final abstract class `cats.effect.ConcurrentEffect`[K[_[_]]]
-object `cats.effect.ConcurrentEffect` {
-  @inline implicit final def get: `cats.effect.ConcurrentEffect`[cats.effect.ConcurrentEffect] = null
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `cats.effect.kernel.MonadCancel`[R[_[_], E]]
+object `cats.effect.kernel.MonadCancel` {
+  @inline implicit final def get: `cats.effect.kernel.MonadCancel`[cats.effect.kernel.MonadCancel] = null
 }
 
-final abstract class `cats.effect.Timer`[K[_[_]]]
-object `cats.effect.Timer` {
-  @inline implicit final def get: `cats.effect.Timer`[cats.effect.Timer] = null
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `cats.effect.kernel.GenTemporal`[R[_[_], E]]
+object `cats.effect.kernel.GenTemporal` {
+  @inline implicit final def get: `cats.effect.kernel.GenTemporal`[cats.effect.kernel.GenTemporal] = null
 }
 
-final abstract class `cats.effect.ContextShift`[K[_[_]]]
-object `cats.effect.ContextShift` {
-  @inline implicit final def get: `cats.effect.ContextShift`[cats.effect.ContextShift] = null
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `cats.effect.std.Dispatcher`[R[_[_]]]
+object `cats.effect.std.Dispatcher` {
+  @inline implicit final def get: `cats.effect.std.Dispatcher`[cats.effect.std.Dispatcher] = null
 }
 
-final abstract class `cats.effect.IO`[K[_]]
-object `cats.effect.IO` {
-  @inline implicit final def get: `cats.effect.IO`[cats.effect.IO] = null
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `cats.effect.unsafe.IORuntime`[R]
+object `cats.effect.unsafe.IORuntime` {
+  @inline implicit final def get: `cats.effect.unsafe.IORuntime`[cats.effect.unsafe.IORuntime] = null
 }
 
 // zio
 
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
 final abstract class `zio.ZIO`[K[_, _, _]]
 object `zio.ZIO` {
   @inline implicit final def get: `zio.ZIO`[zio.ZIO] = null
@@ -129,26 +153,26 @@ object `zio.ZIO` {
 
 // zio-interop-cats
 
-final abstract class `zio.interop.CatsEffectPlatform`[A]
-object `zio.interop.CatsEffectPlatform` {
-  @inline implicit final def get: `zio.interop.CatsEffectPlatform`[zio.interop.CatsEffectPlatform] = null
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `zio.interop.CatsIOResourceSyntax`[K[_[_], _]]
+object `zio.interop.CatsIOResourceSyntax` {
+  @inline implicit final def get: `zio.interop.CatsIOResourceSyntax`[zio.interop.CatsIOResourceSyntax] = null
 }
 
-// monix-bio
-
-final abstract class `monix.bio.IO`[K[_, _]]
-object `monix.bio.IO` {
-  @inline implicit final def get: `monix.bio.IO`[monix.bio.IO] = null
-}
-
-final abstract class `monix.bio.IO.Options`[A]
-object `monix.bio.IO.Options` {
-  @inline implicit final def get: `monix.bio.IO.Options`[monix.bio.IO.Options] = null
-}
-
-// monix
-
-final abstract class `monix.eval.Task`[K[_]]
-object `monix.eval.Task` {
-  @inline implicit final def get: `monix.eval.Task`[monix.eval.Task] = null
-}
+//// monix-bio
+//
+///**
+//  * This instance uses 'no more orphans' trick to provide an Optional instance
+//  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+//  *
+//  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+//  */
+//final abstract class `monix.bio.IO`[K[_, _]]
+//object `monix.bio.IO` {
+//  @inline implicit final def get: `monix.bio.IO`[monix.bio.IO] = null
+//}

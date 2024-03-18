@@ -1,7 +1,7 @@
 package izumi.logstage.sink
 
-import izumi.functional.mono.SyncSafe
-import izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.functional.bio.SyncSafe1
+import izumi.fundamentals.platform.language.IzScala
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.rendering.LogstageCodec
 import izumi.logstage.sink.ExampleService.ExampleDTO
@@ -13,7 +13,6 @@ import org.scalatest.exceptions.TestFailedException
 import scala.annotation.nowarn
 import scala.util.Random
 
-@ExposedTestScope
 @nowarn("msg=[Ee]xpression.*logger")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"
@@ -74,7 +73,12 @@ class ExampleService(logger: IzLogger) {
     val arg1 = 5
     val nullarg: Integer = null
     val exception = makeException("Boom!")
+
     logger.warn("[Cornercase] non-interpolated expression: " + 1)
+    logger.warn("[Cornercase] non-interpolated expression: " + arg1)
+    logger.warn(arg1 + "[Cornercase] non-interpolated expression: " + arg1)
+    logger.warn("[Cornercase] non-interpolated expression: " + arg1 + nullarg + exception)
+
     logger.crit(s"[Cornercase] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}")
     logger.crit(s"[Cornercase] null value: $nullarg")
 
@@ -97,7 +101,7 @@ class ExampleService(logger: IzLogger) {
     final case class NoInstance(x: Int)
     final case class YesInstance(x: Int)
     object YesInstance {
-      implicit val codec: LogstageCodec[YesInstance] = _ write _.x
+      implicit val codec: LogstageCodec[YesInstance] = _ `write` _.x
     }
     sealed trait Sealed
     object Sealed {
@@ -109,12 +113,17 @@ class ExampleService(logger: IzLogger) {
     }
 
     val logStrict: LogIOStrict[Function0] = LogIOStrict.fromLogger(logger)
-    import Assertions._
+    import Assertions.*
 
     val exc = intercept[TestFailedException] {
       assertCompiles("""logStrict.crit(s"Suspended message: clap your hands! ${NoInstance(1)}")""")
     }
-    assert(exc.getMessage() contains "Implicit search failed")
+    if (IzScala.scalaRelease.major == 3) {
+      assert(exc.getMessage() contains "type error")
+    } else {
+      assert(exc.getMessage() contains "Implicit search failed")
+    }
+
     val basic = {
       val instance = YesInstance(1)
       logStrict.crit(s"Suspended message: clap your hands! $instance")
@@ -150,7 +159,7 @@ class ExampleService(logger: IzLogger) {
     exception
   }
 
-  implicit val thunkSyncSafe: SyncSafe[Function0] = new SyncSafe[Function0] {
+  implicit val thunkSyncSafe: SyncSafe1[Function0] = new SyncSafe1[Function0] {
     override def syncSafe[A](unexceptionalEff: => A): () => A = () => unexceptionalEff
   }
 }
