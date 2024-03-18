@@ -18,6 +18,7 @@ import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
 import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 
@@ -90,6 +91,7 @@ abstract class GenericSemigraphTraverse[Err](
     }
   }
 
+  @nowarn("msg=Unused import")
   protected[this] def trace(
     allAxis: Map[String, Set[String]],
     allVisited: mutable.HashSet[(DIKey, Set[AxisPoint])],
@@ -102,6 +104,7 @@ abstract class GenericSemigraphTraverse[Err](
     effectType: SafeType,
     bindings: ModuleBase,
   ): Set[PlanIssue] = {
+    import scala.collection.compat.*
 
     @inline def go(visited: Set[DIKey], current: Set[(DIKey, DIKey)], currentActivation: Set[AxisPoint]): RecursionResult = RecursionResult(current.iterator.map {
       case (key, dependee) =>
