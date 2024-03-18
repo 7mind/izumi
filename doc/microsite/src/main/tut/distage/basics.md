@@ -1606,8 +1606,6 @@ object Module extends ModuleDef {
     make[IzLogger].from(HACK_OVERRIDE_IzLogger())
     include(LogIO2Module[F]())
 
-    addImplicit[TagKK[F]]
-
     makeSubcontext[PetStoreBusinessLogic[F]]
       .withSubmodule(new ModuleDef {
         make[PetStoreReposistory[F]].fromResource[PetStoreReposistory.Impl[F]]
