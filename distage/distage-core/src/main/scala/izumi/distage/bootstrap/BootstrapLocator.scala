@@ -16,7 +16,7 @@ import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning.*
 import izumi.distage.planning.sequential.{ForwardingRefResolverDefaultImpl, FwdrefLoopBreaker, SanityCheckerDefaultImpl}
 import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
-import izumi.distage.planning.solver.{GraphPreparations, PlanSolver, SemigraphSolver}
+import izumi.distage.planning.solver.{GraphQueries, PlanSolver, SemigraphSolver}
 import izumi.distage.provisioning.*
 import izumi.distage.provisioning.strategies.*
 import izumi.fundamentals.platform.functional.Identity
@@ -71,7 +71,7 @@ object BootstrapLocator {
     val sanityChecker = new SanityCheckerDefaultImpl()
     val resolver = new PlanSolver.Impl(
       new SemigraphSolverImpl[DIKey, Int, InstantiationOp](),
-      new GraphPreparations(new BindingTranslator.Impl()),
+      new GraphQueries(new BindingTranslator.Impl()),
     )
 
     new PlannerDefaultImpl(
@@ -111,7 +111,7 @@ object BootstrapLocator {
     make[MirrorProvider].fromValue(mirrorProvider)
 
     make[PlanSolver].from[PlanSolver.Impl]
-    make[GraphPreparations]
+    make[GraphQueries]
 
     make[SemigraphSolver[DIKey, Int, InstantiationOp]].from[SemigraphSolverImpl[DIKey, Int, InstantiationOp]]
 

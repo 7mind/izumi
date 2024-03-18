@@ -37,8 +37,8 @@ object PlanSolver {
 
   @nowarn("msg=Unused import")
   class Impl(
-    resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
-    preps: GraphPreparations,
+              resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
+              preps: GraphQueries,
   ) extends PlanSolver {
 
     import scala.collection.compat.*

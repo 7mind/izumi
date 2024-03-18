@@ -4,7 +4,6 @@ import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
 import izumi.distage.model.exceptions.PlanVerificationException
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp}
-import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.planning.PlanIssue.*
 import izumi.distage.model.planning.{ActivationChoices, AxisPoint, PlanIssue}
@@ -29,7 +28,7 @@ import scala.concurrent.duration.FiniteDuration
 /** @see [[izumi.distage.model.Injector.assert]] */
 @nowarn("msg=Unused import")
 class PlanVerifier(
-  preps: GraphPreparations
+  preps: GraphQueries
 ) {
   import scala.collection.compat.*
 
@@ -144,7 +143,7 @@ class PlanVerifier(
           Right(Iterator.empty)
         } else {
           @inline def reportMissing[A](key: DIKey, dependee: DIKey): Left[NEList[MissingImport], Nothing] = {
-            val origins = allImportingBindings(matrix, currentActivation)(key, dependee)
+            val origins = preps.allImportingBindings(matrix, currentActivation)(key, dependee)
             val similarBindings = ImportStrategyDefaultImpl.findSimilarImports(bindings, key)
             Left(NEList(MissingImport(key, dependee, origins, similarBindings.similarSame, similarBindings.similarSub)))
           }
@@ -158,7 +157,7 @@ class PlanVerifier(
               reportMissingIfNotProvided(key, dependee)(Right(Iterator.empty))
 
             case Some(allOps) =>
-              val ops = allOps.filterNot(o => isIgnoredActivation(excludedActivations)(o._2))
+              val ops = allOps.filterNot(o => preps.isIgnoredActivation(excludedActivations, o._2))
               val ac = ActivationChoices(currentActivation)
 
               val withoutCurrentActivations = {
@@ -221,7 +220,7 @@ class PlanVerifier(
               } yield {
                 allVisited.add((key, currentActivation))
 
-                val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac `allValid` _._2).flatMap(m => depsOf(execOpIndex)(m._1)).toSeq
+                val mutators = justMutators.getOrElse(key, Set.empty).iterator.filter(ac `allValid` _._2).flatMap(m => preps.depsOf(execOpIndex, m._1)).toSeq
 
                 val goNext = next.iterator.map {
                   case (nextActivation, nextDeps) =>
@@ -265,25 +264,6 @@ class PlanVerifier(
     errors.result()
   }
 
-  protected[this] final def allImportingBindings(
-    matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
-    currentActivation: Set[AxisPoint],
-  )(importedKey: DIKey,
-    d: DIKey,
-  ): Set[OperationOrigin] = {
-    // FIXME: reuse formatting from conflictingAxisTagsHint
-    matrix
-      .getOrElse(d, Set.empty)
-      .collect {
-        case (op, activations) if activations.subsetOf(currentActivation) && (op match {
-              case CreateSet(_, members, _) => members
-              case op: ExecutableOp.WiringOp => op.wiring.requiredKeys
-              case op: ExecutableOp.MonadicOp => Set(op.effectKey)
-            }).contains(importedKey) =>
-          op.origin.value
-      }
-  }
-
   protected[this] def checkConflicts(
     allAxis: Map[String, Set[String]],
     withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
@@ -306,40 +286,7 @@ class PlanVerifier(
     if (issues.nonEmpty) {
       Left(NEList.unsafeFrom(issues))
     } else {
-      val next = withoutCurrentActivations.iterator.map {
-        case (op, activations, _) =>
-          // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
-          val deps = depsOf(execOpIndex)(op)
-          val acts = op match {
-            case _: ExecutableOp.CreateSet =>
-              Set.empty[AxisPoint]
-            case _ =>
-              activations
-          }
-          (acts, deps)
-      }.toSeq
-      Right(next)
-    }
-  }
-
-  protected[this] final def depsOf(
-    execOpIndex: MutableMultiMap[DIKey, InstantiationOp]
-  )(op: InstantiationOp
-  ): Set[DIKey] = {
-    op match {
-      case cs: CreateSet =>
-        // we completely ignore weak members, they don't make any difference in case they are unreachable through other paths
-        val members = cs.members.filter {
-          case m: SetElementKey =>
-            preps.getSetElementWeakEdges(execOpIndex, m).isEmpty
-          case _ =>
-            true
-        }
-        members
-      case op: ExecutableOp.WiringOp =>
-        preps.toDep(op).deps
-      case op: ExecutableOp.MonadicOp =>
-        preps.toDep(op).deps
+      preps.nextDepsToVisit(execOpIndex, withoutCurrentActivations)
     }
   }
 
@@ -402,7 +349,7 @@ class PlanVerifier(
         val allCurrentAxisChoices: Set[String] = allAxis.getOrElse(currentAxis, Set.empty[String])
         val opsCurrentAxisChoices: Set[String] = opFilteredActivations.flatMap(_.iterator.filter(_.axis == currentAxis).map(_.value))
         val unsaturatedChoices = (allCurrentAxisChoices diff opsCurrentAxisChoices).map(AxisPoint(currentAxis, _))
-        if (unsaturatedChoices.nonEmpty && !isIgnoredActivation(excludedActivations)(unsaturatedChoices)) {
+        if (unsaturatedChoices.nonEmpty && !preps.isIgnoredActivation(excludedActivations, unsaturatedChoices)) {
           // TODO: quadratic
           if (opAxisSets.forall(_ contains currentAxis)) {
             Some(UnsaturatedAxis(withoutSetMembers.head._1.target, currentAxis, NESet.unsafeFrom(unsaturatedChoices)))
@@ -447,17 +394,17 @@ class PlanVerifier(
     }.toList
   }
 
-  protected[this] def isIgnoredActivation(excludedActivations: Set[NESet[AxisPoint]])(activation: Set[AxisPoint]): Boolean = {
-    excludedActivations.exists(_ subsetOf activation)
-  }
+//  protected[this] def isIgnoredActivation(excludedActivations: Set[NESet[AxisPoint]])(activation: Set[AxisPoint]): Boolean = {
+//    excludedActivations.exists(_ subsetOf activation)
+//  }
 
 }
 
 object PlanVerifier {
   def apply(): PlanVerifier = Default
-  def apply(preps: GraphPreparations): PlanVerifier = new PlanVerifier(preps)
+  def apply(preps: GraphQueries): PlanVerifier = new PlanVerifier(preps)
 
-  private[this] object Default extends PlanVerifier(new GraphPreparations(new BindingTranslator.Impl))
+  private[this] object Default extends PlanVerifier(new GraphQueries(new BindingTranslator.Impl))
 
   sealed abstract class PlanVerifierResult {
     def issues: Option[NESet[PlanIssue]]
