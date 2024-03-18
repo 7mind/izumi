@@ -18,7 +18,6 @@ import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.resources.ArtifactVersion
-import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.logstage.api.IzLogger
 
 import java.nio.charset.StandardCharsets
@@ -110,13 +109,7 @@ final class ConfigWriter[F[_]: TagK](
     val excludedActivations = Set.empty[NESet[AxisPoint]] // TODO: val chosenActivations = parseActivations(cfg.excludeActivations)
     val bindings = roleAppPlanner.bootloader.input.bindings
     val verifier = PlanVerifier()
-    val v = verifier.traceReachables[F](bindings, Roots(NESet(role.binding.key)), _ => true, excludedActivations)
-    val reachable = v match {
-      case Left(issues) =>
-        throw new IllegalStateException(s"Cannot produce minimized config, dependency tracing failed: ${issues.niceList()}")
-
-      case Right(value) => value
-    }
+    val reachable = verifier.traceReachables[F](bindings, Roots(NESet(role.binding.key)), _ => true, excludedActivations)
 
     val filteredModule = bindings.filter(reachable.contains)
 

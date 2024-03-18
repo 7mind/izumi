@@ -2,7 +2,6 @@ package izumi.distage.planning.solver
 
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
-import izumi.distage.model.definition.errors.LocalContextVerificationFailure
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.planning.PlanIssue.*
@@ -24,12 +23,12 @@ import scala.concurrent.duration.FiniteDuration
 
 object GenericSemigraphTraverse {
   case class TraversalResult(visitedKeys: Set[DIKey], time: FiniteDuration, maybeIssues: Option[NESet[PlanIssue]])
-  case class TraversalFailure(time: FiniteDuration, issues: NEList[LocalContextVerificationFailure])
+  case class TraversalFailure[Err](time: FiniteDuration, issues: NEList[Err])
 }
 
-abstract class GenericSemigraphTraverse(
+abstract class GenericSemigraphTraverse[Err](
   queries: GraphQueries,
-  subcontextHandler: SubcontextHandler[LocalContextVerificationFailure],
+  subcontextHandler: SubcontextHandler[Err],
 ) {
 
   def traverse[F[_]: TagK](
@@ -37,10 +36,8 @@ abstract class GenericSemigraphTraverse(
     roots: Roots,
     providedKeys: DIKey => Boolean,
     excludedActivations: Set[NESet[AxisPoint]],
-  ): Either[TraversalFailure, TraversalResult] = {
+  ): Either[TraversalFailure[Err], TraversalResult] = {
     val before = System.currentTimeMillis()
-
-//    val verificationHandler = new SubcontextHandler.VerificationHandler(this, excludedActivations)
     (for {
       ops <- queries.computeOperationsUnsafe(subcontextHandler, bindings).map(_.toSeq)
     } yield {

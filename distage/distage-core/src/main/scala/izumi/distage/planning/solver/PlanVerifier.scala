@@ -102,9 +102,9 @@ class PlanVerifier(
     roots: Roots,
     providedKeys: DIKey => Boolean,
     excludedActivations: Set[NESet[AxisPoint]],
-  ): Either[Set[PlanIssue], Set[DIKey]] = {
-    val verificationHandler = new SubcontextHandler.VerificationHandler(this, excludedActivations)
-    val traversal = new GenericSemigraphTraverse(queries, verificationHandler) {
+  ): Set[DIKey] = {
+    val tracingHandler = new SubcontextHandler.TracingHandler()
+    val traversal = new GenericSemigraphTraverse(queries, tracingHandler) {
       protected def checkConflicts(
         allAxis: Map[String, Set[String]],
         withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
@@ -129,14 +129,10 @@ class PlanVerifier(
     }
 
     traversal
-      .traverse[F](bindings, roots, providedKeys, excludedActivations).left.map {
-        failure =>
-          val issues = failure.issues.map(f => PlanIssue.CantVerifyLocalContext(f)).toSet[PlanIssue]
-          issues
-      }.map {
+      .traverse[F](bindings, roots, providedKeys, excludedActivations).map {
         result =>
           result.visitedKeys
-      }
+      }.toOption.get // traverse can't fail
   }
 
   protected[this] def checkConflicts(
