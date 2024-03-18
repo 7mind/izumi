@@ -69,6 +69,15 @@ scalacOptions += "-Xsource:2.13" // either this
 // scalacOptions += "-Xsource:3" // or this
 ```
 
+Additionally, some source examples in this document use underscore syntax for type lambdas which you can enable with the following options:
+
+```scala
+// For kind-projector on Scala 2
+scalacOptions += "-P:kind-projector:underscore-placeholders"
+
+// For Scala 3
+scalacOptions += "-Ykind-projector:underscores"
+```
 
 ### Hello World example
 
