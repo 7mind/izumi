@@ -5,6 +5,7 @@ import izumi.distage.modules.platform.IdentityPlatformDependentSupportModule
 import izumi.functional.bio.{Clock1, Entropy1}
 import izumi.functional.quasi.*
 import izumi.fundamentals.platform.functional.Identity
+import izumi.reflect.TagK
 
 object IdentitySupportModule extends IdentitySupportModule
 
@@ -15,6 +16,9 @@ object IdentitySupportModule extends IdentitySupportModule
   */
 trait IdentitySupportModule extends ModuleDef {
   include(IdentityPlatformDependentSupportModule)
+
+  addImplicit[TagK[Identity]]
+
   addImplicit[QuasiFunctor[Identity]]
   addImplicit[QuasiApplicative[Identity]]
   addImplicit[QuasiPrimitives[Identity]]

@@ -5,7 +5,7 @@ import izumi.distage.modules.platform.ZIOPlatformDependentSupportModule
 import izumi.functional.bio.*
 import izumi.functional.bio.UnsafeRun2.{FailureHandler, ZIORunner}
 import izumi.functional.bio.retry.{Scheduler2, SchedulerInstances}
-import izumi.reflect.Tag
+import izumi.reflect.{Tag, TagK3}
 import zio.{Executor, IO, Runtime, ZEnvironment, ZIO, ZLayer}
 
 import scala.concurrent.ExecutionContext
@@ -36,6 +36,8 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   if (!(Tag[R] =:= Tag[Any])) {
     include(AnyBIOSupportModule[ZIO[R, +_, +_]])
   }
+
+  addImplicit[TagK3[ZIO]]
 
   // assume default environment is `Any`, otherwise let the error message guide the user here.
   make[ZEnvironment[Any]].named("zio-initial-env").fromValue(ZEnvironment.empty)

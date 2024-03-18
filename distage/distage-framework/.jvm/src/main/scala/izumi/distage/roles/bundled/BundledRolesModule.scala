@@ -8,7 +8,6 @@ import izumi.fundamentals.platform.resources.*
 class BundledRolesModule[F[_]: TagK](version: String) extends ModuleDef with RoleModuleDef {
   make[ArtifactVersion].named("launcher-version").fromValue(ArtifactVersion(version))
 
-  addImplicit[TagK[F]]
   makeRole[ConfigWriter[F]]
   makeRole[Help[F]]
   makeRole[RunAllTasks[F]]
