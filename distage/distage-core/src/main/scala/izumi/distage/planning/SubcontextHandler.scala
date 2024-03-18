@@ -63,4 +63,11 @@ object SubcontextHandler {
 
     }
   }
+
+  class TracingHandler() extends SubcontextHandler[Nothing] {
+    override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[Nothing, SingletonWiring] = {
+      Right(SingletonWiring.PrepareSubcontext(c.extractingFunction, Plan.empty, c.implType, c.externalKeys, Set.empty))
+    }
+  }
+
 }

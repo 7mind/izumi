@@ -5,7 +5,6 @@ import cats.effect.unsafe.IORuntime
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
-import distage.config.AppConfig
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
@@ -16,7 +15,6 @@ import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.DebugProperties
-import izumi.distage.roles.launcher.ActivationParser
 import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
@@ -181,9 +179,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
-        parser = new ActivationParser {
-          override def parseActivation(config: AppConfig): Activation = ???
-        },
+//        parser = new ActivationParser {
+//          override def parseActivation(config: AppConfig): Activation = ???
+//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -221,9 +219,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
-        parser = new ActivationParser {
-          override def parseActivation(config: AppConfig): Activation = ???
-        },
+//        parser = new ActivationParser {
+//          override def parseActivation(config: AppConfig): Activation = ???
+//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -265,9 +263,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
-        parser = new ActivationParser {
-          override def parseActivation(config: AppConfig): Activation = ???
-        },
+//        parser = new ActivationParser {
+//          override def parseActivation(config: AppConfig): Activation = ???
+//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -388,6 +386,12 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role5CfgMinParsed.hasPath("activation"))
       assert(!role5CfgMinParsed.hasPath("activation.axiscomponentaxis"))
       assert(role5CfgMinParsed.hasPath("activation.role05localaxis"))
+
+      assert(role5CfgMinParsed.hasPath("rolelocal1"))
+      assert(role5CfgMinParsed.hasPath("rolelocal1.str"))
+
+      assert(role5CfgMinParsed.hasPath("rolelocal2"))
+      assert(role5CfgMinParsed.hasPath("rolelocal2.bool"))
     }
 
     "roles do not have access to components from MainAppModule" in {
