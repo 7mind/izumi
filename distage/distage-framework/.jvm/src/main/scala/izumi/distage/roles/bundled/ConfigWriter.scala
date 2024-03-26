@@ -3,7 +3,7 @@ package izumi.distage.roles.bundled
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import distage.TagK
 import distage.config.AppConfig
-import izumi.distage.config.codec.ConfigMeta
+import izumi.distage.config.codec.ConfigMetaType
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.services.{ConfigMerger, RoleAppPlanner}
 import izumi.distage.model.definition.{Binding, Id}
@@ -140,23 +140,23 @@ final class ConfigWriter[F[_]: TagK](
       case t: ConfTag =>
         t
     }
-    configTags.flatMap(t => unpack(Seq(t.confPath), t.fieldsMeta))
+    configTags.flatMap(t => unpack(Seq(t.confPath), t.tpe))
   }
 
-  private def unpack(path: Seq[String], meta0: ConfigMeta): Seq[ConfigPath] = {
+  private def unpack(path: Seq[String], meta0: ConfigMetaType): Seq[ConfigPath] = {
     meta0 match {
-      case ConfigMeta.ConfigMetaCaseClass(fields) =>
+      case ConfigMetaType.TCaseClass(fields) =>
         fields.flatMap {
           case (name, meta) =>
             unpack(path :+ name, meta)
         }
-      case ConfigMeta.ConfigMetaSealedTrait(branches) =>
+      case ConfigMetaType.TSealedTrait(branches) =>
         branches.toSeq.flatMap {
           case (name, meta) =>
             unpack(path :+ name, meta)
         }
-      case ConfigMeta.ConfigMetaEmpty() => Seq(ConfigPath(path.mkString(".")))
-      case ConfigMeta.ConfigMetaUnknown() => Seq(ConfigPath(path.mkString("."), wildcard = true))
+      case _ =>
+        Seq(ConfigPath(path.mkString("."), wildcard = true))
     }
   }
 

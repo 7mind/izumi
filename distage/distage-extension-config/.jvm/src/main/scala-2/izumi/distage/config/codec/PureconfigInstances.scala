@@ -51,7 +51,7 @@ object PureconfigInstances extends PureconfigInstances {
       val fields = configMetaJoin(ctx, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader)
       new ConfigReaderWithConfigMeta[A] {
         override def from(cur: ConfigCursor): Result[A] = magnoliaConfigReader.from(cur)
-        override def fieldsMeta: ConfigMeta = fields
+        override def tpe: ConfigMetaType = fields
       }
     }
 
@@ -60,12 +60,12 @@ object PureconfigInstances extends PureconfigInstances {
       val fields = configMetaSplit(ctx, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader)
       new ConfigReaderWithConfigMeta[A] {
         override def from(cur: ConfigCursor): Result[A] = magnoliaConfigReader.from(cur)
-        override def fieldsMeta: ConfigMeta = fields
+        override def tpe: ConfigMetaType = fields
       }
     }
 
-    def configMetaJoin[TC[_], A](ctx: CaseClass[TC, A], toConfigMeta: TC[Any] => ConfigMeta)(implicit productHint: ProductHint[A]): ConfigMeta = {
-      def fields0: ConfigMeta.ConfigMetaCaseClass = ConfigMeta.ConfigMetaCaseClass(
+    def configMetaJoin[TC[_], A](ctx: CaseClass[TC, A], toConfigMeta: TC[Any] => ConfigMetaType)(implicit productHint: ProductHint[A]): ConfigMetaType = {
+      def fields0: ConfigMetaType.TCaseClass = ConfigMetaType.TCaseClass(
         ctx.parameters.map(
           p => {
             val realLabel = {
@@ -78,15 +78,15 @@ object PureconfigInstances extends PureconfigInstances {
           }
         )
       )
-      if (ctx.typeName.full.startsWith("scala.Tuple")) ConfigMeta.ConfigMetaUnknown()
+      if (ctx.typeName.full.startsWith("scala.Tuple")) ConfigMetaType.TUnknown()
       else if (ctx.isValueClass) fields0.fields.head._2 /* NB: AnyVal codecs are not supported on Scala 3 */
       else fields0
     }
 
-    def configMetaSplit[TC[_], A](ctx: SealedTrait[TC, A], toConfigMeta: TC[Any] => ConfigMeta)(implicit coproductHint: CoproductHint[A]): ConfigMeta = {
+    def configMetaSplit[TC[_], A](ctx: SealedTrait[TC, A], toConfigMeta: TC[Any] => ConfigMetaType)(implicit coproductHint: CoproductHint[A]): ConfigMetaType = {
       // Only support Circe-like sealed trait encoding
       if (coproductHint == PureconfigInstances.circeLikeCoproductHint) {
-        ConfigMeta.ConfigMetaSealedTrait(
+        ConfigMetaType.TSealedTrait(
           ctx.subtypes.map {
             s =>
               val realLabel = s.typeName.short // no processing is required for Circe-like hint
@@ -94,7 +94,7 @@ object PureconfigInstances extends PureconfigInstances {
           }.toSet
         )
       } else {
-        ConfigMeta.ConfigMetaUnknown()
+        ConfigMetaType.TUnknown()
       }
     }
   }

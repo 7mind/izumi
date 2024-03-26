@@ -7,7 +7,7 @@ import izumi.reflect.Tag
 import scala.util.Try
 
 private[codec] trait AbstractDIConfigReader[A] {
-  def fieldsMeta: ConfigMeta
+  def tpe: ConfigMetaType
 
   def decodeConfig(config: DistageConfigImpl): Try[A]
 

@@ -57,15 +57,15 @@ object PureconfigInstances extends PureconfigInstances {
                     )
               }
 
-            override def fieldsMeta: ConfigMeta = ConfigMeta.ConfigMetaUnknown()
+            override def tpe: ConfigMetaType = ConfigMetaType.TUnknown()
           }
 
         case _ =>
           new ConfigReaderWithConfigMeta[A] {
             val labels: Array[String] = Utils.transformedLabels[A](fieldMapping).toArray
-            val (fieldsMeta, tupleReader) = {
+            val (tpe, tupleReader) = {
               val (codecs, tupleReader) = readTuple[m.MirroredElemTypes, 0]
-              val fieldMeta = ConfigMeta.ConfigMetaCaseClass(
+              val fieldMeta = ConfigMetaType.TCaseClass(
                 labels.iterator
                   .zip(codecs).map {
                     case (label, reader) => (label, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader(reader))
@@ -152,7 +152,7 @@ object PureconfigInstances extends PureconfigInstances {
             .zip(deriveForSubtypes[m.MirroredElemTypes, A])
             .toMap
 
-        override val fieldsMeta: ConfigMeta = ConfigMeta.ConfigMetaSealedTrait(options.map {
+        override val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(options.map {
           case (label, reader) => (label, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader(reader))
         }.toSet)
 

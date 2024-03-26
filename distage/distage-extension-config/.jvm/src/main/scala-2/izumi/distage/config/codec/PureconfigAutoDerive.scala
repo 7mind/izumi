@@ -34,7 +34,7 @@ import scala.reflect.macros.blackbox
   * }}}
   */
 final class PureconfigAutoDerive[A](val value: ConfigReader[A]) extends AnyVal {
-  def fieldsMeta: ConfigMeta = ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader(value)
+  def tpe: ConfigMetaType = ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader(value)
 }
 
 object PureconfigAutoDerive {

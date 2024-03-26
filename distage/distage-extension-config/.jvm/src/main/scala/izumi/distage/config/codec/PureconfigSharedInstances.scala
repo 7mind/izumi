@@ -10,7 +10,7 @@ trait PureconfigSharedInstances {
     new ConfigReaderWithConfigMeta[Option[A]] with ReadsMissingKeys {
       override def from(cur: ConfigCursor): ConfigReader.Result[Option[A]] = inner.from(cur)
 
-      override def fieldsMeta: ConfigMeta = fields
+      override def tpe: ConfigMetaType = fields
     }
   }
 
