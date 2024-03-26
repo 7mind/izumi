@@ -10,7 +10,7 @@ import izumi.distage.model.definition.{Binding, Id}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, WriteReference}
+import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, MinimizedConfig, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
@@ -83,12 +83,9 @@ final class ConfigWriter[F[_]: TagK](
           val mergedRoleConfig = configMerger.mergeFilter(appConfig.shared, List(loaded), _ => true, "configwriter")
           writeConfig(options, fileNameFull, mergedRoleConfig, subLogger)
 
-          minimizedConfig(mergedRoleConfig, role)
-            .foreach {
-              cfg =>
-                val fileNameMinimized = outputFileName(roleId, roleVersion, options.asJson, Some("minimized"))
-                writeConfig(options, fileNameMinimized, cfg, subLogger)
-            }
+          val min = minimizedConfig(mergedRoleConfig, role)
+          val fileNameMinimized = outputFileName(roleId, roleVersion, options.asJson, Some("minimized"))
+          writeConfig(options, fileNameMinimized, min.config, subLogger)
         } catch {
           case exception: Throwable =>
             logger.crit(s"Cannot process role ${role.descriptor.id}")
@@ -105,19 +102,24 @@ final class ConfigWriter[F[_]: TagK](
     s"$service$suffixStr-$vstr.$extension"
   }
 
-  private[this] def minimizedConfig(roleConfig: Config, role: RoleBinding): Option[Config] = {
+  private[this] def minimizedConfig(roleConfig: Config, role: RoleBinding): MinimizedConfig = {
     val excludedActivations = Set.empty[NESet[AxisPoint]] // TODO: val chosenActivations = parseActivations(cfg.excludeActivations)
     val bindings = roleAppPlanner.bootloader.input.bindings
     val verifier = PlanVerifier()
     val reachable = verifier.traceReachables[F](bindings, Roots(NESet(role.binding.key)), _ => true, excludedActivations)
 
     val filteredModule = bindings.filter(reachable.contains)
+    val configTags = extractConfigTags(filteredModule.bindings)
 
-    val resolvedConfig = {
-      getConfig(filteredModule.bindings).toSet + _HackyMandatorySection
-    }
+    val meta = configTags.map(t => (t.confPath, t.tpe))
+    import izumi.fundamentals.platform.strings.IzString.*
+    println(meta.niceList())
+
+    val resolvedConfig =
+      extractConfigPaths(configTags).toSet + _HackyMandatorySection
+
     val out = ConfigWriter.minimized(resolvedConfig, roleConfig)
-    Some(out)
+    MinimizedConfig(out)
   }
 
   private[this] def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, subLogger: IzLogger): Try[Unit] = {
@@ -135,25 +137,28 @@ final class ConfigWriter[F[_]: TagK](
     }
   }
 
-  private def getConfig(bindings: Set[Binding]): Seq[ConfigPath] = {
-    val configTags = bindings.toSeq.flatMap(_.tags).collect {
+  private def extractConfigPaths(configTags: Seq[ConfTag]): Seq[ConfigPath] = {
+    configTags.flatMap(t => unpackConfigPaths(Seq(t.confPath), t.tpe))
+  }
+
+  private def extractConfigTags(bindings: Set[Binding]) = {
+    bindings.toSeq.flatMap(_.tags).collect {
       case t: ConfTag =>
         t
     }
-    configTags.flatMap(t => unpack(Seq(t.confPath), t.tpe))
   }
 
-  private def unpack(path: Seq[String], meta0: ConfigMetaType): Seq[ConfigPath] = {
+  private def unpackConfigPaths(path: Seq[String], meta0: ConfigMetaType): Seq[ConfigPath] = {
     meta0 match {
       case ConfigMetaType.TCaseClass(fields) =>
         fields.flatMap {
           case (name, meta) =>
-            unpack(path :+ name, meta)
+            unpackConfigPaths(path :+ name, meta)
         }
       case ConfigMetaType.TSealedTrait(branches) =>
         branches.toSeq.flatMap {
           case (name, meta) =>
-            unpack(path :+ name, meta)
+            unpackConfigPaths(path :+ name, meta)
         }
       case _ =>
         Seq(ConfigPath(path.mkString("."), wildcard = true))
@@ -164,6 +169,8 @@ final class ConfigWriter[F[_]: TagK](
 
 object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
+
+  case class MinimizedConfig(config: Config)
 
   override def parserSchema: RoleParserSchema = {
     RoleParserSchema(id, Options, Some("Dump reference configs for all the roles"), None, freeArgsAllowed = false)
