@@ -19,6 +19,22 @@ trait DIConfigMeta[A] {
 object DIConfigMeta {
   implicit def dummy[A]: DIConfigMeta[A] = ???
 
+  implicit def deriveSeq[T, S[K] <: scala.collection.Seq[K]](implicit m: DIConfigMeta[T]): DIConfigMeta[S[T]] = new DIConfigMeta[S[T]] {
+    override def tpe: ConfigMetaType = ConfigMetaType.TList(m.tpe)
+  }
+
+  implicit def deriveSet[T, S[K] <: scala.collection.Set[K]](implicit m: DIConfigMeta[T]): DIConfigMeta[S[T]] = new DIConfigMeta[S[T]] {
+    override def tpe: ConfigMetaType = ConfigMetaType.TSet(m.tpe)
+  }
+
+  implicit def deriveMap[K, V, M[A, B] <: scala.collection.Map[A, B]](
+    implicit decK: DIConfigMeta[K],
+    decV: DIConfigMeta[V],
+  ): DIConfigMeta[M[K, V]] =
+    new DIConfigMeta[M[K, V]] {
+      override def tpe: ConfigMetaType = ConfigMetaType.TMap(decK.tpe, decV.tpe)
+    }
+
   def fromBasic[T](tpeBasic: ConfigMetaBasicType): DIConfigMeta[T] =
     new DIConfigMeta[T] {
       override def tpe: ConfigMetaType = ConfigMetaType.TBasic(tpeBasic)
