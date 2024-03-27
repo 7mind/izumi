@@ -10,14 +10,21 @@ import java.time.{Duration as JavaDuration, Instant, Period, Year, ZoneId, ZoneO
 import java.util.UUID
 import java.util.regex.Pattern
 import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.reflect.{ClassTag, classTag}
 import scala.util.matching.Regex
 
 trait DIConfigMeta[A] {
   def tpe: ConfigMetaType
 }
 
-object DIConfigMeta {
-  implicit def dummy[A]: DIConfigMeta[A] = ???
+sealed trait LowPriorityDIConfigMetaInstances {
+  implicit final def deriveFromMetaAutoDerive[T: ClassTag](implicit dec: MetaAutoDerive[T]): DIConfigMeta[T] = dec.value
+}
+
+object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
+//  implicit def dummy[A]: DIConfigMeta[A] = ???
+  implicit def derived[T: ClassTag](implicit dec: MetaAutoDerive[T]): DIConfigMeta[T] =
+    DIConfigMeta.deriveFromMetaAutoDerive[T](classTag[T], dec)
 
   implicit def deriveSeq[T, S[K] <: scala.collection.Seq[K]](implicit m: DIConfigMeta[T]): DIConfigMeta[S[T]] = new DIConfigMeta[S[T]] {
     override def tpe: ConfigMetaType = ConfigMetaType.TList(m.tpe)
@@ -25,6 +32,10 @@ object DIConfigMeta {
 
   implicit def deriveSet[T, S[K] <: scala.collection.Set[K]](implicit m: DIConfigMeta[T]): DIConfigMeta[S[T]] = new DIConfigMeta[S[T]] {
     override def tpe: ConfigMetaType = ConfigMetaType.TSet(m.tpe)
+  }
+
+  implicit def deriveOption[T](implicit m: DIConfigMeta[T]): DIConfigMeta[Option[T]] = new DIConfigMeta[Option[T]] {
+    override def tpe: ConfigMetaType = ConfigMetaType.TOption(m.tpe)
   }
 
   implicit def deriveMap[K, V, M[A, B] <: scala.collection.Map[A, B]](
