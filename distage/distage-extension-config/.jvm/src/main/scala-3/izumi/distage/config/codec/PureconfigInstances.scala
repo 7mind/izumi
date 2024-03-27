@@ -12,7 +12,6 @@ import scala.compiletime.{constValue, erasedValue, summonFrom}
 import scala.compiletime.ops.int.+
 import scala.deriving.Mirror
 
-
 object PureconfigInstances {
 
   object auto {
@@ -38,7 +37,7 @@ object PureconfigInstances {
     inline def derivedProduct[A](using m: Mirror.ProductOf[A]): ConfigReader[A] = {
       inline erasedValue[A] match {
         case _: Tuple =>
-          new ConfigReaderWithConfigMeta[A] {
+          new ConfigReader[A] {
             override def from(cur: ConfigCursor): ConfigReader.Result[A] =
               for {
                 listCur <- asList(cur)
@@ -55,22 +54,14 @@ object PureconfigInstances {
                       WrongSizeList(constValue[Tuple.Size[A & Tuple]], listCur.size)
                     )
               }
-
-            override def tpe: ConfigMetaType = ConfigMetaType.TUnknown()
           }
 
         case _ =>
-          new ConfigReaderWithConfigMeta[A] {
+          new ConfigReader[A] {
             val labels: Array[String] = Utils.transformedLabels[A](fieldMapping).toArray
-            val (tpe, tupleReader) = {
-              val (codecs, tupleReader) = readTuple[m.MirroredElemTypes, 0]
-              val fieldMeta = ConfigMetaType.TCaseClass(
-                labels.iterator
-                  .zip(codecs).map {
-                    case (label, reader) => (label, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader(reader))
-                  }.toSeq
-              )
-              (fieldMeta, tupleReader)
+            val tupleReader = {
+              val (_, tupleReader) = readTuple[m.MirroredElemTypes, 0]
+              tupleReader
             }
 
             override def from(cur: ConfigCursor): ConfigReader.Result[A] =
@@ -144,16 +135,16 @@ object PureconfigInstances {
       * }}}
       */
     inline def derivedSum[A](using m: Mirror.SumOf[A]): ConfigReader[A] = {
-      new ConfigReaderWithConfigMeta[A] {
+      new ConfigReader[A] {
         val options: Map[String, ConfigReader[A]] =
           Utils
             .transformedLabels[A](fieldMapping)
             .zip(deriveForSubtypes[m.MirroredElemTypes, A])
             .toMap
 
-        override val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(options.map {
-          case (label, reader) => (label, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader(reader))
-        }.toSet)
+//        override val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(options.map {
+//          case (label, reader) => (label, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader(reader))
+//        }.toSet)
 
         override def from(cur: ConfigCursor): ConfigReader.Result[A] = {
           for {
