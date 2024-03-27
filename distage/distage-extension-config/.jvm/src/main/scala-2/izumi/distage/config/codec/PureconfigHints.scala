@@ -7,7 +7,7 @@ import pureconfig.error.*
 import pureconfig.generic.error.*
 import pureconfig.generic.{CoproductHint, ProductHint}
 
-trait PureconfigHints {
+object PureconfigHints {
   /** Override pureconfig's default `kebab-case` fields – force CamelCase product-hint */
   @inline implicit final def forceCamelCaseProductHint[T]: ProductHint[T] = PureconfigHints.camelCaseProductHint.asInstanceOf[ProductHint[T]]
 
@@ -31,9 +31,7 @@ trait PureconfigHints {
     * }}}
     */
   @inline implicit final def forceCirceLikeCoproductHint[T]: CoproductHint[T] = PureconfigHints.circeLikeCoproductHint.asInstanceOf[CoproductHint[T]]
-}
 
-object PureconfigHints {
   private[config] final val camelCaseProductHint: ProductHint[Any] = ProductHint(ConfigFieldMapping(CamelCase, CamelCase))
 
   private[config] final val circeLikeCoproductHint: CoproductHint[Any] = new CoproductHint[Any] {

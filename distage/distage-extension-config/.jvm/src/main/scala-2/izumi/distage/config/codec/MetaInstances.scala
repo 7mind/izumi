@@ -6,7 +6,8 @@ import pureconfig.generic.{CoproductHint, ProductHint}
 
 import scala.language.experimental.macros
 
-object MetaInstances extends PureconfigHints {
+object MetaInstances {
+  import PureconfigHints.*
 
   object auto {
     implicit def gen[T]: DIConfigMeta[T] = macro Magnolia.gen[T]
