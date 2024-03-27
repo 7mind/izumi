@@ -1,20 +1,15 @@
 package izumi.distage.config.codec
 
-import com.typesafe.config.{ConfigRenderOptions, ConfigValue}
 import pureconfig.*
-import pureconfig.error.*
+import pureconfig.generic.derivation.Utils
 
 import scala.compiletime.ops.int.+
 import scala.compiletime.{constValue, erasedValue, summonFrom}
 import scala.deriving.Mirror
-import scala.reflect.classTag
 import scala.util.chaining.*
-import scala.util.control.NonFatal
-import pureconfig.error.{CannotConvert, ConfigReaderFailures, FailureReason, KeyNotFound, ThrowableFailure, WrongSizeList}
-import pureconfig.generic.derivation.{ConfigReaderDerivation, CoproductConfigReaderDerivation, ProductConfigReaderDerivation, Utils}
 
 object MetaInstances {
-
+  // TODO: deduplicate w/PureconfigInstances
   object auto {
     inline implicit def exportDerivedDIConfigMeta[A]: Exported[DIConfigMeta[A]] = {
       summonFrom {
@@ -124,43 +119,7 @@ object MetaInstances {
           derived[A0].asInstanceOf[DIConfigMeta[A]]
       }
 
-    // not published in pureconfig Scala 3 version, copied from Scala 2 version
-    /**
-      * A failure reason given when a valid option for a coproduct cannot be found.
-      *
-      * @param value          the ConfigValue that was unable to be mapped to a coproduct option
-      * @param optionFailures the failures produced when attempting to read coproduct options
-      */
-    final case class NoValidCoproductOptionFound(value: ConfigValue, optionFailures: Seq[(String, ConfigReaderFailures)]) extends FailureReason {
-      def description = {
-        val baseDescription = s"No valid coproduct option found for '${value.render(ConfigRenderOptions.concise())}'."
-        baseDescription + (if (optionFailures.isEmpty) ""
-                           else {
-                             "\n" + optionFailures
-                               .map {
-                                 case (optionName, failures) =>
-                                   s"Can't use coproduct option '$optionName':\n" + failures.prettyPrint(1)
-                               }
-                               .mkString("\n")
-                           })
-      }
-    }
-
-    // not published in pureconfig Scala 3 version, copied from Scala 2 version
-    /**
-      * A failure reason given when a provided coproduct option is invalid. This likely signals a bug in a CoproductHint
-      * implementation, since the provided option isn't a valid one for the CoproductHint's type.
-      *
-      * @param option the coproduct option that is invalid
-      */
-    final case class InvalidCoproductOption(option: String) extends FailureReason {
-      def description =
-        s"""|The provided option '$option' is invalid for the CoproductHint's type. There's likely a bug in the
-            |CoproductHint implementation.""".stripMargin
-    }
-
     private[this] val fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, CamelCase)
-
   }
 
 }
