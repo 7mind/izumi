@@ -6,8 +6,10 @@ object ConfigMetaType {
   final case class TSealedTrait(branches: Set[(String, ConfigMetaType)]) extends ConfigMetaType
   final case class TBasic(tpe: ConfigMetaBasicType) extends ConfigMetaType
   final case class TList(tpe: ConfigMetaType) extends ConfigMetaType
+  final case class TSet(tpe: ConfigMetaType) extends ConfigMetaType
+  final case class TOption(tpe: ConfigMetaType) extends ConfigMetaType
   final case class TMap(keyType: ConfigMetaType, valueType: ConfigMetaType) extends ConfigMetaType
-  final case class TUnknown() extends ConfigMetaType
+  final case class TUnknown(source: String = "???") extends ConfigMetaType
 }
 
 sealed trait ConfigMetaBasicType
