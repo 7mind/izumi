@@ -12,9 +12,8 @@ import scala.compiletime.{constValue, erasedValue, summonFrom}
 import scala.compiletime.ops.int.+
 import scala.deriving.Mirror
 
-trait PureconfigInstances extends PureconfigSharedInstances
 
-object PureconfigInstances extends PureconfigInstances {
+object PureconfigInstances {
 
   object auto {
     inline implicit def exportDerivedConfigReader[A]: Exported[ConfigReader[A]] = {
