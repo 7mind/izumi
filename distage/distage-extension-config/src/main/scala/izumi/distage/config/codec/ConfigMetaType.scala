@@ -1,15 +1,33 @@
 package izumi.distage.config.codec
 
-sealed trait ConfigMetaType
+final case class ConfigMetaTypeId(owner: Option[String], short: String, typeArguments: Seq[ConfigMetaTypeId]) {
+  val full: String = s"$owner.$short"
+}
+
+sealed trait ConfigMetaType {
+  def id: ConfigMetaTypeId
+}
 object ConfigMetaType {
-  final case class TCaseClass(fields: Seq[(String, ConfigMetaType)]) extends ConfigMetaType
-  final case class TSealedTrait(branches: Set[(String, ConfigMetaType)]) extends ConfigMetaType
-  final case class TBasic(tpe: ConfigMetaBasicType) extends ConfigMetaType
-  final case class TList(tpe: ConfigMetaType) extends ConfigMetaType
-  final case class TSet(tpe: ConfigMetaType) extends ConfigMetaType
-  final case class TOption(tpe: ConfigMetaType) extends ConfigMetaType
-  final case class TMap(keyType: ConfigMetaType, valueType: ConfigMetaType) extends ConfigMetaType
-  final case class TUnknown(source: String = "???") extends ConfigMetaType
+  final case class TCaseClass(id: ConfigMetaTypeId, fields: Seq[(String, ConfigMetaType)]) extends ConfigMetaType
+  final case class TSealedTrait(id: ConfigMetaTypeId, branches: Set[(String, ConfigMetaType)]) extends ConfigMetaType
+  final case class TBasic(tpe: ConfigMetaBasicType) extends ConfigMetaType {
+    override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, tpe.toString, Seq.empty)
+  }
+  final case class TList(tpe: ConfigMetaType) extends ConfigMetaType {
+    override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "List", Seq(tpe.id))
+  }
+  final case class TSet(tpe: ConfigMetaType) extends ConfigMetaType {
+    override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "Set", Seq(tpe.id))
+  }
+  final case class TOption(tpe: ConfigMetaType) extends ConfigMetaType {
+    override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "Option", Seq(tpe.id))
+  }
+  final case class TMap(keyType: ConfigMetaType, valueType: ConfigMetaType) extends ConfigMetaType {
+    override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "Map", Seq(keyType.id, valueType.id))
+  }
+  final case class TUnknown(source: String) extends ConfigMetaType {
+    override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "???", Seq.empty)
+  }
 }
 
 sealed trait ConfigMetaBasicType

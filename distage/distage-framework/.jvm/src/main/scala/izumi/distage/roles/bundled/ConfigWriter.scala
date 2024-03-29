@@ -114,6 +114,7 @@ final class ConfigWriter[F[_]: TagK](
     val meta = configTags.map(t => (t.confPath, t.tpe))
     import izumi.fundamentals.platform.strings.IzString.*
     println(meta.niceList())
+//    println(configTags.map(t => (t.confPath, t.id)))
 
     val resolvedConfig =
       extractConfigPaths(configTags).toSet + _HackyMandatorySection
@@ -150,12 +151,12 @@ final class ConfigWriter[F[_]: TagK](
 
   private def unpackConfigPaths(path: Seq[String], meta0: ConfigMetaType): Seq[ConfigPath] = {
     meta0 match {
-      case ConfigMetaType.TCaseClass(fields) =>
+      case ConfigMetaType.TCaseClass(_, fields) =>
         fields.flatMap {
           case (name, meta) =>
             unpackConfigPaths(path :+ name, meta)
         }
-      case ConfigMetaType.TSealedTrait(branches) =>
+      case ConfigMetaType.TSealedTrait(_, branches) =>
         branches.toSeq.flatMap {
           case (name, meta) =>
             unpackConfigPaths(path :+ name, meta)

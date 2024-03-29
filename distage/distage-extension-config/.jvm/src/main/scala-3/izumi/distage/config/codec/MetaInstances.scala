@@ -4,7 +4,7 @@ import pureconfig.*
 import pureconfig.generic.derivation.Utils
 
 import scala.compiletime.ops.int.+
-import scala.compiletime.{constValue, erasedValue, summonFrom}
+import scala.compiletime.{constValue, constValueTuple, erasedValue, summonFrom}
 import scala.deriving.Mirror
 import scala.util.chaining.*
 
@@ -31,10 +31,12 @@ object MetaInstances {
 
     /** Override pureconfig's default `kebab-case` fields – force CamelCase product-hint */
     inline def derivedProduct[A](using m: Mirror.ProductOf[A]): DIConfigMeta[A] = {
+      val tname = constValue[m.MirroredLabel]
+
       inline erasedValue[A] match {
         case _: Tuple =>
           new DIConfigMeta[A] {
-            override def tpe: ConfigMetaType = ConfigMetaType.TUnknown()
+            override def tpe: ConfigMetaType = ConfigMetaType.TUnknown("derivedProduct")
           }
 
         case _ =>
@@ -43,10 +45,11 @@ object MetaInstances {
               val labels: Array[String] = Utils.transformedLabels[A](fieldMapping).toArray
               val codecs = readTuple[m.MirroredElemTypes, 0]
               val fieldMeta = ConfigMetaType.TCaseClass(
+                convertId(tname),
                 labels.iterator
                   .zip(codecs).map {
                     case (label, reader) => (label, reader.tpe)
-                  }.toSeq
+                  }.toSeq,
               )
               fieldMeta
             }
@@ -91,6 +94,8 @@ object MetaInstances {
       * }}}
       */
     inline def derivedSum[A](using m: Mirror.SumOf[A]): DIConfigMeta[A] = {
+      val tname = constValue[m.MirroredLabel]
+
       new DIConfigMeta[A] {
         val options: Map[String, DIConfigMeta[A]] =
           Utils
@@ -98,9 +103,12 @@ object MetaInstances {
             .zip(deriveForSubtypes[m.MirroredElemTypes, A])
             .toMap
 
-        override val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(options.map {
-          case (label, reader) => (label, reader.tpe)
-        }.toSet)
+        override val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(
+          convertId(tname),
+          options.map {
+            case (label, reader) => (label, reader.tpe)
+          }.toSet,
+        )
       }
     }
 
@@ -120,6 +128,11 @@ object MetaInstances {
       }
 
     private[this] val fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, CamelCase)
+
+    private def convertId(name: String): ConfigMetaTypeId = {
+      val parts = name.split('.').toSeq
+      ConfigMetaTypeId(Some(parts.init.mkString(".")), parts.last, Seq.empty)
+    }
   }
 
 }

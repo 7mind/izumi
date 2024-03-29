@@ -22,7 +22,6 @@ sealed trait LowPriorityDIConfigMetaInstances {
 }
 
 object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
-//  implicit def dummy[A]: DIConfigMeta[A] = ???
   implicit def derived[T: ClassTag](implicit dec: MetaAutoDerive[T]): DIConfigMeta[T] =
     DIConfigMeta.deriveFromMetaAutoDerive[T](classTag[T], dec)
 
@@ -46,7 +45,7 @@ object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
       override def tpe: ConfigMetaType = ConfigMetaType.TMap(decK.tpe, decV.tpe)
     }
 
-  def fromBasic[T](tpeBasic: ConfigMetaBasicType): DIConfigMeta[T] =
+  def fromBasic[T: ClassTag](tpeBasic: ConfigMetaBasicType): DIConfigMeta[T] =
     new DIConfigMeta[T] {
       override def tpe: ConfigMetaType = ConfigMetaType.TBasic(tpeBasic)
     }
