@@ -1,14 +1,28 @@
 package izumi.distage.config.codec
 
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import pureconfig.*
 import pureconfig.generic.derivation.Utils
 
 import scala.compiletime.ops.int.+
-import scala.compiletime.{constValue, constValueTuple, erasedValue, summonFrom}
+import scala.compiletime.{constValue, constValueTuple, erasedValue, summonFrom, summonInline}
 import scala.deriving.Mirror
 import scala.util.chaining.*
+import scala.quoted.*
 
 object MetaInstances {
+
+//  inline def packageNameOf[T]: String = ${ packageNameOfImpl[T] }
+//
+//  def packageNameOfImpl[T: Type](using Quotes): Expr[String] = {
+//    import quotes.reflect.*
+//
+//    val symbol = TypeRepr.of[T].typeSymbol
+//    val packageName = symbol.maybeOwner.toString
+//
+//    Expr(packageName)
+//  }
+
   // TODO: deduplicate w/PureconfigInstances
   object auto {
     inline implicit def exportDerivedDIConfigMeta[A]: Exported[DIConfigMeta[A]] = {
@@ -42,10 +56,10 @@ object MetaInstances {
         case _ =>
           new DIConfigMeta[A] {
             override def tpe: ConfigMetaType = {
-              val labels: Array[String] = Utils.transformedLabels[A](fieldMapping).toArray
+              val labels: Array[String] = Utils.transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping).toArray
               val codecs = readTuple[m.MirroredElemTypes, 0]
               val fieldMeta = ConfigMetaType.TCaseClass(
-                convertId(tname),
+                convertId(m),
                 labels.iterator
                   .zip(codecs).map {
                     case (label, reader) => (label, reader.tpe)
@@ -94,17 +108,15 @@ object MetaInstances {
       * }}}
       */
     inline def derivedSum[A](using m: Mirror.SumOf[A]): DIConfigMeta[A] = {
-      val tname = constValue[m.MirroredLabel]
-
       new DIConfigMeta[A] {
         val options: Map[String, DIConfigMeta[A]] =
           Utils
-            .transformedLabels[A](fieldMapping)
+            .transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping)
             .zip(deriveForSubtypes[m.MirroredElemTypes, A])
             .toMap
 
         override val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(
-          convertId(tname),
+          convertId(m),
           options.map {
             case (label, reader) => (label, reader.tpe)
           }.toSet,
@@ -127,12 +139,12 @@ object MetaInstances {
           derived[A0].asInstanceOf[DIConfigMeta[A]]
       }
 
-    private[this] val fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, CamelCase)
-
-    private def convertId(name: String): ConfigMetaTypeId = {
-      val parts = name.split('.').toSeq
-      ConfigMetaTypeId(Some(parts.init.mkString(".")), parts.last, Seq.empty)
+    inline private def convertId[A](m: Mirror.Of[A]): ConfigMetaTypeId = {
+      val tname = constValue[m.MirroredLabel]
+      val p = CodePositionMaterializer.packageOf[A]
+      ConfigMetaTypeId(Some(p), tname, Seq.empty)
     }
+
   }
 
 }

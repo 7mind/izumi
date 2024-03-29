@@ -15,9 +15,10 @@ object CodePositionMaterializer {
 
   inline def materializeApplicationPointId: String = ${ CodePositionMaterializerMacro.getApplicationPointId() }
 
-  object CodePositionMaterializerMacro {
+  inline def packageOf[A]: String = ${ CodePositionMaterializerMacro.getPackageOf[A]() }
 
-    def ownershipChain()(using qctx: Quotes): Seq[qctx.reflect.Symbol] = {
+  class Extractors[Q <: Quotes](using val qctx: Q) {
+    def ownershipChainOf(sym: qctx.reflect.Symbol): Seq[qctx.reflect.Symbol] = {
       import qctx.reflect.*
 
       @tailrec
@@ -30,14 +31,14 @@ object CodePositionMaterializer {
 
         }
       }
+
       val st = mutable.ArrayBuffer[Symbol]()
-      extractOwnershipChain(Symbol.spliceOwner, st)
+      extractOwnershipChain(sym, st)
       st.toSeq
     }
 
-    def getApplicationPointId()(using qctx: Quotes): Expr[String] = {
-      val st = ownershipChain()
-      val applicationId = st.tail
+    def getApplicationPointIdOf(chain: Seq[qctx.reflect.Symbol]): Expr[String] = {
+      val applicationId = chain.tail
         .flatMap {
           case s if s.isPackageDef =>
             Some(s.name)
@@ -54,6 +55,29 @@ object CodePositionMaterializer {
       Expr(applicationId)
     }
 
+    private def goodSymbol(using qctx: Quotes)(s: qctx.reflect.Symbol): Boolean = {
+      val name = s.name
+      !name.startsWith("$") && !name.startsWith("<")
+    }
+  }
+
+  object CodePositionMaterializerMacro {
+    def getPackageOf[A: Type]()(using qctx: Quotes): Expr[String] = {
+      import qctx.reflect.*
+      val ext = new Extractors[qctx.type]
+      ext.getApplicationPointIdOf(ext.ownershipChainOf(TypeRepr.of[A].typeSymbol))
+    }
+
+    def ownershipChain()(using qctx: Quotes): Seq[qctx.reflect.Symbol] = {
+      val ext = new Extractors[qctx.type]
+      ext.ownershipChainOf(qctx.reflect.Symbol.spliceOwner)
+    }
+
+    def getApplicationPointId()(using qctx: Quotes): Expr[String] = {
+      val ext = new Extractors[qctx.type]
+      ext.getApplicationPointIdOf(ownershipChain())
+    }
+
     def getEnclosingPosition()(using qctx: Quotes): Expr[CodePosition] = {
       val sourcePos = SourceFilePositionMaterializer.SourceFilePositionMaterializerMacro.getSourceFilePosition()
       val applicationId = getApplicationPointId()
@@ -66,10 +90,6 @@ object CodePositionMaterializer {
       '{ CodePositionMaterializer(${ pos }) }
     }
 
-    private def goodSymbol(using qctx: Quotes)(s: qctx.reflect.Symbol): Boolean = {
-      val name = s.name
-      !name.startsWith("$") && !name.startsWith("<")
-    }
   }
 
 }

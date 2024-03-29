@@ -2,15 +2,13 @@ package izumi.distage.config.codec
 
 import com.typesafe.config.{ConfigRenderOptions, ConfigValue}
 import pureconfig.*
-import pureconfig.error.{CannotConvert, ConfigReaderFailures, FailureReason, KeyNotFound, ThrowableFailure, WrongSizeList}
-import pureconfig.generic.derivation.{ConfigReaderDerivation, CoproductConfigReaderDerivation, ProductConfigReaderDerivation, Utils}
+import pureconfig.error.*
+import pureconfig.generic.derivation.Utils
 
-import scala.reflect.classTag
-import scala.util.control.NonFatal
-import scala.util.chaining.*
-import scala.compiletime.{constValue, erasedValue, summonFrom}
 import scala.compiletime.ops.int.+
+import scala.compiletime.{constValue, erasedValue, summonFrom}
 import scala.deriving.Mirror
+import scala.util.chaining.*
 
 object PureconfigInstances {
 
@@ -229,7 +227,7 @@ object PureconfigInstances {
             |CoproductHint implementation.""".stripMargin
     }
 
-    private[this] val fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, CamelCase)
+    val fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, CamelCase)
 
   }
 
