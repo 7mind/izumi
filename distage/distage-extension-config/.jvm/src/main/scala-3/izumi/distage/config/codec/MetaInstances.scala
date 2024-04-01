@@ -1,41 +1,17 @@
 package izumi.distage.config.codec
 
-import izumi.fundamentals.platform.language.CodePositionMaterializer
-import pureconfig.*
 import pureconfig.generic.derivation.Utils
 
 import scala.compiletime.ops.int.+
-import scala.compiletime.{constValue, constValueTuple, erasedValue, summonFrom, summonInline}
+import scala.compiletime.*
 import scala.deriving.Mirror
 import scala.util.chaining.*
-import scala.quoted.*
 
 object MetaInstances {
 
-//  inline def packageNameOf[T]: String = ${ packageNameOfImpl[T] }
-//
-//  def packageNameOfImpl[T: Type](using Quotes): Expr[String] = {
-//    import quotes.reflect.*
-//
-//    val symbol = TypeRepr.of[T].typeSymbol
-//    val packageName = symbol.maybeOwner.toString
-//
-//    Expr(packageName)
-//  }
-
-  // TODO: deduplicate w/PureconfigInstances
-  object auto {
-    inline implicit def exportDerivedDIConfigMeta[A]: Exported[DIConfigMeta[A]] = {
-      summonFrom {
-        case c: DIConfigMeta[A] => Exported(c) // avoids `increase -Xmax-inlines` error, but makes no sense to me. Shouldn't be required at all.
-        case m: Mirror.Of[A] =>
-          Exported(configReaderDerivation.derived[A](using m))
-      }
-    }
-  }
-
+  // magnolia on scala3 abuses inlines and requires high inlines limit (e.g. -Xmax-inlines:1024).
+  // so we had to re-implement derivation manually and copy-paste the type id logic from Magnolia
   object configReaderDerivation {
-
     inline def derived[A](using m: Mirror.Of[A]): DIConfigMeta[A] = {
       inline m match {
         case given Mirror.ProductOf[A] => derivedProduct
@@ -59,7 +35,7 @@ object MetaInstances {
               val labels: Array[String] = Utils.transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping).toArray
               val codecs = readTuple[m.MirroredElemTypes, 0]
               val fieldMeta = ConfigMetaType.TCaseClass(
-                convertId(m),
+                typeId[A],
                 labels.iterator
                   .zip(codecs).map {
                     case (label, reader) => (label, reader.tpe)
@@ -116,7 +92,7 @@ object MetaInstances {
             .toMap
 
         override val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(
-          convertId(m),
+          typeId[A],
           options.map {
             case (label, reader) => (label, reader.tpe)
           }.toSet,
@@ -139,10 +115,52 @@ object MetaInstances {
           derived[A0].asInstanceOf[DIConfigMeta[A]]
       }
 
-    inline private def convertId[A](m: Mirror.Of[A]): ConfigMetaTypeId = {
-      val tname = constValue[m.MirroredLabel]
-      val p = CodePositionMaterializer.packageOf[A]
-      ConfigMetaTypeId(Some(p), tname, Seq.empty)
+    import scala.quoted.*
+
+    // https://github.com/softwaremill/magnolia/blob/scala3/core/src/main/scala/magnolia1/macro.scala#L135
+    private inline def typeId[T]: ConfigMetaTypeId = ${ typeIdImpl[T] }
+
+    private def typeIdImpl[T: Type](using Quotes): Expr[ConfigMetaTypeId] = {
+
+      import quotes.reflect.*
+
+      def normalizedName(s: Symbol): String =
+        if s.flags.is(Flags.Module) then s.name.stripSuffix("$") else s.name
+
+      def name(tpe: TypeRepr): Expr[String] = tpe.dealias match {
+        case matchedTpe @ TermRef(typeRepr, name) if matchedTpe.typeSymbol.flags.is(Flags.Module) =>
+          Expr(name.stripSuffix("$"))
+        case TermRef(typeRepr, name) =>
+          Expr(name)
+        case matchedTpe =>
+          Expr(normalizedName(matchedTpe.typeSymbol))
+      }
+
+      def ownerNameChain(sym: Symbol): List[String] =
+        if sym.isNoSymbol then List.empty
+        else if sym == defn.EmptyPackageClass then List.empty
+        else if sym == defn.RootPackage then List.empty
+        else if sym == defn.RootClass then List.empty
+        else ownerNameChain(sym.owner) :+ normalizedName(sym)
+
+      def owner(tpe: TypeRepr): Expr[String] = Expr(
+        ownerNameChain(tpe.dealias.typeSymbol.maybeOwner).mkString(".")
+      )
+
+      def typeInfo(tpe: TypeRepr): Expr[ConfigMetaTypeId] = tpe match {
+
+        case AppliedType(tpe, args) =>
+          '{
+            ConfigMetaTypeId(
+              Some(${ owner(tpe) }),
+              ${ name(tpe) },
+              ${ Expr.ofList(args.map(typeInfo)) },
+            )
+          }
+        case _ =>
+          '{ ConfigMetaTypeId(Some(${ owner(tpe) }), ${ name(tpe) }, Nil) }
+      }
+      typeInfo(TypeRepr.of[T])
     }
 
   }

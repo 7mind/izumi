@@ -1,8 +1,6 @@
 package izumi.distage.config.codec
 
-final case class ConfigMetaTypeId(owner: Option[String], short: String, typeArguments: Seq[ConfigMetaTypeId]) {
-  val full: String = s"$owner.$short"
-}
+final case class ConfigMetaTypeId(owner: Option[String], short: String, typeArguments: Seq[ConfigMetaTypeId])
 
 sealed trait ConfigMetaType {
   def id: ConfigMetaTypeId
