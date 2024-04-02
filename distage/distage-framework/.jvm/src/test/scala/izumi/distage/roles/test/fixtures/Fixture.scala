@@ -42,6 +42,8 @@ object Fixture {
     systemPropList: List[Int],
   )
 
+  case class TestValueConf(value: Int)
+
   class XXX_ResourceEffectsRecorder[F[_]] {
     private val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
     private val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()

@@ -60,6 +60,10 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
   makeConfig[SetElementOnlyCfg]("setElementConfig")
 
+  makeConfig[TestValueConf]("wrapped").named("v1")
+  makeConfig[TestValueConf]("wrapped.path.one").named("v2")
+  makeConfig[TestValueConf]("wrapped.path.two").named("v3")
+
   makeConfig[IntegrationOnlyCfg2]("integrationOnlyCfg2")
   modify[IntegrationOnlyCfg2] {
     (conf: IntegrationOnlyCfg2) =>
@@ -72,7 +76,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
       TestServiceConf2(conf.strval + ":updated", conf.map, conf.list)
   }
   makeConfig[ListConf]("listconf")
-  
+
   include(GenericServiceConf.module[GenericServiceConf.Impl]("genericservice"))
 }
 

@@ -113,7 +113,11 @@ final class ConfigWriter[F[_]: TagK](
 
     val meta = configTags.map(t => (t.confPath, t.tpe))
     import izumi.fundamentals.platform.strings.IzString.*
-    println(meta.niceList())
+    if (meta.nonEmpty) {
+      println(meta.niceList())
+      new JsonSchemaGenerator(configTags).unifyTopLevel()
+
+    }
 //    println(configTags.map(t => (t.confPath, t.id)))
 
     val resolvedConfig =
@@ -142,7 +146,7 @@ final class ConfigWriter[F[_]: TagK](
     configTags.flatMap(t => unpackConfigPaths(Seq(t.confPath), t.tpe))
   }
 
-  private def extractConfigTags(bindings: Set[Binding]) = {
+  private def extractConfigTags(bindings: Set[Binding]): Seq[ConfTag] = {
     bindings.toSeq.flatMap(_.tags).collect {
       case t: ConfTag =>
         t

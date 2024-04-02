@@ -26,7 +26,7 @@ object MetaInstances {
       inline erasedValue[A] match {
         case _: Tuple =>
           new DIConfigMeta[A] {
-            override def tpe: ConfigMetaType = ConfigMetaType.TUnknown("derivedProduct")
+            override def tpe: ConfigMetaType = ConfigMetaType.TUnknown()
           }
 
         case _ =>

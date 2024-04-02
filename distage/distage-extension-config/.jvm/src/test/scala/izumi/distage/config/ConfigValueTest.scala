@@ -20,12 +20,12 @@
 //
 //    "be unknown for config maps" in {
 //      val c = getConfTag(TestConfigReaders.mapDefinition)
-//      assert(c.tpe == ConfigMetaType.TCaseClass(c.tpe.id, Seq("mymap" -> ConfigMetaType.TUnknown("test"))))
+//      assert(c.tpe == ConfigMetaType.TCaseClass(c.tpe.id, Seq("mymap" -> ConfigMetaType.TUnknown()
 //    }
 //
 //    "be unknown for config lists" in {
 //      val c = getConfTag(TestConfigReaders.listDefinition)
-//      assert(c.tpe == ConfigMetaType.TCaseClass(c.tpe.id, Seq("mylist" -> ConfigMetaType.TUnknown("test"))))
+//      assert(c.tpe == ConfigMetaType.TCaseClass(c.tpe.id, Seq("mylist" -> ConfigMetaType.TUnknown()
 //    }
 //
 //    "be as expected for config options" in {
@@ -34,8 +34,8 @@
 //        c.tpe == ConfigMetaType.TCaseClass(
 //          c.tpe.id,
 //          Seq(
-//            "optInt" -> ConfigMetaType.TUnknown("test"),
-//            "optCustomObject" -> ConfigMetaType.TCaseClass(c.tpe.id, Seq("value" -> ConfigMetaType.TUnknown("test"))),
+//            "optInt" -> ConfigMetaType.TUnknown(),
+//            "optCustomObject" -> ConfigMetaType.TCaseClass(c.tpe.id, Seq("value" -> ConfigMetaType.TUnknown(),
 //          ),
 //        )
 //      )
@@ -43,7 +43,7 @@
 //
 //    "be unknown for config tuples" in {
 //      val c = getConfTag(TestConfigReaders.tupleDefinition)
-//      assert(c.tpe == ConfigMetaType.TCaseClass(Seq("tuple" -> ConfigMetaType.TUnknown("test"))))
+//      assert(c.tpe == ConfigMetaType.TCaseClass(Seq("tuple" -> ConfigMetaType.TUnknown()
 //    }
 //
 //    "be unknown for custom codecs" in {
@@ -51,9 +51,9 @@
 //      assert(
 //        c.tpe == ConfigMetaType.TCaseClass(
 //          Seq(
-//            "customObject" -> ConfigMetaType.TUnknown("test"),
-//            "mapCustomObject" -> ConfigMetaType.TUnknown("test"),
-//            "mapListCustomObject" -> ConfigMetaType.TUnknown("test"),
+//            "customObject" -> ConfigMetaType.TUnknown(),
+//            "mapCustomObject" -> ConfigMetaType.TUnknown(),
+//            "mapListCustomObject" -> ConfigMetaType.TUnknown(),
 //          )
 //        )
 //      )
@@ -62,13 +62,13 @@
 //    "be as expected for backticks" in {
 //      val c = getConfTag(TestConfigReaders.backticksDefinition)
 //
-//      assert(c.tpe == ConfigMetaType.TCaseClass(c.tpe.id, Seq("boo-lean" -> ConfigMetaType.TUnknown("test"))))
+//      assert(c.tpe == ConfigMetaType.TCaseClass(c.tpe.id, Seq("boo-lean" -> ConfigMetaType.TUnknown()
 //    }
 //
 //    "be as expected for case classes with private fields" in {
 //      val c = getConfTag(TestConfigReaders.privateFieldsCodecDefinition)
 //
-//      assert(c.tpe == ConfigMetaType.TCaseClass(c.tpe.id, Seq("private-custom-field-name" -> ConfigMetaType.TUnknown("test"))))
+//      assert(c.tpe == ConfigMetaType.TCaseClass(c.tpe.id, Seq("private-custom-field-name" -> ConfigMetaType.TUnknown()
 //    }
 //
 //    "be as expected for case classes with partially private fields" in {
@@ -77,8 +77,8 @@
 //      assert(
 //        c.tpe == ConfigMetaType.TCaseClass(
 //          Seq(
-//            "private-custom-field-name" -> ConfigMetaType.TUnknown("test"),
-//            "publicField" -> ConfigMetaType.TUnknown("test"),
+//            "private-custom-field-name" -> ConfigMetaType.TUnknown(),
+//            "publicField" -> ConfigMetaType.TUnknown(),
 //          )
 //        )
 //      )
@@ -96,9 +96,9 @@
 //              Set(
 //                "CaseClass1" -> ConfigMetaType.TCaseClass(
 //                  Seq(
-//                    "int" -> ConfigMetaType.TUnknown("test"),
-//                    "string" -> ConfigMetaType.TUnknown("test"),
-//                    "boolean" -> ConfigMetaType.TUnknown("test"),
+//                    "int" -> ConfigMetaType.TUnknown(),
+//                    "string" -> ConfigMetaType.TUnknown(),
+//                    "boolean" -> ConfigMetaType.TUnknown(),
 //                    "sealedTrait2" -> ConfigMetaType.TSealedTrait(
 //
 //                      Set(
@@ -110,8 +110,8 @@
 //                ),
 //                "CaseClass2" -> ConfigMetaType.TCaseClass(
 //                  Seq(
-//                    "int" -> ConfigMetaType.TUnknown("test"),
-//                    "boolean" -> ConfigMetaType.TUnknown("test"),
+//                    "int" -> ConfigMetaType.TUnknown(),
+//                    "boolean" -> ConfigMetaType.TUnknown(),
 //                    "sealedTrait2" -> ConfigMetaType.TSealedTrait(
 //                      Set(
 //                        "Yes" -> ConfigMetaType.TCaseClass(Seq()),

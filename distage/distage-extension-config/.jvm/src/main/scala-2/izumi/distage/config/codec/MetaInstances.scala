@@ -45,7 +45,7 @@ object MetaInstances {
           }
         ),
       )
-      if (ctx.typeName.full.startsWith("scala.Tuple")) ConfigMetaType.TUnknown("configMetaJoin")
+      if (ctx.typeName.full.startsWith("scala.Tuple")) ConfigMetaType.TUnknown()
       else if (ctx.isValueClass) fields0.fields.head._2 /* NB: AnyVal codecs are not supported on Scala 3 */
       else fields0
     }
@@ -65,7 +65,7 @@ object MetaInstances {
           }.toSet,
         )
       } else {
-        ConfigMetaType.TUnknown("configMetaSplit")
+        ConfigMetaType.TUnknown()
       }
     }
 

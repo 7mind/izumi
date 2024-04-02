@@ -1,13 +1,25 @@
 package izumi.distage.config.codec
 
-final case class ConfigMetaTypeId(owner: Option[String], short: String, typeArguments: Seq[ConfigMetaTypeId])
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
+import izumi.fundamentals.platform.strings.IzString.*
+
+final case class ConfigMetaTypeId(owner: Option[String], short: String, typeArguments: Seq[ConfigMetaTypeId]) {
+  override def toString: String = {
+    val parts = Seq(owner.getOrElse("_"), short) ++ Option(typeArguments.mkString("[", ",", "]")).toSeq.filterNot(_ => typeArguments.isEmpty)
+    parts.mkString(".")
+  }
+}
 
 sealed trait ConfigMetaType {
   def id: ConfigMetaTypeId
 }
 object ConfigMetaType {
-  final case class TCaseClass(id: ConfigMetaTypeId, fields: Seq[(String, ConfigMetaType)]) extends ConfigMetaType
-  final case class TSealedTrait(id: ConfigMetaTypeId, branches: Set[(String, ConfigMetaType)]) extends ConfigMetaType
+  final case class TCaseClass(id: ConfigMetaTypeId, fields: Seq[(String, ConfigMetaType)]) extends ConfigMetaType {
+    override def toString: String = s"Class $id with fields ${fields.map { case (n, v) => s"$n: $v" }.niceList().shift(2)}"
+  }
+  final case class TSealedTrait(id: ConfigMetaTypeId, branches: Set[(String, ConfigMetaType)]) extends ConfigMetaType {
+    override def toString: String = s"ADT $id with branches ${branches.map { case (n, v) => s"$n: $v" }.niceList().shift(2)}"
+  }
   final case class TBasic(tpe: ConfigMetaBasicType) extends ConfigMetaType {
     override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, tpe.toString, Seq.empty)
   }
@@ -23,8 +35,15 @@ object ConfigMetaType {
   final case class TMap(keyType: ConfigMetaType, valueType: ConfigMetaType) extends ConfigMetaType {
     override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "Map", Seq(keyType.id, valueType.id))
   }
-  final case class TUnknown(source: String) extends ConfigMetaType {
+  final case class TUnknown(pos: CodePosition) extends ConfigMetaType {
     override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "???", Seq.empty)
+  }
+  object TUnknown {
+    def apply()(implicit ev: CodePositionMaterializer, dummyImplicit: DummyImplicit): TUnknown = new TUnknown(ev.get)
+  }
+
+  final case class TVariant(id: ConfigMetaTypeId, variants: Set[ConfigMetaType]) extends ConfigMetaType {
+    override def toString: String = s"Choice $id with variants ${variants.niceList().shift(2)}"
   }
 }
 
