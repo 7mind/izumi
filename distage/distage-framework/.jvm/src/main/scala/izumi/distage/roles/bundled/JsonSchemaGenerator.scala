@@ -81,10 +81,11 @@ class JsonSchemaGenerator(tags: Seq[ConfTag]) {
         JsonObject().toJson
 
       case s: ConfigMetaType.TSealedTrait =>
-        println(s)
-        JsonObject().toJson
+        s.branches.foreach {
+          case (_, tpe) => generateSchema(tpe, defs)
+        }
+        JsonObject("anyOf" -> Json.fromValues(s.branches.map(_._2.id).map(refOf).map(_.toJson))).toJson
 
-//        ???
       case ConfigMetaType.TBasic(tpe) =>
         tpe match {
           case ConfigMetaBasicType.TString => JsonObject("type" -> Json.fromString("string")).toJson
