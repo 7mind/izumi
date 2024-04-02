@@ -1,7 +1,8 @@
 package izumi.distage.roles.bundled
 
+import io.circe.{Json, JsonObject}
 import izumi.distage.config.codec.ConfigMetaType.{TCaseClass, TVariant}
-import izumi.distage.config.codec.{ConfigMetaType, ConfigMetaTypeId}
+import izumi.distage.config.codec.{ConfigMetaBasicType, ConfigMetaType, ConfigMetaTypeId}
 import izumi.distage.config.model.ConfTag
 import izumi.distage.roles.bundled.JsonSchemaGenerator.TLAccumulator
 import izumi.fundamentals.collections.nonempty.NEList
@@ -43,8 +44,104 @@ class JsonSchemaGenerator(tags: Seq[ConfTag]) {
     val schema = convertIntoType(Seq.empty, tl)
 
     println(("TL", schema))
+    val generated = generateSchema(schema)
+    println(("GS", generated.spaces2))
+
     null
   }
+
+  private def generateSchema(meta: ConfigMetaType): Json = {
+    val index = mutable.HashMap.empty[String, Json]
+    generateSchema(meta, index)
+
+    index.get(meta.id.toString).flatMap(_.asObject) match {
+      case Some(value) =>
+        value.add("$defs", JsonObject(index.toSeq*).toJson).toJson
+      case _ => ???
+    }
+  }
+
+  private def generateSchema(meta: ConfigMetaType, defs: mutable.Map[String, Json]): Unit = {
+    val id = meta.id.toString
+
+    val schema = meta match {
+      case c: TCaseClass =>
+        val props = JsonObject(c.fields.map { case (n, t) => (n, refOf(t.id).toJson) }*).toJson
+        c.fields.foreach {
+          case (_, tpe) =>
+            generateSchema(tpe, defs)
+        }
+        val optional = c.fields.collect {
+          case (n, ConfigMetaType.TOption(_)) =>
+            n
+        }.toSet
+        val required = c.fields.map(_._1).toSet.diff(optional)
+        JsonObject("type" -> Json.fromString("object"), "properties" -> props, "required" -> Json.fromValues(required.map(Json.fromString))).toJson
+      case _: ConfigMetaType.TUnknown =>
+        JsonObject().toJson
+
+      case s: ConfigMetaType.TSealedTrait =>
+        println(s)
+        JsonObject().toJson
+
+//        ???
+      case ConfigMetaType.TBasic(tpe) =>
+        tpe match {
+          case ConfigMetaBasicType.TString => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TChar => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TBoolean => JsonObject("type" -> Json.fromString("boolean")).toJson
+          case ConfigMetaBasicType.TDouble => JsonObject("type" -> Json.fromString("number")).toJson
+          case ConfigMetaBasicType.TFloat => JsonObject("type" -> Json.fromString("number")).toJson
+          case ConfigMetaBasicType.TInt => JsonObject("type" -> Json.fromString("integer")).toJson
+          case ConfigMetaBasicType.TLong => JsonObject("type" -> Json.fromString("integer")).toJson
+          case ConfigMetaBasicType.TShort => JsonObject("type" -> Json.fromString("integer")).toJson
+          case ConfigMetaBasicType.TByte => JsonObject("type" -> Json.fromString("integer")).toJson
+          case ConfigMetaBasicType.TURL => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TUUID => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TPath => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TURI => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TPattern => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TRegex => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TInstant => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TZoneOffset => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TZoneId => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TPeriod => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TChronoUnit => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TJavaDuration => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TYear => JsonObject("type" -> Json.fromString("integer")).toJson
+          case ConfigMetaBasicType.TDuration => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TFiniteDuration => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TBigInteger => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TBigInt => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TBigDecimal => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TJavaBigDecimal => JsonObject("type" -> Json.fromString("string")).toJson
+          case ConfigMetaBasicType.TConfig => JsonObject().toJson
+          case ConfigMetaBasicType.TConfigObject => JsonObject("type" -> Json.fromString("object")).toJson
+          case ConfigMetaBasicType.TConfigValue => JsonObject().toJson
+          case ConfigMetaBasicType.TConfigList => JsonObject("type" -> Json.fromString("array")).toJson
+          case ConfigMetaBasicType.TConfigMemorySize => JsonObject("type" -> Json.fromString("string")).toJson
+        }
+      case ConfigMetaType.TList(tpe) =>
+        generateSchema(tpe, defs)
+        JsonObject("type" -> Json.fromString("array"), "items" -> refOf(tpe.id).toJson).toJson
+      case ConfigMetaType.TSet(tpe) =>
+        generateSchema(tpe, defs)
+        JsonObject("type" -> Json.fromString("array"), "items" -> refOf(tpe.id).toJson).toJson
+
+      case ConfigMetaType.TOption(tpe) =>
+        generateSchema(tpe)
+        refOf(tpe.id).toJson
+
+      case m: ConfigMetaType.TMap =>
+        JsonObject("$comment" -> Json.fromString(s"typed map type ${m.id} cannot be encoded with json schema")).toJson
+      case v: TVariant =>
+        JsonObject("$comment" -> Json.fromString(s"variant type ${v.id} cannot be encoded with json schema")).toJson
+    }
+
+    defs.update(id, schema)
+  }
+
+  private def refOf(id: ConfigMetaTypeId): JsonObject = JsonObject("$ref" -> Json.fromString(s"#/$$defs/$id"))
 
   private def convertIntoType(path: Seq[String], accumulator: TLAccumulator): ConfigMetaType = {
     val hasTypings = accumulator.typings.nonEmpty
