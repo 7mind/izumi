@@ -70,8 +70,9 @@ class PortCheck(timeout: FiniteDuration) {
         }
       } catch {
         case t: Throwable =>
+          // DON'T USE .getHostName here!!!
           val message =
-            errorMessage(s"${evaluatedAddress.getAddress.getHostAddress}==${evaluatedAddress.getHostName}:${evaluatedAddress.getPort}, timeout: $timeout", clue)
+            errorMessage(s"${evaluatedAddress.getAddress.getHostAddress}==${evaluatedAddress.getHostString}:${evaluatedAddress.getPort}, timeout: $timeout", clue)
           ResourceCheck.ResourceUnavailable(message, Some(t))
       }
     } catch {
