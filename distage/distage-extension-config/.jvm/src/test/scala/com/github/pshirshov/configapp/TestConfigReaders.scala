@@ -40,7 +40,16 @@ case class PartiallyPrivateCaseClass(
 
 case class NestedObject(value: Int)
 
-class CustomCodecObject(val value: Int)
+class CustomCodecObject(val value: Int) {
+  override def hashCode(): Int = value.hashCode()
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case c: CustomCodecObject => c.value == value
+      case _ => false
+    }
+  }
+}
 object CustomCodecObject {
   def apply(value: Int) = new CustomCodecObject(value)
 
