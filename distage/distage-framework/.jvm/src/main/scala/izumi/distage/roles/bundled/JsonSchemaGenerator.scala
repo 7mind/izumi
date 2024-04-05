@@ -31,8 +31,14 @@ object JsonSchemaGenerator {
   }
 }
 
-class JsonSchemaGenerator(tags: Seq[ConfTag]) {
-  def unifyTopLevel(): ConfigMetaType = {
+class JsonSchemaGenerator() {
+  def generateSchema(tags: Seq[ConfTag]): Json = {
+    val unified = unifyTopLevel(tags)
+    val schema = generateSchema(unified)
+    schema
+  }
+
+  private def unifyTopLevel(tags: Seq[ConfTag]): ConfigMetaType = {
     val types: Seq[NEList[(String, Option[ConfigMetaType])]] = tags.map {
       t =>
         val parts = t.confPath.split('.').toList
@@ -41,13 +47,7 @@ class JsonSchemaGenerator(tags: Seq[ConfTag]) {
 
     val tl = TLAccumulator.emtpy
     convertIntoTree(types, tl)
-    val schema = convertIntoType(Seq.empty, tl)
-
-    println(("TL", schema))
-    val generated = generateSchema(schema)
-    println(("GS", generated.spaces2))
-
-    null
+    convertIntoType(Seq.empty, tl)
   }
 
   private def generateSchema(meta: ConfigMetaType): Json = {
@@ -57,7 +57,8 @@ class JsonSchemaGenerator(tags: Seq[ConfTag]) {
     index.get(meta.id.toString).flatMap(_.asObject) match {
       case Some(value) =>
         value.add("$defs", JsonObject(index.toSeq*).toJson).toJson
-      case _ => ???
+      case _ =>
+        JsonObject("$comment" -> Json.fromString(s"Failed to generate schema for $meta, please report as a bug")).toJson
     }
   }
 
