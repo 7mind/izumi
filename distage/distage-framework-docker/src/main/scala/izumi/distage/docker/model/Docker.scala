@@ -56,7 +56,7 @@ object Docker {
     }
 
     def zeroAddresses: Set[ServiceHost] = {
-      Set(ServiceHost("0.0.0.0"), ServiceHost("::")).flatten
+      Set(ServiceHost("0.0.0.0"), ServiceHost("::"), ServiceHost(":::")).flatten
     }
   }
 

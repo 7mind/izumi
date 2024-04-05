@@ -2,7 +2,7 @@ package izumi.distage.roles.test.fixtures
 
 import distage.config.ConfigModuleDef
 import distage.{LocatorRef, Tag}
-import izumi.distage.config.codec.DIConfigReader
+import izumi.distage.config.codec.{DIConfigMeta, DIConfigReader}
 import izumi.distage.model.definition.Axis
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.roles.test.fixtures.roles.TestRole00.SetElementOnlyCfg
@@ -23,7 +23,7 @@ object Fixture {
   }
   object GenericServiceConf {
     case class Impl(genericField: Int, addedField: Int) extends GenericServiceConf
-    def module[Conf <: GenericServiceConf: Tag: DIConfigReader](path: String): ConfigModuleDef = new ConfigModuleDef {
+    def module[Conf <: GenericServiceConf: Tag: DIConfigReader: DIConfigMeta](path: String): ConfigModuleDef = new ConfigModuleDef {
       makeConfig[Conf](path)
     }
   }
@@ -41,6 +41,8 @@ object Fixture {
     systemPropInt: Int,
     systemPropList: List[Int],
   )
+
+  case class TestValueConf(value: Int)
 
   class XXX_ResourceEffectsRecorder[F[_]] {
     private val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
