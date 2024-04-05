@@ -17,7 +17,7 @@ object CodePositionMaterializer {
 
   inline def packageOf[A]: String = ${ CodePositionMaterializerMacro.getPackageOf[A]() }
 
-  class Extractors[Q <: Quotes](using val qctx: Q) {
+  class Extractors[Q <: Quotes](using val qctx: Q) extends AnyVal {
     def ownershipChainOf(sym: qctx.reflect.Symbol): Seq[qctx.reflect.Symbol] = {
       import qctx.reflect.*
 
