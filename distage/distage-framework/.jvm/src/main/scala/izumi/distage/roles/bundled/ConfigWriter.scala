@@ -3,14 +3,15 @@ package izumi.distage.roles.bundled
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import distage.TagK
 import distage.config.AppConfig
-import izumi.distage.config.codec.ConfigMeta
+import io.circe.Json
+import izumi.distage.config.codec.ConfigMetaType
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.services.{ConfigMerger, RoleAppPlanner}
 import izumi.distage.model.definition.{Binding, Id}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.planning.solver.PlanVerifier
-import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, WriteReference}
+import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, MinimizedConfig, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
@@ -51,10 +52,10 @@ final class ConfigWriter[F[_]: TagK](
 
   private[this] def writeReferenceConfig(options: WriteReference): Unit = {
     val configPath = Paths.get(options.targetDir).toFile
-    logger.info(s"Config ${configPath.getAbsolutePath -> "directory to use"}...")
+    logger.info(s"Config ${configPath.getAbsolutePath -> "target directory"}...")
 
     if (!configPath.exists()) {
-      configPath.mkdir()
+      configPath.mkdirs()
     }
 
     val allRoles = roleInfo.availableRoleBindings
@@ -81,14 +82,11 @@ final class ConfigWriter[F[_]: TagK](
           // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
           subLogger.info(s"About to output configs...")
           val mergedRoleConfig = configMerger.mergeFilter(appConfig.shared, List(loaded), _ => true, "configwriter")
-          writeConfig(options, fileNameFull, mergedRoleConfig, subLogger)
+          writeConfig(options, fileNameFull, mergedRoleConfig, None, subLogger)
 
-          minimizedConfig(mergedRoleConfig, role)
-            .foreach {
-              cfg =>
-                val fileNameMinimized = outputFileName(roleId, roleVersion, options.asJson, Some("minimized"))
-                writeConfig(options, fileNameMinimized, cfg, subLogger)
-            }
+          val min = minimizedConfig(mergedRoleConfig, role)
+          val fileNameMinimized = outputFileName(roleId, roleVersion, options.asJson, Some("minimized"))
+          writeConfig(options, fileNameMinimized, min.config, Some(min.schema), subLogger)
         } catch {
           case exception: Throwable =>
             logger.crit(s"Cannot process role ${role.descriptor.id}")
@@ -105,58 +103,71 @@ final class ConfigWriter[F[_]: TagK](
     s"$service$suffixStr-$vstr.$extension"
   }
 
-  private[this] def minimizedConfig(roleConfig: Config, role: RoleBinding): Option[Config] = {
+  private[this] def minimizedConfig(roleConfig: Config, role: RoleBinding): MinimizedConfig = {
     val excludedActivations = Set.empty[NESet[AxisPoint]] // TODO: val chosenActivations = parseActivations(cfg.excludeActivations)
     val bindings = roleAppPlanner.bootloader.input.bindings
     val verifier = PlanVerifier()
     val reachable = verifier.traceReachables[F](bindings, Roots(NESet(role.binding.key)), _ => true, excludedActivations)
 
     val filteredModule = bindings.filter(reachable.contains)
+    val configTags = extractConfigTags(filteredModule.bindings)
 
-    val resolvedConfig = {
-      getConfig(filteredModule.bindings).toSet + _HackyMandatorySection
-    }
+    val schema = new JsonSchemaGenerator().generateSchema(configTags)
+
+    val resolvedConfig =
+      extractConfigPaths(configTags).toSet + _HackyMandatorySection
+
     val out = ConfigWriter.minimized(resolvedConfig, roleConfig)
-    Some(out)
+    MinimizedConfig(out, schema)
   }
 
-  private[this] def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, subLogger: IzLogger): Try[Unit] = {
+  private[this] def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, schema: Option[Json], subLogger: IzLogger): Try[Unit] = {
     val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
-
     val target = Paths.get(options.targetDir, fileName)
+    val targetSchema = Paths.get(options.targetDir, s"$fileName.jsonschema")
+
     Try {
       val cfg = typesafeConfig.root().render(configRenderOptions.setJson(options.asJson))
       val bytes = cfg.getBytes(StandardCharsets.UTF_8)
       Files.write(target, bytes)
       subLogger.info(s"Reference config saved -> $target (${bytes.size} bytes)")
+      schema.foreach {
+        json =>
+          val bytes = json.spaces2.getBytes(StandardCharsets.UTF_8)
+        Files.write(targetSchema, bytes)
+      }
+
     }.recover {
       case error: Throwable =>
         subLogger.error(s"Can't write reference config to $target, $error")
     }
   }
 
-  private def getConfig(bindings: Set[Binding]): Seq[ConfigPath] = {
-    val configTags = bindings.toSeq.flatMap(_.tags).collect {
+  private def extractConfigPaths(configTags: Seq[ConfTag]): Seq[ConfigPath] = {
+    configTags.flatMap(t => unpackConfigPaths(Seq(t.confPath), t.tpe))
+  }
+
+  private def extractConfigTags(bindings: Set[Binding]): Seq[ConfTag] = {
+    bindings.toSeq.flatMap(_.tags).collect {
       case t: ConfTag =>
         t
     }
-    configTags.flatMap(t => unpack(Seq(t.confPath), t.fieldsMeta))
   }
 
-  private def unpack(path: Seq[String], meta0: ConfigMeta): Seq[ConfigPath] = {
+  private def unpackConfigPaths(path: Seq[String], meta0: ConfigMetaType): Seq[ConfigPath] = {
     meta0 match {
-      case ConfigMeta.ConfigMetaCaseClass(fields) =>
+      case ConfigMetaType.TCaseClass(_, fields) =>
         fields.flatMap {
           case (name, meta) =>
-            unpack(path :+ name, meta)
+            unpackConfigPaths(path :+ name, meta)
         }
-      case ConfigMeta.ConfigMetaSealedTrait(branches) =>
+      case ConfigMetaType.TSealedTrait(_, branches) =>
         branches.toSeq.flatMap {
           case (name, meta) =>
-            unpack(path :+ name, meta)
+            unpackConfigPaths(path :+ name, meta)
         }
-      case ConfigMeta.ConfigMetaEmpty() => Seq(ConfigPath(path.mkString(".")))
-      case ConfigMeta.ConfigMetaUnknown() => Seq(ConfigPath(path.mkString("."), wildcard = true))
+      case _ =>
+        Seq(ConfigPath(path.mkString("."), wildcard = true))
     }
   }
 
@@ -164,6 +175,8 @@ final class ConfigWriter[F[_]: TagK](
 
 object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
+
+  case class MinimizedConfig(config: Config, schema: Json)
 
   override def parserSchema: RoleParserSchema = {
     RoleParserSchema(id, Options, Some("Dump reference configs for all the roles"), None, freeArgsAllowed = false)
