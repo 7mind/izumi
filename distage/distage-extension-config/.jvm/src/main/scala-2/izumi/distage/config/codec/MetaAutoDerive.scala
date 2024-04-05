@@ -18,7 +18,7 @@ object MetaAutoDerive {
       c.Expr[MetaAutoDerive[A]] {
         q"""{
            import _root_.izumi.distage.config.codec.MetaInstances.auto._
-           new ${weakTypeOf[MetaAutoDerive[A]]}(_root_.izumi.distage.config.codec.MetaInstances.auto.gen[${weakTypeOf[A]}])
+           new ${weakTypeOf[MetaAutoDerive[A]]}(_root_.izumi.distage.config.codec.MetaInstances.auto.gen[${weakTypeOf[A]}].value)
          }"""
       }
     }

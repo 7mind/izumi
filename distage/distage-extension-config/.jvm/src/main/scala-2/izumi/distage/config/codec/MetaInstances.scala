@@ -6,31 +6,36 @@ import pureconfig.generic.{CoproductHint, ProductHint}
 
 import scala.language.experimental.macros
 
+case class ExportedMetaInstance[T](value: DIConfigMeta[T])
+
+object ExportedMetaInstance {
+  implicit def fromDIConfigMeta[T: DIConfigMeta]: ExportedMetaInstance[T] = ExportedMetaInstance(implicitly[DIConfigMeta[T]])
+}
 object MetaInstances {
   import PureconfigHints.*
 
   object auto {
-    implicit def gen[T]: DIConfigMeta[T] = macro Magnolia.gen[T]
+    implicit def gen[T]: ExportedMetaInstance[T] = macro Magnolia.gen[T]
 
-    type Typeclass[A] = DIConfigMeta[A]
+    type Typeclass[A] = ExportedMetaInstance[A]
 
-    def join[A](ctx: CaseClass[DIConfigMeta, A]): DIConfigMeta[A] = {
+    def join[A](ctx: CaseClass[ExportedMetaInstance, A]): ExportedMetaInstance[A] = {
       val meta = configMetaJoin(ctx)
 
-      new DIConfigMeta[A] {
+      ExportedMetaInstance(new DIConfigMeta[A] {
         override def tpe: ConfigMetaType = meta
-      }
+      })
     }
 
-    def split[A](ctx: SealedTrait[DIConfigMeta, A]): DIConfigMeta[A] = {
+    def split[A](ctx: SealedTrait[ExportedMetaInstance, A]): ExportedMetaInstance[A] = {
       val meta = configMetaSplit(ctx)
 
-      new DIConfigMeta[A] {
+      ExportedMetaInstance(new DIConfigMeta[A] {
         override def tpe: ConfigMetaType = meta
-      }
+      })
     }
 
-    private def configMetaJoin[A](ctx: CaseClass[DIConfigMeta, A])(implicit productHint: ProductHint[A]): ConfigMetaType = {
+    private def configMetaJoin[A](ctx: CaseClass[ExportedMetaInstance, A])(implicit productHint: ProductHint[A]): ConfigMetaType = {
       def fields0: ConfigMetaType.TCaseClass = ConfigMetaType.TCaseClass(
         convertId(ctx.typeName),
         ctx.parameters.map(
@@ -41,7 +46,7 @@ object MetaInstances {
                 case None => p.label
               }
             }
-            (realLabel, p.typeclass.asInstanceOf[DIConfigMeta[Any]].tpe)
+            (realLabel, p.typeclass.asInstanceOf[ExportedMetaInstance[Any]].value.tpe)
           }
         ),
       )
@@ -51,7 +56,7 @@ object MetaInstances {
     }
 
     private def configMetaSplit[A](
-      ctx: SealedTrait[DIConfigMeta, A]
+      ctx: SealedTrait[ExportedMetaInstance, A]
     )(implicit coproductHint: CoproductHint[A]
     ): ConfigMetaType = {
       // Only support Circe-like sealed trait encoding
@@ -61,7 +66,7 @@ object MetaInstances {
           ctx.subtypes.map {
             s =>
               val realLabel = s.typeName.short // no processing is required for Circe-like hint
-              (realLabel, s.typeclass.asInstanceOf[DIConfigMeta[Any]].tpe)
+              (realLabel, s.typeclass.asInstanceOf[ExportedMetaInstance[Any]].value.tpe)
           }.toSet,
         )
       } else {
