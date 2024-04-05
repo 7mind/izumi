@@ -354,6 +354,7 @@ open class ContainerResource[F[_], Tag](
           .mut(config.entrypoint.nonEmpty)(_.withEntrypoint(config.entrypoint.toList.asJava))
           .mut(config.cwd)(_.withWorkingDir(_))
           .mut(config.user)(_.withUser(_))
+          .mut(config.platform)(_.withPlatform(_))
           .mut(registryAuth)(_.withAuthConfig(_))
           .mut(volumes.nonEmpty)(_.withVolumes(volumes.map(_.getVolume).asJava))
           .mut(volumes.nonEmpty)(_.withBinds(volumes.toList.asJava))
