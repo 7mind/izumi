@@ -1,6 +1,7 @@
 # this is for local development only, see .build.sh for CI settings
 -Xmx16G
--XX:ReservedCodeCacheSize=270M
+-XX:ReservedCodeCacheSize=384M
+-XX:NonProfiledCodeHeapSize=256M
 -XX:MaxMetaspaceSize=4G
 
 -XX:+OmitStackTraceInFastThrow
