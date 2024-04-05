@@ -1,7 +1,9 @@
 package izumi.distage.config.codec
 
+import magnolia1.Magnolia
+
 import scala.language.experimental.macros
-import scala.reflect.macros.blackbox
+import scala.reflect.macros.{blackbox, whitebox}
 
 final class MetaAutoDerive[A](val value: DIConfigMeta[A]) extends AnyVal
 
@@ -18,9 +20,17 @@ object MetaAutoDerive {
       c.Expr[MetaAutoDerive[A]] {
         q"""{
            import _root_.izumi.distage.config.codec.MetaInstances.auto._
-           new ${weakTypeOf[MetaAutoDerive[A]]}(_root_.izumi.distage.config.codec.MetaInstances.auto.gen[${weakTypeOf[A]}].value)
+           import _root_.izumi.distage.config.codec.PureconfigHints._
+
+           _root_.izumi.distage.config.codec.MetaInstances.auto.gen[${weakTypeOf[A]}]
          }"""
       }
+    }
+
+    /** @see [[pureconfig.module.magnolia.ExportedMagnolia]] */
+    def exportedMagnolia[A: c.WeakTypeTag](c: whitebox.Context): c.Expr[MetaAutoDerive[A]] = {
+      val magnoliaTree = c.Expr[DIConfigMeta[A]](Magnolia.gen[A](c))
+      c.universe.reify(new MetaAutoDerive[A](magnoliaTree.splice))
     }
   }
 }

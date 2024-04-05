@@ -11,7 +11,6 @@ object MetaAutoDerive {
   @inline def derived[A](implicit ev: MetaAutoDerive[A]): DIConfigMeta[A] = ev.value
 
   inline implicit def materialize[A](implicit m: Mirror.Of[A]): MetaAutoDerive[A] = {
-
     new MetaAutoDerive[A](izumi.distage.config.codec.MetaInstances.configReaderDerivation.derived[A](using m))
   }
 }
