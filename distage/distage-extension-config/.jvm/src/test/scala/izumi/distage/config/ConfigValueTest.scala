@@ -114,57 +114,15 @@ final class ConfigValueTest extends AnyWordSpec {
 
     }
 
-    "be as exptected for sealed traits" in {
+    "be as expected for sealed traits" in {
       getConfTag(TestConfigReaders.sealedDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          assert(c.fields.toMap.apply("sealedTrait1").isInstanceOf[TSealedTrait])
+          val sealedTrait = c.fields.toMap.apply("sealedTrait1").asInstanceOf[TSealedTrait]
+          assert(sealedTrait.branches.toMap.apply("CaseClass1").isInstanceOf[TCaseClass])
+          assert(sealedTrait.branches.toMap.apply("CaseClass2").isInstanceOf[TCaseClass])
         case _ =>
           fail()
       }
-
-//      assert(
-//        c.tpe ==
-//        ConfigMetaType.TCaseClass(
-//          c.tpe.id,
-//          Seq(
-//            "sealedTrait1" ->
-//            ConfigMetaType.TSealedTrait(
-//              null,
-//              Set(
-//                "CaseClass1" -> ConfigMetaType.TCaseClass(
-//                  c.tpe.id,
-//                  Seq(
-//                    "int" -> ConfigMetaType.TUnknown(),
-//                    "string" -> ConfigMetaType.TUnknown(),
-//                    "boolean" -> ConfigMetaType.TUnknown(),
-//                    "sealedTrait2" -> ConfigMetaType.TSealedTrait(
-//                      null,
-//                      Set(
-//                        "Yes" -> ConfigMetaType.TCaseClass(c.tpe.id, Seq()),
-//                        "No" -> ConfigMetaType.TCaseClass(null, Seq()),
-//                      ),
-//                    ),
-//                  ),
-//                ),
-//                "CaseClass2" -> ConfigMetaType.TCaseClass(
-//                  null,
-//                  Seq(
-//                    "int" -> ConfigMetaType.TUnknown(),
-//                    "boolean" -> ConfigMetaType.TUnknown(),
-//                    "sealedTrait2" -> ConfigMetaType.TSealedTrait(
-//                      null,
-//                      Set(
-//                        "Yes" -> ConfigMetaType.TCaseClass(null, Seq()),
-//                        "No" -> ConfigMetaType.TCaseClass(null, Seq()),
-//                      ),
-//                    ),
-//                  ),
-//                ),
-//              ),
-//            )
-//          ),
-//        )
-//      )
     }
 
   }
