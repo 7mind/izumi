@@ -39,7 +39,7 @@ object PureconfigInstances {
             override def from(cur: ConfigCursor): ConfigReader.Result[A] =
               for {
                 listCur <- asList(cur)
-                result <- readTuple[A & Tuple, 0]._2(listCur.list.toArray, Array.empty)
+                result <- readTuple[A & Tuple, 0](listCur.list.toArray, Array.empty)
               } yield result
 
             def asList(cur: ConfigCursor): Either[ConfigReaderFailures, ConfigListCursor] =
@@ -56,55 +56,48 @@ object PureconfigInstances {
 
         case _ =>
           new ConfigReader[A] {
-            val labels: Array[String] = Utils.transformedLabels[A](fieldMapping).toArray
-            val tupleReader = {
-              val (_, tupleReader) = readTuple[m.MirroredElemTypes, 0]
-              tupleReader
-            }
-
-            override def from(cur: ConfigCursor): ConfigReader.Result[A] =
+            def from(cur: ConfigCursor): ConfigReader.Result[A] =
               for {
                 objCur <- cur.asObjectCursor
-                result <- tupleReader(
-                  labels.map(objCur.atKeyOrUndefined(_)),
-                  labels.map(KeyNotFound.forKeys(_, objCur.keys)),
-                )
+                result <-
+                  Utils
+                    .transformedLabels[A](fieldMapping)
+                    .toArray
+                    .pipe(
+                      labels =>
+                        readTuple[m.MirroredElemTypes, 0](
+                          labels.map(objCur.atKeyOrUndefined(_)),
+                          labels.map(KeyNotFound.forKeys(_, objCur.keys)),
+                        )
+                    )
               } yield m.fromProduct(result)
           }
       }
     }
 
-    inline def readTuple[T <: Tuple, N <: Int]: (List[ConfigReader[Any]], (Array[ConfigCursor], Array[KeyNotFound]) => Either[ConfigReaderFailures, T]) =
+    inline def readTuple[T <: Tuple, N <: Int](
+      cursors: Array[ConfigCursor],
+      keyNotFound: Array[KeyNotFound],
+    ): Either[ConfigReaderFailures, T] =
       inline erasedValue[T] match {
         case _: (h *: t) =>
           val reader = summonConfigReader[h]
-          val (tReaders, nt) = readTuple[t, N + 1]
-          (
-            reader.asInstanceOf[ConfigReader[Any]] :: tReaders,
-            {
-              (cursors: Array[ConfigCursor], keyNotFound: Array[KeyNotFound]) =>
-                val cursor = cursors(constValue[N])
-                val h =
-                  (reader.isInstanceOf[ReadsMissingKeys], cursor.isUndefined) match {
-                    case (true, true) | (_, false) => reader.from(cursor)
-                    case (false, true) => cursor.failed(keyNotFound(constValue[N]))
-                  }
-                val t = nt(cursors, keyNotFound)
+          val cursor = cursors(constValue[N])
+          val h =
+            (reader.isInstanceOf[ReadsMissingKeys], cursor.isUndefined) match {
+              case (true, true) | (_, false) => reader.from(cursor)
+              case (false, true) => cursor.failed(keyNotFound(constValue[N]))
+            }
 
-                (h, t) match {
-                  case (Right(h), Right(t)) => Right(Utils.widen[h *: t, T](h *: t))
-                  case (Left(h), Left(t)) => Left(h ++ t)
-                  case (_, Left(failures)) => Left(failures)
-                  case (Left(failures), _) => Left(failures)
-                }
-            },
-          )
+          h -> readTuple[t, N + 1](cursors, keyNotFound) match {
+            case (Right(h), Right(t)) => Right(Utils.widen[h *: t, T](h *: t))
+            case (Left(h), Left(t)) => Left(h ++ t)
+            case (_, Left(failures)) => Left(failures)
+            case (Left(failures), _) => Left(failures)
+          }
 
         case _: EmptyTuple =>
-          (
-            Nil,
-            (_: Array[ConfigCursor], _: Array[KeyNotFound]) => Right(Utils.widen[EmptyTuple, T](EmptyTuple)),
-          )
+          Right(Utils.widen[EmptyTuple, T](EmptyTuple))
       }
 
     inline def summonConfigReader[A]: ConfigReader[A] =
@@ -134,17 +127,13 @@ object PureconfigInstances {
       */
     inline def derivedSum[A](using m: Mirror.SumOf[A]): ConfigReader[A] = {
       new ConfigReader[A] {
-        val options: Map[String, ConfigReader[A]] =
-          Utils
-            .transformedLabels[A](fieldMapping)
-            .zip(deriveForSubtypes[m.MirroredElemTypes, A])
-            .toMap
+        def from(cur: ConfigCursor): ConfigReader.Result[A] = {
+          val options: Map[String, ConfigReader[A]] =
+            Utils
+              .transformedLabels[A](fieldMapping)
+              .zip(deriveForSubtypes[m.MirroredElemTypes, A])
+              .toMap
 
-//        override val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(options.map {
-//          case (label, reader) => (label, ConfigReaderWithConfigMeta.maybeFieldsFromConfigReader(reader))
-//        }.toSet)
-
-        override def from(cur: ConfigCursor): ConfigReader.Result[A] = {
           for {
             objCur <- cur.asObjectCursor
             _ <-
@@ -227,7 +216,7 @@ object PureconfigInstances {
             |CoproductHint implementation.""".stripMargin
     }
 
-    val fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, CamelCase)
+    private[config] val fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, CamelCase)
 
   }
 
