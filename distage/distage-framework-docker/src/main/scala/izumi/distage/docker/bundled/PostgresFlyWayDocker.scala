@@ -39,7 +39,7 @@ object PostgresFlyWayDocker extends ContainerDef {
   override def config: Config = PostgresFlyWayDocker.applyCfg(Cfg.default)(
     Config(
       registry = Some("public.ecr.aws"),
-      image = "docker/library/postgres:12.6",
+      image = PostgresDocker.config.image,
       ports = Seq(primaryPort),
     )
   )
@@ -60,7 +60,7 @@ object PostgresFlyWayDocker extends ContainerDef {
 
     override def config: Config = FlyWay.applyCfg("localhost", Cfg(""))(
       Config(
-        image = "flyway/flyway:6.0-alpine",
+        image = "flyway/flyway:10",
         ports = Seq.empty,
         reuse = DockerReusePolicy.ReuseEnabled,
         autoRemove = false,
