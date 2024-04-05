@@ -17,11 +17,6 @@ trait DIConfigMeta[A] {
   def tpe: ConfigMetaType
 }
 
-sealed trait LowPriorityDIConfigMetaInstances {
-  implicit def derived[T](implicit dec: MetaAutoDerive[T]): DIConfigMeta[T] =
-    dec.value
-}
-
 object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
 
   implicit def deriveSeq[T, S[K] <: scala.collection.Seq[K]](implicit m: DIConfigMeta[T]): DIConfigMeta[S[T]] = new DIConfigMeta[S[T]] {
@@ -83,4 +78,9 @@ object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
   implicit def read_ConfigMemorySize: DIConfigMeta[ConfigMemorySize] = fromBasic[ConfigMemorySize](ConfigMetaBasicType.TConfigMemorySize)
   implicit def read_JavaBigDecimal: DIConfigMeta[JavaBigDecimal] = fromBasic[JavaBigDecimal](ConfigMetaBasicType.TJavaBigDecimal)
 
+}
+
+sealed trait LowPriorityDIConfigMetaInstances {
+  implicit def derived[T](implicit dec: MetaAutoDerive[T]): DIConfigMeta[T] =
+    dec.value
 }
