@@ -16,12 +16,8 @@ object MetaAutoDerive {
     def materializeImpl[A: c.WeakTypeTag](c: blackbox.Context): c.Expr[MetaAutoDerive[A]] = {
       import c.universe.*
       c.Expr[MetaAutoDerive[A]] {
-        // Yes, this is legal /_\ !! We add an import so that implicit scope is enhanced
-        // by new config codecs that aren't in ConfigReader companion object
         q"""{
            import _root_.izumi.distage.config.codec.MetaInstances.auto._
-           import _root_.izumi.distage.config.codec.MetaInstances._
-
            new ${weakTypeOf[MetaAutoDerive[A]]}(_root_.izumi.distage.config.codec.MetaInstances.auto.gen[${weakTypeOf[A]}])
          }"""
       }

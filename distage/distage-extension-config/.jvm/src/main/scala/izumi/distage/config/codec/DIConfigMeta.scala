@@ -10,7 +10,7 @@ import java.time.{Duration as JavaDuration, Instant, Period, Year, ZoneId, ZoneO
 import java.util.UUID
 import java.util.regex.Pattern
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 import scala.util.matching.Regex
 
 trait DIConfigMeta[A] {
@@ -18,12 +18,11 @@ trait DIConfigMeta[A] {
 }
 
 sealed trait LowPriorityDIConfigMetaInstances {
-  implicit final def deriveFromMetaAutoDerive[T: ClassTag](implicit dec: MetaAutoDerive[T]): DIConfigMeta[T] = dec.value
+  implicit def derived[T](implicit dec: MetaAutoDerive[T]): DIConfigMeta[T] =
+    dec.value
 }
 
 object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
-  implicit def derived[T: ClassTag](implicit dec: MetaAutoDerive[T]): DIConfigMeta[T] =
-    DIConfigMeta.deriveFromMetaAutoDerive[T](classTag[T], dec)
 
   implicit def deriveSeq[T, S[K] <: scala.collection.Seq[K]](implicit m: DIConfigMeta[T]): DIConfigMeta[S[T]] = new DIConfigMeta[S[T]] {
     override def tpe: ConfigMetaType = ConfigMetaType.TList(m.tpe)
