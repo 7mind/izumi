@@ -1,12 +1,12 @@
-package izumi.distage.reflection
+package izumi.distage.reflection.macros
 
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.macros.blackbox
 
-package object macros {
+package object constructors {
 
-  private[macros] def requireConcreteTypeConstructor(c: blackbox.Context)(macroName: String, tpe: c.Type): Unit = {
+  private[constructors] def requireConcreteTypeConstructor(c: blackbox.Context)(macroName: String, tpe: c.Type): Unit = {
     if (!ReflectionUtil.allPartsStrong(tpe.dealias.typeConstructor)) {
       c.abort(
         c.enclosingPosition,

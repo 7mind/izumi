@@ -1,6 +1,6 @@
 package izumi.distage.constructors
 
-import izumi.distage.reflection.macros.*
+import izumi.distage.reflection.macros.constructors.*
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.exceptions.macros.{TraitInitializationFailedException, UnsupportedDefinitionException}
 import izumi.distage.model.providers.Functoid

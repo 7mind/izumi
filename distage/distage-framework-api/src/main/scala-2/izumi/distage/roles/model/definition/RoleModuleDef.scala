@@ -2,7 +2,7 @@ package izumi.distage.roles.model.definition
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSL
-import izumi.distage.reflection.macros.MakeMacro
+import izumi.distage.reflection.macros.constructors.MakeMacro
 import izumi.distage.roles.model.RoleDescriptor.GetRoleDescriptor
 import izumi.distage.roles.model.definition.RoleModuleDef.RoleModuleDefMacros
 
