@@ -1,10 +1,8 @@
-package izumi.distage.model.reflection
-
-import izumi.distage.model.reflection.universe.DIUniverse
+package izumi.distage.model.reflection.universe
 
 trait ReflectionProvider {
   val u: DIUniverse
-  import u._
+  import u.*
 
   def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter
 

@@ -1,11 +1,10 @@
-package izumi.distage.model.reflection.macros
+package izumi.distage.model.reflection
 
 import izumi.distage.constructors.DebugProperties
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.{Provider, ReflectionProviderDefaultImpl}
 import izumi.distage.model.reflection.Provider.ProviderType
-import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
+import izumi.distage.model.reflection.universe.{DIUniverseLiftables, ReflectionProviderDefaultImpl, StaticDIUniverse}
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
 import scala.annotation.nowarn
@@ -27,8 +26,8 @@ class FunctoidMacro(val c: blackbox.Context) {
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
   private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
 
-  import c.universe._
-  import macroUniverse._
+  import c.universe.*
+  import macroUniverse.*
 
   case class ExtractedInfo(associations: List[Association.Parameter], isValReference: Boolean)
 

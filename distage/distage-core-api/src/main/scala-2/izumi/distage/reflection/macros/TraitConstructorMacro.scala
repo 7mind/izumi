@@ -2,8 +2,7 @@ package izumi.distage.reflection.macros
 
 import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.ReflectionProviderDefaultImpl
-import izumi.distage.model.reflection.universe.StaticDIUniverse
+import izumi.distage.model.reflection.universe.{ReflectionProviderDefaultImpl, StaticDIUniverse}
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox

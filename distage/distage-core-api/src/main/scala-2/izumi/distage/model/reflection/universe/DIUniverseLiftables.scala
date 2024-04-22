@@ -1,11 +1,9 @@
-package izumi.distage.model.reflection.macros
-
-import izumi.distage.model.reflection.universe._
+package izumi.distage.model.reflection.universe
 
 class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
-  import u._
-  import u.u._
+  import u.*
+  import u.u.*
 
   protected[this] val modelReflectionPkg: Tree = q"_root_.izumi.distage.model.reflection"
 

@@ -1,8 +1,10 @@
-package izumi.distage.model.providers
+package izumi.distage.model.reflection
 
-import izumi.distage.model.reflection.macros.FunctoidMacro
+import izumi.distage.model.providers.Functoid
+
 import scala.language.experimental.macros
 import scala.language.implicitConversions
+
 
 trait FunctoidMacroMethods {
   implicit def apply[R](fun: () => R): Functoid[R] = macro FunctoidMacro.impl[R]
