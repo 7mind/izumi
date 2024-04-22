@@ -1,4 +1,4 @@
-package izumi.distage.model.reflection.universe
+package izumi.distage.reflection.macros.universe.impl
 
 import scala.reflect.macros.blackbox
 
@@ -23,12 +23,12 @@ private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDISafeT
     def asParameterTpe: TypeNative
 
     final def ctorArgumentExpr(c: blackbox.Context): (u.Tree, u.Tree) = {
-      import u._
+      import u.*
       val freshArgName = u.TermName(c.freshName(name))
       (q"val $freshArgName: $asParameterTpe", Liftable.liftName(freshArgName))
     }
     final def traitMethodExpr(impl: u.Tree): u.Tree = {
-      import u._
+      import u.*
       q"final lazy val ${TermName(name)}: $nonBynameTpe = $impl"
     }
   }

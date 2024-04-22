@@ -1,10 +1,11 @@
-package izumi.distage.model.reflection
+package izumi.distage.reflection.macros
 
 import izumi.distage.constructors.DebugProperties
 import izumi.distage.model.providers.Functoid
+import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
-import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
-import izumi.distage.model.reflection.universe.{DIUniverseLiftables, ReflectionProviderDefaultImpl, StaticDIUniverse}
+import izumi.distage.reflection.macros.universe.StaticDIUniverse.Aux
+import izumi.distage.reflection.macros.universe.{DIUniverseLiftables, ReflectionProviderDefaultImpl, StaticDIUniverse}
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
 import scala.annotation.nowarn

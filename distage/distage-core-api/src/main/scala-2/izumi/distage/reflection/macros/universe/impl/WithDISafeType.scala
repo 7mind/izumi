@@ -1,4 +1,4 @@
-package izumi.distage.model.reflection.universe
+package izumi.distage.reflection.macros.universe.impl
 
 import izumi.fundamentals.platform.cache.{CachedHashcode, CachedRepr}
 import izumi.reflect.macrortti.{LightTypeTag, LightTypeTagImpl}

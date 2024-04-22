@@ -1,4 +1,4 @@
-package izumi.distage.model.reflection.universe
+package izumi.distage.reflection.macros.universe
 
 class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 

@@ -6,8 +6,9 @@ import izumi.fundamentals.platform.reflection.ReflectionUtil
 import scala.annotation.{nowarn, tailrec}
 import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable
-import izumi.distage.model.providers.{Functoid, FunctoidMacro}
-import izumi.distage.model.providers.FunctoidMacro.FunctoidParametersMacro
+import izumi.distage.model.providers.Functoid
+import izumi.distage.reflection.macros.FunctoidMacro
+import izumi.distage.reflection.macros.FunctoidMacro.FunctoidParametersMacro
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 import izumi.fundamentals.reflection.ReflectiveCall
 import izumi.reflect.WeakTag
