@@ -5,7 +5,7 @@ import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
 trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
 
-  sealed trait SymbolInfo {
+  sealed trait MacroSymbolInfo {
     def name: String
     def finalResultType: TypeNative
     final def nonByNameFinalResultType: TypeNative = if (isByName) ReflectionUtil.stripByName(u: u.type)(finalResultType) else finalResultType
@@ -15,15 +15,15 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
 
     def annotations: List[u.Annotation]
 
-    def withTpe(tpe: TypeNative): SymbolInfo
-    def withIsByName(boolean: Boolean): SymbolInfo
-    def withAnnotations(annotations: List[u.Annotation]): SymbolInfo
+    def withTpe(tpe: TypeNative): MacroSymbolInfo
+    def withIsByName(boolean: Boolean): MacroSymbolInfo
+    def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo
     // def typeSignatureArgs: List[SymbolInfo] = underlying.typeSignature.typeArgs.map(_.typeSymbol).map(s => Runtime(s, definingClass))
   }
 
   protected def typeOfDistageAnnotation: TypeNative
 
-  object SymbolInfo {
+  object MacroSymbolInfo {
 
     /**
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
@@ -35,11 +35,11 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
       isByName: Boolean,
       wasGeneric: Boolean,
       annotations: List[u.Annotation],
-    ) extends SymbolInfo {
+    ) extends MacroSymbolInfo {
       override final val name: String = underlying.name.toTermName.toString
-      override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
-      override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
-      override final def withAnnotations(annotations: List[u.Annotation]): SymbolInfo = copy(annotations = annotations)
+      override final def withTpe(tpe: TypeNative): MacroSymbolInfo = copy(finalResultType = tpe)
+      override final def withIsByName(boolean: Boolean): MacroSymbolInfo = copy(isByName = boolean)
+      override final def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo = copy(annotations = annotations)
     }
 
     private[distage] object Runtime {
@@ -75,14 +75,14 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
       annotations: List[u.Annotation],
       isByName: Boolean,
       wasGeneric: Boolean,
-    ) extends SymbolInfo {
-      override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
-      override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
-      override final def withAnnotations(annotations: List[u.Annotation]): SymbolInfo = copy(annotations = annotations)
+    ) extends MacroSymbolInfo {
+      override final def withTpe(tpe: TypeNative): MacroSymbolInfo = copy(finalResultType = tpe)
+      override final def withIsByName(boolean: Boolean): MacroSymbolInfo = copy(isByName = boolean)
+      override final def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo = copy(annotations = annotations)
     }
     object Static {
-      def syntheticFromType(transformName: String => String)(tpe: TypeNative): SymbolInfo.Static = {
-        SymbolInfo.Static(
+      def syntheticFromType(transformName: String => String)(tpe: TypeNative): MacroSymbolInfo.Static = {
+        MacroSymbolInfo.Static(
           name = transformName(tpe.typeSymbol.name.toString),
           finalResultType = tpe,
           annotations = AnnotationTools.getAllTypeAnnotations(u)(tpe),
@@ -92,7 +92,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
       }
     }
 
-    implicit final class SymbolInfoExtensions(symbolInfo: SymbolInfo) {
+    implicit final class SymbolInfoExtensions(symbolInfo: MacroSymbolInfo) {
       def findUniqueAnnotation(annType: TypeNative): Option[u.Annotation] = {
         val distageAnnos = symbolInfo.annotations.filter(t => t.tree.tpe <:< typeOfDistageAnnotation).toSet
 

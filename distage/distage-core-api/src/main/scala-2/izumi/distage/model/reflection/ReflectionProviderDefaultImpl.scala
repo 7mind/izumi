@@ -1,10 +1,9 @@
-package izumi.distage.reflection
+package izumi.distage.model.reflection
 
 import izumi.distage.model.definition.{Id, With}
 import izumi.distage.model.exceptions.macros.UnsupportedDefinitionException
 import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
 import izumi.distage.model.exceptions.reflection.UnsupportedWiringException
-import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.DIUniverse
 import izumi.fundamentals.reflection.{JSRAnnotationTools, ReflectionUtil}
 
@@ -14,7 +13,7 @@ import scala.annotation.nowarn
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   import u.u.{Annotation, LiteralApi}
-  import u.{Association, DIKey, MethodSymbNative, SafeType, SymbNative, SymbolInfo, TypeNative, Wiring, stringIdContract}
+  import u.{Association, MacroDIKey, MacroSafeType, MacroSymbolInfo, MacroWiring, MethodSymbNative, SymbNative, TypeNative, stringIdContract}
 
   private[this] object Id {
     def unapply(ann: Annotation): Option[String] = {
@@ -31,7 +30,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def withIdKeyFromAnnotation(parameterSymbol: SymbolInfo, typeKey: DIKey.TypeKey): DIKey.BasicKey = {
+  private[this] def withIdKeyFromAnnotation(parameterSymbol: MacroSymbolInfo, typeKey: MacroDIKey.TypeKey): MacroDIKey.BasicKey = {
     parameterSymbol.findUniqueAnnotation(typeOfIdAnnotation) match {
       case Some(Id(name)) =>
         typeKey.named(name)
@@ -47,21 +46,21 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  def symbolToAnyWiring(tpe: TypeNative): Wiring = {
+  def symbolToAnyWiring(tpe: TypeNative): MacroWiring = {
     tpe match {
       case FactorySymbol(symbolMethods, dependencyMethods) =>
         val factoryMethods = symbolMethods.map(_.asMethod).map(factoryMethod(tpe))
         val traitMethods = dependencyMethods.map(methodToAssociation(tpe, _))
         val classParameters = constructorParameterLists(tpe)
 
-        Wiring.Factory(factoryMethods, classParameters, traitMethods)
+        MacroWiring.Factory(factoryMethods, classParameters, traitMethods)
 
       case _ =>
         mkConstructorWiring(factoryMethod = u.u.NoSymbol, tpe = tpe)
     }
   }
 
-  override def symbolToWiring(tpe: TypeNative): Wiring = {
+  override def symbolToWiring(tpe: TypeNative): MacroWiring = {
     mkConstructorWiring(factoryMethod = u.u.NoSymbol, tpe = tpe)
 
   }
@@ -70,19 +69,19 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     deepIntersection.map {
       hasTpe =>
         val tpe = hasTpe.dealias
-        val syntheticSymbolInfo = SymbolInfo.Static.syntheticFromType(transformName)(tpe)
+        val syntheticSymbolInfo = MacroSymbolInfo.Static.syntheticFromType(transformName)(tpe)
         Association.Parameter(syntheticSymbolInfo, keyFromSymbolResultType(syntheticSymbolInfo))
     }
   }
 
-  private def factoryMethod(tpe: u.TypeNative)(factoryMethod: u.u.MethodSymbol): u.Wiring.Factory.FactoryMethod = {
-    val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe, wasGeneric = false)
+  private def factoryMethod(tpe: u.TypeNative)(factoryMethod: u.u.MethodSymbol): u.MacroWiring.Factory.FactoryMethod = {
+    val factoryMethodSymb = MacroSymbolInfo.Runtime(factoryMethod, tpe, wasGeneric = false)
     val resultType = ReflectionUtil.norm(u.u: u.u.type) {
       resultOfFactoryMethod(factoryMethodSymb)
         .asSeenFrom(tpe, tpe.typeSymbol)
     }
 
-    val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromParameter(SymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
+    val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromParameter(MacroSymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
     val resultTypeWiring = mkConstructorWiring(factoryMethod, resultType)
 
     val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
@@ -96,19 +95,19 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       )
     }
 
-    Wiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)
+    MacroWiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)
   }
   override def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]] = {
     selectConstructorArguments(tpe).toList.flatten.map(_.map(parameterToAssociation))
   }
 
-  private[this] def mkConstructorWiring(factoryMethod: SymbNative, tpe: TypeNative): Wiring.SingletonWiring = {
+  private[this] def mkConstructorWiring(factoryMethod: SymbNative, tpe: TypeNative): MacroWiring.MacroSingletonWiring = {
     tpe match {
       case ConcreteSymbol(t) =>
-        Wiring.SingletonWiring.Class(t, constructorParameterLists(t), getPrefix(t))
+        MacroWiring.MacroSingletonWiring.Class(t, constructorParameterLists(t), getPrefix(t))
 
       case AbstractSymbol(t) =>
-        Wiring.SingletonWiring.Trait(t, constructorParameterLists(t), traitMethods(t), getPrefix(t))
+        MacroWiring.MacroSingletonWiring.Trait(t, constructorParameterLists(t), traitMethods(t), getPrefix(t))
 
       case FactorySymbol(mms, _) =>
         throw new UnsupportedWiringException(
@@ -122,11 +121,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
              |
              |  * $mms
              |""".stripMargin,
-          SafeType.create(tpe),
+          MacroSafeType.create(tpe),
         )
 
       case _ =>
-        val safeType = SafeType.create(tpe)
+        val safeType = MacroSafeType.create(tpe)
         val factoryMsg = if (factoryMethod != u.u.NoSymbol) {
           s"""
              |  * When trying to create an implementation for result of `$factoryMethod` of factory `${factoryMethod.owner}`
@@ -136,7 +135,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def getPrefix(tpe: TypeNative): Option[DIKey] = {
+  private[this] def getPrefix(tpe: TypeNative): Option[MacroDIKey] = {
     if (tpe.typeSymbol.isStatic) {
       None
     } else {
@@ -144,11 +143,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       typeRef
         .map(_.pre)
         .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
-        .map(v => DIKey.TypeKey(SafeType.create(v)))
+        .map(v => MacroDIKey.TypeKey(MacroSafeType.create(v)))
     }
   }
 
-  private[this] def resultOfFactoryMethod(symbolInfo: SymbolInfo): TypeNative = {
+  private[this] def resultOfFactoryMethod(symbolInfo: MacroSymbolInfo): TypeNative = {
     symbolInfo.findUniqueAnnotation(typeOfWithAnnotation) match {
       case Some(With(tpe)) =>
         tpe
@@ -165,26 +164,26 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     declaredAbstractMethods.map(methodToAssociation(tpe, _))
   }
 
-  override def parameterToAssociation(parameterSymbol: SymbolInfo): Association.Parameter = {
+  override def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter = {
     val key = keyFromParameter(parameterSymbol)
     Association.Parameter(parameterSymbol, key)
   }
 
   private[this] def methodToAssociation(definingClass: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
-    val methodSymb = SymbolInfo.Runtime(method, definingClass, wasGeneric = false)
+    val methodSymb = MacroSymbolInfo.Runtime(method, definingClass, wasGeneric = false)
     Association.AbstractMethod(methodSymb, keyFromSymbolResultType(methodSymb))
   }
 
-  private[this] def keyFromParameter(parameterSymbol: SymbolInfo): DIKey.BasicKey = {
+  private[this] def keyFromParameter(parameterSymbol: MacroSymbolInfo): MacroDIKey.BasicKey = {
     val paramType = if (parameterSymbol.isByName) {
       parameterSymbol.finalResultType.typeArgs.head.finalResultType
     } else parameterSymbol.finalResultType
-    val typeKey = DIKey.TypeKey(SafeType.create(paramType))
+    val typeKey = MacroDIKey.TypeKey(MacroSafeType.create(paramType))
     withIdKeyFromAnnotation(parameterSymbol, typeKey)
   }
 
-  private[this] def keyFromSymbolResultType(methodSymbol: SymbolInfo): DIKey.BasicKey = {
-    val typeKey = DIKey.TypeKey(SafeType.create(methodSymbol.finalResultType))
+  private[this] def keyFromSymbolResultType(methodSymbol: MacroSymbolInfo): MacroDIKey.BasicKey = {
+    val typeKey = MacroDIKey.TypeKey(MacroSafeType.create(methodSymbol.finalResultType))
     withIdKeyFromAnnotation(methodSymbol, typeKey)
   }
 
@@ -205,7 +204,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   // symbolintrospector
-  private[this] def selectConstructorArguments(tpe: TypeNative): Option[List[List[SymbolInfo]]] = {
+  private[this] def selectConstructorArguments(tpe: TypeNative): Option[List[List[MacroSymbolInfo]]] = {
     selectConstructorMethod(tpe).map {
       selectedConstructor =>
         val originalParamListTypes = selectedConstructor.paramLists.map(_.map(_.typeSignature))
@@ -217,9 +216,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             case (origTypes, params) =>
               origTypes.zip(params).map {
                 case (o: u.u.AnnotatedTypeApi, p) =>
-                  SymbolInfo.Runtime(p, tpe, o.underlying.typeSymbol.isParameter, o.annotations)
+                  MacroSymbolInfo.Runtime(p, tpe, o.underlying.typeSymbol.isParameter, o.annotations)
                 case (o, p) =>
-                  SymbolInfo.Runtime(p, tpe, wasGeneric = o.typeSymbol.isParameter)
+                  MacroSymbolInfo.Runtime(p, tpe, wasGeneric = o.typeSymbol.isParameter)
               }
           }
     }

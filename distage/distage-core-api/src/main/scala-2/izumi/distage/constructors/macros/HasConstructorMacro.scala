@@ -3,8 +3,8 @@ package izumi.distage.constructors.macros
 import izumi.distage.constructors.{DebugProperties, ZEnvConstructor}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider.ProviderType
+import izumi.distage.model.reflection.ReflectionProviderDefaultImpl
 import izumi.distage.model.reflection.universe.StaticDIUniverse
-import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 import zio.ZEnvironment
 

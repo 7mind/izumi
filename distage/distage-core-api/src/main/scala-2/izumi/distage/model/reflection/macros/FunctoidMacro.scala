@@ -2,11 +2,10 @@ package izumi.distage.model.reflection.macros
 
 import izumi.distage.constructors.DebugProperties
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.Provider
+import izumi.distage.model.reflection.{Provider, ReflectionProviderDefaultImpl}
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
-import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
 import scala.annotation.nowarn
@@ -110,7 +109,7 @@ class FunctoidMacro(val c: blackbox.Context) {
 
   protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Association.Parameter] = {
     def association(p: Symbol): Association.Parameter = {
-      reflectionProvider.parameterToAssociation(SymbolInfo.Runtime(p))
+      reflectionProvider.parameterToAssociation(MacroSymbolInfo.Runtime(p))
     }
 
     val lambdaParams = lambdaArgs.map(association)
@@ -192,7 +191,7 @@ class FunctoidMacro(val c: blackbox.Context) {
   protected[this] def analyzeValRef(sig: Type): List[Association.Parameter] = {
     widenFunctionObject(sig).typeArgs.init.map {
       tpe =>
-        val symbol = SymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
+        val symbol = MacroSymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
         reflectionProvider.parameterToAssociation(symbol)
     }
   }

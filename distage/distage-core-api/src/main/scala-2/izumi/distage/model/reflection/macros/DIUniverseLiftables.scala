@@ -15,22 +15,22 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   // DIKey
 
-  protected[this] implicit val liftableTypeKey: Liftable[DIKey.TypeKey] = {
-    case DIKey.TypeKey(tpe) => q"""
+  protected[this] implicit val liftableTypeKey: Liftable[MacroDIKey.TypeKey] = {
+    case MacroDIKey.TypeKey(tpe) => q"""
     { new $modelReflectionPkg.DIKey.TypeKey(${liftTypeToSafeType(tpe.typeNative)}) }
       """
   }
 
-  protected[this] implicit val liftableIdKey: Liftable[DIKey.IdKey[?]] = {
-    case idKey: DIKey.IdKey[?] =>
+  protected[this] implicit val liftableIdKey: Liftable[MacroDIKey.IdKey[?]] = {
+    case idKey: MacroDIKey.IdKey[?] =>
       val lifted = idKey.idContract.liftable(idKey.id)
       q"""{ new $modelReflectionPkg.DIKey.IdKey(${liftTypeToSafeType(idKey.tpe.typeNative)}, $lifted) }"""
   }
 
-  protected[this] implicit val liftableBasicDIKey: Liftable[DIKey.BasicKey] = {
-    Liftable[DIKey.BasicKey] {
-      case t: DIKey.TypeKey => q"${liftableTypeKey(t)}"
-      case i: DIKey.IdKey[?] => q"${liftableIdKey(i)}"
+  protected[this] implicit val liftableBasicDIKey: Liftable[MacroDIKey.BasicKey] = {
+    Liftable[MacroDIKey.BasicKey] {
+      case t: MacroDIKey.TypeKey => q"${liftableTypeKey(t)}"
+      case i: MacroDIKey.IdKey[?] => q"${liftableIdKey(i)}"
     }
   }
 
@@ -41,7 +41,7 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // types must all be resolved anyway - they cannot contain polymorphic
   // components, unlike general method symbols (info for which we don't generate).
   // (annotations always empty currently)
-  protected[this] implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
+  protected[this] implicit val liftableSymbolInfo: Liftable[MacroSymbolInfo] = {
     info =>
       q"""{ $modelReflectionPkg.SymbolInfo(
       name = ${info.name},
