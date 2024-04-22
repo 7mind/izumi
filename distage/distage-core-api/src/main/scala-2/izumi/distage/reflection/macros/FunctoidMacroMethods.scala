@@ -1,4 +1,4 @@
-package izumi.distage.model.reflection
+package izumi.distage.reflection.macros
 
 import izumi.distage.model.providers.Functoid
 

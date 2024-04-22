@@ -1,5 +1,4 @@
-package izumi.distage.model.reflection.universe
-
+package izumi.distage.reflection.macros.universe.impl
 
 private[distage] trait WithDIKey { this: DIUniverseBase with WithDISafeType =>
 

@@ -6,6 +6,7 @@ import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.distage.model.reflection.LinkedParameter
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.*
+import izumi.distage.reflection.macros.FunctoidMacroMethods
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.reflect.Tag
@@ -71,7 +72,7 @@ import scala.annotation.unused
   *
   * @note `javax.inject.Named` annotation is also supported
   *
-  * @see [[FunctoidMacro]]]
+  * @see [[izumi.distage.reflection.macros.FunctoidMacro]]]
   * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
   * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
   */

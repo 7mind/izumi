@@ -1,6 +1,7 @@
-package izumi.distage.model.reflection.universe
+package izumi.distage.reflection.macros.universe
 
 import izumi.distage.model.definition.DIStageAnnotation
+import izumi.distage.reflection.macros.universe.impl.DIUniverse
 import izumi.fundamentals.reflection.SingletonUniverse
 
 import scala.reflect.macros.blackbox

@@ -1,10 +1,12 @@
-package izumi.distage.model.providers
+package izumi.distage.reflection.macros
+
 
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 import izumi.distage.model.reflection.*
 import izumi.reflect.Tag
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.reflection.ReflectionUtil
+import izumi.distage.model.providers.Functoid
 
 import scala.annotation.{tailrec, targetName}
 import scala.collection.immutable.List

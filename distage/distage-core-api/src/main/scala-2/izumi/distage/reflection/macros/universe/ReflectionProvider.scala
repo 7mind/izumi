@@ -1,4 +1,6 @@
-package izumi.distage.model.reflection.universe
+package izumi.distage.reflection.macros.universe
+
+import izumi.distage.reflection.macros.universe.impl.DIUniverse
 
 trait ReflectionProvider {
   val u: DIUniverse
