@@ -1,6 +1,6 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.reflection.macros.MakeMacro
+import izumi.distage.reflection.macros.constructors.MakeMacro
 import scala.language.experimental.macros
 
 trait AbstractBindingDefDSLMacro[BindDSL[_]] {

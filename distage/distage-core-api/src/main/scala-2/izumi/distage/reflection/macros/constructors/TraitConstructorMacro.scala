@@ -1,4 +1,4 @@
-package izumi.distage.reflection.macros
+package izumi.distage.reflection.macros.constructors
 
 import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.Functoid

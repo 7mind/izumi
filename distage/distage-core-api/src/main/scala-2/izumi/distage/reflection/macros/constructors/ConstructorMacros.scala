@@ -1,9 +1,9 @@
-package izumi.distage.reflection.macros
+package izumi.distage.reflection.macros.constructors
 
 import izumi.distage.model.providers.Functoid
+import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.universe.{DIUniverseLiftables, ReflectionProvider, StaticDIUniverse}
-import izumi.distage.model.reflection.Provider
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.annotation.{nowarn, tailrec}
