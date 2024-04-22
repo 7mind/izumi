@@ -1,4 +1,4 @@
-package izumi.distage.constructors
+package izumi.distage.reflection
 
 import izumi.fundamentals.reflection.ReflectionUtil
 

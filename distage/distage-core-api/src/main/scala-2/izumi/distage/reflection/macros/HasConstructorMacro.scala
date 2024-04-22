@@ -1,4 +1,4 @@
-package izumi.distage.constructors.macros
+package izumi.distage.reflection.macros
 
 import izumi.distage.constructors.{DebugProperties, ZEnvConstructor}
 import izumi.distage.model.providers.Functoid
@@ -15,8 +15,8 @@ object ZEnvConstructorMacro {
   def mkZEnvConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ZEnvConstructor[T]] = {
     val macroUniverse = StaticDIUniverse(c)
     val impls = ZEnvConstructorMacros(c)(macroUniverse)
-    import c.universe._
-    import impls.{c => _, u => _, _}
+    import c.universe.*
+    import impls.{c as _, u as _, *}
 
     val targetType = weakTypeOf[T].dealias
     requireConcreteTypeConstructor(c)("ZEnvConstructor", targetType)

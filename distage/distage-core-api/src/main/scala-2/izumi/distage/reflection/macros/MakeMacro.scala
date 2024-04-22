@@ -1,4 +1,4 @@
-package izumi.distage.constructors.macros
+package izumi.distage.reflection.macros
 
 import izumi.distage.constructors.{ClassConstructorOptionalMakeDSL, DebugProperties}
 import izumi.distage.model.definition.dsl.ModuleDefDSL

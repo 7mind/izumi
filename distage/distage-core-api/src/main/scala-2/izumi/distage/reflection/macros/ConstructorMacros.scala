@@ -1,4 +1,4 @@
-package izumi.distage.constructors.macros
+package izumi.distage.reflection.macros
 
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider.ProviderType
@@ -11,7 +11,7 @@ import scala.annotation.{nowarn, tailrec}
 import scala.reflect.macros.blackbox
 
 abstract class ClassConstructorMacros extends ConstructorMacrosBase {
-  import c.universe._
+  import c.universe.*
 
   def mkClassConstructorProvider[T: c.WeakTypeTag](reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): c.Expr[Functoid[T]] = {
     val associations = reflectionProvider.constructorParameterLists(targetType)
@@ -40,7 +40,7 @@ object ZEnvConstructorMacros {
 }
 
 abstract class TraitConstructorMacros extends ConstructorMacrosBase {
-  import c.universe._
+  import c.universe.*
 
   def mkTraitConstructorProvider[T: c.WeakTypeTag](wiring: u.MacroWiring.MacroSingletonWiring.Trait): c.Expr[Functoid[T]] = {
     val u.MacroWiring.MacroSingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
@@ -88,7 +88,7 @@ object TraitConstructorMacros {
 }
 
 abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
-  import c.universe._
+  import c.universe.*
 
   def generateFactoryMethod(dependencyArgMap: Map[u.MacroDIKey.BasicKey, c.Tree])(factoryMethod0: u.MacroWiring.Factory.FactoryMethod): c.Tree = {
     val u.MacroWiring.Factory.FactoryMethod(factoryMethod, productConstructor, _) = factoryMethod0
@@ -209,7 +209,7 @@ abstract class ConstructorMacrosBase {
   val c: blackbox.Context
   val u: StaticDIUniverse.Aux[c.universe.type]
 
-  import c.universe._
+  import c.universe.*
 
   def mkCtorArgument(association: u.Association): CtorArgument = {
     val (argName, freshArgName) = association.ctorArgumentExpr(c)
