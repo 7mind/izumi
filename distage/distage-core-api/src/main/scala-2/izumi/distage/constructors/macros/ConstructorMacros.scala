@@ -42,8 +42,8 @@ object ZEnvConstructorMacros {
 abstract class TraitConstructorMacros extends ConstructorMacrosBase {
   import c.universe._
 
-  def mkTraitConstructorProvider[T: c.WeakTypeTag](wiring: u.Wiring.SingletonWiring.Trait): c.Expr[Functoid[T]] = {
-    val u.Wiring.SingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
+  def mkTraitConstructorProvider[T: c.WeakTypeTag](wiring: u.MacroWiring.MacroSingletonWiring.Trait): c.Expr[Functoid[T]] = {
+    val u.MacroWiring.MacroSingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
     val traitParameters = methods.map(_.asParameter)
 
     generateProvider[T, ProviderType.Trait.type](classParameters :+ traitParameters) {
@@ -68,9 +68,9 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
       }
   }
 
-  def symbolToTrait(reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): u.Wiring.SingletonWiring.Trait = {
+  def symbolToTrait(reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): u.MacroWiring.MacroSingletonWiring.Trait = {
     reflectionProvider.symbolToWiring(targetType) match {
-      case trait0: u.Wiring.SingletonWiring.Trait => trait0
+      case trait0: u.MacroWiring.MacroSingletonWiring.Trait => trait0
       case wiring => throw new RuntimeException(s"""Tried to create a `TraitConstructor[$targetType]`, but `$targetType` is not a trait or an abstract class!
                                                    |
                                                    |Inferred wiring is: $wiring""".stripMargin)
@@ -90,8 +90,8 @@ object TraitConstructorMacros {
 abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
   import c.universe._
 
-  def generateFactoryMethod(dependencyArgMap: Map[u.DIKey.BasicKey, c.Tree])(factoryMethod0: u.Wiring.Factory.FactoryMethod): c.Tree = {
-    val u.Wiring.Factory.FactoryMethod(factoryMethod, productConstructor, _) = factoryMethod0
+  def generateFactoryMethod(dependencyArgMap: Map[u.MacroDIKey.BasicKey, c.Tree])(factoryMethod0: u.MacroWiring.Factory.FactoryMethod): c.Tree = {
+    val u.MacroWiring.Factory.FactoryMethod(factoryMethod, productConstructor, _) = factoryMethod0
 
     val (methodArgListDecls, methodArgList) = {
       @nowarn("msg=outer reference")
@@ -156,23 +156,23 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
       """
   }
 
-  def mkAnyConstructorFunction(wiring: u.Wiring.SingletonWiring): (List[u.Association.Parameter], Tree) = {
+  def mkAnyConstructorFunction(wiring: u.MacroWiring.MacroSingletonWiring): (List[u.Association.Parameter], Tree) = {
     wiring match {
-      case w: u.Wiring.SingletonWiring.Class =>
+      case w: u.MacroWiring.MacroSingletonWiring.Class =>
         mkClassConstructorFunction(w)
-      case w: u.Wiring.SingletonWiring.Trait =>
+      case w: u.MacroWiring.MacroSingletonWiring.Trait =>
         mkTraitConstructorFunction(w)
     }
   }
 
-  def mkClassConstructorFunction(w: u.Wiring.SingletonWiring.Class): (List[u.Association.Parameter], Tree) = {
-    val u.Wiring.SingletonWiring.Class(targetType, classParameters, _) = w
+  def mkClassConstructorFunction(w: u.MacroWiring.MacroSingletonWiring.Class): (List[u.Association.Parameter], Tree) = {
+    val u.MacroWiring.MacroSingletonWiring.Class(targetType, classParameters, _) = w
     val (associations, ctorArgs, ctorArgNamesLists) = CtorArgument.unzipLists(classParameters.map(_.map(mkCtorArgument(_))))
     (associations, q"(..$ctorArgs) => new $targetType(...$ctorArgNamesLists)")
   }
 
-  def mkTraitConstructorFunction(wiring: u.Wiring.SingletonWiring.Trait): (List[u.Association.Parameter], Tree) = {
-    val u.Wiring.SingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
+  def mkTraitConstructorFunction(wiring: u.MacroWiring.MacroSingletonWiring.Trait): (List[u.Association.Parameter], Tree) = {
+    val u.MacroWiring.MacroSingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
 
     val (ctorAssociations, classCtorArgs, ctorParams) = CtorArgument.unzipLists(classParameters.map(_.map(mkCtorArgument(_))))
     val (traitAssociations, traitCtorArgs, wireMethods) = methods.map(mkCtorArgument(_)).unzip3(CtorArgument.asTraitMethod)
@@ -185,9 +185,9 @@ abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
     )
   }
 
-  def symbolToFactory(reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): u.Wiring.Factory = {
+  def symbolToFactory(reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): u.MacroWiring.Factory = {
     reflectionProvider.symbolToAnyWiring(targetType) match {
-      case factory: u.Wiring.Factory => factory
+      case factory: u.MacroWiring.Factory => factory
       case wiring => throw new RuntimeException(s"""Tried to create a `FactoryConstructor[$targetType]`, but `$targetType` is not a factory!
                                                    |
                                                    |Inferred wiring is: $wiring""".stripMargin)

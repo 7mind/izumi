@@ -4,26 +4,26 @@ import scala.annotation.nowarn
 
 trait WithDIWiring { this: DIUniverseBase with WithDISafeType with WithDIKey with WithDIAssociation with WithDISymbolInfo =>
 
-  sealed trait Wiring
-  object Wiring {
-    sealed trait SingletonWiring extends Wiring {
-      def prefix: Option[DIKey]
+  sealed trait MacroWiring
+  object MacroWiring {
+    sealed trait MacroSingletonWiring extends MacroWiring {
+      def prefix: Option[MacroDIKey]
       def instanceType: TypeNative
       def associations: Seq[Association]
-      def requiredKeys: Set[DIKey] = associations.map(_.key).toSet ++ prefix.toSet
+      def requiredKeys: Set[MacroDIKey] = associations.map(_.key).toSet ++ prefix.toSet
     }
-    object SingletonWiring {
-      case class Class(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], prefix: Option[DIKey]) extends SingletonWiring {
+    object MacroSingletonWiring {
+      case class Class(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], prefix: Option[MacroDIKey]) extends MacroSingletonWiring {
         override lazy val associations: List[Association] = classParameters.flatten
       }
-      case class Trait(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod], prefix: Option[DIKey])
-        extends SingletonWiring {
+      case class Trait(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod], prefix: Option[MacroDIKey])
+        extends MacroSingletonWiring {
         override lazy val associations: List[Association] = classParameters.flatten ++ methods
       }
     }
 
     case class Factory(factoryMethods: List[Factory.FactoryMethod], classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod])
-      extends Wiring {
+      extends MacroWiring {
       @nowarn("msg=Unused import")
       final def factoryProductDepsFromObjectGraph: List[Association] = {
         import izumi.fundamentals.collections.IzCollections._
@@ -43,7 +43,7 @@ trait WithDIWiring { this: DIUniverseBase with WithDISafeType with WithDIKey wit
         }
       }
 
-      case class FactoryMethod(factoryMethod: SymbolInfo.Runtime, wireWith: SingletonWiring, methodArgumentKeys: Seq[DIKey]) {
+      case class FactoryMethod(factoryMethod: MacroSymbolInfo.Runtime, wireWith: MacroSingletonWiring, methodArgumentKeys: Seq[MacroDIKey]) {
         def objectGraphDeps: Seq[Association] = wireWith.associations.filterNot(methodArgumentKeys contains _.key)
       }
     }

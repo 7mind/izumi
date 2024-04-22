@@ -3,8 +3,8 @@ package izumi.distage.constructors.macros
 import izumi.distage.constructors.{DebugProperties, FactoryConstructor}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider.ProviderType
+import izumi.distage.model.reflection.ReflectionProviderDefaultImpl
 import izumi.distage.model.reflection.universe.StaticDIUniverse
-import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
@@ -24,7 +24,7 @@ object FactoryConstructorMacro {
     val impls = FactoryConstructorMacros(c)(macroUniverse)
     import impls.{c => _, u => _, _}
 
-    val macroUniverse.Wiring.Factory.WithProductDeps(factoryMethods, classParameters, methods, factoryProductsDeps) = symbolToFactory(reflectionProvider)(targetType)
+    val macroUniverse.MacroWiring.Factory.WithProductDeps(factoryMethods, classParameters, methods, factoryProductsDeps) = symbolToFactory(reflectionProvider)(targetType)
     val allParameters = classParameters :+ (methods ++ factoryProductsDeps).map(_.asParameter)
 
     if (factoryMethods.isEmpty) {

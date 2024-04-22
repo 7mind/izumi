@@ -6,9 +6,9 @@ import izumi.reflect.macrortti.{LightTypeTag, LightTypeTagImpl}
 private[distage] trait WithDISafeType { this: DIUniverseBase =>
 
   // TODO: hotspot, hashcode on keys is inefficient
-  case class SafeType private (
+  class MacroSafeType private(
     private[reflection] val typeNative: TypeNative,
-    private[WithDISafeType] val tag: LightTypeTag,
+    private[MacroSafeType] val tag: LightTypeTag,
   ) extends CachedHashcode
     with CachedRepr {
 
@@ -17,7 +17,7 @@ private[distage] trait WithDISafeType { this: DIUniverseBase =>
 
     override final def equals(obj: Any): Boolean = {
       obj match {
-        case that: SafeType =>
+        case that: MacroSafeType =>
           tag =:= that.tag
         case _ =>
           false
@@ -25,9 +25,9 @@ private[distage] trait WithDISafeType { this: DIUniverseBase =>
     }
   }
 
-  object SafeType {
-    def create(tpe: TypeNative): SafeType = {
-      new SafeType(tpe, LightTypeTagImpl.makeLightTypeTag(u)(tpe))
+  object MacroSafeType {
+    def create(tpe: TypeNative): MacroSafeType = {
+      new MacroSafeType(tpe, LightTypeTagImpl.makeLightTypeTag(u)(tpe))
     }
   }
 

@@ -6,11 +6,11 @@ trait ReflectionProvider {
   val u: DIUniverse
   import u._
 
-  def parameterToAssociation(parameterSymbol: SymbolInfo): Association.Parameter
+  def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter
 
   def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]]
-  def symbolToAnyWiring(tpe: TypeNative): Wiring
-  def symbolToWiring(tpe: TypeNative): Wiring
+  def symbolToAnyWiring(tpe: TypeNative): MacroWiring
+  def symbolToWiring(tpe: TypeNative): MacroWiring
   def zioHasParameters(transformName: String => String)(deepIntersection: List[TypeNative]): List[Association.Parameter]
 
   def isConcrete(tpe: TypeNative): Boolean
