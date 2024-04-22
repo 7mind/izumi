@@ -169,7 +169,7 @@ object ModuleDefDSL {
       *
       * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
       *
-      * @see [[izumi.distage.model.reflection.macros.FunctoidMacro]]]
+      * @see [[izumi.distage.model.reflection.FunctoidMacro]]]
       * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
       * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
       */

@@ -71,7 +71,7 @@ import scala.annotation.unused
   *
   * @note `javax.inject.Named` annotation is also supported
   *
-  * @see [[izumi.distage.model.reflection.macros.FunctoidMacro]]]
+  * @see [[FunctoidMacro]]]
   * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
   * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
   */
