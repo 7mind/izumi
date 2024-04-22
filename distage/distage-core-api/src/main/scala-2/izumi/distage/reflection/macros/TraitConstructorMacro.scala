@@ -1,4 +1,4 @@
-package izumi.distage.constructors.macros
+package izumi.distage.reflection.macros
 
 import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.Functoid
@@ -13,8 +13,8 @@ object TraitConstructorMacro {
   def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = {
     val macroUniverse = StaticDIUniverse(c)
     val impls = TraitConstructorMacros(c)(macroUniverse)
-    import c.universe._
-    import impls.{c => _, u => _, _}
+    import c.universe.*
+    import impls.{c as _, u as _, *}
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
     requireConcreteTypeConstructor(c)("TraitConstructor", targetType)

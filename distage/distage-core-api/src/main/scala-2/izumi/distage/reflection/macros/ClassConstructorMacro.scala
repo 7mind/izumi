@@ -1,4 +1,4 @@
-package izumi.distage.constructors.macros
+package izumi.distage.reflection.macros
 
 import izumi.distage.constructors.{ClassConstructor, DebugProperties}
 import izumi.distage.model.providers.Functoid
@@ -12,7 +12,7 @@ import scala.reflect.macros.blackbox
 object ClassConstructorMacro {
 
   def mkClassConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ClassConstructor[T]] = {
-    import c.universe._
+    import c.universe.*
 
     val macroUniverse = StaticDIUniverse(c)
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)

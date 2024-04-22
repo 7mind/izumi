@@ -1,4 +1,4 @@
-package izumi.distage.constructors.macros
+package izumi.distage.reflection.macros
 
 import izumi.distage.constructors.{DebugProperties, FactoryConstructor}
 import izumi.distage.model.providers.Functoid
@@ -12,7 +12,7 @@ import scala.reflect.macros.blackbox
 object FactoryConstructorMacro {
 
   def mkFactoryConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[FactoryConstructor[T]] = {
-    import c.universe._
+    import c.universe.*
 
     val macroUniverse = StaticDIUniverse(c)
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
@@ -22,7 +22,7 @@ object FactoryConstructorMacro {
     requireConcreteTypeConstructor(c)("FactoryConstructor", targetType)
 
     val impls = FactoryConstructorMacros(c)(macroUniverse)
-    import impls.{c => _, u => _, _}
+    import impls.{c as _, u as _, *}
 
     val macroUniverse.MacroWiring.Factory.WithProductDeps(factoryMethods, classParameters, methods, factoryProductsDeps) = symbolToFactory(reflectionProvider)(targetType)
     val allParameters = classParameters :+ (methods ++ factoryProductsDeps).map(_.asParameter)

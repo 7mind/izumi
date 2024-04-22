@@ -1,6 +1,6 @@
 package izumi.distage.constructors
 
-import izumi.distage.constructors.macros.*
+import izumi.distage.reflection.macros.*
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.exceptions.macros.{TraitInitializationFailedException, UnsupportedDefinitionException}
 import izumi.distage.model.providers.Functoid
@@ -105,12 +105,12 @@ object ZEnvConstructor {
   implicit def materialize[T]: ZEnvConstructor[T] = macro ZEnvConstructorMacro.mkZEnvConstructor[T]
 }
 
-private[constructors] sealed trait ClassConstructorOptionalMakeDSL[T] extends Any {
+private[distage] sealed trait ClassConstructorOptionalMakeDSL[T] extends Any {
   def provider: Functoid[T]
 }
 
 object ClassConstructorOptionalMakeDSL {
-  private[constructors] final class Impl[T](val provider: Functoid[T]) extends AnyVal with ClassConstructorOptionalMakeDSL[T]
+  private[distage] final class Impl[T](val provider: Functoid[T]) extends AnyVal with ClassConstructorOptionalMakeDSL[T]
 
   @inline def apply[T](functoid: Functoid[T]): ClassConstructorOptionalMakeDSL.Impl[T] = {
     new ClassConstructorOptionalMakeDSL.Impl[T](functoid)
