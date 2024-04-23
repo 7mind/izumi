@@ -13,7 +13,7 @@ trait Provider {
   def fun: Seq[Any] => Any
   def providerType: ProviderType
 
-  def unsafeApply(refs: Seq[TypedRef[?]]): Any = {
+  def unsafeApply(refs: Seq[GenericTypedRef[?]]): Any = {
     val args = verifyArgs(refs)
     fun(args)
   }
@@ -40,17 +40,12 @@ trait Provider {
     "π:" + providerType.toString
   }
 
-  protected[this] def verifyArgs(refs: Seq[TypedRef[?]]): Seq[Any] = {
+  protected[this] def verifyArgs(refs: Seq[GenericTypedRef[?]]): Seq[Any] = {
     val (newArgs, types, typesCmp) = parameters
       .zip(refs).map {
-        case (param, TypedRef(v, tpe, isByName)) =>
-          val newArg = if (param.isByName && !isByName) {
-            () => v
-          } else if (isByName && !param.isByName) {
-            v.asInstanceOf[Function0[Any]].apply()
-          } else v
-
-          (newArg, tpe, tpe <:< param.key.tpe)
+        case (param, ref) =>
+          val newArg = ref.asArgument(param.isByName)
+          (newArg, ref.tpe, ref.tpe <:< param.key.tpe)
       }.unzip3
 
     val countOk = refs.size == parameters.size
@@ -95,7 +90,7 @@ object Provider {
     def this(parameters: Seq[LinkedParameter], ret: SafeType, fun: Seq[Any] => Any, providerType: ProviderType) =
       this(parameters, ret, fun, fun, providerType)
 
-    override def unsafeApply(refs: Seq[TypedRef[?]]): A =
+    override def unsafeApply(refs: Seq[GenericTypedRef[?]]): A =
       super.unsafeApply(refs).asInstanceOf[A]
 
     override def unsafeMap(newRet: SafeType, f: Any => ?): ProviderImpl[?] =
