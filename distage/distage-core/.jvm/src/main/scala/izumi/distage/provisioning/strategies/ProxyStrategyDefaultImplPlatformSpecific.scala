@@ -2,11 +2,9 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.plan.ExecutableOp.{ProxyOp, WiringOp}
-import izumi.distage.model.plan.Wiring
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
-import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, MirrorProvider, SafeType}
 import izumi.fundamentals.reflection.TypeUtil
 
@@ -29,10 +27,10 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
           for {
             allArgsAsNull <- {
               op.op match {
-                case WiringOp.CallProvider(_, f: Wiring.SingletonWiring.Function, _) if f.provider.providerType eq ProviderType.Class =>
+                case p: WiringOp.CallProvider =>
                   // for class constructors, try to fetch known dependencies from the object graph
                   import izumi.functional.IzEither.*
-                  f.associations
+                  p.wiring.associations
                     .map(a => fetchNonforwardRefParamWithClass(context, op.forwardRefs, a))
                     .biSequence
                     .map(_.toArray: Array[(Class[?], Any)])
@@ -41,12 +39,13 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
                       missing =>
                         ProvisionerIssue.MissingRef(op.target, "Proxy precondition failed: non-forwarding key expected to be in context but wasn't", missing.toSet)
                     )
-                case _ =>
+                case _ => // monadic op or createset
                   // otherwise fill everything with nulls
-                  Right(
-                    runtimeClass.getConstructors.head.getParameterTypes
-                      .map(clazz => clazz -> TypeUtil.defaultValue(clazz)): Array[(Class[?], Any)]
-                  )
+                  runtimeClass.getConstructors.toList
+                    .sortBy(_.getParameters.length)
+                    .headOption
+                    .map(_.getParameterTypes.map(clazz => clazz -> TypeUtil.defaultValue(clazz)): Array[(Class[?], Any)])
+                    .toRight(ProvisionerIssue.UnsupportedOp(tpe, op, "cannot find suitable constructor for proxy"))
               }
             }
           } yield {
