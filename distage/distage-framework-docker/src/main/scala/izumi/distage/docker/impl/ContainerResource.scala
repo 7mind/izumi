@@ -357,7 +357,7 @@ open class ContainerResource[F[_], Tag](
           .mut(config.platform)(_.withPlatform(_))
           .mut(registryAuth)(_.withAuthConfig(_))
           .mut(volumes.nonEmpty)(_.withVolumes(volumes.map(_.getVolume).asJava))
-          .mut(volumes.nonEmpty)(_.withBinds(volumes.toList.asJava))
+          .mut(volumes.nonEmpty)(c => c.withHostConfig(c.getHostConfig.withBinds(volumes.toList.asJava)))
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
           .get
 
