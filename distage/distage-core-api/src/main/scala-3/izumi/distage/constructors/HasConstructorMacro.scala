@@ -64,7 +64,7 @@ object ZEnvConstructorMacro {
           }).changeOwner(lambdaSym)
       }
 
-      val f = util.makeFunctoid[ZEnvironment[R]](lamParams, lamExpr, '{ ProviderType.ZIOEnvironment })
+      val f = util.makeFunctoid[ZEnvironment[R]](lamParams, lamExpr, '{ ProviderType.Constructor })
       '{ new ZEnvConstructor[R](${ f }) }
     }
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }

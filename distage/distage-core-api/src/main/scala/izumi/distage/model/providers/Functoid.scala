@@ -174,7 +174,7 @@ object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters {
       Provider.ProviderImpl[A](
         parameters = Seq.empty,
         ret = SafeType.get[A],
-        originalFun = () => a,
+        underlying = () => a,
         fun = (_: Seq[Any]) => a,
         providerType = ProviderType.Function,
       )
@@ -186,8 +186,9 @@ object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters {
       Provider.ProviderImpl[A](
         parameters = Seq.empty,
         ret = SafeType.get[A],
+        underlying = a.asInstanceOf[AnyRef],
         fun = (_: Seq[Any]) => a,
-        providerType = ProviderType.Singleton,
+        providerType = ProviderType.Constructor,
       )
     )
   }
@@ -202,7 +203,7 @@ object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters {
       Provider.ProviderImpl(
         parameters = Seq(LinkedParameter(symbolInfo, key)),
         ret = retTpe,
-        originalFun = f,
+        underlying = f,
         fun = (s: Seq[Any]) => f(s.head.asInstanceOf[A]),
         providerType = ProviderType.Function,
       )

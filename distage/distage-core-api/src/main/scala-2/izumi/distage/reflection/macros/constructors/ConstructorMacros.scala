@@ -14,7 +14,7 @@ abstract class ClassConstructorMacros extends ConstructorMacrosBase {
 
   def mkClassConstructorProvider[T: c.WeakTypeTag](reflectionProvider: ReflectionProvider.Aux[u.type])(targetType: Type): c.Expr[Functoid[T]] = {
     val associations = reflectionProvider.constructorParameterLists(targetType)
-    generateProvider[T, ProviderType.Class.type](associations)(args => q"new $targetType(...$args)")
+    generateProvider[T, ProviderType.Constructor.type](associations)(args => q"new $targetType(...$args)")
   }
 }
 object ClassConstructorMacros {
@@ -45,7 +45,7 @@ abstract class TraitConstructorMacros extends ConstructorMacrosBase {
     val u.MacroWiring.MacroSingletonWiring.Trait(targetType, classParameters, methods, _) = wiring
     val traitParameters = methods.map(_.asParameter)
 
-    generateProvider[T, ProviderType.Trait.type](classParameters :+ traitParameters) {
+    generateProvider[T, ProviderType.Constructor.type](classParameters :+ traitParameters) {
       argss =>
         q"_root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${val methodDefs = methods.zip(argss.last).map {
             case (method, paramSeqIndexTree) => method.traitMethodExpr(paramSeqIndexTree)

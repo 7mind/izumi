@@ -73,7 +73,7 @@ object TraitConstructorMacro {
 //      )
 //    }
 
-    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Trait })
+    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Constructor })
     '{ new TraitConstructor[R](${ f }) }
   }
 

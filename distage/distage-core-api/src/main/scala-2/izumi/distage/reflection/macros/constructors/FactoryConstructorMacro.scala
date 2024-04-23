@@ -30,7 +30,7 @@ object FactoryConstructorMacro {
       c.abort(c.enclosingPosition, s"No factory methods found in $targetType")
     }
 
-    val provider: c.Expr[Functoid[T]] = generateProvider[T, ProviderType.Factory.type](allParameters) {
+    val provider: c.Expr[Functoid[T]] = generateProvider[T, ProviderType.Constructor.type](allParameters) {
       argss =>
         val dependencyArgMap = allParameters.iterator.flatten.map(_.key).zip(argss.iterator.flatten).toMap
         logger.log(s"""Got associations: $allParameters
