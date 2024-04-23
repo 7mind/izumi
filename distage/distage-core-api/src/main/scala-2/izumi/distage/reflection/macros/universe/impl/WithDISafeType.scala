@@ -1,20 +1,22 @@
 package izumi.distage.reflection.macros.universe.impl
 
-import izumi.fundamentals.platform.cache.{CachedHashcode, CachedRepr}
 import izumi.reflect.macrortti.{LightTypeTag, LightTypeTagImpl}
 
 private[distage] trait WithDISafeType { this: DIUniverseBase =>
 
-  // TODO: hotspot, hashcode on keys is inefficient
-  class MacroSafeType private(
+  class MacroSafeType private (
     private[reflection] val typeNative: TypeNative,
     private[MacroSafeType] val tag: LightTypeTag,
-  ) extends CachedHashcode
-    with CachedRepr {
+  ) {
 
-    override final protected def hash: Int = tag.hashCode()
-    override final protected def repr: String = tag.repr
+    // hashcode is already cached in the underlying code
+    @inline override def hashCode: Int = {
+      tag.hashCode()
+    }
 
+    @inline override def toString: String = {
+      tag.repr
+    }
     override final def equals(obj: Any): Boolean = {
       obj match {
         case that: MacroSafeType =>

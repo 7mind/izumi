@@ -20,6 +20,7 @@ final class SafeType(private[distage] val anyTag: AnyTag) {
     }
   }
 
+  // hashcode is already cached in the underlying code
   @inline override def hashCode: Int = {
     anyTag.hashCode()
   }
@@ -34,10 +35,12 @@ final class SafeType(private[distage] val anyTag: AnyTag) {
   }
 }
 
-object SafeType {
+trait SafeTypeTools {
   def get[T: Tag]: SafeType = new SafeType(Tag[T])
   def getK[K[_]: TagK]: SafeType = new SafeType(TagK[K])
   def unsafeGetWeak[T](implicit weakTag: WeakTag[T]): SafeType = new SafeType(WeakTag[T])
+}
 
+object SafeType extends SafeTypeTools {
   lazy val identityEffectType: SafeType = SafeType.getK[Identity]
 }
