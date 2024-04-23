@@ -70,7 +70,7 @@ object ClassConstructorMacro {
             val paramss = util.extractConstructorParamLists(typeRepr)
             val lamExpr = util.wrapCtorApplicationIntoFunctoidRawLambda[R](paramss, ctorTreeParameterized)
 
-            val f = util.makeFunctoid[R](paramss.flatten, lamExpr, '{ ProviderType.Class })
+            val f = util.makeFunctoid[R](paramss.flatten, lamExpr, '{ ProviderType.Constructor })
             '{ new ClassConstructor[R](${ f }) }
 
           case None =>

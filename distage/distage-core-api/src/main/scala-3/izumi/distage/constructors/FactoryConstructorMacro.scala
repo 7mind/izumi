@@ -111,7 +111,7 @@ object FactoryConstructorMacro {
 //      )
 //    }
 
-    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Factory })
+    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Constructor })
     '{ new FactoryConstructor[R](${ f }) }
 
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case NonFatal(t) => qctx.reflect.report.errorAndAbort(t.stacktraceString) }

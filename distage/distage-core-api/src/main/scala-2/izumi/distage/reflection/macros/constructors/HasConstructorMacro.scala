@@ -34,7 +34,7 @@ object ZEnvConstructorMacro {
 
         val params = reflectionProvider.zioHasParameters(c.freshName)(deepIntersection)
         val provider: c.Expr[Functoid[ZEnvironment[T]]] = {
-          generateProvider[ZEnvironment[T], ProviderType.ZIOEnvironment.type](params :: Nil) {
+          generateProvider[ZEnvironment[T], ProviderType.Constructor.type](params :: Nil) {
             case (headParam :: params) :: Nil =>
               params.foldLeft(q"_root_.zio.ZEnvironment.apply($headParam)") {
                 (expr, arg) => q"$expr.add($arg)"
