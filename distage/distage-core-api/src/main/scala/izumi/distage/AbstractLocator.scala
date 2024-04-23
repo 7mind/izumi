@@ -9,7 +9,7 @@ import izumi.reflect.Tag
 trait AbstractLocator extends Locator {
   protected def lookupLocalUnsafe(key: DIKey): Option[Any]
 
-  private[distage] final def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]] = {
+  private[distage] final def lookupLocal[T: Tag](key: DIKey): Option[GenericTypedRef[T]] = {
     lookupLocalUnsafe(key)
       .map {
         value =>
@@ -38,7 +38,7 @@ trait AbstractLocator extends Locator {
     lookupRef(key).map(_.value)
   }
 
-  override final def lookupRefOrThrow[T: Tag](key: DIKey): TypedRef[T] = {
+  override final def lookupRefOrThrow[T: Tag](key: DIKey): GenericTypedRef[T] = {
     lookupRef(key) match {
       case Some(value) =>
         value
@@ -47,11 +47,11 @@ trait AbstractLocator extends Locator {
     }
   }
 
-  override final def lookupRef[T: Tag](key: DIKey): Option[TypedRef[T]] = {
+  override final def lookupRef[T: Tag](key: DIKey): Option[GenericTypedRef[T]] = {
     recursiveLookup(key, this)
   }
 
-  private[this] final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[TypedRef[T]] = {
+  private[this] final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[GenericTypedRef[T]] = {
     locator
       .lookupLocal[T](key)
       .orElse(locator.parent.flatMap(p => recursiveLookup[T](key, p)))

@@ -8,7 +8,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.OpStatus
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection.{DIKey, TypedRef}
+import izumi.distage.model.reflection.{DIKey, GenericTypedRef}
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiPrimitives
 import izumi.reflect.{Tag, TagK}
@@ -36,10 +36,10 @@ trait Locator {
   def lookupInstance[T: Tag](key: DIKey): Option[T]
 
   def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
-  private[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]]
+  private[distage] def lookupLocal[T: Tag](key: DIKey): Option[GenericTypedRef[T]]
 
-  def lookupRefOrThrow[T: Tag](key: DIKey): TypedRef[T]
-  def lookupRef[T: Tag](key: DIKey): Option[TypedRef[T]]
+  def lookupRefOrThrow[T: Tag](key: DIKey): GenericTypedRef[T]
+  def lookupRef[T: Tag](key: DIKey): Option[GenericTypedRef[T]]
 
   /** The plan that produced this object graph */
   def plan: Plan
@@ -97,7 +97,7 @@ trait Locator {
   /** Same as [[run]] but returns `None` if any of the arguments could not be fulfilled */
   final def runOption[T](function: Functoid[T]): Option[T] = {
     val fn = function.get
-    val args: Option[Queue[TypedRef[Any]]] = fn.diKeys.foldLeft(Option(Queue.empty[TypedRef[Any]])) {
+    val args: Option[Queue[GenericTypedRef[Any]]] = fn.diKeys.foldLeft(Option(Queue.empty[GenericTypedRef[Any]])) {
       (maybeQueue, key) =>
         maybeQueue.flatMap {
           queue =>
