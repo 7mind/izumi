@@ -1,7 +1,5 @@
 package izumi.distage.model.plan.repr
 
-import izumi.distage.model.reflection.DIKey.SetKeyMeta
-
 import scala.annotation.nowarn
 import izumi.distage.model.reflection.*
 import izumi.fundamentals.collections.IzCollections.*
@@ -95,15 +93,7 @@ class KeyMinimizer(
 
       case DIKey.SetElementKey(set, reference, disambiguator) =>
         val base = s"${renderKey(set)}/${renderKey(reference)}"
-        val drepr = (disambiguator match {
-          case SetKeyMeta.NoMeta =>
-            None
-          case SetKeyMeta.WithImpl(disambiguator) =>
-            Some(s"impl:${disambiguator.hashCode}")
-          case SetKeyMeta.WithAutoset(base) =>
-            Some(s"autoset:${renderKey(base)}")
-        }).map(v => "#" + v).getOrElse("")
-
+        val drepr = disambiguator.repr(renderKey)
         val fullDis = styled(drepr, c.BLUE)
         showKeyData("set", s"$base$fullDis")
     }

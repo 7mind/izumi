@@ -1,6 +1,6 @@
 package izumi.distage.model.reflection
 
-import izumi.distage.model.definition.{Identifier, ImplDef}
+import izumi.distage.model.definition.Identifier
 import izumi.fundamentals.platform.cache.CachedProductHashcode
 import izumi.reflect.Tag
 
@@ -50,22 +50,8 @@ object DIKey {
     override def tpe: SafeType = reference.tpe
 
     override def toString: String = {
-      val drepr = (disambiguator match {
-        case SetKeyMeta.NoMeta =>
-          None
-        case SetKeyMeta.WithImpl(disambiguator) =>
-          Some(s"impl:${disambiguator.hashCode}")
-        case SetKeyMeta.WithAutoset(base) =>
-          Some(s"autoset:${base.toString}")
-      }).map(v => "#" + v).getOrElse("")
-      s"{set.$set/${reference.toString}$drepr"
+      s"{set.$set/${reference.toString}${disambiguator.repr(_.toString)}"
     }
-  }
-  sealed trait SetKeyMeta
-  object SetKeyMeta {
-    case object NoMeta extends SetKeyMeta
-    final case class WithImpl(disambiguator: ImplDef) extends SetKeyMeta
-    final case class WithAutoset(base: DIKey) extends SetKeyMeta
   }
 
   final case class ProxyInitKey(proxied: DIKey) extends DIKey {
@@ -84,12 +70,5 @@ object DIKey {
 
   final case class EffectKey(key: DIKey, tpe: SafeType) extends DIKey {
     override def toString: String = s"{effect.${key.toString}/$tpe}"
-  }
-
-  final case class MultiSetImplId(set: DIKey, impl: ImplDef)
-  object MultiSetImplId {
-    implicit object SetImplIdContract extends IdContract[MultiSetImplId] {
-      override def repr(v: MultiSetImplId): String = s"set/${v.set}#${v.impl.hashCode}"
-    }
   }
 }

@@ -3,14 +3,14 @@ package izumi.distage.model.definition.dsl
 import izumi.distage.constructors.{FactoryConstructor, TraitConstructor}
 import izumi.distage.model.definition.*
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.exceptions.dsl.InvalidFunctoidModifier
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.DIKey
-import izumi.distage.model.reflection.DIKey.SetKeyMeta
+import izumi.distage.model.reflection.{DIKey, MultiSetImplId}
+import izumi.distage.model.reflection.SetKeyMeta
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
 
@@ -499,7 +499,7 @@ object AbstractBindingDefDSL {
     private[this] val ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty
 
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
-      val valueProxyKey = DIKey.IdKey(implDef.implType, DIKey.MultiSetImplId(setKey, implDef))
+      val valueProxyKey = DIKey.IdKey(implDef.implType, MultiSetImplId(setKey, implDef))
       val valueProxyBinding = SingletonBinding(valueProxyKey, implDef, Set.empty, pos)
 
       val elementKey = DIKey.SetElementKey(setKey, valueProxyKey, SetKeyMeta.WithImpl(implDef))
