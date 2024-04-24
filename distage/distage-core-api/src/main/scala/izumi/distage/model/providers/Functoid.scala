@@ -1,18 +1,10 @@
 package izumi.distage.model.providers
 
-import izumi.distage.constructors.{ClassConstructor, FactoryConstructor, TraitConstructor, ZEnvConstructor}
 import izumi.distage.model.definition.Identifier
-import izumi.distage.model.exceptions.runtime.TODOBindingException
-import izumi.distage.model.reflection.LinkedParameter
-import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.*
 import izumi.distage.reflection.macros.FunctoidMacroMethods
-import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.reflect.Tag
-import zio.ZEnvironment
-import zio.managed.ZManaged
-import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.annotation.unused
@@ -157,221 +149,14 @@ final case class Functoid[+A](get: Provider) {
   @inline private def getRetTag: Tag[A @uncheckedVariance] = Tag(get.ret.closestClass, get.ret.tag)
 }
 
-object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters {
+object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters with FunctoidConstructors with SimpleFunctoids {
 
   implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
     def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.getRetTag)
   }
 
-  def identity[A: Tag]: Functoid[A] = identityKey(DIKey.get[A]).asInstanceOf[Functoid[A]]
-
   def pure[A: Tag](a: A): Functoid[A] = lift(a)
 
   def unit: Functoid[Unit] = pure(())
 
-  def lift[A: Tag](a: => A): Functoid[A] = {
-    new Functoid[A](
-      Provider.ProviderImpl[A](
-        parameters = Seq.empty,
-        ret = SafeType.get[A],
-        underlying = () => a,
-        fun = (_: Seq[Any]) => a,
-        providerType = ProviderType.Function,
-      )
-    )
-  }
-
-  def singleton[A <: Singleton: Tag](a: A): Functoid[A] = {
-    new Functoid[A](
-      Provider.ProviderImpl[A](
-        parameters = Seq.empty,
-        ret = SafeType.get[A],
-        underlying = a.asInstanceOf[AnyRef],
-        fun = (_: Seq[Any]) => a,
-        providerType = ProviderType.Constructor,
-      )
-    )
-  }
-
-  def single[A: Tag, B: Tag](f: A => B): Functoid[B] = {
-    val key = DIKey.get[A]
-    val tpe = key.tpe
-    val retTpe = SafeType.get[B]
-    val symbolInfo = firstParamSymbolInfo(tpe)
-
-    new Functoid[B](
-      Provider.ProviderImpl(
-        parameters = Seq(LinkedParameter(symbolInfo, key)),
-        ret = retTpe,
-        underlying = f,
-        fun = (s: Seq[Any]) => f(s.head.asInstanceOf[A]),
-        providerType = ProviderType.Function,
-      )
-    )
-  }
-
-  /** Derive constructor for a concrete class `A` using [[ClassConstructor]] */
-  def makeClass[A: ClassConstructor]: Functoid[A] = ClassConstructor[A]
-
-  /**
-    * Derive constructor for an abstract class or a trait `A` using [[TraitConstructor]]
-    *
-    * @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]]
-    */
-  def makeTrait[A: TraitConstructor]: Functoid[A] = TraitConstructor[A]
-
-  /**
-    * Derive constructor for a "factory-like" abstract class or a trait `A` using [[FactoryConstructor]]
-    *
-    * @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]]
-    */
-  def makeFactory[A: FactoryConstructor]: Functoid[A] = FactoryConstructor[A]
-
-  /**
-    * Derive constructor for a `zio.ZEnvironment` value `A` using [[ZEnvConstructor]]
-    *
-    * @see [[https://izumi.7mind.io/distage/basics.html#zio-environment-bindings ZIO Environment bindings]]
-    */
-  def makeHas[A: ZEnvConstructor]: Functoid[ZEnvironment[A]] = ZEnvConstructor[A]
-
-  @deprecated("Same as `makeClass`, use `makeClass`")
-  /** @deprecated Same as `makeClass`, use `makeClass` */
-  def makeAny[A: ClassConstructor]: Functoid[A] = ClassConstructor[A]
-
-  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): Functoid[Nothing] = {
-    new Functoid[Nothing](
-      Provider.ProviderImpl(
-        parameters = Seq.empty,
-        ret = key.tpe,
-        fun = _ => throw new TODOBindingException(s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos),
-        providerType = ProviderType.Function,
-      )
-    )
-  }
-
-  def identityKey(key: DIKey): Functoid[?] = {
-    val tpe = key.tpe
-    val symbolInfo = firstParamSymbolInfo(tpe)
-
-    new Functoid(
-      Provider.ProviderImpl(
-        parameters = Seq(LinkedParameter(symbolInfo, key)),
-        ret = tpe,
-        fun = (_: Seq[Any]).head,
-        providerType = ProviderType.Function,
-      )
-    )
-  }
-
-  @inline private[this] def firstParamSymbolInfo(tpe: SafeType): SymbolInfo = {
-    SymbolInfo(
-      name = "x$1",
-      finalResultType = tpe,
-      isByName = false,
-      wasGeneric = false,
-    )
-  }
-
-}
-
-private[providers] trait FunctoidLifecycleAdapters {
-
-  import cats.effect.kernel.{Resource, Sync}
-  import izumi.reflect.{Tag, TagK}
-  import izumi.functional.lifecycle.Lifecycle
-  import zio.*
-  import scala.language.implicitConversions
-
-  /**
-    * Allows you to bind [[cats.effect.Resource]]-based constructors in `ModuleDef`:
-    *
-    * Example:
-    * {{{
-    *   import cats.effect._
-    *
-    *   val catsResource = Resource.liftF(IO(5))
-    *
-    *   val module = new distage.ModuleDef {
-    *     make[Int].fromResource(catsResource)
-    *   }
-    * }}}
-    *
-    * @note binding a cats Resource[F, A] will add a
-    *       dependency on `Sync[F]` for your corresponding `F` type
-    *       (`Sync[F]` instance will generally be provided automatically via [[izumi.distage.modules.DefaultModule]])
-    */
-  implicit final def providerFromCats[F[_]: TagK, A](
-    resource: => Resource[F, A]
-  )(implicit tag: Tag[Lifecycle.FromCats[F, A]]
-  ): Functoid[Lifecycle.FromCats[F, A]] = {
-    Functoid.identity[Sync[F]].map {
-      implicit sync: Sync[F] =>
-        Lifecycle.fromCats(resource)(sync)
-    }
-  }
-
-  /**
-    * Allows you to bind Scoped [[zio.ZIO]]-based constructors in `ModuleDef`:
-    */
-  implicit final def providerFromZIOScoped[R, E, A](
-    scoped: => ZIO[Scope & R, E, A]
-  )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
-  ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZIO[R](scoped))
-  }
-
-  /**
-    * Allows you to bind Scoped [[zio.ZIO]]-based constructors in `ModuleDef`:
-    */
-  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZIOScopedNothing[R, A](
-    scoped: => ZIO[Scope & R, Nothing, A]
-  )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
-  ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZIO[R](scoped))
-  }
-
-  /**
-    * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
-    */
-  implicit final def providerFromZManaged[R, E, A](
-    managed: => ZManaged[R, E, A]
-  )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
-  ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZManaged(managed))
-  }
-
-  /**
-    * Allows you to bind [[zio.managed.ZManaged]]-based constructors in `ModuleDef`:
-    */
-  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZManagedNothing[R, A](
-    managed: => ZManaged[R, Nothing, A]
-  )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
-  ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZManaged(managed))
-  }
-
-  /**
-    * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
-    */
-  implicit final def providerFromZLayer[R, E, A: Tag](
-    layer: => ZLayer[R, E, A]
-  )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
-  ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZLayer(layer)(zio.Tag[A]))
-  }
-
-  /**
-    * Allows you to bind [[zio.ZLayer]]-based constructors in `ModuleDef`:
-    */
-  // workaround for inference issues with `E=Nothing`, scalac error: Couldn't find Tag[FromZIO[Any, E, Clock]] when binding ZManaged[Any, Nothing, Clock]
-  implicit final def providerFromZLayerNothing[R, A: Tag](
-    layer: => ZLayer[R, Nothing, A]
-  )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
-  ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZLayer(layer)(zio.Tag[A]))
-  }
-
-  disableAutoTrace.discard()
 }

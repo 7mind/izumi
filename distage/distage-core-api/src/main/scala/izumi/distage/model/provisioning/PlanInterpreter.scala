@@ -11,6 +11,7 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.{ProvisionImmutable, ProvisionInstances}
 import izumi.distage.model.reflection.*
+import izumi.distage.model.reflection.Provider.UnsafeProviderCallArgsMismatched
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.build.MacroParameters
@@ -104,6 +105,7 @@ object PlanInterpreter {
                 case UnexpectedStepProvisioning(op, problem) =>
                   val excName = problem match {
                     case di: DIException => di.getClass.getSimpleName
+                    case p: UnsafeProviderCallArgsMismatched => p.getClass.getSimpleName
                     case o => o.getClass.getName
                   }
                   s"Got exception when trying to to execute $op, exception was:\n$excName:\n${stackTrace(problem)}"
