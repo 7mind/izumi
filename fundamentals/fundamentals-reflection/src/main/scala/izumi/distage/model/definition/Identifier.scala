@@ -1,6 +1,7 @@
 package izumi.distage.model.definition
 
 import izumi.distage.model.reflection.IdContract
+
 import scala.language.implicitConversions
 
 /**
