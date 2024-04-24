@@ -1,7 +1,6 @@
 package izumi.distage.model.reflection
 
-import izumi.distage.model.exceptions.runtime.UnsafeProviderCallArgsMismatched
-import izumi.distage.model.reflection.Provider.ProviderType
+import izumi.distage.model.reflection.Provider.{ProviderType, UnsafeProviderCallArgsMismatched}
 
 trait Provider {
   def parameters: Seq[LinkedParameter]
@@ -76,6 +75,8 @@ trait Provider {
 }
 
 object Provider {
+  class UnsafeProviderCallArgsMismatched(message: String, val expected: Seq[SafeType], val actual: Seq[SafeType], val actualValues: Seq[Any])
+    extends RuntimeException(message)
 
   sealed trait ProviderType
   object ProviderType {

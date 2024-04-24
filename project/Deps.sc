@@ -368,7 +368,7 @@ object Izumi {
       final val literals = ArtifactId("fundamentals-literals")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
-      final val reflection = ArtifactId("fundamentals-reflection")
+//      final val reflection = ArtifactId("fundamentals-reflection")
       final val jsonCirce = ArtifactId("fundamentals-json-circe")
 
       final lazy val basics = Seq(
@@ -482,12 +482,14 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.platform,
         libs = Seq(
-          scala_reflect
+          izumi_reflect in Scope.Compile.all,
+          scala_reflect,
         ),
         depends = Seq(
+          Projects.fundamentals.functional,
           Projects.fundamentals.language in Scope.Compile.all,
           Projects.fundamentals.collections in Scope.Compile.all,
-          Projects.fundamentals.reflection in Scope.Compile.all,
+//          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
         settings = Seq(
           "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
@@ -515,14 +517,15 @@ object Izumi {
           "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
         ),
       ),
-      Artifact(
-        name = Projects.fundamentals.reflection,
-        libs = Seq(izumi_reflect in Scope.Compile.all, scala_reflect),
-        depends = Seq(
-          Projects.fundamentals.functional
-        ),
-        settings = Seq.empty,
-      ),
+//      Artifact(
+//        name = Projects.fundamentals.reflection,
+//        libs = Seq(izumi_reflect in Scope.Compile.all, scala_reflect),
+//        depends = Seq(
+//          Projects.fundamentals.functional,
+//          Projects.fundamentals.language,
+//        ),
+//        settings = Seq.empty,
+//      ),
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++
@@ -561,7 +564,7 @@ object Izumi {
         name = Projects.distage.coreApi,
         libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(zio_managed in Scope.Optional.all),
         depends = Seq(
-          Projects.fundamentals.reflection,
+//          Projects.fundamentals.reflection,
           Projects.fundamentals.platform,
           Projects.fundamentals.bio,
         ).map(_ in Scope.Compile.all),
