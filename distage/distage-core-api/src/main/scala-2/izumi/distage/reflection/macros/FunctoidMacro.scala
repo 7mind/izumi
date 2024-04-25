@@ -21,16 +21,13 @@ import scala.reflect.macros.blackbox
   * @see [[izumi.distage.constructors.DebugProperties]]
   */
 class FunctoidMacro(val c: blackbox.Context) {
-
   final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
+  type Parameter = macroUniverse.Association.Parameter
 
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
   private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
 
   import c.universe.*
-  import macroUniverse.*
-
-  case class ExtractedInfo(associations: List[Association.Parameter], isValReference: Boolean)
 
   def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[Functoid[R]] = {
     val associations = analyze(fun, weakTypeOf[R])
@@ -51,7 +48,7 @@ class FunctoidMacro(val c: blackbox.Context) {
     result
   }
 
-  def analyze(tree: Tree, ret: Type): List[Association.Parameter] = tree match {
+  def analyze(tree: Tree, ret: Type): List[Parameter] = tree match {
     case Block(List(), inner) =>
       analyze(inner, ret)
     case Function(args, body) =>
@@ -81,14 +78,14 @@ class FunctoidMacro(val c: blackbox.Context) {
       )
   }
 
-  def generateProvider[R: c.WeakTypeTag](parameters: List[Association.Parameter], fun: Tree): c.Expr[Functoid[R]] = {
+  def generateProvider[R: c.WeakTypeTag](parameters: List[Parameter], fun: Tree): c.Expr[Functoid[R]] = {
     val tools = DIUniverseLiftables(macroUniverse)
     import tools.{liftTypeToSafeType, liftableParameter}
 
     val seqName = if (parameters.nonEmpty) TermName(c.freshName("seqAny")) else TermName("_")
 
     val casts = parameters.indices.map(i => q"$seqName($i)")
-    val parametersNoByName = Liftable.liftList[Association.Parameter].apply(parameters)
+    val parametersNoByName = Liftable.liftList[Parameter].apply(parameters)
 
     c.Expr[Functoid[R]] {
       q"""{
@@ -107,9 +104,9 @@ class FunctoidMacro(val c: blackbox.Context) {
     }
   }
 
-  protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Association.Parameter] = {
-    def association(p: Symbol): Association.Parameter = {
-      reflectionProvider.parameterToAssociation(MacroSymbolInfo.Runtime(p))
+  protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Parameter] = {
+    def association(p: Symbol): Parameter = {
+      reflectionProvider.parameterToAssociation(macroUniverse.MacroSymbolInfo.Runtime(p))
     }
 
     val lambdaParams = lambdaArgs.map(association)
@@ -188,10 +185,10 @@ class FunctoidMacro(val c: blackbox.Context) {
     method.typeSignature.paramLists.flatten
   }
 
-  protected[this] def analyzeValRef(sig: Type): List[Association.Parameter] = {
+  protected[this] def analyzeValRef(sig: Type): List[Parameter] = {
     widenFunctionObject(sig).typeArgs.init.map {
       tpe =>
-        val symbol = MacroSymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
+        val symbol = macroUniverse.MacroSymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
         reflectionProvider.parameterToAssociation(symbol)
     }
   }

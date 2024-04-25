@@ -65,38 +65,6 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   }
 
-  override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
-    deepIntersection.map {
-      hasTpe =>
-        val tpe = hasTpe.dealias
-        val syntheticSymbolInfo = MacroSymbolInfo.Static.syntheticFromType(transformName)(tpe)
-        Association.Parameter(syntheticSymbolInfo, keyFromSymbolResultType(syntheticSymbolInfo))
-    }
-  }
-
-  private def factoryMethod(tpe: u.TypeNative)(factoryMethod: u.u.MethodSymbol): u.MacroWiring.Factory.FactoryMethod = {
-    val factoryMethodSymb = MacroSymbolInfo.Runtime(factoryMethod, tpe, wasGeneric = false)
-    val resultType = ReflectionUtil.norm(u.u: u.u.type) {
-      resultOfFactoryMethod(factoryMethodSymb)
-        .asSeenFrom(tpe, tpe.typeSymbol)
-    }
-
-    val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromParameter(MacroSymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
-    val resultTypeWiring = mkConstructorWiring(factoryMethod, resultType)
-
-    val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
-    if (excessiveTypes.nonEmpty) {
-      throw new UnsupportedDefinitionException(
-        s"""Augmentation failure.
-           |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
-           |  * But method signature contains types not required by constructor of the result type: $excessiveTypes
-           |  * Only the following types are required: ${resultTypeWiring.requiredKeys}
-           |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin
-      )
-    }
-
-    MacroWiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)
-  }
   override def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]] = {
     selectConstructorArguments(tpe).toList.flatten.map(_.map(parameterToAssociation))
   }
@@ -165,26 +133,60 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   override def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter = {
-    val key = keyFromParameter(parameterSymbol)
-    Association.Parameter(parameterSymbol, key)
+    val key = keyFromSymbol(parameterSymbol)
+    Association.Parameter(parameterSymbol, tpeFromSymbol(parameterSymbol), key)
+  }
+
+  override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
+    deepIntersection.map {
+      hasTpe =>
+        val tpe = hasTpe.dealias
+        val syntheticSymbolInfo = MacroSymbolInfo.Static.syntheticFromType(transformName)(tpe)
+        Association.Parameter(syntheticSymbolInfo, tpeFromSymbol(syntheticSymbolInfo), keyFromSymbol(syntheticSymbolInfo))
+    }
+  }
+
+  private def factoryMethod(tpe: u.TypeNative)(factoryMethod: u.u.MethodSymbol): u.MacroWiring.Factory.FactoryMethod = {
+    val factoryMethodSymb = MacroSymbolInfo.Runtime(factoryMethod, tpe, wasGeneric = false)
+    val resultType = ReflectionUtil.norm(u.u: u.u.type) {
+      resultOfFactoryMethod(factoryMethodSymb)
+        .asSeenFrom(tpe, tpe.typeSymbol)
+    }
+
+    val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromSymbol(MacroSymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
+    val resultTypeWiring = mkConstructorWiring(factoryMethod, resultType)
+
+    val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
+    if (excessiveTypes.nonEmpty) {
+      throw new UnsupportedDefinitionException(
+        s"""Augmentation failure.
+           |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
+           |  * But method signature contains types not required by constructor of the result type: $excessiveTypes
+           |  * Only the following types are required: ${resultTypeWiring.requiredKeys}
+           |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin
+      )
+    }
+
+    MacroWiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)
   }
 
   private[this] def methodToAssociation(definingClass: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
     val methodSymb = MacroSymbolInfo.Runtime(method, definingClass, wasGeneric = false)
-    Association.AbstractMethod(methodSymb, keyFromSymbolResultType(methodSymb))
+    Association.AbstractMethod(methodSymb, tpeFromSymbol(methodSymb), keyFromSymbol(methodSymb))
   }
 
-  private[this] def keyFromParameter(parameterSymbol: MacroSymbolInfo): MacroDIKey.BasicKey = {
-    val paramType = if (parameterSymbol.isByName) {
+  private[this] def tpeFromSymbol(parameterSymbol: MacroSymbolInfo): u.MacroSafeType = {
+    val paramType = if (parameterSymbol.isByName) { // this will never be true for a method symbol
       parameterSymbol.finalResultType.typeArgs.head.finalResultType
-    } else parameterSymbol.finalResultType
-    val typeKey = MacroDIKey.TypeKey(MacroSafeType.create(paramType))
-    withIdKeyFromAnnotation(parameterSymbol, typeKey)
+    } else {
+      parameterSymbol.finalResultType
+    }
+    MacroSafeType.create(paramType)
   }
-
-  private[this] def keyFromSymbolResultType(methodSymbol: MacroSymbolInfo): MacroDIKey.BasicKey = {
-    val typeKey = MacroDIKey.TypeKey(MacroSafeType.create(methodSymbol.finalResultType))
-    withIdKeyFromAnnotation(methodSymbol, typeKey)
+  private[this] def keyFromSymbol(parameterSymbol: MacroSymbolInfo): MacroDIKey.BasicKey = {
+    val tpe = tpeFromSymbol(parameterSymbol)
+    val typeKey = MacroDIKey.TypeKey(tpe)
+    withIdKeyFromAnnotation(parameterSymbol, typeKey)
   }
 
   private[this] object ConcreteSymbol {
