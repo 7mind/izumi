@@ -34,16 +34,16 @@ private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDISafeT
   }
 
   object Association {
-    case class Parameter(symbol: MacroSymbolInfo, key: MacroDIKey.BasicKey) extends Association {
+    case class Parameter(symbol: MacroSymbolInfo, stpe: MacroSafeType, key: MacroDIKey.BasicKey) extends Association {
       override final def isByName: Boolean = symbol.isByName
       override final def asParameter: Association.Parameter = this
       override final def asParameterTpe: TypeNative = tpe
     }
 
     // tpe is never by-name for `AbstractMethod`
-    case class AbstractMethod(symbol: MacroSymbolInfo, key: MacroDIKey.BasicKey) extends Association {
+    case class AbstractMethod(symbol: MacroSymbolInfo, stpe: MacroSafeType, key: MacroDIKey.BasicKey) extends Association {
       override final def isByName: Boolean = true
-      override final def asParameter: Parameter = Parameter(symbol.withIsByName(true).withTpe(asParameterTpe), key)
+      override final def asParameter: Parameter = Parameter(symbol.withIsByName(true).withTpe(asParameterTpe), stpe, key)
       override final def asParameterTpe: TypeNative = u.appliedType(u.definitions.ByNameParamClass, tpe) // force by-name
     }
   }
