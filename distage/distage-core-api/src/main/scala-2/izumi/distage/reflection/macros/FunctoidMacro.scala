@@ -157,7 +157,7 @@ class FunctoidMacro(val c: blackbox.Context) {
         case (mArg, lArg) =>
           mArg.copy(
             symbol = lArg.symbol.withAnnotations(mArg.symbol.annotations),
-            key = mArg.key.withTpe(lArg.key.tpe),
+            key = mArg.key.withTpe(lArg.stpe),
           )
       }
     } else {

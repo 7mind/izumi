@@ -226,7 +226,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative] = {
+  def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative] = {
     val constructor = findConstructor(tpe)
     if (!constructor.isTerm) {
       None

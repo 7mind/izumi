@@ -25,6 +25,8 @@ object StaticDIUniverse {
       override protected val typeOfDistageAnnotation: TypeNative = u.typeOf[DIStageAnnotation]
       override implicit val stringIdContract: MacroIdContract[String] = new IdContractImpl[String]
       override implicit def singletonStringIdContract[S <: String with Singleton]: MacroIdContract[S] = new IdContractImpl[S]
+
+      override val rp: ReflectionProvider = ReflectionProviderDefaultImpl.apply(this)
     }
   }
 }

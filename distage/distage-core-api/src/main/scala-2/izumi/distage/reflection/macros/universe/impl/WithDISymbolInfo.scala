@@ -5,6 +5,70 @@ import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
 trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
 
+  sealed trait FriendlyAnnoParams
+  object FriendlyAnnoParams {
+    case class Full(values: List[(String, FriendlyAnnotationValue)]) extends FriendlyAnnoParams
+    case class Values(values: List[FriendlyAnnotationValue]) extends FriendlyAnnoParams
+
+  }
+  case class FriendlyAnnotation(fqn: String, params: FriendlyAnnoParams)
+  sealed trait FriendlyAnnotationValue
+  object FriendlyAnnotation {
+    case class StringValue(value: String) extends FriendlyAnnotationValue
+    case class IntValue(value: Int) extends FriendlyAnnotationValue
+    case class LongValue(value: Long) extends FriendlyAnnotationValue
+    case class UnknownConst(value: Any) extends FriendlyAnnotationValue
+    case class Unknown() extends FriendlyAnnotationValue
+  }
+
+  def makeFriendly(anno: u.Annotation): FriendlyAnnotation = {
+    import u.*
+
+    val tpe = anno.tree.tpe.finalResultType
+//    val tag = LightTypeTagImpl.makeLightTypeTag(u)(tpe)
+//    println(tag)
+    val annoName = tpe.typeSymbol.fullName
+    val paramTrees = anno.tree.children.tail
+    val values = paramTrees.map {
+      p =>
+        (p: @unchecked) match {
+          case Literal(Constant(c)) =>
+            c match {
+              case v: String =>
+                FriendlyAnnotation.StringValue(v)
+              case v: Int =>
+                FriendlyAnnotation.IntValue(v)
+              case v: Long =>
+                FriendlyAnnotation.LongValue(v)
+              case v =>
+                FriendlyAnnotation.UnknownConst(v)
+            }
+          case _ =>
+            FriendlyAnnotation.Unknown()
+        }
+    }
+
+    val constructor = rp.selectConstructorMethod(tpe.asInstanceOf[rp.u.TypeNative])
+
+//    println((anno, u.showRaw(anno.tree.children.head)))
+    println(tpe)
+    val avals = constructor match {
+      case Some(c) =>
+        c.paramLists match {
+          case params :: Nil =>
+            val names = params.map(_.name.decodedName.toString)
+            assert(names.size == values.size)
+            FriendlyAnnoParams.Full(names.zip(values))
+          case _ =>
+            FriendlyAnnoParams.Values(values)
+        }
+      case _ =>
+        FriendlyAnnoParams.Values(values)
+    }
+
+    FriendlyAnnotation(annoName, avals)
+  }
+
   sealed trait MacroSymbolInfo {
     def name: String
     def finalResultType: TypeNative
@@ -105,7 +169,12 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
       }
 
       private[this] def findAnnotation(tgtAnnType: TypeNative): Option[u.Annotation] = {
-        symbolInfo.annotations.find(a => AnnotationTools.annotationTypeEq(u)(tgtAnnType, a))
+        val r = symbolInfo.annotations.find(a => AnnotationTools.annotationTypeEq(u)(tgtAnnType, a))
+        r.foreach {
+          a =>
+            println(makeFriendly(a))
+        }
+        r
       }
     }
 
