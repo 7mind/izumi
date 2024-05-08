@@ -16,6 +16,8 @@ trait ReflectionProvider {
   def isConcrete(tpe: TypeNative): Boolean
   def isWireableAbstract(tpe: TypeNative): Boolean
   def isFactory(tpe: TypeNative): Boolean
+
+  def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative]
 }
 
 object ReflectionProvider {
