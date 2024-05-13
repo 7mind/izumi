@@ -10,14 +10,16 @@ import java.time.{Duration as JavaDuration, Instant, Period, Year, ZoneId, ZoneO
 import java.util.UUID
 import java.util.regex.Pattern
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.reflect.ClassTag
 import scala.util.matching.Regex
 
-trait DIConfigMeta[A] {
+trait DIConfigMeta[T] {
   def tpe: ConfigMetaType
 }
 
 object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
+  def apply[T](configMetaType: ConfigMetaType): DIConfigMeta[T] = new DIConfigMeta[T] {
+    override def tpe: ConfigMetaType = configMetaType
+  }
 
   implicit def deriveSeq[T, S[K] <: scala.collection.Seq[K]](implicit m: DIConfigMeta[T]): DIConfigMeta[S[T]] = new DIConfigMeta[S[T]] {
     override def tpe: ConfigMetaType = ConfigMetaType.TList(m.tpe)
@@ -39,10 +41,9 @@ object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
       override def tpe: ConfigMetaType = ConfigMetaType.TMap(decK.tpe, decV.tpe)
     }
 
-  def fromBasic[T: ClassTag](tpeBasic: ConfigMetaBasicType): DIConfigMeta[T] =
-    new DIConfigMeta[T] {
-      override def tpe: ConfigMetaType = ConfigMetaType.TBasic(tpeBasic)
-    }
+  def fromBasic[T](tpeBasic: ConfigMetaBasicType): DIConfigMeta[T] = new DIConfigMeta[T] {
+    override def tpe: ConfigMetaType = ConfigMetaType.TBasic(tpeBasic)
+  }
 
   implicit def read_String: DIConfigMeta[String] = fromBasic[String](ConfigMetaBasicType.TString)
   implicit def read_Char: DIConfigMeta[Char] = fromBasic[Char](ConfigMetaBasicType.TChar)
