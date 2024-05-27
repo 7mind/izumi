@@ -57,6 +57,12 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
       q"new $modelReflectionPkg.LinkedParameter($symbol, $key)"
   }
 
+  implicit val liftableCompactParameter: Liftable[Association.CompactParameter] = {
+    case Association.CompactParameter(symbol, _, key) =>
+      // TODO: XXX
+      q"new $modelReflectionPkg.LinkedParameter(${symbol.asInstanceOf[MacroSymbolInfo]}, $key)"
+//      q"new $modelReflectionPkg.CompactParameter(${symbol.asInstanceOf[MacroSymbolInfo]}, $stpe, $key)"
+  }
 }
 
 object DIUniverseLiftables {

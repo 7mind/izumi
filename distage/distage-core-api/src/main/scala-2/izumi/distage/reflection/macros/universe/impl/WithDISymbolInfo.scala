@@ -97,6 +97,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
     def isByName: Boolean
     def wasGeneric: Boolean
     def friendlyAnnotations: List[FriendlyAnnotation]
+    def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact
   }
 
   sealed trait MacroSymbolInfo extends MacroSymbolInfoCompact {
@@ -136,6 +137,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
       override final def withTpe(tpe: TypeNative): MacroSymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): MacroSymbolInfo = copy(isByName = boolean)
       override final def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo = copy(annotations = annotations)
+      override final def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact = copy(friendlyAnnotations = annotations)
     }
 
     private[distage] object Runtime {
@@ -185,6 +187,7 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
       override final def withTpe(tpe: TypeNative): MacroSymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): MacroSymbolInfo = copy(isByName = boolean)
       override final def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo = copy(annotations = annotations)
+      override final def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact = copy(friendlyAnnotations = annotations)
     }
     object Static {
       def syntheticFromType(transformName: String => String)(tpe: TypeNative): MacroSymbolInfo.Static = {
