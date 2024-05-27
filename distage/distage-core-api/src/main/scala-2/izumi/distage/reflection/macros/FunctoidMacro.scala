@@ -22,7 +22,7 @@ import scala.reflect.macros.blackbox
   */
 class FunctoidMacro(val c: blackbox.Context) {
   final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
-  type Parameter = macroUniverse.Association.Parameter
+  type Parameter = macroUniverse.Association.CompactParameter
 
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
   private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
@@ -37,7 +37,7 @@ class FunctoidMacro(val c: blackbox.Context) {
       s"""DIKeyWrappedFunction info:
          | Symbol: ${fun.symbol}\n
          | IsMethodSymbol: ${Option(fun.symbol).exists(_.isMethod)}\n
-         | Extracted Annotations: ${associations.flatMap(_.symbol.annotations)}\n
+         | Extracted Annotations: ${associations.flatMap(_.symbol.friendlyAnnotations)}\n
          | Extracted DIKeys: ${associations.map(_.key)}\n
          | argument: ${showCode(fun)}\n
          | argumentTree: ${showRaw(fun)}\n
@@ -80,12 +80,14 @@ class FunctoidMacro(val c: blackbox.Context) {
 
   def generateProvider[R: c.WeakTypeTag](parameters: List[Parameter], fun: Tree): c.Expr[Functoid[R]] = {
     val tools = DIUniverseLiftables(macroUniverse)
-    import tools.{liftTypeToSafeType, liftableParameter}
+    import tools.{liftTypeToSafeType, liftableCompactParameter}
 
     val seqName = if (parameters.nonEmpty) TermName(c.freshName("seqAny")) else TermName("_")
 
     val casts = parameters.indices.map(i => q"$seqName($i)")
     val parametersNoByName = Liftable.liftList[Parameter].apply(parameters)
+
+//    val parametersNoByName = q"???"
 
     c.Expr[Functoid[R]] {
       q"""{
@@ -106,7 +108,7 @@ class FunctoidMacro(val c: blackbox.Context) {
 
   protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Parameter] = {
     def association(p: Symbol): Parameter = {
-      reflectionProvider.parameterToAssociation(macroUniverse.MacroSymbolInfo.Runtime(p))
+      reflectionProvider.parameterToAssociation2(macroUniverse.MacroSymbolInfo.Runtime(p))
     }
 
     val lambdaParams = lambdaArgs.map(association)
@@ -128,7 +130,7 @@ class FunctoidMacro(val c: blackbox.Context) {
     val annotationsOnMethodAreNonEmptyAndASuperset: Boolean = {
       import scala.collection.compat._
       methodReferenceParams.sizeCompare(lambdaParams) == 0 &&
-      methodReferenceParams.exists(_.symbol.annotations.nonEmpty)
+      methodReferenceParams.exists(_.symbol.friendlyAnnotations.nonEmpty)
     }
 
 //    // this is somewhat superfluous since normally lambda parameters can't be annotated in source code at all
@@ -156,7 +158,7 @@ class FunctoidMacro(val c: blackbox.Context) {
       methodReferenceParams.zip(lambdaParams).map {
         case (mArg, lArg) =>
           mArg.copy(
-            symbol = lArg.symbol.withAnnotations(mArg.symbol.annotations),
+            symbol = lArg.symbol.withFriendlyAnnotations(mArg.symbol.friendlyAnnotations),
             key = mArg.key.withTpe(lArg.stpe),
           )
       }
@@ -189,7 +191,7 @@ class FunctoidMacro(val c: blackbox.Context) {
     widenFunctionObject(sig).typeArgs.init.map {
       tpe =>
         val symbol = macroUniverse.MacroSymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
-        reflectionProvider.parameterToAssociation(symbol)
+        reflectionProvider.parameterToAssociation2(symbol)
     }
   }
 
