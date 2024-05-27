@@ -34,6 +34,11 @@ private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDISafeT
   }
 
   object Association {
+    case class CompactParameter(symbol: MacroSymbolInfoCompact, stpe: MacroSafeType, key: MacroDIKey.BasicKey) {
+      final def isByName: Boolean = symbol.isByName
+      final def asParameter: Association.CompactParameter = this
+    }
+
     case class Parameter(symbol: MacroSymbolInfo, stpe: MacroSafeType, key: MacroDIKey.BasicKey) extends Association {
       override final def isByName: Boolean = symbol.isByName
       override final def asParameter: Association.Parameter = this
