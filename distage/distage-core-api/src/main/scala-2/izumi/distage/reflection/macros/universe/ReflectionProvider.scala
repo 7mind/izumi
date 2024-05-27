@@ -7,6 +7,7 @@ trait ReflectionProvider {
   import u.*
 
   def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter
+  def parameterToAssociation2(parameterSymbol: MacroSymbolInfo): Association.CompactParameter
 
   def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]]
   def symbolToAnyWiring(tpe: TypeNative): MacroWiring

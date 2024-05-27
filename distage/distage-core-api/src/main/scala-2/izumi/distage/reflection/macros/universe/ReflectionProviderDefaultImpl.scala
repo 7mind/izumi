@@ -4,25 +4,15 @@ import izumi.distage.model.definition.{Id, With}
 import izumi.distage.model.exceptions.macros.UnsupportedDefinitionException
 import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
 import izumi.distage.model.exceptions.reflection.UnsupportedWiringException
-import izumi.distage.reflection.macros.universe.impl.DIUniverse
-import izumi.fundamentals.reflection.{JSRAnnotationTools, ReflectionUtil}
+import izumi.distage.reflection.macros.universe.impl.{DIUniverse, FriendlyAnnoParams, FriendlyAnnotationValue}
+import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.annotation.nowarn
 
 @nowarn("msg=outer reference")
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
-
-  import u.u.{Annotation, LiteralApi}
+  import u.u.Annotation
   import u.{Association, MacroDIKey, MacroSafeType, MacroSymbolInfo, MacroWiring, MethodSymbNative, SymbNative, TypeNative, stringIdContract}
-
-  private[this] object Id {
-    def unapply(ann: Annotation): Option[String] = {
-      ann.tree.children.tail.collectFirst {
-        case l: LiteralApi if l.value.value.isInstanceOf[String] =>
-          l.value.value.asInstanceOf[String]
-      }
-    }
-  }
 
   private[this] object With {
     def unapply(ann: Annotation): Option[TypeNative] = {
@@ -31,18 +21,42 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private[this] def withIdKeyFromAnnotation(parameterSymbol: MacroSymbolInfo, typeKey: MacroDIKey.TypeKey): MacroDIKey.BasicKey = {
-    parameterSymbol.findUniqueAnnotation(typeOfIdAnnotation) match {
-      case Some(Id(name)) =>
-        typeKey.named(name)
-      case Some(v) =>
-        throw new BadIdAnnotationException(typeOfIdAnnotation.toString, v)
-      case None =>
-        JSRAnnotationTools.uniqueJSRNameAnno(u.u)(parameterSymbol.annotations) match {
-          case Some(value) =>
-            typeKey.named(value)
-          case None =>
-            typeKey
+    val maybeDistageName = parameterSymbol.findUniqueFriendlyAnno(a => a.fqn == typeOfIdAnnotation.typeSymbol.fullName).map {
+      value =>
+        value.params match {
+          case FriendlyAnnoParams.Full(values) =>
+            values.toMap.get("name") match {
+              case Some(value: FriendlyAnnotationValue.StringValue) =>
+                value.value
+              case _ =>
+                throw new BadIdAnnotationException(value.toString, value)
+            }
+
+          case FriendlyAnnoParams.Values(_) =>
+            throw new BadIdAnnotationException(value.toString, value)
         }
+
+    }
+
+//    parameterSymbol.findUniqueFriendlyAnno(a => a.fqn.endsWith(".Named")) match {
+//      case Some(value) =>
+//        System.out.println(s"${System.nanoTime()} $value")
+//      case None =>
+//    }
+
+    lazy val maybeJSRName = parameterSymbol.findUniqueFriendlyAnno(a => a.fqn.endsWith(".Named")).flatMap {
+      value =>
+        value.params.values match {
+          case FriendlyAnnotationValue.StringValue(head) :: Nil =>
+            Some(head)
+          case _ =>
+            None
+        }
+    }
+
+    maybeDistageName.orElse(maybeJSRName) match {
+      case Some(value) => typeKey.named(value)
+      case None => typeKey
     }
   }
 
@@ -135,6 +149,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   override def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter = {
     val key = keyFromSymbol(parameterSymbol)
     Association.Parameter(parameterSymbol, tpeFromSymbol(parameterSymbol), key)
+  }
+
+  override def parameterToAssociation2(parameterSymbol: MacroSymbolInfo): Association.CompactParameter = {
+    val key = keyFromSymbol(parameterSymbol)
+    Association.CompactParameter(parameterSymbol, tpeFromSymbol(parameterSymbol), key)
   }
 
   override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
