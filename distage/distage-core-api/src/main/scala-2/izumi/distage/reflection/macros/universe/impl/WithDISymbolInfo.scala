@@ -3,7 +3,7 @@ package izumi.distage.reflection.macros.universe.impl
 import izumi.distage.model.exceptions.macros.reflection.AnnotationConflictException
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
-trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
+trait WithDISymbolInfo { this: DIUniverseBase =>
 
   private def convertConst(c: Any) = {
     c match {

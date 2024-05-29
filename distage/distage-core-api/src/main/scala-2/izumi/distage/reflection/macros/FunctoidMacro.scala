@@ -5,6 +5,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.reflection.macros.universe.StaticDIUniverse.Aux
+import izumi.distage.reflection.macros.universe.impl.MacroSafeType
 import izumi.distage.reflection.macros.universe.{DIUniverseLiftables, ReflectionProviderDefaultImpl, StaticDIUniverse}
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
@@ -97,7 +98,7 @@ class FunctoidMacro(val c: blackbox.Context) {
     val parametersNoByName = Liftable.liftList[Parameter].apply(parameters)
 
     val retTpe = weakTypeOf[R]
-    val retTagTree = macroUniverse.MacroSafeType.create(retTpe).tagTree.asInstanceOf[c.Tree]
+    val retTagTree = MacroSafeType.create(c)(retTpe).tagTree.asInstanceOf[c.Tree]
 
     c.Expr[Functoid[R]] {
       q"""{
