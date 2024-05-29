@@ -11,18 +11,21 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
     q"{ $modelReflectionPkg.SafeType.get[${Liftable.liftType(tpe)}] }"
   }
 
-  // DIKey
+  def liftMacroTypeToSafeType(tpe: MacroSafeType): Tree = {
+    liftTypeToSafeType(tpe.typeNative)
+  }
 
+  // DIKey
   protected[this] implicit val liftableTypeKey: Liftable[MacroDIKey.TypeKey] = {
     case MacroDIKey.TypeKey(tpe) => q"""
-    { new $modelReflectionPkg.DIKey.TypeKey(${liftTypeToSafeType(tpe.typeNative)}) }
+    { new $modelReflectionPkg.DIKey.TypeKey(${liftMacroTypeToSafeType(tpe)}) }
       """
   }
 
   protected[this] implicit val liftableIdKey: Liftable[MacroDIKey.IdKey[?]] = {
     case idKey: MacroDIKey.IdKey[?] =>
       val lifted = idKey.idContract.liftable(idKey.id)
-      q"""{ new $modelReflectionPkg.DIKey.IdKey(${liftTypeToSafeType(idKey.tpe.typeNative)}, $lifted) }"""
+      q"""{ new $modelReflectionPkg.DIKey.IdKey(${liftMacroTypeToSafeType(idKey.tpe)}, $lifted) }"""
   }
 
   protected[this] implicit val liftableBasicDIKey: Liftable[MacroDIKey.BasicKey] = {
@@ -39,9 +42,8 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // types must all be resolved anyway - they cannot contain polymorphic
   // components, unlike general method symbols (info for which we don't generate).
   // (annotations always empty currently)
-  protected[this] implicit val liftableSymbolInfo: Liftable[MacroSymbolInfo] = {
-    info =>
-      q"""{ $modelReflectionPkg.SymbolInfo(
+  protected[this] def lifSymbolInfo(info: MacroSymbolInfo): Tree = {
+    q"""{ $modelReflectionPkg.SymbolInfo(
       name = ${info.name},
       finalResultType = ${liftTypeToSafeType(info.nonByNameFinalResultType)},
       isByName = ${info.isByName},
@@ -54,14 +56,14 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // converts Association.Parameter to LinkedParameter
   implicit val liftableParameter: Liftable[Association.Parameter] = {
     case Association.Parameter(symbol, _, key) =>
-      q"new $modelReflectionPkg.LinkedParameter($symbol, $key)"
+      val symTree = lifSymbolInfo(symbol)
+      q"new $modelReflectionPkg.LinkedParameter($symTree, $key)"
   }
 
   implicit val liftableCompactParameter: Liftable[Association.CompactParameter] = {
     case Association.CompactParameter(symbol, _, key) =>
-      // TODO: XXX
-      q"new $modelReflectionPkg.LinkedParameter(${symbol.asInstanceOf[MacroSymbolInfo]}, $key)"
-//      q"new $modelReflectionPkg.CompactParameter(${symbol.asInstanceOf[MacroSymbolInfo]}, $stpe, $key)"
+      val symTree = lifSymbolInfo(symbol.asInstanceOf[MacroSymbolInfo])
+      q"new $modelReflectionPkg.LinkedParameter($symTree, $key)"
   }
 }
 

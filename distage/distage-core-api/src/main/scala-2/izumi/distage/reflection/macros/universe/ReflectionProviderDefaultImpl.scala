@@ -84,6 +84,18 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private[this] def mkConstructorWiring(factoryMethod: SymbNative, tpe: TypeNative): MacroWiring.MacroSingletonWiring = {
+    def getPrefix(tpe: TypeNative): Option[MacroDIKey] = {
+      if (tpe.typeSymbol.isStatic) {
+        None
+      } else {
+        val typeRef = ReflectionUtil.toTypeRef[u.u.type](tpe)
+        typeRef
+          .map(_.pre)
+          .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
+          .map(v => MacroDIKey.TypeKey(MacroSafeType.create(v)))
+      }
+    }
+
     tpe match {
       case ConcreteSymbol(t) =>
         MacroWiring.MacroSingletonWiring.Class(t, constructorParameterLists(t), getPrefix(t))
@@ -114,18 +126,6 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
              |  * Type `${factoryMethod.owner}` has been considered a factory because it's an abstract type and contains unimplemented abstract methods with parameters""".stripMargin
         } else ""
         throw new UnsupportedWiringException(s"Wiring unsupported: `$tpe` / $safeType$factoryMsg", safeType)
-    }
-  }
-
-  private[this] def getPrefix(tpe: TypeNative): Option[MacroDIKey] = {
-    if (tpe.typeSymbol.isStatic) {
-      None
-    } else {
-      val typeRef = ReflectionUtil.toTypeRef[u.u.type](tpe)
-      typeRef
-        .map(_.pre)
-        .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
-        .map(v => MacroDIKey.TypeKey(MacroSafeType.create(v)))
     }
   }
 
