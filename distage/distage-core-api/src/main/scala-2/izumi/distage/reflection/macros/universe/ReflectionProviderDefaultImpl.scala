@@ -4,7 +4,7 @@ import izumi.distage.model.definition.{Id, With}
 import izumi.distage.model.exceptions.macros.UnsupportedDefinitionException
 import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
 import izumi.distage.model.exceptions.reflection.UnsupportedWiringException
-import izumi.distage.reflection.macros.universe.impl.{DIUniverse, FriendlyAnnoParams, FriendlyAnnotationValue}
+import izumi.distage.reflection.macros.universe.impl.{DIUniverse, FriendlyAnnoParams, FriendlyAnnotationValue, MacroDIKey}
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.annotation.nowarn
@@ -14,7 +14,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   import izumi.distage.reflection.macros.universe.impl.MacroSafeType
   import u.u.Annotation
-  import u.{Association, MacroDIKey, MacroSymbolInfo, MacroWiring, MethodSymbNative, SymbNative, TypeNative, stringIdContract}
+  import u.{Association, MacroSymbolInfo, MacroWiring, MethodSymbNative, SymbNative, TypeNative}
 
   private[this] object With {
     def unapply(ann: Annotation): Option[TypeNative] = {

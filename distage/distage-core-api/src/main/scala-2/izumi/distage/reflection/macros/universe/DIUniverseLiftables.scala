@@ -1,6 +1,6 @@
 package izumi.distage.reflection.macros.universe
 
-import izumi.distage.reflection.macros.universe.impl.MacroSafeType
+import izumi.distage.reflection.macros.universe.impl.{MacroDIKey, MacroSafeType}
 
 class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
@@ -24,16 +24,15 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
       """
   }
 
-  protected[this] implicit val liftableIdKey: Liftable[MacroDIKey.IdKey[?]] = {
-    case idKey: MacroDIKey.IdKey[?] =>
-      val lifted = idKey.idContract.liftable(idKey.id)
-      q"""{ new $modelReflectionPkg.DIKey.IdKey(${liftMacroTypeToSafeType(idKey.tpe)}, $lifted) }"""
+  protected[this] implicit val liftableIdKey: Liftable[MacroDIKey.IdKey] = {
+    case idKey: MacroDIKey.IdKey =>
+      q"""{ new $modelReflectionPkg.DIKey.IdKey(${liftMacroTypeToSafeType(idKey.tpe)}, ${idKey.id}) }"""
   }
 
   protected[this] implicit val liftableBasicDIKey: Liftable[MacroDIKey.BasicKey] = {
     Liftable[MacroDIKey.BasicKey] {
       case t: MacroDIKey.TypeKey => q"${liftableTypeKey(t)}"
-      case i: MacroDIKey.IdKey[?] => q"${liftableIdKey(i)}"
+      case i: MacroDIKey.IdKey => q"${liftableIdKey(i)}"
     }
   }
 

@@ -8,13 +8,6 @@ import scala.reflect.macros.blackbox
 
 trait StaticDIUniverse extends DIUniverse { self =>
   override val u: SingletonUniverse
-
-  override type MacroIdContract[T] = IdContractImpl[T]
-  class IdContractImpl[T: u.Liftable] extends MacroIdContractApi[T] {
-    override def repr(v: T): String = v.toString
-
-    val liftable: u.Liftable[T] = implicitly
-  }
 }
 
 object StaticDIUniverse {
@@ -24,8 +17,6 @@ object StaticDIUniverse {
       override val ctx: blackbox.Context = c
       override val u: c.universe.type = c.universe
       override protected val typeOfDistageAnnotation: TypeNative = u.typeOf[DIStageAnnotation]
-      override implicit val stringIdContract: MacroIdContract[String] = new IdContractImpl[String]
-      override implicit def singletonStringIdContract[S <: String with Singleton]: MacroIdContract[S] = new IdContractImpl[S]
 
       override val rp: ReflectionProvider = ReflectionProviderDefaultImpl.apply(this)
     }

@@ -3,7 +3,7 @@ package izumi.distage.reflection.macros.constructors
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
-import izumi.distage.reflection.macros.universe.impl.MacroSafeType
+import izumi.distage.reflection.macros.universe.impl.{MacroDIKey, MacroSafeType}
 import izumi.distage.reflection.macros.universe.{DIUniverseLiftables, ReflectionProvider, StaticDIUniverse}
 import izumi.fundamentals.reflection.ReflectionUtil
 
@@ -90,7 +90,7 @@ object TraitConstructorMacros {
 abstract class FactoryConstructorMacros extends ConstructorMacrosBase {
   import c.universe.*
 
-  def generateFactoryMethod(dependencyArgMap: Map[u.MacroDIKey.BasicKey, c.Tree])(factoryMethod0: u.MacroWiring.Factory.FactoryMethod): c.Tree = {
+  def generateFactoryMethod(dependencyArgMap: Map[MacroDIKey.BasicKey, c.Tree])(factoryMethod0: u.MacroWiring.Factory.FactoryMethod): c.Tree = {
     val u.MacroWiring.Factory.FactoryMethod(factoryMethod, productConstructor, _) = factoryMethod0
 
     val (methodArgListDecls, methodArgList) = {
