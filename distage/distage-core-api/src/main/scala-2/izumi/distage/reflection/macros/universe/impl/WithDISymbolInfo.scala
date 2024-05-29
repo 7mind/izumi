@@ -74,7 +74,9 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
   sealed trait MacroSymbolInfo extends MacroSymbolInfoCompact {
     def name: String
     def finalResultType: TypeNative
-    final def nonByNameFinalResultType: TypeNative = if (isByName) ReflectionUtil.stripByName(u: u.type)(finalResultType) else finalResultType
+    final def nonByNameFinalResultType: TypeNative = {
+      if (isByName) ReflectionUtil.stripByName(u: u.type)(finalResultType) else finalResultType
+    }
 
     def isByName: Boolean
     def wasGeneric: Boolean

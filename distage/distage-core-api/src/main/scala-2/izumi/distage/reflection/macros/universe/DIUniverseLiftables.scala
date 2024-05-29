@@ -8,11 +8,12 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   protected[this] val modelReflectionPkg: Tree = q"_root_.izumi.distage.model.reflection"
 
   def liftTypeToSafeType(tpe: TypeNative): Tree = {
+
     q"{ $modelReflectionPkg.SafeType.get[${Liftable.liftType(tpe)}] }"
   }
 
   def liftMacroTypeToSafeType(tpe: MacroSafeType): Tree = {
-    liftTypeToSafeType(tpe.typeNative)
+    tpe.tagTree.asInstanceOf[Tree]
   }
 
   // DIKey

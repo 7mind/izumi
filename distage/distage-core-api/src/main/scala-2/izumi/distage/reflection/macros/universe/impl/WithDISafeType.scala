@@ -5,7 +5,8 @@ import izumi.reflect.macrortti.{LightTypeTag, LightTypeTagImpl}
 private[distage] trait WithDISafeType { this: DIUniverseBase =>
 
   class MacroSafeType private (
-    private[reflection] val typeNative: TypeNative,
+//    private[reflection] val typeNative: TypeNative,
+    private[reflection] val tagTree: ctx.Tree,
     private[MacroSafeType] val tag: LightTypeTag,
   ) {
 
@@ -28,8 +29,14 @@ private[distage] trait WithDISafeType { this: DIUniverseBase =>
   }
 
   object MacroSafeType {
+    import ctx.universe.*
+    protected[this] val modelReflectionPkg: ctx.Tree = q"_root_.izumi.distage.model.reflection"
+
     def create(tpe: TypeNative): MacroSafeType = {
-      new MacroSafeType(tpe, LightTypeTagImpl.makeLightTypeTag(u)(tpe))
+      val ltt = LightTypeTagImpl.makeLightTypeTag(u)(tpe)
+      val tagTree = q"{ $modelReflectionPkg.SafeType.get[${Liftable.liftType(tpe.asInstanceOf[ctx.Type])}] }"
+
+      new MacroSafeType(tagTree, ltt)
     }
   }
 
