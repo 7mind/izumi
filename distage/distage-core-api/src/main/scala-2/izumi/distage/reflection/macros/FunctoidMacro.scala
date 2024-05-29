@@ -89,14 +89,15 @@ class FunctoidMacro(val c: blackbox.Context) {
 
   def generateProvider[R: c.WeakTypeTag](parameters: List[Parameter], fun: Tree): c.Expr[Functoid[R]] = {
     val tools = DIUniverseLiftables(macroUniverse)
-    import tools.{liftTypeToSafeType, liftableCompactParameter}
+    import tools.liftableCompactParameter
 
     val seqName = if (parameters.nonEmpty) TermName(c.freshName("seqAny")) else TermName("_")
 
     val casts = parameters.indices.map(i => q"$seqName($i)")
     val parametersNoByName = Liftable.liftList[Parameter].apply(parameters)
 
-//    val parametersNoByName = q"???"
+    val retTpe = weakTypeOf[R]
+    val retTagTree = macroUniverse.MacroSafeType.create(retTpe).tagTree.asInstanceOf[c.Tree]
 
     c.Expr[Functoid[R]] {
       q"""{
@@ -105,7 +106,7 @@ class FunctoidMacro(val c: blackbox.Context) {
         new ${weakTypeOf[Functoid[R]]}(
           new ${weakTypeOf[Provider.ProviderImpl[R]]}(
             $parametersNoByName,
-            ${liftTypeToSafeType(weakTypeOf[R])},
+            $retTagTree,
             fun,
             { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
             ${symbolOf[ProviderType.Function.type].asClass.module},
@@ -134,7 +135,7 @@ class FunctoidMacro(val c: blackbox.Context) {
 
     @nowarn("msg=Unused import")
     val annotationsOnMethodAreNonEmptyAndASuperset: Boolean = {
-      import scala.collection.compat._
+      import scala.collection.compat.*
       methodReferenceParams.sizeCompare(lambdaParams) == 0 &&
       methodReferenceParams.exists(_.symbol.friendlyAnnotations.nonEmpty)
     }

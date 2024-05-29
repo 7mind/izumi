@@ -21,6 +21,7 @@ object StaticDIUniverse {
   type Aux[U] = StaticDIUniverse { val u: U }
   def apply(c: blackbox.Context): StaticDIUniverse.Aux[c.universe.type] = {
     new StaticDIUniverse { self =>
+      override val ctx: blackbox.Context = c
       override val u: c.universe.type = c.universe
       override protected val typeOfDistageAnnotation: TypeNative = u.typeOf[DIStageAnnotation]
       override implicit val stringIdContract: MacroIdContract[String] = new IdContractImpl[String]
