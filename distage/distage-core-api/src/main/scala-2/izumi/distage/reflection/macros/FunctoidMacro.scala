@@ -21,11 +21,12 @@ import scala.reflect.macros.blackbox
   * @see [[izumi.distage.constructors.DebugProperties]]
   */
 class FunctoidMacro(val c: blackbox.Context) {
-  final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
-  type Parameter = macroUniverse.Association.CompactParameter
-
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
+
+  protected final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
   private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
+
+  type Parameter = macroUniverse.Association.CompactParameter
 
   import c.universe.*
 
