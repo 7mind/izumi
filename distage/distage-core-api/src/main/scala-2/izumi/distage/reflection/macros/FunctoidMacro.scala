@@ -21,14 +21,22 @@ import scala.reflect.macros.blackbox
   * @see [[izumi.distage.constructors.DebugProperties]]
   */
 class FunctoidMacro(val c: blackbox.Context) {
+  import c.universe.*
+
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
 
   protected final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
-  private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
-
   type Parameter = macroUniverse.Association.CompactParameter
 
-  import c.universe.*
+  private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
+
+  private def symbolToParam(p: Symbol): Parameter = {
+    reflectionProvider.parameterToAssociation2(macroUniverse.MacroSymbolInfo.Runtime(p))
+  }
+  private def typeToParam(tpe: Type): Parameter = {
+    val symbol = macroUniverse.MacroSymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
+    reflectionProvider.parameterToAssociation2(symbol)
+  }
 
   def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[Functoid[R]] = {
     val associations = analyze(fun, weakTypeOf[R])
@@ -108,16 +116,13 @@ class FunctoidMacro(val c: blackbox.Context) {
   }
 
   protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Parameter] = {
-    def association(p: Symbol): Parameter = {
-      reflectionProvider.parameterToAssociation2(macroUniverse.MacroSymbolInfo.Runtime(p))
-    }
 
-    val lambdaParams = lambdaArgs.map(association)
+    val lambdaParams = lambdaArgs.map(symbolToParam)
     val methodReferenceParams = body match {
       case Apply(f, args) if args.map(_.symbol) == lambdaArgs =>
         logger.log(s"Matched function body as a method reference - consists of a single call to a function $f with the same arguments as lambda- ${showRaw(body)}")
 
-        extractMethodReferenceParams(f.symbol).map(association)
+        extractMethodReferenceParams(f.symbol).map(symbolToParam)
       case _ =>
         logger.log(s"Function body didn't match as a variable or a method reference - ${showRaw(body)}")
 
@@ -189,11 +194,7 @@ class FunctoidMacro(val c: blackbox.Context) {
   }
 
   protected[this] def analyzeValRef(sig: Type): List[Parameter] = {
-    widenFunctionObject(sig).typeArgs.init.map {
-      tpe =>
-        val symbol = macroUniverse.MacroSymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
-        reflectionProvider.parameterToAssociation2(symbol)
-    }
+    widenFunctionObject(sig).typeArgs.init.map(typeToParam)
   }
 
   protected[this] def widenFunctionObject(sig: Type): Type = {
