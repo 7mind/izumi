@@ -3,27 +3,6 @@ package izumi.distage.reflection.macros.universe.impl
 import izumi.distage.model.exceptions.macros.reflection.AnnotationConflictException
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
-sealed trait FriendlyAnnoParams {
-  def values: List[FriendlyAnnotationValue]
-}
-object FriendlyAnnoParams {
-  case class Full(named: List[(String, FriendlyAnnotationValue)]) extends FriendlyAnnoParams {
-    override def values: List[FriendlyAnnotationValue] = named.map(_._2)
-  }
-  case class Values(values: List[FriendlyAnnotationValue]) extends FriendlyAnnoParams
-
-}
-case class FriendlyAnnotation(fqn: String, params: FriendlyAnnoParams)
-sealed trait FriendlyAnnotationValue
-object FriendlyAnnotationValue {
-  case class StringValue(value: String) extends FriendlyAnnotationValue
-  case class IntValue(value: Int) extends FriendlyAnnotationValue
-  case class LongValue(value: Long) extends FriendlyAnnotationValue
-  case class UnsetValue() extends FriendlyAnnotationValue
-  case class UnknownConst(value: Any) extends FriendlyAnnotationValue
-  case class Unknown() extends FriendlyAnnotationValue
-}
-
 trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
 
   private def convertConst(c: Any) = {
@@ -90,14 +69,6 @@ trait WithDISymbolInfo { this: DIUniverseBase with WithDISafeType =>
     }
 
     FriendlyAnnotation(annoName, avals)
-  }
-
-  sealed trait MacroSymbolInfoCompact {
-    def name: String
-    def isByName: Boolean
-    def wasGeneric: Boolean
-    def friendlyAnnotations: List[FriendlyAnnotation]
-    def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact
   }
 
   sealed trait MacroSymbolInfo extends MacroSymbolInfoCompact {
