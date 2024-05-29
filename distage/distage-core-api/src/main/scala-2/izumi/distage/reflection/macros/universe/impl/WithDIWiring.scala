@@ -2,7 +2,7 @@ package izumi.distage.reflection.macros.universe.impl
 
 import scala.annotation.nowarn
 
-trait WithDIWiring { this: DIUniverseBase with WithDISafeType with WithDIKey with WithDIAssociation with WithDISymbolInfo =>
+trait WithDIWiring { this: DIUniverseBase with WithDIKey with WithDIAssociation with WithDISymbolInfo =>
 
   sealed trait MacroWiring
   object MacroWiring {
@@ -16,8 +16,12 @@ trait WithDIWiring { this: DIUniverseBase with WithDISafeType with WithDIKey wit
       case class Class(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], prefix: Option[MacroDIKey]) extends MacroSingletonWiring {
         override lazy val associations: List[Association] = classParameters.flatten
       }
-      case class Trait(instanceType: TypeNative, classParameters: List[List[Association.Parameter]], methods: List[Association.AbstractMethod], prefix: Option[MacroDIKey])
-        extends MacroSingletonWiring {
+      case class Trait(
+        instanceType: TypeNative,
+        classParameters: List[List[Association.Parameter]],
+        methods: List[Association.AbstractMethod],
+        prefix: Option[MacroDIKey],
+      ) extends MacroSingletonWiring {
         override lazy val associations: List[Association] = classParameters.flatten ++ methods
       }
     }

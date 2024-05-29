@@ -1,5 +1,7 @@
 package izumi.distage.reflection.macros.universe
 
+import izumi.distage.reflection.macros.universe.impl.MacroSafeType
+
 class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   import u.*
@@ -7,13 +9,12 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   protected[this] val modelReflectionPkg: Tree = q"_root_.izumi.distage.model.reflection"
 
-  def liftTypeToSafeType(tpe: TypeNative): Tree = {
-
-    q"{ $modelReflectionPkg.SafeType.get[${Liftable.liftType(tpe)}] }"
-  }
-
   def liftMacroTypeToSafeType(tpe: MacroSafeType): Tree = {
     tpe.tagTree.asInstanceOf[Tree]
+  }
+
+  private def liftTypeToSafeType(tpe: TypeNative): Tree = {
+    q"{ $modelReflectionPkg.SafeType.get[${Liftable.liftType(tpe)}] }"
   }
 
   // DIKey

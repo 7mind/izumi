@@ -11,8 +11,10 @@ import scala.annotation.nowarn
 
 @nowarn("msg=outer reference")
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
+
+  import izumi.distage.reflection.macros.universe.impl.MacroSafeType
   import u.u.Annotation
-  import u.{Association, MacroDIKey, MacroSafeType, MacroSymbolInfo, MacroWiring, MethodSymbNative, SymbNative, TypeNative, stringIdContract}
+  import u.{Association, MacroDIKey, MacroSymbolInfo, MacroWiring, MethodSymbNative, SymbNative, TypeNative, stringIdContract}
 
   private[this] object With {
     def unapply(ann: Annotation): Option[TypeNative] = {
@@ -92,7 +94,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         typeRef
           .map(_.pre)
           .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
-          .map(v => MacroDIKey.TypeKey(MacroSafeType.create(v)))
+          .map(v => MacroDIKey.TypeKey(MacroSafeType.create(u.ctx)(v.asInstanceOf[u.ctx.Type])))
       }
     }
 
@@ -115,11 +117,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
              |
              |  * $mms
              |""".stripMargin,
-          MacroSafeType.create(tpe),
+          MacroSafeType.create(u.ctx)(tpe.asInstanceOf[u.ctx.Type]),
         )
 
       case _ =>
-        val safeType = MacroSafeType.create(tpe)
+        val safeType = MacroSafeType.create(u.ctx)(tpe.asInstanceOf[u.ctx.Type])
         val factoryMsg = if (factoryMethod != u.u.NoSymbol) {
           s"""
              |  * When trying to create an implementation for result of `$factoryMethod` of factory `${factoryMethod.owner}`
@@ -194,13 +196,13 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     Association.AbstractMethod(methodSymb, tpeFromSymbol(methodSymb), keyFromSymbol(methodSymb))
   }
 
-  private[this] def tpeFromSymbol(parameterSymbol: MacroSymbolInfo): u.MacroSafeType = {
+  private[this] def tpeFromSymbol(parameterSymbol: MacroSymbolInfo): MacroSafeType = {
     val paramType = if (parameterSymbol.isByName) { // this will never be true for a method symbol
       parameterSymbol.finalResultType.typeArgs.head.finalResultType
     } else {
       parameterSymbol.finalResultType
     }
-    MacroSafeType.create(paramType)
+    MacroSafeType.create(u.ctx)(paramType.asInstanceOf[u.ctx.Type])
   }
   private[this] def keyFromSymbol(parameterSymbol: MacroSymbolInfo): MacroDIKey.BasicKey = {
     val tpe = tpeFromSymbol(parameterSymbol)

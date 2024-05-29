@@ -1,6 +1,6 @@
 package izumi.distage.reflection.macros.universe.impl
 
-private[distage] trait WithDIKey { this: DIUniverseBase with WithDISafeType =>
+private[distage] trait WithDIKey { this: DIUniverseBase =>
 
   sealed trait MacroDIKey {
     def tpe: MacroSafeType

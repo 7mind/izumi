@@ -3,6 +3,7 @@ package izumi.distage.reflection.macros.constructors
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
+import izumi.distage.reflection.macros.universe.impl.MacroSafeType
 import izumi.distage.reflection.macros.universe.{DIUniverseLiftables, ReflectionProvider, StaticDIUniverse}
 import izumi.fundamentals.reflection.ReflectionUtil
 
@@ -291,7 +292,7 @@ abstract class ConstructorMacrosBase {
   )(fun: List[List[Tree]] => Tree
   ): c.Expr[Functoid[T]] = {
     val tools = DIUniverseLiftables(u)
-    import tools.{liftTypeToSafeType, liftableParameter}
+    import tools.liftableParameter
 
     val seqName = if (parameters.exists(_.nonEmpty)) TermName(c.freshName("seqAny")) else TermName("_")
 
@@ -310,12 +311,15 @@ abstract class ConstructorMacrosBase {
       })
     }
 
+    val retTpe = weakTypeOf[T]
+    val retTagTree = MacroSafeType.create(c)(retTpe).tagTree.asInstanceOf[c.Tree]
+
     c.Expr[Functoid[T]] {
       q"""{
           new ${weakTypeOf[Functoid[T]]}(
             new ${weakTypeOf[Provider.ProviderImpl[T]]}(
               ${Liftable.liftList.apply(parameters.flatten)},
-              ${liftTypeToSafeType(weakTypeOf[T])},
+              $retTagTree,
               { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => ${fun(casts)}: ${weakTypeOf[T]} },
              ${symbolOf[P].asClass.module},
             )
