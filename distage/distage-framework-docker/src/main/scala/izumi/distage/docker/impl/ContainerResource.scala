@@ -329,8 +329,8 @@ open class ContainerResource[F[_], Tag](
     val baseCmd = rawClient.createContainerCmd(imageName).withLabels(allPortLabels.asJava)
 
     val volumes = config.mounts.map {
-      case Docker.Mount(h, c, true) => new Bind(h, new Volume(c), true)
-      case Docker.Mount(h, c, _) => new Bind(h, new Volume(c))
+      case Docker.Mount(h, c, noCopy, isReadOnly) =>
+        new Bind(h, new Volume(c), if (isReadOnly) AccessMode.ro else AccessMode.DEFAULT, SELContext.DEFAULT, if (noCopy) noCopy else null)
     }
 
     val portsEnv = ports.map {

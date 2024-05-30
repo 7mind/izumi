@@ -1,7 +1,7 @@
 package izumi.distage.testkit.distagesuite.generic
 
 import distage.*
-import distage.plugins.{PluginConfig, PluginDef}
+import distage.plugins.PluginConfig
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.distagesuite.fixtures.*
 import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
@@ -92,7 +92,7 @@ object DistageTestExampleBase {
 abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
-    pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new PluginDef {
+    pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new izumi.distage.plugins.PluginDef {
       make[SetCounter]
 
       make[SetElement1]
