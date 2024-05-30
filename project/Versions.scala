@@ -3,7 +3,7 @@ object V {
   val izumi_reflect = "2.3.9"
 
   // foundation
-  val collection_compat = "2.11.0"
+  val collection_compat = "2.12.0"
 
   val kind_projector = "0.13.3"
 
@@ -15,8 +15,8 @@ object V {
   val discipline = "1.5.1"
   val discipline_scalatest = "2.2.0"
 
-  val zio = "2.0.21"
-  val zio_interop_cats = "23.1.0.1"
+  val zio = "2.0.22"
+  val zio_interop_cats = "23.1.0.2"
 
   val monix = "3.4.0"
   val monix_bio = "1.2.0"
@@ -32,11 +32,11 @@ object V {
 
   // java-only dependencies below
   val classgraph = "4.8.172"
-  val slf4j = "2.0.12"
+  val slf4j = "2.0.13"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.14.14"
+  val bytebuddy = "1.14.16"
   val docker_java = "3.3.6"
 
   // microsite-only

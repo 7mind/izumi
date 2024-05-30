@@ -8,12 +8,18 @@ trait DistagePlugins {
   type PluginBase = plugins.PluginBase
   val PluginBase: plugins.PluginBase.type = plugins.PluginBase
 
-  type PluginDef = plugins.PluginDef
+  // Because of Scala 3 bug https://github.com/scala/scala3/issues/19745
+  // we can't use a type alias or export to alias PluginDef name anymore,
+  // use the longer package izumi.distage.plugins.PluginDef instead.
+//  type PluginDef[T] = plugins.PluginDef[T]
 
   type BootstrapPlugin = plugins.BootstrapPlugin
   val BootstrapPlugin: plugins.BootstrapPlugin.type = plugins.BootstrapPlugin
 
-  type BootstrapPluginDef = plugins.BootstrapPluginDef
+  // Because of Scala 3 bug https://github.com/scala/scala3/issues/19745
+  // we can't use a type alias or export to alias BootstrapPluginDef name anymore,
+  // use the longer package izumi.distage.plugins.BootstrapPluginDef instead.
+//  type BootstrapPluginDef[T] = plugins.BootstrapPluginDef[T]
 
   type PluginLoader = load.PluginLoader
   val PluginLoader: load.PluginLoader.type = load.PluginLoader
