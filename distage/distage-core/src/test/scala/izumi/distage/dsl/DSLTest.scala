@@ -7,6 +7,7 @@ import izumi.distage.fixtures.SetCases.*
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
+import izumi.distage.model.definition.dsl.IncludesDSL.TagMergePolicy
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
 import izumi.distage.model.planning.PlanIssue
 import izumi.fundamentals.platform.functional.Identity
@@ -19,11 +20,11 @@ import scala.annotation.unused
 
 class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
-  import TestTagOps._
+  import TestTagOps.*
 
   "Basic DSL" should {
     "allow to define contexts" in {
-      import BasicCase1._
+      import BasicCase1.*
       val definition: ModuleBase = new ModuleDef {
         make[TestClass]
         make[TestDependency0].from[TestImpl0]
@@ -57,7 +58,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
   "Module DSL" should {
     "allow to define contexts" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       object Module extends ModuleDef {
         make[TestClass]
@@ -73,7 +74,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "support annotated parameters" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       object Module extends ModuleDef {
         make[TestClass].annotateParameter[TestDependency0]("test_param")
@@ -93,7 +94,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "produce modules with annotated parameters" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       object ModuleAnnotated extends ModuleDef {
         make[TestClass].annotateParameter[TestDependency0]("test_param")
@@ -120,7 +121,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "correctly handle sets" in {
-      import SetCase1._
+      import SetCase1.*
 
       val definition = new ModuleDef {
         make[Service2]
@@ -151,7 +152,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "allow monoidal operations between different types of binding dsls" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       val mod1: ModuleBase = new ModuleDef {
         make[TestClass]
@@ -196,7 +197,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "allow operations between objects of ModuleDef" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       object mod1 extends ModuleDef {
         make[TestClass]
@@ -209,7 +210,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "allow operations between subclasses of ModuleDef" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       class mod1 extends ModuleDef {
         make[TestClass]
@@ -222,7 +223,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "support allTags" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       val definition: ModuleBase = new ModuleDef {
         tag("tag1")
@@ -237,7 +238,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "ModuleBuilder supports tags; same bindings with different tags are NOT merged (tag merging removed in 0.11.0)" in {
-      import SetCase1._
+      import SetCase1.*
 
       val definition = new ModuleDef {
         many[SetTrait]
@@ -266,7 +267,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "Multiset bindings do NOT support tag merge (tag merging removed in 0.11.0)" in {
-      import SetCase1._
+      import SetCase1.*
 
       val set = Set(new SetImpl5, new SetImpl5)
 
@@ -299,7 +300,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "Tags in different modules are NOT merged (tag merging removed in 0.11.0)" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       val def1 = new ModuleDef {
         makeTrait[TestDependency0].tagged("a")
@@ -322,7 +323,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "Tags in different overriden modules are NOT merged, later definition beets out former and removes its tags (tag merging removed in 0.11.0)" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       val tags12: Seq[BindingTag] = Seq("1", "2")
 
@@ -345,7 +346,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "support zero element" in {
-      import BasicCase1._
+      import BasicCase1.*
       val def1 = new ModuleDef {
         makeTrait[TestDependency0]
       }
@@ -363,7 +364,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "support includes" in {
-      import BasicCase1._
+      import BasicCase1.*
 
       trait Def1 extends ModuleDef {
         makeTrait[TestDependency0]
@@ -385,13 +386,111 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       assert(definition2.bindings.map(_.tags.strings) == Set(Set("tag1", "tag2")))
     }
 
+    "support TagMergePolicy in includes" in {
+      object A extends Axis {
+        case object X extends AxisChoiceDef
+        case object Y extends AxisChoiceDef
+      }
+      object B extends Axis {
+        case object C extends AxisChoiceDef
+        case object D extends AxisChoiceDef
+      }
+      object C extends Axis {
+        case object G extends AxisChoiceDef
+      }
+      class X
+      class Y
+      class Z
+      class W
+
+      val case1 = new ModuleDef {
+        tag(A.X, B.C)
+        include(
+          new ModuleDef {
+            make[X].tagged(A.Y)
+            make[Y].tagged(A.Y)
+            make[Z]
+            make[W].tagged(C.G)
+          },
+          TagMergePolicy.MergePreferInner,
+        )
+      }
+      assert(case1.bindings.map(_.tags) == Set(Set[BindingTag](A.Y, B.C), Set[BindingTag](A.Y, B.C), Set[BindingTag](A.X, B.C), Set[BindingTag](A.X, B.C, C.G)))
+
+      val case2 = new ModuleDef {
+        tag(A.X, B.C)
+        include(
+          new ModuleDef {
+            make[X].tagged(A.Y)
+          },
+          TagMergePolicy.MergePreferOuter,
+        )
+      }
+      assert(case2.bindings.head.tags == Set[BindingTag](A.X, B.C))
+
+      val case3 = new ModuleDef {
+        tag(A.X)
+        include(
+          new ModuleDef {
+            make[X].tagged(B.C)
+          },
+          TagMergePolicy.UseOnlyInner,
+        )
+      }
+      assert(case3.bindings.head.tags == Set[BindingTag](B.C))
+
+      val case4 = new ModuleDef {
+        tag(A.X)
+        include(
+          new ModuleDef {
+            make[X].tagged(B.C)
+          },
+          TagMergePolicy.UseOnlyOuter,
+        )
+      }
+      assert(case4.bindings.head.tags == Set[BindingTag](A.X))
+
+      val case5 = new ModuleDef {
+        tag(A.X)
+        include(
+          new ModuleDef {
+            make[X].tagged(B.C)
+          },
+          TagMergePolicy.ReplaceWith(Set(C.G)),
+        )
+      }
+      assert(case5.bindings.head.tags == Set[BindingTag](C.G))
+
+      val case6 = new ModuleDef {
+        tag(A.X)
+        include(
+          new ModuleDef {
+            make[X].tagged(B.C)
+          },
+          TagMergePolicy.MergePreferNewWith(Set(B.D, C.G)),
+        )
+      }
+      assert(case6.bindings.head.tags == Set[BindingTag](A.X, B.D, C.G))
+
+      val case7 = new ModuleDef {
+        tag(A.X)
+        include(
+          new ModuleDef {
+            make[X].tagged(B.C)
+          },
+          TagMergePolicy.MergePreferExistingWith(Set(B.D, C.G)),
+        )
+      }
+      assert(case7.bindings.head.tags == Set[BindingTag](A.X, B.C, C.G))
+    }
+
     "support ClassConstructor" in {
       class K(@unused a: String) {}
       ClassConstructor[K].get
     }
 
     "support binding to multiple interfaces" in {
-      import BasicCase6._
+      import BasicCase6.*
 
       val implXYZ: Identity[ImplXYZ] = new ImplXYZ
       val implXYZResource = Lifecycle.make(implXYZ)(_ => ())
@@ -496,7 +595,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "support bindings to multiple interfaces (injector test)" in {
-      import BasicCase6._
+      import BasicCase6.*
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[ImplXYZ]
@@ -543,7 +642,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "support .named & .tagged calls after .from" in {
-      import BasicCase6._
+      import BasicCase6.*
 
       val definition = new ModuleDef {
         make[TraitX]
