@@ -4,6 +4,7 @@ import cats.effect.IO
 import izumi.distage.config.ConfigModuleDef
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.StandardAxis.*
+import izumi.distage.model.definition.dsl.IncludesDSL.TagMergePolicy
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
@@ -19,7 +20,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
 
   include(BundledRolesModule[F] overriddenBy new ModuleDef {
     make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
-  })
+  }, TagMergePolicy.UseOnlyInner)
 
   private def version = Option(System.getProperty(TestPluginCatsIO.versionProperty)) match {
     case Some(value) =>
