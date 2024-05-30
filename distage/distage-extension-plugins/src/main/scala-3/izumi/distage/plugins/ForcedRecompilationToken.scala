@@ -36,7 +36,7 @@ object ForcedRecompilationToken {
     // TODO: research if caching typed trees optimization is possible and meaningful in Dotty
     def materializeImpl[T](using quotes: Quotes): Expr[ForcedRecompilationToken[T]] = {
       import quotes.reflect.*
-      val typeTree = ConstantType(StringConstant("abc"))
+      val typeTree = ConstantType(StringConstant(compilerLaunchId))
       typeTree.asType.asInstanceOf[Type[T]] match {
         case given Type[uuid] =>
           '{ null.asInstanceOf[ForcedRecompilationToken[uuid]] }

@@ -1,10 +1,10 @@
 package com.github.pshirshov.test3.bootstrap
 
-import distage.plugins.BootstrapPluginDef
 import izumi.distage.config.ConfigModuleDef
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id}
 import izumi.distage.model.provisioning.strategies.EffectStrategy
 import izumi.distage.planning.solver.PlanSolver
+import izumi.distage.plugins.BootstrapPluginDef
 
 object BootstrapFixture3 {
 
