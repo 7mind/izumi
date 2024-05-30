@@ -41,14 +41,14 @@ trait Bracket2[F[+_, +_]] extends Error2[F] {
   /** Run cleanup on both _success_ and _failure_, if the failure IS NOT an interruption. */
   final def guaranteeExceptOnInterrupt[E, A](
     f: F[E, A],
-    cleanupOnNonInterruption: Either[Exit.Termination, Either[Exit.Error[E], Exit.Success[A]]] => F[Nothing, Unit],
+    cleanupOnNonInterruption: Exit.Uninterrupted[E, A] => F[Nothing, Unit],
   ): F[E, A] = {
     guaranteeCase[E, A](
       f,
       {
-        case e: Exit.Termination => cleanupOnNonInterruption(Left(e))
-        case e: Exit.Error[E] => cleanupOnNonInterruption(Right(Left(e)))
-        case e: Exit.Success[A] => cleanupOnNonInterruption(Right(Right(e)))
+        case e: Exit.Termination => cleanupOnNonInterruption(e)
+        case e: Exit.Error[E] => cleanupOnNonInterruption(e)
+        case e: Exit.Success[A] => cleanupOnNonInterruption(e)
         case _: Exit.Interruption => unit
       },
     )

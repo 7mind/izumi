@@ -1,6 +1,7 @@
 package com.github.pshirshov.configapp
 
 import distage.config.ConfigModuleDef
+import izumi.distage.config.codec.{ConfigMetaType, DIConfigMeta}
 import izumi.distage.model.PlannerInput
 import pureconfig.ConfigReader
 
@@ -39,12 +40,29 @@ case class PartiallyPrivateCaseClass(
 
 case class NestedObject(value: Int)
 
-case class CustomCodecObject(value: Int)
+class CustomCodecObject(val value: Int) {
+  override def hashCode(): Int = value.hashCode()
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case c: CustomCodecObject => c.value == value
+      case _ => false
+    }
+  }
+}
 object CustomCodecObject {
+  def apply(value: Int) = new CustomCodecObject(value)
+
   implicit val pureconfigReader: ConfigReader[CustomCodecObject] = ConfigReader.fromStringOpt {
-    case "eaaxacaca" => Some(CustomCodecObject(453))
-    case "a" => Some(CustomCodecObject(45))
-    case _ => Some(CustomCodecObject(1))
+    case "eaaxacaca" => Some(new CustomCodecObject(453))
+    case "a" => Some(new CustomCodecObject(45))
+    case _ => Some(new CustomCodecObject(1))
+  }
+
+  implicit val diConfigMeta: DIConfigMeta[CustomCodecObject] = new DIConfigMeta[CustomCodecObject] {
+    override def tpe: ConfigMetaType = {
+      ConfigMetaType.TUnknown()
+    }
   }
 }
 

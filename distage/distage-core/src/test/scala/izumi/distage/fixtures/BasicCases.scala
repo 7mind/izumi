@@ -2,10 +2,8 @@ package izumi.distage.fixtures
 
 import distage.{LocatorRef, ModuleDef}
 import izumi.distage.model.definition.Id
-import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks
 
-@ExposedTestScope
 object BasicCases {
 
   object BasicCase1 {

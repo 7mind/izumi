@@ -1,11 +1,9 @@
 package izumi.distage.fixtures
 
 import izumi.distage.model.definition.Id
-import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks._
 import scala.annotation.unused
 
-@ExposedTestScope
 object ProviderCases {
 
   object ProviderCase1 {

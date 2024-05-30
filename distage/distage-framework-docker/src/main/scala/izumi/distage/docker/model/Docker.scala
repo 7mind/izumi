@@ -56,7 +56,7 @@ object Docker {
     }
 
     def zeroAddresses: Set[ServiceHost] = {
-      Set(ServiceHost("0.0.0.0"), ServiceHost("::")).flatten
+      Set(ServiceHost("0.0.0.0"), ServiceHost("::"), ServiceHost(":::")).flatten
     }
   }
 
@@ -184,6 +184,7 @@ object Docker {
     networks: Set[ContainerNetwork[?]] = Set.empty,
     reuse: DockerReusePolicy = DockerReusePolicy.ReuseEnabled,
     autoRemove: Boolean = true,
+    platform: Option[String] = None,
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),

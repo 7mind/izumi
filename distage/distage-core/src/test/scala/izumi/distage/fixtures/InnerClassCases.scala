@@ -1,8 +1,6 @@
 package izumi.distage.fixtures
 
-import izumi.fundamentals.platform.build.ExposedTestScope
 
-@ExposedTestScope
 object InnerClassCases {
 
   object InnerClassUnstablePathsCase {

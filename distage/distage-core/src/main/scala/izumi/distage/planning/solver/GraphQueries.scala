@@ -4,14 +4,16 @@ import izumi.distage.model.definition.BindingTag.AxisTag
 import izumi.distage.model.definition.conflicts.{Annotated, Node}
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots, Wiring}
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.reflection.DIKey
+import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.planning.solver.SemigraphSolver.SemiEdgeSeq
 import izumi.distage.planning.{BindingTranslator, SubcontextHandler}
 import izumi.functional.IzEither.*
-import izumi.fundamentals.collections.MutableMultiMap
-import izumi.fundamentals.collections.nonempty.NEList
+import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
+import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
 import izumi.fundamentals.graphs.tools.gc.Tracer
@@ -19,11 +21,73 @@ import izumi.fundamentals.graphs.tools.gc.Tracer
 import scala.annotation.nowarn
 
 @nowarn("msg=Unused import")
-class GraphPreparations(
+class GraphQueries(
   bindingTranslator: BindingTranslator
 ) {
 
   import scala.collection.compat.*
+  final def isIgnoredActivation(excludedActivations: Set[NESet[AxisPoint]], activation: Set[AxisPoint]): Boolean = {
+    excludedActivations.exists(_ subsetOf activation)
+  }
+
+  final def allImportingBindings(
+                                  matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
+                                  currentActivation: Set[AxisPoint],
+                                )(importedKey: DIKey,
+                                  d: DIKey,
+                                ): Set[OperationOrigin] = {
+    // FIXME: reuse formatting from conflictingAxisTagsHint
+    matrix
+      .getOrElse(d, Set.empty)
+      .collect {
+        case (op, activations) if activations.subsetOf(currentActivation) && (op match {
+          case CreateSet(_, members, _) => members
+          case op: ExecutableOp.WiringOp => op.wiring.requiredKeys
+          case op: ExecutableOp.MonadicOp => Set(op.effectKey)
+        }).contains(importedKey) =>
+          op.origin.value
+      }
+  }
+
+  def nextDepsToVisit(
+                       execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
+                       withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
+                     ): Right[Nothing, Seq[(Set[AxisPoint], Set[DIKey])]] = {
+    val next = withoutCurrentActivations.iterator.map {
+      case (op, activations, _) =>
+        // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
+        val deps = depsOf(execOpIndex, op)
+        val acts = op match {
+          case _: CreateSet =>
+            Set.empty[AxisPoint]
+          case _ =>
+            activations
+        }
+        (acts, deps)
+    }.toSeq
+    Right(next)
+  }
+
+  final def depsOf(
+                    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
+                    op: InstantiationOp,
+                  ): Set[DIKey] = {
+    op match {
+      case cs: CreateSet =>
+        // we completely ignore weak members, they don't make any difference in case they are unreachable through other paths
+        val members = cs.members.filter {
+          case m: SetElementKey =>
+            getSetElementWeakEdges(execOpIndex, m).isEmpty
+          case _ =>
+            true
+        }
+        members
+      case op: ExecutableOp.WiringOp =>
+        toDep(op).deps
+      case op: ExecutableOp.MonadicOp =>
+        toDep(op).deps
+    }
+  }
 
   def findWeakSetMembers(
     setOps: Map[Annotated[DIKey], Node[DIKey, InstantiationOp]],

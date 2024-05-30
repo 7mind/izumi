@@ -176,6 +176,12 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
       F.unit
     }
 
+    "support tests with tagK dep" in {
+      (t: TagK[F]) =>
+        val _ = t
+        F.unit
+    }
+
     "test 1" in {
       (service: MockUserRepository[F]) =>
         for {

@@ -1,9 +1,7 @@
 package izumi.distage.fixtures
 
 import izumi.distage.model.definition.{Id, With}
-import izumi.fundamentals.platform.build.ExposedTestScope
 
-@ExposedTestScope
 object FactoryCases {
 
   object FactoryCase1 {

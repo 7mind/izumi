@@ -4,6 +4,7 @@ import cats.effect.IO
 import izumi.distage.config.ConfigModuleDef
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.StandardAxis.*
+import izumi.distage.model.definition.dsl.IncludesDSL.TagMergePolicy
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
@@ -19,7 +20,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
 
   include(BundledRolesModule[F] overriddenBy new ModuleDef {
     make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
-  })
+  }, TagMergePolicy.UseOnlyInner)
 
   private def version = Option(System.getProperty(TestPluginCatsIO.versionProperty)) match {
     case Some(value) =>
@@ -60,6 +61,10 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
   makeConfig[SetElementOnlyCfg]("setElementConfig")
 
+  makeConfig[TestValueConf]("wrapped").named("v1")
+  makeConfig[TestValueConf]("wrapped.path.one").named("v2")
+  makeConfig[TestValueConf]("wrapped.path.two").named("v3")
+
   makeConfig[IntegrationOnlyCfg2]("integrationOnlyCfg2")
   modify[IntegrationOnlyCfg2] {
     (conf: IntegrationOnlyCfg2) =>
@@ -69,9 +74,11 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   makeConfig[TestServiceConf2]("testservice2")
   modify[TestServiceConf2] {
     (conf: TestServiceConf2) =>
-      TestServiceConf2(conf.strval + ":updated")
+      TestServiceConf2(conf.strval + ":updated", conf.map, conf.list)
   }
   makeConfig[ListConf]("listconf")
+
+  include(GenericServiceConf.module[GenericServiceConf.Impl]("genericservice"))
 }
 
 class TestPluginCatsIO extends TestPluginBase[IO]

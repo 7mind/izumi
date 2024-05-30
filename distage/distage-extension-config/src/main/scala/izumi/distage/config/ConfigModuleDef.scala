@@ -8,20 +8,24 @@ import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.reflect.Tag
-import izumi.distage.config.codec.DIConfigReader
+import izumi.distage.config.codec.{DIConfigMeta, DIConfigReader}
 
 import scala.language.implicitConversions
 
 trait ConfigModuleDef extends ModuleDef {
-  final def makeConfig[T: Tag: DIConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
+  final def makeConfig[T: Tag: DIConfigReader: DIConfigMeta](path: String)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
     pos.discard() // usage in `make[T]` not detected
     make[T].fromConfig(path)
   }
-  final def makeConfigNamed[T: Tag: DIConfigReader](path: String)(implicit pos: CodePositionMaterializer): MakeDSLNamedAfterFrom[T] = {
+  final def makeConfigNamed[T: Tag: DIConfigReader: DIConfigMeta](path: String)(implicit pos: CodePositionMaterializer): MakeDSLNamedAfterFrom[T] = {
     pos.discard()
     make[T].fromConfigNamed(path)
   }
-  final def makeConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T)(implicit pos: CodePositionMaterializer): MakeDSLUnnamedAfterFrom[T] = {
+  final def makeConfigWithDefault[T: Tag: DIConfigReader: DIConfigMeta](
+    path: String
+  )(default: => T
+  )(implicit pos: CodePositionMaterializer
+  ): MakeDSLUnnamedAfterFrom[T] = {
     pos.discard()
     make[T].fromConfigWithDefault(path)(default)
   }
@@ -29,7 +33,7 @@ trait ConfigModuleDef extends ModuleDef {
   @inline final def wireConfig[T: Tag: DIConfigReader](path: String): Functoid[T] = {
     ConfigModuleDef.wireConfig[T](path)
   }
-  @inline final def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): Functoid[T] = {
+  @inline final def wireConfigWithDefault[T: Tag: DIConfigReader: DIConfigMeta](path: String)(default: => T): Functoid[T] = {
     ConfigModuleDef.wireConfigWithDefault[T](path)(default)
   }
 
@@ -38,17 +42,17 @@ trait ConfigModuleDef extends ModuleDef {
 
 object ConfigModuleDef {
   final class FromConfig[T](private val make: MakeDSL[T]) extends AnyVal {
-    def fromConfig(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T]): MakeDSLUnnamedAfterFrom[T] = {
+    def fromConfig(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T], meta: DIConfigMeta[T]): MakeDSLUnnamedAfterFrom[T] = {
       val parser = wireConfig[T](path)
-      make.tagged(ConfTag(path)(parser, dec.fieldsMeta)).from(parser)
+      make.tagged(ConfTag(path)(parser, meta.tpe)).from(parser)
     }
-    def fromConfigNamed(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T]): MakeDSLNamedAfterFrom[T] = {
+    def fromConfigNamed(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T], meta: DIConfigMeta[T]): MakeDSLNamedAfterFrom[T] = {
       val parser = wireConfig[T](path)
-      make.named(path).tagged(ConfTag(path)(parser, dec.fieldsMeta)).from(parser)
+      make.named(path).tagged(ConfTag(path)(parser, meta.tpe)).from(parser)
     }
-    def fromConfigWithDefault(path: String)(default: => T)(implicit tag: Tag[T], dec: DIConfigReader[T]): MakeDSLUnnamedAfterFrom[T] = {
+    def fromConfigWithDefault(path: String)(default: => T)(implicit tag: Tag[T], dec: DIConfigReader[T], meta: DIConfigMeta[T]): MakeDSLUnnamedAfterFrom[T] = {
       val parser = wireConfigWithDefault[T](path)(default)
-      make.tagged(ConfTag(path)(parser, dec.fieldsMeta)).from(parser)
+      make.tagged(ConfTag(path)(parser, meta.tpe)).from(parser)
     }
   }
 

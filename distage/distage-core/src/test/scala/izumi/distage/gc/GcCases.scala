@@ -1,10 +1,8 @@
 package izumi.distage.gc
 
 import distage.ModuleDef
-import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks._
 
-@ExposedTestScope
 object GcCases {
 
   object InjectorCase1 {

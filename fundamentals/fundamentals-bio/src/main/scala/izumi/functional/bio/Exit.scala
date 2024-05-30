@@ -83,7 +83,9 @@ object Exit {
     }
   }
 
-  final case class Success[+A](value: A) extends Exit[Nothing, A] {
+  sealed trait Uninterrupted[+E, +A] extends Exit[E, A]
+
+  final case class Success[+A](value: A) extends Exit.Uninterrupted[Nothing, A] {
     override def map[B](f: A => B): Success[B] = Success(f(value))
     override def leftMap[E1](f: Nothing => E1): this.type = this
     override def flatMap[E1 >: Nothing, B](f: A => Exit[E1, B]): Exit[E1, B] = f(value)
@@ -103,14 +105,16 @@ object Exit {
     override final def flatMap[E1 >: E, B](f: Nothing => Exit[E1, B]): this.type = this
   }
 
-  final case class Error[+E](error: E, trace: Trace[E]) extends Exit.Failure[E] {
+  sealed trait FailureUninterrupted[+E] extends Exit.Failure[E] with Exit.Uninterrupted[E, Nothing]
+
+  final case class Error[+E](error: E, trace: Trace[E]) extends Exit.FailureUninterrupted[E] {
     override def toEither: Right[Nothing, E] = Right(error)
     override def toEitherCompound: Right[Nothing, E] = Right(error)
     override def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, Nothing] = Left(ev(error))
     override def leftMap[E1](f: E => E1): Error[E1] = Error[E1](f(error), trace.map(f))
   }
 
-  final case class Termination(compoundException: Throwable, allExceptions: List[Throwable], trace: Trace[Nothing]) extends Exit.Failure[Nothing] {
+  final case class Termination(compoundException: Throwable, allExceptions: List[Throwable], trace: Trace[Nothing]) extends Exit.FailureUninterrupted[Nothing] {
     override def toEither: Left[List[Throwable], Nothing] = Left(allExceptions)
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
     override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
@@ -152,17 +156,21 @@ object Exit {
         val trace = Trace.ZIOTrace(causeNoTypedErrors)
         Interruption(cause.defects, trace)
       } else {
-        cause.failureOrCause match {
-          case Left(error) =>
-            Error(error, Trace.ZIOTrace(cause))
-          case Right(cause) =>
-            val exceptions = cause.defects
-            val compound = exceptions match {
-              case e :: Nil => e
-              case _ => zio.FiberFailure(cause)
-            }
-            Termination(compound, exceptions, Trace.ZIOTrace(cause))
-        }
+        toExitUninterrupted(cause)
+      }
+    }
+
+    def toExitUninterrupted[E](cause: zio.Cause[E]): Exit.FailureUninterrupted[E] = {
+      cause.failureOrCause match {
+        case Left(error) =>
+          Error(error, Trace.ZIOTrace(cause))
+        case Right(cause) =>
+          val exceptions = cause.defects
+          val compound = exceptions match {
+            case e :: Nil => e
+            case _ => zio.FiberFailure(cause)
+          }
+          Termination(compound, exceptions, Trace.ZIOTrace(cause))
       }
     }
 

@@ -69,6 +69,15 @@ scalacOptions += "-Xsource:2.13" // either this
 // scalacOptions += "-Xsource:3" // or this
 ```
 
+Additionally, some source examples in this document use underscore syntax for type lambdas which you can enable with the following options:
+
+```scala
+// For kind-projector on Scala 2
+scalacOptions += "-P:kind-projector:underscore-placeholders"
+
+// For Scala 3
+scalacOptions += "-Ykind-projector:underscores"
+```
 
 ### Hello World example
 
@@ -1573,8 +1582,7 @@ object PetStoreReposistory {
 
     override def removePet(petId: PetId): F[Nothing, Boolean] = {
       for {
-        success <- state.get.map(_.contains(petId))
-        _       <- state.get.map(_ - petId)
+        success <- state.modify(s => (s.contains(petId), s - petId))
         _       <- contextLog.info(s"Tried to remove $petId, $success")
       } yield success
 
@@ -1606,8 +1614,6 @@ object Module extends ModuleDef {
 
     make[IzLogger].from(HACK_OVERRIDE_IzLogger())
     include(LogIO2Module[F]())
-
-    addImplicit[TagKK[F]]
 
     makeSubcontext[PetStoreBusinessLogic[F]]
       .withSubmodule(new ModuleDef {

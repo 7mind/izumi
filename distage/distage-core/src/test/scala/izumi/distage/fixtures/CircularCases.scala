@@ -1,11 +1,9 @@
 package izumi.distage.fixtures
 
-import izumi.fundamentals.platform.build.ExposedTestScope
 import distage.Id
 
 import scala.util.Random
 
-@ExposedTestScope
 object CircularCases {
 
   object CircularCase1 {

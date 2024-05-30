@@ -4,6 +4,11 @@ import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.{ContainerEnvironment, DockerPort}
 
+/**
+  * Example Kafka Docker.
+  * Depends on [[KafkaZookeeperNetwork.Network]] provided by [[ZookeeperDocker]]
+  * You're encouraged to use this definition as a template and modify it to your needs.
+  */
 object KafkaDocker extends ContainerDef {
   val primaryPort: DockerPort = DockerPort.DynamicTCP("dynamic_kafka_port")
 

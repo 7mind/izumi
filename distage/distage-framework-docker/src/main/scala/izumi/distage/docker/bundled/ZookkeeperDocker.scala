@@ -4,12 +4,19 @@ import distage.{ModuleDef, TagK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.DockerPort
 
+/**
+  * Example zookeeper docker.
+  *  In addition to Zookeeper docker, sets up on [[KafkaZookeeperNetwork.Network]] for [[KafkaDocker]]
+  * You're encouraged to use this definition as a template and modify it to your needs.
+  */
 object ZookeeperDocker extends ContainerDef {
+  val primaryPort: DockerPort = DockerPort.TCP(2181)
+
   override def config: Config = {
     Config(
       registry = Some("public.ecr.aws"),
       image = "docker/library/zookeeper:3.5",
-      ports = Seq(DockerPort.TCP(2181)),
+      ports = Seq(primaryPort),
     )
   }
 }

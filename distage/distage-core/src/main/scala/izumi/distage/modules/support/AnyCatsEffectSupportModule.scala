@@ -23,6 +23,8 @@ import izumi.reflect.TagK
 class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
   include(CatsEffectInstancesModule[F])
 
+  addImplicit[TagK[F]]
+
   make[QuasiIO[F]]
     .aliased[QuasiPrimitives[F]]
     .aliased[QuasiApplicative[F]]

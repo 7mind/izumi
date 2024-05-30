@@ -150,7 +150,7 @@ object Izumi {
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.19")
   final val scala213 = ScalaVersion("2.13.13")
-  final val scala300 = ScalaVersion("3.4.0")
+  final val scala300 = ScalaVersion("3.4.1")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -309,7 +309,7 @@ object Izumi {
           SettingKey(Some(scala212), None) :=
             Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options,
           SettingKey(Some(scala213), None) :=
-            Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics"),
+            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)),
           SettingKey(Some(scala300), None) :=
             Seq[Const](
               "-Yretain-trees", // FIXME required
@@ -338,6 +338,15 @@ object Izumi {
           SettingKey(Some(scala213), Some(true)) := Seq(
             "-opt:l:inline",
             "-opt-inline-from:izumi.**",
+          ),
+          SettingKey.Default := Const.EmptySeq,
+        ),
+        "scalacOptions" ++= Seq(
+          SettingKey(Some(scala213), None) := Seq(
+            "-Xsource:3",
+            "-Xmigration",
+            "-Wconf:cat=scala3-migration:silent",
+            "-Wconf:cat=other-migration:silent",
           ),
           SettingKey.Default := Const.EmptySeq,
         ),

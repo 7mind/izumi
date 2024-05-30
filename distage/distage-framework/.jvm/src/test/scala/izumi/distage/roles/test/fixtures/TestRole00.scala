@@ -38,6 +38,7 @@ object roles {
     notCloseable: NotCloseable,
     val conf: TestServiceConf,
     val conf2: TestServiceConf2,
+    val genconf: GenericServiceConf.Impl,
     val dummies: Set[Dummy],
     val setElems: Set[SetElement],
     val resource: TestRole00Resource[F],
@@ -46,6 +47,9 @@ object roles {
     val es: ExecutorService,
     val counter: XXX_ResourceEffectsRecorder[F],
     val ref: XXX_LocatorLeak,
+    val v1: TestValueConf @Id("v1"),
+    val v2: TestValueConf @Id("v2"),
+    val v3: TestValueConf @Id("v3"),
   ) extends RoleService[F] {
     notCloseable.discard()
 

@@ -1,16 +1,15 @@
 package izumi.distage.config.codec
 
 import com.typesafe.config.ConfigException.Missing
-import com.typesafe.config.ConfigValue
+import com.typesafe.config.*
+import izumi.distage.config.DistageConfigImpl
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.reflect.Tag
-
-import scala.util.{Failure, Success, Try}
-import izumi.distage.config.DistageConfigImpl
 import pureconfig.ConfigReader
 import pureconfig.error.ConfigReaderException
 
 import scala.reflect.{ClassTag, classTag}
+import scala.util.{Failure, Success, Try}
 
 /**
   * Config reader that uses a [[pureconfig.ConfigReader pureconfig.ConfigReader]] implicit instance for a type
@@ -59,17 +58,20 @@ import scala.reflect.{ClassTag, classTag}
 trait DIConfigReader[A] extends AbstractDIConfigReader[A] {
   protected def decodeConfigValue(configValue: ConfigValue): Try[A]
 
-  def fieldsMeta: ConfigMeta = ConfigMeta.ConfigMetaUnknown()
-
   final def decodeConfig(config: DistageConfigImpl): Try[A] = decodeConfigValue(config.root())
 
   final def decodeConfig(path: String)(config: DistageConfigImpl)(implicit tag: Tag[A]): A = {
     unpackResult(config, path)(decodeConfigValue(config.getValue(path)))
   }
 
-  final def map[B](f: A => B): DIConfigReader[B] = decodeConfigValue(_).map(f)
+  final def map[B](f: A => B): DIConfigReader[B] = new DIConfigReader[B] {
+    override protected def decodeConfigValue(configValue: ConfigValue): Try[B] = DIConfigReader.this.decodeConfigValue(configValue).map(f)
+  }
 
-  final def flatMap[B](f: A => DIConfigReader[B]): DIConfigReader[B] = cv => decodeConfigValue(cv).flatMap(f(_).decodeConfigValue(cv))
+  final def flatMap[B](f: A => DIConfigReader[B]): DIConfigReader[B] = new DIConfigReader[B] {
+    override protected def decodeConfigValue(configValue: ConfigValue): Try[B] =
+      DIConfigReader.this.decodeConfigValue(configValue).flatMap(f(_).decodeConfigValue(configValue))
+  }
 
   final def decodeConfigWithDefault(path: String)(default: => A)(config: DistageConfigImpl)(implicit tag: Tag[A]): A = {
     try {
@@ -120,7 +122,6 @@ sealed trait LowPriorityDIConfigReaderInstances {
   implicit final def deriveFromPureconfigAutoDerive[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] = {
     new DIConfigReader[T] {
       override protected def decodeConfigValue(configValue: ConfigValue): Try[T] = DIConfigReader.useConfigReader[T](dec.value, configValue)
-      override val fieldsMeta: ConfigMeta = dec.fieldsMeta
     }
   }
 }

@@ -93,16 +93,15 @@ final case class TestConfig(
   def activate(changeActivation: Activation => Activation): TestConfig = {
     this.copy(activation = changeActivation(this.activation))
   }
-
 }
+
 object TestConfig {
   @deprecated("Use TestConfig() constructor instead, always provide pluginConfig explicitly", "1.2.3")
   def forSuite(clazz: Class[?]): TestConfig = {
     val packageName = clazz.getPackage.getName
 
     TestConfig(
-      pluginConfig = PluginConfig.cached(Seq(packageName)),
-      configBaseName = s"${packageName.split('.').last}-test",
+      pluginConfig = PluginConfig.cached(Seq(packageName))
     )
   }
 

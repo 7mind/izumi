@@ -5,18 +5,16 @@ import cats.effect.unsafe.IORuntime
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
-import distage.config.AppConfig
-import distage.plugins.PluginBase
+import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.DebugProperties
-import izumi.distage.roles.launcher.ActivationParser
 import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
@@ -181,9 +179,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
-        parser = new ActivationParser {
-          override def parseActivation(config: AppConfig): Activation = ???
-        },
+//        parser = new ActivationParser {
+//          override def parseActivation(config: AppConfig): Activation = ???
+//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -221,9 +219,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
-        parser = new ActivationParser {
-          override def parseActivation(config: AppConfig): Activation = ???
-        },
+//        parser = new ActivationParser {
+//          override def parseActivation(config: AppConfig): Activation = ???
+//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -265,9 +263,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
-        parser = new ActivationParser {
-          override def parseActivation(config: AppConfig): Activation = ???
-        },
+//        parser = new ActivationParser {
+//          override def parseActivation(config: AppConfig): Activation = ???
+//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -327,13 +325,32 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role0CfgMinParsed.hasPath("setElementConfig"))
       assert(role0CfgMinParsed.hasPath("testservice2"))
       assert(role0CfgMinParsed.hasPath("testservice"))
+      assert(role0CfgMinParsed.hasPath("genericservice"))
 
+      assert(role0CfgMinParsed.hasPath("genericservice.genericField"))
+      assert(role0CfgMinParsed.hasPath("genericservice.addedField"))
+
+      assert(role0CfgMinParsed.getList("testservice2.list").unwrapped().asScala.toList == List("requiredEntry"))
+      assert(role0CfgMinParsed.getString("testservice2.map.requiredEntry") == "entry")
       assert(role0CfgMinParsed.getString("testservice2.strval") == "xxx")
       assert(role0CfgMinParsed.getString("testservice.overridenInt") == "555")
 
       // ConfigWriter DOES NOT consider system properties!
       assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 222)
       assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List(1, 2, 3))
+
+      val role3 = cfg("testrole03-full", version)
+      val role3Min = cfg("testrole03-minimized", version)
+
+      assert(role3.exists(), s"$role3 exists")
+      assert(role3Min.exists(), s"$role3Min exists")
+      assert(role3.length() > role3Min.length())
+
+      val role3CfgMinParsed = ConfigFactory.parseString(new String(Files.readAllBytes(role3Min.toPath), UTF_8))
+
+      assert(role3CfgMinParsed.hasPath("activation"))
+      assert(role3CfgMinParsed.hasPath("activation.axiscomponentaxis"))
+      assert(!role3CfgMinParsed.hasPath("activation.role05localaxis"))
 
       val role4Cfg = cfg("testrole04-full", version)
       val role4CfgMin = cfg("testrole04-minimized", version)
@@ -355,7 +372,26 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role4CfgMinParsed.hasPath("listconf"))
 
       assert(role0CfgMinParsed.hasPath("activation"))
-      assert(role4CfgMinParsed.hasPath("activation"))
+      assert(role0CfgMinParsed.getObject("activation").keySet().isEmpty)
+
+      val role5 = cfg("testrole05-full", version)
+      val role5Min = cfg("testrole05-minimized", version)
+
+      assert(role5.exists(), s"$role5 exists")
+      assert(role5Min.exists(), s"$role5Min exists")
+      assert(role5.length() > role5Min.length())
+
+      val role5CfgMinParsed = ConfigFactory.parseString(new String(Files.readAllBytes(role5Min.toPath), UTF_8))
+
+      assert(role5CfgMinParsed.hasPath("activation"))
+      assert(!role5CfgMinParsed.hasPath("activation.axiscomponentaxis"))
+      assert(role5CfgMinParsed.hasPath("activation.role05localaxis"))
+
+      assert(role5CfgMinParsed.hasPath("rolelocal1"))
+      assert(role5CfgMinParsed.hasPath("rolelocal1.str"))
+
+      assert(role5CfgMinParsed.hasPath("rolelocal2"))
+      assert(role5CfgMinParsed.hasPath("rolelocal2.bool"))
     }
 
     "roles do not have access to components from MainAppModule" in {

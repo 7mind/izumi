@@ -445,7 +445,7 @@ object Lifecycle extends LifecycleInstances {
       * Unsafely acquire the resource and throw away the finalizer,
       * this will leak the resource and cause it to never be cleaned up.
       *
-      * This function only makes sense in code examples or at top-level,
+      * This function usually only makes sense in code examples or at top-level,
       * please use [[SyntaxUse#use]] otherwise!
       *
       * @note will acquire the resource without an uninterruptible section
@@ -458,7 +458,7 @@ object Lifecycle extends LifecycleInstances {
       * Unsafely acquire the resource, return it and the finalizer.
       * The resource will be leaked unless the finalizer is used.
       *
-      * This function only makes sense in code examples or at top-level,
+      * This function usually only makes sense in code examples or at top-level,
       * please use [[SyntaxUse#use]] otherwise!
       *
       * @note will acquire the resource without an uninterruptible section
