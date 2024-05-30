@@ -5,7 +5,6 @@ import cats.effect.unsafe.IORuntime
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.ConfigFactory
-import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner
@@ -13,7 +12,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
-import izumi.distage.plugins.PluginConfig
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
