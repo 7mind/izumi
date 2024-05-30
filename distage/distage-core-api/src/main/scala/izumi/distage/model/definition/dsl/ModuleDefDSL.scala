@@ -92,11 +92,11 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
       }.result()
   }
   private[this] final def freezeIterator(): Iterator[Binding] = {
-    val frozenTags0 = frozenTags
-    retaggedIncludes
-      .++(frozenState)
-      .map(_.addTags(frozenTags0))
-      .++(asIsIncludes)
+    val frozenOuterTags = frozenTags
+
+    val bindingsWithGlobalTags = frozenState.map(_.addTags(frozenOuterTags))
+    val includesWithProcessedTags = includes.flatMap(_.interpret(frozenOuterTags))
+    bindingsWithGlobalTags ++ includesWithProcessedTags
   }
 
   override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] = new MakeDSL[T](ref, ref.key)
@@ -549,7 +549,7 @@ object ModuleDefDSL {
         * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: ClassConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
-        import tag.{R, E, A, ctorR, tagFull, resourceTag, ev}
+        import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
         val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
         dsl.fromResource(provider)(resourceTag, DummyImplicit.dummyImplicit)
       }
@@ -618,7 +618,7 @@ object ModuleDefDSL {
         implicit tag: ZIOEnvLifecycleTag[R1, T],
         pos: CodePositionMaterializer,
       ): AfterAdd = {
-        import tag.{R, E, A, ctorR, tagFull, resourceTag, ev}
+        import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
         val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
         dsl.addResource(provider)(resourceTag, pos, DummyImplicit.dummyImplicit)
       }
