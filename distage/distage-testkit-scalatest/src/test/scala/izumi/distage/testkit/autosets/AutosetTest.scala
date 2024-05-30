@@ -1,8 +1,8 @@
 package izumi.distage.testkit.autosets
 
-import distage.plugins.{BootstrapPluginDef, PluginConfig, PluginDef}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
+import izumi.distage.plugins.{BootstrapPluginDef, PluginConfig, PluginDef}
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec1
 import izumi.fundamentals.platform.functional.Identity

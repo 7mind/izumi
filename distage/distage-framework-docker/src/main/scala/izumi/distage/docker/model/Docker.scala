@@ -291,6 +291,7 @@ object Docker {
     hostPath: String,
     containerPath: String,
     noCopy: Boolean = false,
+    readOnly: Boolean = false,
   )
 
   final case class UnmappedPorts(
