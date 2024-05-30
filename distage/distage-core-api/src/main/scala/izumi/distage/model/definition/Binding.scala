@@ -1,6 +1,6 @@
 package izumi.distage.model.definition
 
-import izumi.distage.constructors.{ClassConstructor}
+import izumi.distage.constructors.ClassConstructor
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.plan.repr.{BindingFormatter, KeyFormatter}
 import izumi.distage.model.providers.Functoid
