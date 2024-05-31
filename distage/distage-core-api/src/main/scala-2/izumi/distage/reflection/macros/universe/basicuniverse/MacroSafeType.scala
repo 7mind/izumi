@@ -1,4 +1,4 @@
-package izumi.distage.reflection.macros.universe.impl
+package izumi.distage.reflection.macros.universe.basicuniverse
 
 import izumi.reflect.macrortti.{LightTypeTag, LightTypeTagImpl}
 

@@ -1,8 +1,10 @@
 package izumi.distage.reflection.macros.universe.impl
 
+import izumi.distage.reflection.macros.universe.basicuniverse.MacroDIKey
+
 import scala.annotation.nowarn
 
-trait WithDIWiring { this: DIUniverseBase with WithDIKey with WithDIAssociation with WithDISymbolInfo =>
+trait WithDIWiring { this: DIUniverseBase with WithDIAssociation with WithDISymbolInfo =>
 
   sealed trait MacroWiring
   object MacroWiring {
