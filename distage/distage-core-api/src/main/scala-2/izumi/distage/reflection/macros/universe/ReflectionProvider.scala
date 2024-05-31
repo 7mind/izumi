@@ -1,13 +1,13 @@
 package izumi.distage.reflection.macros.universe
 
-import izumi.distage.reflection.macros.universe.impl.DIUniverse
+import izumi.distage.reflection.macros.universe.impl.{CompactParameter, DIUniverse}
 
 trait ReflectionProvider {
   val u: DIUniverse
   import u.*
 
   def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter
-  def parameterToAssociation2(parameterSymbol: MacroSymbolInfo): Association.CompactParameter
+  def parameterToAssociation2(parameterSymbol: MacroSymbolInfo): CompactParameter
 
   def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]]
   def symbolToAnyWiring(tpe: TypeNative): MacroWiring
