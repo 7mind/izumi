@@ -1,8 +1,10 @@
 package izumi.distage.reflection.macros.universe.impl
 
+import izumi.distage.reflection.macros.universe.basicuniverse.{MacroDIKey, MacroSafeType}
+
 import scala.reflect.macros.blackbox
 
-private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDIKey with WithDISymbolInfo =>
+private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDISymbolInfo =>
 
   sealed trait Association {
     def symbol: MacroSymbolInfo
@@ -49,8 +51,4 @@ private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDIKey w
     }
   }
 
-}
-
-case class CompactParameter(symbol: MacroSymbolInfoCompact, stpe: MacroSafeType, key: MacroDIKey.BasicKey) {
-  final def isByName: Boolean = symbol.isByName
 }

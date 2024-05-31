@@ -1,4 +1,4 @@
-package izumi.distage.reflection.macros.universe.impl
+package izumi.distage.reflection.macros.universe.basicuniverse
 
 case class FriendlyAnnotation(fqn: String, params: FriendlyAnnoParams)
 
@@ -29,4 +29,5 @@ trait MacroSymbolInfoCompact {
   def wasGeneric: Boolean
   def friendlyAnnotations: List[FriendlyAnnotation]
   def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact
+  def safeFinalResultType: MacroSafeType
 }

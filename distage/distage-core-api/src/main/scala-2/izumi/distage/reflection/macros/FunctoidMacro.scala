@@ -5,8 +5,8 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.reflection.macros.universe.StaticDIUniverse.Aux
-import izumi.distage.reflection.macros.universe.impl.{CompactParameter, MacroSafeType}
-import izumi.distage.reflection.macros.universe.{DIUniverseLiftables, ReflectionProviderDefaultImpl, StaticDIUniverse}
+import izumi.distage.reflection.macros.universe.basicuniverse.{CompactParameter, DIUniverseBasicLiftables, MacroSafeType}
+import izumi.distage.reflection.macros.universe.{ReflectionProviderDefaultImpl, StaticDIUniverse}
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
 import scala.annotation.nowarn
@@ -22,19 +22,20 @@ import scala.reflect.macros.blackbox
   * @see [[izumi.distage.constructors.DebugProperties]]
   */
 class FunctoidMacro(val c: blackbox.Context) {
+  type Parameter = CompactParameter
+
   import c.universe.*
 
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
 
-  protected final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
-  type Parameter = CompactParameter
-
-  private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
-
   private def symbolToParam(p: Symbol): Parameter = {
+    val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
+    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     reflectionProvider.parameterToAssociation2(macroUniverse.MacroSymbolInfo.Runtime(p))
   }
   private def typeToParam(tpe: Type): Parameter = {
+    val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
+    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val symbol = macroUniverse.MacroSymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
     reflectionProvider.parameterToAssociation2(symbol)
   }
@@ -89,7 +90,7 @@ class FunctoidMacro(val c: blackbox.Context) {
   }
 
   def generateProvider[R: c.WeakTypeTag](parameters: List[Parameter], fun: Tree): c.Expr[Functoid[R]] = {
-    val tools = DIUniverseLiftables(macroUniverse)
+    val tools = new DIUniverseBasicLiftables(c)
     import tools.liftableCompactParameter
 
     val seqName = if (parameters.nonEmpty) TermName(c.freshName("seqAny")) else TermName("_")

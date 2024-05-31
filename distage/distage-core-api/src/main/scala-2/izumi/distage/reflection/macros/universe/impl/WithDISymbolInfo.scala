@@ -1,6 +1,8 @@
 package izumi.distage.reflection.macros.universe.impl
 
 import izumi.distage.model.exceptions.macros.reflection.AnnotationConflictException
+import izumi.distage.reflection.macros.universe.basicuniverse
+import izumi.distage.reflection.macros.universe.basicuniverse.{FriendlyAnnoParams, FriendlyAnnotation, FriendlyAnnotationValue, MacroSafeType, MacroSymbolInfoCompact}
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
 trait WithDISymbolInfo { this: DIUniverseBase =>
@@ -21,8 +23,6 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
     import u.*
 
     val tpe = anno.tree.tpe.finalResultType
-//    val tag = LightTypeTagImpl.makeLightTypeTag(u)(tpe)
-//    println(tag)
     val annoName = tpe.typeSymbol.fullName
     val paramTrees = anno.tree.children.tail
 
@@ -68,7 +68,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
       }
     }
 
-    FriendlyAnnotation(annoName, avals)
+    basicuniverse.FriendlyAnnotation(annoName, avals)
   }
 
   sealed trait MacroSymbolInfo extends MacroSymbolInfoCompact {
@@ -111,6 +111,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
       override final def withIsByName(boolean: Boolean): MacroSymbolInfo = copy(isByName = boolean)
       override final def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo = copy(annotations = annotations)
       override final def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact = copy(friendlyAnnotations = annotations)
+      override final def safeFinalResultType: MacroSafeType = MacroSafeType.create(ctx)(nonByNameFinalResultType.asInstanceOf[ctx.Type])
     }
 
     private[distage] object Runtime {
@@ -161,6 +162,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
       override final def withIsByName(boolean: Boolean): MacroSymbolInfo = copy(isByName = boolean)
       override final def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo = copy(annotations = annotations)
       override final def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact = copy(friendlyAnnotations = annotations)
+      override final def safeFinalResultType: MacroSafeType = MacroSafeType.create(ctx)(nonByNameFinalResultType.asInstanceOf[ctx.Type])
     }
     object Static {
       def syntheticFromType(transformName: String => String)(tpe: TypeNative): MacroSymbolInfo.Static = {
