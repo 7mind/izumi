@@ -5,7 +5,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.reflection.macros.universe.StaticDIUniverse.Aux
-import izumi.distage.reflection.macros.universe.impl.MacroSafeType
+import izumi.distage.reflection.macros.universe.impl.{CompactParameter, MacroSafeType}
 import izumi.distage.reflection.macros.universe.{DIUniverseLiftables, ReflectionProviderDefaultImpl, StaticDIUniverse}
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
@@ -27,7 +27,7 @@ class FunctoidMacro(val c: blackbox.Context) {
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
 
   protected final val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
-  type Parameter = macroUniverse.Association.CompactParameter
+  type Parameter = CompactParameter
 
   private final val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
 

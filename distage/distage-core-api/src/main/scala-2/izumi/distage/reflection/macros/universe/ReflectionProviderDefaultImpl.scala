@@ -4,7 +4,7 @@ import izumi.distage.model.definition.{Id, With}
 import izumi.distage.model.exceptions.macros.UnsupportedDefinitionException
 import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
 import izumi.distage.model.exceptions.reflection.UnsupportedWiringException
-import izumi.distage.reflection.macros.universe.impl.{DIUniverse, FriendlyAnnoParams, FriendlyAnnotationValue, MacroDIKey}
+import izumi.distage.reflection.macros.universe.impl.{CompactParameter, DIUniverse, FriendlyAnnoParams, FriendlyAnnotationValue, MacroDIKey}
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.annotation.nowarn
@@ -153,9 +153,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     Association.Parameter(parameterSymbol, tpeFromSymbol(parameterSymbol), key)
   }
 
-  override def parameterToAssociation2(parameterSymbol: MacroSymbolInfo): Association.CompactParameter = {
+  override def parameterToAssociation2(parameterSymbol: MacroSymbolInfo): CompactParameter = {
     val key = keyFromSymbol(parameterSymbol)
-    Association.CompactParameter(parameterSymbol, tpeFromSymbol(parameterSymbol), key)
+    CompactParameter(parameterSymbol, tpeFromSymbol(parameterSymbol), key)
   }
 
   override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
