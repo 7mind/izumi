@@ -4,8 +4,7 @@ import izumi.distage.constructors.DebugProperties
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
-import izumi.distage.reflection.macros.universe.BaseReflectionProvider
-import izumi.distage.reflection.macros.universe.basicuniverse.{CompactParameter, DIUniverseBasicLiftables, MacroSafeType}
+import izumi.distage.reflection.macros.universe.basicuniverse.{BaseReflectionProvider, CompactParameter, DIUniverseBasicLiftables, MacroSafeType}
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
 import scala.annotation.nowarn

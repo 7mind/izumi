@@ -3,7 +3,7 @@ package izumi.distage.reflection.macros.universe
 import izumi.distage.model.definition.With
 import izumi.distage.model.exceptions.macros.UnsupportedDefinitionException
 import izumi.distage.model.exceptions.reflection.UnsupportedWiringException
-import izumi.distage.reflection.macros.universe.basicuniverse.MacroDIKey
+import izumi.distage.reflection.macros.universe.basicuniverse.{BaseReflectionProvider, MacroDIKey}
 import izumi.distage.reflection.macros.universe.impl.DIUniverse
 import izumi.fundamentals.reflection.ReflectionUtil
 
