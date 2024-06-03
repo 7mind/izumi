@@ -287,14 +287,13 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       trait MyEndpoints[F[_, _]]
 
       trait ZioStreams
-      trait WebSockets
 
       trait MyPublisher
       trait MyClient
 
       object MyPlugin extends ModuleDef {
         make[MyClient].fromZIOEnv {
-          ZIO.succeed(???): ZIO[OpenTracingService & MyPublisher & SttpBackend[Task, ZioStreams & WebSockets] & MyEndpoints[IO], Nothing, MyClient]
+          ZIO.succeed(???): ZIO[OpenTracingService & MyPublisher & SttpBackend[Task, ZioStreams] & MyEndpoints[IO], Nothing, MyClient]
         }
       }
       val _ = MyPlugin
