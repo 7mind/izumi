@@ -4,17 +4,15 @@ import izumi.distage.model.definition.Id
 import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
 import izumi.distage.reflection.macros.universe.basicuniverse
 
-import scala.reflect.macros.blackbox
+class BaseReflectionProvider(val u: scala.reflect.api.Universe) {
+  private val idAnnotationFqn = u.typeOf[Id].typeSymbol.fullName
 
-class BaseReflectionProvider(val c: blackbox.Context) {
-  private val idAnnotationFqn = c.typeOf[Id].typeSymbol.fullName
-
-  def typeToParameter(t: scala.reflect.api.Universe#Type): CompactParameter = {
-    parameterToAssociation2(MacroSymbolInfoCompactImpl.syntheticFromType(c.universe)(c.freshName)(t.asInstanceOf[c.universe.Type]))
+  def typeToParameter(t: u.Type, transformName: String => String): CompactParameter = {
+    parameterToAssociation2(MacroSymbolInfoCompactImpl.syntheticFromType(u)(transformName)(t))
   }
 
-  def symbolToParameter(s: scala.reflect.api.Universe#Symbol): CompactParameter = {
-    parameterToAssociation2(MacroSymbolInfoCompactImpl.fromSymbol(c.universe)(s.asInstanceOf[c.universe.Symbol]))
+  def symbolToParameter(s: u.Symbol): CompactParameter = {
+    parameterToAssociation2(MacroSymbolInfoCompactImpl.fromSymbol(u)(s))
   }
 
   private def parameterToAssociation2(parameterSymbol: MacroSymbolInfoCompact): CompactParameter = {
@@ -28,7 +26,7 @@ class BaseReflectionProvider(val c: blackbox.Context) {
     } else {
       parameterSymbol.finalResultType
     }
-    MacroSafeType.create(c.universe)(paramType.asInstanceOf[c.Type])
+    MacroSafeType.create(u)(paramType)
   }
 
   def keyFromSymbol(parameterSymbol: MacroSymbolInfoCompact): MacroDIKey.BasicKey = {
