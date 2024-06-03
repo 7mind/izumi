@@ -56,7 +56,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         typeRef
           .map(_.pre)
           .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
-          .map(v => MacroDIKey.TypeKey(MacroSafeType.create(u.ctx)(v.asInstanceOf[u.ctx.Type])))
+          .map(v => MacroDIKey.TypeKey(MacroSafeType.create(u.ctx.universe)(v.asInstanceOf[u.ctx.Type])))
       }
     }
 
@@ -79,11 +79,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
              |
              |  * $mms
              |""".stripMargin,
-          MacroSafeType.create(u.ctx)(tpe.asInstanceOf[u.ctx.Type]),
+          MacroSafeType.create(u.ctx.universe)(tpe.asInstanceOf[u.ctx.Type]),
         )
 
       case _ =>
-        val safeType = MacroSafeType.create(u.ctx)(tpe.asInstanceOf[u.ctx.Type])
+        val safeType = MacroSafeType.create(u.ctx.universe)(tpe.asInstanceOf[u.ctx.Type])
         val factoryMsg = if (factoryMethod != u.u.NoSymbol) {
           s"""
              |  * When trying to create an implementation for result of `$factoryMethod` of factory `${factoryMethod.owner}`

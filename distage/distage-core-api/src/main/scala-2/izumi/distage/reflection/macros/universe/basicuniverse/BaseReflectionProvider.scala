@@ -2,8 +2,7 @@ package izumi.distage.reflection.macros.universe.basicuniverse
 
 import izumi.distage.model.definition.Id
 import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
-import izumi.distage.reflection.macros.universe.StaticDIUniverse.Aux
-import izumi.distage.reflection.macros.universe.{StaticDIUniverse, basicuniverse}
+import izumi.distage.reflection.macros.universe.basicuniverse
 
 import scala.reflect.macros.blackbox
 
@@ -11,15 +10,11 @@ class BaseReflectionProvider(val c: blackbox.Context) {
   private val idAnnotationFqn = c.typeOf[Id].typeSymbol.fullName
 
   def typeToParameter(t: scala.reflect.api.Universe#Type): CompactParameter = {
-    val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
-    val symbol = macroUniverse.MacroSymbolInfo.Static.syntheticFromType(c.freshName)(t.asInstanceOf[c.Type])
-    parameterToAssociation2(symbol)
+    parameterToAssociation2(MacroSymbolInfoCompactImpl.syntheticFromType(c.universe)(c.freshName)(t.asInstanceOf[c.universe.Type]))
   }
 
   def symbolToParameter(s: scala.reflect.api.Universe#Symbol): CompactParameter = {
-    val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
-    val info = macroUniverse.MacroSymbolInfo.Runtime(s.asInstanceOf[c.Symbol])
-    parameterToAssociation2(info)
+    parameterToAssociation2(MacroSymbolInfoCompactImpl.fromSymbol(c.universe)(s.asInstanceOf[c.universe.Symbol]))
   }
 
   private def parameterToAssociation2(parameterSymbol: MacroSymbolInfoCompact): CompactParameter = {
@@ -33,7 +28,7 @@ class BaseReflectionProvider(val c: blackbox.Context) {
     } else {
       parameterSymbol.finalResultType
     }
-    MacroSafeType.create(c)(paramType.asInstanceOf[c.Type])
+    MacroSafeType.create(c.universe)(paramType.asInstanceOf[c.Type])
   }
 
   def keyFromSymbol(parameterSymbol: MacroSymbolInfoCompact): MacroDIKey.BasicKey = {
@@ -59,12 +54,6 @@ class BaseReflectionProvider(val c: blackbox.Context) {
         }
 
     }
-
-    //    parameterSymbol.findUniqueFriendlyAnno(a => a.fqn.endsWith(".Named")) match {
-    //      case Some(value) =>
-    //        System.out.println(s"${System.nanoTime()} $value")
-    //      case None =>
-    //    }
 
     lazy val maybeJSRName = parameterSymbol.findUniqueFriendlyAnno(a => a.fqn.endsWith(".Named")).flatMap {
       value =>
