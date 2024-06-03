@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.100`
+import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.102`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -149,7 +149,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.19")
-  final val scala213 = ScalaVersion("2.13.13")
+  final val scala213 = ScalaVersion("2.13.14")
   final val scala300 = ScalaVersion("3.4.1")
 
   object Groups {
