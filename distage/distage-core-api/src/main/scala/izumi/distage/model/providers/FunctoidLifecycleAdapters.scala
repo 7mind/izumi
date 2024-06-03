@@ -4,7 +4,7 @@ import izumi.fundamentals.platform.language.Quirks.Discarder
 import zio.managed.ZManaged
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 
-private[providers] trait FunctoidLifecycleAdapters {
+private[providers] trait FunctoidLifecycleAdaptersTemplate { this: FunctoidTemplate =>
 
   import cats.effect.kernel.{Resource, Sync}
   import izumi.functional.lifecycle.Lifecycle
@@ -105,4 +105,5 @@ private[providers] trait FunctoidLifecycleAdapters {
   }
 
   disableAutoTrace.discard()
+
 }

@@ -1,7 +1,6 @@
 package izumi.distage.reflection.macros
 
 import izumi.distage.constructors.DebugProperties
-import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.reflection.macros.universe.basicuniverse.{BaseReflectionProvider, CompactParameter, DIUniverseBasicLiftables, MacroSafeType}
@@ -34,9 +33,11 @@ abstract class FunctoidMacroBase(val c: blackbox.Context, idAnnotationFqn: Strin
     brp.typeToParameter(tpe.asInstanceOf[brp.u.Type], c.freshName)
   }
 
-  def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[Functoid[R]] = {
+  def impl[Functoid[_], R: c.WeakTypeTag](fun: Tree): c.Expr[Functoid[R]] = {
+    val p = c.prefix.actualType.member(TypeName("FXOid")).typeSignatureIn(c.prefix.actualType)
+    val fr = c.universe.appliedType(p, List(weakTypeOf[R]))
     val associations = analyze(fun, weakTypeOf[R])
-    val result = generateProvider[R](associations, fun)
+    val result = generateProvider[Functoid, R](associations, fun, fr)
 
     logger.log(
       s"""DIKeyWrappedFunction info:
@@ -46,7 +47,7 @@ abstract class FunctoidMacroBase(val c: blackbox.Context, idAnnotationFqn: Strin
          | Extracted DIKeys: ${associations.map(_.key)}\n
          | argument: ${showCode(fun)}\n
          | argumentTree: ${showRaw(fun)}\n
-         | argumentType: ${fun.tpe}
+         | argumentType: ${p}
          | Result code: ${showCode(result.tree)}""".stripMargin
     )
 
@@ -83,7 +84,7 @@ abstract class FunctoidMacroBase(val c: blackbox.Context, idAnnotationFqn: Strin
       )
   }
 
-  def generateProvider[R: c.WeakTypeTag](parameters: List[Parameter], fun: Tree): c.Expr[Functoid[R]] = {
+  def generateProvider[Functoid[_], R: c.WeakTypeTag](parameters: List[Parameter], fun: Tree, fr: Type): c.Expr[Functoid[R]] = {
     val tools = new DIUniverseBasicLiftables(c)
     import tools.liftableCompactParameter
 
@@ -94,12 +95,12 @@ abstract class FunctoidMacroBase(val c: blackbox.Context, idAnnotationFqn: Strin
 
     val retTpe = weakTypeOf[R]
     val retTagTree = MacroSafeType.create(c.universe)(retTpe).tagTree.asInstanceOf[c.Tree]
-
-    c.Expr[Functoid[R]] {
+    val _ = fr
+    c.Expr[izumi.distage.model.providers.Functoid[R]] {
       q"""{
         val fun = $fun
 
-        new ${weakTypeOf[Functoid[R]]}(
+        new ${fr}(
           new ${weakTypeOf[Provider.ProviderImpl[R]]}(
             $parametersNoByName,
             $retTagTree,
@@ -109,7 +110,7 @@ abstract class FunctoidMacroBase(val c: blackbox.Context, idAnnotationFqn: Strin
           )
         )
       }"""
-    }
+    }.asInstanceOf[c.Expr[Functoid[R]]]
   }
 
   protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Parameter] = {

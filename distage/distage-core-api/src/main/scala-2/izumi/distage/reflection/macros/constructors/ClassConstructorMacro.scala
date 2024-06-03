@@ -22,14 +22,13 @@ object ClassConstructorMacro {
     if (reflectionProvider.isConcrete(targetType)) {
       (targetType match {
         case t: SingletonTypeApi =>
-          val functoid = symbolOf[Functoid.type].asClass.module
           val term = t match {
             case t: ThisTypeApi => This(t.sym)
             case t: ConstantTypeApi => q"${t.value}"
             case _ => q"${t.termSymbol}"
           }
           c.Expr[ClassConstructor[T]] {
-            q"{ new ${weakTypeOf[ClassConstructor[T]]}($functoid.singleton[$targetType]($term)) }"
+            q"{ new ${weakTypeOf[ClassConstructor[T]]}(izumi.distage.model.providers.Functoid.singleton[$targetType]($term)) }"
           }
 
         case _ =>
