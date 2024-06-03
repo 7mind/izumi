@@ -1,10 +1,9 @@
 package izumi.distage.reflection.macros.universe
 
-import izumi.distage.model.definition.{Id, With}
+import izumi.distage.model.definition.With
 import izumi.distage.model.exceptions.macros.UnsupportedDefinitionException
-import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
 import izumi.distage.model.exceptions.reflection.UnsupportedWiringException
-import izumi.distage.reflection.macros.universe.basicuniverse.{CompactParameter, FriendlyAnnoParams, FriendlyAnnotationValue, MacroDIKey}
+import izumi.distage.reflection.macros.universe.basicuniverse.MacroDIKey
 import izumi.distage.reflection.macros.universe.impl.DIUniverse
 import izumi.fundamentals.reflection.ReflectionUtil
 
@@ -14,52 +13,14 @@ import scala.annotation.nowarn
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   import izumi.distage.reflection.macros.universe.basicuniverse.MacroSafeType
+  import u.*
   import u.u.Annotation
-  import u.{Association, MacroSymbolInfo, MacroWiring, MethodSymbNative, SymbNative, TypeNative}
+
+  private lazy val brp = new BaseReflectionProvider(u.ctx)
 
   private[this] object With {
     def unapply(ann: Annotation): Option[TypeNative] = {
       ann.tree.tpe.typeArgs.headOption
-    }
-  }
-
-  private[this] def withIdKeyFromAnnotation(parameterSymbol: MacroSymbolInfo, typeKey: MacroDIKey.TypeKey): MacroDIKey.BasicKey = {
-    val maybeDistageName = parameterSymbol.findUniqueFriendlyAnno(a => a.fqn == typeOfIdAnnotation.typeSymbol.fullName).map {
-      value =>
-        value.params match {
-          case FriendlyAnnoParams.Full(values) =>
-            values.toMap.get("name") match {
-              case Some(value: FriendlyAnnotationValue.StringValue) =>
-                value.value
-              case _ =>
-                throw new BadIdAnnotationException(value.toString, value)
-            }
-
-          case FriendlyAnnoParams.Values(_) =>
-            throw new BadIdAnnotationException(value.toString, value)
-        }
-
-    }
-
-//    parameterSymbol.findUniqueFriendlyAnno(a => a.fqn.endsWith(".Named")) match {
-//      case Some(value) =>
-//        System.out.println(s"${System.nanoTime()} $value")
-//      case None =>
-//    }
-
-    lazy val maybeJSRName = parameterSymbol.findUniqueFriendlyAnno(a => a.fqn.endsWith(".Named")).flatMap {
-      value =>
-        value.params.values match {
-          case FriendlyAnnotationValue.StringValue(head) :: Nil =>
-            Some(head)
-          case _ =>
-            None
-        }
-    }
-
-    maybeDistageName.orElse(maybeJSRName) match {
-      case Some(value) => typeKey.named(value)
-      case None => typeKey
     }
   }
 
@@ -150,13 +111,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   override def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter = {
-    val key = keyFromSymbol(parameterSymbol)
-    Association.Parameter(parameterSymbol, tpeFromSymbol(parameterSymbol), key)
-  }
-
-  override def parameterToAssociation2(parameterSymbol: MacroSymbolInfo): CompactParameter = {
-    val key = keyFromSymbol(parameterSymbol)
-    basicuniverse.CompactParameter(parameterSymbol, tpeFromSymbol(parameterSymbol), key)
+    val key = brp.keyFromSymbol(parameterSymbol)
+    Association.Parameter(parameterSymbol, brp.tpeFromSymbol(parameterSymbol), key)
   }
 
   override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
@@ -164,7 +120,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       hasTpe =>
         val tpe = hasTpe.dealias
         val syntheticSymbolInfo = MacroSymbolInfo.Static.syntheticFromType(transformName)(tpe)
-        Association.Parameter(syntheticSymbolInfo, tpeFromSymbol(syntheticSymbolInfo), keyFromSymbol(syntheticSymbolInfo))
+        Association.Parameter(syntheticSymbolInfo, brp.tpeFromSymbol(syntheticSymbolInfo), brp.keyFromSymbol(syntheticSymbolInfo))
     }
   }
 
@@ -175,7 +131,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         .asSeenFrom(tpe, tpe.typeSymbol)
     }
 
-    val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => keyFromSymbol(MacroSymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
+    val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => brp.keyFromSymbol(MacroSymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
     val resultTypeWiring = mkConstructorWiring(factoryMethod, resultType)
 
     val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
@@ -194,21 +150,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private[this] def methodToAssociation(definingClass: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
     val methodSymb = MacroSymbolInfo.Runtime(method, definingClass, wasGeneric = false)
-    Association.AbstractMethod(methodSymb, tpeFromSymbol(methodSymb), keyFromSymbol(methodSymb))
-  }
-
-  private[this] def tpeFromSymbol(parameterSymbol: MacroSymbolInfo): MacroSafeType = {
-    val paramType = if (parameterSymbol.isByName) { // this will never be true for a method symbol
-      parameterSymbol.finalResultType.typeArgs.head.finalResultType
-    } else {
-      parameterSymbol.finalResultType
-    }
-    MacroSafeType.create(u.ctx)(paramType.asInstanceOf[u.ctx.Type])
-  }
-  private[this] def keyFromSymbol(parameterSymbol: MacroSymbolInfo): MacroDIKey.BasicKey = {
-    val tpe = tpeFromSymbol(parameterSymbol)
-    val typeKey = MacroDIKey.TypeKey(tpe)
-    withIdKeyFromAnnotation(parameterSymbol, typeKey)
+    Association.AbstractMethod(methodSymb, brp.tpeFromSymbol(methodSymb), brp.keyFromSymbol(methodSymb))
   }
 
   private[this] object ConcreteSymbol {
@@ -323,15 +265,12 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   protected def typeOfWithAnnotation: TypeNative
-  protected def typeOfIdAnnotation: TypeNative
 }
 
 object ReflectionProviderDefaultImpl {
   def apply(macroUniverse: DIUniverse): ReflectionProvider.Aux[macroUniverse.type] = {
     new ReflectionProviderDefaultImpl {
       override final val u: macroUniverse.type = macroUniverse
-
-      override protected val typeOfIdAnnotation: u.TypeNative = u.u.typeOf[Id]
       override protected val typeOfWithAnnotation: u.TypeNative = u.u.typeOf[With[Any]]
     }
   }

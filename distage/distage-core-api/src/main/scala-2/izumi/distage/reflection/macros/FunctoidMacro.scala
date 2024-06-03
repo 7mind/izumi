@@ -4,9 +4,8 @@ import izumi.distage.constructors.DebugProperties
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
-import izumi.distage.reflection.macros.universe.StaticDIUniverse.Aux
+import izumi.distage.reflection.macros.universe.BaseReflectionProvider
 import izumi.distage.reflection.macros.universe.basicuniverse.{CompactParameter, DIUniverseBasicLiftables, MacroSafeType}
-import izumi.distage.reflection.macros.universe.{ReflectionProviderDefaultImpl, StaticDIUniverse}
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
 import scala.annotation.nowarn
@@ -29,15 +28,10 @@ class FunctoidMacro(val c: blackbox.Context) {
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
 
   private def symbolToParam(p: Symbol): Parameter = {
-    val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
-    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
-    reflectionProvider.parameterToAssociation2(macroUniverse.MacroSymbolInfo.Runtime(p))
+    new BaseReflectionProvider(c).symbolToParameter(p)
   }
   private def typeToParam(tpe: Type): Parameter = {
-    val macroUniverse: Aux[c.universe.type] = StaticDIUniverse(c)
-    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
-    val symbol = macroUniverse.MacroSymbolInfo.Static.syntheticFromType(c.freshName)(tpe)
-    reflectionProvider.parameterToAssociation2(symbol)
+    new BaseReflectionProvider(c).typeToParameter(tpe)
   }
 
   def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[Functoid[R]] = {
