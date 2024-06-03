@@ -24,8 +24,8 @@ object V {
   val circe = "0.14.7"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.17.6"
-  val magnolia = "1.1.8"
-  val jawn = "1.5.1"
+  val magnolia = "1.1.10"
+  val jawn = "1.6.0"
 
   // good to drop - scala
   val scala_java_time = "2.5.0"
@@ -36,7 +36,7 @@ object V {
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.14.16"
+  val bytebuddy = "1.14.17"
   val docker_java = "3.3.6"
 
   // microsite-only
