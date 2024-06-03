@@ -143,13 +143,13 @@ object Docker {
     *                    default: 120 seconds
     *
     * @param pullAttempts Maximum number of attempts for `docker pull`. If pull unexpectedly failed will try again after exponential backoff sleep.
-    *                     default: 3
+    *                     default: 15
     *
     * @param pullAttemptInitialSleep Initial exponential backoff sleep duration after failed attempt to download the image with `docker pull`.
     *                                default: 1 seconds
     *
     * @param pullAttemptMaxSleep Max exponential backoff sleep duration after failed attempt to download the image with `docker pull`.
-    *                            default: 3 seconds
+    *                            default: 15 seconds
     *
     * @param name     Name of the container, if left at `None` Docker will generate a random name
     *
@@ -188,9 +188,9 @@ object Docker {
     healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
     healthCheckMaxAttempts: Int = 120,
     pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
-    pullAttempts: Int = 3,
+    pullAttempts: Int = 15,
     pullAttemptInitialSleep: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
-    pullAttemptMaxSleep: FiniteDuration = FiniteDuration(3, TimeUnit.SECONDS),
+    pullAttemptMaxSleep: FiniteDuration = FiniteDuration(15, TimeUnit.SECONDS),
     healthCheck: ContainerHealthCheck = ContainerHealthCheck.portCheck,
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
     autoPull: Boolean = true,
@@ -291,6 +291,7 @@ object Docker {
     hostPath: String,
     containerPath: String,
     noCopy: Boolean = false,
+    readOnly: Boolean = false,
   )
 
   final case class UnmappedPorts(
