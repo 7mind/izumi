@@ -26,11 +26,12 @@ class FunctoidMacro(val c: blackbox.Context) {
 
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
 
+  private val brp = new BaseReflectionProvider(c.universe)
   private def symbolToParam(p: Symbol): Parameter = {
-    new BaseReflectionProvider(c).symbolToParameter(p)
+    brp.symbolToParameter(p.asInstanceOf[brp.u.Symbol])
   }
   private def typeToParam(tpe: Type): Parameter = {
-    new BaseReflectionProvider(c).typeToParameter(tpe)
+    brp.typeToParameter(tpe.asInstanceOf[brp.u.Type], c.freshName)
   }
 
   def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[Functoid[R]] = {

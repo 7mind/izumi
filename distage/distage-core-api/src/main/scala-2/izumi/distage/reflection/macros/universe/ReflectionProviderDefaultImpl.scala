@@ -3,7 +3,7 @@ package izumi.distage.reflection.macros.universe
 import izumi.distage.model.definition.With
 import izumi.distage.model.exceptions.macros.UnsupportedDefinitionException
 import izumi.distage.model.exceptions.reflection.UnsupportedWiringException
-import izumi.distage.reflection.macros.universe.basicuniverse.{BaseReflectionProvider, MacroDIKey}
+import izumi.distage.reflection.macros.universe.basicuniverse.{BaseReflectionProvider, ConstructorSelector, MacroDIKey}
 import izumi.distage.reflection.macros.universe.impl.DIUniverse
 import izumi.fundamentals.reflection.ReflectionUtil
 
@@ -16,7 +16,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   import u.*
   import u.u.Annotation
 
-  private lazy val brp = new BaseReflectionProvider(u.ctx)
+  private lazy val brp = new BaseReflectionProvider(u.ctx.universe)
 
   private[this] object With {
     def unapply(ann: Annotation): Option[TypeNative] = {
@@ -191,12 +191,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative] = {
-    val constructor = findConstructor(tpe)
-    if (!constructor.isTerm) {
-      None
-    } else {
-      Some(constructor.asTerm.alternatives.head.asMethod)
-    }
+    val cs = new ConstructorSelector(u.u)
+    cs.selectConstructorMethod(tpe.asInstanceOf[cs.u.Type]).map(s => s.asInstanceOf[MethodSymbNative])
   }
 
   override def isConcrete(tpe: TypeNative): Boolean = {
@@ -245,23 +241,6 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private[this] def isFactoryMethod(decl: SymbNative): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && decl.owner != u.u.definitions.AnyClass
-  }
-
-  @inline private[this] def findConstructor(tpe: TypeNative): SymbNative = {
-    findConstructor0(tpe).getOrElse(u.u.NoSymbol)
-  }
-
-  private[this] def findConstructor0(tpe: TypeNative): Option[SymbNative] = {
-    tpe match {
-      case intersection: u.u.RefinedTypeApi =>
-        intersection.parents.collectFirst(Function.unlift(findConstructor0))
-      case tpe =>
-        if (tpe.typeSymbol.isClass && tpe.typeSymbol.asClass.isTrait) {
-          tpe.baseClasses.collectFirst(Function.unlift(b => if (b ne tpe.typeSymbol) findConstructor0(b.typeSignature) else None))
-        } else {
-          tpe.decl(u.u.termNames.CONSTRUCTOR).alternatives.find(_.isPublic)
-        }
-    }
   }
 
   protected def typeOfWithAnnotation: TypeNative
