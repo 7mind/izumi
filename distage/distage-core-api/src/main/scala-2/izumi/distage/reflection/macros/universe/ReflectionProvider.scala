@@ -1,6 +1,5 @@
 package izumi.distage.reflection.macros.universe
 
-import izumi.distage.reflection.macros.universe.basicuniverse.CompactParameter
 import izumi.distage.reflection.macros.universe.impl.DIUniverse
 
 trait ReflectionProvider {
@@ -8,7 +7,6 @@ trait ReflectionProvider {
   import u.*
 
   def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter
-  def parameterToAssociation2(parameterSymbol: MacroSymbolInfo): CompactParameter
 
   def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]]
   def symbolToAnyWiring(tpe: TypeNative): MacroWiring

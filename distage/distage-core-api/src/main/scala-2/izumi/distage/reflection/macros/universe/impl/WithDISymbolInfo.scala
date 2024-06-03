@@ -178,15 +178,17 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
       }
     }
 
+
+
     implicit final class SymbolInfoExtensions(symbolInfo: MacroSymbolInfo) {
-      def findUniqueFriendlyAnno(p: FriendlyAnnotation => Boolean): Option[FriendlyAnnotation] = {
-        val annos = symbolInfo.friendlyAnnotations.filter(p)
-        if (annos.size > 1) {
-          import izumi.fundamentals.platform.strings.IzString.*
-          throw new AnnotationConflictException(s"Multiple DI annotations on symbol `$symbolInfo` in ${symbolInfo.finalResultType}: ${annos.niceList()}")
-        }
-        annos.headOption
-      }
+//      def findUniqueFriendlyAnno(p: FriendlyAnnotation => Boolean): Option[FriendlyAnnotation] = {
+//        val annos = symbolInfo.friendlyAnnotations.filter(p)
+//        if (annos.size > 1) {
+//          import izumi.fundamentals.platform.strings.IzString.*
+//          throw new AnnotationConflictException(s"Multiple DI annotations on symbol `$symbolInfo` in ${symbolInfo.finalResultType}: ${annos.niceList()}")
+//        }
+//        annos.headOption
+//      }
 
       def findUniqueAnnotation(annType: TypeNative): Option[u.Annotation] = {
         val distageAnnos = symbolInfo.annotations.filter(t => t.tree.tpe <:< typeOfDistageAnnotation).toSet
