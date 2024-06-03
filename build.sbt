@@ -5112,7 +5112,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                       )
                   }
                 },
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.100"
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.102"
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin, SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
