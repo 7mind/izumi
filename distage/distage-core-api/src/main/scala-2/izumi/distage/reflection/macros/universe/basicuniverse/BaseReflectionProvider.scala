@@ -1,9 +1,9 @@
-package izumi.distage.reflection.macros.universe
+package izumi.distage.reflection.macros.universe.basicuniverse
 
 import izumi.distage.model.definition.Id
 import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
 import izumi.distage.reflection.macros.universe.StaticDIUniverse.Aux
-import izumi.distage.reflection.macros.universe.basicuniverse.{CompactParameter, FriendlyAnnoParams, FriendlyAnnotationValue, MacroDIKey, MacroSafeType, MacroSymbolInfoCompact}
+import izumi.distage.reflection.macros.universe.{StaticDIUniverse, basicuniverse}
 
 import scala.reflect.macros.blackbox
 
