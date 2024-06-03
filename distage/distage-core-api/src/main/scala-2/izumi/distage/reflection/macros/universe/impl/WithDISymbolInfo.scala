@@ -1,7 +1,7 @@
 package izumi.distage.reflection.macros.universe.impl
 
-import izumi.distage.model.exceptions.macros.reflection.AnnotationConflictException
-import izumi.distage.reflection.macros.universe.basicuniverse.{FriendlyAnnotation, MacroSafeType, MacroSymbolInfoCompact}
+import izumi.distage.reflection.macros.universe.basicuniverse.exceptions.AnnotationConflictException
+import izumi.distage.reflection.macros.universe.basicuniverse.{FriendlyAnnoTools, FriendlyAnnotation, MacroSafeType, MacroSymbolInfoCompact}
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
 trait WithDISymbolInfo { this: DIUniverseBase =>
@@ -133,6 +133,3 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
   }
 
 }
-
-
-

@@ -1,12 +1,9 @@
 package izumi.distage.reflection.macros.universe.basicuniverse
 
-import izumi.distage.model.definition.Id
-import izumi.distage.model.exceptions.macros.reflection.BadIdAnnotationException
 import izumi.distage.reflection.macros.universe.basicuniverse
+import izumi.distage.reflection.macros.universe.basicuniverse.exceptions.BadIdAnnotationException
 
-class BaseReflectionProvider(val u: scala.reflect.api.Universe) {
-  private val idAnnotationFqn = u.typeOf[Id].typeSymbol.fullName
-
+class BaseReflectionProvider(val u: scala.reflect.api.Universe, idAnnotationFqn: String) {
   def typeToParameter(t: u.Type, transformName: String => String): CompactParameter = {
     parameterToAssociation2(MacroSymbolInfoCompactImpl.syntheticFromType(u)(transformName)(t))
   }
@@ -69,3 +66,5 @@ class BaseReflectionProvider(val u: scala.reflect.api.Universe) {
     }
   }
 }
+
+

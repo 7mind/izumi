@@ -1,6 +1,6 @@
 package izumi.distage.reflection.macros.universe
 
-import izumi.distage.model.definition.With
+import izumi.distage.model.definition.{Id, With}
 import izumi.distage.model.exceptions.macros.UnsupportedDefinitionException
 import izumi.distage.model.exceptions.reflection.UnsupportedWiringException
 import izumi.distage.reflection.macros.universe.basicuniverse.{BaseReflectionProvider, ConstructorSelector, MacroDIKey}
@@ -9,6 +9,10 @@ import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.annotation.nowarn
 
+class DIAnnotationMeta(u: scala.reflect.api.Universe) {
+  def idAnnotationFqn: String = u.typeOf[Id].typeSymbol.fullName
+}
+
 @nowarn("msg=outer reference")
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
@@ -16,7 +20,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   import u.*
   import u.u.Annotation
 
-  private lazy val brp = new BaseReflectionProvider(u.ctx.universe)
+  private lazy val idAnnotationFqn = new DIAnnotationMeta(u.u).idAnnotationFqn
+  private lazy val brp = new BaseReflectionProvider(u.ctx.universe, idAnnotationFqn)
 
   private[this] object With {
     def unapply(ann: Annotation): Option[TypeNative] = {

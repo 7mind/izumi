@@ -1,7 +1,6 @@
-package izumi.distage.reflection.macros.universe.impl
+package izumi.distage.reflection.macros.universe.basicuniverse
 
 import izumi.distage.reflection.macros.universe.basicuniverse
-import izumi.distage.reflection.macros.universe.basicuniverse.{ConstructorSelector, FriendlyAnnoParams, FriendlyAnnotation, FriendlyAnnotationValue}
 
 object FriendlyAnnoTools {
   private def convertConst(c: Any): FriendlyAnnotationValue = {
