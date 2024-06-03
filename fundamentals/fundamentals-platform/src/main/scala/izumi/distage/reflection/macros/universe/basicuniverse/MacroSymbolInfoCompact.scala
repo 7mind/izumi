@@ -1,6 +1,6 @@
 package izumi.distage.reflection.macros.universe.basicuniverse
 
-import izumi.distage.model.exceptions.macros.reflection.AnnotationConflictException
+import izumi.distage.reflection.macros.universe.basicuniverse.exceptions.AnnotationConflictException
 
 trait MacroSymbolInfoCompact {
   def name: String
@@ -24,3 +24,5 @@ object MacroSymbolInfoCompact {
     }
   }
 }
+
+

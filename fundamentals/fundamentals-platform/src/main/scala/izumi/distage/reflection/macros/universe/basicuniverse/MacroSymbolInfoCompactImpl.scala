@@ -1,6 +1,5 @@
 package izumi.distage.reflection.macros.universe.basicuniverse
 
-import izumi.distage.reflection.macros.universe.impl.FriendlyAnnoTools
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
 case class MacroSymbolInfoCompactImpl(
