@@ -1,6 +1,6 @@
 object V {
   // izumi
-  val izumi_reflect = "2.3.8"
+  val izumi_reflect = "2.3.9"
 
   // foundation
   val collection_compat = "2.12.0"
@@ -9,11 +9,11 @@ object V {
 
   val scalatest = "3.2.18"
 
-  val cats = "2.10.0"
+  val cats = "2.12.0"
   val cats_effect = "3.5.4"
 
-  val discipline = "1.5.1"
-  val discipline_scalatest = "2.2.0"
+  val discipline = "1.7.0"
+  val discipline_scalatest = "2.3.0"
 
   val zio = "2.1.1"
   val zio_interop_cats = "23.1.0.2"
@@ -21,7 +21,7 @@ object V {
   val monix = "3.4.0"
   val monix_bio = "1.2.0"
 
-  val circe = "0.14.6"
+  val circe = "0.14.7"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.17.6"
   val magnolia = "1.1.10"
