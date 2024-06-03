@@ -109,23 +109,13 @@ object TrivialLogger {
         System.getProperty(path).asBoolean().getOrElse(default)
       }
 
-      var idx = 0
-      var out = false
-      var current = parts.head
-      val tail = parts.tail
-
-      while (idx < tail.length) {
-        out = cond(current)
-        if (out) {
-          idx = Int.MaxValue
-        } else {
-          val p = tail(idx)
-          current = s"$current.$p"
-          idx = idx + 1
-        }
-      }
-
-      out
+      parts
+        .foldLeft((false, "")) {
+          case (done @ (true, _), _) => done
+          case ((_, prev), p) =>
+            val current = if (prev.isEmpty) p else s"$prev.$p"
+            (cond(current), current)
+        }._1
     }
 
     config.forceLog || enabled.getOrElseUpdate(sysProperty, check())
