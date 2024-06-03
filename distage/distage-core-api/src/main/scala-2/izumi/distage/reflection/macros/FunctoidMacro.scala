@@ -92,7 +92,7 @@ class FunctoidMacro(val c: blackbox.Context) {
     val parametersNoByName = Liftable.liftList[Parameter].apply(parameters)
 
     val retTpe = weakTypeOf[R]
-    val retTagTree = MacroSafeType.create(c)(retTpe).tagTree.asInstanceOf[c.Tree]
+    val retTagTree = MacroSafeType.create(c.universe)(retTpe).tagTree.asInstanceOf[c.Tree]
 
     c.Expr[Functoid[R]] {
       q"""{
