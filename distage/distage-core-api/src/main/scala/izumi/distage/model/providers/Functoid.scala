@@ -67,7 +67,11 @@ final case class Functoid[+A](get: Provider) extends AbstractFunctoid[A, Functoi
   override protected def create[B](provider: Provider): Functoid[B] = copy(get = provider)
 }
 
-object Functoid extends FunctoidMacroMethods with FunctoidLifecycleAdapters with FunctoidConstructors with SimpleFunctoids {
+object Functoid extends FunctoidMacroMethods with SimpleFunctoids with FunctoidLifecycleAdapters with FunctoidConstructors {
+
+//  implicit final def convert[R, Self[+A] <: AbstractFunctoid[A, Self]](f: Self[R]): Functoid[R] = {
+//    new Functoid[R](f.get)
+//  }
 
   implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
     def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.returnTypeTag)

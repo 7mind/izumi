@@ -1,7 +1,5 @@
 package izumi.distage.reflection.macros
 
-import izumi.distage.constructors.DebugProperties
-import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.reflection.macros.universe.basicuniverse.{BaseReflectionProvider, CompactParameter, DIUniverseBasicLiftables, MacroSafeType}
@@ -24,7 +22,10 @@ abstract class FunctoidMacroBase(val c: blackbox.Context, idAnnotationFqn: Strin
 
   import c.universe.*
 
-  private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
+  implicit def tpe[A: c.WeakTypeTag]: c.Type
+
+//  private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
+  private final val logger = TrivialMacroLogger.make[this.type](c, "xxx")
 
   private val brp = new BaseReflectionProvider(c.universe, idAnnotationFqn)
   private def symbolToParam(p: Symbol): Parameter = {
@@ -34,9 +35,9 @@ abstract class FunctoidMacroBase(val c: blackbox.Context, idAnnotationFqn: Strin
     brp.typeToParameter(tpe.asInstanceOf[brp.u.Type], c.freshName)
   }
 
-  def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[Functoid[R]] = {
+  def impl[R: c.WeakTypeTag, Ftoid[_]](fun: Tree): c.Expr[Ftoid[R]] = {
     val associations = analyze(fun, weakTypeOf[R])
-    val result = generateProvider[R](associations, fun)
+    val result = generateProvider[R, Ftoid](associations, fun)
 
     logger.log(
       s"""DIKeyWrappedFunction info:
@@ -51,6 +52,35 @@ abstract class FunctoidMacroBase(val c: blackbox.Context, idAnnotationFqn: Strin
     )
 
     result
+  }
+
+  def generateProvider[R: c.WeakTypeTag, Ftoid[_]](parameters: List[Parameter], fun: Tree): c.Expr[Ftoid[R]] = {
+    val tools = new DIUniverseBasicLiftables(c)
+    import tools.liftableCompactParameter
+
+    val seqName = if (parameters.nonEmpty) TermName(c.freshName("seqAny")) else TermName("_")
+
+    val casts = parameters.indices.map(i => q"$seqName($i)")
+    val parametersNoByName = Liftable.liftList[Parameter].apply(parameters)
+
+    val retTpe = weakTypeOf[R]
+    val retTagTree = MacroSafeType.create(c.universe)(retTpe).tagTree.asInstanceOf[c.Tree]
+
+    c.Expr[Ftoid[R]] {
+      q"""{
+        val fun = $fun
+
+        new ${tpe[R]}(
+          new ${weakTypeOf[Provider.ProviderImpl[R]]}(
+            $parametersNoByName,
+            $retTagTree,
+            fun,
+            { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
+            ${symbolOf[ProviderType.Function.type].asClass.module},
+          )
+        )
+      }"""
+    }
   }
 
   def analyze(tree: Tree, ret: Type): List[Parameter] = tree match {
@@ -81,35 +111,6 @@ abstract class FunctoidMacroBase(val c: blackbox.Context, idAnnotationFqn: Strin
            |   argumentTree: ${showRaw(tree)}\n
            | Hint: Try appending _ to your method name""".stripMargin,
       )
-  }
-
-  def generateProvider[R: c.WeakTypeTag](parameters: List[Parameter], fun: Tree): c.Expr[Functoid[R]] = {
-    val tools = new DIUniverseBasicLiftables(c)
-    import tools.liftableCompactParameter
-
-    val seqName = if (parameters.nonEmpty) TermName(c.freshName("seqAny")) else TermName("_")
-
-    val casts = parameters.indices.map(i => q"$seqName($i)")
-    val parametersNoByName = Liftable.liftList[Parameter].apply(parameters)
-
-    val retTpe = weakTypeOf[R]
-    val retTagTree = MacroSafeType.create(c.universe)(retTpe).tagTree.asInstanceOf[c.Tree]
-
-    c.Expr[Functoid[R]] {
-      q"""{
-        val fun = $fun
-
-        new ${weakTypeOf[Functoid[R]]}(
-          new ${weakTypeOf[Provider.ProviderImpl[R]]}(
-            $parametersNoByName,
-            $retTagTree,
-            fun,
-            { ($seqName: _root_.scala.Seq[_root_.scala.Any]) => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
-            ${symbolOf[ProviderType.Function.type].asClass.module},
-          )
-        )
-      }"""
-    }
   }
 
   protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Parameter] = {
