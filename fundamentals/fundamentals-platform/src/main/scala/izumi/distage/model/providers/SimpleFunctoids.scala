@@ -7,6 +7,10 @@ import izumi.reflect.Tag
 private[providers] trait SimpleFunctoids[Ftoid[+_]] {
   protected def create[A](provider: Provider): Ftoid[A]
 
+  def pure[A: Tag](a: A): Ftoid[A] = lift(a)
+
+  def unit: Ftoid[Unit] = pure(())
+
   def identity[A: Tag]: Ftoid[A] = identityKey(DIKey.get[A]).asInstanceOf[Ftoid[A]]
 
   def lift[A: Tag](a: => A): Ftoid[A] = {

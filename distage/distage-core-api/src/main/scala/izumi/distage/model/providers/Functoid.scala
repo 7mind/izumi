@@ -1,11 +1,9 @@
 package izumi.distage.model.providers
 
-import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.distage.model.reflection.*
-import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.reflection.macros.FunctoidMacroMethods
-import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.reflect.Tag
+
+import scala.language.implicitConversions
 
 /**
   * A function that receives its arguments from DI object graph, including named instances via [[izumi.distage.model.definition.Id]] annotation.
@@ -75,15 +73,7 @@ object Functoid
   with SimpleFunctoids[Functoid]
   with SimpleDistageFunctoids
   with FunctoidLifecycleAdapters
-  with FunctoidConstructors {
-  implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
-    def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.returnTypeTag)
-  }
-
-  def pure[A: Tag](a: A): Functoid[A] = lift(a)
-
-  def unit: Functoid[Unit] = pure(())
-
+  with FunctoidConstructors
+  with FunctoidSyntax[Functoid] {
   override protected[providers] def create[A](provider: Provider): Functoid[A] = new Functoid[A](provider)
-
 }
