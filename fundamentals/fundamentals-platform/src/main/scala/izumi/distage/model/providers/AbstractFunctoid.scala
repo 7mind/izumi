@@ -93,3 +93,7 @@ trait AbstractFunctoid[+A, Self[+K] <: AbstractFunctoid[K, Self]] {
 
   def returnTypeTag: Tag[A @uncheckedVariance] = Tag(get.ret.closestClass, get.ret.tag)
 }
+
+final case class BaseFunctoid[+A](get: Provider) extends AbstractFunctoid[A, BaseFunctoid] {
+  override protected def create[B](provider: Provider): BaseFunctoid[B] = copy(get = provider)
+}
