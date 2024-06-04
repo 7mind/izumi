@@ -87,16 +87,3 @@ object Functoid
   override protected[providers] def create[A](provider: Provider): Functoid[A] = new Functoid[A](provider)
 
 }
-
-trait SimpleDistageFunctoids {
-  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): Functoid[Nothing] = {
-    Functoid.create[Nothing](
-      Provider.ProviderImpl(
-        parameters = Seq.empty,
-        ret = key.tpe,
-        fun = _ => throw new TODOBindingException(s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos),
-        providerType = ProviderType.Function,
-      )
-    )
-  }
-}
