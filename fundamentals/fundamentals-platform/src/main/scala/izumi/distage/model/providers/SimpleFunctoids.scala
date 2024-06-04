@@ -1,16 +1,16 @@
 package izumi.distage.model.providers
 
-import izumi.distage.model.exceptions.runtime.TODOBindingException
-import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.model.reflection.*
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.reflect.Tag
 
-private[providers] trait SimpleFunctoids {
-  def identity[A: Tag]: Functoid[A] = identityKey(DIKey.get[A]).asInstanceOf[Functoid[A]]
+private[providers] trait SimpleFunctoids[Ftoid[+_]] {
+  protected def create[A](provider: Provider): Ftoid[A]
 
-  def lift[A: Tag](a: => A): Functoid[A] = {
-    new Functoid[A](
+  def identity[A: Tag]: Ftoid[A] = identityKey(DIKey.get[A]).asInstanceOf[Ftoid[A]]
+
+  def lift[A: Tag](a: => A): Ftoid[A] = {
+    create[A](
       Provider.ProviderImpl[A](
         parameters = Seq.empty,
         ret = SafeType.get[A],
@@ -21,8 +21,8 @@ private[providers] trait SimpleFunctoids {
     )
   }
 
-  def singleton[A <: Singleton: Tag](a: A): Functoid[A] = {
-    new Functoid[A](
+  def singleton[A <: Singleton: Tag](a: A): Ftoid[A] = {
+    create[A](
       Provider.ProviderImpl[A](
         parameters = Seq.empty,
         ret = SafeType.get[A],
@@ -33,13 +33,13 @@ private[providers] trait SimpleFunctoids {
     )
   }
 
-  def single[A: Tag, B: Tag](f: A => B): Functoid[B] = {
+  def single[A: Tag, B: Tag](f: A => B): Ftoid[B] = {
     val key = DIKey.get[A]
     val tpe = key.tpe
     val retTpe = SafeType.get[B]
     val symbolInfo = firstParamSymbolInfo(tpe)
 
-    new Functoid[B](
+    create[B](
       Provider.ProviderImpl(
         parameters = Seq(LinkedParameter(symbolInfo, key)),
         ret = retTpe,
@@ -50,22 +50,11 @@ private[providers] trait SimpleFunctoids {
     )
   }
 
-  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): Functoid[Nothing] = {
-    new Functoid[Nothing](
-      Provider.ProviderImpl(
-        parameters = Seq.empty,
-        ret = key.tpe,
-        fun = _ => throw new TODOBindingException(s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos),
-        providerType = ProviderType.Function,
-      )
-    )
-  }
-
-  def identityKey(key: DIKey): Functoid[?] = {
+  def identityKey(key: DIKey): Ftoid[?] = {
     val tpe = key.tpe
     val symbolInfo = firstParamSymbolInfo(tpe)
 
-    new Functoid(
+    create(
       Provider.ProviderImpl(
         parameters = Seq(LinkedParameter(symbolInfo, key)),
         ret = tpe,

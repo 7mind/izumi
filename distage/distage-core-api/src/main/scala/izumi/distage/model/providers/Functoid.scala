@@ -1,7 +1,10 @@
 package izumi.distage.model.providers
 
+import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.distage.model.reflection.*
+import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.distage.reflection.macros.FunctoidMacroMethods
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.Tag
 
 /**
@@ -64,10 +67,15 @@ import izumi.reflect.Tag
   * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
   */
 final case class Functoid[+A](get: Provider) extends AbstractFunctoid[A, Functoid] {
-  override protected def create[B](provider: Provider): Functoid[B] = copy(get = provider)
+  override protected def create[B](provider: Provider): Functoid[B] = Functoid.create[B](provider)
 }
 
-object Functoid extends FunctoidMacroMethods[Functoid] with SimpleFunctoids with FunctoidLifecycleAdapters with FunctoidConstructors {
+object Functoid
+  extends FunctoidMacroMethods[Functoid]
+  with SimpleFunctoids[Functoid]
+  with SimpleDistageFunctoids
+  with FunctoidLifecycleAdapters
+  with FunctoidConstructors {
   implicit final class SyntaxMapSame[A](private val functoid: Functoid[A]) extends AnyVal {
     def mapSame(f: A => A): Functoid[A] = functoid.map(f)(functoid.returnTypeTag)
   }
@@ -76,4 +84,19 @@ object Functoid extends FunctoidMacroMethods[Functoid] with SimpleFunctoids with
 
   def unit: Functoid[Unit] = pure(())
 
+  override protected[providers] def create[A](provider: Provider): Functoid[A] = new Functoid[A](provider)
+
+}
+
+trait SimpleDistageFunctoids {
+  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): Functoid[Nothing] = {
+    Functoid.create[Nothing](
+      Provider.ProviderImpl(
+        parameters = Seq.empty,
+        ret = key.tpe,
+        fun = _ => throw new TODOBindingException(s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos),
+        providerType = ProviderType.Function,
+      )
+    )
+  }
 }
