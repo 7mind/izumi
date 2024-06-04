@@ -5,6 +5,8 @@ import izumi.distage.reflection.macros.universe.DIAnnotationMeta
 
 import scala.reflect.macros.blackbox
 
-class FunctoidMacro(ctx: blackbox.Context) extends FunctoidMacroBase(ctx, new DIAnnotationMeta(ctx.universe).idAnnotationFqn) {
+class FunctoidMacro(ctx: blackbox.Context) extends FunctoidMacroBase(ctx) {
   override implicit def tpe[A: c.WeakTypeTag]: c.Type = c.weakTypeOf[Functoid[A]]
+
+  override def idAnnotationFqn: String = new DIAnnotationMeta(ctx.universe).idAnnotationFqn
 }
