@@ -32,11 +32,8 @@ trait FunctoidMacroBase[Ftoid[+K] <: AbstractFunctoid[K, Ftoid]] {
     Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm)).asExprOf[Any]
   }
 
-  final class FunctoidMacroImpl[Q <: Quotes](using val qctx: Q) {
-
+  final class FunctoidMacroImpl[Q <: Quotes & Singleton](using val qctx: Q)(val paramsMacro: FunctoidParametersMacroBase[qctx.type]) {
     import qctx.reflect.*
-
-    private val paramsMacro = new FunctoidParametersMacro[qctx.type]()
 
     def make[R: Type](fun: Expr[AnyRef]): Expr[Ftoid[R]] = {
       val parameters = analyze(fun.asTerm)
@@ -106,12 +103,21 @@ trait FunctoidMacroBase[Ftoid[+K] <: AbstractFunctoid[K, Ftoid]] {
         // (Besides, lambda types are the ones specified by the caller, we should respect them)
         singleParamList.params.zip(methodRefParams).map {
           case (ValDef(name, tpeTree, _), mSym) =>
-            paramsMacro.makeParam(name, Left(tpeTree), Some(mSym), Right(mSym.owner.typeRef.memberType(mSym)))
+            paramsMacro.makeParam(
+              name,
+              Left(tpeTree),
+              Some(mSym),
+              Right(mSym.owner.typeRef.memberType(mSym)),
+            )
         }
       } else {
         singleParamList.params.map {
           case valDef @ ValDef(name, tpeTree, _) =>
-            paramsMacro.makeParam(name, Left(tpeTree), Some(valDef.symbol).filterNot(_.isNoSymbol))
+            paramsMacro.makeParam(
+              name,
+              Left(tpeTree),
+              Some(valDef.symbol).filterNot(_.isNoSymbol),
+            )
         }
       }
     }
