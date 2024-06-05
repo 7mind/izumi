@@ -162,7 +162,7 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
       case tpeKey: DIKey.TypeKey => tpeKey -> None
       case idKey @ DIKey.IdKey(tpe, id, m) => DIKey.TypeKey(tpe, m) -> Some(Identifier.fromIdContract(id)(idKey.idContract))
     }
-    val newProvider: Functoid[T] = f(Functoid.identityKey(key).asInstanceOf[Functoid[T]])
+    val newProvider: Functoid[T] = f(Functoid.identityKey[T](key))
     val binding = SingletonBinding(tpeKey, ImplDef.ProviderImpl(newProvider.get.ret, newProvider.get), Set.empty, pos.get.position, isMutator = true)
     val ref = _registered(new SingletonRef(binding))
     maybeId.foreach(ref `append` SetId(_))
@@ -415,7 +415,7 @@ object AbstractBindingDefDSL {
               }
             case _ =>
               // add an independent mutator instead of modifying the original functoid, if no original functoid is available
-              val newProvider = functoidModifier(Functoid.identityKey(b.key).asInstanceOf[Functoid[t]]).get
+              val newProvider = functoidModifier(Functoid.identityKey[t](b.key)).get
               val newRef = SingletonBinding(b.key, ImplDef.ProviderImpl(newProvider.ret, newProvider), Set.empty, b.origin, isMutator = true)
               refs = newRef :: refs
           }

@@ -54,11 +54,11 @@ private[providers] trait SimpleFunctoids[Ftoid[+_]] {
     )
   }
 
-  def identityKey(key: DIKey): Ftoid[?] = {
+  def identityKey[A](key: DIKey): Ftoid[A] = {
     val tpe = key.tpe
     val symbolInfo = firstParamSymbolInfo(tpe)
 
-    create(
+    create[A](
       Provider.ProviderImpl(
         parameters = Seq(LinkedParameter(symbolInfo, key)),
         ret = tpe,
