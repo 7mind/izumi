@@ -22,7 +22,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -59,6 +59,26 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -108,7 +128,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -126,7 +146,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -136,8 +156,12 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -173,14 +197,14 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -209,7 +233,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -246,6 +270,26 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -295,7 +339,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -313,7 +357,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -323,8 +367,12 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -360,14 +408,14 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -394,7 +442,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -431,6 +479,26 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -480,7 +548,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -498,7 +566,7 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -508,8 +576,12 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -545,14 +617,14 @@ lazy val `fundamentals-literals` = project.in(file("fundamentals/fundamentals-li
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -583,7 +655,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -620,6 +692,26 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -669,7 +761,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -687,7 +779,7 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -697,8 +789,12 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -734,14 +830,14 @@ lazy val `fundamentals-orphans` = project.in(file("fundamentals/fundamentals-orp
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -783,7 +879,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -820,6 +916,26 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -869,7 +985,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -887,7 +1003,7 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -897,8 +1013,12 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -934,14 +1054,14 @@ lazy val `fundamentals-language` = project.in(file("fundamentals/fundamentals-la
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -974,7 +1094,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1011,6 +1131,26 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -1060,7 +1200,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1078,7 +1218,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -1088,8 +1228,12 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1125,14 +1269,14 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -1175,7 +1319,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1212,6 +1356,26 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -1261,7 +1425,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1279,7 +1443,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -1289,8 +1453,12 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1326,14 +1494,14 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -1378,7 +1546,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1415,6 +1583,26 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -1464,7 +1652,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1482,7 +1670,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -1492,8 +1680,12 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1529,14 +1721,14 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -1580,7 +1772,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1617,6 +1809,26 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -1666,7 +1878,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1684,7 +1896,7 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -1694,8 +1906,12 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1731,14 +1947,14 @@ lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -1768,7 +1984,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1805,6 +2021,26 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -1854,7 +2090,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1872,7 +2108,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -1882,8 +2118,12 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -1919,14 +2159,14 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -1956,7 +2196,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -1993,6 +2233,26 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -2042,7 +2302,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2060,7 +2320,7 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -2070,8 +2330,12 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2107,14 +2371,14 @@ lazy val `distage-framework-api` = project.in(file("distage/distage-framework-ap
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -2151,7 +2415,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2188,6 +2452,26 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -2237,7 +2521,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2255,7 +2539,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -2265,8 +2549,12 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2302,14 +2590,14 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -2343,7 +2631,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2380,6 +2668,26 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -2429,7 +2737,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2447,7 +2755,7 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -2457,8 +2765,12 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2494,14 +2806,14 @@ lazy val `distage-extension-config` = project.in(file("distage/distage-extension
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -2534,7 +2846,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2571,6 +2883,26 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -2620,7 +2952,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2638,7 +2970,7 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -2648,8 +2980,12 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2685,14 +3021,14 @@ lazy val `distage-extension-logstage` = project.in(file("distage/distage-extensi
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -2730,7 +3066,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2767,6 +3103,26 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -2816,7 +3172,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2834,7 +3190,7 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -2844,8 +3200,12 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -2881,14 +3241,14 @@ lazy val `distage-extension-plugins` = project.in(file("distage/distage-extensio
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -2938,7 +3298,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -2975,6 +3335,26 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -3024,7 +3404,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3042,7 +3422,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -3052,8 +3432,12 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3089,14 +3473,14 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -3135,7 +3519,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3172,6 +3556,26 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -3221,7 +3625,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3239,7 +3643,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -3249,8 +3653,12 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3286,14 +3694,14 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -3322,7 +3730,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3359,6 +3767,26 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -3408,7 +3836,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3426,7 +3854,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -3436,8 +3864,12 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3473,14 +3905,14 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -3518,7 +3950,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3555,6 +3987,26 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -3604,7 +4056,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3622,7 +4074,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -3632,8 +4084,12 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3669,14 +4125,14 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -3706,7 +4162,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3743,6 +4199,26 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -3792,7 +4268,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3810,7 +4286,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -3820,8 +4296,12 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -3857,14 +4337,14 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -3900,7 +4380,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -3937,6 +4417,26 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -3986,7 +4486,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4004,7 +4504,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -4014,8 +4514,12 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4051,14 +4555,14 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -4093,7 +4597,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -4130,6 +4634,26 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -4179,7 +4703,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4197,7 +4721,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -4207,8 +4731,12 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4244,14 +4772,14 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -4281,7 +4809,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -4318,6 +4846,26 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -4367,7 +4915,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4385,7 +4933,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -4395,8 +4943,12 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4432,14 +4984,14 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -4473,7 +5025,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   .settings(
     crossScalaVersions := Seq(
       "3.4.1",
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -4510,6 +5062,26 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -4559,7 +5131,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4577,7 +5149,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -4587,8 +5159,12 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4624,14 +5200,14 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -4691,7 +5267,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.13.13",
+      "2.13.14",
       "2.12.19"
     ),
     scalaVersion := crossScalaVersions.value.head,
@@ -4728,6 +5304,26 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
       (Test / unmanagedSourceDirectories).value.flatMap {
         case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
         case _ => Seq.empty
       }
     },
@@ -4777,7 +5373,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4795,7 +5391,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -4805,8 +5401,12 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -4842,14 +5442,14 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",
@@ -4979,6 +5579,26 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         case _ => Seq.empty
       }
     },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.19") => Seq(
@@ -5025,7 +5645,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified"
       )
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5043,7 +5663,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Woctal-literal",
         "-Wvalue-discard",
         "-Wunused:_",
-        "-Wmacros:after",
+        "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
@@ -5053,8 +5673,12 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-language:3.4",
         "-release:8",
         "-Ykind-projector:underscores",
+        "-Yretain-trees",
         "-no-indent",
-        "-explain"
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wconf:msg=eta-expanded even though:silent"
       )
       case (_, _) => Seq.empty
     } },
@@ -5090,14 +5714,14 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
-      case (false, "2.13.13") => Seq(
+      case (false, "2.13.14") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.13") => Seq(
+      case (_, "2.13.14") => Seq(
         "-Xsource:3",
         "-Xmigration",
         "-Wconf:cat=scala3-migration:silent",

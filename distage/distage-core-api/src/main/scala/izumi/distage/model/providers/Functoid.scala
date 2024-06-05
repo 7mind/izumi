@@ -67,11 +67,11 @@ final case class Functoid[+A](get: Provider) extends AbstractFunctoid[A, Functoi
 }
 
 object Functoid
-  extends FunctoidMacroMethods[Functoid]
-  with SimpleFunctoids[Functoid]
+  extends SimpleFunctoids[Functoid]
   with SimpleFunctoidSyntax[Functoid]
   with SimpleDistageFunctoids
   with FunctoidLifecycleAdapters
+  with FunctoidMacroMethods
   with FunctoidConstructors {
   override protected[providers] def create[A](provider: Provider): Functoid[A] = new Functoid[A](provider)
 }
