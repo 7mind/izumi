@@ -2,6 +2,10 @@ package izumi.distage.reflection.macros.universe.basicuniverse
 
 import izumi.distage.reflection.macros.universe.basicuniverse
 
+import scala.collection.immutable
+
+
+
 object FriendlyAnnoTools {
   private def convertConst(c: Any): FriendlyAnnotationValue = {
     c match {
@@ -15,18 +19,21 @@ object FriendlyAnnoTools {
         FriendlyAnnotationValue.UnknownConst(v)
     }
   }
+
   def makeFriendly(u: scala.reflect.api.Universe)(anno: u.Annotation): FriendlyAnnotation = {
     import u.*
+    val extractor = new PortableNamedArg(u)
 
     val tpe = anno.tree.tpe.finalResultType
     val annoName = tpe.typeSymbol.fullName
     val paramTrees = anno.tree.children.tail
 
     val avals = if (tpe.typeSymbol.isJavaAnnotation) {
-      val pairs = paramTrees.map {
+      val pairs: immutable.List[(Option[String], FriendlyAnnotationValue)] = paramTrees.map {
         p =>
-          (p: @unchecked) match {
-            case NamedArg(Ident(TermName(name)), Literal(Constant(c))) =>
+          (p.asInstanceOf[extractor.u.TreeApi]: @unchecked) match {
+            case extractor.NArg((name, c)) =>
+              // case NamedArg(Ident(TermName(name)), Literal(Constant(c))) =>
               (Some(name), convertConst(c))
             case a =>
               (None, FriendlyAnnotationValue.UnknownConst(s"$a ${u.showRaw(a)}"))

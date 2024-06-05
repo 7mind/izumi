@@ -3,8 +3,6 @@ package izumi.distage.model.providers
 import izumi.distage.model.reflection.*
 import izumi.distage.reflection.macros.FunctoidMacroMethods
 
-import scala.language.implicitConversions
-
 /**
   * A function that receives its arguments from DI object graph, including named instances via [[izumi.distage.model.definition.Id]] annotation.
   *

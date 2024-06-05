@@ -1,7 +1,7 @@
 package izumi.distage.reflection.macros
 
 import izumi.distage.model.providers.Functoid
-import izumi.distage.reflection.macros.universe.DIAnnotationMeta
+import izumi.distage.reflection.macros.universe.{DIAnnotationMeta, FunctoidMacroBase}
 
 import scala.reflect.macros.blackbox
 

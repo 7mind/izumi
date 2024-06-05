@@ -1,4 +1,4 @@
-package izumi.distage.reflection.macros
+package izumi.distage.reflection.macros.universe
 
 import izumi.distage.model.reflection.Provider
 import izumi.distage.model.reflection.Provider.ProviderType
