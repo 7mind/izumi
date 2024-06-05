@@ -20,7 +20,7 @@ object FunctoidMacro extends FunctoidMacroBase[Functoid] {
       new Functoid[R](
         new ProviderImpl[R](
           ${ Expr.ofList(paramDefs) },
-          ${ generateSafeType[R, Q] },
+          ${ FunctoidMacroHelpers.generateSafeType[R, Q] },
           rawFn,
           (args: Seq[Any]) => ${ generateRawFnCall(paramDefs.size, 'rawFn, 'args) },
           ProviderType.Function,
