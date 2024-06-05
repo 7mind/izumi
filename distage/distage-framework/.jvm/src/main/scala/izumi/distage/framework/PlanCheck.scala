@@ -244,7 +244,7 @@ object PlanCheck {
       }
     }
 
-    private[this] def checkAnyApp[F[_]](
+    private def checkAnyApp[F[_]](
       planVerifier: PlanVerifier,
       excludedActivations: Set[NESet[AxisPoint]],
       checkConfig: Boolean,
@@ -309,7 +309,7 @@ object PlanCheck {
       final case class AllExcluding(excluded: Set[String]) extends RoleSelection
     }
 
-    private[this] def parseRoles(s: String): RoleSelection = {
+    private def parseRoles(s: String): RoleSelection = {
       val tokens = s.split(" ").iterator.filter(_.nonEmpty).toList
       tokens match {
         case "*" :: Nil =>
@@ -323,7 +323,7 @@ object PlanCheck {
       }
     }
 
-    private[this] def throwInvalidRoleSelectionError(s: String): Nothing = {
+    private def throwInvalidRoleSelectionError(s: String): Nothing = {
       throw new IllegalArgumentException(
         s"""Invalid role selection syntax in `$s`.
            |
@@ -336,17 +336,17 @@ object PlanCheck {
       )
     }
 
-    private[this] def parseActivations(s: String): Set[NESet[AxisPoint]] = {
+    private def parseActivations(s: String): Set[NESet[AxisPoint]] = {
       s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
           NESet `from` _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
         }.toSet
     }
 
-    private[this] def defaultLogger(): TrivialLogger = {
+    private def defaultLogger(): TrivialLogger = {
       TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.distage.plancheck`.name)
     }
 
-    @tailrec private[this] def cutoffMacroTrace(t: Throwable): Unit = {
+    @tailrec private def cutoffMacroTrace(t: Throwable): Unit = {
       val trace = t.getStackTrace
       val cutoffIdx = Some(trace.indexWhere(_.getClassName contains "scala.reflect.macros.runtime.JavaReflectionRuntimes$JavaReflectionResolvers")).filter(_ > 0)
       t.setStackTrace(cutoffIdx.fold(trace)(trace.take))
@@ -355,7 +355,7 @@ object PlanCheck {
       if (t.getCause ne null) cutoffMacroTrace(t.getCause)
     }
     // indirection for tailrec
-    private[this] def cutSuppressed(t: Throwable): Unit = cutoffMacroTrace(t)
+    private def cutSuppressed(t: Throwable): Unit = cutoffMacroTrace(t)
 
   }
 

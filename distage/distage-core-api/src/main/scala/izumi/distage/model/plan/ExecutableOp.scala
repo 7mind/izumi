@@ -138,7 +138,7 @@ object ExecutableOp {
   }
 
   @tailrec
-  private[this] def opInstanceType(op: ExecutableOp): SafeType = {
+  private def opInstanceType(op: ExecutableOp): SafeType = {
     op match {
       case w: WiringOp =>
         w.wiring.instanceType

@@ -115,7 +115,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
     })
   }
 
-  protected[this] final def roleAppBootModulePlanCheckOverrides(
+  protected final def roleAppBootModulePlanCheckOverrides(
     chosenRoles: RoleSelection,
     chosenConfigResource: Option[(ClassLoader, String)],
   ): ModuleDef = {
@@ -152,7 +152,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
         // keep original ConfigLoader
       }
 
-      private[this] def namePredicateRoleProvider(f: String => Boolean): Functoid[RoleProvider] = {
+      private def namePredicateRoleProvider(f: String => Boolean): Functoid[RoleProvider] = {
         // use Auto-Traits feature to override just the few specific methods of a class succinctly
         @impl trait NamePredicateRoleProvider extends RoleProvider.ReflectiveImpl {
           override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
@@ -167,7 +167,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
         TraitConstructor[NamePredicateRoleProvider]
       }
 
-      private[this] def specificResourceConfigLoader(classLoader: ClassLoader, resourceName: String): ConfigLoader = {
+      private def specificResourceConfigLoader(classLoader: ClassLoader, resourceName: String): ConfigLoader = {
         (_: String) =>
           val cfg = ConfigFactory.parseResources(classLoader, resourceName).resolve()
           if (cfg.origin().resource() eq null) {

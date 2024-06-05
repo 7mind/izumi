@@ -58,8 +58,8 @@ object ContainerNetworkDef {
   ) extends Lifecycle.Basic[F, ContainerNetwork[T]] {
     import client.rawClient
 
-    private[this] val prefix: String = prefixName.camelToUnderscores.replace("$", "")
-    private[this] val networkLabels: Map[String, String] = Map(
+    private val prefix: String = prefixName.camelToUnderscores.replace("$", "")
+    private val networkLabels: Map[String, String] = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       s"${DockerConst.Labels.networkDriverPrefix}.${config.driver}" -> true.toString,
       DockerConst.Labels.namePrefixLabel -> prefix,
@@ -116,7 +116,7 @@ object ContainerNetworkDef {
       }
     }
 
-    private[this] def createNewRandomizedNetwork(): F[ContainerNetwork[T]] = {
+    private def createNewRandomizedNetwork(): F[ContainerNetwork[T]] = {
       F.maybeSuspend {
         val name = config.name.getOrElse(s"$prefix-${UUID.randomUUID().toString.take(8)}")
         logger.info(s"Going to create new ${prefix -> "network"}->$name")
@@ -130,7 +130,7 @@ object ContainerNetworkDef {
       }
     }
 
-    private[this] def integrationCheckHack[A](f: => F[A]): F[A] = {
+    private def integrationCheckHack[A](f: => F[A]): F[A] = {
       // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
       F.definitelyRecoverUnsafeIgnoreTrace(f) {
         (c: Throwable) =>

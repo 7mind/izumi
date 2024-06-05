@@ -44,7 +44,7 @@ object BindingFormatter {
       }
     }
 
-    private[this] def formatTags(tags: Set[BindingTag]) = {
+    private def formatTags(tags: Set[BindingTag]) = {
       if (tags.isEmpty) "" else s".tagged($tags)"
     }
   }

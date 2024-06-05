@@ -300,6 +300,6 @@ trait Injector[F[_]] extends Planner with Producer {
   def providedKeys: Set[DIKey]
   def providedEnvironment: InjectorProvidedEnv
 
-  protected[this] implicit def tagK: TagK[F]
-  protected[this] implicit def F: QuasiIO[F]
+  protected implicit def tagK: TagK[F]
+  protected implicit def F: QuasiIO[F]
 }

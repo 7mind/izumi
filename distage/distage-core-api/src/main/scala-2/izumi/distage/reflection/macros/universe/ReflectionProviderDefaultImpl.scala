@@ -23,7 +23,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   private lazy val idAnnotationFqn = new DIAnnotationMeta(u.u).idAnnotationFqn
   private lazy val brp = new BaseReflectionProvider(u.ctx.universe, idAnnotationFqn)
 
-  private[this] object With {
+  private object With {
     def unapply(ann: Annotation): Option[TypeNative] = {
       ann.tree.tpe.typeArgs.headOption
     }
@@ -52,7 +52,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     selectConstructorArguments(tpe).toList.flatten.map(_.map(parameterToAssociation))
   }
 
-  private[this] def mkConstructorWiring(factoryMethod: SymbNative, tpe: TypeNative): MacroWiring.MacroSingletonWiring = {
+  private def mkConstructorWiring(factoryMethod: SymbNative, tpe: TypeNative): MacroWiring.MacroSingletonWiring = {
     def getPrefix(tpe: TypeNative): Option[MacroDIKey] = {
       if (tpe.typeSymbol.isStatic) {
         None
@@ -98,7 +98,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def resultOfFactoryMethod(symbolInfo: MacroSymbolInfo): TypeNative = {
+  private def resultOfFactoryMethod(symbolInfo: MacroSymbolInfo): TypeNative = {
     symbolInfo.findUniqueAnnotation(typeOfWithAnnotation) match {
       case Some(With(tpe)) =>
         tpe
@@ -107,7 +107,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def traitMethods(tpe: TypeNative): List[Association.AbstractMethod] = {
+  private def traitMethods(tpe: TypeNative): List[Association.AbstractMethod] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
     val declaredAbstractMethods = tpe.members.sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
       .filter(isWireableMethod)
@@ -153,20 +153,20 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     MacroWiring.Factory.FactoryMethod(factoryMethodSymb, resultTypeWiring, alreadyInSignature)
   }
 
-  private[this] def methodToAssociation(definingClass: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
+  private def methodToAssociation(definingClass: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
     val methodSymb = MacroSymbolInfo.Runtime(method, definingClass, wasGeneric = false)
     Association.AbstractMethod(methodSymb, brp.tpeFromSymbol(methodSymb), brp.keyFromSymbol(methodSymb))
   }
 
-  private[this] object ConcreteSymbol {
+  private object ConcreteSymbol {
     def unapply(arg: TypeNative): Option[TypeNative] = Some(arg).filter(isConcrete)
   }
 
-  private[this] object AbstractSymbol {
+  private object AbstractSymbol {
     def unapply(arg: TypeNative): Option[TypeNative] = Some(arg).filter(isWireableAbstract)
   }
 
-  private[this] object FactorySymbol {
+  private object FactorySymbol {
     def unapply(arg: TypeNative): Option[(List[SymbNative], List[MethodSymbNative])] = {
       Some(arg)
         .filter(isFactory)
@@ -175,7 +175,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   // symbolintrospector
-  private[this] def selectConstructorArguments(tpe: TypeNative): Option[List[List[MacroSymbolInfo]]] = {
+  private def selectConstructorArguments(tpe: TypeNative): Option[List[List[MacroSymbolInfo]]] = {
     selectConstructorMethod(tpe).map {
       selectedConstructor =>
         val originalParamListTypes = selectedConstructor.paramLists.map(_.map(_.typeSignature))
@@ -240,11 +240,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def isWireableMethod(decl: SymbNative): Boolean = {
+  private def isWireableMethod(decl: SymbNative): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && decl.owner != u.u.definitions.AnyClass && decl.asMethod.paramLists.isEmpty
   }
 
-  private[this] def isFactoryMethod(decl: SymbNative): Boolean = {
+  private def isFactoryMethod(decl: SymbNative): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && decl.owner != u.u.definitions.AnyClass
   }
 

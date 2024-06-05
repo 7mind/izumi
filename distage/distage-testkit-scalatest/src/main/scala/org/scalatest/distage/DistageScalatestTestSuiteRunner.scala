@@ -153,7 +153,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
   // initialize status early, so that runner can set it to `true` even before this test is discovered
   // by scalatest, if it was already executed by that time
-  private[this] val status: StatefulStatus = DistageTestsRegistrySingleton.registerStatus[F](suiteId)
+  private val status: StatefulStatus = DistageTestsRegistrySingleton.registerStatus[F](suiteId)
 
   override protected final def runNestedSuites(args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTests(testName: Option[String], args: Args): Status = throw new UnsupportedOperationException

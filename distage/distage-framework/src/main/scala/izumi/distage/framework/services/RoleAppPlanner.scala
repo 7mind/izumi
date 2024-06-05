@@ -39,7 +39,7 @@ object RoleAppPlanner {
   )*/
     extends RoleAppPlanner { self =>
 
-    private[this] val runtimeGcRoots: Set[DIKey] = Set(
+    private val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[QuasiIORunner[F]],
       DIKey.get[QuasiIO[F]],
       DIKey.get[QuasiAsync[F]],

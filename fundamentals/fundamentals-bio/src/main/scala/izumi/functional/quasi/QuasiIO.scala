@@ -166,11 +166,11 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     override def fail[A](t: => Throwable): Identity[A] = throw t
     override def traverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = l.iterator.map(f).toList
     override def traverse_[A](l: Iterable[A])(f: A => Identity[Unit]): Identity[Unit] = l.foreach(f)
-    @inline private[this] def TryWithFatal[A](r: => A): Try[A] = {
+    @inline private def TryWithFatal[A](r: => A): Try[A] = {
       try Success(r)
       catch { case t: Throwable => Failure(t) }
     }
-    @inline private[this] def TryNonFatal[A](r: => A): Try[A] = Try(r)
+    @inline private def TryNonFatal[A](r: => A): Try[A] = Try(r)
   }
 
 }

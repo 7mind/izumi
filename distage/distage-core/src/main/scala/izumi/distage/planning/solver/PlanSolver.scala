@@ -216,5 +216,5 @@ object PlanSolver {
 
   }
 
-  private[this] final val enableDebugVerify = DebugProperties.`izumi.distage.debug.verify-all`.boolValue(false)
+  private final val enableDebugVerify = DebugProperties.`izumi.distage.debug.verify-all`.boolValue(false)
 }

@@ -58,8 +58,8 @@ object BootstrapLocator {
     resource.unsafeGet().throwOnFailure()
   }
 
-  private[this] final val mirrorProvider = MirrorProvider.Impl
-  private[this] final val fullStackTraces = izumi.distage.DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
+  private final val mirrorProvider = MirrorProvider.Impl
+  private final val fullStackTraces = izumi.distage.DebugProperties.`izumi.distage.interpreter.full-stacktraces`.boolValue(true)
 
   private final val bootstrapPlanner: Planner = {
     val bootstrapObserver = new PlanningObserverAggregate(Set.empty)

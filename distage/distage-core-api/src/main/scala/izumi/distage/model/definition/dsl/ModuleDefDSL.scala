@@ -85,13 +85,13 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
   override final def iterator: Iterator[Binding] = freezeIterator()
   override final def keysIterator: Iterator[DIKey] = freezeIterator().map(_.key)
 
-  private[this] final def freeze(): Set[Binding] = {
+  private final def freeze(): Set[Binding] = {
     HashSet.newBuilder
       .++= {
         freezeIterator()
       }.result()
   }
-  private[this] final def freezeIterator(): Iterator[Binding] = {
+  private final def freezeIterator(): Iterator[Binding] = {
     val frozenOuterTags = frozenTags
 
     val bindingsWithGlobalTags = frozenState.map(_.addTags(frozenOuterTags))
@@ -327,8 +327,8 @@ object ModuleDefDSL {
       bind(ImplDef.ProviderImpl(provider.ret, provider))
     }
 
-    protected[this] def bind(impl: ImplDef): AfterBind
-    protected[this] def key: DIKey
+    protected def bind(impl: ImplDef): AfterBind
+    protected def key: DIKey
   }
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
@@ -480,8 +480,8 @@ object ModuleDefDSL {
     final def weakSet[I <: Set[? <: T]: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true), pos)
 
-    protected[this] def multiSetAdd(newImpl: ImplDef, pos: CodePositionMaterializer): AfterMultiAdd
-    protected[this] def appendElement(newImpl: ImplDef, pos: CodePositionMaterializer): AfterAdd
+    protected def multiSetAdd(newImpl: ImplDef, pos: CodePositionMaterializer): AfterMultiAdd
+    protected def appendElement(newImpl: ImplDef, pos: CodePositionMaterializer): AfterAdd
   }
 
   /** Workaround for https://github.com/lampepfl/dotty/issues/16406#issuecomment-1712058227 */
@@ -655,7 +655,7 @@ object ModuleDefDSL {
 
   }
 
-  @inline private[this] def provideZEnvLifecycle[R, E, A](lifecycle: Lifecycle[ZIO[R, E, _], A], zenv: ZEnvironment[R]): Lifecycle[ZIO[Any, E, _], A] = {
+  @inline private def provideZEnvLifecycle[R, E, A](lifecycle: Lifecycle[ZIO[R, E, _], A], zenv: ZEnvironment[R]): Lifecycle[ZIO[Any, E, _], A] = {
     lifecycle.mapK[ZIO[R, E, _], ZIO[Any, E, _]](Morphism1(_.provideEnvironment(zenv)))
   }
 
@@ -698,11 +698,11 @@ object ModuleDefDSL {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key))
     }
 
-    override protected[this] def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
+    override protected def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_))
     }
 
-    override protected[this] def toSame: SingletonRef => MakeDSL[T] = {
+    override protected def toSame: SingletonRef => MakeDSL[T] = {
       new MakeDSL[T](_, key)
     }
 
@@ -714,11 +714,11 @@ object ModuleDefDSL {
   ) extends MakeDSLMutBase[T, MakeNamedDSL[T]]
     with MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] {
 
-    override protected[this] def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
+    override protected def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_))
     }
 
-    override protected[this] def toSame: SingletonRef => MakeNamedDSL[T] = {
+    override protected def toSame: SingletonRef => MakeNamedDSL[T] = {
       new MakeNamedDSL[T](_, key)
     }
 
@@ -737,7 +737,7 @@ object ModuleDefDSL {
       addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_))
     }
 
-    override protected[this] def toSame: SingletonRef => MakeDSLUnnamedAfterFrom[T] = {
+    override protected def toSame: SingletonRef => MakeDSLUnnamedAfterFrom[T] = {
       new MakeDSLUnnamedAfterFrom[T](_)
     }
 
@@ -746,14 +746,14 @@ object ModuleDefDSL {
   final class MakeDSLNamedAfterFrom[T](
     override protected val mutableState: SingletonRef
   ) extends MakeDSLMutBase[T, MakeDSLNamedAfterFrom[T]] {
-    override protected[this] def toSame: SingletonRef => MakeDSLNamedAfterFrom[T] = {
+    override protected def toSame: SingletonRef => MakeDSLNamedAfterFrom[T] = {
       new MakeDSLNamedAfterFrom[T](_)
     }
   }
 
   sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] extends Any with AddDependencyDSL[T, Self] {
-    protected[this] def mutableState: SingletonRef
-    protected[this] def toSame: SingletonRef => Self
+    protected def mutableState: SingletonRef
+    protected def toSame: SingletonRef => Self
 
     final def tagged(tags: BindingTag*): Self = {
       addOp(AddTags(tags.toSet))(toSame)
@@ -775,11 +775,11 @@ object ModuleDefDSL {
       addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(toSame)
     }
 
-    protected[this] final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
+    protected final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
       newState(mutableState.append(op))
     }
 
-    override protected[this] def _modifyBy(f: Functoid[T] => Functoid[T]): Self = modifyBy(f)
+    override protected def _modifyBy(f: Functoid[T] => Functoid[T]): Self = modifyBy(f)
 
   }
 
@@ -806,7 +806,7 @@ object ModuleDefDSL {
       addOp(ElementAddTags(tags.toSet))
     }
 
-    private[this] def addOp(op: SetElementInstruction): SetElementDSL[T] = {
+    private def addOp(op: SetElementInstruction): SetElementDSL[T] = {
       val newState = mutableCursor.append(op)
       new SetElementDSL[T](mutableState, newState)
     }
@@ -820,25 +820,25 @@ object ModuleDefDSL {
     def tagged(tags: BindingTag*): MultiSetElementDSL[T] =
       addOp(MultiAddTags(tags.toSet))
 
-    private[this] def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
+    private def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
       val newState = mutableCursor.append(op)
       new MultiSetElementDSL[T](mutableState, newState)
     }
   }
 
   sealed trait SetDSLMutBase[T] extends SetDSLBase[T, SetElementDSL[T], MultiSetElementDSL[T]] {
-    protected[this] def mutableState: SetRef
+    protected def mutableState: SetRef
 
-    protected[this] final def addOp[R](op: SetInstruction)(nextState: SetRef => R): R = {
+    protected final def addOp[R](op: SetInstruction)(nextState: SetRef => R): R = {
       nextState(mutableState.appendOp(op))
     }
 
-    override protected[this] final def appendElement(newElement: ImplDef, pos: CodePositionMaterializer): SetElementDSL[T] = {
+    override protected final def appendElement(newElement: ImplDef, pos: CodePositionMaterializer): SetElementDSL[T] = {
       val mutableCursor = new SetElementRef(newElement, pos.get.position)
       new SetElementDSL[T](mutableState.appendElem(mutableCursor), mutableCursor)
     }
 
-    override protected[this] final def multiSetAdd(newElements: ImplDef, pos: CodePositionMaterializer): MultiSetElementDSL[T] = {
+    override protected final def multiSetAdd(newElements: ImplDef, pos: CodePositionMaterializer): MultiSetElementDSL[T] = {
       val mutableCursor = new MultiSetElementRef(newElements, pos.get.position)
       new MultiSetElementDSL[T](mutableState.appendMultiElem(mutableCursor), mutableCursor)
     }

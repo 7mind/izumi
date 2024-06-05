@@ -28,9 +28,9 @@ sealed abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
   suitesCounter: AtomicInteger
 )(implicit F: QuasiIO[F]
 ) extends Spec1[F] {
-  private[this] val maxSuites = 1
-  private[this] val maxTests = 2
-  private[this] val testsCounter = new AtomicInteger(0)
+  private val maxSuites = 1
+  private val maxTests = 2
+  private val testsCounter = new AtomicInteger(0)
 
   override protected def config: TestConfig = {
     super.config.copy(
@@ -43,7 +43,7 @@ sealed abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
     )
   }
 
-  private[this] def checkCounters: QuasiTemporal[F] => F[Unit] = {
+  private def checkCounters: QuasiTemporal[F] => F[Unit] = {
     FT =>
       F.suspendF {
         val testsCounterVal = testsCounter.addAndGet(1)

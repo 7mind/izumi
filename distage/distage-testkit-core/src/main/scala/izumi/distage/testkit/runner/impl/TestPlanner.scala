@@ -227,7 +227,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private[this] def prepareTestEnv(
+  private def prepareTestEnv(
     envExecutionParams: EnvExecutionParams,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
@@ -348,7 +348,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private[this] def prepareSharedPlan(
+  private def prepareSharedPlan(
     envKeys: Set[DIKey],
     runtimeKeys: Set[DIKey],
     memoizationRoots: Set[DIKey],

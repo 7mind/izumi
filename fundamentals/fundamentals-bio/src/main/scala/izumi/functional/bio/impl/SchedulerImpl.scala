@@ -24,7 +24,7 @@ open class SchedulerImpl[F[+_, +_]: Temporal2](implicit clock: Clock2[F]) extend
     eff.catchAll(err => loop(err, policy.action)(orElse)(eff.catchAll))
   }
 
-  protected[this] def loop[E, S, A, B](
+  protected def loop[E, S, A, B](
     in: A,
     makeDecision: RetryFunction[F, A, S],
   )(stopper: A => F[E, B]

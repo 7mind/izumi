@@ -171,7 +171,7 @@ object PlanCheckMaterializer {
       }
     }
 
-    private[this] def instantiateObject[T](u: Universe)(implicit tpe: u.WeakTypeTag[T]): T = {
+    private def instantiateObject[T](u: Universe)(implicit tpe: u.WeakTypeTag[T]): T = {
       val symbol = tpe.tpe.erasure.typeSymbol
       if (symbol.owner.isPackage || symbol.owner.isPackageClass) {
         val className = s"${symbol.fullName}$$"

@@ -63,7 +63,7 @@ object BindingTranslator {
       }
     }
 
-    private[this] def provisionSingleton[Err](handler: SubcontextHandler[Err], binding: Binding.ImplBinding): Either[Err, Seq[InstantiationOp]] = {
+    private def provisionSingleton[Err](handler: SubcontextHandler[Err], binding: Binding.ImplBinding): Either[Err, Seq[InstantiationOp]] = {
       val target = binding.key
       for {
         wiring <- implToWiring(handler, binding)
@@ -72,7 +72,7 @@ object BindingTranslator {
       }
     }
 
-    private[this] def wiringToInstantiationOp(target: DIKey, binding: Binding, wiring: Wiring): Seq[InstantiationOp] = {
+    private def wiringToInstantiationOp(target: DIKey, binding: Binding, wiring: Wiring): Seq[InstantiationOp] = {
       wiring match {
         case w: SingletonWiring =>
           Seq(pureWiringToWiringOp(target, binding, w))
@@ -91,7 +91,7 @@ object BindingTranslator {
       }
     }
 
-    private[this] def pureWiringToWiringOp(target: DIKey, binding: Binding, wiring: SingletonWiring): WiringOp = {
+    private def pureWiringToWiringOp(target: DIKey, binding: Binding, wiring: SingletonWiring): WiringOp = {
       val userBinding = OperationOrigin.UserBinding(binding)
       wiring match {
         case w: Function =>
@@ -110,7 +110,7 @@ object BindingTranslator {
       }
     }
 
-    private[this] def implToWiring[Err](handler: SubcontextHandler[Err], binding: Binding.ImplBinding): Either[Err, Wiring] = {
+    private def implToWiring[Err](handler: SubcontextHandler[Err], binding: Binding.ImplBinding): Either[Err, Wiring] = {
       binding.implementation match {
         case d: ImplDef.DirectImplDef =>
           directImplToPureWiring(handler, binding, d)
@@ -131,7 +131,7 @@ object BindingTranslator {
       }
     }
 
-    private[this] def directImplToPureWiring[Err](
+    private def directImplToPureWiring[Err](
       handler: SubcontextHandler[Err],
       binding: Binding,
       implementation: ImplDef.DirectImplDef,

@@ -140,7 +140,7 @@ object DIError {
           }.toList.niceList()
     }
   }
-  protected[this] def conflictingAxisTagsHint(
+  protected def conflictingAxisTagsHint(
     key: MutSel[DIKey],
     activeChoices: ActivationChoices,
     ops: Set[OperationOrigin],

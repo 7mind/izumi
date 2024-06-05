@@ -15,7 +15,7 @@ import izumi.logstage.api.IzLogger
 trait ActivationParser extends AbstractActivationParser {}
 
 object ActivationParser {
-  private[this] final val syspropWarnUnsetActivations = DebugProperties.`izumi.distage.roles.activation.warn-unset`.boolValue(true)
+  private final val syspropWarnUnsetActivations = DebugProperties.`izumi.distage.roles.activation.warn-unset`.boolValue(true)
 
   class Impl(
     parser: RoleAppActivationParser,

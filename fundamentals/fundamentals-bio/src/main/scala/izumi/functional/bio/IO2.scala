@@ -52,7 +52,7 @@ trait IO2[F[+_, +_]] extends Panic2[F] {
     syncThrowable(effect.get)
   }
 
-  override protected[this] def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](
+  override protected def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](
     col: ColR[A]
   )(effect: A => F[E, B],
     onLeft: E => IterableOnce[E1],

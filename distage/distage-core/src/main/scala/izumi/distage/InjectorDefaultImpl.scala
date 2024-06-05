@@ -29,10 +29,10 @@ final class InjectorDefaultImpl[F[_]](
   override val tagK: TagK[F],
 ) extends Injector[F] {
 
-  private[this] val planner: Planner = bootstrapLocator.get[Planner]
-  private[this] val interpreter: PlanInterpreter = bootstrapLocator.get[PlanInterpreter]
+  private val planner: Planner = bootstrapLocator.get[Planner]
+  private val interpreter: PlanInterpreter = bootstrapLocator.get[PlanInterpreter]
   // passed-through into `Bootloader`
-  private[this] val bsModule: BootstrapModule = bootstrapLocator.get[BootstrapModule]
+  private val bsModule: BootstrapModule = bootstrapLocator.get[BootstrapModule]
 
   override def plan(input: PlannerInput): Either[NEList[DIError], Plan] = {
     planner.plan(addSelfInfo(input))
@@ -54,7 +54,7 @@ final class InjectorDefaultImpl[F[_]](
   }
 
   // TODO: probably this should be a part of the Planner itself
-  private[this] def addSelfInfo(input: PlannerInput): PlannerInput = {
+  private def addSelfInfo(input: PlannerInput): PlannerInput = {
     val selfReflectionModule = InjectorDefaultImpl.selfReflectionModule(parentFactory, bsModule, defaultModule, input.activation, input)
 
     input.copy(
@@ -114,7 +114,7 @@ object InjectorDefaultImpl {
     }
   }
 
-  private[this] lazy val selfReflectionKeys: Set[DIKey] = {
+  private lazy val selfReflectionKeys: Set[DIKey] = {
     // passing nulls as values to prevent key list getting out of sync
     val reflectModule = selfReflectionModule(null, null, null, null.asInstanceOf[Activation], null)
     val onlyKeys = reflectModule.keys

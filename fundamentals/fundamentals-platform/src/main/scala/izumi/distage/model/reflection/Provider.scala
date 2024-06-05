@@ -47,7 +47,7 @@ trait Provider {
 
   if (providerType eq ProviderType.Function) {} else {}
 
-  protected[this] def verifyArgs(refs: Seq[GenericTypedRef[?]]): Seq[Any] = {
+  protected def verifyArgs(refs: Seq[GenericTypedRef[?]]): Seq[Any] = {
     val (newArgs, types, typesCmp) = parameters
       .zip(refs).map {
         case (param, ref) =>

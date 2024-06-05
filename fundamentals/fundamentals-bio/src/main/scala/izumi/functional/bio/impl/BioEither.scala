@@ -104,7 +104,7 @@ open class BioEither extends Error2[Either] {
     Right((bad.result(), good.result()))
   }
 
-  override protected[this] def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](
+  override protected def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](
     col: ColR[A]
   )(effect: A => Either[E, B],
     onLeft: E => IterableOnce[E1],

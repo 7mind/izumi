@@ -229,7 +229,7 @@ class GraphQueries(
       .iterator
   }
 
-  protected[this] def getAxisPoints(b: Binding): Set[AxisPoint] = {
+  protected def getAxisPoints(b: Binding): Set[AxisPoint] = {
     b.tags.collect {
       case AxisTag(axisValue) =>
         axisValue.toAxisPoint

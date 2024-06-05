@@ -32,7 +32,7 @@ class BaseReflectionProvider(val u: scala.reflect.api.Universe, idAnnotationFqn:
     withIdKeyFromAnnotation(parameterSymbol, typeKey)
   }
 
-  private[this] def withIdKeyFromAnnotation(parameterSymbol: MacroSymbolInfoCompact, typeKey: MacroDIKey.TypeKey): MacroDIKey.BasicKey = {
+  private def withIdKeyFromAnnotation(parameterSymbol: MacroSymbolInfoCompact, typeKey: MacroDIKey.TypeKey): MacroDIKey.BasicKey = {
     val maybeDistageName = parameterSymbol.findUniqueFriendlyAnno(a => a.fqn == idAnnotationFqn).map {
       value =>
         value.params match {

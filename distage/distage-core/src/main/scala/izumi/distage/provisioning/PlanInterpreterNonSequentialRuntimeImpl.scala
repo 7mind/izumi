@@ -55,7 +55,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       }).map(_.left.map(_.fail))
   }
 
-  private[this] def instantiateImpl[F[_]: TagK](
+  private def instantiateImpl[F[_]: TagK](
     plan: Plan,
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
@@ -136,7 +136,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     F.pure(Left(ctx.makeFailure(failed, fullStackTraces)))
   }
 
-  private[this] def integrationPlan[F[_]: TagK](
+  private def integrationPlan[F[_]: TagK](
     state: TraversalState,
     ctx: ProvisionMutable[F],
   )(implicit F: QuasiIO[F]
@@ -160,7 +160,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def prioritize(ops: Iterable[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = ArraySeq.unsafeWrapArray {
+  private def prioritize(ops: Iterable[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = ArraySeq.unsafeWrapArray {
     ops.toArray.sortBy {
       op =>
         val repr = op.target.tpe.tag.repr
@@ -198,7 +198,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def addIntegrationCheckResult[F[_]: TagK](
+  private def addIntegrationCheckResult[F[_]: TagK](
     active: ProvisionMutable[F],
     integrationCheckFType: SafeType,
     result: TimedResult.Success,
@@ -229,7 +229,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def runIfIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
+  private def runIfIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
     op match {
       case i: NewObjectOp.CurrentContextInstance =>
         if (i.implType <:< nullType) {
@@ -248,7 +248,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def checkOrFail[F[_]: TagK](key: DIKey, resource: Any)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
+  private def checkOrFail[F[_]: TagK](key: DIKey, resource: Any)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
     F.suspendF {
       resource
         .asInstanceOf[IntegrationCheck[F]]
@@ -262,7 +262,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def verifyEffectType[F[_]: TagK](
+  private def verifyEffectType[F[_]: TagK](
     ops: Iterable[ExecutableOp]
   )(implicit F: QuasiIO[F]
   ): F[Either[Iterable[IncompatibleEffectTypes], Unit]] = {

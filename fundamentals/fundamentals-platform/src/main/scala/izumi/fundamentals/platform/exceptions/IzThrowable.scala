@@ -67,7 +67,7 @@ final class IzThrowableStackTop(t: Throwable, acceptedPackages: Set[String]) {
     t
   }
 
-  private[this] def stackTop(throwable: Throwable): Option[StackTraceElement] = {
+  private def stackTop(throwable: Throwable): Option[StackTraceElement] = {
     throwable.getStackTrace.find {
       frame =>
         !frame.isNativeMethod && acceptedPackages.exists(frame.getClassName.startsWith)

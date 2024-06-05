@@ -181,11 +181,11 @@ class ForwardingRefResolverDefaultImpl(
     }
   }
 
-  private[this] def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
+  private def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
     test(toPreds, Set.empty, key, key)
   }
 
-  private[this] def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
+  private def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
     val deps = toPreds.getOrElse(toTest, Set.empty)
 
     if (deps.contains(needle)) {

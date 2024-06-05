@@ -82,7 +82,7 @@ trait DIConfigReader[A] extends AbstractDIConfigReader[A] {
     }
   }
 
-  private[this] def unpackResult[T: Tag](config: DistageConfigImpl, path: String)(t: => Try[T]): T = {
+  private def unpackResult[T: Tag](config: DistageConfigImpl, path: String)(t: => Try[T]): T = {
     Try(t).flatten match {
       case Failure(exception) =>
         throw new DIConfigReadException(

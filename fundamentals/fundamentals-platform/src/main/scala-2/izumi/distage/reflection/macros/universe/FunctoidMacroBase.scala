@@ -115,7 +115,7 @@ abstract class FunctoidMacroBase(val c: blackbox.Context) {
       )
   }
 
-  protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Parameter] = {
+  protected def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Parameter] = {
 
     val lambdaParams = lambdaArgs.map(symbolToParam)
     val methodReferenceParams = body match {
@@ -173,7 +173,7 @@ abstract class FunctoidMacroBase(val c: blackbox.Context) {
     }
   }
 
-  protected[this] def extractMethodReferenceParams(symbol: Symbol): List[Symbol] = {
+  protected def extractMethodReferenceParams(symbol: Symbol): List[Symbol] = {
     val isSyntheticCaseClassApply = {
       symbol.name.decodedName.toString == "apply" &&
       symbol.isSynthetic &&
@@ -193,11 +193,11 @@ abstract class FunctoidMacroBase(val c: blackbox.Context) {
     method.typeSignature.paramLists.flatten
   }
 
-  protected[this] def analyzeValRef(sig: Type): List[Parameter] = {
+  protected def analyzeValRef(sig: Type): List[Parameter] = {
     widenFunctionObject(sig).typeArgs.init.map(typeToParam)
   }
 
-  protected[this] def widenFunctionObject(sig: Type): Type = {
+  protected def widenFunctionObject(sig: Type): Type = {
     (sig match {
       case s: SingleTypeApi =>
         sig.baseType(s.sym.typeSignature.baseClasses.find(definitions.FunctionClass.seq.contains(_)).get)

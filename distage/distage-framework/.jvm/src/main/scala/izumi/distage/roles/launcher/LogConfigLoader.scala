@@ -65,7 +65,7 @@ object LogConfigLoader {
       DeclarativeLoggerConfig(format, options, levels, cliOptions.level, jul)
     }
 
-    private[this] def readConfig(config: AppConfig): SinksConfig = {
+    private def readConfig(config: AppConfig): SinksConfig = {
       Try(config.config.getConfig("logger")).toEither.left
         .map(_ => Message("No `logger` section in config. Using defaults."))
         .flatMap {

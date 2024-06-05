@@ -10,11 +10,11 @@ class ConstructorSelector(val u: scala.reflect.api.Universe) {
     }
   }
 
-  @inline private[this] def findConstructor(tpe: u.Type): scala.reflect.api.Universe#Symbol = {
+  @inline private def findConstructor(tpe: u.Type): scala.reflect.api.Universe#Symbol = {
     findConstructor0(tpe).getOrElse(u.NoSymbol)
   }
 
-  private[this] def findConstructor0(tpe: u.Type): Option[scala.reflect.api.Universe#Symbol] = {
+  private def findConstructor0(tpe: u.Type): Option[scala.reflect.api.Universe#Symbol] = {
     tpe match {
       case intersection: u.RefinedTypeApi =>
         intersection.parents.collectFirst(Function.unlift(findConstructor0))

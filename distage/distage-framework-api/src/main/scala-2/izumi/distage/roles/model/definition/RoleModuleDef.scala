@@ -10,7 +10,7 @@ import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 trait RoleModuleDef extends ModuleDef {
-  final protected[this] def makeRole[T](implicit getRoleDescriptor: GetRoleDescriptor[T]): MakeDSL[T] = macro RoleModuleDefMacros.makeRole[T]
+  final protected def makeRole[T](implicit getRoleDescriptor: GetRoleDescriptor[T]): MakeDSL[T] = macro RoleModuleDefMacros.makeRole[T]
 }
 
 object RoleModuleDef {

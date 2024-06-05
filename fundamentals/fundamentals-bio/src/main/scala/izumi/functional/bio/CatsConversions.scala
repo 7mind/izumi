@@ -224,7 +224,7 @@ object CatsConversions {
       F.guaranteeOnInterrupt(fa, _ => F.orTerminate(fin))
     }
 
-    @inline protected[this] final def toPoll(restoreInterruption: RestoreInterruption2[F]): Poll[F[Throwable, _]] = {
+    @inline protected final def toPoll(restoreInterruption: RestoreInterruption2[F]): Poll[F[Throwable, _]] = {
       new Poll[F[Throwable, _]] {
         override def apply[A](fa: F[Throwable, A]): F[Throwable, A] = restoreInterruption(fa)
       }
@@ -528,7 +528,7 @@ object CatsConversions {
 
   }
 
-  private[this] def isUninterruptibleNoOp[F[+_, +_]](F: Panic2[F]): cats.effect.kernel.CancelScope = {
+  private def isUninterruptibleNoOp[F[+_, +_]](F: Panic2[F]): cats.effect.kernel.CancelScope = {
     val unit = F.unit
     if (F.uninterruptible(unit).asInstanceOf[AnyRef] eq unit.asInstanceOf[AnyRef]) {
       cats.effect.kernel.CancelScope.Uncancelable

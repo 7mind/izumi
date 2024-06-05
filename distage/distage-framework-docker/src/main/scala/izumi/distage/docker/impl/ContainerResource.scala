@@ -41,7 +41,7 @@ open class ContainerResource[F[_], Tag](
 
   import client.rawClient
 
-  protected[this] val stableLabels: Map[String, String] = {
+  protected val stableLabels: Map[String, String] = {
     val reuseLabel = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       DockerConst.Labels.dependencies -> deps.map(_.id.name).toList.sorted.mkString(";"),
@@ -49,7 +49,7 @@ open class ContainerResource[F[_], Tag](
     reuseLabel ++ client.labels ++ config.userTags
   }
 
-  protected[this] def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
+  protected def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
     port match {
       case _: DockerPort.TCPBase => ExposedPort.tcp(number)
       case _: DockerPort.UDPBase => ExposedPort.udp(number)
@@ -107,7 +107,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def await(container0: DockerContainer[Tag]): F[DockerContainer[Tag]] = F.tailRecM((container0, 0)) {
+  protected def await(container0: DockerContainer[Tag]): F[DockerContainer[Tag]] = F.tailRecM((container0, 0)) {
     case (container, attempt) =>
       F.maybeSuspend {
         logger.debug(s"Awaiting until alive: $container...")
@@ -200,7 +200,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     logger.info(s"About to start or find container $imageName, ${config.pullTimeout -> "timeout"}...")
     fileLockMutex(s"distage-container-resource-$imageName:${config.ports.mkString(";")}") {
       for {
@@ -323,7 +323,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def runNew(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected def runNew(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
 
     val baseCmd = rawClient.createContainerCmd(imageName).withLabels(allPortLabels.asJava)
@@ -403,7 +403,7 @@ open class ContainerResource[F[_], Tag](
     } yield result
   }
 
-  protected[this] def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
+  protected def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
     def pullWithRetry(attempt: Int = 0): F[Unit] = {
       F.maybeSuspend(
         Try {
@@ -457,7 +457,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def inspectContainerAndGetState(containerId: String): Either[Throwable, ContainerState] = {
+  protected def inspectContainerAndGetState(containerId: String): Either[Throwable, ContainerState] = {
     try {
       val status = rawClient.inspectContainerCmd(containerId).exec()
       status.getState match {
@@ -470,7 +470,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ReportedContainerConnectivity] = {
+  protected def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ReportedContainerConnectivity] = {
     val network = inspection.getNetworkSettings
     val labels = inspection.getConfig.getLabels
     val ports = config.ports.map {
@@ -507,13 +507,13 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  private[this] def renderImageName(registry: Option[String]) = {
+  private def renderImageName(registry: Option[String]) = {
     registry
       .filterNot(_.contains("index.docker.io"))
       .fold(config.image)(reg => s"$reg/${config.image}")
   }
 
-  private[this] def fileLockMutex[A](
+  private def fileLockMutex[A](
     name: String
   )(effect:
     // MUST be by-name because of QuasiIO[Identity]

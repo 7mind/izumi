@@ -16,7 +16,7 @@ trait EqThrowable { this: TestInstances =>
 
     // Unwraps exceptions that got caught by Future's implementation
     // and that got wrapped in ExecutionException (`Future(throw ex)`)
-    private[this] def extractEx(ex: Throwable): Throwable =
+    private def extractEx(ex: Throwable): Throwable =
       ex match {
         case ref: ExecutionException =>
           Option(ref.getCause).getOrElse(ref)

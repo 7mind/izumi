@@ -68,7 +68,7 @@ private[providers] trait SimpleFunctoids[Ftoid[+_]] {
     )
   }
 
-  @inline private[this] def firstParamSymbolInfo(tpe: SafeType): SymbolInfo = {
+  @inline private def firstParamSymbolInfo(tpe: SafeType): SymbolInfo = {
     SymbolInfo(
       name = "x$1",
       finalResultType = tpe,

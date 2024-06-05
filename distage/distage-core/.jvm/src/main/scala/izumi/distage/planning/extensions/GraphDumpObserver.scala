@@ -109,7 +109,7 @@ final class GraphDumpObserver() extends PlanningObserver {
     save(dotfileMin, "aftergc")
   }
 
-  private[this] def save(dotfile: RenderedDot, kind: String): Unit = {
+  private def save(dotfile: RenderedDot, kind: String): Unit = {
     val name = s"plan-${System.currentTimeMillis()}-$kind.gv"
     val last = Paths.get(s"target", s"plan-last-$kind.gv")
 
@@ -121,7 +121,7 @@ final class GraphDumpObserver() extends PlanningObserver {
     Files.createLink(last, path).discard()
   }
 
-  private[this] def modify(name: String, attrs: mutable.Map[String, String], op: ExecutableOp): Unit = {
+  private def modify(name: String, attrs: mutable.Map[String, String], op: ExecutableOp): Unit = {
     val label = op match {
       case op: ExecutableOp.InstantiationOp =>
         op match {

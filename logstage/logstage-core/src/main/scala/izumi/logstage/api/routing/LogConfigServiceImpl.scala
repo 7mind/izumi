@@ -15,9 +15,9 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
     LogEntryConfig(configFor(e.context.static.id).sinks)
   }
 
-  private[this] val configTree = LogConfigServiceImpl.build(loggerConfig)
+  private val configTree = LogConfigServiceImpl.build(loggerConfig)
 
-  @inline private[this] def configFor(e: Log.LoggerId): LoggerPathConfig = {
+  @inline private def configFor(e: Log.LoggerId): LoggerPathConfig = {
     val configPath = findConfig(e.id.split('.').toList, List.empty, configTree)
     configPath
       .collect {
@@ -44,7 +44,7 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
 //    (loggerConfig.root.sinks ++ loggerConfig.entries.values.flatMap(_.sinks)).foreach(_.close())
 //  }
 
-  private[this] def print(node: LogTreeNode, level: Int): String = {
+  private def print(node: LogTreeNode, level: Int): String = {
     val sub = node.sub.values.map(s => print(s, level + 1))
 
     def reprCfg(cfg: LoggerPathConfig) = {

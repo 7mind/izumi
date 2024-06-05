@@ -100,7 +100,7 @@ class LogstageReprWriter(@unused colored: Boolean) extends ExtendedLogstageWrite
 
   override def write(a: BigInt): Unit = str(a)
 
-  @inline private[this] def str(a: Any): Unit = {
+  @inline private def str(a: Any): Unit = {
     stack.push(Token.Value(a.toString))
   }
 }

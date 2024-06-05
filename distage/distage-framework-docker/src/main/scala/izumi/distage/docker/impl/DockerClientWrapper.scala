@@ -72,7 +72,7 @@ class DockerClientWrapper[F[_]](
 }
 
 object DockerClientWrapper {
-  private[this] val jvmRun: String = UUID.randomUUID().toString
+  private val jvmRun: String = UUID.randomUUID().toString
 
   sealed trait ContainerDestroyMeta
   object ContainerDestroyMeta {

@@ -124,7 +124,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
         findAnnotation(annType)
       }
 
-      private[this] def findAnnotation(tgtAnnType: TypeNative): Option[u.Annotation] = {
+      private def findAnnotation(tgtAnnType: TypeNative): Option[u.Annotation] = {
         val r = symbolInfo.annotations.find(a => AnnotationTools.annotationTypeEq(u)(tgtAnnType, a))
         r
       }

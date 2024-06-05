@@ -21,13 +21,13 @@ object ScalaRelease {
         ScalaRelease.Unknown(versionString)
     }
   }
-  private[this] object ParseInt {
+  private object ParseInt {
     def unapply(str: String): Option[Int] = {
       try { Some(Integer.parseInt(str)) }
       catch { case _: NumberFormatException => None }
     }
   }
-  private[this] object RemoveQualifier {
+  private object RemoveQualifier {
     def unapply(str: String): Some[String] = {
       Some(str.takeWhile(_ != '-'))
     }
