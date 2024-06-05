@@ -7,7 +7,7 @@ import izumi.reflect.Tag
 
 import scala.quoted.{Expr, Quotes}
 
-final class FunctoidParametersMacro[Q <: Quotes & Singleton](using val qctx: Q) extends FunctoidParametersMacroBase[Q] {
+final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q) extends FunctoidParametersMacroBase[Q] {
 
   import qctx.reflect.*
 

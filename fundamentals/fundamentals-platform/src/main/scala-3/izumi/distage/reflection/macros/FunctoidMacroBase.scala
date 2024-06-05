@@ -32,7 +32,7 @@ trait FunctoidMacroBase[Ftoid[+K] <: AbstractFunctoid[K, Ftoid]] {
     Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm)).asExprOf[Any]
   }
 
-  final class FunctoidMacroImpl[Q <: Quotes & Singleton](using val qctx: Q)(val paramsMacro: FunctoidParametersMacroBase[qctx.type]) {
+  final class FunctoidMacroImpl[Q <: Quotes](using val qctx: Q)(val paramsMacro: FunctoidParametersMacroBase[qctx.type]) {
     import qctx.reflect.*
 
     def make[R: Type](fun: Expr[AnyRef]): Expr[Ftoid[R]] = {

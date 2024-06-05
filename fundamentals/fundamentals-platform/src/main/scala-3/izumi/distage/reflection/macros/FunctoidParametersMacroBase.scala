@@ -4,7 +4,7 @@ import izumi.distage.model.reflection.LinkedParameter
 
 import scala.quoted.{Expr, Quotes}
 
-trait FunctoidParametersMacroBase[Q <: Quotes & Singleton] {
+trait FunctoidParametersMacroBase[Q <: Quotes] {
   val qctx: Q
 
   import qctx.reflect.*
