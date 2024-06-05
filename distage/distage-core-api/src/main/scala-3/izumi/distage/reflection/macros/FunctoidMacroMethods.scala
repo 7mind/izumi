@@ -12,7 +12,11 @@ trait FunctoidMacroMethods extends FunctoidMacroMethodsBase {}
 object FunctoidMacro extends FunctoidMacroBase[Functoid] {
   transparent inline def make[R](inline fun: AnyRef): Functoid[R] = ${ makeImpl[R]('fun) }
 
-  def makeImpl[R: Type](fun: Expr[AnyRef])(using qctx: Quotes): Expr[Functoid[R]] = new FunctoidMacroImpl[qctx.type](new FunctoidParametersMacro[qctx.type]()).make(fun)
+  def makeImpl[R: Type](fun: Expr[AnyRef])(using qctx: Quotes): Expr[Functoid[R]] = {
+    val idExtractor = new IdExtractorImpl[qctx.type]()
+    val paramMacro = new FunctoidParametersMacro[qctx.type](idExtractor)
+    new FunctoidMacroImpl[qctx.type](paramMacro).make(fun)
+  }
 
   protected def generateFunctoid[R: Type, Q <: Quotes](paramDefs: List[Expr[LinkedParameter]], originalFun: Expr[AnyRef])(using qctx: Q): Expr[Functoid[R]] = {
     '{
