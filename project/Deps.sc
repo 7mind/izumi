@@ -239,6 +239,7 @@ object Izumi {
       final val topLevelSettings = Seq()
 
       final val sharedAggSettings = outOfSource ++ Seq(
+        """SettingKey[Boolean]("ide-skip-project")""" := true,
         "crossScalaVersions" := "Nil".raw
       )
 
@@ -855,7 +856,8 @@ object Izumi {
         libs = Seq.empty,
         depends = Seq.empty,
         settings = Projects.sbtplugins.settings ++ Seq(
-          SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")""")
+          SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")"""),
+          """SettingKey[Boolean]("ide-skip-project")""" := true,
         ),
         plugins = Plugins(
           enabled = Seq.empty,
