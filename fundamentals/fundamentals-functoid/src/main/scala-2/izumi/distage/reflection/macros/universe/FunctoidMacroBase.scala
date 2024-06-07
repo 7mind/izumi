@@ -27,8 +27,7 @@ abstract class FunctoidMacroBase(val c: blackbox.Context) {
 
   private lazy val brp = new BaseReflectionProvider(c.universe, idAnnotationFqn)
 
-//  private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
-  private final val logger = TrivialMacroLogger.make[this.type](c, "xxx")
+  private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
 
   private def symbolToParam(p: Symbol): Parameter = {
     brp.symbolToParameter(p.asInstanceOf[brp.u.Symbol])
