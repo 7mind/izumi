@@ -32,7 +32,7 @@ private[providers] trait SimpleFunctoids[Ftoid[+_]] {
         ret = SafeType.get[A],
         underlying = a.asInstanceOf[AnyRef],
         fun = (_: Seq[Any]) => a,
-        providerType = ProviderType.Constructor,
+        providerType = ProviderType.Singleton,
       )
     )
   }
