@@ -45,7 +45,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
       override final def withIsByName(boolean: Boolean): MacroSymbolInfo = copy(isByName = boolean)
       override final def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo = copy(annotations = annotations)
       override final def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact = copy(friendlyAnnotations = annotations)
-      override final def safeFinalResultType: MacroSafeType = MacroSafeType.create(ctx.universe)(nonByNameFinalResultType.asInstanceOf[ctx.Type])
+      override final def safeFinalResultType: MacroSafeType = MacroSafeType.create(u)(nonByNameFinalResultType)
     }
 
     private[distage] object Runtime {
@@ -96,7 +96,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
       override final def withIsByName(boolean: Boolean): MacroSymbolInfo = copy(isByName = boolean)
       override final def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo = copy(annotations = annotations)
       override final def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact = copy(friendlyAnnotations = annotations)
-      override final def safeFinalResultType: MacroSafeType = MacroSafeType.create(ctx.universe)(nonByNameFinalResultType.asInstanceOf[ctx.Type])
+      override final def safeFinalResultType: MacroSafeType = MacroSafeType.create(u)(nonByNameFinalResultType)
     }
     object Static {
       def syntheticFromType(transformName: String => String)(tpe: TypeNative): MacroSymbolInfo.Static = {

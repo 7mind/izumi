@@ -17,28 +17,28 @@ import scala.reflect.macros.blackbox
   *
   * @see [[izumi.distage.constructors.DebugProperties]]
   */
-abstract class FunctoidMacroBase(val c: blackbox.Context) {
+abstract class FunctoidMacroBase[Ftoid[_]](val c: blackbox.Context) {
   type Parameter = CompactParameter
 
   import c.universe.*
 
-  def tpe[A: c.WeakTypeTag]: c.Type
+  def tpe[A: WeakTypeTag]: Type
   def idAnnotationFqn: String
 
-  private lazy val brp = new BaseReflectionProvider(c.universe, idAnnotationFqn)
+  private lazy val brp: BaseReflectionProvider[c.universe.type] = new BaseReflectionProvider(c.universe, idAnnotationFqn)
 
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.functoid`.name)
 
   private def symbolToParam(p: Symbol): Parameter = {
-    brp.symbolToParameter(p.asInstanceOf[brp.u.Symbol])
+    brp.symbolToParameter(p)
   }
   private def typeToParam(tpe: Type): Parameter = {
-    brp.typeToParameter(tpe.asInstanceOf[brp.u.Type], c.freshName)
+    brp.typeToParameter(tpe, c.freshName)
   }
 
-  def impl[R: c.WeakTypeTag, Ftoid[_]](fun: Tree): c.Expr[Ftoid[R]] = {
+  def impl[R: WeakTypeTag](fun: Tree): Tree = {
     val associations = analyze(fun, weakTypeOf[R])
-    val result = generateProvider[R, Ftoid](associations, fun)
+    val result = generateProvider[R](associations, fun)
 
     logger.log(
       s"""DIKeyWrappedFunction info:
@@ -49,14 +49,14 @@ abstract class FunctoidMacroBase(val c: blackbox.Context) {
          | argument: ${showCode(fun)}\n
          | argumentTree: ${showRaw(fun)}\n
          | argumentType: ${fun.tpe}
-         | Result code: ${showCode(result.tree)}""".stripMargin
+         | Result code: ${showCode(result)}""".stripMargin
     )
 
     result
   }
 
-  def generateProvider[R: c.WeakTypeTag, Ftoid[_]](parameters: List[Parameter], fun: Tree): c.Expr[Ftoid[R]] = {
-    val tools = new DIUniverseBasicLiftables(c)
+  def generateProvider[R: WeakTypeTag](parameters: List[Parameter], fun: Tree): Tree = {
+    val tools = new DIUniverseBasicLiftables(c.universe)
     import tools.liftableCompactParameter
 
     val seqName = if (parameters.nonEmpty) TermName(c.freshName("seqAny")) else TermName("_")
@@ -65,9 +65,9 @@ abstract class FunctoidMacroBase(val c: blackbox.Context) {
     val parametersNoByName = Liftable.liftList[Parameter].apply(parameters)
 
     val retTpe = weakTypeOf[R]
-    val retTagTree = MacroSafeType.create(c.universe)(retTpe).tagTree.asInstanceOf[c.Tree]
+    val retTagTree = MacroSafeType.create(c.universe)(retTpe).tagTree(c.universe)
 
-    c.Expr[Ftoid[R]] {
+    {
       q"""{
         val fun = $fun
 

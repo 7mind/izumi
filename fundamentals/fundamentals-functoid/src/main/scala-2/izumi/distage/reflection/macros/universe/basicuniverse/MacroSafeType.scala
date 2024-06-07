@@ -3,7 +3,7 @@ package izumi.distage.reflection.macros.universe.basicuniverse
 import izumi.reflect.macrortti.{LightTypeTag, LightTypeTagImpl}
 
 final class MacroSafeType private (
-  private[reflection] val tagTree: scala.reflect.api.Universe#Tree,
+  private[reflection] val tagTree0: scala.reflect.api.Universe#Tree,
   private val tag: LightTypeTag,
 ) {
 
@@ -15,6 +15,9 @@ final class MacroSafeType private (
   @inline override def toString: String = {
     tag.repr
   }
+
+  @inline def tagTree(u: scala.reflect.api.Universe): u.Tree = tagTree0.asInstanceOf[u.Tree]
+
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: MacroSafeType =>
@@ -26,12 +29,12 @@ final class MacroSafeType private (
 }
 
 object MacroSafeType {
-  def create(u: scala.reflect.api.Universe)(tpe: scala.reflect.api.Universe#Type): MacroSafeType = {
+  def create(u: scala.reflect.api.Universe)(tpe: u.Type): MacroSafeType = {
     import u.*
     val modelReflectionPkg = q"_root_.izumi.distage.model.reflection"
 
-    val ltt = LightTypeTagImpl.makeLightTypeTag(u)(tpe.asInstanceOf[u.Type])
-    val tagTree = q"{ $modelReflectionPkg.SafeType.get[${u.Liftable.liftType(tpe.asInstanceOf[u.Type])}] }"
+    val ltt = LightTypeTagImpl.makeLightTypeTag(u)(tpe)
+    val tagTree = q"{ $modelReflectionPkg.SafeType.get[${u.Liftable.liftType(tpe)}] }"
 
     new MacroSafeType(tagTree, ltt)
   }

@@ -54,7 +54,7 @@ import izumi.distage.reflection.macros.FunctoidMacroMethods
   *   make[X].from(X.apply _) // summons special Int
   * }}}
   *
-  * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
+  * Functoid forms an applicative functor via its [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.AbstractFunctoid.map2]] methods
   *
   * @note `javax.inject.Named` annotation is also supported
   *

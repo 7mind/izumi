@@ -1,7 +1,7 @@
 package izumi.distage.reflection.macros.universe.basicuniverse
 
-class ConstructorSelector(val u: scala.reflect.api.Universe) {
-  def selectConstructorMethod(tpe: u.Type): Option[scala.reflect.api.Universe#MethodSymbol] = {
+class ConstructorSelector[U <: scala.reflect.api.Universe & Singleton](val u: U) {
+  def selectConstructorMethod(tpe: u.Type): Option[u.MethodSymbol] = {
     val constructor = findConstructor(tpe)
     if (!constructor.isTerm) {
       None
@@ -10,11 +10,11 @@ class ConstructorSelector(val u: scala.reflect.api.Universe) {
     }
   }
 
-  @inline private def findConstructor(tpe: u.Type): scala.reflect.api.Universe#Symbol = {
+  @inline private def findConstructor(tpe: u.Type): u.Symbol = {
     findConstructor0(tpe).getOrElse(u.NoSymbol)
   }
 
-  private def findConstructor0(tpe: u.Type): Option[scala.reflect.api.Universe#Symbol] = {
+  private def findConstructor0(tpe: u.Type): Option[u.Symbol] = {
     tpe match {
       case intersection: u.RefinedTypeApi =>
         intersection.parents.collectFirst(Function.unlift(findConstructor0))

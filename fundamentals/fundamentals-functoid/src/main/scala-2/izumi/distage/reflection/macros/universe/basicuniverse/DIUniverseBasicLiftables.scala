@@ -1,16 +1,13 @@
 package izumi.distage.reflection.macros.universe.basicuniverse
 
-import scala.reflect.macros.blackbox
-
-class DIUniverseBasicLiftables[U <: scala.reflect.api.Universe](val ctx: blackbox.Context) {
-  val u: U = ctx.universe.asInstanceOf[U]
+class DIUniverseBasicLiftables[U <: scala.reflect.api.Universe & Singleton](val u: U) {
   import u.*
 
   val modelReflectionPkg: Tree = q"_root_.izumi.distage.model.reflection"
 
   implicit val liftableMacroSafeType: Liftable[MacroSafeType] = {
     stpe =>
-      stpe.tagTree.asInstanceOf[Tree]
+      stpe.tagTree(u)
   }
 
   implicit val liftableCompactParameter: Liftable[CompactParameter] = {
@@ -34,5 +31,5 @@ class DIUniverseBasicLiftables[U <: scala.reflect.api.Universe](val ctx: blackbo
 }
 
 object DIUniverseBasicLiftables {
-  def apply[U <: scala.reflect.api.Universe](c: blackbox.Context): DIUniverseBasicLiftables[U] = new DIUniverseBasicLiftables[U](c)
+  def apply[U <: scala.reflect.api.Universe & Singleton](u: U): DIUniverseBasicLiftables[U] = new DIUniverseBasicLiftables[U](u)
 }

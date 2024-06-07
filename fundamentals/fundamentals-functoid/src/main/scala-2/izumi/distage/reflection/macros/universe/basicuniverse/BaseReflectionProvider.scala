@@ -3,7 +3,7 @@ package izumi.distage.reflection.macros.universe.basicuniverse
 import izumi.distage.reflection.macros.universe.basicuniverse
 import izumi.distage.reflection.macros.universe.basicuniverse.exceptions.BadIdAnnotationException
 
-class BaseReflectionProvider(val u: scala.reflect.api.Universe, idAnnotationFqn: String) {
+class BaseReflectionProvider[U <: scala.reflect.api.Universe & Singleton](val u: U, idAnnotationFqn: String) {
   def typeToParameter(t: u.Type, transformName: String => String): CompactParameter = {
     parameterToAssociation2(MacroSymbolInfoCompactImpl.syntheticFromType(u)(transformName)(t))
   }
@@ -18,10 +18,11 @@ class BaseReflectionProvider(val u: scala.reflect.api.Universe, idAnnotationFqn:
   }
 
   def tpeFromSymbol(parameterSymbol: MacroSymbolInfoCompact): MacroSafeType = {
+    val tpe = parameterSymbol.finalResultTypeIn(u)
     val paramType = if (parameterSymbol.isByName) { // this will never be true for a method symbol
-      parameterSymbol.finalResultType.typeArgs.head.finalResultType
+      tpe.typeArgs.head.finalResultType
     } else {
-      parameterSymbol.finalResultType
+      tpe
     }
     MacroSafeType.create(u)(paramType)
   }
@@ -66,5 +67,3 @@ class BaseReflectionProvider(val u: scala.reflect.api.Universe, idAnnotationFqn:
     }
   }
 }
-
-

@@ -2,7 +2,7 @@ package izumi.distage.reflection.macros.universe.basicuniverse
 
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
-case class MacroSymbolInfoCompactImpl(
+final case class MacroSymbolInfoCompactImpl(
   name: String,
   finalResultType: scala.reflect.api.Universe#Type,
   friendlyAnnotations: List[FriendlyAnnotation],
@@ -10,7 +10,7 @@ case class MacroSymbolInfoCompactImpl(
   wasGeneric: Boolean,
   safeFinalResultType: MacroSafeType,
 ) extends MacroSymbolInfoCompact {
-  override final def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact = copy(friendlyAnnotations = annotations)
+  override def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact = copy(friendlyAnnotations = annotations)
 }
 
 object MacroSymbolInfoCompactImpl {

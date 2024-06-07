@@ -10,6 +10,7 @@ trait MacroSymbolInfoCompact {
   def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact
   def safeFinalResultType: MacroSafeType
   def finalResultType: scala.reflect.api.Universe#Type
+  @inline final def finalResultTypeIn(u: scala.reflect.api.Universe): u.Type = finalResultType.asInstanceOf[u.Type]
 }
 
 object MacroSymbolInfoCompact {
@@ -24,5 +25,3 @@ object MacroSymbolInfoCompact {
     }
   }
 }
-
-

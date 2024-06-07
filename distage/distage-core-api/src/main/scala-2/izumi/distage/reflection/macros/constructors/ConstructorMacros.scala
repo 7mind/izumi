@@ -312,7 +312,7 @@ abstract class ConstructorMacrosBase {
     }
 
     val retTpe = weakTypeOf[T]
-    val retTagTree = MacroSafeType.create(c.universe)(retTpe).tagTree.asInstanceOf[c.Tree]
+    val retTagTree = MacroSafeType.create(c.universe)(retTpe).tagTree(c.universe)
 
     c.Expr[Functoid[T]] {
       q"""{

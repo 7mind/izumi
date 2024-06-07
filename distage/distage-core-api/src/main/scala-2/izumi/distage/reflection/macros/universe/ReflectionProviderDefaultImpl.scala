@@ -61,7 +61,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         typeRef
           .map(_.pre)
           .filterNot(m => m.termSymbol.isModule && m.termSymbol.isStatic)
-          .map(v => MacroDIKey.TypeKey(MacroSafeType.create(u.ctx.universe)(v.asInstanceOf[u.ctx.Type])))
+          .map(v => MacroDIKey.TypeKey(MacroSafeType.create(u.u)(v)))
       }
     }
 
@@ -84,11 +84,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
              |
              |  * $mms
              |""".stripMargin,
-          MacroSafeType.create(u.ctx.universe)(tpe.asInstanceOf[u.ctx.Type]),
+          MacroSafeType.create(u.u)(tpe),
         )
 
       case _ =>
-        val safeType = MacroSafeType.create(u.ctx.universe)(tpe.asInstanceOf[u.ctx.Type])
+        val safeType = MacroSafeType.create(u.u)(tpe)
         val factoryMsg = if (factoryMethod != u.u.NoSymbol) {
           s"""
              |  * When trying to create an implementation for result of `$factoryMethod` of factory `${factoryMethod.owner}`
@@ -197,7 +197,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative] = {
     val cs = new ConstructorSelector(u.u)
-    cs.selectConstructorMethod(tpe.asInstanceOf[cs.u.Type]).map(s => s.asInstanceOf[MethodSymbNative])
+    cs.selectConstructorMethod(tpe).map(s => s.asInstanceOf[MethodSymbNative])
   }
 
   override def isConcrete(tpe: TypeNative): Boolean = {
