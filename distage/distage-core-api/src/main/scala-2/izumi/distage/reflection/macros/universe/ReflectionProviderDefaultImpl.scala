@@ -9,8 +9,8 @@ import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.annotation.nowarn
 
-class DIAnnotationMeta(u: scala.reflect.api.Universe) {
-  def idAnnotationFqn: String = u.typeOf[Id].typeSymbol.fullName
+object DIAnnotationMeta {
+  def idAnnotationFqn(u: scala.reflect.api.Universe): String = u.typeOf[Id].typeSymbol.fullName
 }
 
 @nowarn("msg=outer reference")
@@ -20,7 +20,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   import u.*
   import u.u.Annotation
 
-  private lazy val idAnnotationFqn = new DIAnnotationMeta(u.u).idAnnotationFqn
+  private lazy val idAnnotationFqn = DIAnnotationMeta.idAnnotationFqn(u.u)
   private lazy val brp = new BaseReflectionProvider(u.ctx.universe, idAnnotationFqn)
 
   private object With {
