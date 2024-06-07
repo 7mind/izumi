@@ -91,5 +91,5 @@ trait AbstractFunctoid[+A, Ftoid[+K] <: AbstractFunctoid[K, Ftoid]] {
     create[A](newProvider)
   }
 
-  def returnTypeTag: Tag[A @uncheckedVariance] = Tag(get.ret.closestClass, get.ret.tag)
+  private[distage] def returnTypeTag: Tag[A @uncheckedVariance] = Tag(get.ret.closestClass, get.ret.tag)
 }
