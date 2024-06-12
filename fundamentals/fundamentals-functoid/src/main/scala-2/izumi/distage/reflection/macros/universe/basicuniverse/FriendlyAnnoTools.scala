@@ -20,7 +20,7 @@ object FriendlyAnnoTools {
 
   def makeFriendly(u: scala.reflect.api.Universe)(anno: u.Annotation): FriendlyAnnotation = {
     import u.*
-    val extractor = new PortableNamedArg(u)
+    val extractor = new PortableNamedArg[u.type](u)
 
     val tpe = anno.tree.tpe.finalResultType
     val annoName = tpe.typeSymbol.fullName
@@ -49,7 +49,7 @@ object FriendlyAnnoTools {
           }
       }
 
-      val rp = new ConstructorSelector(u)
+      val rp = new ConstructorSelector[u.type](u)
       val constructor = rp.selectConstructorMethod(tpe)
       constructor match {
         case Some(c) =>

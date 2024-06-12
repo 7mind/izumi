@@ -21,7 +21,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   import u.u.Annotation
 
   private lazy val idAnnotationFqn = DIAnnotationMeta.idAnnotationFqn(u.u)
-  private lazy val brp = new BaseReflectionProvider(u.u, idAnnotationFqn)
+  private lazy val brp = new BaseReflectionProvider[u.u.type](u.u, idAnnotationFqn)
 
   private object With {
     def unapply(ann: Annotation): Option[TypeNative] = {
@@ -196,7 +196,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative] = {
-    val cs = new ConstructorSelector(u.u)
+    val cs = new ConstructorSelector[u.u.type](u.u)
     cs.selectConstructorMethod(tpe).map(s => s.asInstanceOf[MethodSymbNative])
   }
 

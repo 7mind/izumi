@@ -56,7 +56,7 @@ abstract class FunctoidMacroBase[Ftoid[_]](val c: blackbox.Context) {
   }
 
   def generateProvider[R: WeakTypeTag](parameters: List[Parameter], fun: Tree): Tree = {
-    val tools = new DIUniverseBasicLiftables(c.universe)
+    val tools = new DIUniverseBasicLiftables[c.universe.type](c.universe)
     import tools.liftableCompactParameter
 
     val seqName = if (parameters.nonEmpty) TermName(c.freshName("seqAny")) else TermName("_")
