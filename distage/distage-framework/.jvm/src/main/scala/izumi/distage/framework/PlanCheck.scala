@@ -299,12 +299,6 @@ object PlanCheck {
       }
     }
 
-    private def parseActivations(s: String): Set[NESet[AxisPoint]] = {
-      s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
-          NESet `from` _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
-        }.toSet
-    }
-
     private def defaultLogger(): TrivialLogger = {
       TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.distage.plancheck`.name)
     }
@@ -361,27 +355,12 @@ object PlanCheck {
       )
     }
 
-    private def parseActivations(s: String): Set[NESet[AxisPoint]] = {
-      s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
-          NESet `from` _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
-        }.toSet
-    }
+  }
 
-    private def defaultLogger(): TrivialLogger = {
-      TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.distage.plancheck`.name)
-    }
-
-    @tailrec private def cutoffMacroTrace(t: Throwable): Unit = {
-      val trace = t.getStackTrace
-      val cutoffIdx = Some(trace.indexWhere(_.getClassName contains "scala.reflect.macros.runtime.JavaReflectionRuntimes$JavaReflectionResolvers")).filter(_ > 0)
-      t.setStackTrace(cutoffIdx.fold(trace)(trace.take))
-      val suppressed = t.getSuppressed
-      suppressed.foreach(cutSuppressed)
-      if (t.getCause ne null) cutoffMacroTrace(t.getCause)
-    }
-    // indirection for tailrec
-    private def cutSuppressed(t: Throwable): Unit = cutoffMacroTrace(t)
-
+  private def parseActivations(s: String): Set[NESet[AxisPoint]] = {
+    s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
+        NESet `from` _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
+      }.toSet
   }
 
 }
