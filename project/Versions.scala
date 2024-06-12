@@ -15,7 +15,7 @@ object V {
   val discipline = "1.7.0"
   val discipline_scalatest = "2.3.0"
 
-  val zio = "2.1.1"
+  val zio = "2.1.3"
   val zio_interop_cats = "23.1.0.2"
 
   val monix = "3.4.0"
@@ -23,7 +23,7 @@ object V {
 
   val circe = "0.14.7"
   val circe_derivation = "0.13.0-M5"
-  val pureconfig = "0.17.6"
+  val pureconfig = "0.17.7"
   val magnolia = "1.1.10"
   val jawn = "1.6.0"
 
@@ -31,7 +31,7 @@ object V {
   val scala_java_time = "2.5.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.172"
+  val classgraph = "4.8.173"
   val slf4j = "2.0.13"
   val typesafe_config = "1.4.0"
 

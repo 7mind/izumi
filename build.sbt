@@ -5921,7 +5921,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     } },
     Test / packageDoc / publishArtifact := false,
     sbtPlugin := true,
-    withBuildInfo("izumi.sbt.deps", "Izumi")
+    withBuildInfo("izumi.sbt.deps", "Izumi"),
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
@@ -5929,6 +5930,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
 lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .enablePlugins(SitePreviewPlugin)
@@ -5948,6 +5950,7 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
 lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
@@ -5966,6 +5969,7 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
 lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .enablePlugins(SitePreviewPlugin)
@@ -5988,6 +5992,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
 lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
@@ -6009,6 +6014,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .enablePlugins(SitePreviewPlugin)
@@ -6023,6 +6029,7 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
 lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
@@ -6036,6 +6043,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
 lazy val `docs` = (project in file(".agg/doc-docs"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .enablePlugins(SitePreviewPlugin)
@@ -6047,6 +6055,7 @@ lazy val `docs` = (project in file(".agg/doc-docs"))
 lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
@@ -6057,6 +6066,7 @@ lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
 lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .enablePlugins(SitePreviewPlugin)
@@ -6068,6 +6078,7 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
 lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
@@ -6078,6 +6089,7 @@ lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"
 lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true,
     crossScalaVersions := Nil
   )
   .disablePlugins(AssemblyPlugin)
