@@ -31,7 +31,7 @@ object V {
   val scala_java_time = "2.5.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.172"
+  val classgraph = "4.8.173"
   val slf4j = "2.0.13"
   val typesafe_config = "1.4.0"
 
