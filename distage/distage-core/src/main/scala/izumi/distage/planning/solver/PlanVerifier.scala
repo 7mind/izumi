@@ -15,6 +15,7 @@ import izumi.fundamentals.collections.nonempty.{NEList, NEMap, NESet}
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.TagK
 
+import java.util.concurrent.TimeUnit
 import scala.annotation.{nowarn, tailrec}
 import scala.concurrent.duration.FiniteDuration
 
@@ -280,6 +281,19 @@ object PlanVerifier {
     final def verificationPassed: Boolean = issues.isEmpty
     final def verificationFailed: Boolean = issues.nonEmpty
 
+    def combine(that: PlanVerifierResult): PlanVerifierResult = {
+      (this, that) match {
+        case (PlanVerifierResult.Incorrect(Some(i1), v1, t1), PlanVerifierResult.Incorrect(Some(i2), v2, t2)) =>
+          PlanVerifierResult.Incorrect(Some(i1 ++ i2), v1 ++ v2, t1 + t2)
+        case (fail: PlanVerifierResult.Incorrect, _: PlanVerifierResult.Correct) =>
+          fail
+        case (_: PlanVerifierResult.Correct, fail: PlanVerifierResult.Incorrect) =>
+          fail
+        case (PlanVerifierResult.Correct(v1, t1), PlanVerifierResult.Correct(v2, t2)) =>
+          PlanVerifierResult.Correct(v1 ++ v2, t1 + t2)
+      }
+    }
+
     final def throwOnError(): Unit = this match {
       case incorrect: PlanVerifierResult.Incorrect =>
         throw new PlanVerificationException(
@@ -299,5 +313,7 @@ object PlanVerifier {
   object PlanVerifierResult {
     final case class Incorrect(issues: Some[NESet[PlanIssue]], visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult
     final case class Correct(visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult { override def issues: None.type = None }
+
+    def empty: PlanVerifierResult = PlanVerifierResult.Correct(Set.empty, FiniteDuration(0, TimeUnit.SECONDS))
   }
 }
