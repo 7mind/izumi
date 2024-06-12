@@ -12,6 +12,6 @@ object newtype {
     final def apply(value: A): T = value.asInstanceOf[T]
     final def apply[Collection[+_]](collection: Collection[A])(implicit d: DummyImplicit): Collection[T] = collection.asInstanceOf[Collection[T]]
 
-    @inline protected[this] def unwrap(value: T): A = value.asInstanceOf[A]
+    @inline protected def unwrap(value: T): A = value.asInstanceOf[A]
   }
 }

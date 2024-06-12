@@ -115,7 +115,7 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
       .modifyConfig {
         Functoid { // FIXME: explicit `Functoid` application required on Scala 3 due to https://github.com/lampepfl/dotty/issues/16108
-          (postgresContainer: PostgresFlyWayDocker.Container @Id("postgres-flyway-proxy"), cfg: PostgresFlyWayDocker.Cfg) =>
+          (postgresContainer: PostgresFlyWayDocker.Container @Id(name = "postgres-flyway-proxy"), cfg: PostgresFlyWayDocker.Cfg) =>
             PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg)
         }
       }

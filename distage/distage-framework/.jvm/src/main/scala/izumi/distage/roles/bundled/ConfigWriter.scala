@@ -40,7 +40,7 @@ final class ConfigWriter[F[_]: TagK](
   // fixme: always include `activation` section in configs (Used in RoleAppLauncherImpl#configActivationSection, but not seen in config bindings, since it's not read by DI)
   //  should've been unnecessary after https://github.com/7mind/izumi/issues/779
   //  but, the contents of the MainAppModule (including `"activation"` config read) are not accessible here from `RoleAppPlanner` yet...
-  private[this] val _HackyMandatorySection = ConfigPath("activation", wildcard = true)
+  private val _HackyMandatorySection = ConfigPath("activation", wildcard = true)
   private val configMerger = new ConfigMerger.ConfigMergerImpl(logger)
 
   override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
@@ -50,7 +50,7 @@ final class ConfigWriter[F[_]: TagK](
     }
   }
 
-  private[this] def writeReferenceConfig(options: WriteReference): Unit = {
+  private def writeReferenceConfig(options: WriteReference): Unit = {
     val configPath = Paths.get(options.targetDir).toFile
     logger.info(s"Config ${configPath.getAbsolutePath -> "target directory"}...")
 
@@ -95,7 +95,7 @@ final class ConfigWriter[F[_]: TagK](
     }
   }
 
-  private[this] def outputFileName(service: String, version: Option[String], asJson: Boolean, suffix: Option[String]): String = {
+  private def outputFileName(service: String, version: Option[String], asJson: Boolean, suffix: Option[String]): String = {
     val extension = if (asJson) "json" else "conf"
     val vstr = version.getOrElse("0.0.0-UNKNOWN")
     val suffixStr = suffix.fold("")("-" + _)
@@ -103,7 +103,7 @@ final class ConfigWriter[F[_]: TagK](
     s"$service$suffixStr-$vstr.$extension"
   }
 
-  private[this] def minimizedConfig(roleConfig: Config, role: RoleBinding): MinimizedConfig = {
+  private def minimizedConfig(roleConfig: Config, role: RoleBinding): MinimizedConfig = {
     val excludedActivations = Set.empty[NESet[AxisPoint]] // TODO: val chosenActivations = parseActivations(cfg.excludeActivations)
     val bindings = roleAppPlanner.bootloader.input.bindings
     val verifier = PlanVerifier()
@@ -121,7 +121,7 @@ final class ConfigWriter[F[_]: TagK](
     MinimizedConfig(out, schema)
   }
 
-  private[this] def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, schema: Option[Json], subLogger: IzLogger): Try[Unit] = {
+  private def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, schema: Option[Json], subLogger: IzLogger): Try[Unit] = {
     val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
     val target = Paths.get(options.targetDir, fileName)
     val targetSchema = Paths.get(options.targetDir, s"$fileName.jsonschema")

@@ -26,7 +26,7 @@ private[lifecycle] object LifecycleMethodImpls {
     new Lifecycle[F, B] {
       override type InnerResource = QuasiRef[F, List[() => F[Unit]]]
 
-      private[this] def bracketAppendFinalizer[a, b](finalizers: InnerResource)(lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
+      private def bracketAppendFinalizer[a, b](finalizers: InnerResource)(lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
         F.bracket(
           acquire = lifecycle.acquire.flatMap {
             a =>
@@ -103,7 +103,7 @@ private[lifecycle] object LifecycleMethodImpls {
     new Lifecycle[F, B] {
       override type InnerResource = AtomicReference[List[() => F[Unit]]]
 
-      private[this] def extractAppendFinalizer[a](finalizers: InnerResource)(lifecycleCtor: () => Lifecycle[F, a]): F[a] = {
+      private def extractAppendFinalizer[a](finalizers: InnerResource)(lifecycleCtor: () => Lifecycle[F, a]): F[a] = {
         F.bracket(
           acquire = {
             val lifecycle = lifecycleCtor()

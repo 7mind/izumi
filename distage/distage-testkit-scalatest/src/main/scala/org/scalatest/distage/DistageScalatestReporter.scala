@@ -197,7 +197,7 @@ class DistageScalatestReporter extends TestReporter {
     }
   }
 
-  @inline private[this] def doReport(suiteId: SuiteId)(f: Ordinal => Event): Unit = {
+  @inline private def doReport(suiteId: SuiteId)(f: Ordinal => Event): Unit = {
     DistageTestsRegistrySingleton.runReport(suiteId.suiteId)(sr => sr.reporter(f(sr.tracker.nextOrdinal())))
   }
 

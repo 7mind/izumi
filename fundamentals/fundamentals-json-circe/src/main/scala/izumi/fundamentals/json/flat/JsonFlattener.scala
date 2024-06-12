@@ -214,14 +214,14 @@ class JsonFlattener {
     }
   }
 
-  @inline private[this] def drop(v: (Seq[PathElement], Char, String)): (Seq[PathElement], Char, String) = {
+  @inline private def drop(v: (Seq[PathElement], Char, String)): (Seq[PathElement], Char, String) = {
     v match {
       case (path, tpe, value) =>
         (path.drop(1), tpe, value)
     }
   }
 
-  @inline private[this] def inflateParsedNext(pairs: Seq[(Seq[PathElement], Char, String)]): Either[List[UnpackFailure], Json] = {
+  @inline private def inflateParsedNext(pairs: Seq[(Seq[PathElement], Char, String)]): Either[List[UnpackFailure], Json] = {
     inflateParsed(pairs.map(drop))
   }
 

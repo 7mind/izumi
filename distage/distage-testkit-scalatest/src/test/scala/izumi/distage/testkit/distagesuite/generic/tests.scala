@@ -72,7 +72,7 @@ class DistageTestExampleBIOEnv extends SpecZIO with DistageMemoizeExample[Task] 
 
 object DistageTestExampleBase {
   class SetCounter {
-    private[this] val c: AtomicInteger = new AtomicInteger(0)
+    private val c: AtomicInteger = new AtomicInteger(0)
     def inc(): Unit = c.incrementAndGet().discard()
     def get: Int = c.get()
   }

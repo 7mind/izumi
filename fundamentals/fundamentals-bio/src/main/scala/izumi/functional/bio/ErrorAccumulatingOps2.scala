@@ -108,7 +108,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
     flatTraverseAccumErrors(col)(identity)
   }
 
-  protected[this] def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](
+  protected def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](
     col: ColR[A]
   )(effect: A => F[E, B],
     onLeft: E => IterableOnce[E1],

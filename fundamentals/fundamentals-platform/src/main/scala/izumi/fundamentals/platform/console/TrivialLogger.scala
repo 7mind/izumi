@@ -58,15 +58,15 @@ final class TrivialLoggerImpl(
     new TrivialLoggerImpl(config, id, logMessages, logErrors, loggerLevel + delta)
   }
 
-  @inline private[this] def format(s: => String): String = {
+  @inline private def format(s: => String): String = {
     s"$id: $s"
   }
 
-  @inline private[this] def formatError(s: => String, e: => Throwable): String = {
+  @inline private def formatError(s: => String, e: => Throwable): String = {
     s"$id: $s\n${e.stacktraceString}"
   }
 
-  @inline private[this] def flush(level: Level, s: => String): Unit = {
+  @inline private def flush(level: Level, s: => String): Unit = {
     level match {
       case Level.Info =>
         if (logMessages) {
@@ -98,10 +98,10 @@ object TrivialLogger {
     new TrivialLoggerImpl(config, classTag[T].runtimeClass.getSimpleName, logMessages, logErrors, loggerLevel = 0)
   }
 
-  private[this] val enabled = new mutable.HashMap[String, Boolean]()
+  private val enabled = new mutable.HashMap[String, Boolean]()
 
   @nowarn("msg=return statement uses an exception")
-  private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
+  private def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
     def check(): Boolean = {
       val parts = sysProperty.split('.')
 

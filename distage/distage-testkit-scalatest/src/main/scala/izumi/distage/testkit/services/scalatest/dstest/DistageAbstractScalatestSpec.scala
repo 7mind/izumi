@@ -17,7 +17,7 @@ import zio.ZIO
 import scala.annotation.unused
 
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
-  private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
+  private lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
 
   override def registerTest[A](function: Functoid[F[A]], env: TestEnvironment, pos: SourceFilePosition, id: TestId, meta: SuiteMeta): Unit = {
     if (firstRegistration) {
@@ -33,12 +33,12 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
 
   override protected def config: TestConfig = TestConfig.forSuite(this.getClass)
 
-  final protected[this] lazy val testEnv: TestEnvironment = makeTestEnv()
-  protected[this] def makeTestEnv(): TestEnvironment = loadEnvironment(config)
+  final protected lazy val testEnv: TestEnvironment = makeTestEnv()
+  protected def makeTestEnv(): TestEnvironment = loadEnvironment(config)
 
-  protected[this] def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
+  protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
 
-  protected[this] def distageSuiteId: SuiteId = SuiteId(this.getClass.getName)
+  protected def distageSuiteId: SuiteId = SuiteId(this.getClass.getName)
 
   protected implicit val subjectRegistrationFunction1: StringVerbBlockRegistration = new StringVerbBlockRegistration {
     override def apply(left: String, verb: String, @unused pos: source.Position, f: () => Unit): Unit = {
@@ -46,7 +46,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
     }
   }
 
-  protected[this] def registerBranch(description: String, verb: String, fun: () => Unit): Unit = {
+  protected def registerBranch(description: String, verb: String, fun: () => Unit): Unit = {
     context = Some(SuiteContext(Seq(description, verb)))
     fun()
     context = None

@@ -7,9 +7,9 @@ import izumi.fundamentals.platform.language.Quirks.discard
 import scala.collection.mutable
 
 trait IncludesDSL {
-  final private[this] val mutableAsIsIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
+  final private val mutableAsIsIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
 
-  protected[this] def _initialIncludes: mutable.ArrayBuffer[Include] = mutable.ArrayBuffer.empty
+  protected def _initialIncludes: mutable.ArrayBuffer[Include] = mutable.ArrayBuffer.empty
 
   final private[dsl] def includes: Iterator[Include] = mutableAsIsIncludes.iterator
 
@@ -17,7 +17,7 @@ trait IncludesDSL {
     *
     * WON'T add global tags from [[TagsDSL#tag]] to included bindings.
     */
-  final protected[this] def include(that: ModuleBase, tagMergeStrategy: TagMergePolicy = TagMergePolicy.MergePreferInner): Unit = discard {
+  final protected def include(that: ModuleBase, tagMergeStrategy: TagMergePolicy = TagMergePolicy.MergePreferInner): Unit = discard {
     mutableAsIsIncludes += Include(that, tagMergeStrategy)
   }
 
@@ -26,7 +26,7 @@ trait IncludesDSL {
     * WILL add global tags from [[TagsDSL#tag]] to included bindings.
     */
   @deprecated("Outer module's tags are now added to included module by default, use regular `include`", "1.2.9")
-  final protected[this] def includeApplyTags(that: ModuleBase): Unit = {
+  final protected def includeApplyTags(that: ModuleBase): Unit = {
     include(that, TagMergePolicy.MergePreferInner)
   }
 

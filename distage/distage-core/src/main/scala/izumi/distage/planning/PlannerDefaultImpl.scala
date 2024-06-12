@@ -98,7 +98,7 @@ class PlannerDefaultImpl(
     hook.hookDefinition(module)
   }
 
-  protected[this] def updateKey(mutSel: MutSel[DIKey]): Either[NEList[DIError], DIKey] = {
+  protected def updateKey(mutSel: MutSel[DIKey]): Either[NEList[DIError], DIKey] = {
     mutSel.mut match {
       case Some(value) =>
         updateKey(mutSel.key, value)
@@ -107,7 +107,7 @@ class PlannerDefaultImpl(
     }
   }
 
-  protected[this] def updateKey(key: DIKey, mindex: Int): Either[NEList[DIError], DIKey] = {
+  protected def updateKey(key: DIKey, mindex: Int): Either[NEList[DIError], DIKey] = {
     key match {
       case DIKey.TypeKey(tpe, _) =>
         Right(DIKey.TypeKey(tpe, Some(mindex)))
@@ -125,7 +125,7 @@ class PlannerDefaultImpl(
   }
 
   @nowarn("msg=Unused import")
-  protected[this] def addImports(plan: DG[DIKey, InstantiationOp], roots: Roots): DG[DIKey, SemiplanOp] = {
+  protected def addImports(plan: DG[DIKey, InstantiationOp], roots: Roots): DG[DIKey, SemiplanOp] = {
 
     val imports = plan.successors.links.view
       .filterKeys(k => !plan.meta.nodes.contains(k))

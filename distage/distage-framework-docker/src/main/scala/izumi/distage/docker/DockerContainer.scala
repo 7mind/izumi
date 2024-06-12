@@ -183,7 +183,7 @@ object DockerContainer {
       }
     }
 
-    private[this] def addContainerDependency[T2](
+    private def addContainerDependency[T2](
       implicit tag: distage.Tag[DockerContainer[T2]],
       selfTag: distage.Tag[DockerContainer[T]],
       mutateModule: ModuleDefDSL#MutationContext,

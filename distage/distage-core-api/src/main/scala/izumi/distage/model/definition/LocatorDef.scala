@@ -60,7 +60,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
 
   override def parent: Option[Locator] = None
 
-  private[this] final lazy val (frozenMap, frozenInstances): (Map[DIKey, Any], immutable.Seq[IdentifiedRef]) = {
+  private final lazy val (frozenMap, frozenInstances): (Map[DIKey, Any], immutable.Seq[IdentifiedRef]) = {
     val map = new mutable.LinkedHashMap[DIKey, Any]
 
     frozenState.foreach {
@@ -109,7 +109,7 @@ object LocatorDef {
   final class BindDSLAfterAlias[T](override protected val mutableState: SingletonRef) extends BindDSLMutBase[T]
 
   sealed trait BindDSLMutBase[T] {
-    protected[this] def mutableState: SingletonRef
+    protected def mutableState: SingletonRef
 
     def aliased[T1 >: T: Tag](implicit pos: CodePositionMaterializer): BindDSLAfterAlias[T] = {
       addOp(AliasTo(DIKey.get[T1], pos.get.position))(new BindDSLAfterAlias[T](_))
@@ -119,7 +119,7 @@ object LocatorDef {
       addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(new BindDSLAfterAlias[T](_))
     }
 
-    protected[this] final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
+    protected final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
       newState(mutableState.append(op))
     }
   }

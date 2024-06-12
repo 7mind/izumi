@@ -10,7 +10,7 @@ final class LogMessageMacro(override val c: blackbox.Context) extends LogMessage
 final class LogMessageMacroStrict(override val c: blackbox.Context) extends LogMessageMacro0(c, true)
 
 class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
-  private[this] final val nameExtractor = new ArgumentNameExtractionMacro[c.type](c, strict)
+  private final val nameExtractor = new ArgumentNameExtractionMacro[c.type](c, strict)
 
   import c.universe._
 
@@ -24,7 +24,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
   }
 
   @scala.annotation.tailrec
-  private[this] def processExpr(message: c.Tree, isMultiline: Boolean): c.Expr[Message] = {
+  private def processExpr(message: c.Tree, isMultiline: Boolean): c.Expr[Message] = {
     sealed trait Chunk {
       def tree: Tree
     }
@@ -211,7 +211,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
     }
   }
 
-  private[this] def createMessageExpr(stringContext: c.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
+  private def createMessageExpr(stringContext: c.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
     reify {
       Message(
         c.Expr[StringContext](stringContext).splice,

@@ -1,6 +1,8 @@
 package izumi.distage.constructors
 
-import izumi.distage.model.providers.{Functoid, FunctoidMacro}
+import izumi.distage.model.providers.Functoid
+import izumi.distage.reflection.macros.FunctoidMacro
+
 import izumi.distage.model.reflection.Provider.ProviderType
 
 import scala.quoted.{Expr, Quotes, Type}
@@ -68,7 +70,7 @@ object ClassConstructorMacro {
             val paramss = util.extractConstructorParamLists(typeRepr)
             val lamExpr = util.wrapCtorApplicationIntoFunctoidRawLambda[R](paramss, ctorTreeParameterized)
 
-            val f = util.makeFunctoid[R](paramss.flatten, lamExpr, '{ ProviderType.Class })
+            val f = util.makeFunctoid[R](paramss.flatten, lamExpr, '{ ProviderType.Constructor })
             '{ new ClassConstructor[R](${ f }) }
 
           case None =>

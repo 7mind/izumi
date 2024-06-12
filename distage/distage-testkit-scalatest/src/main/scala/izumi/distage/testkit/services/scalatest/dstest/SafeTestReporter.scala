@@ -38,7 +38,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     delayReport(scope, None, test, testStatus)
   }
 
-  private[this] def delayReport(scope: ScopeId, depth: Option[Int], test: FullMeta, testReport: TestStatus): Unit = synchronized {
+  private def delayReport(scope: ScopeId, depth: Option[Int], test: FullMeta, testReport: TestStatus): Unit = synchronized {
     (runningSuites.get(test.test.id.suite), testReport) match {
       // if the current test locked this suite, and its execution is done
       // then we will report all tests that were finished at this point for this suite
@@ -55,7 +55,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     }
   }
 
-  private[this] def putDelayedReport(scope: ScopeId, depth: Option[Int], meta: FullMeta, report: TestStatus): Unit = synchronized {
+  private def putDelayedReport(scope: ScopeId, depth: Option[Int], meta: FullMeta, report: TestStatus): Unit = synchronized {
     val buffer = delayedReports.getOrElseUpdate(meta, mutable.Queue.empty)
     depth match {
       case Some(value) =>

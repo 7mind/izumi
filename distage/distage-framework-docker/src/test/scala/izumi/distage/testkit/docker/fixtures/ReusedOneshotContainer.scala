@@ -65,7 +65,7 @@ class CmdContainerModule[F[_]: TagK] extends ModuleDef {
 object CmdContainerModule {
   def apply[F[_]: TagK]: CmdContainerModule[F] = new CmdContainerModule[F]
 
-  private[this] val runId: String = UUID.randomUUID().toString
+  private val runId: String = UUID.randomUUID().toString
 
   val stateFileMount: Mount = Mount("/tmp/", "/tmp/docker-test/")
   val stateFilePath: String = s"/tmp/docker-test/docker-test-$runId.txt"

@@ -19,7 +19,7 @@ import scala.collection.mutable
   * }}}
   */
 trait ParserDef {
-  private[this] val _all: mutable.LinkedHashMap[String, ArgDef] = mutable.LinkedHashMap[String, ArgDef]()
+  private val _all: mutable.LinkedHashMap[String, ArgDef] = mutable.LinkedHashMap[String, ArgDef]()
 
   def isEmpty: Boolean = _all.isEmpty
   def nonEmpty: Boolean = _all.nonEmpty
@@ -43,7 +43,7 @@ trait ParserDef {
     arg(name, None, doc, None)
   }
 
-  private[this] def arg(name: String, short: Option[String], doc: String, valueDoc: Option[String]): ArgDef = {
+  private def arg(name: String, short: Option[String], doc: String, valueDoc: Option[String]): ArgDef = {
     if (_all.contains(name)) {
       throw new IllegalArgumentException(s"Parameter $name/$short is already registered!")
     }

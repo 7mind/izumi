@@ -313,8 +313,7 @@ object Izumi {
             (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)),
           SettingKey(Some(scala300), None) :=
             Seq[Const](
-              "-Yretain-trees", // FIXME required
-              "-language:3.4",
+              "-language:3.4"
             ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),
@@ -362,6 +361,7 @@ object Izumi {
 
       final val collections = ArtifactId("fundamentals-collections")
       final val platform = ArtifactId("fundamentals-platform")
+      final val functoid = ArtifactId("fundamentals-functoid")
       final val language = ArtifactId("fundamentals-language")
       final val functional = ArtifactId("fundamentals-functional")
       final val bio = ArtifactId("fundamentals-bio")
@@ -369,11 +369,12 @@ object Izumi {
       final val literals = ArtifactId("fundamentals-literals")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
-      final val reflection = ArtifactId("fundamentals-reflection")
+//      final val reflection = ArtifactId("fundamentals-reflection")
       final val jsonCirce = ArtifactId("fundamentals-json-circe")
 
       final lazy val basics = Seq(
         platform,
+        functoid,
         collections,
         functional,
       ).map(_ in Scope.Runtime.all)
@@ -483,17 +484,36 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.platform,
         libs = Seq(
-          scala_reflect
+          izumi_reflect in Scope.Compile.all,
+          scala_reflect,
         ),
         depends = Seq(
+          Projects.fundamentals.functional,
           Projects.fundamentals.language in Scope.Compile.all,
           Projects.fundamentals.collections in Scope.Compile.all,
-          Projects.fundamentals.reflection in Scope.Compile.all,
+//          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
         settings = Seq(
           "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
         ),
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
+      ),
+      Artifact(
+        name = Projects.fundamentals.functoid,
+        libs = Seq(
+          izumi_reflect in Scope.Compile.all,
+          scala_reflect,
+        ),
+        depends = Seq(
+          Projects.fundamentals.platform,
+          Projects.fundamentals.language in Scope.Compile.all,
+          Projects.fundamentals.collections in Scope.Compile.all,
+          //          Projects.fundamentals.reflection in Scope.Compile.all,
+        ),
+//        settings = Seq(
+//          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
+//        ),
+//        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
         name = Projects.fundamentals.jsonCirce,
@@ -516,14 +536,15 @@ object Izumi {
           "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
         ),
       ),
-      Artifact(
-        name = Projects.fundamentals.reflection,
-        libs = Seq(izumi_reflect in Scope.Compile.all, scala_reflect),
-        depends = Seq(
-          Projects.fundamentals.functional
-        ),
-        settings = Seq.empty,
-      ),
+//      Artifact(
+//        name = Projects.fundamentals.reflection,
+//        libs = Seq(izumi_reflect in Scope.Compile.all, scala_reflect),
+//        depends = Seq(
+//          Projects.fundamentals.functional,
+//          Projects.fundamentals.language,
+//        ),
+//        settings = Seq.empty,
+//      ),
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++
@@ -562,8 +583,9 @@ object Izumi {
         name = Projects.distage.coreApi,
         libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(zio_managed in Scope.Optional.all),
         depends = Seq(
-          Projects.fundamentals.reflection,
+//          Projects.fundamentals.reflection,
           Projects.fundamentals.platform,
+          Projects.fundamentals.functoid,
           Projects.fundamentals.bio,
         ).map(_ in Scope.Compile.all),
         platforms = Targets.cross3,

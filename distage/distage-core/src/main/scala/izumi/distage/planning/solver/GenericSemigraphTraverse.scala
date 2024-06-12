@@ -92,7 +92,7 @@ abstract class GenericSemigraphTraverse[Err](
   }
 
   @nowarn("msg=Unused import")
-  protected[this] def trace(
+  protected def trace(
     allAxis: Map[String, Set[String]],
     allVisited: mutable.HashSet[(DIKey, Set[AxisPoint])],
     matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],

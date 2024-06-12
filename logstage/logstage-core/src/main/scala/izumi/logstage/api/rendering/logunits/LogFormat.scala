@@ -87,7 +87,7 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def processUnbalanced(
+    @inline private def processUnbalanced(
       occurences: mutable.HashMap[String, Int],
       withColors: Boolean,
       hideKeys: Boolean,
@@ -110,7 +110,7 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def process(
+    @inline private def process(
       occurences: mutable.HashMap[String, Int],
       templateBuilder: mutable.StringBuilder,
       messageBuilder: mutable.StringBuilder,
@@ -163,7 +163,7 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def normalizeName(s: String): String = {
+    @inline private def normalizeName(s: String): String = {
       if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
         s
       } else {
@@ -172,17 +172,17 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def handle(part: String): String = {
+    @inline private def handle(part: String): String = {
       StringContext.processEscapes(part)
     }
 
-    @inline private[this] def formatKvStrings(withColor: Boolean, name: String, value: String): String = {
+    @inline private def formatKvStrings(withColor: Boolean, name: String, value: String): String = {
       val key = wrapped(withColor, Console.GREEN, name)
       val v = wrapped(withColor, Console.CYAN, value)
       s"$key=$v"
     }
 
-    @inline private[this] def argToString(codec: Option[LogstageCodec[Any]], argValue: Any, withColors: Boolean): String = {
+    @inline private def argToString(codec: Option[LogstageCodec[Any]], argValue: Any, withColors: Boolean): String = {
       argValue match {
         case null =>
           wrapped(withColors, Console.YELLOW, "null")
@@ -213,7 +213,7 @@ object LogFormat {
 
     protected def toString(argValue: Any): String
 
-    @inline private[this] def wrapped(withColors: Boolean, color: String, message: String): String = {
+    @inline private def wrapped(withColors: Boolean, color: String, message: String): String = {
       if (withColors) {
         s"$color$message${Console.RESET}"
       } else {

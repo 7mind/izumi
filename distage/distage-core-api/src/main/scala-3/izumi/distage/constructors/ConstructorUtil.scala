@@ -6,8 +6,8 @@ import izumi.fundamentals.platform.reflection.ReflectionUtil
 import scala.annotation.{nowarn, tailrec}
 import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable
-import izumi.distage.model.providers.{Functoid, FunctoidMacro}
-import izumi.distage.model.providers.FunctoidMacro.FunctoidParametersMacro
+import izumi.distage.model.providers.Functoid
+import izumi.distage.reflection.macros.{FunctoidMacro, FunctoidMacroHelpers, FunctoidParametersMacro, IdExtractorImpl}
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 import izumi.fundamentals.reflection.ReflectiveCall
 import izumi.reflect.WeakTag
@@ -120,6 +120,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
   import qctx.reflect.*
 
   private val withAnnotationSym: Symbol = TypeRepr.of[With].typeSymbol
+  private val paramsMacro = new FunctoidParametersMacro[qctx.type](new IdExtractorImpl[qctx.type]())
 
   final case class ParamRepr(name: String, mbSymbol: Option[Symbol], tpe: TypeRepr)
 
@@ -157,7 +158,6 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
   }
 
   def makeFunctoid[R: Type](params: List[ParamRepr], argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
-    val paramsMacro = new FunctoidParametersMacro[qctx.type]
 
     val paramDefs = params.map {
       case ParamRepr(n, s, t) => paramsMacro.makeParam(n, Right(t), s)
@@ -167,7 +167,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       new Functoid[R](
         new ProviderImpl[R](
           ${ Expr.ofList(paramDefs) },
-          ${ paramsMacro.safeType[R] },
+          ${ FunctoidMacroHelpers.generateSafeType[R, Q] },
           ${ argsLambda },
           ${ providerType },
         )

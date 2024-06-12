@@ -67,5 +67,5 @@ trait IzLoggerConvenienceApi[Logger <: RoutingLogger] {
     */
   final lazy val DebugLogger = make(LogRouter.debugRouter)
 
-  protected[this] def make(r: LogRouter, context: CustomContext = CustomContext.empty): Logger
+  protected def make(r: LogRouter, context: CustomContext = CustomContext.empty): Logger
 }

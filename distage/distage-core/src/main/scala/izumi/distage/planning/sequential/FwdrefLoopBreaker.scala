@@ -4,7 +4,7 @@ import izumi.distage.model.definition.errors.DIError.LoopResolutionError
 import izumi.distage.model.definition.errors.DIError.LoopResolutionError.NoAppropriateResolutionFound
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
-import izumi.distage.model.plan.ExecutableOp.{ImportOp, InstantiationOp, SemiplanOp}
+import izumi.distage.model.plan.ExecutableOp.{ImportOp, InstantiationOp, SemiplanOp, WiringOp}
 import izumi.distage.model.reflection.{DIKey, MirrorProvider}
 import izumi.distage.planning.sequential.FwdrefLoopBreaker.BreakAt
 import izumi.fundamentals.collections.nonempty.NEList
@@ -33,11 +33,22 @@ object FwdrefLoopBreaker {
                 false
               case _: ImportOp =>
                 false
-              case _: InstantiationOp =>
-                provider.canBeProxied(key.tpe)
+              case i: InstantiationOp =>
+                i match {
+                  case _: ExecutableOp.CreateSet =>
+                    true
+                  case _: ExecutableOp.MonadicOp =>
+                    provider.canBeProxied(key.tpe)
+                  case op: ExecutableOp.WiringOp =>
+                    op match {
+                      case _: WiringOp.CallProvider =>
+                        provider.canBeProxied(key.tpe)
+                      case _ =>
+                        false
+                    }
+                }
             }
         }
-
       }
     }
 

@@ -167,7 +167,7 @@ object PlanCheckMaterializer extends PlanCheckMaterializerCommon {
     }
   }
 
-  private[this] def instantiateObject[T: Type](using qctx: Quotes): T = {
+  private def instantiateObject[T: Type](using qctx: Quotes): T = {
     import qctx.reflect.*
     val symbol = TypeRepr.of[T].typeSymbol
     val className = symbol.fullName.replace("$.", "$") // hack around nested objects

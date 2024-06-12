@@ -116,7 +116,7 @@ class DistageTestRunner[F[_]: TagK, G[_]](
     }
   }
 
-  private[this] def logEnvironmentsInfo(envs: Map[PreparedTestEnv, TestTree[F]], duration: FiniteDuration): Unit = {
+  private def logEnvironmentsInfo(envs: Map[PreparedTestEnv, TestTree[F]], duration: FiniteDuration): Unit = {
     val testRunnerLogger = {
       val minimumLogLevel = envs.map(_._1.envExec.logLevel).toSeq.sorted.headOption.getOrElse(Log.Level.Info)
       IzLogger(minimumLogLevel)("phase" -> "testRunner")

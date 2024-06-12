@@ -1,6 +1,7 @@
 package izumi.distage.constructors
 
-import izumi.distage.model.providers.{Functoid, FunctoidMacro}
+import izumi.distage.model.providers.Functoid
+import izumi.distage.reflection.macros.FunctoidMacro
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.platform.reflection.ReflectionUtil
@@ -63,7 +64,7 @@ object ZEnvConstructorMacro {
           }).changeOwner(lambdaSym)
       }
 
-      val f = util.makeFunctoid[ZEnvironment[R]](lamParams, lamExpr, '{ ProviderType.ZIOEnvironment })
+      val f = util.makeFunctoid[ZEnvironment[R]](lamParams, lamExpr, '{ ProviderType.Constructor })
       '{ new ZEnvConstructor[R](${ f }) }
     }
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }

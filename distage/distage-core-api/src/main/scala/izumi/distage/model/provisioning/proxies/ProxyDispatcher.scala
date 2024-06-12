@@ -10,7 +10,7 @@ trait ProxyDispatcher {
 
 object ProxyDispatcher {
   trait AtomicProxyDispatcher extends ProxyDispatcher {
-    protected[this] val reference = new AtomicReference[AnyRef](null)
+    protected val reference = new AtomicReference[AnyRef](null)
 
     override def init(real: Any): Unit = {
       if (!reference.compareAndSet(null, real.asInstanceOf[AnyRef])) {

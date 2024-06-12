@@ -24,8 +24,8 @@ object TestTreeBuilder {
   ) extends TestTreeBuilder[F] {
     final class MemoizationTreeBuilder(planner: Planner, levelPlan: Plan) {
 
-      private[this] val children = TrieMap.empty[Plan, MemoizationTreeBuilder]
-      private[this] val groups = ArrayBuffer.empty[PackedEnv[F]]
+      private val children = TrieMap.empty[Plan, MemoizationTreeBuilder]
+      private val groups = ArrayBuffer.empty[PackedEnv[F]]
 
       def toImmutable: TestTree[F] = {
         toImmutable(Set.empty)

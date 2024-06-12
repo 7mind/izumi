@@ -91,6 +91,6 @@ trait InjectorFactory {
     new Bootloader(this, bootstrapModule, bootstrapActivation, defaultModule.module, input)
   }
 
-  protected[this] def defaultBootstrap: BootstrapContextModule
-  protected[this] def defaultBootstrapActivation: Activation
+  protected def defaultBootstrap: BootstrapContextModule
+  protected def defaultBootstrapActivation: Activation
 }

@@ -2,7 +2,6 @@ package izumi.distage.fixtures
 
 import izumi.distage.constructors.TraitConstructor
 import izumi.distage.model.definition.With
-import izumi.distage.model.reflection.TypedRef
 
 object Scala3TraitCases {
 

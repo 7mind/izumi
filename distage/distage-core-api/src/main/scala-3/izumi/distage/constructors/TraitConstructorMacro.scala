@@ -1,6 +1,7 @@
 package izumi.distage.constructors
 
-import izumi.distage.model.providers.{Functoid, FunctoidMacro}
+import izumi.distage.model.providers.Functoid
+import izumi.distage.reflection.macros.FunctoidMacro
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.reflect.WeakTag
@@ -72,7 +73,7 @@ object TraitConstructorMacro {
 //      )
 //    }
 
-    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Trait })
+    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Constructor })
     '{ new TraitConstructor[R](${ f }) }
   }
 

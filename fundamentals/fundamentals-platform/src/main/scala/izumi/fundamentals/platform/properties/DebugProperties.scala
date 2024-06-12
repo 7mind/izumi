@@ -15,9 +15,9 @@ import izumi.fundamentals.platform.strings.IzString._
   * }}}
   */
 trait DebugProperties {
-  @inline protected[this] final def BoolProperty(name: String): BooleanProperty = new BooleanProperty(name)
+  @inline protected final def BoolProperty(name: String): BooleanProperty = new BooleanProperty(name)
 
-  @inline protected[this] final def StrProperty(name: String): StrProperty = new StrProperty(name)
+  @inline protected final def StrProperty(name: String): StrProperty = new StrProperty(name)
 }
 
 final case class BooleanProperty(name: String) extends AnyVal {

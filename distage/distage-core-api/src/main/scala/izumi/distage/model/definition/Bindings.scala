@@ -4,7 +4,7 @@ import izumi.distage.Subcontext
 import izumi.distage.constructors.{ClassConstructor, FactoryConstructor, TraitConstructor}
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.DIKey.SetKeyMeta
+import izumi.distage.model.reflection.SetKeyMeta
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.Tag

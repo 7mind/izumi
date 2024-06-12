@@ -27,7 +27,7 @@ private[distage] class ByteBuddyAtomicRefDispatcher(
     }
   }
 
-  @inline private[this] final def getRef: AnyRef = {
+  @inline private final def getRef: AnyRef = {
     val value = reference.get()
     if (value ne null) value else nullProxy
   }

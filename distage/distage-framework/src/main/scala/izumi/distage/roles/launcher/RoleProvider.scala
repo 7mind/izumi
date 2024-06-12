@@ -22,8 +22,8 @@ trait RoleProvider {
 }
 
 object RoleProvider {
-  private[this] final val sysPropIgnoreMismatchedEffect = DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(false)
-  private[this] final val syspropRolesReflection = DebugProperties.`izumi.distage.roles.reflection`.boolValue(true)
+  private final val sysPropIgnoreMismatchedEffect = DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(false)
+  private final val syspropRolesReflection = DebugProperties.`izumi.distage.roles.reflection`.boolValue(true)
 
   open class NonReflectiveImpl(
     logger: IzLogger @Id("early"),
@@ -31,7 +31,7 @@ object RoleProvider {
     parameters: RawAppArgs,
   ) extends RoleProvider {
 
-    protected[this] val isIgnoredMismatchedEffect: Boolean = sysPropIgnoreMismatchedEffect || ignoreMismatchedEffect
+    protected val isIgnoredMismatchedEffect: Boolean = sysPropIgnoreMismatchedEffect || ignoreMismatchedEffect
 
     def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo = {
       val rolesInfo = getInfo(
@@ -115,7 +115,7 @@ object RoleProvider {
     parameters: RawAppArgs,
   ) extends NonReflectiveImpl(logger, ignoreMismatchedEffect, parameters) {
 
-    protected[this] val isReflectionEnabled: Boolean = reflectionEnabled && syspropRolesReflection && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage
+    protected val isReflectionEnabled: Boolean = reflectionEnabled && syspropRolesReflection && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage
 
     override protected def handleMissingStaticMetadata(roleType: SafeType, s: ImplBinding): RoleBinding = {
       if (isReflectionEnabled) {

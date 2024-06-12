@@ -299,12 +299,6 @@ object PlanCheck {
       }
     }
 
-    private def parseActivations(s: String): Set[NESet[AxisPoint]] = {
-      s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
-          NESet `from` _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
-        }.toSet
-    }
-
     private def defaultLogger(): TrivialLogger = {
       TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.distage.plancheck`.name)
     }
@@ -360,6 +354,13 @@ object PlanCheck {
            |""".stripMargin
       )
     }
+
+  }
+
+  private def parseActivations(s: String): Set[NESet[AxisPoint]] = {
+    s.split("\\|").iterator.filter(_.nonEmpty).flatMap {
+        NESet `from` _.split(" ").iterator.filter(_.nonEmpty).map(AxisPoint.parseAxisPoint).toSet
+      }.toSet
   }
 
 }

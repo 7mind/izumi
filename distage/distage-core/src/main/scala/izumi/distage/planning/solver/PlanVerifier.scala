@@ -136,7 +136,7 @@ class PlanVerifier(
       }.toOption.get // traverse can't fail
   }
 
-  protected[this] def checkConflicts(
+  protected def checkConflicts(
     allAxis: Map[String, Set[String]],
     withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
     execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
@@ -162,7 +162,7 @@ class PlanVerifier(
     }
   }
 
-  protected[this] final def checkForConflictingAxisChoices(
+  protected final def checkForConflictingAxisChoices(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[ConflictingAxisChoices] = {
     ops.iterator.flatMap {
@@ -174,7 +174,7 @@ class PlanVerifier(
   }
 
   /** this method fails in case any bindings in the set have indistinguishable activations */
-  protected[this] final def checkForDuplicateActivations(
+  protected final def checkForDuplicateActivations(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[DuplicateActivations] = {
     val duplicateAxisMap = ops
@@ -190,7 +190,7 @@ class PlanVerifier(
   }
 
   /** this method fails in case any bindings in the set have indistinguishable activations */
-  @tailrec protected[this] final def checkForUnsolvableConflicts(
+  @tailrec protected final def checkForUnsolvableConflicts(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[UnsolvableConflict] = {
     // TODO: in case we implement precedence rules the implementation should change
@@ -206,7 +206,7 @@ class PlanVerifier(
   }
 
   /** This method fails in case there are missing/uncovered points on any of the reachable axis */
-  protected[this] final def checkForUnsaturatedAxis(
+  protected final def checkForUnsaturatedAxis(
     allAxis: Map[String, Set[String]],
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
     excludedActivations: Set[NESet[AxisPoint]],
@@ -230,7 +230,7 @@ class PlanVerifier(
     }
   }
 
-  protected[this] final def checkForShadowedActivations(
+  protected final def checkForShadowedActivations(
     allAxis: Map[String, Set[String]],
     ops: Set[(ExecutableOp.InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
   ): List[ShadowedActivation] = {
@@ -256,7 +256,7 @@ class PlanVerifier(
     }.toList
   }
 
-  protected[this] def checkForIncompatibleEffectType(
+  protected def checkForIncompatibleEffectType(
     effectType: SafeType,
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
   ): List[IncompatibleEffectType] = {
@@ -271,7 +271,7 @@ object PlanVerifier {
   def apply(): PlanVerifier = Default
   def apply(preps: GraphQueries): PlanVerifier = new PlanVerifier(preps)
 
-  private[this] object Default extends PlanVerifier(new GraphQueries(new BindingTranslator.Impl))
+  private object Default extends PlanVerifier(new GraphQueries(new BindingTranslator.Impl))
 
   sealed abstract class PlanVerifierResult {
     def issues: Option[NESet[PlanIssue]]

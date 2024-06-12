@@ -24,7 +24,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
     }
   }
 
-  @inline private[this] def mkEntry(level: Level, message: String, args: => Seq[Any], marker: => Option[Marker]): Entry = {
+  @inline private def mkEntry(level: Level, message: String, args: => Seq[Any], marker: => Option[Marker]): Entry = {
     val thread = Thread.currentThread()
     val threadData = ThreadData(thread.getName, thread.getId)
 

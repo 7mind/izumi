@@ -1,7 +1,5 @@
 package izumi.distage.model.plan.repr
 
-import izumi.distage.model.reflection.DIKey.SetKeyMeta
-
 import scala.annotation.nowarn
 import izumi.distage.model.reflection.*
 import izumi.fundamentals.collections.IzCollections.*
@@ -29,7 +27,7 @@ class KeyMinimizer(
   }
 
   @nowarn("msg=Unused import")
-  private[this] val index: Map[String, Int] = {
+  private val index: Map[String, Int] = {
     import scala.collection.compat._
     allKeys.iterator
       .flatMap(extract)
@@ -39,7 +37,7 @@ class KeyMinimizer(
       .toMap
   }
 
-  private[this] val minimizedLTTRenderables = new LTTRenderables {
+  private val minimizedLTTRenderables = new LTTRenderables {
     override def r_SymName(sym: SymName, hasPrefix: Boolean): String = {
       sym match {
         case sym: SymName.NamedSymbol =>
@@ -57,7 +55,7 @@ class KeyMinimizer(
     }
   }
 
-  private[this] def showKeyData(prefix: String, value: String, idx: Option[Int] = None) = {
+  private def showKeyData(prefix: String, value: String, idx: Option[Int] = None) = {
     val prefixRepr = styled(s"{$prefix.", c.GREEN)
     val suffixRepr = styled(s"}", c.GREEN)
     val idxrepr = idx.map(i => styled("@μ(" + i.toString + ")", c.RED)).getOrElse("")
@@ -65,7 +63,7 @@ class KeyMinimizer(
     s"$prefixRepr$value$suffixRepr$idxrepr"
   }
 
-  @inline private[this] def renderKey(key: DIKey, rendertype: SafeType => String): String = {
+  @inline private def renderKey(key: DIKey, rendertype: SafeType => String): String = {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
     key match {
       case DIKey.TypeKey(tpe, idx) =>
@@ -95,21 +93,13 @@ class KeyMinimizer(
 
       case DIKey.SetElementKey(set, reference, disambiguator) =>
         val base = s"${renderKey(set)}/${renderKey(reference)}"
-        val drepr = (disambiguator match {
-          case SetKeyMeta.NoMeta =>
-            None
-          case SetKeyMeta.WithImpl(disambiguator) =>
-            Some(s"impl:${disambiguator.hashCode}")
-          case SetKeyMeta.WithAutoset(base) =>
-            Some(s"autoset:${renderKey(base)}")
-        }).map(v => "#" + v).getOrElse("")
-
+        val drepr = disambiguator.repr(renderKey)
         val fullDis = styled(drepr, c.BLUE)
         showKeyData("set", s"$base$fullDis")
     }
   }
 
-  private[this] def extract(key: DIKey): Set[String] = {
+  private def extract(key: DIKey): Set[String] = {
     key match {
       case k: DIKey.TypeKey =>
         extract(k.tpe)
@@ -134,7 +124,7 @@ class KeyMinimizer(
     }
   }
 
-  private[this] def extract(key: SafeType): Set[String] = {
+  private def extract(key: SafeType): Set[String] = {
     RuntimeAPI
       .unpack(key.tag.ref match {
         case reference: LightTypeTagRef.AbstractReference =>

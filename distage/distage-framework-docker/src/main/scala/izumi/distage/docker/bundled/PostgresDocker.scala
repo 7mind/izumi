@@ -16,7 +16,7 @@ object PostgresDocker extends ContainerDef {
   override def config: Config = {
     Config(
       registry = Some("public.ecr.aws"),
-      image = "docker/library/postgres:16-alpine",
+      image = "docker/library/postgres:16",
       ports = Seq(primaryPort),
       env = Map("POSTGRES_PASSWORD" -> "postgres"),
       healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck(primaryPort, "postgres", "postgres"),

@@ -24,7 +24,7 @@ object StartupBanner {
       }
     }
 
-    private[this] def showDepData(logger: IzLogger, msg: String, clazz: Option[IzArtifact]): Unit = {
+    private def showDepData(logger: IzLogger, msg: String, clazz: Option[IzArtifact]): Unit = {
       val details = clazz.map(_.toString).getOrElse("{No version data}")
       logger.info(s"$msg : $details")
     }

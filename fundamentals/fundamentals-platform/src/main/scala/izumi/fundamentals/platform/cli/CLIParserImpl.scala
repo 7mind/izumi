@@ -41,7 +41,7 @@ class CLIParserImpl extends CLIParser {
     } yield roles
   }
 
-  private[this] def validate(arguments: RawAppArgs): Either[ParserError, Unit] = {
+  private def validate(arguments: RawAppArgs): Either[ParserError, Unit] = {
     val bad = arguments.roles.groupBy(_.role).filter(_._2.size > 1)
     if (bad.nonEmpty) {
       Left(ParserError.DuplicatedRoles(bad.keySet))

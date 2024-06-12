@@ -40,7 +40,7 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler wit
     }
   }
 
-  @inline private[this] def mkEntry(record: LogRecord): Log.Entry = {
+  @inline private def mkEntry(record: LogRecord): Log.Entry = {
 
     val loggerName = Option(record.getLoggerName).getOrElse("unknown")
     val id = Log.LoggerId(loggerName)
@@ -132,7 +132,7 @@ trait JULTools {
 
   def rootRef(): Logger = LogManager.getLogManager.getLogger("")
 
-  private[this] def forEachHandler(logger: Logger)(action: (Logger, java.util.logging.Handler) => Unit): Unit = {
+  private def forEachHandler(logger: Logger)(action: (Logger, java.util.logging.Handler) => Unit): Unit = {
     logger.synchronized {
       val handlers = logger.getHandlers
       for (handler <- handlers) {

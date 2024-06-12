@@ -47,9 +47,9 @@ trait AppShutdownStrategy[F[_]] extends AppShutdownInitiator {
 }
 
 object AppShutdownStrategy {
-  private[this] val logger = TrivialLogger.make[FallbackConsoleSink](DebugProperties.`izumi.debug.distage.shutdown`.name)
+  private val logger = TrivialLogger.make[FallbackConsoleSink](DebugProperties.`izumi.debug.distage.shutdown`.name)
 
-  private[this] def makeShutdownHook(logger: IzLogger, cont: () => Unit): Thread = {
+  private def makeShutdownHook(logger: IzLogger, cont: () => Unit): Thread = {
     new Thread(
       () => {
         logger.warn("Termination signal received")

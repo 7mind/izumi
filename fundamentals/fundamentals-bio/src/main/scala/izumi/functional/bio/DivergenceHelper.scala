@@ -42,7 +42,7 @@ object DivergenceHelper {
     * The structural refinement must be placed directly on
     * the `C` type variable, not through an alias to work.
     */
-  @nowarn("msg=never used") private[this] object Nondivergent {
-    @nowarn("msg=never used") private[this] type Of[A] = A { type Divergence = Nondivergent }
+  @nowarn("msg=never used") private object Nondivergent {
+    @nowarn("msg=never used") private type Of[A] = A { type Divergence = Nondivergent }
   }
 }

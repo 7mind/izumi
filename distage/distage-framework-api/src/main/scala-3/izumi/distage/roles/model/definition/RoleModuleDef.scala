@@ -9,7 +9,7 @@ import izumi.distage.roles.model.definition.RoleModuleDef.RoleModuleDefMacros
 import scala.quoted.{Expr, Quotes, Type}
 
 trait RoleModuleDef extends ModuleDef {
-  inline final protected[this] def makeRole[T](implicit getRoleDescriptor: GetRoleDescriptor[T]): MakeDSL[T] =
+  inline final protected def makeRole[T](implicit getRoleDescriptor: GetRoleDescriptor[T]): MakeDSL[T] =
     ${ RoleModuleDefMacros.makeRole[T]('getRoleDescriptor) }
 }
 

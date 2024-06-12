@@ -67,7 +67,7 @@ object LifecycleAggregator {
     Lifecycle.make(makeImpl[F, E])(_.releaseAll())
   }
 
-  private[this] def makeImpl[F[+_, +_]: Panic2: Primitives2, E]: F[Nothing, LifecycleAggregator[F, E]] = {
+  private def makeImpl[F[+_, +_]: Panic2: Primitives2, E]: F[Nothing, LifecycleAggregator[F, E]] = {
     for {
       finalizers <- F.mkRefM(List.empty[(LifecycleAggregator[F, E]#Key, F[E, Unit])])
     } yield new LifecycleAggregator[F, E](finalizers)

@@ -14,7 +14,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
   import ExtractedName._
   import c.universe._
 
-  @inline private[this] final def debug(arg: Tree, s: => String): Unit = {
+  @inline private final def debug(arg: Tree, s: => String): Unit = {
     if (applyDebug) {
       c.warning(arg.pos, s)
     }
@@ -94,7 +94,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
       }
 
       @tailrec
-      private[this] def extract(arg: Tree, acc: Seq[String]): Option[Seq[String]] = {
+      private def extract(arg: Tree, acc: Seq[String]): Option[Seq[String]] = {
         arg match {
           case Select(Ident(TermName("scala")), TermName("Predef")) =>
             debug(arg, s"END-PREDEF")
@@ -191,7 +191,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
       q"_root_.scala.collection.immutable.List(..$expressions)"
     }
   }
-  private[this] def reifiedPrefixedValue(param: Tree, value: Tree, prefix: String): Expr[LogArg] = {
+  private def reifiedPrefixedValue(param: Tree, value: Tree, prefix: String): Expr[LogArg] = {
     val prefixRepr = c.Expr[String](Literal(Constant(prefix)))
     val paramExpr = c.Expr[Any](param)
     val valueExpr = c.Expr[Any](value)
@@ -200,7 +200,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
     }
   }
 
-  private[this] def reifiedExtractedHidden(param: Tree, s: String): Expr[LogArg] = {
+  private def reifiedExtractedHidden(param: Tree, s: String): Expr[LogArg] = {
     val paramRepTree = c.Expr[String](Literal(Constant(s)))
     val expr = c.Expr[Any](param)
     reify {
@@ -208,7 +208,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
     }
   }
 
-  private[this] def reifiedExtracted(param: Tree, s: Seq[String]): Expr[LogArg] = {
+  private def reifiedExtracted(param: Tree, s: Seq[String]): Expr[LogArg] = {
     val list = c.Expr[Seq[String]](q"List(..$s)")
     val expr = c.Expr[Any](param)
     reify {
@@ -216,7 +216,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
     }
   }
 
-  private[this] def findCodec(param: Tree, tpe: Type): Expr[Option[LogstageCodec[Any]]] = {
+  private def findCodec(param: Tree, tpe: Type): Expr[Option[LogstageCodec[Any]]] = {
     val maybeCodec = scala.util.Try(c.inferImplicitValue(appliedType(weakTypeOf[LogstageCodec[Nothing]].typeConstructor, tpe), silent = false))
     debug(param, s"Logstage codec for argument $param of type `$tpe` == $maybeCodec")
 
@@ -231,7 +231,7 @@ class ArgumentNameExtractionMacro[C <: blackbox.Context](final val c: C, strict:
 
     c.Expr[Option[LogstageCodec[Any]]](q"$tc")
   }
-  @inline private[this] def findCodec(param: Tree): Expr[Option[LogstageCodec[Any]]] = findCodec(param, param.tpe)
+  @inline private def findCodec(param: Tree): Expr[Option[LogstageCodec[Any]]] = findCodec(param, param.tpe)
 }
 
 object ArgumentNameExtractionMacro {

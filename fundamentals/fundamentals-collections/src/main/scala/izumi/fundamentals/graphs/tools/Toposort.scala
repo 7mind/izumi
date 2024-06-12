@@ -14,7 +14,7 @@ object Toposort {
 
   @nowarn("msg=Unused import")
   @tailrec
-  private[this] def cycleBreaking[T](predecessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
+  private def cycleBreaking[T](predecessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
     import scala.collection.compat._
     val (noPreds, hasPreds) = predecessors.partition(_._2.isEmpty)
 
@@ -47,11 +47,11 @@ object Toposort {
     }
   }
 
-  private[this] def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
+  private def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
     test(toPreds, Set.empty, key, key)
   }
 
-  private[this] def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
+  private def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
     val deps = toPreds.getOrElse(toTest, Set.empty)
 
     if (deps.contains(needle)) {

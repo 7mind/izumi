@@ -21,7 +21,7 @@ class Help[F[_]](
     F.maybeSuspend(showHelp())
   }
 
-  private[this] def showHelp(): Unit = {
+  private def showHelp(): Unit = {
     val descriptors = roleInfo.availableRoleBindings
       .map(rb => rb.descriptor.parserSchema)
 

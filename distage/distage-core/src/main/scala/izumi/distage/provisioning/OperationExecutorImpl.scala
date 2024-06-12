@@ -28,7 +28,7 @@ class OperationExecutorImpl(
     )((_, trace) => F.pure(Left(UnexpectedStepProvisioning(step, trace.unsafeAttachTraceOrReturnNewThrowable()))))
   }
 
-  private[this] def executeUnsafe[F[_]: TagK](
+  private def executeUnsafe[F[_]: TagK](
     context: ProvisioningKeyProvider,
     step: NonImportOp,
   )(implicit F: QuasiIO[F]
