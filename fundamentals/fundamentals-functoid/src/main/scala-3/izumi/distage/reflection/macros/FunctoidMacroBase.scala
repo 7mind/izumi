@@ -8,7 +8,7 @@ import scala.collection.immutable.{List, Seq}
 import scala.language.implicitConversions
 import scala.quoted.{Expr, Quotes, Type}
 
-trait FunctoidMacroBase[Ftoid[+K] <: AbstractFunctoid[K, Ftoid]] {
+trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
   protected def generateFunctoid[R: Type, Q <: Quotes](paramDefs: List[Expr[LinkedParameter]], originalFun: Expr[AnyRef])(using qctx: Q): Expr[Ftoid[R]]
 
   protected final def generateRawFnCall[Q <: Quotes](argsCount: Int, rawFn: Expr[Any], args: Expr[Seq[Any]])(using qctx: Q): Expr[Any] = {

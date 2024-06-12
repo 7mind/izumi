@@ -6,9 +6,8 @@ import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.reflect.Tag
 
 import scala.annotation.unchecked.uncheckedVariance
-import scala.annotation.unused
 
-trait AbstractFunctoid[+A, Ftoid[+K] <: AbstractFunctoid[K, Ftoid]] {
+trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
 
   def get: Provider
 
@@ -52,8 +51,8 @@ trait AbstractFunctoid[+A, Ftoid[+K] <: AbstractFunctoid[K, Ftoid]] {
     *   this.map2(that)((f, a) => f(a))
     * }}}
     */
-  def ap[B, C](that: Ftoid[B])(implicit @unused ev: A <:< (B => C), tag: Tag[C]): Ftoid[C] = {
-    map2(that)((f, a) => f.asInstanceOf[B => C](a))
+  def ap[B, C](that: Ftoid[B])(implicit ev: A <:< (B => C), tag: Tag[C]): Ftoid[C] = {
+    map2[B, C](that)((f, a) => ev(f)(a))(using tag)
   }
 
   /** Add `B` as an unused dependency of this Functoid */
