@@ -164,7 +164,7 @@ abstract class FunctoidMacroBase[Ftoid[_]](val c: blackbox.Context) {
         case (mArg, lArg) =>
           mArg.copy(
             symbol = lArg.symbol.withFriendlyAnnotations(mArg.symbol.friendlyAnnotations),
-            key = mArg.key.withTpe(lArg.stpe),
+            key = mArg.key.withTpe(lArg.key.tpe),
           )
       }
     } else {
