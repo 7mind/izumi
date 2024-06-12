@@ -12,7 +12,7 @@ import scala.reflect.macros.blackbox
 object ZEnvConstructorMacro {
 
   def mkZEnvConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ZEnvConstructor[T]] = {
-    val macroUniverse = StaticDIUniverse(c)
+    val macroUniverse = StaticDIUniverse(c.universe)
     val impls = ZEnvConstructorMacros(c)(macroUniverse)
     import c.universe.*
     import impls.{c as _, u as _, *}

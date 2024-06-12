@@ -13,7 +13,7 @@ object FactoryConstructorMacro {
   def mkFactoryConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[FactoryConstructor[T]] = {
     import c.universe.*
 
-    val macroUniverse = StaticDIUniverse(c)
+    val macroUniverse = StaticDIUniverse(c.universe)
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`.name)
 

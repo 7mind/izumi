@@ -10,7 +10,7 @@ import scala.reflect.macros.blackbox
 object TraitConstructorMacro {
 
   def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = {
-    val macroUniverse = StaticDIUniverse(c)
+    val macroUniverse = StaticDIUniverse(c.universe)
     val impls = TraitConstructorMacros(c)(macroUniverse)
     import c.universe.*
     import impls.{c as _, u as _, *}

@@ -21,7 +21,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   import u.u.Annotation
 
   private lazy val idAnnotationFqn = DIAnnotationMeta.idAnnotationFqn(u.u)
-  private lazy val brp = new BaseReflectionProvider(u.ctx.universe, idAnnotationFqn)
+  private lazy val brp = new BaseReflectionProvider(u.u, idAnnotationFqn)
 
   private object With {
     def unapply(ann: Annotation): Option[TypeNative] = {
@@ -117,7 +117,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   override def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter = {
     val key = brp.keyFromSymbol(parameterSymbol)
-    Association.Parameter(parameterSymbol, brp.tpeFromSymbol(parameterSymbol), key)
+    Association.Parameter(parameterSymbol, key)
   }
 
   override def zioHasParameters(transformName: String => String)(deepIntersection: List[u.TypeNative]): List[u.Association.Parameter] = {
@@ -125,7 +125,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       hasTpe =>
         val tpe = hasTpe.dealias
         val syntheticSymbolInfo = MacroSymbolInfo.Static.syntheticFromType(transformName)(tpe)
-        Association.Parameter(syntheticSymbolInfo, brp.tpeFromSymbol(syntheticSymbolInfo), brp.keyFromSymbol(syntheticSymbolInfo))
+        Association.Parameter(syntheticSymbolInfo, brp.keyFromSymbol(syntheticSymbolInfo))
     }
   }
 
@@ -155,7 +155,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private def methodToAssociation(definingClass: TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
     val methodSymb = MacroSymbolInfo.Runtime(method, definingClass, wasGeneric = false)
-    Association.AbstractMethod(methodSymb, brp.tpeFromSymbol(methodSymb), brp.keyFromSymbol(methodSymb))
+    Association.AbstractMethod(methodSymb, brp.keyFromSymbol(methodSymb))
   }
 
   private object ConcreteSymbol {

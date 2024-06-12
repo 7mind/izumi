@@ -9,9 +9,9 @@ trait WithDIWiring { this: DIUniverseBase with WithDIAssociation with WithDISymb
   sealed trait MacroWiring
   object MacroWiring {
     sealed trait MacroSingletonWiring extends MacroWiring {
-      def prefix: Option[MacroDIKey]
+      protected def prefix: Option[MacroDIKey]
       def instanceType: TypeNative
-      def associations: Seq[Association]
+      protected[WithDIWiring] def associations: Seq[Association]
       def requiredKeys: Set[MacroDIKey] = associations.map(_.key).toSet ++ prefix.toSet
     }
     object MacroSingletonWiring {

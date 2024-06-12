@@ -1,6 +1,6 @@
 package izumi.distage.reflection.macros.universe.basicuniverse
 
-class ConstructorSelector[U <: scala.reflect.api.Universe & Singleton](val u: U) {
+final class ConstructorSelector[U <: scala.reflect.api.Universe & Singleton](val u: U) {
   def selectConstructorMethod(tpe: u.Type): Option[u.MethodSymbol] = {
     val constructor = findConstructor(tpe)
     if (!constructor.isTerm) {

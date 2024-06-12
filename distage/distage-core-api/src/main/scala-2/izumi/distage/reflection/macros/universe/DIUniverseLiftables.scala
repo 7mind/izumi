@@ -10,7 +10,7 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   import u.u.*
 
   implicit val liftableParameter: Liftable[Association.Parameter] = {
-    case Association.Parameter(info, _, key) =>
+    case Association.Parameter(info, key) =>
       val resultTree = q"{ $modelReflectionPkg.SafeType.get[${Liftable.liftType(info.nonByNameFinalResultType)}] }"
 //      val keyTree = liftableBasicDIKey.apply(key).asInstanceOf[Tree]
       // currently only function parameter symbols are spliced by this

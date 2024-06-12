@@ -7,7 +7,7 @@ import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 import scala.language.implicitConversions
 import scala.quoted.{Expr, Quotes, Type}
 
-trait FunctoidMacroMethods extends FunctoidMacroMethodsBase {}
+trait FunctoidMacroMethods extends FunctoidMacroMethodsBase
 
 object FunctoidMacro extends FunctoidMacroBase[Functoid] {
   transparent inline def make[R](inline fun: AnyRef): Functoid[R] = ${ makeImpl[R]('fun) }

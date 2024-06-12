@@ -6,7 +6,7 @@ trait ReflectionProvider {
   val u: DIUniverse
   import u.*
 
-  def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter
+  protected def parameterToAssociation(parameterSymbol: MacroSymbolInfo): Association.Parameter
 
   def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]]
   def symbolToAnyWiring(tpe: TypeNative): MacroWiring
@@ -17,7 +17,7 @@ trait ReflectionProvider {
   def isWireableAbstract(tpe: TypeNative): Boolean
   def isFactory(tpe: TypeNative): Boolean
 
-  def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative]
+  protected def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative]
 }
 
 object ReflectionProvider {

@@ -1,6 +1,6 @@
 package izumi.distage.reflection.macros.universe.basicuniverse
 
-class DIUniverseBasicLiftables[U <: scala.reflect.api.Universe & Singleton](val u: U) {
+final class DIUniverseBasicLiftables[U <: scala.reflect.api.Universe & Singleton](val u: U) {
   import u.*
 
   val modelReflectionPkg: Tree = q"_root_.izumi.distage.model.reflection"
@@ -11,7 +11,7 @@ class DIUniverseBasicLiftables[U <: scala.reflect.api.Universe & Singleton](val 
   }
 
   implicit val liftableCompactParameter: Liftable[CompactParameter] = {
-    case CompactParameter(info, _, key) =>
+    case CompactParameter(info, key) =>
       val symTree = q"""{ $modelReflectionPkg.SymbolInfo(
       name = ${info.name},
       finalResultType = ${info.safeFinalResultType},

@@ -4,8 +4,6 @@ import izumi.distage.reflection.macros.universe.basicuniverse
 
 import scala.collection.immutable
 
-
-
 object FriendlyAnnoTools {
   private def convertConst(c: Any): FriendlyAnnotationValue = {
     c match {
@@ -30,14 +28,10 @@ object FriendlyAnnoTools {
 
     val avals = if (tpe.typeSymbol.isJavaAnnotation) {
       val pairs: immutable.List[(Option[String], FriendlyAnnotationValue)] = paramTrees.map {
-        p =>
-          (p.asInstanceOf[extractor.u.TreeApi]: @unchecked) match {
-            case extractor.NArg((name, c)) =>
-              // case NamedArg(Ident(TermName(name)), Literal(Constant(c))) =>
-              (Some(name), convertConst(c))
-            case a =>
-              (None, FriendlyAnnotationValue.UnknownConst(s"$a ${u.showRaw(a)}"))
-          }
+        case extractor.NArg((name, c)) =>
+          (Some(name), convertConst(c))
+        case a =>
+          (None, FriendlyAnnotationValue.UnknownConst(s"$a ${u.showRaw(a)}"))
       }
 
       val names = pairs.map(_._1).collect { case Some(name) => name }
@@ -56,7 +50,7 @@ object FriendlyAnnoTools {
       }
 
       val rp = new ConstructorSelector(u)
-      val constructor = rp.selectConstructorMethod(tpe.asInstanceOf[rp.u.Type])
+      val constructor = rp.selectConstructorMethod(tpe)
       constructor match {
         case Some(c) =>
           c.paramLists match {

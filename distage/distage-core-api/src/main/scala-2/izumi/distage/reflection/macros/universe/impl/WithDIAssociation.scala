@@ -1,13 +1,14 @@
 package izumi.distage.reflection.macros.universe.impl
 
-import izumi.distage.reflection.macros.universe.basicuniverse.{MacroDIKey, MacroSafeType}
+import izumi.distage.reflection.macros.universe.basicuniverse.MacroDIKey
 
 import scala.reflect.macros.blackbox
 
 private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDISymbolInfo =>
 
   sealed trait Association {
-    def symbol: MacroSymbolInfo
+    protected def symbol: MacroSymbolInfo
+
     def key: MacroDIKey.BasicKey
     final def name: String = symbol.name
 
@@ -22,7 +23,7 @@ private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDISymbo
     final def nonBynameTpe: TypeNative = symbol.nonByNameFinalResultType
 
     /** always by-name for methods, - may be by-name for parameters */
-    def asParameterTpe: TypeNative
+    protected def asParameterTpe: TypeNative
 
     final def ctorArgumentExpr(c: blackbox.Context): (u.Tree, u.Tree) = {
       import u.*
@@ -37,16 +38,16 @@ private[distage] trait WithDIAssociation { this: DIUniverseBase with WithDISymbo
 
   object Association {
 
-    case class Parameter(symbol: MacroSymbolInfo, stpe: MacroSafeType, key: MacroDIKey.BasicKey) extends Association {
+    case class Parameter(protected val symbol: MacroSymbolInfo, key: MacroDIKey.BasicKey) extends Association {
       override final def isByName: Boolean = symbol.isByName
       override final def asParameter: Association.Parameter = this
       override final def asParameterTpe: TypeNative = tpe
     }
 
     // tpe is never by-name for `AbstractMethod`
-    case class AbstractMethod(symbol: MacroSymbolInfo, stpe: MacroSafeType, key: MacroDIKey.BasicKey) extends Association {
+    case class AbstractMethod(protected val symbol: MacroSymbolInfo, key: MacroDIKey.BasicKey) extends Association {
       override final def isByName: Boolean = true
-      override final def asParameter: Parameter = Parameter(symbol.withIsByName(true).withTpe(asParameterTpe), stpe, key)
+      override final def asParameter: Parameter = Parameter(symbol.withIsByName(true).withTpe(asParameterTpe), key)
       override final def asParameterTpe: TypeNative = u.appliedType(u.definitions.ByNameParamClass, tpe) // force by-name
     }
   }

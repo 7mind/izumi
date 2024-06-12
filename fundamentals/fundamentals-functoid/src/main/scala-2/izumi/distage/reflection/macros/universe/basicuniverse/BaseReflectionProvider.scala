@@ -14,7 +14,7 @@ class BaseReflectionProvider[U <: scala.reflect.api.Universe & Singleton](val u:
 
   private def parameterToAssociation2(parameterSymbol: MacroSymbolInfoCompact): CompactParameter = {
     val key = keyFromSymbol(parameterSymbol)
-    basicuniverse.CompactParameter(parameterSymbol, tpeFromSymbol(parameterSymbol), key)
+    basicuniverse.CompactParameter(parameterSymbol, key)
   }
 
   def tpeFromSymbol(parameterSymbol: MacroSymbolInfoCompact): MacroSafeType = {

@@ -13,7 +13,7 @@ object ClassConstructorMacro {
   def mkClassConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ClassConstructor[T]] = {
     import c.universe.*
 
-    val macroUniverse = StaticDIUniverse(c)
+    val macroUniverse = StaticDIUniverse(c.universe)
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
