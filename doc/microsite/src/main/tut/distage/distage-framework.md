@@ -187,6 +187,60 @@ object WiringCheck extends SpecWiring(
 `distage-framework`'s Role-based applications are checkable out of the box, but applications assembled directly via `distage-core`'s `distage.Injector` APIs
 must implement the @scaladoc[CheckableApp](izumi.distage.framework.CheckableApp) trait to provide all the data necessary for the checks. You may use @scaladoc[CoreCheckableAppSimple](izumi.distage.framework.CoreCheckableAppSimple) implementation for applications definable by a single collection of modules.
 
+### Adding custom checks
+
+You may add your own custom checks that will be executed at compile-time by overriding `customCheck` method of @scaladoc[CheckableApp](izumi.distage.framework.CheckableApp) or its subtypes @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain) or @scaladoc[CoreCheckableAppSimple](izumi.distage.framework.CoreCheckableAppSimple).
+
+For example, you could check that all components that have types with names that contain "Required" – such as `make[RequiredInt].from(RequiredInt(5))` – are used by other components and fail otherwise:
+
+```scala mdoc:reset:to-string
+import distage.{DIKey, PlanVerifier}
+import distage.PlanVerifier.PlanVerifierResult
+import izumi.distage.framework.model.PlanCheckInput
+import izumi.distage.model.planning.AxisPoint
+import izumi.distage.plugins.PluginConfig
+import izumi.distage.roles.RoleAppMain
+import izumi.fundamentals.collections.nonempty.NESet
+
+object CustomCheckLauncher extends RoleAppMain.LauncherCats[cats.effect.IO] {
+
+  // test that all bindings with types that have 'Required'
+  // in their name are used in the application
+  override def customCheck(
+    planVerifier: PlanVerifier,
+    excludedActivations: Set[NESet[AxisPoint]],
+    checkConfig: Boolean,
+    planCheckInput: PlanCheckInput[AppEffectType],
+  ): PlanVerifierResult = {
+    val usedKeys = planVerifier.traceReachables(
+      planCheckInput.module,
+      planCheckInput.roots,
+      planCheckInput.providedKeys,
+      excludedActivations,
+    )
+    val requiredKeys = planCheckInput.module.keys.filter {
+      // filter out any set elements (to remove weak set elements)
+      case _: DIKey.SetElementKey => false
+      case anyKey => anyKey.tpe.tag.shortName.contains("Required")
+    }
+    val unused = requiredKeys -- usedKeys
+    if (unused.nonEmpty) {
+      throw new RuntimeException(
+        s"""Custom check failed, found unused Required bindings:
+           |  ${unused.map(_.tpe.tag.repr).mkString(", ")}""".stripMargin
+      )
+    } else {
+      PlanVerifierResult.empty
+    }
+  }
+
+  override def pluginConfig = PluginConfig.cached(
+    packagesEnabled = Seq("com.example.custom")
+  )
+
+}
+```
+
 ### Low-Level APIs
 
 @scaladoc[PlanCheckMaterializer](izumi.distage.framework.PlanCheckMaterializer),

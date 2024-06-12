@@ -6,19 +6,24 @@ import izumi.distage.InjectorFactory
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.constructors.TraitConstructor
-import izumi.distage.framework.PlanCheck.runtime.RoleSelection
+import izumi.distage.framework.PlanCheck.RoleSelection
 import izumi.distage.framework.model.PlanCheckInput
 import izumi.distage.framework.services.ConfigLoader
 import izumi.distage.model.definition.{Binding, BootstrapModule, Id, Module, ModuleBase, ModuleDef, impl}
 import izumi.distage.model.plan.Roots
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.SafeType
 import izumi.distage.modules.DefaultModule
+import izumi.distage.planning.solver.PlanVerifier
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.launcher.RoleProvider
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
+import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
@@ -43,6 +48,21 @@ trait CheckableApp {
     selectedRoles: RoleSelection,
     chosenConfigFile: Option[String],
   ): PlanCheckInput[AppEffectType]
+
+  /**
+    * Override this to execute additional arbitrary user-defined checks at compile-time (or runtime via `PlanCheck.runtime`)
+    *
+    * @throws Throwable You may throw a custom exception if your check error is not describable by [[izumi.distage.model.planning.PlanIssue]]
+    */
+  def customCheck(
+    planVerifier: PlanVerifier,
+    excludedActivations: Set[NESet[AxisPoint]],
+    checkConfig: Boolean,
+    planCheckInput: PlanCheckInput[AppEffectType],
+  ): PlanVerifierResult = {
+    Quirks.discard(planVerifier, excludedActivations, checkConfig, planCheckInput)
+    PlanVerifierResult.empty
+  }
 }
 object CheckableApp {
   type Aux[F[_]] = CheckableApp { type AppEffectType[A] = F[A] }
