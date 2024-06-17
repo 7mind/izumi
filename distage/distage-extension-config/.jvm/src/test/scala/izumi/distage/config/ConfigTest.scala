@@ -2,11 +2,12 @@ package izumi.distage.config
 
 import com.github.pshirshov.configapp.SealedTrait.CaseClass2
 import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
-import com.github.pshirshov.configapp._
-import com.typesafe.config._
-import distage.Injector
-import izumi.distage.config.model.AppConfig
+import com.github.pshirshov.configapp.*
+import com.typesafe.config.*
+import distage.{Injector, Mode, Repo}
+import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.immutable.ListSet
@@ -161,6 +162,27 @@ final class ConfigTest extends AnyWordSpec {
           .produce(mkConfigModule("sealed-test2.conf")(TestConfigReaders.sealedDefinition)).unsafeGet()
       assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 eq No)
       assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))
+    }
+
+    "regression test: same path ConfTags are preserved when processing includes" in {
+      final case class A()
+      final case class B()
+      final case class C()
+
+      val defn = new ModuleDef {
+        tag(Repo.Prod)
+
+        include(new ConfigModuleDef {
+          tag(Mode.Test)
+          makeConfig[A]("x")
+          makeConfig[B]("x")
+          makeConfig[C]("x")
+        })
+      }
+
+      val confTags = defn.bindings.toList.flatMap(_.tags.collect { case c: ConfTag => c })
+
+      assert(confTags.map(_.tpe).toSet.size == 3)
     }
 
   }

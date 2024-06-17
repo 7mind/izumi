@@ -44,15 +44,15 @@ object ConfigModuleDef {
   final class FromConfig[T](private val make: MakeDSL[T]) extends AnyVal {
     def fromConfig(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T], meta: DIConfigMeta[T]): MakeDSLUnnamedAfterFrom[T] = {
       val parser = wireConfig[T](path)
-      make.tagged(ConfTag(path)(parser, meta.tpe)).from(parser)
+      make.tagged(ConfTag(path, parser, meta.tpe)).from(parser)
     }
     def fromConfigNamed(path: String)(implicit tag: Tag[T], dec: DIConfigReader[T], meta: DIConfigMeta[T]): MakeDSLNamedAfterFrom[T] = {
       val parser = wireConfig[T](path)
-      make.named(path).tagged(ConfTag(path)(parser, meta.tpe)).from(parser)
+      make.named(path).tagged(ConfTag(path, parser, meta.tpe)).from(parser)
     }
     def fromConfigWithDefault(path: String)(default: => T)(implicit tag: Tag[T], dec: DIConfigReader[T], meta: DIConfigMeta[T]): MakeDSLUnnamedAfterFrom[T] = {
       val parser = wireConfigWithDefault[T](path)(default)
-      make.tagged(ConfTag(path)(parser, meta.tpe)).from(parser)
+      make.tagged(ConfTag(path, parser, meta.tpe)).from(parser)
     }
   }
 
