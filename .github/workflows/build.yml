@@ -60,7 +60,7 @@ jobs:
           token: ${{ env.TOKEN_CODECOV }}
           verbose: true # optional (default = false)
 #          fail_ci_if_error: ${{ matrix.scala != '3' }}
-          files: cobertura.xml
+          files: "**/cobertura.xml"
           # TODO: do we need scoverage.xml? If so files: may be just omitted
           # files: cobertura.xml,scoverage.xml
           # flags: unittests
