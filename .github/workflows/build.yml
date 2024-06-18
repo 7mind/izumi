@@ -17,11 +17,9 @@ jobs:
     steps:
       - id: checksecret_job
         env:
-          OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
-          OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
           TOKEN_BITWARDEN_SM: ${{ secrets.TOKEN_BITWARDEN_SM }}
         run: |
-          echo "HAVE_SECRETS=${{ env.TOKEN_BITWARDEN_SM != '' && env.OPENSSL_IV != '' && env.OPENSSL_KEY != '' }}" >> $GITHUB_OUTPUT
+          echo "HAVE_SECRETS=${{ env.TOKEN_BITWARDEN_SM != '' }}" >> $GITHUB_OUTPUT
   build-jvm:
     runs-on: ubuntu-latest
     needs: [ 'checksecret' ]

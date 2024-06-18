@@ -88,6 +88,7 @@ function publishScala {
 function secrets {
     if [[ "$CI_PULL_REQUEST" == "false"  ]] ; then
         echo "Unpacking secrets"
+        mkdir .secrets
         echo "$SONATYPE_CREDENTIALS_FILE" > "$SONATYPE_SECRET"
         openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
         tar xvf secrets.tar
