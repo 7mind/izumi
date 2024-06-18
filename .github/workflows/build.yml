@@ -130,7 +130,7 @@ jobs:
             a2fe5b5b-5f3f-47f8-961c-b1930110cea7 > OPENSSL_IV
       - uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ secrets.IZUMI_MICROSITE_KEY }}
+          key: ${{ env.IZUMI_MICROSITE_KEY }}
           known_hosts: 'unnecessary' # github.com is already there
       - name: Publish Microsite
         run: |
