@@ -8,6 +8,8 @@ set -xe
 # and https://github.com/sbt/sbt/pull/3995/files
 # TL;DR strict aggregation in sbt is broken; this is a workaround
 
+SONATYPE_SECRET=.secrets/credentials.sonatype-nexus.properties
+
 function scala3 {
   echo "Using Scala 3..."
   VERSION_COMMAND="++ $SCALA3 "
@@ -62,7 +64,7 @@ function publishScala {
     return 0
   fi
 
-  if [[ ! -f ./.secrets/credentials.sonatype-nexus.properties ]] ; then
+  if [[ ! -f "$SONATYPE_SECRET" ]] ; then
     echo "Skipping publish on missing credentials"
     return 0
   fi
@@ -86,6 +88,7 @@ function publishScala {
 function secrets {
     if [[ "$CI_PULL_REQUEST" == "false"  ]] ; then
         echo "Unpacking secrets"
+        echo "$SONATYPE_CREDENTIALS_FILE" > "$SONATYPE_SECRET"
         openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
         tar xvf secrets.tar
         echo "Secrets unpacked"
