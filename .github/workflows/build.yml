@@ -49,7 +49,7 @@ jobs:
           path: '**/target/test-reports/TEST-*.xml'
           reporter: java-junit
 #          fail-on-error: ${{ matrix.scala != '3' }}
-      - uses: bitwarden/sm-action@v1.0.0
+      - uses: bitwarden/sm-action@v2
         with:
           access_token: ${{ secrets.TOKEN_BITWARDEN_SM }}
           secrets: |
@@ -122,7 +122,7 @@ jobs:
       - uses: 7mind/github-env@main
         with:
           java-version: ${{ matrix.java }}
-      - uses: bitwarden/sm-action@v1.0.0
+      - uses: bitwarden/sm-action@v2
         with:
           access_token: ${{ secrets.TOKEN_BITWARDEN_SM }}
           secrets: |
@@ -147,7 +147,7 @@ jobs:
       - uses: 7mind/github-env@main
         with:
           java-version: ${{ matrix.java }}
-      - uses: bitwarden/sm-action@v1.0.0
+      - uses: bitwarden/sm-action@v2
         with:
           access_token: ${{ secrets.TOKEN_BITWARDEN_SM }}
           secrets: |
