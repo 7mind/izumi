@@ -19,11 +19,10 @@ object Root extends RootInstancesLowPriority1 {
   @inline implicit final def ConvertFromConcurrent[F[+_, +_]](implicit Concurrent: NotPredefined.Of[Concurrent2[F]]): Predefined.Of[Panic2[F] & S1] =
     Predefined(S1(Concurrent.InnerF))
 
-  @inline implicit final def AttachPrimitives[F[+_, +_]](@unused self: Functor2[F])(implicit Primitives: Primitives2[F]): Primitives.type =
-    Primitives
+  @inline implicit final def AttachPrimitives[F[+_, +_]](@unused self: Functor2[F])(implicit Primitives: Primitives2[F]): Primitives.type = Primitives
+  @inline implicit final def AttachPrimitivesM[F[+_, +_]](@unused self: Functor2[F])(implicit PrimitivesM: PrimitivesM2[F]): PrimitivesM.type = PrimitivesM
+  @inline implicit final def AttachPrimitivesLocal[F[+_, +_]](@unused self: Functor2[F])(implicit PrimitivesL: PrimitivesLocal2[F]): PrimitivesL.type = PrimitivesL
   @inline implicit final def AttachScheduler[F[+_, +_]](@unused self: Functor2[F])(implicit Scheduler: Scheduler2[F]): Scheduler.type = Scheduler
-  @inline implicit final def AttachPrimitivesM[F[+_, +_]](@unused self: Functor2[F])(implicit PrimitivesM: PrimitivesM2[F]): PrimitivesM.type =
-    PrimitivesM
   @inline implicit final def AttachFork[F[+_, +_]](@unused self: Functor2[F])(implicit Fork: Fork2[F]): Fork.type = Fork
   @inline implicit final def AttachBlockingIO[F[+_, +_]](@unused self: Functor2[F])(implicit BlockingIO: BlockingIO2[F]): BlockingIO.type = BlockingIO
 

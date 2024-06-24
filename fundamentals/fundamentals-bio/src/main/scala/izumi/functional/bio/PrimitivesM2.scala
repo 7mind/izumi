@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.data.Isomorphism2
-import izumi.functional.bio.impl.PrimitivesMFromBIO
+import izumi.functional.bio.impl.{PrimitivesMFromBIO, PrimitivesMZio}
 import izumi.fundamentals.orphans.`zio.ZIO`
 
 trait PrimitivesM2[F[+_, +_]] extends PrimitivesMInstances {
@@ -21,11 +21,11 @@ object PrimitivesM2 {
 
 private[bio] sealed trait PrimitivesMInstances
 object PrimitivesMInstances extends PrimitivesMLowPriorityInstances1 {
-  @inline implicit def PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: PrimitivesM2[F[Any, +_, +_]] = impl.PrimitivesMZio.asInstanceOf[PrimitivesM2[F[Any, +_, +_]]]
+  @inline implicit def PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: PrimitivesM2[F[Any, +_, +_]] = PrimitivesMZio.asInstanceOf[PrimitivesM2[F[Any, +_, +_]]]
 }
 
 sealed trait PrimitivesMLowPriorityInstances1 extends PrimitivesMLowPriorityInstances2 {
-  @inline implicit def PrimitivesZioR[F[-_, +_, +_]: `zio.ZIO`, R]: PrimitivesM2[F[R, +_, +_]] = impl.PrimitivesMZio.asInstanceOf[PrimitivesM2[F[R, +_, +_]]]
+  @inline implicit def PrimitivesZioR[F[-_, +_, +_]: `zio.ZIO`, R]: PrimitivesM2[F[R, +_, +_]] = PrimitivesMZio.asInstanceOf[PrimitivesM2[F[R, +_, +_]]]
 
 }
 sealed trait PrimitivesMLowPriorityInstances2 {
