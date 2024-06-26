@@ -817,6 +817,7 @@ object Izumi {
             "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
             "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
             "izumi.version" -> version.value,
+            "kindprojector.version" -> V.kind_projector,
           )"""),
           SettingDef.RawSettingDef(
             """ghpagesCleanSite / excludeFilter :=

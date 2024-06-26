@@ -5687,6 +5687,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                 "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
                 "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
                 "izumi.version" -> version.value,
+                "kindprojector.version" -> V.kind_projector,
               ),
     ghpagesCleanSite / excludeFilter :=
                 new FileFilter {
