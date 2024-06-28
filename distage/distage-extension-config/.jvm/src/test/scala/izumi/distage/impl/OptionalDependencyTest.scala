@@ -5,7 +5,7 @@ import distage.Lifecycle
 import izumi.distage.model.definition.ModuleDef
 import izumi.functional.quasi.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives}
 import izumi.distage.modules.DefaultModule
-import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2, BlockingIO2, Bracket2, Concurrent2, Error2, F, Fork2, Functor2, Guarantee2, IO2, Monad2, Panic2, Parallel2, Primitives2, PrimitivesM2, Temporal2}
+import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2, BlockingIO2, Bracket2, Concurrent2, Error2, F, Fork2, Functor2, Guarantee2, IO2, Monad2, Panic2, Parallel2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2}
 import izumi.fundamentals.platform.functional.{Identity, Identity2}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
@@ -91,6 +91,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     optSearch[Fork2[SomeBIO]]
     optSearch[Primitives2[SomeBIO]]
     optSearch[PrimitivesM2[SomeBIO]]
+    optSearch[PrimitivesLocal2[SomeBIO]]
     optSearch[BlockingIO2[SomeBIO]]
 
     And("`No More Orphans` type provider object is accessible")

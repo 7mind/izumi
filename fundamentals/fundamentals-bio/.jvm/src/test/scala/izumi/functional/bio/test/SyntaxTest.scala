@@ -1,5 +1,6 @@
 package izumi.functional.bio.test
 
+import izumi.functional.bio.PrimitivesLocal2
 import izumi.functional.bio.data.{Morphism1, Morphism2, Morphism3}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2}
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
@@ -282,6 +283,10 @@ class SyntaxTest extends AnyWordSpec {
       F.mkRefM(4).flatMap(r => r.update(_ => F.pure(5)) *> r.get.map(_ - 1)) *>
       F.mkMutex.flatMap(m => m.bracket(F.pure(10)))
     }
+    def `attach PrimitivesLocal2 methods to BIO even when not imported`[F[+_, +_]: Monad2: PrimitivesLocal2]: F[Nothing, Int] = {
+      F.mkFiberRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)) *>
+      F.mkFiberLocal(4).flatMap(m => m.locally(10)(m.get))
+    }
     def attachScheduler2[F[+_, +_]: Monad2: Scheduler2]: F[Nothing, Int] = {
       F.repeat(F.pure(42))(RetryPolicy.recurs(2))
     }
@@ -292,6 +297,7 @@ class SyntaxTest extends AnyWordSpec {
         z[zio.IO],
         `attach Primitives2 & Fork2 methods even when they aren't imported`[zio.IO],
         `attach PrimitivesM2 methods to BIO even when not imported`[zio.IO],
+        `attach PrimitivesLocal2 methods to BIO even when not imported`[zio.IO],
         attachScheduler2[zio.IO],
       )
     }

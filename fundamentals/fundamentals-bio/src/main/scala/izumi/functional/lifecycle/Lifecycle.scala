@@ -914,6 +914,8 @@ object Lifecycle extends LifecycleInstances {
 
         scope.close(zio.Exit.succeed(()))
       }
+
+      disableAutoTrace.discard()
     }
   }
 
@@ -921,7 +923,6 @@ object Lifecycle extends LifecycleInstances {
     override final def release(resource: InnerResource): F[Unit] = QuasiApplicative[F].unit
   }
 
-  disableAutoTrace.discard()
 }
 
 private[izumi] sealed trait LifecycleInstances extends LifecycleCatsInstances {

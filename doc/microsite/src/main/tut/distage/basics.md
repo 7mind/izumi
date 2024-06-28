@@ -56,7 +56,7 @@ Add the `distage-core` library:
 If you're using Scala 3 you **must** enable `-Yretain-trees` for this library to work correctly:
 
 ```scala
-// REQUIRED options for Scala 3
+// REQUIRED option for Scala 3
 scalacOptions += "-Yretain-trees"
 ```
 
@@ -65,19 +65,25 @@ If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and eit
 ```scala
 // REQUIRED options for Scala 2.12
 scalacOptions += "-Ypartial-unification"
-scalacOptions += "-Xsource:2.13" // either this
-// scalacOptions += "-Xsource:3" // or this
+scalacOptions += "-Xsource:3" // or "-Xsource:2.13" if absolutely necessary
 ```
 
-Additionally, some source examples in this document use underscore syntax for type lambdas which you can enable with the following options:
+Additionally, some source examples in this document use [underscore syntax for type lambdas](https://docs.scala-lang.org/scala3/guides/migration/plugin-kind-projector.html) which you can enable with the following options:
+
+@@@vars
 
 ```scala
-// For kind-projector on Scala 2
+// For Scala 2
 scalacOptions += "-P:kind-projector:underscore-placeholders"
+scalacOptions += "-Xsource:3"
+
+addCompilerPlugin("org.typelevel" % "kind-projector" % "$kindprojector.version$" cross CrossVersion.full)
 
 // For Scala 3
 scalacOptions += "-Ykind-projector:underscores"
 ```
+
+@@@
 
 ### Hello World example
 

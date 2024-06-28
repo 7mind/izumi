@@ -5,6 +5,7 @@ import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
 import com.github.pshirshov.configapp.*
 import com.typesafe.config.*
 import distage.{Injector, Mode, Repo}
+import izumi.distage.config.codec.ConfigMetaType
 import izumi.distage.config.model.{AppConfig, ConfTag}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
@@ -183,6 +184,25 @@ final class ConfigTest extends AnyWordSpec {
       val confTags = defn.bindings.toList.flatMap(_.tags.collect { case c: ConfTag => c })
 
       assert(confTags.map(_.tpe).toSet.size == 3)
+    }
+
+    "ConfigModuleDefNoMeta disables Meta generation" in {
+      final case class A()
+      final case class B()
+      final case class C()
+
+      val defn = new ConfigModuleDefNoMeta {
+        makeConfig[A]("x")
+        makeConfig[B]("x")
+        makeConfig[C]("x")
+      }
+
+      val confTags = defn.bindings.toList.flatMap(_.tags.collect { case c: ConfTag => c })
+      val confMetas = confTags.map(_.tpe)
+
+      assert(confMetas.size == 3)
+      assert(confMetas.toSet.size == 1)
+      assert(confMetas.forall(_.isInstanceOf[ConfigMetaType.TUnknown]))
     }
 
   }

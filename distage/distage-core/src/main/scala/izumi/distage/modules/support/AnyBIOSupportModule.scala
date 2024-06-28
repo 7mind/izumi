@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.functional.quasi.*
 import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
+import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesLocal2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{TagK, TagKK}
 
@@ -72,7 +72,7 @@ object AnyBIOSupportModule extends ModuleDef {
     * `make[Fork2[F]]` and `make[Primitives2[F]]` are not required by [[AnyBIOSupportModule]]
     * but are added for completeness
     */
-  def withImplicits[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: PrimitivesM2: Scheduler2](
+  def withImplicits[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: PrimitivesM2: PrimitivesLocal2: Scheduler2](
     implicit t: TagK[F[Throwable, _]],
     tn: TagK[F[Nothing, _]],
   ): ModuleDef = new ModuleDef {
@@ -83,6 +83,7 @@ object AnyBIOSupportModule extends ModuleDef {
     addImplicit[Temporal2[F]]
     addImplicit[Primitives2[F]]
     addImplicit[PrimitivesM2[F]]
+    addImplicit[PrimitivesLocal2[F]]
     addImplicit[UnsafeRun2[F]]
     addImplicit[Scheduler2[F]]
   }
