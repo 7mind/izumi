@@ -19,7 +19,7 @@ import scala.collection.compat.immutable.ArraySeq
 class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler with JULTools with AutoCloseable {
   override def publish(record: LogRecord): Unit = {
     val level = toLevel(record)
-    val loggerName = Option(record.getLoggerName).getOrElse("unknown")
+    val loggerName = record.getLoggerName match { case null => "null"; case s => s }
     if (router.acceptable(Log.LoggerId(loggerName), level)) {
       router.log(mkEntry(record))
     }
