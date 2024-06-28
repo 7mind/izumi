@@ -269,7 +269,8 @@ object Exit {
     override final def bimap[E, A, E2, A2](r: Exit[E, A])(f: E => E2, g: A => A2): Exit[E2, A2] = r.leftMap(f).map(g)
     override final def leftMap[E, A, E2](r: Exit[E, A])(f: E => E2): Exit[E2, A] = r.leftMap(f)
     override final def flatMap[E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
+
+    disableAutoTrace.discard()
   }
 
-  disableAutoTrace.discard()
 }

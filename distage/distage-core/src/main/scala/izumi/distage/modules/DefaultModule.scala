@@ -5,7 +5,7 @@ import izumi.functional.quasi.{QuasiApplicative, QuasiAsync, QuasiFunctor, Quasi
 import izumi.distage.modules.support.*
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
 import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Async2, Fork2, Primitives2, Temporal2, UnsafeRun2}
+import izumi.functional.bio.{Async2, Fork2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.orphans.*
 import izumi.fundamentals.platform.functional.Identity
 
@@ -121,7 +121,7 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
 
 sealed trait LowPriorityDefaultModulesInstances3 extends LowPriorityDefaultModulesInstances4 {
   /** @see [[izumi.distage.modules.support.AnyBIOSupportModule]] */
-  implicit final def fromBIO[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: Scheduler2]: DefaultModule2[F] = {
+  implicit final def fromBIO[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: PrimitivesM2: PrimitivesLocal2: Scheduler2]: DefaultModule2[F] = {
     DefaultModule(AnyBIOSupportModule.withImplicits[F])
   }
 }

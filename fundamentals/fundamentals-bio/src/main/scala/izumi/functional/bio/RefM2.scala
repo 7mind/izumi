@@ -23,6 +23,8 @@ object RefM2 {
       override def modify[E, B](f: A => ZIO[R, E, (B, A)]): ZIO[R, E, B] = ref.modifyZIO(f)(InteropTracer.newTrace(f))
       override def update[E](f: A => ZIO[R, E, A]): ZIO[R, E, A] = ref.updateAndGetZIO(f)(InteropTracer.newTrace(f))
       override def update_[E](f: A => ZIO[R, E, A]): ZIO[R, E, Unit] = ref.updateZIO(f)(InteropTracer.newTrace(f))
+
+      disableAutoTrace.discard()
     }
 
   def createFromBIO[F[+_, +_]: Bracket2: Primitives2, A](a: A): F[Nothing, RefM2[F, A]] = {
@@ -67,5 +69,4 @@ object RefM2 {
     }
   }
 
-  disableAutoTrace.discard()
 }

@@ -78,12 +78,13 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   addImplicit[Fork2[zio.IO]]
   addImplicit[Primitives2[zio.IO]]
   addImplicit[PrimitivesM2[zio.IO]]
+  addImplicit[PrimitivesLocal2[zio.IO]]
   if (!(Tag[R] =:= Tag[Any])) {
     addImplicit[Async2[ZIO[R, +_, +_]]]
     addImplicit[Temporal2[ZIO[R, +_, +_]]]
     addImplicit[Fork2[ZIO[R, +_, +_]]]
     addImplicit[Primitives2[ZIO[R, +_, +_]]]
-    addImplicit[PrimitivesM2[ZIO[R, +_, +_]]]
+    addImplicit[PrimitivesLocal2[ZIO[R, +_, +_]]]
   }
 
   make[Scheduler2[ZIO[R, +_, +_]]].from {
