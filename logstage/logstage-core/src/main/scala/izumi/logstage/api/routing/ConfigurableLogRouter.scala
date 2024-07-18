@@ -57,11 +57,19 @@ object ConfigurableLogRouter {
   def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level], buffer: LogQueue): ConfigurableLogRouter = {
     import scala.collection.compat._
 
-    val rootConfig = LoggerPathRule(LoggerPathConfig(threshold, Set.empty), sinks)
-    val levelConfigs = levels.view.map {
+    val rootConfig = LoggerPathRule(LoggerPathConfig(threshold), sinks)
+    val levelConfigs = levels.view.flatMap {
       case (id, lvl) =>
         val p = LoggerPathForLines.parse(id)
-        (LoggerPath(p.id), LoggerPathRule(LoggerPathConfig(lvl, p.lines), sinks))
+        if (p.lines.nonEmpty) {
+          p.lines.map {
+            line =>
+              (LoggerPath(p.id, Some(line)), LoggerPathRule(LoggerPathConfig(lvl), sinks))
+          }
+        } else {
+          Seq((LoggerPath(p.id, None), LoggerPathRule(LoggerPathConfig(lvl), sinks)))
+        }
+
     }.toMap
 
     val configService = new LogConfigServiceImpl(LoggerConfig(rootConfig, levelConfigs))

@@ -6,7 +6,7 @@ import izumi.distage.roles.launcher.LogConfigLoader.DeclarativeLoggerConfig
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.Level.Warn
 import izumi.logstage.api.Log.Message
-import izumi.logstage.api.config.{LoggerPath, LoggerPathForLines, LoggerPathConfig}
+import izumi.logstage.api.config.{LoggerPath, LoggerPathConfig, LoggerPathForLines}
 import izumi.logstage.api.rendering.RenderingOptions
 import logstage.IzLogger
 
@@ -54,10 +54,18 @@ object LogConfigLoader {
       val levels = logconf.levels.flatMap {
         case (stringLevel, packageList) =>
           val level = Log.Level.parseLetter(stringLevel)
-          packageList.map {
+          packageList.flatMap {
             pkg =>
               val p = LoggerPathForLines.parse(pkg)
-              (LoggerPath(p.id), LoggerPathConfig(level, p.lines))
+              if (p.lines.nonEmpty) {
+                p.lines.map {
+                  l =>
+                    (LoggerPath(p.id, Some(l)), LoggerPathConfig(level))
+                }
+              } else {
+                Seq((LoggerPath(p.id, None), LoggerPathConfig(level)))
+              }
+
           }
       }
 

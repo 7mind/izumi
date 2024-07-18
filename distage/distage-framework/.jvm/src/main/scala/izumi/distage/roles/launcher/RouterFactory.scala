@@ -31,7 +31,7 @@ object RouterFactory {
       // TODO: here we may read log configuration from config file
       val router = new ConfigurableLogRouter(
         new LogConfigServiceImpl(
-          LoggerConfig(LoggerPathRule(LoggerPathConfig(config.rootLevel, Set.empty), sinks), levelConfigs)
+          LoggerConfig(LoggerPathRule(LoggerPathConfig(config.rootLevel), sinks), levelConfigs)
         ),
         buffer,
       )

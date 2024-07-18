@@ -24,7 +24,8 @@ object LoggingConsoleSinkTest {
         Log.Level.Trace,
         Seq(ColoredConsoleSink),
         Map(
-          "izumi.logstage.sink.ExampleService.start:26,27" -> Log.Level.Error
+          "izumi.logstage.sink.ExampleService.start:26,27" -> Log.Level.Error,
+          "izumi.logstage.sink.ExampleService.start:28" -> Log.Level.Error,
         ),
         LogQueue.Immediate,
       )

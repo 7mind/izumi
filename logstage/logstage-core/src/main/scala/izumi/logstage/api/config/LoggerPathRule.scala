@@ -3,9 +3,9 @@ package izumi.logstage.api.config
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 
-final case class LoggerPath(id: String)
+final case class LoggerPath(id: String, line: Option[Int])
 
-final case class LoggerPathConfig(threshold: Log.Level, lines: Set[Int])
+final case class LoggerPathConfig(threshold: Log.Level)
 
 final case class LoggerPathRule(config: LoggerPathConfig, sinks: Seq[LogSink])
 
