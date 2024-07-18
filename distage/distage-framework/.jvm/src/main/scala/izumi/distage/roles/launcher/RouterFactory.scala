@@ -1,7 +1,7 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.roles.launcher.LogConfigLoader.{DeclarativeLoggerConfig, LoggerFormat}
-import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
+import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig, LoggerPathRule}
 import izumi.logstage.api.logger.LogQueue
 import izumi.logstage.api.rendering.StringRenderingPolicy
 import izumi.logstage.api.routing.LogConfigServiceImpl
@@ -25,13 +25,13 @@ object RouterFactory {
       val sinks = List(sink)
       val levelConfigs = config.levels.map {
         case (pkg, level) =>
-          (pkg, LoggerPathConfig(level, sinks))
+          (pkg, LoggerPathRule(level, sinks))
       }
 
       // TODO: here we may read log configuration from config file
       val router = new ConfigurableLogRouter(
         new LogConfigServiceImpl(
-          LoggerConfig(LoggerPathConfig(config.rootLevel, sinks), levelConfigs)
+          LoggerConfig(LoggerPathRule(LoggerPathConfig(config.rootLevel, Set.empty), sinks), levelConfigs)
         ),
         buffer,
       )

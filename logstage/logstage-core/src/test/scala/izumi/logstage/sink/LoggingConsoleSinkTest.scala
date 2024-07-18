@@ -1,7 +1,9 @@
 package izumi.logstage.sink
 
 import izumi.logstage.api.IzLogger
+import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.sink.ConsoleSink.ColoredConsoleSink
+import logstage.{Log, LogQueue}
 import org.scalatest.wordspec.AnyWordSpec
 
 class LoggingConsoleSinkTest extends AnyWordSpec {
@@ -17,7 +19,18 @@ class LoggingConsoleSinkTest extends AnyWordSpec {
 object LoggingConsoleSinkTest {
 
   def setupConsoleLogger(): IzLogger = {
-    IzLogger(IzLogger.Level.Trace, ColoredConsoleSink)
+    IzLogger.apply(
+      ConfigurableLogRouter.apply(
+        Log.Level.Trace,
+        Seq(ColoredConsoleSink),
+        Map(
+          "izumi.logstage.sink.ExampleService.start:26,27" -> Log.Level.Error
+        ),
+        LogQueue.Immediate,
+      )
+    )
+
+    // IzLogger(IzLogger.Level.Trace, ColoredConsoleSink)
   }
 
 }

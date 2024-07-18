@@ -4,7 +4,7 @@ import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.logstage.DebugProperties
 import izumi.logstage.api.Log
-import izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPathConfig}
+import izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPath, LoggerPathConfig, LoggerPathForLines, LoggerPathRule}
 import izumi.logstage.api.logger.{LogQueue, LogRouter, LogSink}
 import izumi.logstage.sink.{ConsoleSink, FallbackConsoleSink}
 
@@ -57,8 +57,12 @@ object ConfigurableLogRouter {
   def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level], buffer: LogQueue): ConfigurableLogRouter = {
     import scala.collection.compat._
 
-    val rootConfig = LoggerPathConfig(threshold, sinks)
-    val levelConfigs = levels.view.mapValues(lvl => LoggerPathConfig(lvl, sinks)).toMap
+    val rootConfig = LoggerPathRule(LoggerPathConfig(threshold, Set.empty), sinks)
+    val levelConfigs = levels.view.map {
+      case (id, lvl) =>
+        val p = LoggerPathForLines.parse(id)
+        (LoggerPath(p.id), LoggerPathRule(LoggerPathConfig(lvl, p.lines), sinks))
+    }.toMap
 
     val configService = new LogConfigServiceImpl(LoggerConfig(rootConfig, levelConfigs))
 
