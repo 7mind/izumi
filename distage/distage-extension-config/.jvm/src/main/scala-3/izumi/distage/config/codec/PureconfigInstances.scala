@@ -42,7 +42,7 @@ object PureconfigInstances {
       }
     }
 
-    private final class TupleProductConfigReader[A](
+    final class TupleProductConfigReader[A](
       tupleSize: Int,
       readTuple: (Array[ConfigCursor], Array[KeyNotFound]) => Either[ConfigReaderFailures, A],
     ) extends ConfigReader[A] {
@@ -64,7 +64,7 @@ object PureconfigInstances {
         }
     }
 
-    private final class CaseClassProductConfigReader[A](
+    final class CaseClassProductConfigReader[A](
       labels: Array[String],
       readTuple: (Array[ConfigCursor], Array[KeyNotFound]) => Either[ConfigReaderFailures, A],
     ) extends ConfigReader[A] {
@@ -133,7 +133,7 @@ object PureconfigInstances {
       new SealedTraitConfigReader[A](Utils.transformedLabels[A](fieldMapping), deriveForSubtypes[m.MirroredElemTypes, A])
     }
 
-    private final class SealedTraitConfigReader[A](
+    final class SealedTraitConfigReader[A](
       labels: List[String],
       readers: List[ConfigReader[A]],
     ) extends ConfigReader[A] {
