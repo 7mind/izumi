@@ -443,10 +443,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.fundamentals.basics,
-        libs = Seq(
-          scala_reflect,
-          scala3_compiler,
-        ),
+        libs = Seq.empty,
         depends = Seq.empty,
         settings = Seq.empty,
       ),
