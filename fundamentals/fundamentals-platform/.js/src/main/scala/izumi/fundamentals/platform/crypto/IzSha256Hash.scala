@@ -1,11 +1,8 @@
 package izumi.fundamentals.platform.crypto
 
-import izumi.fundamentals.platform
-import izumi.fundamentals.platform.crypto
 import scala.annotation.unused
-
 import scala.scalajs.js
-import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.JSConverters.*
 import scala.scalajs.js.annotation.{JSGlobal, JSImport}
 import scala.scalajs.js.typedarray.Int8Array
 
@@ -34,16 +31,21 @@ class IzSha256Hash(impl: () => ScalaJSSHA256) extends IzHash {
   }
 }
 
-object IzSha256Hash {
-  // scalajs fuckery
-  private var impl: IzSha256Hash = Global
-  def setImported(): Unit = synchronized {
-    impl = Imported
-  }
+object IzSha256Hash extends IzHash {
+
   def getImpl: IzSha256Hash = synchronized {
     impl
   }
 
-  object Global extends IzSha256Hash(() => new crypto.ScalaJSSHA256.GlobalSHA256())
-  object Imported extends IzSha256Hash(() => new platform.crypto.ScalaJSSHA256.ImportedSHA256())
+  // scalajs fuckery
+  private var impl: IzSha256Hash = Global
+
+  def setImported(): Unit = synchronized {
+    impl = Imported
+  }
+
+  object Global extends IzSha256Hash(() => new ScalaJSSHA256.GlobalSHA256())
+  object Imported extends IzSha256Hash(() => new ScalaJSSHA256.ImportedSHA256())
+
+  override def hash(bytes: Array[Byte]): Array[Byte] = getImpl.hash(bytes)
 }

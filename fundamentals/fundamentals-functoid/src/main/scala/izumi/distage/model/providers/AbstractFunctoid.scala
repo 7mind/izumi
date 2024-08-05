@@ -63,8 +63,8 @@ trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
 
   /**
     * Add an `@Id` annotation to an unannotated parameter `P`, e.g.
-    * for .annotateParameter("x"), transform lambda `(p: P) => x(p)`
-    * into `(p: P @Id("x")) => x(p)`
+    * for .annotateParameter[P]("my-id"), transform lambda `(p: P) => x(p)`
+    * into `(p: P @Id("my-id")) => x(p)`
     */
   def annotateParameter[P: Tag](name: Identifier): Ftoid[A] = {
     val paramTpe = SafeType.get[P]

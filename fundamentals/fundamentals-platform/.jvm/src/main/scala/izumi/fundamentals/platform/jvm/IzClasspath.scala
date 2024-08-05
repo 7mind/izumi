@@ -1,9 +1,11 @@
 package izumi.fundamentals.platform.jvm
 
+import izumi.fundamentals.platform.IzPlatformEffectfulUtil
+
 import java.net.{URLClassLoader, URLDecoder}
 import scala.annotation.tailrec
 
-trait IzClasspath {
+trait IzClasspath extends IzPlatformEffectfulUtil {
   def safeClasspathSeq(classLoader: ClassLoader): Seq[String] = {
     val classLoaderCp = extractCp(Option(classLoader), Seq.empty)
 

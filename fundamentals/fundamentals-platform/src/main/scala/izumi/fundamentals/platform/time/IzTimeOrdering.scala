@@ -1,9 +1,11 @@
 package izumi.fundamentals.platform.time
 
-import java.time._
+import izumi.fundamentals.platform.IzPlatformPureUtil
+
+import java.time.*
 import java.util.Date
 
-trait IzTimeOrderingSafe {
+trait IzTimeOrderingSafe extends IzPlatformPureUtil {
   implicit val offsetDateTimeOrdering: Ordering[OffsetDateTime] = Ordering.fromLessThan(_ `isBefore` _)
 
   implicit val localDateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ `isBefore` _)

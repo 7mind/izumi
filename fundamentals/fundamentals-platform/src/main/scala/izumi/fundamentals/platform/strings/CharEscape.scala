@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.strings
 
-class IzEscape(_toEscape: Set[Char], escapeChar: Char) {
+class CharEscape(_toEscape: Set[Char], escapeChar: Char) {
   private val toEscape = _toEscape + escapeChar
 
   def escape(string: String): String = {

@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 import JsonFlattener.*
 import PathElement.*
-import izumi.fundamentals.platform.strings.IzEscape
+import izumi.fundamentals.platform.strings.CharEscape
 
 class JsonFlattener {
 
@@ -24,7 +24,7 @@ class JsonFlattener {
 
   private final val controlChars = Set('.', '[', ']')
   private final val escapeChar = '\\'
-  private final val escape = new IzEscape(controlChars, escapeChar)
+  private final val escape = new CharEscape(controlChars, escapeChar)
 
   def flatten(node: Json): Seq[(String, String)] = {
     flatten(node, Seq.empty)
