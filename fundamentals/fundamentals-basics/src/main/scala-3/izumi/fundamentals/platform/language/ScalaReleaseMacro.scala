@@ -27,6 +27,6 @@ object ScalaReleaseMacro {
 
 }
 
-object IzScala {
+object ScalaReleaseProvider {
   inline def scalaRelease: ScalaRelease = ${ ScalaReleaseMacro.doMaterialize }
 }
