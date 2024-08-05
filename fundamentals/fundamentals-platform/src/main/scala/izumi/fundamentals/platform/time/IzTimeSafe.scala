@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.time
 
-import izumi.fundamentals.platform.IzPlatformPureUtil
+import izumi.fundamentals.platform.{IzPlatformFunctionCollection, IzPlatformSyntax}
 
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.time.temporal.ChronoField.{HOUR_OF_DAY, MINUTE_OF_HOUR, NANO_OF_SECOND, SECOND_OF_MINUTE}
@@ -10,12 +10,15 @@ import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 
 // safe to run on sjs with shims
-trait IzTimeSafe extends IzPlatformPureUtil {
+trait IzTimeSafe extends IzPlatformSyntax {
   @inline implicit final def toRichOffsetDateTime(timestamp: OffsetDateTime): IzOffsetDateTime = new IzOffsetDateTime(timestamp)
   @inline implicit final def toRichLocalDateTime(timestamp: LocalDateTime): IzLocalDateTime = new IzLocalDateTime(timestamp)
   @inline implicit final def toRichDate(value: Date): IzDate = new IzDate(value)
   @inline implicit final def toRichDuration(duration: Duration): IzDuration = new IzDuration(duration)
 
+}
+
+trait IzTimeConstantsSafe extends IzPlatformFunctionCollection {
   // formatters with 3 decimal positions for nanos
   final lazy val ISO_LOCAL_DATE_TIME_3NANO: DateTimeFormatter = {
     new DateTimeFormatterBuilder().parseCaseInsensitive
@@ -74,4 +77,4 @@ trait IzTimeSafe extends IzPlatformPureUtil {
   }
 }
 
-object IzTimeSafe extends IzTimeSafe with IzTimeOrderingSafe
+object IzTimeSafe extends IzTimeSafe with IzTimeConstantsSafe with IzTimeOrderingSafe

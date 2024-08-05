@@ -4,9 +4,17 @@ package izumi.fundamentals.platform
   */
 sealed trait IzPlatformUtil
 
-/** A marker trait for packages with pure helpers (syntax extensions, etc)
+/** A marker trait for packages with pure helpers
   */
-trait IzPlatformPureUtil extends IzPlatformUtil
+sealed trait IzPlatformPureUtil extends IzPlatformUtil
+
+/** A marker trait for packages with purely syntactic extensions
+  */
+trait IzPlatformSyntax extends IzPlatformPureUtil
+
+/** A marker trait for helper function collection packages
+  */
+trait IzPlatformFunctionCollection extends IzPlatformPureUtil
 
 /** A marker trait for packages with impure helpers (RNG access, clock access, filesystem access, etc)
   */

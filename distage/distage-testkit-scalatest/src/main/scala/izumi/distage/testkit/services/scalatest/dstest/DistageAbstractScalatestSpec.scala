@@ -34,6 +34,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ShouldVerb with MustVerb with C
   override protected def config: TestConfig = TestConfig.forSuite(this.getClass)
 
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
+
   protected def makeTestEnv(): TestEnvironment = loadEnvironment(config)
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)

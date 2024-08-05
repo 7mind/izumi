@@ -1,12 +1,12 @@
 package izumi.functional
 
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.platform.IzPlatformPureUtil
+import izumi.fundamentals.platform.IzPlatformSyntax
 
 import scala.collection.compat.*
 import scala.language.implicitConversions
 
-trait IzEither extends IzPlatformPureUtil {
+trait IzEither extends IzPlatformSyntax {
   import izumi.functional.IzEither.*
 
   @inline implicit final def EitherBiAggregate[L, R, Src[_], Col[x] <: IterableOnce[x]](

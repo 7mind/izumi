@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.serialization
 
-import izumi.fundamentals.platform.IzPlatformPureUtil
+import izumi.fundamentals.platform.IzPlatformSyntax
 
 import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import java.nio.ByteBuffer
@@ -15,7 +15,7 @@ final class SerializableExt(private val s: Serializable) extends AnyVal {
   }
 }
 
-trait IzSerializable extends IzPlatformPureUtil {
+trait IzSerializable extends IzPlatformSyntax {
   implicit def toRichSerializable(s: Serializable): SerializableExt = new SerializableExt(s)
 
 }

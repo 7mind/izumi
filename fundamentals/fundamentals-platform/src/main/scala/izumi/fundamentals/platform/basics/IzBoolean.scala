@@ -1,10 +1,10 @@
 package izumi.fundamentals.platform.basics
 
-import izumi.fundamentals.platform.IzPlatformPureUtil
+import izumi.fundamentals.platform.IzPlatformSyntax
 
 import scala.language.implicitConversions
 
-trait IzBoolean extends IzPlatformPureUtil {
+trait IzBoolean extends IzPlatformSyntax {
   import IzBoolean.LazyBool
 
   @inline implicit final def toLazyBool(b: => Boolean): LazyBool = new LazyBool(() => b)
