@@ -21,12 +21,13 @@ package izumi.fundamentals.platform.uuid
 import java.net.{InetAddress, NetworkInterface}
 import java.nio.ByteBuffer
 import java.security.{MessageDigest, SecureRandom}
-import java.util.{Collection, Collections, Enumeration, HashSet, Random, Set, UUID}
+import java.util
+import java.util.{Collections, Random, UUID}
 
-import izumi.fundamentals.platform.uuid.UUIDGen._
-
-object UUIDGen {
-
+/**
+  * The goods are here: www.ietf.org/rfc/rfc4122.txt.
+  */
+trait IzUUIDImpl extends IzUUID {
   // A grand day! millis at 00:00:00.000 15 Oct 1582.
   private val START_EPOCH: Long = -12219292800000L
 
@@ -50,16 +51,41 @@ object UUIDGen {
 
   private val secureRandom: SecureRandom = new SecureRandom()
 
-  // placement of this singleton is important.  It needs to be instantiated *AFTER* the other statics.
-  private val instance: UUIDGen = new UUIDGen()
+  private var lastNanos: Long = _
+
+  // make sure someone didn't whack the clockSeqAndNode by changing the order of instantiation.
+  if (clockSeqAndNode == 0)
+    throw new RuntimeException("singleton instantiation is misplaced.")
+
+  // we can generate at most 10k UUIDs per ms.
+  private def createTimeSafe(): Long = synchronized {
+    var nanosSince: Long = (System.currentTimeMillis() - START_EPOCH) * 10000
+    if (nanosSince > lastNanos) {
+      lastNanos = nanosSince
+    } else {
+      lastNanos += 1
+      nanosSince = lastNanos
+    }
+    createTime(nanosSince)
+  }
+
+  /**
+    * @param when time in milliseconds
+    */
+  private def createTimeUnsafe(when: Long): Long = createTimeUnsafe(when, 0)
+
+  private def createTimeUnsafe(when: Long, nanos: Int): Long = {
+    val nanosSince: Long = ((when - START_EPOCH) * 10000) + nanos
+    createTime(nanosSince)
+  }
 
   /**
     * Creates a type 1 UUID (time-based UUID).
     *
     * @return a UUID instance
     */
-  def getTimeUUID(): UUID =
-    new UUID(instance.createTimeSafe(), clockSeqAndNode)
+  def generateTimeUUID(): UUID =
+    new UUID(createTimeSafe(), clockSeqAndNode)
 
   /**
     * Creates a type 1 UUID (time-based UUID) with the timestamp of @param when, in milliseconds.
@@ -136,8 +162,8 @@ object UUIDGen {
     *
     * @return a type 1 UUID represented as a byte[]
     */
-  def getTimeUUIDBytes(): Array[Byte] =
-    createTimeUUIDBytes(instance.createTimeSafe())
+  def generateTimeUUIDBytes(): Array[Byte] =
+    createTimeUUIDBytes(createTimeSafe())
 
   /**
     * Returns the smaller possible type 1 UUID having the provided timestamp.
@@ -208,7 +234,7 @@ object UUIDGen {
     * @return a type 1 UUID represented as a byte[]
     */
   def getTimeUUIDBytes(timeMillis: Long): Array[Byte] =
-    createTimeUUIDBytes(instance.createTimeUnsafe(timeMillis))
+    createTimeUUIDBytes(createTimeUnsafe(timeMillis))
 
   /**
     * Converts a 100-nanoseconds precision timestamp into the 16 byte representation
@@ -224,7 +250,7 @@ object UUIDGen {
     */
   def getTimeUUIDBytes(timeMillis: Long, nanos: Int): Array[Byte] = {
     if (nanos >= 10000) throw new IllegalArgumentException()
-    createTimeUUIDBytes(instance.createTimeUnsafe(timeMillis, nanos))
+    createTimeUUIDBytes(createTimeUnsafe(timeMillis, nanos))
   }
 
   private def createTimeUUIDBytes(msb: Long): Array[Byte] = {
@@ -270,13 +296,10 @@ object UUIDGen {
     msb
   }
 
-  def getAllLocalAddresses(): Collection[InetAddress] = {
-    val localAddresses: Set[InetAddress] = new HashSet[InetAddress]()
-    val nets: Enumeration[NetworkInterface] =
-      NetworkInterface.getNetworkInterfaces
-    if (nets ne null) {
-      while (nets.hasMoreElements()) localAddresses.addAll(Collections.list(nets.nextElement().getInetAddresses))
-    }
+  private def getAllLocalAddresses(): util.Collection[InetAddress] = {
+    val localAddresses = new util.HashSet[InetAddress]()
+    val nets = NetworkInterface.getNetworkInterfaces
+    while (nets.hasMoreElements) localAddresses.addAll(Collections.list(nets.nextElement().getInetAddresses))
     localAddresses
   }
 
@@ -293,7 +316,7 @@ object UUIDGen {
      * where we don't want to require the yaml.
      */
 
-    val localAddresses: Collection[InetAddress] = getAllLocalAddresses()
+    val localAddresses: util.Collection[InetAddress] = getAllLocalAddresses()
     if (localAddresses.isEmpty)
       throw new RuntimeException("Cannot generate the node component of the UUID because cannot retrieve any IP addresses.")
     // ideally, we'd use the MAC address, but java doesn't expose that.
@@ -309,48 +332,12 @@ object UUIDGen {
   // Since we don't use the mac address, the spec says that multicast
   // Since we don't use the mac address, the spec says that multicast
 
-  private def doHash(data: Collection[InetAddress]): Array[Byte] = {
-    import scala.jdk.CollectionConverters._
+  private def doHash(data: util.Collection[InetAddress]): Array[Byte] = {
+    import scala.jdk.CollectionConverters.*
     val messageDigest: MessageDigest = MessageDigest.getInstance("MD5")
     for (addr <- data.asScala) messageDigest.update(addr.getAddress)
     messageDigest.digest()
   }
-
-}
-
-/**
-  * The goods are here: www.ietf.org/rfc/rfc4122.txt.
-  */
-open class UUIDGen protected () {
-
-  private var lastNanos: Long = _
-
-  // make sure someone didn't whack the clockSeqAndNode by changing the order of instantiation.
-  if (clockSeqAndNode == 0)
-    throw new RuntimeException("singleton instantiation is misplaced.")
-
-  // we can generate at most 10k UUIDs per ms.
-  private def createTimeSafe(): Long = synchronized {
-    var nanosSince: Long = (System.currentTimeMillis() - START_EPOCH) * 10000
-    if (nanosSince > lastNanos) {
-      lastNanos = nanosSince
-    } else {
-      lastNanos += 1
-      nanosSince = lastNanos
-    }
-    createTime(nanosSince)
-  }
-
-  /**
-    * @param when time in milliseconds
-    */
-  private def createTimeUnsafe(when: Long): Long = createTimeUnsafe(when, 0)
-
-  private def createTimeUnsafe(when: Long, nanos: Int): Long = {
-    val nanosSince: Long = ((when - START_EPOCH) * 10000) + nanos
-    createTime(nanosSince)
-  }
-
 }
 
 // for the curious, here is how I generated START_EPOCH

@@ -9,7 +9,7 @@ import izumi.distage.testkit.runner.impl.services.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.uuid.UUIDGen
+import izumi.fundamentals.platform.uuid.IzUUID
 import izumi.logstage.api.IzLogger
 import logstage.Log
 
@@ -38,7 +38,7 @@ class DistageTestRunner[F[_]: TagK, G[_]](
     // All the exceptions should be converted to values by this time.
     // If it throws, there is a bug which needs to be fixed.
     for {
-      id <- G.maybeSuspend(ScopeId(UUIDGen.getTimeUUID()))
+      id <- G.maybeSuspend(ScopeId(IzUUID.generateTimeUUID()))
       _ <- G.maybeSuspend(reporter.beginScope(id))
       envs <- timed(planner.groupTests[G](tests))
       _ <- G.maybeSuspend(reportFailedPlanning(id, envs.out.bad, envs.timing))
