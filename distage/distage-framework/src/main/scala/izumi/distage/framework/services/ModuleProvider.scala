@@ -4,6 +4,7 @@ import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.framework.platform.DistagePlatformModule
 import izumi.distage.model.definition.{Binding, BootstrapModule, BootstrapModuleDef, Id, Module, ModuleDef}
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.SafeType
@@ -99,6 +100,7 @@ object ModuleProvider {
       Seq(
         LogIOModule[F](), // reuse IzLogger from BootstrapModule
         LogstageFailureHandlerModule,
+        new DistagePlatformModule(),
       ) ++ roleAppLocator.map {
         outerLocator =>
           new ModuleDef {

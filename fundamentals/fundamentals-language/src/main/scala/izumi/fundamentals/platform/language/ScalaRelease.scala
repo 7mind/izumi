@@ -6,6 +6,8 @@ sealed trait ScalaRelease {
 }
 
 object ScalaRelease {
+  // it shouldn't be in fundamentals-basics but that's the best place because of the macro call site limitation of scala 2
+
   def parse(versionString: String): ScalaRelease = {
     val parts = versionString.split('.').toList
     parts match {

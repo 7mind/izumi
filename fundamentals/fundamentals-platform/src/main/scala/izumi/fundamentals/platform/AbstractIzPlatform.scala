@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform
 
-trait AbstractIzPlatform {
+trait AbstractIzPlatform extends IzPlatformEffectfulUtil {
   def platform: ScalaPlatform
 
   def isHeadless: Boolean
