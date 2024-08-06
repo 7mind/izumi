@@ -1,5 +1,6 @@
 package izumi.fundamentals.platform
 
+import izumi.fundamentals.platform.crypto.IzHash
 import org.scalatest.wordspec.AnyWordSpec
 
 class IzHashFunctionTest extends AnyWordSpec {
@@ -9,7 +10,7 @@ class IzHashFunctionTest extends AnyWordSpec {
       IzSha256HashFunction.setImported()
 
       for (_ <- 0 to 2) {
-        assert(IzSha256HashFunction.getImpl.hash("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+        assert(IzHash.sha256("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
       }
     }
   }
