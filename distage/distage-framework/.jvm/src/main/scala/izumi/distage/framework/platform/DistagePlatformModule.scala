@@ -1,7 +1,7 @@
 package izumi.distage.framework.platform
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.fundamentals.platform.crypto.{IzHash, IzSha256Hash}
+import izumi.fundamentals.platform.crypto.IzHash
 import izumi.fundamentals.platform.exceptions.IzStack
 import izumi.fundamentals.platform.files.IzFiles
 import izumi.fundamentals.platform.jvm.{IzClasspath, IzJvm}
@@ -25,7 +25,7 @@ class DistagePlatformModule extends ModuleDef {
   make[IzUUID].fromValue(IzUUID)
 
   // pure
-  make[IzHash].from(() => IzSha256Hash.getImpl)
+  make[IzHash].fromValue(IzHash)
 
   // the rest of the pure helpers seem to be unnecessary
 }

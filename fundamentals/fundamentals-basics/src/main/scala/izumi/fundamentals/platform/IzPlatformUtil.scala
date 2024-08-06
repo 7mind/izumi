@@ -9,6 +9,9 @@ sealed trait IzPlatformUtil
 sealed trait IzPlatformPureUtil extends IzPlatformUtil
 
 /** A marker trait for packages with purely syntactic extensions
+  *
+  * All these helpers should be accessible through
+  * {{{import izumi.fundamentals.preamble.*}}}
   */
 trait IzPlatformSyntax extends IzPlatformPureUtil
 
@@ -17,5 +20,8 @@ trait IzPlatformSyntax extends IzPlatformPureUtil
 trait IzPlatformFunctionCollection extends IzPlatformPureUtil
 
 /** A marker trait for packages with impure helpers (RNG access, clock access, filesystem access, etc)
+  *
+  * All these helpers should be added into DI context in [[izumi.distage.framework.platform.DistagePlatformModule]]
+  * and should be by injection, not by addressing the singletons directly.
   */
 trait IzPlatformEffectfulUtil extends IzPlatformUtil
