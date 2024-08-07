@@ -1,7 +1,7 @@
 package izumi.distage.provisioning
 
 import izumi.distage.LocatorDefaultImpl
-import izumi.distage.model.definition.{Id, Lifecycle}
+import izumi.distage.model.definition.{BindingTag, Id, Lifecycle}
 import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.definition.errors.ProvisionerIssue.IncompatibleEffectTypes
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
@@ -62,7 +62,9 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   ): F[Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
     val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
 
-    val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext)
+    val privateBindings = plan.input.bindings.bindings.filter(b => b.tags.contains(BindingTag.Confined)).map(_.key)
+
+    val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext, privateBindings)
 
     @nowarn("msg=Unused import")
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[TraversalState, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]]] = {

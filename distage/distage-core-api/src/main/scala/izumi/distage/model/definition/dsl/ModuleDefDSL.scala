@@ -751,7 +751,7 @@ object ModuleDefDSL {
     }
   }
 
-  sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] extends Any with AddDependencyDSL[T, Self] {
+  sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] extends Any with AddDependencyDSL[T, Self] with Tagging[Self] {
     protected def mutableState: SingletonRef
     protected def toSame: SingletonRef => Self
 
@@ -800,7 +800,8 @@ object ModuleDefDSL {
   final class SetElementDSL[T](
     override protected val mutableState: SetRef,
     mutableCursor: SetElementRef,
-  ) extends SetDSLMutBase[T] {
+  ) extends SetDSLMutBase[T]
+    with Tagging[SetElementDSL[T]] {
 
     def tagged(tags: BindingTag*): SetElementDSL[T] = {
       addOp(ElementAddTags(tags.toSet))
@@ -815,7 +816,8 @@ object ModuleDefDSL {
   final class MultiSetElementDSL[T](
     override protected val mutableState: SetRef,
     mutableCursor: MultiSetElementRef,
-  ) extends SetDSLMutBase[T] {
+  ) extends SetDSLMutBase[T]
+    with Tagging[MultiSetElementDSL[T]] {
 
     def tagged(tags: BindingTag*): MultiSetElementDSL[T] =
       addOp(MultiAddTags(tags.toSet))

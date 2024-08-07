@@ -41,6 +41,8 @@ trait Locator {
   def lookupRefOrThrow[T: Tag](key: DIKey): GenericTypedRef[T]
   def lookupRef[T: Tag](key: DIKey): Option[GenericTypedRef[T]]
 
+  def isPrivate(key: DIKey): Boolean
+
   /** The plan that produced this object graph */
   def plan: Plan
   def parent: Option[Locator]
@@ -121,8 +123,8 @@ object Locator {
     override def parent: Option[Locator] = None
     override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil
     override def index: Map[DIKey, Any] = Map.empty
-
     override def meta: LocatorMeta = LocatorMeta.empty
+    override def isPrivate(key: DIKey): Boolean = false
   }
 
   /** @param timings How long it took to instantiate each component */

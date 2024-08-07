@@ -16,4 +16,6 @@ object BindingTag {
   implicit def apply(tag: AxisChoice): BindingTag = AxisTag(tag)
 
   final case class AxisTag(choice: AxisChoice) extends BindingTag
+
+  final case object Confined extends BindingTag
 }

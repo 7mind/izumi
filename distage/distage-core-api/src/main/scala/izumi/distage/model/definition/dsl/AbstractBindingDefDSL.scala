@@ -18,6 +18,7 @@ import scala.collection.mutable
 
 trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] { self =>
   private final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
+
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
   private[definition] def _bindDSL[T](ref: SingletonRef): BindDSL[T]
@@ -280,7 +281,7 @@ object AbstractBindingDefDSL {
 
   }
 
-  final class ModifyTaggingDSL[T](private val mutableState: SingletonRef) extends AnyVal with AddDependencyDSL[T, ModifyTaggingDSL[T]] {
+  final class ModifyTaggingDSL[T](private val mutableState: SingletonRef) extends AnyVal with AddDependencyDSL[T, ModifyTaggingDSL[T]] with Tagging[ModifyTaggingDSL[T]] {
 
     def tagged(tags: BindingTag*): ModifyTaggingDSL[T] = {
       new ModifyTaggingDSL(mutableState.append(AddTags(tags.toSet)))
@@ -339,7 +340,7 @@ object AbstractBindingDefDSL {
     override protected def toSame: SubcontextRef => SubcontextNamedDSL[T] = new SubcontextNamedDSL[T](_)
   }
 
-  sealed abstract class SubcontextDSLBase[T, Self] {
+  sealed abstract class SubcontextDSLBase[T, Self] extends Tagging[Self] {
     protected def mutableState: SubcontextRef
     protected def toSame: SubcontextRef => Self
 
