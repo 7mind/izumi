@@ -4,16 +4,31 @@ import distage.{Injector, ModuleDef}
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.model.PlannerInput
 import org.scalatest.wordspec.AnyWordSpec
+import BasicCase1.*
 
 class PrivateBindingsTest extends AnyWordSpec with MkInjector {
   "Support private bindings" in {
-    import BasicCase1.*
-
-    val injector = mkInjector()
-
-    val def1 = PlannerInput.everything(new ModuleDef {
+    val loc2 = prepareInheritedLocator(new ModuleDef {
       make[TestDependency0].from[TestImpl0].confined
     })
+
+    assert(loc2.find[JustTrait].nonEmpty)
+    assert(loc2.find[TestDependency0].isEmpty)
+  }
+
+  "Support public bindings" in {
+    val loc2 = prepareInheritedLocator(new ModuleDef {
+      make[TestDependency0].from[TestImpl0]
+    })
+
+    assert(loc2.find[JustTrait].nonEmpty)
+    assert(loc2.find[TestDependency0].nonEmpty)
+  }
+
+  private def prepareInheritedLocator(m: ModuleDef) = {
+    val injector = mkInjector()
+
+    val def1 = PlannerInput.everything(m)
     val plan1 = injector.planUnsafe(def1)
     val loc = injector.produce(plan1).unsafeGet()
     assert(loc.find[TestDependency0].nonEmpty)
@@ -25,9 +40,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
     })
     val plan2 = injector2.planUnsafe(def2)
     val loc2 = injector2.produce(plan2).unsafeGet()
-
-    assert(loc2.find[JustTrait].nonEmpty)
-    assert(loc2.find[TestDependency0].isEmpty)
+    loc2
   }
 
 }

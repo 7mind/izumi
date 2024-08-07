@@ -7,6 +7,7 @@ import izumi.distage.model.definition.errors.ProvisionerIssue.IncompatibleEffect
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp.*
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Plan, Roots}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionInternal, FinalizerFilter}
@@ -62,7 +63,18 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   ): F[Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
     val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
 
-    val privateBindings = plan.input.bindings.bindings.filter(b => b.tags.contains(BindingTag.Confined)).map(_.key)
+    val privateBindings = plan.stepsUnordered
+      .filter {
+        op =>
+          op.origin.value match {
+            case OperationOrigin.UserBinding(binding) =>
+              binding.tags.contains(BindingTag.Confined)
+            case OperationOrigin.SyntheticBinding(binding) =>
+              binding.tags.contains(BindingTag.Confined)
+            case OperationOrigin.Unknown =>
+              false // TODO: true if everyting is private
+          }
+      }.map(_.target).toSet
 
     val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext, privateBindings)
 
