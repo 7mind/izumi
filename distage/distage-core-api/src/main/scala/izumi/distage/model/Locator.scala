@@ -11,6 +11,7 @@ import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, GenericTypedRef}
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiPrimitives
+import izumi.fundamentals.preamble.{toRichIterable, toRichString}
 import izumi.reflect.{Tag, TagK}
 
 import scala.collection.immutable
@@ -107,6 +108,17 @@ trait Locator {
         }
     }
     args.map(fn.unsafeApply(_).asInstanceOf[T])
+  }
+
+  override def toString: String = {
+    val (priv, pub) = instances.map(_.key).partition(isPrivate)
+
+    Seq(
+      s"Locator ${super.toString}",
+      s"with exposed keys:${pub.niceList().shift(2)}".shift(2),
+      s"with confined keys:${priv.niceList().shift(2)}".shift(2),
+    ).mkString("\n")
+
   }
 }
 
