@@ -42,11 +42,11 @@ trait InjectorFactory {
     *                             They can be used to customize the Injector, e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
     */
   def apply[F[_]: QuasiIO: TagK: DefaultModule](
-    bootstrapBase: BootstrapContextModule = defaultBootstrap,
-    bootstrapActivation: Activation = defaultBootstrapActivation,
-    parent: Option[Locator] = None,
-    overrides: Seq[BootstrapModule] = Nil,
-    locatorPrivacy: LocatorPrivacy,
+                                                 bootstrapBase: BootstrapContextModule = defaultBootstrap,
+                                                 bootstrapActivation: Activation = defaultBootstrapActivation,
+                                                 parent: Option[Locator] = None,
+                                                 overrides: Seq[BootstrapModule] = Nil,
+                                                 locatorPrivacy: LocatorPrivacy = defaultBootstrapLocatorPrivacy,
   ): Injector[F]
 
   /**
@@ -95,4 +95,5 @@ trait InjectorFactory {
 
   protected def defaultBootstrap: BootstrapContextModule
   protected def defaultBootstrapActivation: Activation
+  protected def defaultBootstrapLocatorPrivacy: LocatorPrivacy
 }

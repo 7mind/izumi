@@ -60,7 +60,7 @@ trait Injector[F[_]] extends Planner with Producer {
     activation: Activation = Activation.empty,
   )(function: Functoid[F[A]]
   ): F[A] = {
-    produce(PlannerInput(bindings, activation, function.get.diKeys.toSet))
+    produce(PlannerInput(bindings, function.get.diKeys.toSet, activation))
       .use(_.run(function))
   }
 
@@ -109,7 +109,7 @@ trait Injector[F[_]] extends Planner with Producer {
     activation: Activation = Activation.empty,
   )(function: Functoid[F[A]]
   ): Lifecycle[F, A] = {
-    produce(PlannerInput(bindings, activation, function.get.diKeys.toSet))
+    produce(PlannerInput(bindings, function.get.diKeys.toSet, activation))
       .evalMap(_.run(function))
   }
 
@@ -195,7 +195,7 @@ trait Injector[F[_]] extends Planner with Producer {
     activation: Activation = Activation.empty,
     locatorPrivacy: LocatorPrivacy = LocatorPrivacy.PublicByDefault,
   ): Lifecycle[F, Locator] = {
-    produce(PlannerInput(bindings, activation, roots, locatorPrivacy))
+    produce(PlannerInput(bindings, roots, activation, locatorPrivacy))
   }
 
   /**

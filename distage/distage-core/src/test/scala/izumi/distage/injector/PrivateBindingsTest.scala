@@ -1,10 +1,9 @@
 package izumi.distage.injector
 
-import distage.{Activation, Injector, LocatorPrivacy, ModuleDef}
-import izumi.distage.fixtures.BasicCases.BasicCase1
+import distage.{Injector, LocatorPrivacy, ModuleDef}
+import izumi.distage.fixtures.BasicCases.BasicCase1.*
 import izumi.distage.model.PlannerInput
 import org.scalatest.wordspec.AnyWordSpec
-import BasicCase1.*
 
 class PrivateBindingsTest extends AnyWordSpec with MkInjector {
   "Support private bindings in public-by-default mode" in {
@@ -68,8 +67,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
         new ModuleDef {
           make[TestInstanceBinding].fromValue(TestInstanceBinding())
           make[TestCaseClass2]
-        },
-        Activation.empty,
+        }
       )
       .withLocatorPrivacy(LocatorPrivacy.PublicRoots)
 

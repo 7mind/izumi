@@ -228,8 +228,8 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
           make[ComponentHolder]
           make[Root]
         },
-        Activation.empty,
         Roots(DIKey.get[Root]),
+        Activation.empty,
       )
 
       val injector = mkInjector()
@@ -368,8 +368,8 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
           make[S3Component].fromResource(s3ComponentResource[Fn] _)
           make[S3Client].fromResource(s3clientResource[Fn] _)
         },
-        Activation.empty,
         Roots(DIKey.get[S3Client]),
+        Activation.empty,
       )
 
       val injector = mkInjector()

@@ -57,18 +57,16 @@ final class InjectorDefaultImpl[F[_]](
   private def addSelfInfo(input: PlannerInput): PlannerInput = {
     val selfReflectionModule = InjectorDefaultImpl.selfReflectionModule(parentFactory, bsModule, defaultModule, input.activation, input)
 
-    input.copy(
-      bindings = ModuleBase.make(
-        ModuleBase
-          .overrideImpl(
-            ModuleBase.overrideImpl(
-              defaultModule.iterator,
-              input.bindings.iterator,
-            ),
-            selfReflectionModule.iterator,
-          ).toSet
-      )
-    )
+    input.copy(bindings = ModuleBase.make(
+      ModuleBase
+        .overrideImpl(
+          ModuleBase.overrideImpl(
+            defaultModule.iterator,
+            input.bindings.iterator,
+          ),
+          selfReflectionModule.iterator,
+        ).toSet
+    ))
   }
 
   override def providedEnvironment: InjectorProvidedEnv = {

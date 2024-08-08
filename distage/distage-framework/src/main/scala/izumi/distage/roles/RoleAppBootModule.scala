@@ -157,7 +157,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       roots: Set[DIKey] @Id("distage.roles.roots"),
       defaultModule: DefaultModule[F],
     ) =>
-      injectorFactory.bootloader(bsModule, bsActivation, defaultModule, PlannerInput(appModule, activation, roots))
+      injectorFactory.bootloader(bsModule, bsActivation, defaultModule, PlannerInput(appModule, roots, activation))
   }
 
   make[RoleAppPlanner].from[RoleAppPlanner.Impl[F]]

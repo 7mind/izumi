@@ -58,7 +58,7 @@ object TestTreeBuilder {
                         /** (1) It's important to remember that .plan() would always return the same result regardless of the parent locator!
                           * (2) The planner here must preserve customizations (bootstrap modules) hence be the same as instantiated in TestPlanner
                           */
-                        planner.plan(PlannerInput(newAppModule, t.activation, newRoots))
+                        planner.plan(PlannerInput(newAppModule, newRoots, t.activation))
                       } else {
                         Right(Plan.empty)
                       }

@@ -21,7 +21,7 @@ object Injector extends InjectorFactory {
   override def apply[F[_]: QuasiIO: TagK: DefaultModule](
     overrides: BootstrapModule*
   ): Injector[F] = {
-    bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, LocatorPrivacy.PublicByDefault)
+    bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, defaultBootstrapLocatorPrivacy)
   }
 
   /**
@@ -48,9 +48,9 @@ object Injector extends InjectorFactory {
     bootstrapActivation: Activation = defaultBootstrapActivation,
     parent: Option[Locator] = None,
     overrides: Seq[BootstrapModule] = Nil,
-    locatorPrivacy: LocatorPrivacy = LocatorPrivacy.PublicByDefault,
+    bootstrapLocatorPrivacy: LocatorPrivacy = defaultBootstrapLocatorPrivacy,
   ): Injector[F] = {
-    bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, locatorPrivacy)
+    bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, bootstrapLocatorPrivacy)
   }
 
   /**
@@ -120,7 +120,7 @@ object Injector extends InjectorFactory {
     cycleChoice: Cycles.AxisChoiceDef
   ) extends InjectorFactory {
     override final def apply[F[_]: QuasiIO: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
-      bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, LocatorPrivacy.PublicByDefault)
+      bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, BootstrapLocator.defaultBoostrapPrivacy)
     }
 
     override final def apply[F[_]: QuasiIO: TagK: DefaultModule](
@@ -153,6 +153,7 @@ object Injector extends InjectorFactory {
 
     override protected final def defaultBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap
     override protected final def defaultBootstrapActivation: Activation = definition.Activation(Cycles -> cycleChoice)
+    override protected def defaultBootstrapLocatorPrivacy: LocatorPrivacy = BootstrapLocator.defaultBoostrapPrivacy
   }
 
   private def bootstrap[F[_]: QuasiIO: TagK: DefaultModule](
@@ -178,5 +179,5 @@ object Injector extends InjectorFactory {
 
   @inline override protected def defaultBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap
   @inline override protected def defaultBootstrapActivation: Activation = BootstrapLocator.defaultBootstrapActivation
-
+  @inline override protected def defaultBootstrapLocatorPrivacy: LocatorPrivacy = BootstrapLocator.defaultBoostrapPrivacy
 }

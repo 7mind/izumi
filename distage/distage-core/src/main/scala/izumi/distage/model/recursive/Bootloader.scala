@@ -51,7 +51,7 @@ class Bootloader(
     val roots = config.roots(input.roots)
 
     for {
-      plan <- injector.plan(PlannerInput(module, activation, roots, locatorPrivacy))
+      plan <- injector.plan(PlannerInput(module, roots, activation, locatorPrivacy))
     } yield {
       BootstrappedApp(injector, module, plan)
     }

@@ -59,7 +59,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
     val nodes = ops.map(op => (op._1.target, op._1))
     Plan(
       DG(s, s.transposed, GraphMeta(nodes.toMap)),
-      PlannerInput(Module.make(ops.map(_._2).toSet), Activation.empty, Roots.Everything, LocatorPrivacy.PublicByDefault),
+      PlannerInput(Module.make(ops.map(_._2).toSet), Roots.Everything, Activation.empty, LocatorPrivacy.PublicByDefault),
     )
   }
 

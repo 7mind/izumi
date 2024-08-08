@@ -9,12 +9,13 @@ import izumi.fundamentals.collections.nonempty.NEList
 trait Planner {
   def plan(input: PlannerInput): Either[NEList[DIError], Plan]
 
-  @inline final def plan(bindings: ModuleBase, activation: Activation, roots: Roots, locatorPrivacy: LocatorPrivacy): Either[NEList[DIError], Plan] = {
-    plan(PlannerInput(bindings, activation, roots, locatorPrivacy))
-  }
-
-  @inline final def plan(bindings: ModuleBase, roots: Roots): Either[NEList[DIError], Plan] = {
-    plan(bindings, Activation.empty, roots, LocatorPrivacy.PublicByDefault)
+  @inline final def plan(
+    bindings: ModuleBase,
+    roots: Roots,
+    activation: Activation = Activation.empty,
+    locatorPrivacy: LocatorPrivacy = LocatorPrivacy.PublicByDefault,
+  ): Either[NEList[DIError], Plan] = {
+    plan(PlannerInput(bindings, roots, activation, locatorPrivacy))
   }
 
   /**

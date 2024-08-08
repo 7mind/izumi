@@ -122,12 +122,12 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   }
 
   private def computePrivateBindings(plan: Plan): Set[DIKey] = {
-    def isPrivateRoot(target: DIKey): Boolean = {
+    def isRoot(target: DIKey): Boolean = {
       plan.input.roots match {
         case Roots.Of(roots) =>
-          !roots.contains(target)
+          roots.contains(target)
         case Roots.Everything =>
-          false
+          true
       }
     }
 
@@ -138,7 +138,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
         case LocatorPrivacy.PrivateByDefault =>
           !binding.tags.contains(BindingTag.Exposed)
         case LocatorPrivacy.PublicRoots =>
-          isPrivateRoot(target)
+          !isRoot(target) && !binding.tags.contains(BindingTag.Exposed)
       }
     }
 
@@ -155,7 +155,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
             case LocatorPrivacy.PrivateByDefault =>
               true
             case LocatorPrivacy.PublicRoots =>
-              isPrivateRoot(op.target)
+              isRoot(op.target)
           }
       }
     }

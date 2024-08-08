@@ -5,12 +5,11 @@ import izumi.distage.model.definition.*
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagOntoSet, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
 import izumi.distage.model.exceptions.dsl.InvalidFunctoidModifier
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.{DIKey, MultiSetImplId}
-import izumi.distage.model.reflection.SetKeyMeta
+import izumi.distage.model.reflection.{DIKey, MultiSetImplId, SetKeyMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
 
@@ -448,7 +447,7 @@ object AbstractBindingDefDSL {
       val emptySetBinding = setOps.foldLeft(initial: EmptySetBinding[DIKey.BasicKey]) {
         (b, instr) =>
           instr match {
-            case AddTagsAll(tags) => b.addTags(tags)
+            case AddTagOntoSet(tags) => b.addTags(tags)
             case SetIdAll(id) => b.withTarget(DIKey.TypeKey(b.key.tpe).named(id))
           }
       }
@@ -564,7 +563,7 @@ object AbstractBindingDefDSL {
 
   sealed trait SetInstruction
   object SetInstruction {
-    final case class AddTagsAll(tags: Set[BindingTag]) extends SetInstruction
+    final case class AddTagOntoSet(tags: Set[BindingTag]) extends SetInstruction
     final case class SetIdAll(id: Identifier) extends SetInstruction
   }
 

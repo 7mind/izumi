@@ -3,12 +3,12 @@ package izumi.distage.injector
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.InnerClassCases.*
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.{Activation, ModuleDef}
+import izumi.distage.model.definition.ModuleDef
 import org.scalatest.wordspec.AnyWordSpec
 
 class InnerClassesTest extends AnyWordSpec with MkInjector {
   "can instantiate inner classes from stable objects where the classes are inherited from a trait" in {
-    import InnerClassStablePathsCase._
+    import InnerClassStablePathsCase.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[StableObjectInheritingTrait.TestDependency]
@@ -23,8 +23,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   }
 
   "can instantiate inner classes from stable objects where the classes are inherited from a trait and depend on types defined inside trait" in {
-    import InnerClassStablePathsCase._
-    import StableObjectInheritingTrait._
+    import InnerClassStablePathsCase.*
+    import StableObjectInheritingTrait.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestDependency]
@@ -37,7 +37,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   }
 
   "can support path-dependant injections with injector lookup" in {
-    import InnerClassUnstablePathsCase._
+    import InnerClassUnstablePathsCase.*
 
     val testProviderModule = new TestModule
 
@@ -56,7 +56,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
   "can handle function local path-dependent injections" in {
     def someFunction() = {
-      import InnerClassUnstablePathsCase._
+      import InnerClassUnstablePathsCase.*
 
       val testProviderModule = new TestModule
 
@@ -98,7 +98,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   }
 
   "support path-dependent by-name injections" in {
-    import InnerClassByNameCase._
+    import InnerClassByNameCase.*
 
     val testProviderModule = new TestModule
 
@@ -149,8 +149,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   }
 
   "can now find proper constructor for by-name circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
-    import InnerClassStablePathsCase._
-    import StableObjectInheritingTrait._
+    import InnerClassStablePathsCase.*
+    import StableObjectInheritingTrait.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[ByNameCircular1]
@@ -164,7 +164,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   }
 
   "can now handle path-dependent factories" in {
-    import InnerClassUnstablePathsCase._
+    import InnerClassUnstablePathsCase.*
     val testProviderModule = new TestModule
 
     FactoryConstructor[testProviderModule.TestFactory]
@@ -173,8 +173,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       new ModuleDef {
         make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
         makeFactory[testProviderModule.TestFactory]
-      },
-      Activation.empty,
+      }
     )
 
     val context = mkInjector().produce(definition).unsafeGet()
