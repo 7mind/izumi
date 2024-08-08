@@ -4,14 +4,15 @@ import izumi.distage.AbstractLocator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.Plan
+import izumi.distage.model.plan.repr.LocatorFormatter
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.OpStatus
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, GenericTypedRef}
+import izumi.functional.Renderable
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiPrimitives
-import izumi.fundamentals.preamble.{toRichIterable, toRichString}
 import izumi.reflect.{Tag, TagK}
 
 import scala.collection.immutable
@@ -110,15 +111,10 @@ trait Locator {
     args.map(fn.unsafeApply(_).asInstanceOf[T])
   }
 
+  def render()(implicit ev: Renderable[Locator]): String = ev.render(this)
+
   override def toString: String = {
-    val (priv, pub) = instances.map(_.key).partition(isPrivate)
-
-    Seq(
-      s"Locator ${super.toString}",
-      s"with exposed keys:${pub.niceList().shift(2)}".shift(2),
-      s"with confined keys:${priv.niceList().shift(2)}".shift(2),
-    ).mkString("\n")
-
+    this.render()
   }
 }
 
@@ -127,6 +123,8 @@ object Locator {
     def run[B](function: Functoid[F[B]])(implicit F: QuasiPrimitives[F]): F[B] =
       resource.use(_.run(function))
   }
+
+  @inline implicit final def defaultFormatter: Renderable[Locator] = LocatorFormatter
 
   val empty: AbstractLocator = new AbstractLocator {
     override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = None
