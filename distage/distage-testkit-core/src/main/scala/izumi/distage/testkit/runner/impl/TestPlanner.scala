@@ -301,7 +301,9 @@ class TestPlanner[F[_]: TagK: DefaultModule](
 
       // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
       // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized
-      // weak sets behave as usual
+      // weak sets behave as usual.
+      // NOTE: there's no check for memoization here. However, there is in TestTreeBuilder: we filter out non-memoized elements
+      // to not accidentally strengthen unmemoized keys.
       (strengthenedKeys, strengthenedAppModule) = reducedAppModule.foldLeftWith(Set.empty[DIKey.SetElementKey]) {
         case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && (envKeys(key) || envKeys(r.key)) =>
           (acc + key) -> b.copy(implementation = r.copy(weak = false))
