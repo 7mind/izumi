@@ -37,7 +37,7 @@ object TestPlanner {
     memoizationPlanTree: List[Plan],
     envInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
-    strengthenedKeys: Set[DIKey],
+    strengthenedKeys: Set[DIKey.SetElementKey],
   )
   final case class AlmostPreparedTest[F[_]](
     test: DistageTest[F],
@@ -302,14 +302,14 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
       // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized
       // weak sets behave as usual
-      (strengthenedKeys, strengthenedAppModule) = reducedAppModule.foldLeftWith(List.empty[DIKey]) {
+      (strengthenedKeys, strengthenedAppModule) = reducedAppModule.foldLeftWith(Set.empty[DIKey.SetElementKey]) {
         case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && (envKeys(key) || envKeys(r.key)) =>
-          (key :: acc) -> b.copy(implementation = r.copy(weak = false))
+          (acc + key) -> b.copy(implementation = r.copy(weak = false))
         case (acc, b) =>
           acc -> b
       }
 
-      orderedPlans <-
+      memoizationPlanTree <-
         if (env.memoizationRoots.keys.nonEmpty) {
           // we need to create plans for each level of memoization
           // every duplicated key will be removed
@@ -325,7 +325,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                   for {
                     plan <- prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule, planChecker)
                   } yield {
-                    ((acc ++ List(plan), allSharedKeys ++ plan.keys))
+                    (acc ++ List(plan), allSharedKeys ++ plan.keys)
                   }
                 } else {
                   Right((acc, allSharedKeys))
@@ -344,7 +344,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       }
 
       val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
-      PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, highestDebugOutputInTests, strengthenedKeys.toSet)
+      PackedEnv(envMergeCriteria, testPlans, memoizationPlanTree, injector, highestDebugOutputInTests, strengthenedKeys)
     }
   }
 
