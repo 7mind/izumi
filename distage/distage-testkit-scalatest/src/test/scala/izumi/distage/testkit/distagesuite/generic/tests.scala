@@ -99,7 +99,7 @@ object DistageTestExampleBase {
         ),
       )
     }
-  }git
+  }
 }
 
 abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
