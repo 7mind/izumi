@@ -27,7 +27,7 @@ object ConfigMerger {
       val roleConfigs = role.flatMap(_.loaded)
       val nonEmptyRole = roleConfigs.filterNot(_.config.isEmpty)
 
-      val toMerge = (shared ++ role.filter(filter).flatMap(_.loaded)).filterNot(_.config.isEmpty)
+      val toMerge = (role.filter(filter).flatMap(_.loaded) ++ shared).filterNot(_.config.isEmpty)
 
       val folded = foldConfigs(toMerge)
 
@@ -47,11 +47,9 @@ object ConfigMerger {
     }
 
     def foldConfigs(roleConfigs: List[ConfigLoadResult.Success]): Config = {
-      val fallbackOrdered = roleConfigs.reverse // rightmost config has the highest priority, so we need it to become leftmost
+      verifyConfigs(roleConfigs)
 
-      verifyConfigs(fallbackOrdered)
-
-      fallbackOrdered.foldLeft(ConfigFactory.empty()) {
+      roleConfigs.foldLeft(ConfigFactory.empty()) {
         case (acc, loaded) =>
           acc.withFallback(loaded.config)
       }
