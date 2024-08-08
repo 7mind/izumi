@@ -1,7 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.errors.DIError
-import izumi.distage.model.definition.{Activation, ModuleBase}
+import izumi.distage.model.definition.{Activation, LocatorPrivacy, ModuleBase}
 import izumi.distage.model.plan.*
 import izumi.fundamentals.collections.nonempty.NEList
 
@@ -9,12 +9,12 @@ import izumi.fundamentals.collections.nonempty.NEList
 trait Planner {
   def plan(input: PlannerInput): Either[NEList[DIError], Plan]
 
-  @inline final def plan(bindings: ModuleBase, activation: Activation, roots: Roots): Either[NEList[DIError], Plan] = {
-    plan(PlannerInput(bindings, activation, roots))
+  @inline final def plan(bindings: ModuleBase, activation: Activation, roots: Roots, locatorPrivacy: LocatorPrivacy): Either[NEList[DIError], Plan] = {
+    plan(PlannerInput(bindings, activation, roots, locatorPrivacy))
   }
 
   @inline final def plan(bindings: ModuleBase, roots: Roots): Either[NEList[DIError], Plan] = {
-    plan(bindings, Activation.empty, roots)
+    plan(bindings, Activation.empty, roots, LocatorPrivacy.PublicByDefault)
   }
 
   /**

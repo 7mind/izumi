@@ -1,7 +1,7 @@
 package izumi.distage.provisioning
 
 import izumi.distage.LocatorDefaultImpl
-import izumi.distage.model.definition.{BindingTag, Id, Lifecycle}
+import izumi.distage.model.definition.{Binding, BindingTag, Id, Lifecycle, LocatorPrivacy}
 import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.definition.errors.ProvisionerIssue.IncompatibleEffectTypes
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
@@ -63,18 +63,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   ): F[Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
     val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
 
-    val privateBindings = plan.stepsUnordered
-      .filter {
-        op =>
-          op.origin.value match {
-            case OperationOrigin.UserBinding(binding) =>
-              binding.tags.contains(BindingTag.Confined)
-            case OperationOrigin.SyntheticBinding(binding) =>
-              binding.tags.contains(BindingTag.Confined)
-            case OperationOrigin.Unknown =>
-              false // TODO: true if everyting is private
-          }
-      }.map(_.target).toSet
+    val privateBindings = computePrivateBindings(plan)
 
     val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext, privateBindings)
 
@@ -130,6 +119,30 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           }
       }
     } yield res
+  }
+
+  private def computePrivateBindings(plan: Plan): Set[DIKey] = {
+    val privacy = plan.input.locatorPrivacy
+    val defaultPublic = privacy == LocatorPrivacy.PublicByDefault
+    val defaultPrivate = privacy == LocatorPrivacy.PrivateByDefault
+
+    def isPrivate(binding: Binding) = {
+      (defaultPublic && binding.tags.contains(BindingTag.Confined)) || (defaultPrivate && !binding.tags.contains(BindingTag.Exposed))
+    }
+
+    plan.stepsUnordered
+      .filter {
+        op =>
+          op.origin.value match {
+            case OperationOrigin.UserBinding(binding) =>
+              isPrivate(binding)
+            case OperationOrigin.SyntheticBinding(binding) =>
+              isPrivate(binding)
+            case OperationOrigin.Unknown =>
+              defaultPrivate
+          }
+      }
+      .map(_.target).toSet
   }
 
   private def failEarly[F[_]: TagK, A](

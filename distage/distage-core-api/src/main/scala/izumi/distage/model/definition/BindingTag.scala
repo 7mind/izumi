@@ -18,4 +18,5 @@ object BindingTag {
   final case class AxisTag(choice: AxisChoice) extends BindingTag
 
   final case object Confined extends BindingTag
+  final case object Exposed extends BindingTag
 }

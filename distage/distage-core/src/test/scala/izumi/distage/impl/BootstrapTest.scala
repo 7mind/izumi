@@ -1,6 +1,6 @@
 package izumi.distage.impl
 
-import distage.{Activation, DIKey}
+import distage.{Activation, DIKey, LocatorPrivacy}
 import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
 import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.planning.solver.PlanSolver
@@ -10,7 +10,7 @@ class BootstrapTest extends AnyWordSpec {
 
   "Bootstrap Context" should {
     "contain expected definitions" in {
-      val context = BootstrapLocator.bootstrap(BootstrapLocator.defaultBootstrap, Activation(Cycles -> Cycles.Byname), Nil, None)
+      val context = BootstrapLocator.bootstrap(BootstrapLocator.defaultBootstrap, Activation(Cycles -> Cycles.Byname), Nil, None, LocatorPrivacy.PublicByDefault)
 
       val maybeRef = context.find[PlanSolver]
       val ref = context.lookupLocal[PlanSolver](DIKey.get[PlanSolver])

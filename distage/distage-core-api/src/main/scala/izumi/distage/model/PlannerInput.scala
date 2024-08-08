@@ -1,6 +1,6 @@
 package izumi.distage.model
 
-import izumi.distage.model.definition.{Activation, ModuleBase}
+import izumi.distage.model.definition.{Activation, LocatorPrivacy, ModuleBase}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.reflection.DIKey
 import izumi.fundamentals.collections.nonempty.NESet
@@ -25,15 +25,24 @@ final case class PlannerInput(
   bindings: ModuleBase,
   activation: Activation,
   roots: Roots,
+  locatorPrivacy: LocatorPrivacy,
 )
 
 object PlannerInput {
+  implicit class PlannerInputSyntax(private val input: PlannerInput) extends AnyVal {
+    def privateByDefault: PlannerInput = input.copy(locatorPrivacy = LocatorPrivacy.PrivateByDefault)
+    def publicByDefault: PlannerInput = input.copy(locatorPrivacy = LocatorPrivacy.PublicByDefault)
+    def withLocatorPrivacy(privacy: LocatorPrivacy): PlannerInput = input.copy(locatorPrivacy = privacy)
+  }
+
+  def apply(bindings: ModuleBase, activation: Activation, roots: Roots): PlannerInput = PlannerInput(bindings, activation, roots, LocatorPrivacy.PublicByDefault)
   /**
     * Instantiate `roots` and the dependencies of `roots`, discarding bindings that are unrelated.
     *
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph that can be described by `bindings`
     */
-  def apply(bindings: ModuleBase, activation: Activation, roots: NESet[? <: DIKey]): PlannerInput = PlannerInput(bindings, activation, Roots(roots))
+  def apply(bindings: ModuleBase, activation: Activation, roots: NESet[? <: DIKey]): PlannerInput =
+    PlannerInput(bindings, activation, Roots(roots), LocatorPrivacy.PublicByDefault)
 
   /**
     * Instantiate `roots` and the dependencies of `roots`, discarding bindings that are unrelated.
@@ -41,13 +50,14 @@ object PlannerInput {
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph that can be described by `bindings`
     */
   def apply(bindings: ModuleBase, activation: Activation, roots: Set[? <: DIKey])(implicit d: DummyImplicit): PlannerInput =
-    PlannerInput(bindings, activation, Roots(roots))
+    PlannerInput(bindings, activation, Roots(roots), LocatorPrivacy.PublicByDefault)
 
   /** Instantiate `root`, `roots` and their dependencies, discarding bindings that are unrelated.
     *
     * Effectively, this selects and creates a *sub-graph* of the largest possible object graph that can be described by `bindings`
     */
-  def apply(bindings: ModuleBase, activation: Activation, root: DIKey, roots: DIKey*): PlannerInput = PlannerInput(bindings, activation, Roots(root, roots*))
+  def apply(bindings: ModuleBase, activation: Activation, root: DIKey, roots: DIKey*): PlannerInput =
+    PlannerInput(bindings, activation, Roots(root, roots*), LocatorPrivacy.PublicByDefault)
 
   /** Instantiate `T` and the dependencies of `T`, discarding bindings that are unrelated.
     *
@@ -64,5 +74,6 @@ object PlannerInput {
   def target[T: Tag](name: String)(bindings: ModuleBase, activation: Activation): PlannerInput = PlannerInput(bindings, activation, DIKey.get[T].named(name))
 
   /** Disable all dependency pruning. Every binding in `bindings` will be instantiated, without selection of the root components. There's almost always a better way to model things though. */
-  def everything(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput = PlannerInput(bindings, activation, Roots.Everything)
+  def everything(bindings: ModuleBase, activation: Activation = Activation.empty): PlannerInput =
+    PlannerInput(bindings, activation, Roots.Everything, LocatorPrivacy.PublicByDefault)
 }

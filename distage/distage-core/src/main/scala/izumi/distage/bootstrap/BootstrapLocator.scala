@@ -41,6 +41,7 @@ object BootstrapLocator {
     bootstrapActivation: Activation,
     overrides: Seq[BootstrapModule],
     parent: Option[Locator],
+    locatorPrivacy: LocatorPrivacy,
   ): Locator = {
     val bindings0 = bootstrapBase overriddenBy overrides.merge
     // BootstrapModule & bootstrap plugins cannot modify `Activation` after 1.0, it's solely under control of `PlannerInput` now.
@@ -49,7 +50,7 @@ object BootstrapLocator {
 
     val plan =
       BootstrapLocator.bootstrapPlanner
-        .plan(bindings, bootstrapActivation, Roots.Everything).getOrThrow()
+        .plan(bindings, bootstrapActivation, Roots.Everything, locatorPrivacy).getOrThrow()
 
     val resource =
       BootstrapLocator.bootstrapProducer

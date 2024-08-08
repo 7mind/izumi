@@ -57,7 +57,10 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
 
     val s = IncidenceMatrix(ops.map(op => (op._1.target, Set.empty[DIKey])).toMap)
     val nodes = ops.map(op => (op._1.target, op._1))
-    Plan(DG(s, s.transposed, GraphMeta(nodes.toMap)), PlannerInput(Module.make(ops.map(_._2).toSet), Activation.empty, Roots.Everything))
+    Plan(
+      DG(s, s.transposed, GraphMeta(nodes.toMap)),
+      PlannerInput(Module.make(ops.map(_._2).toSet), Activation.empty, Roots.Everything, LocatorPrivacy.PublicByDefault),
+    )
   }
 
   override def parent: Option[Locator] = None

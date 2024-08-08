@@ -21,7 +21,7 @@ object Injector extends InjectorFactory {
   override def apply[F[_]: QuasiIO: TagK: DefaultModule](
     overrides: BootstrapModule*
   ): Injector[F] = {
-    bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides)
+    bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, LocatorPrivacy.PublicByDefault)
   }
 
   /**
@@ -48,8 +48,9 @@ object Injector extends InjectorFactory {
     bootstrapActivation: Activation = defaultBootstrapActivation,
     parent: Option[Locator] = None,
     overrides: Seq[BootstrapModule] = Nil,
+    locatorPrivacy: LocatorPrivacy = LocatorPrivacy.PublicByDefault,
   ): Injector[F] = {
-    bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides)
+    bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, locatorPrivacy)
   }
 
   /**
@@ -119,7 +120,7 @@ object Injector extends InjectorFactory {
     cycleChoice: Cycles.AxisChoiceDef
   ) extends InjectorFactory {
     override final def apply[F[_]: QuasiIO: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
-      bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides)
+      bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, LocatorPrivacy.PublicByDefault)
     }
 
     override final def apply[F[_]: QuasiIO: TagK: DefaultModule](
@@ -127,8 +128,9 @@ object Injector extends InjectorFactory {
       bootstrapActivation: Activation,
       parent: Option[Locator],
       overrides: Seq[BootstrapModule],
+      locatorPrivacy: LocatorPrivacy,
     ): Injector[F] = {
-      bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides)
+      bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, locatorPrivacy)
     }
 
     override final def apply(): Injector[Identity] = apply[Identity]()
@@ -159,8 +161,9 @@ object Injector extends InjectorFactory {
     activation: Activation,
     parent: Option[Locator],
     overrides: Seq[BootstrapModule],
+    locatorPrivacy: LocatorPrivacy,
   ): Injector[F] = {
-    val bootstrapLocator = BootstrapLocator.bootstrap(bootstrapBase, activation, overrides, parent)
+    val bootstrapLocator = BootstrapLocator.bootstrap(bootstrapBase, activation, overrides, parent, locatorPrivacy)
     inheritWithNewDefaultModuleImpl(injectorFactory, bootstrapLocator, implicitly)
   }
 

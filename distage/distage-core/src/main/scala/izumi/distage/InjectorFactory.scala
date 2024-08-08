@@ -1,5 +1,6 @@
 package izumi.distage
 
+import distage.LocatorPrivacy
 import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule}
 import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.recursive.Bootloader
@@ -45,6 +46,7 @@ trait InjectorFactory {
     bootstrapActivation: Activation = defaultBootstrapActivation,
     parent: Option[Locator] = None,
     overrides: Seq[BootstrapModule] = Nil,
+    locatorPrivacy: LocatorPrivacy,
   ): Injector[F]
 
   /**

@@ -6,4 +6,5 @@ trait Tagging[Self] extends Any {
   def tagged(tags: BindingTag*): Self
 
   def confined: Self = tagged(BindingTag.Confined)
+  def exposed: Self = tagged(BindingTag.Exposed)
 }
