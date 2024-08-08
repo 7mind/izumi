@@ -122,26 +122,46 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   }
 
   private def computePrivateBindings(plan: Plan): Set[DIKey] = {
-    val privacy = plan.input.locatorPrivacy
-    val defaultPublic = privacy == LocatorPrivacy.PublicByDefault
-    val defaultPrivate = privacy == LocatorPrivacy.PrivateByDefault
+    def isPrivateRoot(target: DIKey): Boolean = {
+      plan.input.roots match {
+        case Roots.Of(roots) =>
+          !roots.contains(target)
+        case Roots.Everything =>
+          false
+      }
+    }
 
-    def isPrivate(binding: Binding) = {
-      (defaultPublic && binding.tags.contains(BindingTag.Confined)) || (defaultPrivate && !binding.tags.contains(BindingTag.Exposed))
+    def isPrivateBinding(target: DIKey, binding: Binding): Boolean = {
+      plan.input.locatorPrivacy match {
+        case LocatorPrivacy.PublicByDefault =>
+          binding.tags.contains(BindingTag.Confined)
+        case LocatorPrivacy.PrivateByDefault =>
+          !binding.tags.contains(BindingTag.Exposed)
+        case LocatorPrivacy.PublicRoots =>
+          isPrivateRoot(target)
+      }
+    }
+
+    def isPrivate(op: ExecutableOp): Boolean = {
+      op.origin.value match {
+        case OperationOrigin.UserBinding(binding) =>
+          isPrivateBinding(op.target, binding)
+        case OperationOrigin.SyntheticBinding(binding) =>
+          isPrivateBinding(op.target, binding)
+        case OperationOrigin.Unknown =>
+          plan.input.locatorPrivacy match {
+            case LocatorPrivacy.PublicByDefault =>
+              false
+            case LocatorPrivacy.PrivateByDefault =>
+              true
+            case LocatorPrivacy.PublicRoots =>
+              isPrivateRoot(op.target)
+          }
+      }
     }
 
     plan.stepsUnordered
-      .filter {
-        op =>
-          op.origin.value match {
-            case OperationOrigin.UserBinding(binding) =>
-              isPrivate(binding)
-            case OperationOrigin.SyntheticBinding(binding) =>
-              isPrivate(binding)
-            case OperationOrigin.Unknown =>
-              defaultPrivate
-          }
-      }
+      .filter(isPrivate)
       .map(_.target).toSet
   }
 
