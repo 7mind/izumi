@@ -1,6 +1,6 @@
 package distage
 
-import izumi.distage.bootstrap.{BootstrapLocator, Cycles}
+import izumi.distage.bootstrap.{BootstrapLocator, BootstrapRootsMode, Cycles}
 import izumi.distage.model.definition
 import izumi.distage.model.definition.BootstrapContextModule
 import izumi.functional.quasi.QuasiIO
@@ -21,7 +21,7 @@ object Injector extends InjectorFactory {
   override def apply[F[_]: QuasiIO: TagK: DefaultModule](
     overrides: BootstrapModule*
   ): Injector[F] = {
-    bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, defaultBootstrapLocatorPrivacy)
+    bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, defaultBootstrapLocatorPrivacy, defaultBootstrapRootsMode)
   }
 
   /**
@@ -49,8 +49,9 @@ object Injector extends InjectorFactory {
     parent: Option[Locator] = None,
     overrides: Seq[BootstrapModule] = Nil,
     bootstrapLocatorPrivacy: LocatorPrivacy = defaultBootstrapLocatorPrivacy,
+    bootstrapRootsMode: BootstrapRootsMode = defaultBootstrapRootsMode,
   ): Injector[F] = {
-    bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, bootstrapLocatorPrivacy)
+    bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, bootstrapLocatorPrivacy, bootstrapRootsMode)
   }
 
   /**
@@ -120,7 +121,7 @@ object Injector extends InjectorFactory {
     cycleChoice: Cycles.AxisChoiceDef
   ) extends InjectorFactory {
     override final def apply[F[_]: QuasiIO: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
-      bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, BootstrapLocator.defaultBoostrapPrivacy)
+      bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, defaultBootstrapLocatorPrivacy, defaultBootstrapRootsMode)
     }
 
     override final def apply[F[_]: QuasiIO: TagK: DefaultModule](
@@ -129,8 +130,9 @@ object Injector extends InjectorFactory {
       parent: Option[Locator],
       overrides: Seq[BootstrapModule],
       locatorPrivacy: LocatorPrivacy,
+      bootstrapRootsMode: BootstrapRootsMode,
     ): Injector[F] = {
-      bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, locatorPrivacy)
+      bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, locatorPrivacy, bootstrapRootsMode)
     }
 
     override final def apply(): Injector[Identity] = apply[Identity]()
@@ -154,6 +156,7 @@ object Injector extends InjectorFactory {
     override protected final def defaultBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap
     override protected final def defaultBootstrapActivation: Activation = definition.Activation(Cycles -> cycleChoice)
     override protected def defaultBootstrapLocatorPrivacy: LocatorPrivacy = BootstrapLocator.defaultBoostrapPrivacy
+    @inline override protected def defaultBootstrapRootsMode: BootstrapRootsMode = BootstrapRootsMode.UseGC
   }
 
   private def bootstrap[F[_]: QuasiIO: TagK: DefaultModule](
@@ -163,8 +166,9 @@ object Injector extends InjectorFactory {
     parent: Option[Locator],
     overrides: Seq[BootstrapModule],
     locatorPrivacy: LocatorPrivacy,
+    bootstrapRootsMode: BootstrapRootsMode,
   ): Injector[F] = {
-    val bootstrapLocator = BootstrapLocator.bootstrap(bootstrapBase, activation, overrides, parent, locatorPrivacy)
+    val bootstrapLocator = BootstrapLocator.bootstrap(bootstrapBase, activation, overrides, parent, locatorPrivacy, bootstrapRootsMode)
     inheritWithNewDefaultModuleImpl(injectorFactory, bootstrapLocator, implicitly)
   }
 
@@ -180,4 +184,5 @@ object Injector extends InjectorFactory {
   @inline override protected def defaultBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap
   @inline override protected def defaultBootstrapActivation: Activation = BootstrapLocator.defaultBootstrapActivation
   @inline override protected def defaultBootstrapLocatorPrivacy: LocatorPrivacy = BootstrapLocator.defaultBoostrapPrivacy
+  @inline override protected def defaultBootstrapRootsMode: BootstrapRootsMode = BootstrapRootsMode.UseGC
 }

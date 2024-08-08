@@ -43,21 +43,31 @@ object BootstrapLocator {
     overrides: Seq[BootstrapModule],
     parent: Option[Locator],
     locatorPrivacy: LocatorPrivacy,
+    rootsMode: BootstrapRootsMode,
   ): Locator = {
     val bindings0 = bootstrapBase overriddenBy overrides.merge
     // BootstrapModule & bootstrap plugins cannot modify `Activation` after 1.0, it's solely under control of `PlannerInput` now.
     // Please open an issue if you need the ability to override Activation using BootstrapModule
     val bindings = bindings0 ++ BootstrapLocator.selfReflectionModule(bindings0, bootstrapActivation)
 
-    val primaryRoots: NESet[DIKey] = NESet(DIKey.get[Planner], DIKey.get[PlanInterpreter], DIKey.get[BootstrapModule], DIKey.get[Activation].named("bootstrapActivation"))
-    val customRoots = bindings.bindings.filter(_.tags.contains(BindingTag.Exposed)).map(_.key)
-    val allRoots = primaryRoots ++ customRoots
+    val bootstrapRoots = rootsMode match {
+      case BootstrapRootsMode.UseGC =>
+        val primaryRoots: NESet[DIKey] =
+          NESet(DIKey.get[Planner], DIKey.get[PlanInterpreter], DIKey.get[BootstrapModule], DIKey.get[Activation].named("bootstrapActivation"))
+        // we consider all the "exposed" bindings in bootstrap modules to be bootstrap roots
+        val customRoots = bindings.bindings.filter(_.tags.contains(BindingTag.Exposed)).map(_.key)
+        Roots(primaryRoots ++ customRoots)
+      case BootstrapRootsMode.Everything =>
+        Roots.Everything
+      case BootstrapRootsMode.UNSAFE_Custom(keys) =>
+        Roots.Of(keys)
+    }
 
     val plan =
       BootstrapLocator.bootstrapPlanner
         .plan(
           bindings,
-          Roots(allRoots),
+          bootstrapRoots,
           bootstrapActivation,
           locatorPrivacy,
         ).getOrThrow()
