@@ -76,18 +76,18 @@ object DistageTestExampleBase {
   final case class SetElement2(counter: SetCounter) extends SetElement
   final case class SetElement3(counter: SetCounter) extends SetElement
   final case class SetElement4(counter: SetCounter) extends SetElement
-  final case class SetElementRetainer(element: SetElement4)
+  final case class SetElement4Retainer(element: SetElement4)
 
-  sealed trait UnmemoizedSetElement
-  final case class UnmemoizedSetElement1() extends UnmemoizedSetElement
-  final case class UnmemoizedSetElement2() extends UnmemoizedSetElement
-  final case class UnmemoizedSetElement3() extends UnmemoizedSetElement
-  final case class UnmemoizedSetElement4() extends UnmemoizedSetElement
-  final case class UnmemoizedSetElementRetainer(element: UnmemoizedSetElement4) extends UnmemoizedSetElement
+  sealed trait UnmemoizedSetElement extends SetElement
+  final case class UnmemoizedSetElement1(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement2(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement3(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement4(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement4Retainer(element: UnmemoizedSetElement4)
 
-  sealed trait DirectlyMemoizedSetElement
-  final case class DirectlyMemoizedSetElement1() extends DirectlyMemoizedSetElement
-  final case class DirectlyMemoizedSetElement2() extends DirectlyMemoizedSetElement
+  sealed trait DirectlyMemoizedSetElement extends SetElement
+  final case class DirectlyMemoizedSetElement1(counter: SetCounter @Id("directly-memoized")) extends DirectlyMemoizedSetElement
+  final case class DirectlyMemoizedSetElement2(counter: SetCounter @Id("directly-memoized")) extends DirectlyMemoizedSetElement
 
   trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
     override protected def config: TestConfig = {
@@ -99,7 +99,7 @@ object DistageTestExampleBase {
         ),
       )
     }
-  }
+  }git
 }
 
 abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
@@ -109,12 +109,14 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
       make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
 
       make[SetCounter]
+      make[SetCounter].named("unmemoized")
+      make[SetCounter].named("directly-memoized")
 
       make[SetElement1]
       make[SetElement2]
       make[SetElement3]
       make[SetElement4]
-      make[SetElementRetainer]
+      make[SetElement4Retainer]
 
       many[SetElement]
         .weak[SetElement1]
@@ -133,7 +135,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
       make[UnmemoizedSetElement2]
       make[UnmemoizedSetElement3]
       make[UnmemoizedSetElement4]
-      make[UnmemoizedSetElementRetainer]
+      make[UnmemoizedSetElement4Retainer]
 
       many[UnmemoizedSetElement]
         .weak[UnmemoizedSetElement1]
@@ -157,7 +159,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
     "support memoized weak sets with transitively retained elements" in {
       (
         set: Set[SetElement],
-        s1: SetElementRetainer,
+        s1: SetElement4Retainer,
       ) =>
         Quirks.discard(s1)
         F.maybeSuspend(assert(set.size == 4))
@@ -179,7 +181,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         set: Set[SetElement],
         c: SetCounter,
       ) =>
-        assume(c.get == 4)
+        assert(c.get == 4)
         F.maybeSuspend(assert(set.size == 4))
     }
 
@@ -200,7 +202,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         s1: SetElement1,
         s2: SetElement2,
         s3: SetElement3,
-        s4: SetElementRetainer,
+        s4: SetElement4Retainer,
       ) =>
         Quirks.discard(s1, s2, s3, s4)
         F.maybeSuspend(assert(set.size == 4))
@@ -210,8 +212,10 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
       (
         set: Set[DirectlyMemoizedSetElement],
         s1: DirectlyMemoizedSetElement1,
+        c: SetCounter @Id("directly-memoized"),
       ) =>
         Quirks.discard(s1)
+        assert(c.get == 2)
         F.maybeSuspend(assert(set.size == 2))
     }
 
@@ -220,8 +224,10 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         set: Set[DirectlyMemoizedSetElement],
         s1: DirectlyMemoizedSetElement1,
         s2: DirectlyMemoizedSetElement2,
+        c: SetCounter @Id("directly-memoized"),
       ) =>
         Quirks.discard(s1, s2)
+        assert(c.get == 2)
         F.maybeSuspend(assert(set.size == 2))
     }
 
@@ -231,8 +237,10 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         s1: UnmemoizedSetElement1,
         s2: UnmemoizedSetElement2,
         s3: UnmemoizedSetElement3,
+        c: SetCounter @Id("unmemoized"),
       ) =>
         Quirks.discard(s1, s2, s3)
+        assert(c.get == 3)
         F.maybeSuspend(assert(set.size == 3))
     }
 
@@ -242,9 +250,11 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         s1: UnmemoizedSetElement1,
         s2: UnmemoizedSetElement2,
         s3: UnmemoizedSetElement3,
-        s4: UnmemoizedSetElementRetainer,
+        s4: UnmemoizedSetElement4Retainer,
+        c: SetCounter @Id("unmemoized"),
       ) =>
         Quirks.discard(s1, s2, s3, s4)
+        assert(c.get == 4)
         F.maybeSuspend(assert(set.size == 4))
     }
 
