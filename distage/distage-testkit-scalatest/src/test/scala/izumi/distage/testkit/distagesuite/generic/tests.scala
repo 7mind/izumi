@@ -17,18 +17,6 @@ import zio.{Task, ZEnvironment, ZIO}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
-trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
-  override protected def config: TestConfig = {
-    super.config.copy(
-      pluginConfig = PluginConfig.cached(classOf[ActiveComponent].getPackage.getName),
-      memoizationRoots = Map(
-        1 -> Set(DIKey.get[MockCache[F]]),
-        2 -> Set(DIKey.get[Set[SetElement]], DIKey.get[SetCounter]),
-      ),
-    )
-  }
-}
-
 class DistageTestExampleBIO extends Spec2[zio.IO] with DistageMemoizeExample[Task] {
 
   "distage test runner" should {
@@ -71,35 +59,64 @@ class DistageTestExampleBIOEnv extends SpecZIO with DistageMemoizeExample[Task] 
 }
 
 object DistageTestExampleBase {
-  class SetCounter {
+  final class SetCounter {
     private val c: AtomicInteger = new AtomicInteger(0)
+
     def inc(): Unit = c.incrementAndGet().discard()
     def get: Int = c.get()
   }
   sealed trait SetElement {
+    def counter: SetCounter
+
     locally {
       counter.inc()
     }
-    def counter: SetCounter
   }
   final case class SetElement1(counter: SetCounter) extends SetElement
   final case class SetElement2(counter: SetCounter) extends SetElement
   final case class SetElement3(counter: SetCounter) extends SetElement
   final case class SetElement4(counter: SetCounter) extends SetElement
-  final case class SetElementRetainer(element: SetElement4)
+  final case class SetElement4Retainer(element: SetElement4)
+
+  sealed trait UnmemoizedSetElement extends SetElement
+  final case class UnmemoizedSetElement1(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement2(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement3(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement4(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement4Retainer(element: UnmemoizedSetElement4)
+
+  sealed trait DirectlyMemoizedSetElement extends SetElement
+  final case class DirectlyMemoizedSetElement1(counter: SetCounter @Id("directly-memoized")) extends DirectlyMemoizedSetElement
+  final case class DirectlyMemoizedSetElement2(counter: SetCounter @Id("directly-memoized")) extends DirectlyMemoizedSetElement
+
+  trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
+    override protected def config: TestConfig = {
+      super.config.copy(
+        pluginConfig = PluginConfig.cached(classOf[ActiveComponent].getPackage.getName),
+        memoizationRoots = Map(
+          1 -> Set(DIKey[MockCache[F]]),
+          2 -> Set(DIKey[Set[SetElement]], DIKey[SetCounter], DIKey[DirectlyMemoizedSetElement1], DIKey[DirectlyMemoizedSetElement2]),
+        ),
+      )
+    }
+  }
 }
 
 abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
     pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new izumi.distage.plugins.PluginDef {
+      make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
+
       make[SetCounter]
+      make[SetCounter].named("unmemoized")
+      make[SetCounter].named("directly-memoized")
 
       make[SetElement1]
       make[SetElement2]
       make[SetElement3]
       make[SetElement4]
-      make[SetElementRetainer]
+      make[SetElement4Retainer]
 
       many[SetElement]
         .weak[SetElement1]
@@ -114,21 +131,40 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         .weak[SetElement3]
         .weak[SetElement4]
 
-      make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
+      make[UnmemoizedSetElement1]
+      make[UnmemoizedSetElement2]
+      make[UnmemoizedSetElement3]
+      make[UnmemoizedSetElement4]
+      make[UnmemoizedSetElement4Retainer]
+
+      many[UnmemoizedSetElement]
+        .weak[UnmemoizedSetElement1]
+        .weak[UnmemoizedSetElement2]
+        .weak[UnmemoizedSetElement3]
+        .weak[UnmemoizedSetElement4]
+
+      make[DirectlyMemoizedSetElement1]
+      make[DirectlyMemoizedSetElement2]
+
+      many[DirectlyMemoizedSetElement]
+        .weak[DirectlyMemoizedSetElement1]
+        .weak[DirectlyMemoizedSetElement2]
     }
   )
 
   val XXX_Whitebox_memoizedMockCache = new AtomicReference[MockCache[F]]
 
   "distage test custom runner" should {
+
     "support memoized weak sets with transitively retained elements" in {
       (
         set: Set[SetElement],
-        s1: SetElementRetainer,
+        s1: SetElement4Retainer,
       ) =>
         Quirks.discard(s1)
         F.maybeSuspend(assert(set.size == 4))
     }
+
     "support memoized weak sets" in {
       (
         set: Set[SetElement],
@@ -140,7 +176,16 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         F.maybeSuspend(assert(set.size == 4))
     }
 
-    "support unmemoized named weak sets with memoized elements (3)" in {
+    "memoized weak set should contain whole list of members even if test does not depends on them" in {
+      (
+        set: Set[SetElement],
+        c: SetCounter,
+      ) =>
+        assert(c.get == 4)
+        F.maybeSuspend(assert(set.size == 4))
+    }
+
+    "support unmemoized named weak sets containing elements from a different memoized set (depend on 3, should still be 4 due to Set[SetElement]'s memoization)" in {
       (
         set: Set[SetElement] @Id("unmemoized-set"),
         s1: SetElement1,
@@ -151,24 +196,65 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         F.maybeSuspend(assert(set.size == 4))
     }
 
-    "support unmemoized named weak sets with memoized elements (4)" in {
+    "support unmemoized named weak sets containing elements from a different memoized set (depend on 4, should be 4)" in {
       (
         set: Set[SetElement] @Id("unmemoized-set"),
         s1: SetElement1,
         s2: SetElement2,
         s3: SetElement3,
-        s4: SetElementRetainer,
+        s4: SetElement4Retainer,
       ) =>
         Quirks.discard(s1, s2, s3, s4)
         F.maybeSuspend(assert(set.size == 4))
     }
 
-    "return memoized weak set with have whole list of members even if test does not depends on them" in {
+    "support unmemoized weak sets containing directly memoized elements from (depend on 1, should still be 2 due to direct memoization of elements themselves)" in {
       (
-        set: Set[SetElement],
-        c: SetCounter,
+        set: Set[DirectlyMemoizedSetElement],
+        s1: DirectlyMemoizedSetElement1,
+        c: SetCounter @Id("directly-memoized"),
       ) =>
-        assume(c.get != 0)
+        Quirks.discard(s1)
+        assert(c.get == 2)
+        F.maybeSuspend(assert(set.size == 2))
+    }
+
+    "support unmemoized weak sets containing directly memoized elements from (depend on 2, should be 2)" in {
+      (
+        set: Set[DirectlyMemoizedSetElement],
+        s1: DirectlyMemoizedSetElement1,
+        s2: DirectlyMemoizedSetElement2,
+        c: SetCounter @Id("directly-memoized"),
+      ) =>
+        Quirks.discard(s1, s2)
+        assert(c.get == 2)
+        F.maybeSuspend(assert(set.size == 2))
+    }
+
+    "support unmemoized named weak sets with unmemoized elements (depend on 3, should be 3 because everything is unmemoized)" in {
+      (
+        set: Set[UnmemoizedSetElement],
+        s1: UnmemoizedSetElement1,
+        s2: UnmemoizedSetElement2,
+        s3: UnmemoizedSetElement3,
+        c: SetCounter @Id("unmemoized"),
+      ) =>
+        Quirks.discard(s1, s2, s3)
+        assert(c.get == 3)
+        F.maybeSuspend(assert(set.size == 3))
+    }
+
+    "support unmemoized named weak sets with unmemoized elements (depend on 4, should be 4 because everything is unmemoized)" in {
+      (
+        set: Set[UnmemoizedSetElement],
+        s1: UnmemoizedSetElement1,
+        s2: UnmemoizedSetElement2,
+        s3: UnmemoizedSetElement3,
+        s4: UnmemoizedSetElement4Retainer,
+        c: SetCounter @Id("unmemoized"),
+      ) =>
+        Quirks.discard(s1, s2, s3, s4)
+        assert(c.get == 4)
         F.maybeSuspend(assert(set.size == 4))
     }
 
@@ -207,12 +293,12 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         }
     }
 
-    "test 4 (should be ignored)" in {
-      (_: ApplePaymentProvider[F]) =>
+    "test 4 (should be ignored due to unavailable integration check)" in {
+      (_: UnavailableIntegrationCheck[F]) =>
         assert(false)
     }
 
-    "test 5 (should be ignored)" skip {
+    "test 5 (should be ignored due to `skip`)" skip {
       (_: MockCachedUserService[F]) =>
         assert(false)
     }
