@@ -178,9 +178,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
-//        parser = new ActivationParser {
-//          override def parseActivation(config: AppConfig): Activation = ???
-//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -218,9 +215,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
-//        parser = new ActivationParser {
-//          override def parseActivation(config: AppConfig): Activation = ???
-//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -262,9 +256,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
         logger = logger,
-//        parser = new ActivationParser {
-//          override def parseActivation(config: AppConfig): Activation = ???
-//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -391,6 +382,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       assert(role5CfgMinParsed.hasPath("rolelocal2"))
       assert(role5CfgMinParsed.hasPath("rolelocal2.bool"))
+    }
+
+    "prioritize configs as expected" in {
+      TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
     }
 
     "roles do not have access to components from MainAppModule" in {

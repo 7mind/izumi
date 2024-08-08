@@ -2,7 +2,6 @@ package izumi.distage.roles.test.fixtures
 
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.{Id, Lifecycle}
-import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters
@@ -11,6 +10,7 @@ import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.ResourcesPlugin.Conflict
 import izumi.distage.roles.test.fixtures.TestPluginCatsIO.NotCloseable
 import izumi.distage.roles.test.fixtures.roles.TestRole00.TestRole00Resource
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -183,3 +183,29 @@ class FailingRole02[F[_]: QuasiIO](
 object FailingRole02 extends RoleDescriptor {
   override final val id = "failingrole02"
 }
+
+final class ConfigTestRole[F[_]: QuasiIO](configTestConfig: ConfigTestConfig) extends RoleTask[F] {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = QuasiIO[F].maybeSuspend {
+    require(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+    require(configTestConfig.commonReference == 2, "common-reference")
+    require(configTestConfig.common == 3, "common")
+    require(configTestConfig.applicationReference == 4, "application-reference")
+    require(configTestConfig.application == 5, "application")
+    require(configTestConfig.roleReference == 6, "role-reference")
+    require(configTestConfig.role == 7, "role")
+  }
+}
+
+object ConfigTestRole extends RoleDescriptor {
+  override final val id = "configtest"
+}
+
+final case class ConfigTestConfig(
+  commonReferenceDev: Int,
+  commonReference: Int,
+  common: Int,
+  applicationReference: Int,
+  application: Int,
+  roleReference: Int,
+  role: Int,
+)
