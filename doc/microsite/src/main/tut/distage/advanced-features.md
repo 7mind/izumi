@@ -394,7 +394,7 @@ def module = new ModuleDef {
   make[InjectionInfo]
 }
 
-val input = PlannerInput(module, Activation.empty, Roots.target[InjectionInfo])
+val input = PlannerInput(module, Roots.target[InjectionInfo], Activation.empty)
 
 val injectionInfo = Injector().produce(input).unsafeGet().get[InjectionInfo]
 
