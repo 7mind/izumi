@@ -9,9 +9,11 @@ import izumi.fundamentals.platform.cache.CachedProductHashcode
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.reflect.Tag
 
+case class BindingOrigin(position: SourceFilePosition)
+
 sealed trait Binding {
   def key: DIKey
-  def origin: SourceFilePosition
+  def origin: BindingOrigin
   def tags: Set[BindingTag]
 
   def group: GroupingKey
@@ -51,7 +53,7 @@ object Binding {
     override def addTags(tags: Set[BindingTag]): ImplBinding
   }
 
-  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition, isMutator: Boolean = false)
+  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: BindingOrigin, isMutator: Boolean = false)
     extends ImplBinding
     with WithTarget {
     override lazy val group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
@@ -63,7 +65,7 @@ object Binding {
 
   sealed trait SetBinding extends Binding
 
-  final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition)
+  final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: BindingOrigin)
     extends ImplBinding
     with SetBinding {
     override lazy val group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
@@ -74,7 +76,7 @@ object Binding {
     override def isMutator: Boolean = false
   }
 
-  final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding with WithTarget {
+  final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: BindingOrigin) extends SetBinding with WithTarget {
     override lazy val group: GroupingKey = GroupingKey.Key(key)
     override def withTarget[T <: DIKey](key: T): EmptySetBinding[T] = copy(key = key)
     override def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(tags = newTags)

@@ -58,7 +58,7 @@ class ResourceRewriter(
       case implBinding: Binding.ImplBinding =>
         implBinding match {
           case binding: Binding.SingletonBinding[?] =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, tgt, resourceType) match {
+            rewriteImpl(convert, binding.key, binding.origin.position, binding.implementation, tgt, resourceType) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${tgt -> "type"}")
                 Seq(finish(binding, newImpl))
@@ -67,7 +67,7 @@ class ResourceRewriter(
             }
 
           case binding: Binding.SetElementBinding =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, tgt, resourceType) match {
+            rewriteImpl(convert, binding.key, binding.origin.position, binding.implementation, tgt, resourceType) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${tgt -> "type"}")
                 Seq(finish(binding, newImpl))

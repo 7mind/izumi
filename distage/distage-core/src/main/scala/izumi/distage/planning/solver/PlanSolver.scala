@@ -37,8 +37,8 @@ object PlanSolver {
 
   @nowarn("msg=Unused import")
   class Impl(
-              resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
-              preps: GraphQueries,
+    resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
+    preps: GraphQueries,
   ) extends PlanSolver {
 
     import scala.collection.compat.*
@@ -116,7 +116,7 @@ object PlanSolver {
           case aob @ (Annotated(key, Some(_), axis), _, b) =>
             isProperlyActivatedSetElement(ac, axis) {
               unconfigured =>
-                Left(NEList(UnconfiguredMutatorAxis(key, b.origin, unconfigured)))
+                Left(NEList(UnconfiguredMutatorAxis(key, b.origin.position, unconfigured)))
             }.map(out => (aob, out))
           case aob =>
             Right((aob, true))
