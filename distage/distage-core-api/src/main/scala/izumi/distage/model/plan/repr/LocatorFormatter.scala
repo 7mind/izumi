@@ -12,7 +12,7 @@ object LocatorFormatter extends Renderable[Locator] {
     val (priv, pub) = value.instances.map(_.key).partition(value.isPrivate)
 
     Seq(
-      s"Locator ${super.toString}",
+      s"Locator ${value.getClass.getName}@${Integer.toHexString(value.hashCode())} with ${value.depth} parent(s)",
       s"with exposed keys:${pub.map(kf.formatKey).niceList().shift(2)}".shift(2),
       s"with confined keys:${priv.map(kf.formatKey).niceList().shift(2)}".shift(2),
     ).mkString("\n")

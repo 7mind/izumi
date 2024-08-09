@@ -111,6 +111,16 @@ trait Locator {
     args.map(fn.unsafeApply(_).asInstanceOf[T])
   }
 
+  final def depth: Int = {
+    var d = -1
+    var loc: Option[Locator] = Some(this)
+    while (loc.nonEmpty) {
+      d = d + 1
+      loc = loc.get.parent
+    }
+    d
+  }
+
   def render()(implicit ev: Renderable[Locator]): String = ev.render(this)
 
   override def toString: String = {
