@@ -17,6 +17,7 @@ import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
+import izumi.fundamentals.platform.files.FileLockMutex
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString.*
@@ -521,10 +522,15 @@ open class ContainerResource[F[_], Tag](
   ): F[A] = {
     val retryWait = 200.millis
     val maxAttempts = (config.pullTimeout / retryWait).toInt
-    FileLockMutex.withLocalMutex(logger)(
-      name.replaceAll("[:/]", "_"),
+    val filename = name.replaceAll("[:/]", "_")
+    FileLockMutex.withLocalMutex(
+      filename = filename,
       retryWait = retryWait,
       maxAttempts = maxAttempts,
+      attemptLog = (num, maxAttempts) => F.maybeSuspend(logger.debug(s"Attempt $num out of $maxAttempts to acquire file lock for image $filename.")),
+      failLog =
+        attempts => F.maybeSuspend(logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container")),
+      lockAlreadyExistedLog = F.maybeSuspend(logger.debug(s"File lock already existed for image $filename")),
     )(effect)
   }
 }

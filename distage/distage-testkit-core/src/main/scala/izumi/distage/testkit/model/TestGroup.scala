@@ -20,5 +20,5 @@ final case class FailedTest[F[_]](
 final case class TestGroup[F[_]](
   preparedTests: List[PreparedTest[F]],
   failedTests: List[FailedTest[F]],
-  strengthenedKeys: Set[DIKey],
+  strengthenedKeys: Set[DIKey.SetElementKey],
 )

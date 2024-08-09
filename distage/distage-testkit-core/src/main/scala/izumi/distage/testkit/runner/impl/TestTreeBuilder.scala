@@ -2,6 +2,7 @@ package izumi.distage.testkit.runner.impl
 
 import distage.{DIKey, Planner, PlannerInput}
 import izumi.distage.model.plan.Plan
+import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.testkit.model.{FailedTest, PreparedTest, TestGroup, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.PackedEnv
 import izumi.distage.testkit.runner.impl.services.TimedAction
@@ -39,10 +40,18 @@ object TestTreeBuilder {
             val tests = env.preparedTests.map {
               t =>
                 val newAppModule = t.appModule.drop(sharedKeysAtThisLevel)
-                val newRoots = t.targetKeys -- sharedKeysAtThisLevel ++ env.strengthenedKeys.intersect(newAppModule.keys)
 
-                (
-                  t,
+                // filter strengthened keys to _only_ restrengthen keys that are memoized. Avoid forcibly sharing unmemoized elements of unmemoized sets.
+                val filteredStrengthenedKeys = env.strengthenedKeys
+                  .intersect(newAppModule.keys.asInstanceOf[Set[SetElementKey]])
+                  .filter {
+                    case SetElementKey(_, reference, _) => sharedKeysAtThisLevel.contains(reference)
+                  }
+                val newRoots0 = t.targetKeys -- sharedKeysAtThisLevel
+                // restrengthen keys to allow unmemoized sets to contain memoized elements and/or elements of memoized sets (see DistageTestExampleBase tests)
+                val newRoots = newRoots0 ++ filteredStrengthenedKeys
+
+                val maybePreparedTest = {
                   for {
                     maybeNewTestPlan <- timed {
                       if (newRoots.nonEmpty) {
@@ -60,16 +69,18 @@ object TestTreeBuilder {
                       maybeNewTestPlan,
                       newRoots,
                     )
-                  },
-                )
+                  }
+                }
+
+                (t, maybePreparedTest)
             }
 
             val goodTests = tests.collect {
-              case (_, Right(value)) => value
+              case (_, Right(preparedTest)) => preparedTest
             }.toList
 
             val badTests = tests.collect {
-              case (t, Left(value)) => FailedTest(t.test, value)
+              case (t, Left(error)) => FailedTest(t.test, error)
             }.toList
 
             TestGroup(goodTests, badTests, env.strengthenedKeys)

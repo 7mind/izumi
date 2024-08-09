@@ -150,7 +150,7 @@ object Izumi {
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.19")
   final val scala213 = ScalaVersion("2.13.14")
-  final val scala300 = ScalaVersion("3.4.2")
+  final val scala300 = ScalaVersion("3.3.4-RC1")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -359,6 +359,7 @@ object Izumi {
       final val id = ArtifactId("fundamentals")
       final val basePath = Seq("fundamentals")
 
+      final val basics = ArtifactId("fundamentals-basics")
       final val collections = ArtifactId("fundamentals-collections")
       final val platform = ArtifactId("fundamentals-platform")
       final val functoid = ArtifactId("fundamentals-functoid")
@@ -371,13 +372,13 @@ object Izumi {
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
 //      final val reflection = ArtifactId("fundamentals-reflection")
       final val jsonCirce = ArtifactId("fundamentals-json-circe")
-
-      final lazy val basics = Seq(
-        platform,
-        functoid,
-        collections,
-        functional,
-      ).map(_ in Scope.Runtime.all)
+//
+//      final lazy val basics = Seq(
+//        platform,
+//        functoid,
+//        collections,
+//        functional,
+//      ).map(_ in Scope.Runtime.all)
     }
 
     object distage {
@@ -441,16 +442,23 @@ object Izumi {
     name = Projects.fundamentals.id,
     artifacts = Seq(
       Artifact(
-        name = Projects.fundamentals.functional,
+        name = Projects.fundamentals.basics,
         libs = Seq.empty,
         depends = Seq.empty,
+        settings = Seq.empty,
+      ),
+      Artifact(
+        name = Projects.fundamentals.functional,
+        libs = Seq.empty,
+        depends = Seq(Projects.fundamentals.basics),
         settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.collections,
         libs = Seq.empty,
         depends = Seq(
-          Projects.fundamentals.functional
+          Projects.fundamentals.basics,
+          Projects.fundamentals.functional,
         ),
         settings = Seq.empty,
       ),
@@ -459,12 +467,12 @@ object Izumi {
         libs = Seq(
           scala_reflect
         ),
-        depends = Seq.empty,
+        depends = Seq(Projects.fundamentals.basics),
       ),
       Artifact(
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
-        depends = Seq.empty,
+        depends = Seq(Projects.fundamentals.basics),
         settings = Seq(
           disableScaladocOnScala3
         ),
@@ -476,7 +484,8 @@ object Izumi {
           scala3_compiler,
         ),
         depends = Seq(
-          Projects.fundamentals.literals
+          Projects.fundamentals.literals,
+          Projects.fundamentals.basics,
         ),
         settings = Seq.empty,
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
@@ -489,6 +498,7 @@ object Izumi {
         ),
         depends = Seq(
           Projects.fundamentals.functional,
+          Projects.fundamentals.basics,
           Projects.fundamentals.language in Scope.Compile.all,
           Projects.fundamentals.collections in Scope.Compile.all,
 //          Projects.fundamentals.reflection in Scope.Compile.all,
@@ -557,6 +567,7 @@ object Izumi {
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,
           Projects.fundamentals.collections,
+          Projects.fundamentals.basics,
         ),
         settings = Seq(
           // DottyDoc crashes on fundamentals-bio (https://github.com/lampepfl/dotty/issues/18832)

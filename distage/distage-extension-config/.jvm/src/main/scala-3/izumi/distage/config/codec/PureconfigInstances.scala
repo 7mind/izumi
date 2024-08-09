@@ -35,44 +35,48 @@ object PureconfigInstances {
     inline def derivedProduct[A](using m: Mirror.ProductOf[A]): ConfigReader[A] = {
       inline erasedValue[A] match {
         case _: Tuple =>
-          new ConfigReader[A] {
-            override def from(cur: ConfigCursor): ConfigReader.Result[A] =
-              for {
-                listCur <- asList(cur)
-                result <- readTuple[A & Tuple, 0](listCur.list.toArray, Array.empty)
-              } yield result
-
-            def asList(cur: ConfigCursor): Either[ConfigReaderFailures, ConfigListCursor] =
-              cur.asListCursor.flatMap {
-                listCur =>
-                  if (constValue[Tuple.Size[A & Tuple]] == listCur.size)
-                    Right(listCur)
-                  else
-                    listCur.failed(
-                      WrongSizeList(constValue[Tuple.Size[A & Tuple]], listCur.size)
-                    )
-              }
-          }
+          new TupleProductConfigReader[A](constValue[Tuple.Size[A & Tuple]], readTuple[A & Tuple, 0])
 
         case _ =>
-          new ConfigReader[A] {
-            def from(cur: ConfigCursor): ConfigReader.Result[A] =
-              for {
-                objCur <- cur.asObjectCursor
-                result <-
-                  Utils
-                    .transformedLabels[A](fieldMapping)
-                    .toArray
-                    .pipe(
-                      labels =>
-                        readTuple[m.MirroredElemTypes, 0](
-                          labels.map(objCur.atKeyOrUndefined(_)),
-                          labels.map(KeyNotFound.forKeys(_, objCur.keys)),
-                        )
-                    )
-              } yield m.fromProduct(result)
-          }
+          new CaseClassProductConfigReader[A](Utils.transformedLabels[A](fieldMapping).toArray, readTuple[m.MirroredElemTypes, 0](_, _).map(m.fromProduct))
       }
+    }
+
+    final class TupleProductConfigReader[A](
+      tupleSize: Int,
+      readTuple: (Array[ConfigCursor], Array[KeyNotFound]) => Either[ConfigReaderFailures, A],
+    ) extends ConfigReader[A] {
+      override def from(cur: ConfigCursor): ConfigReader.Result[A] =
+        for {
+          listCur <- asList(cur)
+          result <- readTuple(listCur.list.toArray, Array.empty)
+        } yield result
+
+      def asList(cur: ConfigCursor): Either[ConfigReaderFailures, ConfigListCursor] =
+        cur.asListCursor.flatMap {
+          listCur =>
+            if (tupleSize == listCur.size)
+              Right(listCur)
+            else
+              listCur.failed(
+                WrongSizeList(tupleSize, listCur.size)
+              )
+        }
+    }
+
+    final class CaseClassProductConfigReader[A](
+      labels: Array[String],
+      readTuple: (Array[ConfigCursor], Array[KeyNotFound]) => Either[ConfigReaderFailures, A],
+    ) extends ConfigReader[A] {
+      def from(cur: ConfigCursor): ConfigReader.Result[A] =
+        for {
+          objCur <- cur.asObjectCursor
+          result <-
+            readTuple(
+              labels.map(objCur.atKeyOrUndefined),
+              labels.map(KeyNotFound.forKeys(_, objCur.keys)),
+            )
+        } yield result
     }
 
     inline def readTuple[T <: Tuple, N <: Int](
@@ -126,43 +130,45 @@ object PureconfigInstances {
       * }}}
       */
     inline def derivedSum[A](using m: Mirror.SumOf[A]): ConfigReader[A] = {
-      new ConfigReader[A] {
-        def from(cur: ConfigCursor): ConfigReader.Result[A] = {
-          val options: Map[String, ConfigReader[A]] =
-            Utils
-              .transformedLabels[A](fieldMapping)
-              .zip(deriveForSubtypes[m.MirroredElemTypes, A])
-              .toMap
+      new SealedTraitConfigReader[A](Utils.transformedLabels[A](fieldMapping), deriveForSubtypes[m.MirroredElemTypes, A])
+    }
 
-          for {
-            objCur <- cur.asObjectCursor
-            _ <-
-              if (objCur.keys.size == 1) {
-                Right(())
-              } else {
-                val msg =
-                  s"""Invalid format for sealed trait, found multiple or no keys in object. Expected a single-key object like `{ "$$K": {} }`
-                     |where `$$K` can be one of ${options.map(_._1).mkString}""".stripMargin
-                Left(
-                  ConfigReaderFailures(
-                    objCur.failureFor(
-                      NoValidCoproductOptionFound(objCur.objValue, Seq("_invalid_format_" -> ConfigReaderFailures(ThrowableFailure(new RuntimeException(msg), None))))
-                    )
+    final class SealedTraitConfigReader[A](
+      labels: List[String],
+      readers: List[ConfigReader[A]],
+    ) extends ConfigReader[A] {
+      def from(cur: ConfigCursor): ConfigReader.Result[A] = {
+        val options: Map[String, ConfigReader[A]] =
+          labels.zip(readers).toMap
+
+        for {
+          objCur <- cur.asObjectCursor
+          _ <-
+            if (objCur.keys.size == 1) {
+              Right(())
+            } else {
+              val msg =
+                s"""Invalid format for sealed trait, found multiple or no keys in object. Expected a single-key object like `{ "$$K": {} }`
+                   |where `$$K` can be one of ${options.keys.mkString}""".stripMargin
+              Left(
+                ConfigReaderFailures(
+                  objCur.failureFor(
+                    NoValidCoproductOptionFound(objCur.objValue, Seq("_invalid_format_" -> ConfigReaderFailures(ThrowableFailure(new RuntimeException(msg), None))))
                   )
                 )
-              }
-            res <- {
-              val key = objCur.keys.head
-              options.get(key) match {
-                case Some(reader) =>
-                  (objCur atKey key)
-                    .flatMap(reader.from)
-                case None =>
-                  Left(ConfigReaderFailures(objCur.failureFor(InvalidCoproductOption(key))))
-              }
+              )
             }
-          } yield res
-        }
+          res <- {
+            val key = objCur.keys.head
+            options.get(key) match {
+              case Some(reader) =>
+                (objCur atKey key)
+                  .flatMap(reader.from)
+              case None =>
+                Left(ConfigReaderFailures(objCur.failureFor(InvalidCoproductOption(key))))
+            }
+          }
+        } yield res
       }
     }
 
