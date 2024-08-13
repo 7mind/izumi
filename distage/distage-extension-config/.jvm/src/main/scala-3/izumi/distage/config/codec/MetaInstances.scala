@@ -25,25 +25,21 @@ object MetaInstances {
 
       inline erasedValue[A] match {
         case _: Tuple =>
-          new DIConfigMeta[A] {
-            override def tpe: ConfigMetaType = ConfigMetaType.TUnknown()
-          }
+          DIConfigMeta[A](ConfigMetaType.TUnknown())
 
         case _ =>
-          new DIConfigMeta[A] {
-            override def tpe: ConfigMetaType = {
-              val labels: Array[String] = Utils.transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping).toArray
-              val codecs = readTuple[m.MirroredElemTypes, 0]
-              val fieldMeta = ConfigMetaType.TCaseClass(
-                typeId[A],
-                labels.iterator
-                  .zip(codecs).map {
-                    case (label, reader) => (label, reader.tpe)
-                  }.toSeq,
-              )
-              fieldMeta
-            }
+          val tpe: ConfigMetaType = {
+            val labels: Array[String] = Utils.transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping).toArray
+            val codecs = readTuple[m.MirroredElemTypes, 0]
+            ConfigMetaType.TCaseClass(
+              typeId[A],
+              labels.iterator
+                .zip(codecs).map {
+                  case (label, reader) => (label, reader.tpe)
+                }.toSeq,
+            )
           }
+          DIConfigMeta[A](tpe)
       }
     }
 
@@ -84,20 +80,20 @@ object MetaInstances {
       * }}}
       */
     inline def derivedSum[A](using m: Mirror.SumOf[A]): DIConfigMeta[A] = {
-      new DIConfigMeta[A] {
-        val options: Map[String, DIConfigMeta[A]] =
-          Utils
-            .transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping)
-            .zip(deriveForSubtypes[m.MirroredElemTypes, A])
-            .toMap
+      val options: Map[String, DIConfigMeta[A]] =
+        Utils
+          .transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping)
+          .zip(deriveForSubtypes[m.MirroredElemTypes, A])
+          .toMap
 
-        override val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(
-          typeId[A],
-          options.map {
-            case (label, reader) => (label, reader.tpe)
-          }.toSet,
-        )
-      }
+      val tpe: ConfigMetaType = ConfigMetaType.TSealedTrait(
+        typeId[A],
+        options.map {
+          case (label, reader) => (label, reader.tpe)
+        }.toSet,
+      )
+
+      DIConfigMeta[A](tpe)
     }
 
     inline def deriveForSubtypes[T <: Tuple, A]: List[DIConfigMeta[A]] =

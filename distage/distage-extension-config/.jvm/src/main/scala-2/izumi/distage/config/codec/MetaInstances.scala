@@ -15,17 +15,13 @@ object MetaInstances {
     def join[A](ctx: CaseClass[DIConfigMeta, A])(implicit productHint: ProductHint[A]): DIConfigMeta[A] = {
       val meta = configMetaJoin(ctx)
 
-      new DIConfigMeta[A] {
-        override def tpe: ConfigMetaType = meta
-      }
+      DIConfigMeta[A](meta)
     }
 
     def split[A](ctx: SealedTrait[DIConfigMeta, A])(implicit coproductHint: CoproductHint[A]): DIConfigMeta[A] = {
       val meta = configMetaSplit(ctx)
 
-      new DIConfigMeta[A] {
-        override def tpe: ConfigMetaType = meta
-      }
+      DIConfigMeta[A](meta)
     }
 
     private def configMetaJoin[A](ctx: CaseClass[DIConfigMeta, A])(implicit productHint: ProductHint[A]): ConfigMetaType = {
