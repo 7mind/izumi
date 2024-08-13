@@ -6,6 +6,7 @@ import izumi.distage.roles.launcher.LogConfigLoader.DeclarativeLoggerConfig
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.Level.Warn
 import izumi.logstage.api.Log.Message
+import izumi.logstage.api.config.{LoggerPath, LoggerPathConfig, LoggerPathForLines}
 import izumi.logstage.api.rendering.RenderingOptions
 import logstage.IzLogger
 
@@ -27,20 +28,20 @@ object LogConfigLoader {
   case class DeclarativeLoggerConfig(
     format: LoggerFormat,
     rendering: RenderingOptions,
-    levels: Map[String, Log.Level],
+    levels: Map[LoggerPath, LoggerPathConfig],
     rootLevel: Log.Level,
     interceptJUL: Boolean,
   )
 
-  final case class SinksConfig(
+  final case class HoconSinksSection(
     levels: Map[String, List[String]],
     options: Option[RenderingOptions],
     json: Option[Boolean],
     jul: Option[Boolean],
   )
 
-  object SinksConfig {
-    implicit val configReader: DIConfigReader[SinksConfig] = DIConfigReader.derived
+  object HoconSinksSection {
+    implicit val configReader: DIConfigReader[HoconSinksSection] = DIConfigReader.derived
   }
 
   class LogConfigLoaderImpl(cliOptions: CLILoggerOptions, earlyLogger: IzLogger @Id("early")) extends LogConfigLoader {
@@ -53,7 +54,19 @@ object LogConfigLoader {
       val levels = logconf.levels.flatMap {
         case (stringLevel, packageList) =>
           val level = Log.Level.parseLetter(stringLevel)
-          packageList.map(pkg => (pkg, level))
+          packageList.flatMap {
+            pkg =>
+              val p = LoggerPathForLines.parse(pkg)
+              if (p.lines.nonEmpty) {
+                p.lines.map {
+                  l =>
+                    (LoggerPath(p.id, Some(l)), LoggerPathConfig(level))
+                }
+              } else {
+                Seq((LoggerPath(p.id, None), LoggerPathConfig(level)))
+              }
+
+          }
       }
 
       val format = if (isJson) {
@@ -65,19 +78,19 @@ object LogConfigLoader {
       DeclarativeLoggerConfig(format, options, levels, cliOptions.level, jul)
     }
 
-    private def readConfig(config: AppConfig): SinksConfig = {
+    private def readConfig(config: AppConfig): HoconSinksSection = {
       Try(config.config.getConfig("logger")).toEither.left
         .map(_ => Message("No `logger` section in config. Using defaults."))
         .flatMap {
           config =>
-            SinksConfig.configReader.decodeConfig(config).toEither.left.map {
+            HoconSinksSection.configReader.decodeConfig(config).toEither.left.map {
               exception =>
-                Message(s"Failed to parse `logger` config section into ${classOf[SinksConfig] -> "type"}. Using defaults. $exception")
+                Message(s"Failed to parse `logger` config section into ${classOf[HoconSinksSection] -> "type"}. Using defaults. $exception")
             }
         } match {
         case Left(errMessage) =>
           earlyLogger.log(Warn)(errMessage)
-          SinksConfig(Map.empty, None, None, None)
+          HoconSinksSection(Map.empty, None, None, None)
 
         case Right(value) =>
           value
