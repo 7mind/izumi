@@ -930,6 +930,9 @@ object Lifecycle extends LifecycleInstances {
   // only relevant change was ZIOCompanionVersionSpecific became a 'transparent trait' from regular trait
   // BUT using zio.Exit.Success, which is not a trait at all, didn't fix the issue.
   // no idea wtf happened, why it broke and why _method internals_ are breaking bincompat/optionality here
+  // Seems like this is the cause of the compat failure - https://github.com/zio/zio/pull/9047
+  // - but I still don't understand why zio.Exit.Success is affected and why obscuring the return type is
+  // necessary here.
   private def zioSucceedWorkaround[F[x] >: ZIO[Any, Nothing, x], A](a: A): F[A] = {
     zio.Exit.Success(a)
   }
