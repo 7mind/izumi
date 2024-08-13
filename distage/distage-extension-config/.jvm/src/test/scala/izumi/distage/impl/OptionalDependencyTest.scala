@@ -70,9 +70,9 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 //    assertDoesNotCompile("Lifecycle.providerFromCats(null)(null)")
     Async2[SomeBIO](null)
 
-    izumi.functional.lifecycle.Lifecycle
+    locally(izumi.functional.lifecycle.Lifecycle)
 
-    distage.Lifecycle
+    locally(distage.Lifecycle)
 
     izumi.functional.lifecycle.Lifecycle.makePair(Some((1, Some(()))))
 
