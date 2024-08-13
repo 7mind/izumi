@@ -1,14 +1,14 @@
 package izumi.distage.impl
 
-import java.io.ByteArrayInputStream
-import distage.Lifecycle
 import izumi.distage.model.definition.ModuleDef
-import izumi.functional.quasi.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives}
 import izumi.distage.modules.DefaultModule
 import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2, BlockingIO2, Bracket2, Concurrent2, Error2, F, Fork2, Functor2, Guarantee2, IO2, Monad2, Panic2, Parallel2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2}
+import izumi.functional.quasi.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.functional.{Identity, Identity2}
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
+
+import java.io.ByteArrayInputStream
 
 class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
@@ -70,7 +70,11 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 //    assertDoesNotCompile("Lifecycle.providerFromCats(null)(null)")
     Async2[SomeBIO](null)
 
-    Lifecycle.makePair(Some((1, Some(()))))
+    izumi.functional.lifecycle.Lifecycle
+
+    distage.Lifecycle
+
+    izumi.functional.lifecycle.Lifecycle.makePair(Some((1, Some(()))))
 
     And("Can search for all hierarchy classes")
     optSearch[Functor2[SomeBIO]]
@@ -102,7 +106,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
          y()
       """)
 
-    type LC[F[_]] = Lifecycle[F, Int]
+    type LC[F[_]] = distage.Lifecycle[F, Int]
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
     intercept[Throwable] {
       QuasiIO.fromCats[Option, LC](null, null)
@@ -117,11 +121,12 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     Then("Lifecycle.use syntax works")
     var open = false
-    val resource = Lifecycle.makeSimple {
+    val resource = distage.Lifecycle.makeSimple {
       open = true
       new ByteArrayInputStream(Array())
     } {
-      i => open = false; i.close()
+      i =>
+        open = false; i.close()
     }
 
     resource.use {

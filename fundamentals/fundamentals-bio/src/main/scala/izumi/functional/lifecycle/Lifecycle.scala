@@ -594,7 +594,7 @@ object Lifecycle extends LifecycleInstances {
               case any => new RuntimeException(s"Lifecycle finalizer: $any")
             }).flatMap {
               r =>
-                ZIO.suspendSucceed(restore(resource.extract(r).fold(identity, ZIO.succeed(_))))
+                ZIO.suspendSucceed(restore(resource.extract(r).fold(identity, zioSucceedWorkaround)))
             }
       }
     }
@@ -609,7 +609,7 @@ object Lifecycle extends LifecycleInstances {
         resource.acquire.map(
           r =>
             Reservation(
-              ZIO.suspendSucceed(resource.extract(r).fold(identity, ZIO.succeed(_))),
+              ZIO.suspendSucceed(resource.extract(r).fold(identity, zioSucceedWorkaround)),
               _ =>
                 resource
                   .release(r).orDieWith {
@@ -923,6 +923,16 @@ object Lifecycle extends LifecycleInstances {
     override final def release(resource: InnerResource): F[Unit] = QuasiApplicative[F].unit
   }
 
+  // Workaround for the craziest, strangest bincompat failure on Scala 3:
+  // [error] Test suite izumi.distage.impl.OptionalDependencyTest failed with java.lang.NoClassDefFoundError: zio/ZIO
+  // at izumi.distage.impl.OptionalDependencyTest.f$proxy5$1(OptionalDependencyTest.scala:73
+  // appeared in update from zio-2.1.5 to zio-2.1.7 https://github.com/7mind/izumi/pull/2159/
+  // only relevant change was ZIOCompanionVersionSpecific became a 'transparent trait' from regular trait
+  // BUT using zio.Exit.Success, which is not a trait at all, didn't fix the issue.
+  // no idea wtf happened, why it broke and why _method internals_ are breaking bincompat/optionality here
+  private def zioSucceedWorkaround[F[x] >: ZIO[Any, Nothing, x], A](a: A): F[A] = {
+    zio.Exit.Success(a)
+  }
 }
 
 private[izumi] sealed trait LifecycleInstances extends LifecycleCatsInstances {
