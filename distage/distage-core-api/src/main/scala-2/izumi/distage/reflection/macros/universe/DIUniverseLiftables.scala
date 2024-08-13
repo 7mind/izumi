@@ -5,7 +5,7 @@ import izumi.distage.reflection.macros.universe.basicuniverse.DIUniverseBasicLif
 class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   val basic: DIUniverseBasicLiftables[u.u.type] = DIUniverseBasicLiftables[u.u.type](u.u)
-  import basic.{modelReflectionPkg, liftableBasicDIKey}
+  import basic.{liftableBasicDIKey, modelReflectionPkg}
   import u.Association
   import u.u.*
 

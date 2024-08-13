@@ -45,7 +45,7 @@ object PureconfigAutoDerive {
   inline implicit def materialize[A](implicit m: Mirror.Of[A]): PureconfigAutoDerive[A] = {
     import izumi.distage.config.codec.PureconfigInstances.auto.exportDerivedConfigReader
     import izumi.distage.config.codec.PureconfigInstances.given
-    
+
     new PureconfigAutoDerive[A](izumi.distage.config.codec.PureconfigInstances.configReaderDerivation.derived[A](using m))
   }
 }

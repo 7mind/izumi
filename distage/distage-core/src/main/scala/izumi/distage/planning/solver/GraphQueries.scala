@@ -31,28 +31,28 @@ class GraphQueries(
   }
 
   final def allImportingBindings(
-                                  matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
-                                  currentActivation: Set[AxisPoint],
-                                )(importedKey: DIKey,
-                                  d: DIKey,
-                                ): Set[OperationOrigin] = {
+    matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
+    currentActivation: Set[AxisPoint],
+  )(importedKey: DIKey,
+    d: DIKey,
+  ): Set[OperationOrigin] = {
     // FIXME: reuse formatting from conflictingAxisTagsHint
     matrix
       .getOrElse(d, Set.empty)
       .collect {
         case (op, activations) if activations.subsetOf(currentActivation) && (op match {
-          case CreateSet(_, members, _) => members
-          case op: ExecutableOp.WiringOp => op.wiring.requiredKeys
-          case op: ExecutableOp.MonadicOp => Set(op.effectKey)
-        }).contains(importedKey) =>
+              case CreateSet(_, members, _) => members
+              case op: ExecutableOp.WiringOp => op.wiring.requiredKeys
+              case op: ExecutableOp.MonadicOp => Set(op.effectKey)
+            }).contains(importedKey) =>
           op.origin.value
       }
   }
 
   def nextDepsToVisit(
-                       execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
-                       withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
-                     ): Right[Nothing, Seq[(Set[AxisPoint], Set[DIKey])]] = {
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
+    withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
+  ): Right[Nothing, Seq[(Set[AxisPoint], Set[DIKey])]] = {
     val next = withoutCurrentActivations.iterator.map {
       case (op, activations, _) =>
         // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
@@ -69,9 +69,9 @@ class GraphQueries(
   }
 
   final def depsOf(
-                    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
-                    op: InstantiationOp,
-                  ): Set[DIKey] = {
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
+    op: InstantiationOp,
+  ): Set[DIKey] = {
     op match {
       case cs: CreateSet =>
         // we completely ignore weak members, they don't make any difference in case they are unreachable through other paths

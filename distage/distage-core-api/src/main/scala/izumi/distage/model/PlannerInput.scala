@@ -21,7 +21,12 @@ import izumi.reflect.Tag
   *                 On [[izumi.distage.model.plan.Roots.Everything]] garbage collection will not be performed – that would be equivalent to
   *                 designating _all_ DIKeys as roots.
   */
-final case class PlannerInput(bindings: ModuleBase, roots: Roots, activation: Activation, locatorPrivacy: LocatorPrivacy)
+final case class PlannerInput(
+  bindings: ModuleBase,
+  roots: Roots,
+  activation: Activation,
+  locatorPrivacy: LocatorPrivacy,
+)
 
 object PlannerInput {
   private val DefaultPrivacy = LocatorPrivacy.PublicByDefault

@@ -15,7 +15,8 @@ class Help[F[_]](
   roleInfo: RolesInfo,
   activationInfo: ActivationInfo,
   F: QuasiIO[F],
-) extends RoleTask[F] with BundledTask {
+) extends RoleTask[F]
+  with BundledTask {
 
   override def start(@unused roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
     F.maybeSuspend(showHelp())

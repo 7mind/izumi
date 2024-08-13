@@ -13,9 +13,6 @@ object DIPlanCompactFormatter extends Renderable[Plan] {
     val kf = KeyFormatter.minimized(minimizer)
     val opFormatter = OpFormatter(kf, tf, DIRendering.colorsEnabled)
 
-
     plan.toposort.map(k => opFormatter.format(plan.plan.meta.nodes(k))).mkString("\n").listing()
   }
 }
-
-

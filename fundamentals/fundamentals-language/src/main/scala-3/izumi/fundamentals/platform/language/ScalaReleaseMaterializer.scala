@@ -16,14 +16,14 @@ object ScalaReleaseMaterializer {
 
     ScalaRelease.parse(dotty.tools.dotc.config.Properties.versionNumberString) match {
       case ScalaRelease.`3`(minor, bugfix) =>
-        '{ ScalaReleaseMaterializer( ScalaRelease.`3`(${ Expr(minor) }, ${ Expr(bugfix) }) ) }
+        '{ ScalaReleaseMaterializer(ScalaRelease.`3`(${ Expr(minor) }, ${ Expr(bugfix) })) }
       case other =>
         report.warning(s"Scala 3 expected, but something strange was extracted: $other ")
         other match {
           case ScalaRelease.Unsupported(parts) =>
-            '{ ScalaReleaseMaterializer( ScalaRelease.Unsupported(${ Expr(parts) }) ) }
+            '{ ScalaReleaseMaterializer(ScalaRelease.Unsupported(${ Expr(parts) })) }
           case ScalaRelease.Unknown(string) =>
-            '{ ScalaReleaseMaterializer( ScalaRelease.Unknown(${ Expr(string) }) ) }
+            '{ ScalaReleaseMaterializer(ScalaRelease.Unknown(${ Expr(string) })) }
           case _ =>
             report.errorAndAbort(s"Scala 3 expected, but Scala 2 was extracted: $other ")
         }
