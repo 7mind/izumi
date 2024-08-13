@@ -1,11 +1,16 @@
 package izumi.fundamentals.platform.crypto
 
-import java.nio.charset.StandardCharsets
-
-import izumi.fundamentals.platform.bytes.IzBytes._
-
 trait IzHash {
-  def hash(bytes: Array[Byte]): Array[Byte]
+  def sha256(bytes: Array[Byte]): Array[Byte]
+  def sha256(str: String): String
+}
 
-  final def hash(str: String): String = hash(str.getBytes(StandardCharsets.UTF_8)).toHex
+object IzHash extends IzHash {
+  override def sha256(bytes: Array[Byte]): Array[Byte] = {
+    IzSha256HashFunction.hash(bytes)
+  }
+
+  override def sha256(str: String): String = {
+    IzSha256HashFunction.hash(str)
+  }
 }

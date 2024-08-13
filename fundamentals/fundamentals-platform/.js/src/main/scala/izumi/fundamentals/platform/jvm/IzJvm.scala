@@ -1,8 +1,9 @@
 package izumi.fundamentals.platform.jvm
 
-import izumi.fundamentals.platform.IzPlatform
+import izumi.fundamentals.platform.{IzPlatform, IzPlatformEffectfulUtil}
 
-trait IzJvm {
+
+trait IzJvm extends IzPlatformEffectfulUtil {
   @deprecated("Use IzPlatform", "28/04/2022")
   def isHeadless: Boolean = IzPlatform.isHeadless
 

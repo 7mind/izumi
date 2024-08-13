@@ -1,5 +1,7 @@
 package izumi.fundamentals.platform.os
 
+import izumi.fundamentals.platform.IzPlatformEffectfulUtil
+
 import java.io.File
 import java.util.regex.Pattern
 
@@ -18,7 +20,12 @@ object OsType {
 
 }
 
-object IzOs {
+trait IzOs extends IzPlatformEffectfulUtil {
+  def path: Seq[String]
+  def osType: OsType
+}
+
+object IzOs extends IzOs {
   def path: Seq[String] = {
     Option(System.getenv("PATH"))
       .map(_.split(Pattern.quote(File.pathSeparator)).toSeq)

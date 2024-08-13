@@ -18,11 +18,14 @@ import izumi.reflect.TagK
 class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with RoleModuleDef {
   tag(Mode.Prod)
 
-  include(BundledRolesModule[F] overriddenBy new ModuleDef {
-    make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
-  }, TagMergePolicy.UseOnlyInner)
+  include(
+    BundledRolesModule[F] overriddenBy new ModuleDef {
+      make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
+    },
+    TagMergePolicy.UseOnlyInner,
+  )
 
-  private def version = Option(System.getProperty(TestPluginCatsIO.versionProperty)) match {
+  private def version: String = Option(System.getProperty(TestPluginCatsIO.versionProperty)) match {
     case Some(value) =>
       value
     case None =>
@@ -50,9 +53,10 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   make[TestRole00Resource[F]]
   make[TestRole00ResourceIntegrationCheck[F]]
 
+  makeRole[ConfigTestRole[F]]
+  makeConfig[ConfigTestConfig]("configTest")
+
   make[NotCloseable].from[InheritedCloseable]
-//  makeRole[ConfigWriter[F]]
-//  makeRole[Help[F]]
 
   make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
   make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)

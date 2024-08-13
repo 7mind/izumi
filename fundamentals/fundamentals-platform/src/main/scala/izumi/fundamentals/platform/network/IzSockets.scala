@@ -5,16 +5,28 @@
   */
 package izumi.fundamentals.platform.network
 
+import izumi.fundamentals.platform.IzPlatformEffectfulUtil
+import izumi.fundamentals.platform.network.IzSockets.RANDOM_LOOPBACK_ADDRESS
+
 import java.net.{InetSocketAddress, NetworkInterface, StandardProtocolFamily}
 import java.nio.channels.{DatagramChannel, ServerSocketChannel}
-
 import scala.collection.immutable
 import scala.util.Random
+
+trait IzSockets extends IzPlatformEffectfulUtil {
+  def temporaryLocalPort(udp: Boolean = false): Int
+  def temporaryServerAddress(address: String = RANDOM_LOOPBACK_ADDRESS, udp: Boolean = false): InetSocketAddress
+  def temporaryServerAddresses(numberOfAddresses: Int, hostname: String = RANDOM_LOOPBACK_ADDRESS, udp: Boolean = false): immutable.IndexedSeq[InetSocketAddress]
+  def temporaryServerHostnameAndPort(interface: String = RANDOM_LOOPBACK_ADDRESS): (String, Int)
+  def temporaryUdpIpv6Port(iface: NetworkInterface): Int
+  def notBoundServerAddress(address: String): InetSocketAddress
+  def notBoundServerAddress(): InetSocketAddress
+}
 
 /**
   * Utilities to get free socket address.
   */
-object IzSockets {
+object IzSockets extends IzSockets {
 
   val RANDOM_LOOPBACK_ADDRESS = "RANDOM_LOOPBACK_ADDRESS"
 
