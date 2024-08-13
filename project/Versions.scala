@@ -28,7 +28,7 @@ object V {
   val jawn = "1.6.0"
 
   // good to drop - scala
-  val scala_java_time = "2.5.0"
+  val scala_java_time = "2.6.0"
 
   // java-only dependencies below
   val classgraph = "4.8.174"
