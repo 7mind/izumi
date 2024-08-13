@@ -74,10 +74,10 @@ object ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
       val roleInfoModule = new BootstrapModuleDef {
-        make[RolesInfo].fromValue(roles)
-        make[RawAppArgs].fromValue(args)
-        make[ActivationInfo].fromValue(activationInfo)
-        make[AppShutdownInitiator].fromValue(shutdownInitiator)
+        make[RolesInfo].fromValue(roles).exposed
+        make[RawAppArgs].fromValue(args).exposed
+        make[ActivationInfo].fromValue(activationInfo).exposed
+        make[AppShutdownInitiator].fromValue(shutdownInitiator).exposed
       }
 
       val loggerModule = new LogstageModule(logRouter, true)

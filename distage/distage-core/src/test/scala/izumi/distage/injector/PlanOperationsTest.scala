@@ -29,8 +29,8 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
         make[SharedComponent1]
         make[SharedComponent2]
       },
-      Activation.empty,
       primary ++ sub,
+      Activation.empty,
     )
 
     val srcPlan = injector.planUnsafe(definition)

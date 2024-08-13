@@ -42,11 +42,13 @@ object IncludesDSL {
     def interpret(frozenOuterTags: Set[BindingTag]): Iterator[Binding] = {
 
       def excludeTagsOnOverlap(allTags: Set[BindingTag], excludeOnOverlap: Set[BindingTag]): Set[BindingTag] = {
-        val overlaps = allTags.groupBy { case BindingTag.AxisTag(choice) => choice.axis; case _ => null }
+        val overlaps = allTags
+          .collect { case a: BindingTag.AxisTag => a: BindingTag }
+          .groupBy { case BindingTag.AxisTag(choice) => choice.axis }
+
         val tagsToRemove = overlaps.iterator.flatMap {
-          case (null, _) => Nil
           case (_, overlappingTags) if overlappingTags.size > 1 => overlappingTags.intersect(excludeOnOverlap)
-          case _ => Nil
+          case _ => List.empty
         }
         allTags -- tagsToRemove
       }

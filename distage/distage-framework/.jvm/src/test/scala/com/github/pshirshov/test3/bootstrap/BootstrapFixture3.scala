@@ -11,8 +11,8 @@ object BootstrapFixture3 {
   final case class BasicConfig(a: Boolean, b: Int)
 
   object BootstrapPlugin extends BootstrapPluginDef() with ConfigModuleDef {
-    makeConfig[BasicConfig]("basicConfig")
-    make[BootstrapComponent]
+    makeConfig[BasicConfig]("basicConfig").exposed
+    make[BootstrapComponent].exposed
   }
 
   final class UnsatisfiedDep

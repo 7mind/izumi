@@ -1,7 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.Axis.AxisChoice
-import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, ModuleBase}
+import izumi.distage.model.definition.{Activation, Identifier, Lifecycle, LocatorPrivacy, ModuleBase}
 import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.providers.Functoid
@@ -60,7 +60,7 @@ trait Injector[F[_]] extends Planner with Producer {
     activation: Activation = Activation.empty,
   )(function: Functoid[F[A]]
   ): F[A] = {
-    produce(PlannerInput(bindings, activation, function.get.diKeys.toSet))
+    produce(PlannerInput(bindings, function.get.diKeys.toSet, activation))
       .use(_.run(function))
   }
 
@@ -109,7 +109,7 @@ trait Injector[F[_]] extends Planner with Producer {
     activation: Activation = Activation.empty,
   )(function: Functoid[F[A]]
   ): Lifecycle[F, A] = {
-    produce(PlannerInput(bindings, activation, function.get.diKeys.toSet))
+    produce(PlannerInput(bindings, function.get.diKeys.toSet, activation))
       .evalMap(_.run(function))
   }
 
@@ -189,8 +189,13 @@ trait Injector[F[_]] extends Planner with Producer {
   final def produce(input: PlannerInput): Lifecycle[F, Locator] = {
     produceCustomF[F](input)
   }
-  final def produce(bindings: ModuleBase, roots: Roots, activation: Activation = Activation.empty): Lifecycle[F, Locator] = {
-    produce(PlannerInput(bindings, activation, roots))
+  final def produce(
+    bindings: ModuleBase,
+    roots: Roots,
+    activation: Activation = Activation.empty,
+    locatorPrivacy: LocatorPrivacy = LocatorPrivacy.PublicByDefault,
+  ): Lifecycle[F, Locator] = {
+    produce(PlannerInput(bindings, roots, activation, locatorPrivacy))
   }
 
   /**

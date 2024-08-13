@@ -92,7 +92,7 @@ object DistageTestEnv {
 
   private[distage] def testkitBootstrapReflectiveModule(availableActivations: ActivationInfo): BootstrapModuleDef = new BootstrapModuleDef {
     //     Update `testkitBootstrapReflectiveKeys` if you add anything here
-    make[ActivationInfo].fromValue(availableActivations)
+    make[ActivationInfo].fromValue(availableActivations).exposed
   }
 
   lazy val testkitBootstrapReflectiveKeys: Set[DIKey] = {

@@ -104,7 +104,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       }
 
       val injector = mkInjector()
-      val definitionAnnotated = PlannerInput(ModuleAnnotated, Activation(), Roots.Everything)
+      val definitionAnnotated = PlannerInput(ModuleAnnotated, Roots.Everything, Activation())
       val planAnnotated = injector.planUnsafe(definitionAnnotated)
 
       assert(planAnnotated.definition.bindings.nonEmpty)

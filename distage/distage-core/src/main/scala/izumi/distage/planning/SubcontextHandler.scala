@@ -24,7 +24,7 @@ object SubcontextHandler {
       val roots = c.extractingFunction.diKeys.toSet
       for {
         subplan <- planner
-          .plan(PlannerInput(c.module, input.activation, roots))
+          .plan(PlannerInput(c.module, roots, input.activation))
           .left.map(errors => LocalContextPlanningFailure(binding, c, errors))
       } yield {
         val allImported = subplan.importedKeys

@@ -34,8 +34,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
             (i: Int @Id("2")) => 10 + i
           }
         },
-        Activation.empty,
         Roots(DIKey.get[Int]),
+        Activation.empty,
       )
 
       val injector = mkInjector()
@@ -53,8 +53,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
             (i: Int @Id("2")) => Suspend2(10 + i)
           }
         },
-        Activation.empty,
         Roots(DIKey.get[Int]),
+        Activation.empty,
       )
 
       val injector = mkInjector()
@@ -95,8 +95,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
             (i: Int @Id("2")) => 10 + i
           }
         },
-        Activation.empty,
         Roots(DIKey.get[Int]),
+        Activation.empty,
       )
 
       val injector = mkInjector()

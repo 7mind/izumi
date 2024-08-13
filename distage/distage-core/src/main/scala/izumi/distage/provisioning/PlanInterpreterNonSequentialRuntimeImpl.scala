@@ -1,12 +1,13 @@
 package izumi.distage.provisioning
 
 import izumi.distage.LocatorDefaultImpl
-import izumi.distage.model.definition.{Id, Lifecycle}
+import izumi.distage.model.definition.{Binding, BindingTag, Id, Lifecycle, LocatorPrivacy}
 import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.definition.errors.ProvisionerIssue.IncompatibleEffectTypes
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp.*
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Plan, Roots}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionInternal, FinalizerFilter}
@@ -62,7 +63,9 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   ): F[Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
     val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
 
-    val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext)
+    val privateBindings = computePrivateBindings(plan)
+
+    val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext, privateBindings)
 
     @nowarn("msg=Unused import")
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[TraversalState, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]]] = {
@@ -116,6 +119,50 @@ class PlanInterpreterNonSequentialRuntimeImpl(
           }
       }
     } yield res
+  }
+
+  private def computePrivateBindings(plan: Plan): Set[DIKey] = {
+    def isRoot(target: DIKey): Boolean = {
+      plan.input.roots match {
+        case Roots.Of(roots) =>
+          roots.contains(target)
+        case Roots.Everything =>
+          true
+      }
+    }
+
+    def isPrivateBinding(target: DIKey, binding: Binding): Boolean = {
+      plan.input.locatorPrivacy match {
+        case LocatorPrivacy.PublicByDefault =>
+          binding.tags.contains(BindingTag.Confined)
+        case LocatorPrivacy.PrivateByDefault =>
+          !binding.tags.contains(BindingTag.Exposed)
+        case LocatorPrivacy.PublicRoots =>
+          !isRoot(target) && !binding.tags.contains(BindingTag.Exposed)
+      }
+    }
+
+    def isPrivate(op: ExecutableOp): Boolean = {
+      op.origin.value match {
+        case OperationOrigin.UserBinding(binding) =>
+          isPrivateBinding(op.target, binding)
+        case OperationOrigin.SyntheticBinding(binding) =>
+          isPrivateBinding(op.target, binding)
+        case OperationOrigin.Unknown =>
+          plan.input.locatorPrivacy match {
+            case LocatorPrivacy.PublicByDefault =>
+              false
+            case LocatorPrivacy.PrivateByDefault =>
+              true
+            case LocatorPrivacy.PublicRoots =>
+              isRoot(op.target)
+          }
+      }
+    }
+
+    plan.stepsUnordered
+      .filter(isPrivate)
+      .map(_.target).toSet
   }
 
   private def failEarly[F[_]: TagK, A](

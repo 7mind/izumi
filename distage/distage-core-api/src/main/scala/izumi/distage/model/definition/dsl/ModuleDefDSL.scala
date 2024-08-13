@@ -682,6 +682,8 @@ object ModuleDefDSL {
     "modifyBy",
     "addDependency",
     "addDependencies",
+    "exposed",
+    "confined",
   )
 
   final class MakeDSL[T](
@@ -751,7 +753,7 @@ object ModuleDefDSL {
     }
   }
 
-  sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] extends Any with AddDependencyDSL[T, Self] {
+  sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] extends Any with AddDependencyDSL[T, Self] with Tagging[Self] {
     protected def mutableState: SingletonRef
     protected def toSame: SingletonRef => Self
 
@@ -785,8 +787,11 @@ object ModuleDefDSL {
 
   final class SetDSL[T](
     protected val mutableState: SetRef
-  ) extends SetDSLMutBase[T] {
-
+  ) extends SetDSLMutBase[T]
+    with Tagging[SetDSL[T]] {
+    def tagged(tags: BindingTag*): SetDSL[T] = {
+      addOp(SetInstruction.AddTagOntoSet(tags.toSet))(new SetDSL[T](_))
+    }
     def named(name: Identifier): SetNamedDSL[T] = {
       addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_))
     }
@@ -796,11 +801,17 @@ object ModuleDefDSL {
   final class SetNamedDSL[T](
     override protected val mutableState: SetRef
   ) extends SetDSLMutBase[T]
+    with Tagging[SetNamedDSL[T]] {
+    def tagged(tags: BindingTag*): SetNamedDSL[T] = {
+      addOp(SetInstruction.AddTagOntoSet(tags.toSet))(new SetNamedDSL[T](_))
+    }
+  }
 
   final class SetElementDSL[T](
     override protected val mutableState: SetRef,
     mutableCursor: SetElementRef,
-  ) extends SetDSLMutBase[T] {
+  ) extends SetDSLMutBase[T]
+    with Tagging[SetElementDSL[T]] {
 
     def tagged(tags: BindingTag*): SetElementDSL[T] = {
       addOp(ElementAddTags(tags.toSet))
@@ -815,7 +826,8 @@ object ModuleDefDSL {
   final class MultiSetElementDSL[T](
     override protected val mutableState: SetRef,
     mutableCursor: MultiSetElementRef,
-  ) extends SetDSLMutBase[T] {
+  ) extends SetDSLMutBase[T]
+    with Tagging[MultiSetElementDSL[T]] {
 
     def tagged(tags: BindingTag*): MultiSetElementDSL[T] =
       addOp(MultiAddTags(tags.toSet))

@@ -14,8 +14,6 @@ import izumi.reflect.TagK
 
 trait RoleAppPlanner {
   def bootloader: Bootloader
-
-//  def reboot(bsModule: BootstrapModule, config: Option[AppConfig]): RoleAppPlanner
   def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans
 }
 
@@ -33,28 +31,13 @@ object RoleAppPlanner {
     bsModule: BootstrapModule @Id("roleapp"),
     val bootloader: Bootloader @Id("roleapp"),
     logger: IzLogger,
-//    parser: ActivationParser,
-  ) /*(implicit
-    defaultModule: DefaultModule[F]
-  )*/
-    extends RoleAppPlanner { self =>
+  ) extends RoleAppPlanner { self =>
 
     private val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[QuasiIORunner[F]],
       DIKey.get[QuasiIO[F]],
       DIKey.get[QuasiAsync[F]],
     )
-
-//    override def reboot(bsOverride: BootstrapModule, config: Option[AppConfig]): RoleAppPlanner = {
-//      val configOverride = new BootstrapModuleDef {
-//        config.foreach(cfg => include(AppConfigModule(cfg)))
-//      }
-//      val updatedBsModule = bsModule overriddenBy bsOverride overriddenBy configOverride
-//
-//      val activation = config.map(parser.parseActivation).getOrElse(this.activation)
-//
-//      new RoleAppPlanner.Impl[F](options, activation, updatedBsModule, bootloader, logger, parser)
-//    }
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
       logger.trace(s"Application will use: ${appMainRoots -> "app roots"} and $activation")
@@ -76,7 +59,7 @@ object RoleAppPlanner {
           logger.trace(s"Bootstrap plan:\n${bootstrapped.plan.render() -> "bootstrap dump" -> null}")
           logger.trace(s"App module: ${(bootstrapped.module: ModuleBase) -> "app module" -> null}")
         }
-        appPlan <- bootstrapped.injector.plan(PlannerInput(bootstrapped.module.drop(runtimeKeys), activation, appMainRoots))
+        appPlan <- bootstrapped.injector.plan(PlannerInput(bootstrapped.module.drop(runtimeKeys), appMainRoots, activation))
       } yield {
 
         val check = new PlanCircularDependencyCheck(options, logger)

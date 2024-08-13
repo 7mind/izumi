@@ -159,7 +159,7 @@ import distage.{Activation, Injector, Roots}
 
 val injector = Injector[Task]()
 
-val plan = injector.plan(HelloByeModule, Activation.empty, Roots.target[HelloByeApp]).getOrThrow()
+val plan = injector.plan(HelloByeModule, Roots.target[HelloByeApp], Activation.empty).getOrThrow()
 ```
 
 The series of steps must be executed to produce the object graph.

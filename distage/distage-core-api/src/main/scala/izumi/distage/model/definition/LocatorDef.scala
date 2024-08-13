@@ -35,7 +35,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
   override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): LocatorDef.BindDSLUnnamedAfterFrom[T] = new LocatorDef.BindDSLUnnamedAfterFrom(ref)
   override private[definition] final def _setDSL[T](ref: SetRef): LocatorDef.SetDSL[T] = new LocatorDef.SetDSL[T](ref)
 
-  protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
+  // protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
   override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = {
     frozenMap.get(key)
@@ -43,6 +43,8 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
 
   override def instances: immutable.Seq[IdentifiedRef] = frozenInstances
   override def index: Map[DIKey, Any] = frozenMap
+
+  override def isPrivate(key: DIKey): Boolean = confined.contains(key)
 
   /** The plan that produced this object graph */
   override def plan: Plan = {
@@ -55,13 +57,17 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
 
     val s = IncidenceMatrix(ops.map(op => (op._1.target, Set.empty[DIKey])).toMap)
     val nodes = ops.map(op => (op._1.target, op._1))
-    Plan(DG(s, s.transposed, GraphMeta(nodes.toMap)), PlannerInput(Module.make(ops.map(_._2).toSet), Activation.empty, Roots.Everything))
+    Plan(
+      DG(s, s.transposed, GraphMeta(nodes.toMap)),
+      PlannerInput(Module.make(ops.map(_._2).toSet), Roots.Everything, Activation.empty, LocatorPrivacy.PublicByDefault),
+    )
   }
 
   override def parent: Option[Locator] = None
 
-  private final lazy val (frozenMap, frozenInstances): (Map[DIKey, Any], immutable.Seq[IdentifiedRef]) = {
+  private final lazy val (frozenMap, frozenInstances, confined): (Map[DIKey, Any], immutable.Seq[IdentifiedRef], Set[DIKey]) = {
     val map = new mutable.LinkedHashMap[DIKey, Any]
+    val confined = frozenState.filter(_.tags.contains(BindingTag.Confined)).map(_.key).toSet
 
     frozenState.foreach {
       case SingletonBinding(key, InstanceImpl(_, instance), _, _, false) =>
@@ -79,7 +85,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
         )
     }
 
-    map.toMap -> map.iterator.map { case (k, v) => IdentifiedRef(k, v) }.toList
+    (map.toMap, map.iterator.map { case (k, v) => IdentifiedRef(k, v) }.toList, confined)
   }
 }
 

@@ -4,11 +4,13 @@ import izumi.distage.AbstractLocator
 import izumi.distage.model.Locator.LocatorMeta
 import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.Plan
+import izumi.distage.model.plan.repr.LocatorFormatter
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.OpStatus
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, GenericTypedRef}
+import izumi.functional.Renderable
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiPrimitives
 import izumi.reflect.{Tag, TagK}
@@ -40,6 +42,8 @@ trait Locator {
 
   def lookupRefOrThrow[T: Tag](key: DIKey): GenericTypedRef[T]
   def lookupRef[T: Tag](key: DIKey): Option[GenericTypedRef[T]]
+
+  def isPrivate(key: DIKey): Boolean
 
   /** The plan that produced this object graph */
   def plan: Plan
@@ -106,6 +110,22 @@ trait Locator {
     }
     args.map(fn.unsafeApply(_).asInstanceOf[T])
   }
+
+  final def depth: Int = {
+    var d = -1
+    var loc: Option[Locator] = Some(this)
+    while (loc.nonEmpty) {
+      d = d + 1
+      loc = loc.get.parent
+    }
+    d
+  }
+
+  def render()(implicit ev: Renderable[Locator]): String = ev.render(this)
+
+  override def toString: String = {
+    this.render()
+  }
 }
 
 object Locator {
@@ -114,6 +134,8 @@ object Locator {
       resource.use(_.run(function))
   }
 
+  @inline implicit final def defaultFormatter: Renderable[Locator] = LocatorFormatter
+
   val empty: AbstractLocator = new AbstractLocator {
     override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = None
     override def instances: immutable.Seq[IdentifiedRef] = Nil
@@ -121,8 +143,8 @@ object Locator {
     override def parent: Option[Locator] = None
     override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil
     override def index: Map[DIKey, Any] = Map.empty
-
     override def meta: LocatorMeta = LocatorMeta.empty
+    override def isPrivate(key: DIKey): Boolean = false
   }
 
   /** @param timings How long it took to instantiate each component */

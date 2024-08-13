@@ -16,17 +16,13 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[Circular1]
-            make[Circular2]
-            make[Circular3]
-            make[Circular4]
-            make[Trash]
-          },
-          Activation.empty,
-          Roots(DIKey.get[Circular2]),
-        )
+        PlannerInput(new ModuleDef {
+          make[Circular1]
+          make[Circular2]
+          make[Circular3]
+          make[Circular4]
+          make[Trash]
+        }, Roots(DIKey.get[Circular2]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()
@@ -52,15 +48,11 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[MkS3Client].from[Impl]
-            make[S3Component]
-            make[App]
-          },
-          Activation.empty,
-          Roots(DIKey.get[App]),
-        )
+        PlannerInput(new ModuleDef {
+          make[MkS3Client].from[Impl]
+          make[S3Component]
+          make[App]
+        }, Roots(DIKey.get[App]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()
@@ -72,18 +64,14 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            many[IntegrationComponent].add[S3Component]
+        PlannerInput(new ModuleDef {
+          many[IntegrationComponent].add[S3Component]
 
-            make[MkS3Client].from[Impl]
-            make[S3Upload]
-            make[Ctx]
-            make[S3Component]
-          },
-          Activation.empty,
-          Roots(DIKey.get[Ctx]),
-        )
+          make[MkS3Client].from[Impl]
+          make[S3Upload]
+          make[Ctx]
+          make[S3Component]
+        }, Roots(DIKey.get[Ctx]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()
@@ -98,18 +86,14 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[MkS3Client]
-            make[S3Upload]
-            make[Ctx]
-            make[S3Component]
-            many[IntegrationComponent].add[S3Component]
-            make[Initiator]
-          },
-          Activation.empty,
-          Roots(DIKey.get[Ctx], DIKey.get[Initiator]),
-        )
+        PlannerInput(new ModuleDef {
+          make[MkS3Client]
+          make[S3Upload]
+          make[Ctx]
+          make[S3Component]
+          many[IntegrationComponent].add[S3Component]
+          make[Initiator]
+        }, Roots(DIKey.get[Ctx], DIKey.get[Initiator]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()
@@ -121,16 +105,12 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[Circular1]
-            make[Circular2]
-            make[T1].using[Circular1]
-            make[T2].using[Circular2]
-          },
-          Activation.empty,
-          Roots(DIKey.get[Circular2]),
-        )
+        PlannerInput(new ModuleDef {
+          make[Circular1]
+          make[Circular2]
+          make[T1].using[Circular1]
+          make[T2].using[Circular2]
+        }, Roots(DIKey.get[Circular2]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()
@@ -145,14 +125,10 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[T1].from[Circular1]
-            make[T2].from[Circular2]
-          },
-          Activation.empty,
-          Roots(DIKey.get[T1]),
-        )
+        PlannerInput(new ModuleDef {
+          make[T1].from[Circular1]
+          make[T2].from[Circular2]
+        }, Roots(DIKey.get[T1]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()
@@ -165,33 +141,29 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[Circular1].from {
-              (t1: Circular1, t2: Circular2) =>
-                new Circular1 {
-                  override def c1: Circular1 = t1
+        PlannerInput(new ModuleDef {
+          make[Circular1].from {
+            (t1: Circular1, t2: Circular2) =>
+              new Circular1 {
+                override def c1: Circular1 = t1
 
-                  override def c2: Circular2 = t2
+                override def c2: Circular2 = t2
 
-                  override def nothing: Int = 1
-                }
-            }
-            make[Circular2].from {
-              (t1: Circular1, t2: Circular2) =>
-                new Circular2 {
+                override def nothing: Int = 1
+              }
+          }
+          make[Circular2].from {
+            (t1: Circular1, t2: Circular2) =>
+              new Circular2 {
 
-                  override def c1: Circular1 = t1
+                override def c1: Circular1 = t1
 
-                  override def c2: Circular2 = t2
+                override def c2: Circular2 = t2
 
-                  override def nothing: Int = 2
-                }
-            }
-          },
-          Activation.empty,
-          Roots(DIKey.get[Circular2]),
-        )
+                override def nothing: Int = 2
+              }
+          }
+        }, Roots(DIKey.get[Circular2]), Activation.empty)
       )
       val result = injector.produce(plan).unsafeGet()
       assert(result.get[Circular1].nothing == 1)
@@ -205,14 +177,10 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[Circular1]
-            make[Circular2]
-          },
-          Activation.empty,
-          Roots(DIKey.get[Circular2]),
-        )
+        PlannerInput(new ModuleDef {
+          make[Circular1]
+          make[Circular2]
+        }, Roots(DIKey.get[Circular2]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()
@@ -227,14 +195,10 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[Circular1]
-            make[Circular2]
-          },
-          Activation.empty,
-          Roots(DIKey.get[Circular2]),
-        )
+        PlannerInput(new ModuleDef {
+          make[Circular1]
+          make[Circular2]
+        }, Roots(DIKey.get[Circular2]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()
@@ -248,14 +212,10 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[Circular1]
-            make[Circular2]
-          },
-          Activation.empty,
-          Roots(DIKey.get[Circular2], DIKey.get[Set[AutoCloseable]]),
-        )
+        PlannerInput(new ModuleDef {
+          make[Circular1]
+          make[Circular2]
+        }, Roots(DIKey.get[Circular2], DIKey.get[Set[AutoCloseable]]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()
@@ -269,19 +229,15 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
-        PlannerInput(
-          new ModuleDef {
-            make[Circular1]
-            make[Circular2]
-            make[Circular3]
-            make[Circular4]
-            many[T1]
-              .ref[Circular1]
-              .ref[Circular2]
-          },
-          Activation.empty,
-          Roots(DIKey.get[Circular4], DIKey.get[immutable.Set[T1]], DIKey.get[Circular3]),
-        )
+        PlannerInput(new ModuleDef {
+          make[Circular1]
+          make[Circular2]
+          make[Circular3]
+          make[Circular4]
+          many[T1]
+            .ref[Circular1]
+            .ref[Circular2]
+        }, Roots(DIKey.get[Circular4], DIKey.get[immutable.Set[T1]], DIKey.get[Circular3]), Activation.empty)
       )
 
       val result = injector.produce(plan).unsafeGet()

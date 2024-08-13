@@ -5,12 +5,11 @@ import izumi.distage.model.definition.*
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.*
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagOntoSet, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
 import izumi.distage.model.exceptions.dsl.InvalidFunctoidModifier
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.{DIKey, MultiSetImplId}
-import izumi.distage.model.reflection.SetKeyMeta
+import izumi.distage.model.reflection.{DIKey, MultiSetImplId, SetKeyMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
 
@@ -18,6 +17,7 @@ import scala.collection.mutable
 
 trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] { self =>
   private final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
+
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
   private[definition] def _bindDSL[T](ref: SingletonRef): BindDSL[T]
@@ -280,7 +280,7 @@ object AbstractBindingDefDSL {
 
   }
 
-  final class ModifyTaggingDSL[T](private val mutableState: SingletonRef) extends AnyVal with AddDependencyDSL[T, ModifyTaggingDSL[T]] {
+  final class ModifyTaggingDSL[T](private val mutableState: SingletonRef) extends AnyVal with AddDependencyDSL[T, ModifyTaggingDSL[T]] with Tagging[ModifyTaggingDSL[T]] {
 
     def tagged(tags: BindingTag*): ModifyTaggingDSL[T] = {
       new ModifyTaggingDSL(mutableState.append(AddTags(tags.toSet)))
@@ -339,7 +339,7 @@ object AbstractBindingDefDSL {
     override protected def toSame: SubcontextRef => SubcontextNamedDSL[T] = new SubcontextNamedDSL[T](_)
   }
 
-  sealed abstract class SubcontextDSLBase[T, Self] {
+  sealed abstract class SubcontextDSLBase[T, Self] extends Tagging[Self] {
     protected def mutableState: SubcontextRef
     protected def toSame: SubcontextRef => Self
 
@@ -447,7 +447,7 @@ object AbstractBindingDefDSL {
       val emptySetBinding = setOps.foldLeft(initial: EmptySetBinding[DIKey.BasicKey]) {
         (b, instr) =>
           instr match {
-            case AddTagsAll(tags) => b.addTags(tags)
+            case AddTagOntoSet(tags) => b.addTags(tags)
             case SetIdAll(id) => b.withTarget(DIKey.TypeKey(b.key.tpe).named(id))
           }
       }
@@ -563,7 +563,7 @@ object AbstractBindingDefDSL {
 
   sealed trait SetInstruction
   object SetInstruction {
-    final case class AddTagsAll(tags: Set[BindingTag]) extends SetInstruction
+    final case class AddTagOntoSet(tags: Set[BindingTag]) extends SetInstruction
     final case class SetIdAll(id: Identifier) extends SetInstruction
   }
 

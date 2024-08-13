@@ -48,12 +48,17 @@ trait AbstractLocator extends Locator {
   }
 
   override final def lookupRef[T: Tag](key: DIKey): Option[GenericTypedRef[T]] = {
-    recursiveLookup(key, this)
+    recursiveLookup(key, this, this)
   }
 
-  private final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[GenericTypedRef[T]] = {
-    locator
-      .lookupLocal[T](key)
-      .orElse(locator.parent.flatMap(p => recursiveLookup[T](key, p)))
+  private final def recursiveLookup[T: Tag](key: DIKey, locator: Locator, origin: Locator): Option[GenericTypedRef[T]] = {
+    locator.lookupLocal[T](key) match {
+      case Some(_) if (locator ne origin) && locator.isPrivate(key) =>
+        None
+      case a @ Some(_) => a
+      case None =>
+        locator.parent.flatMap(p => recursiveLookup[T](key, p, origin))
+    }
+
   }
 }

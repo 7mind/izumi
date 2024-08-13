@@ -269,8 +269,8 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       runtimePlan <- injector.plan(
         PlannerInput(
           appModule ++ new TestRuntimeModule(envExecutionParams),
-          fullActivation,
           runtimeGcRoots,
+          fullActivation,
         )
       )
       _ <- Right(planChecker.showProxyWarnings(runtimePlan))
@@ -291,7 +291,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
         .map {
           case (testRoots, distageTests) =>
             for {
-              plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, fullActivation, testRoots)) else Right(Plan.empty)
+              plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, testRoots, fullActivation)) else Right(Plan.empty)
               _ <- Right(planChecker.showProxyWarnings(plan))
             } yield {
               distageTests.map(AlmostPreparedTest(_, reducedAppModule, plan.keys, fullActivation))
@@ -364,7 +364,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     for {
       plan <-
         if (sharedKeys.nonEmpty) {
-          injector.plan(PlannerInput(appModule, activation, sharedKeys))
+          injector.plan(PlannerInput(appModule, sharedKeys, activation))
         } else {
           Right(Plan.empty)
         }

@@ -4,7 +4,7 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.ModuleDef
 
 class AppConfigModule(appConfig: AppConfig) extends ModuleDef {
-  make[AppConfig].fromValue(appConfig)
+  make[AppConfig].fromValue(appConfig).exposed
 }
 
 object AppConfigModule {
