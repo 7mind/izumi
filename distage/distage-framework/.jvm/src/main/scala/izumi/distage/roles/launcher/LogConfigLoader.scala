@@ -6,7 +6,6 @@ import izumi.distage.roles.launcher.LogConfigLoader.DeclarativeLoggerConfig
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.Level.Warn
 import izumi.logstage.api.Log.Message
-import izumi.logstage.api.config.{LoggerPath, LoggerPathConfig, LoggerPathForLines}
 import izumi.logstage.api.rendering.RenderingOptions
 import logstage.IzLogger
 
@@ -28,7 +27,7 @@ object LogConfigLoader {
   case class DeclarativeLoggerConfig(
     format: LoggerFormat,
     rendering: RenderingOptions,
-    levels: Map[LoggerPath, LoggerPathConfig],
+    levels: Map[String, Log.Level],
     rootLevel: Log.Level,
     interceptJUL: Boolean,
   )
@@ -51,23 +50,22 @@ object LogConfigLoader {
       val options = logconf.options.getOrElse(RenderingOptions.default)
       val jul = logconf.jul.getOrElse(true)
 
-      val levels = logconf.levels.flatMap {
-        case (stringLevel, packageList) =>
-          val level = Log.Level.parseLetter(stringLevel)
-          packageList.flatMap {
-            pkg =>
-              val p = LoggerPathForLines.parse(pkg)
-              if (p.lines.nonEmpty) {
-                p.lines.map {
-                  l =>
-                    (LoggerPath(p.id, Some(l)), LoggerPathConfig(level))
-                }
-              } else {
-                Seq((LoggerPath(p.id, None), LoggerPathConfig(level)))
-              }
-
-          }
-      }
+      import izumi.fundamentals.collections.IzCollections.*
+      val levels = logconf.levels.iterator
+        .flatMap {
+          case (stringLevel, packageList) =>
+            val level = Log.Level.parseLetter(stringLevel)
+            packageList.map {
+              pkg =>
+                (pkg, level)
+            }
+        }
+        .toMultimapView
+        .map {
+          case (path, levels) =>
+            (path, levels.min)
+        }
+        .toMap
 
       val format = if (isJson) {
         LoggerFormat.Json

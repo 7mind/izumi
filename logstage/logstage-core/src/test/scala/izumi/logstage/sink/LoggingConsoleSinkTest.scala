@@ -19,17 +19,17 @@ class LoggingConsoleSinkTest extends AnyWordSpec {
 object LoggingConsoleSinkTest {
 
   def setupConsoleLogger(): IzLogger = {
-    IzLogger.apply(
-      ConfigurableLogRouter.apply(
-        Log.Level.Trace,
-        Seq(ColoredConsoleSink),
-        Map(
-          "izumi.logstage.sink.ExampleService.start:26,27" -> Log.Level.Error,
-          "izumi.logstage.sink.ExampleService.start:28" -> Log.Level.Error,
-        ),
-        LogQueue.Immediate,
-      )
+    val router = ConfigurableLogRouter(
+      Log.Level.Trace,
+      Seq(ColoredConsoleSink),
+      Map(
+        "izumi.logstage.sink.ExampleService.start:26,27" -> Log.Level.Error,
+        "izumi.logstage.sink.ExampleService.start:28" -> Log.Level.Error,
+      ),
+      LogQueue.Immediate,
     )
+
+    IzLogger(router)
 
     // IzLogger(IzLogger.Level.Trace, ColoredConsoleSink)
   }

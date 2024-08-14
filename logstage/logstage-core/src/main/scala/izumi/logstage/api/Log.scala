@@ -32,10 +32,10 @@ object Log {
       v.charAt(0).toLower match {
         case 't' => Log.Level.Trace
         case 'd' => Log.Level.Debug
-        case 'i' => Log.Level.Info
         case 'w' => Log.Level.Warn
         case 'e' => Log.Level.Error
         case 'c' => Log.Level.Crit
+        case _ => Log.Level.Info
       }
     }
 

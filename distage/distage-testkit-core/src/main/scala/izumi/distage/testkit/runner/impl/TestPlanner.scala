@@ -123,7 +123,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                   // test loggers will not create polling threads and will log immediately
                   val logConfigLoader = new LogConfigLoaderImpl(CLILoggerOptions(envExec.logLevel, json = false), configLoadLogger)
                   val logConfig = logConfigLoader.loadLoggingConfig(config)
-                  val router = new RouterFactory.RouterFactoryImpl().createRouter(logConfig, logBuffer)
+                  val router = new RouterFactory.RouterFactoryConsoleSinkImpl().createRouter(logConfig, logBuffer)
 
                   prepareGroupPlans(envExec, config, env, tests, router).left.map(bad => (tests, bad))
                 }

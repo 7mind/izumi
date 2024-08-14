@@ -41,6 +41,19 @@ class WildcardPrefixTreeTest extends AnyWordSpec {
       assert(call(tree, "a", "b") == Set(1, 2, 3))
       assert(call(tree, "a", "x") == Set(1, 3))
     }
+
+    "support root wildcard" in {
+      val tree = WildcardPrefixTree.build(
+        Seq(
+          (Seq(Some("a"), None, Some("c")), 1),
+          (Seq(Some("a"), None, Some("d")), 3),
+          (Seq(None), 2),
+        )
+      )
+
+      assert(call(tree, "a") == Set(1, 2, 3))
+      assert(call(tree, "b") == Set(2))
+    }
   }
 
 }

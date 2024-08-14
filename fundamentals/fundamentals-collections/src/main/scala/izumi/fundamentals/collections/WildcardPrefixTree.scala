@@ -4,14 +4,13 @@ import izumi.fundamentals.collections
 import izumi.fundamentals.collections.WildcardPrefixTree.PathElement
 
 case class WildcardPrefixTree[K, V](values: Seq[V], children: Map[PathElement[K], WildcardPrefixTree[K, V]]) {
-  def findSubtrees(prefix: List[K]): Seq[WildcardPrefixTree[K, V]] = {
-    prefix match {
-      case Nil =>
-        Seq(this)
-      case head :: tail =>
-        val exact = children.get(PathElement.Value(head))
-        val wildcard = children.get(PathElement.Wildcard)
-        (exact.toSeq ++ wildcard.toSeq).flatMap(_.findSubtrees(tail))
+  def findSubtrees(prefix: Seq[K]): Seq[WildcardPrefixTree[K, V]] = {
+    if (prefix.isEmpty) {
+      Seq(this)
+    } else {
+      val exact = children.get(PathElement.Value(prefix.head))
+      val wildcard = children.get(PathElement.Wildcard)
+      (exact.toSeq ++ wildcard.toSeq).flatMap(_.findSubtrees(prefix.tail))
     }
   }
 
@@ -28,6 +27,9 @@ object WildcardPrefixTree {
   }
 
   def build[P, V](pairs: Seq[(Seq[Option[P]], V)]): WildcardPrefixTree[P, V] = {
+    build(pairs, identity)
+  }
+  def build[P, V](pairs: Seq[(Seq[Option[P]], V)], map: (Seq[V] => Seq[V])): WildcardPrefixTree[P, V] = {
     val (currentValues, subValues) = pairs.partition(_._1.isEmpty)
 
     val next = subValues
@@ -45,10 +47,12 @@ object WildcardPrefixTree {
             case None =>
               PathElement.Wildcard
           }
-          wk -> build(group.map(_._2))
+          wk -> build(group.map(_._2), map)
       }
       .toMap
 
-    collections.WildcardPrefixTree(currentValues.map(_._2), next)
+    val values = map(currentValues.map(_._2))
+
+    collections.WildcardPrefixTree(values, next)
   }
 }
