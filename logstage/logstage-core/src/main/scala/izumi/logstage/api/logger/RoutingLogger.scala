@@ -12,14 +12,6 @@ trait RoutingLogger extends AbstractLogger {
   def router: LogRouter
   def customContext: CustomContext
 
-  @inline override final def acceptable(loggerId: Log.LoggerId, logLevel: Log.Level): Boolean = {
-    router.acceptable(loggerId, logLevel)
-  }
-
-  override def acceptable(loggerId: Log.LoggerId, line: Int, logLevel: Log.Level): Boolean = {
-    router.acceptable(loggerId, line, logLevel)
-  }
-
   override def acceptable(position: CodePosition, logLevel: Log.Level): Boolean =
     router.acceptable(LoggerId(position.applicationPointId), position.position.line, logLevel)
 

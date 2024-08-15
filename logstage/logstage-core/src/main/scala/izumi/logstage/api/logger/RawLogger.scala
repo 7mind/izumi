@@ -9,8 +9,6 @@ final class RawLogger[E <: AnyEncoded](delegate: EncodingAwareAbstractLogger[E])
   override type Self = RawLogger[E]
 
   def unsafeLog(entry: Log.Entry): Unit = delegate.unsafeLog(entry)
-  def acceptable(loggerId: Log.LoggerId, logLevel: Log.Level): Boolean = delegate.acceptable(loggerId, logLevel)
-  def acceptable(loggerId: Log.LoggerId, line: Int, logLevel: Log.Level): Boolean = delegate.acceptable(loggerId, line, logLevel)
   def acceptable(position: CodePosition, logLevel: Log.Level): Boolean = delegate.acceptable(position, logLevel)
 
   def withCustomContext(context: CustomContext): Self = new RawLogger(delegate.withCustomContext(context))
