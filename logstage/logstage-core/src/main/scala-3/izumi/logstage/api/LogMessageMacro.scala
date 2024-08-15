@@ -67,7 +67,8 @@ object LogMessageMacro {
                     case Left(value) =>
                       parts += expr
                     case Right(value) =>
-                      parts ++= Seq(Left(""), expr)
+                      // a space here would be added into malformed strings like arg1 + arg2 + arg3 and prevent them from collapsing
+                      parts ++= Seq(Left(" "), expr)
                   }
                 case None =>
                   parts ++= Seq(Left(""), expr)

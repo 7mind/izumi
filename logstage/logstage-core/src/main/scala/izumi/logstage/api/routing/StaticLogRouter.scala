@@ -46,10 +46,20 @@ class StaticLogRouter extends LogRouter {
     }
   }
 
+  override def acceptable(id: Log.LoggerId, line: Int, messageLevel: Log.Level): Boolean = {
+    proxied.get() match {
+      case null =>
+        messageLevel >= fallbackThreshold
+
+      case p =>
+        p.acceptable(id, line, messageLevel)
+    }
+  }
+
   override def log(entry: Log.Entry): Unit = {
     proxied.get() match {
       case null =>
-        if (acceptable(entry.context.static.id, entry.context.dynamic.level))
+        if (acceptable(entry.context.static.id, entry.context.static.position.line, entry.context.dynamic.level))
           fallbackSink.flush(entry)
 
       case p =>

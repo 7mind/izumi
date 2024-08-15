@@ -25,13 +25,12 @@ object LoggingConsoleSinkTest {
       Map(
         "izumi.logstage.sink.ExampleService.start:26,27" -> Log.Level.Error,
         "izumi.logstage.sink.ExampleService.start:28" -> Log.Level.Error,
+        "izumi.logstage.sink.ExampleService.start:28" -> Log.Level.Trace,
       ),
       LogQueue.Immediate,
     )
 
     IzLogger(router)
-
-    // IzLogger(IzLogger.Level.Trace, ColoredConsoleSink)
   }
 
 }

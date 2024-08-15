@@ -4,17 +4,37 @@ import izumi.fundamentals.collections.nonempty.{NEList, NEString}
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 
-//final case class LoggerPathRule(config: LoggerPathConfig, sinks: Seq[LogSink])
-//
-//final case class LoggerPath(id: String, line: Option[Int])
-//
-//final case class LoggerPathConfig(threshold: Log.Level)
+import scala.annotation.nowarn
+import scala.language.implicitConversions
+
+sealed trait LoggingTarget {
+  def level: Log.Level
+}
+
+@nowarn("msg=Unused import")
+object LoggingTarget {
+  case class Level(level: Log.Level) extends LoggingTarget
+  case class Config(config: LoggerPathConfig) extends LoggingTarget {
+    def level: Log.Level = config.level
+  }
+
+  import scala.collection.compat.*
+  implicit def fromLevel(level: Log.Level): LoggingTarget = Level(level)
+  implicit def fromConfig(config: LoggerPathConfig): LoggingTarget = Config(config)
+
+  implicit def fromLevelsMap(levels: Map[String, Log.Level]): Map[String, LoggingTarget] = {
+    levels.view.mapValues(l => Level(l)).toMap
+  }
+  implicit def fromConfigMap(levels: Map[String, LoggerPathConfig]): Map[String, LoggingTarget] = {
+    levels.view.mapValues(l => Config(l)).toMap
+  }
+}
 
 sealed trait LoggerPathElement
 
 object LoggerPathElement {
   final case class Pkg(name: NEString) extends LoggerPathElement
-  final case object Wildcard extends LoggerPathElement
+  case object Wildcard extends LoggerPathElement
 }
 
 final case class LoggerPath(path: NEList[LoggerPathElement], lines: Set[Int])
@@ -25,7 +45,7 @@ final case class LoggerRule(path: LoggerPath, config: LoggerPathConfig)
 
 final case class LoggerConfig(entries: List[LoggerRule], root: LoggerRule)
 
-object LoggerPathForLines {
+object LoggerPath {
 
   def parse(cfg: String): Option[LoggerPath] = {
     val li = cfg.lastIndexOf(':')

@@ -1,7 +1,7 @@
 package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{CustomContext, LoggerId}
 
@@ -17,7 +17,7 @@ trait AbstractLoggerF[F[_]] {
 
   def withCustomContext(context: CustomContext): Self
 
-  @inline def ifAcceptable(loggerId: LoggerId, logLevel: Log.Level)(action: => F[Unit])(implicit pos: CodePositionMaterializer): F[Unit]
+  @inline def ifAcceptable(loggerId: LoggerId, line: Int, logLevel: Log.Level)(action: => F[Unit]): F[Unit]
 
   @inline final def apply(context: CustomContext): Self = withCustomContext(context)
 
@@ -27,7 +27,7 @@ trait AbstractLoggerF[F[_]] {
 
   /** Log Entry if `logLevel` is above the threshold configured for this logger. */
   @inline final def log(entry: Log.Entry): F[Unit] = {
-    ifAcceptable(entry.context.static.id, entry.context.dynamic.level)(unsafeLog(entry))
+    ifAcceptable(entry.context.static.id, entry.context.static.position.line, entry.context.dynamic.level)(unsafeLog(entry))
   }
 
   /**
@@ -36,7 +36,7 @@ trait AbstractLoggerF[F[_]] {
     * Does not allocate Entry if `logLevel` is below the requirement
     */
   @inline final def log(logLevel: Log.Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
-    ifAcceptable(LoggerId(pos.get.applicationPointId), logLevel)(unsafeLog(Log.Entry.create(logLevel, messageThunk)(pos)))
+    ifAcceptable(LoggerId(pos.get.applicationPointId), pos.get.position.line, logLevel)(unsafeLog(Log.Entry.create(logLevel, messageThunk)(pos)))
   }
 
 }
@@ -47,9 +47,12 @@ trait AbstractLogger extends AbstractLoggerF[Identity] {
   def unsafeLog(entry: Log.Entry): Unit
 
   def acceptable(loggerId: LoggerId, logLevel: Log.Level): Boolean
+  def acceptable(loggerId: LoggerId, line: Int, logLevel: Log.Level): Boolean
 
-  @inline final def ifAcceptable(loggerId: LoggerId, logLevel: Log.Level)(action: => Unit)(implicit pos: CodePositionMaterializer): Unit = {
-    if (acceptable(loggerId, logLevel)) {
+  def acceptable(position: CodePosition, logLevel: Log.Level): Boolean
+
+  @inline final def ifAcceptable(loggerId: LoggerId, line: Int, logLevel: Log.Level)(action: => Unit): Unit = {
+    if (acceptable(loggerId, line, logLevel)) {
       action
     }
   }
