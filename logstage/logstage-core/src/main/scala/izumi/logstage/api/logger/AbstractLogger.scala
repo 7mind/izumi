@@ -21,7 +21,7 @@ trait AbstractLoggerF[F[_]] {
 
   /** Log Entry if `logLevel` is above the threshold configured for this logger. */
   @inline final def log(entry: Log.Entry): F[Unit] = {
-    ifAcceptable(CodePosition(entry.context.static.position, entry.context.static.id.id), entry.context.dynamic.level)(unsafeLog(entry))
+    ifAcceptable(entry.context.static.pos, entry.context.dynamic.level)(unsafeLog(entry))
   }
 
   /**

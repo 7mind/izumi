@@ -5,5 +5,5 @@ final case class SourceFilePosition(file: String, line: Int) {
 }
 
 object SourceFilePosition {
-  def unknown = SourceFilePosition("?", 0)
+  def unknown: SourceFilePosition = SourceFilePosition("?", 0)
 }

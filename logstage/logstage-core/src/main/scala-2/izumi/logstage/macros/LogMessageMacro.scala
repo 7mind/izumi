@@ -63,8 +63,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
       private lazy val balanced: Seq[Chunk] = {
         val balancedParts = mutable.ArrayBuffer[Chunk]()
 
-        // a space here would be added into malformed strings like arg1 + arg2 + arg3 and prevent them from collapsing
-        val emptystring = Chunk.Element(Literal(Constant(" ")))
+        val emptystring = Chunk.Element(Literal(Constant("")))
 
         parts.foreach {
           case e: Chunk.Element =>

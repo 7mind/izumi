@@ -56,14 +56,14 @@ object Extractor {
   class SourcePosition() extends Extractor {
     override def render(entry: Log.Entry, context: RenderingOptions): LETree.TextNode = {
       Quirks.discard(context)
-      LETree.TextNode(entry.context.static.position.toString)
+      LETree.TextNode(entry.context.static.pos.position.toString)
     }
   }
 
   class LoggerName() extends Extractor {
     override def render(entry: Log.Entry, context: RenderingOptions): LETree.TextNode = {
       Quirks.discard(context)
-      LETree.TextNode(entry.context.static.id.id)
+      LETree.TextNode(entry.context.static.pos.applicationPointId)
     }
   }
 

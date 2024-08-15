@@ -1,6 +1,6 @@
 package izumi.logstage.adapter.jul
 
-import izumi.fundamentals.platform.language.SourceFilePosition
+import izumi.fundamentals.platform.language.{CodePosition, SourceFilePosition}
 import izumi.logstage.api.Log
 import logstage.LogRouter
 
@@ -44,11 +44,10 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler wit
   @inline private def mkEntry(record: LogRecord): Log.Entry = {
 
     val loggerName = Option(record.getLoggerName).getOrElse("unknown")
-    val id = Log.LoggerId(loggerName)
 
     val thread = Thread.currentThread()
 
-    val ctx = Log.StaticExtendedContext(id, SourceFilePosition.unknown)
+    val ctx = Log.StaticExtendedContext(CodePosition(SourceFilePosition.unknown, loggerName))
     val threadData = Log.ThreadData(thread.getName, thread.getId)
 
     val params = Option(record.getParameters).toSeq.flatten

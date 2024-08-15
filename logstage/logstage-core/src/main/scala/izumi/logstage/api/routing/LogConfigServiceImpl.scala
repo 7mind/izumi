@@ -2,6 +2,7 @@ package izumi.logstage.api.routing
 
 import izumi.fundamentals.collections.WildcardPrefixTree
 import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.language.CodePosition
 import izumi.logstage.api.Log
 import izumi.logstage.api.config.*
 import izumi.fundamentals.platform.strings.WildcardPrefixTreeTools.*
@@ -40,14 +41,15 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
     logLevel >= cfg.threshold
   }
 
-  override def acceptable(id: Log.LoggerId, line: Int, logLevel: Log.Level): Boolean = {
-    val query = id.id.split('.') :+ lineSegment(line)
+  override def acceptable(position: CodePosition, logLevel: Log.Level): Boolean = {
+    val query = position.applicationPointId.split('.') :+ lineSegment(position.position.line)
     val cfg = queryConfig(query)
     logLevel >= cfg.threshold
   }
 
+
   override def config(e: Log.Entry): LogEntryConfig = {
-    val query = e.context.static.id.id.split('.') :+ lineSegment(e.context.static.position.line)
+    val query = e.context.static.pos.applicationPointId.split('.') :+ lineSegment(e.context.static.pos.position.line)
 
     val cfg = queryConfig(query)
 

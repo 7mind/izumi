@@ -3,6 +3,7 @@ package izumi.logstage.api.routing
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.console.TrivialLogger.Config
+import izumi.fundamentals.platform.language.CodePosition
 import izumi.logstage.DebugProperties
 import izumi.logstage.api.Log
 import izumi.logstage.api.config.*
@@ -37,11 +38,11 @@ class ConfigurableLogRouter(
     logConfigService.acceptable(id, messageLevel)
   }
 
-  override def acceptable(id: Log.LoggerId, line: Int, logLevel: Log.Level): Boolean = {
-    logConfigService.acceptable(id, line, logLevel)
-  }
-
   override def toString: String = s"${super.toString} with `$buffer` queue and configured with $logConfigService"
+
+  override def acceptable(position: CodePosition, logLevel: Log.Level): Boolean = {
+    logConfigService.acceptable(position, logLevel)
+  }
 }
 
 object ConfigurableLogRouter {

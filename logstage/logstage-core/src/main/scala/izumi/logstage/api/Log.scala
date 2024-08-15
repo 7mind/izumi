@@ -1,7 +1,7 @@
 package izumi.logstage.api
 
 import izumi.fundamentals.collections.IzCollections.*
-import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, SourceFilePosition}
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 import izumi.logstage.api.rendering.{AnyEncoded, LogstageCodec}
 
 object Log {
@@ -99,13 +99,7 @@ object Log {
 
   final case class LoggerId(id: String) extends AnyVal
 
-  object LoggerId {
-    @inline final def fromCodePosition(pos: CodePosition): LoggerId = {
-      new LoggerId(pos.applicationPointId)
-    }
-  }
-
-  final case class StaticExtendedContext(id: LoggerId, position: SourceFilePosition)
+  final case class StaticExtendedContext(pos: CodePosition) extends AnyVal
 
   final case class ThreadData(threadName: String, threadId: Long)
 
@@ -127,7 +121,7 @@ object Log {
       val thread = Thread.currentThread()
       val tsMillis = System.currentTimeMillis()
       val dynamicContext = DynamicContext(logLevel, ThreadData(thread.getName, thread.getId), tsMillis)
-      val extendedStaticContext = StaticExtendedContext(LoggerId(pos.get.applicationPointId), pos.get.position)
+      val extendedStaticContext = StaticExtendedContext(pos.get)
 
       Log.Context(extendedStaticContext, dynamicContext, customContext)
     }
