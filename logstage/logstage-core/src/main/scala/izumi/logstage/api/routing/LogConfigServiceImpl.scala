@@ -30,9 +30,11 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
           path =>
             (path.toList, rule.config)
         }
-    }
+    } ++ List((List.empty, loggerConfig.root.config))
 
-    WildcardPrefixTree.build[String, LoggerPathConfig](out)
+    val result = WildcardPrefixTree.build[String, LoggerPathConfig](out)
+    assert(result.values.nonEmpty)
+    result
   }
 
   override def acceptable(id: Log.LoggerId, logLevel: Log.Level): Boolean = {
@@ -47,7 +49,6 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
     logLevel >= cfg.threshold
   }
 
-
   override def config(e: Log.Entry): LogEntryConfig = {
     val query = e.context.static.pos.applicationPointId.split('.') :+ lineSegment(e.context.static.pos.position.line)
 
@@ -61,18 +62,15 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
   }
 
   @inline private def queryConfig(query: Array[String]): LoggerPathConfig = {
-    val result = configTree.findSubtree(query.toSeq).map(_.values)
-    result match {
-      case Some(value) =>
-        if (value.length == 1) {
-          value.head
-        } else if (value.isEmpty) {
-          loggerConfig.root.config
-        } else {
-          value.minBy(_.threshold)
-        }
-      case None =>
-        loggerConfig.root.config
+    val result = configTree.findBestMatch(query.toSeq).found.values
+
+    if (result.length == 1) {
+      result.head
+    } else if (result.length > 1) {
+      result.minBy(_.threshold)
+    } else {
+      // this should NOT happen, the root of the tree must be always configured
+      loggerConfig.root.config
     }
   }
 

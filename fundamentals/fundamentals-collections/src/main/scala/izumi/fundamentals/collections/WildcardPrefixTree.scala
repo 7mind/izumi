@@ -1,13 +1,13 @@
 package izumi.fundamentals.collections
 
 import izumi.fundamentals.collections
-import izumi.fundamentals.collections.WildcardPrefixTree.PathElement
+import izumi.fundamentals.collections.WildcardPrefixTree.{BestMatch, PathElement}
 
 import scala.annotation.tailrec
 
 final case class WildcardPrefixTree[K, V](values: Seq[V], children: Map[PathElement[K], WildcardPrefixTree[K, V]]) {
   @tailrec
-  def findSubtree(prefix: Iterable[K]): Option[WildcardPrefixTree[K, V]] = {
+  def findExactMatch(prefix: Iterable[K]): Option[WildcardPrefixTree[K, V]] = {
     if (prefix.isEmpty) {
       Some(this)
     } else {
@@ -15,20 +15,36 @@ final case class WildcardPrefixTree[K, V](values: Seq[V], children: Map[PathElem
       val wildcard = children.get(PathElement.Wildcard)
       exact.orElse(wildcard) match {
         case Some(value) =>
-          value.findSubtree(prefix.tail)
+          value.findExactMatch(prefix.tail)
         case None =>
           None
       }
     }
   }
 
-  def findSubtrees(prefix: Iterable[K]): Seq[WildcardPrefixTree[K, V]] = {
+  @tailrec
+  def findBestMatch(prefix: Iterable[K]): BestMatch[K, V] = {
+    if (prefix.isEmpty) {
+      BestMatch(this, prefix)
+    } else {
+      val exact = children.get(PathElement.Value(prefix.head))
+      val wildcard = children.get(PathElement.Wildcard)
+      exact.orElse(wildcard) match {
+        case Some(value) =>
+          value.findBestMatch(prefix.tail)
+        case None =>
+          BestMatch(this, prefix)
+      }
+    }
+  }
+
+  def findAllMatchingSubtrees(prefix: Iterable[K]): Seq[WildcardPrefixTree[K, V]] = {
     if (prefix.isEmpty) {
       Seq(this)
     } else {
       val exact = children.get(PathElement.Value(prefix.head))
       val wildcard = children.get(PathElement.Wildcard)
-      (exact.toSeq ++ wildcard.toSeq).flatMap(_.findSubtrees(prefix.tail))
+      (exact.toSeq ++ wildcard.toSeq).flatMap(_.findAllMatchingSubtrees(prefix.tail))
     }
   }
 
@@ -42,6 +58,8 @@ final case class WildcardPrefixTree[K, V](values: Seq[V], children: Map[PathElem
 }
 
 object WildcardPrefixTree {
+  case class BestMatch[K, V](found: WildcardPrefixTree[K, V], unmatched: Iterable[K])
+
   sealed trait PathElement[+V]
   object PathElement {
     final case class Value[V](value: V) extends PathElement[V]
