@@ -163,7 +163,7 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
       case idKey @ DIKey.IdKey(tpe, id, m) => DIKey.TypeKey(tpe, m) -> Some(Identifier.fromIdContract(id)(idKey.idContract))
     }
     val newProvider: Functoid[T] = f(Functoid.identityKey[T](key))
-    val binding = SingletonBinding(tpeKey, ImplDef.ProviderImpl(newProvider.get.ret, newProvider.get), Set.empty, pos.get.position, isMutator = true)
+    val binding = SingletonBinding(tpeKey, ImplDef.ProviderImpl(newProvider.get.ret, newProvider.get), Set.empty, BindingOrigin(pos.get.position), isMutator = true)
     val ref = _registered(new SingletonRef(binding))
     maybeId.foreach(ref `append` SetId(_))
     ref
@@ -423,7 +423,7 @@ object AbstractBindingDefDSL {
           // it's ok to retrieve `tags`, `implType` & `key` from `b` because all changes to
           // `b` properties must come before first `aliasTo` operation in sorted ops set
           // when `aliased` is interpreted no more changes are going to happen
-          val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, pos)
+          val newRef = SingletonBinding(key, ImplDef.ReferenceImpl(b.implementation.implType, b.key, weak = false), b.tags, BindingOrigin(pos))
           refs = newRef :: refs
       }
 
@@ -481,7 +481,7 @@ object AbstractBindingDefDSL {
       val implKey = DIKey.TypeKey(implDef.implType)
       val elKey = DIKey.SetElementKey(setKey, implKey, SetKeyMeta.WithImpl(implDef))
 
-      ops.foldLeft(SetElementBinding(elKey, implDef, Set.empty, pos)) {
+      ops.foldLeft(SetElementBinding(elKey, implDef, Set.empty, BindingOrigin(pos))) {
         (b, instr) =>
           instr match {
             case ElementAddTags(tags) => b.addTags(tags)
@@ -500,10 +500,10 @@ object AbstractBindingDefDSL {
 
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
       val valueProxyKey = DIKey.IdKey(implDef.implType, MultiSetImplId(setKey, implDef))
-      val valueProxyBinding = SingletonBinding(valueProxyKey, implDef, Set.empty, pos)
+      val valueProxyBinding = SingletonBinding(valueProxyKey, implDef, Set.empty, BindingOrigin(pos))
 
       val elementKey = DIKey.SetElementKey(setKey, valueProxyKey, SetKeyMeta.WithImpl(implDef))
-      val refBind0 = SetElementBinding(elementKey, ImplDef.ReferenceImpl(valueProxyBinding.key.tpe, valueProxyBinding.key, weak = false), Set.empty, pos)
+      val refBind0 = SetElementBinding(elementKey, ImplDef.ReferenceImpl(valueProxyBinding.key.tpe, valueProxyBinding.key, weak = false), Set.empty, BindingOrigin(pos))
 
       val refBind = ops.foldLeft(refBind0) {
         (b, op) =>

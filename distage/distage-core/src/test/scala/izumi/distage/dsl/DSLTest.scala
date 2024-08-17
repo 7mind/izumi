@@ -8,7 +8,7 @@ import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.dsl.IncludesDSL.TagMergePolicy
-import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
+import izumi.distage.model.definition.{Binding, BindingOrigin, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
 import izumi.distage.model.planning.PlanIssue
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
@@ -528,7 +528,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
               DIKey.get[ImplXYZ],
               ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)),
               Set.empty,
-              SourceFilePosition.unknown,
+              BindingOrigin(SourceFilePosition.unknown),
             ),
             Bindings.reference[TraitX, ImplXYZ],
             Bindings.reference[TraitY, ImplXYZ],
@@ -559,7 +559,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
               ImplDef.ProviderImpl(SafeType.get[X], ClassConstructor[X].get),
             ),
             Set.empty,
-            SourceFilePosition.unknown,
+            BindingOrigin(SourceFilePosition.unknown),
           ),
           Bindings.reference[TraitX, ImplXYZ],
           Bindings.reference[TraitY, ImplXYZ],
@@ -583,7 +583,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
               DIKey.get[ImplXYZ],
               ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[Lifecycle[Identity, ImplXYZ]], implXYZResource)),
               Set.empty,
-              SourceFilePosition.unknown,
+              BindingOrigin(SourceFilePosition.unknown),
             ),
             Bindings.reference[TraitX, ImplXYZ],
             Bindings.reference[TraitY, ImplXYZ],

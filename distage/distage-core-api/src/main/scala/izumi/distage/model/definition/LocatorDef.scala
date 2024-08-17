@@ -50,7 +50,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
   override def plan: Plan = {
     val ops = frozenInstances.map {
       case IdentifiedRef(key, value) =>
-        val binding = Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown)
+        val binding = Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, BindingOrigin(SourceFilePosition.unknown))
         val origin = OperationOrigin.SyntheticBinding(binding)
         (UseInstance(key, Instance(key.tpe, value), origin), binding)
     }.toVector
