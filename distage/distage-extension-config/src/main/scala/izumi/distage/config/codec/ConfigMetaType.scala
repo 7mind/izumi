@@ -12,39 +12,48 @@ final case class ConfigMetaTypeId(owner: Option[String], short: String, typeArgu
 
 sealed trait ConfigMetaType {
   def id: ConfigMetaTypeId
+  def doc: Option[String]
 }
 object ConfigMetaType {
-  final case class TCaseClass(id: ConfigMetaTypeId, fields: Seq[(String, ConfigMetaType)]) extends ConfigMetaType {
-    override def toString: String = s"Class $id with fields ${fields.map { case (n, v) => s"$n: $v" }.niceList().shift(2)}"
+  case class ConfigField(name: String, tpe: ConfigMetaType, doc: Option[String])
+  final case class TVariant(id: ConfigMetaTypeId, variants: Set[ConfigMetaType], doc: Option[String]) extends ConfigMetaType {
+    override def toString: String = s"Choice $id with variants ${variants.niceList().shift(2)}"
   }
-  final case class TSealedTrait(id: ConfigMetaTypeId, branches: Set[(String, ConfigMetaType)]) extends ConfigMetaType {
+
+  final case class TCaseClass(id: ConfigMetaTypeId, fields: Seq[ConfigField], doc: Option[String]) extends ConfigMetaType {
+    override def toString: String = s"Class $id with fields ${fields.map { case ConfigField(n, v, _) => s"$n: $v" }.niceList().shift(2)}"
+  }
+  final case class TSealedTrait(id: ConfigMetaTypeId, branches: Set[(String, ConfigMetaType)], doc: Option[String]) extends ConfigMetaType {
     override def toString: String = s"ADT $id with branches ${branches.map { case (n, v) => s"$n: $v" }.niceList().shift(2)}"
   }
   final case class TBasic(tpe: ConfigMetaBasicType) extends ConfigMetaType {
     override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, tpe.toString, Seq.empty)
+    def doc: Option[String] = None
   }
   final case class TList(tpe: ConfigMetaType) extends ConfigMetaType {
     override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "List", Seq(tpe.id))
+    def doc: Option[String] = None
   }
   final case class TSet(tpe: ConfigMetaType) extends ConfigMetaType {
     override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "Set", Seq(tpe.id))
+    def doc: Option[String] = None
   }
   final case class TOption(tpe: ConfigMetaType) extends ConfigMetaType {
     override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "Option", Seq(tpe.id))
+    def doc: Option[String] = None
   }
   final case class TMap(keyType: ConfigMetaType, valueType: ConfigMetaType) extends ConfigMetaType {
     override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "Map", Seq(keyType.id, valueType.id))
+    def doc: Option[String] = None
   }
   final case class TUnknown(pos: CodePosition) extends ConfigMetaType {
     override def id: ConfigMetaTypeId = ConfigMetaTypeId(None, "???", Seq.empty)
+    def doc: Option[String] = None
   }
   object TUnknown {
     def apply()(implicit ev: CodePositionMaterializer, dummyImplicit: DummyImplicit): TUnknown = new TUnknown(ev.get)
   }
 
-  final case class TVariant(id: ConfigMetaTypeId, variants: Set[ConfigMetaType]) extends ConfigMetaType {
-    override def toString: String = s"Choice $id with variants ${variants.niceList().shift(2)}"
-  }
 }
 
 sealed trait ConfigMetaBasicType

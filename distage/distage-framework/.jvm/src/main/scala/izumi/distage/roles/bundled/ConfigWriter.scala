@@ -5,6 +5,7 @@ import distage.TagK
 import distage.config.AppConfig
 import io.circe.Json
 import izumi.distage.config.codec.ConfigMetaType
+import izumi.distage.config.codec.ConfigMetaType.ConfigField
 import izumi.distage.config.model.ConfTag
 import izumi.distage.framework.services.{ConfigMerger, RoleAppPlanner}
 import izumi.distage.model.definition.{Binding, Id}
@@ -156,13 +157,13 @@ final class ConfigWriter[F[_]: TagK](
 
   private def unpackConfigPaths(path: Seq[String], meta0: ConfigMetaType): Seq[ConfigPath] = {
     meta0 match {
-      case ConfigMetaType.TCaseClass(_, fields) =>
-        fields.flatMap {
-          case (name, meta) =>
+      case cc: ConfigMetaType.TCaseClass =>
+        cc.fields.flatMap {
+          case ConfigField(name, meta, _) =>
             unpackConfigPaths(path :+ name, meta)
         }
-      case ConfigMetaType.TSealedTrait(_, branches) =>
-        branches.toSeq.flatMap {
+      case t: ConfigMetaType.TSealedTrait =>
+        t.branches.toSeq.flatMap {
           case (name, meta) =>
             unpackConfigPaths(path :+ name, meta)
         }
