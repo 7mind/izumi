@@ -1,5 +1,8 @@
 package izumi.distage.config.codec
 
+import izumi.distage.config.codec.ConfigMetaType.ConfigField
+import izumi.distage.config.model.ConfigDoc
+import izumi.fundamentals.platform.reflection.ReflectionUtil
 import pureconfig.generic.derivation.Utils
 
 import scala.compiletime.ops.int.+
@@ -30,13 +33,15 @@ object MetaInstances {
         case _ =>
           val tpe: ConfigMetaType = {
             val labels: Array[String] = Utils.transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping).toArray
+
             val codecs = readTuple[m.MirroredElemTypes, 0]
             ConfigMetaType.TCaseClass(
               typeId[A],
               labels.iterator
                 .zip(codecs).map {
-                  case (label, reader) => (label, reader.tpe)
+                  case (label, reader) => ConfigField(label, reader.tpe, None)
                 }.toSeq,
+              typeDocs[A],
             )
           }
           DIConfigMeta[A](tpe)
@@ -91,6 +96,7 @@ object MetaInstances {
         options.map {
           case (label, reader) => (label, reader.tpe)
         }.toSet,
+        typeDocs[A],
       )
 
       DIConfigMeta[A](tpe)
@@ -115,6 +121,27 @@ object MetaInstances {
 
     // https://github.com/softwaremill/magnolia/blob/scala3/core/src/main/scala/magnolia1/macro.scala#L135
     private inline def typeId[T]: ConfigMetaTypeId = ${ typeIdImpl[T] }
+
+    private inline def typeDocs[T]: Option[String] = ${ typeDocsImpl[T] }
+
+    private def typeDocsImpl[T: Type](using Quotes): Expr[Option[String]] = {
+      import quotes.reflect.*
+
+      val idAnnotationSym: Symbol = TypeRepr.of[ConfigDoc].typeSymbol
+      val tpe = TypeRepr.of[T]
+
+      val out = ReflectionUtil
+        .readTypeOrSymbolDIAnnotation(idAnnotationSym)("doc-extractor", Some(tpe.typeSymbol), Right(tpe)) {
+          case aterm @ Apply(Select(New(_), _), c :: _) =>
+            c.asExprOf[String].value.orElse {
+              report.errorAndAbort(s"ConfigDoc.Id annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
+            }
+          case aterm =>
+            report.errorAndAbort(s"ConfigDoc annotation expects one literal String argument but got malformed tree ${aterm.show} ($aterm)")
+        }
+
+      Expr(out)
+    }
 
     private def typeIdImpl[T: Type](using Quotes): Expr[ConfigMetaTypeId] = {
 

@@ -131,7 +131,7 @@ final class ConfigWriter[F[_]: TagK](
       val cfg = typesafeConfig.root().render(configRenderOptions.setJson(options.asJson))
       val bytes = cfg.getBytes(StandardCharsets.UTF_8)
       Files.write(target, bytes)
-      subLogger.info(s"Reference config saved -> $target (${bytes.size} bytes)")
+      subLogger.info(s"Reference config saved -> $target (${bytes.size -> "size"} bytes)")
       schema.foreach {
         json =>
           val bytes = json.spaces2.getBytes(StandardCharsets.UTF_8)
