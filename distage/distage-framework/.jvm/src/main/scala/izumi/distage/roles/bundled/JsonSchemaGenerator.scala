@@ -77,7 +77,12 @@ class JsonSchemaGenerator() {
             n
         }.toSet
         val required = c.fields.map(_._1).toSet.diff(optional)
-        JsonObject("type" -> Json.fromString("object"), "properties" -> props, "required" -> Json.fromValues(required.map(Json.fromString))).toJson
+        JsonObject(
+          "type" -> Json.fromString("object"),
+          "properties" -> props,
+          "required" -> Json.fromValues(required.map(Json.fromString))
+        ).toJson
+
       case _: ConfigMetaType.TUnknown =>
         JsonObject().toJson
 
@@ -85,7 +90,9 @@ class JsonSchemaGenerator() {
         s.branches.foreach {
           case (_, tpe) => generateSchema(tpe, defs)
         }
-        JsonObject("anyOf" -> Json.fromValues(s.branches.map(_._2.id).map(refOf).map(_.toJson))).toJson
+        JsonObject(
+          "anyOf" -> Json.fromValues(s.branches.map(_._2.id).map(refOf).map(_.toJson))
+        ).toJson
 
       case ConfigMetaType.TBasic(tpe) =>
         tpe match {
