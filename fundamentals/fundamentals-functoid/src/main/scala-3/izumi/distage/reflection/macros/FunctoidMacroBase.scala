@@ -117,6 +117,7 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
               name,
               Left(tpeTree),
               Some(valDef.symbol).filterNot(_.isNoSymbol),
+              Left(tpeTree),
             )
         }
       }
@@ -137,7 +138,7 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
           val args = o.init
           args.iterator.zipWithIndex.map {
             (tpe, idx) =>
-              paramsMacro.makeParam(s"arg_$idx", Right(tpe), None)
+              paramsMacro.makeParam(s"arg_$idx", Right(tpe), None, Right(tpe))
           }.toList
       }
     }
