@@ -1,10 +1,10 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding}
-import izumi.distage.model.definition.{Binding, Identifier, ImplDef, ModuleBase}
+import izumi.distage.model.definition.{Binding, BindingOrigin, Identifier, ImplDef, ModuleBase}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.*
-import izumi.distage.model.reflection.DIKey.{SetElementKey}
+import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.planning.AutoSetHook.InclusionPredicate
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 import izumi.reflect.Tag
@@ -88,7 +88,7 @@ final case class AutoSetHook[BINDING: Tag](includeOnly: InclusionPredicate, name
       elementOps
     }
 
-    val declareSet = definition ++ ModuleBase.make(Set(EmptySetBinding(setKey, Set.empty, pos.position)))
+    val declareSet = definition ++ ModuleBase.make(Set(EmptySetBinding(setKey, Set.empty, BindingOrigin(pos.position))))
     declareSet ++ ModuleBase.make(elements)
   }
 

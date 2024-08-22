@@ -1,7 +1,7 @@
 package izumi.distage.roles.bundled
 
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.roles.bundled.ConfigWriter.Options
+import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
@@ -36,25 +36,25 @@ class Help[F[_]](
     val baseDoc =
       s"""izumi/distage role application launcher
          |
-         |  General commandline format:
+         |General commandline format:
          |
-         |    launcher [launcher options] [:role-name [role options] -- <role-args>]""".stripMargin
+         |  * launcher [launcher options] [:role-name [role options] -- <role-args>]""".stripMargin
 
     val notes =
-      s"""
-         |  Notes:
+      s"""Notes:
          |
-         |    - Config file option (-c) is also appliable to every role individually
+         |  * Config file option (-c) is also appliable to every role individually
          |
-         |  Examples:
+         |  * Example:
          |
-         |    launcher -c myconfig.json :help :myrole -c roleconfig.json
+         |    launcher -c global-config.json :help :my-role -c my-role-config.json
+         |    launcher -c global-config.json :help :my-role -c my-role-config.json -- my-role-arg :role2
          |
          |Available functionality choices:
          |$activations""".stripMargin
 
     val help = ParserSchemaFormatter.makeDocs(
-      ParserSchema(GlobalArgsSchema(Options, Some(baseDoc), Some(notes)), descriptors.toIndexedSeq.sortBy(_.id))
+      ParserSchema(GlobalArgsSchema(RoleAppMain.Options, Some(baseDoc), Some(notes)), descriptors.toIndexedSeq.sortBy(_.id))
     )
 
     println(help)
