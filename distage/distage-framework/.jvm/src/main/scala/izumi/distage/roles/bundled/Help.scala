@@ -36,19 +36,19 @@ class Help[F[_]](
     val baseDoc =
       s"""izumi/distage role application launcher
          |
-         |  General commandline format:
+         |General commandline format:
          |
-         |    launcher [launcher options] [:role-name [role options] -- <role-args>]""".stripMargin
+         |  * launcher [launcher options] [:role-name [role options] -- <role-args>]""".stripMargin
 
     val notes =
-      s"""
-         |  Notes:
+      s"""Notes:
          |
-         |    - Config file option (-c) is also appliable to every role individually
+         |  * Config file option (-c) is also appliable to every role individually
          |
-         |  Examples:
+         |  * Example:
          |
-         |    launcher -c myconfig.json :help :myrole -c roleconfig.json
+         |    launcher -c global-config.json :help :my-role -c my-role-config.json
+         |    launcher -c global-config.json :help :my-role -c my-role-config.json -- my-role-arg :role2
          |
          |Available functionality choices:
          |$activations""".stripMargin
