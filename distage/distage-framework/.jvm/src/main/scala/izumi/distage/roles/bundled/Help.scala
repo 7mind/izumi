@@ -1,7 +1,7 @@
 package izumi.distage.roles.bundled
 
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.roles.bundled.ConfigWriter.Options
+import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
@@ -54,7 +54,7 @@ class Help[F[_]](
          |$activations""".stripMargin
 
     val help = ParserSchemaFormatter.makeDocs(
-      ParserSchema(GlobalArgsSchema(Options, Some(baseDoc), Some(notes)), descriptors.toIndexedSeq.sortBy(_.id))
+      ParserSchema(GlobalArgsSchema(RoleAppMain.Options, Some(baseDoc), Some(notes)), descriptors.toIndexedSeq.sortBy(_.id))
     )
 
     println(help)
