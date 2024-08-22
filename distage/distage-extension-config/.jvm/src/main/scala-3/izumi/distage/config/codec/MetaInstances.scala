@@ -15,6 +15,12 @@ object MetaInstances {
   // magnolia on scala3 abuses inlines and requires high inlines limit (e.g. -Xmax-inlines:1024).
   // so we had to re-implement derivation manually and copy-paste the type id logic from Magnolia
   object configReaderDerivation {
+    transparent inline def summonDIConfigMeta[A]: DIConfigMeta[A] =
+      summonFrom {
+        case reader: DIConfigMeta[A] => reader
+        case given Mirror.Of[A] => derived[A]
+      }
+
     transparent inline def derived[A](using m: Mirror.Of[A]): DIConfigMeta[A] = {
       inline m match {
         case given Mirror.ProductOf[A] => derivedProduct
@@ -52,7 +58,7 @@ object MetaInstances {
       }
     }
 
-    inline def readTuple[T <: Tuple, N <: Int]: List[DIConfigMeta[Any]] =
+    transparent inline def readTuple[T <: Tuple, N <: Int]: List[DIConfigMeta[Any]] =
       inline erasedValue[T] match {
         case _: (h *: t) =>
           val reader = summonDIConfigMeta[h]
@@ -61,12 +67,6 @@ object MetaInstances {
 
         case _: EmptyTuple =>
           Nil
-      }
-
-    inline def summonDIConfigMeta[A]: DIConfigMeta[A] =
-      summonFrom {
-        case reader: DIConfigMeta[A] => reader
-        case given Mirror.Of[A] => derived[A]
       }
 
     /** Override pureconfig's default `type` field type discriminator for sealed traits.
