@@ -86,6 +86,39 @@ object ReflectionUtil {
     }
   }
 
+  def findSymbolAnnoString(
+    using qctx: Quotes
+  )(sym: qctx.reflect.Symbol,
+    annotationSym: qctx.reflect.Symbol,
+  ): Option[String] = {
+    sym.getAnnotation(annotationSym).flatMap(extractStringValue(_, annotationSym.name))
+  }
+
+  def findTypeAnnoString(
+    using qctx: Quotes
+  )(tpe: qctx.reflect.TypeRepr,
+    annotationSym: qctx.reflect.Symbol,
+  ): Option[String] = {
+    findTypeReprAnno(tpe, tpe.typeSymbol).orElse(tpe.typeSymbol.getAnnotation(annotationSym)).flatMap(extractStringValue(_, annotationSym.name))
+  }
+
+  private def extractStringValue(
+    using qctx: Quotes
+  )(term: qctx.reflect.Term,
+    name: String,
+  ) = {
+    import qctx.reflect.*
+
+    term match {
+      case aterm @ Apply(Select(New(_), _), c :: _) =>
+        c.asExprOf[String].value.orElse {
+          report.errorAndAbort(s"$name annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
+        }
+      case aterm =>
+        report.errorAndAbort(s"$name annotation expects one literal String argument but got malformed tree ${aterm.show} ($aterm)")
+    }
+  }
+
   private def findSymbolAnno(
     using qctx: Quotes
   )(sym: qctx.reflect.Symbol,

@@ -130,7 +130,7 @@ object MetaInstances {
 
     transparent inline def fieldAnnos[T]: List[(String, String)] = ${ fieldAnnosImpl[T] }
 
-    def fieldAnnosImpl[T: Type](using Quotes): Expr[List[(String, String)]] = {
+    def fieldAnnosImpl[T: Type](using qctx: Quotes): Expr[List[(String, String)]] = {
       import quotes.reflect.*
 
       val tpe = TypeRepr.of[T]
@@ -139,16 +139,9 @@ object MetaInstances {
 
       val fieldNames = caseClassFields.flatMap {
         f =>
-          val out = ReflectionUtil.readTypeOrSymbolDIAnnotation(idAnnotationSym)("doc-extractor", Some(f), Right(f.owner.typeRef.memberType(f))) {
-            case aterm @ Apply(Select(New(_), _), c :: _) =>
-              c.asExprOf[String].value.orElse {
-                report.errorAndAbort(s"ConfigDoc.Id annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
-              }
-            case aterm =>
-              report.errorAndAbort(s"ConfigDoc annotation expects one literal String argument but got malformed tree ${aterm.show} ($aterm)")
-          }
-          out.map(doc => f.name -> doc)
-
+          ReflectionUtil
+            .findSymbolAnnoString(f, idAnnotationSym)
+            .map(doc => f.name -> doc)
       }
 
       Expr.ofList(fieldNames.map(Expr.apply))
@@ -160,17 +153,7 @@ object MetaInstances {
       val idAnnotationSym: Symbol = TypeRepr.of[ConfigDoc].typeSymbol
       val tpe = TypeRepr.of[T]
 
-      val out = ReflectionUtil
-        .readTypeOrSymbolDIAnnotation(idAnnotationSym)("doc-extractor", Some(tpe.typeSymbol), Right(tpe)) {
-          case aterm @ Apply(Select(New(_), _), c :: _) =>
-            c.asExprOf[String].value.orElse {
-              report.errorAndAbort(s"ConfigDoc.Id annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
-            }
-          case aterm =>
-            report.errorAndAbort(s"ConfigDoc annotation expects one literal String argument but got malformed tree ${aterm.show} ($aterm)")
-        }
-
-      Expr(out)
+      Expr(ReflectionUtil.findTypeAnnoString(tpe, idAnnotationSym))
     }
 
     private def typeIdImpl[T: Type](using Quotes): Expr[ConfigMetaTypeId] = {
