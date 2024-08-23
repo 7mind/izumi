@@ -174,7 +174,12 @@ open class ContainerResource[F[_], Tag](
                   F.fail(DockerFailureException(s"Unexpected condition: $container terminated with failure: $failure", DockerFailureCause.Terminated(state)))
 
                 case impossible: GoodHealthcheck =>
-                  F.fail(DockerFailureException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container", DockerFailureCause.Bug))
+                  F.fail(
+                    DockerFailureException(
+                      s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container",
+                      DockerFailureCause.Bug,
+                    )
+                  )
               }
             }
 
@@ -184,7 +189,11 @@ open class ContainerResource[F[_], Tag](
   }
 
   private def lostDependencies(inspection: InspectContainerResponse): Boolean = {
-    Option(inspection.getConfig.getLabels.get(DockerConst.Labels.dependencies)).filterNot(_.isEmpty).map(_.split(';')) match {
+    Option(inspection.getConfig)
+      .map(_.getLabels)
+      .map(_.get(DockerConst.Labels.dependencies))
+      .filterNot(_.isEmpty)
+      .map(_.split(';')) match {
       case Some(value) =>
         !value.forall {
           id =>
@@ -374,7 +383,10 @@ open class ContainerResource[F[_], Tag](
 
         maybeMappedPorts match {
           case Left(value) =>
-            throw DockerFailureException(s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!", DockerFailureCause.MissingPorts(value))
+            throw DockerFailureException(
+              s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!",
+              DockerFailureCause.MissingPorts(value),
+            )
 
           case Right(mappedPorts) =>
             val container = DockerContainer[Tag](

@@ -1,8 +1,9 @@
 package izumi.distage.docker.model
 
 import izumi.distage.docker.model.Docker.UnmappedPorts
+import izumi.distage.model.exceptions.runtime.NonCriticalIntegrationFailure
 
-sealed abstract class DockerException(message: String, cause: Throwable) extends RuntimeException(message, cause) {
+sealed abstract class DockerException(message: String, cause: Throwable) extends RuntimeException(message, cause) with NonCriticalIntegrationFailure {
   def this(message: String) = this(message, null)
 }
 
