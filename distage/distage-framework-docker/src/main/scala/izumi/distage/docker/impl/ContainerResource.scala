@@ -129,7 +129,7 @@ open class ContainerResource[F[_], Tag](
               Right(out)
             }
 
-          case Right(HealthCheckResult.Terminated(failure)) =>
+          case Right(HealthCheckResult.Terminated(failure, _)) =>
             F.fail(new RuntimeException(s"$container terminated with failure: $failure"))
 
           case Right(last) =>
@@ -170,7 +170,7 @@ open class ContainerResource[F[_], Tag](
                   }
                   F.fail(new TimeoutException(sb.toString()))
 
-                case HealthCheckResult.Terminated(failure) =>
+                case HealthCheckResult.Terminated(failure, _) =>
                   F.fail(new RuntimeException(s"Unexpected condition: $container terminated with failure: $failure"))
 
                 case impossible: GoodHealthcheck =>
