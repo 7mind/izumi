@@ -19,7 +19,6 @@ object AppFailureHandler {
 
   object PrintingHandler extends AppFailureHandler {
     override def onError(t: Throwable): Nothing = {
-      report(t)
       rethrow(t)
     }
   }
