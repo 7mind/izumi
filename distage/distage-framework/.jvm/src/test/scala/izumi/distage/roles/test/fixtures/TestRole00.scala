@@ -169,7 +169,7 @@ class FailingRole01[F[_]: QuasiIO](
 
 object FailingRole01 extends RoleDescriptor {
   final val expectedError =
-    "Instance is not available in the object graph: {type.izumi.distage.roles.launcher.AppResourceProvider::FinalizerFilters"
+    "Instance is not available in the object graph: {type.izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters[cats.effect.IO[+_]]}"
   override final val id = "failingrole01"
 }
 

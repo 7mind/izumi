@@ -18,7 +18,7 @@ class ExitLatchEntrypointBase extends RoleAppMain.LauncherBIO[zio.IO] {
   }
 
   override protected def earlyFailureHandler(args: RoleAppMain.ArgV): AppFailureHandler = {
-    AppFailureHandler.PrintingHandler
+    AppFailureHandler.NullHandler
   }
 }
 

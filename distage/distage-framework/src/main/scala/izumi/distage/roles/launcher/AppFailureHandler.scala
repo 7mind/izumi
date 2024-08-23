@@ -17,12 +17,6 @@ object AppFailureHandler {
     }
   }
 
-  object PrintingHandler extends AppFailureHandler {
-    override def onError(t: Throwable): Nothing = {
-      rethrow(t)
-    }
-  }
-
   object NullHandler extends AppFailureHandler {
     override def onError(t: Throwable): Unit = {
       rethrow(t)
