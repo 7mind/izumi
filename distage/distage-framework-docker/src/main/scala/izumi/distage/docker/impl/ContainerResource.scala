@@ -7,7 +7,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.G
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.docker.impl.ContainerResource.PortDecl
 import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
-import izumi.distage.docker.model.Docker
+import izumi.distage.docker.model.{Docker, DockerFailureCause, DockerFailureException, DockerTimeoutException}
 import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
@@ -129,8 +129,8 @@ open class ContainerResource[F[_], Tag](
               Right(out)
             }
 
-          case Right(HealthCheckResult.Terminated(failure, _)) =>
-            F.fail(new RuntimeException(s"$container terminated with failure: $failure"))
+          case Right(HealthCheckResult.Terminated(failure, state)) =>
+            F.fail(DockerFailureException(s"$container terminated with failure: $failure", DockerFailureCause.Terminated(state)))
 
           case Right(last) =>
             val maxAttempts = config.healthCheckMaxAttempts
@@ -141,7 +141,7 @@ open class ContainerResource[F[_], Tag](
             } else {
               last match {
                 case HealthCheckResult.Failed(failure) =>
-                  F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts for $container: $failure"))
+                  F.fail(DockerTimeoutException(s"Health checks failed after $maxAttempts attempts for $container: $failure"))
 
                 case HealthCheckResult.UnavailableWithMeta(unavailablePorts, unverifiedPorts) =>
                   val sb = new StringBuilder()
@@ -170,16 +170,16 @@ open class ContainerResource[F[_], Tag](
                   }
                   F.fail(new TimeoutException(sb.toString()))
 
-                case HealthCheckResult.Terminated(failure, _) =>
-                  F.fail(new RuntimeException(s"Unexpected condition: $container terminated with failure: $failure"))
+                case HealthCheckResult.Terminated(failure, state) =>
+                  F.fail(DockerFailureException(s"Unexpected condition: $container terminated with failure: $failure", DockerFailureCause.Terminated(state)))
 
                 case impossible: GoodHealthcheck =>
-                  F.fail(new TimeoutException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container"))
+                  F.fail(DockerFailureException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container", DockerFailureCause.Bug))
               }
             }
 
           case Left(t) =>
-            F.fail(new RuntimeException(s"$container failed due to exception: ${t.stacktraceString}", t))
+            F.fail(DockerFailureException(s"$container failed due to exception: ${t.stacktraceString}", DockerFailureCause.Throwed(t), t))
         }
   }
 
@@ -374,7 +374,7 @@ open class ContainerResource[F[_], Tag](
 
         maybeMappedPorts match {
           case Left(value) =>
-            throw new RuntimeException(s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!")
+            throw DockerFailureException(s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!", DockerFailureCause.MissingPorts(value))
 
           case Right(mappedPorts) =>
             val container = DockerContainer[Tag](
