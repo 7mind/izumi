@@ -926,7 +926,7 @@ object Lifecycle extends LifecycleInstances {
   // Workaround for the craziest, strangest bincompat failure on Scala 3:
   // [error] Test suite izumi.distage.impl.OptionalDependencyTest failed with java.lang.NoClassDefFoundError: zio/ZIO
   // at izumi.distage.impl.OptionalDependencyTest.f$proxy5$1(OptionalDependencyTest.scala:73
-  // appeared in update from zio-2.1.5 to zio-2.1.7 https://github.com/7mind/izumi/pull/2159/
+  // appeared in update from zio-2.1.5 to zio-2.1.8 https://github.com/7mind/izumi/pull/2159/
   // only relevant change was ZIOCompanionVersionSpecific became a 'transparent trait' from regular trait
   // BUT using zio.Exit.Success, which is not a trait at all, didn't fix the issue.
   // no idea wtf happened, why it broke and why _method internals_ are breaking bincompat/optionality here
