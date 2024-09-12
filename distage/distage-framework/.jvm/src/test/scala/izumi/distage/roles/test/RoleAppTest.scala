@@ -385,7 +385,52 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "prioritize configs as expected" in {
+
       TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
+
+      import ConfigTestRole.configTestConfig
+
+      assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+      assert(configTestConfig.commonReference == 2, "common-reference")
+      assert(configTestConfig.common == 3, "common")
+      assert(configTestConfig.applicationReference == 4, "application-reference")
+      assert(configTestConfig.application == 5, "application")
+      assert(configTestConfig.roleReference == 6, "role-reference")
+      assert(configTestConfig.role == 7, "role")
+
+      val roleOverrideConf = getClass.getResource("/configtest-role-override.conf").getPath
+
+      TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+      assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+      assert(configTestConfig.commonReference == 9, "common-reference")
+      assert(configTestConfig.common == 3, "common")
+      assert(configTestConfig.applicationReference == 9, "application-reference")
+      assert(configTestConfig.application == 5, "application")
+      assert(configTestConfig.roleReference == 9, "role-reference")
+      assert(configTestConfig.role == 5, "role")
+
+      val commonOverrideConf = getClass.getResource("/configtest-common-override.conf").getPath
+
+      TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
+
+      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+      assert(configTestConfig.commonReference == 8, "common-reference")
+      assert(configTestConfig.common == 8, "common")
+      assert(configTestConfig.applicationReference == 8, "application-reference")
+      assert(configTestConfig.application == 8, "application")
+      assert(configTestConfig.roleReference == 6, "role-reference")
+      assert(configTestConfig.role == 7, "role")
+
+      TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+      assert(configTestConfig.commonReference == 9, "common-reference")
+      assert(configTestConfig.common == 8, "common")
+      assert(configTestConfig.applicationReference == 9, "application-reference")
+      assert(configTestConfig.application == 8, "application")
+      assert(configTestConfig.roleReference == 9, "role-reference")
+      assert(configTestConfig.role == 8, "role")
     }
 
     "roles do not have access to components from MainAppModule" in {

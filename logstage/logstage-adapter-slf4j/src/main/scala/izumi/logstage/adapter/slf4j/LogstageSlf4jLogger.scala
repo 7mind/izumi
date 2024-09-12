@@ -1,7 +1,7 @@
 package izumi.logstage.adapter.slf4j
 
-import izumi.fundamentals.platform.language.SourceFilePosition
-import izumi.logstage.api.Log._
+import izumi.fundamentals.platform.language.{CodePosition, SourceFilePosition}
+import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger.LogRouter
 import org.slf4j.{Logger, Marker}
 
@@ -32,10 +32,11 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
     val ctx = caller match {
       case Some(frame) =>
-        StaticExtendedContext(id, SourceFilePosition(frame.getFileName, frame.getLineNumber))
+        val fname = Option(frame.getFileName).getOrElse("?")
+        StaticExtendedContext(CodePosition(SourceFilePosition(fname, frame.getLineNumber), name))
 
       case None =>
-        StaticExtendedContext(id, SourceFilePosition.unknown)
+        StaticExtendedContext(CodePosition(SourceFilePosition.unknown, name))
     }
 
     val customContext = marker match {

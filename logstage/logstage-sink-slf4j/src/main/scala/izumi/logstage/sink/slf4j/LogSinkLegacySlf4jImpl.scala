@@ -48,14 +48,14 @@ class LogSinkLegacySlf4jImpl(
   private def log(logger: (Marker, String, Throwable) => Unit, message: Log.Entry): Unit = {
     val throwable = message.firstThrowable
     val asString = policy.render(message)
-    val markers = markerFactory.getMarker(s"${message.context.static.position.file}:${message.context.static.position.line}")
+    val markers = markerFactory.getMarker(s"${message.context.static.pos.position.file}:${message.context.static.pos.position.line}")
     logger(markers, asString, throwable.orNull)
   }
 
   private val loggers = new ConcurrentHashMap[String, slf4j.Logger]()
 
   private def getSlf4jLogger(e: Log.Entry): slf4j.Logger = {
-    val loggerId = e.context.static.id.id
+    val loggerId = e.context.static.pos.applicationPointId
     loggers.computeIfAbsent(loggerId, (id: String) => slf4j.LoggerFactory.getLogger(id))
   }
 }

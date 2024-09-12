@@ -160,7 +160,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
   def makeFunctoid[R: Type](params: List[ParamRepr], argsLambda: Expr[Seq[Any] => R], providerType: Expr[ProviderType]): Expr[Functoid[R]] = {
 
     val paramDefs = params.map {
-      case ParamRepr(n, s, t) => paramsMacro.makeParam(n, Right(t), s)
+      case ParamRepr(n, s, t) => paramsMacro.makeParam(n, Right(t), s, Right(t))
     }
 
     val out = '{

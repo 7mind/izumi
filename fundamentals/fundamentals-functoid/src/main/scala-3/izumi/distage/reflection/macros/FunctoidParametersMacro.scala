@@ -15,11 +15,7 @@ final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor:
       case Left(t) => t.tpe
     }
   }
-
-  def makeParam(name: String, tpe: Either[TypeTree, TypeRepr], annotSym: Option[Symbol]): Expr[LinkedParameter] = {
-    makeParam(name, tpe, annotSym, tpe)
-  }
-
+  
   def makeParam(name: String, tpe: Either[TypeTree, TypeRepr], annotSym: Option[Symbol], annotTpe: Either[TypeTree, TypeRepr]): Expr[LinkedParameter] = {
     val identifier = idExtractor.extractId(name, annotSym, annotTpe)
 

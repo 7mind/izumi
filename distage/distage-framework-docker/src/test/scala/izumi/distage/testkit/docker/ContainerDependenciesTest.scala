@@ -6,10 +6,11 @@ import izumi.distage.docker.impl.DockerClientWrapper
 import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, DockerIntegrationCheck, RemovalReason}
 import izumi.distage.docker.model.Docker.ContainerId
 import izumi.distage.docker.modules.DockerSupportModule
-import izumi.distage.model.exceptions.runtime.ProvisioningIntegrationException
 import izumi.fundamentals.platform.functional.Identity
 import logstage.IzLogger
 import org.scalatest.wordspec.AnyWordSpec
+
+import scala.util.Try
 
 final class ContainerDependenciesTest extends AnyWordSpec {
   "distage-docker should re-create containers with failed dependencies, https://github.com/7mind/izumi/issues/1366" in {
@@ -20,14 +21,13 @@ final class ContainerDependenciesTest extends AnyWordSpec {
       make[IzLogger].fromValue(IzLogger())
     }
 
-    try {
-      Injector()
-        .produceGet[DockerIntegrationCheck[Identity]](module)
-        .use(_ => ())
-    } catch {
-      case ProvisioningIntegrationException(_) =>
-        assume(false)
-    }
+    assert(
+      Try(
+        Injector()
+          .produceGet[DockerIntegrationCheck[Identity]](module)
+          .use(_ => ())
+      ).isSuccess
+    )
 
     def runContainers(): (ContainerId, ContainerId) = {
       Injector()

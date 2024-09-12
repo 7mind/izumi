@@ -75,7 +75,6 @@ object PlanInterpreter {
         s"""Interpreter stopped; out of $ccTotal operations: $ccFailed failed, $ccDone succeeded, $ccPending ignored
            |$repr
            |""".stripMargin,
-        null,
       ).addAllSuppressed(allExceptions)
     }
   }

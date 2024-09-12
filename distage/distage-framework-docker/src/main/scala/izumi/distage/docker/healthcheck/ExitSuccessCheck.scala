@@ -13,15 +13,15 @@ final class ExitSuccessCheck(exitCode: Int) extends ContainerHealthCheck {
         logger.info(s"$container successfully exited, health check passed.")
         HealthCheckResult.Passed
 
-      case ContainerState.Exited(status) =>
-        HealthCheckResult.Terminated(s"Container terminated with unexpected code. Code=$status, expected=$exitCode")
-
       case ContainerState.Running =>
         logger.info(s"$container is still running, expected container to exit, health check failed.")
         HealthCheckResult.Failed("Container is still running, expected container to exit")
 
+      case ContainerState.Exited(status) =>
+        HealthCheckResult.Terminated(s"Container terminated with unexpected code. Code=$status, expected=$exitCode", state)
+
       case ContainerState.NotFound =>
-        HealthCheckResult.Terminated("Container not found, expected container to exit with status code 0.")
+        HealthCheckResult.Terminated("Container not found, expected container to exit with status code 0.", state)
 
     }
   }

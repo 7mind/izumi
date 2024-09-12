@@ -1,7 +1,7 @@
 package izumi.logstage.api
 
 import scala.annotation.nowarn
-import izumi.fundamentals.platform.language.{IzScala, SourceFilePosition}
+import izumi.fundamentals.platform.language.{CodePosition, IzScala, SourceFilePosition}
 import izumi.logstage.api.Log.*
 import izumi.logstage.api.rendering.{LogstageCodec, RenderingOptions, StringRenderingPolicy}
 import org.scalatest.wordspec.AnyWordSpec
@@ -186,7 +186,7 @@ class BasicLoggingTest extends AnyWordSpec {
       Entry(
         m,
         Context(
-          StaticExtendedContext(LoggerId("test"), SourceFilePosition("test.scala", 0)),
+          StaticExtendedContext(CodePosition(SourceFilePosition("test.scala", 0), "test")),
           DynamicContext(Level.Warn, ThreadData("test", 0), 0),
           CustomContext(Seq.empty),
         ),
