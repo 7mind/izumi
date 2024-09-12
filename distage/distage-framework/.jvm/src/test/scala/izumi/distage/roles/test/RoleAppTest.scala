@@ -477,21 +477,15 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         ()
       }
 
-      withProperties(
-        DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false",
-        DebugProperties.`distage.roles.always-include-reference-common-configs`.name -> "false",
-      ) {
-        TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+      TestEntrypoint.main(Array("-c", commonOverrideConf, "-nc", "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-        assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-        assert(configTestConfig.commonReference == 89, "common-reference")
-        assert(configTestConfig.common == 8, "common")
-        assert(configTestConfig.applicationReference == 9, "application-reference")
-        assert(configTestConfig.application == 8, "application")
-        assert(configTestConfig.roleReference == 9, "role-reference")
-        assert(configTestConfig.role == 8, "role")
-        ()
-      }
+      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+      assert(configTestConfig.commonReference == 89, "common-reference")
+      assert(configTestConfig.common == 8, "common")
+      assert(configTestConfig.applicationReference == 9, "application-reference")
+      assert(configTestConfig.application == 8, "application")
+      assert(configTestConfig.roleReference == 9, "role-reference")
+      assert(configTestConfig.role == 8, "role")
     }
 
     "roles do not have access to components from MainAppModule" in {
