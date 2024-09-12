@@ -25,7 +25,10 @@ object ConfigArgsProvider {
     parameters: RawAppArgs,
     rolesInfo: RolesInfo,
     alwaysIncludeReferenceRoleConfigs: Boolean @Id("distage.roles.always-include-reference-role-configs"),
+    alwaysIncludeReferenceCommonConfigs: Boolean @Id("distage.roles.always-include-reference-common-configs"),
+    ignoreAllReferenceConfigs: Boolean @Id("distage.roles.ignore-all-reference-configs"),
   ) extends ConfigArgsProvider {
+
     override def args(): ConfigLoader.Args = {
       import scala.collection.compat.*
 
@@ -45,7 +48,11 @@ object ConfigArgsProvider {
       }
       val maybeGlobalConfig = parameters.globalParameters.findValue(RoleAppMain.Options.configParam).asFile
 
-      ConfigLoader.Args(maybeGlobalConfig, roleConfigs, alwaysIncludeReferenceRoleConfigs)
+      val ignoreAll = ignoreAllReferenceConfigs || parameters.globalParameters.hasFlag(RoleAppMain.Options.ignoreAllReferenceConfigs)
+      val includeRole = !ignoreAll && alwaysIncludeReferenceRoleConfigs
+      val includeCommon = !ignoreAll && alwaysIncludeReferenceCommonConfigs
+
+      ConfigLoader.Args(maybeGlobalConfig, roleConfigs, includeRole, includeCommon, ignoreAll)
     }
   }
 }

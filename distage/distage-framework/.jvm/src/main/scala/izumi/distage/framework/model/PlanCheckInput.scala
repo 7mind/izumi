@@ -22,7 +22,7 @@ final case class PlanCheckInput[F[_]](
   bsPlugins: LoadedPlugins,
 )
 object PlanCheckInput {
-  private val emptyConfigArgs = ConfigArgsProvider.const(ConfigLoader.Args(None, List.empty, alwaysIncludeReferenceRoleConfigs = true))
+  private val emptyConfigArgs = ConfigArgsProvider.const(ConfigLoader.Args(None, List.empty, true, true, false))
 
   def apply[F[_]](
     module: ModuleBase,

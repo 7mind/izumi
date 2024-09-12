@@ -59,6 +59,8 @@ object ConfigLoader {
     global: Option[File],
     configs: List[RoleConfig],
     alwaysIncludeReferenceRoleConfigs: Boolean,
+    alwaysIncludeReferenceCommonConfigs: Boolean,
+    ignoreAllReferenceConfigs: Boolean,
   )
   final class ConfigLoaderException(message: String, val failures: List[Throwable]) extends DIException(message)
 
@@ -75,7 +77,7 @@ object ConfigLoader {
 
       val maybeLoadedRoleConfigs = configArgs.configs.map {
         rc =>
-          val defaults = configLocation.forRole(rc.role).map(loadConfigSource)
+          val defaults = if (!configArgs.ignoreAllReferenceConfigs) configLocation.forRole(rc.role).map(loadConfigSource) else Nil
           val loaded = rc.configSource match {
             case GenericConfigSource.ConfigFile(file) =>
               val provided = Seq(loadConfigSource(ConfigSource.File(file)))
@@ -90,9 +92,13 @@ object ConfigLoader {
           (rc, loaded)
       }
 
-      val commonExplicitConfigs = configArgs.global.map(ConfigSource.File.apply).toList
-      val commonReferenceConfigs = configLocation.commonReferenceConfigs.toList
-      val commonConfigs = commonExplicitConfigs ++ commonReferenceConfigs
+      val commonExplicitConfigs = configArgs.global.map(ConfigSource.File.apply)
+      val commonReferenceConfigs = if (!configArgs.ignoreAllReferenceConfigs) configLocation.commonReferenceConfigs.toList else Nil
+      val commonConfigs = if (configArgs.alwaysIncludeReferenceCommonConfigs) {
+        commonExplicitConfigs.toList ++ commonReferenceConfigs
+      } else {
+        commonExplicitConfigs.fold(commonReferenceConfigs)(List(_))
+      }
       val loaded = for {
         loadedCommonConfigs <- commonConfigs.map(loadConfigSource).map(_.toEither).biSequenceScalar
         loadedRoleConfigs <- maybeLoadedRoleConfigs.map {

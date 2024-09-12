@@ -11,7 +11,6 @@ class RoleAppBootConfigModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
   make[ConfigMerger].from[ConfigMerger.ConfigMergerImpl]
   make[ConfigLocationProvider].from(ConfigLocationProvider.Default)
   make[ConfigArgsProvider].from[ConfigArgsProvider.Default]
-  make[Boolean].named("distage.roles.always-include-reference-role-configs").fromValue(false)
   make[AppConfig].from {
     (configLoader: ConfigLoader) =>
       configLoader.loadConfig("application startup")

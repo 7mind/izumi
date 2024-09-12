@@ -45,6 +45,8 @@ object BootstrapFactory {
           None,
           List(RoleConfig(configBaseName, active = true, GenericConfigSource.ConfigDefault)),
           alwaysIncludeReferenceRoleConfigs = true, // we expect no user-provided role configs in tests
+          alwaysIncludeReferenceCommonConfigs = true,
+          ignoreAllReferenceConfigs = false,
         )
       )
       val merger = new ConfigMergerImpl(logger)
