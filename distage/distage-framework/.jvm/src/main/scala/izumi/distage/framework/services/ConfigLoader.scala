@@ -92,7 +92,7 @@ object ConfigLoader {
 
       val commonExplicitConfigs = configArgs.global.map(ConfigSource.File.apply).toList
       val commonReferenceConfigs = configLocation.commonReferenceConfigs.toList
-      val commonConfigs = commonReferenceConfigs ++ commonExplicitConfigs
+      val commonConfigs = commonExplicitConfigs ++ commonReferenceConfigs
       val loaded = for {
         loadedCommonConfigs <- commonConfigs.map(loadConfigSource).map(_.toEither).biSequenceScalar
         loadedRoleConfigs <- maybeLoadedRoleConfigs.map {

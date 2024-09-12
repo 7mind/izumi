@@ -37,7 +37,7 @@ object ConfigMerger {
       sub.info(s"Config input: ${shared.size -> "shared configs"} of which ${nonEmptyShared.size -> "non empty shared configs"}")
       sub.info(s"Config input: ${roleConfigs.size -> "role configs"}  of which ${nonEmptyRole.size -> "non empty role configs"}")
       sub.info(s"Output config has ${folded.entrySet().size() -> "root nodes"}")
-      sub.info(s"The following configs were used (ascending priority): ${repr.niceList() -> "used configs"}")
+      sub.info(s"The following configs were used (highest priority first): ${repr.niceList() -> "used configs"}")
 
       val configRepr = (shared.map(c => (c.clue, true)) ++ role.flatMap(r => r.loaded.map(c => (s"${c.clue}, role=${r.roleConfig.role}", filter(r)))))
         .map(c => s"${c._1}, active = ${c._2}")
