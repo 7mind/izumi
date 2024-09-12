@@ -57,6 +57,7 @@ jobs:
             5e21669e-48b4-49ce-82f0-b193010a2ded > TOKEN_CODECOV
       - uses: codecov/codecov-action@v4
         if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
+        continue-on-error: true
         with:
           token: ${{ env.TOKEN_CODECOV }}
           verbose: true # optional (default = false)
