@@ -308,8 +308,9 @@ object Docker {
 
   sealed trait ContainerState
   object ContainerState {
+    sealed trait ContainerFailure extends ContainerState
     case object Running extends ContainerState
-    case object NotFound extends ContainerState
-    final case class Exited(status: Long) extends ContainerState
+    case object NotFound extends ContainerFailure
+    final case class Exited(status: Long) extends ContainerFailure
   }
 }
