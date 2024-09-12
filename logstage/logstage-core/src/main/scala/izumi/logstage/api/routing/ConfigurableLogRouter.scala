@@ -1,10 +1,12 @@
 package izumi.logstage.api.routing
 
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.console.TrivialLogger.Config
+import izumi.fundamentals.platform.language.CodePosition
 import izumi.logstage.DebugProperties
 import izumi.logstage.api.Log
-import izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPath, LoggerPathConfig, LoggerPathForLines, LoggerPathRule}
+import izumi.logstage.api.config.*
 import izumi.logstage.api.logger.{LogQueue, LogRouter, LogSink}
 import izumi.logstage.sink.{ConsoleSink, FallbackConsoleSink}
 
@@ -15,7 +17,6 @@ class ConfigurableLogRouter(
   logConfigService: LogConfigService,
   buffer: LogQueue,
 ) extends LogRouter {
-  private final val fallback = TrivialLogger.make[FallbackConsoleSink](DebugProperties.`izumi.logstage.routing.log-failures`.name, Config(forceLog = true))
 
   override def log(entry: Log.Entry): Unit = {
     val sinks = logConfigService
@@ -26,56 +27,72 @@ class ConfigurableLogRouter(
       sink =>
         try {
           buffer.append(entry, sink)
-//          sink.flush(entry)
         } catch {
           case NonFatal(e) =>
-            fallback.log(s"Log sink $sink failed", e)
+            ConfigurableLogRouter.fallback.log(s"Log sink $sink failed", e)
         }
     }
   }
 
   override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = {
-    logConfigService.threshold(id) <= messageLevel
+    logConfigService.acceptable(id, messageLevel)
+  }
+
+  override def toString: String = s"${super.toString} with `$buffer` queue and configured with $logConfigService"
+
+  override def acceptable(position: CodePosition, logLevel: Log.Level): Boolean = {
+    logConfigService.acceptable(position, logLevel)
   }
 }
 
 object ConfigurableLogRouter {
+  private final val fallback: TrivialLogger = TrivialLogger.make[FallbackConsoleSink](DebugProperties.`izumi.logstage.routing.log-failures`.name, Config(forceLog = true))
+
   def apply(
-    threshold: Log.Level = Log.Level.Trace,
+    rootThreshold: Log.Level = Log.Level.Trace,
     sink: LogSink = ConsoleSink.ColoredConsoleSink,
-    levels: Map[String, Log.Level] = Map.empty,
+    levels: Map[String, LoggingTarget] = Map.empty,
     buffer: LogQueue = LogQueue.Immediate,
   ): ConfigurableLogRouter = {
-    ConfigurableLogRouter(threshold, Seq(sink), levels, buffer)
+    ConfigurableLogRouter(rootThreshold, Seq(sink), levels, buffer)
   }
 
-  def apply(threshold: Log.Level, sinks: Seq[LogSink], buffer: LogQueue): ConfigurableLogRouter = {
-    ConfigurableLogRouter(threshold, sinks, Map.empty[String, Log.Level], buffer)
+  def apply(rootThreshold: Log.Level, sinks: Seq[LogSink], buffer: LogQueue): ConfigurableLogRouter = {
+    ConfigurableLogRouter(rootThreshold, sinks, Map.empty[String, LoggingTarget], buffer)
+  }
+
+  def apply(logConfigService: LogConfigService, buffer: LogQueue): ConfigurableLogRouter = {
+    new ConfigurableLogRouter(logConfigService, buffer)
   }
 
   @nowarn("msg=Unused import")
-  def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level], buffer: LogQueue): ConfigurableLogRouter = {
-    import scala.collection.compat._
+  def apply(rootThreshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, LoggingTarget], buffer: LogQueue): ConfigurableLogRouter = {
+    import izumi.fundamentals.collections.IzCollections.*
 
-    val rootConfig = LoggerPathRule(LoggerPathConfig(threshold), sinks)
-    val levelConfigs = levels.view.flatMap {
-      case (id, lvl) =>
-        val p = LoggerPathForLines.parse(id)
-        if (p.lines.nonEmpty) {
-          p.lines.map {
-            line =>
-              (LoggerPath(p.id, Some(line)), LoggerPathRule(LoggerPathConfig(lvl), sinks))
-          }
-        } else {
-          Seq((LoggerPath(p.id, None), LoggerPathRule(LoggerPathConfig(lvl), sinks)))
-        }
+    import scala.collection.compat.*
 
-    }.toMap
+    def toConfig(target: LoggingTarget) = {
+      target match {
+        case LoggingTarget.Level(level) => LoggerPathConfig(level, sinks)
+        case LoggingTarget.Config(config) => config
+      }
+    }
 
-    val configService = new LogConfigServiceImpl(LoggerConfig(rootConfig, levelConfigs))
+    val levelConfigs = levels.view
+      .flatMap {
+        case (id, lvl) =>
+          LoggerPath.parse(id).map(rule => (rule, lvl)).toList
+      }.toMultimapView.map {
+        case (path, levels) =>
+          LoggerRule(path, toConfig(levels.minBy(_.level)))
+      }.toList
+
+    val rootRule = LoggerRule(LoggerPath(NEList(LoggerPathElement.Wildcard), Set.empty), LoggerPathConfig(rootThreshold, sinks))
+
+    val configService = new LogConfigServiceImpl(LoggerConfig(levelConfigs, rootRule))
+    configService.validate(fallback)
 
     ConfigurableLogRouter(configService, buffer)
   }
 
-  def apply(logConfigService: LogConfigService, buffer: LogQueue): ConfigurableLogRouter = new ConfigurableLogRouter(logConfigService, buffer)
 }

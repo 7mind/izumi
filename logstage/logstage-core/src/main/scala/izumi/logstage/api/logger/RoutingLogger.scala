@@ -1,7 +1,8 @@
 package izumi.logstage.api.logger
 
-import izumi.logstage.api.Log.CustomContext
+import izumi.fundamentals.platform.language.CodePosition
 import izumi.logstage.api.Log
+import izumi.logstage.api.Log.CustomContext
 
 /** Logger that forwards entries to [[LogRouter]] */
 trait RoutingLogger extends AbstractLogger {
@@ -11,8 +12,8 @@ trait RoutingLogger extends AbstractLogger {
   def router: LogRouter
   def customContext: CustomContext
 
-  @inline override final def acceptable(loggerId: Log.LoggerId, logLevel: Log.Level): Boolean = {
-    router.acceptable(loggerId, logLevel)
+  override def acceptable(position: CodePosition, logLevel: Log.Level): Boolean = {
+    router.acceptable(position, logLevel)
   }
 
   /** Log irrespective of minimum log level */

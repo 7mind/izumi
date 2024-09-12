@@ -34,7 +34,18 @@ object LogFormat {
       val templateBuilder = new StringBuilder()
       val messageBuilder = new StringBuilder()
 
+      // here we fix representation of "malformed" strings like arg1 + arg2 + arg3.
+      // While technically it IS correct to print all the args concatenated, it makes sense to separate them
       val staticParts = entry.message.template.parts
+        .foldLeft((Option.empty[String], Seq.empty[String])) {
+          case ((last, acc), part) =>
+            if (part == "" && last.contains("")) {
+              (Some(part), acc.init ++ Seq(" ", " "))
+            } else {
+              (Some(part), acc :+ part)
+            }
+        }._2
+
       val head = staticParts.head
       templateBuilder.append(handle(head))
       messageBuilder.append(handle(head))
@@ -58,7 +69,7 @@ object LogFormat {
     }
 
     def traceThrowables(options: RenderingOptions, entry: Log.Entry): String = {
-      import izumi.fundamentals.platform.exceptions.IzThrowable._
+      import izumi.fundamentals.platform.exceptions.IzThrowable.*
 
       val throwables = entry.throwables
       if (throwables.nonEmpty) {
@@ -167,7 +178,7 @@ object LogFormat {
       if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
         s
       } else {
-        import izumi.fundamentals.platform.strings.IzString._
+        import izumi.fundamentals.platform.strings.IzString.*
         s.replace(' ', '_').camelToUnderscores
       }
     }
@@ -204,7 +215,7 @@ object LogFormat {
             }
           } catch {
             case f: Throwable =>
-              import IzThrowable._
+              import IzThrowable.*
               val message = s"[${argValue.getClass.getName}#toString failed]\n${f.stacktraceString} "
               wrapped(withColors, Console.RED, message)
           }

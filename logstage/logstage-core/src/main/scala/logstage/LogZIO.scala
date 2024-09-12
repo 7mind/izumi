@@ -1,7 +1,7 @@
 package logstage
 
 import izumi.functional.bio.{SyncSafe1, SyncSafe2}
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF}
 import izumi.logstage.api.rendering.AnyEncoded
@@ -37,12 +37,6 @@ object LogZIO {
     override final def unsafeLog(entry: Log.Entry): ZIO[LogIO3[ZIO], Nothing, Unit] =
       ZIO.serviceWithZIO(get(_).log(entry))
 
-    override final def acceptable(loggerId: Log.LoggerId, logLevel: Level): ZIO[LogIO3[ZIO], Nothing, Boolean] =
-      ZIO.serviceWithZIO(get(_).acceptable(loggerId, logLevel))
-
-    override final def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Boolean] =
-      ZIO.serviceWithZIO(get(_).acceptable(logLevel))
-
     override final def createEntry(logLevel: Level, message: Log.Message)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Log.Entry] =
       ZIO.serviceWithZIO(get(_).createEntry(logLevel, message))
 
@@ -52,6 +46,9 @@ object LogZIO {
     override final def withCustomContext(context: CustomContext): LogIO2[ZIO[LogIO3[ZIO], _, _]] = {
       new LogZIOImpl(get(_).withCustomContext(context))
     }
+
+    override def acceptable(position: CodePosition, logLevel: Level): ZIO[LogIO3[ZIO], Nothing, Boolean] =
+      ZIO.serviceWithZIO(get(_).acceptable(position, logLevel))
   }
 
   def withFiberId(logger: AbstractLogger): LogIO2[IO] = {

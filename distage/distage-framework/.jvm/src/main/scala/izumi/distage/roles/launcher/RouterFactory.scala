@@ -1,20 +1,24 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.roles.launcher.LogConfigLoader.{DeclarativeLoggerConfig, LoggerFormat}
-import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig, LoggerPathRule}
+import izumi.logstage.api.config.LoggingTarget
 import izumi.logstage.api.logger.LogQueue
 import izumi.logstage.api.rendering.StringRenderingPolicy
-import izumi.logstage.api.routing.LogConfigServiceImpl
 import logstage.circe.LogstageCirceRenderingPolicy
 import logstage.{ConfigurableLogRouter, ConsoleSink}
+
+import scala.annotation.nowarn
 
 trait RouterFactory {
   def createRouter(config: DeclarativeLoggerConfig, buffer: LogQueue): ConfigurableLogRouter
 }
 
 object RouterFactory {
-  class RouterFactoryImpl extends RouterFactory {
+  class RouterFactoryConsoleSinkImpl extends RouterFactory {
+    @nowarn("msg=Unused import")
     override def createRouter(config: DeclarativeLoggerConfig, buffer: LogQueue): ConfigurableLogRouter = {
+      import scala.collection.compat.*
+
       val policy = config.format match {
         case LoggerFormat.Json =>
           new LogstageCirceRenderingPolicy()
@@ -23,16 +27,11 @@ object RouterFactory {
       }
       val sink = new ConsoleSink(policy)
       val sinks = List(sink)
-      val levelConfigs = config.levels.map {
-        case (pkg, level) =>
-          (pkg, LoggerPathRule(level, sinks))
-      }
 
-      // TODO: here we may read log configuration from config file
-      val router = new ConfigurableLogRouter(
-        new LogConfigServiceImpl(
-          LoggerConfig(LoggerPathRule(LoggerPathConfig(config.rootLevel), sinks), levelConfigs)
-        ),
+      val router = ConfigurableLogRouter(
+        config.rootLevel,
+        sinks,
+        config.levels.view.mapValues(level => LoggingTarget.Level(level)).toMap,
         buffer,
       )
 
