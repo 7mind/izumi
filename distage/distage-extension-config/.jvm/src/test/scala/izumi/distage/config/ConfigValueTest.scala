@@ -18,11 +18,10 @@ final class ConfigValueTest extends AnyWordSpec {
   }
 
   "Config fields meta" should {
-
     "properly derive config maps" in {
       getConfTag(TestConfigReaders.mapDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          assert(c.fields.toMap.apply("mymap").isInstanceOf[TMap])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("mymap").isInstanceOf[TMap])
         case _ =>
           fail()
       }
@@ -31,7 +30,7 @@ final class ConfigValueTest extends AnyWordSpec {
     "properly derive config lists" in {
       getConfTag(TestConfigReaders.listDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          assert(c.fields.toMap.apply("mylist").isInstanceOf[TList])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("mylist").isInstanceOf[TList])
         case _ =>
           fail()
       }
@@ -40,8 +39,8 @@ final class ConfigValueTest extends AnyWordSpec {
     "be as expected for config options" in {
       getConfTag(TestConfigReaders.optDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          assert(c.fields.toMap.apply("optInt").isInstanceOf[TOption])
-          assert(c.fields.toMap.apply("optCustomObject").isInstanceOf[TOption])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("optInt").isInstanceOf[TOption])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("optCustomObject").isInstanceOf[TOption])
         case _ =>
           fail()
       }
@@ -50,7 +49,7 @@ final class ConfigValueTest extends AnyWordSpec {
     "be unknown for config tuples" in {
       getConfTag(TestConfigReaders.tupleDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          assert(c.fields.toMap.apply("tuple").isInstanceOf[TUnknown])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("tuple").isInstanceOf[TUnknown])
         case _ =>
           fail()
       }
@@ -59,16 +58,16 @@ final class ConfigValueTest extends AnyWordSpec {
     "be unknown for custom codecs" in {
       getConfTag(TestConfigReaders.customCodecDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          assert(c.fields.toMap.apply("customObject").isInstanceOf[TUnknown])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("customObject").isInstanceOf[TUnknown])
 
-          c.fields.toMap.apply("mapCustomObject") match {
+          c.fields.map(f => (f.name, f.tpe)).toMap.apply("mapCustomObject") match {
             case m: TMap =>
               assert(m.valueType.isInstanceOf[TUnknown])
             case _ =>
               fail()
           }
 
-          c.fields.toMap.apply("mapListCustomObject") match {
+          c.fields.map(f => (f.name, f.tpe)).toMap.apply("mapListCustomObject") match {
             case m: TMap =>
               m.valueType match {
                 case l: TList =>
@@ -88,7 +87,7 @@ final class ConfigValueTest extends AnyWordSpec {
     "be as expected for backticks" in {
       getConfTag(TestConfigReaders.backticksDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          assert(c.fields.toMap.apply("boo-lean").isInstanceOf[TBasic])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("boo-lean").isInstanceOf[TBasic])
         case _ =>
           fail()
       }
@@ -97,7 +96,7 @@ final class ConfigValueTest extends AnyWordSpec {
     "be as expected for case classes with private fields" in {
       getConfTag(TestConfigReaders.privateFieldsCodecDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          assert(c.fields.toMap.apply("private-custom-field-name").isInstanceOf[TBasic])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("private-custom-field-name").isInstanceOf[TBasic])
         case _ =>
           fail()
       }
@@ -106,8 +105,8 @@ final class ConfigValueTest extends AnyWordSpec {
     "be as expected for case classes with partially private fields" in {
       getConfTag(TestConfigReaders.partiallyPrivateFieldsCodecDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          assert(c.fields.toMap.apply("private-custom-field-name").isInstanceOf[TBasic])
-          assert(c.fields.toMap.apply("publicField").isInstanceOf[TBasic])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("private-custom-field-name").isInstanceOf[TBasic])
+          assert(c.fields.map(f => (f.name, f.tpe)).toMap.apply("publicField").isInstanceOf[TBasic])
         case _ =>
           fail()
       }
@@ -117,7 +116,7 @@ final class ConfigValueTest extends AnyWordSpec {
     "be as expected for sealed traits" in {
       getConfTag(TestConfigReaders.sealedDefinition).tpe match {
         case c: ConfigMetaType.TCaseClass =>
-          val sealedTrait = c.fields.toMap.apply("sealedTrait1").asInstanceOf[TSealedTrait]
+          val sealedTrait = c.fields.map(f => (f.name, f.tpe)).toMap.apply("sealedTrait1").asInstanceOf[TSealedTrait]
           assert(sealedTrait.branches.toMap.apply("CaseClass1").isInstanceOf[TCaseClass])
           assert(sealedTrait.branches.toMap.apply("CaseClass2").isInstanceOf[TCaseClass])
         case _ =>

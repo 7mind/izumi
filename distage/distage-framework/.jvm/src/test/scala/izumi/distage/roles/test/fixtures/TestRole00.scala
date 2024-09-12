@@ -1,5 +1,6 @@
 package izumi.distage.roles.test.fixtures
 
+import izumi.distage.config.model.ConfigDoc
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.{Id, Lifecycle}
 import izumi.distage.model.provisioning.IntegrationCheck
@@ -200,7 +201,9 @@ object ConfigTestRole extends RoleDescriptor {
   override final val id = "configtest"
 }
 
+@ConfigDoc("docstest: ConfigTestConfig doc")
 final case class ConfigTestConfig(
+  @ConfigDoc("docstest: field doc")
   commonReferenceDev: Int,
   commonReference: Int,
   common: Int,

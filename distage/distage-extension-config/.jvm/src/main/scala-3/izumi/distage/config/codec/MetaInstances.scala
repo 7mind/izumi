@@ -1,5 +1,8 @@
 package izumi.distage.config.codec
 
+import izumi.distage.config.codec.ConfigMetaType.ConfigField
+import izumi.distage.config.model.ConfigDoc
+import izumi.fundamentals.platform.reflection.ReflectionUtil
 import pureconfig.generic.derivation.Utils
 
 import scala.compiletime.ops.int.+
@@ -12,7 +15,13 @@ object MetaInstances {
   // magnolia on scala3 abuses inlines and requires high inlines limit (e.g. -Xmax-inlines:1024).
   // so we had to re-implement derivation manually and copy-paste the type id logic from Magnolia
   object configReaderDerivation {
-    inline def derived[A](using m: Mirror.Of[A]): DIConfigMeta[A] = {
+    transparent inline def summonDIConfigMeta[A]: DIConfigMeta[A] =
+      summonFrom {
+        case reader: DIConfigMeta[A] => reader
+        case given Mirror.Of[A] => derived[A]
+      }
+
+    transparent inline def derived[A](using m: Mirror.Of[A]): DIConfigMeta[A] = {
       inline m match {
         case given Mirror.ProductOf[A] => derivedProduct
         case given Mirror.SumOf[A] => derivedSum
@@ -20,7 +29,7 @@ object MetaInstances {
     }
 
     /** Override pureconfig's default `kebab-case` fields – force CamelCase product-hint */
-    inline def derivedProduct[A](using m: Mirror.ProductOf[A]): DIConfigMeta[A] = {
+    transparent inline def derivedProduct[A](using m: Mirror.ProductOf[A]): DIConfigMeta[A] = {
       val tname = constValue[m.MirroredLabel]
 
       inline erasedValue[A] match {
@@ -30,20 +39,26 @@ object MetaInstances {
         case _ =>
           val tpe: ConfigMetaType = {
             val labels: Array[String] = Utils.transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping).toArray
+
             val codecs = readTuple[m.MirroredElemTypes, 0]
+
+            import izumi.fundamentals.collections.IzCollections.*
+            val annos = fieldAnnos[A].map { case (k, v) => (PureconfigInstances.configReaderDerivation.fieldMapping(k), v) }.toMultimap
+
             ConfigMetaType.TCaseClass(
               typeId[A],
               labels.iterator
                 .zip(codecs).map {
-                  case (label, reader) => (label, reader.tpe)
+                  case (label, reader) => ConfigField(label, reader.tpe, annos.get(label).flatMap(_.headOption))
                 }.toSeq,
+              typeDocs[A],
             )
           }
           DIConfigMeta[A](tpe)
       }
     }
 
-    inline def readTuple[T <: Tuple, N <: Int]: List[DIConfigMeta[Any]] =
+    transparent inline def readTuple[T <: Tuple, N <: Int]: List[DIConfigMeta[Any]] =
       inline erasedValue[T] match {
         case _: (h *: t) =>
           val reader = summonDIConfigMeta[h]
@@ -52,12 +67,6 @@ object MetaInstances {
 
         case _: EmptyTuple =>
           Nil
-      }
-
-    inline def summonDIConfigMeta[A]: DIConfigMeta[A] =
-      summonFrom {
-        case reader: DIConfigMeta[A] => reader
-        case given Mirror.Of[A] => derived[A]
       }
 
     /** Override pureconfig's default `type` field type discriminator for sealed traits.
@@ -79,7 +88,7 @@ object MetaInstances {
       *   }
       * }}}
       */
-    inline def derivedSum[A](using m: Mirror.SumOf[A]): DIConfigMeta[A] = {
+    transparent inline def derivedSum[A](using m: Mirror.SumOf[A]): DIConfigMeta[A] = {
       val options: Map[String, DIConfigMeta[A]] =
         Utils
           .transformedLabels[A](PureconfigInstances.configReaderDerivation.fieldMapping)
@@ -91,18 +100,19 @@ object MetaInstances {
         options.map {
           case (label, reader) => (label, reader.tpe)
         }.toSet,
+        typeDocs[A],
       )
 
       DIConfigMeta[A](tpe)
     }
 
-    inline def deriveForSubtypes[T <: Tuple, A]: List[DIConfigMeta[A]] =
+    transparent inline def deriveForSubtypes[T <: Tuple, A]: List[DIConfigMeta[A]] =
       inline erasedValue[T] match {
         case _: (h *: t) => deriveForSubtype[h, A] :: deriveForSubtypes[t, A]
         case _: EmptyTuple => Nil
       }
 
-    inline def deriveForSubtype[A0, A]: DIConfigMeta[A] =
+    transparent inline def deriveForSubtype[A0, A]: DIConfigMeta[A] =
       summonFrom {
         case reader: DIConfigMeta[A0] =>
           reader.asInstanceOf[DIConfigMeta[A]]
@@ -115,6 +125,36 @@ object MetaInstances {
 
     // https://github.com/softwaremill/magnolia/blob/scala3/core/src/main/scala/magnolia1/macro.scala#L135
     private inline def typeId[T]: ConfigMetaTypeId = ${ typeIdImpl[T] }
+
+    private inline def typeDocs[T]: Option[String] = ${ typeDocsImpl[T] }
+
+    transparent inline def fieldAnnos[T]: List[(String, String)] = ${ fieldAnnosImpl[T] }
+
+    def fieldAnnosImpl[T: Type](using qctx: Quotes): Expr[List[(String, String)]] = {
+      import quotes.reflect.*
+
+      val tpe = TypeRepr.of[T]
+      val caseClassFields = tpe.typeSymbol.caseFields
+      val idAnnotationSym: Symbol = TypeRepr.of[ConfigDoc].typeSymbol
+
+      val fieldNames = caseClassFields.flatMap {
+        f =>
+          ReflectionUtil
+            .findSymbolAnnoString(f, idAnnotationSym)
+            .map(doc => f.name -> doc)
+      }
+
+      Expr.ofList(fieldNames.map(Expr.apply))
+    }
+
+    private def typeDocsImpl[T: Type](using Quotes): Expr[Option[String]] = {
+      import quotes.reflect.*
+
+      val idAnnotationSym: Symbol = TypeRepr.of[ConfigDoc].typeSymbol
+      val tpe = TypeRepr.of[T]
+
+      Expr(ReflectionUtil.findTypeAnnoString(tpe, idAnnotationSym))
+    }
 
     private def typeIdImpl[T: Type](using Quotes): Expr[ConfigMetaTypeId] = {
 
@@ -144,7 +184,6 @@ object MetaInstances {
       )
 
       def typeInfo(tpe: TypeRepr): Expr[ConfigMetaTypeId] = tpe match {
-
         case AppliedType(tpe, args) =>
           '{
             ConfigMetaTypeId(

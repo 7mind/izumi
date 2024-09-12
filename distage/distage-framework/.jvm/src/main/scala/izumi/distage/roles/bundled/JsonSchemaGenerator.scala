@@ -1,7 +1,7 @@
 package izumi.distage.roles.bundled
 
 import io.circe.{Json, JsonObject}
-import izumi.distage.config.codec.ConfigMetaType.{TCaseClass, TVariant}
+import izumi.distage.config.codec.ConfigMetaType.{ConfigField, TCaseClass, TVariant}
 import izumi.distage.config.codec.{ConfigMetaBasicType, ConfigMetaType, ConfigMetaTypeId}
 import izumi.distage.config.model.ConfTag
 import izumi.distage.roles.bundled.JsonSchemaGenerator.TLAccumulator
@@ -62,30 +62,37 @@ class JsonSchemaGenerator() {
     }
   }
 
+  private def genDoc(doc: Option[String]) = {
+    doc.map(doc => "$comment" -> Json.fromString(doc))
+  }
+
   private def generateSchema(meta: ConfigMetaType, defs: mutable.Map[String, Json]): Unit = {
     val id = meta.id.toString
 
     val schema = meta match {
-      case c: TCaseClass =>
-        val props = JsonObject(c.fields.map { case (n, t) => (n, refOf(t.id).toJson) }*).toJson
-        c.fields.foreach {
-          case (_, tpe) =>
+      case cc: TCaseClass =>
+        val props = JsonObject(cc.fields.map { case ConfigField(n, t, doc) => (n, refOf(t.id).deepMerge(JsonObject(genDoc(doc).toSeq*)).toJson) }*).toJson
+        cc.fields.foreach {
+          case ConfigField(_, tpe, _) =>
             generateSchema(tpe, defs)
         }
-        val optional = c.fields.collect {
-          case (n, ConfigMetaType.TOption(_)) =>
+        val optional = cc.fields.collect {
+          case ConfigField(n, ConfigMetaType.TOption(_), _) =>
             n
         }.toSet
-        val required = c.fields.map(_._1).toSet.diff(optional)
-        JsonObject("type" -> Json.fromString("object"), "properties" -> props, "required" -> Json.fromValues(required.map(Json.fromString))).toJson
-      case _: ConfigMetaType.TUnknown =>
-        JsonObject().toJson
+        val required = cc.fields.map(_.name).toSet.diff(optional)
+        val fields = Seq("type" -> Json.fromString("object"), "properties" -> props, "required" -> Json.fromValues(required.map(Json.fromString))) ++ genDoc(cc.doc)
+        JsonObject(fields*).toJson
 
-      case s: ConfigMetaType.TSealedTrait =>
-        s.branches.foreach {
+      case st: ConfigMetaType.TSealedTrait =>
+        st.branches.foreach {
           case (_, tpe) => generateSchema(tpe, defs)
         }
-        JsonObject("anyOf" -> Json.fromValues(s.branches.map(_._2.id).map(refOf).map(_.toJson))).toJson
+        val fields = Seq("anyOf" -> Json.fromValues(st.branches.map(_._2.id).map(refOf).map(_.toJson))) ++ genDoc(st.doc)
+        JsonObject(fields*).toJson
+
+      case _: ConfigMetaType.TUnknown =>
+        JsonObject().toJson
 
       case ConfigMetaType.TBasic(tpe) =>
         tpe match {
@@ -126,6 +133,7 @@ class JsonSchemaGenerator() {
       case ConfigMetaType.TList(tpe) =>
         generateSchema(tpe, defs)
         JsonObject("type" -> Json.fromString("array"), "items" -> refOf(tpe.id).toJson).toJson
+
       case ConfigMetaType.TSet(tpe) =>
         generateSchema(tpe, defs)
         JsonObject("type" -> Json.fromString("array"), "items" -> refOf(tpe.id).toJson).toJson
@@ -151,12 +159,13 @@ class JsonSchemaGenerator() {
 
     val fields = accumulator.entries.toSeq.map {
       case (id, sub) =>
-        (id, convertIntoType(path :+ id, sub))
+        val converted = convertIntoType(path :+ id, sub)
+        ConfigField(id, converted, None)
     }
 
     val id = ConfigMetaTypeId(None, ("_" +: path).mkString("."), Seq.empty)
 
-    val asClass = ConfigMetaType.TCaseClass(id, fields)
+    val asClass = ConfigMetaType.TCaseClass(id, fields, None)
     val typingsSet = accumulator.typings.toSet
 
     if (hasEntries && !hasTypings) {
@@ -182,11 +191,16 @@ class JsonSchemaGenerator() {
     val ids = typingsSet.map(_.id)
     val allIds = ConfigMetaTypeId(None, s"merged:${ids.mkString(";")}", Seq.empty)
 
+    val maybeDoc = typingsSet.flatMap(_.doc)
+    val doc = Option(maybeDoc).filterNot(_.isEmpty)
+
     if (classes.size == typingsSet.size) {
       val fields = classes.flatMap(_.fields).toSeq
-      TCaseClass(allIds, fields)
+      val fullDoc = doc.map(docs => (Seq(s"Merged case class (${typingsSet.map(_.id.toString).mkString(", ")})") ++ docs).mkString("\n"))
+      TCaseClass(allIds, fields, fullDoc)
     } else {
-      TVariant(allIds, typingsSet)
+      val fullDoc = doc.map(docs => (Seq(s"Variant class merged from (${typingsSet.map(_.id.toString).mkString(", ")})") ++ docs).mkString("\n"))
+      TVariant(allIds, typingsSet, fullDoc)
     }
   }
 
