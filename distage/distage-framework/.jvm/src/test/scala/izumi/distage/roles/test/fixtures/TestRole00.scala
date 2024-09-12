@@ -187,18 +187,14 @@ object FailingRole02 extends RoleDescriptor {
 
 final class ConfigTestRole[F[_]: QuasiIO](configTestConfig: ConfigTestConfig) extends RoleTask[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = QuasiIO[F].maybeSuspend {
-    require(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
-    require(configTestConfig.commonReference == 2, "common-reference")
-    require(configTestConfig.common == 3, "common")
-    require(configTestConfig.applicationReference == 4, "application-reference")
-    require(configTestConfig.application == 5, "application")
-    require(configTestConfig.roleReference == 6, "role-reference")
-    require(configTestConfig.role == 7, "role")
+    ConfigTestRole.configTestConfig = configTestConfig
   }
 }
 
 object ConfigTestRole extends RoleDescriptor {
   override final val id = "configtest"
+
+  var configTestConfig: ConfigTestConfig = null
 }
 
 @ConfigDoc("docstest: ConfigTestConfig doc")
