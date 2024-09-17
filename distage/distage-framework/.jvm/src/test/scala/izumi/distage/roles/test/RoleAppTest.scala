@@ -284,8 +284,12 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "produce config dumps and support minimization" in {
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
-      withProperties(overrides ++ Map(TestPluginCatsIO.versionProperty -> version.version)) {
-        TestEntrypoint.main(Array("-nc", "-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
+      val role00OverrideConf = getClass.getResource("/testrole00-override.conf").getPath
+      withProperties(
+        overrides ++
+        Map(TestPluginCatsIO.versionProperty -> version.version)
+      ) {
+        TestEntrypoint.main(Array("-nc", "-c", role00OverrideConf, "-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
       }
 
       val cwCfg = cfg("configwriter-full", version)
@@ -328,6 +332,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       // ConfigWriter DOES NOT consider system properties!
       assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 222)
       assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List(1, 2, 3))
+
+      // ConfigWriter DOES NOT consider non-reference configs!
+      assert(role0CfgMinParsed.getInt("testservice.explicitInt") == 111)
 
       val role3 = cfg("testrole03-full", version)
       val role3Min = cfg("testrole03-minimized", version)
