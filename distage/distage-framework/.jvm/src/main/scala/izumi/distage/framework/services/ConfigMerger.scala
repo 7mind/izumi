@@ -11,18 +11,40 @@ import scala.util.Try
 
 trait ConfigMerger {
   def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], clue: String): Config
-  def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean, clue: String): Config
+  def mergeFilter(
+    logger: IzLogger,
+    filteringStrategy: ConfigFilteringStrategy,
+    filter: LoadedRoleConfigs => Boolean,
+  )(shared: List[ConfigLoadResult.Success],
+    role: List[LoadedRoleConfigs],
+    clue: String,
+  ): Config
+
   def foldConfigs(roleConfigs: List[ConfigLoadResult.Success]): Config
   def addSystemProps(config: Config): Config
 }
 
 object ConfigMerger {
-  class ConfigMergerImpl(logger: IzLogger @Id("early")) extends ConfigMerger {
+  class ConfigMergerImpl(
+    logger: IzLogger @Id("early"),
+    filteringStrategy: ConfigFilteringStrategy,
+  ) extends ConfigMerger {
+
     override def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], clue: String): Config = {
-      mergeFilter(shared, role, _.roleConfig.active, clue)
+      mergeFilter(logger, filteringStrategy, _.roleConfig.active)(shared, role, clue)
     }
 
-    override def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean, clue: String): Config = {
+    override def mergeFilter(
+      logger: IzLogger,
+      filteringStrategy: ConfigFilteringStrategy,
+      filter: LoadedRoleConfigs => Boolean,
+    )(shared0: List[ConfigLoadResult.Success],
+      role0: List[LoadedRoleConfigs],
+      clue: String,
+    ): Config = {
+      val shared = filteringStrategy.filterSharedConfigs(shared0)
+      val role = filteringStrategy.filterRoleConfigs(role0)
+
       val nonEmptyShared = shared.filterNot(_.config.isEmpty)
       val roleConfigs = role.flatMap(_.loaded)
       val nonEmptyRole = roleConfigs.filterNot(_.config.isEmpty)
@@ -39,8 +61,10 @@ object ConfigMerger {
       sub.info(s"Output config has ${folded.entrySet().size() -> "root nodes"}")
       sub.info(s"The following configs were used (highest priority first): ${repr.niceList() -> "used configs"}")
 
-      val configRepr = (shared.map(c => (c.clue, true)) ++ role.flatMap(r => r.loaded.map(c => (s"${c.clue}, role=${r.roleConfig.role}", filter(r)))))
-        .map(c => s"${c._1}, active = ${c._2}")
+      val configRepr = shared.map(c => (c.clue, true)) ++
+        role
+          .flatMap(r => r.loaded.map(c => (s"${c.clue}, role=${r.roleConfig.role}", filter(r))))
+          .map(c => s"${c._1}, active = ${c._2}")
       logger.debug(s"Full list of processed configs: ${configRepr.niceList() -> "locations"}")
 
       folded
@@ -87,6 +111,7 @@ object ConfigMerger {
         .systemProperties()
         .withFallback(config)
         .resolve()
+
       logger.info(
         s"Config with ${config.entrySet().size() -> "root nodes"} has been enhanced with system properties, new config has ${result.entrySet().size() -> "new root nodes"}"
       )

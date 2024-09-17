@@ -2,7 +2,7 @@ package izumi.distage.framework.model
 
 import distage.Injector
 import izumi.distage.framework.services.ConfigMerger.ConfigMergerImpl
-import izumi.distage.framework.services.{ConfigArgsProvider, ConfigLoader, ConfigLocationProvider}
+import izumi.distage.framework.services.{ConfigArgsProvider, ConfigFilteringStrategy, ConfigLoader, ConfigLocationProvider}
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.reflection.DIKey
@@ -22,7 +22,7 @@ final case class PlanCheckInput[F[_]](
   bsPlugins: LoadedPlugins,
 )
 object PlanCheckInput {
-  private val emptyConfigArgs = ConfigArgsProvider.const(ConfigLoader.Args(None, List.empty, true, true, false))
+  private val emptyConfigArgs = ConfigArgsProvider.const(ConfigLoader.Args(None, List.empty))
 
   def apply[F[_]](
     module: ModuleBase,
@@ -30,7 +30,7 @@ object PlanCheckInput {
     roleNames: Set[String] = Set.empty,
     configLoader: ConfigLoader = {
       val logger = IzLogger()
-      val merger = new ConfigMergerImpl(logger)
+      val merger = new ConfigMergerImpl(logger, new ConfigFilteringStrategy.Raw(true, true, ignoreAll = false))
       new ConfigLoader.LocalFSImpl(logger, merger, ConfigLocationProvider.Default, emptyConfigArgs)
     },
     appPlugins: LoadedPlugins = LoadedPlugins.empty,

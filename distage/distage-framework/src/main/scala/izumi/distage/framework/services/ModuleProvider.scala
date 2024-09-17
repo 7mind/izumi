@@ -106,6 +106,7 @@ object ModuleProvider {
           new ModuleDef {
             make[LocatorRef].named("roleapp").fromValue(outerLocator)
             make[RoleAppPlanner].from((_: LocatorRef @Id("roleapp")).get.get[RoleAppPlanner])
+            make[ConfigMerger].from((_: LocatorRef @Id("roleapp")).get.get[ConfigMerger])
           }
       }
     }

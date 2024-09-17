@@ -58,9 +58,6 @@ object ConfigLoader {
   final case class Args(
     global: Option[File],
     configs: List[RoleConfig],
-    alwaysIncludeReferenceRoleConfigs: Boolean,
-    alwaysIncludeReferenceCommonConfigs: Boolean,
-    ignoreAllReferenceConfigs: Boolean,
   )
   final class ConfigLoaderException(message: String, val failures: List[Throwable]) extends DIException(message)
 
@@ -76,60 +73,45 @@ object ConfigLoader {
       val configArgs = args.args()
 
       val maybeLoadedRoleConfigs = configArgs.configs.map {
-        rc =>
-          val defaults = if (!configArgs.ignoreAllReferenceConfigs) configLocation.forRole(rc.role).map(loadConfigSource) else Nil
-          val loaded = rc.configSource match {
+        roleConfig =>
+          val references = configLocation.forRole(roleConfig.role).map(loadConfigSource(false, _))
+          val loaded = roleConfig.configSource match {
             case GenericConfigSource.ConfigFile(file) =>
-              val provided = Seq(loadConfigSource(ConfigSource.File(file)))
-              if (configArgs.alwaysIncludeReferenceRoleConfigs) {
-                provided ++ defaults
-              } else {
-                provided
-              }
+              val explicit = Seq(loadConfigSource(true, ConfigSource.File(file)))
+              explicit ++ references
             case GenericConfigSource.ConfigDefault =>
-              defaults
+              references
           }
-          (rc, loaded)
+          (roleConfig, loaded)
       }
 
-      val commonExplicitConfigs = configArgs.global.map(ConfigSource.File.apply)
-      val commonReferenceConfigs = if (!configArgs.ignoreAllReferenceConfigs) configLocation.commonReferenceConfigs.toList else Nil
-      val commonConfigs = if (configArgs.alwaysIncludeReferenceCommonConfigs) {
-        commonExplicitConfigs.toList ++ commonReferenceConfigs
-      } else {
-        commonExplicitConfigs.fold(commonReferenceConfigs)(List(_))
-      }
+      val loadedCommonExplicitConfigs = configArgs.global.map(ConfigSource.File(_)).map(loadConfigSource(true, _))
+      val loadedCommonReferenceConfigs = configLocation.commonReferenceConfigs.map(loadConfigSource(false, _))
       val loaded = for {
-        loadedCommonConfigs <- commonConfigs.map(loadConfigSource).map(_.toEither).biSequenceScalar
+        loadedCommonConfigs <- (loadedCommonExplicitConfigs ++ loadedCommonReferenceConfigs).map(_.toEither).toList.biSequenceScalar
         loadedRoleConfigs <- maybeLoadedRoleConfigs.map {
-          case (rc, loaded) =>
-            loaded.map {
-              lr =>
-                lr.toEither
-            }.biSequenceScalar match {
-              case Left(value) =>
-                Left(value)
-              case Right(value) =>
-                Right(LoadedRoleConfigs(rc, value))
+          case (roleConfig, loaded) =>
+            loaded.map(_.toEither).biSequenceScalar match {
+              case Left(failures) =>
+                Left(failures)
+              case Right(configLoadResults) =>
+                Right(LoadedRoleConfigs(roleConfig, configLoadResults))
             }
         }.biSequence
-      } yield {
-        (loadedCommonConfigs, loadedRoleConfigs)
-      }
+      } yield (loadedCommonConfigs, loadedRoleConfigs)
 
       loaded match {
-        case Left(value) =>
-          val failures = value.map(f => s"Failed to load ${f.src} ${f.clue}: ${f.failure.stacktraceString}")
+        case Left(errs) =>
+          val failures = errs.map(f => s"Failed to load ${f.src} ${f.clue}: ${f.failure.stacktraceString}")
           logger.error(s"Cannot load configuration: ${failures.toList.niceList() -> "failures"}")
-          throw new ConfigLoaderException(s"Cannot load configuration: ${failures.toList.niceList()}", value.map(_.failure).toList)
+          throw new ConfigLoaderException(s"Cannot load configuration: failures=${failures.toList.niceList()}", errs.map(_.failure).toList)
         case Right((shared, role)) =>
           val merged = merger.addSystemProps(merger.merge(shared, role, clue))
           AppConfig(merged, shared, role)
       }
-
     }
 
-    protected def loadConfigSource(configSource: ConfigSource): ConfigLoadResult = {
+    protected def loadConfigSource(isExplicit: Boolean, configSource: ConfigSource): ConfigLoadResult = {
       configSource match {
         case r: ConfigSource.Resource =>
           def tryLoadResource(): Try[Config] = {
@@ -143,11 +125,11 @@ object ConfigLoader {
 
           IzResources(resourceClassLoader).getPath(r.name) match {
             case Some(LoadablePathReference(path, _)) =>
-              doLoad(s"$r (available: $path)", configSource, tryLoadResource())
+              doLoad(s"$r (available: $path)", configSource, isExplicit, tryLoadResource())
             case Some(UnloadablePathReference(path)) =>
-              doLoad(s"$r (exists: $path)", configSource, tryLoadResource())
+              doLoad(s"$r (exists: $path)", configSource, isExplicit, tryLoadResource())
             case None =>
-              doLoad(s"$r (missing)", configSource, Success(ConfigFactory.empty()))
+              doLoad(s"$r (missing)", configSource, isExplicit, Success(ConfigFactory.empty()))
           }
 
         case f: ConfigSource.File =>
@@ -155,20 +137,21 @@ object ConfigLoader {
             doLoad(
               s"$f (exists: ${f.file.getCanonicalPath})",
               configSource,
+              isExplicit,
               Try(ConfigFactory.parseFile(f.file)).flatMap {
                 cfg => if (cfg.origin().filename() ne null) Success(cfg) else Failure(new FileNotFoundException(s"Couldn't find config file $f"))
               },
             )
           } else {
-            doLoad(s"$f (missing)", configSource, Failure(new FileNotFoundException(f.file.getCanonicalPath)))
+            doLoad(s"$f (missing)", configSource, isExplicit, Failure(new FileNotFoundException(f.file.getCanonicalPath)))
           }
       }
     }
 
-    private def doLoad(clue: String, source: ConfigSource, loader: => Try[Config]): ConfigLoadResult = {
+    private def doLoad(clue: String, source: ConfigSource, isExplicit: Boolean, loader: => Try[Config]): ConfigLoadResult = {
       loader match {
-        case Failure(exception) => ConfigLoadResult.Failure(clue, source, exception)
-        case Success(value) => ConfigLoadResult.Success(clue, source, value)
+        case Failure(exception) => ConfigLoadResult.Failure(clue, source, isExplicit, exception)
+        case Success(value) => ConfigLoadResult.Success(clue, source, isExplicit, value)
       }
     }
 
