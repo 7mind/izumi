@@ -13,7 +13,6 @@ trait RoleAppActivationParser {
 }
 
 object RoleAppActivationParser {
-  private final val sysPropIgnoreUnknownActivations = DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.boolValue(false)
 
   class Impl(
     logger: IzLogger,
@@ -45,7 +44,7 @@ object RoleAppActivationParser {
             case None =>
               logger.warn(s"Unknown choice on axis $axisName: $choiceName")
               logger.warn(s"All available $choices")
-              if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
+              if (ignoreUnknownActivations ) {
                 None
               } else {
                 throw new DIAppBootstrapException(
@@ -57,7 +56,7 @@ object RoleAppActivationParser {
         case None =>
           logger.warn(s"Unknown axis: $axisName")
           logger.warn(s"All available $choices")
-          if (ignoreUnknownActivations || sysPropIgnoreUnknownActivations) {
+          if (ignoreUnknownActivations ) {
             None
           } else {
             throw new DIAppBootstrapException(

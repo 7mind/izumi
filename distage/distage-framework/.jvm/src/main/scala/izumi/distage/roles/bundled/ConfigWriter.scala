@@ -7,7 +7,7 @@ import io.circe.Json
 import izumi.distage.config.codec.ConfigMetaType
 import izumi.distage.config.codec.ConfigMetaType.ConfigField
 import izumi.distage.config.model.ConfTag
-import izumi.distage.framework.services.{ConfigMerger, RoleAppPlanner}
+import izumi.distage.framework.services.{ConfigFilteringStrategy, ConfigMerger, RoleAppPlanner}
 import izumi.distage.model.definition.{Binding, Id}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.planning.AxisPoint
@@ -34,6 +34,7 @@ final class ConfigWriter[F[_]: TagK](
   roleInfo: RolesInfo,
   roleAppPlanner: RoleAppPlanner,
   appConfig: AppConfig,
+  configMerger: ConfigMerger,
   F: QuasiIO[F],
 ) extends RoleTask[F]
   with BundledTask {
@@ -42,7 +43,6 @@ final class ConfigWriter[F[_]: TagK](
   //  should've been unnecessary after https://github.com/7mind/izumi/issues/779
   //  but, the contents of the MainAppModule (including `"activation"` config read) are not accessible here from `RoleAppPlanner` yet...
   private val _HackyMandatorySection = ConfigPath("activation", wildcard = true)
-  private val configMerger = new ConfigMerger.ConfigMergerImpl(logger)
 
   override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
     F.maybeSuspend {
@@ -82,7 +82,15 @@ final class ConfigWriter[F[_]: TagK](
 
           // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
           subLogger.info(s"About to output configs...")
-          val mergedRoleConfig = configMerger.mergeFilter(appConfig.shared, List(loaded), _ => true, "configwriter")
+          val mergedRoleConfig = configMerger.mergeFilter(
+            logger,
+            ConfigFilteringStrategy(
+              _.filter(!_.isExplicit),
+              _.map(c => c.copy(loaded = c.loaded.filter(!_.isExplicit))),
+            ),
+            _ => true,
+          )(appConfig.shared, List(loaded), "configwriter")
+
           writeConfig(options, fileNameFull, mergedRoleConfig, None, subLogger)
 
           val min = minimizedConfig(mergedRoleConfig, role)
@@ -185,33 +193,27 @@ object ConfigWriter extends RoleDescriptor {
 
   /**
     * Configuration for [[ConfigWriter]]
-    *
-    * @param includeCommon Append shared sections from `common-reference.conf` into every written config
     */
   case class WriteReference(
     asJson: Boolean,
     targetDir: String,
-    includeCommon: Boolean,
     useLauncherVersion: Boolean,
   )
 
   object Options extends ParserDef {
     final val targetDir = arg("target", "t", "target directory", "<path>")
-    final val excludeCommon = flag("exclude-common", "ec", "do not include shared sections")
     final val useComponentVersion = flag("version-use-component", "vc", "use component version instead of launcher version")
     final val formatTypesafe = arg("format", "f", "output format, json is default", "{json|hocon}")
   }
 
   def parse(p: RawEntrypointParams): WriteReference = {
     val targetDir = p.findValue(Options.targetDir).map(_.value).getOrElse("config")
-    val includeCommon = p.hasNoFlag(Options.excludeCommon)
     val useLauncherVersion = p.hasNoFlag(Options.useComponentVersion)
     val asJson = !p.findValue(Options.formatTypesafe).map(_.value).contains("hocon")
 
     WriteReference(
       asJson,
       targetDir,
-      includeCommon,
       useLauncherVersion,
     )
   }
