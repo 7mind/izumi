@@ -28,6 +28,14 @@ import scala.annotation.{nowarn, unused}
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.Try
 
+/**
+  * Writes reference config into files, split by roles (includes only parts of the config used by the application).
+  *
+  * Also generates a JSON Schema description for config.
+  *
+  * @see [[izumi.distage.config.model.ConfigDoc]] annotation to attach comments to generated JSON Schema nodes
+  * @see [[izumi.distage.roles.bundled.JsonSchemaGenerator]]
+  */
 final class ConfigWriter[F[_]: TagK](
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
@@ -145,7 +153,6 @@ final class ConfigWriter[F[_]: TagK](
           val bytes = json.spaces2.getBytes(StandardCharsets.UTF_8)
         Files.write(targetSchema, bytes)
       }
-
     }.recover {
       case error: Throwable =>
         subLogger.error(s"Can't write reference config to $target, $error")
@@ -185,7 +192,7 @@ final class ConfigWriter[F[_]: TagK](
 object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
 
-  case class MinimizedConfig(config: Config, schema: Json)
+  final case class MinimizedConfig(config: Config, schema: Json)
 
   override def parserSchema: RoleParserSchema = {
     RoleParserSchema(id, Options, Some("Dump reference configs for all the roles"), None, freeArgsAllowed = false)

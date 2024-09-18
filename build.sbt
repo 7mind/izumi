@@ -3839,7 +3839,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       "org.typelevel" %%% "cats-core" % V.cats % Test,
       "org.typelevel" %%% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Test
+      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Test,
+      "io.circe" %%% "circe-parser" % V.circe % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),

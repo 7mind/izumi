@@ -9,29 +9,8 @@ import izumi.fundamentals.collections.nonempty.NEList
 
 import scala.collection.mutable
 
-object JsonSchemaGenerator {
-  case class TLAccumulator(typings: mutable.HashSet[ConfigMetaType], entries: mutable.HashMap[String, TLAccumulator]) {
+class JsonSchemaGenerator {
 
-    def add(pathElement: String, typing: Option[ConfigMetaType]): Unit = {
-      val subAcc = entries.getOrElseUpdate(pathElement, TLAccumulator.emtpy)
-      typing.foreach {
-        tpe =>
-          subAcc.typings.add(tpe)
-      }
-    }
-
-    def get(name: String): TLAccumulator = {
-      entries(name)
-    }
-  }
-
-  object TLAccumulator {
-    def emtpy = new TLAccumulator(mutable.HashSet.empty, mutable.HashMap.empty)
-
-  }
-}
-
-class JsonSchemaGenerator() {
   def generateSchema(tags: Seq[ConfTag]): Json = {
     val unified = unifyTopLevel(tags)
     val schema = generateSchema(unified)
@@ -45,7 +24,7 @@ class JsonSchemaGenerator() {
         parts.init.map(p => (p, None)) ::: NEList((parts.last, Some(t.tpe)))
     }
 
-    val tl = TLAccumulator.emtpy
+    val tl = TLAccumulator.empty
     convertIntoTree(types, tl)
     convertIntoType(Seq.empty, tl)
   }
@@ -62,7 +41,7 @@ class JsonSchemaGenerator() {
     }
   }
 
-  private def genDoc(doc: Option[String]) = {
+  private def genDoc(doc: Option[String]): Option[(String, Json)] = {
     doc.map(doc => "$comment" -> Json.fromString(doc))
   }
 
@@ -151,7 +130,9 @@ class JsonSchemaGenerator() {
     defs.update(id, schema)
   }
 
-  private def refOf(id: ConfigMetaTypeId): JsonObject = JsonObject("$ref" -> Json.fromString(s"#/$$defs/$id"))
+  private def refOf(id: ConfigMetaTypeId): JsonObject = {
+    JsonObject("$ref" -> Json.fromString(s"#/$$defs/$id"))
+  }
 
   private def convertIntoType(path: Seq[String], accumulator: TLAccumulator): ConfigMetaType = {
     val hasTypings = accumulator.typings.nonEmpty
@@ -186,7 +167,7 @@ class JsonSchemaGenerator() {
 
   }
 
-  private def mergeTypes(typingsSet: Set[ConfigMetaType]) = {
+  private def mergeTypes(typingsSet: Set[ConfigMetaType]): ConfigMetaType = {
     val classes = typingsSet.collect { case c: TCaseClass => c }
     val ids = typingsSet.map(_.id)
     val allIds = ConfigMetaTypeId(None, s"merged:${ids.mkString(";")}", Seq.empty)
@@ -221,5 +202,25 @@ class JsonSchemaGenerator() {
         val sub = level.get(subName)
         convertIntoTree(paths, sub)
     }
+  }
+}
+
+object JsonSchemaGenerator {
+  final case class TLAccumulator(typings: mutable.HashSet[ConfigMetaType], entries: mutable.HashMap[String, TLAccumulator]) {
+
+    def add(pathElement: String, typing: Option[ConfigMetaType]): Unit = {
+      val subAcc = entries.getOrElseUpdate(pathElement, TLAccumulator.empty)
+      typing.foreach {
+        tpe =>
+          subAcc.typings.add(tpe)
+      }
+    }
+
+    def get(name: String): TLAccumulator = {
+      entries(name)
+    }
+  }
+  object TLAccumulator {
+    def empty = new TLAccumulator(mutable.HashSet.empty, mutable.HashMap.empty)
   }
 }

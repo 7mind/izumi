@@ -389,6 +389,42 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       assert(role5CfgMinParsed.hasPath("rolelocal2"))
       assert(role5CfgMinParsed.hasPath("rolelocal2.bool"))
+
+      // JSON Schema Generator works:
+
+      val role0JsonSchema = jsonSchema("testrole00-minimized", version)
+
+      assert(role0JsonSchema.exists(), s"$role0JsonSchema exists")
+
+      val role0JsonSchemaParsed = io.circe.parser.parse(new String(Files.readAllBytes(role0JsonSchema.toPath), UTF_8)).toTry.get
+
+      val testServiceConfCursor = role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.TestServiceConf")
+      val testServiceDoc = testServiceConfCursor.downField("$comment").as[String].toTry.get
+      assert(testServiceDoc == "docstest: case class doc")
+      val fieldDoc = testServiceConfCursor.downField("properties").downField("intval").downField("$comment").as[String].toTry.get
+      assert(fieldDoc == "docstest: field doc")
+
+      val sealedTraitDoc =
+        role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.A").downField("$comment").as[String].toTry.get
+      assert(sealedTraitDoc == "docstest: sealed trait doc")
+
+      val a1Doc = role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.A1").downField("$comment").as[String].toTry.get
+      assert(a1Doc == "docstest: A1 doc")
+
+      val a2Doc = role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.A2").downField("$comment").as[String].toTry.get
+      assert(a2Doc == "docstest: A2 doc")
+
+      val configTestJsonSchema = jsonSchema("configtest-minimized", version)
+
+      assert(configTestJsonSchema.exists(), s"$configTestJsonSchema exists")
+
+      val configTestJsonSchemaParsed = io.circe.parser.parse(new String(Files.readAllBytes(configTestJsonSchema.toPath), UTF_8)).toTry.get
+
+      val configTestConfigCursor = configTestJsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.ConfigTestConfig")
+      val configTestDoc = configTestConfigCursor.downField("$comment").as[String].toTry.get
+      assert(configTestDoc == "docstest: ConfigTestConfig doc")
+      val commonReferenceDevFieldDoc = configTestConfigCursor.downField("properties").downField("commonReferenceDev").downField("$comment").as[String].toTry.get
+      assert(commonReferenceDevFieldDoc == "docstest: field doc")
     }
 
     "prioritize configs as expected" in {
@@ -549,5 +585,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
   private def cfg(role: String, version: ArtifactVersion): File = {
     Paths.get(targetPath, s"$role-${version.version}.json").toFile
+  }
+  private def jsonSchema(role: String, version: ArtifactVersion): File = {
+    Paths.get(targetPath, s"$role-${version.version}.json.jsonschema").toFile
   }
 }
