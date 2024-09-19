@@ -72,7 +72,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -180,7 +180,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -205,7 +205,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -213,7 +213,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -289,7 +289,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -397,7 +397,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -422,7 +422,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -430,7 +430,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -507,7 +507,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -615,7 +615,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -640,7 +640,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -648,7 +648,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -725,7 +725,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -833,7 +833,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -858,7 +858,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -866,7 +866,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -947,7 +947,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1055,7 +1055,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1084,7 +1084,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -1092,7 +1092,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -1178,7 +1178,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1286,7 +1286,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1311,7 +1311,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -1319,7 +1319,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -1401,7 +1401,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1509,7 +1509,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1534,7 +1534,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -1542,7 +1542,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -1626,7 +1626,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1734,7 +1734,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1759,7 +1759,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -1767,7 +1767,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -1857,7 +1857,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1965,7 +1965,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1992,7 +1992,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -2000,7 +2000,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -2091,7 +2091,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2199,7 +2199,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2228,7 +2228,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -2236,7 +2236,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -2329,7 +2329,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2437,7 +2437,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2462,7 +2462,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -2470,7 +2470,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -2500,7 +2500,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2553,7 +2553,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2661,7 +2661,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2750,7 +2750,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2858,7 +2858,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2883,7 +2883,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -2891,7 +2891,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -2974,7 +2974,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3082,7 +3082,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3107,7 +3107,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3115,7 +3115,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -3206,7 +3206,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3314,7 +3314,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3339,7 +3339,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3347,7 +3347,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -3435,7 +3435,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3543,7 +3543,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3568,7 +3568,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3576,7 +3576,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -3656,7 +3656,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3764,7 +3764,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3789,7 +3789,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3797,7 +3797,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -3906,7 +3906,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4014,7 +4014,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4039,7 +4039,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -4047,7 +4047,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -4086,7 +4086,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -4139,7 +4139,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4247,7 +4247,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4288,7 +4288,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -4341,7 +4341,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4449,7 +4449,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4499,7 +4499,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -4552,7 +4552,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4660,7 +4660,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4702,7 +4702,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -4755,7 +4755,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4863,7 +4863,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4958,7 +4958,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5066,7 +5066,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -5091,7 +5091,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -5099,7 +5099,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -5186,7 +5186,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5294,7 +5294,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -5319,7 +5319,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -5327,7 +5327,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -5357,7 +5357,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -5410,7 +5410,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5518,7 +5518,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -5564,7 +5564,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     crossScalaVersions := Seq(
       "3.3.4-RC2",
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -5617,7 +5617,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5725,7 +5725,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -5799,7 +5799,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   .settings(
     crossScalaVersions := Seq(
       "2.13.14",
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -5852,7 +5852,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5960,7 +5960,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -6045,7 +6045,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                       )
                   }
                 },
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.102"
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.104"
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin, SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
@@ -6062,7 +6062,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.12.19"
+      "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -6116,7 +6116,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.19") => Seq(
+      case (_, "2.12.20") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -6224,7 +6224,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.19") => Seq(
+      case (false, "2.12.20") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
