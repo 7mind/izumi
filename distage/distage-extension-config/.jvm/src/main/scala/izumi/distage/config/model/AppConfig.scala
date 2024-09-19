@@ -26,37 +26,33 @@ object AppConfig {
 }
 
 sealed trait GenericConfigSource
-
 object GenericConfigSource {
-  case class ConfigFile(file: File) extends GenericConfigSource
+  final case class ConfigFile(file: File) extends GenericConfigSource
 
   case object ConfigDefault extends GenericConfigSource
 }
 
-case class RoleConfig(role: String, active: Boolean, configSource: GenericConfigSource)
+final case class RoleConfig(role: String, active: Boolean, configSource: GenericConfigSource)
 
-case class LoadedRoleConfigs(roleConfig: RoleConfig, loaded: Seq[ConfigLoadResult.Success])
+final case class LoadedRoleConfigs(roleConfig: RoleConfig, loaded: Seq[ConfigLoadResult.Success])
 
 sealed trait ConfigLoadResult {
   def clue: String
-
   def src: ConfigSource
-
+  def isExplicit: Boolean
   def toEither: Either[ConfigLoadResult.Failure, ConfigLoadResult.Success]
 }
-
 object ConfigLoadResult {
-  case class Success(clue: String, src: ConfigSource, config: Config) extends ConfigLoadResult {
+  final case class Success(clue: String, src: ConfigSource, isExplicit: Boolean, config: Config) extends ConfigLoadResult {
     override def toEither: Either[ConfigLoadResult.Failure, ConfigLoadResult.Success] = Right(this)
   }
 
-  case class Failure(clue: String, src: ConfigSource, failure: Throwable) extends ConfigLoadResult {
+  final case class Failure(clue: String, src: ConfigSource, isExplicit: Boolean, failure: Throwable) extends ConfigLoadResult {
     override def toEither: Either[ConfigLoadResult.Failure, ConfigLoadResult.Success] = Left(this)
   }
 }
 
 sealed trait ConfigSource
-
 object ConfigSource {
   final case class Resource(name: String) extends ConfigSource {
     override def toString: String = s"resource:$name"

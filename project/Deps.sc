@@ -660,7 +660,9 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.framework,
-        libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(scala3_compiler),
+        libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(scala3_compiler) ++ Seq(
+          circe_parser in Scope.Test.all
+        ),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),

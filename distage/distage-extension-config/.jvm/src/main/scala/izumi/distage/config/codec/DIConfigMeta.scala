@@ -12,6 +12,13 @@ import java.util.regex.Pattern
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.matching.Regex
 
+/**
+  * Type information for generated config codec, used to generate JSON Schemas for config in ConfigWriter role.
+  *
+  * @see [[izumi.distage.roles.bundled.ConfigWriter]]
+  * @see [[izumi.distage.roles.bundled.JsonSchemaGenerator]]
+  * @see [[izumi.distage.config.model.ConfigDoc]]
+  */
 trait DIConfigMeta[T] {
   def tpe: ConfigMetaType
 }
