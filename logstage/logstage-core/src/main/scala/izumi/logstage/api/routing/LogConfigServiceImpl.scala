@@ -23,7 +23,7 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
               entries :+ Some(lineSegment(line))
           }
         } else {
-          List(entries :+ None)
+          List(entries, entries :+ None)
         }
 
         paths.map {

@@ -114,7 +114,7 @@ val logger = objects.get[LogIO[UIO]]
 
 - @scaladoc[Help](izumi.distage.roles.bundled.Help) - prints help message when launched `./launcher :help`
 - @scaladoc[ConfigWriter](izumi.distage.roles.bundled.ConfigWriter) - writes reference config into files, split by
-  roles (includes only parts of the config used by the application)
+  roles (includes only parts of the config used by the application). Also generates a JSON Schema description for config.
 
 Use `include` to add it to your application:
 
