@@ -92,11 +92,16 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Activation].named("default").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
 
-  make[Boolean].named("distage.roles.reflection").fromValue(true)
-  make[Boolean].named("distage.roles.logs.json").fromValue(false)
-  make[Boolean].named("distage.roles.ignore-mismatched-effect").fromValue(false)
-  make[Boolean].named("distage.roles.activation.ignore-unknown").fromValue(false)
-  make[Boolean].named("distage.roles.activation.warn-unset").fromValue(true)
+  make[Boolean].named("distage.roles.reflection").from(DebugProperties.`izumi.distage.roles.reflection`.boolValue(default = true))
+  make[Boolean].named("distage.roles.logs.json").from(DebugProperties.`izumi.distage.roles.logs.json`.boolValue(default = false))
+  make[Boolean].named("distage.roles.ignore-mismatched-effect").from(DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(default = false))
+  make[Boolean].named("distage.roles.activation.ignore-unknown").from(DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.boolValue(default = false))
+  make[Boolean].named("distage.roles.activation.warn-unset").from(DebugProperties.`izumi.distage.roles.activation.warn-unset`.boolValue(default = true))
+
+  make[Boolean].named("distage.roles.always-include-reference-role-configs").from(DebugProperties.`distage.roles.always-include-reference-role-configs`.boolValue(true))
+  make[Boolean]
+    .named("distage.roles.always-include-reference-common-configs").from(DebugProperties.`distage.roles.always-include-reference-common-configs`.boolValue(true))
+  make[Boolean].named("distage.roles.ignore-all-reference-configs").from(DebugProperties.`distage.roles.ignore-all-reference-configs`.boolValue(default = false))
 
   make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
   make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)

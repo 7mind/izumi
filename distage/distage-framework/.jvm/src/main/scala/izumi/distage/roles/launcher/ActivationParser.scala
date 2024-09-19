@@ -12,10 +12,9 @@ import izumi.logstage.api.IzLogger
   * Note, besides replacing this class, activation parsing strategy can also be changed by using bootstrap modules or plugins
   * and adding an override for `make[Activation].named("roleapp")` to [[izumi.distage.roles.RoleAppMain#roleAppBootOverrides]]
   */
-trait ActivationParser extends AbstractActivationParser {}
+trait ActivationParser extends AbstractActivationParser
 
 object ActivationParser {
-  private final val syspropWarnUnsetActivations = DebugProperties.`izumi.distage.roles.activation.warn-unset`.boolValue(true)
 
   class Impl(
     parser: RoleAppActivationParser,
@@ -43,7 +42,7 @@ object ActivationParser {
         cmdActivations // commandline choices override values in config
 
       val unsetActivations = activationInfo.availableChoices.keySet diff resultActivation.activeChoices.keySet
-      if (unsetActivations.nonEmpty && warnUnsetActivations && syspropWarnUnsetActivations) {
+      if (unsetActivations.nonEmpty && warnUnsetActivations) {
         logger.raw.warn {
           s"""Some activation choices were left unspecified both on the commandline and in default configuration:
              |

@@ -40,6 +40,7 @@ object Fixture {
     @ConfigDoc("docstest: field doc") intval: Int,
     strval: String,
     overridenInt: Int,
+    explicitInt: Int,
     systemPropInt: Int,
     systemPropList: List[Int],
     a: A,

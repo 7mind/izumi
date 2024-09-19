@@ -284,8 +284,12 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "produce config dumps and support minimization" in {
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
-      withProperties(overrides ++ Map(TestPluginCatsIO.versionProperty -> version.version)) {
-        TestEntrypoint.main(Array("-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
+      val role00OverrideConf = getClass.getResource("/testrole00-override.conf").getPath
+      withProperties(
+        overrides ++
+        Map(TestPluginCatsIO.versionProperty -> version.version)
+      ) {
+        TestEntrypoint.main(Array("-nc", "-c", role00OverrideConf, "-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
       }
 
       val cwCfg = cfg("configwriter-full", version)
@@ -328,6 +332,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       // ConfigWriter DOES NOT consider system properties!
       assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 222)
       assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List(1, 2, 3))
+
+      // ConfigWriter DOES NOT consider non-reference configs!
+      assert(role0CfgMinParsed.getInt("testservice.explicitInt") == 111)
 
       val role3 = cfg("testrole03-full", version)
       val role3Min = cfg("testrole03-minimized", version)
@@ -382,6 +389,42 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       assert(role5CfgMinParsed.hasPath("rolelocal2"))
       assert(role5CfgMinParsed.hasPath("rolelocal2.bool"))
+
+      // JSON Schema Generator works:
+
+      val role0JsonSchema = jsonSchema("testrole00-minimized", version)
+
+      assert(role0JsonSchema.exists(), s"$role0JsonSchema exists")
+
+      val role0JsonSchemaParsed = io.circe.parser.parse(new String(Files.readAllBytes(role0JsonSchema.toPath), UTF_8)).toTry.get
+
+      val testServiceConfCursor = role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.TestServiceConf")
+      val testServiceDoc = testServiceConfCursor.downField("$comment").as[String].toTry.get
+      assert(testServiceDoc == "docstest: case class doc")
+      val fieldDoc = testServiceConfCursor.downField("properties").downField("intval").downField("$comment").as[String].toTry.get
+      assert(fieldDoc == "docstest: field doc")
+
+      val sealedTraitDoc =
+        role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.A").downField("$comment").as[String].toTry.get
+      assert(sealedTraitDoc == "docstest: sealed trait doc")
+
+      val a1Doc = role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.A1").downField("$comment").as[String].toTry.get
+      assert(a1Doc == "docstest: A1 doc")
+
+      val a2Doc = role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.A2").downField("$comment").as[String].toTry.get
+      assert(a2Doc == "docstest: A2 doc")
+
+      val configTestJsonSchema = jsonSchema("configtest-minimized", version)
+
+      assert(configTestJsonSchema.exists(), s"$configTestJsonSchema exists")
+
+      val configTestJsonSchemaParsed = io.circe.parser.parse(new String(Files.readAllBytes(configTestJsonSchema.toPath), UTF_8)).toTry.get
+
+      val configTestConfigCursor = configTestJsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.ConfigTestConfig")
+      val configTestDoc = configTestConfigCursor.downField("$comment").as[String].toTry.get
+      assert(configTestDoc == "docstest: ConfigTestConfig doc")
+      val commonReferenceDevFieldDoc = configTestConfigCursor.downField("properties").downField("commonReferenceDev").downField("$comment").as[String].toTry.get
+      assert(commonReferenceDevFieldDoc == "docstest: field doc")
     }
 
     "prioritize configs as expected" in {
@@ -403,19 +446,34 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
       assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
-      assert(configTestConfig.commonReference == 9, "common-reference")
+      assert(configTestConfig.commonReference == 29, "common-reference")
       assert(configTestConfig.common == 3, "common")
       assert(configTestConfig.applicationReference == 9, "application-reference")
       assert(configTestConfig.application == 5, "application")
       assert(configTestConfig.roleReference == 9, "role-reference")
-      assert(configTestConfig.role == 5, "role")
+      assert(configTestConfig.role == 7, "role")
+
+      withProperties(
+        DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false"
+      ) {
+        TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+        assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+        assert(configTestConfig.commonReference == 29, "common-reference")
+        assert(configTestConfig.common == 3, "common")
+        assert(configTestConfig.applicationReference == 9, "application-reference")
+        assert(configTestConfig.application == 5, "application")
+        assert(configTestConfig.roleReference == 9, "role-reference")
+        assert(configTestConfig.role == 5, "role")
+        ()
+      }
 
       val commonOverrideConf = getClass.getResource("/configtest-common-override.conf").getPath
 
       TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
 
       assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-      assert(configTestConfig.commonReference == 8, "common-reference")
+      assert(configTestConfig.commonReference == 28, "common-reference")
       assert(configTestConfig.common == 8, "common")
       assert(configTestConfig.applicationReference == 8, "application-reference")
       assert(configTestConfig.application == 8, "application")
@@ -425,7 +483,47 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
       assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-      assert(configTestConfig.commonReference == 9, "common-reference")
+      assert(configTestConfig.commonReference == 289, "common-reference")
+      assert(configTestConfig.common == 8, "common")
+      assert(configTestConfig.applicationReference == 9, "application-reference")
+      assert(configTestConfig.application == 8, "application")
+      assert(configTestConfig.roleReference == 9, "role-reference")
+      assert(configTestConfig.role == 7, "role") // role reference beats explicit common config
+
+      withProperties(
+        DebugProperties.`distage.roles.always-include-reference-common-configs`.name -> "false"
+      ) {
+        TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
+
+        assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+        assert(configTestConfig.commonReference == 8, "common-reference")
+        assert(configTestConfig.common == 8, "common")
+        assert(configTestConfig.applicationReference == 8, "application-reference")
+        assert(configTestConfig.application == 8, "application")
+        assert(configTestConfig.roleReference == 6, "role-reference")
+        assert(configTestConfig.role == 7, "role")
+        ()
+      }
+
+      withProperties(
+        DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false"
+      ) {
+        TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+        assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+        assert(configTestConfig.commonReference == 289, "common-reference")
+        assert(configTestConfig.common == 8, "common")
+        assert(configTestConfig.applicationReference == 9, "application-reference")
+        assert(configTestConfig.application == 8, "application")
+        assert(configTestConfig.roleReference == 9, "role-reference")
+        assert(configTestConfig.role == 8, "role")
+        ()
+      }
+
+      TestEntrypoint.main(Array("-c", commonOverrideConf, "-nc", "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+      assert(configTestConfig.commonReference == 89, "common-reference")
       assert(configTestConfig.common == 8, "common")
       assert(configTestConfig.applicationReference == 9, "application-reference")
       assert(configTestConfig.application == 8, "application")
@@ -487,5 +585,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
   private def cfg(role: String, version: ArtifactVersion): File = {
     Paths.get(targetPath, s"$role-${version.version}.json").toFile
+  }
+  private def jsonSchema(role: String, version: ArtifactVersion): File = {
+    Paths.get(targetPath, s"$role-${version.version}.json.jsonschema").toFile
   }
 }

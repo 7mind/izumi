@@ -39,4 +39,38 @@ object DebugProperties extends properties.DebugProperties {
     * @deprecated since 1.0.1
     */
   final val `izumi.distage.roles.reflection` = BoolProperty("izumi.distage.roles.reflection")
+
+  /**
+    * Force JSON logging
+    *
+    * Can be set / overridden via command-line option `--log-format`/`-lf`
+    *
+    * Default: `false`
+    */
+  final val `izumi.distage.roles.logs.json` = BoolProperty("izumi.distage.roles.logs.json")
+
+  /**
+    * Include reference role configs as fallback configs if an explicit role config is passed on the command-line.
+    *
+    * If `false`, explicit role config fully replaces reference role configs instead of overriding them.
+    *
+    * Default: `true`
+    */
+  final val `distage.roles.always-include-reference-role-configs` = BoolProperty("distage.roles.always-include-reference-role-configs")
+
+  /**
+    * Include reference common configs as fallback configs if an explicit common config is passed on the command-line.
+    *
+    * If `false`, explicit common config fully replaces reference common configs instead of overriding them.
+    *
+    * Default: `true`
+    */
+  final val `distage.roles.always-include-reference-common-configs` = BoolProperty("distage.roles.always-include-reference-common-configs")
+
+  /**
+    * Don't use any reference configs, role or common, only read configs passed on the command-line and system properties.
+    *
+    * Default: `false`
+    */
+  final val `distage.roles.ignore-all-reference-configs` = BoolProperty("distage.roles.ignore-all-reference-configs")
 }
