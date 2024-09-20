@@ -5,6 +5,16 @@ import distage.config.{AppConfig, ConfigModuleDef}
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.language.Quirks
 
+trait TestService1[F[+_, +_]] {
+  def xyz(int: Int): Int
+}
+
+class TImpl[F[+_, +_]] extends TestService1[F] {
+  override def xyz(int: Int): Int = int
+}
+
+class TestService2[F[+_, +_]]
+
 // application
 trait TestAppService
 
