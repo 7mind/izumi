@@ -18,20 +18,17 @@ object MetaInstances {
     transparent inline def summonDIConfigMeta[A]: DIConfigMeta[A] =
       summonFrom {
         case reader: DIConfigMeta[A] => reader
-        case given Mirror.Of[A] => derived[A]
+        case m @ given Mirror.Of[A] => derived[A](using m)
       }
 
     transparent inline def derived[A](using m: Mirror.Of[A]): DIConfigMeta[A] = {
       inline m match {
-        case given Mirror.ProductOf[A] => derivedProduct
-        case given Mirror.SumOf[A] => derivedSum
+        case m @ given Mirror.ProductOf[A] => derivedProduct(using m)
+        case m @ given Mirror.SumOf[A] => derivedSum(using m)
       }
     }
 
-    /** Override pureconfig's default `kebab-case` fields – force CamelCase product-hint */
     transparent inline def derivedProduct[A](using m: Mirror.ProductOf[A]): DIConfigMeta[A] = {
-      val tname = constValue[m.MirroredLabel]
-
       inline erasedValue[A] match {
         case _: Tuple =>
           DIConfigMeta[A](ConfigMetaType.TUnknown())
@@ -69,25 +66,6 @@ object MetaInstances {
           Nil
       }
 
-    /** Override pureconfig's default `type` field type discriminator for sealed traits.
-      * Instead, use `circe`-like format with a single-key object. Example:
-      *
-      * {{{
-      *   sealed trait AorB
-      *   final case class A(a: Int) extends AorB
-      *   final case class B(b: String) extends AorB
-      *
-      *   final case class Config(values: List[AorB])
-      * }}}
-      *
-      * in config:
-      *
-      * {{{
-      *   config {
-      *     values = [{ A { a = 5 } }, { B { b = cba } }]
-      *   }
-      * }}}
-      */
     transparent inline def derivedSum[A](using m: Mirror.SumOf[A]): DIConfigMeta[A] = {
       val options: Map[String, DIConfigMeta[A]] =
         Utils
@@ -121,17 +99,17 @@ object MetaInstances {
           derived[A0].asInstanceOf[DIConfigMeta[A]]
       }
 
-    import scala.quoted.*
+    import scala.quoted.{Expr, Quotes, Type}
 
     // https://github.com/softwaremill/magnolia/blob/scala3/core/src/main/scala/magnolia1/macro.scala#L135
-    private inline def typeId[T]: ConfigMetaTypeId = ${ typeIdImpl[T] }
+    transparent inline def typeId[T]: ConfigMetaTypeId = ${ typeIdImpl[T] }
 
-    private inline def typeDocs[T]: Option[String] = ${ typeDocsImpl[T] }
+    transparent inline def typeDocs[T]: Option[String] = ${ typeDocsImpl[T] }
 
     transparent inline def fieldAnnos[T]: List[(String, String)] = ${ fieldAnnosImpl[T] }
 
     def fieldAnnosImpl[T: Type](using qctx: Quotes): Expr[List[(String, String)]] = {
-      import quotes.reflect.*
+      import qctx.reflect.*
 
       val tpe = TypeRepr.of[T]
       val caseClassFields = tpe.typeSymbol.caseFields
@@ -147,8 +125,8 @@ object MetaInstances {
       Expr.ofList(fieldNames.map(Expr.apply))
     }
 
-    private def typeDocsImpl[T: Type](using Quotes): Expr[Option[String]] = {
-      import quotes.reflect.*
+    def typeDocsImpl[T: Type](using qctx: Quotes): Expr[Option[String]] = {
+      import qctx.reflect.*
 
       val idAnnotationSym: Symbol = TypeRepr.of[ConfigDoc].typeSymbol
       val tpe = TypeRepr.of[T]
@@ -156,9 +134,8 @@ object MetaInstances {
       Expr(ReflectionUtil.findTypeAnnoString(tpe, idAnnotationSym))
     }
 
-    private def typeIdImpl[T: Type](using Quotes): Expr[ConfigMetaTypeId] = {
-
-      import quotes.reflect.*
+    def typeIdImpl[T: Type](using qctx: Quotes): Expr[ConfigMetaTypeId] = {
+      import qctx.reflect.*
 
       def normalizedName(s: Symbol): String =
         if s.flags.is(Flags.Module) then s.name.stripSuffix("$") else s.name
