@@ -15,16 +15,12 @@ trait IncludesDSL {
 
   /** Add all bindings in `that` module into `this` module
     *
-    * WON'T add global tags from [[TagsDSL#tag]] to included bindings.
+    * WILL add outer tags / axis values from [[TagsDSL#tag]] to included bindings, unless they're overridden by tags / axis values in the included module.
     */
   final protected def include(that: ModuleBase, tagMergeStrategy: TagMergePolicy = TagMergePolicy.MergePreferInner): Unit = discard {
     mutableAsIsIncludes += Include(that, tagMergeStrategy)
   }
 
-  /** Add all bindings in `that` module into `this` module
-    *
-    * WILL add global tags from [[TagsDSL#tag]] to included bindings.
-    */
   @deprecated("Outer module's tags are now added to included module by default, use regular `include`", "1.2.9")
   final protected def includeApplyTags(that: ModuleBase): Unit = {
     include(that, TagMergePolicy.MergePreferInner)
