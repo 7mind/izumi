@@ -18,6 +18,7 @@ function nixify() {
       exec nix develop \
         --ignore-environment \
         --keep HOME \
+        --keep DOCKER_HOST \
         --keep CI_BRANCH \
         --keep CI_COMMIT \
         --keep CI_BRANCH_TAG \

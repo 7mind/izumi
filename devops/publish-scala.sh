@@ -4,8 +4,6 @@ set -e
 set -x
 
 source ./devops/.env.sh
-printenv
-
 source ./devops/.validate-publishing.sh
 
 [[ ! -f "$SONATYPE_SECRET" ]] && echo "SONATYPE_SECRET=$SONATYPE_SECRET is not a file" && exit 0

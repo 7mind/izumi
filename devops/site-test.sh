@@ -4,7 +4,6 @@ set -e
 set -x
 
 source ./devops/.env.sh
-printenv
 
 sbt -batch -no-colors -v \
   "project docs" \

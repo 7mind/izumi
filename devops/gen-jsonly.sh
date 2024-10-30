@@ -3,4 +3,6 @@
 set -e
 set -x
 
+source ./devops/.env.sh
+
 bash sbtgen.sc --nojvm --js

@@ -19,9 +19,17 @@ class DockerSupportModule[F[_]: TagK](configModule: ModuleBase) extends ModuleDe
   make[DefaultDockerClientConfig].from {
     (clientConfig: Docker.ClientConfig) =>
       /** We do not need to use global registry here since it would be overridden in CMD requests. */
-      val remote = clientConfig.remote.filter(_ => clientConfig.useRemote)
+      val remote = clientConfig.remote
+        .filter(_ => clientConfig.useRemote)
       Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
-        .mut(remote)((b, c) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config))
+        .mut(remote)(
+          (builder, remoteConfig) =>
+            builder
+              .withDockerHost(remoteConfig.host)
+              .withDockerTlsVerify(remoteConfig.tlsVerify)
+              .withDockerCertPath(remoteConfig.certPath)
+              .withDockerConfig(remoteConfig.config)
+        )
         .get.build()
   }
 

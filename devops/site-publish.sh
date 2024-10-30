@@ -4,8 +4,6 @@ set -e
 set -x
 
 source ./devops/.env.sh
-printenv
-
 source ./devops/.validate-publishing.sh
 
 sbt -batch -no-colors -v \
