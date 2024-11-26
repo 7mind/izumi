@@ -226,4 +226,6 @@ object Plan {
     }
   }
 
+  implicit def planOrdering: Ordering[Plan] = Ordering.by(_.input)
+
 }

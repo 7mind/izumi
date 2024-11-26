@@ -5,7 +5,7 @@ import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.functional.quasi.QuasiIO.syntax.*
 
 trait ExtParTraverse[F[_]] {
-  def apply[A, B](
+  def apply[A: Ordering, B](
     l: Iterable[A]
   )(getParallelismGroup: A => Parallelism
   )(f: A => F[B]
@@ -18,7 +18,7 @@ object ExtParTraverse {
     F: QuasiIO[F],
     P: QuasiAsync[F],
   ) extends ExtParTraverse[F] {
-    def apply[A, B](
+    def apply[A: Ordering, B](
       l: Iterable[A]
     )(getParallelismGroup: A => Parallelism
     )(f: A => F[B]
@@ -31,7 +31,7 @@ object ExtParTraverse {
       F.traverse(sorted) {
         case (Parallelism.Fixed(n), l) if l.size > 1 => P.parTraverseN(n)(l)(f)
         case (Parallelism.Unlimited, l) if l.size > 1 => P.parTraverse(l)(f)
-        case (_, l) => F.traverse(l)(f)
+        case (_, l) => F.traverse(l.toSeq.sorted)(f)
       }.map(_.flatten)
     }
   }

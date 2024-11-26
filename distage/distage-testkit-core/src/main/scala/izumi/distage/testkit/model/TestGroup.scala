@@ -5,12 +5,20 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.testkit.runner.impl.services.Timed
 import izumi.fundamentals.collections.nonempty.NEList
+import scala.math.Ordering
 
 final case class PreparedTest[F[_]](
   test: DistageTest[F],
   timedPlan: Timed[Plan],
   roots: Set[DIKey],
 )
+
+object PreparedTest {
+  implicit def orderedPreparedTest[F[_]]: Ordering[PreparedTest[F[_]]] =
+    Ordering.by { case PreparedTest(test, _, _) =>
+      (test.testMeta.pos.file, test.testMeta.pos.line)
+    }
+}
 
 final case class FailedTest[F[_]](
   test: DistageTest[F],

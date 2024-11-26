@@ -80,3 +80,8 @@ final case class TestTree[F[_]](
     }
   }
 }
+
+object TestTree {
+  implicit def testTreeOrdering[F[_]]: Ordering[TestTree[F[_]]] = Ordering.by(_.levelPlan)
+}
+

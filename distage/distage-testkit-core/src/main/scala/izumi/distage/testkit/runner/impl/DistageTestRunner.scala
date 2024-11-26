@@ -17,6 +17,13 @@ import scala.concurrent.duration.FiniteDuration
 
 object DistageTestRunner {
   case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism)
+
+  object SuiteData {
+    implicit def suiteDataOrdering: Ordering[SuiteData] = Ordering.by {
+      case SuiteData(id, meta, suiteParallelism) =>
+        (id.suiteId, meta.suiteName, meta.suiteClassName, suiteParallelism.toString())
+    }
+  }
 }
 
 class DistageTestRunner[F[_]: TagK, G[_]](

@@ -86,4 +86,5 @@ object PlannerInput {
   def apply(bindings: ModuleBase, activation: Activation, root: DIKey, roots: DIKey*): PlannerInput =
     PlannerInput(bindings, Roots(root, roots*), activation, DefaultPrivacy)
 
+  implicit def plannerInputOrdering: Ordering[PlannerInput] = Ordering.by(_.hashCode())
 }

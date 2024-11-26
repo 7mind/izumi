@@ -63,6 +63,11 @@ object TestPlanner {
     highestDebugOutputInTests: Boolean,
   )
 
+  object PreparedTestEnv {
+    implicit def preparedTestEnvOrdering: Ordering[PreparedTestEnv] =
+      Ordering.by(_.runtimePlan)
+  }
+
   sealed trait PlanningFailure
   object PlanningFailure {
     final case class Exception(throwable: Throwable) extends PlanningFailure

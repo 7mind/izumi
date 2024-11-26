@@ -82,6 +82,8 @@ object TestTreeRunner {
       // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
       // we assume that individual tests within a suite can't have different values of `parallelSuites`
       // (because of structure & that difference even if happens wouldn't be actionable at the level of suites anyway)
+      implicit def testsBySuiteOrdering[A]: Ordering[(DistageTestRunner.SuiteData, A)] = Ordering.by(_._1)
+
       parTraverse(testsBySuite)(_._1.suiteParallelism) {
         case (suiteData, preparedTests) =>
           F.bracket(
