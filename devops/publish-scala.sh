@@ -17,7 +17,8 @@ if [[ "$CI_BRANCH_TAG" =~ ^v.*$ ]] ; then
     "show credentials" \
     "$VERSION_COMMAND clean" \
     "$VERSION_COMMAND package" \
-    "$VERSION_COMMAND publishSigned"
+    "$VERSION_COMMAND publishSigned" \
+    "sonatypeBundleRelease"
 else
   sbt -batch -no-colors -v \
     --java-home "$JAVA_HOME" \
