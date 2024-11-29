@@ -388,8 +388,8 @@ object AbstractBindingDefDSL {
         case _: SetImpl => 0
         case _: AddTags => 0
         case _: SetId => 0
-        case _: SetIdFromImplName => 1
-        case _: Modify[?] => 2
+        case _: Modify[?] => 1
+        case _: SetIdFromImplName => 2
         case _: AliasTo => 3
       }
       sortedOps.foreach {
@@ -406,11 +406,11 @@ object AbstractBindingDefDSL {
           b.implementation match {
             case ImplDef.ProviderImpl(implType, function) =>
               val newProvider = functoidModifier(Functoid(function)).get
-              if (newProvider.ret <:< implType) {
+              if (newProvider.ret <:< b.key.tpe) {
                 b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
               } else {
                 throw new InvalidFunctoidModifier(
-                  s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}` (${initial.origin})"
+                  s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the key type `${b.key.tpe}` (${initial.origin})"
                 )
               }
             case _ =>
