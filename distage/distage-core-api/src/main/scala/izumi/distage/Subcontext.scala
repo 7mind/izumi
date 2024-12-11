@@ -27,8 +27,52 @@ trait Subcontext[A] {
 
   def plan: Plan
 
-  def modify[B](f: Functoid[A] => Functoid[B]): Subcontext[B]
+  final def map[B: Tag](f: A => B): Subcontext[B] = unsafeModify(_.map(f))
 
-  final def map[B: Tag](f: A => B): Subcontext[B] = modify(_.map(f))
-  final def flatAp[B: Tag](f: Functoid[A => B]): Subcontext[B] = modify(_.flatAp(f))
+  /**
+    * Unsafely substitute the root extracting Functoid.
+    *
+    * Note, because the `plan` has been calculated ahead of time with `A`
+    * as the root, it's not possible to request additional components
+    * via Functoid that weren't already in the graph as dependencies of `A`
+    * – everything that `A` doesn't depend is not in the plan.
+    *
+    * Example:
+    *
+    * {{{
+    * val submodule = new ModuleDef {
+    *   make[Int].fromValue(3)
+    *   make[Int].named("five").from((_: Int) + 2)
+    *   make[String].fromValue("x")
+    * }
+    *
+    * makeSubcontext[Int].named("five").withSubmodule(submodule)
+    *
+    * ...
+    *
+    * (subcontext: Subcontext[Int])
+    *   .unsafeModify(_ => Functoid.identity[String])
+    *   .produceRun(println(_))
+    *   // error: `String` is not available
+    * }}}
+    *
+    * A binding for `String` is defined in the submodule, but is not referenced by `Int @Id("five")` binding.
+    * Therefore it was removed by garbage collection and cannot be extracted with this Subcontext. You'd have to create
+    * another `Subcontext[String]` with the same submodule to create `String`:
+    *
+    * {{{
+    * makeSubcontext[String](submodule)
+    *
+    * ...
+    *
+    * (subcontext: Subcontext[String])
+    *   .produceRun(println(_))
+    *   // x
+    * }}}
+    *
+    * If you DO need dynamic replanning, you'll need to use
+    * [[https://izumi.7mind.io/distage/advanced-features.html#depending-on-locator nested injection]]
+    * directly.
+    */
+  def unsafeModify[B](f: Functoid[A] => Functoid[B]): Subcontext[B]
 }

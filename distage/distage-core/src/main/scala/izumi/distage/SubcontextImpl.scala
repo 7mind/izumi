@@ -50,7 +50,7 @@ open class SubcontextImpl[A](
     produce().use(f)
   }
 
-  override def modify[B](f: Functoid[A] => Functoid[B]): Subcontext[B] = {
+  override def unsafeModify[B](f: Functoid[A] => Functoid[B]): Subcontext[B] = {
     new SubcontextImpl(externalKeys, parent, plan, f(functoid), providedExternals, selfKey)
   }
 
