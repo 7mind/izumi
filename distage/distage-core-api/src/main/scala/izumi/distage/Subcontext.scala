@@ -3,6 +3,7 @@ package izumi.distage
 import izumi.distage.model.definition.Identifier
 import izumi.functional.lifecycle.Lifecycle
 import izumi.distage.model.plan.Plan
+import izumi.distage.model.providers.Functoid
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
@@ -26,5 +27,8 @@ trait Subcontext[A] {
 
   def plan: Plan
 
-  def map[B: Tag](f: A => B): Subcontext[B]
+  def modify[B](f: Functoid[A] => Functoid[B]): Subcontext[B]
+
+  final def map[B: Tag](f: A => B): Subcontext[B] = modify(_.map(f))
+  final def flatAp[B: Tag](f: Functoid[A => B]): Subcontext[B] = modify(_.flatAp(f))
 }

@@ -23,7 +23,7 @@ class SubcontextStrategyDefaultImpl extends SubcontextStrategy {
         val locatorRef = value.asInstanceOf[LocatorRef]
         val provider = op.wiring.provider
         val subplan = op.wiring.subplan
-        val ctx = SubcontextImpl.empty[Any](op.wiring.externalKeys, locatorRef, subplan, Functoid(provider), op.target)
+        val ctx = SubcontextImpl.initial[Any](op.wiring.externalKeys, locatorRef, subplan, Functoid(provider), op.target)
         F.pure(Right(Seq(NewObjectOp.UseInstance(op.target, ctx))))
 
       case None =>
