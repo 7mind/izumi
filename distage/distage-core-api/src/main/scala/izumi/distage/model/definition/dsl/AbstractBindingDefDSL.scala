@@ -355,6 +355,10 @@ object AbstractBindingDefDSL {
       addOp(SubcontextInstruction.SetExtractor(f))(toSame)
     }
 
+    final def extractSelf: Self = {
+      addOp(SubcontextInstruction.SetExtractor(Functoid.identity[T]))(toSame)
+    }
+
     final def localDependency[B: Tag]: Self = {
       localDependency(DIKey[B])
     }
