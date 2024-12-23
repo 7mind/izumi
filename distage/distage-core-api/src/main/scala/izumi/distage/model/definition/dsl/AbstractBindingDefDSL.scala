@@ -355,7 +355,7 @@ object AbstractBindingDefDSL {
       addOp(SubcontextInstruction.SetExtractor(f))(toSame)
     }
 
-    final def extractSelf: Self = {
+    final def extractSelf(implicit t: Tag[T]): Self = {
       addOp(SubcontextInstruction.SetExtractor(Functoid.identity[T]))(toSame)
     }
 
