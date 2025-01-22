@@ -48,9 +48,25 @@ object TextTree {
       }
       q"$begin$middle$end"
     }
+
+    def joinN(): TextTree[T] = {
+      target.join("\n")
+    }
+
+    def joinNN(): TextTree[T] = {
+      target.join("\n\n")
+    }
   }
 
   implicit final class TextTreeGenericOps[T](private val target: TextTree[T]) {
+    def last: Option[Char] = target match {
+      case ValueNode(_) => None
+      case StringNode(value) => value.lastOption
+      case Node(chunks) => chunks.toList.filter(_.nonEmpty).lastOption.flatMap(_.last)
+      case Shift(nested, _) => nested.last
+      case Trim(nested) => nested.last
+    }
+
     def as[W](implicit conv: T => W): TextTree[W] = {
       target.map(conv)
     }
@@ -194,6 +210,46 @@ object TextTree {
 
     implicit def subtree[T](node: TextTree[T]): InterpolationArg[T] = new InterpolationArg[T] {
       override def asNode: TextTree[T] = node
+    }
+  }
+
+  object style {
+    object c {
+      implicit class TextTreeCStyleOps[T](target: TextTree[T]) {
+        def endC(): TextTree[T] = {
+          target.last match {
+            case Some('}') => target
+            case None => target
+            case _ => q"$target;"
+          }
+        }
+      }
+
+      implicit class TextTreeSeqCStyleOps[T](target: Seq[TextTree[T]]) {
+        def joinCN(): TextTree[T] = {
+          if (target.isEmpty) {
+            StringNode("")
+          } else {
+            val withSeparators = target.flatMap {
+              t =>
+                if (t.last.contains('}')) {
+                  Seq(t, StringNode("\n"))
+                } else {
+                  Seq(t, StringNode(";\n"))
+                }
+
+            }.init
+
+            NEList.from(withSeparators) match {
+              case Some(value) =>
+                Node(value)
+              case None =>
+                StringNode("")
+            }
+          }
+        }
+
+      }
     }
   }
 }
