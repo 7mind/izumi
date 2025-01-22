@@ -97,6 +97,7 @@ jobs:
           # TODO: do we need scoverage.xml? If so files: may be just omitted
           # files: cobertura.xml,scoverage.xml
           # flags: unittests
+      - uses: sbt/setup-sbt@v1 # setup sbt
       - name: Upload dependency graph
         uses: scalacenter/sbt-dependency-submission@v2
 
