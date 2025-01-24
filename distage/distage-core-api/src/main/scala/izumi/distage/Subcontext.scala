@@ -20,7 +20,8 @@ trait Subcontext[A] {
     *       Use `produce` if you need to extend the lifetime of the Subcontext's resources.
     */
   def produceRun[F[_]: QuasiIO: TagK, B](f: A => F[B]): F[B]
-  final def produceRun[B](f: A => B): B = produceRun[Identity, B](f)
+
+  final def produceRunSimple[B](f: A => B): B = produceRun[Identity, B](f)
 
   def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): Subcontext[A]
   def provide[T: Tag](name: Identifier)(value: T)(implicit pos: CodePositionMaterializer): Subcontext[A]
@@ -30,7 +31,7 @@ trait Subcontext[A] {
   final def map[B: Tag](f: A => B): Subcontext[B] = unsafeModify(_.map(f))
 
   /**
-    * Unsafely substitute the root extracting Functoid.
+    * Unsafely substitute the Functoid that extracts the root component.
     *
     * Note, because the `plan` has been calculated ahead of time with `A`
     * as the root, it's not possible to request additional components
@@ -75,4 +76,7 @@ trait Subcontext[A] {
     * directly.
     */
   def unsafeModify[B](f: Functoid[A] => Functoid[B]): Subcontext[B]
+
+  @deprecated("Renamed to produceRunSimple", "1.2.17")
+  final def produceRun[B](f: A => B): B = produceRunSimple[B](f)
 }

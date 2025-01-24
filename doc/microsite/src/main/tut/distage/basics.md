@@ -1397,6 +1397,17 @@ Injector()
 
 ## Subcontexts
 
+Subcontext seems to do most of this - it inherits from global scope by default. You can use include inside subcontext's module to spread out definitions into multiple modules. It is limited to a target dependency, but the target dependency itself is not limited - you can make a tuple or a case class binding to aggregate multiple components in a tuple or even add LocatorRef to extract arbitrary components (but they would have to be dependencies of other components in the tuple).
+
+It wouldn't make a lot of sense to make Subcontexts fully unrestricted wrt the target dependency - because Subcontexts are actually an optimization of nested injection pattern, where the target dependency is known ahead of time. This allows the subcontext to be pre-planned in advance, so when you create an instance of the subgraph there is no injector overhead - the constructors are just called with local dependencies according to the pre-calculated plan. Since values of local dependencies can't influence the shape of the graph there is no reason to recalculate it.
+
+Now, if you actually need to be able to make different subgraphs out of a module at runtime, you can manually use nested injection - that way you have full flexibility with regards to everything, you can even do another classpath scan for Plugins and construct the module from that at runtime.
+
+However, for efficiency, you'd probably want to use pre-calculated subcontexts, because people rarely make dynamically extensible applications especially in Scala. It would be easier to just make multiple subcontexts for each different component - they can even use the same module, it doesn't matter, only real dependencies of the target dependency will be created, modules can safely contain unused bindings:
+
+
+Note also that Subcontexts are generalized Factories. A subcontext with just one binding is exactly the same as a Factory.
+
 Sometimes multiple components depend on the same piece of data that appears locally, after all the components were already wired.
 This data may need to be passed around repeatedly, possibly across the entire application. To do this, we may have to add an argument
 to most methods of an application, or have to use a Reader monad everywhere.
