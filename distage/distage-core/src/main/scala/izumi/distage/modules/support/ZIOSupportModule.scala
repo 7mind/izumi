@@ -39,6 +39,17 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
 
   addImplicit[TagK3[ZIO]]
 
+  // The Runtime ZLayers (such as those found in zio.Runtime.* or zio.test.*)
+  // used to configure the ZIO runtime and associated magic FiberRefs.
+  // You can override this binding in user code to provide your own configuration,
+  // e.g. to obtain TestClock from zio-test:
+  // {{{
+  //   make[List[ZLayer[Any, Nothing, Any]]].named("zio-runtime-configuration").from {
+  //     List(zio.test.testEnvironment)
+  //   }
+  // }}}
+  make[List[ZLayer[Any, Nothing, Any]]].named("zio-runtime-configuration").fromValue(Nil)
+
   // assume default environment is `Any`, otherwise let the error message guide the user here.
   make[ZEnvironment[Any]].named("zio-initial-env").fromValue(ZEnvironment.empty)
 
@@ -63,7 +74,6 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
       )
   }
   make[FailureHandler].fromValue(FailureHandler.Default)
-  make[List[ZLayer[Any, Nothing, Any]]].named("zio-runtime-configuration").fromValue(Nil)
 
   make[Executor].named("io").from {
     // no reason to use custom blocking pool, since this one is hardcoded in zio.internal.ZScheduler.submitBlocking

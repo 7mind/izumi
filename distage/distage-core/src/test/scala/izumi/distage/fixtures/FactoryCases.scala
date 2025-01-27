@@ -27,6 +27,7 @@ object FactoryCases {
     final case class AssistedTestClass(b: Dependency, a: Int)
     final case class NamedAssistedTestClass(@Id("special") b: Dependency, a: Int)
     final case class GenericAssistedTestClass[T, S](a: List[T], b: List[S], c: Dependency)
+    final case class AmbiguousTestClass(a: Dependency @Id("special"), b: Dependency @Id("veryspecial"))
 
     trait Factory {
       def wiringTargetForDependency: Dependency
@@ -54,6 +55,16 @@ object FactoryCases {
 
     trait GenericAssistedFactory {
       def x[T, S](t: List[T], s: List[S]): GenericAssistedTestClass[T, S]
+    }
+
+    trait AmbiguousOnlyParamNamesFactory {
+      def x(a: Dependency @Id("special"), b: Dependency @Id("veryspecial")): AmbiguousTestClass
+      def y(b: Dependency @Id("veryspecial"), a: Dependency @Id("special")): AmbiguousTestClass
+    }
+
+    trait AmbiguousOnlyIdFactory {
+      def x(special: Dependency @Id("special"), veryspecial: Dependency @Id("veryspecial")): AmbiguousTestClass
+      def y(veryspecial: Dependency @Id("veryspecial"), special: Dependency @Id("special")): AmbiguousTestClass
     }
 
     trait AbstractDependency

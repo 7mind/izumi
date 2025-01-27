@@ -510,7 +510,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
 
       requireConcreteTypeConstructor(resultTpe, "FactoryConstructor")
 
-      val getFactoryProductType = {
+      val getFactoryProductType: List[TypeTree] => TypeRepr = {
         (methodTypeArgs: List[TypeTree]) =>
 
           val rettAppliedProperly = methodType match {
@@ -542,7 +542,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
 
           res.dealias.simplified
       }
-      val factoryProductType = getFactoryProductType(Nil)
+      val factoryProductType: TypeRepr = getFactoryProductType(Nil)
 
       val isTrait = symbolIsTraitOrAbstract(factoryProductType.typeSymbol)
 
@@ -555,7 +555,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
         ctxUntyped.assertIsWireableTrait(isInFactoryConstructor = true)
       }
 
-      val factoryProductCtorParamLists = if (isTrait) {
+      val factoryProductCtorParamLists: ParamReprLists = if (isTrait) {
         val byNameMethodArgs = ctxUntyped.methodDecls.map {
           case MemberRepr(n, _, s, t, _) => ParamRepr(n, s, returnTypeOfMethodOrByName(t))
         } // become byName later via ensureByName if they're InjectedDependencyParameter
@@ -565,13 +565,13 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       }
       assertSignatureIsAcceptableForFactory(factoryProductCtorParamLists.flatten, resultTpe, s"implementation constructor ${factoryProductType.show}")
 
-      val methodParams = extractMethodParamLists(methodType, mbMethodSym.getOrElse(Symbol.noSymbol)).flatten
+      val methodParams: List[ParamRepr] = extractMethodParamLists(methodType, mbMethodSym.getOrElse(Symbol.noSymbol)).flatten
       assertSignatureIsAcceptableForFactory(methodParams, resultTpe, s"factory method $methodName")
 
       val indexedMethodParams = methodParams.zipWithIndex
       val methodParamIndex = indexedMethodParams.map { case (ParamRepr(n, _, t), idx) => (t, (n, idx)) }
 
-      val factoryProductParamss = factoryProductCtorParamLists.zipWithIndex.map {
+      val factoryProductParamss: List[List[FactoryProductParameter]] = factoryProductCtorParamLists.zipWithIndex.map {
         case (params, paramListIdx) =>
           params.map {
             case ParamRepr(paramName, symbol, paramType) =>
@@ -589,14 +589,14 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
                   InjectedDependencyParameter(ParamRepr(newName, symbol, ensureByName(paramType)), curIndex)
 
                 case multiple =>
-                  val (_, (_, idx)) = multiple
-                    .find { case (_, (n, _)) => n == paramName }
-                    .getOrElse(
+                  val idx = multiple
+                    .collectFirst { case (_, (n, idx)) if n == paramName => idx }
+                    .getOrElse {
                       report.errorAndAbort(
                         s"""Couldn't disambiguate between multiple arguments with the same type available for parameter $paramName: ${paramType.show} of ${factoryProductType.show} constructor
                            |Expected one of the arguments to be named `$paramName` or for the type to be unique among factory method arguments""".stripMargin
                       )
-                    )
+                    }
                   MethodParameter(idx)
               }
           }
@@ -626,10 +626,10 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       }
 
       FactoryProductData(
-        getFactoryProductType,
-        factoryProductParamss.flatten.collect { case p: InjectedDependencyParameter => p.depByNameParamRepr },
-        hackySecretTraitImpl,
-        factoryProductParamss,
+        getFactoryProductType = getFactoryProductType,
+        byNameDependencies = factoryProductParamss.flatten.collect { case p: InjectedDependencyParameter => p.depByNameParamRepr },
+        hackyTraitImpl = hackySecretTraitImpl,
+        factoryProductParameterLists = factoryProductParamss,
       )
     }
 

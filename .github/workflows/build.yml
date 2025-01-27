@@ -99,7 +99,8 @@ jobs:
           # flags: unittests
       - uses: sbt/setup-sbt@v1 # setup sbt
       - name: Upload dependency graph
-        uses: scalacenter/sbt-dependency-submission@v2
+        if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
+        uses: scalacenter/sbt-dependency-submission@v3.1.0
 
   build-js:
     runs-on: ubuntu-latest
