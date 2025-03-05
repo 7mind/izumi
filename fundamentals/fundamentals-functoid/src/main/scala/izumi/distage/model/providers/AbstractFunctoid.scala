@@ -1,8 +1,10 @@
 package izumi.distage.model.providers
 
 import izumi.distage.model.definition.Identifier
+import izumi.distage.model.exceptions.dsl.ParameterNotFoundForAnnotation
 import izumi.distage.model.reflection.{DIKey, Provider, SafeType}
 import izumi.fundamentals.platform.language.Quirks.Discarder
+import izumi.fundamentals.preamble.toRichIterable
 import izumi.reflect.Tag
 
 import scala.annotation.unchecked.uncheckedVariance
@@ -65,6 +67,26 @@ trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
     * Add an `@Id` annotation to an unannotated parameter `P`, e.g.
     * for .annotateParameter[P]("my-id"), transform lambda `(p: P) => x(p)`
     * into `(p: P @Id("my-id")) => x(p)`
+    *
+    * @throws ParameterNotFoundForAnnotation if there's no unannotated parameter `p: P` in functoid
+    */
+  def annotateParameterOrThrow[P: Tag](name: Identifier): Ftoid[A] = {
+    val newFn = annotateParameter[P](name)
+    if (newFn.get.parameters == this.get.parameters) {
+      throw new ParameterNotFoundForAnnotation(
+        s"""Could not annotate parameter with `${DIKey[P]}` with annotation `${name.idContract.repr(name.id)}` in functoid `$this`:
+           |Parameter `${DIKey[P]}` not found.
+           |Found other parameters:${this.get.parameters.map(_.key).niceList()}""".stripMargin
+      )
+    } else {
+      newFn
+    }
+  }
+
+  /**
+    * Add an `@Id` annotation to an unannotated parameter `P`, e.g.
+    * for .annotateParameter[P]("my-id"), transform lambda `(p: P) => x(p)`
+    * into `(p: P @Id("my-id")) => x(p)`
     */
   def annotateParameter[P: Tag](name: Identifier): Ftoid[A] = {
     val paramTpe = SafeType.get[P]
@@ -73,6 +95,7 @@ trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
       case _: DIKey.IdKey[?] => false
     }
   }
+
   /** Add an `@Id(name)` annotation to all unannotated parameters */
   def annotateAllParameters(name: Identifier): Ftoid[A] = {
     annotateParameterWhen(name) {
@@ -80,6 +103,7 @@ trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
       case _: DIKey.IdKey[?] => false
     }
   }
+
   /** Add an `@Id(name)` annotation to all parameters matching `predicate` */
   def annotateParameterWhen(name: Identifier)(predicate: DIKey.BasicKey => Boolean): Ftoid[A] = {
     val newProvider = this.get.replaceKeys {

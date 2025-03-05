@@ -791,6 +791,10 @@ object ModuleDefDSL {
 
     override protected def _modifyBy(f: Functoid[T] => Functoid[T]): Self = modifyBy(f)
 
+    override protected def _addDependencies(keys: Iterable[DIKey]): Self = {
+      addOp(AddDependencies(keys))(toSame)
+    }
+
   }
 
   final class SetDSL[T](

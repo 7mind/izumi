@@ -300,29 +300,31 @@ object AbstractBindingDefDSL {
     }
 
     override protected def _modifyBy(f: Functoid[T] => Functoid[T]): ModifyTaggingDSL[T] = by(f)
+    override protected def _addDependencies(keys: Iterable[DIKey]): ModifyTaggingDSL[T] = by(_.addDependencies(keys))
   }
 
   trait AddDependencyDSL[T, Self] extends Any {
     protected def _modifyBy(f: Functoid[T] => Functoid[T]): Self
+    protected def _addDependencies(keys: Iterable[DIKey]): Self
 
-    def addDependency[B: Tag]: Self = {
-      _modifyBy(_.addDependency[B])
+    final def addDependency[B: Tag]: Self = {
+      addDependency(DIKey[B])
     }
 
-    def addDependency[B: Tag](name: Identifier): Self = {
-      _modifyBy(_.addDependency[B](name))
+    final def addDependency[B: Tag](name: Identifier): Self = {
+      addDependency(DIKey[B](name))
     }
 
-    def addDependency(key: DIKey): Self = {
-      _modifyBy(_.addDependency(key))
+    final def addDependency(key: DIKey): Self = {
+      _addDependencies(key :: Nil)
     }
 
-    def addDependencies(keys: Iterable[DIKey]): Self = {
-      _modifyBy(_.addDependencies(keys))
+    final def addDependencies(keys: Iterable[DIKey]): Self = {
+      _addDependencies(keys)
     }
 
-    def annotateParameter[P: Tag](name: Identifier): Self = {
-      _modifyBy(_.annotateParameter[P](name))
+    final def annotateParameter[P: Tag](name: Identifier): Self = {
+      _modifyBy(_.annotateParameterOrThrow[P](name))
     }
   }
 
@@ -390,7 +392,8 @@ object AbstractBindingDefDSL {
         case _: SetId => 0
         case _: SetIdFromImplName => 1
         case _: Modify[?] => 2
-        case _: AliasTo => 3
+        case _: AddDependencies => 3
+        case _: AliasTo => 4
       }
       sortedOps.foreach {
         case SetImpl(implDef) =>
@@ -403,19 +406,33 @@ object AbstractBindingDefDSL {
         case SetIdFromImplName() =>
           b = b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tag.longNameWithPrefix.toLowerCase))
         case Modify(functoidModifier: (Functoid[t] => Functoid[u])) =>
+          b = b.withImplDef(b.implementation match {
+            case implDef: ImplDef.ProviderImpl =>
+              applyFunctoidModifier(implDef, functoidModifier)
+            case ImplDef.ResourceImpl(implType, effectHKTypeCtor, resourceImpl: ImplDef.ProviderImpl) =>
+              ImplDef.ResourceImpl(implType, effectHKTypeCtor, applyFunctoidModifier(resourceImpl, functoidModifier))
+            case ImplDef.EffectImpl(implType, effectHKTypeCtor, effectImpl: ImplDef.ProviderImpl) =>
+              ImplDef.EffectImpl(implType, effectHKTypeCtor, applyFunctoidModifier(effectImpl, functoidModifier))
+            case _ =>
+              throw new InvalidFunctoidModifier(
+                s"""Cannot apply Functoid modifier $functoidModifier to binding $b - Functoid is inaccessible in binding implementation. Expected `ImplDef.ProviderImpl`, but got `ImplDef.${b.implementation.productPrefix}`
+                   |  Please use a separate mutator binding `modify[T].by { <your-modifier> }` instead. (${initial.origin})""".stripMargin
+              )
+          })
+        case AddDependencies(dependencies) =>
+          val functoidModifier = (_: Functoid[Any]).addDependencies(dependencies)
           b.implementation match {
-            case ImplDef.ProviderImpl(implType, function) =>
-              val newProvider = functoidModifier(Functoid(function)).get
-              if (newProvider.ret <:< implType) {
-                b = b.withImplDef(ImplDef.ProviderImpl(implType, newProvider))
-              } else {
-                throw new InvalidFunctoidModifier(
-                  s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}` (${initial.origin})"
-                )
-              }
+            case providerImpl: ImplDef.ProviderImpl =>
+              b = b.withImplDef(applyFunctoidModifier(providerImpl, functoidModifier))
+            case ImplDef.ResourceImpl(implType, effectHKTypeCtor, resourceImpl: ImplDef.ProviderImpl) =>
+              b = b.withImplDef(ImplDef.ResourceImpl(implType, effectHKTypeCtor, applyFunctoidModifier(resourceImpl, functoidModifier)))
+            case ImplDef.EffectImpl(implType, effectHKTypeCtor, effectImpl: ImplDef.ProviderImpl) =>
+              b = b.withImplDef(ImplDef.EffectImpl(implType, effectHKTypeCtor, applyFunctoidModifier(effectImpl, functoidModifier)))
             case _ =>
               // add an independent mutator instead of modifying the original functoid, if no original functoid is available
-              val newProvider = functoidModifier(Functoid.identityKey[t](b.key)).get
+              // this is ok for `addDependencies` because we don't need to access/modify arguments of the original functoid,
+              // which might be necessary for a general functoid modifier such as `annotateParameter`.
+              val newProvider = Functoid.identityKey[Any](b.key).addDependencies(dependencies).get
               val newRef = SingletonBinding(b.key, ImplDef.ProviderImpl(newProvider.ret, newProvider), Set.empty, b.origin, isMutator = true)
               refs = newRef :: refs
           }
@@ -435,6 +452,18 @@ object AbstractBindingDefDSL {
     def append(op: SingletonInstruction): SingletonRef = {
       ops += op
       this
+    }
+
+    private def applyFunctoidModifier[A, B](implDef: ImplDef.ProviderImpl, functoidModifier: Functoid[A] => Functoid[B]): ImplDef.ProviderImpl = {
+      val ImplDef.ProviderImpl(implType, function) = implDef
+      val newProvider = functoidModifier(Functoid(function)).get
+      if (newProvider.ret <:< implType) {
+        ImplDef.ProviderImpl(implType, newProvider)
+      } else {
+        throw new InvalidFunctoidModifier(
+          s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the old return type `${function.ret}` (${initial.origin})"
+        )
+      }
     }
   }
 
@@ -558,6 +587,7 @@ object AbstractBindingDefDSL {
     final case class SetId(id: Identifier) extends SingletonInstruction
     final case class SetIdFromImplName() extends SingletonInstruction
     final case class Modify[T](functoidModifier: Functoid[T] => Functoid[T]) extends SingletonInstruction
+    final case class AddDependencies(dependencies: Iterable[DIKey]) extends SingletonInstruction
     final case class AliasTo(key: DIKey.BasicKey, pos: SourceFilePosition) extends SingletonInstruction
   }
 
