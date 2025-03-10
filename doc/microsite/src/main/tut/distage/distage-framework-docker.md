@@ -132,7 +132,7 @@ dependent resource will fail with a `izumi.distage.model.exceptions.runtime.Prov
 ### Config API
 
 The @scaladoc[`DockerProviderExtensions`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions)
-provides additional APIs for modiying the container definition.
+provides additional APIs for modifying the container definition.
 
 #### modifyConfig
 
