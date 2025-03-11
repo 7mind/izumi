@@ -208,7 +208,7 @@ objects.find[Strong]
 
 // Weak is not
 
-objects.find[Strong]
+objects.find[Weak]
 
 // There's only Strong in the Set
 
