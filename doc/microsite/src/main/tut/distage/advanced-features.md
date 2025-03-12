@@ -486,3 +486,116 @@ Injector().produceRun(pathModule(path1) ++ pathModule(path2)) {
 ```
 
 Now the example works, because the `A` type inside `pathModule(path1)` is `path1.A` and for `pathModule(path2)` it's `path2.A`, which matches their subsequent spelling in `(p1a: path1.A, p2a: path2.A) =>` in `produceRun`
+
+### Locator-private bindings
+
+You may use locator-private bindings, which will not be exposed in`Locator` produced by the interpreter.
+
+If the instance is locator-private, it cannot be seen by inherited locators.
+There are 3 locator privacy (@scaladoc[LocatorPrivacy](izumi.distage.model.definition.LocatorPrivacy)) modes:
+- PublicByDefault
+- PrivateByDefault
+- PublicRoots
+
+#### Public By Default
+All the bindings are public, unless explicitly marked as `confined`
+This is default behaviour.
+
+```scala mdoc:to-string:reset
+import distage.{Injector, LocatorPrivacy, ModuleDef, PlannerInput}
+
+class A
+class B
+class C
+
+def module = new ModuleDef {
+  make[A]
+  make[B].confined
+}
+val input = PlannerInput.everything(module).withLocatorPrivacy(LocatorPrivacy.PublicByDefault)
+val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
+
+val inheritedInjector = Injector.inherit(mainLocator)
+
+def module2 = new ModuleDef {
+  make[C]
+}
+val input2 = PlannerInput.everything(module2)
+val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
+
+inheritedLocator.find[A]
+inheritedLocator.find[C]
+// inherited and new binding are available
+
+inheritedLocator.find[B]
+// but confined binding is not
+```
+
+#### Private By Default
+All the bindings are private, unless explicitly marked as `exposed`
+
+```scala mdoc:to-string:reset
+import distage.{Injector, LocatorPrivacy, ModuleDef, PlannerInput}
+
+class A
+class B
+class C
+
+def module = new ModuleDef {
+  make[A]
+  make[B].exposed
+}
+val input = PlannerInput.everything(module).withLocatorPrivacy(LocatorPrivacy.PrivateByDefault)
+
+val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
+
+val inheritedInjector = Injector.inherit(mainLocator)
+
+def module2 = new ModuleDef {
+  make[C]
+}
+val input2 = PlannerInput.everything(module2)
+val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
+
+inheritedLocator.find[A]
+// binding is not available
+
+inheritedLocator.find[B]
+inheritedLocator.find[C]
+// but new and 'exposed' are
+```
+
+#### Public Roots
+Only planning GC roots are public
+This is default behaviour for bootstrap injectors.
+All bootstrap bindings, which need to be available in inherited locators, must be explicitly marked as `exposed`
+
+```scala mdoc:to-string:reset
+import distage.{Injector, LocatorPrivacy, ModuleDef, PlannerInput}
+
+class A
+class B
+class C
+
+def module = new ModuleDef {
+  make[A]
+  make[B]
+}
+val input = PlannerInput.target[A](module).withLocatorPrivacy(LocatorPrivacy.PublicRoots)
+
+val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
+
+val inheritedInjector = Injector.inherit(mainLocator)
+
+def module2 = new ModuleDef {
+  make[C]
+}
+val input2 = PlannerInput.everything(module2)
+val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
+
+inheritedLocator.find[A]
+// targeted binding is available
+
+inheritedLocator.find[B]
+// but unrelated one is not
+```
