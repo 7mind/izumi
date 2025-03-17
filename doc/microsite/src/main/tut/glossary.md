@@ -36,7 +36,7 @@ We have overloaded the following terms for the domain of dependency injection:
 * **garbage-collection**, *also* **garbage-collecting DI** – a process of hard exclusion of dependency declarations which are not required for current application configuration to run. A *garbage-collecting DI* requires a set of *garbage collection roots* (application entrypoints) in order to be able to *trace* required dependencies. It's important to note that, while *lazy* dependency instantiation does provide similar capabilities, it's less observable and cannot guarantee soundness of the wiring process. Thus *lazy* instantiation frequently leads to problems in run-time.
 
 Terms used by Izumi
--------------------
+-------------------d
 
 Also we use the following terms which have stable semantic but aren't widely used in the domain of software design and engineering:
 
@@ -45,7 +45,7 @@ Also we use the following terms which have stable semantic but aren't widely use
 * **compile-time reflection** – type information which is preserved during compile time and does not require any support from the language runtime. In some sense almost any reflection is a compile-time reflection (e.g. Java type information is preserved during compile time). Though a true compile-time reflection would try to precompute what's possible during compile-time and won't require whole parts of the compiler to be available at run time. Without a preprocessor, only a language with strong macro capabilities can support compile-time reflection.
 * **test dependency memoization** – sound sharing of test dependencies between tests in a test suite or a family of test suites. Good memoization should avoid any use of singletons, apply just-in-time cleanups, provide users with good control capabilities of what can and what cannot be shared and share dependencies transitively.
 * **shift left** – a particular set of practices and mindset which assume that engineers should try to address the problems as early in the software development pipeline as possible. *Shift left* approach is based on a strong semi-empiric hypothesis saying that the total amount of resources spent on a particular issue would lower if it's addressed earlier. Generally *shift left* approach always pays back.
-* **shift right** – a particular set of miss-practices and mindset allowing developers to postpone problem detection as much as they can. *Shift right* approach creates technical debt, forces the operations teams to do more job which can be easily avoided, and, frequently, turns users into alpha-testers.
+* **shift right** – a particular set of mispractices and mindset allowing developers to postpone problem detection as much as they can. *Shift right* approach creates technical debt, forces the operations teams to do more job which can be easily avoided, and, frequently, turns users into alpha-testers.
 
 
 Terms elaborated by Izumi

@@ -523,11 +523,11 @@ def module2 = new ModuleDef {
 val input2 = PlannerInput.everything(module2)
 val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
 
-inheritedLocator.find[A]
-inheritedLocator.find[C]
+assert(inheritedLocator.find[A].nonEmpty)
+assert(inheritedLocator.find[C].nonEmpty)
 // inherited and new binding are available
 
-inheritedLocator.find[B]
+assert(inheritedLocator.find[B].isEmpty)
 // but confined binding is not
 ```
 
@@ -557,11 +557,11 @@ def module2 = new ModuleDef {
 val input2 = PlannerInput.everything(module2)
 val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
 
-inheritedLocator.find[A]
+assert(inheritedLocator.find[A].isEmpty)
 // binding is not available
 
-inheritedLocator.find[B]
-inheritedLocator.find[C]
+assert(inheritedLocator.find[B].nonEmpty)
+assert(inheritedLocator.find[C].nonEmpty)
 // but new and 'exposed' are
 ```
 
@@ -593,9 +593,9 @@ def module2 = new ModuleDef {
 val input2 = PlannerInput.everything(module2)
 val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
 
-inheritedLocator.find[A]
+assert(inheritedLocator.find[A].nonEmpty)
 // targeted binding is available
 
-inheritedLocator.find[B]
+assert(inheritedLocator.find[B].isEmpty)
 // but unrelated one is not
 ```
