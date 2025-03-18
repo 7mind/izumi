@@ -696,6 +696,10 @@ object ModuleDefDSL {
       addOp(SetId(name))(new MakeNamedDSL[T](_, key.named(name)))
     }
 
+    def named(name: Option[Identifier]): MakeNamedDSL[T] = {
+      name.fold(new MakeNamedDSL[T](mutableState, key))(name => addOp(SetId(name))(new MakeNamedDSL[T](_, key.named(name))))
+    }
+
     def namedByImpl: MakeNamedDSL[T] = {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key))
     }
@@ -733,6 +737,10 @@ object ModuleDefDSL {
 
     def named(name: Identifier): MakeDSLNamedAfterFrom[T] = {
       addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_))
+    }
+
+    def named(name: Option[Identifier]): MakeDSLNamedAfterFrom[T] = {
+      name.fold(new MakeDSLNamedAfterFrom[T](mutableState))(name => addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_)))
     }
 
     def namedByImpl: MakeDSLNamedAfterFrom[T] = {
@@ -794,6 +802,10 @@ object ModuleDefDSL {
     }
     def named(name: Identifier): SetNamedDSL[T] = {
       addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_))
+    }
+
+    def named(name: Option[Identifier]): SetNamedDSL[T] = {
+      name.fold(new SetNamedDSL[T](mutableState))(name => addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_)))
     }
 
   }

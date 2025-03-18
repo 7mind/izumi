@@ -254,4 +254,36 @@ Forest fire, climbin' higher, real life, it can wait""")
     class Out(val dep1: T1, val dep2: T2)
   }
 
+  object BasicCase10 {
+
+    trait TestDependency {
+      def boom(): Int
+    }
+
+    class TestImpl1 extends TestDependency {
+      override def boom(): Int = 1
+    }
+
+    class TestImpl2 extends TestDependency {
+      override def boom(): Int = 2
+    }
+
+    class TestGreeter {
+      def hello(): String = "hello"
+    }
+
+    class TestClass(
+       @Id("named.greeter") val namedGreeter: TestGreeter,
+       val greeter: TestGreeter,
+       @Id("named.test.before.from") val testImpl1: TestDependency,
+       @Id("named.test.after.from") val testImpl2: TestDependency,
+       val testImpl: TestDependency
+     ) {
+      def correctWired(): Boolean = {
+        namedGreeter.hello() == "hello" && greeter.hello() == "hello" &&
+          testImpl1.boom() == 1 && testImpl.boom() == 1 && testImpl2.boom() == 2
+      }
+    }
+  }
+
 }
