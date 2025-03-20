@@ -5,10 +5,10 @@ import izumi.distage.fixtures.BasicCases.*
 import izumi.distage.fixtures.SetCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
+import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.definition.errors.{ConflictResolutionError, DIError}
-import izumi.distage.model.definition.{BindingTag, Identifier}
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
@@ -601,14 +601,14 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import SetCase4.*
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestClass]
-      make[TestGreeter].named(Some("named.greeter"): Option[Identifier])
+      make[TestGreeter].named(Some("named.greeter"))
       make[TestGreeter].named(None) // should bind without id
-      make[TestDependency].named(Some("named.test.before.from"): Option[Identifier]).from[TestImpl1]
+      make[TestDependency].named(Some("named.test.before.from")).from[TestImpl1]
       make[TestDependency].named(None).from[TestImpl1]
-      make[TestDependency].from[TestImpl2].named(Some("named.test.after.from"): Option[Identifier])
+      make[TestDependency].from[TestImpl2].named(Some("named.test.after.from"))
 
       many[Service]
-        .named(Some("named.set.test"): Option[Identifier])
+        .named(Some("named.set.test"))
         .add[Service1]
         .add[Service2]
 
