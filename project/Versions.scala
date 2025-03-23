@@ -43,5 +43,5 @@ object V {
   val doobie = "1.0.0-RC2"
 
   // test-only
-  val scalamock = "6.1.1"
+  val scalamock = "6.2.0"
 }
