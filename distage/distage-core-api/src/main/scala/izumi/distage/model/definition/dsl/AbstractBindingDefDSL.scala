@@ -324,7 +324,7 @@ object AbstractBindingDefDSL {
     }
 
     final def annotateParameter[P: Tag](name: Identifier): Self = {
-      _modifyBy(_.annotateParameterOrThrow[P](name))
+      _modifyBy(_.annotateParameter[P](name))
     }
   }
 

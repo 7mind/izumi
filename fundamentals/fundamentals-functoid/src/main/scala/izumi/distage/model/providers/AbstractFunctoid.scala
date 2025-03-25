@@ -70,13 +70,14 @@ trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
     *
     * @throws ParameterNotFoundForAnnotation if there's no unannotated parameter `p: P` in functoid
     */
-  def annotateParameterOrThrow[P: Tag](name: Identifier): Ftoid[A] = {
-    val newFn = annotateParameter[P](name)
+  def annotateParameter[P: Tag](name: Identifier): Ftoid[A] = {
+    val newFn = annotateParameterIfExists[P](name)
     if (newFn.get.parameters == this.get.parameters) {
       throw new ParameterNotFoundForAnnotation(
         s"""Could not annotate parameter with `${DIKey[P]}` with annotation `${name.idContract.repr(name.id)}` in functoid `$this`:
            |Parameter `${DIKey[P]}` not found.
-           |Found other parameters:${this.get.parameters.map(_.key).niceList()}""".stripMargin
+           |Found other parameters:${this.get.parameters.map(_.key).niceList()}
+           |Use `annotateParameterIfExists` if the parameter missing is not an error in your circumstance""".stripMargin
       )
     } else {
       newFn
@@ -87,8 +88,10 @@ trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
     * Add an `@Id` annotation to an unannotated parameter `P`, e.g.
     * for .annotateParameter[P]("my-id"), transform lambda `(p: P) => x(p)`
     * into `(p: P @Id("my-id")) => x(p)`
+    *
+    * Does nothing if there's no unannotated parameter `p: P` in functoid
     */
-  def annotateParameter[P: Tag](name: Identifier): Ftoid[A] = {
+  def annotateParameterIfExists[P: Tag](name: Identifier): Ftoid[A] = {
     val paramTpe = SafeType.get[P]
     annotateParameterWhen(name) {
       case DIKey.TypeKey(tpe, _) => tpe == paramTpe
