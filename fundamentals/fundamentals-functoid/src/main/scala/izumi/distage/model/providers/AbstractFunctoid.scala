@@ -74,9 +74,10 @@ trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
     val newFn = annotateParameterIfExists[P](name)
     if (newFn.get.parameters == this.get.parameters) {
       throw new ParameterNotFoundForAnnotation(
-        s"""Could not annotate parameter with `${DIKey[P]}` with annotation `${name.idContract.repr(name.id)}` in functoid `$this`:
+        s"""Could not annotate parameter `${DIKey[P]}` with annotation `${name.idContract.repr(name.id)}`:
            |Parameter `${DIKey[P]}` not found.
            |Found other parameters:${this.get.parameters.map(_.key).niceList()}
+           |In Functoid: `$this`
            |Use `annotateParameterIfExists` if the parameter missing is not an error in your circumstance""".stripMargin
       )
     } else {
