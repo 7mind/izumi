@@ -364,7 +364,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
                     .withIsInterruptedF(i => release(a, Exit.ZIOExit.toExit(e)(i)))
                     .foldCauseZIO(
                       cause2 => ZIO.refailCause(e.foldExit(_ ++ cause2, _ => cause2)),
-                      _ => ZIO.done(e),
+                      _ => e,
                     )
               }
         }

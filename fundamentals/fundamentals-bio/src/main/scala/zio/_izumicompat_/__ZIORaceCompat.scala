@@ -14,7 +14,7 @@ object __ZIORaceCompat {
     * the global scope instead of the scope of the parent fiber.
     */
   final def raceFirst[R, E, A](self: ZIO[R, E, A], that: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-    this.race(self.exit, that.exit).flatMap(ZIO.done(_))
+    this.race(self.exit, that.exit).flatMap(identity)
 
   /**
     * An implementation of `race` that forks the left and right fibers in

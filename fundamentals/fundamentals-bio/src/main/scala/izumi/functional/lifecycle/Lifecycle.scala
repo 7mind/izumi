@@ -939,7 +939,7 @@ object Lifecycle extends LifecycleInstances {
   // Another workaround for a Scala 3 bincompat failure:
   // java.lang.NoClassDefFoundError: zio/CanFail.
   // Appeared in an update from zio 2.1.14 to 2.1.16
-  private implicit def zioCanFailWorkaround[E]: zio.CanFail[E] = null
+  private implicit def zioCanFailWorkaround[F[x] >: zio.CanFail[x], E]: F[E] = null
 }
 
 private[izumi] sealed trait LifecycleInstances extends LifecycleCatsInstances {
