@@ -932,7 +932,7 @@ object Izumi {
     pluginConflictRules = Map(assemblyPluginJvm.name -> true),
     appendPlugins = Defaults.SbtGenPlugins ++ Seq(
       SbtPlugin("com.eed3si9n", "sbt-assembly", PV.sbt_assembly),
-      SbtPlugin("com.jsuereth", "sbt-pgp", PV.sbt_pgp),
+      SbtPlugin("com.github.sbt", "sbt-pgp", PV.sbt_pgp),
       SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
       SbtPlugin("com.github.sbt", "sbt-unidoc", PV.sbt_unidoc),
       SbtPlugin("com.github.sbt", "sbt-site", PV.sbt_site),
