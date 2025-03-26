@@ -408,11 +408,11 @@ object AbstractBindingDefDSL {
         case Modify(functoidModifier: (Functoid[t] => Functoid[u])) =>
           b = b.withImplDef(b.implementation match {
             case implDef: ImplDef.ProviderImpl =>
-              applyFunctoidModifier(implDef, functoidModifier)
+              applyFunctoidModifier(b.key.tpe, implDef, functoidModifier)
             case ImplDef.ResourceImpl(implType, effectHKTypeCtor, resourceImpl: ImplDef.ProviderImpl) =>
-              ImplDef.ResourceImpl(implType, effectHKTypeCtor, applyFunctoidModifier(resourceImpl, functoidModifier))
+              ImplDef.ResourceImpl(implType, effectHKTypeCtor, applyFunctoidModifier(b.key.tpe, resourceImpl, functoidModifier))
             case ImplDef.EffectImpl(implType, effectHKTypeCtor, effectImpl: ImplDef.ProviderImpl) =>
-              ImplDef.EffectImpl(implType, effectHKTypeCtor, applyFunctoidModifier(effectImpl, functoidModifier))
+              ImplDef.EffectImpl(implType, effectHKTypeCtor, applyFunctoidModifier(b.key.tpe, effectImpl, functoidModifier))
             case _ =>
               throw new InvalidFunctoidModifier(
                 s"""Cannot apply Functoid modifier $functoidModifier to binding $b - Functoid is inaccessible in binding implementation. Expected `ImplDef.ProviderImpl`, but got `ImplDef.${b.implementation.productPrefix}`
@@ -423,11 +423,11 @@ object AbstractBindingDefDSL {
           val functoidModifier = (_: Functoid[Any]).addDependencies(dependencies)
           b.implementation match {
             case providerImpl: ImplDef.ProviderImpl =>
-              b = b.withImplDef(applyFunctoidModifier(providerImpl, functoidModifier))
+              b = b.withImplDef(applyFunctoidModifier(b.key.tpe, providerImpl, functoidModifier))
             case ImplDef.ResourceImpl(implType, effectHKTypeCtor, resourceImpl: ImplDef.ProviderImpl) =>
-              b = b.withImplDef(ImplDef.ResourceImpl(implType, effectHKTypeCtor, applyFunctoidModifier(resourceImpl, functoidModifier)))
+              b = b.withImplDef(ImplDef.ResourceImpl(implType, effectHKTypeCtor, applyFunctoidModifier(b.key.tpe, resourceImpl, functoidModifier)))
             case ImplDef.EffectImpl(implType, effectHKTypeCtor, effectImpl: ImplDef.ProviderImpl) =>
-              b = b.withImplDef(ImplDef.EffectImpl(implType, effectHKTypeCtor, applyFunctoidModifier(effectImpl, functoidModifier)))
+              b = b.withImplDef(ImplDef.EffectImpl(implType, effectHKTypeCtor, applyFunctoidModifier(b.key.tpe, effectImpl, functoidModifier)))
             case _ =>
               // add an independent mutator instead of modifying the original functoid, if no original functoid is available
               // this is ok for `addDependencies` because we don't need to access/modify arguments of the original functoid,
@@ -454,14 +454,14 @@ object AbstractBindingDefDSL {
       this
     }
 
-    private def applyFunctoidModifier[A, B](implDef: ImplDef.ProviderImpl, functoidModifier: Functoid[A] => Functoid[B]): ImplDef.ProviderImpl = {
+    private def applyFunctoidModifier[A, B](keyType: SafeType, implDef: ImplDef.ProviderImpl, functoidModifier: Functoid[A] => Functoid[B]): ImplDef.ProviderImpl = {
       val ImplDef.ProviderImpl(implType, function) = implDef
       val newProvider = functoidModifier(Functoid(function)).get
-      if (newProvider.ret <:< implType) {
+      if (newProvider.ret <:< keyType) {
         ImplDef.ProviderImpl(implType, newProvider)
       } else {
         throw new InvalidFunctoidModifier(
-          s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the key type `${function.ret}` (${initial.origin})"
+          s"Cannot apply invalid Functoid modifier $functoidModifier, new return type `${newProvider.ret}` is not a subtype of the key type `$keyType` (${initial.origin})"
         )
       }
     }
