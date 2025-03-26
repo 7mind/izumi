@@ -94,10 +94,8 @@ object DockerContainer {
       selfTag: distage.Tag[DockerContainer[T]],
       mutateModule: ModuleDefDSL#MutationContext,
     ): Functoid[ContainerResource[F, T]] = {
-      addContainerDependency[containerDecl.Tag]
-      self
-        .addDependency[DockerContainer[containerDecl.Tag]]
-        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[containerDecl.Tag])
+      addContainerToDependenciesSet[containerDecl.Tag]
+      self.addDependency[DockerContainer[containerDecl.Tag]]
     }
 
     def dependOnContainer[T2](
@@ -105,10 +103,8 @@ object DockerContainer {
       selfTag: distage.Tag[DockerContainer[T]],
       mutateModule: ModuleDefDSL#MutationContext,
     ): Functoid[ContainerResource[F, T]] = {
-      addContainerDependency[T2]
-      self
-        .addDependency[DockerContainer[T2]]
-        .annotateParameter[Set[DockerContainer[Any]]](DependencyTag.get[T2])
+      addContainerToDependenciesSet[T2]
+      self.addDependency[DockerContainer[T2]]
     }
 
     /**
@@ -183,7 +179,7 @@ object DockerContainer {
       }
     }
 
-    private def addContainerDependency[T2](
+    private def addContainerToDependenciesSet[T2](
       implicit tag: distage.Tag[DockerContainer[T2]],
       selfTag: distage.Tag[DockerContainer[T]],
       mutateModule: ModuleDefDSL#MutationContext,

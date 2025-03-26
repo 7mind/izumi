@@ -7,7 +7,7 @@ trait IzFiles
   with RecursiveFileRemovals
   with FileSearch
   with FsRefresh
-  with FileReads
+  with FileOps
   with ExecutableSearch
   with Homedir
   with FileAttributes

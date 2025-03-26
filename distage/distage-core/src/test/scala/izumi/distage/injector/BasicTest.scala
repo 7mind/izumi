@@ -595,4 +595,34 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     assert(exc.getMessage.contains("related subtypes"))
     assert(exc.getMessage.contains("same type"))
   }
+
+  "support named bindings with option" in {
+    import BasicCase10.*
+    import SetCase4.*
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[TestClass]
+      make[TestGreeter].named(Some("named.greeter"))
+      make[TestGreeter].named(None) // should bind without id
+      make[TestDependency].named(Some("named.test.before.from")).from[TestImpl1]
+      make[TestDependency].named(None).from[TestImpl1]
+      make[TestDependency].from[TestImpl2].named(Some("named.test.after.from"))
+
+      many[Service]
+        .named(Some("named.set.test"))
+        .add[Service1]
+        .add[Service2]
+
+      many[Service]
+        .named(None)
+        .add[Service1]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    assert(context.get[TestClass].correctWired())
+    assert(context.get[Set[Service]]("named.set.test").size == 2)
+    assert(context.get[Set[Service]].size == 1)
+  }
 }

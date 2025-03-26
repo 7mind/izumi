@@ -9,6 +9,7 @@ import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBindi
 import izumi.distage.model.definition.StandardAxis.{Mode, Repo}
 import izumi.distage.model.definition.dsl.IncludesDSL.TagMergePolicy
 import izumi.distage.model.definition.{Binding, BindingOrigin, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
+import izumi.distage.model.exceptions.dsl.{InvalidFunctoidModifier, ParameterNotFoundForAnnotation}
 import izumi.distage.model.planning.PlanIssue
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
@@ -806,7 +807,67 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       assert(verification.verificationFailed)
       assert(verification.issues.get.forall(_.isInstanceOf[PlanIssue.MissingImport]))
       val imports = verification.issues.get.toSet.collect { case i: PlanIssue.MissingImport => (i.dependee, i.key) }
-      assert(imports == Set(DIKey[Int] -> DIKey[String], DIKey[Unit]("x") -> DIKey[String]))
+      assert(
+        imports == Set(
+          DIKey[Int] -> DIKey[String],
+          DIKey[Unit]("x") -> DIKey[String],
+        )
+      )
+      // two modifier bindings were added
+      assert(definition.bindings.size == (3 + 2))
+    }
+
+    "addDependency supports adding dependencies for .fromResource/.fromEffect bindings" in {
+      val definition = new ModuleDef {
+        make[Int].fromResource(Lifecycle.pure(5)).addDependency[String]
+        make[Long].fromResource(() => Lifecycle.pure(5L)).addDependency[String]
+        make[Short].fromEffect[Identity, Short](() => 5: Identity[Short]).addDependency[String]
+      }
+
+      val verification = PlanVerifier().verify[Identity](definition, Roots.Everything, Set.empty, Set.empty)
+      assert(verification.verificationFailed)
+      assert(verification.issues.get.forall(_.isInstanceOf[PlanIssue.MissingImport]))
+      val imports = verification.issues.get.toSet.collect { case i: PlanIssue.MissingImport => (i.dependee, i.key) }
+      assert(
+        imports == Set(
+          DIKey[Int] -> DIKey[String],
+          DIKey.ResourceKey(DIKey[Long], SafeType.get[Lifecycle[Identity, Long]]) -> DIKey[String],
+          DIKey.EffectKey(DIKey[Short], SafeType.get[Short]) -> DIKey[String],
+        )
+      )
+      // only one modifier binding was added for .fromValue-like make[Int] binding
+      assert(definition.bindings.size == (3 + 1))
+    }
+
+    "modify & annotateParameter do not support adding dependencies for .fromValue and .using bindings" in {
+      intercept[InvalidFunctoidModifier](new ModuleDef {
+        make[Int]
+          .fromValue(5)
+          .modifyBy(_.addDependency[String])
+      }.bindings)
+      intercept[InvalidFunctoidModifier](new ModuleDef {
+        make[Unit].fromValue(())
+        make[Unit].named("x").using[Unit].annotateParameter[String]("special")
+      }.bindings)
+    }
+
+    "annotateParameter throws when annotating non-existent parameters" in {
+      val okDef = new ModuleDef {
+        make[Int]
+          .from((_: Long).toInt)
+          .annotateParameter[Long]("special")
+      }
+      assert(okDef.bindings != null)
+
+      val badDef = new ModuleDef {
+        make[Int]
+          .from((_: Long).toInt)
+          .annotateParameter[String]("special")
+      }
+      val err = intercept[ParameterNotFoundForAnnotation](badDef.bindings)
+      assert(err.getMessage contains "Long")
+      assert(err.getMessage contains "special")
+      assert(err.getMessage contains "String")
     }
 
   }

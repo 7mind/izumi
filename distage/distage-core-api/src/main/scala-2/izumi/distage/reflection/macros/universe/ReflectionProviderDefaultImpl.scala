@@ -138,14 +138,15 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
     val alreadyInSignature = factoryMethod.paramLists.flatten.map(symbol => brp.keyFromSymbol(MacroSymbolInfo.Runtime(symbol, tpe, wasGeneric = false)))
     val resultTypeWiring = mkConstructorWiring(factoryMethod, resultType)
+    val requiredKeys = resultTypeWiring.requiredKeys
 
-    val excessiveTypes = alreadyInSignature.toSet -- resultTypeWiring.requiredKeys
-    if (excessiveTypes.nonEmpty) {
+    val excessiveKeys = alreadyInSignature.toSet[MacroDIKey] -- requiredKeys
+    if (excessiveKeys.nonEmpty) {
       throw new UnsupportedDefinitionException(
         s"""Augmentation failure.
            |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
-           |  * But method signature contains types not required by constructor of the result type: $excessiveTypes
-           |  * Only the following types are required: ${resultTypeWiring.requiredKeys}
+           |  * But method signature contains keys not required by constructor of the result type: $excessiveKeys
+           |  * Only the following keys are required: $requiredKeys
            |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin
       )
     }

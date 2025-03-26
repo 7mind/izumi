@@ -23,6 +23,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       makeFactory[OverridingFactory]
       makeFactory[AssistedFactory]
       makeFactory[AbstractFactory]
+      makeFactory[AmbiguousOnlyParamNamesFactory]
     })
 
     val injector = mkNoCyclesInjector()
@@ -50,6 +51,28 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val assistedFactory = context.get[AssistedFactory]
     assert(assistedFactory.x(1).a == 1)
     assert(assistedFactory.x(1).b.isInstanceOf[Dependency])
+
+    val ambiguousFactory = context.get[AmbiguousOnlyParamNamesFactory]
+    val d1 = ConcreteDep()
+    val d2 = ConcreteDep()
+    val amb1 = ambiguousFactory.x(d1, d2)
+    val amb2 = ambiguousFactory.y(d1, d2)
+    assert(d1 ne d2)
+    assert(amb1.a.eq(d1) && amb1.b.eq(d2))
+    assert(amb2.a.eq(d2) && amb2.b.eq(d1))
+  }
+
+  "progression test: should, but doesn't support disambiguation of factory parameters based on Id annotation, not param names" in {
+    def test(): Unit = assertCompiles("""
+    import FactoryCase1.AmbiguousOnlyIdFactory
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      makeFactory[AmbiguousOnlyIdFactory]
+    })
+    """)
+
+    val exc = intercept[TestFailedException](test())
+    assert(exc.getMessage contains "Couldn't disambiguate between multiple arguments with the same type")
   }
 
   "handle generic arguments in factory methods" in {
@@ -282,7 +305,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       makeFactory[InvalidImplicitFactory]
     }"""))
     assert(
-      res.getMessage.contains("contains types not required by constructor of the result type") ||
+      res.getMessage.contains("contains keys not required by constructor of the result type") ||
       res.getMessage.contains("has arguments which were not consumed by implementation constructor")
     )
     assert(res.getMessage.contains("UnrelatedTC["))
@@ -443,7 +466,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "support polymorphic factory types" in {
     import FactoryCase8.*
 
-    def definition[F[+_, +_]: TagKK] = PlannerInput.everything(new ModuleDef {
+    def definition[F[+_, +_]: TagKK]: PlannerInput = PlannerInput.everything(new ModuleDef {
       makeFactory[XFactory[F]]
       make[XContext[F]]
     })

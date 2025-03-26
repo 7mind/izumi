@@ -55,6 +55,7 @@ class ResourceRewriter(
 
   private def rewrite[TGT](tgt: SafeType, resourceType: SafeType)(convert: TGT => Lifecycle[Identity, TGT])(b: Binding): Seq[Binding] = {
     b match {
+      case b if b.isMutator => Seq(b) // do not rewrite mutators
       case implBinding: Binding.ImplBinding =>
         implBinding match {
           case binding: Binding.SingletonBinding[?] =>

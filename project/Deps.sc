@@ -149,8 +149,8 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.20")
-  final val scala213 = ScalaVersion("2.13.14")
-  final val scala300 = ScalaVersion("3.3.4")
+  final val scala213 = ScalaVersion("2.13.16")
+  final val scala300 = ScalaVersion("3.3.5")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -932,7 +932,7 @@ object Izumi {
     pluginConflictRules = Map(assemblyPluginJvm.name -> true),
     appendPlugins = Defaults.SbtGenPlugins ++ Seq(
       SbtPlugin("com.eed3si9n", "sbt-assembly", PV.sbt_assembly),
-      SbtPlugin("com.jsuereth", "sbt-pgp", PV.sbt_pgp),
+      SbtPlugin("com.github.sbt", "sbt-pgp", PV.sbt_pgp),
       SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
       SbtPlugin("com.github.sbt", "sbt-unidoc", PV.sbt_unidoc),
       SbtPlugin("com.github.sbt", "sbt-site", PV.sbt_site),

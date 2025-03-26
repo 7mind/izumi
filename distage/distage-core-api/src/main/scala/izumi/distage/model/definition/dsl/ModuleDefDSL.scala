@@ -10,7 +10,7 @@ import izumi.distage.model.definition.dsl.AnyKindShim.LifecycleF
 import izumi.distage.model.definition.dsl.LifecycleAdapters.{LifecycleTag, ZIOEnvLifecycleTag}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.distage.model.reflection.{DIKey, IdContract, SafeType}
 import izumi.functional.bio.data.Morphism1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
@@ -696,6 +696,10 @@ object ModuleDefDSL {
       addOp(SetId(name))(new MakeNamedDSL[T](_, key.named(name)))
     }
 
+    def named[I: IdContract](name: Option[I]): MakeNamedDSL[T] = {
+      name.fold(new MakeNamedDSL[T](mutableState, key))(name => addOp(SetId(name))(new MakeNamedDSL[T](_, key.named(name))))
+    }
+
     def namedByImpl: MakeNamedDSL[T] = {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key))
     }
@@ -733,6 +737,10 @@ object ModuleDefDSL {
 
     def named(name: Identifier): MakeDSLNamedAfterFrom[T] = {
       addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_))
+    }
+
+    def named[I: IdContract](name: Option[I]): MakeDSLNamedAfterFrom[T] = {
+      name.fold(new MakeDSLNamedAfterFrom[T](mutableState))(name => addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_)))
     }
 
     def namedByImpl: MakeDSLNamedAfterFrom[T] = {
@@ -783,6 +791,10 @@ object ModuleDefDSL {
 
     override protected def _modifyBy(f: Functoid[T] => Functoid[T]): Self = modifyBy(f)
 
+    override protected def _addDependencies(keys: Iterable[DIKey]): Self = {
+      addOp(AddDependencies(keys))(toSame)
+    }
+
   }
 
   final class SetDSL[T](
@@ -794,6 +806,10 @@ object ModuleDefDSL {
     }
     def named(name: Identifier): SetNamedDSL[T] = {
       addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_))
+    }
+
+    def named[I: IdContract](name: Option[I]): SetNamedDSL[T] = {
+      name.fold(new SetNamedDSL[T](mutableState))(name => addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_)))
     }
 
   }
