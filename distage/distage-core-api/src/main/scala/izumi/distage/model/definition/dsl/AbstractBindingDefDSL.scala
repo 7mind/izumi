@@ -9,7 +9,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
 import izumi.distage.model.exceptions.dsl.InvalidFunctoidModifier
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.{DIKey, MultiSetImplId, SetKeyMeta}
+import izumi.distage.model.reflection.{DIKey, MultiSetImplId, SafeType, SetKeyMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
 
