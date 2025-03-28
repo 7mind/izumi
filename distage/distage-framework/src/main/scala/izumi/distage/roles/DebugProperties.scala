@@ -73,4 +73,13 @@ object DebugProperties extends properties.DebugProperties {
     * Default: `false`
     */
   final val `distage.roles.ignore-all-reference-configs` = BoolProperty("distage.roles.ignore-all-reference-configs")
+
+  /**
+    * Enable environment variables of form `CONFIG_FORCE_a_b_c=value` to override values set in system properties and config.
+    *
+    * Default: `true`
+    *
+    * @see [[com.typesafe.config.ConfigFactory.systemEnvironmentOverrides]] - documentation for environment variable override syntax
+    */
+  final val `distage.roles.enable-config-environment-overrides` = BoolProperty("distage.roles.enable-config-environment-overrides")
 }

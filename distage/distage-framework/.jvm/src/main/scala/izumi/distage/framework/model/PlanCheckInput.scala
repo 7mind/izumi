@@ -30,7 +30,7 @@ object PlanCheckInput {
     roleNames: Set[String] = Set.empty,
     configLoader: ConfigLoader = {
       val logger = IzLogger()
-      val merger = new ConfigMergerImpl(logger, new ConfigFilteringStrategy.Raw(true, true, ignoreAll = false))
+      val merger = new ConfigMergerImpl(logger, true, new ConfigFilteringStrategy.Raw(true, true, ignoreAll = false))
       new ConfigLoader.LocalFSImpl(logger, merger, ConfigLocationProvider.Default, emptyConfigArgs)
     },
     appPlugins: LoadedPlugins = LoadedPlugins.empty,

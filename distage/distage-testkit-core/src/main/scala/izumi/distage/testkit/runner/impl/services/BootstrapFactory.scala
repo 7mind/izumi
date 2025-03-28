@@ -48,6 +48,7 @@ object BootstrapFactory {
       )
       val merger = new ConfigMergerImpl(
         logger,
+        enableConfigEnvOverrides = true,
         new ConfigFilteringStrategy.Raw(
           alwaysIncludeReferenceRoleConfigs = true, // we expect no user-provided role configs in tests
           alwaysIncludeReferenceCommonConfigs = true,

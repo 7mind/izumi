@@ -19,17 +19,19 @@ import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.os.{IzOs, OsType}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogSink
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.io.{File, OutputStream, PrintStream}
-import java.nio.{BufferOverflowException, ByteBuffer}
 import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Paths}
+import java.nio.{BufferOverflowException, ByteBuffer}
 import java.util.UUID
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.*
 
 class RoleAppTest extends AnyWordSpec with WithProperties {
@@ -434,11 +436,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(commonReferenceDevFieldDoc == "docstest: field doc")
     }
 
-    "prioritize configs as expected" in {
+    "prioritize configs as expected, support system property and system environment overrides" in {
+      import ConfigTestRole.configTestConfig
 
       TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
-
-      import ConfigTestRole.configTestConfig
 
       assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
       assert(configTestConfig.commonReference == 2, "common-reference")
@@ -536,6 +537,47 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(configTestConfig.application == 8, "application")
       assert(configTestConfig.roleReference == 9, "role-reference")
       assert(configTestConfig.role == 8, "role")
+
+      // system property config overrides
+
+      withProperties(
+        "configTest.commonReferenceDev" -> "20"
+      ) {
+        ConfigFactory.invalidateCaches()
+        TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
+
+        assert(configTestConfig.commonReferenceDev == 20, "common-reference-dev")
+        assert(configTestConfig.commonReference == 2, "common-reference")
+        assert(configTestConfig.common == 3, "common")
+        assert(configTestConfig.applicationReference == 4, "application-reference")
+        assert(configTestConfig.application == 5, "application")
+        assert(configTestConfig.roleReference == 6, "role-reference")
+        assert(configTestConfig.role == 7, "role")
+        ()
+      }
+
+      // system environment config overrides
+      IzOs.osType match {
+        case os @ (OsType.Windows | OsType.Unknown) =>
+          println(s"System Environment test not supported on $os")
+        case _ =>
+          EnvHacker.modifySystemEnvironment(_.put("CONFIG_FORCE_configTest_commonReferenceDev", "25"))
+          try {
+            ConfigFactory.invalidateCaches()
+            TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
+
+            assert(configTestConfig.commonReferenceDev == 25, "common-reference-dev")
+            assert(configTestConfig.commonReference == 2, "common-reference")
+            assert(configTestConfig.common == 3, "common")
+            assert(configTestConfig.applicationReference == 4, "application-reference")
+            assert(configTestConfig.application == 5, "application")
+            assert(configTestConfig.roleReference == 6, "role-reference")
+            assert(configTestConfig.role == 7, "role")
+            ()
+          } finally {
+            EnvHacker.modifySystemEnvironment(_.remove("CONFIG_FORCE_configTest_commonReferenceDev"))
+          }
+      }
     }
 
     "roles do not have access to components from MainAppModule" in {
@@ -624,5 +666,39 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
   }
   private def jsonSchema(role: String, version: ArtifactVersion): File = {
     Paths.get(targetPath, s"$role-${version.version}.json.jsonschema").toFile
+  }
+
+  // from https://stackoverflow.com/a/77248141 & https://github.com/PulseBeat02/MessingWithUnsafe/blob/main/src/main/java/io/github/pulsebeat02/messingwithunsafe/unsafe/UnsafeProvider.java
+  private object EnvHacker {
+    def modifySystemEnvironment(f: java.util.Map[String, String] => Any): Unit = {
+      try {
+        val unwritable = System.getenv()
+        assert(unwritable eq System.getenv())
+        val writable = getField(unwritable.getClass, unwritable, "m")
+        f(writable)
+        ()
+      } catch {
+        case e: NoSuchFieldException =>
+          throw new AssertionError(e)
+      }
+    }
+
+    @nowarn("msg=deprecated")
+    private def getField[T <: AnyRef](clazz: Class[?], `object`: T, name: String): T = {
+      unsafe.getObject(`object`, unsafe.objectFieldOffset(clazz.getDeclaredField(name))).asInstanceOf[T]
+    }
+
+    private val unsafe: sun.misc.Unsafe = {
+      try {
+        val field = classOf[sun.misc.Unsafe].getDeclaredField("theUnsafe")
+        field.setAccessible(true)
+        val res = field.get(null).asInstanceOf[sun.misc.Unsafe]
+        field.setAccessible(false)
+        res
+      } catch {
+        case e @ (_: IllegalAccessException | _: NoSuchFieldException) =>
+          throw new AssertionError(e)
+      }
+    }
   }
 }

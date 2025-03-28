@@ -102,6 +102,8 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Boolean]
     .named("distage.roles.always-include-reference-common-configs").from(DebugProperties.`distage.roles.always-include-reference-common-configs`.boolValue(true))
   make[Boolean].named("distage.roles.ignore-all-reference-configs").from(DebugProperties.`distage.roles.ignore-all-reference-configs`.boolValue(default = false))
+  make[Boolean]
+    .named("distage.roles.enable-config-environment-overrides").from(DebugProperties.`distage.roles.enable-config-environment-overrides`.boolValue(default = true))
 
   make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
   make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)
