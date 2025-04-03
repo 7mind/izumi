@@ -1,6 +1,7 @@
 package izumi.logstage.macros
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
+import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.logstage.api.Log.{Level, Message}
 import izumi.logstage.api.logger.AbstractLogIO
 
@@ -29,6 +30,52 @@ object LogIOMacroMethods {
 
   def scCritMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
     doLog(c)(message, Level.Crit, EncodingMode.NonStrict)
+  }
+
+  def scLogMethod[F[_], A](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level]
+  )(function: c.Expr[F[A]]
+  ): c.Expr[F[A]] = {
+    scLogMethodImpl[F, A](c)(level, printTypes = true, printImplicits = true)(function)
+  }
+
+  def scLogMethodPrintTypes[F[_], A](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level],
+    printTypes: c.Expr[Boolean],
+  )(function: c.Expr[F[A]]
+  ): c.Expr[F[A]] = {
+    scLogMethodImpl[F, A](c)(level, ReflectionUtil.getBooleanLiteral(c)(printTypes.tree), printImplicits = true)(function)
+  }
+
+  def scLogMethodPrintTypesImplicits[F[_], A](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level],
+    printTypes: c.Expr[Boolean],
+    printImplicits: c.Expr[Boolean],
+  )(function: c.Expr[F[A]]
+  ): c.Expr[F[A]] = {
+    scLogMethodImpl[F, A](c)(
+      level,
+      ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
+      ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree),
+    )(function)
+  }
+
+  private def scLogMethodImpl[F[_], A](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level],
+    printTypes: Boolean,
+    printImplicits: Boolean,
+  )(function: c.Expr[F[A]]
+  ): c.Expr[F[A]] = {
+    new LogMethodMacro[c.type](c).logMethodIO[F, A](
+      level,
+      function,
+      printTypes,
+      printImplicits,
+    )
   }
 
   def scTraceMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {

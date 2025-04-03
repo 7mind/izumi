@@ -1,6 +1,7 @@
 package izumi.logstage.macros
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
+import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{Level, Message}
 import izumi.logstage.api.logger.AbstractLogger
@@ -31,6 +32,52 @@ object LoggerMacroMethods {
 
   def scCritMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     doLog(c)(message, Level.Crit, EncodingMode.NonStrict)
+  }
+
+  def scLogMethod[A](
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(level: c.Expr[Level]
+  )(function: c.Expr[A]
+  ): c.Expr[A] = {
+    scLogMethodImpl[A](c)(level, printTypes = true, printImplicits = true)(function)
+  }
+
+  def scLogMethodPrintTypes[A](
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(level: c.Expr[Level],
+    printTypes: c.Expr[Boolean],
+  )(function: c.Expr[A]
+  ): c.Expr[A] = {
+    scLogMethodImpl[A](c)(level, ReflectionUtil.getBooleanLiteral(c)(printTypes.tree), printImplicits = true)(function)
+  }
+
+  def scLogMethodPrintTypesImplicits[A](
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(level: c.Expr[Level],
+    printTypes: c.Expr[Boolean],
+    printImplicits: c.Expr[Boolean],
+  )(function: c.Expr[A]
+  ): c.Expr[A] = {
+    scLogMethodImpl[A](c)(
+      level,
+      ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
+      ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree)
+    )(function)
+  }
+
+  private def scLogMethodImpl[A](
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(level: c.Expr[Level],
+    printTypes: Boolean,
+    printImplicits: Boolean,
+  )(function: c.Expr[A]
+  ): c.Expr[A] = {
+    new LogMethodMacro[c.type](c).logMethod[A](
+      level,
+      function,
+      printTypes,
+      printImplicits,
+    )
   }
 
   def scTraceMacroStrict(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
@@ -109,5 +156,4 @@ object LoggerMacroMethods {
       }
     }
   }
-
 }

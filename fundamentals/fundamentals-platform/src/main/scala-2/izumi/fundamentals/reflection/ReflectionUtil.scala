@@ -131,4 +131,14 @@ object ReflectionUtil {
     }.headOption
   }
 
+  def getBooleanLiteral(c: blackbox.Context)(tree: c.universe.Tree): Boolean = {
+    findBooleanLiteral(tree).getOrElse(c.abort(c.enclosingPosition, "must use boolean literal"))
+  }
+
+  def findBooleanLiteral(tree: Universe#Tree): Option[Boolean] = {
+    tree.collect {
+      case l: Universe#LiteralApi if l.value.value.isInstanceOf[Boolean] =>
+        l.value.value.asInstanceOf[Boolean]
+    }.headOption
+  }
 }

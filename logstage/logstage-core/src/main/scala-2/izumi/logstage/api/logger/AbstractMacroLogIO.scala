@@ -1,6 +1,7 @@
 package izumi.logstage.api.logger
 
-import izumi.logstage.macros.LogIOMacroMethods._
+import izumi.logstage.api.Log.Level
+import izumi.logstage.macros.LogIOMacroMethods.*
 
 import scala.language.experimental.macros
 
@@ -13,4 +14,12 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] =>
   final def warn(message: String): F[Unit] = macro scWarnMacro[F]
   final def error(message: String): F[Unit] = macro scErrorMacro[F]
   final def crit(message: String): F[Unit] = macro scCritMacro[F]
+
+  final def logMethod[A](level: Level)(function: => A): F[A] = macro scLogMethod[F, A]
+  final def logMethod[A](level: Level, printTypes: Boolean)(function: => A): F[A] = macro scLogMethodPrintTypes[F, A]
+  final def logMethod[A](level: Level, printTypes: Boolean, printImplicits: Boolean)(function: => A): F[A] = macro scLogMethodPrintTypesImplicits[F, A]
+
+  final def logMethodF[G[x] >: F[x], A](level: Level)(function: => G[A]): G[A] = macro scLogMethod[G, A]
+  final def logMethodF[G[x] >: F[x], A](level: Level, printTypes: Boolean)(function: => G[A]): G[A] = macro scLogMethodPrintTypes[G, A]
+  final def logMethodF[G[x] >: F[x], A](level: Level, printTypes: Boolean, printImplicits: Boolean)(function: => G[A]): G[A] = macro scLogMethodPrintTypesImplicits[G, A]
 }
