@@ -437,6 +437,7 @@ object Izumi {
       final lazy val testkitCore = ArtifactId("distage-testkit-core")
       final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
       final lazy val testkitScalatestSbtModuleFilteringTest = ArtifactId("distage-testkit-scalatest-sbt-module-filtering-test")
+      final lazy val testkitScalatestTools = ArtifactId("distage-testkit-scalatest-tools")
       final lazy val extensionLogstage = ArtifactId("distage-extension-logstage")
     }
 
@@ -750,6 +751,15 @@ object Izumi {
         settings = Seq(
           "skip" in SettingScope.Raw("publish") := true
         ),
+      ),
+      Artifact(
+        name = Projects.distage.testkitScalatestTools,
+        libs = allMonadsOptional ++ Seq(scalatest.dependency in Scope.Compile.all),
+        depends = Seq(
+          Projects.distage.testkitScalatest in Scope.Compile.all
+        ),
+        platforms = Targets.jvm3,
+        settings = Nil,
       ),
     ),
     pathPrefix = Projects.distage.basePath,
