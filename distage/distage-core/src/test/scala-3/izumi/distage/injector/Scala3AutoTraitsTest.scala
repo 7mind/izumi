@@ -94,6 +94,18 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
         }
       ]
     }
+
+    "support intersection types with trait constructors" in {
+      import izumi.distage.fixtures.Scala3TraitCases.IntersectionCase.*
+      val traitConstructor = TraitConstructor[Trait1 & Trait2 & Class1].get
+      val traitIntersection = traitConstructor.unsafeApply(Seq(TypedRef(4), TypedRef(1), TypedRef(2), TypedRef(3), TypedRef(5))).asInstanceOf[Trait1 & Trait2 & Class1]
+
+      assert(traitIntersection.dep1 == 1)
+      assert(traitIntersection.dep2 == 2)
+      assert(traitIntersection.dep3 == 3)
+      assert(traitIntersection.dep4 == 4)
+      assert(traitIntersection.dep5 == 5)
+    }
   }
 
 }

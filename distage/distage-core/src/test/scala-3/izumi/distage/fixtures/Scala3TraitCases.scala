@@ -58,4 +58,18 @@ object Scala3TraitCases {
     def f3(c: C1): T @With[C2]
     def f4(a1: Int)(a2: Long, a5: Double): T @With[C3]
   }
+
+  object IntersectionCase {
+    trait Trait1(val dep1: Int) {
+      def dep2: Int
+    }
+
+    trait Trait2 {
+      def dep3: Int
+    }
+
+    abstract class Class1(val dep4: Int) {
+      def dep5: Int
+    }
+  }
 }
