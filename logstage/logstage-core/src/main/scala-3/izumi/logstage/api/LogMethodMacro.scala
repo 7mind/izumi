@@ -141,7 +141,7 @@ object LogMethodMacro {
         case Nil => (acc, index)
         case head :: tail =>
           if (!logImplicits && isImplicit(head)) {
-            loopOverArgs(tail, argsTrees, index, acc)
+            loopOverArgs(tail, argsTrees, index + 1, acc)
           } else {
             val valSymbol = Symbol.newVal(Symbol.spliceOwner, head.name, argsTrees(index).tpe.widen, Flags.EmptyFlags, Symbol.noSymbol)
             loopOverArgs(tail, argsTrees, index + 1, acc :+ valSymbol)
