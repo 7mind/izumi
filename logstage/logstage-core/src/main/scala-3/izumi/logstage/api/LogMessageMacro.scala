@@ -59,7 +59,33 @@ object LogMessageMacro {
                 case None =>
                   parts += Left(c.value.toString)
               }
+            case Inlined(_, _, Literal(c)) =>
+              parts.lastOption match {
+                case Some(value) =>
+                  value match {
+                    case Left(value) =>
+                      parts.remove(parts.size - 1)
+                      parts += Left(value + c.value.toString)
+                    case Right(_) =>
+                      parts += Left(c.value.toString)
+                  }
+                case None =>
+                  parts += Left(c.value.toString)
+              }
             case chunk @ Ident(_) =>
+              val expr = Right(makeArg(chunk.asExprOf[Any]))
+              parts.lastOption match {
+                case Some(value) =>
+                  value match {
+                    case Left(value) =>
+                      parts += expr
+                    case Right(value) =>
+                      parts ++= Seq(Left(""), expr)
+                  }
+                case None =>
+                  parts ++= Seq(Left(""), expr)
+              }
+            case Inlined(_, _, chunk @ Ident(_)) =>
               val expr = Right(makeArg(chunk.asExprOf[Any]))
               parts.lastOption match {
                 case Some(value) =>
@@ -104,14 +130,17 @@ object LogMessageMacro {
     @tailrec
     def unpackPlus(message: Term, parts: List[Term]): List[Term] = {
       message match {
-        case Ident(i) =>
+        case Ident(_) | Inlined(_, _, Ident(_)) =>
           message +: parts
 
-        case Literal(c) =>
+        case Literal(_) | Inlined(_, _, Literal(_)) =>
           message +: parts
 
         case Apply(Select(left, "+"), right :: Nil) =>
           unpackPlus(left, right +: parts)
+
+        case Inlined(_, _, tree) =>
+          unpackPlus(tree, parts)
 
         case _ =>
           report.errorAndAbort(s"Concatenation is too complex for analysis, use string interpolation instead: ${message.show}")
