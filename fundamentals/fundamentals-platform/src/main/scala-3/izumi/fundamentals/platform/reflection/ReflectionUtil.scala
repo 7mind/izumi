@@ -45,7 +45,7 @@ object ReflectionUtil {
     }
 
     go(typeRepr)
-    tpes.toList.sortBy(_.typeSymbol.flags.is(Flags.Trait))
+    tpes.toList
   }
 
   def intersectionUnionMembers(using q: Quotes)(typeRepr: q.reflect.TypeRepr): List[q.reflect.TypeRepr] = {

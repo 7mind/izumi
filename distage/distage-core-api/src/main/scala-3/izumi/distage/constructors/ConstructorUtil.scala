@@ -20,7 +20,9 @@ class ConstructorContext[R0, Q <: Quotes, U <: ConstructorUtil[Q]](using val rTy
 
   val resultTpe = TypeRepr.of[R].dealias.simplified
   val resultTpeTree = TypeTree.of[R]
-  private val resultTpes = ReflectionUtil.intersectionMembers(resultTpe)
+  private val resultTpes = ReflectionUtil
+    .intersectionMembers(resultTpe)
+    .sortBy(_.typeSymbol.flags.is(Flags.Trait))
   val resultTpeSyms = resultTpes.map(_.typeSymbol)
 
   val refinementMethods = resultTpes.flatMap(util.unpackRefinement)
