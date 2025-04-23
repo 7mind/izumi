@@ -1,5 +1,6 @@
 package izumi.logstage.macros
 
+import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
 import izumi.logstage.api.Log.Level
 
@@ -9,26 +10,47 @@ import scala.reflect.macros.blackbox
 class LogMethodMacro[C <: blackbox.Context](final val c: C) {
   import c.universe.*
 
-  def logMethodIO[F[_], A](level: c.Expr[Level], function: c.Expr[F[A]], logTypes: Boolean, logImplicits: Boolean): c.Expr[F[A]] = {
+  def logMethodIOF[F[_], A](
+    level: c.Expr[Level],
+    function: c.Expr[F[A]],
+    logTypes: Boolean,
+    logImplicits: Boolean,
+    qp: c.Expr[QuasiPrimitives[F]],
+  ): c.Expr[F[A]] = {
     val (variables, logString) = createVariablesAndLogStringTrees(function, logTypes, logImplicits)
 
-    val isWrapped = isWrappedInF(function.tree)
+    val logTree =
+      q"""
+         $qp.tapBothUntyped($function)(
+           err = error => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + error))(position),
+           succ = result => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + result))(position)
+         )   
+        """
+
+    c.Expr[F[A]](q"""
+           val self = ${c.prefix}
+           val position = ${getEnclosingPosition(c)}
+           ..$variables
+           $logTree
+         """)
+  }
+
+  def logMethodIO[F[_], A](
+    level: c.Expr[Level],
+    function: c.Expr[A],
+    logTypes: Boolean,
+    logImplicits: Boolean,
+    qp: c.Expr[QuasiIO[F]],
+  ): c.Expr[F[A]] = {
+    val (variables, logString) = createVariablesAndLogStringTrees(function, logTypes, logImplicits)
 
     val logTree =
-      if (isWrapped) {
-        q"""
-         $function.flatMap(result =>
-           self
-           .log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString))(position)
-           .map(_ => result)
+      q"""
+         $qp.tapBothUntyped($qp.maybeSuspend($function))(
+           err = error => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + error))(position),
+           succ = result => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + result))(position)
          )
         """
-      } else {
-        q"""
-         val result = $function
-         self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString))(position).map(_ => result)
-        """
-      }
 
     c.Expr[F[A]](q"""
            val self = ${c.prefix}
@@ -45,12 +67,19 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
            val self = ${c.prefix}
            val position = ${getEnclosingPosition(c)}
            ..$variables
-           val result = $function
-           val msg = _root_.izumi.logstage.api.Log.Message.apply($logString)
-           if (self.acceptable(position.get, $level)) {
-              self.unsafeLog(Log.Entry.create($level, msg)(position))
+           try {
+             val result = $function
+             if (self.acceptable(position.get, $level)) {
+               self.unsafeLog(Log.Entry.create($level, _root_.izumi.logstage.api.Log.Message.apply($logString + " => " + result))(position))
+             }
+             result
+           } catch {
+             case error: Throwable =>
+              if (self.acceptable(position.get, $level)) {
+                self.unsafeLog(Log.Entry.create($level, _root_.izumi.logstage.api.Log.Message.apply($logString + " => " + error))(position))
+              }
+              throw error
            }
-           result
          """)
   }
 
@@ -65,18 +94,7 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
     val withFunctionName = q""" "Call to " + ${method.name.decodedName.toString}"""
     val withTypes = appendTypesInfo(withFunctionName, funcTree, method, logTypes)
     val withArguments = addTermsToString(argumentsToLog, withTypes)
-    val withResult = q""" $withArguments + " => " + result """
-    (variables, withResult)
-  }
-
-  private def isWrappedInF(funcTree: Tree): Boolean = {
-    val funcTypeConstructor = funcTree.tpe.dealias.typeSymbol
-    val thisType = c.prefix.tree.tpe
-    val parentTypes: List[Type] = thisType.baseClasses.map(thisType.baseType)
-    val parentTypeArgs =
-      parentTypes.flatMap(parent => parent.typeArgs.map(_.dealias.typeSymbol))
-
-    parentTypeArgs.contains(funcTypeConstructor)
+    (variables, withArguments)
   }
 
   private def appendTypesInfo(messageStringTree: Tree, funcTree: Tree, methodSymbol: MethodSymbol, logTypes: Boolean): Tree = {

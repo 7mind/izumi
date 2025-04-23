@@ -1,5 +1,6 @@
 package izumi.logstage.macros
 
+import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
 import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.logstage.api.Log.{Level, Message}
@@ -35,18 +36,39 @@ object LogIOMacroMethods {
   def scLogMethod[F[_], A](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
   )(level: c.Expr[Level]
-  )(function: c.Expr[F[A]]
+  )(function: c.Expr[A]
+  )(qp: c.Expr[QuasiIO[F]]
   ): c.Expr[F[A]] = {
-    scLogMethodImpl[F, A](c)(level, printTypes = true, printImplicits = true)(function)
+    scLogMethodImpl[F, A](c)(level, printTypes = true, printImplicits = true)(function)(qp)
+  }
+
+  def scLogMethodF[F[_], A](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level]
+  )(function: c.Expr[F[A]]
+  )(qp: c.Expr[QuasiPrimitives[F]]
+  ): c.Expr[F[A]] = {
+    scLogMethodFImpl[F, A](c)(level, printTypes = true, printImplicits = true)(function)(qp)
   }
 
   def scLogMethodPrintTypes[F[_], A](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
   )(level: c.Expr[Level],
     printTypes: c.Expr[Boolean],
-  )(function: c.Expr[F[A]]
+  )(function: c.Expr[A]
+  )(qp: c.Expr[QuasiIO[F]]
   ): c.Expr[F[A]] = {
-    scLogMethodImpl[F, A](c)(level, ReflectionUtil.getBooleanLiteral(c)(printTypes.tree), printImplicits = true)(function)
+    scLogMethodImpl[F, A](c)(level, ReflectionUtil.getBooleanLiteral(c)(printTypes.tree), printImplicits = true)(function)(qp)
+  }
+
+  def scLogMethodFPrintTypes[F[_], A](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level],
+    printTypes: c.Expr[Boolean],
+  )(function: c.Expr[F[A]]
+  )(qp: c.Expr[QuasiPrimitives[F]]
+  ): c.Expr[F[A]] = {
+    scLogMethodFImpl[F, A](c)(level, ReflectionUtil.getBooleanLiteral(c)(printTypes.tree), printImplicits = true)(function)(qp)
   }
 
   def scLogMethodPrintTypesImplicits[F[_], A](
@@ -54,13 +76,29 @@ object LogIOMacroMethods {
   )(level: c.Expr[Level],
     printTypes: c.Expr[Boolean],
     printImplicits: c.Expr[Boolean],
-  )(function: c.Expr[F[A]]
+  )(function: c.Expr[A]
+  )(qp: c.Expr[QuasiIO[F]]
   ): c.Expr[F[A]] = {
     scLogMethodImpl[F, A](c)(
       level,
       ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
       ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree),
-    )(function)
+    )(function)(qp)
+  }
+
+  def scLogMethodFPrintTypesImplicits[F[_], A](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level],
+    printTypes: c.Expr[Boolean],
+    printImplicits: c.Expr[Boolean],
+  )(function: c.Expr[F[A]]
+  )(qp: c.Expr[QuasiPrimitives[F]]
+  ): c.Expr[F[A]] = {
+    scLogMethodFImpl[F, A](c)(
+      level,
+      ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
+      ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree),
+    )(function)(qp)
   }
 
   private def scLogMethodImpl[F[_], A](
@@ -68,13 +106,32 @@ object LogIOMacroMethods {
   )(level: c.Expr[Level],
     printTypes: Boolean,
     printImplicits: Boolean,
-  )(function: c.Expr[F[A]]
+  )(function: c.Expr[A]
+  )(qp: c.Expr[QuasiIO[F]]
   ): c.Expr[F[A]] = {
     new LogMethodMacro[c.type](c).logMethodIO[F, A](
       level,
       function,
       printTypes,
       printImplicits,
+      qp,
+    )
+  }
+
+  private def scLogMethodFImpl[F[_], A](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level],
+    printTypes: Boolean,
+    printImplicits: Boolean,
+  )(function: c.Expr[F[A]]
+  )(qp: c.Expr[QuasiPrimitives[F]]
+  ): c.Expr[F[A]] = {
+    new LogMethodMacro[c.type](c).logMethodIOF[F, A](
+      level,
+      function,
+      printTypes,
+      printImplicits,
+      qp,
     )
   }
 

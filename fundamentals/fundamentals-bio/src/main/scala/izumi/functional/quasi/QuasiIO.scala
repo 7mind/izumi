@@ -10,6 +10,7 @@ import izumi.fundamentals.platform.functional.Identity
 import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.tailrec
 import scala.language.implicitConversions
+import scala.util.chaining.scalaUtilChainingOps
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -139,6 +140,14 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
           success(value)
       }
     }
+
+    override def tapBothUntyped[A](eff: => Identity[A])(err: Any => Identity[Unit], succ: A => Identity[Unit]): Identity[A] = {
+      TryNonFatal(eff) match {
+        case Failure(exception) => err(exception); throw exception
+        case Success(value) => succ(value).pipe(_ => value)
+      }
+    }
+
     override def bracket[A, B](acquire: => Identity[A])(release: A => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
       try use(a)
@@ -182,6 +191,9 @@ private[quasi] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuasi
     new QuasiPrimitivesFromBIO[F, Throwable] with QuasiIO[F[Throwable, _]] {
       override final def suspendF[A](effAction: => F[E, A]): F[E, A] = super[QuasiPrimitivesFromBIO].suspendF(effAction)
       override final def mkRef[A](a: A): F[E, QuasiRef[F[E, _], A]] = super[QuasiPrimitivesFromBIO].mkRef(a)
+      override final def tapBothUntyped[A](eff: => F[E, A])(err: Any => F[E, Unit], succ: A => F[E, Unit]): F[E, A] = {
+        super[QuasiPrimitivesFromBIO].tapBothUntyped(eff)(err, succ)
+      }
 
       override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
       override def maybeSuspendEither[A](eff: => Either[E, A]): F[E, A] = F.fromEither(eff)
@@ -225,6 +237,9 @@ private[quasi] sealed trait LowPriorityQuasiIOInstances1 {
     new QuasiPrimitivesFromCats[F](F) with QuasiIO[F] {
       override final def suspendF[A](effAction: => F[A]): F[A] = super[QuasiPrimitivesFromCats].suspendF(effAction)
       override final def mkRef[A](a: A): F[QuasiRef[F, A]] = super[QuasiPrimitivesFromCats].mkRef(a)
+      override final def tapBothUntyped[A](eff: => F[A])(err: Any => F[Unit], succ: A => F[Unit]): F[A] = {
+        super[QuasiPrimitivesFromCats].tapBothUntyped(eff)(err, succ)
+      }
 
       override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
       override def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[A] = F.defer(F.fromEither(eff))
@@ -300,6 +315,8 @@ trait QuasiPrimitives[F[_]] extends QuasiApplicative[F] {
         flatMap(acc)(_ => f(a))
     }
   }
+
+  def tapBothUntyped[A](eff: => F[A])(err: Any => F[Unit], succ: A => F[Unit]): F[A]
 }
 
 object QuasiPrimitives extends LowPriorityQuasiPrimitivesInstances {
@@ -357,6 +374,10 @@ private[quasi] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](implicit F: IO2
 
   override final def traverse[A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]] = F.traverse(l)(f)
   override final def traverse_[A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = F.traverse_(l)(f)
+
+  override def tapBothUntyped[A](eff: => F[E, A])(err: Any => F[E, Unit], succ: A => F[E, Unit]): F[E, A] = {
+    F.tapBoth(eff)(err, succ)
+  }
 }
 
 private[quasi] sealed class QuasiPrimitivesFromCats[F[_]](F: cats.effect.kernel.Sync[F]) extends QuasiPrimitives[F] {
@@ -381,6 +402,15 @@ private[quasi] sealed class QuasiPrimitivesFromCats[F[_]](F: cats.effect.kernel.
 
   override final def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)
   override final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(F)
+
+  override def tapBothUntyped[A](eff: => F[A])(err: Any => F[Unit], succ: A => F[Unit]): F[A] = {
+    F.attemptTap(eff)(
+      _.fold(
+        e => err(e),
+        v => succ(v),
+      )
+    )
+  }
 }
 
 /**

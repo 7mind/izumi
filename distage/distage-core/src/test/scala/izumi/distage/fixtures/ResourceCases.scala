@@ -208,6 +208,16 @@ object ResourceCases {
             }.flatMap(res => release(a, None).map(_ => res))
         }
       }
+
+      override def tapBothUntyped[A](eff: => Suspend2[E, A])(err: Any => Suspend2[E, Unit], succ: A => Suspend2[E, Unit]): Suspend2[E, A] = {
+        Suspend2(
+          () =>
+            Try(eff.run()).toEither.flatMap(identity) match {
+              case Left(error) => err(error).run().map(_ => throw error)
+              case Right(value) => succ(value).run().map(_ => value)
+            }
+        )
+      }
     }
   }
 }

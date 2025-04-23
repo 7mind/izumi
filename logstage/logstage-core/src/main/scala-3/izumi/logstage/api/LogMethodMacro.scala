@@ -1,6 +1,6 @@
 package izumi.logstage.api
 
-import izumi.functional.quasi.QuasiPrimitives
+import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.reflection.ReflectionUtil
 import izumi.logstage.api.Log.{Level, Message}
@@ -10,7 +10,7 @@ import scala.annotation.tailrec
 import scala.quoted.*
 
 object LogMethodMacro {
-  def logMethodIOF[A: Type, F[_]: Type, G[X] >: F[X]: Type](
+  def logMethodIOF[A: Type, F[_]: Type, G[x] >: F[x]: Type](
     level: Expr[Level],
     function: Expr[G[A]],
     logger: Expr[AbstractLogIO[F]],
@@ -25,7 +25,10 @@ object LogMethodMacro {
 
     val logExpr =
       '{
-        $qp.flatMap[A, A]($function)(result => $qp.map($logger.log($level)(Message($logMessage + " => " + result))(CodePositionMaterializer.materialize))(_ => result))
+        $qp.tapBothUntyped($function)(
+          err = error => $logger.log($level)(Message($logMessage + " => " + error))(CodePositionMaterializer.materialize),
+          succ = result => $logger.log($level)(Message($logMessage + " => " + result))(CodePositionMaterializer.materialize),
+        )
       }.asTerm
 
     Block(
@@ -34,29 +37,31 @@ object LogMethodMacro {
     ).asExprOf[G[A]]
   }
 
-  def logMethodIO[A: Type, F[_]: Type](
+  def logMethodIO[A: Type, F[_]: Type, G[x] >: F[x]: Type](
     level: Expr[Level],
     function: Expr[A],
     logger: Expr[AbstractLogIO[F]],
     logTypesExpr: Expr[Boolean],
     logImplicitsExpr: Expr[Boolean],
-    qp: Expr[QuasiPrimitives[F]],
+    qp: Expr[QuasiIO[G]],
   )(using qctx: Quotes
-  ): Expr[F[A]] = {
+  ): Expr[G[A]] = {
     import qctx.reflect.*
     val funcTree = function.asTerm
     val (variables, logMessage) = createVariablesAndLogMessage(funcTree, logTypesExpr, logImplicitsExpr)
 
     val logExpr =
       '{
-        val result = $function
-        $qp.map($logger.log($level)(Message($logMessage + " => " + result))(CodePositionMaterializer.materialize))(_ => result)
+        $qp.tapBothUntyped($qp.maybeSuspend($function))(
+          err = error => $logger.log($level)(Message($logMessage + " => " + error))(CodePositionMaterializer.materialize),
+          succ = result => $logger.log($level)(Message($logMessage + " => " + result))(CodePositionMaterializer.materialize),
+        )
       }.asTerm
 
     Block(
       variables,
       logExpr,
-    ).asExprOf[F[A]]
+    ).asExprOf[G[A]]
   }
 
   def logMethod[A: Type](
@@ -73,11 +78,19 @@ object LogMethodMacro {
 
     val logExpr = '{
       val pos = CodePositionMaterializer.materialize
-      val result = $function
-      if ($logger.acceptable(pos.get, $level)) {
-        $logger.unsafeLog(Log.Entry.create($level, Message($logMessage + " => " + result))(pos))
+      try {
+        val result = $function
+        if ($logger.acceptable(pos.get, $level)) {
+          $logger.unsafeLog(Log.Entry.create($level, Message($logMessage + " => " + result))(pos))
+        }
+        result
+      } catch {
+        case error: Throwable =>
+          if ($logger.acceptable(pos.get, $level)) {
+            $logger.unsafeLog(Log.Entry.create($level, Message($logMessage + " => " + error))(pos))
+          }
+          throw error
       }
-      result
     }.asTerm
 
     Block(
