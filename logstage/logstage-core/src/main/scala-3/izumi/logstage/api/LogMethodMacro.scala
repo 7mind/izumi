@@ -106,12 +106,19 @@ object LogMethodMacro {
     logImplicitsExpr: Expr[Boolean],
   ): (List[qctx.reflect.ValDef], Expr[String]) = {
     import qctx.reflect.*
-    val logTypes = ReflectionUtil.getBooleanLiteral(logTypesExpr.asTerm)
-    val logImplicits = ReflectionUtil.getBooleanLiteral(logImplicitsExpr.asTerm)
+    val logTypes: Boolean = logTypesExpr.value match {
+      case Some(value) => value
+      case None => true
+    }
+    val logImplicits = logImplicitsExpr.value match {
+      case Some(value) => value
+      case None => true
+    }
 
     val methodSymbol = getMethodSymbol(funcTree)
-    val (methodTypeArguments, methodArguments) = methodSymbol.paramSymss.partition(_.exists(_.isType))
-    val argumentsTrees = getMethodArguments(funcTree)
+    val methodParams = methodSymbol.paramSymss
+    val (methodTypeArguments, methodArguments) = methodParams.partition(_.exists(_.isType))
+    val argumentsTrees = getMethodArguments(funcTree, methodArguments.size > 1)
     val variablesSymbols = createVariablesSymbols(methodArguments, argumentsTrees, logImplicits)
     val variables: List[ValDef] = variablesSymbols.flatten.zip(argumentsTrees).map {
       case (symbol, tree) => ValDef(symbol, Some(tree))
@@ -202,7 +209,8 @@ object LogMethodMacro {
       }
     }
 
-    loopOverCurriedArgs(symbols, stringTree)
+    if (symbols.isEmpty) '{ $stringTree + "()" }
+    else loopOverCurriedArgs(symbols, stringTree)
   }
 
   private def getFunctionTypeArguments(using qctx: Quotes)(funcTree: qctx.reflect.Tree): List[qctx.reflect.TypeRepr] = {
@@ -234,7 +242,7 @@ object LogMethodMacro {
     loop(function)
   }
 
-  private def getMethodArguments(using qctx: Quotes)(function: qctx.reflect.Term): List[qctx.reflect.Term] = {
+  private def getMethodArguments(using qctx: Quotes)(function: qctx.reflect.Term, curried: Boolean): List[qctx.reflect.Term] = {
     import qctx.reflect.*
     @tailrec
     def loop(tree: Term, acc: List[Term]): List[Term] = tree match {
@@ -247,6 +255,7 @@ object LogMethodMacro {
       case _ => report.errorAndAbort("The expression must be class or object method call")
     }
 
-    loop(function, List.empty[Term]).reverse
+    val args = loop(function, List.empty[Term])
+    if (curried) args.reverse else args
   }
 }

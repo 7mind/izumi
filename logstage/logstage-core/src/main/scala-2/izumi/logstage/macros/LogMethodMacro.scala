@@ -117,10 +117,11 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
       if (logImplicits) (nonImplicit ++ implicitArguments).map(_.map(_.name.toTermName))
       else nonImplicit.map(_.map(_.name.toTermName))
 
-    val argumentsTrees = getFunctionArguments(funcTree)
+    val argumentsTrees = getFunctionArguments(funcTree, methodArguments.size > 1)
     val argumentsTreesToLog =
       if (logImplicits) argumentsTrees
       else argumentsTrees.dropRight(implicitArguments.size)
+
     (argumentsToLog, argumentsTreesToLog)
   }
 
@@ -178,7 +179,7 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
     loop(function)
   }
 
-  private def getFunctionArguments(funcTree: Tree): List[Tree] = {
+  private def getFunctionArguments(funcTree: Tree, curried: Boolean): List[Tree] = {
     @tailrec
     def loop(tree: Tree, acc: List[Tree]): List[Tree] = tree match {
       case Apply(Select(_, _) | TypeApply(Select(_, _), _), args) => acc ++ args
@@ -188,6 +189,7 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
 
       case _ => c.abort(c.enclosingPosition, "Expected method or object method call")
     }
-    loop(funcTree, List.empty[Tree]).reverse
+    val args = loop(funcTree, List.empty[Tree])
+    if (curried) args.reverse else args
   }
 }

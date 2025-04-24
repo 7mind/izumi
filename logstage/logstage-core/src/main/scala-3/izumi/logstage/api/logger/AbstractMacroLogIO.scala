@@ -16,24 +16,9 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] =>
   transparent inline final def crit(inline message: String): F[Unit] = log(Log.Level.Crit, message)
 
   transparent inline final def logMethod[G[x] >: F[x], A](
-    inline level: Level
-  )(inline function: => A
-  )(using qp: QuasiIO[G]
-  ): G[A] = {
-    ${ LogMethodMacro.logMethodIO[A, F, G]('level, 'function, 'this, 'true, 'true, 'qp) }
-  }
-  transparent inline final def logMethod[G[x] >: F[x], A](
     inline level: Level,
-    inline logTypes: Boolean,
-  )(inline function: => A
-  )(using qp: QuasiIO[G]
-  ): G[A] = {
-    ${ LogMethodMacro.logMethodIO[A, F, G]('level, 'function, 'this, 'logTypes, 'true, 'qp) }
-  }
-  transparent inline final def logMethod[G[x] >: F[x], A](
-    inline level: Level,
-    inline logTypes: Boolean,
-    inline logImplicits: Boolean,
+    inline logTypes: Boolean = true,
+    inline logImplicits: Boolean = true,
   )(inline function: => A
   )(using qp: QuasiIO[G]
   ): G[A] = {
@@ -41,26 +26,9 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] =>
   }
 
   transparent inline final def logMethodF[G[x] >: F[x], A](
-    inline level: Level
-  )(inline function: => G[A]
-  )(using qp: QuasiPrimitives[G]
-  ): G[A] = {
-    ${ LogMethodMacro.logMethodIOF[A, F, G]('level, 'function, 'this, 'true, 'true, 'qp) }
-  }
-
-  transparent inline final def logMethodF[G[x] >: F[x], A](
     inline level: Level,
-    inline logTypes: Boolean,
-  )(inline function: => G[A]
-  )(using qp: QuasiPrimitives[G]
-  ): G[A] = {
-    ${ LogMethodMacro.logMethodIOF[A, F, G]('level, 'function, 'this, 'logTypes, 'true, 'qp) }
-  }
-
-  transparent inline final def logMethodF[G[x] >: F[x], A](
-    inline level: Level,
-    inline logTypes: Boolean,
-    inline logImplicits: Boolean,
+    inline logTypes: Boolean = true,
+    inline logImplicits: Boolean = true,
   )(inline function: => G[A]
   )(using qp: QuasiPrimitives[G]
   ): G[A] = {

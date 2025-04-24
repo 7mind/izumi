@@ -181,13 +181,4 @@ object ReflectionUtil {
         None
     }
   }
-
-  def getBooleanLiteral(using qctx: Quotes)(tree: qctx.reflect.Term): Boolean = {
-    import qctx.reflect.*
-    (tree match {
-      case Inlined(_, _, Literal(BooleanConstant(value))) => Some(value)
-      case Literal(BooleanConstant(value)) => Some(value)
-      case _ => None
-    }).getOrElse(report.errorAndAbort("Must use a boolean literal"))
-  }
 }

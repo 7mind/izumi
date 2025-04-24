@@ -21,13 +21,12 @@ trait AbstractMacroLogger { this: AbstractLogger =>
   transparent inline final def error(inline message: String): Unit = log(Log.Level.Error, message)
   transparent inline final def crit(inline message: String): Unit = log(Log.Level.Crit, message)
 
-  transparent inline final def logMethod[A](inline level: Level)(inline function: => A): A = {
-    ${ LogMethodMacro.logMethod('level, 'function, 'this, 'true, 'true) }
-  }
-  transparent inline final def logMethod[A](inline level: Level, inline logTypes: Boolean)(inline function: => A): A = {
-    ${ LogMethodMacro.logMethod('level, 'function, 'this, 'logTypes, 'true) }
-  }
-  transparent inline final def logMethod[A](inline level: Level, inline logTypes: Boolean, inline logImplicits: Boolean)(inline function: => A): A = {
+  transparent inline final def logMethod[A](
+    inline level: Level,
+    inline logTypes: Boolean = true,
+    inline logImplicits: Boolean = true,
+  )(inline function: => A
+  ): A = {
     ${ LogMethodMacro.logMethod('level, 'function, 'this, 'logTypes, 'logImplicits) }
   }
 
