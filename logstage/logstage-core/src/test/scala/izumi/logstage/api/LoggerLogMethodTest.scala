@@ -236,6 +236,51 @@ class LoggerLogMethodTest extends AnyWordSpec {
       assert(withoutTypesAndImplicits.message.template == withoutTypesAndImplicitsStringContext)
       assert(withoutTypesAndImplicits.message.args == withoutTypesAndImplicitsArgs)
     }
+
+    "log overloaded methods with different number of parameters" in {
+      val testSink = new TestSink(Some(new StringRenderingPolicy(RenderingOptions.simple, None)))
+      val logger = IzLogger(sink = testSink)
+
+      logger.logMethod(Log.Level.Info)(tc.add(1))
+      logger.logMethod(Log.Level.Info)(tc.add(1, 1))
+
+      val logEntry = testSink.fetch().toIndexedSeq
+      val add1P = logEntry(0)
+      val add2P = logEntry(1)
+
+      val (add1PStringContext, add1PArgs) = {
+        val stringContext = StringContext(
+          "Call to add(",
+          ") => ",
+          "",
+        )
+        val args = Seq(
+          LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+          LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        )
+        (stringContext, args)
+      }
+
+      val (add2PStringContext, add2PArgs) = {
+        val stringContext = StringContext(
+          "Call to add(",
+          ", ",
+          ") => ",
+          "",
+        )
+        val args = Seq(
+          LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+          LogArg(Seq("y"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+          LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        )
+        (stringContext, args)
+      }
+
+      assert(add1P.message.template == add1PStringContext)
+      assert(add1P.message.args == add1PArgs)
+      assert(add2P.message.template == add2PStringContext)
+      assert(add2P.message.args == add2PArgs)
+    }
   }
 
   "LogIO.logMethod" should {
@@ -349,5 +394,8 @@ class LoggerLogMethodTest extends AnyWordSpec {
         ZIO.fail(new Exception("Error during execution"))
       } else ZIO.attempt(a + b)
     }
+
+    def add(x: Int): Int = x + x
+    def add(x: Int, y: Int): Int = x + y
   }
 }

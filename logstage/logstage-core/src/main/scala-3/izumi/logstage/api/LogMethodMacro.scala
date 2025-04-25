@@ -99,15 +99,27 @@ object LogMethodMacro {
       case None => true
     }
 
-    val methodSymbol = getMethodSymbol(funcTree)
-    val methodParams = methodSymbol.paramSymss
+    val methodsSymbols = getMethodSymbols(funcTree)
+    val argumentsTreesUnordered = getMethodArguments(funcTree)
+    
+    val method =
+      if (methodsSymbols.size == 1) {
+        methodsSymbols.head
+      } else {
+        methodsSymbols.find(_.paramSymss.flatten.size == argumentsTreesUnordered.size).head
+      }
+      
+    val argumentsTrees =
+      if (method.paramSymss.size == 1) argumentsTreesUnordered
+      else argumentsTreesUnordered.reverse
+    
+    val methodParams = method.paramSymss
     val (methodTypeArguments, methodArguments) = methodParams.partition(_.exists(_.isType))
-    val argumentsTrees = getMethodArguments(funcTree, methodArguments.size > 1)
     val variablesSymbols = createVariablesSymbols(methodArguments, argumentsTrees, logImplicits)
     val variables: List[ValDef] = variablesSymbols.flatten.zip(argumentsTrees).map {
       case (symbol, tree) => ValDef(symbol, Some(tree))
     }
-    val withFunctionName = Expr(s"Call to ${methodSymbol.name}")
+    val withFunctionName = Expr(s"Call to ${method.name}")
     val withTypes = appendTypesInfo(funcTree, methodTypeArguments.flatten, withFunctionName, logTypes)
     val withArguments = appendSymbolsToString(variablesSymbols, withTypes)
     (variables, withArguments)
@@ -209,12 +221,12 @@ object LogMethodMacro {
     loop(funcTree).map(_.tpe)
   }
 
-  private def getMethodSymbol(using qctx: Quotes)(function: qctx.reflect.Term): qctx.reflect.Symbol = {
+  private def getMethodSymbols(using qctx: Quotes)(function: qctx.reflect.Term): List[qctx.reflect.Symbol] = {
     import qctx.reflect.*
     @tailrec
-    def loop(tree: Term): Symbol = tree match {
-      case Apply(Select(obj, method), _) => obj.symbol.methodMember(method).head
-      case Apply(TypeApply(Select(obj, method), _), _) => obj.symbol.methodMember(method).head
+    def loop(tree: Term): List[Symbol] = tree match {
+      case Apply(Select(obj, method), _) => obj.symbol.methodMember(method)
+      case Apply(TypeApply(Select(obj, method), _), _) => obj.symbol.methodMember(method)
 
       case Inlined(_, _, term) => loop(term)
       case Apply(TypeApply(term, _), _) => loop(term)
@@ -226,7 +238,7 @@ object LogMethodMacro {
     loop(function)
   }
 
-  private def getMethodArguments(using qctx: Quotes)(function: qctx.reflect.Term, curried: Boolean): List[qctx.reflect.Term] = {
+  private def getMethodArguments(using qctx: Quotes)(function: qctx.reflect.Term): List[qctx.reflect.Term] = {
     import qctx.reflect.*
     @tailrec
     def loop(tree: Term, acc: List[Term]): List[Term] = tree match {
@@ -239,7 +251,6 @@ object LogMethodMacro {
       case _ => report.errorAndAbort("The expression must be class or object method call")
     }
 
-    val args = loop(function, List.empty[Term])
-    if (curried) args.reverse else args
+    loop(function, List.empty[Term])
   }
 }
