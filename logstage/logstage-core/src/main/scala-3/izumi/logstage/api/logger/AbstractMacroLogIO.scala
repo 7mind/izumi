@@ -32,7 +32,7 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] =>
   )(inline function: => G[A]
   )(using qp: QuasiPrimitives[G]
   ): G[A] = {
-    ${ LogMethodMacro.logMethodIOF[A, F, G]('level, 'function, 'this, 'logTypes, 'logImplicits, 'qp) }
+    ${ LogMethodMacro.logMethodIOF[A, G[A], F, G]('level, 'function, 'function, 'this, 'logTypes, 'logImplicits, 'qp) }
   }
 
   transparent inline final def log(inline level: Log.Level, inline message: String): F[Unit] = {

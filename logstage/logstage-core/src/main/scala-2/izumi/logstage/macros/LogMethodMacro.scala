@@ -13,11 +13,12 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
   def logMethodIOF[F[_], A](
     level: c.Expr[Level],
     function: c.Expr[F[A]],
+    functionTreeToInspect: Tree,
     logTypes: Boolean,
     logImplicits: Boolean,
     qp: c.Expr[QuasiPrimitives[F]],
   ): c.Expr[F[A]] = {
-    val (variables, logString) = createVariablesAndLogStringTrees(function, logTypes, logImplicits)
+    val (variables, logString) = createVariablesAndLogStringTrees(functionTreeToInspect, logTypes, logImplicits)
 
     val logTree =
       q"""
@@ -42,26 +43,11 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
     logImplicits: Boolean,
     qp: c.Expr[QuasiIO[F]],
   ): c.Expr[F[A]] = {
-    val (variables, logString) = createVariablesAndLogStringTrees(function, logTypes, logImplicits)
-
-    val logTree =
-      q"""
-         $qp.tapBothUntyped($qp.maybeSuspend($function))(
-           err = error => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + error))(position),
-           succ = result => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + result))(position)
-         )
-        """
-
-    c.Expr[F[A]](q"""
-           val self = ${c.prefix}
-           val position = ${getEnclosingPosition(c)}
-           ..$variables
-           $logTree
-         """)
+    logMethodIOF(level, c.Expr[F[A]](q"$qp.maybeSuspend($function)"), function.tree, logTypes, logImplicits, qp)
   }
 
   def logMethod[A](level: c.Expr[Level], function: c.Expr[A], logTypes: Boolean, logImplicits: Boolean): c.Expr[A] = {
-    val (variables, logString) = createVariablesAndLogStringTrees(function, logTypes, logImplicits)
+    val (variables, logString) = createVariablesAndLogStringTrees(function.tree, logTypes, logImplicits)
 
     c.Expr[A](q"""
            val self = ${c.prefix}
@@ -83,16 +69,15 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
          """)
   }
 
-  private def createVariablesAndLogStringTrees[A](function: c.Expr[A], logTypes: Boolean, logImplicits: Boolean): (List[Tree], Tree) = {
-    val funcTree = function.tree
-    val method = getMethodSymbol(funcTree)
+  private def createVariablesAndLogStringTrees[A](function: Tree, logTypes: Boolean, logImplicits: Boolean): (List[Tree], Tree) = {
+    val method = getMethodSymbol(function)
 
-    val (argumentsToLog, argumentsTreesToLog) = getArgumentsToLog(funcTree, method, logImplicits)
+    val (argumentsToLog, argumentsTreesToLog) = getArgumentsToLog(function, method, logImplicits)
 
     val variables = createVariablesTrees(argumentsToLog.flatten, argumentsTreesToLog)
 
     val withFunctionName = q""" "Call to " + ${method.name.decodedName.toString}"""
-    val withTypes = appendTypesInfo(withFunctionName, funcTree, method, logTypes)
+    val withTypes = appendTypesInfo(withFunctionName, function, method, logTypes)
     val withArguments = addTermsToString(argumentsToLog, withTypes)
     (variables, withArguments)
   }

@@ -151,7 +151,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
       Try(runEff(logger.logMethodF[zio.Task, Int](Log.Level.Info)(tc.withErrorF(-1, 2)))) match {
         case Failure(_) =>
           val logEntry = testSink.fetch().head
-          assert(renderMessage(logEntry).startsWith("Call to withErrorFThrowable(a=-1, b=2) => error=java.lang.Exception: Error during execution"))
+          assert(renderMessage(logEntry).startsWith("Call to withErrorF(a=-1, b=2) => error=java.lang.Exception: Error during execution"))
         case Success(_) => fail()
       }
     }

@@ -2,7 +2,6 @@ package izumi.logstage.api
 
 import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.fundamentals.platform.reflection.ReflectionUtil
 import izumi.logstage.api.Log.{Level, Message}
 import izumi.logstage.api.logger.{AbstractLogIO, AbstractLogger}
 
@@ -10,18 +9,18 @@ import scala.annotation.tailrec
 import scala.quoted.*
 
 object LogMethodMacro {
-  def logMethodIOF[A: Type, F[_]: Type, G[x] >: F[x]: Type](
-    level: Expr[Level],
+  def logMethodIOF[A: Type, B, F[_]: Type, G[x] >: F[x]: Type](
+    using qctx: Quotes
+  )(level: Expr[Level],
     function: Expr[G[A]],
+    functionTreeToInspect: Expr[B],
     logger: Expr[AbstractLogIO[F]],
     logTypesExpr: Expr[Boolean],
     logImplicitsExpr: Expr[Boolean],
     qp: Expr[QuasiPrimitives[G]],
-  )(using qctx: Quotes
   ): Expr[G[A]] = {
     import qctx.reflect.*
-    val funcTree = function.asTerm
-    val (variables, logMessage) = createVariablesAndLogMessage(funcTree, logTypesExpr, logImplicitsExpr)
+    val (variables, logMessage) = createVariablesAndLogMessage(functionTreeToInspect.asTerm, logTypesExpr, logImplicitsExpr)
 
     val logExpr =
       '{
@@ -46,22 +45,7 @@ object LogMethodMacro {
     qp: Expr[QuasiIO[G]],
   )(using qctx: Quotes
   ): Expr[G[A]] = {
-    import qctx.reflect.*
-    val funcTree = function.asTerm
-    val (variables, logMessage) = createVariablesAndLogMessage(funcTree, logTypesExpr, logImplicitsExpr)
-
-    val logExpr =
-      '{
-        $qp.tapBothUntyped($qp.maybeSuspend($function))(
-          err = error => $logger.log($level)(Message($logMessage + " => " + error))(CodePositionMaterializer.materialize),
-          succ = result => $logger.log($level)(Message($logMessage + " => " + result))(CodePositionMaterializer.materialize),
-        )
-      }.asTerm
-
-    Block(
-      variables,
-      logExpr,
-    ).asExprOf[G[A]]
+    logMethodIOF(level, '{ $qp.maybeSuspend($function) }, function, logger, logTypesExpr, logImplicitsExpr, qp)
   }
 
   def logMethod[A: Type](

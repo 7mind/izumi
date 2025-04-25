@@ -129,6 +129,7 @@ object LogIOMacroMethods {
     new LogMethodMacro[c.type](c).logMethodIOF[F, A](
       level,
       function,
+      function.tree,
       printTypes,
       printImplicits,
       qp,
