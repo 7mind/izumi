@@ -237,16 +237,18 @@ class LoggerLogMethodTest extends AnyWordSpec {
       assert(withoutTypesAndImplicits.message.args == withoutTypesAndImplicitsArgs)
     }
 
-    "log overloaded methods with different number of parameters" in {
+    "log overloaded methods" in {
       val testSink = new TestSink(Some(new StringRenderingPolicy(RenderingOptions.simple, None)))
       val logger = IzLogger(sink = testSink)
 
       logger.logMethod(Log.Level.Info)(tc.add(1))
       logger.logMethod(Log.Level.Info)(tc.add(1, 1))
+      logger.logMethod(Log.Level.Info)(tc.add(1.0, 1.0))
 
       val logEntry = testSink.fetch().toIndexedSeq
       val add1P = logEntry(0)
       val add2P = logEntry(1)
+      val add2PD = logEntry(2)
 
       val (add1PStringContext, add1PArgs) = {
         val stringContext = StringContext(
@@ -276,10 +278,27 @@ class LoggerLogMethodTest extends AnyWordSpec {
         (stringContext, args)
       }
 
+      val (add2PDStringContext, add2PDArgs) = {
+        val stringContext = StringContext(
+          "Call to add(",
+          ", ",
+          ") => ",
+          "",
+        )
+        val args = Seq(
+          LogArg(Seq("y"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
+          LogArg(Seq("z"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
+          LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        )
+        (stringContext, args)
+      }
+
       assert(add1P.message.template == add1PStringContext)
       assert(add1P.message.args == add1PArgs)
       assert(add2P.message.template == add2PStringContext)
       assert(add2P.message.args == add2PArgs)
+      assert(add2PD.message.template == add2PDStringContext)
+      assert(add2PD.message.args == add2PDArgs)
     }
   }
 
@@ -397,5 +416,6 @@ class LoggerLogMethodTest extends AnyWordSpec {
 
     def add(x: Int): Int = x + x
     def add(x: Int, y: Int): Int = x + y
+    def add(y: Double, z: Double): Int = y.toInt + z.toInt
   }
 }

@@ -70,15 +70,8 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
   }
 
   private def createVariablesAndLogStringTrees[A](function: Tree, logTypes: Boolean, logImplicits: Boolean): (List[Tree], Tree) = {
-    val methodsSymbols = getMethodSymbols(function)
+    val method = getMethodSymbols(function)
     val argumentsTreesUnordered = getFunctionArguments(function)
-
-    val method =
-      if (methodsSymbols.size == 1) {
-        methodsSymbols.head
-      } else {
-        methodsSymbols.find(_.paramLists.flatten.size == argumentsTreesUnordered.size).head
-      }
 
     val argumentsTrees =
       if (method.paramLists.size == 1) argumentsTreesUnordered
@@ -161,11 +154,18 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
     loop(funcTree)
   }
 
-  private def getMethodSymbols(function: Tree): List[MethodSymbol] = {
+  private def getMethodSymbols(function: Tree): MethodSymbol = {
+    def getMethodBySignature(methodSignature: Type, obj: Tree, methodName: Name): MethodSymbol = {
+      obj.tpe.member(methodName.decodedName).asTerm.alternatives
+        .map(_.asMethod)
+        .find(_.typeSignature == methodSignature)
+        .getOrElse(c.abort(c.enclosingPosition, s"Object ${obj.symbol.name} doesn't have method $methodName with signature $methodSignature"))
+    }
+
     @tailrec
-    def loop(tree: Tree): List[MethodSymbol] = tree match {
-      case Apply(Select(obj, method), _) => obj.tpe.member(method.decodedName).asTerm.alternatives.map(_.asMethod)
-      case Apply(TypeApply(Select(obj, method), _), _) => obj.tpe.member(method.decodedName).asTerm.alternatives.map(_.asMethod)
+    def loop(tree: Tree): MethodSymbol = tree match {
+      case Apply(m @ Select(obj, method), _) => getMethodBySignature(m.symbol.typeSignature, obj, method)
+      case Apply(TypeApply(m @ Select(obj, method), _), _) => getMethodBySignature(m.symbol.typeSignature, obj, method)
 
       case Apply(inner, _) => loop(inner)
       case Apply(TypeApply(inner, _), _) => loop(inner)

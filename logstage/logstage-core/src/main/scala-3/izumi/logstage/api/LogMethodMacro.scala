@@ -99,20 +99,12 @@ object LogMethodMacro {
       case None => true
     }
 
-    val methodsSymbols = getMethodSymbols(funcTree)
+    val method = getMethodSymbols(funcTree)
     val argumentsTreesUnordered = getMethodArguments(funcTree)
-    
-    val method =
-      if (methodsSymbols.size == 1) {
-        methodsSymbols.head
-      } else {
-        methodsSymbols.find(_.paramSymss.flatten.size == argumentsTreesUnordered.size).head
-      }
-      
     val argumentsTrees =
       if (method.paramSymss.size == 1) argumentsTreesUnordered
       else argumentsTreesUnordered.reverse
-    
+
     val methodParams = method.paramSymss
     val (methodTypeArguments, methodArguments) = methodParams.partition(_.exists(_.isType))
     val variablesSymbols = createVariablesSymbols(methodArguments, argumentsTrees, logImplicits)
@@ -221,12 +213,23 @@ object LogMethodMacro {
     loop(funcTree).map(_.tpe)
   }
 
-  private def getMethodSymbols(using qctx: Quotes)(function: qctx.reflect.Term): List[qctx.reflect.Symbol] = {
+  private def getMethodSymbols(using qctx: Quotes)(function: qctx.reflect.Term): qctx.reflect.Symbol = {
     import qctx.reflect.*
+    def getMethodBySignature(signature: Option[Signature], obj: Term, methodName: String): Symbol = {
+      val methodSignature = signature match {
+        case Some(s) => s
+        case None => report.errorAndAbort("The expression must be class or object method call")
+      }
+      obj.symbol
+        .methodMember(methodName)
+        .find(_.signature == methodSignature)
+        .getOrElse(report.errorAndAbort(s"Object ${obj.symbol.name} doesn't have method $methodName with signature $methodSignature"))
+    }
+    
     @tailrec
-    def loop(tree: Term): List[Symbol] = tree match {
-      case Apply(Select(obj, method), _) => obj.symbol.methodMember(method)
-      case Apply(TypeApply(Select(obj, method), _), _) => obj.symbol.methodMember(method)
+    def loop(tree: Term): Symbol = tree match {
+      case Apply(m @ Select(obj, method), _) => getMethodBySignature(m.signature, obj, method)
+      case Apply(TypeApply(m @ Select(obj, method), _), _) => getMethodBySignature(m.signature, obj, method)
 
       case Inlined(_, _, term) => loop(term)
       case Apply(TypeApply(term, _), _) => loop(term)
