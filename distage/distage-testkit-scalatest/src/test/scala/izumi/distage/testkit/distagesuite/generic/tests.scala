@@ -6,14 +6,17 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.distagesuite.fixtures.*
 import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, SpecZIO}
+import izumi.distage.testkit.scalatest.{AssertCIO, AssertIO2, AssertSync, AssertZIO, Spec1, Spec2, SpecZIO}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
+import izumi.functional.bio.F
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
-import zio.{Task, ZEnvironment, ZIO}
+import cats.effect.kernel.Sync
+import cats.effect.IO as CIO
+import zio.{IO, Task, ZEnvironment, ZIO}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
@@ -358,5 +361,69 @@ abstract class ForcedRootTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[
   "forced root was attached and the acquire effect has been executed" in {
     (locatorRef: LocatorRef) =>
       assert(locatorRef.get.get[ForcedRootProbe].started)
+  }
+}
+
+class ShorthandAssertionsTestZIO extends SpecZIO with AssertZIO {
+  "shorthand assertions ZIO" should {
+    "support short assert versions" in {
+      for {
+        _ <- assertIO(ZIO.succeed(42))(_ == 42)
+        _ <- assertIO(ZIO.succeed(42))(_ != 21)
+        _ <- assertIO(ZIO.succeed(List("one", "two")))(_.nonEmpty)
+
+        _ <- assertIO(ZIO.succeed(42), ZIO.succeed(21))(_ > _)
+        _ <- assertIO(ZIO.succeed("test"), ZIO.succeed(4))(_.length == _)
+      } yield ()
+    }
+  }
+}
+
+class ShorthandAssertionsTestCIO extends Spec1[CIO] with AssertCIO {
+  "shorthand assertions CIO" should {
+    "support short assert versions" in {
+      for {
+        _ <- assertIO(CIO.pure(42))(_ == 42)
+        _ <- assertIO(CIO.pure(42))(_ != 21)
+        _ <- assertIO(CIO.pure(List("one", "two")))(_.nonEmpty)
+
+        _ <- assertIO(CIO.pure(42), CIO.pure(21))(_ > _)
+        _ <- assertIO(CIO.pure("test"), CIO.pure(4))(_.length == _)
+      } yield ()
+    }
+  }
+}
+
+abstract class ShorthandAssertionsTestBase[F[+_, +_]: TagKK: DefaultModule2] extends Spec2[F] with AssertIO2[F]
+
+class ShorthandAssertionsTestIO2 extends ShorthandAssertionsTestBase[IO] {
+  "shorthand assertions IO2" should {
+    "support short assert versions" in {
+      for {
+        _ <- assertIO(F.pure(42))(_ == 42)
+        _ <- assertIO(F.pure(42))(_ != 21)
+        _ <- assertIO(F.pure(List("one", "two")))(_.nonEmpty)
+
+        _ <- assertIO(F.pure(42), F.pure(21))(_ > _)
+        _ <- assertIO(F.pure("test"), F.pure(4))(_.length == _)
+      } yield ()
+    }
+  }
+}
+
+abstract class ShorthandAssertionsTestSyncBase[F[_]: Sync: TagK: DefaultModule] extends Spec1[F] with AssertSync[F]
+
+class ShorthandAssertionsTestSync extends ShorthandAssertionsTestSyncBase[CIO] {
+  "shorthand assertions IO2" should {
+    "support short assert versions" in {
+      for {
+        _ <- assertIO(CIO.pure(42))(_ == 42)
+        _ <- assertIO(CIO.pure(42))(_ != 21)
+        _ <- assertIO(CIO.pure(List("one", "two")))(_.nonEmpty)
+
+        _ <- assertIO(CIO.pure(42), CIO.pure(21))(_ > _)
+        _ <- assertIO(CIO.pure("test"), CIO.pure(4))(_.length == _)
+      } yield ()
+    }
   }
 }
