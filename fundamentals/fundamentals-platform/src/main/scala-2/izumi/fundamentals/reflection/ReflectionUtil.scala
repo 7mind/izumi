@@ -131,4 +131,35 @@ object ReflectionUtil {
     }.headOption
   }
 
+  def betaReduceLambda1[In, Out](c: blackbox.Context)(lambda: c.Expr[In => Out], resultName: String): c.universe.Tree = {
+    import c.universe._
+    lambda.tree match {
+      case Function(List(param), body) =>
+        val transformer = new Transformer {
+          override def transform(tree: Tree): Tree = tree match {
+            case Ident(_) if tree.symbol == param.symbol => Ident(TermName(resultName))
+            case _ => super.transform(tree)
+          }
+        }
+        transformer.transform(body)
+      case _ => c.abort(c.enclosingPosition, "Expected a lambda function.")
+    }
+  }
+
+  def betaReduceLambda2[A, B, Out](c: blackbox.Context)(lambda: c.Expr[(A, B) => Out], resultAName: String, resultBName: String): c.universe.Tree = {
+    import c.universe._
+    lambda.tree match {
+      case Function(List(paramA, paramB), body) =>
+        val transformer = new Transformer {
+          override def transform(tree: Tree): Tree = tree match {
+            case Ident(_) if tree.symbol == paramA.symbol => Ident(TermName(resultAName))
+            case Ident(_) if tree.symbol == paramB.symbol => Ident(TermName(resultBName))
+            case _ => super.transform(tree)
+          }
+        }
+        transformer.transform(body)
+      case _ => c.abort(c.enclosingPosition, "Expected a lambda function.")
+    }
+  }
+
 }

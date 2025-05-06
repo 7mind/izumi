@@ -6,9 +6,9 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.distagesuite.fixtures.*
 import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.{AssertCIO, AssertIO2, AssertSync, AssertZIO, Spec1, Spec2, SpecZIO}
+import izumi.distage.testkit.scalatest.*
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
-import izumi.functional.bio.F
+import izumi.functional.bio.{F, IO2}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.fundamentals.platform.language.Quirks
@@ -16,7 +16,7 @@ import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
 import cats.effect.kernel.Sync
 import cats.effect.IO as CIO
-import zio.{IO, Task, ZEnvironment, ZIO}
+import zio.{Task, ZEnvironment, ZIO}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
@@ -394,9 +394,9 @@ class ShorthandAssertionsTestCIO extends Spec1[CIO] with AssertCIO {
   }
 }
 
-abstract class ShorthandAssertionsTestBase[F[+_, +_]: TagKK: DefaultModule2] extends Spec2[F] with AssertIO2[F]
+abstract class ShorthandAssertionsIO2TestBase[F[+_, +_]: IO2: TagKK: DefaultModule2] extends Spec2[F] with AssertIO2[F]
 
-class ShorthandAssertionsTestIO2 extends ShorthandAssertionsTestBase[IO] {
+class ShorthandAssertionsTestIO2 extends ShorthandAssertionsIO2TestBase[zio.IO] {
   "shorthand assertions IO2" should {
     "support short assert versions" in {
       for {
