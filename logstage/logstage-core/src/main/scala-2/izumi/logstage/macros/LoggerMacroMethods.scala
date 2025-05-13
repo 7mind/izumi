@@ -33,6 +33,14 @@ object LoggerMacroMethods {
     doLog(c)(message, Level.Crit, EncodingMode.NonStrict)
   }
 
+  def scLogValues(
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(level: c.Expr[Level]
+  )(values: c.Expr[Any]*
+  ): c.Expr[Unit] = {
+    doLogImpl(c)(new LogValuesMacro[c.type](c).createMessage(values), level)
+  }
+
   def scTraceMacroStrict(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     doLog(c)(message, Level.Trace, EncodingMode.Strict)
   }
@@ -86,6 +94,7 @@ object LoggerMacroMethods {
       strict =>
         new LogMessageMacro0[c.type](c, strict = strict).logMessageMacro(message)
     }
+
     val l = level match {
       case Level.Trace =>
         c.universe.reify(Level.Trace)
@@ -101,13 +110,20 @@ object LoggerMacroMethods {
         c.universe.reify(Level.Crit)
     }
 
+    doLogImpl(c)(m, l)
+  }
+
+  private def doLogImpl(
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(message: c.Expr[Message],
+    level: c.Expr[Level],
+  ): c.Expr[Unit] = {
     c.universe.reify {
       val self = c.prefix.splice
       val position = getEnclosingPosition(c).splice
-      if (self.acceptable(position.get, l.splice)) {
-        self.unsafeLog(Log.Entry.create(l.splice, m.splice)(position))
+      if (self.acceptable(position.get, level.splice)) {
+        self.unsafeLog(Log.Entry.create(level.splice, message.splice)(position))
       }
     }
   }
-
 }

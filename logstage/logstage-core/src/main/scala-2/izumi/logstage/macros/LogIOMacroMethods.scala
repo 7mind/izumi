@@ -31,6 +31,14 @@ object LogIOMacroMethods {
     doLog(c)(message, Level.Crit, EncodingMode.NonStrict)
   }
 
+  def scLogValues[F[_]](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level]
+  )(values: c.Expr[Any]*
+  ): c.Expr[F[Unit]] = {
+    doLogImpl(c)(new LogValuesMacro[c.type](c).createMessage(values), level)
+  }
+
   def scTraceMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
     doLog(c)(message, Level.Trace, EncodingMode.Strict)
   }
@@ -104,9 +112,16 @@ object LogIOMacroMethods {
         c.universe.reify(Level.Crit)
     }
 
-    c.universe.reify {
-      c.prefix.splice.log(l.splice)(m.splice)(getEnclosingPosition(c).splice)
-    }
+    doLogImpl[F](c)(m, l)
   }
 
+  private def doLogImpl[F[_]](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(message: c.Expr[Message],
+    level: c.Expr[Level],
+  ): c.Expr[F[Unit]] = {
+    c.universe.reify {
+      c.prefix.splice.log(level.splice)(message.splice)(getEnclosingPosition(c).splice)
+    }
+  }
 }
