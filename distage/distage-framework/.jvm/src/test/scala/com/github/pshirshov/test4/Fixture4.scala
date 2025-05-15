@@ -48,7 +48,7 @@ object Fixture4 {
     def mkDep(): Dep = {
       depCtx
         .provide[MissingDep](new MissingDep {})
-        .produceRun(identity)
+        .produceRunSimple(identity)
     }
 
     override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[Identity, Unit] = {
