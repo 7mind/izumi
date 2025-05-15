@@ -15,15 +15,10 @@ trait AbstractMacroStrictLogger { this: AbstractLogger =>
     * They also look better in Intellij
     */
   transparent inline final def trace(inline message: String): Unit = log(Log.Level.Trace, message)
-
   transparent inline final def debug(inline message: String): Unit = log(Log.Level.Debug, message)
-
   transparent inline final def info(inline message: String): Unit = log(Log.Level.Info, message)
-
   transparent inline final def warn(inline message: String): Unit = log(Log.Level.Warn, message)
-
   transparent inline final def error(inline message: String): Unit = log(Log.Level.Error, message)
-
   transparent inline final def crit(inline message: String): Unit = log(Log.Level.Crit, message)
 
   transparent inline final def log(inline level: Log.Level, inline message: String): Unit = {

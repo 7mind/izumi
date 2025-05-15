@@ -265,7 +265,7 @@ Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` 
 NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
 
 ```scala mdoc:reset:to-string
-import distage.{BootstrapModuleDef, ModuleDef, Injector}
+import distage.{BootstrapModuleDef, ModuleDef, Injector, Identity, Lifecycle}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
 
@@ -289,11 +289,12 @@ def appModule = new ModuleDef {
   make[C]
 }
 
-val resources = Injector(bootstrapModule)
+val resources: Identity[Set[PrintResource]] = Injector[Identity](bootstrapModule)
   .produceGet[Set[PrintResource]](appModule)
   .use(set => set)
 
 resources.foreach(_.start())
+
 resources.toSeq.reverse.foreach(_.stop())
 ```
 
@@ -466,23 +467,23 @@ class Path {
 ```
 
 ```scala mdoc:to-string
-import distage.{ClassConstructor, ModuleDef, Injector, Tag}
-
-object Path {
-  type Aux[A0] = Path { type A = A0 }
-}
-
-def pathModule[A: Tag: ClassConstructor](p: Path.Aux[A]) = new ModuleDef {
-  make[A]
-}
-
-val path1 = new Path
-val path2 = new Path
-
-Injector().produceRun(pathModule(path1) ++ pathModule(path2)) {
-  (p1a: path1.A, p2a: path2.A) =>
-    println((p1a, p2a))
-}
+//import distage.{ClassConstructor, ModuleDef, Injector, Tag}
+//
+//object Path {
+//  type Aux[A0] = Path { type A = A0 }
+//}
+//
+//def pathModule[A: Tag: ClassConstructor](p: Path.Aux[A]) = new ModuleDef {
+//  make[A]
+//}
+//
+//val path1 = new Path
+//val path2 = new Path
+//
+//Injector().produceRun(pathModule(path1) ++ pathModule(path2)) {
+//  (p1a: path1.A, p2a: path2.A) =>
+//    println((p1a, p2a))
+//}
 ```
 
 Now the example works, because the `A` type inside `pathModule(path1)` is `path1.A` and for `pathModule(path2)` it's `path2.A`, which matches their subsequent spelling in `(p1a: path1.A, p2a: path2.A) =>` in `produceRun`

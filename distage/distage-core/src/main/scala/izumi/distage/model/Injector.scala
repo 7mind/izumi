@@ -21,7 +21,7 @@ import izumi.reflect.{Tag, TagK}
   */
 trait Injector[F[_]] extends Planner with Producer {
   /**
-    * Create an an object graph described by the `input` module,
+    * Create an object graph described by the `input` module,
     * designate all arguments of the provided function as roots of the graph,
     * and run the function, deallocating the object graph when the function exits.
     *

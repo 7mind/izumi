@@ -5837,6 +5837,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
+      "3.3.5",
       "2.13.16",
       "2.12.20"
     ),
@@ -6083,8 +6084,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                             f.getCanonicalPath.endsWith(".html")
                       )
                   }
-                },
-    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.13" % "0.0.104"
+                }
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin, SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
@@ -6612,7 +6612,8 @@ lazy val `izumi` = (project in file("."))
     ThisBuild / developers := List(
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
-    ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
+    ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
+    libraryDependencies += "io.7mind.izumi.sbt" % "sbtgen_2.12" % "0.0.104"
   )
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
