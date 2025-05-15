@@ -1,6 +1,6 @@
 package izumi.functional.lifecycle
 
-import izumi.functional.bio.{Applicative2, F, IO2, Panic2, Primitives2, PrimitivesM2, RefM2, TypedError}
+import izumi.functional.bio.{Applicative2, F, IO2, Panic2, PrimitivesM2, RefM2, TypedError}
 
 final class LifecycleAggregator[F[+_, +_], E](
   finalizers: RefM2[F, List[(LifecycleAggregator[F, E]#Key, F[E, Unit])]]

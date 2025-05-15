@@ -1,10 +1,7 @@
 package izumi.functional.lifecycle
 
-import izumi.functional.bio.{IO2, TypedError}
-import izumi.functional.bio.data.{RestoreInterruption1, RestoreInterruption2}
+import izumi.functional.bio.data.RestoreInterruption1
 import izumi.functional.quasi.{QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
-
-import java.util.concurrent.atomic.AtomicReference
 
 private[lifecycle] object LifecycleMethodImpls {
   @inline final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: QuasiFunctor[F]): Lifecycle[F, B] = {

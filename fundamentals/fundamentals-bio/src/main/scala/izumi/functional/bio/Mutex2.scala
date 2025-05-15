@@ -1,8 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.data.Isomorphism2
-import izumi.functional.lifecycle.{Lifecycle, LifecycleAggregator}
-import izumi.functional.quasi.QuasiPrimitives
+import izumi.functional.lifecycle.Lifecycle
 
 trait Mutex2[F[+_, +_]] {
   def bracket[E, A](f: F[E, A]): F[E, A]

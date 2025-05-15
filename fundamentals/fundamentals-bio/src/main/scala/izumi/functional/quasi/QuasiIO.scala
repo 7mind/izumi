@@ -1,9 +1,9 @@
 package izumi.functional.quasi
 
 import cats.effect.kernel.Outcome
-import izumi.functional.quasi.QuasiIO.QuasiIOIdentity
-import izumi.functional.bio.data.{Morphism1, RestoreInterruption1, RestoreInterruption2}
+import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
 import izumi.functional.bio.{Applicative2, Exit, Functor2, IO2, TypedError}
+import izumi.functional.quasi.QuasiIO.QuasiIOIdentity
 import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.Functor`, `cats.effect.kernel.Sync`}
 import izumi.fundamentals.platform.functional.Identity
 

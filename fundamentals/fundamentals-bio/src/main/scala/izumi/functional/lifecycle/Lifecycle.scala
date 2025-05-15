@@ -2,18 +2,18 @@ package izumi.functional.lifecycle
 
 import cats.Applicative
 import cats.effect.kernel
-import cats.effect.kernel.{GenConcurrent, MonadCancel, Resource, Sync}
+import cats.effect.kernel.{GenConcurrent, Resource, Sync}
+import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
+import izumi.functional.bio.{Fiber2, Fork2, Functor2, Monad2}
 import izumi.functional.quasi.*
-import izumi.functional.bio.data.{Morphism1, RestoreInterruption1, RestoreInterruption2}
-import izumi.functional.bio.{Exit, Fiber2, Fork2, Functor2, IO2, Monad2, Panic2, TypedError}
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
 import zio.internal.stacktracer.Tracer
-import zio.{Scope, ZEnvironment, ZIO, ZLayer}
-import zio.managed.{Reservation, ZManaged}
 import zio.managed.ZManaged.ReleaseMap
+import zio.managed.{Reservation, ZManaged}
 import zio.stacktracer.TracingImplicits.disableAutoTrace
+import zio.{Scope, ZEnvironment, ZIO, ZLayer}
 
 import java.util.concurrent.{ExecutorService, TimeUnit}
 import scala.annotation.unused

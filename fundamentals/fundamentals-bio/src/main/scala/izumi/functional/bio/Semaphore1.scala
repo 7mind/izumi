@@ -3,9 +3,8 @@ package izumi.functional.bio
 import cats.effect.kernel.Sync
 import cats.effect.std.Semaphore
 import izumi.functional.bio.data.~>
-import izumi.functional.lifecycle.{Lifecycle, LifecycleAggregator}
+import izumi.functional.lifecycle.Lifecycle
 import zio.ZIO
-import zio.stm.USTM
 
 trait Semaphore1[+F[_]] {
   def acquire: F[Unit]
