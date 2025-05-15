@@ -462,28 +462,30 @@ There's one way to workaround this - turn the type member `A` into a type parame
 
 ```scala mdoc:to-string:reset:invisible
 class Path {
-  class A
+  class Inner
+
+  type A = Inner
 }
 ```
 
 ```scala mdoc:to-string
-//import distage.{ClassConstructor, ModuleDef, Injector, Tag}
-//
-//object Path {
-//  type Aux[A0] = Path { type A = A0 }
-//}
-//
-//def pathModule[A: Tag: ClassConstructor](p: Path.Aux[A]) = new ModuleDef {
-//  make[A]
-//}
-//
-//val path1 = new Path
-//val path2 = new Path
-//
-//Injector().produceRun(pathModule(path1) ++ pathModule(path2)) {
-//  (p1a: path1.A, p2a: path2.A) =>
-//    println((p1a, p2a))
-//}
+import distage.{ClassConstructor, ModuleDef, Injector, Tag}
+
+object Path {
+  type Aux[A0] = Path { type A = A0 }
+}
+
+def pathModule[A: Tag: ClassConstructor](p: Path.Aux[A]) = new ModuleDef {
+  make[A]
+}
+
+val path1 = new Path
+val path2 = new Path
+
+Injector().produceRun(pathModule(path1) ++ pathModule(path2)) {
+  (p1a: path1.A, p2a: path2.A) =>
+    println((p1a, p2a))
+}
 ```
 
 Now the example works, because the `A` type inside `pathModule(path1)` is `path1.A` and for `pathModule(path2)` it's `path2.A`, which matches their subsequent spelling in `(p1a: path1.A, p2a: path2.A) =>` in `produceRun`
