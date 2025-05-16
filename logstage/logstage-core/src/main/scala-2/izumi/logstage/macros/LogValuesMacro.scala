@@ -11,9 +11,7 @@ class LogValuesMacro[C <: blackbox.Context](val c: C) {
     values: Seq[c.Expr[Any]]
   ): c.Expr[Log.Message] = {
     val messageString = createMessageString(values)
-    c.Expr[Log.Message](q"""
-       _root_.izumi.logstage.api.Log.Message.apply($messageString)
-     """)
+    new LogMessageMacro0[c.type](c, false).logMessageMacro(c.Expr[String](messageString))
   }
 
   private def createMessageString(values: Seq[c.Expr[Any]]): Tree = {

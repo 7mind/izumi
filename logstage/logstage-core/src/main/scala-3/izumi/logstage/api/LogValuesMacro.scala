@@ -1,7 +1,8 @@
 package izumi.logstage.api
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log.{Level, Message}
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
+import izumi.logstage.api.Log.Level
 import izumi.logstage.api.logger.{AbstractLogIO, AbstractLogger}
 
 import scala.annotation.tailrec
@@ -15,7 +16,11 @@ object LogValuesMacro {
     values: Expr[Seq[Any]],
   ): Expr[F[Unit]] = {
     val messageString = createMessageString(values)
-    '{ $logger.log($level)(Message($messageString))(CodePositionMaterializer.materialize) }
+    '{
+      $logger.log($level)(
+        ${ LogMessageMacro.message(messageString, strict = false) }
+      )(${ CodePositionMaterializerMacro.getCodePositionMaterializer() })
+    }
   }
 
   def logValues(
@@ -28,7 +33,12 @@ object LogValuesMacro {
     '{
       val pos = CodePositionMaterializer.materialize
       if ($logger.acceptable(pos.get, $level)) {
-        $logger.unsafeLog(Log.Entry.create($level, Message($messageString))(pos))
+        $logger.unsafeLog(
+          Log.Entry.create(
+            $level,
+            ${ LogMessageMacro.message(messageString, strict = false) },
+          )(${ CodePositionMaterializerMacro.getCodePositionMaterializer() })
+        )
       }
     }
   }
