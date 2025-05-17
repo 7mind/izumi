@@ -48,7 +48,7 @@ Global / Keys.commands ~= {
     xs.filterNot(_.nameOption.contains("preferScala2")) :+ preferScala2
 }
 
-lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-basics"))
+lazy val `fundamentals-basics` = project.in(file("fundamentals/fundamentals-basics"))
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
