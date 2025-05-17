@@ -49,7 +49,7 @@ object AssertCIO extends AssertCIO {
       import c.universe._
 
       val resultName = TermName(c.freshName("result"))
-      val predicateBody = ReflectionUtil.betaReduceLambda1[T, Boolean](c)(predicate, resultName.toString)
+      val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultName.toString))
 
       c.Expr[IO[Assertion]](q"$effect.flatMap { ($resultName: ${weakTypeOf[T]}) => assertIO($predicateBody)($prettifier, $pos) }")
     }
@@ -66,7 +66,8 @@ object AssertCIO extends AssertCIO {
 
       val resultAName = TermName(c.freshName("resultA"))
       val resultBName = TermName(c.freshName("resultB"))
-      val predicateBody = ReflectionUtil.betaReduceLambda2[A, B, Boolean](c)(predicate, resultAName.toString, resultBName.toString)
+//      val predicateBody = ReflectionUtil.betaReduceLambda2[A, B, Boolean](c)(predicate, resultAName.toString, resultBName.toString)
+      val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultAName.toString, resultBName.toString))
 
       c.Expr[IO[Assertion]](q"""$effectA.flatMap {
            ($resultAName: ${weakTypeOf[A]}) =>

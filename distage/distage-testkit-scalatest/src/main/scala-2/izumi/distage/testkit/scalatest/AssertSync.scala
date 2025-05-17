@@ -63,7 +63,7 @@ object AssertSync {
       import c.universe._
 
       val resultName = TermName(c.freshName("result"))
-      val predicateBody = ReflectionUtil.betaReduceLambda1[T, Boolean](c)(predicate, resultName.toString)
+      val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultName.toString))
 
       c.Expr[F[Assertion]](q"$FlatMap.flatMap($effect){($resultName: ${weakTypeOf[T]}) => assertIO($predicateBody)($Sync, $prettifier, $pos)}")
     }
@@ -82,7 +82,7 @@ object AssertSync {
 
       val resultAName = TermName(c.freshName("resultA"))
       val resultBName = TermName(c.freshName("resultB"))
-      val predicateBody = ReflectionUtil.betaReduceLambda2[A, B, Boolean](c)(predicate, resultAName.toString, resultBName.toString)
+      val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultAName.toString, resultBName.toString))
 
       c.Expr[F[Assertion]](q"""$FlatMap.flatMap($effectA){
            ($resultAName: ${weakTypeOf[A]}) =>

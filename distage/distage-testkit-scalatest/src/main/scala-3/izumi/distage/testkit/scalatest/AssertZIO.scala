@@ -11,24 +11,24 @@ trait AssertZIO {
     ZIO.succeed(Assertions.assert(arg))(zioTrace)
   }
 
-  inline final def assertIO[T](
-    inline effect: ZIO[Any, Nothing, T]
+  inline final def assertIO[R, E, T](
+    inline effect: ZIO[R, E, T]
   )(inline predicate: T => Boolean
   )(implicit prettifier: Prettifier,
     pos: Position,
     zioTrace: zio.Trace,
-  ): ZIO[Any, Nothing, Assertion] = {
+  ): ZIO[R, E, Assertion] = {
     effect.flatMap(result => assertIO(predicate(result)))
   }
 
-  inline final def assertIO[A, B](
-    inline effectA: ZIO[Any, Nothing, A],
-    inline effectB: ZIO[Any, Nothing, B],
+  inline final def assertIO[R, E, A, B](
+    inline effectA: ZIO[R, E, A],
+    inline effectB: ZIO[R, E, B],
   )(inline predicate: (A, B) => Boolean
   )(implicit prettifier: Prettifier,
     pos: Position,
     zioTrace: zio.Trace,
-  ): ZIO[Any, Nothing, Assertion] = {
+  ): ZIO[R, E, Assertion] = {
     effectA.flatMap(resultA => effectB.flatMap(resultB => assertIO(predicate(resultA, resultB))))
   }
 }

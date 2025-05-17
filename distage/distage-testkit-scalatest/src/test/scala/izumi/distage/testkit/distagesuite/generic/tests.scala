@@ -1,21 +1,21 @@
 package izumi.distage.testkit.distagesuite.generic
 
-import distage.*
+import distage._
 import distage.plugins.PluginConfig
 import izumi.distage.modules.DefaultModule
-import izumi.distage.testkit.distagesuite.fixtures.*
-import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
+import izumi.distage.testkit.distagesuite.fixtures._
+import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase._
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.*
+import izumi.distage.testkit.scalatest._
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
-import izumi.functional.bio.{F, IO2}
+import izumi.functional.bio.{Exit, F, IO2}
 import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.quasi.QuasiIO.syntax._
 import izumi.fundamentals.platform.language.Quirks
-import izumi.fundamentals.platform.language.Quirks.*
+import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.exceptions.TestFailedException
 import cats.effect.kernel.Sync
-import cats.effect.IO as CIO
+import cats.effect.{IO => CIO}
 import zio.{Task, ZEnvironment, ZIO}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
@@ -368,12 +368,18 @@ class ShorthandAssertionsTestZIO extends SpecZIO with AssertZIO {
   "shorthand assertions ZIO" should {
     "support short assert versions" in {
       for {
-        _ <- assertIO(ZIO.succeed(42))(_ == 42)
-        _ <- assertIO(ZIO.succeed(42))(_ != 21)
-        _ <- assertIO(ZIO.succeed(List("one", "two")))(_.nonEmpty)
+        _ <- assertIO(ZIO.attempt(42))(_ == 42)
+        _ <- assertIO(ZIO.attempt(42))(_ != 21)
+        _ <- assertIO(ZIO.attempt(List("one", "two")))(_.nonEmpty)
+        _ <- assertIO(ZIO.attempt(42))(_ == 21).sandboxExit.map {
+          case Exit.Termination(err, _, _) =>
+            assert(err.getMessage.contains("42 did not equal 21"))
+          case other =>
+            fail(s"Unexpected error: $other")
+        }
 
-        _ <- assertIO(ZIO.succeed(42), ZIO.succeed(21))(_ > _)
-        _ <- assertIO(ZIO.succeed("test"), ZIO.succeed(4))(_.length == _)
+        _ <- assertIO(ZIO.attempt(42), ZIO.attempt(21))(_ > _)
+        _ <- assertIO(ZIO.attempt("test"), ZIO.attempt(4))(_.length == _)
       } yield ()
     }
   }
@@ -386,6 +392,8 @@ class ShorthandAssertionsTestCIO extends Spec1[CIO] with AssertCIO {
         _ <- assertIO(CIO.pure(42))(_ == 42)
         _ <- assertIO(CIO.pure(42))(_ != 21)
         _ <- assertIO(CIO.pure(List("one", "two")))(_.nonEmpty)
+        err <- assertIO(CIO.pure(42))(_ == 21).attempt
+        _ <- assertIO(err.left.get.getMessage.contains("42 did not equal 21"))
 
         _ <- assertIO(CIO.pure(42), CIO.pure(21))(_ > _)
         _ <- assertIO(CIO.pure("test"), CIO.pure(4))(_.length == _)
@@ -400,12 +408,17 @@ class ShorthandAssertionsTestIO2 extends ShorthandAssertionsIO2TestBase[zio.IO] 
   "shorthand assertions IO2" should {
     "support short assert versions" in {
       for {
-        _ <- assertIO(F.pure(42))(_ == 42)
-        _ <- assertIO(F.pure(42))(_ != 21)
-        _ <- assertIO(F.pure(List("one", "two")))(_.nonEmpty)
-
-        _ <- assertIO(F.pure(42), F.pure(21))(_ > _)
-        _ <- assertIO(F.pure("test"), F.pure(4))(_.length == _)
+        _ <- assertIO(F.syncThrowable(42))(_ == 42)
+        _ <- assertIO(F.syncThrowable(42))(_ != 21)
+        _ <- assertIO(F.syncThrowable(List("one", "two")))(_.nonEmpty)
+        _ <- assertIO(F.syncThrowable(42))(_ == 21).sandboxExit.map {
+          case Exit.Termination(err, _, _) =>
+            assert(err.getMessage.contains("42 did not equal 21"))
+          case other =>
+            fail(s"Unexpected error: $other")
+        }
+        _ <- assertIO(F.syncThrowable(42), F.syncThrowable(21))(_ > _)
+        _ <- assertIO(F.syncThrowable("test"), F.syncThrowable(4))(_.length == _)
       } yield ()
     }
   }
@@ -420,6 +433,8 @@ class ShorthandAssertionsTestSync extends ShorthandAssertionsTestSyncBase[CIO] {
         _ <- assertIO(CIO.pure(42))(_ == 42)
         _ <- assertIO(CIO.pure(42))(_ != 21)
         _ <- assertIO(CIO.pure(List("one", "two")))(_.nonEmpty)
+        err <- assertIO(CIO.pure(42))(_ == 21).attempt
+        _ <- assertIO(err.left.get.getMessage.contains("42 did not equal 21"))
 
         _ <- assertIO(CIO.pure(42), CIO.pure(21))(_ > _)
         _ <- assertIO(CIO.pure("test"), CIO.pure(4))(_.length == _)

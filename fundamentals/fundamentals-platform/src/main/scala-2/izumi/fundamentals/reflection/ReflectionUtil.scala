@@ -131,29 +131,15 @@ object ReflectionUtil {
     }.headOption
   }
 
-  def betaReduceLambda1[In, Out](c: blackbox.Context)(lambda: c.Expr[In => Out], resultName: String): c.universe.Tree = {
+  def betaReduceLambda(c: blackbox.Context)(lambda: c.Expr[Any], names: List[String]): c.universe.Tree = {
     import c.universe._
     lambda.tree match {
-      case Function(List(param), body) =>
+      case Function(params, body) =>
+        assert(params.size == names.size)
+        val substitutions = params.map(_.symbol).zip(names).toMap
         val transformer = new Transformer {
           override def transform(tree: Tree): Tree = tree match {
-            case Ident(_) if tree.symbol == param.symbol => Ident(TermName(resultName))
-            case _ => super.transform(tree)
-          }
-        }
-        transformer.transform(body)
-      case _ => c.abort(c.enclosingPosition, "Expected a lambda function.")
-    }
-  }
-
-  def betaReduceLambda2[A, B, Out](c: blackbox.Context)(lambda: c.Expr[(A, B) => Out], resultAName: String, resultBName: String): c.universe.Tree = {
-    import c.universe._
-    lambda.tree match {
-      case Function(List(paramA, paramB), body) =>
-        val transformer = new Transformer {
-          override def transform(tree: Tree): Tree = tree match {
-            case Ident(_) if tree.symbol == paramA.symbol => Ident(TermName(resultAName))
-            case Ident(_) if tree.symbol == paramB.symbol => Ident(TermName(resultBName))
+            case Ident(_) if substitutions.exists(_._1 == tree.symbol) => Ident(TermName(substitutions(tree.symbol)))
             case _ => super.transform(tree)
           }
         }
