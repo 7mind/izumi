@@ -58,11 +58,16 @@ object AssertSync {
     ): c.Expr[F[Assertion]] = {
       import c.universe._
 
+      val syncFreshName = TermName(c.freshName("Sync"))
       val resultName = TermName(c.freshName("result"))
       val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultName.toString))
 
       c.Expr[F[Assertion]](
-        q"$Sync.flatMap($effect){($resultName: ${weakTypeOf[T]}) => _root_.izumi.distage.testkit.scalatest.AssertSync.assertIO($predicateBody)($Sync, $prettifier, $pos)}"
+        q"""{
+            val $syncFreshName = $Sync
+            $syncFreshName.flatMap($effect){
+              ($resultName: ${weakTypeOf[T]}) => _root_.izumi.distage.testkit.scalatest.AssertSync.assertIO($predicateBody)($syncFreshName, $prettifier, $pos)
+            }}"""
       )
     }
 
@@ -77,15 +82,19 @@ object AssertSync {
     ): c.Expr[F[Assertion]] = {
       import c.universe._
 
+      val syncFreshName = TermName(c.freshName("Sync"))
       val resultAName = TermName(c.freshName("resultA"))
       val resultBName = TermName(c.freshName("resultB"))
       val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultAName.toString, resultBName.toString))
 
-      c.Expr[F[Assertion]](q"""$Sync.flatMap($effectA){
+      c.Expr[F[Assertion]](q"""{
+          val $syncFreshName = $Sync
+          $syncFreshName.flatMap($effectA){
            ($resultAName: ${weakTypeOf[A]}) =>
-              $Sync.flatMap($effectB){ ($resultBName: ${weakTypeOf[B]}) =>
-                _root_.izumi.distage.testkit.scalatest.AssertSync.assertIO($predicateBody)($Sync, $prettifier, $pos) }
-        }""")
+              $syncFreshName.flatMap($effectB){ ($resultBName: ${weakTypeOf[B]}) =>
+                _root_.izumi.distage.testkit.scalatest.AssertSync.assertIO($predicateBody)($syncFreshName, $prettifier, $pos) }
+        }
+     }""")
     }
   }
 }

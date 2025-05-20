@@ -57,11 +57,16 @@ object AssertIO2 {
     ): c.Expr[F[E, Assertion]] = {
       import c.universe._
 
+      val io2FreshName = TermName(c.freshName("IO2"))
       val resultName = TermName(c.freshName("result"))
       val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultName.toString))
 
       c.Expr[F[Nothing, Assertion]](
-        q"$IO2.flatMap($effect) { ($resultName: ${weakTypeOf[T]}) => _root_.izumi.distage.testkit.scalatest.AssertIO2.assertIO($predicateBody)($IO2, $prettifier, $pos) }"
+        q"""{
+           val $io2FreshName = $IO2
+           $io2FreshName.flatMap($effect) {
+             ($resultName: ${weakTypeOf[T]}) => _root_.izumi.distage.testkit.scalatest.AssertIO2.assertIO($predicateBody)($io2FreshName, $prettifier, $pos)
+           }}"""
       )
     }
 
@@ -76,15 +81,18 @@ object AssertIO2 {
     ): c.Expr[F[E, Assertion]] = {
       import c.universe._
 
+      val io2FreshName = TermName(c.freshName("IO2"))
       val resultAName = TermName(c.freshName("resultA"))
       val resultBName = TermName(c.freshName("resultB"))
       val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultAName.toString, resultBName.toString))
 
-      c.Expr[F[Nothing, Assertion]](q"""$IO2.flatMap($effectA) {
+      c.Expr[F[Nothing, Assertion]](q"""{
+        val $io2FreshName = $IO2
+        $io2FreshName.flatMap($effectA) {
            ($resultAName: ${weakTypeOf[A]}) =>
-              $IO2.flatMap($effectB) { ($resultBName: ${weakTypeOf[B]}) =>
-                _root_.izumi.distage.testkit.scalatest.AssertIO2.assertIO($predicateBody)($IO2, $prettifier, $pos) }
-        }""")
+              $io2FreshName.flatMap($effectB) { ($resultBName: ${weakTypeOf[B]}) =>
+                _root_.izumi.distage.testkit.scalatest.AssertIO2.assertIO($predicateBody)($io2FreshName, $prettifier, $pos) }
+        }}""")
     }
   }
 }
