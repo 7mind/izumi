@@ -402,9 +402,7 @@ class ShorthandAssertionsTestCIO extends Spec1[CIO] with AssertCIO {
   }
 }
 
-abstract class ShorthandAssertionsIO2TestBase[F[+_, +_]: IO2: TagKK: DefaultModule2] extends Spec2[F] with AssertIO2[F]
-
-class ShorthandAssertionsTestIO2 extends ShorthandAssertionsIO2TestBase[zio.IO] {
+abstract class ShorthandAssertionsIO2TestBase[F[+_, +_]: IO2: TagKK: DefaultModule2] extends Spec2[F] with AssertIO2[F] {
   "shorthand assertions IO2" should {
     "support short assert versions" in {
       for {
@@ -424,21 +422,25 @@ class ShorthandAssertionsTestIO2 extends ShorthandAssertionsIO2TestBase[zio.IO] 
   }
 }
 
-abstract class ShorthandAssertionsTestSyncBase[F[_]: Sync: TagK: DefaultModule] extends Spec1[F] with AssertSync[F]
+class ShorthandAssertionsTestIO2 extends ShorthandAssertionsIO2TestBase[zio.IO]
 
-class ShorthandAssertionsTestSync extends ShorthandAssertionsTestSyncBase[CIO] {
+abstract class ShorthandAssertionsTestSyncBase[F[_]: TagK: DefaultModule](implicit F: Sync[F]) extends Spec1[F] with AssertSync[F] {
+  import cats.syntax.applicativeError.catsSyntaxApplicativeError
+
   "shorthand assertions IO2" should {
     "support short assert versions" in {
       for {
-        _ <- assertIO(CIO.pure(42))(_ == 42)
-        _ <- assertIO(CIO.pure(42))(_ != 21)
-        _ <- assertIO(CIO.pure(List("one", "two")))(_.nonEmpty)
-        err <- assertIO(CIO.pure(42))(_ == 21).attempt
+        _ <- assertIO(F.pure(42))(_ == 42)
+        _ <- assertIO(F.pure(42))(_ != 21)
+        _ <- assertIO(F.pure(List("one", "two")))(_.nonEmpty)
+        err <- assertIO(F.pure(42))(_ == 21).attempt
         _ <- assertIO(err.left.exists(_.getMessage.contains("42 did not equal 21")))
 
-        _ <- assertIO(CIO.pure(42), CIO.pure(21))(_ > _)
-        _ <- assertIO(CIO.pure("test"), CIO.pure(4))(_.length == _)
+        _ <- assertIO(F.pure(42), F.pure(21))(_ > _)
+        _ <- assertIO(F.pure("test"), F.pure(4))(_.length == _)
       } yield ()
     }
   }
 }
+
+class ShorthandAssertionsTestSync extends ShorthandAssertionsTestSyncBase[CIO]
