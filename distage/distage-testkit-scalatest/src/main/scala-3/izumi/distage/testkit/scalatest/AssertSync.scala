@@ -1,6 +1,5 @@
 package izumi.distage.testkit.scalatest
 
-import cats.FlatMap
 import cats.effect.kernel.Sync
 import org.scalactic.{Prettifier, source}
 import org.scalatest.{Assertion, Assertions}
@@ -15,11 +14,10 @@ trait AssertSync[F[_]] {
     inline effect: F[T]
   )(inline predicate: T => Boolean
   )(implicit Sync: Sync[F],
-    FlatMap: FlatMap[F],
     prettifier: Prettifier,
     pos: source.Position,
   ): F[Assertion] = {
-    FlatMap.flatMap(effect)(result => assertIO(predicate(result)))
+    Sync.flatMap(effect)(result => assertIO(predicate(result)))
   }
 
   inline final def assertIO[A, B](
@@ -27,11 +25,10 @@ trait AssertSync[F[_]] {
     inline effectB: F[B],
   )(inline predicate: (A, B) => Boolean
   )(implicit Sync: Sync[F],
-    FlatMap: FlatMap[F],
     prettifier: Prettifier,
     pos: source.Position,
   ): F[Assertion] = {
-    FlatMap.flatMap(effectA)(resultA => FlatMap.flatMap(effectB)(resultB => assertIO(predicate(resultA, resultB))))
+    Sync.flatMap(effectA)(resultA => Sync.flatMap(effectB)(resultB => assertIO(predicate(resultA, resultB))))
   }
 }
 

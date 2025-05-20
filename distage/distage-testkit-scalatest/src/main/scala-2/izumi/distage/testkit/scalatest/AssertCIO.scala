@@ -51,7 +51,9 @@ object AssertCIO extends AssertCIO {
       val resultName = TermName(c.freshName("result"))
       val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultName.toString))
 
-      c.Expr[IO[Assertion]](q"$effect.flatMap { ($resultName: ${weakTypeOf[T]}) => assertIO($predicateBody)($prettifier, $pos) }")
+      c.Expr[IO[Assertion]](
+        q"$effect.flatMap { ($resultName: ${weakTypeOf[T]}) => _root_.izumi.distage.testkit.scalatest.AssertCIO.assertIO($predicateBody)($prettifier, $pos) }"
+      )
     }
 
     def shortImpl2[A: c.WeakTypeTag, B: c.WeakTypeTag](
@@ -66,12 +68,11 @@ object AssertCIO extends AssertCIO {
 
       val resultAName = TermName(c.freshName("resultA"))
       val resultBName = TermName(c.freshName("resultB"))
-//      val predicateBody = ReflectionUtil.betaReduceLambda2[A, B, Boolean](c)(predicate, resultAName.toString, resultBName.toString)
       val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultAName.toString, resultBName.toString))
 
       c.Expr[IO[Assertion]](q"""$effectA.flatMap {
            ($resultAName: ${weakTypeOf[A]}) =>
-              $effectB.flatMap { ($resultBName: ${weakTypeOf[B]}) => assertIO($predicateBody)($prettifier, $pos) }
+              $effectB.flatMap { ($resultBName: ${weakTypeOf[B]}) => _root_.izumi.distage.testkit.scalatest.AssertCIO.assertIO($predicateBody)($prettifier, $pos) }
         }""")
     }
   }

@@ -393,7 +393,7 @@ class ShorthandAssertionsTestCIO extends Spec1[CIO] with AssertCIO {
         _ <- assertIO(CIO.pure(42))(_ != 21)
         _ <- assertIO(CIO.pure(List("one", "two")))(_.nonEmpty)
         err <- assertIO(CIO.pure(42))(_ == 21).attempt
-        _ <- assertIO(err.left.get.getMessage.contains("42 did not equal 21"))
+        _ <- assertIO(err.left.exists(_.getMessage.contains("42 did not equal 21")))
 
         _ <- assertIO(CIO.pure(42), CIO.pure(21))(_ > _)
         _ <- assertIO(CIO.pure("test"), CIO.pure(4))(_.length == _)
@@ -434,7 +434,7 @@ class ShorthandAssertionsTestSync extends ShorthandAssertionsTestSyncBase[CIO] {
         _ <- assertIO(CIO.pure(42))(_ != 21)
         _ <- assertIO(CIO.pure(List("one", "two")))(_.nonEmpty)
         err <- assertIO(CIO.pure(42))(_ == 21).attempt
-        _ <- assertIO(err.left.get.getMessage.contains("42 did not equal 21"))
+        _ <- assertIO(err.left.exists(_.getMessage.contains("42 did not equal 21")))
 
         _ <- assertIO(CIO.pure(42), CIO.pure(21))(_ > _)
         _ <- assertIO(CIO.pure("test"), CIO.pure(4))(_.length == _)

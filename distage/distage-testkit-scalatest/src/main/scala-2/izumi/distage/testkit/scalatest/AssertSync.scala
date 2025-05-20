@@ -1,6 +1,5 @@
 package izumi.distage.testkit.scalatest
 
-import cats.FlatMap
 import cats.effect.kernel.Sync
 import izumi.distage.testkit.scalatest.AssertSync.AssertSyncMacro
 import izumi.fundamentals.reflection.ReflectionUtil
@@ -20,7 +19,6 @@ trait AssertSync[F[_]] {
     effect: F[T]
   )(predicate: T => Boolean
   )(implicit Sync: Sync[F],
-    FlatMap: FlatMap[F],
     prettifier: Prettifier,
     pos: Position,
   ): F[Assertion] = macro AssertSyncMacro.shortImpl1[F, T]
@@ -30,7 +28,6 @@ trait AssertSync[F[_]] {
     effectB: F[B],
   )(predicate: (A, B) => Boolean
   )(implicit Sync: Sync[F],
-    FlatMap: FlatMap[F],
     prettifier: Prettifier,
     pos: Position,
   ): F[Assertion] = macro AssertSyncMacro.shortImpl2[F, A, B]
@@ -56,7 +53,6 @@ object AssertSync {
     )(effect: c.Expr[F[T]]
     )(predicate: c.Expr[T => Boolean]
     )(Sync: c.Expr[Sync[F]],
-      FlatMap: c.Expr[FlatMap[F]],
       prettifier: c.Expr[Prettifier],
       pos: c.Expr[Position],
     ): c.Expr[F[Assertion]] = {
@@ -65,7 +61,9 @@ object AssertSync {
       val resultName = TermName(c.freshName("result"))
       val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultName.toString))
 
-      c.Expr[F[Assertion]](q"$FlatMap.flatMap($effect){($resultName: ${weakTypeOf[T]}) => assertIO($predicateBody)($Sync, $prettifier, $pos)}")
+      c.Expr[F[Assertion]](
+        q"$Sync.flatMap($effect){($resultName: ${weakTypeOf[T]}) => _root_.izumi.distage.testkit.scalatest.AssertSync.assertIO($predicateBody)($Sync, $prettifier, $pos)}"
+      )
     }
 
     def shortImpl2[F[_], A: c.WeakTypeTag, B: c.WeakTypeTag](
@@ -74,7 +72,6 @@ object AssertSync {
       effectB: c.Expr[F[B]],
     )(predicate: c.Expr[(A, B) => Boolean]
     )(Sync: c.Expr[Sync[F]],
-      FlatMap: c.Expr[FlatMap[F]],
       prettifier: c.Expr[Prettifier],
       pos: c.Expr[Position],
     ): c.Expr[F[Assertion]] = {
@@ -84,9 +81,10 @@ object AssertSync {
       val resultBName = TermName(c.freshName("resultB"))
       val predicateBody = ReflectionUtil.betaReduceLambda(c)(predicate, List(resultAName.toString, resultBName.toString))
 
-      c.Expr[F[Assertion]](q"""$FlatMap.flatMap($effectA){
+      c.Expr[F[Assertion]](q"""$Sync.flatMap($effectA){
            ($resultAName: ${weakTypeOf[A]}) =>
-              $FlatMap.flatMap($effectB){ ($resultBName: ${weakTypeOf[B]}) => assertIO($predicateBody)($Sync, $prettifier, $pos) }
+              $Sync.flatMap($effectB){ ($resultBName: ${weakTypeOf[B]}) =>
+                _root_.izumi.distage.testkit.scalatest.AssertSync.assertIO($predicateBody)($Sync, $prettifier, $pos) }
         }""")
     }
   }
