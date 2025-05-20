@@ -1,5 +1,5 @@
 object PV {
-  val scala_js_version = "1.18.2"
+  val scala_js_version = "1.19.0"
 
   val sbt_mdoc = "2.6.5"
   val sbt_paradox_material_theme = "0.7.0"
