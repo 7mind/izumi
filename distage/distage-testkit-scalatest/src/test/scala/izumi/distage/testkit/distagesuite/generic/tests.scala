@@ -1,21 +1,21 @@
 package izumi.distage.testkit.distagesuite.generic
 
-import distage._
+import distage.*
 import distage.plugins.PluginConfig
 import izumi.distage.modules.DefaultModule
-import izumi.distage.testkit.distagesuite.fixtures._
-import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase._
+import izumi.distage.testkit.distagesuite.fixtures.*
+import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest._
+import izumi.distage.testkit.scalatest.*
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.functional.bio.{Exit, F, IO2}
 import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax._
+import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.fundamentals.platform.language.Quirks
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
 import cats.effect.kernel.Sync
-import cats.effect.{IO => CIO}
+import cats.effect.IO as CIO
 import zio.{Task, ZEnvironment, ZIO}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
