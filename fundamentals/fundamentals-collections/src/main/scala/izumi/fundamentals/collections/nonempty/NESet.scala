@@ -329,7 +329,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     * @tparm B the type of the elements of each nested <code>NESet</code>
     * @return a new <code>NESet</code> resulting from concatenating all nested <code>NESet</code>s.
     */
-  def flatten[B](implicit ev: T <:< NESet[B]): NESet[B] = flatMap(ev)
+  def flatten[B](using ev: T <:< NESet[B]): NESet[B] = flatMap(ev)
 
   /**
     * Folds the elements of this <code>NESet</code> using the specified associative binary operator.
@@ -494,28 +494,28 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     *
     * @return the largest element of this <code>NESet</code>.
     */
-  def max[U >: T](implicit cmp: Ordering[U]): T = toSet.max(cmp)
+  def max[U >: T](using cmp: Ordering[U]): T = toSet.max(cmp)
 
   /**
     * Finds the largest result after applying the given function to every element.
     *
     * @return the largest result of applying the given function to every element of this <code>NESet</code>.
     */
-  def maxBy[U](f: T => U)(implicit cmp: Ordering[U]): T = toSet.maxBy(f)(cmp)
+  def maxBy[U](f: T => U)(using cmp: Ordering[U]): T = toSet.maxBy(f)(cmp)
 
   /**
     * Finds the smallest element.
     *
     * @return the smallest element of this <code>NESet</code>.
     */
-  def min[U >: T](implicit cmp: Ordering[U]): T = toSet.min(cmp)
+  def min[U >: T](using cmp: Ordering[U]): T = toSet.min(cmp)
 
   /**
     * Finds the smallest result after applying the given function to every element.
     *
     * @return the smallest result of applying the given function to every element of this <code>NESet</code>.
     */
-  def minBy[U](f: T => U)(implicit cmp: Ordering[U]): T = toSet.minBy(f)(cmp)
+  def minBy[U](f: T => U)(using cmp: Ordering[U]): T = toSet.minBy(f)(cmp)
 
   /**
     * Displays all elements of this <code>NESet</code> in a string.
@@ -562,7 +562,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     *
     * @return the product of all elements
     */
-  def product[U >: T](implicit num: Numeric[U]): U = toSet.product(num)
+  def product[U >: T](using num: Numeric[U]): U = toSet.product(num)
 
   /**
     * Reduces the elements of this <code>NESet</code> using the specified associative binary operator.
@@ -773,7 +773,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     *
     * @return the sum of all elements
     */
-  def sum[U >: T](implicit num: Numeric[U]): U = toSet.sum(num)
+  def sum[U >: T](using num: Numeric[U]): U = toSet.sum(num)
 
   /**
     * Converts this <code>NESet</code> into a collection of type <code>Col</code> by copying all elements.
@@ -788,7 +788,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     *
     * @return an array containing all elements of this <code>NESet</code>. A <code>ClassTag</code> must be available for the element type of this <code>NESet</code>.
     */
-  def toArray[U >: T](implicit classTag: ClassTag[U]): Array[U] = toSet.toArray
+  def toArray[U >: T](using classTag: ClassTag[U]): Array[U] = toSet.toArray
 
   /**
     * Converts this <code>NESet</code> to a <code>Vector</code>.
@@ -842,7 +842,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     *
     * @return a map of type <code>immutable.Map[K, V]</code> containing all key/value pairs of type <code>(K, V)</code> of this <code>NESet</code>.
     */
-  def toMap[K, V](implicit ev: T <:< (K, V)): Map[K, V] = toSet.toMap
+  def toMap[K, V](using ev: T <:< (K, V)): Map[K, V] = toSet.toMap
 
   /**
     * Converts this <code>NESet</code> to an immutable <code>IndexedSeq</code>.
@@ -866,7 +866,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     */
   override def toString: String = "NESet(" + toSet.mkString(", ") + ")"
 
-  def transpose[U](implicit ev: T <:< NESet[U]): NESet[NESet[U]] = {
+  def transpose[U](using ev: T <:< NESet[U]): NESet[NESet[U]] = {
     val asSets = toSet.map(ev)
     val Set = asSets.map(_.toSet).transpose
     new NESet(Set.map(new NESet(_)))
@@ -924,7 +924,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     * @param that the <code>Set</code> to add.
     * @return a new <code>NESet</code> that contains all elements of this <code>NESet</code> followed by all elements of <code>that</code> <code>GenSeq</code>.
     */
-  infix def union(that: Set[T])(implicit dummyImplicit: DummyImplicit): NESet[T] = new NESet(toSet.union(that))
+  infix def union(that: Set[T])(using dummyImplicit: DummyImplicit): NESet[T] = new NESet(toSet.union(that))
 
   /**
     * Converts this <code>NESet</code> of pairs into two <code>NESet</code>s of the first and second half of each pair.
@@ -934,7 +934,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     * @param asPair an implicit conversion that asserts that the element type of this <code>NESet</code> is a pair.
     * @return a pair of <code>NESet</code>s, containing the first and second half, respectively, of each element pair of this <code>NESet</code>.
     */
-  def unzip[L, R](implicit asPair: T => (L, R)): (NESet[L], NESet[R]) = {
+  def unzip[L, R](using asPair: T => (L, R)): (NESet[L], NESet[R]) = {
     val unzipped = toSet.unzip
     (new NESet(unzipped._1), new NESet(unzipped._2))
   }
@@ -948,7 +948,7 @@ final class NESet[T] private (val toSet: Set[T]) extends AnyVal {
     * @param asTriple an implicit conversion that asserts that the element type of this <code>NESet</code> is a triple.
     * @return a triple of <code>NESet</code>s, containing the first, second, and third member, respectively, of each element triple of this <code>NESet</code>.
     */
-  def unzip3[L, M, R](implicit asTriple: T => (L, M, R)): (NESet[L], NESet[M], NESet[R]) = {
+  def unzip3[L, M, R](using asTriple: T => (L, M, R)): (NESet[L], NESet[M], NESet[R]) = {
     val unzipped = toSet.unzip3
     (new NESet(unzipped._1), new NESet(unzipped._2), new NESet(unzipped._3))
   }

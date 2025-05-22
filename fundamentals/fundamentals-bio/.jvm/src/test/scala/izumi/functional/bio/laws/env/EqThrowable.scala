@@ -6,7 +6,7 @@ import cats.effect.testkit.TestInstances
 import scala.concurrent.ExecutionException
 
 trait EqThrowable { this: TestInstances =>
-  implicit override lazy val eqThrowable: Eq[Throwable] = new Eq[Throwable] {
+  override given eqThrowable: Eq[Throwable] = new Eq[Throwable] {
     override def eqv(x: Throwable, y: Throwable): Boolean = {
       val ex1 = extractEx(x)
       val ex2 = extractEx(y)

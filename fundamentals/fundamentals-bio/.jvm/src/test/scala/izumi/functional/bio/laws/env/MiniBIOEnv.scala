@@ -10,18 +10,18 @@ import org.scalacheck.{Arbitrary, Prop}
 import scala.util.Try
 
 trait MiniBIOEnv extends TestInstances with EqThrowable {
-  implicit val execMiniBIO: MiniBIO[Throwable, Boolean] => Prop = {
+  given execMiniBIO: (MiniBIO[Throwable, Boolean] => Prop) = {
     miniBIO => syncIoBooleanToProp(SyncIO.defer(SyncIO.fromEither(miniBIO.run().toThrowableEither)))
   }
 
-  implicit def arbMiniBIO[A](implicit arb: Arbitrary[A]): Arbitrary[MiniBIO[Throwable, A]] = Arbitrary {
+  given arbMiniBIO[A](using arb: Arbitrary[A]): Arbitrary[MiniBIO[Throwable, A]] = Arbitrary {
     Arbitrary.arbBool.arbitrary.flatMap {
       if (_) arb.arbitrary.map(IO2[MiniBIO].pure(_))
       else Arbitrary.arbThrowable.arbitrary.map(IO2[MiniBIO].fail(_))
     }
   }
 
-  implicit def eqMiniBIO[A](implicit eq: Eq[A]): Eq[MiniBIO[Throwable, A]] = Eq.instance {
+  given eqMiniBIO[A](using eq: Eq[A]): Eq[MiniBIO[Throwable, A]] = Eq.instance {
     (l, r) =>
       val tl = Try(MiniBIO.autoRun.autoRunAlways(l))
       val tr = Try(MiniBIO.autoRun.autoRunAlways(r))

@@ -111,7 +111,7 @@ open class BioEither extends Error2[Either] {
     init: AC,
     onRight: (AC, B) => AC,
     end: AC => B1,
-  )(implicit buildL: Factory[E1, ColL[E1]]
+  )(using buildL: Factory[E1, ColL[E1]]
   ): Either[ColL[E1], B1] = {
     val bad = buildL.newBuilder
 

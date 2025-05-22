@@ -830,28 +830,28 @@ final class NEString private (val theString: String) extends AnyVal {
     *
     * @return the largest element of this <code>NEString</code>.
     */
-  def max(implicit cmp: Ordering[Char]): Char = theString.max(cmp)
+  def max(using cmp: Ordering[Char]): Char = theString.max(cmp)
 
   /**
     * Finds the largest result after applying the given function to every character.
     *
     * @return the largest result of applying the given function to every character of this <code>NEString</code>.
     */
-  def maxBy[U](f: Char => U)(implicit cmp: Ordering[U]): Char = theString.maxBy(f)(cmp)
+  def maxBy[U](f: Char => U)(using cmp: Ordering[U]): Char = theString.maxBy(f)(cmp)
 
   /**
     * Finds the smallest character.
     *
     * @return the smallest character of this <code>NEString</code>.
     */
-  def min(implicit cmp: Ordering[Char]): Char = theString.min(cmp)
+  def min(using cmp: Ordering[Char]): Char = theString.min(cmp)
 
   /**
     * Finds the smallest result after applying the given function to every character.
     *
     * @return the smallest result of applying the given function to every character of this <code>NEString</code>.
     */
-  def minBy[U](f: Char => U)(implicit cmp: Ordering[U]): Char = theString.minBy(f)(cmp)
+  def minBy[U](f: Char => U)(using cmp: Ordering[U]): Char = theString.minBy(f)(cmp)
 
   /**
     * Displays all characters of this <code>NEString</code> in a string.
@@ -948,7 +948,7 @@ final class NEString private (val theString: String) extends AnyVal {
     *
     * @return the product of all elements
     */
-  def product(implicit num: Numeric[Char]): Char = theString.product(num)
+  def product(using num: Numeric[Char]): Char = theString.product(num)
 
   /**
     * Reduces the elements of this <code>NEString</code> using the specified associative binary operator.
@@ -1187,7 +1187,7 @@ final class NEString private (val theString: String) extends AnyVal {
     * @return a <code>NEString</code> consisting of the elements of this <code>NEString</code> sorted according to the <code>Ordering</code> where
     *    <code>x &lt; y if ord.lt(f(x), f(y))</code>.
     */
-  def sortBy[U](f: Char => U)(implicit ord: Ordering[U]): NEString = new NEString(theString.iterator.toSeq.sortBy(f).mkString)
+  def sortBy[U](f: Char => U)(using ord: Ordering[U]): NEString = new NEString(theString.iterator.toSeq.sortBy(f).mkString)
 
   /**
     * Sorts this <code>NEString</code> according to a comparison function.
@@ -1213,7 +1213,7 @@ final class NEString private (val theString: String) extends AnyVal {
     * @param ord the <code>Ordering</code> to be used to compare elements.
     * @return a <code>NEString</code> consisting of the characters of this <code>NEString</code> sorted according to the ordering defined by <code>ord</code>.
     */
-  def sorted(implicit ord: Ordering[Char]): NEString = new NEString(theString.iterator.toSeq.sorted(ord).mkString)
+  def sorted(using ord: Ordering[Char]): NEString = new NEString(theString.iterator.toSeq.sorted(ord).mkString)
 
   /**
     * Indicates whether this <code>NEString</code> starts with the given <code>Seq</code>.
@@ -1282,7 +1282,7 @@ final class NEString private (val theString: String) extends AnyVal {
     *
     * @return the sum of all elements
     */
-  def sum(implicit num: Numeric[Long]): Long = theString.iterator.map(_.toLong).sum(num)
+  def sum(using num: Numeric[Long]): Long = theString.iterator.map(_.toLong).sum(num)
 
   /**
     * Converts this <code>NEString</code> into a collection of type <code>Col</code> by copying all elements.
@@ -1297,7 +1297,7 @@ final class NEString private (val theString: String) extends AnyVal {
     *
     * @return an array containing all characters of this <code>NEString</code>. A <code>ClassTag</code> must be available for the element type of this <code>NEString</code>.
     */
-  def toArray(implicit classTag: ClassTag[Char]): Array[Char] = theString.toArray
+  def toArray(using classTag: ClassTag[Char]): Array[Char] = theString.toArray
 
   /**
     * Converts this <code>NEString</code> to a <code>Vector</code>.
@@ -1430,7 +1430,7 @@ final class NEString private (val theString: String) extends AnyVal {
     * @param asPair an implicit conversion that asserts that the character type of this <code>NEString</code> is a pair.
     * @return a pair of <code>NEString</code>s, containing the first and second half, respectively, of each character pair of this <code>NEString</code>.
     */
-  def unzip[L, R](implicit asPair: Char => (L, R)): (Iterable[L], Iterable[R]) = {
+  def unzip[L, R](using asPair: Char => (L, R)): (Iterable[L], Iterable[R]) = {
     val unzipped = theString.unzip
     (unzipped._1, unzipped._2)
   }
@@ -1444,7 +1444,7 @@ final class NEString private (val theString: String) extends AnyVal {
     * @param asTriple an implicit conversion that character that the character type of this <code>NEString</code> is a triple.
     * @return a triple of <code>NEString</code>s, containing the first, second, and third member, respectively, of each character triple of this <code>NEString</code>.
     */
-  def unzip3[L, M, R](implicit asTriple: Char => (L, M, R)): (Iterable[L], Iterable[M], Iterable[R]) = {
+  def unzip3[L, M, R](using asTriple: Char => (L, M, R)): (Iterable[L], Iterable[M], Iterable[R]) = {
     val unzipped = theString.unzip3
     (unzipped._1, unzipped._2, unzipped._3)
   }

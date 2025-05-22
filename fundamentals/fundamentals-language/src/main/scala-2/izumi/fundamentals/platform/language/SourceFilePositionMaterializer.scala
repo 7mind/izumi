@@ -6,7 +6,7 @@ import scala.reflect.macros.blackbox
 final case class SourceFilePositionMaterializer(get: SourceFilePosition) extends AnyVal
 
 object SourceFilePositionMaterializer {
-  @inline def sourcePosition(implicit ev: SourceFilePositionMaterializer): SourceFilePosition = ev.get
+  @inline def sourcePosition(using ev: SourceFilePositionMaterializer): SourceFilePosition = ev.get
 
   implicit def materialize: SourceFilePositionMaterializer = macro SourcePositionMaterializerMacro.getSourceFilePositionMaterializer
 

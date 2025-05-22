@@ -6,7 +6,7 @@ import scala.collection.compat.*
 
 final class IzTraversables[A](private val list: IterableOnce[A]) extends AnyVal {
 
-  def maxOr(default: A)(implicit cmp: Ordering[A]): A = {
+  def maxOr(default: A)(using cmp: Ordering[A]): A = {
     val iterator = list.iterator
     if (iterator.nonEmpty) {
       iterator.max(cmp)
@@ -15,7 +15,7 @@ final class IzTraversables[A](private val list: IterableOnce[A]) extends AnyVal 
     }
   }
 
-  def minOr(default: A)(implicit cmp: Ordering[A]): A = {
+  def minOr(default: A)(using cmp: Ordering[A]): A = {
     val iterator = list.iterator
     if (iterator.nonEmpty) {
       iterator.min(cmp)
@@ -24,7 +24,7 @@ final class IzTraversables[A](private val list: IterableOnce[A]) extends AnyVal 
     }
   }
 
-  def ifEmptyOr[E, N, L](a: => E)(l: IterableOnce[A] => N)(implicit ev: Lub[E, N, L]): L = {
+  def ifEmptyOr[E, N, L](a: => E)(l: IterableOnce[A] => N)(using ev: Lub[E, N, L]): L = {
     if (list.iterator.isEmpty) {
       ev.fst(a)
     } else {
@@ -32,7 +32,7 @@ final class IzTraversables[A](private val list: IterableOnce[A]) extends AnyVal 
     }
   }
 
-  def ifNonEmptyOr[E, N, L](l: IterableOnce[A] => N)(a: => E)(implicit ev: Lub[E, N, L]): L = {
+  def ifNonEmptyOr[E, N, L](l: IterableOnce[A] => N)(a: => E)(using ev: Lub[E, N, L]): L = {
     if (list.iterator.isEmpty) {
       ev.fst(a)
     } else {

@@ -20,6 +20,6 @@ object Scheduler2 {
 
 private[bio] sealed trait SchedulerInstances
 object SchedulerInstances {
-  @inline implicit def SchedulerFromTemporalAndClock[F[+_, +_]: Temporal2: Clock2]: Predefined.Of[Scheduler2[F]] =
+  @inline given SchedulerFromTemporalAndClock[F[+_, +_]: Temporal2: Clock2]: Predefined.Of[Scheduler2[F]] =
     Predefined(new SchedulerImpl[F[+_, +_]])
 }

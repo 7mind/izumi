@@ -13,14 +13,14 @@ object __ZIORaceCompat {
     * An implementation of `raceFirst` that forks the left and right fibers in
     * the global scope instead of the scope of the parent fiber.
     */
-  final def raceFirst[R, E, A](self: ZIO[R, E, A], that: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+  final def raceFirst[R, E, A](self: ZIO[R, E, A], that: => ZIO[R, E, A])(using trace: Trace): ZIO[R, E, A] =
     this.race(self.exit, that.exit).flatMap(identity)
 
   /**
     * An implementation of `race` that forks the left and right fibers in
     * the global scope instead of the scope of the parent fiber.
     */
-  private def race[R, E, A](self: ZIO[R, E, A], that: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+  private def race[R, E, A](self: ZIO[R, E, A], that: => ZIO[R, E, A])(using trace: Trace): ZIO[R, E, A] =
     ZIO.fiberIdWith {
       parentFiberId =>
         this.raceWith(self, that)(
@@ -46,7 +46,7 @@ object __ZIORaceCompat {
     right: => ZIO[R, E2, B],
   )(leftDone: (Exit[E, A], Fiber[E2, B]) => ZIO[R, E3, C],
     rightDone: (Exit[E2, B], Fiber[E, A]) => ZIO[R, E3, C],
-  )(implicit trace: Trace
+  )(using trace: Trace
   ): ZIO[R, E3, C] =
     this.raceFibersWith(left, right)(
       (winner, loser) =>
@@ -74,7 +74,7 @@ object __ZIORaceCompat {
     right: ZIO[R, E2, B],
   )(leftWins: (Fiber.Runtime[E, A], Fiber.Runtime[E2, B]) => ZIO[R, E3, C],
     rightWins: (Fiber.Runtime[E2, B], Fiber.Runtime[E, A]) => ZIO[R, E3, C],
-  )(implicit trace: Trace
+  )(using trace: Trace
   ): ZIO[R, E3, C] =
     ZIO.withFiberRuntime[R, E3, C] {
       (parentFiber, parentStatus) =>

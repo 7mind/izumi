@@ -90,21 +90,21 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     implicit def suspendedSyntax[F[_], A](fa: => F[A]): QuasiIOSuspendedSyntax[F, A] = new QuasiIOSuspendedSyntax(() => fa)
 
     implicit final class QuasiIOSyntax[F[_], A](private val fa: F[A]) extends AnyVal {
-      @inline def map[B](f: A => B)(implicit F: QuasiFunctor[F]): F[B] = F.map(fa)(f)
-      @inline def flatMap[B](f: A => F[B])(implicit F: QuasiPrimitives[F]): F[B] = F.flatMap(fa)(f)
+      @inline def map[B](f: A => B)(using F: QuasiFunctor[F]): F[B] = F.map(fa)(f)
+      @inline def flatMap[B](f: A => F[B])(using F: QuasiPrimitives[F]): F[B] = F.flatMap(fa)(f)
     }
 
     final class QuasiIOSuspendedSyntax[F[_], A](private val fa: () => F[A]) extends AnyVal {
-      @inline def guarantee(`finally`: => F[Unit])(implicit F: QuasiPrimitives[F]): F[A] = {
+      @inline def guarantee(`finally`: => F[Unit])(using F: QuasiPrimitives[F]): F[A] = {
         F.guarantee(fa())(`finally`)
       }
-      @inline def guaranteeOnFailure(cleanupOnFailure: Throwable => F[Unit])(implicit F: QuasiIO[F]): F[A] = {
+      @inline def guaranteeOnFailure(cleanupOnFailure: Throwable => F[Unit])(using F: QuasiIO[F]): F[A] = {
         F.guaranteeOnFailure(fa())(cleanupOnFailure)
       }
     }
   }
 
-  @inline implicit def quasiIOIdentity: QuasiIO[Identity] = QuasiIOIdentity
+  @inline given quasiIOIdentity: QuasiIO[Identity] = QuasiIOIdentity
 
   private[quasi] object QuasiIOIdentity extends QuasiIO[Identity] {
     override def pure[A](a: A): Identity[A] = a
@@ -177,7 +177,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
 
 private[quasi] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuasiIOInstances1 {
 
-  implicit def fromBIO[F[+_, +_]](implicit F: IO2[F]): QuasiIO[F[Throwable, _]] = {
+  given fromBIO[F[+_, +_]](using F: IO2[F]): QuasiIO[F[Throwable, _]] = {
     type E = Throwable
     new QuasiPrimitivesFromBIO[F, Throwable] with QuasiIO[F[Throwable, _]] {
       override final def suspendF[A](effAction: => F[E, A]): F[E, A] = super[QuasiPrimitivesFromBIO].suspendF(effAction)
@@ -220,7 +220,7 @@ private[quasi] sealed trait LowPriorityQuasiIOInstances1 {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Sync[_[_]]: `cats.effect.kernel.Sync`](implicit F0: Sync[F]): QuasiIO[F] = {
+  given fromCats[F[_], Sync[_[_]]: `cats.effect.kernel.Sync`](using F0: Sync[F]): QuasiIO[F] = {
     val F = F0.asInstanceOf[cats.effect.kernel.Sync[F]]
     new QuasiPrimitivesFromCats[F](F) with QuasiIO[F] {
       override final def suspendF[A](effAction: => F[A]): F[A] = super[QuasiPrimitivesFromCats].suspendF(effAction)
@@ -305,11 +305,11 @@ trait QuasiPrimitives[F[_]] extends QuasiApplicative[F] {
 object QuasiPrimitives extends LowPriorityQuasiPrimitivesInstances {
   @inline def apply[F[_]: QuasiPrimitives]: QuasiPrimitives[F] = implicitly
 
-  @inline implicit def quasiPrimitivesIdentity: QuasiPrimitives[Identity] = QuasiIOIdentity
+  @inline given quasiPrimitivesIdentity: QuasiPrimitives[Identity] = QuasiIOIdentity
 }
 
 private[quasi] sealed trait LowPriorityQuasiPrimitivesInstances extends LowPriorityQuasiPrimitivesInstances1 {
-  implicit def fromBIO[F[+_, +_], E](implicit F: IO2[F]): QuasiPrimitives[F[E, _]] = new QuasiPrimitivesFromBIO[F, E]
+  given fromBIO[F[+_, +_], E](using F: IO2[F]): QuasiPrimitives[F[E, _]] = new QuasiPrimitivesFromBIO[F, E]
 }
 
 private[quasi] sealed trait LowPriorityQuasiPrimitivesInstances1 {
@@ -320,13 +320,13 @@ private[quasi] sealed trait LowPriorityQuasiPrimitivesInstances1 {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Sync[_[_]]: `cats.effect.kernel.Sync`](implicit F0: Sync[F]): QuasiPrimitives[F] = {
+  given fromCats[F[_], Sync[_[_]]: `cats.effect.kernel.Sync`](using F0: Sync[F]): QuasiPrimitives[F] = {
     new QuasiPrimitivesFromCats(F0.asInstanceOf[cats.effect.kernel.Sync[F]])
   }
 
 }
 
-private[quasi] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](implicit F: IO2[F]) extends QuasiPrimitives[F[E, _]] {
+private[quasi] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](using F: IO2[F]) extends QuasiPrimitives[F[E, _]] {
   override def suspendF[A](f: => F[E, A]): F[E, A] = F.sync(f).flatten
 
   override final def pure[A](a: A): F[E, A] = F.pure(a)
@@ -406,11 +406,11 @@ trait QuasiApplicative[F[_]] extends QuasiFunctor[F] {
 object QuasiApplicative extends LowPriorityQuasiApplicativeInstances {
   @inline def apply[F[_]: QuasiApplicative]: QuasiApplicative[F] = implicitly
 
-  @inline implicit def quasiApplicativeIdentity: QuasiApplicative[Identity] = QuasiIOIdentity
+  @inline given quasiApplicativeIdentity: QuasiApplicative[Identity] = QuasiIOIdentity
 }
 
 private[quasi] sealed trait LowPriorityQuasiApplicativeInstances extends LowPriorityQuasiApplicativeInstances1 {
-  implicit def fromBIO[F[+_, +_], E](implicit F: Applicative2[F]): QuasiApplicative[F[E, _]] = {
+  given fromBIO[F[+_, +_], E](using F: Applicative2[F]): QuasiApplicative[F[E, _]] = {
     new QuasiApplicative[F[E, _]] {
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
@@ -428,7 +428,7 @@ private[quasi] sealed trait LowPriorityQuasiApplicativeInstances1 {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Applicative[_[_]]: `cats.Applicative`](implicit F0: Applicative[F]): QuasiApplicative[F] = {
+  given fromCats[F[_], Applicative[_[_]]: `cats.Applicative`](using F0: Applicative[F]): QuasiApplicative[F] = {
     val F = F0.asInstanceOf[cats.Applicative[F]]
     new QuasiApplicative[F] {
       override def pure[A](a: A): F[A] = F.pure(a)
@@ -454,14 +454,14 @@ trait QuasiFunctor[F[_]] {
 object QuasiFunctor extends LowPriorityQuasiFunctorInstances {
   @inline def apply[F[_]: QuasiFunctor]: QuasiFunctor[F] = implicitly
 
-  @inline implicit def quasiFunctorIdentity: QuasiFunctor[Identity] = {
+  @inline given quasiFunctorIdentity: QuasiFunctor[Identity] = {
     // FIXME: This instance's type is QuasiFunctor not QuasiApplicative to Scala 3 bug https://github.com/lampepfl/dotty/issues/16431
     QuasiIOIdentity
   }
 }
 
 private[quasi] sealed trait LowPriorityQuasiFunctorInstances extends LowPriorityQuasiFunctorInstances1 {
-  implicit def fromBIO[F[+_, +_], E](implicit F: Functor2[F]): QuasiFunctor[F[E, _]] = {
+  given fromBIO[F[+_, +_], E](using F: Functor2[F]): QuasiFunctor[F[E, _]] = {
     new QuasiFunctor[F[E, _]] {
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
     }
@@ -475,7 +475,7 @@ private[quasi] sealed trait LowPriorityQuasiFunctorInstances1 {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromCats[F[_], Functor[_[_]]: `cats.Functor`](implicit F0: Functor[F]): QuasiFunctor[F] = {
+  given fromCats[F[_], Functor[_[_]]: `cats.Functor`](using F0: Functor[F]): QuasiFunctor[F] = {
     val F = F0.asInstanceOf[cats.Functor[F]]
     new QuasiFunctor[F] {
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
@@ -490,7 +490,7 @@ trait QuasiRef[F[_], A] {
 }
 
 object QuasiRef {
-  def mk[F[_], A](a: A)(implicit F: QuasiPrimitives[F]): F[QuasiRef[F, A]] = F.mkRef(a)
+  def mk[F[_], A](a: A)(using F: QuasiPrimitives[F]): F[QuasiRef[F, A]] = F.mkRef(a)
 
   def fromMaybeSuspend[F[_], A](a: A)(maybeSuspend: Morphism1[() => _, F]): F[QuasiRef[F, A]] = {
     maybeSuspend {

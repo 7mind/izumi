@@ -35,7 +35,7 @@ sealed abstract class FreeError[+S[_, _], +E, +A] {
 
   // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
   @nowarn("msg=pattern case: FreeError.FlatMapped")
-  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Error2[G]): G[E, A] = {
+  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(using G: Error2[G]): G[E, A] = {
     this match {
       case FreeError.Pure(a) => G.pure(a)
       case FreeError.Suspend(a) => transform(a)
@@ -77,7 +77,7 @@ object FreeError {
     override def toString: String = s"Redeem:[sub=$sub]"
   }
 
-  @inline implicit def FreeErrorInstances[S[_, _]]: Error2[FreeError[S, +_, +_]] = Error2Instance.asInstanceOf[Error2Instance[S]]
+  @inline given FreeErrorInstances[S[_, _]]: Error2[FreeError[S, +_, +_]] = Error2Instance.asInstanceOf[Error2Instance[S]]
 
   object Error2Instance extends Error2Instance[Nothing]
   class Error2Instance[S[_, _]] extends Error2[FreeError[S, +_, +_]] {

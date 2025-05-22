@@ -16,7 +16,7 @@ class IssueTest extends AnyWordSpec {
 object IssueTest {
   case class MyIssue(
     a: Int
-  )(implicit val
+  )(using val
     context: IssueContext
   ) extends Issue
 }

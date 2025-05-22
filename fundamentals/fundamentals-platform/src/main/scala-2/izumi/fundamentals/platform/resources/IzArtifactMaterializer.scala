@@ -6,7 +6,7 @@ import scala.language.experimental.macros
 final case class IzArtifactMaterializer(get: IzArtifact) extends AnyVal
 
 object IzArtifactMaterializer {
-  @inline def currentArtifact(implicit ev: IzArtifactMaterializer): IzArtifact = ev.get
+  @inline def currentArtifact(using ev: IzArtifactMaterializer): IzArtifact = ev.get
 
   implicit def materialize: IzArtifactMaterializer = macro IzArtifactMaterializerMacro.make
 }

@@ -8,8 +8,8 @@ final case class CodePositionMaterializer(get: CodePosition) extends AnyVal
 
 object CodePositionMaterializer {
   @targetName("applySummon")
-  inline def apply()(implicit ev: CodePositionMaterializer): CodePositionMaterializer = ev
-  inline def codePosition(implicit ev: CodePositionMaterializer): CodePosition = ev.get
+  inline def apply()(using ev: CodePositionMaterializer): CodePositionMaterializer = ev
+  inline def codePosition(using ev: CodePositionMaterializer): CodePosition = ev.get
 
   inline implicit def materialize: CodePositionMaterializer = ${ CodePositionMaterializerMacro.getCodePositionMaterializer() }
 

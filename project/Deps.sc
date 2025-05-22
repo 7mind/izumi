@@ -150,7 +150,7 @@ object Izumi {
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.20")
   final val scala213 = ScalaVersion("2.13.16")
-  final val scala300 = ScalaVersion("3.3.5")
+  final val scala300 = ScalaVersion("3.7.1-RC1")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -354,7 +354,7 @@ object Izumi {
             (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)),
           SettingKey(Some(scala300), None) :=
             Seq[Const](
-              "-language:3.4"
+              "-source:3.7"
             ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),

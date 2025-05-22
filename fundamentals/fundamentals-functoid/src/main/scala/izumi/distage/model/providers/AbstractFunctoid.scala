@@ -53,7 +53,7 @@ trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
     *   this.map2(that)((f, a) => f(a))
     * }}}
     */
-  def ap[B, C](that: Ftoid[B])(implicit ev: A <:< (B => C), tag: Tag[C]): Ftoid[C] = {
+  def ap[B, C](that: Ftoid[B])(using ev: A <:< (B => C), tag: Tag[C]): Ftoid[C] = {
     map2[B, C](that)((f, a) => ev(f)(a))(using tag)
   }
 

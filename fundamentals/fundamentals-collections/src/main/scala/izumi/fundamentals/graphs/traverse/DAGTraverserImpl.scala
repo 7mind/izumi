@@ -12,7 +12,7 @@
 //  traverseStrategy: TraverseStrategy[F, Node, Trace, Progress],
 //  interruptionStrategy: InterruptionStrategy[F],
 //)
-//(implicit
+//(using
 // F: Monad[F],
 // P: Parallel[F],
 //) extends AbstractDagTraverser[F, Node, Trace, Progress] {

@@ -38,7 +38,7 @@ object Promise2 {
   }
 
   implicit final class Promise2Ops[+F[+_, +_], E, A](private val self: Promise2[F, E, A]) extends AnyVal {
-    def mapK[G[+_, +_]](fg: F ~>> G)(implicit G: Functor2[G]): Promise2[G, E, A] = new Promise2[G, E, A] {
+    def mapK[G[+_, +_]](fg: F ~>> G)(using G: Functor2[G]): Promise2[G, E, A] = new Promise2[G, E, A] {
       override def await: G[E, A] = fg(self.await)
       override def poll: G[Nothing, Option[G[E, A]]] = fg(self.poll).map(_.map(fg(_)))
       override def succeed(a: A): G[Nothing, Boolean] = fg(self.succeed(a))

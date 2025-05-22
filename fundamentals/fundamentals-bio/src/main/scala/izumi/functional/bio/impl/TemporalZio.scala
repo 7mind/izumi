@@ -16,13 +16,13 @@ open class TemporalZio[R]
   with Temporal2[ZIO[R, +_, +_]] {
 
   @inline override final def sleep(duration: Duration): ZIO[R, Nothing, Unit] = {
-    implicit val trace: zio.Trace = Tracer.newTrace
+    given trace: zio.Trace = Tracer.newTrace
 
     zio.Clock.sleep(fromScala(duration))
   }
 
   @inline override final def timeout[E, A](duration: Duration)(r: ZIO[R, E, A]): ZIO[R, E, Option[A]] = {
-    implicit val trace: zio.Trace = Tracer.newTrace
+    given trace: zio.Trace = Tracer.newTrace
 
     this.race(r.map(Some(_)).interruptible, this.sleep(duration).as(None).interruptible)
   }

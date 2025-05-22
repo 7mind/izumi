@@ -31,7 +31,7 @@ abstract class Identifier {
 }
 
 object Identifier {
-  implicit def fromIdContract[I](id0: I)(implicit ev: IdContract[I]): Identifier { type Id = I } = new Identifier {
+  implicit def fromIdContract[I](id0: I)(using ev: IdContract[I]): Identifier { type Id = I } = new Identifier {
     override type Id = I
     override val id: I = id0
     override val idContract: IdContract[I] = ev

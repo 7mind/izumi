@@ -372,7 +372,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     * @tparm B the type of the elements of each nested <code>NEList</code>
     * @return a new <code>NEList</code> resulting from concatenating all nested <code>NEList</code>s.
     */
-  def flatten[B](implicit ev: T <:< NEList[B]): NEList[B] = flatMap(ev)
+  def flatten[B](using ev: T <:< NEList[B]): NEList[B] = flatMap(ev)
 
   /**
     * Folds the elements of this <code>NEList</code> using the specified associative binary operator.
@@ -766,28 +766,28 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @return the largest element of this <code>NEList</code>.
     */
-  def max[U >: T](implicit cmp: Ordering[U]): T = toList.max(cmp)
+  def max[U >: T](using cmp: Ordering[U]): T = toList.max(cmp)
 
   /**
     * Finds the largest result after applying the given function to every element.
     *
     * @return the largest result of applying the given function to every element of this <code>NEList</code>.
     */
-  def maxBy[U](f: T => U)(implicit cmp: Ordering[U]): T = toList.maxBy(f)(cmp)
+  def maxBy[U](f: T => U)(using cmp: Ordering[U]): T = toList.maxBy(f)(cmp)
 
   /**
     * Finds the smallest element.
     *
     * @return the smallest element of this <code>NEList</code>.
     */
-  def min[U >: T](implicit cmp: Ordering[U]): T = toList.min(cmp)
+  def min[U >: T](using cmp: Ordering[U]): T = toList.min(cmp)
 
   /**
     * Finds the smallest result after applying the given function to every element.
     *
     * @return the smallest result of applying the given function to every element of this <code>NEList</code>.
     */
-  def minBy[U](f: T => U)(implicit cmp: Ordering[U]): T = toList.minBy(f)(cmp)
+  def minBy[U](f: T => U)(using cmp: Ordering[U]): T = toList.minBy(f)(cmp)
 
   /**
     * Displays all elements of this <code>NEList</code> in a string.
@@ -884,7 +884,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @return the product of all elements
     */
-  def product[U >: T](implicit num: Numeric[U]): U = toList.product(num)
+  def product[U >: T](using num: Numeric[U]): U = toList.product(num)
 
   /**
     * Reduces the elements of this <code>NEList</code> using the specified associative binary operator.
@@ -1130,7 +1130,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     * @return a <code>NEList</code> consisting of the elements of this <code>NEList</code> sorted according to the <code>Ordering</code> where
     *    <code>x &lt; y if ord.lt(f(x), f(y))</code>.
     */
-  def sortBy[U](f: T => U)(implicit ord: Ordering[U]): NEList[T] = new NEList(toList.sortBy(f))
+  def sortBy[U](f: T => U)(using ord: Ordering[U]): NEList[T] = new NEList(toList.sortBy(f))
 
   /**
     * Sorts this <code>NEList</code> according to a comparison function.
@@ -1157,7 +1157,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     * @param the comparison function that tests whether its first argument precedes its second argument in the desired ordering.
     * @return a <code>NEList</code> consisting of the elements of this <code>NEList</code> sorted according to the comparison function <code>lt</code>.
     */
-  def sorted[U >: T](implicit ord: Ordering[U]): NEList[U] = new NEList(toList.sorted(ord))
+  def sorted[U >: T](using ord: Ordering[U]): NEList[U] = new NEList(toList.sorted(ord))
 
   /**
     * Indicates whether this <code>NEList</code> starts with the given <code>Seq</code>.
@@ -1226,7 +1226,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @return the sum of all elements
     */
-  def sum[U >: T](implicit num: Numeric[U]): U = toList.sum(num)
+  def sum[U >: T](using num: Numeric[U]): U = toList.sum(num)
 
   // import scala.collection.compat._
 
@@ -1243,7 +1243,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @return an array containing all elements of this <code>NEList</code>. A <code>ClassTag</code> must be available for the element type of this <code>NEList</code>.
     */
-  def toArray[U >: T](implicit classTag: ClassTag[U]): Array[U] = toList.toArray
+  def toArray[U >: T](using classTag: ClassTag[U]): Array[U] = toList.toArray
 
   /**
     * Converts this <code>NEList</code> to a <code>Vector</code>.
@@ -1297,7 +1297,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     *
     * @return a map of type <code>immutable.Map[K, V]</code> containing all key/value pairs of type <code>(K, V)</code> of this <code>NEList</code>.
     */
-  def toMap[K, V](implicit ev: T <:< (K, V)): Map[K, V] = toList.toMap
+  def toMap[K, V](using ev: T <:< (K, V)): Map[K, V] = toList.toMap
 
   /**
     * Converts this <code>NEList</code> to an immutable <code>IndexedSeq</code>.
@@ -1321,7 +1321,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     */
   override def toString: String = "NEList(" + toList.mkString(", ") + ")"
 
-  def transpose[U](implicit ev: T <:< NEList[U]): NEList[NEList[U]] = {
+  def transpose[U](using ev: T <:< NEList[U]): NEList[NEList[U]] = {
     val asLists = toList.map(ev)
     val list = asLists.map(_.toList).transpose
     new NEList(list.map(new NEList(_)))
@@ -1389,7 +1389,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     * @param asPair an implicit conversion that asserts that the element type of this <code>NEList</code> is a pair.
     * @return a pair of <code>NEList</code>s, containing the first and second half, respectively, of each element pair of this <code>NEList</code>.
     */
-  def unzip[L, R](implicit asPair: T => (L, R)): (NEList[L], NEList[R]) = {
+  def unzip[L, R](using asPair: T => (L, R)): (NEList[L], NEList[R]) = {
     val unzipped = toList.unzip
     (new NEList(unzipped._1), new NEList(unzipped._2))
   }
@@ -1403,7 +1403,7 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     * @param asTriple an implicit conversion that asserts that the element type of this <code>NEList</code> is a triple.
     * @return a triple of <code>NEList</code>s, containing the first, second, and third member, respectively, of each element triple of this <code>NEList</code>.
     */
-  def unzip3[L, M, R](implicit asTriple: T => (L, M, R)): (NEList[L], NEList[M], NEList[R]) = {
+  def unzip3[L, M, R](using asTriple: T => (L, M, R)): (NEList[L], NEList[M], NEList[R]) = {
     val unzipped = toList.unzip3
     (new NEList(unzipped._1), new NEList(unzipped._2), new NEList(unzipped._3))
   }

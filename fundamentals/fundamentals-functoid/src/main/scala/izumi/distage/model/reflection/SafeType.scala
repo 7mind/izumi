@@ -38,7 +38,7 @@ final class SafeType(private[distage] val anyTag: AnyTag) {
 trait SafeTypeTools {
   final def get[T: Tag]: SafeType = new SafeType(Tag[T])
   final def getK[K[_]: TagK]: SafeType = new SafeType(TagK[K])
-  final def unsafeGetWeak[T](implicit weakTag: WeakTag[T]): SafeType = new SafeType(WeakTag[T])
+  final def unsafeGetWeak[T](using weakTag: WeakTag[T]): SafeType = new SafeType(WeakTag[T])
 }
 
 object SafeType extends SafeTypeTools {

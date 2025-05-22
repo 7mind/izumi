@@ -9,7 +9,7 @@ sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
   def leftMap[E1](f: E => E1): Exit[E1, A]
   def flatMap[E1 >: E, B](f: A => Exit[E1, B]): Exit[E1, B]
-  def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, A]
+  def toThrowableEither(using ev: E <:< Throwable): Either[Throwable, A]
 }
 
 object Exit {
@@ -89,7 +89,7 @@ object Exit {
     override def map[B](f: A => B): Success[B] = Success(f(value))
     override def leftMap[E1](f: Nothing => E1): this.type = this
     override def flatMap[E1 >: Nothing, B](f: A => Exit[E1, B]): Exit[E1, B] = f(value)
-    override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, A] = Right(value)
+    override def toThrowableEither(using ev: Nothing <:< Throwable): Either[Throwable, A] = Right(value)
   }
 
   sealed trait Failure[+E] extends Exit[E, Nothing] {
@@ -98,7 +98,7 @@ object Exit {
     def toEither: Either[List[Throwable], E]
     def toEitherCompound: Either[Throwable, E]
 
-    final def toThrowable(implicit ev: E <:< Throwable): Throwable = toEitherCompound.fold(identity, ev)
+    final def toThrowable(using ev: E <:< Throwable): Throwable = toEitherCompound.fold(identity, ev)
     final def toThrowable(conv: E => Throwable): Throwable = toEitherCompound.fold(identity, conv)
 
     override final def map[B](f: Nothing => B): this.type = this
@@ -110,14 +110,14 @@ object Exit {
   final case class Error[+E](error: E, trace: Trace[E]) extends Exit.FailureUninterrupted[E] {
     override def toEither: Right[Nothing, E] = Right(error)
     override def toEitherCompound: Right[Nothing, E] = Right(error)
-    override def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, Nothing] = Left(ev(error))
+    override def toThrowableEither(using ev: E <:< Throwable): Either[Throwable, Nothing] = Left(ev(error))
     override def leftMap[E1](f: E => E1): Error[E1] = Error[E1](f(error), trace.map(f))
   }
 
   final case class Termination(compoundException: Throwable, allExceptions: List[Throwable], trace: Trace[Nothing]) extends Exit.FailureUninterrupted[Nothing] {
     override def toEither: Left[List[Throwable], Nothing] = Left(allExceptions)
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
-    override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
+    override def toThrowableEither(using ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
     override def leftMap[E1](f: Nothing => E1): this.type = this
   }
   object Termination {
@@ -127,7 +127,7 @@ object Exit {
   final case class Interruption(compoundException: Throwable, otherExceptions: List[Throwable], trace: Trace[Nothing]) extends Exit.Failure[Nothing] {
     override def toEither: Left[List[Throwable], Nothing] = Left(List(compoundException))
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
-    override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
+    override def toThrowableEither(using ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
     override def leftMap[E1](f: Nothing => E1): this.type = this
   }
   object Interruption {
@@ -203,7 +203,7 @@ object Exit {
       }
     }
 
-    def ZIOSignalOnNoExternalInterruptFailure[R, E, A](f: ZIO[R, E, A])(signalOnNonInterrupt: => ZIO[R, Nothing, Any])(implicit trace: zio.Trace): ZIO[R, E, A] = {
+    def ZIOSignalOnNoExternalInterruptFailure[R, E, A](f: ZIO[R, E, A])(signalOnNonInterrupt: => ZIO[R, Nothing, Any])(using trace: zio.Trace): ZIO[R, E, A] = {
       f.onExit {
         case zio.Exit.Success(_) =>
           ZIO.unit
@@ -216,11 +216,11 @@ object Exit {
       }
     }
 
-    def withIsInterrupted[R, E, A](f: Boolean => A)(implicit trace: zio.Trace): ZIO[R, E, A] = {
+    def withIsInterrupted[R, E, A](f: Boolean => A)(using trace: zio.Trace): ZIO[R, E, A] = {
       withIsInterruptedF[R, E, A](b => ZIO.succeed(f(b)))
     }
 
-    def withIsInterruptedF[R, E, A](f: Boolean => ZIO[R, E, A])(implicit trace: zio.Trace): ZIO[R, E, A] = {
+    def withIsInterruptedF[R, E, A](f: Boolean => ZIO[R, E, A])(using trace: zio.Trace): ZIO[R, E, A] = {
       ZIO.descriptorWith(desc => f(desc.interrupters.nonEmpty))
     }
 
@@ -235,7 +235,7 @@ object Exit {
 //      }
 //    }
 //
-//    def toExit[E, A](exit: Either[bio.Cause[E], A])(implicit d: DummyImplicit): Exit[E, A] = {
+//    def toExit[E, A](exit: Either[bio.Cause[E], A])(using d: DummyImplicit): Exit[E, A] = {
 //      exit match {
 //        case Left(error) => toExit(error)
 //        case Right(value) => Success(value)
@@ -251,7 +251,7 @@ object Exit {
 //  }
 
   object CatsExit {
-    def exitToOutcomeThrowable[F[+_, +_], A](exit: Exit[Throwable, A])(implicit F: Applicative2[F]): Outcome[F[Throwable, +_], Throwable, A] = {
+    def exitToOutcomeThrowable[F[+_, +_], A](exit: Exit[Throwable, A])(using F: Applicative2[F]): Outcome[F[Throwable, +_], Throwable, A] = {
       toOutcomeThrowable(F.pure, exit)
     }
     def toOutcomeThrowable[F[_], A](pure: A => F[A], exit: Exit[Throwable, A]): Outcome[F, Throwable, A] = exit match {
@@ -262,7 +262,7 @@ object Exit {
     }
   }
 
-  implicit lazy val ExitInstances: Monad2[Exit] & Bifunctor2[Exit] = new Monad2[Exit] with Bifunctor2[Exit] {
+  given ExitInstances: (Monad2[Exit] & Bifunctor2[Exit]) = new Monad2[Exit] with Bifunctor2[Exit] {
     override final val InnerF: Functor2[Exit] = this
     override final def pure[A](a: A): Exit[Nothing, A] = Exit.Success(a)
     override final def map[E, A, B](r: Exit[E, A])(f: A => B): Exit[E, B] = r.map(f)

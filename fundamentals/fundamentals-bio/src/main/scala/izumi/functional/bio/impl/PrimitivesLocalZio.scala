@@ -11,7 +11,7 @@ object PrimitivesLocalZio extends PrimitivesLocalZio[Any]
 open class PrimitivesLocalZio[R] extends PrimitivesLocal2[ZIO[R, +_, +_]] {
 
   override def mkFiberRef[A](a: A): ZIO[R, Nothing, FiberRef2[ZIO[R, +_, +_], A]] = {
-    implicit val trace: zio.Trace = Tracer.newTrace
+    given trace: zio.Trace = Tracer.newTrace
 
     FiberRef
       .make(a)

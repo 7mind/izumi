@@ -6,11 +6,11 @@ final class LifecycleAggregator[F[+_, +_], E](
   finalizers: RefM2[F, List[(LifecycleAggregator[F, E]#Key, F[E, Unit])]]
 ) {
 
-  def acquire[R](resource: Lifecycle[F[E, _], R])(implicit F: IO2[F]): F[E, R] = {
+  def acquire[R](resource: Lifecycle[F[E, _], R])(using F: IO2[F]): F[E, R] = {
     acquireKey(resource).map(_._1)
   }
 
-  def acquireKey[R](resource: Lifecycle[F[E, _], R])(implicit F: IO2[F]): F[E, (R, Key)] = {
+  def acquireKey[R](resource: Lifecycle[F[E, _], R])(using F: IO2[F]): F[E, (R, Key)] = {
     F.uninterruptibleExcept {
       restore =>
         for {
@@ -29,7 +29,7 @@ final class LifecycleAggregator[F[+_, +_], E](
     }
   }
 
-  def release(key: Key)(implicit F: Applicative2[F]): F[E, Unit] = {
+  def release(key: Key)(using F: Applicative2[F]): F[E, Unit] = {
     finalizers.modify {
       map =>
         map.find(_._1 == key) match {
@@ -39,7 +39,7 @@ final class LifecycleAggregator[F[+_, +_], E](
     }
   }
 
-  def releaseAll()(implicit F: Panic2[F]): F[Nothing, Unit] = {
+  def releaseAll()(using F: Panic2[F]): F[Nothing, Unit] = {
     for {
       finalizers <- finalizers.modify(m => F.pure(m -> List.empty))
       _ <- finalizers.iterator

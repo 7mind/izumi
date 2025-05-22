@@ -110,7 +110,7 @@ package object bio extends Syntax2 {
     *   }
     * }}}
     */
-  @inline override final def F[F[+_, +_]](implicit F: Functor2[F]): F.type = F
+  @inline override final def F[F[+_, +_]](using F: Functor2[F]): F.type = F
 
   type TransZio[F[_, _]] = Isomorphism2[F, zio.IO]
   object TransZio {

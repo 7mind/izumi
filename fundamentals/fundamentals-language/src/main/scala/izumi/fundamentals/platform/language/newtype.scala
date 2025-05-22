@@ -10,7 +10,7 @@ object newtype {
     }
     final type T = FinalT.T
     final def apply(value: A): T = value.asInstanceOf[T]
-    final def apply[Collection[+_]](collection: Collection[A])(implicit d: DummyImplicit): Collection[T] = collection.asInstanceOf[Collection[T]]
+    final def apply[Collection[+_]](collection: Collection[A])(using d: DummyImplicit): Collection[T] = collection.asInstanceOf[Collection[T]]
 
     @inline protected def unwrap(value: T): A = value.asInstanceOf[A]
   }

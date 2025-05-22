@@ -13,7 +13,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
   def traverseAccumErrors[ColR[x] <: IterableOnce[x], ColL[_], E, A, B](
     col: ColR[A]
   )(f: A => F[ColL[E], B]
-  )(implicit
+  )(using
     buildR: Factory[B, ColR[B]],
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
@@ -31,7 +31,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
   def traverseAccumErrors_[ColR[x] <: IterableOnce[x], ColL[_], E, A](
     col: ColR[A]
   )(f: A => F[ColL[E], Unit]
-  )(implicit
+  )(using
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
   ): F[ColL[E], Unit] = {
@@ -47,7 +47,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
   /** `sequence` with error accumulation */
   def sequenceAccumErrors[ColR[x] <: IterableOnce[x], ColL[_], E, A](
     col: ColR[F[ColL[E], A]]
-  )(implicit
+  )(using
     buildR: Factory[A, ColR[A]],
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
@@ -58,7 +58,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
   /** `sequence_` with error accumulation */
   def sequenceAccumErrors_[ColR[x] <: IterableOnce[x], ColL[_], E, A](
     col: ColR[F[ColL[E], A]]
-  )(implicit
+  )(using
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
   ): F[ColL[E], Unit] = {
@@ -68,7 +68,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
   /** `sequence` with error accumulation */
   def sequenceAccumErrorsNEList[ColR[x] <: IterableOnce[x], E, A](
     col: ColR[F[E, A]]
-  )(implicit buildR: Factory[A, ColR[A]]
+  )(using buildR: Factory[A, ColR[A]]
   ): F[NEList[E], ColR[A]] = {
     accumulateErrorsImpl(col)(
       effect = identity,
@@ -83,7 +83,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
   def flatTraverseAccumErrors[ColR[x] <: IterableOnce[x], ColIn[x] <: IterableOnce[x], ColL[_], E, A, B](
     col: ColR[A]
   )(f: A => F[ColL[E], ColIn[B]]
-  )(implicit
+  )(using
     buildR: Factory[B, ColR[B]],
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
@@ -100,7 +100,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
   /** `flatSequence` with error accumulation */
   def flatSequenceAccumErrors[ColR[x] <: IterableOnce[x], ColIn[x] <: IterableOnce[x], ColL[_], E, A](
     col: ColR[F[ColL[E], ColIn[A]]]
-  )(implicit
+  )(using
     buildR: Factory[A, ColR[A]],
     buildL: Factory[E, ColL[E]],
     iterL: ColL[E] => IterableOnce[E],
@@ -115,7 +115,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
     init: AC,
     onRight: (AC, B) => AC,
     end: AC => B1,
-  )(implicit buildL: Factory[E1, ColL[E1]]
+  )(using buildL: Factory[E1, ColL[E1]]
   ): F[ColL[E1], B1] = {
     def go(
       bad: Queue[E1],

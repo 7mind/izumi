@@ -510,28 +510,28 @@ final class NEMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     *
     * @return the largest entry of this <code>NEMap</code>.
     */
-  def max[U >: (K, V)](implicit cmp: Ordering[U]): (K, V) = toMap.max(cmp)
+  def max[U >: (K, V)](using cmp: Ordering[U]): (K, V) = toMap.max(cmp)
 
   /**
     * Finds the largest result after applying the given function to every entry.
     *
     * @return the largest result of applying the given function to every entry of this <code>NEMap</code>.
     */
-  def maxBy[U](f: ((K, V)) => U)(implicit cmp: Ordering[U]): (K, V) = toMap.maxBy(f)(cmp)
+  def maxBy[U](f: ((K, V)) => U)(using cmp: Ordering[U]): (K, V) = toMap.maxBy(f)(cmp)
 
   /**
     * Finds the smallest entry.
     *
     * @return the smallest entry of this <code>NEMap</code>.
     */
-  def min[U >: (K, V)](implicit cmp: Ordering[U]): (K, V) = toMap.min(cmp)
+  def min[U >: (K, V)](using cmp: Ordering[U]): (K, V) = toMap.min(cmp)
 
   /**
     * Finds the smallest result after applying the given function to every entry.
     *
     * @return the smallest result of applying the given function to every entry of this <code>NEMap</code>.
     */
-  def minBy[U](f: ((K, V)) => U)(implicit cmp: Ordering[U]): (K, V) = toMap.minBy(f)(cmp)
+  def minBy[U](f: ((K, V)) => U)(using cmp: Ordering[U]): (K, V) = toMap.minBy(f)(cmp)
 
   /**
     * Displays all entries of this <code>NEMap</code> in a string.
@@ -578,7 +578,7 @@ final class NEMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     *
     * @return the product of all elements
     */
-  def product[U >: (K, V)](implicit num: Numeric[U]): U = toMap.product(num)
+  def product[U >: (K, V)](using num: Numeric[U]): U = toMap.product(num)
 
   /**
     * Reduces the entries of this <code>NEMap</code> using the specified associative binary operator.
@@ -719,7 +719,7 @@ final class NEMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     *
     * @return the sum of all elements
     */
-  def sum[U >: (K, V)](implicit num: Numeric[U]): U = toMap.sum(num)
+  def sum[U >: (K, V)](using num: Numeric[U]): U = toMap.sum(num)
 
   /**
     * Converts this <code>NEMap</code> into a collection of type <code>Col</code> by copying all entries.
@@ -733,7 +733,7 @@ final class NEMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     *
     * @return an array containing all entries of this <code>NEMap</code>. A <code>ClassTag</code> must be available for the entry type of this <code>NEMap</code>.
     */
-  def toArray[U >: (K, V)](implicit classTag: ClassTag[U]): Array[U] = toMap.toArray
+  def toArray[U >: (K, V)](using classTag: ClassTag[U]): Array[U] = toMap.toArray
 
   /**
     * Converts this <code>NEMap</code> to a <code>Vector</code>.
@@ -800,7 +800,7 @@ final class NEMap[K, +V] private (val toMap: Map[K, V]) extends AnyVal {
     * @param asPair an implicit conversion that asserts that the element type of this <code>NEMap</code> is a pair.
     * @return a pair of <code>NEMap</code>s, containing the first and second half, respectively, of each element pair of this <code>NEMap</code>.
     */
-  def unzip[L, R](implicit asPair: ((K, V)) => (L, R)): (scala.collection.immutable.Iterable[L], scala.collection.immutable.Iterable[R]) = toMap.unzip
+  def unzip[L, R](using asPair: ((K, V)) => (L, R)): (scala.collection.immutable.Iterable[L], scala.collection.immutable.Iterable[R]) = toMap.unzip
 
   /**
     * Converts this <code>NEMap</code> of triples into three <code>NEMap</code>s of the first, second, and and third entry of each triple.

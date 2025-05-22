@@ -5,7 +5,7 @@ import cats.effect.unsafe.IORuntime
 import org.scalatest.wordspec.AsyncWordSpec
 
 class QuasiIOTest extends AsyncWordSpec {
-  implicit val rt: IORuntime = IORuntime.builder().setCompute(implicitly, () => ()).setBlocking(implicitly, () => ()).build()
+  given rt: IORuntime = IORuntime.builder().setCompute(implicitly, () => ()).setBlocking(implicitly, () => ()).build()
 
   "QuasiIO" should {
     "be convertable to Future" in {

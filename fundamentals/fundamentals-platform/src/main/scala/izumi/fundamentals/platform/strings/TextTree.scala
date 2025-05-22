@@ -67,7 +67,7 @@ object TextTree {
       case Trim(nested) => nested.last
     }
 
-    def as[W](implicit conv: T => W): TextTree[W] = {
+    def as[W](using conv: T => W): TextTree[W] = {
       target.map(conv)
     }
 

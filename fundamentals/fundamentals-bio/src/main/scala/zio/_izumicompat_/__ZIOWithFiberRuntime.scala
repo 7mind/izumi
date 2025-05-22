@@ -5,7 +5,7 @@ import zio.{Fiber, Trace, ZIO}
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 object __ZIOWithFiberRuntime {
-  def ZIOWithFiberRuntime[R, E, A](onState: (Fiber.Runtime[E, A], Fiber.Status.Running) => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] = {
+  def ZIOWithFiberRuntime[R, E, A](onState: (Fiber.Runtime[E, A], Fiber.Status.Running) => ZIO[R, E, A])(using trace: Trace): ZIO[R, E, A] = {
     ZIO.withFiberRuntime(onState)
   }
 

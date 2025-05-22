@@ -125,24 +125,24 @@ final class ArityConversionTest extends AnyWordSpec with PlatformDependentTestBa
 
   }
 
-  implicit def noImplicit[A](implicit Null: A = null): Boolean = Null == null
+  given noImplicit[A](using Null: A = null): Boolean = Null == null
 
   type EitherR[R, E, A] = R => Either[E, A]
 
   type EitherRX[-R, +E, +A] >: R @uncheckedVariance => Either[E @uncheckedVariance, A @uncheckedVariance]
-  implicit val syncSafeEitherRX: SyncSafe3[EitherRX] = new SyncSafe3[EitherRX] {
+  given syncSafeEitherRX: SyncSafe3[EitherRX] = new SyncSafe3[EitherRX] {
     override def syncSafe[A](unexceptionalEff: => A): EitherR[Any, Nothing, A] = _ => Right(unexceptionalEff)
   }
-  implicit val clockEitherRX: Clock3[EitherRX] = Clock1.Standard.asInstanceOf[Clock3[EitherRX]]
+  given clockEitherRX: Clock3[EitherRX] = Clock1.Standard.asInstanceOf[Clock3[EitherRX]]
   @nowarn("msg=CanBuildFrom")
-  implicit val entropyEitherRX: Entropy3[EitherRX] = Entropy1.Standard.asInstanceOf[Entropy3[EitherRX]]
+  given entropyEitherRX: Entropy3[EitherRX] = Entropy1.Standard.asInstanceOf[Entropy3[EitherRX]]
 
   type EitherX[+E, +A] >: Either[E @uncheckedVariance, A @uncheckedVariance]
-  implicit val syncSafeEitherX: SyncSafe2[EitherX] = new SyncSafe2[EitherX] {
+  given syncSafeEitherX: SyncSafe2[EitherX] = new SyncSafe2[EitherX] {
     override def syncSafe[A](unexceptionalEff: => A): EitherX[Nothing, A] = Right(unexceptionalEff)
   }
-  implicit val clockEitherX: Clock2[EitherX] = Clock1.Standard.asInstanceOf[Clock2[EitherX]]
+  given clockEitherX: Clock2[EitherX] = Clock1.Standard.asInstanceOf[Clock2[EitherX]]
   @nowarn("msg=CanBuildFrom")
-  implicit val entropyEitherX: Entropy2[EitherX] = Entropy1.Standard.asInstanceOf[Entropy2[EitherX]]
+  given entropyEitherX: Entropy2[EitherX] = Entropy1.Standard.asInstanceOf[Entropy2[EitherX]]
 
 }

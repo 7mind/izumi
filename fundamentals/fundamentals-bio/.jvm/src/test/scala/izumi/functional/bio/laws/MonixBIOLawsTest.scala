@@ -8,9 +8,9 @@
 //import monix.execution.schedulers.TestScheduler
 //
 //class MonixBIOLawsTest extends CatsLawsTestBase with MonixTestEnv {
-//  implicit val testScheduler: TestScheduler = TestScheduler()
-//  implicit val runtime: UnsafeRun2[monix.bio.IO] = UnsafeRun2.createMonixBIO(testScheduler, opt)
-//  implicit val CE: ConcurrentEffect[monix.bio.Task] = ConcurrentEffect[monix.bio.Task](catz.BIOAsyncForkUnsafeRunToConcurrentEffect)
+//  given testScheduler: TestScheduler = TestScheduler()
+//  given runtime: UnsafeRun2[monix.bio.IO] = UnsafeRun2.createMonixBIO(testScheduler, opt)
+//  given CE: ConcurrentEffect[monix.bio.Task] = ConcurrentEffect[monix.bio.Task](catz.BIOAsyncForkUnsafeRunToConcurrentEffect)
 //
 //  val concurrentEffectTestsMonix: ConcurrentEffectTests[monix.bio.Task] = new ConcurrentEffectTests[monix.bio.Task] {
 //    override val laws = new ConcurrentEffectLaws[monix.bio.Task] {

@@ -3,7 +3,7 @@ package izumi.fundamentals.platform.resources
 final case class IzArtifactMaterializer(get: IzArtifact) extends AnyVal
 
 object IzArtifactMaterializer {
-  @inline def currentArtifact(implicit ev: IzArtifactMaterializer): IzArtifact = ev.get
+  @inline def currentArtifact(using ev: IzArtifactMaterializer): IzArtifact = ev.get
 
   inline implicit def materialize: IzArtifactMaterializer = {
     import izumi.fundamentals.platform.build.BuildAttributes as BA
