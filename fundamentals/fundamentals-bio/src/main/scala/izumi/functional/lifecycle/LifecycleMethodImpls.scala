@@ -5,7 +5,7 @@ import izumi.functional.quasi.{QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
 import java.util.concurrent.atomic.AtomicReference
 
 private[lifecycle] object LifecycleMethodImpls {
-  @inline final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: QuasiFunctor[F]): Lifecycle[F, B] = {
+  @inline final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(using F: QuasiFunctor[F]): Lifecycle[F, B] = {
     new Lifecycle[F, B] {
       type InnerResource = self.InnerResource
 
@@ -21,7 +21,7 @@ private[lifecycle] object LifecycleMethodImpls {
     }
   }
 
-  @inline final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: QuasiPrimitives[F]): Lifecycle[F, B] = {
+  @inline final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(using F: QuasiPrimitives[F]): Lifecycle[F, B] = {
     import QuasiIO.syntax.*
     new Lifecycle[F, B] {
       override type InnerResource = QuasiRef[F, List[() => F[Unit]]]
@@ -62,7 +62,7 @@ private[lifecycle] object LifecycleMethodImpls {
     }
   }
 
-  @inline final def evalMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => F[B])(implicit F: QuasiPrimitives[F]): Lifecycle[F, B] = {
+  @inline final def evalMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => F[B])(using F: QuasiPrimitives[F]): Lifecycle[F, B] = {
     flatMapImpl(self)(a => Lifecycle.liftF(f(a)))
   }
 
@@ -97,7 +97,7 @@ private[lifecycle] object LifecycleMethodImpls {
     self: Lifecycle[F, A]
   )(failure: Throwable => Lifecycle[F, B],
     success: A => Lifecycle[F, B],
-  )(implicit F: QuasiIO[F]
+  )(using F: QuasiIO[F]
   ): Lifecycle[F, B] = {
     import QuasiIO.syntax.*
     new Lifecycle[F, B] {

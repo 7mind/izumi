@@ -10,6 +10,6 @@ trait WithRenderableSyntax {
 
 object WithRenderableSyntax {
   final class RenderableSyntax[T](private val r: T) extends AnyVal {
-    def render()(implicit R: Renderable[T]): String = R.render(r)
+    def render()(using R: Renderable[T]): String = R.render(r)
   }
 }

@@ -16,9 +16,9 @@ object PrimitivesLocal2 {
 
 private[bio] sealed trait PrimitivesLocalInstances
 object PrimitivesLocalInstances extends PrimitivesLocalInstancesLowPriority {
-  @inline implicit def PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: PrimitivesLocal2[F[Any, +_, +_]] = impl.PrimitivesLocalZio.asInstanceOf[PrimitivesLocal2[F[Any, +_, +_]]]
+  @inline given PrimitivesZio[F[-_, +_, +_]: `zio.ZIO`]: PrimitivesLocal2[F[Any, +_, +_]] = impl.PrimitivesLocalZio.asInstanceOf[PrimitivesLocal2[F[Any, +_, +_]]]
 }
 
 sealed trait PrimitivesLocalInstancesLowPriority {
-  @inline implicit def PrimitivesZioR[F[-_, +_, +_]: `zio.ZIO`, R]: PrimitivesLocal2[F[R, +_, +_]] = impl.PrimitivesLocalZio.asInstanceOf[PrimitivesLocal2[F[R, +_, +_]]]
+  @inline given PrimitivesZioR[F[-_, +_, +_]: `zio.ZIO`, R]: PrimitivesLocal2[F[R, +_, +_]] = impl.PrimitivesLocalZio.asInstanceOf[PrimitivesLocal2[F[R, +_, +_]]]
 }

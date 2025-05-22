@@ -11,5 +11,5 @@ trait Functor2[F[+_, +_]] extends RootBifunctor[F] {
   /** Extracts the optional value, or returns the given `valueOnNone` value */
   def fromOptionOr[E, A](valueOnNone: => A, r: F[E, Option[A]]): F[E, A] = map(r)(_.getOrElse(valueOnNone))
 
-  @inline final def widen[E, A, A1](r: F[E, A])(implicit @unused ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
+  @inline final def widen[E, A, A1](r: F[E, A])(using @unused ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
 }

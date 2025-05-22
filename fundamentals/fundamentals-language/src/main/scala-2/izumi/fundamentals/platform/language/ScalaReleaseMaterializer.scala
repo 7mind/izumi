@@ -6,7 +6,7 @@ import scala.reflect.macros.blackbox
 case class ScalaReleaseMaterializer(release: ScalaRelease)
 
 object ScalaReleaseMaterializer {
-  @inline def scalaRelease(implicit ev: ScalaReleaseMaterializer): ScalaRelease = ev.release
+  @inline def scalaRelease(using ev: ScalaReleaseMaterializer): ScalaRelease = ev.release
 
   implicit def materialize: ScalaReleaseMaterializer = macro scalaReleaseMacro
 

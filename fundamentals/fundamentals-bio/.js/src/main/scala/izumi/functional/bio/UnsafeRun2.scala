@@ -20,7 +20,7 @@ trait UnsafeRun2[F[_, _]] {
 }
 
 object UnsafeRun2 {
-  @inline def apply[F[_, _]](implicit ev: UnsafeRun2[F]): UnsafeRun2[F] = ev
+  @inline def apply[F[_, _]](using ev: UnsafeRun2[F]): UnsafeRun2[F] = ev
 
   /**
     * @param customCpuPool             will replace [[zio.internal.ZScheduler]] if set
@@ -136,11 +136,11 @@ object UnsafeRun2 {
 
     def failureHandlerSupervisor(handler: FailureHandler.Custom): Supervisor[Unit] = new Supervisor[Unit] {
       // @formatter:off
-      override def value(implicit trace: Trace): UIO[Unit] = ZIO.unit
-      override def onStart[R, E, A](environment: ZEnvironment[R], effect: ZIO[R, E, A], parent: Option[Fiber.Runtime[Any, Any]], fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = ()
+      override def value(using trace: Trace): UIO[Unit] = ZIO.unit
+      override def onStart[R, E, A](environment: ZEnvironment[R], effect: ZIO[R, E, A], parent: Option[Fiber.Runtime[Any, Any]], fiber: Fiber.Runtime[E, A])(using unsafe: Unsafe): Unit = ()
       // @formatter:on
 
-      override def onEnd[R, E, A](exit: zio.Exit[E, A], fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
+      override def onEnd[R, E, A](exit: zio.Exit[E, A], fiber: Fiber.Runtime[E, A])(using unsafe: Unsafe): Unit = {
         exit match {
           case zio.Exit.Success(_) => ()
           case zio.Exit.Failure(cause) =>

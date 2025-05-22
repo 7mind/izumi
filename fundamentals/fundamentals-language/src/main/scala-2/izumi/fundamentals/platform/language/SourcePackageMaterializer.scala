@@ -6,8 +6,8 @@ import scala.reflect.macros.blackbox
 final case class SourcePackageMaterializer(get: SourcePackage) extends AnyVal
 
 object SourcePackageMaterializer {
-  @inline def apply()(implicit ev: SourcePackageMaterializer, dummy: DummyImplicit): SourcePackageMaterializer = ev
-  @inline def thisPkg(implicit pkg: SourcePackageMaterializer): String = pkg.get.pkg
+  @inline def apply()(using ev: SourcePackageMaterializer, dummy: DummyImplicit): SourcePackageMaterializer = ev
+  @inline def thisPkg(using pkg: SourcePackageMaterializer): String = pkg.get.pkg
 
   implicit def materialize: SourcePackageMaterializer = macro SourcePackageMaterializerMacro.getSourcePackage
 

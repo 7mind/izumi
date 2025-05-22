@@ -43,14 +43,14 @@ object TemporalInstances extends TemporalInstancesLowPriority1 {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  @inline implicit final def Temporal2Zio[ZIO[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[Temporal2[ZIO[Any, +_, +_]]] =
+  @inline given Temporal2Zio[ZIO[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[Temporal2[ZIO[Any, +_, +_]]] =
     Predefined(TemporalZio.asInstanceOf[Temporal2[ZIO[Any, +_, +_]]])
 }
 sealed trait TemporalInstancesLowPriority1 {
-  @inline implicit final def Temporal2ZioR[ZIO[-_, +_, +_]: `zio.ZIO`, R]: Predefined.Of[Temporal2[ZIO[R, +_, +_]]] =
+  @inline given Temporal2ZioR[ZIO[-_, +_, +_]: `zio.ZIO`, R]: Predefined.Of[Temporal2[ZIO[R, +_, +_]]] =
     Predefined(TemporalZio.asInstanceOf[Temporal2[ZIO[R, +_, +_]]])
 
-//  @inline implicit final def TemporalMonix[MonixBIO[+_, +_]: `monix.bio.IO`, Timer[_[_]]: `cats.effect.kernel.Clock`](
+//  @inline given TemporalMonix[MonixBIO[+_, +_]: `monix.bio.IO`, Timer[_[_]]: `cats.effect.kernel.Clock`](
 //    implicit
 //    timer: Timer[MonixBIO[Nothing, _]]
 //  ): Predefined.Of[Temporal2[MonixBIO]] = new TemporalMonix(timer.asInstanceOf[cats.effect.kernel.Clock[monix.bio.UIO]]).asInstanceOf[Predefined.Of[Temporal2[MonixBIO]]]

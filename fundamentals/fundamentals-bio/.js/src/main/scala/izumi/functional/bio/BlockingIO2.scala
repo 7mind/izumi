@@ -16,7 +16,7 @@ object BlockingIO2 {
 private[bio] sealed trait BlockingIOInstances
 object BlockingIOInstances {
 
-  implicit def fromSyncSafe2[F[+_, +_]: SyncSafe2]: Predefined.Of[BlockingIO2[F]] = Predefined(new BlockingIO2[F] {
+  given fromSyncSafe2[F[+_, +_]: SyncSafe2]: Predefined.Of[BlockingIO2[F]] = Predefined(new BlockingIO2[F] {
     override def shiftBlocking[E, A](f: F[E, A]): F[E, A] = f
     override def syncBlocking[A](f: => A): F[Throwable, A] = SyncSafe2[F].syncSafe(f)
     override def syncInterruptibleBlocking[A](f: => A): F[Throwable, A] = SyncSafe2[F].syncSafe(f)

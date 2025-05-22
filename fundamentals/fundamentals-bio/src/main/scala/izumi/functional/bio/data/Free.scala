@@ -19,7 +19,7 @@ sealed abstract class Free[+S[_, _], +E, +A] {
 
   // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
   @nowarn("msg=pattern case: Free.FlatMapped")
-  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Monad2[G]): G[E, A] = {
+  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(using G: Monad2[G]): G[E, A] = {
     this match {
       case Free.Pure(a) => G.pure(a)
       case Free.Suspend(a) => transform.apply(a)
@@ -46,7 +46,7 @@ object Free {
     override def toString: String = s"FlatMapped:[sub=$sub]"
   }
 
-  @inline implicit def FreeMonadInstances[S[_, _]]: Monad2[Free[S, +_, +_]] = new Monad2Instance[S]
+  @inline given FreeMonadInstances[S[_, _]]: Monad2[Free[S, +_, +_]] = new Monad2Instance[S]
 
   object Monad2Instance extends Monad2Instance[Nothing]
   class Monad2Instance[S[_, _]] extends Monad2[Free[S, +_, +_]] {

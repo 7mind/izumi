@@ -130,9 +130,9 @@ object Clock1 extends LowPriorityClockInstances {
       def truncatedTo(timestamp: T, unit: TemporalUnit): T
     }
     private object TruncatableTime {
-      implicit lazy val TruncatableZoned: TruncatableTime[ZonedDateTime] = (timestamp: ZonedDateTime, unit: TemporalUnit) => timestamp.truncatedTo(unit)
-      implicit lazy val TruncatableOffset: TruncatableTime[OffsetDateTime] = (timestamp: OffsetDateTime, unit: TemporalUnit) => timestamp.truncatedTo(unit)
-      implicit lazy val TruncatableLocal: TruncatableTime[LocalDateTime] = (timestamp: LocalDateTime, unit: TemporalUnit) => timestamp.truncatedTo(unit)
+      given TruncatableZoned: TruncatableTime[ZonedDateTime] = (timestamp: ZonedDateTime, unit: TemporalUnit) => timestamp.truncatedTo(unit)
+      given TruncatableOffset: TruncatableTime[OffsetDateTime] = (timestamp: OffsetDateTime, unit: TemporalUnit) => timestamp.truncatedTo(unit)
+      given TruncatableLocal: TruncatableTime[LocalDateTime] = (timestamp: LocalDateTime, unit: TemporalUnit) => timestamp.truncatedTo(unit)
     }
 
     private def applyTTAccuracy[T: TruncatableTime](now: T, clockAccuracy: ClockAccuracy): T = {
@@ -156,7 +156,7 @@ object Clock1 extends LowPriorityClockInstances {
     def applyAccuracy(now: LocalDateTime, clockAccuracy: ClockAccuracy): LocalDateTime = applyTTAccuracy(now, clockAccuracy)
   }
 
-  @inline implicit final def impureClock: Clock1[Identity] = Standard
+  @inline given impureClock: Clock1[Identity] = Standard
 
   /**
     * Emulate covariance. We're forced to employ these because
@@ -167,26 +167,26 @@ object Clock1 extends LowPriorityClockInstances {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  @inline implicit final def limitedCovariance2[C[f[_]] <: Clock1[f], F[_, _], E](
-    implicit F: C[F[Nothing, _]] { type Divergence = Nondivergent }
+  @inline given limitedCovariance2[C[f[_]] <: Clock1[f], F[_, _], E](
+    using F: C[F[Nothing, _]] { type Divergence = Nondivergent }
   ): Divergent.Of[C[F[E, _]]] = {
     Divergent(F.asInstanceOf[C[F[E, _]]])
   }
 
-  @inline implicit final def limitedCovariance3[C[f[_]] <: Clock1[f], FR[_, _, _], R0, E](
-    implicit F: C[FR[Any, Nothing, _]] { type Divergence = Nondivergent }
+  @inline given limitedCovariance3[C[f[_]] <: Clock1[f], FR[_, _, _], R0, E](
+    using F: C[FR[Any, Nothing, _]] { type Divergence = Nondivergent }
   ): Divergent.Of[C[FR[R0, E, _]]] = {
     Divergent(F.asInstanceOf[C[FR[R0, E, _]]])
   }
 
-  @inline implicit final def covarianceConversion[F[_], G[_]](clock: Clock1[F])(implicit @unused ev: F[Unit] <:< G[Unit]): Clock1[G] = {
+  @inline implicit final def covarianceConversion[F[_], G[_]](clock: Clock1[F])(using @unused ev: F[Unit] <:< G[Unit]): Clock1[G] = {
     clock.asInstanceOf[Clock1[G]]
   }
 }
 
 sealed trait LowPriorityClockInstances {
 
-  @inline implicit final def fromImpureClock[F[_]](implicit impureClock: Clock1[Identity], F: SyncSafe1[F]): Clock1[F] = {
+  @inline given fromImpureClock[F[_]](using impureClock: Clock1[Identity], F: SyncSafe1[F]): Clock1[F] = {
     new Clock1[F] {
       override val epoch: F[Long] = F.syncSafe(impureClock.epoch)
       @deprecated("use nowZoned")

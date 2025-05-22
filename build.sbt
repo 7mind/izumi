@@ -178,8 +178,8 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -192,7 +192,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -242,7 +242,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -250,7 +250,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -395,8 +395,8 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -409,7 +409,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -459,7 +459,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -467,7 +467,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -613,8 +613,8 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -627,7 +627,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -677,7 +677,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -685,7 +685,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -831,8 +831,8 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -845,7 +845,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -895,7 +895,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -903,7 +903,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -1053,8 +1053,8 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -1067,7 +1067,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -1115,13 +1115,13 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     } },
     Test / packageDoc / publishArtifact := false,
     Compile / doc / sources := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq.empty
+      case (_, "3.7.1-RC1") => Seq.empty
       case (_, _) => (Compile / doc / sources).value
     } }
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -1129,7 +1129,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -1284,8 +1284,8 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -1298,7 +1298,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -1348,7 +1348,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -1356,7 +1356,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -1507,8 +1507,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -1521,7 +1521,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -1571,7 +1571,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -1579,7 +1579,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -1732,8 +1732,8 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -1746,7 +1746,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -1796,7 +1796,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -1804,7 +1804,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -1963,8 +1963,8 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -1977,7 +1977,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -2029,7 +2029,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -2037,7 +2037,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -2197,8 +2197,8 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -2211,7 +2211,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -2259,13 +2259,13 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     } },
     Test / packageDoc / publishArtifact := false,
     Compile / doc / sources := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq.empty
+      case (_, "3.7.1-RC1") => Seq.empty
       case (_, _) => (Compile / doc / sources).value
     } }
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -2273,7 +2273,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -2435,8 +2435,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -2449,7 +2449,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -2499,7 +2499,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -2507,7 +2507,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -2537,7 +2537,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -2659,8 +2659,8 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -2673,7 +2673,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -2856,8 +2856,8 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -2870,7 +2870,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -2920,7 +2920,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -2928,7 +2928,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -3080,8 +3080,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -3094,7 +3094,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -3144,7 +3144,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -3152,7 +3152,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -3312,8 +3312,8 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -3326,7 +3326,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -3376,7 +3376,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -3384,7 +3384,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -3541,8 +3541,8 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -3555,7 +3555,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -3605,7 +3605,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -3613,7 +3613,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -3762,8 +3762,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -3776,7 +3776,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -3826,7 +3826,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -3834,7 +3834,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -4012,8 +4012,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -4026,7 +4026,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -4076,7 +4076,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -4084,7 +4084,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -4123,7 +4123,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -4245,8 +4245,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -4259,7 +4259,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -4325,7 +4325,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -4447,8 +4447,8 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -4461,7 +4461,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -4536,7 +4536,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -4658,8 +4658,8 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -4672,7 +4672,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -4739,7 +4739,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -4861,8 +4861,8 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -4875,7 +4875,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -5064,8 +5064,8 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -5078,7 +5078,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -5128,7 +5128,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -5136,7 +5136,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -5292,8 +5292,8 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -5306,7 +5306,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -5356,7 +5356,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -5364,7 +5364,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -5394,7 +5394,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -5516,8 +5516,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -5530,7 +5530,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -5601,7 +5601,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.3.5",
+      "3.7.1-RC1",
       "2.13.16",
       "2.12.20"
     ),
@@ -5723,8 +5723,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -5737,7 +5737,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -5958,8 +5958,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -5972,7 +5972,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
@@ -6222,8 +6222,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ycache-macro-class-loader:last-modified",
         "-Wunused:-synthetics"
       )
-      case (_, "3.3.5") => Seq(
-        "-language:3.4",
+      case (_, "3.7.1-RC1") => Seq(
+        "-source:3.7",
         "-release:8",
         "-Ykind-projector:underscores",
         "-Yretain-trees",
@@ -6236,7 +6236,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       case (_, _) => Seq.empty
     } },
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.3.5") => Seq(
+      case (_, "3.7.1-RC1") => Seq(
         "-Wconf:any:verbose",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",

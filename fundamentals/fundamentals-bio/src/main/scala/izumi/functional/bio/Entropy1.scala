@@ -34,7 +34,7 @@ trait Entropy1[F[_]] extends DivergenceHelper {
   def nextUUID(): F[UUID]
 
   @nowarn("msg=CanBuildFrom")
-  def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]]
+  def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(using bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]]
 
   def withSeed(seed: Long): Entropy1[F]
   def setSeed(seed: Long): F[Unit]
@@ -47,7 +47,7 @@ trait Entropy1[F[_]] extends DivergenceHelper {
 object Entropy1 extends LowPriorityEntropyInstances {
   def apply[F[_]: Entropy1]: Entropy1[F] = implicitly
 
-  def fromImpure[F[_]: SyncSafe1](impureEntropy: Entropy1[Identity]): Entropy1[F] = fromImpureEntropy(impureEntropy, SyncSafe1[F])
+  def fromImpure[F[_]: SyncSafe1](impureEntropy: Entropy1[Identity]): Entropy1[F] = fromImpureEntropy(using impureEntropy, SyncSafe1[F])
 
   object Standard extends ScalaEntropy {
     override protected def random: Random = scala.util.Random
@@ -67,7 +67,7 @@ object Entropy1 extends LowPriorityEntropyInstances {
     protected def random: scala.util.Random
 
     @nowarn("msg=CanBuildFrom")
-    override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): CC[T] = {
+    override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(using bf: CanBuildFrom[CC[T], T, CC[T]]): CC[T] = {
       random.shuffle(xs)
     }
 
@@ -95,7 +95,7 @@ object Entropy1 extends LowPriorityEntropyInstances {
     override def setSeed(seed: Long): Unit = random.setSeed(seed)
   }
 
-  @inline implicit final def impureEntropy: Entropy1[Identity] = Standard
+  @inline given impureEntropy: Entropy1[Identity] = Standard
 
   /**
     * Emulate covariance. We're forced to employ these because
@@ -106,19 +106,19 @@ object Entropy1 extends LowPriorityEntropyInstances {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  @inline implicit final def limitedCovariance2[C[f[_]] <: Entropy1[f], F[_, _], E](
-    implicit F: C[F[Nothing, _]] { type Divergence = Nondivergent }
+  @inline given limitedCovariance2[C[f[_]] <: Entropy1[f], F[_, _], E](
+    using F: C[F[Nothing, _]] { type Divergence = Nondivergent }
   ): Divergent.Of[C[F[E, _]]] = {
     Divergent(F.asInstanceOf[C[F[E, _]]])
   }
 
-  @inline implicit final def limitedCovariance3[C[f[_]] <: Entropy1[f], FR[_, _, _], R0, E](
-    implicit F: C[FR[Any, Nothing, _]] { type Divergence = Nondivergent }
+  @inline given limitedCovariance3[C[f[_]] <: Entropy1[f], FR[_, _, _], R0, E](
+    using F: C[FR[Any, Nothing, _]] { type Divergence = Nondivergent }
   ): Divergent.Of[C[FR[R0, E, _]]] = {
     Divergent(F.asInstanceOf[C[FR[R0, E, _]]])
   }
 
-  @inline implicit final def covarianceConversion[F[_], G[_]](entropy: Entropy1[F])(implicit @unused ev: F[Unit] <:< G[Unit]): Entropy1[G] = {
+  @inline implicit final def covarianceConversion[F[_], G[_]](entropy: Entropy1[F])(using @unused ev: F[Unit] <:< G[Unit]): Entropy1[G] = {
     entropy.asInstanceOf[Entropy1[G]]
   }
 
@@ -126,7 +126,7 @@ object Entropy1 extends LowPriorityEntropyInstances {
 
 sealed trait LowPriorityEntropyInstances {
 
-  @inline implicit final def fromImpureEntropy[F[_]](implicit impureEntropy: Entropy1[Identity], F: SyncSafe1[F]): Entropy1[F] = {
+  @inline given fromImpureEntropy[F[_]](using impureEntropy: Entropy1[Identity], F: SyncSafe1[F]): Entropy1[F] = {
     new Entropy1[F] {
       override def nextBoolean(): F[Boolean] = F.syncSafe(impureEntropy.nextBoolean())
       override def nextDouble(): F[Double] = F.syncSafe(impureEntropy.nextDouble())
@@ -146,7 +146,7 @@ sealed trait LowPriorityEntropyInstances {
       override def withSeed(seed: Long): Entropy1[F] = fromImpureEntropy(using impureEntropy.withSeed(seed), F)
 
       @nowarn("msg=CanBuildFrom")
-      override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]] =
+      override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(using bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]] =
         F.syncSafe(impureEntropy.shuffle[T, CC](xs))
     }
   }

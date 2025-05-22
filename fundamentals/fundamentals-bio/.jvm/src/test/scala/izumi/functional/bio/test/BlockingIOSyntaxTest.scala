@@ -33,6 +33,6 @@ class BlockingIOSyntaxTest extends AnyWordSpec {
     assert(zioBlockingApply3() != null)
   }
 
-  def summonOrNull[A](implicit a: A = null): A = a
+  def summonOrNull[A](using a: A = null): A = a
 
 }

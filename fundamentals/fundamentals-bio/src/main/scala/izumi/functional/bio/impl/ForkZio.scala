@@ -15,7 +15,7 @@ object ForkZio extends ForkZio[Any]
 open class ForkZio[R] extends Fork2[ZIO[R, +_, +_]] {
 
   override def fork[E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, Fiber2[ZIO[R, +_, +_], E, A]] = {
-    implicit val trace: zio.Trace = Tracer.instance.empty
+    given trace: zio.Trace = Tracer.instance.empty
 
     val interrupted = new AtomicBoolean(true) // fiber could be interrupted before executing a single op
     ZIOExit
@@ -30,7 +30,7 @@ open class ForkZio[R] extends Fork2[ZIO[R, +_, +_]] {
   }
 
   override def forkOn[E, A](ec: ExecutionContext)(f: ZIO[R, E, A]): ZIO[R, Nothing, Fiber2[ZIO[R, +_, +_], E, A]] = {
-    implicit val trace: zio.Trace = Tracer.instance.empty
+    given trace: zio.Trace = Tracer.instance.empty
 
     val interrupted = new AtomicBoolean(true) // fiber could be interrupted before executing a single op
     ZIOExit

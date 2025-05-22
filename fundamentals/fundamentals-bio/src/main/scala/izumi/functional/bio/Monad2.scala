@@ -17,17 +17,17 @@ trait Monad2[F[+_, +_]] extends Applicative2[F] {
 
   def tap[E, A](r: F[E, A], f: A => F[E, Unit]): F[E, A] = flatMap(r)(a => as(f(a))(a))
 
-  @inline final def when[E, E1](cond: F[E, Boolean])(ifTrue: => F[E1, Unit])(implicit ev: E <:< E1): F[E1, Unit] = {
+  @inline final def when[E, E1](cond: F[E, Boolean])(ifTrue: => F[E1, Unit])(using ev: E <:< E1): F[E1, Unit] = {
     ifThenElse(cond)(ifTrue, unit)
   }
-  @inline final def unless[E, E1](cond: F[E, Boolean])(ifFalse: => F[E1, Unit])(implicit ev: E <:< E1): F[E1, Unit] = {
+  @inline final def unless[E, E1](cond: F[E, Boolean])(ifFalse: => F[E1, Unit])(using ev: E <:< E1): F[E1, Unit] = {
     ifThenElse(cond)(unit, ifFalse)
   }
   @inline final def ifThenElse[E, E1, A](
     cond: F[E, Boolean]
   )(ifTrue: => F[E1, A],
     ifFalse: => F[E1, A],
-  )(implicit @unused ev: E <:< E1
+  )(using @unused ev: E <:< E1
   ): F[E1, A] = {
     flatMap(cond.asInstanceOf[F[E1, Boolean]])(if (_) ifTrue else ifFalse)
   }

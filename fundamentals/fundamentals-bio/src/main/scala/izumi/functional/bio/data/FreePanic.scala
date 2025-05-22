@@ -44,7 +44,7 @@ sealed abstract class FreePanic[+S[_, _], +E, +A] {
 
   // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
   @nowarn("msg=(pattern case: FreePanic.FlatMapped)|(Unreachable case)")
-  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(implicit G: Panic2[G]): G[E, A] = {
+  @inline final def foldMap[S1[e, a] >: S[e, a], G[+_, +_]](transform: S1 ~>> G)(using G: Panic2[G]): G[E, A] = {
     this match {
       case FreePanic.Pure(a) => G.pure(a)
       case FreePanic.Suspend(a) => transform(a)
@@ -187,7 +187,7 @@ object FreePanic {
     override def toString: String = s"BracketExcept:[acquire=$acquire;use=${use.getClass.getSimpleName};release=${release.getClass.getSimpleName}]"
   }
 
-  @inline implicit def FreePanicInstances[S[_, _]]: Panic2[FreePanic[S, +_, +_]] = Panic2Instance.asInstanceOf[Panic2Instance[S]]
+  @inline given FreePanicInstances[S[_, _]]: Panic2[FreePanic[S, +_, +_]] = Panic2Instance.asInstanceOf[Panic2Instance[S]]
 
   object Panic2Instance extends Panic2Instance[Nothing]
   class Panic2Instance[S[_, _]] extends Panic2[FreePanic[S, +_, +_]] {

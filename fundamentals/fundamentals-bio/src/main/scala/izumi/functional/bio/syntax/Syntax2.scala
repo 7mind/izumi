@@ -51,30 +51,30 @@ trait Syntax2 extends Syntax2.ImplicitPuns {
     *   }
     * }}}
     */
-  def F[F[+_, +_]](implicit F: Functor2[F]): F.type = F
+  def F[F[+_, +_]](using F: Functor2[F]): F.type = F
 }
 
 object Syntax2 {
 
-  class FunctorOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Functor2[F]) {
+  class FunctorOps[F[+_, +_], +E, +A](protected val r: F[E, A])(using protected val F: Functor2[F]) {
     @inline final def map[B](f: A => B): F[E, B] = F.map(r)(f)
 
     @inline final infix def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
     @inline final def void: F[E, Unit] = F.void(r)
-    @inline final def widen[A1](implicit @unused ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
+    @inline final def widen[A1](using @unused ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
 
-    @inline final def fromOptionOr[B](valueOnNone: => B)(implicit ev: A <:< Option[B]): F[E, B] = F.fromOptionOr(valueOnNone, widen)
+    @inline final def fromOptionOr[B](valueOnNone: => B)(using ev: A <:< Option[B]): F[E, B] = F.fromOptionOr(valueOnNone, widen)
   }
 
-  final class BifunctorOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Bifunctor2[F]) {
+  final class BifunctorOps[F[+_, +_], +E, +A](protected val r: F[E, A])(using protected val F: Bifunctor2[F]) {
     @inline final def leftMap[E2](f: E => E2): F[E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
     @inline final def widenError[E1 >: E]: F[E1, A] = r
-    @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
+    @inline final def widenBoth[E1 >: E, A1](using @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
   }
 
-  class ApplicativeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Applicative2[F]) extends FunctorOps(r)(using F) {
+  class ApplicativeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: Applicative2[F]) extends FunctorOps(r)(using F) {
 
     /** execute two operations in order, return result of second operation */
     @inline final def *>[E1 >: E, B](f0: => F[E1, B]): F[E1, B] = F.*>(r, f0)
@@ -91,12 +91,11 @@ object Syntax2 {
     @inline final def forever: F[E, Nothing] = F.forever(r)
   }
 
-  class GuaranteeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Guarantee2[F]) extends ApplicativeOps(r)(using F) {
+  class GuaranteeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: Guarantee2[F]) extends ApplicativeOps(r)(using F) {
     @inline final def guarantee(cleanup: F[Nothing, Unit]): F[E, A] = F.guarantee(r, cleanup)
   }
 
-  class ApplicativeErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: ApplicativeError2[F])
-    extends GuaranteeOps(r)(using F) {
+  class ApplicativeErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: ApplicativeError2[F]) extends GuaranteeOps(r)(using F) {
     @inline final def leftMap[E2](f: E => E2): F[E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
@@ -104,32 +103,32 @@ object Syntax2 {
     @inline final def leftMap2[E2, A1 >: A, E3](r2: => F[E2, A1])(f: (E, E2) => E3): F[E3, A1] = F.leftMap2(r, r2)(f)
 
     @inline final def widenError[E1 >: E]: F[E1, A] = r
-    @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
+    @inline final def widenBoth[E1 >: E, A1](using @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
   }
 
-  final class MonadOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Monad2[F]) extends ApplicativeOps(r)(using F) {
+  final class MonadOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: Monad2[F]) extends ApplicativeOps(r)(using F) {
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E1, A, B](r)(f0)
     @inline final def tap[E1 >: E](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
-    @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
+    @inline final def flatten[E1 >: E, A1](using ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
 
     @inline final def iterateWhile(p: A => Boolean): F[E, A] = F.iterateWhile(r)(p)
     @inline final def iterateUntil(p: A => Boolean): F[E, A] = F.iterateUntil(r)(p)
 
-    @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(implicit ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
+    @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(using ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
   }
 
-  class ErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Error2[F]) extends ApplicativeErrorOps(r)(using F) {
+  class ErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: Error2[F]) extends ApplicativeErrorOps(r)(using F) {
     // duplicated from MonadOps
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E1, A, B](r)(f0)
     @inline final def tap[E1 >: E](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
-    @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
+    @inline final def flatten[E1 >: E, A1](using ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
 
     @inline final def iterateWhile(p: A => Boolean): F[E, A] = F.iterateWhile(r)(p)
     @inline final def iterateUntil(p: A => Boolean): F[E, A] = F.iterateUntil(r)(p)
 
-    @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(implicit ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
+    @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(using ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
     // duplicated from MonadOps
 
     @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[E, A2, E2](r)(h)
@@ -147,8 +146,8 @@ object Syntax2 {
 
     @inline final def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E2, A] = F.tapBoth[E, A, E2](r)(err, succ)
 
-    @inline final def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): F[E1, A1] = F.flatMap[E1, A, A1](r)(F.fromEither[E1, A1](_))
-    @inline final def fromOption[E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.fromOption(errorOnNone, r.widen)
+    @inline final def fromEither[E1 >: E, A1](using ev: A <:< Either[E1, A1]): F[E1, A1] = F.flatMap[E1, A, A1](r)(F.fromEither[E1, A1](_))
+    @inline final def fromOption[E1 >: E, A1](errorOnNone: => E1)(using ev1: A <:< Option[A1]): F[E1, A1] = F.fromOption(errorOnNone, r.widen)
 
     @inline final def retryWhile(f: E => Boolean): F[E, A] = F.retryWhile(r)(f)
     @inline final def retryWhileF(f: E => F[Nothing, Boolean]): F[E, A] = F.retryWhileF(r)(f)
@@ -173,11 +172,11 @@ object Syntax2 {
       *   // f: F[Option[Unit], Unit] = F.fail(Some(())
       * }}}
       */
-    @inline final def withFilter[A1 >: A, E1 >: E](predicate: A => Boolean)(implicit filter: WithFilter[E1], pos: SourceFilePositionMaterializer): F[E1, A] =
+    @inline final def withFilter[A1 >: A, E1 >: E](predicate: A => Boolean)(using filter: WithFilter[E1], pos: SourceFilePositionMaterializer): F[E1, A] =
       F.withFilter[E1, A](r)(predicate)
   }
 
-  class BracketOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Bracket2[F]) extends ErrorOps(r)(using F) {
+  class BracketOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: Bracket2[F]) extends ErrorOps(r)(using F) {
     @inline final def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracket(r: F[E1, A])(release)(use)
 
     @inline final def bracketCase[E1 >: E, B](release: (A, Exit[E1, B]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracketCase(r: F[E1, A])(release)(use)
@@ -191,7 +190,7 @@ object Syntax2 {
       F.guaranteeExceptOnInterrupt(r, cleanupOnNonInterruption)
   }
 
-  class PanicOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Panic2[F]) extends BracketOps(r)(using F) {
+  class PanicOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: Panic2[F]) extends BracketOps(r)(using F) {
     @inline final def sandbox: F[Exit.FailureUninterrupted[E], A] = F.sandbox(r)
     @inline final def sandboxExit: F[Nothing, Exit.Uninterrupted[E, A]] = F.sandboxExit(r)
 
@@ -206,31 +205,31 @@ object Syntax2 {
       *     .catchAll(_ => IO2(println("Caught error!")))
       * }}}
       */
-    @inline final def sandboxToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
+    @inline final def sandboxToThrowable(using ev: E <:< Throwable): F[Throwable, A] =
       F.leftMap(F.sandbox(r))(_.toThrowable)
     /** Convert Throwable typed error into a defect */
-    @inline final def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
+    @inline final def orTerminate(using ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
     @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
   }
 
-  class IOOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: IO2[F]) extends PanicOps(r)(using F) {
-    @inline final def bracketAuto[E1 >: E, B](use: A => F[E1, B])(implicit ev: A <:< AutoCloseable): F[E1, B] =
+  class IOOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: IO2[F]) extends PanicOps(r)(using F) {
+    @inline final def bracketAuto[E1 >: E, B](use: A => F[E1, B])(using ev: A <:< AutoCloseable): F[E1, B] =
       F.bracket[E1, A, B](r)(c => F.sync(c.close()))(use)
   }
 
-  class ParallelOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Parallel2[F]) {
+  class ParallelOps[F[+_, +_], +E, +A](protected val r: F[E, A])(using protected val F: Parallel2[F]) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
     @inline final infix def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
     @inline final infix def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
     @inline final infix def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
   }
-  final class ConcurrentOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Concurrent2[F]) extends ParallelOps(r)(using F) {
+  final class ConcurrentOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: Concurrent2[F]) extends ParallelOps(r)(using F) {
     @inline final infix def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
     @inline final def racePairUnsafe[E1 >: E, A1 >: A](
       that: F[E1, A1]
     ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
-  class AsyncOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Async2[F]) extends IOOps(r)(using F) {
+  class AsyncOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(using override protected val F: Async2[F]) extends IOOps(r)(using F) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
     @inline final infix def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
     @inline final infix def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
@@ -242,15 +241,15 @@ object Syntax2 {
     ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
 
-  final class TemporalOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Temporal2[F]) {
-    @inline final def repeatUntil[E2 >: E, A2](tooManyAttemptsError: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
+  final class TemporalOps[F[+_, +_], +E, +A](protected val r: F[E, A])(using protected val F: Temporal2[F]) {
+    @inline final def repeatUntil[E2 >: E, A2](tooManyAttemptsError: => E2, sleep: FiniteDuration, maxAttempts: Int)(using ev: A <:< Option[A2]): F[E2, A2] =
       F.repeatUntil[E2, A2](new FunctorOps(r)(using F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
 
     @inline final def timeout(duration: Duration): F[E, Option[A]] = F.timeout(duration)(r)
     @inline final def timeoutFail[E1 >: E](e: => E1)(duration: Duration): F[E1, A] = F.timeoutFail(duration)(e, r)
   }
 
-  final class ForkOps[F[+_, +_], +E, +A](private val r: F[E, A])(implicit private val F: Fork2[F]) {
+  final class ForkOps[F[+_, +_], +E, +A](private val r: F[E, A])(using private val F: Fork2[F]) {
     @inline final def fork: F[Nothing, Fiber2[F, E, A]] = F.fork(r)
   }
 
@@ -285,7 +284,7 @@ object Syntax2 {
       *   IO2(println("Hello world!"))
       * }}}
       */
-    @inline final def IO2[F[+_, +_], A](effect: => A)(implicit F: IO2[F]): F[Throwable, A] = F.syncThrowable(effect)
+    @inline final def IO2[F[+_, +_], A](effect: => A)(using F: IO2[F]): F[Throwable, A] = F.syncThrowable(effect)
     @inline final def IO2[F[+_, +_]: IO2]: IO2[F] = implicitly
   }
   trait ImplicitPuns5 extends ImplicitPuns6 {
@@ -327,11 +326,11 @@ object Syntax2 {
   }
 
   final class ClockAccessor[F[+_, +_]](@unused private val dummy: Boolean = false) extends AnyVal {
-    def clock(implicit clock: Clock2[F]): clock.type = clock
+    def clock(using clock: Clock2[F]): clock.type = clock
   }
 
   final class EntropyAccessor[F[+_, +_]](@unused private val dummy: Boolean = false) extends AnyVal {
-    def entropy(implicit entropy: Entropy2[F]): entropy.type = entropy
+    def entropy(using entropy: Entropy2[F]): entropy.type = entropy
   }
 
 }

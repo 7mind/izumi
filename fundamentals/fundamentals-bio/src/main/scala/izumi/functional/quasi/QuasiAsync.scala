@@ -29,7 +29,7 @@ trait QuasiAsync[F[_]] {
 object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   def apply[F[_]: QuasiAsync]: QuasiAsync[F] = implicitly
 
-  implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = {
+  given quasiAsyncIdentity: QuasiAsync[Identity] = {
     new QuasiAsync[Identity] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
         val promise = Promise[A]()
@@ -66,12 +66,12 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   }
 
   private[izumi] def parTraverseIdentity[A, B](ec0: ExecutionContext)(l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-    implicit val ec: ExecutionContext = ec0
+    given ec: ExecutionContext = ec0
     val future = Future.sequence(l.iterator.map(a => Future(scala.concurrent.blocking(f(a)))))
     Await.result(future, Duration.Inf).toList
   }
 
-  implicit def fromBIO[F[+_, +_]: Async2]: QuasiAsync[F[Throwable, _]] = {
+  given fromBIO[F[+_, +_]: Async2]: QuasiAsync[F[Throwable, _]] = {
     new QuasiAsync[F[Throwable, _]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
         F.async(effect)
@@ -99,9 +99,9 @@ private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[F[_], Async[_[_]]: `cats.effect.kernel.Async`](implicit F0: Async[F]): QuasiAsync[F] = new QuasiAsync[F] {
+  given fromCats[F[_], Async[_[_]]: `cats.effect.kernel.Async`](using F0: Async[F]): QuasiAsync[F] = new QuasiAsync[F] {
     @inline private def F: cats.effect.kernel.Async[F] = F0.asInstanceOf[cats.effect.kernel.Async[F]]
-    private implicit val P: cats.Parallel[F] = cats.effect.kernel.instances.spawn.parallelForGenSpawn(F)
+    private given P: cats.Parallel[F] = cats.effect.kernel.instances.spawn.parallelForGenSpawn(F)
 
     override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
       F.async_(effect)
@@ -132,13 +132,13 @@ trait QuasiTemporal[F[_]] {
 object QuasiTemporal extends LowPriorityQuasiTimerInstances {
   def apply[F[_]: QuasiTemporal]: QuasiTemporal[F] = implicitly
 
-  implicit lazy val quasiTimerIdentity: QuasiTemporal[Identity] = new QuasiTemporal[Identity] {
+  given quasiTimerIdentity: QuasiTemporal[Identity] = new QuasiTemporal[Identity] {
     override def sleep(duration: FiniteDuration): Identity[Unit] = {
       Thread.sleep(duration.toMillis)
     }
   }
 
-  implicit def fromBIO[F[+_, +_]](implicit F: Temporal2[F]): QuasiTemporal[F[Throwable, _]] = new QuasiTemporal[F[Throwable, _]] {
+  given fromBIO[F[+_, +_]](using F: Temporal2[F]): QuasiTemporal[F[Throwable, _]] = new QuasiTemporal[F[Throwable, _]] {
     override def sleep(duration: FiniteDuration): F[Throwable, Unit] = {
       F.sleep(duration)
     }
@@ -152,7 +152,7 @@ private[quasi] sealed trait LowPriorityQuasiTimerInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit final def fromCats[F[_], GenTemporal[_[_], _]: `cats.effect.kernel.GenTemporal`](implicit F0: GenTemporal[F, Throwable]): QuasiTemporal[F] =
+  given fromCats[F[_], GenTemporal[_[_], _]: `cats.effect.kernel.GenTemporal`](using F0: GenTemporal[F, Throwable]): QuasiTemporal[F] =
     new QuasiTemporal[F] {
       override def sleep(duration: FiniteDuration): F[Unit] = {
         F0.asInstanceOf[cats.effect.kernel.GenTemporal[F, Throwable]].sleep(duration)

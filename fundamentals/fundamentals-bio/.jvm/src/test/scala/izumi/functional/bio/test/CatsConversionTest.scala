@@ -3,7 +3,7 @@ package izumi.functional.bio.test
 import cats.effect.kernel.*
 import cats.effect.{Ref, kernel}
 import cats.{Defer, Parallel}
-import izumi.functional.bio.catz.*
+import izumi.functional.bio.catz.given
 import izumi.functional.bio.{BlockingIO2, F, IO2}
 import org.scalatest.wordspec.AnyWordSpec
 

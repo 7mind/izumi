@@ -33,7 +33,7 @@ object DivergenceHelper {
     * for summoning, instead of the direct type itself, as in:
     *
     * {{{
-    *   implicit def convert1To2[C[f[_]] <: SyncSafe1[f], F[_, _], E](implicit F: C[F[Nothing, _]] { type Divergence = Nondivergent }): Divergent.Of[C[F[E, _]]]
+    *   implicit def convert1To2[C[f[_]] <: SyncSafe1[f], F[_, _], E](using F: C[F[Nothing, _]] { type Divergence = Nondivergent }): Divergent.Of[C[F[E, _]]]
     * }}}
     *
     * Where using `Nondivergent.Of[C[F[Nothing, _]]]` or `SyncSafe1[F[Nothing, _]] { type Divergence = Nondivergent }`

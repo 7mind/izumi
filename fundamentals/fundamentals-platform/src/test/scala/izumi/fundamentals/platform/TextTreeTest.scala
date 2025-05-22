@@ -127,7 +127,7 @@ object TextTreeTest {
     implicit def upcast_sub(sub: Sub): Wrap = WSub(sub)
 
     object conversion {
-      implicit def arg_from_sub[T](sub: T)(implicit conv: T => Wrap): InterpolationArg[Wrap] = new InterpolationArg[Wrap] {
+      implicit def arg_from_sub[T](sub: T)(using conv: T => Wrap): InterpolationArg[Wrap] = new InterpolationArg[Wrap] {
         override def asNode: TextTree[Wrap] = ValueNode[Wrap](conv(sub))
       }
     }

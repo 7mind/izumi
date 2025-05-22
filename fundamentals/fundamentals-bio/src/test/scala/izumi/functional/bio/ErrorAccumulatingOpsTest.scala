@@ -6,7 +6,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import scala.annotation.{nowarn, unused}
 
 final class ErrorAccumulatingOpsTestEither extends ErrorAccumulatingOpsTest[Either] {
-  override implicit def F: Error2[Either] = Root.BIOEither
+  override given F: Error2[Either] = Root.BIOEither
   override def unsafeRun[E, A](f: Either[E, A]): Either[E, A] = f
 }
 
@@ -22,7 +22,7 @@ abstract class ErrorAccumulatingOpsTest[F[+_, +_]] extends AnyWordSpec {
   def listTList: List[TList] = Nil
   def x(@unused t: TList): Result[Unit] = F.unit
 
-  implicit def F: Error2[F]
+  given F: Error2[F]
   def unsafeRun[E, A](f: F[E, A]): Either[E, A]
 
   implicit final class Run[+E, +A](f: F[E, A]) {

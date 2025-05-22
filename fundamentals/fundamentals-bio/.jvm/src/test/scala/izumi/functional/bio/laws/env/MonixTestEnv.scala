@@ -20,8 +20,8 @@
 //import scala.util.{Either, Failure, Success, Try}
 //
 //trait MonixTestEnv extends BaseLawsSuite {
-//  implicit lazy val opt: IO.Options = IO.defaultOptions
-//  implicit lazy val cs: ContextShift[Task] = IO.contextShift
+//  given opt: IO.Options = IO.defaultOptions
+//  given cs: ContextShift[Task] = IO.contextShift
 //}
 //
 //// Copypaste from monix-bio test suite
@@ -38,7 +38,7 @@
 //    * At the moment of writing, these match the defaults, but it's
 //    * better to specify these explicitly.
 //    */
-//  implicit val params: Parameters = Parameters.default
+//  given params: Parameters = Parameters.default
 //
 ////  override lazy val checkConfig: Parameters =
 ////    org.scalacheck.Test.Parameters.default
@@ -98,7 +98,7 @@
 //    }
 //  }
 //
-//  implicit def equalityCIO[A](implicit A: Eq[A], ec: TestScheduler): Eq[CIO[A]] =
+//  implicit def equalityCIO[A](using A: Eq[A], ec: TestScheduler): Eq[CIO[A]] =
 //    new Eq[CIO[A]] {
 //
 //      def eqv(x: CIO[A], y: CIO[A]): Boolean =
@@ -227,24 +227,24 @@
 //  implicit def arbitraryIO[A: Arbitrary: Cogen]: Arbitrary[CIO[A]] =
 //    catsEffectLawsArbitraryForIO
 //
-//  implicit def arbitraryExToA[A](implicit A: Arbitrary[A]): Arbitrary[Throwable => A] =
+//  implicit def arbitraryExToA[A](using A: Arbitrary[A]): Arbitrary[Throwable => A] =
 //    Arbitrary {
 //      val fun = implicitly[Arbitrary[Int => A]]
 //      for (f <- fun.arbitrary) yield (t: Throwable) => f(t.hashCode())
 //    }
 //
-//  implicit def arbitraryPfExToA[A](implicit A: Arbitrary[A]): Arbitrary[PartialFunction[Throwable, A]] =
+//  implicit def arbitraryPfExToA[A](using A: Arbitrary[A]): Arbitrary[PartialFunction[Throwable, A]] =
 //    Arbitrary {
 //      val fun = implicitly[Arbitrary[Int => A]]
 //      for (f <- fun.arbitrary) yield { case (t: Throwable) => f(t.hashCode()) }
 //    }
 //
-//  implicit def arbitraryTaskToLong[A, B](implicit B: Arbitrary[B]): Arbitrary[Task[A] => B] =
+//  implicit def arbitraryTaskToLong[A, B](using B: Arbitrary[B]): Arbitrary[Task[A] => B] =
 //    Arbitrary {
 //      for (b <- B.arbitrary) yield (_: Task[A]) => b
 //    }
 //
-//  implicit def arbitraryIOToLong[A, B](implicit B: Arbitrary[B]): Arbitrary[CIO[A] => B] =
+//  implicit def arbitraryIOToLong[A, B](using B: Arbitrary[B]): Arbitrary[CIO[A] => B] =
 //    Arbitrary {
 //      for (b <- B.arbitrary) yield (_: CIO[A]) => b
 //    }
@@ -271,7 +271,7 @@
 //        inst.eqv(x, y)
 //    }
 //
-//  implicit def arbitraryCancelableFuture[A](implicit A: Arbitrary[A], ec: Scheduler): Arbitrary[CancelableFuture[A]] =
+//  implicit def arbitraryCancelableFuture[A](using A: Arbitrary[A], ec: Scheduler): Arbitrary[CancelableFuture[A]] =
 //    Arbitrary {
 //      for {
 //        a <- A.arbitrary
@@ -297,7 +297,7 @@
 //
 //trait ArbitraryInstancesBase0 extends EqThrowable with TestUtils {
 //
-//  implicit def equalityFutureEither[E, A](implicit A: Eq[A], E: Eq[E], ec: TestScheduler): Eq[Future[Either[E, A]]] =
+//  implicit def equalityFutureEither[E, A](using A: Eq[A], E: Eq[E], ec: TestScheduler): Eq[Future[Either[E, A]]] =
 //    new Eq[Future[Either[E, A]]] {
 //
 //      def eqv(x: Future[Either[E, A]], y: Future[Either[E, A]]): Boolean = {
@@ -335,7 +335,7 @@
 //      }
 //    }
 //
-//  def equalityFuture[A](implicit A: Eq[A], ec: TestScheduler): Eq[Future[A]] =
+//  def equalityFuture[A](using A: Eq[A], ec: TestScheduler): Eq[Future[A]] =
 //    new Eq[Future[A]] {
 //
 //      def eqv(x: Future[A], y: Future[A]): Boolean = {

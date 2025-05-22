@@ -60,7 +60,7 @@ class SyntaxTest extends AnyWordSpec {
   "BIOConcurrent conversion works in presence of BIOParallel/BIOTemporal, overrides BIOParallel" in {
     import izumi.functional.bio.{Concurrent2, Parallel2, Temporal2, F}
 
-    def x[F[+_, +_]: Concurrent2: Temporal2](a: F[Nothing, Unit], b: F[Nothing, Unit])(implicit @unused P: Parallel2[F]) = {
+    def x[F[+_, +_]: Concurrent2: Temporal2](a: F[Nothing, Unit], b: F[Nothing, Unit])(using @unused P: Parallel2[F]) = {
       a.zipPar(b)
       a.zipParLeft(b)
       a.zipParRight(b)
@@ -245,7 +245,7 @@ class SyntaxTest extends AnyWordSpec {
     def yy[F[+_, +_]: Error2]: F[Option[Throwable], Unit] = {
       // Scala 3 Workaround
       import izumi.functional.bio.WithFilter
-      implicit val withFilterScala3Workaround: WithFilter[Option[Throwable]] = WithFilter.WithFilterOption(using WithFilter.WithFilterNoSuchElementException)
+      given withFilterScala3Workaround: WithFilter[Option[Throwable]] = WithFilter.WithFilterOption(using WithFilter.WithFilterNoSuchElementException)
       val _ = withFilterScala3Workaround
       // Scala 3 Workaround
 

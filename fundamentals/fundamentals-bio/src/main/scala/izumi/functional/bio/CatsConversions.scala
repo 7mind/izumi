@@ -28,57 +28,57 @@ import scala.concurrent.{ExecutionContext, Future, TimeoutException}
   * }}}
   */
 trait CatsConversions extends CatsConversions1 {
-  @inline implicit final def BIOToFunctor[F[+_, +_], E](implicit F0: Functor2[F]): cats.Functor[F[E, _]] & S1 = new BIOCatsFunctor[F, E] {
+  @inline given BIOToFunctor[F[+_, +_], E](using F0: Functor2[F]): (cats.Functor[F[E, _]] & S1) = new BIOCatsFunctor[F, E] {
     override val F: Functor2[F] = F0
   }
 }
 trait CatsConversions1 extends CatsConversions2 {
-  @inline implicit final def BIOToBifunctor[F[+_, +_]](implicit F0: Bifunctor2[F]): cats.Bifunctor[F] & S2 = new BIOCatsBifunctor[F] {
+  @inline given BIOToBifunctor[F[+_, +_]](using F0: Bifunctor2[F]): (cats.Bifunctor[F] & S2) = new BIOCatsBifunctor[F] {
     override val F: Bifunctor2[F] = F0
   }
 }
 trait CatsConversions2 extends CatsConversions3 {
-  @inline implicit final def BIOToApplicative[F[+_, +_], E](implicit F0: Applicative2[F]): cats.Applicative[F[E, _]] & S3 = new BIOCatsApplicative[F, E] {
+  @inline given BIOToApplicative[F[+_, +_], E](using F0: Applicative2[F]): (cats.Applicative[F[E, _]] & S3) = new BIOCatsApplicative[F, E] {
     override val F: Applicative2[F] = F0
   }
 }
 trait CatsConversions3 extends CatsConversions4 {
-  @inline implicit final def BIOToMonad[F[+_, +_], E](implicit F: Monad2[F]): cats.Monad[F[E, _]] & S4 = new BIOCatsMonad[F, E](F)
+  @inline given BIOToMonad[F[+_, +_], E](using F: Monad2[F]): (cats.Monad[F[E, _]] & S4) = new BIOCatsMonad[F, E](F)
 }
 trait CatsConversions4 extends CatsConversions5 {
-  @inline implicit final def BIOToMonadError[F[+_, +_], E](implicit F: Error2[F]): cats.MonadError[F[E, _], E] & S5 = new BIOCatsMonadError[F, E](F)
+  @inline given BIOToMonadError[F[+_, +_], E](using F: Error2[F]): (cats.MonadError[F[E, _], E] & S5) = new BIOCatsMonadError[F, E](F)
 }
 trait CatsConversions5 extends CatsConversions6 {
-  @inline implicit final def BIOToClock[F[+_, +_], E](implicit F: Applicative2[F], Clock: Clock2[F]): cats.effect.kernel.Clock[F[E, _]] & S6 =
+  @inline given BIOToClock[F[+_, +_], E](using F: Applicative2[F], Clock: Clock2[F]): (cats.effect.kernel.Clock[F[E, _]] & S6) =
     new BIOCatsClockImpl[F, E](F, Clock)
 }
 trait CatsConversions6 extends CatsConversions60 {
-  @inline implicit final def BIOToMonadCancel[F[+_, +_]](implicit F: Panic2[F]): cats.effect.kernel.MonadCancel[F[Throwable, _], Throwable] & S7 =
+  @inline given BIOToMonadCancel[F[+_, +_]](using F: Panic2[F]): (cats.effect.kernel.MonadCancel[F[Throwable, _], Throwable] & S7) =
     new BIOCatsMonadCancelImpl[F](F)
 }
 trait CatsConversions60 extends CatsConversions7 {
-  @inline implicit final def BIOToSync[F[+_, +_]](implicit F: IO2[F], BlockingIO: BlockingIO2[F], Clock: Clock2[F]): cats.effect.kernel.Sync[F[Throwable, _]] & S8 =
+  @inline given BIOToSync[F[+_, +_]](using F: IO2[F], BlockingIO: BlockingIO2[F], Clock: Clock2[F]): (cats.effect.kernel.Sync[F[Throwable, _]] & S8) =
     new BIOCatsSyncImpl[F](F, BlockingIO, Clock)
 }
 trait CatsConversions7 extends CatsConversions8 {
-  @inline implicit final def BIOToSpawn[F[+_, +_]](implicit F: IO2[F], FC: Concurrent2[F], Fork: Fork2[F]): cats.effect.kernel.GenSpawn[F[Throwable, _], Throwable] & S9 =
+  @inline given BIOToSpawn[F[+_, +_]](using F: IO2[F], FC: Concurrent2[F], Fork: Fork2[F]): (cats.effect.kernel.GenSpawn[F[Throwable, _], Throwable] & S9) =
     new BIOCatsSpawnImpl[F](F, FC, Fork)
 }
 trait CatsConversions8 extends CatsConversions9 {
-  @inline implicit final def BIOToConcurrent[F[+_, +_]](
-    implicit
+  @inline given BIOToConcurrent[F[+_, +_]](
+    using
     F: IO2[F],
     FC: Concurrent2[F],
     Fork: Fork2[F],
     Primitives: Primitives2[F],
-  ): cats.effect.kernel.GenConcurrent[F[Throwable, _], Throwable] & S10 = new BIOCatsConcurrentImpl[F](F, FC, Fork, Primitives)
+  ): (cats.effect.kernel.GenConcurrent[F[Throwable, _], Throwable] & S10) = new BIOCatsConcurrentImpl[F](F, FC, Fork, Primitives)
 }
 trait CatsConversions9 extends CatsConversions10 {
-  @inline implicit final def BIOToParallel[F[+_, +_]](implicit F: Parallel2[F]): cats.Parallel[F[Throwable, _]] = new BIOCatsParallel[F](F)
+  @inline given BIOToParallel[F[+_, +_]](using F: Parallel2[F]): cats.Parallel[F[Throwable, _]] = new BIOCatsParallel[F](F)
 }
 trait CatsConversions10 extends CatsConversions11 {
-  @inline implicit final def BIOToTemporal[F[+_, +_]](
-    implicit
+  @inline given BIOToTemporal[F[+_, +_]](
+    using
     F: IO2[F],
     FC: Concurrent2[F],
     FT: Temporal2[F],
@@ -86,20 +86,20 @@ trait CatsConversions10 extends CatsConversions11 {
     Fork: Fork2[F],
     Primitives: Primitives2[F],
     BlockingIO: BlockingIO2[F],
-  ): cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] & S11 = {
+  ): (cats.effect.kernel.GenTemporal[F[Throwable, _], Throwable] & S11) = {
     new BIOCatsTemporalImpl(F, FC, FT, Fork, Primitives, BlockingIO, Clock)
   }
 }
 trait CatsConversions11 {
-  @inline implicit final def BIOToAsync[F[+_, +_]](
-    implicit @unused ev: Functor2[F],
+  @inline given BIOToAsync[F[+_, +_]](
+    using @unused ev: Functor2[F],
     F: Async2[F],
     FT: Temporal2[F],
     Clock: Clock2[F],
     Fork: Fork2[F],
     BlockingIO: BlockingIO2[F],
     Primitives: Primitives2[F],
-  ): cats.effect.kernel.Async[F[Throwable, _]] & S12 = new BIOCatsAsync[F](F, F, FT, Fork, BlockingIO, Clock, Primitives)
+  ): (cats.effect.kernel.Async[F[Throwable, _]] & S12) = new BIOCatsAsync[F](F, F, FT, Fork, BlockingIO, Clock, Primitives)
 }
 
 object CatsConversions {
@@ -434,8 +434,8 @@ object CatsConversions {
 
     override final def memoize[A](fa: F[Throwable, A]): F[Throwable, F[Throwable, A]] = super.memoize(fa)
     override final def parReplicateAN[A](n: Int)(replicas: Int, ma: F[Throwable, A]): F[Throwable, List[A]] = super.parReplicateAN(n)(replicas, ma)
-    override final def parSequenceN[T[_], A](n: Int)(tma: T[F[Throwable, A]])(implicit evidence$1: Traverse[T]): F[Throwable, T[A]] = super.parSequenceN(n)(tma)
-    override final def parTraverseN[T[_], A, B](n: Int)(ta: T[A])(f: A => F[Throwable, B])(implicit evidence$2: Traverse[T]): F[Throwable, T[B]] =
+    override final def parSequenceN[T[_], A](n: Int)(tma: T[F[Throwable, A]])(using evidence$1: Traverse[T]): F[Throwable, T[A]] = super.parSequenceN(n)(tma)
+    override final def parTraverseN[T[_], A, B](n: Int)(ta: T[A])(f: A => F[Throwable, B])(using evidence$2: Traverse[T]): F[Throwable, T[B]] =
       super.parTraverseN(n)(ta)(f)
   }
 
@@ -445,7 +445,7 @@ object CatsConversions {
 
     override final def sleep(time: FiniteDuration): F[Throwable, Unit] = FT.sleep(time)
 
-    override final def timeout[A](fa: F[Throwable, A], duration: FiniteDuration)(implicit ev: TimeoutException <:< Throwable): F[Throwable, A] = {
+    override final def timeout[A](fa: F[Throwable, A], duration: FiniteDuration)(using ev: TimeoutException <:< Throwable): F[Throwable, A] = {
       FT.timeoutFail(duration)(new TimeoutException(duration.toString()), fa)
     }
 
@@ -456,7 +456,7 @@ object CatsConversions {
     override final def delayBy[A](fa: F[Throwable, A], time: FiniteDuration): F[Throwable, A] = super.delayBy(fa, time)
     override final def andWait[A](fa: F[Throwable, A], time: FiniteDuration): F[Throwable, A] = super.andWait(fa, time)
 
-    override final def timeoutAndForget[A](fa: F[Throwable, A], duration: FiniteDuration)(implicit ev: TimeoutException <:< Throwable): F[Throwable, A] =
+    override final def timeoutAndForget[A](fa: F[Throwable, A], duration: FiniteDuration)(using ev: TimeoutException <:< Throwable): F[Throwable, A] =
       super.timeoutAndForget(fa, duration)(ev)
   }
 

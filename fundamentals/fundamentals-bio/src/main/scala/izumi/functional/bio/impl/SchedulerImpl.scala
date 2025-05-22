@@ -10,7 +10,7 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.FiniteDuration
 
-open class SchedulerImpl[F[+_, +_]: Temporal2](implicit clock: Clock2[F]) extends Scheduler2[F] {
+open class SchedulerImpl[F[+_, +_]: Temporal2](using clock: Clock2[F]) extends Scheduler2[F] {
 
   override def repeat[E, A, B](eff: F[E, A])(policy: RetryPolicy[F, A, B]): F[E, A] = {
     eff.flatMap(out => loop(out, policy.action)(F.pure(_))(eff.flatMap))

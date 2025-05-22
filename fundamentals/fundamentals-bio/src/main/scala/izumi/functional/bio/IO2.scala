@@ -59,7 +59,7 @@ trait IO2[F[+_, +_]] extends Panic2[F] {
     init: AC,
     onRight: (AC, B) => AC,
     end: AC => B1,
-  )(implicit buildL: Factory[E1, ColL[E1]]
+  )(using buildL: Factory[E1, ColL[E1]]
   ): F[ColL[E1], B1] = {
     suspendSafe {
       val bad = buildL.newBuilder

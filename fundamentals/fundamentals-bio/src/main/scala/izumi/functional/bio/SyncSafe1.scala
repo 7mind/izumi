@@ -23,7 +23,7 @@ object SyncSafe1 extends LowPrioritySyncSafeInstances0 {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def fromSync[F[_], Sync[_[_]]: `cats.effect.kernel.Sync`](implicit F0: Sync[F]): SyncSafe1[F] = {
+  given fromSync[F[_], Sync[_[_]]: `cats.effect.kernel.Sync`](using F0: Sync[F]): SyncSafe1[F] = {
     val F = F0.asInstanceOf[cats.effect.kernel.Sync[F]]
     new SyncSafe1[F] {
       override def syncSafe[A](f: => A): F[A] = F.delay(f)
@@ -32,7 +32,7 @@ object SyncSafe1 extends LowPrioritySyncSafeInstances0 {
 }
 
 trait LowPrioritySyncSafeInstances0 extends LowPrioritySyncSafeInstances1 {
-  implicit final def fromBIO[F[+_, +_]: IO2]: SyncSafe1[F[Nothing, _]] =
+  given fromBIO[F[+_, +_]: IO2]: SyncSafe1[F[Nothing, _]] =
     new SyncSafe1[F[Nothing, _]] {
       override def syncSafe[A](f: => A): F[Nothing, A] = F.sync(f)
     }
@@ -48,19 +48,19 @@ trait LowPrioritySyncSafeInstances1 {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  @inline implicit final def limitedCovariance2[C[f[_]] <: SyncSafe1[f], FR[_, _], E](
-    implicit F: C[FR[Nothing, _]] { type Divergence = Nondivergent }
+  @inline given limitedCovariance2[C[f[_]] <: SyncSafe1[f], FR[_, _], E](
+    using F: C[FR[Nothing, _]] { type Divergence = Nondivergent }
   ): Divergent.Of[C[FR[E, _]]] = {
     Divergent(F.asInstanceOf[C[FR[E, _]]])
   }
 
-  @inline implicit final def limitedCovariance3[C[f[_]] <: SyncSafe1[f], FR[_, _, _], R0, E](
-    implicit F: C[FR[Any, Nothing, _]] { type Divergence = Nondivergent }
+  @inline given limitedCovariance3[C[f[_]] <: SyncSafe1[f], FR[_, _, _], R0, E](
+    using F: C[FR[Any, Nothing, _]] { type Divergence = Nondivergent }
   ): Divergent.Of[C[FR[R0, E, _]]] = {
     Divergent(F.asInstanceOf[C[FR[R0, E, _]]])
   }
 
-  @inline implicit final def covarianceConversion[F[_], G[_]](syncSafe: SyncSafe1[F])(implicit @unused ev: F[Unit] <:< G[Unit]): SyncSafe1[G] = {
+  @inline implicit final def covarianceConversion[F[_], G[_]](syncSafe: SyncSafe1[F])(using @unused ev: F[Unit] <:< G[Unit]): SyncSafe1[G] = {
     syncSafe.asInstanceOf[SyncSafe1[G]]
   }
 }

@@ -10,7 +10,7 @@ object PrimitivesMZio extends PrimitivesMZio[Any]
 
 open class PrimitivesMZio[R] extends PrimitivesM2[ZIO[R, +_, +_]] {
   override def mkRefM[A](a: A): ZIO[R, Nothing, RefM2[ZIO[R, +_, +_], A]] = {
-    implicit val trace: zio.Trace = Tracer.newTrace
+    given trace: zio.Trace = Tracer.newTrace
 
     Ref.Synchronized.make(a).map(RefM2.fromZIO)
   }

@@ -22,7 +22,7 @@ object FileLockMutex {
   )(effect:
     // MUST be by-name because of QuasiIO[Identity]
     => F[A]
-  )(implicit
+  )(using
     F: QuasiIO[F],
     P: QuasiAsync[F],
     T: QuasiTemporal[F],
@@ -38,7 +38,7 @@ object FileLockMutex {
     failLog: Int => F[Unit],
     // MUST be by-name because of QuasiIO[Identity]
     lockAlreadyExistedLog: => F[Unit],
-  )(implicit
+  )(using
     F: QuasiIO[F],
     P: QuasiAsync[F],
     T: QuasiTemporal[F],

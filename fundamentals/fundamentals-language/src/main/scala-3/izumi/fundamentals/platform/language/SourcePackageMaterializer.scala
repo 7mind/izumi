@@ -8,8 +8,8 @@ final case class SourcePackageMaterializer(get: SourcePackage) extends AnyVal
 
 object SourcePackageMaterializer {
   @targetName("applySummon")
-  inline def apply()(implicit ev: SourcePackageMaterializer): SourcePackageMaterializer = ev
-  inline def thisPkg(implicit pkg: SourcePackageMaterializer): String = pkg.get.pkg
+  inline def apply()(using ev: SourcePackageMaterializer): SourcePackageMaterializer = ev
+  inline def thisPkg(using pkg: SourcePackageMaterializer): String = pkg.get.pkg
 
   inline implicit def materialize: SourcePackageMaterializer = ${ SourcePackageMaterializerMacro.getSourcePackageMaterializer() }
 

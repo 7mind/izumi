@@ -5,7 +5,7 @@ import scala.collection.mutable
 
 final class IzIterable[A, Repr[X] <: Iterable[X]](private val xs: Repr[A]) extends AnyVal {
 
-  def distinctBy[B, That](f: A => B)(implicit cbf: BuildFrom[Repr[A], A, That]): That = {
+  def distinctBy[B, That](f: A => B)(using cbf: BuildFrom[Repr[A], A, That]): That = {
     val builder = cbf.newBuilder(xs)
     val i = xs.iterator
     val set = mutable.Set[B]()

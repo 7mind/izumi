@@ -35,7 +35,7 @@ object BlockingIOInstances extends BlockingIOInstancesLowPriority {
 
   def BlockingZIOFromExecutor[R](blockingExecutor: Executor): BlockingIO2[ZIO[R, +_, +_]] = new BlockingIO2[ZIO[R, +_, +_]] {
     override def shiftBlocking[E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = {
-      implicit val trace: zio.Trace = Tracer.newTrace
+      given trace: zio.Trace = Tracer.newTrace
       ZIO.environmentWithZIO[R] {
         r =>
           ZIO.provideLayer[Any, E, Any, Any, A](zio.Runtime.setBlockingExecutor(blockingExecutor)) {
@@ -45,14 +45,14 @@ object BlockingIOInstances extends BlockingIOInstancesLowPriority {
     }
     override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
       val byName: () => A = () => f
-      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
+      given trace: zio.Trace = InteropTracer.newTrace(byName)
       ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
         ZIO.attemptBlocking(f)
       }
     }
     override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
       val byName: () => A = () => f
-      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
+      given trace: zio.Trace = InteropTracer.newTrace(byName)
       ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
         ZIO.attemptBlockingInterrupt(f)
       }
@@ -65,7 +65,7 @@ object BlockingIOInstances extends BlockingIOInstancesLowPriority {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  @inline implicit final def BlockingZIODefault[Zio[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[BlockingIO2[Zio[Any, +_, +_]]] =
+  @inline given BlockingZIODefault[Zio[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[BlockingIO2[Zio[Any, +_, +_]]] =
     Predefined(BlockingZio.asInstanceOf[BlockingIO2[Zio[Any, +_, +_]]])
 
   object BlockingZio extends BlockingZio[Any]
@@ -74,13 +74,13 @@ object BlockingIOInstances extends BlockingIOInstancesLowPriority {
 
     override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
       val byName: () => A = () => f
-      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
+      given trace: zio.Trace = InteropTracer.newTrace(byName)
       ZIO.attemptBlocking(f)
     }
 
     override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
       val byName: () => A = () => f
-      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
+      given trace: zio.Trace = InteropTracer.newTrace(byName)
       ZIO.attemptBlockingInterrupt(f)
     }
   }
@@ -95,6 +95,6 @@ object BlockingIOInstances extends BlockingIOInstancesLowPriority {
 }
 
 sealed trait BlockingIOInstancesLowPriority {
-  @inline implicit final def BlockingZIODefaultR[Zio[-_, +_, +_]: `zio.ZIO`, R]: Predefined.Of[BlockingIO2[Zio[R, +_, +_]]] =
+  @inline given BlockingZIODefaultR[Zio[-_, +_, +_]: `zio.ZIO`, R]: Predefined.Of[BlockingIO2[Zio[R, +_, +_]]] =
     Predefined(BlockingZio.asInstanceOf[BlockingIO2[Zio[R, +_, +_]]])
 }

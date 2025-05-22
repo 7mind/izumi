@@ -5,7 +5,7 @@ import scala.quoted.{Expr, Quotes, Type}
 final case class SourceFilePositionMaterializer(get: SourceFilePosition) extends AnyVal
 
 object SourceFilePositionMaterializer {
-  inline def sourcePosition(implicit ev: SourceFilePositionMaterializer): SourceFilePosition = ev.get
+  inline def sourcePosition(using ev: SourceFilePositionMaterializer): SourceFilePosition = ev.get
 
   inline implicit def materialize: SourceFilePositionMaterializer = ${ SourceFilePositionMaterializerMacro.getSourceFilePositionMaterializer }
 

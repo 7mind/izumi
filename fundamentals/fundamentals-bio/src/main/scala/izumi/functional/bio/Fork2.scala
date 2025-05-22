@@ -18,9 +18,9 @@ object ForkInstances extends LowPriorityForkInstances {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  @inline implicit def ForkZio[ZIO[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[Fork2[ZIO[Any, +_, +_]]] = Predefined(impl.ForkZio.asInstanceOf[Fork2[ZIO[Any, +_, +_]]])
+  @inline given ForkZio[ZIO[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[Fork2[ZIO[Any, +_, +_]]] = Predefined(impl.ForkZio.asInstanceOf[Fork2[ZIO[Any, +_, +_]]])
 }
 sealed trait LowPriorityForkInstances {
-  @inline implicit def ForkZioR[ZIO[-_, +_, +_]: `zio.ZIO`, R]: Predefined.Of[Fork2[ZIO[R, +_, +_]]] = Predefined(impl.ForkZio.asInstanceOf[Fork2[ZIO[R, +_, +_]]])
-//  @inline implicit def ForkMonix[MonixBIO[+_, +_]: `monix.bio.IO`]: Predefined.Of[Fork2[MonixBIO]] = impl.ForkMonix.asInstanceOf[Predefined.Of[Fork2[MonixBIO]]]
+  @inline given ForkZioR[ZIO[-_, +_, +_]: `zio.ZIO`, R]: Predefined.Of[Fork2[ZIO[R, +_, +_]]] = Predefined(impl.ForkZio.asInstanceOf[Fork2[ZIO[R, +_, +_]]])
+//  @inline given ForkMonix[MonixBIO[+_, +_]: `monix.bio.IO`]: Predefined.Of[Fork2[MonixBIO]] = impl.ForkMonix.asInstanceOf[Predefined.Of[Fork2[MonixBIO]]]
 }

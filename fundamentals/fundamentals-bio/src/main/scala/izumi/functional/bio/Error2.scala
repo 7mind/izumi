@@ -81,7 +81,7 @@ trait Error2[F[+_, +_]] extends ApplicativeError2[F] with Monad2[F] with ErrorAc
     *   // f: F[Option[Unit], Unit] = F.fail(Some(())
     * }}}
     */
-  @inline final def withFilter[E, A](r: F[E, A])(predicate: A => Boolean)(implicit filter: WithFilter[E], pos: SourceFilePositionMaterializer): F[E, A] = {
+  @inline final def withFilter[E, A](r: F[E, A])(predicate: A => Boolean)(using filter: WithFilter[E], pos: SourceFilePositionMaterializer): F[E, A] = {
     flatMap(r)(a => if (predicate(a)) pure(a) else fail(filter.error(a, pos.get)))
   }
 

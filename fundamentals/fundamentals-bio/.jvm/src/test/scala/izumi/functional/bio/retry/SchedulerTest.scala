@@ -24,9 +24,9 @@ class SchedulerTest extends AnyWordSpec {
   private val zioRunner: UnsafeRun2[IO] = UnsafeRun2.createZIO[Any]()
 
   private object implicits {
-    implicit val zioClockImplicit: Clock2[IO] = zioClock
-    implicit val zioTemporalImplicit: Temporal2[IO] = zioTemporal
-    implicit val zioSchedulerImplicit: Scheduler2[IO] = zioScheduler
+    given zioClockImplicit: Clock2[IO] = zioClock
+    given zioTemporalImplicit: Temporal2[IO] = zioTemporal
+    given zioSchedulerImplicit: Scheduler2[IO] = zioScheduler
   }
 
   def toZonedDateTime(epochMillis: Long): ZonedDateTime = {
@@ -63,7 +63,7 @@ class SchedulerTest extends AnyWordSpec {
     }
 
     "execute effect with a given period" in {
-      import implicits.*
+      import implicits.given
       val list1 = zioRunner.unsafeRun(testTimedScheduler(zio.ZIO.unit)(RetryPolicy.spaced(200.millis), 3))
 //      val list2 = monixRunner.unsafeRun(testTimedSc(bio.IO.unit)(RetryPolicy.spaced(200.millis), 3))
       assert(list1 == Vector.fill(3)(200.millis))
@@ -73,7 +73,7 @@ class SchedulerTest extends AnyWordSpec {
     // This one seems weird a bit, but it's the best simple test case I could come up with at the moment
     // Since it took some time to run effect plus execute repeat logic, delays could be slightly less than expected.
     "execute effect within a time window" in {
-      import implicits.*
+      import implicits.given
       val sleeps1 =
         zioRunner.unsafeRun(testTimedScheduler(zioTemporal.sleep(1.seconds))(RetryPolicy.fixed(2.seconds), 4))
 
@@ -114,7 +114,7 @@ class SchedulerTest extends AnyWordSpec {
     }
 
     "execute spaced" in {
-      import implicits.*
+      import implicits.given
       val sleeps1 =
         zioRunner.unsafeRun(testTimedScheduler(zioTemporal.sleep(1.seconds))(RetryPolicy.spaced(2.seconds), 4))
 
@@ -176,7 +176,7 @@ class SchedulerTest extends AnyWordSpec {
     }
 
     "combine different policies properly" in {
-      import implicits.*
+      import implicits.given
       val intersectPZio = RetryPolicy.recursWhile[IO, Boolean](identity) && RetryPolicy.recurs(4)
       val unionPZio = RetryPolicy.recursWhile[IO, Boolean](identity) || RetryPolicy.recurs(4)
       val effZio = (counter: zio.Ref[Int]) => counter.updateAndGet(_ + 1).map(_ < 3)
@@ -277,7 +277,7 @@ class SchedulerTest extends AnyWordSpec {
         } yield (schedulerRetries, temporalRetries)
       }
 
-      import implicits.*
+      import implicits.given
 
       val zioRetries = zioRunner.unsafeRun(test[IO]())
       assert(zioRetries == ((10, 10)))
@@ -305,7 +305,7 @@ class SchedulerTest extends AnyWordSpec {
 //        } yield ()
 //      }
 
-      import implicits.*
+      import implicits.given
 
       zioRunner.unsafeRun {
         for {
