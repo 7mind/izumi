@@ -17,6 +17,7 @@ import izumi.distage.roles.model.{RoleService, RoleTask}
 import izumi.functional.bio.Exit
 import izumi.functional.bio.UnsafeRun2.FailureHandler
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.{LogIOModule, LogstageModule}
@@ -69,6 +70,7 @@ object ModuleProvider {
     args: RawAppArgs,
     activationInfo: ActivationInfo,
     shutdownInitiator: AppShutdownInitiator,
+    appArtifact: Option[IzArtifact] @Id("app.artifact"),
     roleAppLocator: Option[LocatorRef] @Id("roleapp"),
   ) extends ModuleProvider {
 
@@ -78,6 +80,7 @@ object ModuleProvider {
         make[RawAppArgs].fromValue(args).exposed
         make[ActivationInfo].fromValue(activationInfo).exposed
         make[AppShutdownInitiator].fromValue(shutdownInitiator).exposed
+        make[Option[IzArtifact]].named("app.artifact").fromValue(appArtifact).exposed
       }
 
       val loggerModule = new LogstageModule(logRouter, true)
