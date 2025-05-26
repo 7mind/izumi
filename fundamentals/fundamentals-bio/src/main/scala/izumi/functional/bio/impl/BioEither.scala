@@ -4,6 +4,7 @@ import izumi.functional.bio.Error2
 
 import scala.collection.compat.*
 import scala.util.Try
+import scala.util.control.NonFatal
 
 object BioEither extends BioEither
 
@@ -27,6 +28,10 @@ open class BioEither extends Error2[Either] {
     case None => Left(errorOnNone)
   }
   @inline override final def fromTry[A](effect: => Try[A]): Either[Throwable, A] = effect.toEither
+  @inline override final def fromAttempt[A](effect: => A): Either[Throwable, A] = {
+    try Right(effect)
+    catch { case t: Throwable if NonFatal(t) => Left(t) }
+  }
 
   @inline override final def guarantee[E, A](f: Either[E, A], cleanup: Either[Nothing, Unit]): Either[E, A] = f
 

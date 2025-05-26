@@ -17,4 +17,8 @@ trait ApplicativeError2[F[+_, +_]] extends Guarantee2[F] with Bifunctor2[F] {
   def fromEither[E, V](effect: => Either[E, V]): F[E, V]
   def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): F[E, A]
   def fromTry[A](effect: => Try[A]): F[Throwable, A]
+  /** For lazy monads: alias for [[IO2#syncThrowable]]. For strict monads, shorthand for `F.fromTry(Try(effect))` */
+  def fromAttempt[A](effect: => A): F[Throwable, A]
+
+  @inline final def ifThenFail[E](cond: Boolean)(errorIfTrue: => E): F[E, Unit] = if (cond) fail(errorIfTrue) else unit
 }

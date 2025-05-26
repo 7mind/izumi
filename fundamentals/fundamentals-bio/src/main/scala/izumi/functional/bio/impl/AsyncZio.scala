@@ -77,6 +77,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
 
     ZIO.fromTry(effect)
   }
+  @inline override final def fromAttempt[A](effect: => A): ZIO[R, Throwable, A] = syncThrowable(effect)
 
   @inline override final def void[E, A](r: ZIO[R, E, A]): ZIO[R, E, Unit] = r.unit(Tracer.instance.empty)
   @inline override final def map[E, A, B](r: ZIO[R, E, A])(f: A => B): ZIO[R, E, B] = r.map(f)(InteropTracer.newTrace(f))

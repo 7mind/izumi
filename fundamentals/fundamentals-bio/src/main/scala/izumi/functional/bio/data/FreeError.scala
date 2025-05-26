@@ -110,5 +110,6 @@ object FreeError {
     }
 
     @inline override final def fromTry[A](effect: => Try[A]): FreeError[S, Throwable, A] = fromEither(effect.toEither)
+    @inline override final def fromAttempt[A](effect: => A): FreeError[S, Throwable, A] = fromTry(Try(effect))
   }
 }
