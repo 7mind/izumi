@@ -95,9 +95,8 @@ object Provider {
     fun: Seq[Any] => Any,
     providerType: ProviderType,
   ) extends Provider {
-    def this(parameters: Seq[LinkedParameter], ret: SafeType, fun: Seq[Any] => Any, providerType: ProviderType) = {
+    def this(parameters: Seq[LinkedParameter], ret: SafeType, fun: Seq[Any] => Any, providerType: ProviderType) =
       this(parameters, ret, fun, fun, providerType)
-    }
 
     override def unsafeApply(refs: Seq[GenericTypedRef[?]]): A =
       super.unsafeApply(refs).asInstanceOf[A]
