@@ -147,7 +147,7 @@ object Locator {
     override def isPrivate(key: DIKey): Boolean = false
   }
 
-  /** @param timings How long it took to instantiate each component */
+  /** @param status How long it took to instantiate each component */
   final case class LocatorMeta(
     status: Map[DIKey, OpStatus]
   ) extends AnyVal
