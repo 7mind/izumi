@@ -10,8 +10,15 @@ class CLIParserImpl(mmParser: MultiModalArgsParser, subArgsParser: SubArgsParser
       mmargs <- mmParser.parse(args)
       primArgs <- subArgsParser.parseSubArgs(mmargs.primaryArgs)
 
-      // TODO: probably we should just remove this code and let role entrypoints to parse args independently
-      // We don't want to extend our schema and make it a universal cli->object mapper, and we should let users use any parsers
+      // Probably we should just remove this code and let role entrypoints to parse args independently
+      // Current issues:
+      // 1) Each role has to do parsing and reporting on its own, failures would look ugly
+      // 2) If a user wants to use their own parser/object mapper, they still receive parsed EntrypointArgs which they don't need
+      // Potential improvements:
+      // - Add parsers/implementations as type parameters/fields in role descriptors
+      // - Change def start(roleParameters: EntrypointArgs) signature to def start(roleParameters: ARG), where ARG is a type parameter of the role
+      // Not sure if it's really beneficial though
+
       modalities = mmargs.modalities
         .map(
           m =>
