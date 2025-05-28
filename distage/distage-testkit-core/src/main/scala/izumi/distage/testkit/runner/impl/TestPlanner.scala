@@ -21,7 +21,7 @@ import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.{LogQueue, LogRouter}
@@ -214,7 +214,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
         )
         val activationParser = new ActivationParser.Impl(
           roleAppActivationParser,
-          RawAppArgs.empty,
+          RoleAppArgs.empty,
           env.activationInfo,
           env.activation,
           Activation.empty,

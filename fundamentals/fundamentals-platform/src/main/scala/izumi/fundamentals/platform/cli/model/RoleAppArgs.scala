@@ -1,40 +1,42 @@
-package izumi.fundamentals.platform.cli.model.raw
+package izumi.fundamentals.platform.cli.model
+
+import izumi.fundamentals.platform.cli.model.schema.ParserDef.ArgDef
 
 import java.io.File
 import java.nio.file.Path
 
-import izumi.fundamentals.platform.cli.model.schema.ParserDef.ArgDef
-
-final case class RawAppArgs(
-  globalParameters: RawEntrypointParams,
-  roles: Vector[RawRoleParams],
+final case class RoleAppArgs(
+  globalParameters: EntrypointArgs,
+  roles: Vector[RoleArgs],
 )
-object RawAppArgs {
-  def empty: RawAppArgs = RawAppArgs(RawEntrypointParams.empty, Vector.empty)
+object RoleAppArgs {
+  def empty: RoleAppArgs = RoleAppArgs(EntrypointArgs.empty, Vector.empty)
 }
 
-final case class RawRoleParams(
+final case class RoleArgs(
   role: String,
-  roleParameters: RawEntrypointParams,
-  freeArgs: Vector[String],
+  roleParameters: EntrypointArgs,
 )
-object RawRoleParams {
-  def apply(role: String): RawRoleParams = RawRoleParams(role, RawEntrypointParams.empty, Vector.empty)
+
+object RoleArgs {
+  def apply(role: String): RoleArgs = RoleArgs(role, EntrypointArgs.empty)
 }
 
-final case class RequiredRoles(requiredRoles: Vector[RawRoleParams])
+final case class RequiredRoles(requiredRoles: Vector[RoleArgs])
 
-final case class RawEntrypointParams(
+final case class EntrypointArgs(
+  raw: Vector[String],
   flags: Vector[RawFlag],
   values: Vector[RawValue],
+  freeArgs: Vector[String],
 ) {
   def findValue(parameter: ArgDef): Option[RawValue] = values.find(parameter.name matches _.name)
   def findValues(parameter: ArgDef): Vector[RawValue] = values.filter(parameter.name matches _.name)
   def hasFlag(parameter: ArgDef): Boolean = flags.exists(parameter.name matches _.name)
   def hasNoFlag(parameter: ArgDef): Boolean = !hasFlag(parameter)
 }
-object RawEntrypointParams {
-  def empty: RawEntrypointParams = RawEntrypointParams(Vector.empty, Vector.empty)
+object EntrypointArgs {
+  def empty: EntrypointArgs = EntrypointArgs(Vector.empty, Vector.empty, Vector.empty, Vector.empty)
 }
 
 final case class RawFlag(name: String)

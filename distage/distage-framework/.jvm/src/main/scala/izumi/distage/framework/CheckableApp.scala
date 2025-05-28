@@ -21,7 +21,7 @@ import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.launcher.RoleProvider
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.collections.nonempty.NESet
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.Discarder
@@ -144,7 +144,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
       make[IzLogger].fromValue(IzLogger.NullLogger)
 
       make[AppConfig].fromValue(AppConfig.empty)
-      make[RawAppArgs].fromValue(RawAppArgs.empty)
+      make[RoleAppArgs].fromValue(RoleAppArgs.empty)
 
       make[RoleProvider].from {
         chosenRoles match {

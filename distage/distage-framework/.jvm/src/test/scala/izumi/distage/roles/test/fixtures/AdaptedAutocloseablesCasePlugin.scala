@@ -5,7 +5,7 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 
@@ -30,7 +30,7 @@ class AdaptedAutocloseablesCase(
   val sinks: Set[LogSink]
 ) extends RoleService[IO] {
 
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[IO, Unit] = {
+  override def start(roleParameters: EntrypointArgs): Lifecycle[IO, Unit] = {
     Lifecycle.liftF(IO.unit)
   }
 }

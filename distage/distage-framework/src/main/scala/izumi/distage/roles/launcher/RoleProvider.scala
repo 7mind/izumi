@@ -1,6 +1,6 @@
 package izumi.distage.roles.launcher
 
-import distage.{Id, *}
+import distage.*
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.Binding.ImplBinding
 import izumi.distage.model.reflection.SafeType
@@ -8,8 +8,8 @@ import izumi.distage.roles.model.definition.RoleTag
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.{IzPlatform, ScalaPlatform}
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
@@ -23,9 +23,9 @@ trait RoleProvider {
 object RoleProvider {
 
   open class NonReflectiveImpl(
-    logger: IzLogger @Id("early"),
-    ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
-    parameters: RawAppArgs,
+                                logger: IzLogger @Id("early"),
+                                ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
+                                parameters: RoleAppArgs,
   ) extends RoleProvider {
 
     def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo = {
@@ -104,10 +104,10 @@ object RoleProvider {
   }
 
   open class ReflectiveImpl(
-    logger: IzLogger @Id("early"),
-    ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
-    reflectionEnabled: Boolean @Id("distage.roles.reflection"),
-    parameters: RawAppArgs,
+                             logger: IzLogger @Id("early"),
+                             ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
+                             reflectionEnabled: Boolean @Id("distage.roles.reflection"),
+                             parameters: RoleAppArgs,
   ) extends NonReflectiveImpl(logger, ignoreMismatchedEffect, parameters) {
 
     protected val isReflectionEnabled: Boolean = reflectionEnabled && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage

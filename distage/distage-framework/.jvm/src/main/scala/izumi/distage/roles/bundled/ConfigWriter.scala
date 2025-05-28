@@ -17,14 +17,14 @@ import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.collections.nonempty.NESet
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import scala.annotation.{nowarn, unused}
+import scala.annotation.nowarn
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.Try
 
@@ -52,7 +52,7 @@ final class ConfigWriter[F[_]: TagK](
   //  but, the contents of the MainAppModule (including `"activation"` config read) are not accessible here from `RoleAppPlanner` yet...
   private val _HackyMandatorySection = ConfigPath("activation", wildcard = true)
 
-  override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
+  override def start(roleParameters: EntrypointArgs): F[Unit] = {
     F.maybeSuspend {
       val config = ConfigWriter.parse(roleParameters)
       writeReferenceConfig(config)
@@ -213,7 +213,7 @@ object ConfigWriter extends RoleDescriptor {
     final val formatTypesafe = arg("format", "f", "output format, json is default", "{json|hocon}")
   }
 
-  def parse(p: RawEntrypointParams): WriteReference = {
+  def parse(p: EntrypointArgs): WriteReference = {
     val targetDir = p.findValue(Options.targetDir).map(_.value).getOrElse("config")
     val useLauncherVersion = p.hasNoFlag(Options.useComponentVersion)
     val asJson = !p.findValue(Options.formatTypesafe).map(_.value).contains("hocon")

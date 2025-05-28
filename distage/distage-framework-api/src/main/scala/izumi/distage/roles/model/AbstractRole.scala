@@ -1,7 +1,7 @@
 package izumi.distage.roles.model
 
 import izumi.distage.model.definition.Lifecycle
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 
 sealed trait AbstractRole[+F[_]]
 
@@ -27,7 +27,7 @@ trait RoleService[+F[_]] extends AbstractRole[F] {
     * import logstage.LogIO2.log
     *
     * final class HelloService[F[+_, +_]: IO2: LogIO2] extends RoleService[F] {
-    *   def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F[Nothing, _], Unit] = {
+    *   def start(roleParameters: EntrypointArgs): Lifecycle[F[Nothing, _], Unit] = {
     *     Lifecycle.fork_(helloServer).void
     *   }
     *
@@ -44,7 +44,7 @@ trait RoleService[+F[_]] extends AbstractRole[F] {
     * You may start a separate thread / fiber, etc during resource initialization.
     * All the shutdown logic has to be implemented in the resource finalizer.
     */
-  def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit]
+  def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit]
 
 }
 
@@ -56,6 +56,6 @@ trait RoleTask[+F[_]] extends AbstractRole[F] {
   /**
     * Application startup wouldn't progress until the effect finishes.
     */
-  def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit]
+  def start(roleParameters: EntrypointArgs): F[Unit]
 
 }

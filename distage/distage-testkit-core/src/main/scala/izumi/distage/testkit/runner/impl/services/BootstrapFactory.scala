@@ -9,7 +9,7 @@ import izumi.distage.framework.services.{ConfigArgsProvider, ConfigFilteringStra
 import izumi.distage.model.definition.Activation
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.reflect.TagK
@@ -73,7 +73,7 @@ object BootstrapFactory {
         options = options,
         config = config,
         roles = roles,
-        args = RawAppArgs.empty,
+        args = RoleAppArgs.empty,
         activationInfo = activationInfo,
         shutdownInitiator = AppShutdownInitiator.empty,
         roleAppLocator = None,

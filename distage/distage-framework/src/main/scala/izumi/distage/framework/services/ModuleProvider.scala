@@ -16,7 +16,7 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleService, RoleTask}
 import izumi.functional.bio.Exit
 import izumi.functional.bio.UnsafeRun2.FailureHandler
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.{LogIOModule, LogstageModule}
@@ -61,21 +61,21 @@ object ModuleProvider {
   }
 
   class Impl[F[_]: TagK](
-    logRouter: LogRouter,
-    options: PlanningOptions,
-    // pass-through
-    config: AppConfig,
-    roles: RolesInfo,
-    args: RawAppArgs,
-    activationInfo: ActivationInfo,
-    shutdownInitiator: AppShutdownInitiator,
-    roleAppLocator: Option[LocatorRef] @Id("roleapp"),
+                          logRouter: LogRouter,
+                          options: PlanningOptions,
+                          // pass-through
+                          config: AppConfig,
+                          roles: RolesInfo,
+                          args: RoleAppArgs,
+                          activationInfo: ActivationInfo,
+                          shutdownInitiator: AppShutdownInitiator,
+                          roleAppLocator: Option[LocatorRef] @Id("roleapp"),
   ) extends ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
       val roleInfoModule = new BootstrapModuleDef {
         make[RolesInfo].fromValue(roles).exposed
-        make[RawAppArgs].fromValue(args).exposed
+        make[RoleAppArgs].fromValue(args).exposed
         make[ActivationInfo].fromValue(activationInfo).exposed
         make[AppShutdownInitiator].fromValue(shutdownInitiator).exposed
       }

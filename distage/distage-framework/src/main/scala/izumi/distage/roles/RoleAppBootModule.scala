@@ -17,7 +17,7 @@ import izumi.distage.roles.launcher.*
 import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
-import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
+import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, MultiModalArgsParser, MultiModalArgsParserImpl, ParserFailureHandler}
 import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
@@ -78,6 +78,8 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
 
   make[CLIParser].from[CLIParserImpl]
+  make[MultiModalArgsParser].from[MultiModalArgsParserImpl]
+
   make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
 
   many[LibraryReference]

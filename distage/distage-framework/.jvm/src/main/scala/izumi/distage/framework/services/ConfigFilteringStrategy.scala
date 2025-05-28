@@ -3,7 +3,7 @@ package izumi.distage.framework.services
 import izumi.distage.config.model.{ConfigLoadResult, LoadedRoleConfigs}
 import izumi.distage.model.definition.Id
 import izumi.distage.roles.RoleAppMain
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 
 trait ConfigFilteringStrategy {
   def filterSharedConfigs(shared: List[ConfigLoadResult.Success]): List[ConfigLoadResult.Success]
@@ -22,10 +22,10 @@ object ConfigFilteringStrategy {
   }
 
   class Default(
-    parameters: RawAppArgs,
-    alwaysIncludeReferenceRoleConfigs: Boolean @Id("distage.roles.always-include-reference-role-configs"),
-    alwaysIncludeReferenceCommonConfigs: Boolean @Id("distage.roles.always-include-reference-common-configs"),
-    ignoreAllReferenceConfigs: Boolean @Id("distage.roles.ignore-all-reference-configs"),
+                 parameters: RoleAppArgs,
+                 alwaysIncludeReferenceRoleConfigs: Boolean @Id("distage.roles.always-include-reference-role-configs"),
+                 alwaysIncludeReferenceCommonConfigs: Boolean @Id("distage.roles.always-include-reference-common-configs"),
+                 ignoreAllReferenceConfigs: Boolean @Id("distage.roles.ignore-all-reference-configs"),
   ) extends ConfigFilteringStrategy.Raw(
       alwaysIncludeReferenceRoleConfigs = alwaysIncludeReferenceRoleConfigs,
       alwaysIncludeReferenceCommonConfigs = alwaysIncludeReferenceCommonConfigs,

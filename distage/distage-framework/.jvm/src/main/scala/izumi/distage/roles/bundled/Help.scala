@@ -5,7 +5,7 @@ import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.*
 import izumi.fundamentals.platform.strings.IzString.*
 
@@ -18,7 +18,7 @@ class Help[F[_]](
 ) extends RoleTask[F]
   with BundledTask {
 
-  override def start(@unused roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
+  override def start(@unused roleParameters: EntrypointArgs): F[Unit] = {
     F.maybeSuspend(showHelp())
   }
 

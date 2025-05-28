@@ -7,7 +7,7 @@ import izumi.distage.roles.launcher.AppFailureHandler
 import izumi.distage.roles.launcher.AppFailureHandler.TerminatingHandler
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.functional.Identity
 
 object Fixture3 {
@@ -34,7 +34,7 @@ object Fixture3 {
     // There is no direct dependency on BootstrapComponent anywhere, however, since it's in bootstrap, it's always a Root
 //    val bootstrapComponent: BootstrapComponent
   ) extends RoleTask[Identity] {
-    override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Unit = ()
+    override def start(roleParameters: EntrypointArgs): Unit = ()
   }
   object Fixture3Role extends RoleDescriptor {
     final val id = "fixture3"

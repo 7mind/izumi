@@ -1,12 +1,12 @@
 package izumi.fundamentals.platform.cli
 
 import izumi.fundamentals.platform.cli.CLIParser.ParserError
-import izumi.fundamentals.platform.cli.CLIParser.ParserError.{DanglingArgument, DanglingSplitter, DuplicatedRoles}
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.CLIParser.ParserError.*
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.language.Quirks
 
 trait ParserFailureHandler {
-  def onParserError(e: ParserError): RawAppArgs
+  def onParserError(e: ParserError): RoleAppArgs
 }
 
 object ParserFailureHandler {
@@ -20,31 +20,21 @@ object ParserFailureHandler {
   }
 
   object PrintingHandler extends ParserFailureHandler {
-    override def onParserError(e: ParserError): RawAppArgs = {
+    override def onParserError(e: ParserError): RoleAppArgs = {
       System.err.println(makeMessage(e))
-      RawAppArgs.empty
+      RoleAppArgs.empty
     }
   }
 
   object NullHandler extends ParserFailureHandler {
-    override def onParserError(e: ParserError): RawAppArgs = {
+    override def onParserError(e: ParserError): RoleAppArgs = {
       Quirks.discard(e)
-      RawAppArgs.empty
+      RoleAppArgs.empty
     }
   }
 
   private def makeMessage(e: ParserError): String = {
     e match {
-      case d: DanglingArgument =>
-        s"""Improperly positioned argument '${d.arg}' after valid commandline '${d.processed.mkString(" ")}'
-           |
-           |$example
-         """.stripMargin
-      case d: DanglingSplitter =>
-        s"""Improperly positioned splitter '--' after valid commandline '${d.processed.mkString(" ")}'
-           |
-           |$example
-         """.stripMargin
       case d: DuplicatedRoles =>
         s"""Duplicated roles: ${d.bad.mkString(", ")}
            |

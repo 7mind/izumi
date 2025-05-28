@@ -3,7 +3,7 @@ package izumi.distage.framework.services
 import izumi.distage.config.model.{GenericConfigSource, RoleConfig}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 
 import java.io.File
 import scala.annotation.nowarn
@@ -21,8 +21,8 @@ object ConfigArgsProvider {
 
   @nowarn("msg=Unused import")
   class Default(
-    parameters: RawAppArgs,
-    rolesInfo: RolesInfo,
+                 parameters: RoleAppArgs,
+                 rolesInfo: RolesInfo,
   ) extends ConfigArgsProvider {
 
     override def args(): ConfigLoader.Args = {

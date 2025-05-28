@@ -5,7 +5,7 @@ import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.test.fixtures.TestTask00
-import izumi.fundamentals.platform.cli.model.raw.RawRoleParams
+import izumi.fundamentals.platform.cli.model.RoleArgs
 import org.scalatest.wordspec.AsyncWordSpec
 import zio.Executor
 
@@ -25,7 +25,7 @@ class BaseSJSFrameworkTest extends AsyncWordSpec {
           )
         )
 
-        override protected def requiredRoles(argv: ArgV): Vector[RawRoleParams] = Vector(RawRoleParams("testtask00"))
+        override protected def requiredRoles(argv: ArgV): Vector[RoleArgs] = Vector(RoleArgs("testtask00"))
       }
       for {
         _ <- main.main()
@@ -46,7 +46,7 @@ class BaseSJSFrameworkTest extends AsyncWordSpec {
           )
         )
 
-        override protected def requiredRoles(argv: ArgV): Vector[RawRoleParams] = Vector(RawRoleParams("testtask00"))
+        override protected def requiredRoles(argv: ArgV): Vector[RoleArgs] = Vector(RoleArgs("testtask00"))
       }
       for {
         _ <- main.main()

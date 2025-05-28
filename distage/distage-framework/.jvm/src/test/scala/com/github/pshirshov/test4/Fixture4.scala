@@ -7,7 +7,7 @@ import izumi.distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.functional.Identity
 
 object Fixture4 {
@@ -51,7 +51,7 @@ object Fixture4 {
         .produceRunSimple(identity)
     }
 
-    override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[Identity, Unit] = {
+    override def start(roleParameters: EntrypointArgs): Lifecycle[Identity, Unit] = {
       Lifecycle.makeSimple(mkDep())(_ => ()).void
     }
   }

@@ -27,7 +27,7 @@ import distage.plugins.PluginDef
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.RoleDescriptor
 import izumi.distage.roles.model.RoleTask
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.raw.EntrypointArgs
 import logstage.LogIO
 import zio.UIO
 
@@ -40,7 +40,7 @@ object AppPlugin extends PluginDef {
 }
 
 class ExampleRoleTask(log: LogIO[UIO]) extends RoleTask[UIO] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): UIO[Unit] = {
+  override def start(roleParameters: EntrypointArgs): UIO[Unit] = {
     log.info(s"Running ${ExampleRoleTask.id}!")
   }
 }

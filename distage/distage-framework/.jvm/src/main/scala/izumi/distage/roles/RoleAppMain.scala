@@ -15,7 +15,7 @@ import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.bio.Async2
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.raw.{RawRoleParams, RequiredRoles}
+import izumi.fundamentals.platform.cli.model.{RoleArgs, RequiredRoles}
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
@@ -82,7 +82,7 @@ abstract class RoleAppMain[F[_]](
   protected def roleAppBootOverrides(@unused argv: ArgV): Module = Module.empty
 
   /** Roles always enabled in this [[RoleAppMain]] */
-  protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = Vector.empty
+  protected def requiredRoles(@unused argv: ArgV): Vector[RoleArgs] = Vector.empty
 
   def main(args: Array[String]): Unit = {
     val argv = ArgV(args)

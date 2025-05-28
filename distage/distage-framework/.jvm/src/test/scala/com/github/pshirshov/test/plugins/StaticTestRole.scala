@@ -6,7 +6,7 @@ import izumi.functional.quasi.QuasiApplicative
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.bio.Clock1
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.functional.Identity
 import logstage.LogIO
 
@@ -20,7 +20,7 @@ class StaticTestRole[F[_]](
   val log: LogIO[F],
 )(implicit F: QuasiApplicative[F]
 ) extends RoleTask[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = F.unit
+  override def start(roleParameters: EntrypointArgs): F[Unit] = F.unit
 }
 
 object StaticTestRole extends RoleDescriptor {
