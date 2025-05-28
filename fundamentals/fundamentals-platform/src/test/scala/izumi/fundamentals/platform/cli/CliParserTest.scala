@@ -45,9 +45,8 @@ class CliParserTest extends AnyWordSpec {
             EntrypointArgs(
               Vector("--", "--config=xxx", "arg1", "arg2", "--yyy=zzz"),
               Vector.empty,
-              Vector(RawValue("config", "xxx"), RawValue("yyy", "zzz")),
-              Vector("--", "arg1", "arg2"),
-//              Vector("--config=xxx", "arg1", "arg2", "--yyy=zzz"),
+              Vector.empty,
+              Vector("--config=xxx", "arg1", "arg2", "--yyy=zzz"),
             ),
           ),
           RoleArgs("role2", EntrypointArgs.empty),

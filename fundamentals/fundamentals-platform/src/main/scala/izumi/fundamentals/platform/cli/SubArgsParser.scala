@@ -10,6 +10,7 @@ trait SubArgsParser {
 class SubArgsParserImpl() extends SubArgsParser {
   sealed trait Arg
   object Arg {
+    case class Separator() extends Arg
     case class Free(value: String) extends Arg
     case class Value(name: String, value: String) extends Arg
     case class Flag(name: String) extends Arg
@@ -31,7 +32,7 @@ class SubArgsParserImpl() extends SubArgsParser {
               Arg.Value(k, v.substring(1))
           }
         } else {
-          Arg.Free(arg)
+          Arg.Separator()
         }
       } else if (arg.startsWith("-")) {
         val paramName = arg.substring(1)
@@ -55,8 +56,20 @@ class SubArgsParserImpl() extends SubArgsParser {
           new StInitial(raw, flags, parameters :+ RawValue(name, value), freeArgs)
         case Arg.Flag(name) =>
           new StFlagOpen(raw, RawFlag(name), flags, parameters, freeArgs)
+        case Arg.Separator() =>
+          new StDontParse(raw, flags, parameters, freeArgs)
       }
 
+    }
+  }
+
+  class StDontParse(raw: Vector[String], flags: Vector[RawFlag], parameters: Vector[RawValue], freeArgs: Vector[String]) extends State {
+    override def freeze(): Either[Nothing, EntrypointArgs] = {
+      Right(EntrypointArgs(raw, flags, parameters, freeArgs))
+    }
+
+    override def next(arg: String): State = {
+      new StDontParse(raw, flags, parameters, freeArgs :+ arg)
     }
   }
 
@@ -73,6 +86,8 @@ class SubArgsParserImpl() extends SubArgsParser {
           new StInitial(raw, flags :+ flag, parameters :+ RawValue(name, value), freeArgs)
         case Arg.Flag(name) =>
           new StFlagOpen(raw, RawFlag(name), flags :+ flag, parameters, freeArgs)
+        case Arg.Separator() =>
+          new StDontParse(raw, flags :+ flag, parameters, freeArgs)
       }
     }
   }
