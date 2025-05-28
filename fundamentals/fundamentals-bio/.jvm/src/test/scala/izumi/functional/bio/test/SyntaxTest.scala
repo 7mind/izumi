@@ -431,9 +431,9 @@ class SyntaxTest extends AnyWordSpec {
     import izumi.functional.bio.{F, Applicative2}
     import izumi.functional.bio.unsafe.MaybeSuspend2
 
-    def x[F[+_, +_]: Applicative2](implicit G: MaybeSuspend2[F]): F[Nothing, Int] = {
+    def x[F[+_, +_]: Applicative2](implicit F0: MaybeSuspend2[F]): F[Nothing, Int] = {
       F.maybeSuspend(scala.util.Random.nextLong()) *>
-      G.maybeSuspend(scala.util.Random.nextInt())
+      F0.maybeSuspend(scala.util.Random.nextInt())
     }
 
     x[zio.IO]
