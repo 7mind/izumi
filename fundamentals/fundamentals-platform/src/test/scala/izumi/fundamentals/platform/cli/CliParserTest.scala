@@ -5,7 +5,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class CliParserTest extends AnyWordSpec {
 
-  def mkParser() = new CLIParserImpl(new MultiModalArgsParserImpl())
+  def mkParser() = new CLIParserImpl(new MultiModalArgsParserImpl(), new SubArgsParserImpl())
 
   "CLI parser" should {
     "parse args" in {
