@@ -3,6 +3,7 @@ package izumi.logstage.api.logger
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.{Log, LogValuesMacro}
 import izumi.logstage.api.Log.Message
+import izumi.logstage.macros.EncodingMode
 
 trait AbstractMacroLogger { this: AbstractLogger =>
 
@@ -22,7 +23,7 @@ trait AbstractMacroLogger { this: AbstractLogger =>
   transparent inline final def crit(inline message: String): Unit = log(Log.Level.Crit, message)
 
   transparent inline final def logValues(inline level: Log.Level)(inline values: Any*): Unit = {
-    ${ LogValuesMacro.logValues('this, 'level, 'values) }
+    ${ LogValuesMacro.logValues('this, 'level, 'values, 1) }
   }
 
   transparent inline final def log(inline level: Log.Level, inline message: String): Unit = {

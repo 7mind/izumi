@@ -15,7 +15,7 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] =>
   transparent inline final def crit(inline message: String): F[Unit] = log(Log.Level.Crit, message)
 
   transparent inline final def logValues(inline level: Log.Level)(values: Any*): F[Unit] = {
-    ${ LogValuesMacro.logValuesIO[F]('this, 'level, 'values) }
+    ${ LogValuesMacro.logValuesIO[F]('this, 'level, 'values, 1) }
   }
 
   transparent inline final def log(inline level: Log.Level, inline message: String): F[Unit] = {

@@ -1,9 +1,8 @@
 package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log
+import izumi.logstage.api.{Log, LogValuesMacro}
 import izumi.logstage.api.Log.Message
-
 
 trait AbstractMacroRawLogger { this: AbstractLogger =>
 
@@ -16,16 +15,15 @@ trait AbstractMacroRawLogger { this: AbstractLogger =>
     * They also look better in Intellij
     */
   inline final def trace(inline message: String): Unit = log(Log.Level.Trace, message)
-
   inline final def debug(inline message: String): Unit = log(Log.Level.Debug, message)
-
   inline final def info(inline message: String): Unit = log(Log.Level.Info, message)
-
   inline final def warn(inline message: String): Unit = log(Log.Level.Warn, message)
-
   inline final def error(inline message: String): Unit = log(Log.Level.Error, message)
-
   inline final def crit(inline message: String): Unit = log(Log.Level.Crit, message)
+
+  inline final def logValues(inline level: Log.Level)(inline values: Any*): Unit = {
+    ${ LogValuesMacro.logValues('this, 'level, 'values, 3) }
+  }
 
   inline final def log(inline level: Log.Level, inline message: String): Unit = {
     val pos = CodePositionMaterializer.materialize
