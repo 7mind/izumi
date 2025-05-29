@@ -65,7 +65,7 @@ object LoggerMacroMethods {
     scLogMethodImpl[A](c)(
       level,
       ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
-      ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree)
+      ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree),
     )(function)
   }
 
@@ -170,4 +170,5 @@ object LoggerMacroMethods {
       }
     }
   }
+
 }
