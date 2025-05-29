@@ -10,7 +10,6 @@ import izumi.fundamentals.platform.functional.Identity
 import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scala.util.chaining.scalaUtilChainingOps
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -144,7 +143,7 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
     override def tapBothUntyped[A](eff: => Identity[A])(err: Any => Identity[Unit], succ: A => Identity[Unit]): Identity[A] = {
       TryNonFatal(eff) match {
         case Failure(exception) => err(exception); throw exception
-        case Success(value) => succ(value).pipe(_ => value)
+        case Success(value) => succ(value); value
       }
     }
 
