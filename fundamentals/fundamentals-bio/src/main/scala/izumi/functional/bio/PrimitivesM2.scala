@@ -29,5 +29,5 @@ sealed trait PrimitivesMLowPriorityInstances1 extends PrimitivesMLowPriorityInst
 
 }
 sealed trait PrimitivesMLowPriorityInstances2 {
-  @inline implicit def PrimitivesFromBIO[F[+_, +_]: Bracket2: Primitives2]: PrimitivesM2[F] = new PrimitivesMFromBIO[F]
+  @inline implicit def PrimitivesFromBIO[F[+_, +_]: IO2: Primitives2]: PrimitivesM2[F] = new PrimitivesMFromBIO[F]
 }

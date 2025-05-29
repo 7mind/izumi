@@ -72,7 +72,7 @@ object Log {
   type LogArg = LogArgTyped[Any]
   object LogArg {
     def apply[T](value: Seq[String], t: T, hiddenName: Boolean, codec: Option[LogstageCodec[T]]): LogArg = {
-      LogArgTyped(value, t, hiddenName, codec.map(t => t.asInstanceOf[LogstageCodec[Any]]))
+      new LogArgTyped[Any](value, t, hiddenName, codec.map(t => t.asInstanceOf[LogstageCodec[Any]]))
     }
   }
   type LogContext = Seq[LogArg]

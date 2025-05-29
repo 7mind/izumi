@@ -33,6 +33,10 @@ object LoggerMacroMethods {
     doLog(c)(message, Level.Crit, EncodingMode.NonStrict)
   }
 
+  def scLogValues(c: blackbox.Context { type PrefixType = AbstractLogger })(level: c.Expr[Level])(values: c.Expr[Any]*): c.Expr[Unit] = {
+    doLogValues(c)(level, values, EncodingMode.NonStrict)
+  }
+
   def scTraceMacroStrict(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     doLog(c)(message, Level.Trace, EncodingMode.Strict)
   }
@@ -55,6 +59,10 @@ object LoggerMacroMethods {
 
   def scCritMacroStrict(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     doLog(c)(message, Level.Crit, EncodingMode.Strict)
+  }
+
+  def scLogValuesStrict(c: blackbox.Context { type PrefixType = AbstractLogger })(level: c.Expr[Level])(values: c.Expr[Any]*): c.Expr[Unit] = {
+    doLogValues(c)(level, values, EncodingMode.Strict)
   }
 
   def scTraceMacroRaw(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
@@ -81,31 +89,37 @@ object LoggerMacroMethods {
     doLog(c)(message, Level.Crit, EncodingMode.Raw)
   }
 
-  private def doLog(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String], level: Level, mode: EncodingMode): c.Expr[Unit] = {
-    val m: c.Expr[Message] = mode.fold(c.universe.reify(Message.raw(message.splice))) {
-      strict =>
-        new LogMessageMacro0[c.type](c, strict = strict).logMessageMacro(message)
-    }
-    val l = level match {
-      case Level.Trace =>
-        c.universe.reify(Level.Trace)
-      case Level.Debug =>
-        c.universe.reify(Level.Debug)
-      case Level.Info =>
-        c.universe.reify(Level.Info)
-      case Level.Warn =>
-        c.universe.reify(Level.Warn)
-      case Level.Error =>
-        c.universe.reify(Level.Error)
-      case Level.Crit =>
-        c.universe.reify(Level.Crit)
-    }
+  def scLogValuesRaw(c: blackbox.Context { type PrefixType = AbstractLogger })(level: c.Expr[Level])(values: c.Expr[Any]*): c.Expr[Unit] = {
+    doLogValues(c)(level, values, EncodingMode.Raw)
+  }
 
+  private def doLog(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String], level: Level, mode: EncodingMode): c.Expr[Unit] = {
+    val m = LogMessageMacro0.createMessageWithMode(c)(message, mode)
+    val l = LogMessageMacro0.reifyLevel(c)(level)
+    doLogImpl(c)(m, l)
+  }
+
+  private def doLogValues(
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(level: c.Expr[Level],
+    values: Seq[c.Expr[Any]],
+    mode: EncodingMode,
+  ): c.Expr[Unit] = {
+    val message = LogValuesMacro.createMessageString(c)(values)
+    val m = LogMessageMacro0.createMessageWithMode(c)(message, mode)
+    doLogImpl(c)(m, level)
+  }
+
+  private def doLogImpl(
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(message: c.Expr[Message],
+    level: c.Expr[Level],
+  ): c.Expr[Unit] = {
     c.universe.reify {
       val self = c.prefix.splice
       val position = getEnclosingPosition(c).splice
-      if (self.acceptable(position.get, l.splice)) {
-        self.unsafeLog(Log.Entry.create(l.splice, m.splice)(position))
+      if (self.acceptable(position.get, level.splice)) {
+        self.unsafeLog(Log.Entry.create(level.splice, message.splice)(position))
       }
     }
   }

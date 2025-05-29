@@ -1,6 +1,6 @@
 package izumi.functional.lifecycle
 
-import izumi.functional.bio.{Applicative2, F, IO2, Panic2, Primitives2, RefM2, TypedError}
+import izumi.functional.bio.{Applicative2, F, IO2, Panic2, PrimitivesM2, RefM2, TypedError}
 
 final class LifecycleAggregator[F[+_, +_], E](
   finalizers: RefM2[F, List[(LifecycleAggregator[F, E]#Key, F[E, Unit])]]
@@ -19,8 +19,7 @@ final class LifecycleAggregator[F[+_, +_], E](
           _ <- finalizers.update_ {
             fins =>
               val finalizer = {
-                // suspend
-                F.sync(resource.release(inner)).flatten
+                F.suspendSafe(resource.release(inner))
               }
               F.pure((key -> finalizer) :: fins)
           }
@@ -47,8 +46,7 @@ final class LifecycleAggregator[F[+_, +_], E](
         .foldLeft(F.unit) {
           // use `guarantee` to make all finalizers execute even if previous finalizer failed
           _ `guarantee` _.catchAll {
-            case e: Throwable => F.terminate(e)
-            case e => F.terminate(TypedError(e))
+            e => F.terminate(TypedError.wrapIfNotThrowable(e))
           }
         }
     } yield ()
@@ -59,15 +57,15 @@ final class LifecycleAggregator[F[+_, +_], E](
 }
 
 object LifecycleAggregator {
-  def make[F[+_, +_]: Panic2: Primitives2]: Lifecycle[F[Throwable, _], LifecycleAggregator[F, Throwable]] = {
+  def make[F[+_, +_]: Panic2: PrimitivesM2]: Lifecycle[F[Throwable, _], LifecycleAggregator[F, Throwable]] = {
     Lifecycle.make(makeImpl[F, Throwable])(_.releaseAll())
   }
 
-  def makeGeneric[F[+_, +_]: Panic2: Primitives2, E]: Lifecycle[F[E, _], LifecycleAggregator[F, E]] = {
+  def makeGeneric[F[+_, +_]: Panic2: PrimitivesM2, E]: Lifecycle[F[E, _], LifecycleAggregator[F, E]] = {
     Lifecycle.make(makeImpl[F, E])(_.releaseAll())
   }
 
-  private def makeImpl[F[+_, +_]: Panic2: Primitives2, E]: F[Nothing, LifecycleAggregator[F, E]] = {
+  private def makeImpl[F[+_, +_]: Panic2: PrimitivesM2, E]: F[Nothing, LifecycleAggregator[F, E]] = {
     for {
       finalizers <- F.mkRefM(List.empty[(LifecycleAggregator[F, E]#Key, F[E, Unit])])
     } yield new LifecycleAggregator[F, E](finalizers)

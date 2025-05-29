@@ -136,7 +136,7 @@ jobs:
     strategy:
       matrix:
         java: [ '22' ]
-        scala: [ '2.13']
+        scala: [ '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@minimal
       - name: Build Microsite

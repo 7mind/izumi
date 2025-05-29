@@ -10,12 +10,16 @@ trait AbstractLocator extends Locator {
   protected def lookupLocalUnsafe(key: DIKey): Option[Any]
 
   private[distage] final def lookupLocal[T: Tag](key: DIKey): Option[GenericTypedRef[T]] = {
-    lookupLocalUnsafe(key)
-      .map {
-        value =>
-          require(key.tpe <:< SafeType.get[T], s"$key in not a subtype of ${SafeType.get[T]}")
-          TypedRef(value.asInstanceOf[T], key.tpe, isByName = false)
-      }
+    if (key == AbstractLocator.locatorDIKey) {
+      Some(TypedRef(this.asInstanceOf[T], key.tpe, isByName = false))
+    } else {
+      lookupLocalUnsafe(key)
+        .map {
+          value =>
+            require(key.tpe <:< SafeType.get[T], s"$key in not a subtype of ${SafeType.get[T]}")
+            TypedRef(value.asInstanceOf[T], key.tpe, isByName = false)
+        }
+    }
   }
 
   override final def find[T: Tag]: Option[T] =
@@ -61,4 +65,8 @@ trait AbstractLocator extends Locator {
     }
 
   }
+}
+
+object AbstractLocator {
+  private val locatorDIKey: DIKey.TypeKey = DIKey.get[Locator]
 }

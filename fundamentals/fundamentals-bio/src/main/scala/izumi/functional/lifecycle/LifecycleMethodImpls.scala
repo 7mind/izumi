@@ -1,8 +1,7 @@
 package izumi.functional.lifecycle
 
+import izumi.functional.bio.data.RestoreInterruption1
 import izumi.functional.quasi.{QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
-
-import java.util.concurrent.atomic.AtomicReference
 
 private[lifecycle] object LifecycleMethodImpls {
   @inline final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: QuasiFunctor[F]): Lifecycle[F, B] = {
@@ -26,14 +25,15 @@ private[lifecycle] object LifecycleMethodImpls {
     new Lifecycle[F, B] {
       override type InnerResource = QuasiRef[F, List[() => F[Unit]]]
 
-      private def bracketAppendFinalizer[a, b](finalizers: InnerResource)(lifecycle: Lifecycle[F, a])(use: lifecycle.InnerResource => F[b]): F[b] = {
-        F.bracket(
-          acquire = lifecycle.acquire.flatMap {
-            a =>
-              finalizers.update((() => lifecycle.release(a)) :: _).map(_ => a)
-          }
-        )(release = _ => F.unit)(
-          use = use
+      private def useAppendFinalizer[T, U](finalizers: InnerResource)(lifecycle: Lifecycle[F, T])(use: lifecycle.InnerResource => F[U]): F[U] = {
+        F.uninterruptibleExcept(
+          restore =>
+            lifecycle.acquire.flatMap {
+              a =>
+                finalizers
+                  .update((() => lifecycle.release(a)) :: _)
+                  .flatMap(_ => restore(use(a)))
+            }
         )
       }
 
@@ -46,12 +46,12 @@ private[lifecycle] object LifecycleMethodImpls {
       }
 
       override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = Left {
-        bracketAppendFinalizer(finalizers)(self) {
+        useAppendFinalizer(finalizers)(self) {
           (inner1: self.InnerResource) =>
             F.suspendF {
               self.extract(inner1).fold(_.map(f), F `pure` f(_)).flatMap {
                 (that: Lifecycle[F, B]) =>
-                  bracketAppendFinalizer(finalizers)(that) {
+                  useAppendFinalizer(finalizers)(that) {
                     (inner2: that.InnerResource) =>
                       that.extract[C](inner2).fold(identity, F.pure)
                   }
@@ -60,10 +60,6 @@ private[lifecycle] object LifecycleMethodImpls {
         }
       }
     }
-  }
-
-  @inline final def evalMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => F[B])(implicit F: QuasiPrimitives[F]): Lifecycle[F, B] = {
-    flatMapImpl(self)(a => Lifecycle.liftF(f(a)))
   }
 
   @inline final def wrapAcquireImpl[F[_], A](self: Lifecycle[F, A])(f: (=> F[self.InnerResource]) => F[self.InnerResource]): Lifecycle[F, A] = {
@@ -101,38 +97,27 @@ private[lifecycle] object LifecycleMethodImpls {
   ): Lifecycle[F, B] = {
     import QuasiIO.syntax.*
     new Lifecycle[F, B] {
-      override type InnerResource = AtomicReference[List[() => F[Unit]]]
+      override type InnerResource = QuasiRef[F, List[() => F[Unit]]]
 
-      private def extractAppendFinalizer[a](finalizers: InnerResource)(lifecycleCtor: () => Lifecycle[F, a]): F[a] = {
-        F.bracket(
-          acquire = {
+      private def extractAppendFinalizer[T](finalizers: InnerResource)(lifecycleCtor: () => Lifecycle[F, T]): F[T] = {
+        F.uninterruptibleExcept {
+          restore =>
             val lifecycle = lifecycleCtor()
             lifecycle.acquire.flatMap {
               a =>
-                F.maybeSuspend {
-                  // can't use `.updateAndGet` because of Scala.js
-                  var oldValue = finalizers.get()
-                  while (!finalizers.compareAndSet(oldValue, (() => lifecycle.release(a)) :: oldValue)) {
-                    oldValue = finalizers.get()
-                  }
-                  val doExtract: () => F[a] = {
-                    () => lifecycle.extract[a](a).fold(identity, F.pure)
-                  }
-                  doExtract
-                }
+                finalizers
+                  .update((() => lifecycle.release(a)) :: _)
+                  .flatMap(_ => restore(lifecycle.extract[T](a).fold(identity, F.pure)))
             }
-          }
-        )(release = _ => F.unit)(
-          use = doExtract => doExtract()
-        )
+        }
       }
 
       override def acquire: F[InnerResource] = {
-        F.maybeSuspend(new AtomicReference(Nil))
+        F.mkRef(Nil)
       }
 
       override def release(finalizers: InnerResource): F[Unit] = {
-        F.suspendF(F.traverse_(finalizers.get())(_.apply()))
+        finalizers.get.flatMap(F.traverse_(_)(_.apply()))
       }
 
       override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = {
@@ -145,4 +130,33 @@ private[lifecycle] object LifecycleMethodImpls {
       }
     }
   }
+
+  @inline final def makeUninterruptibleExceptImpl[F[_], A](
+    acquire0: RestoreInterruption1[F] => F[A]
+  )(release0: A => F[Unit]
+  )(implicit F: QuasiPrimitives[F]
+  ): Lifecycle[F, A] = {
+    import QuasiIO.syntax.*
+    new Lifecycle[F, A] {
+      override type InnerResource = QuasiRef[F, List[() => F[Unit]]]
+
+      override def acquire: F[InnerResource] = {
+        F.mkRef(Nil)
+      }
+
+      override def release(finalizers: InnerResource): F[Unit] = {
+        finalizers.get.flatMap(F.traverse_(_)(_.apply()))
+      }
+
+      override def extract[B >: A](finalizers: InnerResource): Either[F[B], B] = Left {
+        F.uninterruptibleExcept {
+          restore =>
+            acquire0(restore).flatMap {
+              a => finalizers.update((() => release0(a)) :: _).map(_ => a)
+            }
+        }
+      }
+    }
+  }
+
 }

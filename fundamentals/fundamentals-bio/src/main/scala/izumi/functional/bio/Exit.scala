@@ -33,17 +33,14 @@ object Exit {
       */
     def unsafeAttachTraceOrReturnNewThrowable(conv: E => Throwable): Throwable
 
-    final def unsafeAttachTraceOrReturnNewThrowable(): Throwable = unsafeAttachTraceOrReturnNewThrowable(TypedError(_))
+    final def unsafeAttachTraceOrReturnNewThrowable(): Throwable = unsafeAttachTraceOrReturnNewThrowable(TypedError.wrapIfNotThrowable)
 
     def map[E1](f: E => E1): Trace[E1]
 
     override final def toString: String = asString
   }
   object Trace {
-    def forTypedError[E](error: E): Trace[E] = error match {
-      case t: Throwable => ThrowableTrace(t)
-      case e => ThrowableTrace(TypedError(e))
-    }
+    def forTypedError[E](error: E): Trace[E] = ThrowableTrace(TypedError.wrapIfNotThrowable(error))
 
     def forUnknownError: Trace[Nothing] = new Trace[Nothing] {
       override val asString: String = "<empty trace, unknown error>"

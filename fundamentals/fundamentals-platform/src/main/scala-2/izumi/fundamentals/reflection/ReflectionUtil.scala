@@ -131,4 +131,21 @@ object ReflectionUtil {
     }.headOption
   }
 
+  def betaReduceLambda(c: blackbox.Context)(lambda: c.Expr[Any], names: List[String]): c.universe.Tree = {
+    import c.universe._
+    lambda.tree match {
+      case Function(params, body) =>
+        assert(params.size == names.size)
+        val substitutions = params.map(_.symbol).zip(names).toMap
+        val transformer = new Transformer {
+          override def transform(tree: Tree): Tree = tree match {
+            case Ident(_) if substitutions.exists(_._1 == tree.symbol) => Ident(TermName(substitutions(tree.symbol)))
+            case _ => super.transform(tree)
+          }
+        }
+        transformer.transform(body)
+      case _ => c.abort(c.enclosingPosition, "Expected a lambda function.")
+    }
+  }
+
 }

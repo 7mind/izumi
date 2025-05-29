@@ -1,6 +1,6 @@
 package izumi.logstage.macros
 
-import izumi.logstage.api.Log.{LogArg, Message}
+import izumi.logstage.api.Log.{Level, LogArg, Message}
 
 import scala.collection.mutable
 import scala.reflect.macros.blackbox
@@ -8,6 +8,33 @@ import scala.reflect.macros.blackbox
 final class LogMessageMacro(override val c: blackbox.Context) extends LogMessageMacro0(c, false)
 
 final class LogMessageMacroStrict(override val c: blackbox.Context) extends LogMessageMacro0(c, true)
+
+object LogMessageMacro0 {
+
+  def createMessageWithMode(c: blackbox.Context)(message: c.Expr[String], mode: EncodingMode): c.Expr[Message] = {
+    mode.fold(
+      onRaw = c.universe.reify(Message.raw(message.splice))
+    )(onStrictness = strictness => new LogMessageMacro0[c.type](c, strict = strictness).logMessageMacro(message))
+  }
+
+  def reifyLevel(c: blackbox.Context)(level: Level): c.Expr[Level] = {
+    level match {
+      case Level.Trace =>
+        c.universe.reify(Level.Trace)
+      case Level.Debug =>
+        c.universe.reify(Level.Debug)
+      case Level.Info =>
+        c.universe.reify(Level.Info)
+      case Level.Warn =>
+        c.universe.reify(Level.Warn)
+      case Level.Error =>
+        c.universe.reify(Level.Error)
+      case Level.Crit =>
+        c.universe.reify(Level.Crit)
+    }
+  }
+
+}
 
 class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
   private final val nameExtractor = new ArgumentNameExtractionMacro[c.type](c, strict)

@@ -306,7 +306,7 @@ def CombinedModule = HelloByeModule overriddenBy TwoImplsModule
 // Choose component configuration when making an Injector:
 
 runner.unsafeRun {
-  Injector()
+  Injector[Task]()
     .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.AllCaps))
     .use(_.run)
 }
@@ -314,7 +314,7 @@ runner.unsafeRun {
 // Check that result changes with a different configuration:
 
 runner.unsafeRun {
-  Injector()
+  Injector[Task]()
     .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.Normal))
     .use(_.run)
 }

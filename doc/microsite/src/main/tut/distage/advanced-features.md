@@ -265,7 +265,7 @@ Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` 
 NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
 
 ```scala mdoc:reset:to-string
-import distage.{BootstrapModuleDef, ModuleDef, Injector}
+import distage.{BootstrapModuleDef, ModuleDef, Injector, Identity, Lifecycle}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
 
@@ -289,11 +289,12 @@ def appModule = new ModuleDef {
   make[C]
 }
 
-val resources = Injector(bootstrapModule)
+val resources: Identity[Set[PrintResource]] = Injector[Identity](bootstrapModule)
   .produceGet[Set[PrintResource]](appModule)
   .use(set => set)
 
 resources.foreach(_.start())
+
 resources.toSeq.reverse.foreach(_.stop())
 ```
 
@@ -461,7 +462,9 @@ There's one way to workaround this - turn the type member `A` into a type parame
 
 ```scala mdoc:to-string:reset:invisible
 class Path {
-  class A
+  class Inner
+
+  type A = Inner
 }
 ```
 

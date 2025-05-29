@@ -77,6 +77,7 @@ object BootstrapFactory {
         activationInfo = activationInfo,
         shutdownInitiator = AppShutdownInitiator.empty,
         roleAppLocator = None,
+        appArtifact = None,
       )
     }
   }
