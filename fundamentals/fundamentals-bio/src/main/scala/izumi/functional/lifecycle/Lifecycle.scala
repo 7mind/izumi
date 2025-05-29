@@ -210,7 +210,7 @@ trait Lifecycle[+F[_], +A] {
 
   /**
     * The action in `F` used to release, close or deallocate the resource
-    * after it has been acquired and used through [[izumi.distage.model.definition.Lifecycle.SyntaxUse#use]].
+    * after it has been acquired and used through [[Lifecycle.SyntaxUse#use]].
     *
     * @note the `release` action is performed *uninterruptibly*,
     * when `F` is an effect type that supports interruption/cancellation.
