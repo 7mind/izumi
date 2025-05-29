@@ -129,9 +129,6 @@ class LocatorDefTest extends AnyWordSpec {
     ".get[Locator] always returns self" in {
       val ctx = new LocatorDef {}
 
-      def l1(i: => Int) = i + 5
-      def l2(i: => Int @Id("special")) = i
-
       assert(ctx.get[Locator] == ctx)
       assert(ctx.run((l: Locator) => l) == ctx)
     }
