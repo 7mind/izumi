@@ -46,7 +46,7 @@ class DisabledTestF[F[_]](implicit F: Applicative[F]) extends Lifecycle.Basic[F,
   override def release(resource: TestEnableDisable): F[Unit] = F.unit
 }
 
-abstract class MyDisabledTestF[F0[_]: QuasiIO: DefaultModule, F[x] <: F0[x]: TagK](f0Tag: TagK[F0])(implicit F: Applicative[F]) extends Spec1[F0]()(f0Tag, implicitly) {
+abstract class MyDisabledTestF[F0[_]: QuasiIO: DefaultModule, F[x] <: F0[x]: TagK](f0Tag: TagK[F0])(implicit F: Applicative[F]) extends Spec1[F0]()(using f0Tag, implicitly) {
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = new ModuleDef {

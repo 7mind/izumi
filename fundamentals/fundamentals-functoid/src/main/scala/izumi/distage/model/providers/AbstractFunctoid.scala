@@ -112,7 +112,7 @@ trait AbstractFunctoid[+A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
   def annotateParameterWhen(name: Identifier)(predicate: DIKey.BasicKey => Boolean): Ftoid[A] = {
     val newProvider = this.get.replaceKeys {
       case k: DIKey.BasicKey if predicate(k) =>
-        DIKey.IdKey(k.tpe, name.id, k.mutatorIndex)(name.idContract)
+        DIKey.IdKey(k.tpe, name.id, k.mutatorIndex)(using name.idContract)
       case k => k
     }
     create[A](newProvider)

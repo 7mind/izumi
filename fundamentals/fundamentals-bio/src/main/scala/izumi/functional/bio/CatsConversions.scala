@@ -179,7 +179,7 @@ object CatsConversions {
             //  because there's no branch of Outcome to convert Exit.Terminated to
             //  since we can't convert its Throwable to arbitrary E in Outcome.Errored
             //  and it would be incorrect to convert Exit.Terminated to Outcome.Canceled
-            release(a, CatsExit.exitToOutcomeThrowable(e)(F))
+            release(a, CatsExit.exitToOutcomeThrowable(e)(using F))
           }
       )(use)
     }
@@ -192,7 +192,7 @@ object CatsConversions {
       F.bracketCase(acquire)(
         (a, e: Exit[Throwable, B]) =>
           F.orTerminate {
-            release(a, CatsExit.exitToOutcomeThrowable(e)(F))
+            release(a, CatsExit.exitToOutcomeThrowable(e)(using F))
           }
       )(use)
     }
@@ -217,7 +217,7 @@ object CatsConversions {
       F.guarantee(fa, F.orTerminate(fin))
     }
     @inline override final def guaranteeCase[A](fa: F[Throwable, A])(fin: Outcome[F[Throwable, _], Throwable, A] => F[Throwable, Unit]): F[Throwable, A] = {
-      F.guaranteeCase(fa, (exit: Exit[Throwable, A]) => F.orTerminate(fin(CatsExit.exitToOutcomeThrowable(exit)(F))))
+      F.guaranteeCase(fa, (exit: Exit[Throwable, A]) => F.orTerminate(fin(CatsExit.exitToOutcomeThrowable(exit)(using F))))
     }
 
     @inline override final def onCancel[A](fa: F[Throwable, A], fin: F[Throwable, Unit]): F[Throwable, A] = {
@@ -324,7 +324,7 @@ object CatsConversions {
     override def cede: F[Throwable, Unit] = FC.yieldNow
 
     @inline override final def start[A](fa: F[Throwable, A]): F[Throwable, Fiber[F[Throwable, _], Throwable, A]] = {
-      F.map(Fork.fork(fa))(_.toCats(F))
+      F.map(Fork.fork(fa))(_.toCats(using F))
     }
 
     @inline override final def racePair[A, B](
@@ -335,8 +335,8 @@ object CatsConversions {
       (Fiber[F[Throwable, _], Throwable, A], Outcome[F[Throwable, _], Throwable, B]),
     ]] = {
       F.map(FC.racePairUnsafe(fa, fb)) {
-        case Left((l, f)) => Left((CatsExit.exitToOutcomeThrowable(l)(F), f.toCats(F)))
-        case Right((f, r)) => Right((f.toCats(F), CatsExit.exitToOutcomeThrowable(r)(F)))
+        case Left((l, f)) => Left((CatsExit.exitToOutcomeThrowable(l)(using F), f.toCats(using F)))
+        case Right((f, r)) => Right((f.toCats(using F), CatsExit.exitToOutcomeThrowable(r)(using F)))
       }
     }
 
@@ -492,7 +492,7 @@ object CatsConversions {
     override final def evalOn[A](fa: F[Throwable, A], ec: ExecutionContext): F[Throwable, A] = F.onEC(ec)(fa)
 
     override final def startOn[A](fa: F[Throwable, A], ec: ExecutionContext): F[Throwable, Fiber[F[Throwable, _], Throwable, A]] = {
-      F.map(Fork.forkOn(ec)(fa))(_.toCats(F))
+      F.map(Fork.forkOn(ec)(fa))(_.toCats(using F))
     }
     override final def async_[A](k: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = F.async(k)
     override final def fromFuture[A](fut: F[Throwable, Future[A]]): F[Throwable, A] = F.flatMap(fut)(F.fromFuture(_))

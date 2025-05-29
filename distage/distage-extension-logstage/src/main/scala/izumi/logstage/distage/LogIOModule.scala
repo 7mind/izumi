@@ -15,7 +15,7 @@ import logstage.{LogCreateIO, LogIO, LogRouter, UnsafeLogIO}
   */
 class LogIOModule[F[_]: TagK] extends ModuleDef {
   make[LogIO[F]]
-    .from(LogIO.fromLogger[F](_: IzLogger)(_: SyncSafe1[F]))
+    .from(LogIO.fromLogger[F](_: IzLogger)(using _: SyncSafe1[F]))
     .aliased[UnsafeLogIO[F]]
     .aliased[LogCreateIO[F]]
 }

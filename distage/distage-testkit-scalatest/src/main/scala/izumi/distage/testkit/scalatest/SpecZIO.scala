@@ -62,6 +62,6 @@ abstract class SpecZIO(implicit val defaultModule3: DefaultModule3[ZIO], val tag
   }
 
   override protected def config: TestConfig = super.config.copy(
-    moduleOverrides = LogIO2Module[ZIO[Any, _, _]]()(tagBIO)
+    moduleOverrides = LogIO2Module[ZIO[Any, _, _]]()(using tagBIO)
   )
 }

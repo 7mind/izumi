@@ -42,7 +42,7 @@ object PlanCheckInput {
     module = module,
     roots = roots,
     roleNames = roleNames,
-    providedKeys = Injector.providedKeys[F]()(defaultModule),
+    providedKeys = Injector.providedKeys[F]()(using defaultModule),
     configLoader = configLoader,
     appPlugins = appPlugins,
     bsPlugins = bsPlugins,

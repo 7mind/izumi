@@ -37,23 +37,23 @@ class AnyBIOSupportModule[F[+_, +_]: TagKK](implicit t: TagK[F[Throwable, _]], t
     .aliased[QuasiApplicative2[F]]
     .aliased[QuasiFunctor2[F]]
     .from {
-      QuasiIO.fromBIO(_: IO2[F])
+      QuasiIO.fromBIO(using _: IO2[F])
     }
   make[QuasiAsync2[F]].from {
-    QuasiAsync.fromBIO(_: Async2[F])
+    QuasiAsync.fromBIO(using _: Async2[F])
   }
   make[QuasiTemporal2[F]].from {
-    QuasiTemporal.fromBIO(_: Temporal2[F])
+    QuasiTemporal.fromBIO(using _: Temporal2[F])
   }
   make[SyncSafe2[F]].from {
-    SyncSafe1.fromBIO(_: IO2[F])
+    SyncSafe1.fromBIO(using _: IO2[F])
   }
   make[SyncSafe1[F[Throwable, _]]].from((_: SyncSafe2[F]).widen[F[Throwable, _]])
   make[Clock2[F]].from {
-    Clock1.fromImpure(_: Clock1[Identity])(_: SyncSafe2[F])
+    Clock1.fromImpure(_: Clock1[Identity])(using _: SyncSafe2[F])
   }
   make[Entropy2[F]].from {
-    Entropy1.fromImpure(_: Entropy1[Identity])(_: SyncSafe2[F])
+    Entropy1.fromImpure(_: Entropy1[Identity])(using _: SyncSafe2[F])
   }
   make[Clock1[F[Throwable, _]]].from {
     Clock1.covarianceConversion[F[Nothing, _], F[Throwable, _]](_: Clock2[F])

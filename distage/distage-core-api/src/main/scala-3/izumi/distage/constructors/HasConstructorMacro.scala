@@ -45,13 +45,13 @@ object ZEnvConstructorMacro {
                 val Typed(term, exprTpe) = exprAcc
                 given Type[A] = exprTpe.tpe.asType.asInstanceOf[Type[A]]
 
-                val addExpr = '{ ${ term.asExprOf[A] }.add[B](${ arg.asExprOf[B] })(summonInline[zio.Tag[B]]) }
+                val addExpr = '{ ${ term.asExprOf[A] }.add[B](${ arg.asExprOf[B] })(using summonInline[zio.Tag[B]]) }
                 Typed(addExpr.asTerm, TypeTree.of[A & zio.ZEnvironment[B]])
               }
 
               params
                 .foldLeft(
-                  Typed('{ zio.ZEnvironment.apply[t](${ headParam.asExprOf[t] })(summonInline[zio.Tag[t]]) }.asTerm, TypeTree.of[zio.ZEnvironment[t]])
+                  Typed('{ zio.ZEnvironment.apply[t](${ headParam.asExprOf[t] })(using summonInline[zio.Tag[t]]) }.asTerm, TypeTree.of[zio.ZEnvironment[t]])
                 ) {
                   case (expr, (arg, ParamRepr(_, _, tpe))) =>
                     tpe.asType match {

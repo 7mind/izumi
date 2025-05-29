@@ -143,7 +143,7 @@ sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModul
     val F = F0.asInstanceOf[cats.effect.kernel.Async[F]]
     val P = P0.asInstanceOf[cats.Parallel[F]]
     val D = D0.asInstanceOf[cats.effect.std.Dispatcher[F]]
-    DefaultModule(AnyCatsEffectSupportModule.withImplicits[F](tagK, F, P, D))
+    DefaultModule(AnyCatsEffectSupportModule.withImplicits[F](using tagK, F, P, D))
   }
 }
 

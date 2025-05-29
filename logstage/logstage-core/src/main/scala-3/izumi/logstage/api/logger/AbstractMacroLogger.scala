@@ -2,8 +2,8 @@ package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{Level, Message}
-import izumi.logstage.api.{Log, LogMethodMacro}
-
+import izumi.logstage.api.{Log, LogMethodMacro, LogValuesMacro}
+import izumi.logstage.macros.EncodingMode
 trait AbstractMacroLogger { this: AbstractLogger =>
 
   /**
@@ -20,6 +20,10 @@ trait AbstractMacroLogger { this: AbstractLogger =>
   transparent inline final def warn(inline message: String): Unit = log(Log.Level.Warn, message)
   transparent inline final def error(inline message: String): Unit = log(Log.Level.Error, message)
   transparent inline final def crit(inline message: String): Unit = log(Log.Level.Crit, message)
+
+  transparent inline final def logValues(inline level: Log.Level)(inline values: Any*): Unit = {
+    ${ LogValuesMacro.logValues('this, 'level, 'values, 1) }
+  }
 
   transparent inline final def logMethod[A](
     inline level: Level,

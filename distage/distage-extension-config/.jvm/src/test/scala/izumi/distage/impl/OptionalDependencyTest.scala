@@ -59,16 +59,16 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     assert(new optSearch1[QuasiPrimitives].find == QuasiPrimitives.quasiPrimitivesIdentity)
     assert(new optSearch1[QuasiIO].find == QuasiIO.quasiIOIdentity)
 
-    try QuasiIO.fromBIO(null)
+    try QuasiIO.fromBIO(using null)
     catch { case _: NullPointerException => }
-    try IO2[SomeBIO, Unit](())(null)
+    try IO2[SomeBIO, Unit](())(using null)
     catch { case _: NullPointerException => }
 
     And("Methods that mention cats/ZIO types directly cannot be referred")
 //    assertDoesNotCompile("QuasiIO.fromBIO(BIO.BIOZio)")
 //    assertDoesNotCompile("Lifecycle.fromCats(null)")
 //    assertDoesNotCompile("Lifecycle.providerFromCats(null)(null)")
-    Async2[SomeBIO](null)
+    Async2[SomeBIO](using null)
 
     locally(izumi.functional.lifecycle.Lifecycle)
 
@@ -109,7 +109,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     type LC[F[_]] = distage.Lifecycle[F, Int]
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
     intercept[Throwable] {
-      QuasiIO.fromCats[Option, LC](null, null)
+      QuasiIO.fromCats[Option, LC](using null, null)
     } match {
       case _: NoClassDefFoundError =>
       case _: NullPointerException =>

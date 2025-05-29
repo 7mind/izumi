@@ -67,13 +67,13 @@ jobs:
           SCALA_VERSION: ${{ matrix.scala }}
           JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  != '3'
-        run: ./build.sh nix gen coverage
+        run: ./run --nix :gen :coverage
       - name: Build and Test without Coverage # coverage leads to verification errors on scala3
         env:
           SCALA_VERSION: ${{ matrix.scala }}
           JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  == '3'
-        run: ./build.sh nix gen test
+        run: ./run --nix :gen :test
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         with:
@@ -117,13 +117,13 @@ jobs:
           SCALA_VERSION: ${{ matrix.scala }}
           JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  != '3'
-        run: ./build.sh nix gen-jsonly coverage
+        run: ./run --nix :gen-jsonly :coverage
       - name: Build and Test without Coverage # coverage leads to verification errors on scala3
         env:
           SCALA_VERSION: ${{ matrix.scala }}
           JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  == '3'
-        run: ./build.sh nix gen-jsonly test
+        run: ./run --nix :gen-jsonly :test
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         with:
@@ -136,14 +136,14 @@ jobs:
     strategy:
       matrix:
         java: [ '22' ]
-        scala: [ '2.13']
+        scala: [ '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@minimal
       - name: Build Microsite
         env:
           SCALA_VERSION: ${{ matrix.scala }}
           JAVA_VERSION: ${{ matrix.java }}
-        run: ./build.sh nix gen-js site-test
+        run: ./run --nix :gen-js :site-test
 
   publish-site:
     runs-on: ubuntu-latest
@@ -168,7 +168,7 @@ jobs:
         env:
           SCALA_VERSION: ${{ matrix.scala }}
           JAVA_VERSION: ${{ matrix.java }}
-        run: ./build.sh nix gen-js site-publish
+        run: ./run --nix :gen-js :site-publish
 
   publish-artifacts:
     runs-on: ubuntu-latest
@@ -199,7 +199,7 @@ jobs:
           openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
           tar xvf secrets.tar
           
-          ./build.sh nix gen-js publish-scala
+          ./run --nix :gen-js :publish-scala
 
   all-good:
     if: always()

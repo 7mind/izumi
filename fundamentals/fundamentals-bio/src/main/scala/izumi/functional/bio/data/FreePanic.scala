@@ -235,5 +235,6 @@ object FreePanic {
     }
 
     @inline override final def fromTry[A](effect: => Try[A]): FreePanic[S, Throwable, A] = fromEither(effect.toEither)
+    @inline override final def fromAttempt[A](effect: => A): FreePanic[S, Throwable, A] = fromTry(Try(effect))
   }
 }

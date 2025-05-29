@@ -3,17 +3,17 @@ package izumi.functional.lifecycle
 import cats.Applicative
 import cats.effect.kernel
 import cats.effect.kernel.{GenConcurrent, Resource, Sync}
-import izumi.functional.quasi.*
-import izumi.functional.bio.data.Morphism1
+import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
 import izumi.functional.bio.{Fiber2, Fork2, Functor2, Monad2}
+import izumi.functional.quasi.*
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
 import zio.internal.stacktracer.Tracer
-import zio.{Scope, ZEnvironment, ZIO, ZLayer}
-import zio.managed.{Reservation, ZManaged}
 import zio.managed.ZManaged.ReleaseMap
+import zio.managed.{Reservation, ZManaged}
 import zio.stacktracer.TracingImplicits.disableAutoTrace
+import zio.{Scope, ZEnvironment, ZIO, ZLayer}
 
 import java.util.concurrent.{ExecutorService, TimeUnit}
 import scala.annotation.unused
@@ -210,7 +210,7 @@ trait Lifecycle[+F[_], +A] {
 
   /**
     * The action in `F` used to release, close or deallocate the resource
-    * after it has been acquired and used through [[izumi.distage.model.definition.Lifecycle.SyntaxUse#use]].
+    * after it has been acquired and used through [[Lifecycle.SyntaxUse#use]].
     *
     * @note the `release` action is performed *uninterruptibly*,
     * when `F` is an effect type that supports interruption/cancellation.
@@ -233,10 +233,12 @@ trait Lifecycle[+F[_], +A] {
     */
   def extract[B >: A](resource: InnerResource): Either[F[B], B]
 
-  final def map[G[x] >: F[x]: QuasiFunctor, B](f: A => B): Lifecycle[G, B] = LifecycleMethodImpls.mapImpl[G, A, B](this)(f)
+  final def map[G[x] >: F[x]: QuasiFunctor, B](f: A => B): Lifecycle[G, B] =
+    LifecycleMethodImpls.mapImpl[G, A, B](this)(f)
   final def flatMap[G[x] >: F[x]: QuasiPrimitives, B](f: A => Lifecycle[G, B]): Lifecycle[G, B] =
     LifecycleMethodImpls.flatMapImpl[G, A, B](this)(f)
-  final def flatten[G[x] >: F[x]: QuasiPrimitives, B](implicit ev: A <:< Lifecycle[G, B]): Lifecycle[G, B] = this.flatMap(ev)
+  final def flatten[G[x] >: F[x]: QuasiPrimitives, B](implicit ev: A <:< Lifecycle[G, B]): Lifecycle[G, B] =
+    this.flatMap(ev)
 
   final def catchAll[G[x] >: F[x]: QuasiIO, B >: A](recover: Throwable => Lifecycle[G, B]): Lifecycle[G, B] =
     LifecycleMethodImpls.redeemImpl[G, A, B](this)(recover, Lifecycle.pure[G](_))
@@ -246,7 +248,8 @@ trait Lifecycle[+F[_], +A] {
   final def redeem[G[x] >: F[x]: QuasiIO, B](onFailure: Throwable => Lifecycle[G, B], onSuccess: A => Lifecycle[G, B]): Lifecycle[G, B] =
     LifecycleMethodImpls.redeemImpl[G, A, B](this)(onFailure, onSuccess)
 
-  final def evalMap[G[x] >: F[x]: QuasiPrimitives, B](f: A => G[B]): Lifecycle[G, B] = LifecycleMethodImpls.evalMapImpl[G, A, B](this)(f)
+  final def evalMap[G[x] >: F[x]: QuasiPrimitives, B](f: A => G[B]): Lifecycle[G, B] =
+    flatMap[G, B](a => Lifecycle.liftF(f(a)))
   final def evalTap[G[x] >: F[x]: QuasiPrimitives](f: A => G[Unit]): Lifecycle[G, A] =
     evalMap[G, A](a => QuasiFunctor[G].map(f(a))(_ => a))
 
@@ -317,6 +320,14 @@ object Lifecycle extends LifecycleInstances {
       init(a)
       a
     }(release)
+  }
+
+  def makeUninterruptibleExcept[F[_], A](
+    acquire: RestoreInterruption1[F] => F[A]
+  )(release: A => F[Unit]
+  )(implicit F: QuasiPrimitives[F]
+  ): Lifecycle[F, A] = {
+    LifecycleMethodImpls.makeUninterruptibleExceptImpl[F, A](acquire)(release)
   }
 
   def makePair[F[_], A](allocate: F[(A, F[Unit])]): Lifecycle[F, A] = {
@@ -485,7 +496,7 @@ object Lifecycle extends LifecycleInstances {
       }
 
       override def release(finalizersRef: kernel.Ref[F, List[F[Unit]]]): F[Unit] = {
-        F.flatMap(finalizersRef.get)(cats.instances.list.catsStdInstancesForList.sequence_(_))
+        F.flatMap(finalizersRef.get)(cats.instances.list.catsStdInstancesForList.sequence_(_)(F))
       }
 
       override def extract[B >: A](finalizersRef: kernel.Ref[F, List[F[Unit]]]): Left[F[B], Nothing] = {
@@ -503,7 +514,7 @@ object Lifecycle extends LifecycleInstances {
         // FIXME: `Lifecycle.release` should have an `exit` parameter
         F.uncancelable(
           restore =>
-            F.flatMap(restore(resource.allocated)) {
+            F.flatMap(restore(resource.allocated(F))) {
               case (a, finalizer) =>
                 F.as(finalizers.update(finalizer :: _), a)
             }
@@ -898,7 +909,11 @@ object Lifecycle extends LifecycleInstances {
   object FromZIO {
     trait FromZIOManaged[R, E, A] extends FromZIO[R, E, A] {
       override final type InnerResource = ReleaseMap
-      override final def acquire: ZIO[R, E, ReleaseMap] = ReleaseMap.make(Tracer.instance.empty)
+
+      override final def acquire: ZIO[R, E, ReleaseMap] = {
+        ReleaseMap.make(Tracer.instance.empty)
+      }
+
       override final def release(releaseMap: ReleaseMap): ZIO[R, Nothing, Unit] = {
         implicit val trace: zio.Trace = Tracer.instance.empty
 
@@ -908,7 +923,11 @@ object Lifecycle extends LifecycleInstances {
 
     trait FromZIOScoped[R, E, A] extends FromZIO[R, E, A] {
       override final type InnerResource = Scope.Closeable
-      override final def acquire: ZIO[R, E, Scope.Closeable] = Scope.make(Tracer.instance.empty)
+
+      override final def acquire: ZIO[R, E, Scope.Closeable] = {
+        Scope.make(Tracer.instance.empty)
+      }
+
       override final def release(scope: Scope.Closeable): ZIO[R, Nothing, Unit] = {
         implicit val trace: zio.Trace = Tracer.instance.empty
 
@@ -946,8 +965,8 @@ private[izumi] sealed trait LifecycleInstances extends LifecycleCatsInstances {
   implicit final def monad2ForLifecycle[F[+_, +_]: Functor2](implicit P: QuasiPrimitives[F[Any, +_]]): Monad2[Lifecycle2[F, +_, +_]] =
     new Monad2[Lifecycle2[F, +_, +_]] {
       override def map[E, A, B](r: Lifecycle[F[E, _], A])(f: A => B): Lifecycle[F[E, _], B] = r.map(f)
-      override def flatMap[E, A, B](r: Lifecycle2[F, E, A])(f: A => Lifecycle2[F, E, B]): Lifecycle2[F, E, B] = r.flatMap(f)(P.asInstanceOf[QuasiPrimitives[F[E, +_]]])
-      override def pure[A](a: A): Lifecycle2[F, Nothing, A] = Lifecycle.pure[F[Nothing, _]](a)(P.asInstanceOf[QuasiPrimitives[F[Nothing, +_]]])
+      override def flatMap[E, A, B](r: Lifecycle2[F, E, A])(f: A => Lifecycle2[F, E, B]): Lifecycle2[F, E, B] = r.flatMap(f)(using P.asInstanceOf[QuasiPrimitives[F[E, +_]]])
+      override def pure[A](a: A): Lifecycle2[F, Nothing, A] = Lifecycle.pure[F[Nothing, _]](a)(using P.asInstanceOf[QuasiPrimitives[F[Nothing, +_]]])
     }
 }
 

@@ -43,6 +43,11 @@ additional parameters.
 
 Example [postgres](https://hub.docker.com/_/postgres/) container definition:
 
+```scala mdoc:invisible
+// workaround doobie.util.pos.Pos macro failure inside mdoc on Scala 3
+implicit def overridePos: doobie.util.pos.Pos = doobie.util.pos.Pos("", 0)
+```
+
 ```scala mdoc:to-string
 import izumi.distage.docker.{ContainerDef, Docker}
 

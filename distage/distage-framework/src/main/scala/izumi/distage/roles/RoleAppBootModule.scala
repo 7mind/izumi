@@ -126,7 +126,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   make[RolesInfo].from {
     (provider: RoleProvider, appModule: ModuleBase @Id("main"), tagK: TagK[F]) =>
-      provider.loadRoles[F](appModule)(tagK)
+      provider.loadRoles[F](appModule)(using tagK)
   }
   make[Set[DIKey]].named("distage.roles.roots").from {
     (rolesInfo: RolesInfo) =>

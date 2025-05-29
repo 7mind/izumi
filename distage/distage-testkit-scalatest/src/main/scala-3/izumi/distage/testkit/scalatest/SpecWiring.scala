@@ -10,7 +10,7 @@ abstract class SpecWiring[F[_], AppMain <: CheckableApp { type AppEffectType[A] 
 )(implicit
   val planCheck: PlanCheckMaterializer[AppMain, Cfg],
   defaultModule: DefaultModule[F],
-) extends Spec1[F]()(app.tagK, defaultModule)
+) extends Spec1[F]()(using app.tagK, defaultModule)
   with WiringAssertions {
 
   s"Wiring check for `${planCheck.app.getClass.getCanonicalName}`" should {

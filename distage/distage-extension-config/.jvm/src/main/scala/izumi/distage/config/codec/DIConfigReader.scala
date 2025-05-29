@@ -104,7 +104,7 @@ object DIConfigReader extends LowPriorityDIConfigReaderInstances {
   @inline def apply[T: DIConfigReader]: DIConfigReader[T] = implicitly
 
   def derived[T: ClassTag](implicit dec: PureconfigAutoDerive[T]): DIConfigReader[T] =
-    DIConfigReader.deriveFromPureconfigAutoDerive[T](classTag[T], dec)
+    DIConfigReader.deriveFromPureconfigAutoDerive[T](using classTag[T], dec)
 
   implicit def deriveFromExistingPureconfigConfigReader[T: ClassTag](implicit dec: ConfigReader[T]): DIConfigReader[T] = {
     useConfigReader[T](dec, _)

@@ -14,17 +14,20 @@ final class DefaultModuleTest extends AnyWordSpec with MkInjector with CatsIOPla
 
     "build for forZIOPlusCats" in {
       unsafeRun(
-        Injector[zio.Task]()(implicitly[QuasiIO[zio.Task]], implicitly[TagK[zio.Task]], DefaultModule.forZIOPlusCats).produce(Module.empty, Roots.Everything).unsafeGet()
+        Injector[zio.Task]()(using implicitly[QuasiIO[zio.Task]], implicitly[TagK[zio.Task]], DefaultModule.forZIOPlusCats)
+          .produce(Module.empty, Roots.Everything).unsafeGet()
       )
     }
 
     "build for forZIO" in {
-      unsafeRun(Injector[zio.Task]()(implicitly[QuasiIO[zio.Task]], implicitly[TagK[zio.Task]], DefaultModule.forZIO).produce(Module.empty, Roots.Everything).unsafeGet())
+      unsafeRun(
+        Injector[zio.Task]()(using implicitly[QuasiIO[zio.Task]], implicitly[TagK[zio.Task]], DefaultModule.forZIO).produce(Module.empty, Roots.Everything).unsafeGet()
+      )
     }
 
     "build for forCatsIO" in {
       catsIOUnsafeRunSync(
-        Injector[cats.effect.IO]()(implicitly[QuasiIO[cats.effect.IO]], implicitly[TagK[cats.effect.IO]], DefaultModule.forCatsIO)
+        Injector[cats.effect.IO]()(using implicitly[QuasiIO[cats.effect.IO]], implicitly[TagK[cats.effect.IO]], DefaultModule.forCatsIO)
           .produce(Module.empty, Roots.Everything).unsafeGet()
       )
     }
@@ -32,7 +35,7 @@ final class DefaultModuleTest extends AnyWordSpec with MkInjector with CatsIOPla
     "build for fromBIO" in {
       implicit val unsafeRun2: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO()
       unsafeRun(
-        Injector[zio.Task]()(implicitly[QuasiIO[zio.Task]], implicitly[TagK[zio.Task]], DefaultModule.fromBIO[zio.IO])
+        Injector[zio.Task]()(using implicitly[QuasiIO[zio.Task]], implicitly[TagK[zio.Task]], DefaultModule.fromBIO[zio.IO])
           .produce(Module.empty, Roots.Everything).unsafeGet()
       )
     }
@@ -41,7 +44,7 @@ final class DefaultModuleTest extends AnyWordSpec with MkInjector with CatsIOPla
       catsIOUnsafeRunSync {
         Dispatcher.sequential[cats.effect.IO].use {
           implicit dispatcher =>
-            Injector[cats.effect.IO]()(implicitly[QuasiIO[cats.effect.IO]], implicitly[TagK[cats.effect.IO]], DefaultModule.fromCats: DefaultModule[cats.effect.IO])
+            Injector[cats.effect.IO]()(using implicitly[QuasiIO[cats.effect.IO]], implicitly[TagK[cats.effect.IO]], DefaultModule.fromCats: DefaultModule[cats.effect.IO])
               .produce(Module.empty, Roots.Everything).unsafeGet()
         }
       }
@@ -50,7 +53,7 @@ final class DefaultModuleTest extends AnyWordSpec with MkInjector with CatsIOPla
     "build for fromQuasiIO" in {
       implicit val quasiIORunner: QuasiIORunner[cats.effect.IO] = QuasiIORunner.mkFromCatsIORuntime(IORuntime.builder().build())
       catsIOUnsafeRunSync(
-        Injector[cats.effect.IO]()(implicitly[QuasiIO[cats.effect.IO]], implicitly[TagK[cats.effect.IO]], DefaultModule.fromQuasiIO: DefaultModule[cats.effect.IO])
+        Injector[cats.effect.IO]()(using implicitly[QuasiIO[cats.effect.IO]], implicitly[TagK[cats.effect.IO]], DefaultModule.fromQuasiIO: DefaultModule[cats.effect.IO])
           .produce(Module.empty, Roots.Everything).unsafeGet()
       )
     }

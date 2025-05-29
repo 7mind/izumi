@@ -107,13 +107,13 @@ private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
       F.async_(effect)
     }
     override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
-      cats.Parallel.parTraverse_(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
+      cats.Parallel.parTraverse_(l.iterator.toList)(f)(using cats.instances.list.catsStdInstancesForList, P)
     }
     override def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
-      cats.Parallel.parTraverse(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
+      cats.Parallel.parTraverse(l.iterator.toList)(f)(using cats.instances.list.catsStdInstancesForList, P)
     }
     override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
-      F.parTraverseN(n)(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList)
+      F.parTraverseN(n)(l.iterator.toList)(f)(using cats.instances.list.catsStdInstancesForList)
     }
     override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
       F.void(parTraverseN(n)(l)(f))

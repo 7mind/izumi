@@ -23,7 +23,7 @@ version="$izumi.version$"
 To declare roles use @scaladoc[RoleModuleDef#makeRole](izumi.distage.roles.model.definition.RoleModuleDef):
 
 ```scala mdoc:reset:to-string
-import distage.plugins.PluginDef
+import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.RoleDescriptor
 import izumi.distage.roles.model.RoleTask
@@ -119,7 +119,7 @@ val logger = objects.get[LogIO[UIO]]
 Use `include` to add it to your application:
 
 ```scala mdoc:reset:to-string
-import distage.plugins.PluginDef
+import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.BundledRolesModule
 import zio.Task
 
@@ -418,7 +418,8 @@ import com.example.petstore._
 "fakepackage com.example.petstore": Unit
 
 import distage.Injector
-import distage.plugins.{PluginConfig, PluginDef, PluginLoader}
+import distage.plugins.{PluginConfig, PluginLoader}
+import izumi.distage.plugins.PluginDef
 
 object PetStorePlugin extends PluginDef {
   make[PetRepository]

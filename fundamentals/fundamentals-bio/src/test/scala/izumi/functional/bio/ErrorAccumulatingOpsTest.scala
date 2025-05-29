@@ -1,5 +1,6 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.impl.MiniBIO
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -8,6 +9,18 @@ import scala.annotation.{nowarn, unused}
 final class ErrorAccumulatingOpsTestEither extends ErrorAccumulatingOpsTest[Either] {
   override implicit def F: Error2[Either] = Root.BIOEither
   override def unsafeRun[E, A](f: Either[E, A]): Either[E, A] = f
+}
+
+final class ErrorAccumulatingOpsTestMiniBIO extends ErrorAccumulatingOpsTest[MiniBIO] {
+  override implicit def F: Error2[MiniBIO] = MiniBIO.BIOMiniBIO
+  override def unsafeRun[E, A](f: MiniBIO[E, A]): Either[E, A] = f.run() match {
+    case Exit.Success(value) => Right(value)
+    case uninterrupted: Exit.FailureUninterrupted[E] =>
+      uninterrupted match {
+        case Exit.Error(error, _) => Left(error)
+        case Exit.Termination(compoundException, _, _) => throw compoundException
+      }
+  }
 }
 
 @nowarn("msg=Unused import")

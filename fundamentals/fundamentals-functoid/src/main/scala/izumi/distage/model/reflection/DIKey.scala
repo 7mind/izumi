@@ -18,7 +18,7 @@ sealed abstract class DIKey extends Product with CachedProductHashcode {
 
 object DIKey {
   def apply[T: Tag]: DIKey = DIKey.TypeKey(SafeType.get[T])
-  def apply[T: Tag](id: Identifier): DIKey = DIKey.IdKey(SafeType.get[T], id.id)(id.idContract)
+  def apply[T: Tag](id: Identifier): DIKey = DIKey.IdKey(SafeType.get[T], id.id)(using id.idContract)
 
   def get[T: Tag]: DIKey.TypeKey = DIKey.TypeKey(SafeType.get[T])
 
@@ -29,7 +29,7 @@ object DIKey {
 
   final case class TypeKey(tpe: SafeType, mutatorIndex: Option[Int] = None) extends BasicKey {
     def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id, mutatorIndex)
-    def named(id: Identifier): IdKey[id.Id] = IdKey(tpe, id.id, mutatorIndex)(id.idContract)
+    def named(id: Identifier): IdKey[id.Id] = IdKey(tpe, id.id, mutatorIndex)(using id.idContract)
 
     override def withTpe(tpe: SafeType): DIKey.TypeKey = copy(tpe = tpe)
     override def toString: String = formatWithIndex(s"{type.${tpe.tag.scalaStyledName}}", mutatorIndex)

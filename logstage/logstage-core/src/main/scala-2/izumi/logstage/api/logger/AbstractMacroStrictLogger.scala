@@ -1,6 +1,7 @@
 package izumi.logstage.api.logger
 
-import izumi.logstage.macros.LoggerMacroMethods._
+import izumi.logstage.api.Log.Level
+import izumi.logstage.macros.LoggerMacroMethods.*
 
 import scala.language.experimental.macros
 
@@ -21,4 +22,5 @@ trait AbstractMacroStrictLogger { this: AbstractLogger =>
   final def error(message: String): Unit = macro scErrorMacroStrict
   final def crit(message: String): Unit = macro scCritMacroStrict
 
+  final def logValues(level: Level)(values: Any*): Unit = macro scLogValuesStrict
 }

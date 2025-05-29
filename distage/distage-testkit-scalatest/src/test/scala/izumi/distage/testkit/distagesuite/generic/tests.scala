@@ -6,13 +6,16 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.distagesuite.fixtures.*
 import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec1, Spec2, SpecZIO}
+import izumi.distage.testkit.scalatest.*
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
+import izumi.functional.bio.{Exit, F, IO2}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
+import cats.effect.kernel.Sync
+import cats.effect.IO as CIO
 import zio.{Task, ZEnvironment, ZIO}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
@@ -360,3 +363,84 @@ abstract class ForcedRootTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[
       assert(locatorRef.get.get[ForcedRootProbe].started)
   }
 }
+
+class ShorthandAssertionsTestZIO extends SpecZIO with AssertZIO {
+  "shorthand assertions ZIO" should {
+    "support short assert versions" in {
+      for {
+        _ <- assertIO(ZIO.attempt(42))(_ == 42)
+        _ <- assertIO(ZIO.attempt(42))(_ != 21)
+        _ <- assertIO(ZIO.attempt(List("one", "two")))(_.nonEmpty)
+        _ <- assertIO(ZIO.attempt(42))(_ == 21).sandboxExit.map {
+          case Exit.Termination(err, _, _) =>
+            assert(err.getMessage.contains("42 did not equal 21"))
+          case other =>
+            fail(s"Unexpected error: $other")
+        }
+
+        _ <- assertIO(ZIO.attempt(42), ZIO.attempt(21))(_ > _)
+        _ <- assertIO(ZIO.attempt("test"), ZIO.attempt(4))(_.length == _)
+      } yield ()
+    }
+  }
+}
+
+class ShorthandAssertionsTestCIO extends Spec1[CIO] with AssertCIO {
+  "shorthand assertions CIO" should {
+    "support short assert versions" in {
+      for {
+        _ <- assertIO(CIO.pure(42))(_ == 42)
+        _ <- assertIO(CIO.pure(42))(_ != 21)
+        _ <- assertIO(CIO.pure(List("one", "two")))(_.nonEmpty)
+        err <- assertIO(CIO.pure(42))(_ == 21).attempt
+        _ <- assertIO(err.left.exists(_.getMessage.contains("42 did not equal 21")))
+
+        _ <- assertIO(CIO.pure(42), CIO.pure(21))(_ > _)
+        _ <- assertIO(CIO.pure("test"), CIO.pure(4))(_.length == _)
+      } yield ()
+    }
+  }
+}
+
+abstract class ShorthandAssertionsIO2TestBase[F[+_, +_]: IO2: TagKK: DefaultModule2] extends Spec2[F] with AssertIO2[F] {
+  "shorthand assertions IO2" should {
+    "support short assert versions" in {
+      for {
+        _ <- assertIO(F.syncThrowable(42))(_ == 42)
+        _ <- assertIO(F.syncThrowable(42))(_ != 21)
+        _ <- assertIO(F.syncThrowable(List("one", "two")))(_.nonEmpty)
+        _ <- assertIO(F.syncThrowable(42))(_ == 21).sandboxExit.map {
+          case Exit.Termination(err, _, _) =>
+            assert(err.getMessage.contains("42 did not equal 21"))
+          case other =>
+            fail(s"Unexpected error: $other")
+        }
+        _ <- assertIO(F.syncThrowable(42), F.syncThrowable(21))(_ > _)
+        _ <- assertIO(F.syncThrowable("test"), F.syncThrowable(4))(_.length == _)
+      } yield ()
+    }
+  }
+}
+
+class ShorthandAssertionsTestIO2 extends ShorthandAssertionsIO2TestBase[zio.IO]
+
+abstract class ShorthandAssertionsTestSyncBase[F[_]: TagK: DefaultModule](implicit F: Sync[F]) extends Spec1[F] with AssertSync[F] {
+  import cats.syntax.applicativeError.catsSyntaxApplicativeError
+
+  "shorthand assertions IO2" should {
+    "support short assert versions" in {
+      for {
+        _ <- assertIO(F.pure(42))(_ == 42)
+        _ <- assertIO(F.pure(42))(_ != 21)
+        _ <- assertIO(F.pure(List("one", "two")))(_.nonEmpty)
+        err <- assertIO(F.pure(42))(_ == 21).attempt
+        _ <- assertIO(err.left.exists(_.getMessage.contains("42 did not equal 21")))
+
+        _ <- assertIO(F.pure(42), F.pure(21))(_ > _)
+        _ <- assertIO(F.pure("test"), F.pure(4))(_.length == _)
+      } yield ()
+    }
+  }
+}
+
+class ShorthandAssertionsTestSync extends ShorthandAssertionsTestSyncBase[CIO]

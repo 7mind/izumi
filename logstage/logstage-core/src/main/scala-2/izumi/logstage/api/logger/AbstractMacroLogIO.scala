@@ -16,6 +16,8 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] =>
   final def error(message: String): F[Unit] = macro scErrorMacro[F]
   final def crit(message: String): F[Unit] = macro scCritMacro[F]
 
+  final def logValues(level: Level)(values: Any*): F[Unit] = macro scLogValues[F]
+
   final def logMethod[G[x] >: F[x], A](level: Level)(function: => A)(implicit qp: QuasiIO[G]): G[A] = macro scLogMethod[G, A]
   final def logMethod[G[x] >: F[x], A](
     level: Level,

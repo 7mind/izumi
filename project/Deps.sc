@@ -150,7 +150,7 @@ object Izumi {
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.20")
   final val scala213 = ScalaVersion("2.13.16")
-  final val scala300 = ScalaVersion("3.3.5")
+  final val scala300 = ScalaVersion("3.3.6")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -202,7 +202,7 @@ object Izumi {
       ),
     )
 //    final val cross = Seq(jvmPlatform2, jsPlatform2)
-    final val jvm2 = Seq(jvmPlatform2)
+//    final val jvm2 = Seq(jvmPlatform2)
 //    final val js = Seq(jsPlatform2)
 
     final val cross3 = Seq(jvmPlatform3, jsPlatform3)
@@ -236,7 +236,48 @@ object Izumi {
 
       final val crossScalaSources = Defaults.CrossScalaPlusSources
 
-      final val topLevelSettings = Seq()
+      final val topLevelSettings = Seq(
+        "Keys.commands".in(
+          SettingScope.Raw("Global")
+        ) ~= """{
+               |  // Workaround for Intellij "Open cross-compiled projects as Scala 2" option pending upstream merge of https://github.com/JetBrains/sbt-structure/pull/73
+               |  xs =>
+               |    def numbersOf(version: String): (Int, Int, Int) = {
+               |      val prefix = version.split('.').filter(s => s.nonEmpty && s.forall(_.isDigit)).map(_.toInt).take(3)
+               |      val xs = prefix ++ Seq.fill(3 - prefix.length)(0)
+               |      (xs(0), xs(1), xs(2))
+               |    }
+               |
+               |    val preferScala2: Command = Command.command("preferScala2") { state =>
+               |      val (structure, data) = {
+               |        val extracted = Project.extract(state)
+               |        (extracted.structure, extracted.structure.data)
+               |      }
+               |
+               |      val scala3Projects = structure.allProjectRefs.filter { project =>
+               |        (project / Keys.scalaVersion).get(data).exists(_.startsWith("3."))
+               |      }
+               |
+               |      val (scala2Versions, crossScala2And3ProjectsCount) = scala3Projects.foldLeft((Set.empty[String], 0)) {
+               |        case ((scala2Versions, crossCount), project) =>
+               |          val projectScala2Versions = (project / Keys.crossScalaVersions).get(data).getOrElse(Seq.empty).filter(_.startsWith("2."))
+               |          (scala2Versions ++ projectScala2Versions, crossCount + (if (projectScala2Versions.nonEmpty) 1 else 0))
+               |      }
+               |
+               |      // We can only do this when all sbt projects cross-compile to Scala 2 & Scala 3
+               |      // See https://youtrack.jetbrains.com/issue/SCL-22619/
+               |      val canSetScala2VersionGlobally = crossScala2And3ProjectsCount > 0 &&
+               |        scala3Projects.length == crossScala2And3ProjectsCount
+               |      if (canSetScala2VersionGlobally) {
+               |        "++" + scala2Versions.maxBy(numbersOf) :: state
+               |      } else {
+               |        state
+               |      }
+               |    }
+               |
+               |    xs.filterNot(_.nameOption.contains("preferScala2")) :+ preferScala2
+               |}""".stripMargin.raw
+      )
 
       final val sharedAggSettings = outOfSource ++ Seq(
         """SettingKey[Boolean]("ide-skip-project")""" := true,
@@ -285,6 +326,10 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
+        // scala-steward workaround
+        // add sbtgen version to sbt build to allow scala-steward to find it and update it in .sc files
+        // https://github.com/scala-steward-org/scala-steward/issues/696#issuecomment-545800968
+        "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.12" % "${Version.SbtGen.value}"""".raw,
       )
 
       val scala2Wconf = Seq(
@@ -859,10 +904,6 @@ object Izumi {
               }
             }"""
           ),
-          // scala-steward workaround
-          // add sbtgen version to sbt build to allow scala-steward to find it and update it in .sc files
-          // https://github.com/scala-steward-org/scala-steward/issues/696#issuecomment-545800968
-          "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.13" % "${Version.SbtGen.value}"""".raw,
         ),
         plugins = Plugins(
           enabled = Seq(
@@ -880,7 +921,7 @@ object Izumi {
     ),
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
-    defaultPlatforms = Targets.jvm2,
+    defaultPlatforms = Targets.jvm3,
     dontIncludeInSuperAgg = true,
   )
 

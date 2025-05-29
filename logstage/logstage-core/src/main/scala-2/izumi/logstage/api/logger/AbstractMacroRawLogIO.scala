@@ -1,6 +1,7 @@
 package izumi.logstage.api.logger
 
-import izumi.logstage.macros.LogIOMacroMethods._
+import izumi.logstage.api.Log.Level
+import izumi.logstage.macros.LogIOMacroMethods.*
 
 import scala.language.experimental.macros
 
@@ -13,4 +14,6 @@ trait AbstractMacroRawLogIO[F[_]] { this: AbstractLogIO[F] =>
   final def warn(message: String): F[Unit] = macro scWarnMacroRaw[F]
   final def error(message: String): F[Unit] = macro scErrorMacroRaw[F]
   final def crit(message: String): F[Unit] = macro scCritMacroRaw[F]
+
+  final def logValues(level: Level)(values: Any*): F[Unit] = macro scLogValuesRaw[F]
 }

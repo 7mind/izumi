@@ -1,6 +1,6 @@
 package com.example.petstore
 
-import distage.plugins._
+import izumi.distage.plugins.PluginDef
 
 object PetStorePlugin extends PluginDef {
   make[PetRepository]

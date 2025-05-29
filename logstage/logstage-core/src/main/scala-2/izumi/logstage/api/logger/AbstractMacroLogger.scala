@@ -22,6 +22,7 @@ trait AbstractMacroLogger { this: AbstractLogger =>
   final def error(message: String): Unit = macro scErrorMacro
   final def crit(message: String): Unit = macro scCritMacro
 
+  final def logValues(level: Level)(values: Any*): Unit = macro scLogValues
   final def logMethod[A](level: Level)(function: => A): A = macro scLogMethod[A]
   final def logMethod[A](level: Level, printTypes: Boolean)(function: => A): A = macro scLogMethodPrintTypes[A]
   final def logMethod[A](level: Level, printTypes: Boolean, printImplicits: Boolean)(function: => A): A = macro scLogMethodPrintTypesImplicits[A]

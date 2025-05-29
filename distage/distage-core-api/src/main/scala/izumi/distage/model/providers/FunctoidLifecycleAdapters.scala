@@ -36,8 +36,8 @@ private[providers] trait FunctoidLifecycleAdapters {
   )(implicit tag: Tag[Lifecycle.FromCats[F, A]]
   ): Functoid[Lifecycle.FromCats[F, A]] = {
     Functoid.identity[Sync[F]].map {
-      implicit sync: Sync[F] =>
-        Lifecycle.fromCats(resource)(sync)
+      (sync: Sync[F]) =>
+        Lifecycle.fromCats(resource)(using sync)
     }
   }
 
@@ -90,7 +90,7 @@ private[providers] trait FunctoidLifecycleAdapters {
     layer: => ZLayer[R, E, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
-    Functoid.lift(Lifecycle.fromZLayer(layer)(zio.Tag[A]))
+    Functoid.lift(Lifecycle.fromZLayer(layer)(using zio.Tag[A]))
   }
 
   /**
@@ -101,7 +101,7 @@ private[providers] trait FunctoidLifecycleAdapters {
     layer: => ZLayer[R, Nothing, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, Nothing, A]]
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
-    Functoid.lift(Lifecycle.fromZLayer(layer)(zio.Tag[A]))
+    Functoid.lift(Lifecycle.fromZLayer(layer)(using zio.Tag[A]))
   }
 
   disableAutoTrace.discard()

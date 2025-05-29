@@ -98,7 +98,7 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   }
 
   make[Scheduler2[ZIO[R, +_, +_]]].from {
-    SchedulerInstances.SchedulerFromTemporalAndClock(_: Temporal2[ZIO[R, +_, +_]], _: Clock2[ZIO[R, +_, +_]])
+    SchedulerInstances.SchedulerFromTemporalAndClock(using _: Temporal2[ZIO[R, +_, +_]], _: Clock2[ZIO[R, +_, +_]])
   }
 
   addImplicit[TransZio[IO]]

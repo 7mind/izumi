@@ -160,7 +160,7 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
   final private def _modify[T](key: DIKey.BasicKey)(f: Functoid[T] => Functoid[T])(implicit pos: CodePositionMaterializer): SingletonRef = {
     val (tpeKey: DIKey.TypeKey, maybeId) = key match {
       case tpeKey: DIKey.TypeKey => tpeKey -> None
-      case idKey @ DIKey.IdKey(tpe, id, m) => DIKey.TypeKey(tpe, m) -> Some(Identifier.fromIdContract(id)(idKey.idContract))
+      case idKey @ DIKey.IdKey(tpe, id, m) => DIKey.TypeKey(tpe, m) -> Some(Identifier.fromIdContract(id)(using idKey.idContract))
     }
     val newProvider: Functoid[T] = f(Functoid.identityKey[T](key))
     val binding = SingletonBinding(tpeKey, ImplDef.ProviderImpl(newProvider.get.ret, newProvider.get), Set.empty, BindingOrigin(pos.get.position), isMutator = true)

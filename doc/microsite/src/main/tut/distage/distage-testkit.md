@@ -433,9 +433,9 @@ import izumi.distage.plugins.ForcedRecompilationToken.disabled._
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
-import distage.plugins.PluginDef
 import distage.Activation
 import distage.StandardAxis.Repo
+import izumi.distage.plugins.PluginDef
 
 object BonusServicePlugin extends PluginDef {
   make[BonusService]

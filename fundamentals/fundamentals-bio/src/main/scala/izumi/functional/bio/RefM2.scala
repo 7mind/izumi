@@ -27,7 +27,7 @@ object RefM2 {
       disableAutoTrace.discard()
     }
 
-  def createFromBIO[F[+_, +_]: Bracket2: Primitives2, A](a: A): F[Nothing, RefM2[F, A]] = {
+  def createFromBIO[F[+_, +_]: IO2: Primitives2, A](a: A): F[Nothing, RefM2[F, A]] = {
     for {
       mutex <- Mutex2.createFromBIO[F]
       ref <- F.mkRef(a)

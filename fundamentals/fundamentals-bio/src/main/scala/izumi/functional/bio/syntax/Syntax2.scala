@@ -74,7 +74,7 @@ object Syntax2 {
     @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
   }
 
-  class ApplicativeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Applicative2[F]) extends FunctorOps(r)(F) {
+  class ApplicativeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Applicative2[F]) extends FunctorOps(r)(using F) {
 
     /** execute two operations in order, return result of second operation */
     @inline final def *>[E1 >: E, B](f0: => F[E1, B]): F[E1, B] = F.*>(r, f0)
@@ -91,12 +91,12 @@ object Syntax2 {
     @inline final def forever: F[E, Nothing] = F.forever(r)
   }
 
-  class GuaranteeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Guarantee2[F]) extends ApplicativeOps(r)(F) {
+  class GuaranteeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Guarantee2[F]) extends ApplicativeOps(r)(using F) {
     @inline final def guarantee(cleanup: F[Nothing, Unit]): F[E, A] = F.guarantee(r, cleanup)
   }
 
   class ApplicativeErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: ApplicativeError2[F])
-    extends GuaranteeOps(r)(F) {
+    extends GuaranteeOps(r)(using F) {
     @inline final def leftMap[E2](f: E => E2): F[E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
@@ -107,7 +107,7 @@ object Syntax2 {
     @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
   }
 
-  final class MonadOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Monad2[F]) extends ApplicativeOps(r)(F) {
+  final class MonadOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Monad2[F]) extends ApplicativeOps(r)(using F) {
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E1, A, B](r)(f0)
     @inline final def tap[E1 >: E](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
 
@@ -119,7 +119,7 @@ object Syntax2 {
     @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(implicit ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
   }
 
-  class ErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Error2[F]) extends ApplicativeErrorOps(r)(F) {
+  class ErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Error2[F]) extends ApplicativeErrorOps(r)(using F) {
     // duplicated from MonadOps
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E1, A, B](r)(f0)
     @inline final def tap[E1 >: E](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
@@ -177,7 +177,7 @@ object Syntax2 {
       F.withFilter[E1, A](r)(predicate)
   }
 
-  class BracketOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Bracket2[F]) extends ErrorOps(r)(F) {
+  class BracketOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Bracket2[F]) extends ErrorOps(r)(using F) {
     @inline final def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracket(r: F[E1, A])(release)(use)
 
     @inline final def bracketCase[E1 >: E, B](release: (A, Exit[E1, B]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracketCase(r: F[E1, A])(release)(use)
@@ -191,7 +191,7 @@ object Syntax2 {
       F.guaranteeExceptOnInterrupt(r, cleanupOnNonInterruption)
   }
 
-  class PanicOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Panic2[F]) extends BracketOps(r)(F) {
+  class PanicOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Panic2[F]) extends BracketOps(r)(using F) {
     @inline final def sandbox: F[Exit.FailureUninterrupted[E], A] = F.sandbox(r)
     @inline final def sandboxExit: F[Nothing, Exit.Uninterrupted[E, A]] = F.sandboxExit(r)
 
@@ -213,7 +213,7 @@ object Syntax2 {
     @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
   }
 
-  class IOOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: IO2[F]) extends PanicOps(r)(F) {
+  class IOOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: IO2[F]) extends PanicOps(r)(using F) {
     @inline final def bracketAuto[E1 >: E, B](use: A => F[E1, B])(implicit ev: A <:< AutoCloseable): F[E1, B] =
       F.bracket[E1, A, B](r)(c => F.sync(c.close()))(use)
   }
@@ -224,14 +224,13 @@ object Syntax2 {
     @inline final infix def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
     @inline final infix def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
   }
-  final class ConcurrentOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Concurrent2[F])
-    extends ParallelOps(r)(F) {
+  final class ConcurrentOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Concurrent2[F]) extends ParallelOps(r)(using F) {
     @inline final infix def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
     @inline final def racePairUnsafe[E1 >: E, A1 >: A](
       that: F[E1, A1]
     ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
-  class AsyncOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Async2[F]) extends IOOps(r)(F) {
+  class AsyncOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Async2[F]) extends IOOps(r)(using F) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
     @inline final infix def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
     @inline final infix def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
@@ -245,7 +244,7 @@ object Syntax2 {
 
   final class TemporalOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Temporal2[F]) {
     @inline final def repeatUntil[E2 >: E, A2](tooManyAttemptsError: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
-      F.repeatUntil[E2, A2](new FunctorOps(r)(F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
+      F.repeatUntil[E2, A2](new FunctorOps(r)(using F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
 
     @inline final def timeout(duration: Duration): F[E, Option[A]] = F.timeout(duration)(r)
     @inline final def timeoutFail[E1 >: E](e: => E1)(duration: Duration): F[E1, A] = F.timeoutFail(duration)(e, r)

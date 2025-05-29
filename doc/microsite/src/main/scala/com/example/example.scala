@@ -2,7 +2,7 @@ package com.example
 
 import distage.StandardAxis.Mode
 import distage.config.ConfigModuleDef
-import distage.plugins.PluginDef
+import izumi.distage.plugins.PluginDef
 
 final case class HostPort(host: String, port: Int)
 

@@ -261,7 +261,7 @@ object PlanCheck {
         roots = roots,
         providedKeys = providedKeys,
         excludedActivations = excludedActivations,
-      )(effectType)
+      )(using effectType)
       val reachableKeys = providedKeys ++ planVerifierResult.visitedKeys
 
       val configIssues = if (checkConfig) {

@@ -5,6 +5,7 @@ import izumi.logstage.api.rendering.LogstageCodec
 
 import scala.annotation.tailrec
 import scala.quoted.{Expr, Quotes, Type}
+import scala.collection.mutable.ArrayBuffer
 
 object LogMessageMacro {
   def message(message: Expr[String], strict: Boolean)(using qctx: Quotes): Expr[Message] = {
@@ -34,71 +35,56 @@ object LogMessageMacro {
     @tailrec
     def matchTerm(message: Term, multiline: Boolean): Expr[Message] = {
       message match {
-        case Typed(term, _) =>
-          matchTerm(term, multiline)
         case Inlined(_, _, term) =>
+          matchTerm(term, multiline)
+        case Typed(term, _) =>
           matchTerm(term, multiline)
         case Block(_, term) =>
           matchTerm(term, multiline)
         case Apply(Select(left, "+"), right :: Nil) =>
           val unpacked = unpackPlus(left, List(right))
           assert(unpacked.nonEmpty)
-          val parts = scala.collection.mutable.ArrayBuffer.empty[Either[String, Expr[LogArg]]]
+          val parts = ArrayBuffer.empty[Either[String, Expr[LogArg]]]
 
-          unpacked.foreach {
-            case Literal(c) =>
-              parts.lastOption match {
-                case Some(value) =>
-                  value match {
-                    case Left(value) =>
-                      parts.remove(parts.size - 1)
-                      parts += Left(value + c.value.toString)
-                    case Right(_) =>
-                      parts += Left(c.value.toString)
-                  }
-                case None =>
-                  parts += Left(c.value.toString)
-              }
-            case Inlined(_, _, Literal(c)) =>
-              parts.lastOption match {
-                case Some(value) =>
-                  value match {
-                    case Left(value) =>
-                      parts.remove(parts.size - 1)
-                      parts += Left(value + c.value.toString)
-                    case Right(_) =>
-                      parts += Left(c.value.toString)
-                  }
-                case None =>
-                  parts += Left(c.value.toString)
-              }
-            case chunk @ Ident(_) =>
-              val expr = Right(makeArg(chunk.asExprOf[Any]))
-              parts.lastOption match {
-                case Some(value) =>
-                  value match {
-                    case Left(value) =>
-                      parts += expr
-                    case Right(value) =>
-                      parts ++= Seq(Left(""), expr)
-                  }
-                case None =>
-                  parts ++= Seq(Left(""), expr)
-              }
-            case Inlined(_, _, chunk @ Ident(_)) =>
-              val expr = Right(makeArg(chunk.asExprOf[Any]))
-              parts.lastOption match {
-                case Some(value) =>
-                  value match {
-                    case Left(value) =>
-                      parts += expr
-                    case Right(value) =>
-                      parts ++= Seq(Left(""), expr)
-                  }
-                case None =>
-                  parts ++= Seq(Left(""), expr)
-              }
+          def collectPart(part: Term, parts: ArrayBuffer[Either[String, Expr[LogArg]]]): Unit = {
+            part match {
+              case Inlined(_, _, term) => collectPart(term, parts)
+              case Literal(c) =>
+                parts.lastOption match {
+                  case Some(value) =>
+                    value match {
+                      case Left(value) =>
+                        parts.remove(parts.size - 1)
+                        parts += Left(value + c.value.toString)
+                      case Right(_) =>
+                        parts += Left(c.value.toString)
+                    }
+                  case None => parts += Left(c.value.toString)
+                }
+              case chunk @ Ident(_) =>
+                val expr = Right(makeArg(chunk.asExprOf[Any]))
+                parts.lastOption match {
+                  case Some(value) =>
+                    value match {
+                      case Left(value) => parts += expr
+                      case Right(value) => parts ++= Seq(Left(""), expr)
+                    }
+                  case None => parts ++= Seq(Left(""), expr)
+                }
+              case chunk @ Apply(_, _) =>
+                val expr = Right(makeArg(chunk.asExprOf[Any]))
+                parts.lastOption match {
+                  case Some(value) =>
+                    value match {
+                      case Left(value) => parts += expr
+                      case Right(value) => parts ++= Seq(Left(""), expr)
+                    }
+                  case None => parts ++= Seq(Left(""), expr)
+                }
+            }
           }
+
+          unpacked.foreach(collectPart(_, parts))
 
           assert(parts.nonEmpty)
           if (parts.last.isRight) {
@@ -130,17 +116,17 @@ object LogMessageMacro {
     @tailrec
     def unpackPlus(message: Term, parts: List[Term]): List[Term] = {
       message match {
-        case Ident(_) | Inlined(_, _, Ident(_)) =>
+        case Inlined(_, _, tree) =>
+          unpackPlus(tree, parts)
+
+        case Ident(_) =>
           message +: parts
 
-        case Literal(_) | Inlined(_, _, Literal(_)) =>
+        case Literal(c) =>
           message +: parts
 
         case Apply(Select(left, "+"), right :: Nil) =>
           unpackPlus(left, right +: parts)
-
-        case Inlined(_, _, tree) =>
-          unpackPlus(tree, parts)
 
         case _ =>
           report.errorAndAbort(s"Concatenation is too complex for analysis, use string interpolation instead: ${message.show}")

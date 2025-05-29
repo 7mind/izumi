@@ -42,11 +42,7 @@ class Bootloader(
       bootstrapActivation = config.bootstrapActivation(bootstrapActivation),
       overrides = Seq(bootstrap),
       locatorPrivacy = locatorPrivacy,
-    )(
-      QuasiIO[Identity],
-      TagK[Identity],
-      DefaultModule[Identity](defaultModule),
-    )
+    )(using QuasiIO[Identity], TagK[Identity], DefaultModule[Identity](defaultModule))
     val module = config.appModule(input.bindings)
     val roots = config.roots(input.roots)
 

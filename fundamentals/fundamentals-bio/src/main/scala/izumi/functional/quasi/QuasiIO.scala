@@ -1,9 +1,9 @@
 package izumi.functional.quasi
 
 import cats.effect.kernel.Outcome
-import izumi.functional.quasi.QuasiIO.QuasiIOIdentity
-import izumi.functional.bio.data.Morphism1
+import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
 import izumi.functional.bio.{Applicative2, Exit, Functor2, IO2, TypedError}
+import izumi.functional.quasi.QuasiIO.QuasiIOIdentity
 import izumi.fundamentals.orphans.{`cats.Applicative`, `cats.Functor`, `cats.effect.kernel.Sync`}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -164,6 +164,9 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
           value
       }
     }
+    override def uninterruptibleExcept[A](f: RestoreInterruption1[Identity] => Identity[A]): Identity[A] = {
+      f(Morphism1.identity[Identity])
+    }
     override def guarantee[A](fa: => Identity[A])(`finally`: => Identity[Unit]): Identity[A] = {
       try { fa }
       finally `finally`
@@ -187,37 +190,36 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
 private[quasi] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuasiIOInstances1 {
 
   implicit def fromBIO[F[+_, +_]](implicit F: IO2[F]): QuasiIO[F[Throwable, _]] = {
-    type E = Throwable
     new QuasiPrimitivesFromBIO[F, Throwable] with QuasiIO[F[Throwable, _]] {
-      override final def suspendF[A](effAction: => F[E, A]): F[E, A] = super[QuasiPrimitivesFromBIO].suspendF(effAction)
-      override final def mkRef[A](a: A): F[E, QuasiRef[F[E, _], A]] = super[QuasiPrimitivesFromBIO].mkRef(a)
-      override final def tapBothUntyped[A](eff: => F[E, A])(err: Any => F[E, Unit], succ: A => F[E, Unit]): F[E, A] = {
+      override final def suspendF[A](effAction: => F[Throwable, A]): F[Throwable, A] = F.suspend(effAction)
+      override final def mkRef[A](a: A): F[Throwable, QuasiRef[F[Throwable, _], A]] = super[QuasiPrimitivesFromBIO].mkRef(a)
+      override final def tapBothUntyped[A](eff: => F[Throwable, A])(err: Any => F[Throwable, Unit], succ: A => F[Throwable, Unit]): F[Throwable, A] = {
         super[QuasiPrimitivesFromBIO].tapBothUntyped(eff)(err, succ)
       }
 
-      override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
-      override def maybeSuspendEither[A](eff: => Either[E, A]): F[E, A] = F.fromEither(eff)
-      override def definitelyRecoverUnsafeIgnoreTrace[A](action: => F[E, A])(recover: E => F[E, A]): F[E, A] = {
+      override def maybeSuspend[A](eff: => A): F[Throwable, A] = F.syncThrowable(eff)
+      override def maybeSuspendEither[A](eff: => Either[Throwable, A]): F[Throwable, A] = F.fromEither(eff)
+      override def definitelyRecoverUnsafeIgnoreTrace[A](action: => F[Throwable, A])(recover: Throwable => F[Throwable, A]): F[Throwable, A] = {
         F.suspend(action).sandbox.catchAll(recover apply _.toThrowable)
       }
-      override def definitelyRecoverWithTrace[A](action: => F[E, A])(recover: (E, Exit.Trace[E]) => F[E, A]): F[E, A] = {
+      override def definitelyRecoverWithTrace[A](action: => F[Throwable, A])(recover: (Throwable, Exit.Trace[Throwable]) => F[Throwable, A]): F[Throwable, A] = {
         F.suspend(action).sandbox.catchAll(e => recover(e.toThrowable, e.trace))
       }
-      override def redeem[A, B](action: => F[E, A])(failure: E => F[E, B], success: A => F[E, B]): F[E, B] = {
+      override def redeem[A, B](action: => F[Throwable, A])(failure: Throwable => F[Throwable, B], success: A => F[Throwable, B]): F[Throwable, B] = {
         action.redeem(failure, success)
       }
-      override def fail[A](t: => E): F[E, A] = F.fail(t)
-      override def bracketCase[A, B](acquire: => F[E, A])(release: (A, Option[E]) => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
-        F.bracketCase[E, A, B](acquire = F.suspend(acquire))(release = {
+      override def fail[A](t: => Throwable): F[Throwable, A] = F.fail(t)
+      override def bracketCase[A, B](acquire: => F[Throwable, A])(release: (A, Option[Throwable]) => F[Throwable, Unit])(use: A => F[Throwable, B]): F[Throwable, B] = {
+        F.bracketCase[Throwable, A, B](acquire = F.suspend(acquire))(release = {
           case (a, exit) =>
             exit match {
               case Exit.Success(_) => release(a, None).orTerminate
-              case failure: Exit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
+              case failure: Exit.Failure[Throwable] => release(a, Some(failure.toThrowable)).orTerminate
             }
         })(use = use)
       }
-      override def guaranteeOnFailure[A](fa: => F[E, A])(cleanupOnFailure: E => F[E, Unit]): F[E, A] = {
-        F.guaranteeOnFailure(F.suspend(fa), (e: Exit.Failure[E]) => cleanupOnFailure(e.toThrowable).orTerminate)
+      override def guaranteeOnFailure[A](fa: => F[Throwable, A])(cleanupOnFailure: Throwable => F[Throwable, Unit]): F[Throwable, A] = {
+        F.guaranteeOnFailure(F.suspend(fa), (e: Exit.Failure[Throwable]) => cleanupOnFailure(e.toThrowable).orTerminate)
       }
     }
   }
@@ -295,6 +297,8 @@ trait QuasiPrimitives[F[_]] extends QuasiApplicative[F] {
   def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B]
   def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = bracket(acquire = unit)(release = _ => `finally`)(use = _ => fa)
 
+  def uninterruptibleExcept[A](f: RestoreInterruption1[F] => F[A]): F[A]
+
   def mkRef[A](a: A): F[QuasiRef[F, A]]
 
   def suspendF[A](effAction: => F[A]): F[A]
@@ -344,7 +348,12 @@ private[quasi] sealed trait LowPriorityQuasiPrimitivesInstances1 {
 }
 
 private[quasi] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](implicit F: IO2[F]) extends QuasiPrimitives[F[E, _]] {
-  override def suspendF[A](f: => F[E, A]): F[E, A] = F.sync(f).flatten
+  /** Overridden in [[LowPriorityQuasiIOInstances.fromBIO]] */
+  override def suspendF[A](f: => F[E, A]): F[E, A] = F.suspendSafe(f)
+
+  override def mkRef[A](a: A): F[E, QuasiRef[F[E, _], A]] = {
+    QuasiRef.fromMaybeSuspend(a)(Morphism1(f => F.sync(f())))
+  }
 
   override final def pure[A](a: A): F[E, A] = F.pure(a)
   override final def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
@@ -354,22 +363,19 @@ private[quasi] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](implicit F: IO2
 
   override final def bracket[A, B](acquire: => F[E, A])(release: A => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
     F.bracket(acquire = suspendF(acquire))(release = release(_).catchAll {
-      case e: Throwable => F.terminate(e)
-      case e => F.terminate(TypedError(e))
+      e => F.terminate(TypedError.wrapIfNotThrowable(e))
     })(use = use)
   }
   override final def guarantee[A](fa: => F[E, A])(`finally`: => F[E, Unit]): F[E, A] = {
     F.guarantee(
       suspendF(fa),
       suspendF(`finally`).catchAll {
-        case e: Throwable => F.terminate(e)
-        case e => F.terminate(TypedError(e))
+        e => F.terminate(TypedError.wrapIfNotThrowable(e))
       },
     )
   }
-
-  override def mkRef[A](a: A): F[E, QuasiRef[F[E, _], A]] = {
-    QuasiRef.fromMaybeSuspend(a)(Morphism1(f => F.sync(f())))
+  override final def uninterruptibleExcept[A](f: RestoreInterruption1[F[E, _]] => F[E, A]): F[E, A] = {
+    F.uninterruptibleExcept(restore => f(Morphism1(g => restore(g))))
   }
 
   override final def traverse[A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]] = F.traverse(l)(f)
@@ -395,13 +401,16 @@ private[quasi] sealed class QuasiPrimitivesFromCats[F[_]](F: cats.effect.kernel.
   override final def guarantee[A](fa: => F[A])(`finally`: => F[Unit]): F[A] = {
     F.guarantee(F.defer(fa), F.defer(`finally`))
   }
+  override final def uninterruptibleExcept[A](f: RestoreInterruption1[F] => F[A]): F[A] = {
+    F.uncancelable(restore => f(Morphism1(g => restore(g))))
+  }
 
   override def mkRef[A](a: A): F[QuasiRef[F, A]] = {
     QuasiRef.fromMaybeSuspend(a)(Morphism1(f => F.delay(f())))
   }
 
-  override final def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)
-  override final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(F)
+  override final def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(using F)
+  override final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(using F)
 
   override def tapBothUntyped[A](eff: => F[A])(err: Any => F[Unit], succ: A => F[Unit]): F[A] = {
     F.attemptTap(eff)(
@@ -464,8 +473,8 @@ private[quasi] sealed trait LowPriorityQuasiApplicativeInstances1 {
       override def pure[A](a: A): F[A] = F.pure(a)
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
       override def map2[A, B, C](fa: F[A], fb: => F[B])(f: (A, B) => C): F[C] = F.map2(fa, fb)(f)
-      override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(F)
-      override def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(F)
+      override def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(using F)
+      override def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(using F)
     }
   }
 }
@@ -532,6 +541,7 @@ object QuasiRef {
           override def update(f: A => A): F[Unit] = {
             maybeSuspend {
               () =>
+                // can't use `.updateAndGet` because of Scala.js
                 var oldValue = ref.get()
                 while (!ref.compareAndSet(oldValue, f(oldValue))) {
                   oldValue = ref.get()

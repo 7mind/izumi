@@ -42,10 +42,10 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
     implicit F: Sync[F] => SyncSafe1.fromSync
   }
   make[Clock1[F]].from {
-    Clock1.fromImpure(_: Clock1[Identity])(_: SyncSafe1[F])
+    Clock1.fromImpure(_: Clock1[Identity])(using _: SyncSafe1[F])
   }
   make[Entropy1[F]].from {
-    Entropy1.fromImpure(_: Entropy1[Identity])(_: SyncSafe1[F])
+    Entropy1.fromImpure(_: Entropy1[Identity])(using _: SyncSafe1[F])
   }
 }
 

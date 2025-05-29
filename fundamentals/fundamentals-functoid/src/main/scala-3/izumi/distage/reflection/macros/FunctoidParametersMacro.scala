@@ -46,7 +46,7 @@ final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor:
     id match {
       case Some(str) =>
         val strExpr = Expr(str)
-        '{ new DIKey.IdKey($safeTpe, $strExpr, None)(scala.compiletime.summonInline[IdContract[String]]) }
+        '{ new DIKey.IdKey($safeTpe, $strExpr, None)(using scala.compiletime.summonInline[IdContract[String]]) }
       case None =>
         '{ new DIKey.TypeKey($safeTpe, None) }
     }
