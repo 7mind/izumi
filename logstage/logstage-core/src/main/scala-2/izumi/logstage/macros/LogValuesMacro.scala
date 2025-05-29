@@ -1,22 +1,14 @@
 package izumi.logstage.macros
 
-import logstage.Log
-
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 
-class LogValuesMacro[C <: blackbox.Context](val c: C) {
-  import c.universe.*
-  def createMessage(
-    values: Seq[c.Expr[Any]]
-  ): c.Expr[Log.Message] = {
-    val messageString = createMessageString(values)
-    new LogMessageMacro0[c.type](c, false).logMessageMacro(c.Expr[String](messageString))
-  }
+object LogValuesMacro {
+  def createMessageString(c: blackbox.Context)(values: Seq[c.Expr[Any]]): c.Expr[String] = {
+    import c.universe.*
 
-  private def createMessageString(values: Seq[c.Expr[Any]]): Tree = {
     @tailrec
-    def loop(args: List[Tree], acc: Tree): Tree = {
+    def loop(args: List[c.Tree], acc: c.Tree): c.Tree = {
       args match {
         case Nil => acc
         case head :: Nil => q""" $acc + $head """
@@ -24,6 +16,6 @@ class LogValuesMacro[C <: blackbox.Context](val c: C) {
       }
     }
 
-    loop(values.map(_.tree).toList, q""" "" """)
+    c.Expr[String](loop(values.map(_.tree).toList, q""" "" """))
   }
 }

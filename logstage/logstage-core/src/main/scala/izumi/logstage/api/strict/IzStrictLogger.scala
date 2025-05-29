@@ -5,6 +5,12 @@ import izumi.logstage.api.logger.{AbstractMacroStrictLogger, EncodingAwareAbstra
 import izumi.logstage.api.rendering.StrictEncoded
 import izumi.logstage.api.{IzLoggerConvenienceApi, Log}
 
+/**
+  * A variant of [[logstage.IzLogger]] that renders values only
+  * using [[izumi.logstage.api.rendering.LogstageCodec]] typeclass instances
+  * for those values. If an instance is missing, compilation will fail, whereas
+  * with default `IzLogger`, the rendering will fall back to using `toString` method
+  */
 class IzStrictLogger(
   override val router: LogRouter,
   override val customContext: Log.CustomContext,
