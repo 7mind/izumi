@@ -10,7 +10,7 @@ trait AbstractLocator extends Locator {
   protected def lookupLocalUnsafe(key: DIKey): Option[Any]
 
   private[distage] final def lookupLocal[T: Tag](key: DIKey): Option[GenericTypedRef[T]] = {
-    if (key == DIKey.get[Locator]) {
+    if (key == AbstractLocator.locatorDIKey) {
       Some(TypedRef(this.asInstanceOf[T], key.tpe, isByName = false))
     } else {
       lookupLocalUnsafe(key)
@@ -65,4 +65,8 @@ trait AbstractLocator extends Locator {
     }
 
   }
+}
+
+object AbstractLocator {
+  private val locatorDIKey: DIKey.TypeKey = DIKey.get[Locator]
 }
