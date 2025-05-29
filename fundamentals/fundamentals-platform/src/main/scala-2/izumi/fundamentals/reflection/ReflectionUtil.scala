@@ -158,4 +158,5 @@ object ReflectionUtil {
         l.value.value.asInstanceOf[Boolean]
     }.headOption
   }
+
 }
