@@ -1,7 +1,7 @@
 package izumi.logstage.api.logger
 
 import izumi.logstage.api.Log.Level
-import izumi.logstage.macros.LoggerMacroMethods.*
+import izumi.logstage.macros.LoggerMacroMethods.Raw
 
 import scala.language.experimental.macros
 
@@ -15,12 +15,16 @@ trait AbstractMacroRawLogger { this: AbstractLogger =>
     *
     * They also look better in Intellij
     */
-  final def trace(message: String): Unit = macro scTraceMacroRaw
-  final def debug(message: String): Unit = macro scDebugMacroRaw
-  final def info(message: String): Unit = macro scInfoMacroRaw
-  final def warn(message: String): Unit = macro scWarnMacroRaw
-  final def error(message: String): Unit = macro scErrorMacroRaw
-  final def crit(message: String): Unit = macro scCritMacroRaw
+  final def trace(message: String): Unit = macro Raw.scTraceMacro
+  final def debug(message: String): Unit = macro Raw.scDebugMacro
+  final def info(message: String): Unit = macro Raw.scInfoMacro
+  final def warn(message: String): Unit = macro Raw.scWarnMacro
+  final def error(message: String): Unit = macro Raw.scErrorMacro
+  final def crit(message: String): Unit = macro Raw.scCritMacro
 
-  final def logValues(level: Level)(values: Any*): Unit = macro scLogValuesRaw
+  final def logValues(level: Level)(values: Any*): Unit = macro Raw.scLogValues
+
+  final def logMethod[A](level: Level)(function: => A): A = macro Raw.scLogMethod[A]
+  final def logMethod[A](level: Level, printTypes: Boolean)(function: => A): A = macro Raw.scLogMethodPrintTypes[A]
+  final def logMethod[A](level: Level, printTypes: Boolean, printImplicits: Boolean)(function: => A): A = macro Raw.scLogMethodPrintTypesImplicits[A]
 }

@@ -2,19 +2,20 @@ package izumi.logstage.macros
 
 import izumi.logstage.api.Log.{Level, LogArg, Message}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.reflect.macros.blackbox
 
-final class LogMessageMacro(override val c: blackbox.Context) extends LogMessageMacro0(c, false)
+object LogMessageMacro {
 
-final class LogMessageMacroStrict(override val c: blackbox.Context) extends LogMessageMacro0(c, true)
+  final class NonStrict(override val c: blackbox.Context) extends LogMessageMacro(c, strict = false)
 
-object LogMessageMacro0 {
+  final class Strict(override val c: blackbox.Context) extends LogMessageMacro(c, strict = true)
 
   def createMessageWithMode(c: blackbox.Context)(message: c.Expr[String], mode: EncodingMode): c.Expr[Message] = {
     mode.fold(
       onRaw = c.universe.reify(Message.raw(message.splice))
-    )(onStrictness = strictness => new LogMessageMacro0[c.type](c, strict = strictness).logMessageMacro(message))
+    )(onStrictness = new LogMessageMacro[c.type](c, _).logMessageMacro(message))
   }
 
   def reifyLevel(c: blackbox.Context)(level: Level): c.Expr[Level] = {
@@ -36,10 +37,10 @@ object LogMessageMacro0 {
 
 }
 
-class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
+open class LogMessageMacro[C <: blackbox.Context](val c: C, strict: Boolean) {
   private final val nameExtractor = new ArgumentNameExtractionMacro[c.type](c, strict)
 
-  import c.universe._
+  import c.universe.*
 
   final def logMessageMacro(message: c.Expr[String]): c.Expr[Message] = {
     message.tree match {
@@ -50,7 +51,7 @@ class LogMessageMacro0[C <: blackbox.Context](val c: C, strict: Boolean) {
     }
   }
 
-  @scala.annotation.tailrec
+  @tailrec
   private def processExpr(message: c.Tree, isMultiline: Boolean): c.Expr[Message] = {
     sealed trait Chunk {
       def tree: Tree

@@ -9,228 +9,139 @@ import izumi.logstage.api.logger.AbstractLogIO
 import scala.reflect.macros.blackbox
 
 object LogIOMacroMethods {
+  object NonStrict extends LogIOMacroMethods(EncodingMode.NonStrict, defaultPrintTypes = false, defaultPrintImplicits = false)
+  object Strict extends LogIOMacroMethods(EncodingMode.Strict, defaultPrintTypes = false, defaultPrintImplicits = false)
+  object Raw extends LogIOMacroMethods(EncodingMode.Raw, defaultPrintTypes = false, defaultPrintImplicits = false)
+}
+
+open class LogIOMacroMethods(
+  val mode: EncodingMode,
+  val defaultPrintTypes: Boolean,
+  val defaultPrintImplicits: Boolean,
+) {
+
   def scTraceMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Trace, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Trace, mode)
   }
 
   def scDebugMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Debug, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Debug, mode)
   }
 
   def scInfoMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Info, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Info, mode)
   }
 
   def scWarnMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Warn, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Warn, mode)
   }
 
   def scErrorMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Error, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Error, mode)
   }
 
   def scCritMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Crit, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Crit, mode)
   }
 
-  def scLogValues[F[_]](
-    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level]
-  )(values: c.Expr[Any]*
-  ): c.Expr[F[Unit]] = {
-    doLogValues(c)(level, values, EncodingMode.NonStrict)
+  // format: off
+  def scLogValues[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(level: c.Expr[Level])(values: c.Expr[Any]*): c.Expr[F[Unit]] = {
+    doLogValues(c)(level, values, mode)
   }
 
-  def scLogMethod[F[_], A](
-    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level]
-  )(function: c.Expr[A]
-  )(qp: c.Expr[QuasiIO[F]]
-  ): c.Expr[F[A]] = {
-    scLogMethodImpl[F, A](c)(level, printTypes = true, printImplicits = true)(function)(qp)
-  }
-
-  def scLogMethodF[F[_], A](
-    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level]
-  )(function: c.Expr[F[A]]
-  )(qp: c.Expr[QuasiPrimitives[F]]
-  ): c.Expr[F[A]] = {
-    scLogMethodFImpl[F, A](c)(level, printTypes = true, printImplicits = true)(function)(qp)
-  }
-
-  def scLogMethodPrintTypes[F[_], A](
-    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level],
-    printTypes: c.Expr[Boolean],
-  )(function: c.Expr[A]
-  )(qp: c.Expr[QuasiIO[F]]
-  ): c.Expr[F[A]] = {
-    scLogMethodImpl[F, A](c)(level, ReflectionUtil.getBooleanLiteral(c)(printTypes.tree), printImplicits = true)(function)(qp)
-  }
-
-  def scLogMethodFPrintTypes[F[_], A](
-    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level],
-    printTypes: c.Expr[Boolean],
-  )(function: c.Expr[F[A]]
-  )(qp: c.Expr[QuasiPrimitives[F]]
-  ): c.Expr[F[A]] = {
-    scLogMethodFImpl[F, A](c)(level, ReflectionUtil.getBooleanLiteral(c)(printTypes.tree), printImplicits = true)(function)(qp)
-  }
-
-  def scLogMethodPrintTypesImplicits[F[_], A](
-    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level],
-    printTypes: c.Expr[Boolean],
-    printImplicits: c.Expr[Boolean],
-  )(function: c.Expr[A]
-  )(qp: c.Expr[QuasiIO[F]]
-  ): c.Expr[F[A]] = {
-    scLogMethodImpl[F, A](c)(
-      level,
-      ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
-      ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree),
-    )(function)(qp)
-  }
-
-  def scLogMethodFPrintTypesImplicits[F[_], A](
-    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level],
-    printTypes: c.Expr[Boolean],
-    printImplicits: c.Expr[Boolean],
-  )(function: c.Expr[F[A]]
-  )(qp: c.Expr[QuasiPrimitives[F]]
-  ): c.Expr[F[A]] = {
-    scLogMethodFImpl[F, A](c)(
-      level,
-      ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
-      ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree),
-    )(function)(qp)
-  }
-
-  private def scLogMethodImpl[F[_], A](
-    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level],
-    printTypes: Boolean,
-    printImplicits: Boolean,
-  )(function: c.Expr[A]
-  )(qp: c.Expr[QuasiIO[F]]
-  ): c.Expr[F[A]] = {
-    new LogMethodMacro[c.type](c).logMethodIO[F, A](
-      level,
-      function,
-      printTypes,
-      printImplicits,
-      qp,
+  def scLogMethod[F[_], A](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(level: c.Expr[Level])(function: c.Expr[A])(qp: c.Expr[QuasiIO[F]]): c.Expr[F[A]] = {
+    scLogMethodImpl[F, A](c)(qp, level, function)(
+      printTypes = defaultPrintTypes,
+      printImplicits = defaultPrintImplicits,
     )
   }
 
-  private def scLogMethodFImpl[F[_], A](
-    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level],
-    printTypes: Boolean,
-    printImplicits: Boolean,
-  )(function: c.Expr[F[A]]
-  )(qp: c.Expr[QuasiPrimitives[F]]
-  ): c.Expr[F[A]] = {
-    new LogMethodMacro[c.type](c).logMethodIOF[F, A](
-      level,
-      function,
-      function.tree,
-      printTypes,
-      printImplicits,
-      qp,
+  def scLogMethodPrintTypes[F[_], A](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(level: c.Expr[Level], printTypes: c.Expr[Boolean])(function: c.Expr[A])(qp: c.Expr[QuasiIO[F]]): c.Expr[F[A]] = {
+    scLogMethodImpl[F, A](c)(qp, level, function)(
+      printTypes = ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
+      printImplicits = defaultPrintImplicits,
     )
   }
 
-  def scTraceMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Trace, EncodingMode.Strict)
+  def scLogMethodPrintTypesImplicits[F[_], A](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(level: c.Expr[Level], printTypes: c.Expr[Boolean], printImplicits: c.Expr[Boolean])(function: c.Expr[A])(qp: c.Expr[QuasiIO[F]]): c.Expr[F[A]] = {
+    scLogMethodImpl[F, A](c)(qp, level, function)(
+      printTypes = ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
+      printImplicits = ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree),
+    )
   }
 
-  def scDebugMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Debug, EncodingMode.Strict)
+  def scLogMethodF[F[_], A](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(level: c.Expr[Level])(function: c.Expr[F[A]])(qp: c.Expr[QuasiPrimitives[F]]): c.Expr[F[A]] = {
+    scLogMethodImplF[F, A](c)(qp, level, function)(
+      printTypes = defaultPrintTypes,
+      printImplicits = defaultPrintImplicits,
+    )
   }
 
-  def scInfoMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Info, EncodingMode.Strict)
+  def scLogMethodPrintTypesF[F[_], A](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(level: c.Expr[Level], printTypes: c.Expr[Boolean])(function: c.Expr[F[A]])(qp: c.Expr[QuasiPrimitives[F]]): c.Expr[F[A]] = {
+    scLogMethodImplF[F, A](c)(qp, level, function)(
+      printTypes = ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
+      printImplicits = defaultPrintImplicits,
+    )
   }
 
-  def scWarnMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Warn, EncodingMode.Strict)
+  def scLogMethodPrintTypesImplicitsF[F[_], A](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(level: c.Expr[Level], printTypes: c.Expr[Boolean], printImplicits: c.Expr[Boolean])(function: c.Expr[F[A]])(qp: c.Expr[QuasiPrimitives[F]]): c.Expr[F[A]] = {
+    scLogMethodImplF[F, A](c)(qp, level, function)(
+      printTypes = ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
+      printImplicits = ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree),
+    )
   }
 
-  def scErrorMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Error, EncodingMode.Strict)
-  }
-
-  def scCritMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Crit, EncodingMode.Strict)
-  }
-
-  def scLogValuesStrict[F[_]](
+  protected def scLogMethodImpl[F[_], A](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level]
-  )(values: c.Expr[Any]*
-  ): c.Expr[F[Unit]] = {
-    doLogValues(c)(level, values, EncodingMode.Strict)
+  )(qp: c.Expr[QuasiIO[F]],
+    level: c.Expr[Level],
+    function: c.Expr[A],
+  )(printTypes: Boolean,
+    printImplicits: Boolean,
+  ): c.Expr[F[A]] = {
+    val lmm = new LogMethodMacro[c.type](c)
+    lmm.logMethodIO[F, A](qp, level, printTypes, printImplicits, function.tree)(
+      functionToUse = lmm.exprMaybeSuspend(qp, function)
+    )
   }
 
-  def scTraceMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Trace, EncodingMode.Raw)
-  }
-
-  def scDebugMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Debug, EncodingMode.Raw)
-  }
-
-  def scInfoMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Info, EncodingMode.Raw)
-  }
-
-  def scWarnMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Warn, EncodingMode.Raw)
-  }
-
-  def scErrorMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Error, EncodingMode.Raw)
-  }
-
-  def scCritMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Crit, EncodingMode.Raw)
-  }
-
-  def scLogValuesRaw[F[_]](
+  protected def scLogMethodImplF[F[_], A](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
-  )(level: c.Expr[Level]
-  )(values: c.Expr[Any]*
-  ): c.Expr[F[Unit]] = {
-    doLogValues(c)(level, values, EncodingMode.Raw)
+  )(qp: c.Expr[QuasiPrimitives[F]],
+    level: c.Expr[Level],
+    function: c.Expr[F[A]],
+  )(printTypes: Boolean,
+    printImplicits: Boolean,
+  ): c.Expr[F[A]] = {
+    val lmm = new LogMethodMacro[c.type](c)
+    lmm.logMethodIO[F, A](qp, level, printTypes, printImplicits, function.tree)(
+      functionToUse = function
+    )
   }
 
-  private def doLog[F[_]](
+  protected def doLog[F[_]](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
   )(message: c.Expr[String],
     level: Level,
     mode: EncodingMode,
   ): c.Expr[F[Unit]] = {
-    val m = LogMessageMacro0.createMessageWithMode(c)(message, mode)
-    val l = LogMessageMacro0.reifyLevel(c)(level)
+    val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
+    val l = LogMessageMacro.reifyLevel(c)(level)
     doLogImpl[F](c)(m, l)
   }
 
-  private def doLogValues[F[_]](
+  protected def doLogValues[F[_]](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
   )(level: c.Expr[Level],
     values: Seq[c.Expr[Any]],
     mode: EncodingMode,
   ): c.Expr[F[Unit]] = {
     val message = LogValuesMacro.createMessageString(c)(values)
-    val m = LogMessageMacro0.createMessageWithMode(c)(message, mode)
+    val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
     doLogImpl(c)(m, level)
   }
 
-  private def doLogImpl[F[_]](
+  protected def doLogImpl[F[_]](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
   )(message: c.Expr[Message],
     level: c.Expr[Level],
@@ -239,4 +150,5 @@ object LogIOMacroMethods {
       c.prefix.splice.log(level.splice)(message.splice)(getEnclosingPosition(c).splice)
     }
   }
+
 }

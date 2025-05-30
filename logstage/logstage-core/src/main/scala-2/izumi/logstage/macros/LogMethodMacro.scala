@@ -7,22 +7,26 @@ import izumi.logstage.api.Log.Level
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 
-class LogMethodMacro[C <: blackbox.Context](final val c: C) {
+final class LogMethodMacro[C <: blackbox.Context](val c: C) {
   import c.universe.*
 
-  def logMethodIOF[F[_], A](
+  def exprMaybeSuspend[F[_], A](qp: c.Expr[QuasiIO[F]], expr: c.Expr[A]): c.Expr[F[A]] = {
+    c.Expr[F[A]](q"$qp.maybeSuspend($expr)")
+  }
+
+  def logMethodIO[F[_], A](
+    qp: c.Expr[QuasiPrimitives[F]],
     level: c.Expr[Level],
-    function: c.Expr[F[A]],
-    functionTreeToInspect: Tree,
     logTypes: Boolean,
     logImplicits: Boolean,
-    qp: c.Expr[QuasiPrimitives[F]],
+    functionTreeToInspect: Tree,
+  )(functionToUse: c.Expr[F[A]]
   ): c.Expr[F[A]] = {
     val (variables, logString) = createVariablesAndLogStringTrees(functionTreeToInspect, logTypes, logImplicits)
 
     val logTree =
       q"""
-         $qp.tapBothUntyped($function)(
+         $qp.tapBothUntyped($functionToUse)(
            err = error => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + error))(position),
            succ = result => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + result))(position)
          )   
@@ -36,16 +40,6 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
          """)
   }
 
-  def logMethodIO[F[_], A](
-    level: c.Expr[Level],
-    function: c.Expr[A],
-    logTypes: Boolean,
-    logImplicits: Boolean,
-    qp: c.Expr[QuasiIO[F]],
-  ): c.Expr[F[A]] = {
-    logMethodIOF(level, c.Expr[F[A]](q"$qp.maybeSuspend($function)"), function.tree, logTypes, logImplicits, qp)
-  }
-
   def logMethod[A](level: c.Expr[Level], function: c.Expr[A], logTypes: Boolean, logImplicits: Boolean): c.Expr[A] = {
     val (variables, logString) = createVariablesAndLogStringTrees(function.tree, logTypes, logImplicits)
 
@@ -56,20 +50,20 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
            try {
              val result = $function
              if (self.acceptable(position.get, $level)) {
-               self.unsafeLog(Log.Entry.create($level, _root_.izumi.logstage.api.Log.Message.apply($logString + " => " + result))(position))
+               self.unsafeLog(_root_.izumi.logstage.api.Log.Entry.create($level, _root_.izumi.logstage.api.Log.Message.apply($logString + " => " + result))(position))
              }
              result
            } catch {
-             case error: Throwable =>
+             case error: _root_.java.lang.Throwable =>
               if (self.acceptable(position.get, $level)) {
-                self.unsafeLog(Log.Entry.create($level, _root_.izumi.logstage.api.Log.Message.apply($logString + " => " + error))(position))
+                self.unsafeLog(_root_.izumi.logstage.api.Log.Entry.create($level, _root_.izumi.logstage.api.Log.Message.apply($logString + " => " + error))(position))
               }
               throw error
            }
          """)
   }
 
-  private def createVariablesAndLogStringTrees[A](function: Tree, logTypes: Boolean, logImplicits: Boolean): (List[Tree], Tree) = {
+  private def createVariablesAndLogStringTrees(function: Tree, logTypes: Boolean, logImplicits: Boolean): (List[Tree], Tree) = {
     val method = getMethodSymbols(function)
     val argumentsTreesUnordered = getFunctionArguments(function)
 
@@ -156,7 +150,8 @@ class LogMethodMacro[C <: blackbox.Context](final val c: C) {
 
   private def getMethodSymbols(function: Tree): MethodSymbol = {
     def getMethodBySignature(methodSignature: Type, obj: Tree, methodName: Name): MethodSymbol = {
-      obj.tpe.member(methodName.decodedName).asTerm.alternatives
+      obj.tpe
+        .member(methodName.decodedName).asTerm.alternatives
         .map(_.asMethod)
         .find(_.typeSignature == methodSignature)
         .getOrElse(c.abort(c.enclosingPosition, s"Object ${obj.symbol.name} doesn't have method $methodName with signature $methodSignature"))
