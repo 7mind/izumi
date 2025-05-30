@@ -64,34 +64,38 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
   }
 
   private def createVariablesAndLogStringTrees(function: Tree, logTypes: Boolean, logImplicits: Boolean): (List[Tree], Tree) = {
-    val method = getMethodSymbols(function)
+    val method = getMethodSymbol(function)
     val argumentsTreesUnordered = getFunctionArguments(function)
 
     val argumentsTrees =
       if (method.paramLists.size == 1) argumentsTreesUnordered
       else argumentsTreesUnordered.reverse
 
-    val (argumentsToLog, argumentsTreesToLog) = getArgumentsToLog(argumentsTrees, method, logImplicits)
+    val (termVariableNamess, termVariableValues) = getArgumentsToLog(argumentsTrees, method, logImplicits)
 
-    val variables = createVariablesTrees(argumentsToLog.flatten, argumentsTreesToLog)
+    val termVariableDecls = createVariablesTrees(termVariableNamess.flatten, termVariableValues)
 
-    val withFunctionName = q""" "Call to " + ${method.name.decodedName.toString}"""
-    val withTypes = appendTypesInfo(withFunctionName, function, method, logTypes)
-    val withArguments = addTermsToString(argumentsToLog, withTypes)
-    (variables, withArguments)
+    val withFunctionName = q"${s"Call to ${method.name.decodedName.toString}"}"
+    val (typeVariableDecls, withTypes) = appendTypesInfo(withFunctionName, function, method, logTypes)
+    val withArguments = addTermsToString(termVariableNamess, withTypes, "(", ")")
+    (termVariableDecls ++ typeVariableDecls, withArguments)
   }
 
-  private def appendTypesInfo(messageStringTree: Tree, funcTree: Tree, methodSymbol: MethodSymbol, logTypes: Boolean): Tree = {
+  private def appendTypesInfo(messageStringTree: Tree, funcTree: Tree, methodSymbol: MethodSymbol, logTypes: Boolean): (List[Tree], Tree) = {
     if (logTypes) {
       val typeArguments = methodSymbol.typeParams.map(_.name)
       if (typeArguments.nonEmpty) {
         val typesPassed = getFunctionTypeArguments(funcTree)
-        val typeInfo = typeArguments
-          .zip(typesPassed)
-          .map { case (name, tpe) => s"$name=$tpe" }.mkString("[", " ", "]")
-        q""" $messageStringTree + $typeInfo"""
-      } else messageStringTree
-    } else messageStringTree
+        val typeVariableNames = typeArguments.map(_.toTermName)
+        val typeVariableValues = typesPassed.map(t => q"${show(t)}")
+        val typeVariableDecls = createVariablesTrees(typeVariableNames, typeVariableValues)
+        (typeVariableDecls, addTermsToString(List(typeVariableNames), messageStringTree, "[", "]"))
+      } else {
+        (Nil, messageStringTree)
+      }
+    } else {
+      (Nil, messageStringTree)
+    }
   }
 
   private def getArgumentsToLog(argumentsTrees: List[Tree], methodSymbol: MethodSymbol, logImplicits: Boolean): (List[List[TermName]], List[Tree]) = {
@@ -109,34 +113,19 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
   }
 
   private def createVariablesTrees(argumentsNames: List[TermName], args: List[Tree]): List[Tree] = {
-    argumentsNames
-      .zip(args)
-      .map { case (name, arg) => q"val $name = $arg" }
+    argumentsNames.iterator.zip(args).map { case (name, arg) => q"val $name = $arg" }.toList
   }
 
-  private def addTermsToString(valsNames: List[List[TermName]], stringTree: Tree): Tree = {
-    @tailrec
-    def loopOverArgs(args: List[TermName], acc: Tree): Tree = {
-      args match {
-        case Nil => acc
-        case head :: Nil => q""" $acc + $head """
-        case head :: tail => loopOverArgs(tail, q""" $acc + $head + ", "  """)
-      }
+  private def addTermsToString(valsNamess: List[List[TermName]], stringTree: Tree, bracketOpen: String, bracketClose: String): Tree = {
+    valsNamess.foldLeft(stringTree) {
+      (acc, valNames) =>
+        val openedBracket = q""" $acc + $bracketOpen """
+        val withArgs = valNames match {
+          case Nil => openedBracket
+          case head :: tail => tail.foldLeft[Tree](q"$openedBracket + $head")((a, b) => q""" $a + ", " + $b """)
+        }
+        q""" $withArgs + $bracketClose """
     }
-
-    @tailrec
-    def loopOverCurriedArgs(curriedArgs: List[List[TermName]], acc: Tree): Tree = {
-      curriedArgs match {
-        case Nil => acc
-        case head :: tail =>
-          val openedBracket = q""" $acc + "("  """
-          val withArgs = loopOverArgs(head, openedBracket)
-          val withClosedBracket = q""" $withArgs + ")"  """
-          loopOverCurriedArgs(tail, withClosedBracket)
-      }
-    }
-
-    loopOverCurriedArgs(valsNames, stringTree)
   }
 
   private def getFunctionTypeArguments(funcTree: Tree): List[Type] = {
@@ -144,28 +133,21 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
     def loop(tree: Tree): List[Type] = tree match {
       case TypeApply(_, targs) => targs.map(_.tpe)
       case Apply(fun, _) => loop(fun)
+      case _ => Nil
     }
     loop(funcTree)
   }
 
-  private def getMethodSymbols(function: Tree): MethodSymbol = {
-    def getMethodBySignature(methodSignature: Type, obj: Tree, methodName: Name): MethodSymbol = {
-      obj.tpe
-        .member(methodName.decodedName).asTerm.alternatives
-        .map(_.asMethod)
-        .find(_.typeSignature == methodSignature)
-        .getOrElse(c.abort(c.enclosingPosition, s"Object ${obj.symbol.name} doesn't have method $methodName with signature $methodSignature"))
-    }
-
+  private def getMethodSymbol(function: Tree): MethodSymbol = {
     @tailrec
     def loop(tree: Tree): MethodSymbol = tree match {
-      case Apply(m @ Select(obj, method), _) => getMethodBySignature(m.symbol.typeSignature, obj, method)
-      case Apply(TypeApply(m @ Select(obj, method), _), _) => getMethodBySignature(m.symbol.typeSignature, obj, method)
+      case Apply(m: SelectApi, _) if m.symbol.isMethod => m.symbol.asMethod
+      case Apply(TypeApply(m: SelectApi, _), _) if m.symbol.isMethod => m.symbol.asMethod
 
+      case TypeApply(inner, _) => loop(inner)
       case Apply(inner, _) => loop(inner)
-      case Apply(TypeApply(inner, _), _) => loop(inner)
 
-      case _ => c.abort(c.enclosingPosition, "Expected method or object method call")
+      case _ => c.abort(c.enclosingPosition, s"Expected method call, but got ${showCode(tree)} (raw=${showRaw(tree)})")
     }
     loop(function)
   }
@@ -178,7 +160,7 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
       case Apply(inner, args) => loop(inner, acc ++ args)
       case Apply(TypeApply(inner, _), args) => loop(inner, acc ++ args)
 
-      case _ => c.abort(c.enclosingPosition, "Expected method or object method call")
+      case _ => c.abort(c.enclosingPosition, s"Expected method call, but got ${showCode(tree)} (raw=${showRaw(tree)})")
     }
     loop(funcTree, List.empty[Tree])
   }
