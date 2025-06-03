@@ -41,29 +41,23 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
     prefixName: TermName,
     self: c.Expr[AbstractLogger],
     level: c.Expr[Level],
-    function: c.Expr[A],
     logTypes: c.Expr[Boolean],
     logImplicits: c.Expr[Boolean],
+    function: c.Expr[A],
   ): c.Expr[A] = {
-    // always add logTypes and logImplicits exprs to the tree to avoid losing side effects in their evaluations when logging is disabled
-    // (Note: no such care is required on Scala 3 as it handles all such lifting on its own for non-inline parameters)
-    val logTypesName = c.freshName(TermName("logTypes"))
-    val logImplicitsName = c.freshName(TermName("logImplicits"))
     val (variables, fnMessageTree, argsMsgTree, typesMsgTree, implicitsMsgTree) = createVariablesAndLogStringTrees(mode, function.tree)
 
     c.Expr[A](q"""
       val $prefixName = ${c.prefix}
       val self = $self
       val position = ${CodePositionMaterializerMacro.getEnclosingPosition(c)}
-      val $logTypesName = $logTypes
-      val $logImplicitsName = $logImplicits
       try {
         val result = $function
         if (self.acceptable(position.get, $level)) {
           ..$variables
           val argsMsg = $argsMsgTree
-          val typesMsg = ${ifOrEmptyMsg(logTypesName)(typesMsgTree)}
-          val implicitsMsg = ${ifOrEmptyMsg(logImplicitsName)(implicitsMsgTree)}
+          val typesMsg = ${ifOrEmptyMsg(logTypes)(typesMsgTree)}
+          val implicitsMsg = ${ifOrEmptyMsg(logImplicits)(implicitsMsgTree)}
           self.unsafeLog(_root_.izumi.logstage.api.Log.Entry.create(
             $level,
             $fnMessageTree ++ typesMsg ++ argsMsg ++ implicitsMsg ++ ${messageMacro(mode, q""" " => " + result """)}
@@ -75,8 +69,8 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
           if (self.acceptable(position.get, $level)) {
             ..$variables
             val argsMsg = $argsMsgTree
-            val typesMsg = ${ifOrEmptyMsg(logTypesName)(typesMsgTree)}
-            val implicitsMsg = ${ifOrEmptyMsg(logImplicitsName)(implicitsMsgTree)}
+            val typesMsg = ${ifOrEmptyMsg(logTypes)(typesMsgTree)}
+            val implicitsMsg = ${ifOrEmptyMsg(logImplicits)(implicitsMsgTree)}
             self.unsafeLog(_root_.izumi.logstage.api.Log.Entry.create(
               $level,
               $fnMessageTree ++ typesMsg ++ argsMsg ++ implicitsMsg ++ ${messageMacro(mode, q""" " => " + error """)}
@@ -98,11 +92,7 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
     functionTreeToInspect: Tree,
   )(functionToUse: c.Expr[QP] => c.Expr[F[A]]
   ): c.Expr[F[A]] = {
-    // always add logTypes and logImplicits exprs to the tree to avoid losing side effects in their evaluations when logging is disabled
-    // (Note: no such care is required on Scala 3 as it handles all such lifting on its own for non-inline parameters)
-    val logTypesName = c.freshName(TermName("logTypes"))
-    val logImplicitsName = c.freshName(TermName("logImplicits"))
-    // evaluate QuasiPrimitives just once. Avoid re-evaluating it multiple times
+    // evaluate QuasiPrimitives just once. Avoid re-evaluating its derivation multiple times in runtime
     val qpName = c.freshName(TermName("F"))
     val (variables, fnMessageTree, argsMsgTree, typesMsgTree, implicitsMsgTree) = createVariablesAndLogStringTrees(mode, functionTreeToInspect)
 
@@ -110,15 +100,13 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
       val $prefixName = ${c.prefix}
       val self = $self
       val position = ${CodePositionMaterializerMacro.getEnclosingPosition(c)}
-      val $logTypesName = $logTypes
-      val $logImplicitsName = $logImplicits
       val $qpName = $qpExpr
       $qpName.tapBothUntyped(${functionToUse(c.Expr[QP](q"$qpName"))})(
         err = error0 => self.log($level)({
           ..$variables
           val argsMsg = $argsMsgTree
-          val typesMsg = ${ifOrEmptyMsg(logTypesName)(typesMsgTree)}
-          val implicitsMsg = ${ifOrEmptyMsg(logImplicitsName)(implicitsMsgTree)}
+          val typesMsg = ${ifOrEmptyMsg(logTypes)(typesMsgTree)}
+          val implicitsMsg = ${ifOrEmptyMsg(logImplicits)(implicitsMsgTree)}
           val errorMsg = error0 match {
             case error: Throwable =>
               ${messageMacro(mode, q""" " => " + error """)}
@@ -130,8 +118,8 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
         succ = result => self.log($level)({
           ..$variables
           val argsMsg = $argsMsgTree
-          val typesMsg = ${ifOrEmptyMsg(logTypesName)(typesMsgTree)}
-          val implicitsMsg = ${ifOrEmptyMsg(logImplicitsName)(implicitsMsgTree)}
+          val typesMsg = ${ifOrEmptyMsg(logTypes)(typesMsgTree)}
+          val implicitsMsg = ${ifOrEmptyMsg(logImplicits)(implicitsMsgTree)}
           $fnMessageTree ++ typesMsg ++ argsMsg ++ implicitsMsg ++ ${messageMacro(mode, q""" " => " + result """)}
         })(position)
       )
@@ -173,7 +161,7 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
     }
   }
 
-  private def ifOrEmptyMsg(bool: TermName)(message: Tree): Tree = {
+  private def ifOrEmptyMsg(bool: c.Expr[Boolean])(message: Tree): Tree = {
     q"if ($bool) $message else $emptyMessageTree"
   }
 

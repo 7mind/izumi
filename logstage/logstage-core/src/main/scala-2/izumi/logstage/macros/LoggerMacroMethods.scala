@@ -47,7 +47,7 @@ object LoggerMacroMethods {
     val printTypes = c.Expr[Boolean](q"$prefixName.__printTypes")
     val printImplicits = c.Expr[Boolean](q"$prefixName.__printImplicits")
 
-    new LogMethodMacro[c.type](c).logMethod[A](mode, prefixName, self, level, function, printTypes, printImplicits)
+    new LogMethodMacro[c.type](c).logMethod[A](mode, prefixName, self, level, printTypes, printImplicits, function)
   }
 
   private def doLog(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String], level: Level): c.Expr[Unit] = {
