@@ -94,6 +94,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       assert(throwableMap("message") == json""""throwme"""")
       assert(throwableMap("stacktrace").asString.get.nonEmpty)
     }
+
   }
 
   def setupJsonLogger(debug: Boolean): (IzLogger, TestSink) = {

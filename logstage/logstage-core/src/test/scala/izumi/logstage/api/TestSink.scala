@@ -26,6 +26,5 @@ class TestSink(policy: Option[RenderingPolicy] = None) extends LogSink {
       p =>
         renderedMessages.add(p.render(e)).discard()
     }
-
   }
 }

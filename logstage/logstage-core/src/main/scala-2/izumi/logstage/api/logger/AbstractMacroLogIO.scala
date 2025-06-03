@@ -2,29 +2,45 @@ package izumi.logstage.api.logger
 
 import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
 import izumi.logstage.api.Log.Level
-import izumi.logstage.macros.LogIOMacroMethods.NonStrict
+import izumi.logstage.api.logger.AbstractMacroLogIO.LogMethodF
+import izumi.logstage.macros.LogIOMacroMethods.*
 
 import scala.language.experimental.macros
 
-trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] =>
+trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Singleton } =>
 
   /** Aliases for [[AbstractLogIO#log(entry:*]] that look better in Intellij */
-  final def trace(message: String): F[Unit] = macro NonStrict.scTraceMacro[F]
-  final def debug(message: String): F[Unit] = macro NonStrict.scDebugMacro[F]
-  final def info(message: String): F[Unit] = macro NonStrict.scInfoMacro[F]
-  final def warn(message: String): F[Unit] = macro NonStrict.scWarnMacro[F]
-  final def error(message: String): F[Unit] = macro NonStrict.scErrorMacro[F]
-  final def crit(message: String): F[Unit] = macro NonStrict.scCritMacro[F]
+  final def trace(message: String): F[Unit] = macro scTraceMacro[F]
+  final def debug(message: String): F[Unit] = macro scDebugMacro[F]
+  final def info(message: String): F[Unit] = macro scInfoMacro[F]
+  final def warn(message: String): F[Unit] = macro scWarnMacro[F]
+  final def error(message: String): F[Unit] = macro scErrorMacro[F]
+  final def crit(message: String): F[Unit] = macro scCritMacro[F]
 
-  final def logValues(level: Level)(values: Any*): F[Unit] = macro NonStrict.scLogValues[F]
+  final def logValues(level: Level)(values: Any*): F[Unit] = macro scLogValues[F]
 
-  // format: off
-  final def logMethod[G[x] >: F[x], A](level: Level)(function: => A)(implicit qp: QuasiIO[G]): G[A] = macro NonStrict.scLogMethod[G, A]
-  final def logMethod[G[x] >: F[x], A](level: Level, printTypes: Boolean)(function: => A)(implicit qp: QuasiIO[G]): G[A] = macro NonStrict.scLogMethodPrintTypes[G, A]
-  final def logMethod[G[x] >: F[x], A](level: Level, printTypes: Boolean, printImplicits: Boolean)(function: => A)(implicit qp: QuasiIO[G]): G[A] = macro NonStrict.scLogMethodPrintTypesImplicits[G, A]
+  final def logMethodF(level: Level, printTypes: Boolean = false, printImplicits: Boolean = false): LogMethodF[F, EncMode] =
+    new LogMethodF[F, EncMode](this, level, printTypes, printImplicits)
+}
 
-  final def logMethodF[G[x] >: F[x], A](level: Level)(function: => G[A])(implicit qp: QuasiPrimitives[G]): G[A] = macro NonStrict.scLogMethodF[G, A]
-  final def logMethodF[G[x] >: F[x], A](level: Level, printTypes: Boolean)(function: => G[A])(implicit qp: QuasiPrimitives[G]): G[A] = macro NonStrict.scLogMethodPrintTypesF[G, A]
-  final def logMethodF[G[x] >: F[x], A](level: Level, printTypes: Boolean, printImplicits: Boolean)(function: => G[A])(implicit qp: QuasiPrimitives[G]): G[A] = macro NonStrict.scLogMethodPrintTypesImplicitsF[G, A]
-  // format: on
+object AbstractMacroLogIO {
+
+  implicit final class LogIO2LogMethodSyntax[F[+_, +_], Enc](private val self: AbstractLogIO[F[Nothing, _]] { type EncMode = Enc }) extends AnyVal {
+    def logMethod(level: Level, printTypes: Boolean = false, printImplicits: Boolean = false): LogMethod[F[Nothing, _], F[Throwable, _], Enc] =
+      new LogMethod[F[Nothing, _], F[Throwable, _], Enc](self, level, printTypes, printImplicits)
+  }
+
+  implicit final class LogIO1LogMethodSyntax[F[_], Enc](private val self: AbstractLogIO[F] { type EncMode = Enc }) extends AnyVal {
+    def logMethod(level: Level, printTypes: Boolean = false, printImplicits: Boolean = false): LogMethod[F, F, Enc] =
+      new LogMethod[F, F, Enc](self, level, printTypes, printImplicits)
+  }
+
+  final class LogMethod[XF[_], F[x] >: XF[x], En](val __getSelf: AbstractLogIO[XF], val __getSelfLevel: Level, val __printTypes: Boolean, val __printImplicits: Boolean) {
+    def apply[A](function: => A)(implicit F: QuasiIO[F]): F[A] = macro scLogMethod[XF, F, A, En]
+  }
+
+  final class LogMethodF[XF[_], EncMode](val __getSelf: AbstractLogIO[XF], val __getSelfLevel: Level, val __printTypes: Boolean, val __printImplicits: Boolean) {
+    def apply[F[x] >: XF[x], A](function: => F[A])(implicit F: QuasiPrimitives[F]): F[A] = macro scLogMethodF[F, A, EncMode]
+  }
+
 }

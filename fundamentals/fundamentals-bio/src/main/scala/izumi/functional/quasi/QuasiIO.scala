@@ -354,6 +354,10 @@ private[quasi] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](implicit F: IO2
     QuasiRef.fromMaybeSuspend(a)(Morphism1(f => F.sync(f())))
   }
 
+  override def tapBothUntyped[A](eff: => F[E, A])(err: Any => F[E, Unit], succ: A => F[E, Unit]): F[E, A] = {
+    F.tapBoth(eff)(err, succ)
+  }
+
   override final def pure[A](a: A): F[E, A] = F.pure(a)
   override final def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
   override final def map2[A, B, C](fa: F[E, A], fb: => F[E, B])(f: (A, B) => C): F[E, C] = F.map2(fa, fb)(f)
@@ -379,14 +383,19 @@ private[quasi] sealed class QuasiPrimitivesFromBIO[F[+_, +_], E](implicit F: IO2
 
   override final def traverse[A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]] = F.traverse(l)(f)
   override final def traverse_[A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = F.traverse_(l)(f)
-
-  override def tapBothUntyped[A](eff: => F[E, A])(err: Any => F[E, Unit], succ: A => F[E, Unit]): F[E, A] = {
-    F.tapBoth(eff)(err, succ)
-  }
 }
 
 private[quasi] sealed class QuasiPrimitivesFromCats[F[_]](F: cats.effect.kernel.Sync[F]) extends QuasiPrimitives[F] {
   override def suspendF[A](effAction: => F[A]): F[A] = F.defer(effAction)
+
+  override def tapBothUntyped[A](eff: => F[A])(err: Any => F[Unit], succ: A => F[Unit]): F[A] = {
+    F.attemptTap(eff)(
+      _.fold(
+        e => err(e),
+        v => succ(v),
+      )
+    )
+  }
 
   override final def pure[A](a: A): F[A] = F.pure(a)
   override final def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
@@ -410,15 +419,6 @@ private[quasi] sealed class QuasiPrimitivesFromCats[F[_]](F: cats.effect.kernel.
 
   override final def traverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = cats.instances.list.catsStdInstancesForList.traverse(l.toList)(f)(using F)
   override final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = cats.instances.list.catsStdInstancesForList.traverse_(l.toList)(f)(using F)
-
-  override def tapBothUntyped[A](eff: => F[A])(err: Any => F[Unit], succ: A => F[Unit]): F[A] = {
-    F.attemptTap(eff)(
-      _.fold(
-        e => err(e),
-        v => succ(v),
-      )
-    )
-  }
 }
 
 /**

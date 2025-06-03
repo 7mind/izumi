@@ -1,8 +1,9 @@
 package izumi.logstage.macros
 
 import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
-import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log.Level
+import izumi.logstage.api.logger.{AbstractLogIO, AbstractLogger}
 
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
@@ -10,60 +11,134 @@ import scala.reflect.macros.blackbox
 final class LogMethodMacro[C <: blackbox.Context](val c: C) {
   import c.universe.*
 
+  private val emptyMessageTree: Tree = {
+    q"_root_.izumi.logstage.api.Log.Message.empty"
+  }
+
+  private def messageMacro(mode: EncodingMode, stringTree: Tree): Tree = {
+    stringTree match {
+      case Literal(Constant("")) =>
+        emptyMessageTree
+      case _ =>
+        mode match {
+          case EncodingMode.NonStrict =>
+            q"_root_.izumi.logstage.api.Log.Message.apply($stringTree)"
+          case EncodingMode.Strict =>
+            q"_root_.izumi.logstage.api.Log.StrictMessage.apply($stringTree)"
+          case EncodingMode.Raw =>
+            q"_root_.izumi.logstage.api.Log.Message.raw($stringTree)"
+        }
+      // LogMessageMacro.createMessageWithMode(c)(c.Expr[String](stringTree), EncodingMode.NonStrict) // doesn't find LogstageCodec due to empty .tpes in passed untyped tree
+    }
+  }
+
   def exprMaybeSuspend[F[_], A](qp: c.Expr[QuasiIO[F]], expr: c.Expr[A]): c.Expr[F[A]] = {
     c.Expr[F[A]](q"$qp.maybeSuspend($expr)")
   }
 
-  def logMethodIO[F[_], A](
-    qp: c.Expr[QuasiPrimitives[F]],
+  def logMethod[A](
+    mode: EncodingMode,
+    prefixName: TermName,
+    self: c.Expr[AbstractLogger],
     level: c.Expr[Level],
-    logTypes: Boolean,
-    logImplicits: Boolean,
-    functionTreeToInspect: Tree,
-  )(functionToUse: c.Expr[F[A]]
-  ): c.Expr[F[A]] = {
-    val (variables, logString) = createVariablesAndLogStringTrees(functionTreeToInspect, logTypes, logImplicits)
-
-    val logTree =
-      q"""
-         $qp.tapBothUntyped($functionToUse)(
-           err = error => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + error))(position),
-           succ = result => self.log($level)(_root_.izumi.logstage.api.Log.Message.apply($logString + " => " + result))(position)
-         )   
-        """
-
-    c.Expr[F[A]](q"""
-           val self = ${c.prefix}
-           val position = ${getEnclosingPosition(c)}
-           ..$variables
-           $logTree
-         """)
-  }
-
-  def logMethod[A](level: c.Expr[Level], function: c.Expr[A], logTypes: Boolean, logImplicits: Boolean): c.Expr[A] = {
-    val (variables, logString) = createVariablesAndLogStringTrees(function.tree, logTypes, logImplicits)
+    function: c.Expr[A],
+    logTypes: c.Expr[Boolean],
+    logImplicits: c.Expr[Boolean],
+  ): c.Expr[A] = {
+    // always add logTypes and logImplicits exprs to the tree to avoid losing side effects in their evaluations when logging is disabled
+    // (Note: no such care is required on Scala 3 as it handles all such lifting on its own for non-inline parameters)
+    val logTypesName = c.freshName(TermName("logTypes"))
+    val logImplicitsName = c.freshName(TermName("logImplicits"))
+    val (variables, fnMessageTree, argsMsgTree, typesMsgTree, implicitsMsgTree) = createVariablesAndLogStringTrees(mode, function.tree)
 
     c.Expr[A](q"""
-           val self = ${c.prefix}
-           val position = ${getEnclosingPosition(c)}
-           ..$variables
-           try {
-             val result = $function
-             if (self.acceptable(position.get, $level)) {
-               self.unsafeLog(_root_.izumi.logstage.api.Log.Entry.create($level, _root_.izumi.logstage.api.Log.Message.apply($logString + " => " + result))(position))
-             }
-             result
-           } catch {
-             case error: _root_.java.lang.Throwable =>
-              if (self.acceptable(position.get, $level)) {
-                self.unsafeLog(_root_.izumi.logstage.api.Log.Entry.create($level, _root_.izumi.logstage.api.Log.Message.apply($logString + " => " + error))(position))
-              }
-              throw error
-           }
-         """)
+      val $prefixName = ${c.prefix}
+      val self = $self
+      val position = ${CodePositionMaterializerMacro.getEnclosingPosition(c)}
+      val $logTypesName = $logTypes
+      val $logImplicitsName = $logImplicits
+      try {
+        val result = $function
+        if (self.acceptable(position.get, $level)) {
+          ..$variables
+          val argsMsg = $argsMsgTree
+          val typesMsg = ${ifOrEmptyMsg(logTypesName)(typesMsgTree)}
+          val implicitsMsg = ${ifOrEmptyMsg(logImplicitsName)(implicitsMsgTree)}
+          self.unsafeLog(_root_.izumi.logstage.api.Log.Entry.create(
+            $level,
+            $fnMessageTree ++ typesMsg ++ argsMsg ++ implicitsMsg ++ ${messageMacro(mode, q""" " => " + result """)}
+            )(position))
+        }
+        result
+      } catch {
+        case error: _root_.java.lang.Throwable =>
+          if (self.acceptable(position.get, $level)) {
+            ..$variables
+            val argsMsg = $argsMsgTree
+            val typesMsg = ${ifOrEmptyMsg(logTypesName)(typesMsgTree)}
+            val implicitsMsg = ${ifOrEmptyMsg(logImplicitsName)(implicitsMsgTree)}
+            self.unsafeLog(_root_.izumi.logstage.api.Log.Entry.create(
+              $level,
+              $fnMessageTree ++ typesMsg ++ argsMsg ++ implicitsMsg ++ ${messageMacro(mode, q""" " => " + error """)}
+              )(position))
+          }
+          throw error
+      }
+      """)
   }
 
-  private def createVariablesAndLogStringTrees(function: Tree, logTypes: Boolean, logImplicits: Boolean): (List[Tree], Tree) = {
+  def logMethodIO[XF[_], F[x] >: XF[x], QP <: QuasiPrimitives[F], A](
+    mode: EncodingMode,
+    prefixName: TermName,
+    qpExpr: c.Expr[QP],
+    self: c.Expr[AbstractLogIO[XF]],
+    level: c.Expr[Level],
+    logTypes: c.Expr[Boolean],
+    logImplicits: c.Expr[Boolean],
+    functionTreeToInspect: Tree,
+  )(functionToUse: c.Expr[QP] => c.Expr[F[A]]
+  ): c.Expr[F[A]] = {
+    // always add logTypes and logImplicits exprs to the tree to avoid losing side effects in their evaluations when logging is disabled
+    // (Note: no such care is required on Scala 3 as it handles all such lifting on its own for non-inline parameters)
+    val logTypesName = c.freshName(TermName("logTypes"))
+    val logImplicitsName = c.freshName(TermName("logImplicits"))
+    // evaluate QuasiPrimitives just once. Avoid re-evaluating it multiple times
+    val qpName = c.freshName(TermName("F"))
+    val (variables, fnMessageTree, argsMsgTree, typesMsgTree, implicitsMsgTree) = createVariablesAndLogStringTrees(mode, functionTreeToInspect)
+
+    c.Expr[F[A]](q"""
+      val $prefixName = ${c.prefix}
+      val self = $self
+      val position = ${CodePositionMaterializerMacro.getEnclosingPosition(c)}
+      val $logTypesName = $logTypes
+      val $logImplicitsName = $logImplicits
+      val $qpName = $qpExpr
+      $qpName.tapBothUntyped(${functionToUse(c.Expr[QP](q"$qpName"))})(
+        err = error0 => self.log($level)({
+          ..$variables
+          val argsMsg = $argsMsgTree
+          val typesMsg = ${ifOrEmptyMsg(logTypesName)(typesMsgTree)}
+          val implicitsMsg = ${ifOrEmptyMsg(logImplicitsName)(implicitsMsgTree)}
+          val errorMsg = error0 match {
+            case error: Throwable =>
+              ${messageMacro(mode, q""" " => " + error """)}
+            case error: Any =>
+              ${messageMacro(mode, q""" " => " + error """)}
+          }
+          $fnMessageTree ++ typesMsg ++ argsMsg ++ implicitsMsg ++ errorMsg
+        })(position),
+        succ = result => self.log($level)({
+          ..$variables
+          val argsMsg = $argsMsgTree
+          val typesMsg = ${ifOrEmptyMsg(logTypesName)(typesMsgTree)}
+          val implicitsMsg = ${ifOrEmptyMsg(logImplicitsName)(implicitsMsgTree)}
+          $fnMessageTree ++ typesMsg ++ argsMsg ++ implicitsMsg ++ ${messageMacro(mode, q""" " => " + result """)}
+        })(position)
+      )
+      """)
+  }
+
+  private def createVariablesAndLogStringTrees(mode: EncodingMode, function: Tree): (List[Tree], Tree, Tree, Tree, Tree) = {
     val method = getMethodSymbol(function)
     val argumentsTreesUnordered = getFunctionArguments(function)
 
@@ -71,55 +146,61 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
       if (method.paramLists.size == 1) argumentsTreesUnordered
       else argumentsTreesUnordered.reverse
 
-    val (termVariableNamess, termVariableValues) = getArgumentsToLog(argumentsTrees, method, logImplicits)
+    val (explicitArgNamess, explicitArgValues, implicitArgNamess, implicitArgValues) = getArgumentsToLog(argumentsTrees, method)
 
-    val termVariableDecls = createVariablesTrees(termVariableNamess.flatten, termVariableValues)
+    val termVariableDecls = createVariablesTrees(explicitArgNamess.flatten ++ implicitArgNamess.flatten, explicitArgValues ++ implicitArgValues)
+    val (typeVariableDecls, typesMessage) = mkTypesMsg(mode, function, method)
 
-    val withFunctionName = q"${s"Call to ${method.name.decodedName.toString}"}"
-    val (typeVariableDecls, withTypes) = appendTypesInfo(withFunctionName, function, method, logTypes)
-    val withArguments = addTermsToString(termVariableNamess, withTypes, "(", ")")
-    (termVariableDecls ++ typeVariableDecls, withArguments)
+    val variableDecls = termVariableDecls ++ typeVariableDecls
+    val fnMessage = q"_root_.izumi.logstage.api.Log.Message.raw(${s"Call to ${method.name.decodedName.toString}"})"
+    val argsMessage = messageMacro(mode, mkParametersString(explicitArgNamess, "(", ")"))
+    val implicitsMessage = messageMacro(mode, mkParametersString(implicitArgNamess, "(", ")"))
+
+    (variableDecls, fnMessage, argsMessage, typesMessage, implicitsMessage)
   }
 
-  private def appendTypesInfo(messageStringTree: Tree, funcTree: Tree, methodSymbol: MethodSymbol, logTypes: Boolean): (List[Tree], Tree) = {
-    if (logTypes) {
-      val typeArguments = methodSymbol.typeParams.map(_.name)
-      if (typeArguments.nonEmpty) {
-        val typesPassed = getFunctionTypeArguments(funcTree)
-        val typeVariableNames = typeArguments.map(_.toTermName)
-        val typeVariableValues = typesPassed.map(t => q"${show(t)}")
-        val typeVariableDecls = createVariablesTrees(typeVariableNames, typeVariableValues)
-        (typeVariableDecls, addTermsToString(List(typeVariableNames), messageStringTree, "[", "]"))
-      } else {
-        (Nil, messageStringTree)
-      }
+  private def mkTypesMsg(mode: EncodingMode, funcTree: Tree, methodSymbol: MethodSymbol): (List[Tree], Tree) = {
+    val typeArguments = methodSymbol.typeParams.map(_.name)
+    if (typeArguments.nonEmpty) {
+      val typesPassed = getFunctionTypeArguments(funcTree)
+      val typeVariableNames = typeArguments.map(_.toTermName)
+      val typeVariableValues = typesPassed.map(t => q"${show(t)}")
+      val typeVariableDecls = createVariablesTrees(typeVariableNames, typeVariableValues)
+      val stringTree = mkParametersString(List(typeVariableNames), "[", "]")
+      (typeVariableDecls, messageMacro(mode, stringTree))
     } else {
-      (Nil, messageStringTree)
+      (Nil, emptyMessageTree)
     }
   }
 
-  private def getArgumentsToLog(argumentsTrees: List[Tree], methodSymbol: MethodSymbol, logImplicits: Boolean): (List[List[TermName]], List[Tree]) = {
-    val methodArguments = methodSymbol.paramLists
-    val (implicitArguments, nonImplicit) = methodArguments.partition(_.exists(_.isImplicit))
-    val argumentsToLog =
-      if (logImplicits) (nonImplicit ++ implicitArguments).map(_.map(_.name.toTermName))
-      else nonImplicit.map(_.map(_.name.toTermName))
+  private def ifOrEmptyMsg(bool: TermName)(message: Tree): Tree = {
+    q"if ($bool) $message else $emptyMessageTree"
+  }
 
-    val argumentsTreesToLog =
-      if (logImplicits) argumentsTrees
-      else argumentsTrees.dropRight(implicitArguments.size)
+  private def getArgumentsToLog(
+    argumentsTrees: List[Tree],
+    methodSymbol: MethodSymbol,
+  ): (List[List[TermName]], List[Tree], List[List[TermName]], List[Tree]) = {
+    val methodArgumentss = methodSymbol.paramLists
+    val (implicitArgumentss, explicitArgumentss) = methodArgumentss.partition(_.exists(_.isImplicit))
 
-    (argumentsToLog, argumentsTreesToLog)
+    val explicitArgumentNamess = explicitArgumentss.map(_.map(_.name.toTermName))
+    val implicitArgumentNamess = implicitArgumentss.map(_.map(_.name.toTermName))
+
+    val (explicitArgumentsTrees, implicitArgumentTrees) = argumentsTrees.splitAt(explicitArgumentss.flatten.size)
+
+    (explicitArgumentNamess, explicitArgumentsTrees, implicitArgumentNamess, implicitArgumentTrees)
   }
 
   private def createVariablesTrees(argumentsNames: List[TermName], args: List[Tree]): List[Tree] = {
-    argumentsNames.iterator.zip(args).map { case (name, arg) => q"val $name = $arg" }.toList
+    argumentsNames.iterator.zip(args).map { case (name, arg) => q"val $name: ${arg.tpe match { case null => null; case t => t.widen }} = $arg" }.toList
   }
 
-  private def addTermsToString(valsNamess: List[List[TermName]], stringTree: Tree, bracketOpen: String, bracketClose: String): Tree = {
-    valsNamess.foldLeft(stringTree) {
+  private def mkParametersString(valsNamess: List[List[TermName]], bracketOpen: String, bracketClose: String): Tree = {
+    val start: Tree = Literal(Constant(""))
+    valsNamess.foldLeft(start) {
       (acc, valNames) =>
-        val openedBracket = q""" $acc + $bracketOpen """
+        val openedBracket = if (acc eq start) q"$bracketOpen" else q""" $acc + $bracketOpen """
         val withArgs = valNames match {
           case Nil => openedBracket
           case head :: tail => tail.foldLeft[Tree](q"$openedBracket + $head")((a, b) => q""" $a + ", " + $b """)

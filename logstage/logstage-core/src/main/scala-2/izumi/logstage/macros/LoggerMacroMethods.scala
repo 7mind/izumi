@@ -1,111 +1,81 @@
 package izumi.logstage.macros
 
-import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
-import izumi.fundamentals.reflection.ReflectionUtil
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{Level, Message}
-import izumi.logstage.api.logger.AbstractLogger
+import izumi.logstage.api.logger.{AbstractLogger, AbstractMacroLogger}
+import izumi.logstage.macros.EncodingModeExtractors.{getModeFromPrefixesEncModeTypeMember, getModeFromType}
 
 import scala.reflect.macros.blackbox
 
 object LoggerMacroMethods {
-  object NonStrict extends LoggerMacroMethods(EncodingMode.NonStrict, defaultPrintTypes = false, defaultPrintImplicits = false)
-  object Strict extends LoggerMacroMethods(EncodingMode.Strict, defaultPrintTypes = false, defaultPrintImplicits = false)
-  object Raw extends LoggerMacroMethods(EncodingMode.Raw, defaultPrintTypes = false, defaultPrintImplicits = false)
-}
-
-open class LoggerMacroMethods(
-  val mode: EncodingMode,
-  val defaultPrintTypes: Boolean,
-  val defaultPrintImplicits: Boolean,
-) {
 
   def scTraceMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
-    doLog(c)(message, Level.Trace, mode)
+    doLog(c)(message, Level.Trace)
   }
 
   def scDebugMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
-    doLog(c)(message, Level.Debug, mode)
+    doLog(c)(message, Level.Debug)
   }
 
   def scInfoMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
-    doLog(c)(message, Level.Info, mode)
+    doLog(c)(message, Level.Info)
   }
 
   def scWarnMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
-    doLog(c)(message, Level.Warn, mode)
+    doLog(c)(message, Level.Warn)
   }
 
   def scErrorMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
-    doLog(c)(message, Level.Error, mode)
+    doLog(c)(message, Level.Error)
   }
 
   def scCritMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
-    doLog(c)(message, Level.Crit, mode)
+    doLog(c)(message, Level.Crit)
   }
 
   def scLogValues(c: blackbox.Context { type PrefixType = AbstractLogger })(level: c.Expr[Level])(values: c.Expr[Any]*): c.Expr[Unit] = {
-    doLogValues(c)(level, values, mode)
+    doLogValues(c)(level, values)
   }
 
-  // format: off
-  def scLogMethod[A](c: blackbox.Context { type PrefixType = AbstractLogger })(level: c.Expr[Level])(function: c.Expr[A]): c.Expr[A] = {
-    scLogMethodImpl[A](c)(
-      printTypes = defaultPrintTypes,
-      printImplicits = defaultPrintImplicits,
-    )(level, function)
+  def scLogMethod[A, EncMode: c.WeakTypeTag](c: blackbox.Context { type PrefixType = AbstractMacroLogger.LogMethod[EncMode] })(function: c.Expr[A]): c.Expr[A] = {
+    import c.universe.*
+    val mode = getModeFromType[EncMode](c)
+    val prefixName = c.freshName(TermName("prefix"))
+    val self = c.Expr[AbstractLogger](q"$prefixName.__getSelf")
+    val level = c.Expr[Level](q"$prefixName.__getSelfLevel")
+    val printTypes = c.Expr[Boolean](q"$prefixName.__printTypes")
+    val printImplicits = c.Expr[Boolean](q"$prefixName.__printImplicits")
+
+    new LogMethodMacro[c.type](c).logMethod[A](mode, prefixName, self, level, function, printTypes, printImplicits)
   }
 
-  def scLogMethodPrintTypes[A](c: blackbox.Context { type PrefixType = AbstractLogger })(level: c.Expr[Level], printTypes: c.Expr[Boolean])(function: c.Expr[A]): c.Expr[A] = {
-    scLogMethodImpl[A](c)(
-      printTypes = ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
-      printImplicits = defaultPrintImplicits,
-    )(level, function)
-  }
-
-  def scLogMethodPrintTypesImplicits[A](c: blackbox.Context { type PrefixType = AbstractLogger })(level: c.Expr[Level], printTypes: c.Expr[Boolean], printImplicits: c.Expr[Boolean])(function: c.Expr[A]): c.Expr[A] = {
-    scLogMethodImpl[A](c)(
-      printTypes = ReflectionUtil.getBooleanLiteral(c)(printTypes.tree),
-      printImplicits = ReflectionUtil.getBooleanLiteral(c)(printImplicits.tree),
-    )(level, function)
-  }
-  // format: on
-
-  protected def scLogMethodImpl[A](
-    c: blackbox.Context { type PrefixType = AbstractLogger }
-  )(printTypes: Boolean,
-    printImplicits: Boolean,
-  )(level: c.Expr[Level],
-    function: c.Expr[A],
-  ): c.Expr[A] = {
-    new LogMethodMacro[c.type](c).logMethod[A](level, function, printTypes, printImplicits)
-  }
-
-  protected def doLog(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String], level: Level, mode: EncodingMode): c.Expr[Unit] = {
+  private def doLog(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String], level: Level): c.Expr[Unit] = {
+    val mode = getModeFromPrefixesEncModeTypeMember(c)
     val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
     val l = LogMessageMacro.reifyLevel(c)(level)
     doLogImpl(c)(m, l)
   }
 
-  protected def doLogValues(
+  private def doLogValues(
     c: blackbox.Context { type PrefixType = AbstractLogger }
   )(level: c.Expr[Level],
     values: Seq[c.Expr[Any]],
-    mode: EncodingMode,
   ): c.Expr[Unit] = {
+    val mode = getModeFromPrefixesEncModeTypeMember(c)
     val message = LogValuesMacro.createMessageString(c)(values)
     val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
     doLogImpl(c)(m, level)
   }
 
-  protected def doLogImpl(
+  private def doLogImpl(
     c: blackbox.Context { type PrefixType = AbstractLogger }
   )(message: c.Expr[Message],
     level: c.Expr[Level],
   ): c.Expr[Unit] = {
     c.universe.reify {
       val self = c.prefix.splice
-      val position = getEnclosingPosition(c).splice
+      val position = CodePositionMaterializerMacro.getEnclosingPosition(c).splice
       if (self.acceptable(position.get, level.splice)) {
         self.unsafeLog(Log.Entry.create(level.splice, message.splice)(position))
       }

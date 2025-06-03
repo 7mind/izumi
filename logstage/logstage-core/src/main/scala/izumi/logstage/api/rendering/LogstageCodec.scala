@@ -1,7 +1,7 @@
 package izumi.logstage.api.rendering
 
 import scala.annotation.unused
-import izumi.fundamentals.platform.exceptions.IzThrowable._
+import izumi.fundamentals.platform.exceptions.IzThrowable.*
 
 trait LogstageCodec[-T] {
   def write(writer: LogstageWriter, value: T): Unit
@@ -14,14 +14,24 @@ trait LogstageCodec[-T] {
 object LogstageCodec extends LogstageCodecLowPriority {
   @inline def apply[T: LogstageCodec]: LogstageCodec[T] = implicitly
 
-  implicit def listCodec[T: LogstageCodec]: LogstageCodec[Iterable[T]] = new LogstageCodec[Iterable[T]] {
+  implicit def listCodec[T: LogstageCodec]: LogstageCodec[Iterable[T]] = new ListCodec[T](LogstageCodec[T])
+
+  implicit def mapCodec[K: LogstageCodec, V: LogstageCodec]: LogstageCodec[collection.Map[K, V]] = new MapCodec[K, V](LogstageCodec[K], LogstageCodec[V])
+
+  // make null instance higher priority than all other LowPriority instances
+  // (`implicit object` is more specific than `implicit val` wrt specificity rule of implicit search)
+  implicit object LogstageCodecNull extends LogstageCodec[Null] {
+    override def write(writer: LogstageWriter, @unused value: Null): Unit = writer.writeNull()
+  }
+
+  final case class ListCodec[T](tCodec: LogstageCodec[T]) extends LogstageCodec[Iterable[T]] {
     override def write(writer: LogstageWriter, value: Iterable[T]): Unit = {
       writer.openList()
 
       value.foreach {
         v =>
           writer.nextListElementOpen()
-          LogstageCodec[T].write(writer, v)
+          tCodec.write(writer, v)
           writer.nextListElementClose()
       }
 
@@ -29,27 +39,21 @@ object LogstageCodec extends LogstageCodecLowPriority {
     }
   }
 
-  implicit def mapCodec[K: LogstageCodec, V: LogstageCodec]: LogstageCodec[Map[K, V]] = new LogstageCodec[Map[K, V]] {
-    override def write(writer: LogstageWriter, value: Map[K, V]): Unit = {
+  final case class MapCodec[K, V](kCodec: LogstageCodec[K], vCodec: LogstageCodec[V]) extends LogstageCodec[collection.Map[K, V]] {
+    override def write(writer: LogstageWriter, value: collection.Map[K, V]): Unit = {
       writer.openMap()
       value.foreach {
         case (k, v) =>
           writer.nextMapElementOpen()
-          LogstageCodec[K].write(writer, k)
+          kCodec.write(writer, k)
           writer.mapElementSplitter()
-          LogstageCodec[V].write(writer, v)
+          vCodec.write(writer, v)
           writer.nextMapElementClose()
       }
       writer.closeMap()
-
     }
   }
 
-  // make null instance higher priority than all other LowPriority instances
-  // (`implicit object` is more specific than `implicit val` wrt specificity rule of implicit search)
-  implicit object LogstageCodecNull extends LogstageCodec[Null] {
-    override def write(writer: LogstageWriter, @unused value: Null): Unit = writer.writeNull()
-  }
 }
 
 sealed trait LogstageCodecLowPriority {

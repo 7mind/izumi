@@ -120,17 +120,6 @@ object ReflectionUtil {
     go(targetType).distinct
   }
 
-  def getStringLiteral(c: blackbox.Context)(tree: c.universe.Tree): String = {
-    findStringLiteral(tree).getOrElse(c.abort(c.enclosingPosition, "must use string literal"))
-  }
-
-  def findStringLiteral(tree: Universe#Tree): Option[String] = {
-    tree.collect {
-      case l: Universe#LiteralApi if l.value.value.isInstanceOf[String] =>
-        l.value.value.asInstanceOf[String]
-    }.headOption
-  }
-
   def betaReduceLambda(c: blackbox.Context)(lambda: c.Expr[Any], names: List[String]): c.universe.Tree = {
     import c.universe._
     lambda.tree match {
@@ -148,15 +137,40 @@ object ReflectionUtil {
     }
   }
 
-  def getBooleanLiteral(c: blackbox.Context)(tree: c.universe.Tree): Boolean = {
-    findBooleanLiteral(tree).getOrElse(c.abort(c.enclosingPosition, "must use boolean literal"))
+  def getStringLiteral(c: blackbox.Context)(tree: c.universe.Tree): String = {
+    findStringLiteral(tree).getOrElse(c.abort(c.enclosingPosition, "must use string literal"))
   }
 
-  def findBooleanLiteral(tree: Universe#Tree): Option[Boolean] = {
+  def findStringLiteral(tree: Universe#Tree): Option[String] = {
     tree.collect {
-      case l: Universe#LiteralApi if l.value.value.isInstanceOf[Boolean] =>
-        l.value.value.asInstanceOf[Boolean]
+      case l: Universe#LiteralApi if l.value.value.isInstanceOf[String] =>
+        l.value.value.asInstanceOf[String]
     }.headOption
+  }
+
+  def getLiteralValue[S](c: blackbox.Context)(tree: c.universe.Tree)(orElse: => S): S = {
+    findLiteralValue[S](tree) match {
+      case Some(value) => value
+      case None => orElse
+    }
+  }
+
+  def findLiteralValue[S](tree: Universe#Tree): Option[S] = {
+    tree.collect {
+      case l: Universe#LiteralApi => l.value.value.asInstanceOf[S]
+    }.headOption
+  }
+
+  def getConstantType0[S](tpe: Universe#Type)(orElse: => S): S = {
+    tpe match {
+      case c: Universe#ConstantTypeApi => c.value.value.asInstanceOf[S]
+      case _ => orElse
+    }
+  }
+
+  def getConstantType[S](c: blackbox.Context)(orElse: => S)(implicit tag: c.WeakTypeTag[S]): S = {
+    val tpe = c.weakTypeOf[S](using tag)
+    getConstantType0[S](tpe.dealias)(orElse)
   }
 
 }

@@ -9,6 +9,8 @@ trait AbstractLoggerF[F[_]] {
 
   type Self <: AbstractLoggerF[F]
 
+  type EncMode
+
   def withCustomContext(context: CustomContext): Self
 
   @inline final def apply(context: CustomContext): Self = withCustomContext(context)

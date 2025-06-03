@@ -3,7 +3,7 @@ package izumi.distage.framework
 import izumi.distage.framework.model.PlanCheckResult
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.plugins.StaticPluginLoader.StaticPluginLoaderMacro
-import izumi.fundamentals.reflection.{TrivialMacroLogger, TypeUtil}
+import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger, TypeUtil}
 
 import scala.language.experimental.macros
 import scala.reflect.api.Universe
@@ -79,34 +79,30 @@ object PlanCheckMaterializer {
     ): c.Expr[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, PrintBindings, OnlyWarn]]] = {
       import c.universe._
 
-      def getConstantType0[S](tpe: Type): S = {
-        tpe match {
-          case ConstantType(Constant(s)) => s.asInstanceOf[S]
-          case tpe =>
-            c.abort(
-              c.enclosingPosition,
-              s"""When materializing ${weakTypeOf[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, PrintBindings, OnlyWarn]]]},
-                 |Bad constant type: $tpe - Not a constant! Only constant literal types are supported!
-               """.stripMargin,
-            )
-        }
+      import ReflectionUtil.{getConstantType, getConstantType0}
+
+      def badConstantErr[S: c.WeakTypeTag]: Nothing = {
+        val tpe = weakTypeOf[S]
+        c.abort(
+          c.enclosingPosition,
+          s"""When materializing ${weakTypeOf[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, PrintBindings, OnlyWarn]]]},
+             |Bad constant type: $tpe - Not a constant! Only constant literal types are supported!""".stripMargin,
+        )
       }
-      def getConstantType[S: c.WeakTypeTag]: S = {
-        getConstantType0(weakTypeOf[S].dealias)
-      }
+
       def noneIfUnset[S: c.WeakTypeTag]: Option[S] = {
         val tpe = weakTypeOf[S].dealias
         if (tpe =:= typeOf[PlanCheckConfig.Unset]) {
           None
         } else {
-          Some(getConstantType0[S](tpe))
+          Some(getConstantType0[S](tpe)(badConstantErr[S]))
         }
       }
 
       val roleAppMain = c.Expr[AppMain](q"${weakTypeOf[AppMain].asInstanceOf[SingleTypeApi].sym.asTerm}")
-      val roles = getConstantType[Roles]
-      val activations = getConstantType[Activations]
-      val config = getConstantType[Config]
+      val roles = getConstantType[Roles](c)(badConstantErr[Roles])
+      val activations = getConstantType[Activations](c)(badConstantErr[Activations])
+      val config = getConstantType[Config](c)(badConstantErr[Config])
       val checkConfig = noneIfUnset[CheckConfig]
       val printBindings = noneIfUnset[PrintBindings]
       val onlyWarn = noneIfUnset[OnlyWarn]

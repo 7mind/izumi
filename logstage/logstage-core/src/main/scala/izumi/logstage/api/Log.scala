@@ -179,14 +179,14 @@ object Log {
     }
     def +(that: Message): Message = ++(that)
   }
-  /** Construct [[Message]] from a string interpolation using [[Message.apply]] */
+  /** Construct [[Message]] from a string interpolation using [[MessageMat.apply]] */
   object Message extends MessageMat {
     def raw(message: String): Message = Message(StringContext(message), Nil)
 
     def empty: Message = raw("")
   }
 
-  /** Construct [[Message]] from a string interpolation using [[StrictMessage.apply]] */
+  /** Construct [[Message]] from a string interpolation using [[StrictMessageMat.apply]] */
   object StrictMessage extends StrictMessageMat {
     def empty: Message = Message.empty
   }

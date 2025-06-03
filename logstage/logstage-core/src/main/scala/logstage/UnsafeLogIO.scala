@@ -16,7 +16,7 @@ trait UnsafeLogIO[F[_]] extends LogCreateIO[F] {
   /** Check if this code position is not blacklisted and `logLevel` is at or above the configured threshold */
   def acceptable(position: CodePosition, logLevel: Level): F[Boolean]
 
-  override def widen[G[_]](implicit @unused ev: F[AnyRef] <:< G[AnyRef]): UnsafeLogIO[G] = this.asInstanceOf[UnsafeLogIO[G]]
+  override def widen[G[_]](implicit @unused ev: F[Unit] <:< G[Unit]): UnsafeLogIO[G] = this.asInstanceOf[UnsafeLogIO[G]]
 }
 
 object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
@@ -49,7 +49,7 @@ object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
     }
   }
 
-  implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit ev: F[AnyRef] <:< G[AnyRef]): UnsafeLogIO[G] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: UnsafeLogIO[F])(implicit ev: F[Unit] <:< G[Unit]): UnsafeLogIO[G] = log.widen
 }
 
 sealed trait LowPriorityUnsafeLogIOInstances {
