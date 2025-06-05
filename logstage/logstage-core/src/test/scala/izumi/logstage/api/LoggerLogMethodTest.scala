@@ -668,7 +668,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
       import Ordering.Implicits.*
       import Numeric.Implicits.*
 
-      if (a < Numeric[E].zero) {
+      if (a < implicitly[Numeric[E]].zero) {
         throw new Exception("Error during execution")
       } else {
         a + b
@@ -678,7 +678,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
       import Ordering.Implicits.*
       import Numeric.Implicits.*
 
-      if (a < Numeric[E].zero) {
+      if (a < implicitly[Numeric[E]].zero) {
         ZIO.fail(new Exception("Error during execution"))
       } else {
         ZIO.attempt(a + b)
