@@ -690,7 +690,8 @@ object ModuleDefDSL {
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.TypeKey,
   ) extends MakeDSLMutBase[T, MakeDSL[T]]
-    with MakeDSLBase[T, MakeDSLUnnamedAfterFrom[T]] {
+    with MakeDSLBase[T, MakeDSLUnnamedAfterFrom[T]]
+    with ScalaVersionSpecificMakeDsl[T, MakeDSLUnnamedAfterFrom[T]] {
 
     def named(name: Identifier): MakeNamedDSL[T] = {
       addOp(SetId(name))(new MakeNamedDSL[T](_, key.named(name)))
@@ -718,7 +719,8 @@ object ModuleDefDSL {
     override protected val mutableState: SingletonRef,
     override protected val key: DIKey.BasicKey,
   ) extends MakeDSLMutBase[T, MakeNamedDSL[T]]
-    with MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] {
+    with MakeDSLBase[T, MakeDSLNamedAfterFrom[T]]
+    with ScalaVersionSpecificMakeDsl[T, MakeDSLNamedAfterFrom[T]] {
 
     override protected def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_))
