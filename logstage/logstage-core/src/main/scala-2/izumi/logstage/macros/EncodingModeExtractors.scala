@@ -19,7 +19,7 @@ object EncodingModeExtractors {
   def getModeFromName(c: blackbox.Context)(debugTpe: c.universe.Type, name: String): EncodingMode = {
     encodingModeStrMap.getOrElse(
       name,
-      c.abort(c.enclosingPosition, s"Couldn't get valid type member `EncMode` from $debugTpe, got $name, expected one of $encodingModeStrMap"),
+      c.abort(c.enclosingPosition, s"Couldn't get valid type member `EncMode` from $debugTpe, got $name, expected one of ${encodingModeStrMap.keys.mkString("`", ", ", "`")}"),
     )
   }
 

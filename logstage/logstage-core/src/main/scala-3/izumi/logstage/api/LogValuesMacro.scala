@@ -2,6 +2,7 @@ package izumi.logstage.api
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
+import izumi.logstage.api.EncodingModeExtractors.getModeFromType
 import izumi.logstage.api.Log.{Level, Message}
 import izumi.logstage.api.logger.{AbstractLogIO, AbstractLogger}
 import izumi.logstage.macros.EncodingMode
@@ -11,29 +12,27 @@ import scala.quoted.*
 
 object LogValuesMacro {
 
-  def logValuesIO[F[_]: Type](
+  def logValuesIO[F[_]: Type, Enc: Type](
     logger: Expr[AbstractLogIO[F]],
     level: Expr[Level],
     values: Expr[Seq[Any]],
-    mode: 1 | 2 | 3
   )(using Quotes): Expr[F[Unit]] = {
+    val mode = EncodingModeExtractors.getModeFromType[Enc]
     val messageString = createMessageString(values)
-    val message =  createMessageWithMode(intToMode(mode), messageString)
+    val message =  createMessageWithMode(mode, messageString)
     '{
-      ${ logger }.log(${ level })(
-        ${ message }
-      )(using ${ CodePositionMaterializerMacro.getCodePositionMaterializer() })
+      ${ logger }.log(${ level })(${ message })(using ${ CodePositionMaterializerMacro.getCodePositionMaterializer() })
     }
   }
 
-  def logValues(
-    logger: Expr[AbstractLogger],
+  def logValues[Enc: Type](
+    logger: Expr[AbstractLogger { type EncMode = Enc }],
     level: Expr[Level],
     values: Expr[Seq[Any]],
-    mode: 1 | 2 | 3,
   )(using Quotes): Expr[Unit] = {
+    val mode = EncodingModeExtractors.getModeFromType[Enc]
     val messageString = createMessageString(values)
-    val message =  createMessageWithMode(intToMode(mode), messageString)
+    val message =  createMessageWithMode(mode, messageString)
     '{
       val pos = ${ CodePositionMaterializerMacro.getCodePositionMaterializer() }
       if (${ logger }.acceptable(pos.get, ${ level })) {
@@ -55,8 +54,8 @@ object LogValuesMacro {
     def loopOverArgs(args: List[Expr[Any]], acc: Expr[String]): Expr[String] = {
       args match {
         case Nil => acc
-        case head :: Nil => '{ $acc + $head }
-        case head :: tail => loopOverArgs(tail, '{ $acc + $head + ", " })
+        case head :: Nil => '{ $acc + ${ head } }
+        case head :: tail => loopOverArgs(tail, '{ $acc + ${ head } + ", " })
       }
     }
 
@@ -72,10 +71,10 @@ object LogValuesMacro {
     )(onStrictness = LogMessageMacro.message(messageString, _))
   }
 
-  inline private def intToMode(value: 1 | 2 | 3): EncodingMode = value match {
-    case 1 => EncodingMode.NonStrict
-    case 2 => EncodingMode.Strict
-    case 3 => EncodingMode.Raw
+  inline private def constToMode(value: "NonStrict" | "Strict" | "Raw"): EncodingMode = value match {
+    case "NonStrict" => EncodingMode.NonStrict
+    case "Strict" => EncodingMode.Strict
+    case "Raw" => EncodingMode.Raw
   }
 
 }

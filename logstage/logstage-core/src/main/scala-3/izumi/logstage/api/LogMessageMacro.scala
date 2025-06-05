@@ -1,13 +1,28 @@
 package izumi.logstage.api
 
-import izumi.logstage.api.Log.{LogArg, Message}
+import izumi.logstage.api.Log.{LogArg, Message, StrictMessage}
 import izumi.logstage.api.rendering.LogstageCodec
+import izumi.logstage.macros.EncodingMode
 
 import scala.annotation.tailrec
-import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable.ArrayBuffer
+import scala.compiletime
+import scala.compiletime.{codeOf, erasedValue}
+import scala.quoted.{Expr, Quotes, Type}
 
 object LogMessageMacro {
+  transparent inline def createMessageWithMode[EncMode <: Singleton](inline message: String): Message = {
+    inline erasedValue[EncMode] match {
+      case _: EncodingMode.NonStrict.type => Message(message)
+      case _: EncodingMode.Strict.type => StrictMessage(message)
+      case _: EncodingMode.Raw.type => Message.raw(message)
+      case _ =>
+        compiletime.error(
+          "Couldn't match " + codeOf(erasedValue[EncMode]) + " with any of the values in EncodingMode enum, expected one of: NonStrict, Strict or Raw"
+        )
+    }
+  }
+
   def message(message: Expr[String], strict: Boolean)(using qctx: Quotes): Expr[Message] = {
     import qctx.reflect.*
 
@@ -135,13 +150,13 @@ object LogMessageMacro {
 
     def makeMessage(multiline: Boolean, parts: Seq[Expr[String]], args: Seq[Expr[LogArg]]): Expr[Message] = {
       val scparts = Expr.ofSeq(if (multiline) {
-        parts.map(s => '{ $s.stripMargin })
+        parts.map(s => '{ ${ s }.stripMargin })
       } else {
         parts
       })
 
-      val sc: Expr[StringContext] = '{ StringContext($scparts*) }
-      '{ Message($sc, ${ Expr.ofSeq(args) }) }
+      val sc: Expr[StringContext] = '{ StringContext(${ scparts }*) }
+      '{ Message(${ sc }, ${ Expr.ofSeq(args) }) }
     }
 
     def makeArgs(args: Expr[Seq[Any]]): Seq[Expr[LogArg]] = {
@@ -157,17 +172,18 @@ object LogMessageMacro {
     def makeArg(expr: Expr[Any]): Expr[LogArg] = {
       val (parts, realExpr, isHidden, codec) = extractArgName(Seq.empty, expr)
       val vals: Expr[Seq[String]] = Expr.ofSeq(parts.map(n => Expr(n)))
-      '{ LogArg($vals, $realExpr, ${ Expr(isHidden) }, $codec) }
+      '{ LogArg(${ vals }, ${ realExpr }, ${ Expr(isHidden) }, ${ codec }) }
     }
 
     def findCodec(expr: Expr[Any]): Expr[Option[LogstageCodec[Any]]] = {
-      val codec: Expr[Option[LogstageCodec[Any]]] = expr.asTerm.tpe.asType match {
+      val codec: Expr[Option[LogstageCodec[Any]]] = expr.asTerm.tpe.widenTermRefByName.asType match {
         case '[a] =>
-          Expr.summon[LogstageCodec[a]].asInstanceOf[Option[Expr[LogstageCodec[Any]]]] match {
+          val tpe = Type.of[LogstageCodec[a]]
+          Expr.summon[LogstageCodec[a]](using tpe) match {
             case Some(c) =>
-              '{ Some($c.asInstanceOf[LogstageCodec[Any]]) }
+              '{ Some(${ c }.asInstanceOf[LogstageCodec[Any]]) }
             case None if strict =>
-              report.errorAndAbort(s"Can't find LogstageCodec for ${expr.show} but we are in Strict mode")
+              report.errorAndAbort(s"Implicit search failed for ${Type.show(using tpe)} for ${expr.show}, LogstageCodec instances are required in Strict mode")
             case None =>
               Expr(None)
           }

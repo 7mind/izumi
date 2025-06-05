@@ -2,258 +2,274 @@ package izumi.logstage.api
 
 import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log.{Level, Message}
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
+import izumi.logstage.api.Log.{Level, Message, StrictMessage}
 import izumi.logstage.api.logger.{AbstractLogIO, AbstractLogger}
+import izumi.logstage.macros.EncodingMode
 
 import scala.annotation.tailrec
 import scala.quoted.*
 
 object LogMethodMacro {
-  def logMethodIOF[A: Type, B, F[_]: Type, G[x] >: F[x]: Type](
-    using qctx: Quotes
-  )(level: Expr[Level],
-    function: Expr[G[A]],
-    functionTreeToInspect: Expr[B],
-    logger: Expr[AbstractLogIO[F]],
-    logTypesExpr: Expr[Boolean],
-    logImplicitsExpr: Expr[Boolean],
-    qp: Expr[QuasiPrimitives[G]],
-  ): Expr[G[A]] = {
-    import qctx.reflect.*
-    val (variables, logMessage) = createVariablesAndLogMessage(functionTreeToInspect.asTerm, logTypesExpr, logImplicitsExpr)
 
-    val logExpr =
-      '{
-        $qp.tapBothUntyped($function)(
-          err = error => $logger.log($level)(Message($logMessage + " => " + error))(CodePositionMaterializer.materialize),
-          succ = result => $logger.log($level)(Message($logMessage + " => " + result))(CodePositionMaterializer.materialize),
-        )
-      }.asTerm
-
-    Block(
-      variables,
-      logExpr,
-    ).asExprOf[G[A]]
-  }
-
-  def logMethodIO[A: Type, F[_]: Type, G[x] >: F[x]: Type](
+  def logMethodIO[A: Type, F[_]: Type, G[x] >: F[x]: Type, EncMode: Type](
     level: Expr[Level],
     function: Expr[A],
     logger: Expr[AbstractLogIO[F]],
-    logTypesExpr: Expr[Boolean],
-    logImplicitsExpr: Expr[Boolean],
+    printTypes: Expr[Boolean],
+    printImplicits: Expr[Boolean],
     qp: Expr[QuasiIO[G]],
-  )(using qctx: Quotes
+  )(using Quotes
   ): Expr[G[A]] = {
-    logMethodIOF(level, '{ $qp.maybeSuspend($function) }, function, logger, logTypesExpr, logImplicitsExpr, qp)
+    logMethodIOF[A, F, G, EncMode](level, '{ ${ qp }.maybeSuspend(${ function }) }, function, logger, printTypes, printImplicits, qp)
   }
 
-  def logMethod[A: Type](
+  def logMethodIOF[A: Type, F[_]: Type, G[x] >: F[x]: Type, EncMode: Type](
+    level: Expr[Level],
+    function: Expr[G[A]],
+    functionTreeToInspect: Expr[Any],
+    logger: Expr[AbstractLogIO[F]],
+    printTypes: Expr[Boolean],
+    printImplicits: Expr[Boolean],
+    qp: Expr[QuasiPrimitives[G]],
+  )(using qctx: Quotes
+  ): Expr[G[A]] = {
+    import qctx.reflect.*
+    val mode = EncodingModeExtractors.getModeFromType[EncMode]
+    val (variables, fnMessage, argsMessage, typesMessage, implicitsMessage) = createVariablesAndLogMessage(mode, functionTreeToInspect.asTerm)
+
+    '{
+      val position = ${ CodePositionMaterializerMacro.getCodePositionMaterializer() }
+      ${ qp }.tapBothUntyped(${ function })(
+        err = error =>
+          ${ logger }.log(${ level }) {
+            ${
+              blockWithVariables(qctx)(variables) {
+                '{
+                  val typesMsg = ${ ifOrEmptyMsg(printTypes)(typesMessage) }
+                  val implicitsMsg = ${ ifOrEmptyMsg(printImplicits)(implicitsMessage) }
+                  val errorMsg = error match {
+                    case error: Throwable => ${ messageMacro(mode, '{ " => " + error }) }
+                    case error => ${ messageMacro(mode, '{ " => " + error }) }
+                  }
+                  ${ fnMessage } ++ typesMsg ++ ${ argsMessage } ++ implicitsMsg ++ errorMsg
+                }
+              }
+            }
+          }(using position),
+        succ = result =>
+          ${ logger }.log(${ level }) {
+            ${
+              blockWithVariables(qctx)(variables) {
+                '{
+                  val typesMsg = ${ ifOrEmptyMsg(printTypes)(typesMessage) }
+                  val implicitsMsg = ${ ifOrEmptyMsg(printImplicits)(implicitsMessage) }
+                  ${ fnMessage } ++ typesMsg ++ ${ argsMessage } ++ implicitsMsg ++ ${ messageMacro(mode, '{ " => " + result }) }
+                }
+              }
+            }
+          }(using position),
+      )
+    }
+  }
+
+  def logMethod[A: Type, EncMode: Type](
     level: Expr[Level],
     function: Expr[A],
     logger: Expr[AbstractLogger],
-    logTypesExpr: Expr[Boolean],
-    logImplicitsExpr: Expr[Boolean],
+    printTypes: Expr[Boolean],
+    printImplicits: Expr[Boolean],
   )(using qctx: Quotes
   ): Expr[A] = {
     import qctx.reflect.*
-    val funcTree = function.asTerm
-    val (variables, logMessage) = createVariablesAndLogMessage(funcTree, logTypesExpr, logImplicitsExpr)
+    val mode = EncodingModeExtractors.getModeFromType[EncMode]
+    val (variables, fnMessage, argsMessage, typesMessage, implicitsMessage) = createVariablesAndLogMessage(mode, function.asTerm)
 
-    val logExpr = '{
-      val pos = CodePositionMaterializer.materialize
+    '{
+      val position = ${ CodePositionMaterializerMacro.getCodePositionMaterializer() }
       try {
-        val result = $function
-        if ($logger.acceptable(pos.get, $level)) {
-          $logger.unsafeLog(Log.Entry.create($level, Message($logMessage + " => " + result))(pos))
+        val result = ${ function }
+        if (${ logger }.acceptable(position.get, ${ level })) {
+          ${
+            blockWithVariables(qctx)(variables) {
+              '{
+                val typesMsg = ${ ifOrEmptyMsg(printTypes)(typesMessage) }
+                val implicitsMsg = ${ ifOrEmptyMsg(printImplicits)(implicitsMessage) }
+                ${ logger }.unsafeLog(
+                  Log.Entry.create(
+                    ${ level },
+                    ${ fnMessage } ++ typesMsg ++ ${ argsMessage } ++ implicitsMsg ++ ${ messageMacro(mode, '{ " => " + result }) },
+                  )(using position)
+                )
+              }
+            }
+          }
         }
         result
       } catch {
         case error: Throwable =>
-          if ($logger.acceptable(pos.get, $level)) {
-            $logger.unsafeLog(Log.Entry.create($level, Message($logMessage + " => " + error))(pos))
+          if (${ logger }.acceptable(position.get, ${ level })) {
+            ${
+              blockWithVariables(qctx)(variables) {
+                '{
+                  val typesMsg = ${ ifOrEmptyMsg(printTypes)(typesMessage) }
+                  val implicitsMsg = ${ ifOrEmptyMsg(printImplicits)(implicitsMessage) }
+                  ${ logger }.unsafeLog(
+                    Log.Entry.create(
+                      ${ level },
+                      ${ fnMessage } ++ typesMsg ++ ${ argsMessage } ++ implicitsMsg ++ ${ messageMacro(mode, '{ " => " + error }) },
+                    )(using position)
+                  )
+                }
+              }
+            }
           }
           throw error
       }
-    }.asTerm
+    }
+  }
 
-    Block(
-      variables,
-      logExpr,
-    ).asExprOf[A]
+  private def blockWithVariables[A: Type](qctx: Quotes)(variables: List[qctx.reflect.ValDef])(expr: Expr[A]): Expr[A] = {
+    import qctx.reflect.{Block, asTerm}
+    Block(variables, expr.asTerm).asExprOf[A]
   }
 
   private def createVariablesAndLogMessage(
     using qctx: Quotes
-  )(funcTree: qctx.reflect.Term,
-    logTypesExpr: Expr[Boolean],
-    logImplicitsExpr: Expr[Boolean],
-  ): (List[qctx.reflect.ValDef], Expr[String]) = {
+  )(mode: EncodingMode,
+    funcTree: qctx.reflect.Term,
+  ): (List[qctx.reflect.ValDef], Expr[Message], Expr[Message], Expr[Message], Expr[Message]) = {
     import qctx.reflect.*
-    val logTypes: Boolean = logTypesExpr.value match {
-      case Some(value) => value
-      case None => true
-    }
-    val logImplicits = logImplicitsExpr.value match {
-      case Some(value) => value
-      case None => true
-    }
+    val (method, argumentsTreess) = getFunctionArgumentsAndMethodSymbol(funcTree)
 
-    val method = getMethodSymbols(funcTree)
-    val argumentsTreesUnordered = getMethodArguments(funcTree)
-    val argumentsTrees =
-      if (method.paramSymss.size == 1) argumentsTreesUnordered
-      else argumentsTreesUnordered.reverse
+    val (methodTypeArguments, methodArguments) = method.paramSymss.partition(_.exists(_.isType))
 
-    val methodParams = method.paramSymss
-    val (methodTypeArguments, methodArguments) = methodParams.partition(_.exists(_.isType))
-    val variablesSymbols = createVariablesSymbols(methodArguments, argumentsTrees, logImplicits)
-    val variables: List[ValDef] = variablesSymbols.flatten.zip(argumentsTrees).map {
-      case (symbol, tree) => ValDef(symbol, Some(tree))
-    }
-    val withFunctionName = Expr(s"Call to ${method.name}")
-    val withTypes = appendTypesInfo(funcTree, methodTypeArguments.flatten, withFunctionName, logTypes)
-    val withArguments = appendSymbolsToString(variablesSymbols, withTypes)
-    (variables, withArguments)
+    val (explicitVariableDecls, implicitVariableDecls) = getArgumentsToLog(methodArguments, argumentsTreess)
+
+    val fnMessage = '{ Message.raw(${ Expr(s"Call to ${method.name}") }) }
+    val (typeVariableDecls, typesMessage) = mkTypesMsg(mode, funcTree, methodTypeArguments.flatten)
+    val variableValDefs: List[ValDef] = ((explicitVariableDecls.iterator ++ implicitVariableDecls).flatten ++ typeVariableDecls).map(_._1).toList
+    val argMessage = messageMacro(mode, mkParametersString(explicitVariableDecls.map(_.map(_._2)), Expr(""), "(", ")"))
+    val implicitsMessage = messageMacro(mode, mkParametersString(implicitVariableDecls.map(_.map(_._2)), Expr(""), "(", ")"))
+
+    (variableValDefs, fnMessage, argMessage, typesMessage, implicitsMessage)
   }
 
-  private def appendTypesInfo(
+  private def mkTypesMsg(
     using qctx: Quotes
-  )(funcTree: qctx.reflect.Term,
-    methodTypeArguments: List[qctx.reflect.Symbol],
-    message: Expr[String],
-    logTypes: Boolean,
-  ) = {
-    if (logTypes && methodTypeArguments.nonEmpty) {
+  )(mode: EncodingMode,
+    funcTree: qctx.reflect.Term,
+    typeArguments: List[qctx.reflect.Symbol],
+  ): (List[(qctx.reflect.ValDef, Expr[Any])], Expr[Message]) = {
+    import qctx.reflect.*
+    if (typeArguments.nonEmpty) {
       val typesPassed = getFunctionTypeArguments(funcTree)
-      val typeInfo = methodTypeArguments
-        .zip(typesPassed)
-        .map { case (typeArgument, typeTree) => s"${typeArgument.name}=${typeTree.show}" }.mkString("[", " ", "]")
-      '{ $message + ${ Expr[String](typeInfo) } }
-    } else message
+      val typeVariableNames = typeArguments.map(_.name)
+      val typeVariableValues = typesPassed.map(t => Literal(StringConstant(t.show(using Printer.TypeReprShortCode))))
+      val typeVariableDecls = createVariableTrees(using qctx)(identity[String]) {
+        typeVariableNames.zip(typeVariableValues)
+      }
+      val stringTree = mkParametersString(List(typeVariableDecls.map(_._2)), Expr(""), "[", "]")
+      (typeVariableDecls, messageMacro(mode, stringTree))
+    } else {
+      (Nil, emptyMessageTree)
+    }
   }
 
-  private def createVariablesSymbols(
+  private def messageMacro(mode: EncodingMode, stringExpr: Expr[String])(using Quotes): Expr[Message] = {
+    mode match {
+      case EncodingMode.NonStrict => '{ Message.apply(${ stringExpr }) }
+      case EncodingMode.Strict => '{ StrictMessage.apply(${ stringExpr }) }
+      case EncodingMode.Raw => '{ Message.raw(${ stringExpr }) }
+    }
+  }
+
+  private def emptyMessageTree(using Quotes): Expr[Message] = {
+    '{ Message.empty }
+  }
+
+  private def ifOrEmptyMsg(bool: Expr[Boolean])(message: Expr[Message])(using Quotes): Expr[Message] = {
+    '{
+      if (${ bool }) ${ message }
+      else ${ emptyMessageTree }
+    }
+  }
+
+  private def getArgumentsToLog(
     using qctx: Quotes
-  )(args: List[List[qctx.reflect.Symbol]],
-    argsTrees: List[qctx.reflect.Term],
-    logImplicits: Boolean,
-  ): List[List[qctx.reflect.Symbol]] = {
+  )(methodArgumentss: List[List[qctx.reflect.Symbol]],
+    argumentsTreess: List[List[qctx.reflect.Term]],
+  ): (List[List[(qctx.reflect.ValDef, Expr[Any])]], List[List[(qctx.reflect.ValDef, Expr[Any])]]) = {
     import qctx.reflect.*
 
     def isImplicit(symbol: Symbol): Boolean = symbol.flags.is(Flags.Given) || symbol.flags.is(Flags.Implicit)
 
-    @tailrec
-    def loopOverArgs(symbols: List[Symbol], argsTrees: IndexedSeq[Term], index: Int, acc: List[Symbol]): (List[Symbol], Int) = {
-      symbols match {
-        case Nil => (acc, index)
-        case head :: tail =>
-          if (!logImplicits && isImplicit(head)) {
-            loopOverArgs(tail, argsTrees, index + 1, acc)
-          } else {
-            val valSymbol = Symbol.newVal(Symbol.spliceOwner, head.name, argsTrees(index).tpe.widen, Flags.EmptyFlags, Symbol.noSymbol)
-            loopOverArgs(tail, argsTrees, index + 1, acc :+ valSymbol)
-          }
-      }
-    }
+    val zipped = methodArgumentss.zip(argumentsTreess).map((as, ts) => as.zip(ts))
+    val (implicits, explicits) = zipped.partition(_.exists((s, _) => isImplicit(s)))
 
-    @tailrec
-    def loopOverCurriedArgs(args: List[List[Symbol]], argsTrees: IndexedSeq[Term], index: Int, acc: List[List[Symbol]]): List[List[Symbol]] = {
-      args match {
-        case Nil => acc
-        case head :: tail =>
-          val (symbols, newIndex) = loopOverArgs(head, argsTrees, index, Nil)
-          loopOverCurriedArgs(tail, argsTrees, newIndex, acc :+ symbols)
-      }
-    }
+    val explicitArgumentss = explicits.map(createVariableTrees(_.name))
+    val implicitArgumentss = implicits.map(createVariableTrees(_.name))
 
-    loopOverCurriedArgs(args, argsTrees.toIndexedSeq, 0, Nil).filter(_.nonEmpty)
+    (explicitArgumentss, implicitArgumentss)
   }
 
-  private def appendSymbolsToString(
+  private def createVariableTrees[A](using qctx: Quotes)(getName: A => String)(namesTerms: List[(A, qctx.reflect.Term)]): List[(qctx.reflect.ValDef, Expr[Any])] = {
+    import qctx.reflect.*
+    namesTerms.map {
+      (a, term) =>
+        ValDef.let(Symbol.spliceOwner, getName(a), term)(ref => ref) match {
+          case Block(List(valDef: ValDef), ref) =>
+            (valDef, ref.asExpr)
+        }
+    }
+  }
+
+  private def mkParametersString(
     using qctx: Quotes
-  )(symbols: List[List[qctx.reflect.Symbol]],
+  )(valExprss: List[List[Expr[Any]]],
     stringTree: Expr[String],
+    bracketOpen: String,
+    bracketClose: String,
   ): Expr[String] = {
     import qctx.reflect.*
-    @tailrec
-    def loopOverArgs(args: List[Symbol], acc: Expr[String]): Expr[String] = {
-      args match {
-        case Nil => acc
-        case head :: Nil => '{ $acc + ${ Ref(head).asExpr } }
-        case head :: tail => loopOverArgs(tail, '{ $acc + ${ Ref(head).asExpr } + ", " })
-      }
+    val bOpenExpr = Expr(bracketOpen)
+    val bCloseExpr = Expr(bracketClose)
+    valExprss.foldLeft(stringTree) {
+      (acc, valExprs) =>
+        val openedBracket: Expr[String] = '{ ${ acc } + ${ bOpenExpr } }
+        val withArgs = valExprs match {
+          case Nil => openedBracket
+          case head :: tail =>
+            tail.foldLeft('{ ${ openedBracket } + ${ head } })((a, b) => '{ ${ a } + ", " + ${ b } })
+        }
+        '{ ${ withArgs } + ${ bCloseExpr } }
     }
-
-    @tailrec
-    def loopOverCurriedArgs(curriedArgs: List[List[Symbol]], acc: Expr[String]): Expr[String] = {
-      curriedArgs match {
-        case Nil => acc
-        case head :: tail =>
-          val openedBracket = '{ $acc + "(" }
-          val withArgs = loopOverArgs(head, openedBracket)
-          val withClosedBracket = '{ $withArgs + ")" }
-          loopOverCurriedArgs(tail, withClosedBracket)
-      }
-    }
-
-    if (symbols.isEmpty) '{ $stringTree + "()" }
-    else loopOverCurriedArgs(symbols, stringTree)
   }
 
   private def getFunctionTypeArguments(using qctx: Quotes)(funcTree: qctx.reflect.Tree): List[qctx.reflect.TypeRepr] = {
     import qctx.reflect.*
     @tailrec
-    def loop(tree: Tree): List[TypeTree] = tree match {
-      case TypeApply(_, targs) => targs
+    def loop(tree: Tree): List[TypeRepr] = tree match {
+      case TypeApply(_, targs) => targs.map(_.tpe)
       case Apply(tree, _) => loop(tree)
       case Inlined(_, _, tree) => loop(tree)
     }
-
-    loop(funcTree).map(_.tpe)
+    loop(funcTree)
   }
 
-  private def getMethodSymbols(using qctx: Quotes)(function: qctx.reflect.Term): qctx.reflect.Symbol = {
-    import qctx.reflect.*
-    def getMethodBySignature(signature: Option[Signature], obj: Term, methodName: String): Symbol = {
-      val methodSignature = signature match {
-        case Some(s) => s
-        case None => report.errorAndAbort("The expression must be class or object method call")
-      }
-      obj.symbol
-        .methodMember(methodName)
-        .find(_.signature == methodSignature)
-        .getOrElse(report.errorAndAbort(s"Object ${obj.symbol.name} doesn't have method $methodName with signature $methodSignature"))
-    }
-    
-    @tailrec
-    def loop(tree: Term): Symbol = tree match {
-      case Apply(m @ Select(obj, method), _) => getMethodBySignature(m.signature, obj, method)
-      case Apply(TypeApply(m @ Select(obj, method), _), _) => getMethodBySignature(m.signature, obj, method)
-
-      case Inlined(_, _, term) => loop(term)
-      case Apply(TypeApply(term, _), _) => loop(term)
-      case Apply(term, _) => loop(term)
-
-      case _ => report.errorAndAbort("The expression must be class or object method call")
-    }
-
-    loop(function)
-  }
-
-  private def getMethodArguments(using qctx: Quotes)(function: qctx.reflect.Term): List[qctx.reflect.Term] = {
+  private def getFunctionArgumentsAndMethodSymbol(using qctx: Quotes)(funcTree: qctx.reflect.Term): (qctx.reflect.Symbol, List[List[qctx.reflect.Term]]) = {
     import qctx.reflect.*
     @tailrec
-    def loop(tree: Term, acc: List[Term]): List[Term] = tree match {
-      case Apply(Select(_, _) | TypeApply(Select(_, _), _), args) => acc ++ args
+    def loop(tree: Term, argss: List[List[Term]]): (Symbol, List[List[Term]]) = tree match {
+      case Apply(m @ Select(_, _), args) => (m.symbol, args :: argss)
+      case Apply(m @ TypeApply(Select(_, _), _), args) => (m.symbol, args :: argss)
 
-      case Inlined(_, _, term) => loop(term, acc)
-      case Apply(TypeApply(term, _), args) => loop(term, acc ++ args)
-      case Apply(term, args) => loop(term, acc ++ args)
+      case Inlined(_, _, term) => loop(term, argss)
+      case Apply(TypeApply(term, _), args) => loop(term, args :: argss)
+      case Apply(term, args) => loop(term, args :: argss)
 
-      case _ => report.errorAndAbort("The expression must be class or object method call")
+      case _ => report.errorAndAbort(s"Expected method call, but got ${tree.show} (raw=$tree)")
     }
-
-    loop(function, List.empty[Term])
+    loop(funcTree, Nil)
   }
 }

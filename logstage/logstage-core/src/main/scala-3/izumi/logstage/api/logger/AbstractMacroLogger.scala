@@ -1,10 +1,11 @@
 package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log.{Level, Message}
-import izumi.logstage.api.{Log, LogMethodMacro, LogValuesMacro}
+import izumi.logstage.api.Log.{Level, Message, StrictMessage}
+import izumi.logstage.api.{Log, LogMessageMacro, LogMethodMacro, LogValuesMacro}
 import izumi.logstage.macros.EncodingMode
-trait AbstractMacroLogger { this: AbstractLogger =>
+
+trait AbstractMacroLogger { this: AbstractLogger { type EncMode <: Singleton } =>
 
   /**
     * More efficient aliases for [[log]]
@@ -14,30 +15,32 @@ trait AbstractMacroLogger { this: AbstractLogger =>
     *
     * They also look better in Intellij
     */
-  transparent inline final def trace(inline message: String): Unit = log(Log.Level.Trace, message)
-  transparent inline final def debug(inline message: String): Unit = log(Log.Level.Debug, message)
-  transparent inline final def info(inline message: String): Unit = log(Log.Level.Info, message)
-  transparent inline final def warn(inline message: String): Unit = log(Log.Level.Warn, message)
-  transparent inline final def error(inline message: String): Unit = log(Log.Level.Error, message)
-  transparent inline final def crit(inline message: String): Unit = log(Log.Level.Crit, message)
+  transparent inline final def trace(inline message: String): Unit = logImpl(Log.Level.Trace, message)
+  transparent inline final def debug(inline message: String): Unit = logImpl(Log.Level.Debug, message)
+  transparent inline final def info(inline message: String): Unit = logImpl(Log.Level.Info, message)
+  transparent inline final def warn(inline message: String): Unit = logImpl(Log.Level.Warn, message)
+  transparent inline final def error(inline message: String): Unit = logImpl(Log.Level.Error, message)
+  transparent inline final def crit(inline message: String): Unit = logImpl(Log.Level.Crit, message)
 
-  transparent inline final def logValues(inline level: Log.Level)(inline values: Any*): Unit = {
-    ${ LogValuesMacro.logValues('this, 'level, 'values, 1) }
+  transparent inline final def logValues(level: Log.Level)(inline values: Any*): Unit = {
+    ${ LogValuesMacro.logValues[EncMode]('{ this }, '{ level }, '{ values }) }
   }
 
   transparent inline final def logMethod[A](
-    inline level: Level,
-    inline logTypes: Boolean = true,
-    inline logImplicits: Boolean = true,
+    level: Level,
+    printTypes: Boolean = false,
+    printImplicits: Boolean = false,
   )(inline function: => A
   ): A = {
-    ${ LogMethodMacro.logMethod('level, 'function, 'this, 'logTypes, 'logImplicits) }
+    ${ LogMethodMacro.logMethod[A, EncMode]('{ level }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }) }
   }
 
-  transparent inline final def log(inline level: Log.Level, inline message: String): Unit = {
+  private[AbstractMacroLogger] transparent inline final def logImpl(inline level: Log.Level, inline message: String): Unit = {
     val pos = CodePositionMaterializer.materialize
     if (acceptable(pos.get, level)) {
-      unsafeLog(Log.Entry.create(level, Message(message))(pos))
+      unsafeLog(
+        Log.Entry.create(level, LogMessageMacro.createMessageWithMode[EncMode](message))(pos)
+      )
     }
   }
 }

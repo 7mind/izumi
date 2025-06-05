@@ -1,6 +1,7 @@
 package izumi.logstage.api
 
 import izumi.functional.bio.TypedError
+import izumi.fundamentals.platform.language.IzScala
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.logstage.api.Log.LogArg
 import izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
@@ -324,9 +325,10 @@ class LoggerLogMethodTest extends AnyWordSpec {
       ") => ",
       "",
     )
+    val vectorTryStringTpeString = if (IzScala.scalaRelease.major == 2) "Vector[scala.util.Try[String]]" else "Vector[Try[String]]"
     val args = Seq(
       LogArg(Seq("C"), "List", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("F"), "Vector[scala.util.Try[String]]", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+      LogArg(Seq("F"), vectorTryStringTpeString, hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
       LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
       LogArg(Seq("a"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),

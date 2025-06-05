@@ -2,7 +2,6 @@ package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{CustomContext, Entry, Level, Message}
-import izumi.logstage.api.logger.AbstractLogIO.SyntaxWidenError
 import logstage.UnsafeLogIO
 
 import scala.annotation.unused
@@ -34,7 +33,9 @@ object AbstractLogIO extends LowPriorityAbstractLogIOInstances {
 
 sealed trait LowPriorityAbstractLogIOInstances {
   // workaround for inference issues with `E=Nothing`
-  @inline implicit final def SyntaxWidenErrorNothing[F[+_, +_], Self0[f[_]]](
-    logIO: AbstractLogIO[F[Nothing, _]] { type Self[f[_]] = Self0[f] }
-  ): SyntaxWidenError[F, Nothing, Self0] = { new SyntaxWidenError[F, Nothing, Self0](logIO) }
+  @inline implicit final def SyntaxWidenErrorNothing[F[+_, +_]](
+    logIO: AbstractLogIO[F[Nothing, _]]
+  ): AbstractLogIO.SyntaxWidenError[F, Nothing, logIO.Self] = {
+    new AbstractLogIO.SyntaxWidenError[F, Nothing, logIO.Self](logIO)
+  }
 }

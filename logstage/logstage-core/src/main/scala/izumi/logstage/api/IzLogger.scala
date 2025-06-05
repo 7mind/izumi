@@ -3,7 +3,7 @@ package izumi.logstage.api
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.{AbstractMacroLogger, EncodingAwareAbstractLogger, LogRouter, RawLogger, RoutingLogger}
 import izumi.logstage.api.rendering.AnyEncoded
-import izumi.logstage.macros.EncodingMode.NonStrict
+import izumi.logstage.macros.EncodingMode
 
 class IzLogger(
   override val router: LogRouter,
@@ -14,7 +14,7 @@ class IzLogger(
 
   override type Self = IzLogger
 
-  override type EncMode = NonStrict.type
+  override type EncMode = EncodingMode.NonStrict.type
 
   def withCustomContext(context: CustomContext): Self = new IzLogger(router, customContext + context)
 

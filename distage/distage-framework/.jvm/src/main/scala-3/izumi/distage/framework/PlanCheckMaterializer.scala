@@ -78,33 +78,29 @@ object PlanCheckMaterializer extends PlanCheckMaterializerCommon {
   ): Expr[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, PrintBindings, OnlyWarn]]] = {
     import qctx.reflect.*
 
-    def getConstantType0[S](tpe: TypeRepr): S = {
-      tpe match {
-        case ConstantType(c) => c.value.asInstanceOf[S]
-        case tpe =>
-          report.errorAndAbort(
-            s"""When materializing ${Type.show[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, PrintBindings, OnlyWarn]]]},
-               |Bad constant type: $tpe - Not a constant! Only constant literal types are supported!
-             """.stripMargin
-          )
-      }
+    import izumi.fundamentals.platform.reflection.ReflectionUtil.{getConstantType, getConstantType0}
+
+    def badConstantErr[S](using t: => Type[S])(tpe: TypeRepr = TypeRepr.of[S](using t)) = {
+      report.errorAndAbort(
+        s"""When materializing ${Type.show[PlanCheckMaterializer[AppMain, PlanCheckConfig[Roles, Activations, Config, CheckConfig, PrintBindings, OnlyWarn]]]},
+           |Bad constant type: $tpe - Not a constant! Only constant literal types are supported!
+         """.stripMargin
+      )
     }
-    def getConstantType[S: Type]: S = {
-      getConstantType0(TypeRepr.of[S].dealias)
-    }
+
     def noneIfUnset[S: Type]: Option[S] = {
       val tpe = TypeRepr.of[S].dealias
       if (tpe =:= TypeRepr.of[PlanCheckConfig.Unset]) {
         None
       } else {
-        Some(getConstantType0[S](tpe))
+        Some(getConstantType0[S](tpe)(badConstantErr[S](tpe)))
       }
     }
 
     val roleAppMain = Ref(TypeRepr.of[AppMain].termSymbol).asExprOf[AppMain]
-    val roles = getConstantType[Roles]
-    val activations = getConstantType[Activations]
-    val config = getConstantType[Config]
+    val roles = getConstantType[Roles](badConstantErr[Roles]())
+    val activations = getConstantType[Activations](badConstantErr[Activations]())
+    val config = getConstantType[Config](badConstantErr[Config]())
     val checkConfig = noneIfUnset[CheckConfig]
     val printBindings = noneIfUnset[PrintBindings]
     val onlyWarn = noneIfUnset[OnlyWarn]

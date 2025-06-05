@@ -1,8 +1,7 @@
 package izumi.fundamentals.platform.reflection
 
-import scala.quoted.Quotes
+import scala.quoted.{Quotes, Type}
 import scala.collection.mutable
-
 import scala.annotation.tailrec
 
 object ReflectionUtil {
@@ -86,6 +85,18 @@ object ReflectionUtil {
     }
   }
 
+  def getConstantType0[S](using qctx: Quotes)(tpe: qctx.reflect.TypeRepr)(orElse: => S): S = {
+    import qctx.reflect.*
+    tpe match {
+      case ConstantType(c) => c.value.asInstanceOf[S]
+      case _ => orElse
+    }
+  }
+
+  def getConstantType[S: Type](orElse: => S)(using qctx: Quotes): S = {
+    getConstantType0(qctx.reflect.TypeRepr.of[S].dealias)(orElse)
+  }
+
   def findSymbolAnnoString(
     using qctx: Quotes
   )(sym: qctx.reflect.Symbol,
@@ -106,7 +117,7 @@ object ReflectionUtil {
     using qctx: Quotes
   )(term: qctx.reflect.Term,
     name: String,
-  ) = {
+  ): Option[String] = {
     import qctx.reflect.*
 
     term match {
