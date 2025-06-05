@@ -3,7 +3,8 @@ package izumi.logstage.api.logger
 import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{Level, Message}
-import izumi.logstage.api.{Log, LogMessageMacro, LogMethodMacro, LogValuesMacro}
+import izumi.logstage.api.Log
+import izumi.logstage.macros.{LogMessageMacro, LogMethodMacro, LogValuesMacro}
 
 trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Singleton } =>
 

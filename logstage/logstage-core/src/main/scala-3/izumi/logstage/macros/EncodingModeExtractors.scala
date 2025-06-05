@@ -1,6 +1,4 @@
-package izumi.logstage.api
-
-import izumi.logstage.macros.EncodingMode
+package izumi.logstage.macros
 
 import scala.quoted.{Quotes, Type}
 

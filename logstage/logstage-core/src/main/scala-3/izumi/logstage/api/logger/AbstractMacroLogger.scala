@@ -2,7 +2,8 @@ package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{Level, Message, StrictMessage}
-import izumi.logstage.api.{Log, LogMessageMacro, LogMethodMacro, LogValuesMacro}
+import izumi.logstage.api.Log
+import izumi.logstage.macros.{LogMessageMacro, LogMethodMacro, LogValuesMacro}
 import izumi.logstage.macros.EncodingMode
 
 trait AbstractMacroLogger { this: AbstractLogger { type EncMode <: Singleton } =>

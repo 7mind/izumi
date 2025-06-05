@@ -1,6 +1,8 @@
 package izumi.logstage.api
 
 import izumi.logstage.api.Log.Message
+import izumi.logstage.macros.LogMessageMacro
+
 import scala.language.implicitConversions
 
 trait StrictMessageMat {

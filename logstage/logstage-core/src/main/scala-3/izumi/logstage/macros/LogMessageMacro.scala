@@ -1,8 +1,7 @@
-package izumi.logstage.api
+package izumi.logstage.macros
 
 import izumi.logstage.api.Log.{LogArg, Message, StrictMessage}
 import izumi.logstage.api.rendering.LogstageCodec
-import izumi.logstage.macros.EncodingMode
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer

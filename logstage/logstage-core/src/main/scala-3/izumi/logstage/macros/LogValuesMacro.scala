@@ -1,11 +1,11 @@
-package izumi.logstage.api
+package izumi.logstage.macros
 
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
-import izumi.logstage.api.EncodingModeExtractors.getModeFromType
+import izumi.logstage.macros.EncodingModeExtractors.getModeFromType
+import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{Level, Message}
 import izumi.logstage.api.logger.{AbstractLogIO, AbstractLogger}
-import izumi.logstage.macros.EncodingMode
 
 import scala.annotation.tailrec
 import scala.quoted.*
