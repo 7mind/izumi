@@ -664,15 +664,25 @@ class LoggerLogMethodTest extends AnyWordSpec {
       ZIO.replicateZIO(2)(ZIO.succeed(fn)).map(_.toList)
     }
 
-    def withError(a: Int, b: Int): Int = {
-      if (a < 0) {
+    def withError[E: Numeric: Ordering](a: E, b: E): E = {
+      import Ordering.Implicits.*
+      import Numeric.Implicits.*
+
+      if (a < Numeric[E].zero) {
         throw new Exception("Error during execution")
-      } else a + b
+      } else {
+        a + b
+      }
     }
-    def withErrorF(a: Int, b: Int): Task[Int] = {
-      if (a < 0) {
+    def withErrorF[E: Numeric: Ordering](a: E, b: E): Task[E] = {
+      import Ordering.Implicits.*
+      import Numeric.Implicits.*
+
+      if (a < Numeric[E].zero) {
         ZIO.fail(new Exception("Error during execution"))
-      } else ZIO.attempt(a + b)
+      } else {
+        ZIO.attempt(a + b)
+      }
     }
 
     def add(x: Int): Int = x + x

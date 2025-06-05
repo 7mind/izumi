@@ -27,12 +27,7 @@ trait AbstractMacroLogger { this: AbstractLogger { type EncMode <: Singleton } =
     ${ LogValuesMacro.logValues[EncMode]('{ this }, '{ level }, '{ values }) }
   }
 
-  transparent inline final def logMethod[A](
-    level: Level,
-    printTypes: Boolean = false,
-    printImplicits: Boolean = false,
-  )(inline function: => A
-  ): A = {
+  transparent inline final def logMethod[A](level: Level, printTypes: Boolean = false, printImplicits: Boolean = false)(inline function: => A): A = {
     ${ LogMethodMacro.logMethod[A, EncMode]('{ level }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }) }
   }
 

@@ -25,19 +25,19 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Single
     printTypes: Boolean = false,
     printImplicits: Boolean = false,
   )(inline function: => A
-  )(using qp: QuasiIO[G]
+  )(using G: QuasiIO[G]
   ): G[A] = {
-    ${ LogMethodMacro.logMethodIO[A, F, G, EncMode]('{ level }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ qp }) }
+    ${ LogMethodMacro.logMethodIO[A, F, G, EncMode]('{ level }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ G }) }
   }
 
   transparent inline final def logMethodF[G[x] >: F[x], A](
     level: Level,
-    printTypes: Boolean = true,
-    printImplicits: Boolean = true,
+    printTypes: Boolean = false,
+    printImplicits: Boolean = false,
   )(inline function: => G[A]
-  )(using qp: QuasiPrimitives[G]
+  )(using G: QuasiPrimitives[G]
   ): G[A] = {
-    ${ LogMethodMacro.logMethodIOF[A, F, G, EncMode]('{ level }, '{ function }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ qp }) }
+    ${ LogMethodMacro.logMethodIOF[A, F, G, EncMode]('{ level }, '{ function }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ G }) }
   }
 
   private[AbstractMacroLogIO] transparent inline final def logImpl(inline level: Log.Level, inline message: String): F[Unit] = {
