@@ -150,7 +150,7 @@ object LogMethodMacro {
     val (typeVariableDecls, typesMessage) = mkTypesMsg(mode, funcTree, methodTypeArguments.flatten)
     val variableValDefs: List[ValDef] = ((explicitVariableDecls.iterator ++ implicitVariableDecls).flatten ++ typeVariableDecls).map(_._1).toList
     val argMessage = messageMacro(mode, mkParametersString(explicitVariableDecls.map(_.map(_._2)), Expr(""), "(", ")"))
-    val implicitsMessage = messageMacro(mode, mkParametersString(implicitVariableDecls.map(_.map(_._2)), Expr(""), "(", ")"))
+    val implicitsMessage = messageMacro(mode, mkParametersString(implicitVariableDecls.map(_.map(_._2)), Expr(""), "(using ", ")"))
 
     (variableValDefs, fnMessage, argMessage, typesMessage, implicitsMessage)
   }
@@ -217,10 +217,8 @@ object LogMethodMacro {
     import qctx.reflect.*
     namesTerms.map {
       (a, term) =>
-        ValDef.let(Symbol.spliceOwner, getName(a), term)(ref => ref) match {
-          case Block(List(valDef: ValDef), ref) =>
-            (valDef, ref.asExpr)
-        }
+        val sym = Symbol.newVal(Symbol.spliceOwner, getName(a), term.tpe.widen, Flags.Lazy, Symbol.noSymbol)
+        (ValDef(sym, Some(term)), Ref(sym).asExpr)
     }
   }
 
@@ -253,6 +251,8 @@ object LogMethodMacro {
       case TypeApply(_, targs) => targs.map(_.tpe)
       case Apply(tree, _) => loop(tree)
       case Inlined(_, _, tree) => loop(tree)
+      case Block(List(), tree) => loop(tree)
+      case _ => Nil
     }
     loop(funcTree)
   }
@@ -265,6 +265,7 @@ object LogMethodMacro {
       case Apply(m @ TypeApply(Select(_, _), _), args) => (m.symbol, args :: argss)
 
       case Inlined(_, _, term) => loop(term, argss)
+      case Block(List(), term) => loop(term, argss)
       case Apply(TypeApply(term, _), args) => loop(term, args :: argss)
       case Apply(term, args) => loop(term, args :: argss)
 

@@ -11,6 +11,10 @@ trait LogStage {
   val ConsoleSink: sink.ConsoleSink.type = sink.ConsoleSink
 
   type LogIORaw[F[_], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F, E]
+  type LogIO2Raw[F[_, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Nothing, _], E]
+  type LogIORaw2[F[_, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Nothing, _], E]
+  type LogIO3Raw[F[_, _, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Any, Nothing, _], E]
+  type LogIORaw3[F[_, _, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Any, Nothing, _], E]
 
   type LogQueue = izumi.logstage.api.logger.LogQueue
   val LogQueue: izumi.logstage.api.logger.LogQueue.type = izumi.logstage.api.logger.LogQueue

@@ -61,7 +61,7 @@ object LogValuesMacro {
 
     values match {
       case Varargs(args) => loopOverArgs(args.toList, '{ "" })
-      case _ => report.errorAndAbort("Expected varargs parameter")
+      case tree => report.errorAndAbort(s"Expected varargs parameter, but got code `${tree.show}` (raw: $tree)")
     }
   }
 

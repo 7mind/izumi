@@ -21,6 +21,10 @@ package object logstage extends LogStage {
   override final val ConsoleSink: sink.ConsoleSink.type = sink.ConsoleSink
 
   override type LogIORaw[F[_], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F, E]
+  override type LogIO2Raw[F[_, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Nothing, _], E]
+  override type LogIORaw2[F[_, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Nothing, _], E]
+  override type LogIO3Raw[F[_, _, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Any, Nothing, _], E]
+  override type LogIORaw3[F[_, _, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Any, Nothing, _], E]
 
   override type LogQueue = izumi.logstage.api.logger.LogQueue
   override final val LogQueue: izumi.logstage.api.logger.LogQueue.type = izumi.logstage.api.logger.LogQueue

@@ -68,6 +68,7 @@ sealed trait LogstageCodecLowPriority {
   implicit final lazy val LogstageCodecDouble: LogstageCodec[Double] = _.write(_)
   implicit final lazy val LogstageCodecBigDecimal: LogstageCodec[BigDecimal] = _.write(_)
   implicit final lazy val LogstageCodecBigInt: LogstageCodec[BigInt] = _.write(_)
+  implicit final lazy val LogstageCodecUnit: LogstageCodec[Unit] = (s, unit) => s.write(unit.toString)
 
   implicit final lazy val LogstageCodecThrowable: LogstageCodec[Throwable] = {
     (w, t) =>

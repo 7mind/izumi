@@ -138,7 +138,7 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
     val variableDecls = termVariableDecls ++ typeVariableDecls
     val fnMessage = q"_root_.izumi.logstage.api.Log.Message.raw(${s"Call to ${method.name.decodedName.toString}"})"
     val argsMessage = messageMacro(mode, mkParametersString(explicitArgNamess, "(", ")"))
-    val implicitsMessage = messageMacro(mode, mkParametersString(implicitArgNamess, "(", ")"))
+    val implicitsMessage = messageMacro(mode, mkParametersString(implicitArgNamess, "(using ", ")"))
 
     (variableDecls, fnMessage, argsMessage, typesMessage, implicitsMessage)
   }
@@ -174,7 +174,7 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
   }
 
   private def createVariablesTrees(argumentsNames: List[TermName], args: List[Tree]): List[Tree] = {
-    argumentsNames.iterator.zip(args.iterator).map { case (name, arg) => q"val $name: ${arg.tpe match { case null => null; case t => t.widen }} = $arg" }.toList
+    argumentsNames.iterator.zip(args.iterator).map { case (name, arg) => q"lazy val $name: ${arg.tpe match { case null => null; case t => t.widen }} = $arg" }.toList
   }
 
   private def mkParametersString(valsNamess: List[List[TermName]], bracketOpen: String, bracketClose: String): Tree = {
@@ -197,6 +197,7 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
     def loop(tree: Tree): List[Type] = tree match {
       case TypeApply(_, targs) => targs.map(_.tpe)
       case Apply(fun, _) => loop(fun)
+      case Block(List(), inner) => loop(inner)
       case _ => Nil
     }
     loop(funcTree)
@@ -210,6 +211,8 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
 
       case Apply(inner, args) => loop(inner, args :: argss)
       case Apply(TypeApply(inner, _), args) => loop(inner, args :: argss)
+
+      case Block(List(), inner) => loop(inner, argss)
 
       case _ => c.abort(c.enclosingPosition, s"Expected method call, but got ${showCode(tree)} (raw=${showRaw(tree)})")
     }
