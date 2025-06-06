@@ -27,7 +27,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
 
     mode match {
       case EncodingMode.Raw =>
-        assert(logEntry.message.template == StringContext("Call to testFunc(1, 2) => 3.0"))
+        assert(logEntry.message.template == StringContext(s"Call to testFunc(${1}, ${2}) => ${3.0}"))
         assert(logEntry.message.args.isEmpty)
       case _ =>
         val stringContext = StringContext(
