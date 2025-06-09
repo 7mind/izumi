@@ -23,9 +23,9 @@ trait RoleProvider {
 object RoleProvider {
 
   open class NonReflectiveImpl(
-                                logger: IzLogger @Id("early"),
-                                ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
-                                parameters: RoleAppArgs,
+    logger: IzLogger @Id("early"),
+    ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
+    parameters: RoleAppArgs,
   ) extends RoleProvider {
 
     def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo = {
@@ -104,10 +104,10 @@ object RoleProvider {
   }
 
   open class ReflectiveImpl(
-                             logger: IzLogger @Id("early"),
-                             ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
-                             reflectionEnabled: Boolean @Id("distage.roles.reflection"),
-                             parameters: RoleAppArgs,
+    logger: IzLogger @Id("early"),
+    ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
+    reflectionEnabled: Boolean @Id("distage.roles.reflection"),
+    parameters: RoleAppArgs,
   ) extends NonReflectiveImpl(logger, ignoreMismatchedEffect, parameters) {
 
     protected val isReflectionEnabled: Boolean = reflectionEnabled && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage

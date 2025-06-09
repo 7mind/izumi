@@ -2,7 +2,7 @@ package izumi.distage.roles.launcher
 
 import distage.Id
 import izumi.distage.roles.RoleAppMain
-import izumi.fundamentals.platform.cli.model.{RoleAppArgs, EntrypointArgs}
+import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RoleAppArgs}
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.Level
 
@@ -17,9 +17,9 @@ trait CLILoggerOptionsReader {
 
 object CLILoggerOptionsReader {
   class CLILoggerOptionsReaderImpl(
-                                    parameters: RoleAppArgs,
-                                    defaultLogLevel: Log.Level @Id("early"),
-                                    defaultLogFormatJson: Boolean @Id("distage.roles.logs.json"),
+    parameters: RoleAppArgs,
+    defaultLogLevel: Log.Level @Id("early"),
+    defaultLogFormatJson: Boolean @Id("distage.roles.logs.json"),
   ) extends CLILoggerOptionsReader {
     override def read(): CLILoggerOptions = {
       val rootLogLevel = getRootLogLevel(parameters.globalParameters, defaultLogLevel)

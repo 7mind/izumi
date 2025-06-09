@@ -17,10 +17,10 @@ trait RoleAppEntrypoint[F[_]] {
 
 object RoleAppEntrypoint {
   class Impl[F[_]: TagK](
-                          roles: RolesInfo,
-                          lateLogger: IzLogger,
-                          parameters: RoleAppArgs,
-                          hook: AppShutdownStrategy[F],
+    roles: RolesInfo,
+    lateLogger: IzLogger,
+    parameters: RoleAppArgs,
+    hook: AppShutdownStrategy[F],
   ) extends RoleAppEntrypoint[F] {
 
     override def runTasksAndRoles(locator: Locator, effect: QuasiIO[F]): F[Unit] = {
