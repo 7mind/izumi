@@ -15,8 +15,12 @@ trait Error2[F[+_, +_]] extends ApplicativeError2[F] with Monad2[F] with ErrorAc
   def redeem[E, A, E2, B](r: F[E, A])(err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B] = {
     flatMap(attempt(r))(_.fold(err, succ))
   }
-  def redeemPure[E, A, B](r: F[E, A])(err: E => B, succ: A => B): F[Nothing, B] = catchAll(map(r)(succ))(e => pure(err(e)))
-  def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = redeemPure(r)(Left(_), Right(_))
+  def redeemPure[E, A, B](r: F[E, A])(err: E => B, succ: A => B): F[Nothing, B] = {
+    catchAll(map(r)(succ))(e => pure(err(e)))
+  }
+  def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = {
+    redeemPure(r)(Left(_), Right(_))
+  }
 
   def tapError[E, A, E1 >: E](r: F[E, A])(f: E => F[E1, Unit]): F[E1, A] = {
     catchAll(r)(e => *>(f(e), fail(e)))
@@ -86,8 +90,13 @@ trait Error2[F[+_, +_]] extends ApplicativeError2[F] with Monad2[F] with ErrorAc
   }
 
   // defaults
-  override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = catchAll(map(r)(g))(e => fail(f(e)))
-  override def leftMap2[E, A, E2, E3](firstOp: F[E, A], secondOp: => F[E2, A])(f: (E, E2) => E3): F[E3, A] =
+  override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = {
+    catchAll(map(r)(g))(e => fail(f(e)))
+  }
+  override def leftMap2[E, A, E2, E3](firstOp: F[E, A], secondOp: => F[E2, A])(f: (E, E2) => E3): F[E3, A] = {
     catchAll(firstOp)(e => leftMap(secondOp)(f(e, _)))
-  override def orElse[E, A, E2](r: F[E, A], f: => F[E2, A]): F[E2, A] = catchAll(r)(_ => f)
+  }
+  override def orElse[E, A, E2](r: F[E, A], f: => F[E2, A]): F[E2, A] = {
+    catchAll(r)(_ => f)
+  }
 }

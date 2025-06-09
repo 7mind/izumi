@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-trait Concurrent2[F[+_, +_]] extends Parallel2[F] {
+trait Concurrent2[F[+_, +_]] extends Parallel2[F] with ParallelErrorAccumulatingOps2[F] {
   override def InnerF: Panic2[F]
 
   /** Race two actions, the winner is the first action to TERMINATE, whether by success or failure */

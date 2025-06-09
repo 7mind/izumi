@@ -7,7 +7,7 @@ import scala.collection.compat.immutable.LazyList
 import scala.collection.compat.immutable.LazyList.#::
 import scala.collection.immutable.Queue
 
-trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
+trait ErrorAccumulatingOps2[F[+_, +_]] { F: Error2[F] =>
 
   /** `traverse` with error accumulation */
   def traverseAccumErrors[ColR[x] <: IterableOnce[x], ColL[_], E, A, B](
@@ -125,7 +125,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
     ): F[ColL[E1], B1] = {
       lazyList match {
         case h #:: tail =>
-          redeem(effect(h))(
+          F.redeem(effect(h))(
             e => go(bad ++ onLeft(e), good, tail, allGood = false),
             v => {
               val newGood = onRight(good, v)
@@ -134,9 +134,9 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
           )
         case _ =>
           if (allGood) {
-            pure(end(good))
+            F.pure(end(good))
           } else {
-            fail(bad.to(buildL))
+            F.fail(bad.to(buildL))
           }
       }
     }

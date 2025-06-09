@@ -58,7 +58,8 @@ object Exit {
           case e => conv(e)
         }
         if (zio2ThrowableWithSuppressedAttached.getSuppressed.isEmpty) {
-          // Throwable has disabled suppression, return full cause instead (add stackless like its added in squashTraceWith, NB stackless removes Throwable stacktraces, not monadic traces)
+          // Throwable has disabled suppression, return full cause instead (add `stackless` like it's added in squashTraceWith,
+          // NB stackless removes native Throwable stacktraces, not monadic traces)
           zio.FiberFailure(zio.Cause.stackless(cause))
         } else {
           zio2ThrowableWithSuppressedAttached

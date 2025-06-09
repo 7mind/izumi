@@ -9,7 +9,7 @@ trait IO2[F[+_, +_]] extends Panic2[F] {
     * Capture a side-effectful block of code that can throw exceptions
     *
     * @note `sync` means `synchronous`, that is, a blocking CPU effect, as opposed to a non-blocking
-    *       [[izumi.functional.bio.Async3#async asynchronous]] effect or a
+    *       [[izumi.functional.bio.Async2#async asynchronous]] effect or a
     *       long blocking I/O effect ([[izumi.functional.bio.BlockingIO2#syncBlocking]])
     */
   def syncThrowable[A](effect: => A): F[Throwable, A]
@@ -27,7 +27,7 @@ trait IO2[F[+_, +_]] extends Panic2[F] {
     * }}}
     * @note If you're not completely sure that a captured block can't throw, use [[syncThrowable]]
     * @note `sync` means `synchronous`, that is, a blocking CPU effect, as opposed to a non-blocking
-    *       [[izumi.functional.bio.Async3#async asynchronous]] effect or a
+    *       [[izumi.functional.bio.Async2#async asynchronous]] effect or a
     *       long blocking I/O effect ([[izumi.functional.bio.BlockingIO2#syncBlocking]])
     */
   def sync[A](effect: => A): F[Nothing, A]
@@ -53,6 +53,13 @@ trait IO2[F[+_, +_]] extends Panic2[F] {
   }
   override def fromAttempt[A](effect: => A): F[Throwable, A] = {
     syncThrowable(effect)
+  }
+  override def fromSandboxExit[E, A](effect: => Exit.Uninterrupted[E, A]): F[E, A] = {
+    flatMap(sync(effect)) {
+      case Exit.Success(value) => pure[A](value)
+      case Exit.Error(error, _) => fail[E](error)
+      case Exit.Termination(compoundException, _, _) => terminate(compoundException)
+    }
   }
 
   override protected def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](

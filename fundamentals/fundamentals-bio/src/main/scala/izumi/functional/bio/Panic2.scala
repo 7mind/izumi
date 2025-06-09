@@ -7,7 +7,7 @@ trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
   def terminate(v: => Throwable): F[Nothing, Nothing]
 
   /** @note Will return either [[Exit.Success]], [[Exit.Error]] or [[Exit.Termination]].
-   *       [[Exit.Interruption]] cannot be sandboxed. Use [[guaranteeOnInterrupt]] for cleanups on interruptions. */
+   *       [[Exit.Interruption]] cannot be sandboxed – use [[guaranteeOnInterrupt]] for cleanups on interruptions. */
   def sandbox[E, A](r: F[E, A]): F[Exit.FailureUninterrupted[E], A]
 
   /**
@@ -45,10 +45,6 @@ trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
     */
   def sendInterruptToSelf: F[Nothing, Unit]
 
-  def uninterruptible[E, A](r: F[E, A]): F[E, A] = {
-    uninterruptibleExcept(_ => r)
-  }
-
   /**
     * Designate the effect uninterruptible, with exception of regions
     * in it that are specifically marked to restore previous interruptibility
@@ -84,8 +80,20 @@ trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
     */
   def uninterruptibleExcept[E, A](r: RestoreInterruption2[F] => F[E, A]): F[E, A]
 
+  def fromSandboxExit[E, A](effect: => Exit.Uninterrupted[E, A]): F[E, A]
+
+  def uninterruptible[E, A](r: F[E, A]): F[E, A] = {
+    uninterruptibleExcept(_ => r)
+  }
+
   /** Like [[bracketCase]], but `acquire` can contain marked interruptible regions as in [[uninterruptibleExcept]] */
-  def bracketExcept[E, A, B](acquire: RestoreInterruption2[F] => F[E, A])(release: (A, Exit[E, B]) => F[Nothing, Unit])(use: A => F[E, B]): F[E, B]
+  def bracketExcept[E, A, B](acquire: RestoreInterruption2[F] => F[E, A])(release: (A, Exit[E, B]) => F[Nothing, Unit])(use: A => F[E, B]): F[E, B] = {
+    uninterruptibleExcept { restore =>
+      flatMap(acquire(restore)) {
+        a => guaranteeCase(restore(use(a)), exit => release(a, exit))
+      }
+    }
+  }
 
   @inline final def orTerminate[A](r: F[Throwable, A]): F[Nothing, A] = {
     catchAll(r)(terminate(_))
@@ -95,6 +103,11 @@ trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
    *       [[Exit.Interruption]] cannot be sandboxed. Use [[guaranteeOnInterrupt]] for cleanups on interruptions. */
   @inline final def sandboxExit[E, A](r: F[E, A]): F[Nothing, Exit.Uninterrupted[E, A]] = {
     redeemPure(sandbox(r))(identity, Exit.Success(_))
+  }
+
+  // defaults
+  override def bracketCase[E, A, B](acquire: F[E, A])(release: (A, Exit[E, B]) => F[Nothing, Unit])(use: A => F[E, B]): F[E, B] = {
+    bracketExcept[E, A, B](_ => acquire)(release)(use)
   }
 }
 

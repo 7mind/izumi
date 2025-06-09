@@ -215,7 +215,6 @@ object FreePanic {
     ): FreePanic[S, E, B] = FreePanic.BracketExcept(acquire, release, use)
 
     @inline override final def pure[A](a: A): FreePanic[S, Nothing, A] = FreePanic.pure(a)
-
     @inline override final def fail[E](v: => E): FreePanic[S, E, Nothing] = FreePanic.fail(v)
     @inline override final def terminate(v: => Throwable): FreePanic[S, Nothing, Nothing] = FreePanic.terminate(v)
     @inline override final def sendInterruptToSelf: FreePanic[S, Nothing, Unit] = FreePanic.sendInterruptToSelf
@@ -236,5 +235,13 @@ object FreePanic {
 
     @inline override final def fromTry[A](effect: => Try[A]): FreePanic[S, Throwable, A] = fromEither(effect.toEither)
     @inline override final def fromAttempt[A](effect: => A): FreePanic[S, Throwable, A] = fromTry(Try(effect))
+
+    @inline override final def fromSandboxExit[E, A](effect: => Exit.Uninterrupted[E, A]): FreePanic[S, E, A] = FreePanic.unit *> {
+      effect match {
+        case Exit.Success(value) => pure(value)
+        case Exit.Error(error, _) => fail(error)
+        case Exit.Termination(compoundException, _, _) => terminate(compoundException)
+      }
+    }
   }
 }

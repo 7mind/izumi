@@ -83,7 +83,7 @@ object Syntax2 {
     @inline final def <*[E1 >: E, B](f0: => F[E1, B]): F[E1, A] = F.<*(r, f0)
 
     /** execute two operations in order, return result of both operations */
-    @inline final infix def zip[E2 >: E, B, C](r2: => F[E2, B]): F[E2, (A, B)] = F.map2(r, r2)(_ -> _)
+    @inline final infix def zip[E2 >: E, B, C](r2: => F[E2, B]): F[E2, (A, B)] = F.zip(r, r2)
 
     /** execute two operations in order, map their results */
     @inline final def map2[E2 >: E, B, C](r2: => F[E2, B])(f: (A, B) => C): F[E2, C] = F.map2(r, r2)(f)
