@@ -17,13 +17,13 @@ trait ActivationParser extends AbstractActivationParser
 object ActivationParser {
 
   class Impl(
-              parser: RoleAppActivationParser,
-              parameters: RoleAppArgs,
-              activationInfo: ActivationInfo,
-              defaultActivations: Activation @Id("default"),
-              additionalActivations: Activation @Id("additional"),
-              logger: IzLogger,
-              warnUnsetActivations: Boolean @Id("distage.roles.activation.warn-unset"),
+    parser: RoleAppActivationParser,
+    parameters: RoleAppArgs,
+    activationInfo: ActivationInfo,
+    defaultActivations: Activation @Id("default"),
+    additionalActivations: Activation @Id("additional"),
+    logger: IzLogger,
+    warnUnsetActivations: Boolean @Id("distage.roles.activation.warn-unset"),
   ) extends ActivationParser {
 
     def parseActivation(config: AppConfig): Activation = {

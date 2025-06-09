@@ -13,7 +13,7 @@ import izumi.distage.roles.launcher.AppShutdownStrategy
 import izumi.distage.roles.launcher.ActivationParser
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.{RoleAppArgs, EntrypointArgs, RoleArgs, RequiredRoles}
+import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RequiredRoles, RoleAppArgs, RoleArgs}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.reflect.TagK

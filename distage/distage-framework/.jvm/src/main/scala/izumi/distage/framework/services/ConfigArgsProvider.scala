@@ -21,8 +21,8 @@ object ConfigArgsProvider {
 
   @nowarn("msg=Unused import")
   class Default(
-                 parameters: RoleAppArgs,
-                 rolesInfo: RolesInfo,
+    parameters: RoleAppArgs,
+    rolesInfo: RolesInfo,
   ) extends ConfigArgsProvider {
 
     override def args(): ConfigLoader.Args = {

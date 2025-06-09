@@ -15,7 +15,7 @@ import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.bio.Async2
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.{RoleArgs, RequiredRoles}
+import izumi.fundamentals.platform.cli.model.{RequiredRoles, RoleArgs}
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer

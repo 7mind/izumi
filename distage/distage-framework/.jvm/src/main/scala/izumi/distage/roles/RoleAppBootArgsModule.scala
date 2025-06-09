@@ -10,7 +10,7 @@ import izumi.reflect.TagK
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.roles.launcher.*
 import izumi.distage.model.definition.Activation
-import izumi.fundamentals.platform.cli.model.{RoleAppArgs, RequiredRoles}
+import izumi.fundamentals.platform.cli.model.{RequiredRoles, RoleAppArgs}
 
 class RoleAppBootArgsModule[F[_]: TagK: DefaultModule](
   args: ArgV,

@@ -14,4 +14,3 @@ class IntegrationCheckException(val failures: NEList[ResourceCheck.Failure], cap
   def this(failures: NEList[ResourceCheck.Failure]) = this(failures, true)
   def this(failure: ResourceCheck.Failure) = this(NEList(failure))
 }
-

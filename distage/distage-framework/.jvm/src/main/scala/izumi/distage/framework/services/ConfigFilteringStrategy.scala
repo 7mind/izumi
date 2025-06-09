@@ -22,10 +22,10 @@ object ConfigFilteringStrategy {
   }
 
   class Default(
-                 parameters: RoleAppArgs,
-                 alwaysIncludeReferenceRoleConfigs: Boolean @Id("distage.roles.always-include-reference-role-configs"),
-                 alwaysIncludeReferenceCommonConfigs: Boolean @Id("distage.roles.always-include-reference-common-configs"),
-                 ignoreAllReferenceConfigs: Boolean @Id("distage.roles.ignore-all-reference-configs"),
+    parameters: RoleAppArgs,
+    alwaysIncludeReferenceRoleConfigs: Boolean @Id("distage.roles.always-include-reference-role-configs"),
+    alwaysIncludeReferenceCommonConfigs: Boolean @Id("distage.roles.always-include-reference-common-configs"),
+    ignoreAllReferenceConfigs: Boolean @Id("distage.roles.ignore-all-reference-configs"),
   ) extends ConfigFilteringStrategy.Raw(
       alwaysIncludeReferenceRoleConfigs = alwaysIncludeReferenceRoleConfigs,
       alwaysIncludeReferenceCommonConfigs = alwaysIncludeReferenceCommonConfigs,
