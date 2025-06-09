@@ -27,7 +27,7 @@ import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.RoleDescriptor
 import izumi.distage.roles.model.RoleTask
-import izumi.fundamentals.platform.cli.model.raw.EntrypointArgs
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import logstage.LogIO
 import zio.UIO
 
