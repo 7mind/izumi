@@ -101,6 +101,7 @@ abstract class ErrorAccumulatingOpsTest[F[+_, +_]] extends AnyWordSpec {
 
       val l2: Seq[F[String, Int]] = List(F.pure(1), F.pure(2), F.pure(3), F.fail("error"))
       assert(F.sequenceAccumErrorsNEList(l2).run() == Left(NEList("error")))
+      assert(F.traverseAccumErrorsNEList(List(1, 2, 3, 4))(F.fail(_)).run() == Left(NEList(1, 2, 3, 4)))
 
       val l3: Seq[F[List[String], Int]] = List(F.pure(1), F.pure(2), F.pure(3), F.fail(List("error")))
       assert(F.sequenceAccumErrors(l3).run() == Left(List("error")))

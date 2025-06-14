@@ -56,7 +56,7 @@ trait Syntax2 extends Syntax2.ImplicitPuns {
 
 object Syntax2 {
 
-  class FunctorOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Functor2[F]) {
+  open class FunctorOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Functor2[F]) {
     @inline final def map[B](f: A => B): F[E, B] = F.map(r)(f)
 
     @inline final infix def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
@@ -74,7 +74,7 @@ object Syntax2 {
     @inline final def widenBoth[E1 >: E, A1](implicit @unused ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
   }
 
-  class ApplicativeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Applicative2[F]) extends FunctorOps(r)(using F) {
+  open class ApplicativeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Applicative2[F]) extends FunctorOps(r)(using F) {
 
     /** execute two operations in order, return result of second operation */
     @inline final def *>[E1 >: E, B](f0: => F[E1, B]): F[E1, B] = F.*>(r, f0)
@@ -91,11 +91,11 @@ object Syntax2 {
     @inline final def forever: F[E, Nothing] = F.forever(r)
   }
 
-  class GuaranteeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Guarantee2[F]) extends ApplicativeOps(r)(using F) {
+  open class GuaranteeOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Guarantee2[F]) extends ApplicativeOps(r)(using F) {
     @inline final def guarantee(cleanup: F[Nothing, Unit]): F[E, A] = F.guarantee(r, cleanup)
   }
 
-  class ApplicativeErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: ApplicativeError2[F])
+  open class ApplicativeErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: ApplicativeError2[F])
     extends GuaranteeOps(r)(using F) {
     @inline final def leftMap[E2](f: E => E2): F[E2, A] = F.leftMap(r)(f)
     @inline final def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
@@ -119,7 +119,7 @@ object Syntax2 {
     @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(implicit ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
   }
 
-  class ErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Error2[F]) extends ApplicativeErrorOps(r)(using F) {
+  open class ErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Error2[F]) extends ApplicativeErrorOps(r)(using F) {
     // duplicated from MonadOps
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E1, A, B](r)(f0)
     @inline final def tap[E1 >: E](f0: A => F[E1, Unit]): F[E1, A] = F.tap(r, f0)
@@ -177,7 +177,7 @@ object Syntax2 {
       F.withFilter[E1, A](r)(predicate)
   }
 
-  class BracketOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Bracket2[F]) extends ErrorOps(r)(using F) {
+  open class BracketOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Bracket2[F]) extends ErrorOps(r)(using F) {
     @inline final def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracket(r: F[E1, A])(release)(use)
 
     @inline final def bracketCase[E1 >: E, B](release: (A, Exit[E1, B]) => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] = F.bracketCase(r: F[E1, A])(release)(use)
@@ -191,7 +191,7 @@ object Syntax2 {
       F.guaranteeExceptOnInterrupt(r, cleanupOnNonInterruption)
   }
 
-  class PanicOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Panic2[F]) extends BracketOps(r)(using F) {
+  open class PanicOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Panic2[F]) extends BracketOps(r)(using F) {
     @inline final def sandbox: F[Exit.FailureUninterrupted[E], A] = F.sandbox(r)
     @inline final def sandboxExit: F[Nothing, Exit.Uninterrupted[E, A]] = F.sandboxExit(r)
 
@@ -213,7 +213,7 @@ object Syntax2 {
     @inline final def uninterruptible: F[E, A] = F.uninterruptible(r)
   }
 
-  class IOOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: IO2[F]) extends PanicOps(r)(using F) {
+  open class IOOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: IO2[F]) extends PanicOps(r)(using F) {
     @inline final def bracketAuto[E1 >: E, B](use: A => F[E1, B])(implicit ev: A <:< AutoCloseable): F[E1, B] =
       F.bracket[E1, A, B](r)(c => F.sync(c.close()))(use)
   }
@@ -230,7 +230,7 @@ object Syntax2 {
       that: F[E1, A1]
     ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
-  class AsyncOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Async2[F]) extends IOOps(r)(using F) {
+  open class AsyncOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Async2[F]) extends IOOps(r)(using F) {
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
     @inline final infix def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
     @inline final infix def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
@@ -254,29 +254,37 @@ object Syntax2 {
     @inline final def fork: F[Nothing, Fiber2[F, E, A]] = F.fork(r)
   }
 
-  trait ImplicitPuns extends ImplicitPuns1 {
+  trait ImplicitPuns extends ImplicitPunsTemporal
+  trait ImplicitPunsTemporal extends ImplicitPunsFork {
     @inline implicit final def Temporal2[F[+_, +_]: Temporal2, E, A](self: F[E, A]): TemporalOps[F, E, A] = new TemporalOps[F, E, A](self)
     @inline implicit final def Temporal2[F[+_, +_]: Error2, E, A](self: F[E, A]): ErrorOps[F, E, A] = new ErrorOps[F, E, A](self)
     @inline final def Temporal2[F[+_, +_]: Temporal2]: Temporal2[F] = implicitly
-
+  }
+  trait ImplicitPunsFork extends ImplicitPunsAsync {
     @inline implicit final def Fork2[F[+_, +_]: Fork2, E, A](self: F[E, A]): ForkOps[F, E, A] = new ForkOps[F, E, A](self)
     @inline final def Fork2[F[+_, +_]: Fork2]: Fork2[F] = implicitly
   }
-  trait ImplicitPuns1 extends ImplicitPuns2 {
+  trait ImplicitPunsAsync extends ImplicitPunsConcurrent {
     @inline implicit final def Async2[F[+_, +_]: Async2, E, A](self: F[E, A]): AsyncOps[F, E, A] = new AsyncOps[F, E, A](self)
     @inline final def Async2[F[+_, +_]: Async2]: Async2[F] = implicitly
   }
-  trait ImplicitPuns2 extends ImplicitPuns3 {
+  trait ImplicitPunsConcurrent extends ImplicitPunsParallelErrorAccumulatingOps {
     @inline implicit final def Concurrent2[F[+_, +_]: Concurrent2, E, A](self: F[E, A]): ConcurrentOps[F, E, A] = new ConcurrentOps[F, E, A](self)
     @inline implicit final def Concurrent2[F[+_, +_]: Panic2, E, A](self: F[E, A]): PanicOps[F, E, A] = new PanicOps[F, E, A](self)
     @inline final def Concurrent2[F[+_, +_]: Concurrent2]: Concurrent2[F] = implicitly
   }
-  trait ImplicitPuns3 extends ImplicitPuns4 {
+  trait ImplicitPunsParallelErrorAccumulatingOps extends ImplicitPunsParallel {
+    @inline implicit final def ParallelErrorAccumulatingOps2[F[+_, +_]: ParallelErrorAccumulatingOps2, E, A](self: F[E, A]): ParallelOps[F, E, A] =
+      new ParallelOps[F, E, A](self)
+    @inline implicit final def ParallelErrorAccumulatingOps2[F[+_, +_]: Monad2, E, A](self: F[E, A]): MonadOps[F, E, A] = new MonadOps[F, E, A](self)
+    @inline final def ParallelErrorAccumulatingOps2[F[+_, +_]: ParallelErrorAccumulatingOps2]: ParallelErrorAccumulatingOps2[F] = implicitly
+  }
+  trait ImplicitPunsParallel extends ImplicitPunsIO {
     @inline implicit final def Parallel2[F[+_, +_]: Parallel2, E, A](self: F[E, A]): ParallelOps[F, E, A] = new ParallelOps[F, E, A](self)
     @inline implicit final def Parallel2[F[+_, +_]: Monad2, E, A](self: F[E, A]): MonadOps[F, E, A] = new MonadOps[F, E, A](self)
     @inline final def Parallel2[F[+_, +_]: Parallel2]: Parallel2[F] = implicitly
   }
-  trait ImplicitPuns4 extends ImplicitPuns5 {
+  trait ImplicitPunsIO extends ImplicitPunsPanic {
     @inline implicit final def IO2[F[+_, +_]: IO2, E, A](self: F[E, A]): IOOps[F, E, A] = new IOOps[F, E, A](self)
     /**
       * Shorthand for [[IO2#syncThrowable]]
@@ -288,40 +296,40 @@ object Syntax2 {
     @inline final def IO2[F[+_, +_], A](effect: => A)(implicit F: IO2[F]): F[Throwable, A] = F.syncThrowable(effect)
     @inline final def IO2[F[+_, +_]: IO2]: IO2[F] = implicitly
   }
-  trait ImplicitPuns5 extends ImplicitPuns6 {
+  trait ImplicitPunsPanic extends ImplicitPunsBracket {
     @inline implicit final def Panic2[F[+_, +_]: Panic2, E, A](self: F[E, A]): PanicOps[F, E, A] = new PanicOps[F, E, A](self)
     @inline final def Panic2[F[+_, +_]: Panic2]: Panic2[F] = implicitly
   }
-  trait ImplicitPuns6 extends ImplicitPuns7 {
+  trait ImplicitPunsBracket extends ImplicitPunsError {
     @inline implicit final def Bracket2[F[+_, +_]: Bracket2, E, A](self: F[E, A]): BracketOps[F, E, A] = new BracketOps[F, E, A](self)
     @inline final def Bracket2[F[+_, +_]: Bracket2]: Bracket2[F] = implicitly
   }
-  trait ImplicitPuns7 extends ImplicitPuns8 {
+  trait ImplicitPunsError extends ImplicitPunsApplicativeError {
     @inline implicit final def Error2[F[+_, +_]: Error2, E, A](self: F[E, A]): ErrorOps[F, E, A] = new ErrorOps[F, E, A](self)
     @inline final def Error2[F[+_, +_]: Error2]: Error2[F] = implicitly
   }
-  trait ImplicitPuns8 extends ImplicitPuns9 {
+  trait ImplicitPunsApplicativeError extends ImplicitPunsGuarantee {
     @inline implicit final def ApplicativeError2[F[+_, +_]: ApplicativeError2, E, A](self: F[E, A]): ApplicativeErrorOps[F, E, A] = new ApplicativeErrorOps[F, E, A](self)
     @inline final def ApplicativeError2[F[+_, +_]: ApplicativeError2]: ApplicativeError2[F] = implicitly
   }
-  trait ImplicitPuns9 extends ImplicitPuns10 {
+  trait ImplicitPunsGuarantee extends ImplicitPunsMonad {
     @inline implicit final def Guarantee2[F[+_, +_]: Guarantee2, E, A](self: F[E, A]): GuaranteeOps[F, E, A] = new GuaranteeOps[F, E, A](self)
     @inline final def Guarantee2[F[+_, +_]: Guarantee2]: Guarantee2[F] = implicitly
   }
-  trait ImplicitPuns10 extends ImplicitPuns11 {
+  trait ImplicitPunsMonad extends ImplicitPunsApplicative {
     @inline implicit final def Monad2[F[+_, +_]: Monad2, E, A](self: F[E, A]): MonadOps[F, E, A] = new MonadOps[F, E, A](self)
     @inline final def Monad2[F[+_, +_]: Monad2]: Monad2[F] = implicitly
   }
-  trait ImplicitPuns11 extends ImplicitPuns12 {
+  trait ImplicitPunsApplicative extends ImplicitPunsBifunctor {
     @inline implicit final def Applicative2[F[+_, +_]: Applicative2, E, A](self: F[E, A]): ApplicativeOps[F, E, A] = new ApplicativeOps[F, E, A](self)
     @inline final def Applicative2[F[+_, +_]: Applicative2]: Applicative2[F] = implicitly
   }
-  trait ImplicitPuns12 extends ImplicitPuns13 {
+  trait ImplicitPunsBifunctor extends ImplicitPunsFunctor {
     @inline implicit final def Bifunctor2[F[+_, +_]: Bifunctor2, E, A](self: F[E, A]): BifunctorOps[F, E, A] = new BifunctorOps[F, E, A](self)
     @inline implicit final def Bifunctor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Bifunctor2[F[+_, +_]: Bifunctor2]: Bifunctor2[F] = implicitly
   }
-  trait ImplicitPuns13 {
+  trait ImplicitPunsFunctor {
     @inline implicit final def Functor2[F[+_, +_]: Functor2, E, A](self: F[E, A]): FunctorOps[F, E, A] = new FunctorOps[F, E, A](self)
     @inline final def Functor2[F[+_, +_]: Functor2]: Functor2[F] = implicitly
   }

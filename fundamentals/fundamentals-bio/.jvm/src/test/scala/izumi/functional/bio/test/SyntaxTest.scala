@@ -23,7 +23,12 @@ class SyntaxTest extends AnyWordSpec {
       F.unit: F[Nothing, Unit]
     }
 
+    def y[F[+_, +_]: Parallel2]: F[Nothing, Unit] = {
+      F.parTraverse_(List(1))(_ => F.unit)
+    }
+
     x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+    y[zio.IO]
   }
 
   "BIOConcurrent attachment/conversion works" in {
@@ -36,10 +41,43 @@ class SyntaxTest extends AnyWordSpec {
       a.zipWithPar(b)((a, b) => (a, b))
       a.flatMap(_ => b).flatMap(_ => F.unit)
       a.guaranteeCase(_ => a.race(b).widenError[Throwable].catchAll(_ => F.unit `orElse` F.uninterruptible(F.race(a, b))).void)
+      F.fail("x"): F[String, Unit]
       F.unit: F[Nothing, Unit]
     }
 
+    def y[F[+_, +_]: Concurrent2]: F[Nothing, Unit] = {
+      F.parTraverse_(List(1))(_ => F.unit)
+      F.yieldNow
+    }
+
     x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+    y[zio.IO]
+  }
+
+  "ParallelErrorAccumulatingOps2 attachment/conversion works" in {
+    import izumi.functional.bio.{F, ParallelErrorAccumulatingOps2}
+
+    def x[F[+_, +_]: ParallelErrorAccumulatingOps2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
+      a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b).flatMap(_ => F.unit)
+      F.fail("x"): F[String, Unit]
+      F.unit: F[Nothing, Unit]
+    }
+
+    def y[F[+_, +_]: ParallelErrorAccumulatingOps2]: F[Nothing, Unit] = {
+      F.parTraverse_(List(1))(_ => F.unit)
+    }
+
+    def a[F[+_, +_]: ParallelErrorAccumulatingOps2]: F[List[Int], Int] = {
+      F.parTraverseAccumErrors(List(1))(_ => a[F]).map(_.head)
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+    y[zio.IO]
+    a[zio.IO]
   }
 
   "BIOTemporal attachment/conversion works" in {

@@ -44,6 +44,21 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { F: Error2[F] =>
     )
   }
 
+  /** `traverse` with error accumulation */
+  def traverseAccumErrorsNEList[ColR[x] <: IterableOnce[x], E, A, B](
+    col: ColR[A]
+  )(f: A => F[E, B]
+  )(implicit buildR: Factory[B, ColR[B]]
+  ): F[NEList[E], ColR[B]] = {
+    accumulateErrorsImpl(col)(
+      effect = f,
+      onLeft = (e: E) => Seq(e),
+      init = Queue.empty[B],
+      onRight = (ac: Queue[B], a: B) => ac :+ a,
+      end = (ac: Queue[B]) => ac.to(buildR),
+    )
+  }
+
   /** `sequence` with error accumulation */
   def sequenceAccumErrors[ColR[x] <: IterableOnce[x], ColL[_], E, A](
     col: ColR[F[ColL[E], A]]

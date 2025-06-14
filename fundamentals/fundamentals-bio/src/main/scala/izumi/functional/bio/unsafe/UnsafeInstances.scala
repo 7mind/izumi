@@ -9,7 +9,9 @@ import scala.collection.compat.{Factory, IterableOnce}
 
 object UnsafeInstances {
 
-  object Lawless_ParallelErrorAccumulatingOpsEither extends Parallel2[Either] with ParallelErrorAccumulatingOps2[Either] {
+  implicit def Lawless_ParallelErrorAccumulatingOpsEither: Parallel2[Either] & ParallelErrorAccumulatingOps2[Either] = Lawless_ParallelErrorAccumulatingOpsEitherImpl
+
+  private object Lawless_ParallelErrorAccumulatingOpsEitherImpl extends Parallel2[Either] with ParallelErrorAccumulatingOps2[Either] {
     override val InnerF: Error2[Either] = BioEither
 
     private val idAsync: QuasiAsync[Identity] = QuasiAsync.quasiAsyncIdentity
