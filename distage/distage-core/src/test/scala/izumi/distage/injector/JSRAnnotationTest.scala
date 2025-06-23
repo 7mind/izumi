@@ -11,10 +11,10 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
   "JSR330 @Named anno" should {
     "work with combined annos when no functoid is involved" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
         make[ServerConfig]
       })
 
@@ -29,8 +29,8 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with field annos when no functoid is involved" in {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
         make[ServerConfigWithFieldAnnos]
       })
 
@@ -42,8 +42,8 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with alias annos when no functoid is involved" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
         make[ServerConfigWithTypeAnnos]
       })
 
@@ -54,11 +54,11 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with param annos when no functoid is involved" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
-        make[ServerConfigWithParamAnnos].from(new ServerConfigWithParamAnnos(_, _, _, _))
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
+        make[ServerConfigWithParamAnnos].fromImplicit(new ServerConfigWithParamAnnos(_, _, _, _))
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -72,9 +72,9 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with field annos when functoid takes .apply" in {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
-        make[ServerConfigWithFieldAnnos].from(ServerConfigWithFieldAnnos.apply _)
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
+        make[ServerConfigWithFieldAnnos].fromImplicit(ServerConfigWithFieldAnnos.apply _)
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -85,9 +85,9 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with alias annos when functoid takes .apply" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
-        make[ServerConfigWithTypeAnnos].from(ServerConfigWithTypeAnnos.apply _)
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
+        make[ServerConfigWithTypeAnnos].fromImplicit(ServerConfigWithTypeAnnos.apply _)
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -97,11 +97,11 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with combined annos when functoid takes .apply" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
-        make[ServerConfig].from(ServerConfig.apply _)
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
+        make[ServerConfig].fromImplicit(ServerConfig.apply _)
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -115,11 +115,11 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with param annos when functoid takes .apply" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
-        make[ServerConfigWithParamAnnos].from(ServerConfigWithParamAnnos.apply _)
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
+        make[ServerConfigWithParamAnnos].fromImplicit(ServerConfigWithParamAnnos.apply _)
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -133,9 +133,9 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with field annos when functoid takes overriden companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
-        make[ServerConfigWithFieldAnnos].from(ServerConfigWithFieldAnnos)
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
+        make[ServerConfigWithFieldAnnos].fromImplicit(ServerConfigWithFieldAnnos)
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -146,9 +146,9 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with alias annos when functoid takes companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
-        make[ServerConfigWithTypeAnnos].from(ServerConfigWithTypeAnnos)
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
+        make[ServerConfigWithTypeAnnos].fromImplicit(ServerConfigWithTypeAnnos)
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -158,11 +158,11 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with combined annos when functoid takes companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
-        make[ServerConfig].from(ServerConfig)
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
+        make[ServerConfig].fromImplicit(ServerConfig)
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -176,11 +176,11 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with param annos when functoid takes companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
-        make[ServerConfigWithParamAnnos].from(ServerConfigWithParamAnnos)
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
+        make[ServerConfigWithParamAnnos].fromImplicit(ServerConfigWithParamAnnos)
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -194,11 +194,11 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with param annos when functoid takes overriden companion as function" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").from(80)
-        make[String].named("address").from("localhost")
-        make[Int].named("port1").from(90)
-        make[String].named("address1").from("localhost1")
-        make[ServerConfigWithParamAnnosOverridenObject].from(ServerConfigWithParamAnnosOverridenObject)
+        make[Int].named("port").fromImplicit(80)
+        make[String].named("address").fromImplicit("localhost")
+        make[Int].named("port1").fromImplicit(90)
+        make[String].named("address1").fromImplicit("localhost1")
+        make[ServerConfigWithParamAnnosOverridenObject].fromImplicit(ServerConfigWithParamAnnosOverridenObject)
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()

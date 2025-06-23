@@ -7,7 +7,7 @@ import izumi.reflect.Tag
 
 trait ScalaVersionSpecificMakeDsl[T, AfterBind] {
   self: MakeDSLBase[T, AfterBind] =>
-  def fromImplicit[I <: T : Tag, N <: Scala3FunctoidDummyImplicit](f: N ?=> Functoid[I]): AfterBind = {
+  def fromImplicit[I <: T: Tag, N <: Scala3FunctoidDummyImplicit](f: N ?=> Functoid[I]): AfterBind = {
     this.from[I](f(using null.asInstanceOf[N]))
   }
 }

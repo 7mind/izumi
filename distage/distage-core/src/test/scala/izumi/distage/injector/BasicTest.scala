@@ -29,7 +29,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
-        make[TestInstanceBinding].from(TestInstanceBinding())
+        make[TestInstanceBinding].fromImplicit(TestInstanceBinding())
       },
       Activation.empty,
       DIKey[TestDependency1],
@@ -190,7 +190,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         .from[TestImpl0Good]
       make[TestInstanceBinding]
         .named("named.test")
-        .from(TestInstanceBinding())
+        .fromImplicit(TestInstanceBinding())
       // test SetIdFromImplName
       make[TestDependency0].namedByImpl
         .from[TestImpl0Good]
@@ -235,7 +235,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase1.*
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestCaseClass2]
-      make[TestInstanceBinding].from(new TestInstanceBinding)
+      make[TestInstanceBinding].fromImplicit(new TestInstanceBinding)
     })
 
     val injector = mkInjector()
@@ -332,13 +332,13 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "handle set inclusions" in {
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Set[Int]].named("x").from(Set(1, 2, 3))
-      make[Set[Int]].named("y").from(Set(4, 5, 6))
+      make[Set[Int]].named("x").fromImplicit(Set(1, 2, 3))
+      make[Set[Int]].named("y").fromImplicit(Set(4, 5, 6))
       many[Int].refSet[Set[Int]]("x")
       many[Int].refSet[Set[Int]]("y")
 
-      make[Set[None.type]].from(Set(None))
-      make[Set[Some[Int]]].from(Set(Some(7)))
+      make[Set[None.type]].fromImplicit(Set(None))
+      make[Set[Some[Int]]].fromImplicit(Set(Some(7)))
       many[Option[Int]].refSet[Set[None.type]]
       many[Option[Int]].refSet[Set[Some[Int]]]
     })
@@ -351,7 +351,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "handle multiple set element binds" in {
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(7)
+      make[Int].fromImplicit(7)
 
       many[Int].add(0)
       many[Int].addSet(Set(1, 2, 3))
@@ -403,8 +403,8 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase7.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].named("port").from(80)
-      make[String].named("address").from("localhost")
+      make[Int].named("port").fromImplicit(80)
+      make[String].named("address").fromImplicit("localhost")
       make[ServerConfig].from(ServerConfig)
     })
 

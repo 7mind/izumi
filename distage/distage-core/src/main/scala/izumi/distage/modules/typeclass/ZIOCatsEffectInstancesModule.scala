@@ -16,10 +16,10 @@ object ZIOCatsEffectInstancesModule {
 class ZIOCatsEffectInstancesModule[R: Tag] extends ModuleDef {
   include(CatsEffectInstancesModule[ZIO[R, Throwable, +_]])
 
-  make[Async[ZIO[R, Throwable, +_]]].from {
+  make[Async[ZIO[R, Throwable, +_]]].fromImplicit {
     zio.interop.catz.asyncInstance[R]
   }
-  make[Parallel[ZIO[R, Throwable, +_]]].from {
+  make[Parallel[ZIO[R, Throwable, +_]]].fromImplicit {
     zio.interop.catz.parallelInstance[R, Throwable]
   }
 }

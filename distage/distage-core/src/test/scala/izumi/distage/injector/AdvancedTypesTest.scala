@@ -18,9 +18,9 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[List[Dep]].named("As").from(List(DepA()))
-      make[List[Dep]].named("Bs").from(List(DepB()))
-      make[List[DepA]].from(List(DepA(), DepA(), DepA()))
+      make[List[Dep]].named("As").fromImplicit(List(DepA()))
+      make[List[Dep]].named("Bs").fromImplicit(List(DepB()))
+      make[List[DepA]].fromImplicit(List(DepA(), DepA(), DepA()))
       make[TestClass[DepA]]
     })
 
@@ -216,7 +216,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase5.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[WidgetId].from(WidgetId(1))
+      make[WidgetId].fromImplicit(WidgetId(1))
       make[Dep]
     })
 

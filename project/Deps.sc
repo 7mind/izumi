@@ -367,7 +367,8 @@ object Izumi {
             (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)),
           SettingKey(Some(scala300), None) :=
             Seq[Const](
-              "-language:3.4"
+              "-language:3.4",
+              "-experimental"
             ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),

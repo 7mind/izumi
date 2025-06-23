@@ -119,7 +119,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       val definition = PlannerInput.everything(new ModuleDef {
         make[Circular2]
         make[Circular1]
-        make[Int].from(1)
+        make[Int].fromImplicit(1)
       })
 
       val injector = mkInjector()

@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ModuleDef
 import zio.{Executor, Runtime}
 
 private[modules] abstract class ZIOPlatformDependentSupportModule[R] extends ModuleDef {
-  make[Executor].named("cpu").from {
+  make[Executor].named("cpu").fromImplicit {
     Runtime.defaultExecutor
   }
 }

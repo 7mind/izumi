@@ -4,6 +4,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.*
 import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 
+import scala.annotation.experimental
 import scala.language.implicitConversions
 import scala.quoted.{Expr, Quotes, Type}
 

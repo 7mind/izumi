@@ -14,7 +14,7 @@ class DockerSupportModule[F[_]: TagK](configModule: ModuleBase) extends ModuleDe
   include(configModule)
 
   make[DockerClientWrapper[F]].fromResource[DockerClientWrapper.Resource[F]]
-  make[DockerClientFactory].from(DockerClientFactory.impl)
+  make[DockerClientFactory].fromImplicit(DockerClientFactory.impl)
 
   make[DefaultDockerClientConfig].from {
     (clientConfig: Docker.ClientConfig) =>

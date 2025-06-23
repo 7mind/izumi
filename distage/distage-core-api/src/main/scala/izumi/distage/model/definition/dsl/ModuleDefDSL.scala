@@ -110,8 +110,8 @@ object ModuleDefDSL {
     final def from[I <: T: ClassConstructor]: AfterBind =
       from(ClassConstructor[I])
 
-    final def from[I <: T: Tag](function: => I): AfterBind =
-      from(Functoid.lift(function))
+//    final def from[I <: T: Tag](function: => I): AfterBind =
+//      from(Functoid.lift(function))
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
