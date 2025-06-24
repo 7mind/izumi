@@ -95,7 +95,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               new AdaptedAutocloseablesCasePlugin,
               probe,
               new izumi.distage.plugins.PluginDef {
-                make[TestResource[IO]].from[IntegrationResource0[IO]]
+                make[TestResource[IO]].fromClass[IntegrationResource0[IO]]
                 many[TestResource[IO]]
                   .ref[TestResource[IO]]
               },
@@ -170,7 +170,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-        make[TestResource[IO]].from[IntegrationResource0[IO]]
+        make[TestResource[IO]].fromClass[IntegrationResource0[IO]]
         many[TestResource[IO]]
           .ref[TestResource[IO]]
       } ++

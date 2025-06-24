@@ -56,7 +56,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   makeRole[ConfigTestRole[F]]
   makeConfig[ConfigTestConfig]("configTest")
 
-  make[NotCloseable].from[InheritedCloseable]
+  make[NotCloseable].fromClass[InheritedCloseable]
 
   make[AxisComponent].fromImplicit(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
   make[AxisComponent].fromImplicit(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)

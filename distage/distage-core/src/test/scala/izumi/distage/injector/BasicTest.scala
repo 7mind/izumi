@@ -25,7 +25,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       new ModuleDef {
         make[TestClass]
         makeTrait[TestDependency3]
-        make[TestDependency0].from[TestImpl0]
+        make[TestDependency0].fromClass[TestImpl0]
         makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
@@ -57,7 +57,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import SetCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TypedService[Int]].from[ServiceWithTypedSet]
+      make[TypedService[Int]].fromClass[ServiceWithTypedSet]
       many[ExampleTypedCaseClass[Int]]
     })
 
@@ -184,18 +184,18 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestClass]
         .named("named.test.class")
-      make[TestDependency0].from[TestImpl0Bad]
+      make[TestDependency0].fromClass[TestImpl0Bad]
       make[TestDependency0]
         .named("named.test.dependency.0")
-        .from[TestImpl0Good]
+        .fromClass[TestImpl0Good]
       make[TestInstanceBinding]
         .named("named.test")
         .fromImplicit(TestInstanceBinding())
       // test SetIdFromImplName
       make[TestDependency0].namedByImpl
-        .from[TestImpl0Good]
+        .fromClass[TestImpl0Good]
       make[TestDependency0]
-        .from[TestImpl0Bad]
+        .fromClass[TestImpl0Bad]
         .namedByImpl
     })
 
@@ -210,8 +210,8 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency].from[Impl1]
-      make[Dependency].from[Impl2]
+      make[Dependency].fromClass[Impl1]
+      make[Dependency].fromClass[Impl2]
     })
 
     val injector = mkInjector()
@@ -583,7 +583,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       new ModuleDef {
         make[Out]
         make[Dep1]
-        make[T2].named("wrong").from[Dep2]
+        make[T2].named("wrong").fromClass[Dep2]
       },
       Activation.empty,
       DIKey[Out],
@@ -608,9 +608,9 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       make[TestClass]
       make[TestGreeter].named(Some("named.greeter"))
       make[TestGreeter].named(None) // should bind without id
-      make[TestDependency].named(Some("named.test.before.from")).from[TestImpl1]
-      make[TestDependency].named(None).from[TestImpl1]
-      make[TestDependency].from[TestImpl2].named(Some("named.test.after.from"))
+      make[TestDependency].named(Some("named.test.before.from")).fromClass[TestImpl1]
+      make[TestDependency].named(None).fromClass[TestImpl1]
+      make[TestDependency].fromClass[TestImpl2].named(Some("named.test.after.from"))
 
       many[Service]
         .named(Some("named.set.test"))

@@ -13,10 +13,10 @@ class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
       import AnimalModelTestJvm._
       val definition = PlannerInput(new ModuleDef {
         make[Cluster]
-        make[UserRepo].from[UserRepoImpl]
-        make[AccountsRepo].from[AccountsRepoImpl]
-        make[UsersService].from[UserServiceImpl]
-        make[AccountingService].from[AccountingServiceImpl]
+        make[UserRepo].fromClass[UserRepoImpl]
+        make[AccountsRepo].fromClass[AccountsRepoImpl]
+        make[UsersService].fromClass[UserServiceImpl]
+        make[AccountingService].fromClass[AccountingServiceImpl]
         make[UsersApiImpl]
         make[AccountsApiImpl]
         make[UnrequiredDep]

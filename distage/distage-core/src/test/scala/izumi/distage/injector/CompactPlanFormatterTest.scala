@@ -26,9 +26,9 @@ class CompactPlanFormatterTest extends AnyWordSpec with MkInjector {
   "PlanFormatterTest should produce short class names if it's unique in plan" in {
     val injector = mkInjector()
     val plan = injector.planUnsafe(PlannerInput.everything(new ModuleDef {
-      make[JustTrait].from[Impl1]
-      make[OptionT[scala.Either[Nothing, _], Unit]].from(OptionT[Either[Nothing, _], Unit](Right(None)))
-      make[K1[T1]].from(new K1[T1] {})
+      make[JustTrait].fromClass[Impl1]
+      make[OptionT[scala.Either[Nothing, _], Unit]].fromClass(OptionT[Either[Nothing, _], Unit](Right(None)))
+      make[K1[T1]].fromClass(new K1[T1] {})
       makeTrait[W1.T2]
       makeTrait[W2.T2]
     }))

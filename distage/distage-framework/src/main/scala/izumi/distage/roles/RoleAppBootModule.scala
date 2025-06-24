@@ -63,7 +63,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[PluginLoader]
     .named("bootstrap")
     .aliased[PluginLoader]("main")
-    .from[PluginLoaderDefaultImpl]
+    .fromClass[PluginLoaderDefaultImpl]
 
   make[LoadedPlugins].named("bootstrap").from {
     (loader: PluginLoader @Id("bootstrap"), config: PluginConfig @Id("bootstrap")) =>
@@ -90,7 +90,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       IzLogger(router)("phase" -> "late")
   }
 
-  make[StartupBanner].from[StartupBanner.Impl]
+  make[StartupBanner].fromClass[StartupBanner.Impl]
 
   make[Activation].named("default").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
@@ -111,7 +111,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
   make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)
 
-  make[ModuleValidator].from[ModuleValidator.ModuleValidatorImpl]
+  make[ModuleValidator].fromClass[ModuleValidator.ModuleValidatorImpl]
 
   make[ValidatedModulePair].from {
     (
@@ -137,7 +137,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   }
 
   make[Set[Axis.AxisChoice]].named("unused-valid-axis-choices").fromValue(unusedValidAxisChoices)
-  make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.Impl]
+  make[ActivationChoicesExtractor].fromClass[ActivationChoicesExtractor.Impl]
   make[ActivationInfo].from {
     (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>
       activationExtractor.findAvailableChoices(appModule)
@@ -145,7 +145,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   make[Option[LocatorRef]].named("roleapp").from(Some(_: LocatorRef))
 
-  make[ModuleProvider].from[ModuleProvider.Impl[F]]
+  make[ModuleProvider].fromClass[ModuleProvider.Impl[F]]
 
   make[Module].named("roleapp").from {
     (provider: ModuleProvider, appModule: ModuleBase @Id("main")) =>
@@ -170,17 +170,17 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       injectorFactory.bootloader(bsModule, bsActivation, defaultModule, PlannerInput(appModule, roots, activation))
   }
 
-  make[RoleAppPlanner].from[RoleAppPlanner.Impl[F]]
+  make[RoleAppPlanner].fromClass[RoleAppPlanner.Impl[F]]
 
   make[AppStartupPlans].from {
     (roleAppPlanner: RoleAppPlanner, roots: Set[DIKey] @Id("distage.roles.roots")) =>
       roleAppPlanner.makePlan(roots)
   }
 
-  make[RoleAppEntrypoint[F]].from[RoleAppEntrypoint.Impl[F]]
+  make[RoleAppEntrypoint[F]].fromClass[RoleAppEntrypoint.Impl[F]]
 
   make[FinalizerFilters[F]].fromValue(FinalizerFilters.all[F])
-  make[AppResourceProvider[F]].from[AppResourceProvider.Impl[F]]
+  make[AppResourceProvider[F]].fromClass[AppResourceProvider.Impl[F]]
   make[AppResource[F]].from {
     (transformer: AppResourceProvider[F]) =>
       transformer.makeAppResource

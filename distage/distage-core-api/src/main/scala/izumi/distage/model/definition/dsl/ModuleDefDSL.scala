@@ -107,7 +107,7 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
 object ModuleDefDSL {
 
   trait MakeDSLBase[T, AfterBind] {
-    final def from[I <: T: ClassConstructor]: AfterBind =
+    final def fromClass[I <: T: ClassConstructor]: AfterBind =
       from(ClassConstructor[I])
 
 //    final def from[I <: T: Tag](function: => I): AfterBind =

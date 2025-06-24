@@ -84,11 +84,11 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA]
-      make[Fork1].tagged(Axis1.B).from[ImplB]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplB]
 
-      make[Fork2].tagged(Axis2.C).from[ImplC]
-      make[Fork2].tagged(Axis2.D).from[ImplD]
+      make[Fork2].tagged(Axis2.C).fromClass[ImplC]
+      make[Fork2].tagged(Axis2.D).fromClass[ImplD]
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -99,11 +99,11 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA]
-      make[Fork1].tagged(Axis1.B).from[ImplB]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplB]
 
-      make[Fork2].tagged(Axis1.B, Axis2.C).from[ImplC]
-      make[Fork2].tagged(Axis1.B, Axis2.D).from[ImplD]
+      make[Fork2].tagged(Axis1.B, Axis2.C).fromClass[ImplC]
+      make[Fork2].tagged(Axis1.B, Axis2.D).fromClass[ImplD]
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -114,10 +114,10 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA]
-      make[Fork1].tagged(Axis1.B).from[ImplB]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplB]
 
-      make[Fork2].tagged(Axis1.B).from[ImplC]
+      make[Fork2].tagged(Axis1.B).fromClass[ImplC]
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -128,11 +128,11 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA]
-      make[Fork1].tagged(Axis1.B).from[ImplB]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplB]
 
-      make[Fork2].tagged(Axis1.A, Axis2.C).from[ImplC]
-      make[Fork2].tagged(Axis1.A, Axis2.D).from[ImplD]
+      make[Fork2].tagged(Axis1.A, Axis2.C).fromClass[ImplC]
+      make[Fork2].tagged(Axis1.A, Axis2.D).fromClass[ImplD]
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -144,10 +144,10 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA]
-      make[Fork1].tagged(Axis1.B).from[ImplB]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplB]
 
-      make[Fork2].tagged(Axis1.A).from[ImplC]
+      make[Fork2].tagged(Axis1.A).fromClass[ImplC]
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -159,8 +159,8 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA]
-      make[Fork1].tagged(Axis1.B).from[ImplB]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplB]
     }
 
     val implBOrigin = OperationOrigin.UserBinding(definition.iterator.find(_.tags.contains(Axis1.B)).get)
@@ -181,10 +181,10 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA]
-      make[Fork1].tagged(Axis1.B).from[ImplA]
-      make[Fork1].tagged(Axis2.C).from[ImplA]
-      make[Fork1].tagged(Axis2.D).from[ImplA]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplA]
+      make[Fork1].tagged(Axis2.C).fromClass[ImplA]
+      make[Fork1].tagged(Axis2.D).fromClass[ImplA]
     }
 
     assertThrows[InjectorFailed] {
@@ -209,13 +209,13 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplB]
-      make[Fork1].tagged(Axis1.B).from[ImplB2]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplB]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplB2]
 
-      make[Fork2].tagged(Axis1.A).from[ImplC]
-      make[Fork2].tagged(Axis1.B).from[ImplD]
-      make[Fork2].tagged(Axis2.C).from[ImplC2]
-      make[Fork2].tagged(Axis2.D).from[ImplD2]
+      make[Fork2].tagged(Axis1.A).fromClass[ImplC]
+      make[Fork2].tagged(Axis1.B).fromClass[ImplD]
+      make[Fork2].tagged(Axis2.C).fromClass[ImplC2]
+      make[Fork2].tagged(Axis2.D).fromClass[ImplD2]
     }
 
     assertThrows[InjectorFailed] {
@@ -239,10 +239,10 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A, Axis3.E).from[ImplA]
-      make[Fork1].tagged(Axis1.B, Axis3.F).from[ImplA]
-      make[Fork1].tagged(Axis1.A, Axis2.C).from[ImplA]
-      make[Fork1].tagged(Axis1.B, Axis2.D).from[ImplA]
+      make[Fork1].tagged(Axis1.A, Axis3.E).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.B, Axis3.F).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.A, Axis2.C).fromClass[ImplA]
+      make[Fork1].tagged(Axis1.B, Axis2.D).fromClass[ImplA]
     }
 
     assertThrows[InjectorFailed] {
@@ -267,10 +267,10 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA] // shadowed activation
-      make[Fork1].tagged(Axis1.A, Axis2.C).from[ImplA2]
-      make[Fork1].tagged(Axis1.A, Axis2.D).from[ImplA3]
-      make[Fork1].tagged(Axis1.B).from[ImplA4]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA] // shadowed activation
+      make[Fork1].tagged(Axis1.A, Axis2.C).fromClass[ImplA2]
+      make[Fork1].tagged(Axis1.A, Axis2.D).fromClass[ImplA3]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplA4]
     }
 
     assert(
@@ -292,9 +292,9 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].from[ImplA] // shadowed activation
-      make[Fork1].tagged(Axis1.A).from[ImplA2]
-      make[Fork1].tagged(Axis1.B).from[ImplA3]
+      make[Fork1].fromClass[ImplA] // shadowed activation
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA2]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplA3]
     }
 
     assert(
@@ -323,8 +323,8 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].from[ImplA]
-      make[Fork1].from[ImplA2]
+      make[Fork1].fromClass[ImplA]
+      make[Fork1].fromClass[ImplA2]
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
@@ -339,12 +339,12 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA] // less-specific activation
-      make[Fork1].tagged(Axis1.A, Axis2.C).from[ImplA2]
-      make[Fork1].tagged(Axis1.B).from[ImplB]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA] // less-specific activation
+      make[Fork1].tagged(Axis1.A, Axis2.C).fromClass[ImplA2]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplB]
 
-      make[Fork2].tagged(Axis2.C).from[ImplC]
-      make[Fork2].tagged(Axis2.D).from[ImplD]
+      make[Fork2].tagged(Axis2.C).fromClass[ImplC]
+      make[Fork2].tagged(Axis2.D).fromClass[ImplD]
     }
 
     assertThrows[InjectorFailed] {
@@ -375,12 +375,12 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA] // shadowed activation
-      make[Fork1].tagged(Axis1.A, Axis2.D).from[ImplA5]
-      make[Fork1].tagged(Axis1.A, Axis2.C).from[ImplA2] // shadowed activation
-      make[Fork1].tagged(Axis1.A, Axis2.C, Axis3.E).from[ImplA3]
-      make[Fork1].tagged(Axis1.A, Axis2.C, Axis3.F).from[ImplA4]
-      make[Fork1].tagged(Axis1.B).from[ImplA6]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA] // shadowed activation
+      make[Fork1].tagged(Axis1.A, Axis2.D).fromClass[ImplA5]
+      make[Fork1].tagged(Axis1.A, Axis2.C).fromClass[ImplA2] // shadowed activation
+      make[Fork1].tagged(Axis1.A, Axis2.C, Axis3.E).fromClass[ImplA3]
+      make[Fork1].tagged(Axis1.A, Axis2.C, Axis3.F).fromClass[ImplA4]
+      make[Fork1].tagged(Axis1.B).fromClass[ImplA6]
     }
 
     assertThrows[InjectorFailed] {
@@ -444,14 +444,14 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase1._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis1.A).from[ImplA2] // less-specific activation
-      make[Fork1].tagged(Axis1.A, Axis2.D).from[ImplA5]
-      make[Fork1].tagged(Axis1.A, Axis2.C, Axis3.F).from[ImplA4]
-      make[Fork1].tagged(Axis1.B, Axis2.C).from[ImplB]
-      make[Fork1].tagged(Axis1.B, Axis2.D).from[ImplA6]
+      make[Fork1].tagged(Axis1.A).fromClass[ImplA2] // less-specific activation
+      make[Fork1].tagged(Axis1.A, Axis2.D).fromClass[ImplA5]
+      make[Fork1].tagged(Axis1.A, Axis2.C, Axis3.F).fromClass[ImplA4]
+      make[Fork1].tagged(Axis1.B, Axis2.C).fromClass[ImplB]
+      make[Fork1].tagged(Axis1.B, Axis2.D).fromClass[ImplA6]
 
-      make[Fork2].tagged(Axis2.C, Axis3.E).from[ImplC]
-      make[Fork2].tagged(Axis2.C).from[ImplC]
+      make[Fork2].tagged(Axis2.C, Axis3.E).fromClass[ImplC]
+      make[Fork2].tagged(Axis2.C).fromClass[ImplC]
     }
 
     assertThrows[InjectorFailed] {
@@ -509,10 +509,10 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         .ref[ExternalDep]
 
       make[X]
-      make[Fork1].tagged(Axis.A).from[ImplA].addDependency[Set[Dep]]
-      make[Fork1].tagged(Axis.B).from[ImplB]
+      make[Fork1].tagged(Axis.A).fromClass[ImplA].addDependency[Set[Dep]]
+      make[Fork1].tagged(Axis.B).fromClass[ImplB]
 
-      make[BadDep].tagged(Axis.B).from[BadDepImplB]
+      make[BadDep].tagged(Axis.B).fromClass[BadDepImplB]
     }
 
     val result1 = PlanVerifier().verify[Identity](definition, Roots.target[X], Injector.providedKeys(), Set.empty)
@@ -550,10 +550,10 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     import PlanVerifierCase2._
 
     val definition = new ModuleDef {
-      make[Fork1].tagged(Axis.A).from[ImplA]
-      make[Fork1].tagged(Axis.B).from[ImplB]
+      make[Fork1].tagged(Axis.A).fromClass[ImplA]
+      make[Fork1].tagged(Axis.B).fromClass[ImplB]
 
-      make[BadDep].tagged(Axis.B).from[BadDepImplB]
+      make[BadDep].tagged(Axis.B).fromClass[BadDepImplB]
     }
 
     val result1 = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)

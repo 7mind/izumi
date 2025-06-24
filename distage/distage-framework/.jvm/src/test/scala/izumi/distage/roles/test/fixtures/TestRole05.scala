@@ -45,8 +45,8 @@ object TestRole05 extends RoleDescriptor {
 
   class Role05Module[F[_]: TagK] extends ModuleDef with ConfigModuleDef with RoleModuleDef {
     makeRole[TestRole05[F]]
-    make[TestRole05Dependency].from[TestRole05DependencyImpl1].tagged(Role05LocalAxis.Rolelocal1)
-    make[TestRole05Dependency].from[TestRole05DependencyImpl2].tagged(Role05LocalAxis.Rolelocal2)
+    make[TestRole05Dependency].fromClass[TestRole05DependencyImpl1].tagged(Role05LocalAxis.Rolelocal1)
+    make[TestRole05Dependency].fromClass[TestRole05DependencyImpl2].tagged(Role05LocalAxis.Rolelocal2)
     makeConfig[Rolelocal1SpecificConfig]("rolelocal1")
     makeConfig[Rolelocal2SpecificConfig]("rolelocal2")
   }

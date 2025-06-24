@@ -9,7 +9,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
   "Support private bindings in public-by-default mode" in {
     val def1 = PlannerInput(
       new ModuleDef {
-        make[TestDependency0].from[TestImpl0].confined
+        make[TestDependency0].fromClass[TestImpl0].confined
       },
       Roots(DIKey.get[TestDependency0]),
     )
@@ -25,7 +25,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
   "Support public bindings in public-by-default mode" in {
     val def1 = PlannerInput(
       new ModuleDef {
-        make[TestDependency0].from[TestImpl0]
+        make[TestDependency0].fromClass[TestImpl0]
       },
       Roots(DIKey.get[TestDependency0]),
     )
@@ -40,7 +40,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
   "Support private bindings in private-by-default mode" in {
     val def1 = PlannerInput(
       new ModuleDef {
-        make[TestDependency0].from[TestImpl0]
+        make[TestDependency0].fromClass[TestImpl0]
       },
       Roots(DIKey.get[TestDependency0]),
     )
@@ -56,7 +56,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
   "Support public bindings in private-by-default mode" in {
     val def1 = PlannerInput(
       new ModuleDef {
-        make[TestDependency0].from[TestImpl0].exposed
+        make[TestDependency0].fromClass[TestImpl0].exposed
       },
       Roots(DIKey.get[TestDependency0]),
     )
@@ -98,7 +98,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
 
     val def2 = PlannerInput
       .everything(new ModuleDef {
-        make[JustTrait].from[Impl0]
+        make[JustTrait].fromClass[Impl0]
       })
       .withLocatorPrivacy(def1.locatorPrivacy) // we don't need this at the moment, but it may change in the future
 

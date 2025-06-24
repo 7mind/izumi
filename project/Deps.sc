@@ -368,7 +368,6 @@ object Izumi {
           SettingKey(Some(scala300), None) :=
             Seq[Const](
               "-language:3.4",
-              "-experimental"
             ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),

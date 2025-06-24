@@ -10,11 +10,11 @@ import izumi.reflect.TagK
 import logstage.ThreadingLogQueue
 
 class RoleAppBootLoggerModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
-  make[EarlyLoggerFactory].from[EarlyLoggerFactory.EarlyLoggerFactoryImpl]
+  make[EarlyLoggerFactory].fromClass[EarlyLoggerFactory.EarlyLoggerFactoryImpl]
 
-  make[LogConfigLoader].from[LogConfigLoader.LogConfigLoaderImpl]
-  make[RouterFactory].from[RouterFactory.RouterFactoryConsoleSinkImpl]
-  make[LateLoggerFactory].from[LateLoggerFactory.LateLoggerFactoryImpl]
+  make[LogConfigLoader].fromClass[LogConfigLoader.LogConfigLoaderImpl]
+  make[RouterFactory].fromClass[RouterFactory.RouterFactoryConsoleSinkImpl]
+  make[LateLoggerFactory].fromClass[LateLoggerFactory.LateLoggerFactoryImpl]
   make[LogQueue].fromResource(ThreadingLogQueue.resource())
 
   make[Log.Level].named("early").fromValue(Log.Level.Info)

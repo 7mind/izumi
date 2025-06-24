@@ -16,14 +16,14 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[GlobalService]
 
       // this will not be used/instantiated
-      make[LocalService].from[LocalServiceBadImpl]
+      make[LocalService].fromClass[LocalServiceBadImpl]
 
       makeSubcontext[Int]
         .named("test")
         .withSubmodule {
           new ModuleDef {
             make[LocalService]
-              .from[LocalServiceGoodImpl]
+              .fromClass[LocalServiceGoodImpl]
               .annotateParameter[Arg]("x")
           }
         }
@@ -60,7 +60,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         .named("test")
         .withSubmodule(new ModuleDef {
           make[Arg].fromValue(Arg(2))
-          make[LocalService].from[LocalServiceGoodImpl]
+          make[LocalService].fromClass[LocalServiceGoodImpl]
         })
         .extractWith {
           (summator: LocalService) =>
@@ -82,7 +82,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
   "support self references" in {
     val module = new ModuleDef {
       makeSubcontext[Int](new ModuleDef {
-        make[LocalRecursiveService].from[LocalRecursiveServiceGoodImpl]
+        make[LocalRecursiveService].fromClass[LocalRecursiveServiceGoodImpl]
       })
         .extractWith {
           (summator: LocalRecursiveService) =>
@@ -106,7 +106,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     val module = new ModuleDef {
       make[GlobalServiceDependency]
       make[GlobalService]
-      make[LocalService].from[LocalServiceGoodImpl]
+      make[LocalService].fromClass[LocalServiceGoodImpl]
       make[Arg].fromValue(Arg(1))
 
       makeSubcontext[Int]
@@ -145,7 +145,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[GlobalService]
 
       makeSubcontext[Int](new ModuleDef {
-        make[LocalService].from[LocalServiceGoodImpl]
+        make[LocalService].fromClass[LocalServiceGoodImpl]
 
         make[Arg].tagged(Repo.Dummy).fromValue(Arg(1))
         make[Arg].tagged(Repo.Prod).fromValue(Arg(-1))

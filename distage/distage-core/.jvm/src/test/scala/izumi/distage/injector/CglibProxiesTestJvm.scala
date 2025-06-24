@@ -40,8 +40,8 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       import CircularCase1.*
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Circular2].from[Circular2Impl]
-        make[Circular1].from[Circular1Impl]
+        make[Circular2].fromClass[Circular2Impl]
+        make[Circular1].fromClass[Circular1Impl]
       })
 
       val injector = mkInjector()
@@ -226,7 +226,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       import CircularCase6.*
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Dependency { def dep: RefinedCircular }].from[RealDependency]
+        make[Dependency { def dep: RefinedCircular }].fromClass[RealDependency]
         make[RefinedCircular]
       })
 

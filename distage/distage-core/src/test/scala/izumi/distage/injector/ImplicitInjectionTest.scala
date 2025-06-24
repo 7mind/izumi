@@ -35,7 +35,7 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestClass]
       make[Dep]
-      make[DummyImplicit].from[MyDummyImplicit]
+      make[DummyImplicit].fromClass[MyDummyImplicit]
     })
 
     val injector = mkInjector()

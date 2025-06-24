@@ -366,7 +366,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         makeTrait[NotInContext]
         make[TestClass]
         makeTrait[TestDependency3]
-        make[TestDependency0].from[TestImpl0]
+        make[TestDependency0].fromClass[TestImpl0]
         makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]

@@ -36,16 +36,16 @@ class RoleAppBootArgsModule[F[_]: TagK: DefaultModule](
       )
   }
 
-  make[RoleAppActivationParser].from[RoleAppActivationParser.Impl]
-  make[ActivationParser].from[ActivationParser.Impl]
+  make[RoleAppActivationParser].fromClass[RoleAppActivationParser.Impl]
+  make[ActivationParser].fromClass[ActivationParser.Impl]
   make[Activation].named("roleapp").from {
     (parser: ActivationParser, config: AppConfig) =>
       parser.parseActivation(config)
   }
 
-  make[AppArgsInterceptor].from[AppArgsInterceptor.Impl]
+  make[AppArgsInterceptor].fromClass[AppArgsInterceptor.Impl]
 
-  make[CLILoggerOptionsReader].from[CLILoggerOptionsReader.CLILoggerOptionsReaderImpl]
+  make[CLILoggerOptionsReader].fromClass[CLILoggerOptionsReader.CLILoggerOptionsReaderImpl]
   make[CLILoggerOptions].from {
     (reader: CLILoggerOptionsReader) =>
       reader.read()

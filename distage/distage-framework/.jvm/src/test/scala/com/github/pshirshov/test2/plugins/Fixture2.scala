@@ -15,11 +15,11 @@ object Fixture2 {
   }
 
   final class TestPlugin extends PluginDef with RoleModuleDef {
-    make[Dep].tagged(Mode.Prod, Repo.Prod).from[DepGood]
-    make[Dep].tagged(Mode.Prod, Repo.Dummy).from[DepGood]
+    make[Dep].tagged(Mode.Prod, Repo.Prod).fromClass[DepGood]
+    make[Dep].tagged(Mode.Prod, Repo.Dummy).fromClass[DepGood]
 
-    make[Dep].tagged(Mode.Test, Repo.Prod).from[DepBad]
-    make[Dep].tagged(Mode.Test, Repo.Dummy).from[DepBad]
+    make[Dep].tagged(Mode.Test, Repo.Prod).fromClass[DepBad]
+    make[Dep].tagged(Mode.Test, Repo.Dummy).fromClass[DepBad]
 
     makeRole[TargetRole].tagged(Repo.Prod)
     makeRole[TargetRole].tagged(Repo.Dummy)

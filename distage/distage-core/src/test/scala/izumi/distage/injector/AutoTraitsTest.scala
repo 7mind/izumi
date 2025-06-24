@@ -150,8 +150,8 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     import TraitCase4.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dep].named("A").from[DepA]
-      make[Dep].named("B").from[DepB]
+      make[Dep].named("A").fromClass[DepA]
+      make[Dep].named("B").fromClass[DepB]
       makeTrait[Trait]
       makeTrait[Trait1]
     })

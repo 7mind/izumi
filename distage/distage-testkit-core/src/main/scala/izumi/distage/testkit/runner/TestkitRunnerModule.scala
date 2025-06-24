@@ -22,15 +22,15 @@ class TestkitRunnerModule[F[_]: TagK: DefaultModule](reporter: TestReporter, isC
 
   make[Throwable => Boolean].fromValue(isCancellation)
   make[TestStatusConverter]
-  make[TimedAction].from[TimedActionImpl]
-  make[TestConfigLoader].from[TestConfigLoader.TestConfigLoaderImpl]
+  make[TimedAction].fromClass[TimedActionImpl]
+  make[TestConfigLoader].fromClass[TestConfigLoader.TestConfigLoaderImpl]
   make[TestPlanner[F]]
-  make[TestTreeBuilder[F]].from[TestTreeBuilder.TestTreeBuilderImpl[F]]
+  make[TestTreeBuilder[F]].fromClass[TestTreeBuilder.TestTreeBuilderImpl[F]]
 
-  make[TimedActionF[Identity]].from[TimedActionFImpl[Identity]]
-  make[ExtParTraverse[Identity]].from[ExtParTraverse.ExtParTraverseImpl[Identity]]
+  make[TimedActionF[Identity]].fromClass[TimedActionFImpl[Identity]]
+  make[ExtParTraverse[Identity]].fromClass[ExtParTraverse.ExtParTraverseImpl[Identity]]
 
-  make[DistageTestRunner[F, Identity]].from[DistageTestRunner[F, Identity]]
+  make[DistageTestRunner[F, Identity]].fromClass[DistageTestRunner[F, Identity]]
 
   make[LogQueue].fromResource(ThreadingLogQueue.resource())
 }

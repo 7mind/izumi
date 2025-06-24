@@ -22,8 +22,8 @@ class TestRuntimeModule[F[_]: TagK](params: EnvExecutionParams) extends ModuleDe
     (logger: IzLogger) => logger
   }
   // the dependencies will be available through testRunnerLocator which is set as parent for the current injector
-  make[TimedActionF[F]].from[TimedActionFImpl[F]]
-  make[TestTreeRunner[F]].from[TestTreeRunner.TestTreeRunnerImpl[F]]
-  make[IndividualTestRunner[F]].from[IndividualTestRunner.IndividualTestRunnerImpl[F]]
-  make[ExtParTraverse[F]].from[ExtParTraverse.ExtParTraverseImpl[F]]
+  make[TimedActionF[F]].fromClass[TimedActionFImpl[F]]
+  make[TestTreeRunner[F]].fromClass[TestTreeRunner.TestTreeRunnerImpl[F]]
+  make[IndividualTestRunner[F]].fromClass[IndividualTestRunner.IndividualTestRunnerImpl[F]]
+  make[ExtParTraverse[F]].fromClass[ExtParTraverse.ExtParTraverseImpl[F]]
 }

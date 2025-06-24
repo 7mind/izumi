@@ -13,7 +13,7 @@ trait TestService
 class TestServiceImpl extends TestService with TestTrait
 
 object AutosetTestModule extends PluginDef {
-  make[TestService].from[TestServiceImpl]
+  make[TestService].fromClass[TestServiceImpl]
   many[TestTrait]
 }
 

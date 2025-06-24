@@ -127,45 +127,45 @@ object BootstrapLocator {
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
     make[Boolean].named("izumi.distage.interpreter.full-stacktraces").fromValue(fullStackTraces)
 
-    make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
+    make[ProvisionOperationVerifier].fromClass[ProvisionOperationVerifier.Default]
 
     make[MirrorProvider].fromValue(mirrorProvider)
 
-    make[PlanSolver].from[PlanSolver.Impl]
+    make[PlanSolver].fromClass[PlanSolver.Impl]
     make[GraphQueries]
 
-    make[SemigraphSolver[DIKey, Int, InstantiationOp]].from[SemigraphSolverImpl[DIKey, Int, InstantiationOp]]
+    make[SemigraphSolver[DIKey, Int, InstantiationOp]].fromClass[SemigraphSolverImpl[DIKey, Int, InstantiationOp]]
 
-    make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
-    make[SanityChecker].from[SanityCheckerDefaultImpl]
+    make[ForwardingRefResolver].fromClass[ForwardingRefResolverDefaultImpl]
+    make[SanityChecker].fromClass[SanityCheckerDefaultImpl]
 
-    make[Planner].from[PlannerDefaultImpl]
-    make[OperationExecutor].from[OperationExecutorImpl]
-    make[PlanInterpreter].from[PlanInterpreterNonSequentialRuntimeImpl]
+    make[Planner].fromClass[PlannerDefaultImpl]
+    make[OperationExecutor].fromClass[OperationExecutorImpl]
+    make[PlanInterpreter].fromClass[PlanInterpreterNonSequentialRuntimeImpl]
 
-    make[SetStrategy].from[SetStrategyDefaultImpl]
-    make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
-    make[ImportStrategy].from[ImportStrategyDefaultImpl]
-    make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
-    make[SubcontextStrategy].from[SubcontextStrategyDefaultImpl]
-    make[EffectStrategy].from[EffectStrategyDefaultImpl]
-    make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
+    make[SetStrategy].fromClass[SetStrategyDefaultImpl]
+    make[ProviderStrategy].fromClass[ProviderStrategyDefaultImpl]
+    make[ImportStrategy].fromClass[ImportStrategyDefaultImpl]
+    make[InstanceStrategy].fromClass[InstanceStrategyDefaultImpl]
+    make[SubcontextStrategy].fromClass[SubcontextStrategyDefaultImpl]
+    make[EffectStrategy].fromClass[EffectStrategyDefaultImpl]
+    make[ResourceStrategy].fromClass[ResourceStrategyDefaultImpl]
 
     many[PlanningObserver]
     many[PlanningHook]
 
-    make[PlanningObserver].from[PlanningObserverAggregate]
-    make[PlanningHook].from[PlanningHookAggregate]
+    make[PlanningObserver].fromClass[PlanningObserverAggregate]
+    make[PlanningHook].fromClass[PlanningHookAggregate]
 
-    make[BindingTranslator].from[BindingTranslator.Impl]
+    make[BindingTranslator].fromClass[BindingTranslator.Impl]
 
     make[ProxyProvider].tagged(Cycles.Proxy).fromValue(DynamicProxyProvider)
     make[ProxyProvider].fromValue(new ProxyProviderFailingImpl(ProvisionerIssue.ProxyFailureCause.ProxiesDisabled()))
 
-    make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
-    make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
+    make[ProxyStrategy].tagged(Cycles.Disable).fromClass[ProxyStrategyFailingImpl]
+    make[ProxyStrategy].fromClass[ProxyStrategyDefaultImpl]
 
-    make[FwdrefLoopBreaker].from[FwdrefLoopBreaker.FwdrefLoopBreakerDefaultImpl]
+    make[FwdrefLoopBreaker].fromClass[FwdrefLoopBreaker.FwdrefLoopBreakerDefaultImpl]
   }
 
   final val defaultBootstrapActivation: Activation = Activation(

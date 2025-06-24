@@ -28,7 +28,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       import BasicCase1.*
       val definition: ModuleBase = new ModuleDef {
         make[TestClass]
-        make[TestDependency0].from[TestImpl0]
+        make[TestDependency0].fromClass[TestImpl0]
         make[TestInstanceBinding].fromImplicit(TestInstanceBinding())
 
         make[TestClass]
@@ -49,7 +49,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           .named("named.set")
           .add[Impl3]
 
-        make[TestDependency0].namedByImpl.from[TestImpl0]
+        make[TestDependency0].namedByImpl.fromClass[TestImpl0]
         makeTrait[TestDependency0].namedByImpl
       }
 
@@ -63,7 +63,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       object Module extends ModuleDef {
         make[TestClass]
-        make[TestDependency0].from[TestImpl0]
+        make[TestDependency0].fromClass[TestImpl0]
       }
 
       assert(
@@ -79,7 +79,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       object Module extends ModuleDef {
         make[TestClass].annotateParameter[TestDependency0]("test_param")
-        make[TestDependency0].named("test_param").from[TestImpl0]
+        make[TestDependency0].named("test_param").fromClass[TestImpl0]
       }
 
       assert(
@@ -99,9 +99,9 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       object ModuleAnnotated extends ModuleDef {
         make[TestClass].annotateParameter[TestDependency0]("test_param")
-        make[TestDependency1].from[TestImpl1]
-        make[TestDependency0].from[TestImpl0]
-        make[TestDependency0].named("test_param").from[TestImpl00]
+        make[TestDependency1].fromClass[TestImpl1]
+        make[TestDependency0].fromClass[TestImpl0]
+        make[TestDependency0].named("test_param").fromClass[TestImpl00]
       }
 
       val injector = mkInjector()
@@ -249,8 +249,8 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           .add[SetImpl3].tagged("A") // merge
           .add[SetImpl3].tagged("B") // merge
 
-        make[Service1].tagged("CA").from[Service1] // merge
-        make[Service1].tagged("CB").from[Service1] // merge
+        make[Service1].tagged("CA").fromClass[Service1] // merge
+        make[Service1].tagged("CB").fromClass[Service1] // merge
 
         make[Service2].tagged("CC")
 
@@ -647,13 +647,13 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       val definition = new ModuleDef {
         make[TraitX]
-          .from[ImplXYZ]
+          .fromClass[ImplXYZ]
           .named("other")
           .tagged("x")
           .aliased[TraitX]("other2")
 
         make[ImplXYZ]
-          .from[ImplXYZ]
+          .fromClass[ImplXYZ]
           .tagged("xa")
           .aliased[TraitY]
 
@@ -724,7 +724,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         assertCompiles(
           """
           def definition[T <: Int: Tag] = new ModuleDef {
-            make[Int].from[T]
+            make[Int].fromClass[T]
           }
         """
         )

@@ -10,8 +10,8 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
     import CircularCase11.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[T1].from[Circular1Impl]
-      make[T2].from[Circular2Impl]
+      make[T1].fromClass[Circular1Impl]
+      make[T2].fromClass[Circular2Impl]
 
       many[Service]
         .ref[T1]
@@ -33,8 +33,8 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
     import CircularCase12.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[T1].from[Circular1Impl]
-      make[T2].from[Circular2Impl]
+      make[T1].fromClass[Circular1Impl]
+      make[T2].fromClass[Circular2Impl]
 
       many[Service]
         .ref[T1]
@@ -57,8 +57,8 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
     import CircularCase13.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[T1].from[Circular1Impl]
-      make[T2].from[Circular2Impl]
+      make[T1].fromClass[Circular1Impl]
+      make[T2].fromClass[Circular2Impl]
 
       many[Service]
         .ref[T1]

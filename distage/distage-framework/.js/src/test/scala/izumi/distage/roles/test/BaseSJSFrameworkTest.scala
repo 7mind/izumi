@@ -41,7 +41,7 @@ class BaseSJSFrameworkTest extends AsyncWordSpec {
             new PluginDef with RoleModuleDef {
               makeRole[TestTask00[zio.Task]]
               make[ExecutionContext].named("cpu").fromImplicit(BaseSJSFrameworkTest.this.executionContext)
-              make[Executor].named("cpu").from(Executor.fromExecutionContext(BaseSJSFrameworkTest.this.executionContext))
+              make[Executor].named("cpu").fromClass(Executor.fromExecutionContext(BaseSJSFrameworkTest.this.executionContext))
             }
           )
         )

@@ -9,5 +9,5 @@ class RoleAppBootPlatformModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
   include(new RoleAppBootConfigModule[F]())
   include(new RoleAppBootLoggerModule[F]())
 
-  make[RoleProvider].from[RoleProvider.NonReflectiveImpl]
+  make[RoleProvider].fromClass[RoleProvider.NonReflectiveImpl]
 }
