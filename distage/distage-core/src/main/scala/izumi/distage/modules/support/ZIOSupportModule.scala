@@ -57,7 +57,7 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
 
   make[BlockingIO2[ZIO[R, +_, +_]]].fromValue(BlockingIOInstances.BlockingZIODefaultR[ZIO, R])
   
-  make[ZIORunner[R]].fromImplicit {
+  make[ZIORunner[R]].from {
     (
       cpuPool: Executor @Id("cpu"),
       blockingPool: Executor @Id("io"),

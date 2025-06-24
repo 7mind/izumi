@@ -45,19 +45,19 @@ abstract class DistageMemoizationEnvsTest extends SpecZIO with AssertZIO {
           2 -> Set(DIKey[MemoizedLevel2]),
         ),
         pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new izumi.distage.plugins.PluginDef {
-          make[MemoizedInstance].fromImplicit {
+          make[MemoizedInstance].from {
             MemoizationEnv.makeInstance(MemoizationEnv.memoizedInstance)(MemoizationEnv.MemoizedInstance.apply)
           }
-          make[MemoizedLevel1].fromImplicit {
+          make[MemoizedLevel1].from {
             MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel1)(MemoizationEnv.MemoizedLevel1.apply)
           }
-          make[MemoizedLevel2].fromImplicit {
+          make[MemoizedLevel2].from {
             MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel2)(MemoizationEnv.MemoizedLevel2.apply)
           }
-          make[MemoizedLevel3].fromImplicit {
+          make[MemoizedLevel3].from {
             MemoizationEnv.makeInstance(MemoizationEnv.memoizedLevel3)(MemoizationEnv.MemoizedLevel3.apply)
           }
-          make[TestInstance].fromImplicit(TestInstance(UUID.randomUUID()))
+          make[TestInstance].from(TestInstance(UUID.randomUUID()))
         },
         forcedRoots = Set(DIKey[MemoizedInstance], DIKey[MemoizedLevel1]),
         activation = distage.Activation(Repo -> Repo.Prod),
@@ -97,7 +97,7 @@ class SameLevel_1_WithoutLastMemoizationLevel extends DistageMemoizationEnvsTest
         1 -> Set(DIKey.get[MemoizedInstance], DIKey.get[MemoizedLevel1])
       ),
       pluginConfig = super.config.pluginConfig overriddenBy new izumi.distage.plugins.PluginDef {
-        make[MemoizedLevel2].fromImplicit(MemoizedLevel2(UUID.randomUUID()))
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
       },
       activation = distage.Activation(Repo -> Repo.Prod),
     )
@@ -132,7 +132,7 @@ class SameLevel_1_WithModuleOverride extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
     super.config.copy(
       pluginConfig = super.config.pluginConfig overriddenBy new izumi.distage.plugins.PluginDef {
-        make[TestInstance].fromImplicit(MemoizationEnv.anotherTestInstance)
+        make[TestInstance].from(MemoizationEnv.anotherTestInstance)
       }
     )
   }
@@ -154,9 +154,9 @@ trait DifferentLevelsWithLevel1 extends DistageMemoizationEnvsTest {
   override protected def config: TestConfig = {
     super.config.copy(
       pluginConfig = super.config.pluginConfig overriddenBy new izumi.distage.plugins.PluginDef {
-        make[MemoizedInstance].fromImplicit(MemoizedInstance(UUID.randomUUID()))
-        make[MemoizedLevel1].fromImplicit(MemoizedLevel1(UUID.randomUUID()))
-        make[MemoizedLevel2].fromImplicit(MemoizedLevel2(UUID.randomUUID()))
+        make[MemoizedInstance].from(MemoizedInstance(UUID.randomUUID()))
+        make[MemoizedLevel1].from(MemoizedLevel1(UUID.randomUUID()))
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
       }
     )
   }
@@ -173,7 +173,7 @@ class DifferentLevelsWithLevel1InstanceOverride2 extends DifferentLevelsWithLeve
   override protected def config: TestConfig = {
     super.config.copy(
       pluginConfig = super.config.pluginConfig overriddenBy new izumi.distage.plugins.PluginDef {
-        make[MemoizedLevel2].fromImplicit(MemoizedLevel2(UUID.randomUUID()))
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
       }
     )
   }
@@ -187,7 +187,7 @@ class SameLevel_1_WithLevel2InstanceOverride extends DistageMemoizationEnvsTest 
   override protected def config: TestConfig = {
     super.config.copy(
       pluginConfig = super.config.pluginConfig overriddenBy new izumi.distage.plugins.PluginDef {
-        make[MemoizedLevel2].fromImplicit(MemoizedLevel2(UUID.randomUUID()))
+        make[MemoizedLevel2].from(MemoizedLevel2(UUID.randomUUID()))
       }
     )
   }

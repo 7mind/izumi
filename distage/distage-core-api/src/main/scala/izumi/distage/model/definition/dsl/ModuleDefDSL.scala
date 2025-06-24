@@ -106,11 +106,12 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
 
 object ModuleDefDSL {
 
-  trait MakeDSLBase[T, AfterBind] {
-    final def fromClass[I <: T: ClassConstructor]: AfterBind =
-      from(ClassConstructor[I])
+  trait MakeDSLBase[T, AfterBind] extends ScalaVersionSpecificMakeDsl[T, AfterBind] {
+    final def fromClass[I <: T: Tag](implicit ctor: ClassConstructor[I]): AfterBind = {
+      from(ctor.provider)
+    }
 
-//    final def from[I <: T: Tag](function: => I): AfterBind =
+    //    final def from[I <: T: Tag](function: => I): AfterBind =
 //      from(Functoid.lift(function))
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
@@ -173,16 +174,16 @@ object ModuleDefDSL {
       * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
       * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
       */
-    final def from[I <: T](function: Functoid[I])(implicit d: DummyImplicit): AfterBind =
+    final def fromNoCapture[I <: T](function: Functoid[I])(implicit d: DummyImplicit): AfterBind =
       bind(ImplDef.ProviderImpl(function.get.ret, function.get))
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
-    final def fromTrait[I <: T: TraitConstructor]: AfterBind =
-      from[I](TraitConstructor[I])
+    final def fromTrait[I <: T: Tag](implicit ctor: TraitConstructor[I]): AfterBind =
+      from(ctor.provider)
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
-    final def fromFactory[I <: T: FactoryConstructor]: AfterBind =
-      from[I](FactoryConstructor[I])
+    final def fromFactory[I <: T: Tag](implicit ctor: FactoryConstructor[I]): AfterBind =
+      from(ctor.provider)
 
     /**
       * Bind by reference to another bound key

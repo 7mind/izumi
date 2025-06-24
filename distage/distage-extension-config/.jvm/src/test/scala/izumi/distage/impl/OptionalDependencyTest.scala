@@ -140,7 +140,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     new ModuleDef {
       make[Some[Int]]
       make[None.type]
-      make[Int].fromImplicit(0)
+      make[Int].from(0)
     }
 
 //    Then("Lifecycle.toCats doesn't work")

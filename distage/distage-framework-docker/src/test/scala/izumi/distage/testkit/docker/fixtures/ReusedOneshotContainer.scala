@@ -58,8 +58,8 @@ class CmdContainerModule[F[_]: TagK] extends ModuleDef {
     ReusedOneshotContainer.make[F]
   }
 
-  make[Lifecycle[F, ReuseCheckContainer.Container]].fromImplicit(ReuseCheckContainer.make[F])
-  make[ContainerResource[F, ExitCodeCheckContainer.Tag]].fromImplicit(ExitCodeCheckContainer.make[F])
+  make[Lifecycle[F, ReuseCheckContainer.Container]].from(ReuseCheckContainer.make[F])
+  make[ContainerResource[F, ExitCodeCheckContainer.Tag]].from(ExitCodeCheckContainer.make[F])
 }
 
 object CmdContainerModule {

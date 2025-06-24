@@ -13,7 +13,7 @@ class StaticDSLTest extends AnyWordSpec {
       val definition: ModuleBase = new ModuleDef {
         make[TestClass].fromClass[TestClass]
         make[TestDependency0].fromClass[TestImpl0]
-        make[TestInstanceBinding].fromImplicit(TestInstanceBinding())
+        make[TestInstanceBinding].from(TestInstanceBinding())
 
         make[TestClass]
           .named("named.test.class")
@@ -23,7 +23,7 @@ class StaticDSLTest extends AnyWordSpec {
           .fromTrait[TestDependency0]
         make[TestInstanceBinding]
           .named("named.test")
-          .fromImplicit(TestInstanceBinding())
+          .from(TestInstanceBinding())
         many[JustTrait]
           .named("named.empty.set")
         many[JustTrait]

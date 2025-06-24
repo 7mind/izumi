@@ -49,16 +49,16 @@ class AnyBIOSupportModule[F[+_, +_]: TagKK](implicit t: TagK[F[Throwable, _]], t
     SyncSafe1.fromBIO(using _: IO2[F])
   }
   make[SyncSafe1[F[Throwable, _]]].from((_: SyncSafe2[F]).widen[F[Throwable, _]])
-  make[Clock2[F]].from {
+  make[Clock2[F]].fromNoCapture {
     Clock1.fromImpure(_: Clock1[Identity])(using _: SyncSafe2[F])
   }
-  make[Entropy2[F]].from {
+  make[Entropy2[F]].fromNoCapture {
     Entropy1.fromImpure(_: Entropy1[Identity])(using _: SyncSafe2[F])
   }
-  make[Clock1[F[Throwable, _]]].from {
+  make[Clock1[F[Throwable, _]]].fromNoCapture {
     Clock1.covarianceConversion[F[Nothing, _], F[Throwable, _]](_: Clock2[F])
   }
-  make[Entropy1[F[Throwable, _]]].from {
+  make[Entropy1[F[Throwable, _]]].fromNoCapture {
     Entropy1.covarianceConversion[F[Nothing, _], F[Throwable, _]](_: Entropy2[F])
   }
 }

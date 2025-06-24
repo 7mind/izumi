@@ -4,6 +4,7 @@ import cats.Parallel
 import cats.effect.kernel.{Async, GenTemporal, Sync}
 import cats.effect.std.Dispatcher
 import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.providers.Functoid
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.bio.{Clock1, Entropy1, SyncSafe1}
 import izumi.functional.quasi.*
@@ -29,17 +30,17 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
     .aliased[QuasiPrimitives[F]]
     .aliased[QuasiApplicative[F]]
     .aliased[QuasiFunctor[F]]
-    .from {
-      implicit F: Sync[F] => QuasiIO.fromCats
+    .fromNoCapture {
+      implicit F: Sync[F] => QuasiIO.fromCats[F, Sync]
     }
-  make[QuasiAsync[F]].from {
-    implicit F: Async[F] => QuasiAsync.fromCats
+  make[QuasiAsync[F]].fromNoCapture {
+      implicit F: Async[F] => QuasiAsync.fromCats[F, Async]
   }
-  make[QuasiTemporal[F]].from {
-    implicit F: GenTemporal[F, Throwable] => QuasiTemporal.fromCats
+  make[QuasiTemporal[F]].fromNoCapture {
+    implicit F: GenTemporal[F, Throwable] => QuasiTemporal.fromCats[F, GenTemporal]
   }
-  make[SyncSafe1[F]].from {
-    implicit F: Sync[F] => SyncSafe1.fromSync
+  make[SyncSafe1[F]].fromNoCapture {
+    implicit F: Sync[F] => SyncSafe1.fromSync[F, Sync]
   }
   make[Clock1[F]].from {
     Clock1.fromImpure(_: Clock1[Identity])(using _: SyncSafe1[F])
@@ -47,6 +48,33 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
   make[Entropy1[F]].from {
     Entropy1.fromImpure(_: Entropy1[Identity])(using _: SyncSafe1[F])
   }
+
+  /*
+  (
+  (
+  evidence$1: izumi.fundamentals.orphans.cats.effect.kernel.Sync[[F >: scala.Nothing <: [_$1 >: scala.Nothing <: scala.Any] => scala.Any] => cats.effect.kernel.Sync[F]],
+  F: cats.effect.kernel.Sync[AnyCatsEffectSupportModule.this.F]
+  ) => (
+  (implicit `F₂`: cats.effect.kernel.Sync[AnyCatsEffectSupportModule.this.F]) =>
+  izumi.functional.quasi.QuasiIO.fromCats[AnyCatsEffectSupportModule.this.F, [F >: scala.Nothing <: [_$1 >: scala.Nothing <: scala.Any] => scala.Any] =>
+  cats.effect.kernel.Sync[F]](evidence$1, `F₂`)
+  ).apply(F))
+   */
+
+  /*
+  (
+  (implicit F: cats.effect.kernel.Sync[AnyCatsEffectSupportModule.this.F]) =>
+  izumi.functional.quasi.QuasiIO.fromCats[AnyCatsEffectSupportModule.this.F, [F >: scala.Nothing <: [_$1 >: scala.Nothing <: scala.Any] => scala.Any] =>
+  cats.effect.kernel.Sync[F]](evidence$1, F))
+   */
+
+  /*
+  (
+  (implicit F: cats.effect.kernel.Sync[AnyCatsEffectSupportModule.this.F]) =>
+  izumi.functional.quasi.QuasiIO.fromCats[AnyCatsEffectSupportModule.this.F, [F >: scala.Nothing <: [_$1 >: scala.Nothing <: scala.Any] => scala.Any] =>
+  cats.effect.kernel.Sync[F]](izumi.fundamentals.orphans.cats.effect.kernel.Sync.get, F))
+
+   */
 }
 
 object AnyCatsEffectSupportModule {

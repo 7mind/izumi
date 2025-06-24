@@ -206,7 +206,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "can instantiate structural types" in {
     val definition = PlannerInput.everything(new ModuleDef {
       makeTrait[{ def a: Int }]
-      make[Int].fromImplicit(5)
+      make[Int].from(5)
     })
 
     val injector = mkInjector()

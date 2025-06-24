@@ -42,7 +42,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     val testProviderModule = new TestModule
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[testProviderModule.type].fromImplicit(testProviderModule: testProviderModule.type)
+      make[testProviderModule.type].from(testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
       make[testProviderModule.TestClass[testProviderModule.type]]
     })
@@ -61,7 +61,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       val testProviderModule = new TestModule
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[testProviderModule.type].fromImplicit(testProviderModule: testProviderModule.type)
+        make[testProviderModule.type].from(testProviderModule: testProviderModule.type)
         make[testProviderModule.TestClass[testProviderModule.type]]
         make[testProviderModule.TestDependency]
       })
@@ -103,7 +103,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     val testProviderModule = new TestModule
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[testProviderModule.type].fromImplicit(testProviderModule: testProviderModule.type)
+      make[testProviderModule.type].from(testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
       make[testProviderModule.TestClass[testProviderModule.type]]
     })
@@ -122,7 +122,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
   "can handle class local path-dependent injections" in {
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TopLevelPathDepTest.type].fromImplicit(TopLevelPathDepTest: TopLevelPathDepTest.type)
+      make[TopLevelPathDepTest.type].from(TopLevelPathDepTest: TopLevelPathDepTest.type)
       make[TopLevelPathDepTest.TestClass[TopLevelPathDepTest.type]]
       make[TopLevelPathDepTest.TestDependency]
     })
@@ -171,7 +171,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.target[testProviderModule.TestFactory](
       new ModuleDef {
-        make[testProviderModule.type].fromImplicit(testProviderModule: testProviderModule.type)
+        make[testProviderModule.type].from(testProviderModule: testProviderModule.type)
         makeFactory[testProviderModule.TestFactory]
       }
     )
@@ -187,7 +187,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {
     private val definition = PlannerInput.everything(new ModuleDef {
-      make[InnerPathDepTest.this.type].fromImplicit(InnerPathDepTest.this: InnerPathDepTest.this.type)
+      make[InnerPathDepTest.this.type].from(InnerPathDepTest.this: InnerPathDepTest.this.type)
       make[InnerPathDepTest.type].fromClass[InnerPathDepTest.type]
       make[TestClass[InnerPathDepTest.this.type]]
       make[TestDependency]

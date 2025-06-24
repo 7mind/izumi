@@ -171,7 +171,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     val definition = PlannerInput.everything(new ModuleDef {
       make[Circular2]
       make[Circular1]
-      make[Int].fromImplicit(1)
+      make[Int].from(1)
     })
 
     val injector = mkNoProxiesInjector()

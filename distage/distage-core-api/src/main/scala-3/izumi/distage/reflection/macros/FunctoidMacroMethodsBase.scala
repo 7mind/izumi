@@ -59,5 +59,5 @@ trait FunctoidMacroMethodsBase extends ByNameConversion {
 
 trait ByNameConversion {
   @targetName("applyByName")
-  inline implicit def apply[R](inline fun: R): Functoid[R] = FunctoidMacro.make(() => fun)
+  inline implicit def apply[R](inline fun: R): Functoid[R] = FunctoidMacro.make[R](() => fun)
 }

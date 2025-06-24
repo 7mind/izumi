@@ -9,7 +9,7 @@ import izumi.reflect.TagK
 class RoleAppBootConfigModule[F[_]: TagK: DefaultModule] extends ModuleDef {
   make[ConfigLoader].fromClass[ConfigLoader.LocalFSImpl]
   make[ConfigMerger].fromClass[ConfigMerger.ConfigMergerImpl]
-  make[ConfigLocationProvider].fromImplicit(ConfigLocationProvider.Default)
+  make[ConfigLocationProvider].from(ConfigLocationProvider.Default)
   make[ConfigArgsProvider].fromClass[ConfigArgsProvider.Default]
   make[ConfigFilteringStrategy].fromClass[ConfigFilteringStrategy.Default]
   make[AppConfig].from {

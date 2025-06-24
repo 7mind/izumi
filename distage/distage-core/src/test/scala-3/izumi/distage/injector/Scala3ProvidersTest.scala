@@ -11,9 +11,9 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     def makeX(x: Int)(using desc: Description): X = X(desc.description)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].fromImplicit(1)
+      make[Int].from(1)
       make[Description].fromValue(Description("X"))
-      make[X].fromImplicit(makeX)
+      make[X].from(makeX)
     })
 
     val injector = mkInjector()
@@ -31,9 +31,9 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     def makeX[T](value: T)(implicit desc: Description[X]): X = X(desc.description)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].fromImplicit(1)
+      make[Int].from(1)
       make[Description[X]].fromValue(Description("X"))
-      make[X].fromImplicit(makeX[Int])
+      make[X].from(makeX[Int])
     })
 
     val injector = mkInjector()
@@ -51,9 +51,9 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     def makeX(x: Int)(using desc: Description): X = X(desc.description)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].fromImplicit(1)
+      make[Int].from(1)
       make[Description].fromValue(Description("X"))
-      make[X].fromImplicit {
+      make[X].from {
         (b: Int) => {
           val a = 1
           val desc = implicitly[Description]
@@ -77,10 +77,10 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     def makeX(x: Int)(using desc: Description, moreDesc: String): X = X(desc.description + moreDesc)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].fromImplicit(1)
-      make[String].fromImplicit("more-description")
-      make[Description].fromImplicit(Description("X"))
-      make[X].fromImplicit(makeX)
+      make[Int].from(1)
+      make[String].from("more-description")
+      make[Description].from(Description("X"))
+      make[X].from(makeX)
     })
 
     val injector = mkInjector()
@@ -98,10 +98,10 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     def makeX(x: Int)(using desc: Description): X = X(desc.description)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].fromImplicit(1)
-      make[String].fromImplicit("str")
+      make[Int].from(1)
+      make[String].from("str")
       make[Description].fromValue(Description("X"))
-      make[X].fromImplicit {
+      make[X].from {
         (b: Int) => {
           val a = 1
           val desc = implicitly[Description].description + implicitly[String]
@@ -134,8 +134,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
       addImplicit[Pointed[F]]
-      make[Int].named("TestService").fromImplicit(getResult)
-      make[F[String]].fromImplicit {
+      make[Int].named("TestService").from(getResult)
+      make[F[String]].from {
         (res: Int @Id("TestService")) => Pointed[F].point(s"Hello $res!")
       }
     }
@@ -163,7 +163,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     case class Definition[F[_] : TagK : Pointed](getResult: Int) extends ModuleDef {
       addImplicit[Pointed[F]]
-      make[F[Any]].fromImplicit(Pointed[F].point(1: Any))
+      make[F[Any]].from(Pointed[F].point(1: Any))
     }
 
     val injector = mkInjector()

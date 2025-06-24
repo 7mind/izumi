@@ -20,7 +20,7 @@ class ConflictPlugin extends PluginDef {
 }
 
 trait ResourcesPluginBase extends ModuleDef {
-  make[ExecutorService].fromImplicit(Executors.newCachedThreadPool())
+  make[ExecutorService].from(Executors.newCachedThreadPool())
 
   make[IntegrationResource1[Identity]]
   make[JustResource1[Identity]]
