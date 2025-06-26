@@ -30,16 +30,16 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
     .aliased[QuasiPrimitives[F]]
     .aliased[QuasiApplicative[F]]
     .aliased[QuasiFunctor[F]]
-    .fromNoCapture {
+    .from {
       implicit F: Sync[F] => QuasiIO.fromCats[F, Sync]
     }
-  make[QuasiAsync[F]].fromNoCapture {
+  make[QuasiAsync[F]].from {
       implicit F: Async[F] => QuasiAsync.fromCats[F, Async]
   }
-  make[QuasiTemporal[F]].fromNoCapture {
+  make[QuasiTemporal[F]].from {
     implicit F: GenTemporal[F, Throwable] => QuasiTemporal.fromCats[F, GenTemporal]
   }
-  make[SyncSafe1[F]].fromNoCapture {
+  make[SyncSafe1[F]].from {
     implicit F: Sync[F] => SyncSafe1.fromSync[F, Sync]
   }
   make[Clock1[F]].from {
@@ -48,33 +48,6 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
   make[Entropy1[F]].from {
     Entropy1.fromImpure(_: Entropy1[Identity])(using _: SyncSafe1[F])
   }
-
-  /*
-  (
-  (
-  evidence$1: izumi.fundamentals.orphans.cats.effect.kernel.Sync[[F >: scala.Nothing <: [_$1 >: scala.Nothing <: scala.Any] => scala.Any] => cats.effect.kernel.Sync[F]],
-  F: cats.effect.kernel.Sync[AnyCatsEffectSupportModule.this.F]
-  ) => (
-  (implicit `F₂`: cats.effect.kernel.Sync[AnyCatsEffectSupportModule.this.F]) =>
-  izumi.functional.quasi.QuasiIO.fromCats[AnyCatsEffectSupportModule.this.F, [F >: scala.Nothing <: [_$1 >: scala.Nothing <: scala.Any] => scala.Any] =>
-  cats.effect.kernel.Sync[F]](evidence$1, `F₂`)
-  ).apply(F))
-   */
-
-  /*
-  (
-  (implicit F: cats.effect.kernel.Sync[AnyCatsEffectSupportModule.this.F]) =>
-  izumi.functional.quasi.QuasiIO.fromCats[AnyCatsEffectSupportModule.this.F, [F >: scala.Nothing <: [_$1 >: scala.Nothing <: scala.Any] => scala.Any] =>
-  cats.effect.kernel.Sync[F]](evidence$1, F))
-   */
-
-  /*
-  (
-  (implicit F: cats.effect.kernel.Sync[AnyCatsEffectSupportModule.this.F]) =>
-  izumi.functional.quasi.QuasiIO.fromCats[AnyCatsEffectSupportModule.this.F, [F >: scala.Nothing <: [_$1 >: scala.Nothing <: scala.Any] => scala.Any] =>
-  cats.effect.kernel.Sync[F]](izumi.fundamentals.orphans.cats.effect.kernel.Sync.get, F))
-
-   */
 }
 
 object AnyCatsEffectSupportModule {

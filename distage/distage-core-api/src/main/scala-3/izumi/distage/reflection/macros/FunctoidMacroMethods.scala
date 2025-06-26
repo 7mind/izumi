@@ -19,13 +19,18 @@ object FunctoidMacro extends FunctoidMacroBase[Functoid] {
     new FunctoidMacroImpl[qctx.type](paramMacro).make(fun)
   }
 
-  protected def generateFunctoid[R: Type, Q <: Quotes](paramDefs: List[Expr[LinkedParameter]], originalFun: Expr[AnyRef])(using qctx: Q): Expr[Functoid[R]] = {
+  protected def generateFunctoid[R: Type, Q <: Quotes](
+    using qctx: Q
+  )(paramDefs: List[Expr[LinkedParameter]],
+    originalFun: Expr[AnyRef],
+    ignoreDuringImplicitsSearch: List[qctx.reflect.Symbol],
+  ): Expr[Functoid[R]] = {
     '{
       val rawFn: AnyRef = ${ originalFun }
       new Functoid[R](
         new ProviderImpl[R](
           ${ Expr.ofList(paramDefs) },
-          ${ FunctoidMacroHelpers.generateSafeType[R, Q] },
+          ${ FunctoidMacroHelpers.generateSafeType[R, Q](ignoreDuringImplicitsSearch) },
           rawFn,
           (args: Seq[Any]) => ${ generateRawFnCall(paramDefs.size, 'rawFn, 'args) },
           ProviderType.Function,

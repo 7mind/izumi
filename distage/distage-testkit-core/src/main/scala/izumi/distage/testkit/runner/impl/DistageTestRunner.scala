@@ -108,7 +108,7 @@ class DistageTestRunner[F[_]: TagK, G[_]](
             (runtimeLocator, runtimeInstantiationTiming) =>
               runtimeLocator.run {
                 (runner: QuasiIORunner[F], testTreeRunner: TestTreeRunner[F], logger: IzLogger @Id("distage-testkit")) =>
-                  logger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
+                  //logger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
                   EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(testTreeRunner.traverse(id, 0, testsTree, runtimeLocator)))
               }
           },
@@ -143,3 +143,11 @@ class DistageTestRunner[F[_]: TagK, G[_]](
   }
 
 }
+/*
+  if (`AbstractMacroLogger_this₂`.acceptable(pos.get, izumi.logstage.api.Log.Level.Info))
+    `AbstractMacroLogger_this₂`
+      .unsafeLog(
+        izumi.logstage.api.Log.Entry.create(izumi.logstage.api.Log.Level.Info,
+        izumi.logstage.api.Log.Message.apply(scala.StringContext.apply("Processing ", " using ", ""),
+        izumi.logstage.api.Log.LogArg.apply[scala.Any]("tests", allEnvTests.size, false, scala.Some.apply[izumi.logstage.api.rendering.LogstageCodec[scala.Any]](izumi.logstage.api.rendering.LogstageCodec.LogstageCodecInt.asInstanceOf[izumi.logstage.api.rendering.LogstageCodec[scala.Any]])), izumi.logstage.api.Log.LogArg.apply[scala.Any]("monad", distage.TagK.apply[DistageTestRunner.this.F](DistageTestRunner.this.evidence$1).tag, false, scala.None)))(pos)) else ()
+ */

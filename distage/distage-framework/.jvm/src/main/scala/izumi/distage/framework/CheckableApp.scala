@@ -146,7 +146,8 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
       make[AppConfig].fromValue(AppConfig.empty)
       make[RoleAppArgs].fromValue(RoleAppArgs.empty)
 
-      make[RoleProvider].from {
+      //TODO: 
+      make[RoleProvider].fromNoCapture {
         chosenRoles match {
           case RoleSelection.Everything =>
             namePredicateRoleProvider(_ => true)

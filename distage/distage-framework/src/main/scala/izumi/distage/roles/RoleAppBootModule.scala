@@ -85,7 +85,8 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   many[LibraryReference]
 
-  make[IzLogger].from {
+  //TODO: 
+  make[IzLogger].fromNoCapture {
     (router: LogRouter) =>
       IzLogger(router)("phase" -> "late")
   }
@@ -185,4 +186,5 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
     (transformer: AppResourceProvider[F]) =>
       transformer.makeAppResource
   }
+  make[DummyImplicit].fromValue(DummyImplicit.dummyImplicit)
 }

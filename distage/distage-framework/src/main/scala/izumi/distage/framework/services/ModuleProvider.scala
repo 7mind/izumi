@@ -117,7 +117,8 @@ object ModuleProvider {
   }
 
   object LogstageFailureHandlerModule extends ModuleDef {
-    make[FailureHandler].from {
+    //TODO:
+    make[FailureHandler].fromNoCapture {
       (logger: IzLogger) =>
         FailureHandler.Custom {
           case Exit.Error(error, trace) =>

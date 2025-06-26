@@ -4,7 +4,7 @@ import izumi.distage.model.reflection.*
 import izumi.fundamentals.reflection.ReflectiveCall
 import izumi.reflect.Tag
 
-import scala.quoted.{Expr, Quotes}
+import scala.quoted.{Expr, Quotes, Type}
 
 final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor: IdExtractor[qctx.type]) extends FunctoidParametersMacroBase[Q] {
 
@@ -23,6 +23,7 @@ final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor:
     mbSym: Option[Symbol],
     annotSym: Option[Symbol],
     annotTpe: Either[TypeTree, TypeRepr],
+    ignoreDuringImplicitsSearch: List[Symbol],
   ): Expr[LinkedParameter] = {
     val identifier = idExtractor.extractId(name, annotSym, annotTpe)
 
@@ -42,32 +43,30 @@ final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor:
       LinkedParameter(
         SymbolInfo(
           name = ${ Expr(name) },
-          finalResultType = ${ safeTypeFromRepr(tpeRepr) },
+          finalResultType = ${ safeTypeFromRepr(tpeRepr, ignoreDuringImplicitsSearch) },
           isByName = ${ Expr(isByName) },
           wasGeneric = ${ Expr(wasGeneric) },
         ),
-        ${ makeKeyFromRepr(tpeRepr, identifier) },
+        ${ makeKeyFromRepr(tpeRepr, identifier, ignoreDuringImplicitsSearch) },
       )
     }
   }
 
-  private def makeKeyFromRepr(tpe: TypeRepr, id: Option[String]): Expr[DIKey] = {
-    val safeTpe = safeTypeFromRepr(tpe)
+  private def makeKeyFromRepr(tpe: TypeRepr, id: Option[String], ignoreDuringImplicitsSearch: List[Symbol]): Expr[DIKey] = {
+    val safeTpe = safeTypeFromRepr(tpe, ignoreDuringImplicitsSearch)
     id match {
       case Some(str) =>
         val strExpr = Expr(str)
-        '{ new DIKey.IdKey($safeTpe, $strExpr, None)(using scala.compiletime.summonInline[IdContract[String]]) }
+        '{ DIKey.IdKey($safeTpe, $strExpr, None)(using scala.compiletime.summonInline[IdContract[String]]) }
       case None =>
-        '{ new DIKey.TypeKey($safeTpe, None) }
+        '{ DIKey.TypeKey($safeTpe, None) }
     }
   }
 
-  private def safeTypeFromRepr(tpe: TypeRepr): Expr[SafeType] = {
+  private def safeTypeFromRepr(tpe: TypeRepr, ignoreDuringImplicitsSearch: List[Symbol]): Expr[SafeType] = {
     dropByName(tpe).asType match {
-      case '[a] =>
-        '{ SafeType.get[a](using scala.compiletime.summonInline[Tag[a]]) }
-      case _ =>
-        report.errorAndAbort(s"Cannot generate SafeType from ${tpe.show}, probably that's a bug in Functoid macro")
+      case '[a] => FunctoidMacroHelpers.generateSafeType[a, Q](ignoreDuringImplicitsSearch)
+      case _ => report.errorAndAbort(s"Cannot generate SafeType from ${tpe.show}, probably that's a bug in Functoid macro")
     }
   }
 
@@ -77,5 +76,4 @@ final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor:
       case _ => tpe
     }
   }
-
 }

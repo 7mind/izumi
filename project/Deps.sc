@@ -150,7 +150,7 @@ object Izumi {
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.20")
   final val scala213 = ScalaVersion("2.13.16")
-  final val scala300 = ScalaVersion("3.3.6")
+  final val scala300 = ScalaVersion("3.7.1-RC1")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -367,7 +367,7 @@ object Izumi {
             (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)),
           SettingKey(Some(scala300), None) :=
             Seq[Const](
-              "-language:3.4",
+              "-source:3.7",
             ) ++ Defaults.Scala3Options,
           SettingKey.Default := Const.EmptySeq,
         ),
@@ -706,7 +706,7 @@ object Izumi {
       Artifact(
         name = Projects.distage.plugins,
         libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect) ++
-          Seq( /* for ZIOResourcesZManagedTestJvm */ zio_managed, zio_interop_cats, cats_effect).map(_ in Scope.Test.jvm),
+          Seq( /* for ZIOResourcesZManagedTestJvm */ zio_managed, zio_interop_cats, cats_effect, javaXInject).map(_ in Scope.Test.jvm),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all) ++

@@ -1,6 +1,9 @@
 package izumi.distage.injector
 
 import distage.{Id, ModuleDef, PlannerInput, TagK}
+import izumi.distage.constructors.ClassConstructor
+import izumi.distage.model.Locator
+import izumi.reflect.Tag
 import org.scalatest.wordspec.AnyWordSpec
 
 class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
@@ -171,5 +174,75 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     val context = injector.produce(plan).unsafeGet()
 
     context.get[List[Any]] == List(1)
+  }
+
+  "should not override implicit inside the block" in {
+    final case class Description(description: String)
+    final case class X(s: String)
+
+    def makeX(x: Int)(using desc: Description): X = X(desc.description)
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Int].from(1)
+      make[X].from {
+        (b: Int) => {
+          val a = 1
+          implicit val description = Description("desc")
+          val desc = implicitly[Description]
+          X(b.toString + desc.description)
+        }
+      }
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    context.get[X]
+  }
+
+  "should not override given inside the block" in {
+    final case class Description(description: String)
+    final case class X(s: String)
+
+    def makeX(x: Int)(using desc: Description): X = X(desc.description)
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Int].from(1)
+      make[X].from {
+        (b: Int) => {
+          val a = 1
+          given description: Description = Description("desc")
+          val desc = implicitly[Description]
+          X(b.toString + desc.description)
+        }
+      }
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    context.get[X]
+  }
+
+  "should ignore dummy implicit during implicit search if there is implicit defined outside of the object graph" in {
+    final case class Description[T](description: String)
+    final case class X(s: String)
+
+    def makeX[T: Tag](value: T)(implicit desc: Description[X]): X = X(desc.description)
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Int].from(1)
+      make[Description[X]].fromValue(Description("X"))
+      make[X].from(makeX[Int])
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    context.get[Description[X]]
+    context.get[X]
   }
 }

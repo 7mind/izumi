@@ -15,5 +15,6 @@ trait FunctoidParametersMacroBase[Q <: Quotes] {
     mbSym: Option[Symbol],
     annotSym: Option[Symbol],
     annotTpe: Either[TypeTree, TypeRepr],
+    ignoreDuringImplicitsSearch: List[Symbol] = Nil,
   ): Expr[LinkedParameter]
 }
