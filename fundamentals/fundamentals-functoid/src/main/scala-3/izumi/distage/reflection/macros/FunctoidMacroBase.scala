@@ -2,9 +2,8 @@ package izumi.distage.reflection.macros
 
 import izumi.distage.model.providers.AbstractFunctoid
 import izumi.distage.model.reflection.*
-import izumi.reflect.Tag
 
-import scala.annotation.{experimental, tailrec}
+import scala.annotation.tailrec
 import scala.collection.immutable.{List, Seq}
 import scala.language.implicitConversions
 import scala.quoted.{Expr, Quotes, Type}
@@ -41,8 +40,8 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
   final class FunctoidMacroImpl[Q <: Quotes](using val qctx: Q)(val paramsMacro: FunctoidParametersMacroBase[qctx.type]) {
     import qctx.reflect.*
 
-    private val dummyType: TypeRepr = TypeRepr.of[Scala3FunctoidDummyImplicit]
-    private val dummyTypeSymbol: Symbol = TypeRepr.of[Scala3FunctoidDummyImplicit].typeSymbol
+    private val dummyTypeSymbol: Symbol = TypeRepr.of[FunctoidDummyImplicit].typeSymbol
+    private val unignorableDummyTypeSymbol: Symbol = TypeRepr.of[UnignorableDummyImplicit].typeSymbol
 
     def make[R: Type](fun: Expr[AnyRef]): Expr[Ftoid[R]] = {
       val (parameters, func, dummyImplicitSymbols) = analyze[R](fun.asTerm)
@@ -159,27 +158,21 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
           treeMap.transformTree(body)(argsOwner)
         }
 
-        println("file: " + Position.ofMacroExpansion)
-        println("original block: " + block.show)
         val dummyArgs = extractDummyArguments(body)
         val (noImplicitsProvided, implicitsProvided) = dummyArgs
           .map(
-            d =>
-              d.tpe.asType match {
-                case '[a] => d.copy(providedImplicit = Expr.summonIgnoring[a](d.term.symbol).map(_.asTerm))
-                case _ => d
+            dummy =>
+              dummy.tpe.asType match {
+                case '[a] => 
+                  if (dummy.term.tpe.baseClasses.contains(unignorableDummyTypeSymbol)) {
+                    dummy
+                  } else {
+                    dummy.copy(providedImplicit = Expr.summonIgnoring[a](dummy.term.symbol).map(_.asTerm))
+                  }
+                case _ => dummy
               }
           ).partition(_.providedImplicit.isEmpty)
-//        val (noImplicitsProvided, implicitsProvided) = dummyArgs.partition {
-//          d =>
-//            d.tpe.asType match {
-//              case '[a] => Expr.summonIgnoring[a](d.term.symbol).isEmpty
-//              case _ => false
-//            }
-//        }
-        println("implicits: " + implicitsProvided)
-        println("no implicits: " + noImplicitsProvided)
-        println("dummy args: " + dummyArgs)
+
         if (dummyArgs.nonEmpty) {
           val newValDefs = noImplicitsProvided.map {
             dummy =>
@@ -225,8 +218,6 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
               Select.unique(newFun, "apply").appliedToArgs(params)
             },
           )
-
-          println("result: " + resultLambda.show)
 
           (allLinkedParams, resultLambda.asExprOf[AnyRef], ignoreDuringImplicitSearch)
         } else {

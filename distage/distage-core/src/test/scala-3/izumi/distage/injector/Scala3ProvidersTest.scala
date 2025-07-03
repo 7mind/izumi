@@ -1,8 +1,7 @@
 package izumi.distage.injector
 
-import distage.{Id, ModuleDef, PlannerInput, TagK}
-import izumi.distage.constructors.ClassConstructor
-import izumi.distage.model.Locator
+import distage.*
+import izumi.distage.model.definition.dsl.ScalaVersionSpecificMakeDsl
 import izumi.reflect.Tag
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -232,9 +231,10 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     def makeX[T: Tag](value: T)(implicit desc: Description[X]): X = X(desc.description)
 
+    implicit val description: Description[X] = Description[X]("description")
+
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
-      make[Description[X]].fromValue(Description("X"))
       make[X].from(makeX[Int])
     })
 
@@ -242,7 +242,50 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description[X]]
+    context.get[X]
+  }
+
+  "should summon implicits if functoid passed to a function" in {
+    final case class Description(description: String)
+    final case class X(s: String)
+
+    def makeX(using desc: Description, d: Double): Functoid[X] = Functoid((x: Int) => X(d.toString + x.toString + desc.description))
+
+    implicit val desc: Description = Description("")
+    implicit val double: Double = 2.0
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Int].from(1)
+      make[X].from( makeX )
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    context.get[Int]
+    context.get[X]
+  }
+
+  "ignore implicits defined and only use objects from the object graph" in {
+    final case class Description(description: String)
+    final case class X(s: String)
+
+    def makeX(value: Int)(implicit desc: Description): X = X(desc.description)
+
+    implicit val description: Description = Description("description")
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Int].from(1)
+      make[Description].fromValue(Description("desc"))
+      make[X].from(ScalaVersionSpecificMakeDsl.withAllImplicits(makeX))
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    context.get[Description]
     context.get[X]
   }
 }

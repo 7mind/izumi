@@ -85,8 +85,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   many[LibraryReference]
 
-  //TODO: 
-  make[IzLogger].fromNoCapture {
+  make[IzLogger].noCapture {
     (router: LogRouter) =>
       IzLogger(router)("phase" -> "late")
   }

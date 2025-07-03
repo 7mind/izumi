@@ -108,7 +108,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
     )
     val args = Seq(
       LogArg(Seq("fn"), 11, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), hiddenName = false, Some(LogstageCodec.listCodec(LogstageCodec.LogstageCodecInt))),
+      LogArg(Seq("result"), List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), hiddenName = false, Some(LogstageCodec.listCodec(using LogstageCodec.LogstageCodecInt))),
     )
     assert(logEntry.message.template == stringContext)
     assert(logEntry.message.args == args)

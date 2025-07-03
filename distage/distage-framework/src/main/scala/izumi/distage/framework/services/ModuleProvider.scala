@@ -6,6 +6,7 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.platform.DistagePlatformModule
 import izumi.distage.model.definition.{Binding, BootstrapModule, BootstrapModuleDef, Id, Module, ModuleDef}
+import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.SafeType
 import izumi.distage.planning.AutoSetHook.InclusionPredicate
@@ -21,7 +22,7 @@ import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.{LogIOModule, LogstageModule}
-import izumi.reflect.TagK
+import izumi.reflect.{Tag, TagK}
 
 /**
   * This component is responsible for passing-through selected components from the outer [[izumi.distage.roles.RoleAppBootModule]]
@@ -117,8 +118,7 @@ object ModuleProvider {
   }
 
   object LogstageFailureHandlerModule extends ModuleDef {
-    //TODO:
-    make[FailureHandler].fromNoCapture {
+    make[FailureHandler].noCapture {
       (logger: IzLogger) =>
         FailureHandler.Custom {
           case Exit.Error(error, trace) =>
