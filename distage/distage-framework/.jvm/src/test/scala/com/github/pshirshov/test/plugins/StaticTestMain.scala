@@ -18,7 +18,7 @@ object StaticTestMain extends RoleAppMain.LauncherCats[cats.effect.IO] {
   override protected def pluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test.plugins") ++ staticTestMainPlugin[cats.effect.IO, Identity]
 
   private[plugins] def staticTestMainPlugin[F[_]: TagK, G[_]: TagK] = new PluginDef with RoleModuleDef {
-    makeRole[StaticTestRole[F]].fromEffect {
+    makeRole[StaticTestRole[F]].fromEffectNoCapture {
       ClassConstructor[StaticTestRole[F]]
         .flatAp((G: QuasiApplicative[G]) => G.pure(_: StaticTestRole[F]))
     }

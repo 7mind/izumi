@@ -516,7 +516,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       val definitionEffect = new ModuleDef {
         make[ImplXYZ]
-          .fromEffect(implXYZ)
+          .fromEffectValue(implXYZ)
           .aliased[TraitX]
           .aliased[TraitY]
           .aliased[TraitZ]
@@ -821,7 +821,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val definition = new ModuleDef {
         make[Int].fromResource(Lifecycle.pure(5)).addDependency[String]
         make[Long].fromResource(() => Lifecycle.pure(5L)).addDependency[String]
-        make[Short].fromEffect[Identity, Short](() => 5: Identity[Short]).addDependency[String]
+        make[Short].fromEffect(() => 5: Identity[Short]).addDependency[String]
       }
 
       val verification = PlanVerifier().verify[Identity](definition, Roots.Everything, Set.empty, Set.empty)

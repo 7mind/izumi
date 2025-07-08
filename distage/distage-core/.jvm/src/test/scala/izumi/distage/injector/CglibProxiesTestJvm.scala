@@ -362,7 +362,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       import izumi.distage.fixtures.CircularCases.CircularCase3.*
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Ref[Fn, Boolean]].fromEffect(Ref[Fn](false))
+        make[Ref[Fn, Boolean]].fromEffectValue(Ref[Fn](false))
         make[SelfReference].fromEffect {
           (ref: Ref[Fn, Boolean], self: SelfReference) =>
             ref.update(!_).flatMap(_ => Suspend2(new SelfReference(self)))
@@ -385,7 +385,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
 
       val definition = PlannerInput(
         new ModuleDef {
-          make[Ref[Fn, Queue[Ops]]].fromEffect(Ref[Fn](Queue.empty[Ops]))
+          make[Ref[Fn, Queue[Ops]]].fromEffectValue(Ref[Fn](Queue.empty[Ops]))
           many[IntegrationComponent]
             .ref[S3Component]
           make[S3Component].fromResource(s3ComponentResource[Fn] _)

@@ -30,8 +30,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val definition = PlannerInput(
         new ModuleDef {
           make[Int].named("2").from(2)
-          make[Int].fromEffect[Identity, Int] {
-            (i: Int @Id("2")) => 10 + i
+          make[Int].fromEffect {
+            (i: Int @Id("2")) => Identity[Int](10 + i)
           }
         },
         Roots(DIKey.get[Int]),
@@ -69,7 +69,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val execIncrement = (_: Ref[Fn, Int]).update(_ + 1)
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Ref[Fn, Int]].fromEffect(Ref[Fn](0))
+        make[Ref[Fn, Int]].fromEffectValue(Ref[Fn](0))
 
         make[Fn[Int]].from(execIncrement)
 
@@ -91,8 +91,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val definition = PlannerInput(
         new ModuleDef {
           make[Int].named("2").from(2)
-          make[Int].fromEffect[Identity, Int] {
-            (i: Int @Id("2")) => 10 + i
+          make[Int].fromEffect {
+            (i: Int @Id("2")) => Identity[Int](10 + i)
           }
         },
         Roots(DIKey.get[Int]),
@@ -108,7 +108,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
 
     "work with set bindings" in {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Ref[Fn, Set[Char]]].fromEffect(Ref[Fn](Set.empty[Char]))
+        make[Ref[Fn, Set[Char]]].fromEffectValue(Ref[Fn](Set.empty[Char]))
 
         many[Char]
           .addEffect(Suspend2('a'))
@@ -403,7 +403,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       import ResourceCase1._
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[mutable.Queue[Ops]].fromEffect(queueEffect)
+        make[mutable.Queue[Ops]].fromEffectValue(queueEffect)
         make[X].fromResource[XResource]
         make[Y].fromResource[YResource]
         make[Z].fromResource[ZFaultyResource]

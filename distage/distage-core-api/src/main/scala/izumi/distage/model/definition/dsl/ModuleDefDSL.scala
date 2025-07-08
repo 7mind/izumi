@@ -174,8 +174,8 @@ object ModuleDefDSL {
       * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
       * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
       */
-    final def fromNoCapture[I <: T](function: Functoid[I])(implicit d: DummyImplicit): AfterBind =
-      bind(ImplDef.ProviderImpl(function.get.ret, function.get))
+//    final def fromNoCapture[I <: T](function: Functoid[I])(implicit d: DummyImplicit): AfterBind =
+//      bind(ImplDef.ProviderImpl(function.get.ret, function.get))
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
     final def fromTrait[I <: T: Tag](implicit ctor: TraitConstructor[I]): AfterBind =
@@ -217,11 +217,11 @@ object ModuleDefDSL {
       *   make[Ref[IO, Int]].named("globalMutableCounter").fromEffect(Ref[IO](0))
       * }}}
       */
-    final def fromEffect[F[_]: TagK, I <: T: Tag](instance: F[I]): AfterBind =
+    final def fromEffectValue[F[_]: TagK, I <: T: Tag](instance: F[I]): AfterBind =
       bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
 
-    final def fromEffect[F[_]: TagK, I <: T: Tag](function: Functoid[F[I]]): AfterBind =
-      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(function.get.ret, function.get)))
+//    final def fromEffect[F[_]: TagK, I <: T: Tag](function: Functoid[F[I]]): AfterBind =
+//      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(function.get.ret, function.get)))
 
     /**
       * Bind to result of executing an effect bound to a key at `F[I]`
