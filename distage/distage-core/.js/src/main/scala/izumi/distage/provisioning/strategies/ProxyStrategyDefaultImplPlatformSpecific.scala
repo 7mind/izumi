@@ -26,7 +26,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
   }
 
   protected def failCogenProxy(tpe: SafeType, op: ProxyOp.MakeProxy): Left[ProvisionerIssue, Nothing] = {
-    Left(ProvisionerIssue.UnsupportedOp(tpe, op, "cglib proxies are not supported on Scala.js, check documentation & try using by-name parameters!"))
+    Left(ProvisionerIssue.UnsupportedProxyType(tpe, op, "cglib proxies are not supported on Scala.js, check documentation & try using by-name parameters!"))
 
   }
 }

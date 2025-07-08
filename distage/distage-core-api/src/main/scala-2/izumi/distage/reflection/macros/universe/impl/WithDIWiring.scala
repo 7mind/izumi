@@ -2,6 +2,8 @@ package izumi.distage.reflection.macros.universe.impl
 
 import izumi.distage.reflection.macros.universe.basicuniverse.MacroDIKey
 
+import scala.annotation.nowarn
+
 trait WithDIWiring { this: DIUniverseBase with WithDIAssociation with WithDISymbolInfo =>
 
   sealed trait MacroWiring
@@ -30,7 +32,9 @@ trait WithDIWiring { this: DIUniverseBase with WithDIAssociation with WithDISymb
       extends MacroWiring
 
     object Factory {
+      @nowarn("msg=Unused import")
       def factoryProductDepsFromObjectGraph(factoryMethods: List[Factory.FactoryMethod]): List[Association] = {
+        import izumi.fundamentals.collections.IzCollections._
         factoryMethods
           .flatMap(_.objectGraphDeps)
           .distinctBy(_.key)
