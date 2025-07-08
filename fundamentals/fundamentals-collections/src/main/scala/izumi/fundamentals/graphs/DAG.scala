@@ -1,6 +1,5 @@
 package izumi.fundamentals.graphs
 
-import izumi.fundamentals.graphs.DG.fromPred
 import izumi.fundamentals.graphs.GraphImpl.{DirectedGraphPred, DirectedGraphSucc}
 import izumi.fundamentals.graphs.GraphProperty.DirectedAcyclicGraph
 import izumi.fundamentals.graphs.struct.IncidenceMatrix
@@ -18,7 +17,7 @@ final case class DAG[N, M] private (
 object DAG extends GraphSyntax[DAG] {
 
   def fromSucc[N, M](successors: IncidenceMatrix[N], meta: GraphMeta[N, M], breaker: LoopBreaker[N] = LoopBreaker.terminating[N]): Either[DAGError[N], DAG[N, M]] = {
-    fromPred(successors.transposed, meta)
+    fromPred(successors.transposed, meta, breaker)
   }
 
   def fromPred[N, M](predecessors: IncidenceMatrix[N], meta: GraphMeta[N, M], breaker: LoopBreaker[N] = LoopBreaker.terminating[N]): Either[DAGError[N], DAG[N, M]] = {
