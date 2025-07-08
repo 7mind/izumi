@@ -15,10 +15,10 @@ class ProxyStrategyFailingImpl extends ProxyStrategy {
     @unused executor: OperationExecutor,
     initProxy: ProxyOp.InitProxy,
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    implicitly[QuasiIO[F]].pure(Left(ProvisionerIssue.ProxyStrategyFailingImplCalled(initProxy.target, this)))
+    QuasiIO[F].pure(Left(ProvisionerIssue.ProxyStrategyFailingImplCalled(initProxy.target, initProxy.proxy, this)))
   }
 
   override def makeProxy[F[_]: TagK: QuasiIO](@unused context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    implicitly[QuasiIO[F]].pure(Left(ProvisionerIssue.ProxyStrategyFailingImplCalled(makeProxy.target, this)))
+    QuasiIO[F].pure(Left(ProvisionerIssue.ProxyStrategyFailingImplCalled(makeProxy.target, makeProxy, this)))
   }
 }

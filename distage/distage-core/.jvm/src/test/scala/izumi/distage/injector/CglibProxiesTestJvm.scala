@@ -178,7 +178,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       assert(context.get[GenericCircular[Dependency]] eq context.get[Dependency].dep)
     }
 
-    "support named circular dependencies" in brokenOnScala3 {
+    "support named circular dependencies" in {
       import CircularCase4.*
 
       val definition = PlannerInput.everything(new ModuleDef {

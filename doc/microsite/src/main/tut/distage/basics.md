@@ -1302,7 +1302,7 @@ Injector().produceRun(module overriddenBy new ModuleDef {
 
 `distage` can derive 'factory' implementations from suitable traits using `makeFactory` method.
 This feature is especially useful with `Akka`.
-All unimplemented methods _with parameters_ in a trait will be filled by factory methods:
+All unimplemented methods in a trait will be filled by factory methods:
 
 Given a class `ActorFactory`:
 
@@ -1357,7 +1357,7 @@ You can use this feature to concisely provide non-Singleton semantics for some o
 
 Factory implementations are derived at compile-time by @scaladoc[FactoryConstructor](izumi.distage.constructors.FactoryConstructor) macro and can be summoned at need.
 
-Since `distage` version `1.1.0` you have to bind factories explicitly using `makeFactory` and `fromFactory` methods, not implicitly via `make`; parameterless methods in factories now produce new instances instead of summoning a dependency.
+Since `distage` version `1.1.0` you have to bind factories explicitly using `makeFactory` and `fromFactory` methods, not implicitly via `make`. Parameterless methods in factories now produce new instances instead of summoning a dependency.
 
 ### @With annotation
 

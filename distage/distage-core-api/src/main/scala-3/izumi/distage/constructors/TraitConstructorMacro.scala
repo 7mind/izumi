@@ -33,7 +33,7 @@ object TraitConstructorMacro {
 
     val lamParams = {
       val byNameMethodArgs = methodDecls.map {
-        case MemberRepr(n, _, maybeSym, t, _) => ParamRepr(s"_$n", maybeSym, util.ensureByName(util.returnTypeOfMethodOrByName(t)))
+        case MemberRepr(n, _, _, maybeSym, t, _) => ParamRepr(s"_$n", maybeSym, util.ensureByName(util.returnTypeOfMethodOrByName(t)))
       }
       flatCtorParams ++ byNameMethodArgs
     }

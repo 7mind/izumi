@@ -9,5 +9,11 @@ trait FunctoidParametersMacroBase[Q <: Quotes] {
 
   import qctx.reflect.*
 
-  def makeParam(name: String, tpe: Either[TypeTree, TypeRepr], annotSym: Option[Symbol], annotTpe: Either[TypeTree, TypeRepr]): Expr[LinkedParameter]
+  def makeParam(
+    name: String,
+    tpe: Either[TypeTree, TypeRepr],
+    mbSym: Option[Symbol],
+    annotSym: Option[Symbol],
+    annotTpe: Either[TypeTree, TypeRepr],
+  ): Expr[LinkedParameter]
 }

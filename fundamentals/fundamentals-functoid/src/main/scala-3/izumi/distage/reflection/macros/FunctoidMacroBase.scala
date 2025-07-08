@@ -104,20 +104,23 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
         singleParamList.params.zip(methodRefParams).map {
           case (ValDef(name, tpeTree, _), mSym) =>
             paramsMacro.makeParam(
-              name,
-              Left(tpeTree),
-              Some(mSym),
-              Right(mSym.owner.typeRef.memberType(mSym)),
+              name = name,
+              tpe = Left(tpeTree),
+              mbSym = Some(mSym),
+              annotSym = Some(mSym),
+              annotTpe = Right(mSym.owner.typeRef.memberType(mSym)),
             )
         }
       } else {
         singleParamList.params.map {
           case valDef @ ValDef(name, tpeTree, _) =>
+            val mbSym = Some(valDef.symbol).filterNot(_.isNoSymbol)
             paramsMacro.makeParam(
-              name,
-              Left(tpeTree),
-              Some(valDef.symbol).filterNot(_.isNoSymbol),
-              Left(tpeTree),
+              name = name,
+              tpe = Left(tpeTree),
+              mbSym = mbSym,
+              annotSym = mbSym,
+              annotTpe = Left(tpeTree),
             )
         }
       }
@@ -138,7 +141,7 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
           val args = o.init
           args.iterator.zipWithIndex.map {
             (tpe, idx) =>
-              paramsMacro.makeParam(s"arg_$idx", Right(tpe), None, Right(tpe))
+              paramsMacro.makeParam(s"arg_$idx", Right(tpe), None, None, Right(tpe))
           }.toList
       }
     }

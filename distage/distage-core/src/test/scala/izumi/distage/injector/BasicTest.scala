@@ -105,8 +105,13 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         })
 
         val injector = mkInjector()
-        injector.produce(injector.plan(definition)).unsafeGet().get[TestClass]
+        val ctx = injector.produce(injector.planUnsafe(definition)).unsafeGet()
+        ctx.get[TestClass]
         """)
+    }
+    brokenOnScala3 {
+      // assertCompiles breaks on `make` macro
+      assert(!res.getMessage.contains("Couldn't find position"))
     }
     brokenOnScala3 {
       assert(res.getMessage.contains("BadIdAnnotationException"))

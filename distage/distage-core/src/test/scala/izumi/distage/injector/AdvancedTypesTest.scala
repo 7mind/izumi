@@ -5,10 +5,9 @@ import izumi.distage.fixtures.TraitCases.*
 import izumi.distage.fixtures.TypesCases.*
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.assertions.ScalatestGuards
-import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
+import izumi.fundamentals.platform.language.literals.LiteralCompat
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.Ordering.Implicits.infixOrderingOps
 import scala.annotation.nowarn
 import scala.language.reflectiveCalls
 
@@ -107,8 +106,8 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
-      make[Trait1 { def dep: Dep2 }].fromTrait[Trait3[Dep2]]
-      make[Trait1 { def dep: Dep }].fromTrait[Trait3[Dep]]
+      make[Trait1 { def dep: Dep2 }].fromTrait[Trait31[Dep2]]
+      make[Trait1 { def dep: Dep }].fromTrait[Trait31[Dep]]
       make[{ def dep: Dep }].fromTrait[Trait6]
     })
 
@@ -177,24 +176,22 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
       make[T & Trait1].from(TraitConstructor[G])
     }
 
-    val definition = PlannerInput.everything(new Definition[Trait3[Dep], Trait3[Dep], Trait5[Dep]])
+    val definition = PlannerInput.everything(new Definition[Trait3[Dep], Trait31[Dep], Trait5[Dep]])
 
     val injector = mkInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    brokenOnScala3 {
-      val instantiated = context.get[Trait3[Dep] & Trait1]
-      val instantiated2 = context.get[Trait3[Dep] & Trait4]
+    val instantiated = context.get[Trait3[Dep] & Trait1]
+    val instantiated2 = context.get[Trait3[Dep] & Trait4]
 
-      assert(instantiated.dep == context.get[Dep])
-      assert(instantiated.isInstanceOf[Trait1])
-      assert(!instantiated.isInstanceOf[Trait4])
+    assert(instantiated.dep == context.get[Dep])
+    assert(instantiated.isInstanceOf[Trait1])
+    assert(!instantiated.isInstanceOf[Trait4])
 
-      assert(instantiated2.dep == context.get[Dep])
-      assert(instantiated2.isInstanceOf[Trait1])
-      assert(instantiated2.isInstanceOf[Trait4])
-    }
+    assert(instantiated2.dep == context.get[Dep])
+    assert(instantiated2.isInstanceOf[Trait1])
+    assert(instantiated2.isInstanceOf[Trait4])
   }
 
   "handle generic parameters in abstract `with` types" in {
@@ -245,16 +242,16 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "support constant types in class strategy" in {
-    assume(IzScala.scalaRelease >= ScalaRelease.`2_13`(0))
-    brokenOnScala3 {
-      assertCompiles(
-        """
-        new ModuleDef {
-          make[5]
-        }
-      """
-      )
-    }
+    val constantHolder = LiteralCompat.`5`
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[constantHolder.T]
+    })
+
+    val injector = mkInjector()
+    val context = injector.produce(definition).unsafeGet()
+
+    assert(context.get[constantHolder.T] == 5)
   }
 
   "regression test for https://github.com/7mind/izumi/issues/1523 Parameterization failure with Set of intersection type alias" in {

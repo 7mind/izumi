@@ -30,7 +30,7 @@ object FactoryCases {
     final case class AmbiguousTestClass(a: Dependency @Id("special"), b: Dependency @Id("veryspecial"))
 
     trait Factory {
-      def wiringTargetForDependency: Dependency
+      def factoryMethodForDependency0: Dependency
       def factoryMethodForDependency(): Dependency
       def x(): TestClass
     }
@@ -38,6 +38,10 @@ object FactoryCases {
     trait MixedAssistendNonAssisted {
       def assisted(): TestClass
       def nonAssisted(dependency: Dependency): TestClass
+    }
+
+    trait InvalidValFactory {
+      val abstractVal: Dependency
     }
 
     trait OverridingFactory {
@@ -49,7 +53,7 @@ object FactoryCases {
     }
 
     trait NamedAssistedFactory {
-      def dep: Dependency @Id("veryspecial")
+      def dep: Dependency @Id("veryspecial") // Id annotation is ignored after // makeFactory - change of semantics!
       def x(a: Int): NamedAssistedTestClass
     }
 
@@ -100,7 +104,7 @@ object FactoryCases {
       override def x(z: Int, y: Int, x: Int): Product @With[ProductImpl]
     }
 
-    class Dependency()
+    class Dependency
 
     final case class ProductImpl(x: Int, y: Int, z: Int, dependency: Dependency)
 

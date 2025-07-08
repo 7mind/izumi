@@ -7,6 +7,7 @@ import izumi.distage.fixtures.TypesCases.TypesCase6
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.reflection.TypedRef
+import izumi.reflect.Tag
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.nowarn
@@ -110,18 +111,39 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     assert(instantiated3.asInstanceOf[Trait3].prr() == "Hello World")
   }
 
-  "support trait fields" in {
+  "support trait fields and default values for trait fields" in {
     import TraitCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeTrait[ATraitWithAField]
+      make[Int].fromValue(1)
     })
 
     val injector = mkInjector()
     val plan = injector.planUnsafe(definition)
 
     val context = injector.produce(plan).unsafeGet()
+    assert(context.get[ATraitWithAField].method == 1)
     assert(context.get[ATraitWithAField].field == 1)
+    assert(context.get[ATraitWithAField].methodDefault == 2)
+    assert(context.get[ATraitWithAField].fieldDefault == 2)
+    assert(context.get[ATraitWithAField].lazyFieldDefault == 2)
+  }
+
+  "support parameterized trait fields and default values for trait fields" in {
+    import TraitCase3.*
+
+    def definition[T: Tag]: PlannerInput = PlannerInput.everything(new ModuleDef {
+      makeTrait[ATraitWithAFieldParameterized[T]]
+      make[Int].fromValue(1)
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition[Int])
+
+    val context = injector.produce(plan).unsafeGet()
+    assert(context.get[ATraitWithAFieldParameterized[Int]].method == 1)
+    assert(context.get[ATraitWithAFieldParameterized[Int]].field == 1)
   }
 
   "support named bindings in cglib traits" in {

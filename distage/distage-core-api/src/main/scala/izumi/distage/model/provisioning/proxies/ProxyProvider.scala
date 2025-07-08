@@ -16,13 +16,14 @@ object ProxyProvider {
         ProvisionerIssue.ProxyProviderFailingImplCalled(
           deferredKey,
           this,
+          proxyContext,
           cause,
         )
       )
     }
   }
 
-  final case class ProxyContext(runtimeClass: Class[?], op: ExecutableOp, params: ProxyParams)
+  final case class ProxyContext(runtimeClass: Class[?], op: ExecutableOp.ProxyOp.MakeProxy, params: ProxyParams)
 
   sealed trait ProxyParams
   object ProxyParams {

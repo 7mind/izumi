@@ -42,15 +42,13 @@ class ProxyStrategyDefaultImpl(
             for {
               tpe <- proxyTargetType(makeProxy)
               _ <-
-                if (!mirrorProvider.canBeProxied(tpe)) {
-                  failCogenProxy(tpe, makeProxy)
-                } else {
+                if (mirrorProvider.canBeProxied(tpe)) {
                   Right(())
+                } else {
+                  failCogenProxy(tpe, makeProxy)
                 }
               proxy <- makeCogenProxy(context, tpe, makeProxy)
-            } yield {
-              proxy
-            }
+            } yield proxy
           }
       } yield {
         Seq(

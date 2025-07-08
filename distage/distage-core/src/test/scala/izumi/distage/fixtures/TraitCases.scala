@@ -45,9 +45,17 @@ object TraitCases {
   object TraitCase3 {
 
     trait ATraitWithAField {
-      def method: Int = 1
+      def method: Int
+      val field: Int
 
-      val field: Int = 1
+      def methodDefault: Int = 2
+      lazy val lazyFieldDefault: Int = fieldDefault
+      val fieldDefault: Int = 2
+    }
+
+    trait ATraitWithAFieldParameterized[T] {
+      def method: T
+      val field: T
     }
 
   }

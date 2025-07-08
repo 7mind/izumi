@@ -14,6 +14,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
     }
 
     def isByName: Boolean
+    def isVal: Boolean
     def wasGeneric: Boolean
 
     protected def annotations: List[u.Annotation]
@@ -36,6 +37,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
       typeSignatureInDefiningClass: TypeNative,
       finalResultType: TypeNative,
       isByName: Boolean,
+      isVal: Boolean,
       wasGeneric: Boolean,
       protected val annotations: List[u.Annotation],
       friendlyAnnotations: List[FriendlyAnnotation],
@@ -64,6 +66,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
           typeSignatureInDefiningClass = tpeIn,
           finalResultType = tpeIn.finalResultType,
           isByName = underlying.isTerm && underlying.asTerm.isByNameParam,
+          isVal = underlying.isTerm && underlying.asTerm.isVal,
           wasGeneric = wasGeneric,
           annotations = annos,
           friendlyAnnotations = annos.map(FriendlyAnnoTools.makeFriendly(u)),
@@ -97,6 +100,7 @@ trait WithDISymbolInfo { this: DIUniverseBase =>
 //      override final def withAnnotations(annotations: List[u.Annotation]): MacroSymbolInfo = copy(annotations = annotations)
       override final def withFriendlyAnnotations(annotations: List[FriendlyAnnotation]): MacroSymbolInfoCompact = copy(friendlyAnnotations = annotations)
       override final def safeFinalResultType: MacroSafeType = MacroSafeType.create(u)(nonByNameFinalResultType)
+      override final def isVal: Boolean = false
     }
     object Static {
       def syntheticFromType(transformName: String => String)(tpe: TypeNative): MacroSymbolInfo.Static = {

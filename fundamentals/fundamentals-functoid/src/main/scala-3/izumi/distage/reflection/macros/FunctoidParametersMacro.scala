@@ -1,6 +1,7 @@
 package izumi.distage.reflection.macros
 
 import izumi.distage.model.reflection.*
+import izumi.fundamentals.reflection.ReflectiveCall
 import izumi.reflect.Tag
 
 import scala.quoted.{Expr, Quotes}
@@ -16,7 +17,13 @@ final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor:
     }
   }
 
-  def makeParam(name: String, tpe: Either[TypeTree, TypeRepr], annotSym: Option[Symbol], annotTpe: Either[TypeTree, TypeRepr]): Expr[LinkedParameter] = {
+  override def makeParam(
+    name: String,
+    tpe: Either[TypeTree, TypeRepr],
+    mbSym: Option[Symbol],
+    annotSym: Option[Symbol],
+    annotTpe: Either[TypeTree, TypeRepr],
+  ): Expr[LinkedParameter] = {
     val identifier = idExtractor.extractId(name, annotSym, annotTpe)
 
     val tpeRepr = tpe._tpe
@@ -26,7 +33,10 @@ final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor:
       case _ => false
     }
 
-    val wasGeneric = tpeRepr.typeSymbol.isTypeParam // deem abstract type members as generic? No. Because we don't do that in Scala 2 version.
+    val wasGeneric = tpeRepr.typeSymbol.isTypeParam || mbSym.exists {
+      s =>
+        ReflectiveCall.call[TypeRepr](qctx.reflect.SymbolMethods, "info", s).typeSymbol.isTypeParam
+    } // deem abstract type members as generic? No. Because we don't do that in Scala 2 version.
 
     '{
       LinkedParameter(

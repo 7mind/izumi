@@ -50,7 +50,7 @@ object Scala3TraitCases {
   trait T
   case class C1() extends T
   case class C2(c: C1, d: Int) extends T
-  case class C3(a1: Int, a2: Long, a3: Number, a4: String)(a5: Double) extends T
+  case class C3(a1: Int, a2: Long, a3: Number, a4: String)(val a5: Double) extends T
 
   trait FactoryTrait1 {
     def f1: T @distage.With[C2]
@@ -72,4 +72,9 @@ object Scala3TraitCases {
       def dep5: Int
     }
   }
+
+  trait ATraitWithALazyField {
+    lazy val lazyField: Int
+  }
+
 }

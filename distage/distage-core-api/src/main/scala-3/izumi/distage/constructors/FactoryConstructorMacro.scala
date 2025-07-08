@@ -35,7 +35,12 @@ object FactoryConstructorMacro {
     var flatLambdaSigIndex = 0 // index of a new dependency to add to the outermost lambda requesting parameters
 
     val factoryProductData = factoryContext.methodDecls.map {
-      case MemberRepr(n, _, mbMethodSym, methodType, _) =>
+      case MemberRepr(n, isMethod, _, mbMethodSym, methodType, _) =>
+        if (!isMethod) {
+          report.errorAndAbort(
+            s"Abstract vals are forbidden in Factories, but found abstract val `$n`! All abstract definitions in Factories must produce new instances, not summon dependencies. For summoning dependencies into fields use makeTrait/fromTrait/TraitConstructor"
+          )
+        }
         factoryUtil.getFactoryProductData(resultTpe) {
           () =>
             val curIndex = flatLambdaSigIndex
@@ -68,7 +73,7 @@ object FactoryConstructorMacro {
             factoryContext.parentTypesParameterized,
             {
               (s: Symbol) =>
-                val methodSyms = factoryContext.methodDecls.generateDeclSymbols(s)
+                val methodSyms = factoryContext.methodDecls.generateDeclSymbols(forceLazyVals = false)(s)
                 methodSymbols = methodSyms
                 methodSyms
             },

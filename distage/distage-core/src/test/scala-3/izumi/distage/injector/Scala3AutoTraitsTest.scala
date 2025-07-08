@@ -1,7 +1,6 @@
 package izumi.distage.injector
 
-import distage.With
-import izumi.distage.constructors.{FactoryConstructor, TraitConstructor}
+import distage.{FactoryConstructor, ModuleDef, PlannerInput, TraitConstructor, With}
 import izumi.distage.fixtures.Scala3TraitCases.*
 import izumi.distage.model.reflection.TypedRef
 import org.scalatest.wordspec.AnyWordSpec
@@ -85,14 +84,66 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     "support factories" in {
-      FactoryConstructor[FactoryTrait1]
+      import scala.reflect.Selectable.reflectiveSelectable
 
-      FactoryConstructor[{
+      val definition = PlannerInput.everything(new ModuleDef {
+        makeFactory[FactoryTrait1]
+        makeFactory[{
+            type U = Object
+            def makeConcreteDep(): T @distage.With[C2]
+            def makeConcreteDep1(d: Int): T @With[C2]
+          }
+        ]
+        make[C1]
+        make[Int].fromValue(1)
+        make[Number].fromValue(5)
+        make[String].fromValue("abc")
+      })
+      val injector = mkInjector()
+      val plan = injector.planUnsafe(definition)
+
+      val context = injector.produce(plan).unsafeGet()
+
+      val factory1 = context.get[FactoryTrait1]
+      val factory2 = context.get[{
           type U = Object
           def makeConcreteDep(): T @distage.With[C2]
           def makeConcreteDep1(d: Int): T @With[C2]
         }
       ]
+
+      val c1 = context.get[C1]
+      val int = context.get[Int]
+
+      assert(factory1.f1 ne null)
+      assert(factory1.f1 ne factory1.f1)
+      assert(factory1.f1.isInstanceOf[C2])
+      assert(factory1.f1.asInstanceOf[C2].c eq c1)
+      assert(factory1.f1.asInstanceOf[C2].d == int)
+
+      assert(factory1.f2() ne null)
+      assert(factory1.f2() ne factory1.f1)
+      assert(factory1.f2() ne factory1.f2())
+      assert(factory1.f2().isInstanceOf[C2])
+      assert(factory1.f2().asInstanceOf[C2].c eq c1)
+      assert(factory1.f2().asInstanceOf[C2].d == int)
+
+      val newC1 = new C1()
+      assert(factory1.f3(newC1).isInstanceOf[C2])
+      assert(factory1.f3(newC1).asInstanceOf[C2].c eq newC1)
+      assert(factory1.f3(newC1).asInstanceOf[C2].d == int)
+
+      val c3 = factory1.f4(1)(2L, 3.0)
+      assert(c3.isInstanceOf[C3])
+      assert(c3.asInstanceOf[C3] == C3(1, 2L, 5, "abc")(3.0))
+      assert(c3.asInstanceOf[C3].a5 == 3.0)
+
+      assert(factory2.makeConcreteDep() ne null)
+      assert(factory2.makeConcreteDep() ne factory2.makeConcreteDep())
+      assert(factory2.makeConcreteDep().isInstanceOf[C2])
+
+      assert(factory2.makeConcreteDep1(7) == C2(C1(), 7))
+      assert(factory2.makeConcreteDep1(7).asInstanceOf[C2].c eq c1)
     }
 
     "support intersection types with trait constructors" in {
@@ -106,6 +157,21 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
       assert(traitIntersection.dep4 == 4)
       assert(traitIntersection.dep5 == 5)
     }
+
+    "support overriding lazy vals in auto-traits" in {
+      val definition = PlannerInput.everything(new ModuleDef {
+        makeTrait[ATraitWithALazyField]
+        make[Int].fromValue(1)
+      })
+
+      val injector = mkInjector()
+      val plan = injector.planUnsafe(definition)
+
+      val context = injector.produce(plan).unsafeGet()
+
+      assert(context.get[ATraitWithALazyField].lazyField == 1)
+    }
+
   }
 
 }

@@ -23,8 +23,17 @@ object FactoryConstructorMacro {
     val impls = FactoryConstructorMacros(c)(macroUniverse)
     import impls.{c as _, u as _, *}
 
-    val macroUniverse.MacroWiring.Factory.WithProductDeps(factoryMethods, classParameters, methods, factoryProductsDeps) = symbolToFactory(reflectionProvider)(targetType)
-    val allParameters = classParameters :+ (methods ++ factoryProductsDeps).map(_.asParameter)
+    val macroUniverse.MacroWiring.Factory(factoryMethods, classParameters, methods) = symbolToFactory(reflectionProvider)(targetType)
+    val factoryProductsDeps = macroUniverse.MacroWiring.Factory.factoryProductDepsFromObjectGraph(factoryMethods)
+    methods.collect {
+      case macroUniverse.Association.AbstractMethod(symbol, _) if symbol.isVal =>
+        c.abort(
+          c.enclosingPosition,
+          s"Abstract vals are forbidden in Factories, but found abstract val `${symbol.name}`! All abstract definitions in Factories must produce new instances, not summon dependencies. For summoning dependencies into fields use makeTrait/fromTrait/TraitConstructor",
+        )
+    }
+
+    val allParameters = classParameters :+ factoryProductsDeps.map(_.asParameter)
 
     if (factoryMethods.isEmpty) {
       c.abort(c.enclosingPosition, s"No factory methods found in $targetType")

@@ -234,6 +234,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
 
     "Conversions from ZLayer should fail to typecheck if the result type is unrelated to the binding type" in {
       brokenOnScala3 {
+        // assertCompiles breaks on `make` macro
         assertCompiles("""
          new ModuleDef {
            make[String].fromResource { (_: Unit) => ZLayer.succeed("42") }

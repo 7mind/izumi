@@ -6,12 +6,14 @@ import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider
 import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, MirrorProvider, SafeType}
+import izumi.fundamentals.platform.{IzPlatform, ScalaPlatform}
 import izumi.fundamentals.reflection.TypeUtil
 
 abstract class ProxyStrategyDefaultImplPlatformSpecific(
   proxyProvider: ProxyProvider,
   mirrorProvider: MirrorProvider,
 ) {
+  protected val platform: ScalaPlatform = IzPlatform.platform
 
   protected def makeCogenProxy(
     context: ProvisioningKeyProvider,
@@ -19,7 +21,11 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
     op: ProxyOp.MakeProxy,
   ): Either[ProvisionerIssue, DeferredInit] = {
     for {
-      runtimeClass <- mirrorProvider.runtimeClass(tpe).toRight(ProvisionerIssue.NoRuntimeClass(op.target))
+      _ <-
+        if (platform != ScalaPlatform.JVM) {
+          Left(ProvisionerIssue.UnsupportedProxyType(tpe, op, s"cannot create proxies on platform=$platform, only standard JVM is supported for creating proxies"))
+        } else Right(())
+      runtimeClass <- mirrorProvider.runtimeClass(tpe).toRight(ProvisionerIssue.NoRuntimeClassForProxy(tpe, op))
       classConstructorParams <-
         if (noArgsConstructor(tpe)) {
           Right(ProxyParams.Empty)
@@ -45,7 +51,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
                     .sortBy(_.getParameters.length)
                     .headOption
                     .map(_.getParameterTypes.map(clazz => clazz -> TypeUtil.defaultValue(clazz)): Array[(Class[?], Any)])
-                    .toRight(ProvisionerIssue.UnsupportedOp(tpe, op, "cannot find suitable constructor for proxy"))
+                    .toRight(ProvisionerIssue.UnsupportedProxyType(tpe, op, "cannot find suitable constructor for proxy"))
               }
             }
           } yield {
@@ -61,7 +67,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
   }
 
   protected def failCogenProxy(tpe: SafeType, op: ProxyOp.MakeProxy): Left[ProvisionerIssue, Unit] = {
-    Left(ProvisionerIssue.UnsupportedOp(tpe, op, "tried to make proxy of non-proxyable (final?) class"))
+    Left(ProvisionerIssue.UnsupportedProxyType(tpe, op, "tried to make proxy of non-proxyable (final?) class"))
   }
 
   private def fetchNonforwardRefParamWithClass(
@@ -94,7 +100,7 @@ abstract class ProxyStrategyDefaultImplPlatformSpecific(
       case param =>
         context.fetchKey(declaredKey, param.isByName) match {
           case Some(v) =>
-            Right((clazz, v.asInstanceOf[Any]))
+            Right((clazz, v))
 
           case None =>
             Left(List(param.key))

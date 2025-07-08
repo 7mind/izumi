@@ -31,7 +31,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     assert(exc.getSuppressed.head.getCause.isInstanceOf[RuntimeException])
   }
 
-  "support complex circular dependencies" in brokenOnScala3 {
+  "support complex circular dependencies" in {
     import CircularCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
@@ -40,6 +40,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
       makeTrait[Circular2]
       makeTrait[Circular5]
       makeFactory[Circular4]
+      makeFactory[Circular6]
     })
 
     val injector = mkInjector()
@@ -47,9 +48,11 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
 
     assert(plan.plan.successors.links(DIKey.get[Circular1]).size == 2)
     assert(!plan.plan.successors.links.contains(DIKey.ProxyInitKey(DIKey.get[Circular1])))
+    assert(plan.plan.successors.links(DIKey.get[Circular1]) == Set(DIKey[Circular6], DIKey[Circular5]))
 
     assert(plan.plan.predecessors.links(DIKey.get[Circular1]).size == 1)
     assert(!plan.plan.predecessors.links.contains(DIKey.ProxyInitKey(DIKey.get[Circular1])))
+    assert(plan.plan.predecessors.links(DIKey.get[Circular1]) == Set(DIKey[Circular2]))
 
     val context = injector.produce(plan).unsafeGet()
     val c3 = context.get[Circular3]
@@ -191,16 +194,62 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[ErasedCircular[Dependency]]
-      make[PhantomDependency[Dependency]]
+      make[ErasedDependency[Dependency]]
     })
 
     val injector = mkInjector()
     val context = injector.produce(definition).unsafeGet()
 
-    assert(context.get[ErasedCircular[Dependency]] != null)
-    assert(context.get[PhantomDependency[Dependency]] != null)
+    val erasedCircular = context.get[ErasedCircular[Dependency]]
+    val erasedDependency = context.get[ErasedDependency[Dependency]]
 
-    assert(context.get[ErasedCircular[Dependency]].dep eq context.get[PhantomDependency[Dependency]])
-    assert(context.get[PhantomDependency[Dependency]] eq context.get[ErasedCircular[Dependency]].dep)
+    assert(erasedCircular != null)
+    assert(erasedDependency != null)
+
+    assert(erasedCircular.dep eq erasedDependency)
+    assert(erasedDependency.dep eq erasedCircular)
   }
+
+  "print dependencies of the cycle-breaking key in the error message when cycle support is disabled" in {
+    import CircularCase5._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[ErasedCircular[Dependency]]
+      make[ErasedDependency[Dependency]]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val error = intercept[ProvisioningException](injector.produce(definition).unsafeGet())
+
+    assert(
+      error.getMessage.contains(
+        "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedCircular[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+      ) ||
+      error.getMessage.contains(
+        "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedDependency[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+      )
+    )
+  }
+
+  "print dependencies of the cycle-breaking key in the error message when proxy support is disabled, but is required to break cycle" in {
+    import CircularCase5._
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[ErasedCircular[Dependency]]
+      make[ErasedDependency[Dependency]]
+    })
+
+    val injector = mkNoProxiesInjector()
+    val error = intercept[ProvisioningException](injector.produce(definition).unsafeGet())
+
+    assert(
+      error.getMessage.contains(
+        "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedCircular[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+      ) ||
+      error.getMessage.contains(
+        "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedDependency[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+      )
+    )
+  }
+
 }

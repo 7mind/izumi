@@ -48,6 +48,12 @@ object CircularCases {
       def arg2: Circular4
     }
 
+    trait Circular6 {
+      def factoryFun(c4: Circular4, c5: Circular5): CircularProduct
+    }
+
+    case class CircularProduct(arg: Circular1, c4: Circular4, c5: Circular5)
+
     trait CircularBad1 {
       def arg: CircularBad2
 
@@ -105,8 +111,8 @@ object CircularCases {
     class GenericCircular[T](val dep: T)
     class Dependency(val dep: GenericCircular[Dependency])
 
-    class ErasedCircular[T](val dep: PhantomDependency[T])
-    class PhantomDependency[T]()
+    class ErasedCircular[T](val dep: ErasedDependency[T])
+    class ErasedDependency[T](val dep: ErasedCircular[T])
   }
 
   object CircularCase6 {

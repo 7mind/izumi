@@ -206,14 +206,17 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
     request[IO]
   }
 
-  "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in brokenOnScala3 {
-    assertCompiles(
-      """
+  "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in {
+    brokenOnScala3 {
+      // assertCompiles breaks on `make` macro
+      assertCompiles(
+        """
          new ModuleDef {
            make[String].fromResource { (_: Unit) => Resource.pure[cats.Id, String]("42") }
          }
       """
-    )
+      )
+    }
     val res = intercept[TestFailedException](
       assertCompiles(
         """
@@ -223,7 +226,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       """
       )
     )
-    assert(res.getMessage contains "implicit")
+    assert((res.getMessage contains "implicit") || (res.getMessage contains "No given instance"))
     assert(res.getMessage contains "AdaptFunctoid")
   }
 
