@@ -75,8 +75,8 @@ object DischargeDummyMacro {
                 dummy =>
                   dummy.tpe.widen.asType match {
                     case '[a] =>
-                      println("dummy tpe: " + dummy.tpe)
-                      println("dummy tpe: " + dummy.tpe.asType)
+//                      println("dummy tpe: " + dummy.tpe)
+//                      println("dummy tpe: " + dummy.tpe.asType)
                       Expr
                         .summonIgnoring[a](dummyParamSymbol).map(_.asTerm)
                         .getOrElse(report.errorAndAbort(s"No implicit value found for ${dummy.tpe.show}, ${dummy.tpe.widenTermRefByName} "))
@@ -89,7 +89,7 @@ object DischargeDummyMacro {
               val res = Select.unique(lambda, "apply").appliedToArgs(implicits).asExprOf[Functoid[I]]
               println("discharge result: " + res.show)
               res
-            } else
+            } else 
               '{ $function(using null.asInstanceOf[N]) }
 
           case Typed(term, _) => rewrite(term)

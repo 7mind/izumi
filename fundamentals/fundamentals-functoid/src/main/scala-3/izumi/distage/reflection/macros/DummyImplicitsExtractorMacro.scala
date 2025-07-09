@@ -49,15 +49,20 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
             println("type apply fun tpe: " + fun.fun.tpe.widenTermRefByName + " of " + fun.show)
             fun.fun.tpe.widenTermRefByName match {
               case lt: MethodType =>
-                val fromArgs = foldTrees(Set.empty, args)(owner)
+                val (fromArgs, types) = args.zip(lt.paramTypes).flatMap { 
+                  case (arg, tpe) => 
+                    val res = foldTree(Set.empty, arg)(owner)
+                    if (res.isEmpty) None
+                    else Some(res -> tpe)
+                }.unzip
                 val fromTerm = foldTree(Set.empty, t)(owner)
                 println("args size: " + args.size)
                 println("lt types: " + lt.paramTypes + " size " + lt.paramTypes.size)
                 println("from args: " + fromArgs + " size " + fromArgs.size)
                 println("from term: " + fromTerm + " size " + fromTerm.size)
                 val newTypesFromArgs =
-                  if (fromArgs.exists(_.notUpdated)) update(fromArgs, lt.paramTypes, true)
-                  else fromArgs
+                  if (fromArgs.flatten.exists(_.notUpdated)) update(fromArgs.flatten.toSet, types, true)
+                  else fromArgs.flatten.toSet
                 val newTypesFromTerm =
                   if (fromTerm.exists(_.notUpdated)) update(fromTerm, lt.paramTypes, true)
                   else fromTerm
