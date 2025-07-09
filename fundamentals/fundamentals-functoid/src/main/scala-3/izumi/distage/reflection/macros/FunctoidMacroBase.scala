@@ -37,7 +37,11 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
     Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm)).asExprOf[Any]
   }
 
-  final class FunctoidMacroImpl[Q <: Quotes](using val qctx: Q)(val paramsMacro: FunctoidParametersMacroBase[qctx.type]) {
+  final class FunctoidMacroImpl[Q <: Quotes](
+    using val qctx: Q
+  )(paramsMacro: FunctoidParametersMacroBase[qctx.type],
+    dummyImplicitsExtractorMacro: DummyImplicitsExtractorMacro[qctx.type],
+  ) {
     import qctx.reflect.*
 
     private val dummyTypeSymbol: Symbol = TypeRepr.of[FunctoidDummyImplicit].typeSymbol
@@ -63,79 +67,6 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
 
     @tailrec def analyze[R](fun: Term): (List[Expr[LinkedParameter]], Expr[AnyRef], List[Symbol]) = fun match {
       case block @ Block(List(DefDef(name, (singleParamList: TermParamClause) :: Nil, _, Some(body))), _: Closure) =>
-        final case class DummyArg(
-          term: Term,
-          tpe: TypeRepr,
-          updated: Boolean,
-          providedImplicit: Option[Term] = None,
-        ) {
-          def notUpdated: Boolean = !updated
-        }
-
-        def extractDummyArguments(body: Term): List[DummyArg] = {
-          val treeAccumulator: TreeAccumulator[Set[DummyArg]] = new TreeAccumulator[Set[DummyArg]] {
-            private val paramsBySymbol = singleParamList.params.map(_.symbol).toSet
-            private def update(args: Set[DummyArg], types: List[TypeRepr], dummy: Boolean): Set[DummyArg] = {
-              if (dummy) {
-                args.zip(types).map { case (arg, tpe) => arg.copy(tpe = tpe, updated = true) }
-              } else Set.empty
-            }
-
-            private def hasDummy(args: List[Term]): Boolean = {
-              args.exists(_.tpe.baseClasses.contains(dummyTypeSymbol))
-            }
-
-            override def foldTree(
-              x: Set[DummyArg],
-              tree: Tree,
-            )(owner: Symbol
-            ): Set[DummyArg] = {
-              tree match {
-                case fun @ Apply(inner: Apply, args) =>
-                  fun.fun.tpe match {
-                    case lt: MethodType =>
-                      val extracted = foldTrees(Set.empty, args)(owner)
-                      val newTypes = update(extracted, lt.paramTypes, extracted.nonEmpty)
-                      foldTree(newTypes ++ x, inner)(owner)
-                  }
-                case fun @ Apply(s: Select, args) => foldOverTree(x, fun)(owner)
-                case s: Select => foldOverTree(x, s)(owner)
-                case i: Ident =>
-                  if (i.tpe.baseClasses.contains(dummyTypeSymbol)) {
-                    x + DummyArg(i, i.tpe, false)
-                  } else x
-                case fun @ Apply(t: TypeApply, args) =>
-                  fun.fun.tpe match {
-                    case lt: MethodType =>
-                      val fromArgs = foldTrees(Set.empty, args)(owner)
-                      val fromTerm = foldTree(Set.empty, t)(owner)
-                      val newTypesFromArgs =
-                        if (fromArgs.exists(_.notUpdated)) update(fromArgs, lt.paramTypes, true)
-                        else fromArgs
-                      val newTypesFromTerm =
-                        if (fromTerm.exists(_.notUpdated)) update(fromTerm, lt.paramTypes, true)
-                        else fromTerm
-                      newTypesFromTerm ++ newTypesFromArgs ++ x
-                    case _ => foldTrees(x, args)(owner) ++ x
-                  }
-
-                case fun @ Apply(_, args) =>
-                  fun.tpe match {
-                    case lt: MethodType =>
-                      val extracted = foldTrees(Set.empty, args)(owner)
-                      val newTypes = update(extracted, lt.paramTypes, extracted.nonEmpty)
-                      newTypes ++ x
-                    case _ => foldTrees(x, args)(owner) ++ x
-                  }
-
-                case _ => foldOverTree(x, tree)(owner)
-              }
-            }
-          }
-
-          treeAccumulator.foldTree(Set.empty, body)(Symbol.spliceOwner).toList
-        }
-
         def copyArgsIntoBody(
           body: Term,
           noImplicitsProvided: Map[Term, Term],
@@ -158,16 +89,17 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
           treeMap.transformTree(body)(argsOwner)
         }
 
-        val dummyArgs = extractDummyArguments(body)
+        println("base original block: " + block.show)
+        val dummyArgs = dummyImplicitsExtractorMacro.extractDummyArguments(body, Symbol.spliceOwner)
         val (noImplicitsProvided, implicitsProvided) = dummyArgs
           .map(
             dummy =>
               dummy.tpe.asType match {
-                case '[a] => 
+                case '[a] =>
                   if (dummy.term.tpe.baseClasses.contains(unignorableDummyTypeSymbol)) {
                     dummy
                   } else {
-                    dummy.copy(providedImplicit = Expr.summonIgnoring[a](dummy.term.symbol).map(_.asTerm))
+                    dummy.withProvidedImplicit(Expr.summonIgnoring[a](dummy.term.symbol).map(_.asTerm))
                   }
                 case _ => dummy
               }
@@ -218,6 +150,8 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
               Select.unique(newFun, "apply").appliedToArgs(params)
             },
           )
+
+          println("base result block: " + resultLambda.show)
 
           (allLinkedParams, resultLambda.asExprOf[AnyRef], ignoreDuringImplicitSearch)
         } else {

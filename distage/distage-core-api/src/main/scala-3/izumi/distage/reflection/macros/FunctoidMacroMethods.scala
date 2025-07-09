@@ -15,7 +15,8 @@ object FunctoidMacro extends FunctoidMacroBase[Functoid] {
   def makeImpl[R: Type](fun: Expr[AnyRef])(using qctx: Quotes): Expr[Functoid[R]] = {
     val idExtractor = new IdExtractorImpl[qctx.type]()
     val paramMacro = new FunctoidParametersMacro[qctx.type](idExtractor)
-    new FunctoidMacroImpl[qctx.type](paramMacro).make(fun)
+    val implicitsExtractorMacro = new DummyImplicitsExtractorMacro[qctx.type]()
+    new FunctoidMacroImpl[qctx.type](paramMacro, implicitsExtractorMacro).make(fun)
   }
 
   protected def generateFunctoid[R: Type, Q <: Quotes](
