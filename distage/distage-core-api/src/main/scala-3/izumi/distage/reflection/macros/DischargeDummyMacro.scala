@@ -48,7 +48,7 @@ object DischargeDummyMacro {
             val dummyArgs = dummyImplicitsExtractorMacro.extractDummyArguments(body, Symbol.spliceOwner)
             if (dummyArgs.nonEmpty) {
               val dummyParamSymbol = singleParamList.params.head.symbol
-              val lambdaArgsNames = dummyArgs.map(_.term.symbol.name)
+              val lambdaArgsNames = dummyArgs.map(t => "explicit$" + t.term.symbol.name)
               val lambdaArgsTypes = dummyArgs.map(_.tpe)
 
               val methodType = MethodType(lambdaArgsNames)(
@@ -79,15 +79,18 @@ object DischargeDummyMacro {
               val anyTpe = TypeRepr.of[Any]
               val fnType = defn.FunctionClass(implicits.size).typeRef.appliedTo(List.fill(implicits.size + 1)(anyTpe))
               Select.unique(lambda, "apply").appliedToArgs(implicits).asExprOf[Functoid[I]]
-            } else 
-              '{ $function(using null.asInstanceOf[N]) }
+            } else {
+              val res = '{ ${ function }(using null.asInstanceOf[N]) }
+              println(s"discharge not done: ${res.show}")
+              res
+            }
 
           case Typed(term, _) => rewrite(term)
           case Inlined(_, _, term) => rewrite(term)
           case Block(List(), term) => rewrite(term)
           case _ =>
             val term = fun.asExprOf[N ?=> Functoid[I]]
-            '{ $term(using null.asInstanceOf[N]) }
+            '{ ${ term }(using null.asInstanceOf[N]) }
         }
       }
 

@@ -9,14 +9,14 @@ import scala.language.implicitConversions
 import scala.quoted.{Expr, Quotes, Type}
 
 trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
-  protected def generateFunctoid[R: Type, Q <: Quotes](
-    using qctx: Q
+  protected def generateFunctoid[R: Type](
+    using qctx: Quotes
   )(paramDefs: List[Expr[LinkedParameter]],
     originalFun: Expr[AnyRef],
     ignoreDuringImplicitsSearch: List[qctx.reflect.Symbol],
   ): Expr[Ftoid[R]]
 
-  protected final def generateRawFnCall[Q <: Quotes](argsCount: Int, rawFn: Expr[Any], args: Expr[Seq[Any]])(using qctx: Q): Expr[Any] = {
+  protected final def generateRawFnCall(argsCount: Int, rawFn: Expr[Any], args: Expr[Seq[Any]])(using qctx: Quotes): Expr[Any] = {
     import qctx.reflect.*
 
     val params = List.tabulate(argsCount) {
@@ -49,7 +49,7 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
 
     def make[R: Type](fun: Expr[AnyRef]): Expr[Ftoid[R]] = {
       val (parameters, func, dummyImplicitSymbols) = analyze[R](fun.asTerm)
-      val out = generateFunctoid[R, Q](parameters, func, dummyImplicitSymbols)
+      val out = generateFunctoid[R](parameters, func, dummyImplicitSymbols)
 
       //      report.warning(
       //        s"""fun=${fun.show}

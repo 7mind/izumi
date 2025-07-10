@@ -19,8 +19,8 @@ object FunctoidMacro extends FunctoidMacroBase[Functoid] {
     new FunctoidMacroImpl[qctx.type](paramMacro, implicitsExtractorMacro).make(fun)
   }
 
-  protected def generateFunctoid[R: Type, Q <: Quotes](
-    using qctx: Q
+  protected def generateFunctoid[R: Type](
+    using qctx: Quotes
   )(paramDefs: List[Expr[LinkedParameter]],
     originalFun: Expr[AnyRef],
     ignoreDuringImplicitsSearch: List[qctx.reflect.Symbol],
@@ -30,7 +30,7 @@ object FunctoidMacro extends FunctoidMacroBase[Functoid] {
       new Functoid[R](
         new ProviderImpl[R](
           ${ Expr.ofList(paramDefs) },
-          ${ FunctoidMacroHelpers.generateSafeType[R, Q](ignoreDuringImplicitsSearch) },
+          ${ FunctoidMacroHelpers.generateSafeType[R](using qctx)(ignoreDuringImplicitsSearch) },
           rawFn,
           (args: Seq[Any]) => ${ generateRawFnCall(paramDefs.size, 'rawFn, 'args) },
           ProviderType.Function,

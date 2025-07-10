@@ -1,14 +1,7 @@
 package izumi.distage.reflection.macros
 
-trait FunctoidDummyImplicit
+sealed trait FunctoidDummyImplicit
 
-final class IgnorableFunctoidDummyImplicit private() extends FunctoidDummyImplicit
-object IgnorableFunctoidDummyImplicit {
-  implicit val dummyImplicit: IgnorableFunctoidDummyImplicit = new IgnorableFunctoidDummyImplicit
-}
+final abstract class IgnorableFunctoidDummyImplicit extends FunctoidDummyImplicit
 
-final class UnignorableDummyImplicit private () extends FunctoidDummyImplicit
-object UnignorableDummyImplicit {
-  implicit val unignorableDummyImplicit: UnignorableDummyImplicit = new UnignorableDummyImplicit
-}
-
+final abstract class UnignorableDummyImplicit extends FunctoidDummyImplicit

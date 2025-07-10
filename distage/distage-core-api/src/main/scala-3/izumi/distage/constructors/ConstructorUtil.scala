@@ -170,7 +170,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
       new Functoid[R](
         new ProviderImpl[R](
           ${ Expr.ofList(paramDefs) },
-          ${ FunctoidMacroHelpers.generateSafeType[R, Q]() },
+          ${ FunctoidMacroHelpers.generateSafeType[R]() },
           ${ argsLambda },
           ${ providerType },
         )
