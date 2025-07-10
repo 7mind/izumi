@@ -89,7 +89,6 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
           treeMap.transformTree(body)(argsOwner)
         }
 
-        println("base original block: " + block.show)
         val dummyArgs = dummyImplicitsExtractorMacro.extractDummyArguments(body, Symbol.spliceOwner)
         val (noImplicitsProvided, implicitsProvided) = dummyArgs
           .map(
@@ -150,9 +149,7 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
               Select.unique(newFun, "apply").appliedToArgs(params)
             },
           )
-
-          println("base result block: " + resultLambda.show)
-
+          
           (allLinkedParams, resultLambda.asExprOf[AnyRef], ignoreDuringImplicitSearch)
         } else {
           (analyzeLambdaOrMethodRef(name, singleParamList, body, Nil), fun.asExprOf[AnyRef], Nil)

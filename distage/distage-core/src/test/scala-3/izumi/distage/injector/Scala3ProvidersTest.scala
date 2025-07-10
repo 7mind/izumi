@@ -256,7 +256,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
-      make[X].from( makeX )
+      make[X].from(makeX)
     })
 
     val injector = mkInjector()

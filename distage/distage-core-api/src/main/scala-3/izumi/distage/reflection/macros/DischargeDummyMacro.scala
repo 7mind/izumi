@@ -31,7 +31,7 @@ object DischargeDummyMacro {
           case block @ Block(List(DefDef(name, (singleParamList: TermParamClause) :: Nil, _, Some(body))), _: Closure) =>
             def rewriteDummiesByIdent(
               tree: Tree,
-              dummyArgs: Map[Term, Term], // dummy -> real
+              dummyArgs: Map[Term, Term],
               owner: Symbol,
             ): Tree = {
               val treeMap: TreeMap = new TreeMap {
@@ -45,15 +45,9 @@ object DischargeDummyMacro {
               treeMap.transformTree(tree)(owner)
             }
 
-            println("discharge block: " + block.show)
-            println("discharge block tree " + block.show(using Printer.TreeStructure))
-            println("discharge body: " + body.show) 
-            println("discharge body tree: " + body.show(using Printer.TreeStructure))
             val dummyArgs = dummyImplicitsExtractorMacro.extractDummyArguments(body, Symbol.spliceOwner)
             if (dummyArgs.nonEmpty) {
-              println("dummy terms: " + dummyArgs)
               val dummyParamSymbol = singleParamList.params.head.symbol
-
               val lambdaArgsNames = dummyArgs.map(_.term.symbol.name)
               val lambdaArgsTypes = dummyArgs.map(_.tpe)
 
@@ -75,8 +69,6 @@ object DischargeDummyMacro {
                 dummy =>
                   dummy.tpe.widen.asType match {
                     case '[a] =>
-//                      println("dummy tpe: " + dummy.tpe)
-//                      println("dummy tpe: " + dummy.tpe.asType)
                       Expr
                         .summonIgnoring[a](dummyParamSymbol).map(_.asTerm)
                         .getOrElse(report.errorAndAbort(s"No implicit value found for ${dummy.tpe.show}, ${dummy.tpe.widenTermRefByName} "))
@@ -86,9 +78,7 @@ object DischargeDummyMacro {
 
               val anyTpe = TypeRepr.of[Any]
               val fnType = defn.FunctionClass(implicits.size).typeRef.appliedTo(List.fill(implicits.size + 1)(anyTpe))
-              val res = Select.unique(lambda, "apply").appliedToArgs(implicits).asExprOf[Functoid[I]]
-              println("discharge result: " + res.show)
-              res
+              Select.unique(lambda, "apply").appliedToArgs(implicits).asExprOf[Functoid[I]]
             } else 
               '{ $function(using null.asInstanceOf[N]) }
 

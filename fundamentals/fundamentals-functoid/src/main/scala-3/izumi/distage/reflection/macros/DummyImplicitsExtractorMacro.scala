@@ -27,15 +27,13 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
   }
 
   def extractDummyArguments(term: Term, owner: Symbol): List[DummyImplicitArg] = {
-    val treeAccumulator = new TreeAccumulator[Set[DummyArg]] {
-      override def foldTree(x: Set[DummyArg], tree: qctx.reflect.Tree)(owner: qctx.reflect.Symbol): Set[DummyArg] = {
-        println("entered fold tree: " + tree.show(using Printer.TreeStructure))
+    val treeAccumulator = new TreeAccumulator[List[DummyArg]] {
+      override def foldTree(x: List[DummyArg], tree: qctx.reflect.Tree)(owner: qctx.reflect.Symbol): List[DummyArg] = {
         tree match {
           case fun @ Apply(inner: Apply, args) =>
-            println("inner fun tpe: " + fun.fun.tpe.widenTermRefByName)
             fun.fun.tpe.widenTermRefByName match {
               case lt: MethodType =>
-                val extracted = foldTrees(Set.empty, args)(owner)
+                val extracted = foldTrees(List.empty, args)(owner)
                 val newTypes = update(extracted, lt.paramTypes, extracted.nonEmpty)
                 foldTree(newTypes ++ x, inner)(owner)
             }
@@ -43,26 +41,23 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
           case s: Select => foldOverTree(x, s)(owner)
           case i: Ident =>
             if (i.tpe.baseClasses.contains(dummyTypeSymbol)) {
-              x + DummyArg(DummyImplicitArg(i, i.tpe), false)
+              x :+ DummyArg(DummyImplicitArg(i, i.tpe), false)
             } else x
           case fun @ Apply(t: TypeApply, args) =>
-            println("type apply fun tpe: " + fun.fun.tpe.widenTermRefByName + " of " + fun.show)
             fun.fun.tpe.widenTermRefByName match {
               case lt: MethodType =>
-                val (fromArgs, types) = args.zip(lt.paramTypes).flatMap { 
-                  case (arg, tpe) => 
-                    val res = foldTree(Set.empty, arg)(owner)
-                    if (res.isEmpty) None
-                    else Some(res -> tpe)
-                }.unzip
-                val fromTerm = foldTree(Set.empty, t)(owner)
-                println("args size: " + args.size)
-                println("lt types: " + lt.paramTypes + " size " + lt.paramTypes.size)
-                println("from args: " + fromArgs + " size " + fromArgs.size)
-                println("from term: " + fromTerm + " size " + fromTerm.size)
+                val (fromArgs, types) = args
+                  .zip(lt.paramTypes).flatMap {
+                    case (arg, tpe) =>
+                      foldTree(List.empty, arg)(owner) match {
+                        case Nil => None
+                        case args => Some(args -> tpe)
+                      }
+                  }.unzip
+                val fromTerm = foldTree(List.empty, t)(owner)
                 val newTypesFromArgs =
-                  if (fromArgs.flatten.exists(_.notUpdated)) update(fromArgs.flatten.toSet, types, true)
-                  else fromArgs.flatten.toSet
+                  if (fromArgs.flatten.exists(_.notUpdated)) update(fromArgs.flatten, types, true)
+                  else fromArgs.flatten
                 val newTypesFromTerm =
                   if (fromTerm.exists(_.notUpdated)) update(fromTerm, lt.paramTypes, true)
                   else fromTerm
@@ -71,10 +66,9 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
             }
 
           case fun @ Apply(_, args) =>
-            println("fun tpe: " + fun.fun.tpe.widenTermRefByName)
             fun.fun.tpe.widenTermRefByName match {
               case lt: MethodType =>
-                val extracted = foldTrees(Set.empty, args)(owner)
+                val extracted = foldTrees(List.empty, args)(owner)
                 val newTypes = update(extracted, lt.paramTypes, extracted.nonEmpty)
                 newTypes ++ x
               case _ => foldTrees(x, args)(owner) ++ x
@@ -85,15 +79,15 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
       }
     }
     treeAccumulator
-      .foldTree(Set.empty, term)(owner)
-      .toList
+      .foldTree(List.empty, term)(owner)
+      .distinct
       .map(_.dummy)
   }
 
-  private def update(args: Set[DummyArg], types: List[TypeRepr], dummy: Boolean): Set[DummyArg] = {
+  private def update(args: List[DummyArg], types: List[TypeRepr], dummy: Boolean): List[DummyArg] = {
     if (dummy) {
       args.zip(types).map { case (arg, tpe) => arg.update(tpe, true) }
-    } else Set.empty
+    } else List.empty
   }
 
   private def hasDummy(args: List[Term]): Boolean = {
