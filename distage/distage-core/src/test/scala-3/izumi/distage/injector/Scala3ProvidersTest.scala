@@ -2,6 +2,7 @@ package izumi.distage.injector
 
 import distage.*
 import izumi.distage.model.definition.dsl.ScalaVersionSpecificMakeDsl
+import izumi.functional.quasi.QuasiApplicative
 import izumi.reflect.Tag
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -56,11 +57,12 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
       make[Int].from(1)
       make[Description].fromValue(Description("X"))
       make[X].from {
-        (b: Int) => {
-          val a = 1
-          val desc = implicitly[Description]
-          X(b.toString + desc.description)
-        }
+        (b: Int) =>
+          {
+            val a = 1
+            val desc = implicitly[Description]
+            X(b.toString + desc.description)
+          }
       }
     })
 
@@ -104,11 +106,12 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
       make[String].from("str")
       make[Description].fromValue(Description("X"))
       make[X].from {
-        (b: Int) => {
-          val a = 1
-          val desc = implicitly[Description].description + implicitly[String]
-          X(desc + b.toString)
-        }
+        (b: Int) =>
+          {
+            val a = 1
+            val desc = implicitly[Description].description + implicitly[String]
+            X(desc + b.toString)
+          }
       }
     })
 
@@ -126,7 +129,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     }
 
     object Pointed {
-      def apply[F[_] : Pointed]: Pointed[F] = implicitly
+      def apply[F[_]: Pointed]: Pointed[F] = implicitly
 
       implicit final val pointedList: Pointed[List] =
         new Pointed[List] {
@@ -155,7 +158,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     }
 
     object Pointed {
-      def apply[F[_] : Pointed]: Pointed[F] = implicitly
+      def apply[F[_]: Pointed]: Pointed[F] = implicitly
 
       implicit final val pointedList: Pointed[List] =
         new Pointed[List] {
@@ -163,7 +166,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
         }
     }
 
-    case class Definition[F[_] : TagK : Pointed](getResult: Int) extends ModuleDef {
+    case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
       addImplicit[Pointed[F]]
       make[F[Any]].from(Pointed[F].point(1: Any))
     }
@@ -184,12 +187,13 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
       make[X].from {
-        (b: Int) => {
-          val a = 1
-          implicit val description = Description("desc")
-          val desc = implicitly[Description]
-          X(b.toString + desc.description)
-        }
+        (b: Int) =>
+          {
+            val a = 1
+            implicit val description = Description("desc")
+            val desc = implicitly[Description]
+            X(b.toString + desc.description)
+          }
       }
     })
 
@@ -209,12 +213,13 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
       make[X].from {
-        (b: Int) => {
-          val a = 1
-          given description: Description = Description("desc")
-          val desc = implicitly[Description]
-          X(b.toString + desc.description)
-        }
+        (b: Int) =>
+          {
+            val a = 1
+            given description: Description = Description("desc")
+            val desc = implicitly[Description]
+            X(b.toString + desc.description)
+          }
       }
     })
 
@@ -227,9 +232,9 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
   "should ignore dummy implicit during implicit search if there is implicit defined outside of the object graph" in {
     final case class Description[T](description: String)
-    final case class X(s: String)
+    final case class X(s: String, i: Any, t1: Tag[?], t2: Tag[?])
 
-    def makeX[T: Tag](value: T)(implicit desc: Description[X]): X = X(desc.description)
+    def makeX[T: Tag](value: T)(implicit desc: Description[X], t: Tag[X]): X = X(desc.description, value, Tag[T], Tag[X])
 
     implicit val description: Description[X] = Description[X]("description")
 
@@ -242,7 +247,11 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[X]
+    val x = context.get[X]
+    assert(x.s == description.description)
+    assert(x.i == 1)
+    assert(x.t1 == Tag[Int])
+    assert(x.t2 == Tag[X])
   }
 
   "should summon implicits if functoid passed to a function" in {
@@ -288,4 +297,61 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     context.get[Description]
     context.get[X]
   }
+
+  "should ignore Tag* dummies using summonIgnoring, even if they are used in context function body inside Functoid macro" in {
+    var functoid: Functoid[Any] = null
+
+    def definition[F[_]: TagK] = PlannerInput.everything(new ModuleDef {
+      make[Int].fromEffect {
+        val x = Functoid[F[Int]] {
+          (F: QuasiApplicative[F]) =>
+            // ok case
+            Predef.require(implicitly[Tag[QuasiApplicative[F]]] ne null)
+            Predef.require(implicitly[Tag[F[Int]]] ne null)
+
+            F.pure[Int](1)
+        }
+        functoid = x
+        x
+      }
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition[Identity])
+    val context = injector.produce(plan).unsafeGet()
+
+    assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[QuasiApplicative[Identity]].tag))
+    assert(functoid.get.ret == SafeType.get[Int])
+    assert(context.get[Int] == 1)
+  }
+
+  "should ignore Tag* dummies using summonIgnoring, even if they are used in context function body outside of Functoid macro" in {
+    var functoid: Functoid[Any] = null
+
+    def definition[F[_]: TagK] = PlannerInput.everything(new ModuleDef {
+      // crashes after DischargeDummyMacro, even though the generated tree is now good (from FunctoidMacro).
+      // If DischargeDummyMacro is skipped, compiles (and fails `require`'s due to nulls)
+//      make[Int].fromEffectDebug {
+      make[Int].fromEffect {
+        // bad case
+        Predef.require(implicitly[Tag[QuasiApplicative[F]]] ne null)
+        Predef.require(implicitly[Tag[F[Int]]] ne null)
+
+        val x = Functoid.apply[F[Int]] {
+          (F: QuasiApplicative[F]) => F.pure[Int](1)
+        }
+        functoid = x
+        x
+      }
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition[Identity])
+    val context = injector.produce(plan).unsafeGet()
+
+    assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[QuasiApplicative[Identity]].tag))
+    assert(functoid.get.ret == SafeType.get[Int])
+    assert(context.get[Int] == 1)
+  }
+
 }

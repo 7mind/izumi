@@ -1,11 +1,13 @@
 package izumi.distage.reflection.macros
 
+import scala.annotation.tailrec
 import scala.quoted.Quotes
 
 final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
   import qctx.reflect.*
 
-  private val dummyTypeSymbol: Symbol = TypeRepr.of[FunctoidDummyImplicit].typeSymbol
+  private val dummyType: TypeRepr = TypeRepr.of[FunctoidDummyImplicit]
+  private val dummyTypeSymbol: Symbol = dummyType.typeSymbol
 
   final case class DummyImplicitArg(
     term: Term,
@@ -82,6 +84,18 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
       .foldTree(List.empty, term)(owner)
       .distinct
       .map(_.dummy)
+  }
+
+  @tailrec def extractDummySymbolsFromImplicitSearch(knownSyms: List[Symbol]): List[Symbol] = {
+    Implicits.searchIgnoring(dummyType)(knownSyms*) match {
+      case succ: ImplicitSearchSuccess =>
+        val newSym = succ.tree.symbol
+        println(s"XYGot newSYm $newSym")
+        extractDummySymbolsFromImplicitSearch(newSym :: knownSyms)
+      case x =>
+        println(s"XYGOt failure $x")
+        knownSyms
+    }
   }
 
   private def update(args: List[DummyArg], types: List[TypeRepr], dummy: Boolean): List[DummyArg] = {

@@ -104,6 +104,11 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
               }
           ).partition(_.providedImplicit.isEmpty)
 
+        val ignoreDuringImplicitSearch = {
+          val inTreeDummySyms = dummyArgs.iterator.map(_.term.symbol).distinct.toList
+          dummyImplicitsExtractorMacro.extractDummySymbolsFromImplicitSearch(inTreeDummySyms)
+        }
+
         if (dummyArgs.nonEmpty) {
           val newValDefs = noImplicitsProvided.map {
             dummy =>
@@ -118,7 +123,6 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
                 None,
               )
           }
-          val ignoreDuringImplicitSearch = List(dummyArgs.head.term.symbol)
           val linkedParamsImplicits = analyzeLambdaOrMethodRef(name, TermParamClause(newValDefs), body, ignoreDuringImplicitSearch)
           val linkedParamsRegular = analyzeLambdaOrMethodRef(name, singleParamList, body, ignoreDuringImplicitSearch)
           val allLinkedParams = linkedParamsImplicits ++ linkedParamsRegular
@@ -152,7 +156,7 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
           
           (allLinkedParams, resultLambda.asExprOf[AnyRef], ignoreDuringImplicitSearch)
         } else {
-          (analyzeLambdaOrMethodRef(name, singleParamList, body, Nil), fun.asExprOf[AnyRef], Nil)
+          (analyzeLambdaOrMethodRef(name, singleParamList, body, ignoreDuringImplicitSearch), fun.asExprOf[AnyRef], ignoreDuringImplicitSearch)
         }
       case Typed(term, _) => analyze(term)
       case Inlined(_, _, term) => analyze(term)
