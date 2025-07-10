@@ -40,32 +40,35 @@ final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor:
     } // deem abstract type members as generic? No. Because we don't do that in Scala 2 version.
 
     '{
+      val safeType = ${ safeTypeFromRepr(tpeRepr, ignoreDuringImplicitsSearch) }
       LinkedParameter(
         SymbolInfo(
           name = ${ Expr(name) },
-          finalResultType = ${ safeTypeFromRepr(tpeRepr, ignoreDuringImplicitsSearch) },
+          finalResultType = safeType,
           isByName = ${ Expr(isByName) },
           wasGeneric = ${ Expr(wasGeneric) },
         ),
-        ${ makeKeyFromRepr(tpeRepr, identifier, ignoreDuringImplicitsSearch) },
+        ${ makeKeyFromRepr('{ safeType }, identifier, ignoreDuringImplicitsSearch) },
       )
     }
   }
 
-  private def makeKeyFromRepr(tpe: TypeRepr, id: Option[String], ignoreDuringImplicitsSearch: List[Symbol]): Expr[DIKey] = {
-    val safeTpe = safeTypeFromRepr(tpe, ignoreDuringImplicitsSearch)
+  private def makeKeyFromRepr(safeType: Expr[SafeType], id: Option[String], ignoreDuringImplicitsSearch: List[Symbol]): Expr[DIKey] = {
     id match {
       case Some(str) =>
-        val strExpr = Expr(str)
-        '{ DIKey.IdKey($safeTpe, $strExpr, None)(using scala.compiletime.summonInline[IdContract[String]]) }
+        val idContractExpr = Expr
+          .summonIgnoring[IdContract[String]](ignoreDuringImplicitsSearch*)
+          .getOrElse(qctx.reflect.report.errorAndAbort(s"No implicit value found for ${Type.show[IdContract[String]]}"))
+
+        '{ DIKey.IdKey[String](${ safeType }, ${ Expr(str) }, None)(using ${ idContractExpr }) }
       case None =>
-        '{ DIKey.TypeKey($safeTpe, None) }
+        '{ DIKey.TypeKey(${ safeType }, None) }
     }
   }
 
   private def safeTypeFromRepr(tpe: TypeRepr, ignoreDuringImplicitsSearch: List[Symbol]): Expr[SafeType] = {
     dropByName(tpe).asType match {
-      case '[a] => FunctoidMacroHelpers.generateSafeType[a, Q](ignoreDuringImplicitsSearch)
+      case '[a] => FunctoidMacroHelpers.generateSafeType[a](ignoreDuringImplicitsSearch)
       case _ => report.errorAndAbort(s"Cannot generate SafeType from ${tpe.show}, probably that's a bug in Functoid macro")
     }
   }
