@@ -67,7 +67,7 @@ final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen w
       val definition: ModuleDef = new ModuleDef {
         make[Res].named("instance").fromResource(resResource)
 
-        make[Res].named("provider").fromResource {
+        make[Res].named("provider").fromResourceAdapt {
           (_: Res @Id("instance")) =>
             resResource
         }
@@ -134,7 +134,7 @@ final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen w
         // assertCompiles breaks on `make` macro
         assertCompiles("""
          new ModuleDef {
-           make[String].fromResource { (_: Unit) => ZManaged.succeed("42") }
+           make[String].fromResourceAdapt { (_: Unit) => ZManaged.succeed("42") }
          }
       """)
       }
@@ -142,7 +142,7 @@ final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen w
         assertCompiles(
           """
          new ModuleDef {
-           make[String].fromResource { (_: Unit) => ZManaged.succeed(42) }
+           make[String].fromResourceAdapt { (_: Unit) => ZManaged.succeed(42) }
          }
       """
         )

@@ -545,7 +545,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       val definitionResource = new ModuleDef {
         make[ImplXYZ]
-          .fromResource[X]
+          .fromResourceClass[X]
           .aliased[TraitX]
           .aliased[TraitY]
           .aliased[TraitZ]
@@ -734,7 +734,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         assertCompiles(
           """
           def definition[F[_]: TagK] = new ModuleDef {
-            make[Int].fromResource[Lifecycle.Basic[F, Int]]
+            make[Int].fromResourceClass[Lifecycle.Basic[F, Int]]
           }
         """
         )

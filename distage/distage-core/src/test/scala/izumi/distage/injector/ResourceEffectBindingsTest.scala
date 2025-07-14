@@ -293,7 +293,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       import ClassResourceCase._
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Res].fromResource[SimpleResource]
+        make[Res].fromResourceClass[SimpleResource]
       })
 
       val injector = mkInjector()
@@ -313,7 +313,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       import ClassResourceCase._
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Res].fromResource[SuspendResource]
+        make[Res].fromResourceClass[SuspendResource]
       })
 
       val injector = mkInjector()
@@ -384,7 +384,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val failure = resource
         .use {
           case Left(fail) =>
-            Suspend2 {
+            Suspend2 {  
               val nonSyntheticInstances = fail.failed.instances.filter(_._1 != DIKey.get[LocatorRef])
               assert(nonSyntheticInstances.isEmpty)
               fail
@@ -404,9 +404,9 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[mutable.Queue[Ops]].fromEffectValue(queueEffect)
-        make[X].fromResource[XResource]
-        make[Y].fromResource[YResource]
-        make[Z].fromResource[ZFaultyResource]
+        make[X].fromResourceClass[XResource]
+        make[Y].fromResourceClass[YResource]
+        make[Z].fromResourceClass[ZFaultyResource]
       })
 
       val injector = mkInjector()
@@ -436,7 +436,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         assertCompiles {
           """
           def x[F[_]]: ModuleDef = new ModuleDef {
-            make[Any].fromResource[Lifecycle[F, Any]](() => ???)
+            make[Any].fromResource[Lifecycle[F, Any], Nothing](() => ???)
           }; ""
           """
         }

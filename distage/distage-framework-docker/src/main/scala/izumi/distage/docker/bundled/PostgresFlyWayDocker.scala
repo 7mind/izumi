@@ -91,14 +91,14 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
   make[PostgresFlyWayDocker.Cfg].from(cfg)
 
   // Network binding, to be able to access Postgres container from the FlyWay container
-  make[PostgresFlyWayDocker.FlyWayNetwork.Network].fromResource {
+  make[PostgresFlyWayDocker.FlyWayNetwork.Network].fromResourceNoCapture {
     PostgresFlyWayDocker.FlyWayNetwork.make[F]
   }
 
   // Binding of the Postgres container.
   // Here we are going to bind the proxy instance so that we setup postgres DB before flyway,
   // later we'll just return the running container here as the real instance, after FlyWay container has run.
-  make[PostgresFlyWayDocker.Container].named("postgres-flyway-proxy").fromResource {
+  make[PostgresFlyWayDocker.Container].named("postgres-flyway-proxy").fromResourceNoCapture {
     PostgresFlyWayDocker
       .make[F]
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
@@ -109,7 +109,7 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
   }
 
   // FlyWay container binding with modification of container parameters (to pass Postgres container address into config).
-  make[PostgresFlyWayDocker.FlyWay.Container].fromResource {
+  make[PostgresFlyWayDocker.FlyWay.Container].fromResourceNoCapture {
     PostgresFlyWayDocker.FlyWay
       .make[F]
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)

@@ -6,6 +6,8 @@ import cats.effect.{IO, Resource, Sync}
 import distage.*
 import izumi.distage.compat.CatsResourcesTestJvm.*
 import izumi.distage.model.definition.Binding.SingletonBinding
+import izumi.distage.model.definition.dsl.LifecycleAdapters
+import izumi.distage.model.definition.dsl.LifecycleAdapters.LifecycleTag
 import izumi.distage.model.definition.{Id, ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.provisioning.proxies.DistageProxy
@@ -74,7 +76,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
         (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
           IORuntime(cpuPool, blockingPool, scheduler, () => (), ioRuntimeConfig)
       }
-      make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
+      make[ExecutionContext].named("cpu").fromResourceClass[CreateCPUPool]
 
       final class CreateCPUPool(@unused ioRuntime: => IORuntime)
         extends Lifecycle.Of[Identity, ExecutionContext](
@@ -109,7 +111,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
         (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
           IORuntime(cpuPool, blockingPool, scheduler, () => (), ioRuntimeConfig)
       }
-      make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
+      make[ExecutionContext].named("cpu").fromResourceClass[CreateCPUPool]
 
       // DIFFERENCE: not by-name
       final class CreateCPUPool(@unused ioRuntime: IORuntime)
@@ -138,7 +140,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
     val definition: ModuleDef = new ModuleDef {
       make[Res].named("instance").fromResource(resResource)
 
-      make[Res].named("provider").fromResource {
+      make[Res].named("provider").fromResourceAdapt {
         (_: Res @Id("instance")) =>
           resResource
       }
