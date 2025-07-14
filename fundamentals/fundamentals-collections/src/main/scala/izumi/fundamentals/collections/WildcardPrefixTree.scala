@@ -22,17 +22,26 @@ final case class WildcardPrefixTree[K, V](values: Seq[V], children: Map[PathElem
     }
   }
 
-  @tailrec
   def findBestMatch(prefix: Iterable[K]): BestMatch[K, V] = {
+    findBestMatchImpl(prefix, None)
+  }
+
+  @tailrec
+  private def findBestMatchImpl(prefix: Iterable[K], maybeFallback: Option[BestMatch[K, V]]): BestMatch[K, V] = {
     if (prefix.isEmpty) {
       BestMatch(this, prefix)
     } else {
-      val exact = children.get(PathElement.Value(prefix.head))
-      val wildcard = children.get(PathElement.Wildcard)
-      exact.orElse(wildcard) match {
-        case Some(value) =>
-          value.findBestMatch(prefix.tail)
-        case None =>
+      val maybeExact = children.get(PathElement.Value(prefix.head))
+      val maybeWildcard = children.get(PathElement.Wildcard)
+      (maybeExact, maybeWildcard, maybeFallback) match {
+        case (Some(exact), _, _) =>
+          val nextFallback = maybeWildcard.map(w => BestMatch(w, prefix.tail)).orElse(maybeFallback)
+          exact.findBestMatchImpl(prefix.tail, nextFallback)
+        case (None, Some(wildcard), _) =>
+          wildcard.findBestMatchImpl(prefix.tail, maybeFallback)
+        case (None, None, Some(BestMatch(fallback, unmatched))) =>
+          fallback.findBestMatchImpl(unmatched, None)
+        case (None, None, None) =>
           BestMatch(this, prefix)
       }
     }
