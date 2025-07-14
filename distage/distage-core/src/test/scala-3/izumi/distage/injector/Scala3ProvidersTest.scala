@@ -182,15 +182,13 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     final case class Description(description: String)
     final case class X(s: String)
 
-    def makeX(x: Int)(using desc: Description): X = X(desc.description)
-
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
       make[X].from {
         (b: Int) =>
           {
             val a = 1
-            implicit val description = Description("desc")
+            implicit val description: Description = Description("desc")
             val desc = implicitly[Description]
             X(b.toString + desc.description)
           }
@@ -201,7 +199,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[X]
+    assert(context.get[X] == X("1desc"))
   }
 
   "should not override given inside the block" in {
@@ -329,9 +327,6 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     var functoid: Functoid[Any] = null
 
     def definition[F[_]: TagK] = PlannerInput.everything(new ModuleDef {
-      // crashes after DischargeDummyMacro, even though the generated tree is now good (from FunctoidMacro).
-      // If DischargeDummyMacro is skipped, compiles (and fails `require`'s due to nulls)
-//      make[Int].fromEffectDebug {
       make[Int].fromEffect {
         // bad case
         Predef.require(implicitly[Tag[QuasiApplicative[F]]] ne null)

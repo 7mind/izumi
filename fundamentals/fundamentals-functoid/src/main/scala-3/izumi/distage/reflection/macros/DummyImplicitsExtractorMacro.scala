@@ -17,6 +17,10 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
     def withProvidedImplicit(i: Option[Term]): DummyImplicitArg = {
       this.copy(providedImplicit = i)
     }
+
+    override def toString: String = {
+      s"DummyImplicitArg(${term.show}, ${tpe.show}, ${providedImplicit.map(_.show)})"
+    }
   }
 
   private final case class DummyArg(
@@ -24,33 +28,66 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
     updated: Boolean,
   ) {
     def notUpdated: Boolean = !updated
-    def update(tpe: TypeRepr, updated: Boolean): DummyArg =
-      this.copy(dummy = this.dummy.copy(tpe = tpe), updated = updated)
+    def update(tpe: TypeRepr): DummyArg =
+      this.copy(dummy = this.dummy.copy(tpe = tpe), updated = true)
   }
 
   def extractDummyArguments(term: Term, owner: Symbol): List[DummyImplicitArg] = {
     val treeAccumulator = new TreeAccumulator[List[DummyArg]] {
-      override def foldTree(x: List[DummyArg], tree: qctx.reflect.Tree)(owner: qctx.reflect.Symbol): List[DummyArg] = {
+      override def foldTree(acc: List[DummyArg], tree: qctx.reflect.Tree)(owner: qctx.reflect.Symbol): List[DummyArg] = {
         tree match {
           case fun @ Apply(inner: Apply, args) =>
             fun.fun.tpe.widenTermRefByName match {
               case lt: MethodType =>
                 val extracted = foldTrees(List.empty, args)(owner)
-                val newTypes = update(extracted, lt.paramTypes, extracted.nonEmpty)
-                foldTree(newTypes ++ x, inner)(owner)
+                val newTypes = update(extracted, lt.paramTypes)
+                foldTree(newTypes ++ acc, inner)(owner)
             }
-          case fun @ Apply(s: Select, args) => foldOverTree(x, fun)(owner)
-          case s: Select => foldOverTree(x, s)(owner)
+          case fun @ Apply(inner: Select, args) =>
+            fun.fun.tpe.widenTermRefByName match {
+              case lt: MethodType =>
+                val extracted = foldTrees(List.empty, args)(owner)
+                val newTypes = update(extracted, lt.paramTypes)
+                foldTree(newTypes ++ acc, inner)(owner)
+            }
+          case s @ Select(p, _) =>
+            val res = foldOverTree(acc, s)(owner)
+            res.map {
+              case d @ DummyArg(_, false) => d.update(p.tpe.widenTermRefByName)
+              case d => d
+            }
           case i: Ident =>
             if (i.tpe.baseClasses.contains(dummyTypeSymbol)) {
-              x :+ DummyArg(DummyImplicitArg(i, i.tpe), false)
-            } else x
+              acc :+ DummyArg(DummyImplicitArg(i, i.tpe), false)
+            } else acc
           case fun @ Apply(t: TypeApply, args) =>
             fun.fun.tpe.widenTermRefByName match {
               case lt: MethodType =>
+//                println(
+//                  s"got methodtype ${lt.show} ${lt.show(using Printer.TypeReprStructure)} ${lt.paramTypes.exists(_.typeSymbol == defn.RepeatedParamClass)} ${lt.paramTypes.collect {
+//                      case x if x.typeSymbol == defn.RepeatedParamClass =>
+//                        x match {
+//                          case AppliedType(_, List(arg)) => s"REPEATED:${arg.show}"
+//                        }
+//                    }}"
+//                )
+                val varargType = lt.paramTypes.lastOption match {
+                  case Some(AppliedType(t, targ :: Nil)) if t.typeSymbol == defn.RepeatedParamClass =>
+                    Some(targ)
+                  case _ =>
+                    None
+                }
+                val paramTypesWithVararg = varargType match {
+                  case None => lt.paramTypes
+                  case Some(vararg) =>
+                    val repeat = args.size - (lt.paramTypes.size - 1)
+                    lt.paramTypes.init ::: List.fill(repeat)(vararg)
+                }
                 val (fromArgs, types) = args
-                  .zip(lt.paramTypes).flatMap {
+                  .zip(paramTypesWithVararg)
+                  .flatMap {
                     case (arg, tpe) =>
+                      // FIXME carry forward `tpe` in the accumulator, instead of fixing-up "non-updated" dummies afterwards
                       foldTree(List.empty, arg)(owner) match {
                         case Nil => None
                         case args => Some(args -> tpe)
@@ -58,25 +95,30 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
                   }.unzip
                 val fromTerm = foldTree(List.empty, t)(owner)
                 val newTypesFromArgs =
-                  if (fromArgs.flatten.exists(_.notUpdated)) update(fromArgs.flatten, types, true)
+                  if (fromArgs.flatten.exists(_.notUpdated)) update(fromArgs.flatten, types)
                   else fromArgs.flatten
                 val newTypesFromTerm =
-                  if (fromTerm.exists(_.notUpdated)) update(fromTerm, lt.paramTypes, true)
+                  if (fromTerm.exists(_.notUpdated)) update(fromTerm, paramTypesWithVararg)
                   else fromTerm
-                newTypesFromTerm ++ newTypesFromArgs ++ x
-              case _ => foldTrees(x, args)(owner) ++ x
+
+                val res = newTypesFromTerm ++ newTypesFromArgs ++ acc
+                if (res.nonEmpty) {
+                  println(s"Gfodlf from `${fun.show}`\n newTypesFromTerm=$newTypesFromTerm\n newTypesFromArgs=$newTypesFromArgs\n fromTerm=$fromTerm")
+                }
+                res
+              case _ => foldTrees(acc, args)(owner) ++ acc
             }
 
           case fun @ Apply(_, args) =>
             fun.fun.tpe.widenTermRefByName match {
               case lt: MethodType =>
                 val extracted = foldTrees(List.empty, args)(owner)
-                val newTypes = update(extracted, lt.paramTypes, extracted.nonEmpty)
-                newTypes ++ x
-              case _ => foldTrees(x, args)(owner) ++ x
+                val newTypes = update(extracted, lt.paramTypes)
+                newTypes ++ acc
+              case _ => foldTrees(acc, args)(owner) ++ acc
             }
 
-          case _ => foldOverTree(x, tree)(owner)
+          case _ => foldOverTree(acc, tree)(owner)
         }
       }
     }
@@ -92,19 +134,14 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
         val newSym = succ.tree.symbol
         println(s"XYGot newSYm $newSym")
         extractDummySymbolsFromImplicitSearch(newSym :: knownSyms)
-      case x =>
-        println(s"XYGOt failure $x")
+      case x: ImplicitSearchFailure =>
+        println(s"XYGOt failure for $dummyType ${x.explanation}")
         knownSyms
     }
   }
 
-  private def update(args: List[DummyArg], types: List[TypeRepr], dummy: Boolean): List[DummyArg] = {
-    if (dummy) {
-      args.zip(types).map { case (arg, tpe) => arg.update(tpe, true) }
-    } else List.empty
+  private def update(args: List[DummyArg], types: List[TypeRepr]): List[DummyArg] = {
+    args.zip(types).map { case (arg, tpe) => arg.update(tpe) }
   }
 
-  private def hasDummy(args: List[Term]): Boolean = {
-    args.exists(_.tpe.baseClasses.contains(dummyTypeSymbol))
-  }
 }

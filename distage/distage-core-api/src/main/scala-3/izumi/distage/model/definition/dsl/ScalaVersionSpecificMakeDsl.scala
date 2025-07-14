@@ -22,7 +22,8 @@ trait ScalaVersionSpecificMakeDsl[T, AfterBind] { self: MakeDSLBase[T, AfterBind
 
   inline def fromEffectDebug[F[_]: TagK, I <: T: Tag, N <: IgnorableFunctoidDummyImplicit](inline f: N ?=> Functoid[F[I]]): AfterBind = {
     compiletime.error(
-      "input: " + compiletime.codeOf((() => f): () => N ?=> Functoid[F[I]]) + "\nresult: " + compiletime.codeOf(DischargeDummyMacro.dischargeDummy[F[I], N](f))
+      "input: " + compiletime.codeOf((() => f): () => N ?=> Functoid[F[I]]) +
+      "\nresult: " + compiletime.codeOf(DischargeDummyMacro.dischargeDummy[F[I], N](f))
     )
     fromEffect[F, I, N](f)
   }

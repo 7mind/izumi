@@ -67,7 +67,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         make[Res]
           .named("instance").fromResource(resResource)
 
-        make[Res].named("provider").fromResource {
+        make[Res].named("provider").fromResourceAdapt {
           (_: Res @Id("instance")) =>
             resResource
         }
@@ -170,7 +170,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
       val definition: ModuleDef = new ModuleDef {
         make[Res].named("instance").fromResource(resResource)
 
-        make[Res].named("provider").fromResource {
+        make[Res].named("provider").fromResourceAdapt {
           (_: Res @Id("instance")) =>
             resResource
         }

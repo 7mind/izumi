@@ -93,14 +93,14 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
         val (noImplicitsProvided, implicitsProvided) = dummyArgs
           .map(
             dummy =>
-              dummy.tpe.asType match {
-                case '[a] =>
-                  if (dummy.term.tpe.baseClasses.contains(unignorableDummyTypeSymbol)) {
-                    dummy
-                  } else {
-                    dummy.withProvidedImplicit(Expr.summonIgnoring[a](dummy.term.symbol).map(_.asTerm))
-                  }
-                case _ => dummy
+              if (dummy.term.tpe.baseClasses.contains(unignorableDummyTypeSymbol)) {
+                dummy
+              } else {
+                val maybeImplicit = Implicits.searchIgnoring(dummy.tpe)(dummy.term.symbol) match {
+                  case s: ImplicitSearchSuccess => Some(s.tree)
+                  case _ => None
+                }
+                dummy.withProvidedImplicit(maybeImplicit)
               }
           ).partition(_.providedImplicit.isEmpty)
 
@@ -153,7 +153,7 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
               Select.unique(newFun, "apply").appliedToArgs(params)
             },
           )
-          
+
           (allLinkedParams, resultLambda.asExprOf[AnyRef], ignoreDuringImplicitSearch)
         } else {
           (analyzeLambdaOrMethodRef(name, singleParamList, body, ignoreDuringImplicitSearch), fun.asExprOf[AnyRef], ignoreDuringImplicitSearch)
