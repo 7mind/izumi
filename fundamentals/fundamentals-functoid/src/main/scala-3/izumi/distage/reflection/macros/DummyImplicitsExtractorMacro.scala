@@ -43,13 +43,8 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
                 val newTypes = update(extracted, lt.paramTypes)
                 foldTree(newTypes ++ acc, inner)(owner)
             }
-          case fun @ Apply(inner: Select, args) =>
-            fun.fun.tpe.widenTermRefByName match {
-              case lt: MethodType =>
-                val extracted = foldTrees(List.empty, args)(owner)
-                val newTypes = update(extracted, lt.paramTypes)
-                foldTree(newTypes ++ acc, inner)(owner)
-            }
+          case Apply(_: Select, _) =>
+            foldOverTree(acc, tree)(owner)
           case s @ Select(p, _) =>
             val res = foldOverTree(acc, s)(owner)
             res.map {
@@ -103,7 +98,9 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
 
                 val res = newTypesFromTerm ++ newTypesFromArgs ++ acc
                 if (res.nonEmpty) {
-                  println(s"Gfodlf from `${fun.show}`\n newTypesFromTerm=$newTypesFromTerm\n newTypesFromArgs=$newTypesFromArgs\n fromTerm=$fromTerm")
+                  println(
+                    s"Got apply(TypeApply) dummies from `${fun.show}`\n newTypesFromTerm=$newTypesFromTerm\n newTypesFromArgs=$newTypesFromArgs\n fromTerm=$fromTerm"
+                  )
                 }
                 res
               case _ => foldTrees(acc, args)(owner) ++ acc
