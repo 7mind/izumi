@@ -3,7 +3,6 @@ package izumi.logstage.sink
 import izumi.functional.bio.SyncSafe1
 import izumi.fundamentals.platform.language.IzScala
 import izumi.logstage.api.IzLogger
-import izumi.logstage.api.rendering.LogstageCodec
 import izumi.logstage.sink.ExampleService.ExampleDTO
 import logstage.LogIO
 import logstage.strict.LogIOStrict
@@ -141,6 +140,7 @@ class ExampleService(logger: IzLogger) {
     mapsOk()
     rawOk()
     rawWithCtxOk()
+    nullsOk()
   }
 
   private def makeException(message: String): RuntimeException = {
