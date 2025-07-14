@@ -87,16 +87,20 @@ class WildcardPrefixTreeTest extends AnyWordSpec {
         )
       )
 
-      assert(tree1.findBestMatch(Seq("b", "c", "missing")).found.values.toSet == Set(1))
+      assert(tree1.findBestMatch(Seq("b", "c", "c")).found.values.toSet == Set(10))
+      assert(tree1.findBestMatch(Seq("b", "c", "c")).unmatched.isEmpty)
+
+      assert(tree1.findBestMatch(Seq("b", "c", "missing")).found.values.toSet == Set(2))
       assert(tree1.findBestMatch(Seq("b", "c", "missing")).unmatched == Seq("missing"))
 
       assert(tree1.findBestMatch(Seq("b", "missing", "c")).found.values.toSet == Set(11))
       assert(tree1.findBestMatch(Seq("b", "missing", "c")).unmatched.isEmpty)
 
-      assert(tree1.findBestMatch(Seq("b", "missing", "missing")).found.values.toSet == Set(2))
-      assert(tree1.findBestMatch(Seq("b", "missing", "missing2")).unmatched == Seq("missing2"))
-      assert(tree1.findBestMatch(Seq("b", "x", "missing")).found.values.toSet == Set(2))
-      assert(tree1.findBestMatch(Seq("b", "x", "missing")).unmatched == Seq("missing"))
+      assert(tree1.findBestMatch(Seq("b", "missing", "missing")).found.values.toSet == Set(100, 101))
+      assert(tree1.findBestMatch(Seq("b", "missing", "missing2")).unmatched == Seq("missing", "missing2"))
+
+      assert(tree1.findBestMatch(Seq("b", "x", "missing")).found.values.toSet == Set(100, 101))
+      assert(tree1.findBestMatch(Seq("b", "x", "missing")).unmatched == Seq("x", "missing"))
 
       assert(tree1.findBestMatch(Seq("missing1", "missing2")).found.values.toSet == Set(100, 101))
       assert(tree1.findBestMatch(Seq("missing1", "missing2")).unmatched == Seq("missing2"))
