@@ -74,6 +74,23 @@ class BasicLoggingTest extends AnyWordSpec {
       assert(message3.template.parts.toList == List("Hello\nthere!\n"))
       assert(message3.args == List.empty)
     }
+
+    "correctly search codecs for wildcards" in {
+      import Fixture.*
+      final class SealedHolder[T <: Sealed](val value: T)
+      def withWildcard1(some: Some[?]): Message = {
+        Message(s"wildcard: ${some.value}")
+      }
+      def withWildcard2(sld: SealedHolder[?]): Message = {
+        Message(s"wildcard: ${sld.value}")
+      }
+
+      val msg1 = withWildcard1(Some(1))
+      val msg2 = withWildcard2(new SealedHolder(Sealed.Branch("")))
+
+      assert(msg1.args.head.codec.isEmpty)
+      assert(msg2.args.head.codec == Some(Sealed.codec))
+    }
   }
 
   "Strict logger" should {

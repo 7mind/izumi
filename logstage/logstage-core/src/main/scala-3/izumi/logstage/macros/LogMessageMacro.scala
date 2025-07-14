@@ -175,33 +175,21 @@ object LogMessageMacro {
     }
 
     def findCodec(expr: Expr[Any]): Expr[Option[LogstageCodec[Any]]] = {
-      val codec: Expr[Option[LogstageCodec[Any]]] = expr.asTerm.tpe.widenTermRefByName.asType match {
-        case '[a] =>
-          val tpe = Type.of[LogstageCodec[a]]
-          Expr.summon[LogstageCodec[a]](using tpe) match {
-            case Some(c) =>
-              '{ Some(${ c }.asInstanceOf[LogstageCodec[Any]]) }
-            case None if strict =>
-              report.errorAndAbort(s"Implicit search failed for ${Type.show(using tpe)} for ${expr.show}, LogstageCodec instances are required in Strict mode")
-            case None =>
-              Expr(None)
-          }
+      val targ = expr.asTerm.tpe.widenTermRefByName
+      val sym = Symbol.requiredClass("izumi.logstage.api.rendering.LogstageCodec")
+      val appliedType = AppliedType(sym.typeRef, List(targ))
+      Implicits.search(appliedType) match {
+        case s: ImplicitSearchSuccess =>
+          val c = s.tree.asExprOf[LogstageCodec[?]]
+          '{ Some(${ c }.asInstanceOf[LogstageCodec[Any]]) }
+        case _ if strict =>
+          report.errorAndAbort(s"Implicit search failed for ${appliedType.show} for ${expr.show}, LogstageCodec instances are required in Strict mode")
+        case _ =>
+          Expr(None)
       }
-
-      // Expr.summon mysteriously fail here
-//      val codec = Implicits.search(expr.asTerm.tpe) match {
-//        case iss: ImplicitSearchSuccess =>
-//          report.warning(s"Found codec for ${expr.asTerm}: ${expr.asTerm.tpe} ==> ${iss.tree.asExpr}")
-//          '{Some(${iss.tree.asExpr.asInstanceOf[Expr[LogstageCodec[Any]]]})}
-//        case isf: ImplicitSearchFailure =>
-//          report.warning(s"Not found codec for ${expr.asTerm}: ${expr.asTerm.tpe}")
-//          Expr(None)
-//      }
-
-      codec
     }
 
-    def extractArgName(acc: Seq[String], expr: Expr[Any]): (Seq[String], Expr[Any], Boolean, Expr[Option[LogstageCodec[Any]]]) = {
+    def extractArgName(acc: Seq[String], expr0: Expr[Any]): (Seq[String], Expr[Any], Boolean, Expr[Option[LogstageCodec[Any]]]) = {
       def nameOf(id: Expr[Any]): Seq[String] = {
         id.asTerm match {
           case Literal(c) =>
@@ -210,7 +198,7 @@ object LogMessageMacro {
             report.errorAndAbort(s"Log argument name must be a literal: $id")
         }
       }
-      expr match {
+      expr0 match {
         case '{ ($expr: Any) -> $id -> null } =>
           (nameOf(id), expr, true, findCodec(expr))
 
@@ -220,8 +208,8 @@ object LogMessageMacro {
         case '{ ($expr: Any) -> $id } =>
           (nameOf(id), expr, false, findCodec(expr))
 
-        case o =>
-          (extractTermName(acc, o.asTerm), o, false, findCodec(o))
+        case other =>
+          (extractTermName(acc, other.asTerm), other, false, findCodec(other))
       }
     }
 
