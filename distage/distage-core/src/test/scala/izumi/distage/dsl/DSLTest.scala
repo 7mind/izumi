@@ -571,7 +571,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       val definitionResourceFn = new ModuleDef {
         make[ImplXYZ]
-          .fromResource(implXYZResource)
+          .fromResourceValue(implXYZResource)
           .aliased[TraitX]
           .aliased[TraitY]
           .aliased[TraitZ]
@@ -819,7 +819,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
     "addDependency supports adding dependencies for .fromResource/.fromEffect bindings" in {
       val definition = new ModuleDef {
-        make[Int].fromResource(Lifecycle.pure(5)).addDependency[String]
+        make[Int].fromResourceValue(Lifecycle.pure(5)).addDependency[String]
         make[Long].fromResource(() => Lifecycle.pure(5L)).addDependency[String]
         make[Short].fromEffect(() => 5: Identity[Short]).addDependency[String]
       }

@@ -25,7 +25,7 @@ class ZookeeperDockerModule[F[_]: TagK] extends ModuleDef {
   make[KafkaZookeeperNetwork.Network].fromResource {
     KafkaZookeeperNetwork.make[F]
   }
-  make[ZookeeperDocker.Container].fromResource {
+  make[ZookeeperDocker.Container].fromResourceNoCapture {
     ZookeeperDocker
       .make[F]
       .connectToNetwork(KafkaZookeeperNetwork)

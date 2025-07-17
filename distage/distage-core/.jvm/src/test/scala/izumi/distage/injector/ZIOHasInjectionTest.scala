@@ -11,6 +11,8 @@ import izumi.distage.model.reflection.TypedRef
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.model.definition.dsl.ScalaVersionSpecificMakeFromZIOEnvDsl
+import izumi.distage.reflection.macros.IgnorableFunctoidDummyImplicit
 import zio.*
 
 import scala.annotation.nowarn
@@ -114,7 +116,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Dep].named("A").fromClass[DepA]
         make[Dep].named("B").fromClass[DepB]
-        make[TestClass2[Dep]].named("A").fromZIOEnv[Dep @Id("A"), Nothing, TestClass2[Dep]](ctorA)
+        make[TestClass2[Dep]].named("A").fromZIOEnv[Dep @Id("A"), Nothing, TestClass2[Dep], IgnorableFunctoidDummyImplicit](ctorA)
         make[TestClass2[Dep]].named("B").fromZIOEnv(ctorB)
       })
 

@@ -112,7 +112,7 @@ object ModuleDefDSL {
       from(ctor.provider)
     }
 
-    //    final def from[I <: T: Tag](function: => I): AfterBind =
+//    final def from[I <: T: Tag](function: => I): AfterBind =
 //      from(Functoid.lift(function))
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
@@ -285,10 +285,10 @@ object ModuleDefDSL {
       fromResource(ctor.provider)
     }
 
-//    final def fromResourceValue[R](instance: R & Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R]): AfterBind = {
-//      import tag.*
-//      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
-//    }
+    final def fromResourceValue[R](instance: R & Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R]): AfterBind = {
+      import tag.*
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
+    }
 
     final def fromResourceNoCapture[R](function: Functoid[R & Lifecycle[LifecycleF, T]])(implicit tag: LifecycleTag[R]): AfterBind = {
       import tag.*
@@ -491,94 +491,94 @@ object ModuleDefDSL {
 
   object MakeDSLBase {
 
-    implicit final class MakeFromZIOZEnv[T, AfterBind](protected val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal {
-
-      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](effect: ZIO[Scope & R, E, I]): AfterBind = {
-        val provider: Functoid[Lifecycle.FromZIO[Any, E, I]] = ZEnvConstructor[R]
-          .map(r => effect.provideSomeEnvironment[Scope](_.unionAll[R](r)))
-          .map(Lifecycle.fromZIO[Any](_))
-
-        dsl.fromResource(provider)
-      }
-
-      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZIO[Scope & R, E, I]]): AfterBind = {
-        val provider: Functoid[Lifecycle.FromZIO[Any, E, I]] = function
-          .map2(ZEnvConstructor[R])((zio, r) => zio.provideSomeEnvironment[Scope](_.unionAll[R](r)))
-          .map(Lifecycle.fromZIO[Any](_))
-
-        dsl.fromResource(provider)
-      }
-
-      def fromZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
-        dsl.fromResourceAdapt(ZEnvConstructor[R].map(resource.provideEnvironment(_)))
-      }
-
-      def fromZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZManaged[R, E, I]]): AfterBind = {
-        dsl.fromResourceAdapt(function.map2(ZEnvConstructor[R])(_.provideEnvironment(_)))
-      }
-
-      def fromZLayerEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](layer: ZLayer[R, E, I]): AfterBind = {
-        dsl.fromResourceAdapt(ZEnvConstructor[R].map(ZLayer.succeedEnvironment(_) >>> layer))
-      }
-      def fromZLayerEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZLayer[R, E, I]]): AfterBind = {
-        dsl.fromResourceAdapt(function.map2(ZEnvConstructor[R])((layer, e) => ZLayer.succeedEnvironment(e) >>> layer))
-      }
-
-      /**
-        * Bind to a Lifecycle class which has a ZIO effect type that specifies dependencies via zio environment, e.g.
-        *
-        * {{{
-        * class IntLifecycle extends Lifecycle.OfZIO[Double, Nothing, Int](
-        *   for {
-        *     double <- ZIO.service[Double]
-        *     _ <- ZIO.acquireRelease(ZIO.unit)(_ => ZIO.succeed(println("Closed")))
-        *   } yield double.toInt
-        * )
-        *
-        * val module = new ModuleDef {
-        *   make[Int].fromZEnvLifecycle[IntLifecycle]
-        *   make[Double].from(5.0)
-        * }
-        *
-        * Injector[Task]().produceRun(module) {
-        *   (i: Int) => ZIO.succeed(println(i))
-        * }
-        * // 5
-        * // Closed
-        * }}}
-        *
-        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
-        */
-      def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: ClassConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
-        import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
-        val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(using tagFull)
-        dsl.fromResource(provider)(resourceTag)
-      }
-
-      /**
-        * Bind to a Lifecycle value which has a ZIO effect type that specifies dependencies via zio environment
-        *
-        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
-        */
-      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: Lifecycle[ZIO[R, E, _], I]): AfterBind = {
-        val provider = ZEnvConstructor[R].map(provideZEnvLifecycle(resource, _))
-        dsl.fromResource[Lifecycle[ZIO[Any, E, _], I], IgnorableFunctoidDummyImplicit](provider)
-      }
-
-      /**
-        * Bind to a Lifecycle value which has a ZIO effect type that specifies dependencies via zio environment
-        *
-        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
-        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
-        */
-      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[Lifecycle[ZIO[R, E, _], I]]): AfterBind = {
-        val provider = function.map2(ZEnvConstructor[R])(provideZEnvLifecycle)
-        dsl.fromResource[Lifecycle[ZIO[Any, E, _], I], IgnorableFunctoidDummyImplicit](provider)
-      }
-
-    }
+//    implicit final class MakeFromZIOZEnv[T, AfterBind](protected val dsl: MakeDSLBase[T, AfterBind]) extends AnyVal {
+//
+//      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](effect: ZIO[Scope & R, E, I]): AfterBind = {
+//        val provider: Functoid[Lifecycle.FromZIO[Any, E, I]] = ZEnvConstructor[R]
+//          .map(r => effect.provideSomeEnvironment[Scope](_.unionAll[R](r)))
+//          .map(Lifecycle.fromZIO[Any](_))
+//
+//        dsl.fromResource(provider)
+//      }
+//
+//      def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZIO[Scope & R, E, I]]): AfterBind = {
+//        val provider: Functoid[Lifecycle.FromZIO[Any, E, I]] = function
+//          .map2(ZEnvConstructor[R])((zio, r) => zio.provideSomeEnvironment[Scope](_.unionAll[R](r)))
+//          .map(Lifecycle.fromZIO[Any](_))
+//
+//        dsl.fromResource(provider)
+//      }
+//
+//      def fromZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
+//        dsl.fromResourceAdapt(ZEnvConstructor[R].map(resource.provideEnvironment(_)))
+//      }
+//
+//      def fromZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZManaged[R, E, I]]): AfterBind = {
+//        dsl.fromResourceAdapt(function.map2(ZEnvConstructor[R])(_.provideEnvironment(_)))
+//      }
+//
+//      def fromZLayerEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](layer: ZLayer[R, E, I]): AfterBind = {
+//        dsl.fromResourceAdapt(ZEnvConstructor[R].map(ZLayer.succeedEnvironment(_) >>> layer))
+//      }
+//      def fromZLayerEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZLayer[R, E, I]]): AfterBind = {
+//        dsl.fromResourceAdapt(function.map2(ZEnvConstructor[R])((layer, e) => ZLayer.succeedEnvironment(e) >>> layer))
+//      }
+//
+//      /**
+//        * Bind to a Lifecycle class which has a ZIO effect type that specifies dependencies via zio environment, e.g.
+//        *
+//        * {{{
+//        * class IntLifecycle extends Lifecycle.OfZIO[Double, Nothing, Int](
+//        *   for {
+//        *     double <- ZIO.service[Double]
+//        *     _ <- ZIO.acquireRelease(ZIO.unit)(_ => ZIO.succeed(println("Closed")))
+//        *   } yield double.toInt
+//        * )
+//        *
+//        * val module = new ModuleDef {
+//        *   make[Int].fromZEnvLifecycle[IntLifecycle]
+//        *   make[Double].from(5.0)
+//        * }
+//        *
+//        * Injector[Task]().produceRun(module) {
+//        *   (i: Int) => ZIO.succeed(println(i))
+//        * }
+//        * // 5
+//        * // Closed
+//        * }}}
+//        *
+//        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+//        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
+//        */
+//      def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: ClassConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
+//        import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
+//        val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(using tagFull)
+//        dsl.fromResource(provider)(resourceTag)
+//      }
+//
+//      /**
+//        * Bind to a Lifecycle value which has a ZIO effect type that specifies dependencies via zio environment
+//        *
+//        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+//        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
+//        */
+//      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: Lifecycle[ZIO[R, E, _], I]): AfterBind = {
+//        val provider = ZEnvConstructor[R].map(provideZEnvLifecycle(resource, _))
+//        dsl.fromResource[Lifecycle[ZIO[Any, E, _], I], IgnorableFunctoidDummyImplicit](provider)
+//      }
+//
+//      /**
+//        * Bind to a Lifecycle value which has a ZIO effect type that specifies dependencies via zio environment
+//        *
+//        * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
+//        * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
+//        */
+//      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[Lifecycle[ZIO[R, E, _], I]]): AfterBind = {
+//        val provider = function.map2(ZEnvConstructor[R])(provideZEnvLifecycle)
+//        dsl.fromResource[Lifecycle[ZIO[Any, E, _], I], IgnorableFunctoidDummyImplicit](provider)
+//      }
+//
+//    }
 
   }
 

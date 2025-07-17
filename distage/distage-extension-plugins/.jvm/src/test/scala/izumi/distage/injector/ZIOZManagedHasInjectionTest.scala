@@ -6,6 +6,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
+import izumi.distage.model.definition.dsl.ScalaVersionSpecificMakeFromZIOEnvDsl
 import org.scalatest.wordspec.AnyWordSpec
 import zio.*
 import zio.managed.ZManaged

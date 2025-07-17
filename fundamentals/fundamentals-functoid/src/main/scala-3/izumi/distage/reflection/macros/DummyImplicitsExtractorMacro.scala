@@ -99,7 +99,7 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
                 val res = newTypesFromTerm ++ newTypesFromArgs ++ acc
                 if (res.nonEmpty) {
                   println(
-                    s"Got apply(TypeApply) dummies from `${fun.show}`\n newTypesFromTerm=$newTypesFromTerm\n newTypesFromArgs=$newTypesFromArgs\n fromTerm=$fromTerm"
+                    s"Got apply(TypeApply) dummies from `${fun.show}`\nnewTypesFromTerm=$newTypesFromTerm\nnewTypesFromArgs=$newTypesFromArgs\ntypes=$types\nfromTerm=$fromTerm\nfromargs=$fromArgs"
                   )
                 }
                 res
@@ -138,7 +138,7 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
   }
 
   private def update(args: List[DummyArg], types: List[TypeRepr]): List[DummyArg] = {
-    args.zip(types).map { case (arg, tpe) => arg.update(tpe) }
+    args.zip(types).map { case (arg, tpe) => if (arg.notUpdated) arg.update(tpe) else arg }
   }
 
 }

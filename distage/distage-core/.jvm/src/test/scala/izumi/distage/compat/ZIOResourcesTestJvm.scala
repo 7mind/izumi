@@ -237,7 +237,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         // assertCompiles breaks on `make` macro
         assertCompiles("""
          new ModuleDef {
-           make[String].fromResource { (_: Unit) => ZLayer.succeed("42") }
+           make[String].fromResourceAdapt { (_: Unit) => ZLayer.succeed("42") }
          }
         """)
       }
@@ -245,7 +245,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         assertCompiles(
           """
          new ModuleDef {
-           make[String].fromResource { (_: Unit) => ZLayer.succeed(42) }
+           make[String].fromResourceAdapt { (_: Unit) => ZLayer.succeed(42) }
          }
       """
         )
