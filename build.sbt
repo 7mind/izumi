@@ -4930,7 +4930,8 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
 lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("logstage/logstage-core"))
   .dependsOn(
     `fundamentals-bio` % "test->compile;compile->compile",
-    `fundamentals-platform` % "test->compile;compile->compile"
+    `fundamentals-platform` % "test->compile;compile->compile",
+    `fundamentals-platform` % "test->compile,test"
   )
   .settings(
     libraryDependencies ++= Seq(

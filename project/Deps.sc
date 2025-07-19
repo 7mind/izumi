@@ -779,7 +779,12 @@ object Izumi {
         libs = Seq(scala_reflect) ++
           allCatsOptional ++ allZioOptional ++
           Seq(scala_java_time in Scope.Compile.js),
-        depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.platform).map(_ in Scope.Compile.all),
+        depends = Seq(
+          Projects.fundamentals.bio,
+          Projects.fundamentals.platform,
+        ).map(_ in Scope.Compile.all) ++ Seq(
+          Projects.fundamentals.platform tin Scope.Test.all
+        ),
       ),
       Artifact(
         name = Projects.logstage.renderingCirce,

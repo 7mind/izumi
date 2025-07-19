@@ -1,5 +1,6 @@
 package izumi.logstage.api
 
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.language.Quirks.Discarder
 
 import scala.annotation.nowarn
@@ -12,7 +13,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.util.Random
 
-class BasicLoggingTest extends AnyWordSpec {
+class BasicLoggingTest extends AnyWordSpec with ScalatestGuards {
 
   "Argument extraction macro" should {
     "extract argument names from an arbitrary string" in {
@@ -81,15 +82,22 @@ class BasicLoggingTest extends AnyWordSpec {
       def withWildcard1(some: Some[?]): Message = {
         Message(s"wildcard: ${some.value}")
       }
-      def withWildcard2(sld: SealedHolder[?]): Message = {
+      def withWildcard2(sld: SealedHolder[? <: Sealed]): Message = {
+        Message(s"wildcard: ${sld.value}")
+      }
+      def withWildcard3(sld: SealedHolder[?]): Message = {
         Message(s"wildcard: ${sld.value}")
       }
 
       val msg1 = withWildcard1(Some(1))
       val msg2 = withWildcard2(new SealedHolder(Sealed.Branch("")))
+      val msg3 = withWildcard3(new SealedHolder(Sealed.Branch("")))
 
       assert(msg1.args.head.codec.isEmpty)
-      assert(msg2.args.head.codec == Some(Sealed.codec))
+      assert(msg2.args.head.codec.contains(Sealed.codec))
+      brokenOnScala2 {
+        assert(msg3.args.head.codec.contains(Sealed.codec))
+      }
     }
   }
 
