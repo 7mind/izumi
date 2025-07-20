@@ -21,7 +21,7 @@ final class ContainerDependenciesTest extends AnyWordSpec {
       make[IzLogger].fromValue(IzLogger())
     }
 
-    assert(
+    assume(
       Try(
         Injector()
           .produceGet[DockerIntegrationCheck[Identity]](module)

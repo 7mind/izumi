@@ -782,9 +782,7 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.bio,
           Projects.fundamentals.platform,
-        ).map(_ in Scope.Compile.all) ++ Seq(
-          Projects.fundamentals.platform tin Scope.Test.all
-        ),
+        ).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.logstage.renderingCirce,

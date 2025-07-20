@@ -1,9 +1,6 @@
 package izumi.logstage.api
 
-import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.language.Quirks.Discarder
-
-import scala.annotation.nowarn
 import izumi.fundamentals.platform.language.{CodePosition, IzScala, SourceFilePosition}
 import izumi.logstage.api.Log.*
 import izumi.logstage.api.rendering.{LogstageCodec, RenderingOptions, StringRenderingPolicy}
@@ -11,9 +8,10 @@ import izumi.logstage.api.strict.IzStrictLogger
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.nowarn
 import scala.util.Random
 
-class BasicLoggingTest extends AnyWordSpec with ScalatestGuards {
+class BasicLoggingTest extends AnyWordSpec {
 
   "Argument extraction macro" should {
     "extract argument names from an arbitrary string" in {
@@ -95,7 +93,7 @@ class BasicLoggingTest extends AnyWordSpec with ScalatestGuards {
 
       assert(msg1.args.head.codec.isEmpty)
       assert(msg2.args.head.codec.contains(Sealed.codec))
-      brokenOnScala2 {
+      if (IzScala.scalaRelease.major >= 3) {
         assert(msg3.args.head.codec.contains(Sealed.codec))
       }
     }
