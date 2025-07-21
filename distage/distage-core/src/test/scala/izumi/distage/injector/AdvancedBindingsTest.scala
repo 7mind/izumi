@@ -41,11 +41,11 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
 
     val definitionParent = PlannerInput.everything(new ModuleDef {
       many[Service]
-        .add[Service1]
+        .addClass[Service1]
     })
     val definitionSub = PlannerInput.everything(new ModuleDef {
       many[Service]
-        .add[Service2]
+        .addClass[Service2]
     })
 
     val injector = mkInjector()

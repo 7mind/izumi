@@ -148,7 +148,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
       many[JustTrait]
         .named("named.set")
-        .add[Impl3]
+        .addClass[Impl3]
     })
 
     val injector = mkInjector()
@@ -257,27 +257,27 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       make[Service3]
 
       many[SetTrait]
-        .add[SetImpl1]
-        .add[SetImpl2]
-        .add[SetImpl3]
+        .addClass[SetImpl1]
+        .addClass[SetImpl2]
+        .addClass[SetImpl3]
 
       many[SetTrait]
         .named("n1")
-        .add[SetImpl1]
-        .add[SetImpl2]
-        .add[SetImpl3]
+        .addClass[SetImpl1]
+        .addClass[SetImpl2]
+        .addClass[SetImpl3]
 
       many[SetTrait]
         .named("n2")
-        .add[SetImpl1]
-        .add[SetImpl2]
-        .add[SetImpl3]
+        .addClass[SetImpl1]
+        .addClass[SetImpl2]
+        .addClass[SetImpl3]
 
       many[SetTrait]
         .named("n3")
-        .add[SetImpl1]
-        .add[SetImpl2]
-        .add[SetImpl3]
+        .addClass[SetImpl1]
+        .addClass[SetImpl2]
+        .addClass[SetImpl3]
     })
 
     val injector = mkInjector()
@@ -615,12 +615,12 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
       many[Service]
         .named(Some("named.set.test"))
-        .add[Service1]
-        .add[Service2]
+        .addClass[Service1]
+        .addClass[Service2]
 
       many[Service]
         .named(None)
-        .add[Service1]
+        .addClass[Service1]
     })
 
     val injector = mkInjector()

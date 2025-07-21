@@ -111,8 +111,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         make[Ref[Fn, Set[Char]]].fromEffectValue(Ref[Fn](Set.empty[Char]))
 
         many[Char]
-          .addEffect(Suspend2('a'))
-          .addEffect(Suspend2('b'))
+          .addEffectInstance(Suspend2('a'))
+          .addEffectInstance(Suspend2('b'))
 
         make[Unit].fromEffect {
           (ref: Ref[Fn, Set[Char]], set: Set[Char]) =>
@@ -335,8 +335,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
 
       val definition = PlannerInput.everything(new ModuleDef {
         many[Res]
-          .addResource[SimpleResource]
-          .addResource[SuspendResource]
+          .addResourceClass[SimpleResource]
+          .addResourceClass[SuspendResource]
       })
 
       val injector = mkInjector()

@@ -11,6 +11,7 @@ import izumi.distage.model.definition.dsl.IncludesDSL.TagMergePolicy
 import izumi.distage.model.definition.{Binding, BindingOrigin, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
 import izumi.distage.model.exceptions.dsl.{InvalidFunctoidModifier, ParameterNotFoundForAnnotation}
 import izumi.distage.model.planning.PlanIssue
+import izumi.distage.reflection.macros.IgnorableFunctoidDummyImplicit
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
@@ -40,14 +41,14 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           .from(TestInstanceBinding())
         many[JustTrait].named("named.empty.set")
         many[JustTrait]
-          .add[Impl0]
+          .addClass[Impl0]
           .add(new Impl1)
         many[JustTrait]
           .named("named.set")
           .add(new Impl2())
         many[JustTrait]
           .named("named.set")
-          .add[Impl3]
+          .addClass[Impl3]
 
         make[TestDependency0].namedByImpl.fromClass[TestImpl0]
         makeTrait[TestDependency0].namedByImpl
@@ -131,9 +132,9 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         make[Service3]
 
         many[SetTrait]
-          .add[SetImpl1]
-          .add[SetImpl2]
-          .add[SetImpl3]
+          .addClass[SetImpl1]
+          .addClass[SetImpl2]
+          .addClass[SetImpl3]
       }
 
       assert(
@@ -244,10 +245,10 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val definition = new ModuleDef {
         many[SetTrait]
           .named("n1")
-          .add[SetImpl1].tagged("A")
-          .add[SetImpl2].tagged("B")
-          .add[SetImpl3].tagged("A") // merge
-          .add[SetImpl3].tagged("B") // merge
+          .addClass[SetImpl1].tagged("A")
+          .addClass[SetImpl2].tagged("B")
+          .addClass[SetImpl3].tagged("A") // merge
+          .addClass[SetImpl3].tagged("B") // merge
 
         make[Service1].tagged("CA").fromClass[Service1] // merge
         make[Service1].tagged("CB").fromClass[Service1] // merge
@@ -775,7 +776,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           () => { i += 1; i }
         }
         def int() = {
-          many[Int].addEffect[Identity, Int](fn)
+          many[Int].addEffect[Identity, Int, IgnorableFunctoidDummyImplicit](fn)
         }
 
         int()

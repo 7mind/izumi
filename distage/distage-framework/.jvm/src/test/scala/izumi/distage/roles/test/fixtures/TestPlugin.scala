@@ -35,7 +35,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   many[Dummy]
 
   many[SetElement]
-    .add[SetElement1]
+    .addClass[SetElement1]
 
   makeRole[TestTask00[F]]
   makeRole[TestRole00[F]]

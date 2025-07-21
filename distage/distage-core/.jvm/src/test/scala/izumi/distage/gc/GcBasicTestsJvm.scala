@@ -65,7 +65,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val injector = mkInjector()
       val plan = injector.planUnsafe(
         PlannerInput(new ModuleDef {
-          many[IntegrationComponent].add[S3Component]
+          many[IntegrationComponent].addClass[S3Component]
 
           make[MkS3Client].fromClass[Impl]
           make[S3Upload]
@@ -91,7 +91,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           make[S3Upload]
           make[Ctx]
           make[S3Component]
-          many[IntegrationComponent].add[S3Component]
+          many[IntegrationComponent].addClass[S3Component]
           make[Initiator]
         }, Roots(DIKey.get[Ctx], DIKey.get[Initiator]), Activation.empty)
       )

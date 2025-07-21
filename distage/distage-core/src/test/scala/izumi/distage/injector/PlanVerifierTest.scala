@@ -568,8 +568,8 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[Fork2]
-        .add[ImplC].tagged(Axis1.A)
-        .add[ImplD].tagged(Axis1.B)
+        .addClass[ImplC].tagged(Axis1.A)
+        .addClass[ImplD].tagged(Axis1.B)
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)

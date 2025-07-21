@@ -27,7 +27,7 @@ class StaticDSLTest extends AnyWordSpec {
         many[JustTrait]
           .named("named.empty.set")
         many[JustTrait]
-          .add[Impl0]
+          .addClass[Impl0]
           .add(new Impl1)
           .addTrait[JustTrait]
         many[JustTrait]
@@ -35,7 +35,7 @@ class StaticDSLTest extends AnyWordSpec {
           .add(new Impl2())
         many[JustTrait]
           .named("named.set")
-          .add[Impl3]
+          .addClass[Impl3]
       }
 
       assert(definition != null)

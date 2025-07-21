@@ -11,7 +11,7 @@ import izumi.distage.model.planning.PlanningObserver
 class GraphDumpBootstrapModule extends BootstrapModuleDef {
   // note: GraphDumpObserver doesn't work on Scala.js [due to file IO?]
   many[PlanningObserver]
-    .add[GraphDumpObserver]
+    .addClass[GraphDumpObserver]
 }
 
 object GraphDumpBootstrapModule extends GraphDumpBootstrapModule {

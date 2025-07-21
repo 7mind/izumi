@@ -12,6 +12,7 @@ import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.wordspec.AnyWordSpec
 import izumi.distage.model.definition.dsl.ScalaVersionSpecificMakeFromZIOEnvDsl
+import izumi.distage.model.definition.dsl.ScalaVersionSpecificAddFromZIOEnvDsl
 import izumi.distage.reflection.macros.IgnorableFunctoidDummyImplicit
 import zio.*
 
@@ -89,7 +90,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
         make[Dep].fromClass[DepA]
         make[TestClass2[Dep]].fromZIOEnv(ZIO.environmentWithZIO {
           (value: ZEnvironment[Dep]) =>
-            ZIO.attempt(TestClass2(value.get))
+            ZIO.attempt(TestClass2(value.get))  
         })
       }
 

@@ -161,9 +161,9 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[SetTrait]
-        .add[SetImpl1].tagged(Repo.Prod)
-        .add[SetImpl2].tagged(Repo.Dummy)
-        .add[SetImpl5]
+        .addClass[SetImpl1].tagged(Repo.Prod)
+        .addClass[SetImpl2].tagged(Repo.Dummy)
+        .addClass[SetImpl5]
     }
 
     val instance = mkInjector()
@@ -182,8 +182,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[SetTrait]
-        .add[SetImpl1].tagged(Repo.Prod)
-        .add[SetImpl5]
+        .addClass[SetImpl1].tagged(Repo.Prod)
+        .addClass[SetImpl5]
     }
 
     intercept[InjectorFailed] {
@@ -199,10 +199,10 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[SetTrait]
-        .add[SetImpl1].tagged(Repo.Prod)
-        .add[SetImpl2].tagged(Repo.Dummy)
-        .add[SetImpl3].tagged(Repo.Dummy, Mode.Test)
-        .add[SetImpl5]
+        .addClass[SetImpl1].tagged(Repo.Prod)
+        .addClass[SetImpl2].tagged(Repo.Dummy)
+        .addClass[SetImpl3].tagged(Repo.Dummy, Mode.Test)
+        .addClass[SetImpl5]
     }
 
     intercept[InjectorFailed] {
@@ -218,8 +218,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[Service]
-        .add[Service1].tagged(Repo.Prod)
-        .add[Service1].tagged(Repo.Dummy)
+        .addClass[Service1].tagged(Repo.Prod)
+        .addClass[Service1].tagged(Repo.Dummy)
     }
 
     val set = mkInjector()
@@ -234,8 +234,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[Service]
-        .add[Service1]
-        .add[Service1].tagged(Repo.Dummy)
+        .addClass[Service1]
+        .addClass[Service1].tagged(Repo.Dummy)
     }
 
     intercept[InjectorFailed] {
@@ -251,8 +251,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[Service]
-        .add[Service1]
-        .add[Service1].tagged(Repo.Prod)
+        .addClass[Service1]
+        .addClass[Service1].tagged(Repo.Prod)
     }
 
     val set = mkInjector()
@@ -267,7 +267,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val baseDef = new ModuleDef {
       many[SetTrait]
-        .add[SetImpl1].tagged(Repo.Prod)
+        .addClass[SetImpl1].tagged(Repo.Prod)
     }
 
     val definitionTodo = baseDef ++ new ModuleDef {
