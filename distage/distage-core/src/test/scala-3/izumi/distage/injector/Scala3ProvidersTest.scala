@@ -2,10 +2,11 @@ package izumi.distage.injector
 
 import distage.*
 import izumi.functional.quasi.QuasiApplicative
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.reflect.Tag
 import org.scalatest.wordspec.AnyWordSpec
 
-class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
+class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "support bindings with function implicit parameters" in {
     final case class Description(description: String)
     final case class X(s: String)
@@ -425,5 +426,25 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     context.get[Description]
     context.get[X]
+  }
+
+  "fail to find implicit for non specific type" in broken {
+    trait A[T]
+    object A {
+       implicit val intA: A[Int] = new A[Int]{}
+    }
+
+    final case class X[T](a: A[T])
+    def makeX[T](implicit a: A[T]): X[Any] = X[Any](a.asInstanceOf[A[Any]])
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[X[Any]].from(bindImplicits(makeX))
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    context.get[X[Any]]
   }
 }
