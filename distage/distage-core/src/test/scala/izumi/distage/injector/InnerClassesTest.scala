@@ -188,7 +188,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {
     private val definition = PlannerInput.everything(new ModuleDef {
       make[InnerPathDepTest.this.type].from(InnerPathDepTest.this: InnerPathDepTest.this.type)
-      make[InnerPathDepTest.type].fromClass[InnerPathDepTest.type]
+      make[InnerPathDepTest.type].from[InnerPathDepTest.type]
       make[TestClass[InnerPathDepTest.this.type]]
       make[TestDependency]
     })

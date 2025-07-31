@@ -29,7 +29,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       import BasicCase1.*
       val definition: ModuleBase = new ModuleDef {
         make[TestClass]
-        make[TestDependency0].fromClass[TestImpl0]
+        make[TestDependency0].from[TestImpl0]
         make[TestInstanceBinding].from(TestInstanceBinding())
 
         make[TestClass]
@@ -41,16 +41,16 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           .from(TestInstanceBinding())
         many[JustTrait].named("named.empty.set")
         many[JustTrait]
-          .addClass[Impl0]
+          .add[Impl0]
           .add(new Impl1)
         many[JustTrait]
           .named("named.set")
           .add(new Impl2())
         many[JustTrait]
           .named("named.set")
-          .addClass[Impl3]
+          .add[Impl3]
 
-        make[TestDependency0].namedByImpl.fromClass[TestImpl0]
+        make[TestDependency0].namedByImpl.from[TestImpl0]
         makeTrait[TestDependency0].namedByImpl
       }
 
@@ -64,7 +64,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       object Module extends ModuleDef {
         make[TestClass]
-        make[TestDependency0].fromClass[TestImpl0]
+        make[TestDependency0].from[TestImpl0]
       }
 
       assert(
@@ -80,7 +80,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       object Module extends ModuleDef {
         make[TestClass].annotateParameter[TestDependency0]("test_param")
-        make[TestDependency0].named("test_param").fromClass[TestImpl0]
+        make[TestDependency0].named("test_param").from[TestImpl0]
       }
 
       assert(
@@ -100,9 +100,9 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       object ModuleAnnotated extends ModuleDef {
         make[TestClass].annotateParameter[TestDependency0]("test_param")
-        make[TestDependency1].fromClass[TestImpl1]
-        make[TestDependency0].fromClass[TestImpl0]
-        make[TestDependency0].named("test_param").fromClass[TestImpl00]
+        make[TestDependency1].from[TestImpl1]
+        make[TestDependency0].from[TestImpl0]
+        make[TestDependency0].named("test_param").from[TestImpl00]
       }
 
       val injector = mkInjector()
@@ -132,9 +132,9 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         make[Service3]
 
         many[SetTrait]
-          .addClass[SetImpl1]
-          .addClass[SetImpl2]
-          .addClass[SetImpl3]
+          .add[SetImpl1]
+          .add[SetImpl2]
+          .add[SetImpl3]
       }
 
       assert(
@@ -245,13 +245,13 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val definition = new ModuleDef {
         many[SetTrait]
           .named("n1")
-          .addClass[SetImpl1].tagged("A")
-          .addClass[SetImpl2].tagged("B")
-          .addClass[SetImpl3].tagged("A") // merge
-          .addClass[SetImpl3].tagged("B") // merge
+          .add[SetImpl1].tagged("A")
+          .add[SetImpl2].tagged("B")
+          .add[SetImpl3].tagged("A") // merge
+          .add[SetImpl3].tagged("B") // merge
 
-        make[Service1].tagged("CA").fromClass[Service1] // merge
-        make[Service1].tagged("CB").fromClass[Service1] // merge
+        make[Service1].tagged("CA").from[Service1] // merge
+        make[Service1].tagged("CB").from[Service1] // merge
 
         make[Service2].tagged("CC")
 
@@ -288,7 +288,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
     "Set bindings with the same source position but different implementations do not conflict" in {
       val definition: ModuleDef = new ModuleDef {
-        def int(int: Int) = many[Int].addValue(int)
+        def int(int: Int) = many[Int].add(int)
 
         int(1)
         int(2)
@@ -517,7 +517,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       val definitionEffect = new ModuleDef {
         make[ImplXYZ]
-          .fromEffectValue(implXYZ)
+          .fromEffect(implXYZ)
           .aliased[TraitX]
           .aliased[TraitY]
           .aliased[TraitZ]
@@ -546,7 +546,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       val definitionResource = new ModuleDef {
         make[ImplXYZ]
-          .fromResourceClass[X]
+          .fromResource[X]
           .aliased[TraitX]
           .aliased[TraitY]
           .aliased[TraitZ]
@@ -572,7 +572,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       val definitionResourceFn = new ModuleDef {
         make[ImplXYZ]
-          .fromResourceValue(implXYZResource)
+          .fromResource(implXYZResource)
           .aliased[TraitX]
           .aliased[TraitY]
           .aliased[TraitZ]
@@ -648,13 +648,13 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
       val definition = new ModuleDef {
         make[TraitX]
-          .fromClass[ImplXYZ]
+          .from[ImplXYZ]
           .named("other")
           .tagged("x")
           .aliased[TraitX]("other2")
 
         make[ImplXYZ]
-          .fromClass[ImplXYZ]
+          .from[ImplXYZ]
           .tagged("xa")
           .aliased[TraitY]
 
@@ -725,7 +725,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         assertCompiles(
           """
           def definition[T <: Int: Tag] = new ModuleDef {
-            make[Int].fromClass[T]
+            make[Int].from[T]
           }
         """
         )
@@ -735,7 +735,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         assertCompiles(
           """
           def definition[F[_]: TagK] = new ModuleDef {
-            make[Int].fromResourceClass[Lifecycle.Basic[F, Int]]
+            make[Int].fromResource[Lifecycle.Basic[F, Int]]
           }
         """
         )
@@ -776,7 +776,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           () => { i += 1; i }
         }
         def int() = {
-          many[Int].addEffect[Identity, Int, IgnorableFunctoidDummyImplicit](fn)
+          many[Int].addEffect[Identity, Int](fn)
         }
 
         int()
@@ -798,9 +798,9 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     "addDependency supports adding dependencies for .fromValue and .using bindings" in {
       val definition = new ModuleDef {
         make[Int]
-          .fromValue(5)
+          .from(5)
           .addDependency[String]
-        make[Unit].fromValue(())
+        make[Unit].from(())
         make[Unit].named("x").using[Unit].addDependency[String]
       }
 
@@ -820,7 +820,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
     "addDependency supports adding dependencies for .fromResource/.fromEffect bindings" in {
       val definition = new ModuleDef {
-        make[Int].fromResourceValue(Lifecycle.pure(5)).addDependency[String]
+        make[Int].fromResource(Lifecycle.pure(5)).addDependency[String]
         make[Long].fromResource(() => Lifecycle.pure(5L)).addDependency[String]
         make[Short].fromEffect(() => 5: Identity[Short]).addDependency[String]
       }
@@ -843,11 +843,11 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     "modify & annotateParameter do not support adding dependencies for .fromValue and .using bindings" in {
       intercept[InvalidFunctoidModifier](new ModuleDef {
         make[Int]
-          .fromValue(5)
+          .from(5)
           .modifyBy(_.addDependency[String])
       }.bindings)
       intercept[InvalidFunctoidModifier](new ModuleDef {
-        make[Unit].fromValue(())
+        make[Unit].from(())
         make[Unit].named("x").using[Unit].annotateParameter[String]("special")
       }.bindings)
     }

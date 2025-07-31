@@ -12,7 +12,7 @@ class BootstrapPlatformModule(options: PlanningOptions) extends BootstrapModuleD
   }
 
   make[RewriteRules]
-    .fromValue(options.rewriteRules)
+    .from(options.rewriteRules)
   many[PlanningHook]
-    .addClass[ResourceRewriter]
+    .add[ResourceRewriter]
 }

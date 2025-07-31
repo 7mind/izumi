@@ -7,7 +7,7 @@ import izumi.logstage.api.logger.LogRouter
 import izumi.reflect.TagK
 
 class RoleAppBootLoggerModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
-  make[IzLogger].named("early").fromValue(IzLogger())
-  make[LogRouter].fromValue(IzLogger().router)
+  make[IzLogger].named("early").from(IzLogger())
+  make[LogRouter].from(IzLogger().router)
 
 }

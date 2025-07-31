@@ -353,7 +353,7 @@ abstract class ActivationTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[
 abstract class ForcedRootTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[F] {
   override protected def config: TestConfig = super.config.copy(
     moduleOverrides = new ModuleDef {
-      make[ForcedRootResource[F]].fromResourceClass[ForcedRootResource[F]]
+      make[ForcedRootResource[F]].fromResource[ForcedRootResource[F]]
       make[ForcedRootProbe]
     },
     forcedRoots = Set(DIKey.get[ForcedRootResource[F]]),

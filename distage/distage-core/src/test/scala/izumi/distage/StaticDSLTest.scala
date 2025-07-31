@@ -11,13 +11,13 @@ class StaticDSLTest extends AnyWordSpec {
     "allow to define static contexts" in {
       import BasicCase1._
       val definition: ModuleBase = new ModuleDef {
-        make[TestClass].fromClass[TestClass]
-        make[TestDependency0].fromClass[TestImpl0]
+        make[TestClass].from[TestClass]
+        make[TestDependency0].from[TestImpl0]
         make[TestInstanceBinding].from(TestInstanceBinding())
 
         make[TestClass]
           .named("named.test.class")
-          .fromClass[TestClass]
+          .from[TestClass]
         make[TestDependency0]
           .named("named.test.dependency.0")
           .fromTrait[TestDependency0]
@@ -27,7 +27,7 @@ class StaticDSLTest extends AnyWordSpec {
         many[JustTrait]
           .named("named.empty.set")
         many[JustTrait]
-          .addClass[Impl0]
+          .add[Impl0]
           .add(new Impl1)
           .addTrait[JustTrait]
         many[JustTrait]
@@ -35,7 +35,7 @@ class StaticDSLTest extends AnyWordSpec {
           .add(new Impl2())
         many[JustTrait]
           .named("named.set")
-          .addClass[Impl3]
+          .add[Impl3]
       }
 
       assert(definition != null)

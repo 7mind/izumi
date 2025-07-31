@@ -107,10 +107,10 @@ abstract class RoleAppMain[F[_]](
       appArtifact = artifact.get,
       unusedValidAxisChoices,
     ) ++ new ModuleDef {
-      make[RoleAppArgs].fromValue(RoleAppArgs(EntrypointArgs.empty, additionalRoles.requiredRoles))
-      make[PlanningOptions].fromValue(planningOptions())
-      make[ActivationParser].fromClass[ActivationParser.Impl]
-      make[Activation].named("entrypoint").fromValue(activation())
+      make[RoleAppArgs].from(RoleAppArgs(EntrypointArgs.empty, additionalRoles.requiredRoles))
+      make[PlanningOptions].from(planningOptions())
+      make[ActivationParser].from[ActivationParser.Impl]
+      make[Activation].named("entrypoint").from(activation())
       make[Activation].named("roleapp").from {
         (parser: ActivationParser, config: AppConfig) =>
           parser.parseActivation(config)

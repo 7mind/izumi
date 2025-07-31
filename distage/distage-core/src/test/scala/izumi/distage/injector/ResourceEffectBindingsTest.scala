@@ -30,7 +30,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val definition = PlannerInput(
         new ModuleDef {
           make[Int].named("2").from(2)
-          make[Int].fromEffect {
+          make[Int].fromEffect[Identity, Int] {
             (i: Int @Id("2")) => Identity[Int](10 + i)
           }
         },
@@ -69,7 +69,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val execIncrement = (_: Ref[Fn, Int]).update(_ + 1)
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Ref[Fn, Int]].fromEffectValue(Ref[Fn](0))
+        make[Ref[Fn, Int]].fromEffect(Ref[Fn](0))
 
         make[Fn[Int]].from(execIncrement)
 
@@ -91,7 +91,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val definition = PlannerInput(
         new ModuleDef {
           make[Int].named("2").from(2)
-          make[Int].fromEffect {
+          make[Int].fromEffect[Identity, Int] {
             (i: Int @Id("2")) => Identity[Int](10 + i)
           }
         },
@@ -108,11 +108,11 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
 
     "work with set bindings" in {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Ref[Fn, Set[Char]]].fromEffectValue(Ref[Fn](Set.empty[Char]))
+        make[Ref[Fn, Set[Char]]].fromEffect(Ref[Fn](Set.empty[Char]))
 
         many[Char]
-          .addEffectInstance(Suspend2('a'))
-          .addEffectInstance(Suspend2('b'))
+          .addEffect(Suspend2('a'))
+          .addEffect(Suspend2('b'))
 
         make[Unit].fromEffect {
           (ref: Ref[Fn, Set[Char]], set: Set[Char]) =>
@@ -293,7 +293,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       import ClassResourceCase._
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Res].fromResourceClass[SimpleResource]
+        make[Res].fromResource[SimpleResource]
       })
 
       val injector = mkInjector()
@@ -313,7 +313,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       import ClassResourceCase._
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Res].fromResourceClass[SuspendResource]
+        make[Res].fromResource[SuspendResource]
       })
 
       val injector = mkInjector()
@@ -335,8 +335,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
 
       val definition = PlannerInput.everything(new ModuleDef {
         many[Res]
-          .addResourceClass[SimpleResource]
-          .addResourceClass[SuspendResource]
+          .addResource[SimpleResource]
+          .addResource[SuspendResource]
       })
 
       val injector = mkInjector()
@@ -366,7 +366,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         makeTrait[NotInContext]
         make[TestClass]
         makeTrait[TestDependency3]
-        make[TestDependency0].fromClass[TestImpl0]
+        make[TestDependency0].from[TestImpl0]
         makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
@@ -403,10 +403,10 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       import ResourceCase1._
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[mutable.Queue[Ops]].fromEffectValue(queueEffect)
-        make[X].fromResourceClass[XResource]
-        make[Y].fromResourceClass[YResource]
-        make[Z].fromResourceClass[ZFaultyResource]
+        make[mutable.Queue[Ops]].fromEffect(queueEffect)
+        make[X].fromResource[XResource]
+        make[Y].fromResource[YResource]
+        make[Z].fromResource[ZFaultyResource]
       })
 
       val injector = mkInjector()
@@ -436,7 +436,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         assertCompiles {
           """
           def x[F[_]]: ModuleDef = new ModuleDef {
-            make[Any].fromResource[Lifecycle[F, Any], Nothing](() => ???)
+            make[Any].fromResource[Lifecycle[F, Any]](() => ???)
           }; ""
           """
         }

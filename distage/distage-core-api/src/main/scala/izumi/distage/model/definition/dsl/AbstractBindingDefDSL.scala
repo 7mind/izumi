@@ -15,7 +15,7 @@ import izumi.reflect.Tag
 
 import scala.collection.mutable
 
-trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] { self =>
+trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] with ScalaVersionSpecificBindDSL { self =>
   private final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
 
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty

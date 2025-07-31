@@ -40,8 +40,8 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       import CircularCase1.*
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Circular2].fromClass[Circular2Impl]
-        make[Circular1].fromClass[Circular1Impl]
+        make[Circular2].from[Circular2Impl]
+        make[Circular1].from[Circular1Impl]
       })
 
       val injector = mkInjector()
@@ -226,7 +226,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       import CircularCase6.*
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Dependency { def dep: RefinedCircular }].fromClass[RealDependency]
+        make[Dependency { def dep: RefinedCircular }].from[RealDependency]
         make[RefinedCircular]
       })
 
@@ -362,7 +362,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       import izumi.distage.fixtures.CircularCases.CircularCase3.*
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Ref[Fn, Boolean]].fromEffectValue(Ref[Fn](false))
+        make[Ref[Fn, Boolean]].fromEffect(Ref[Fn](false))
         make[SelfReference].fromEffect {
           (ref: Ref[Fn, Boolean], self: SelfReference) =>
             ref.update(!_).flatMap(_ => Suspend2(new SelfReference(self)))
@@ -385,7 +385,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
 
       val definition = PlannerInput(
         new ModuleDef {
-          make[Ref[Fn, Queue[Ops]]].fromEffectValue(Ref[Fn](Queue.empty[Ops]))
+          make[Ref[Fn, Queue[Ops]]].fromEffect(Ref[Fn](Queue.empty[Ops]))
           many[IntegrationComponent]
             .ref[S3Component]
           make[S3Component].fromResource(s3ComponentResource[Fn] _)

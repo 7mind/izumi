@@ -24,12 +24,12 @@ import scala.concurrent.ExecutionContext
 class AnyBIOSupportModule[F[+_, +_]: TagKK](implicit t: TagK[F[Throwable, _]], tn: TagK[F[Nothing, _]]) extends ModuleDef {
   include(BIOInstancesModule[F])
 
-  make[TagK[F[Nothing, _]]].fromValue(tn)
-  make[TagK[F[Throwable, _]]].fromValue(t)
+  make[TagK[F[Nothing, _]]].from(tn)
+  make[TagK[F[Throwable, _]]].from(t)
   addImplicit[TagKK[F]]
 
   make[QuasiIORunner2[F]]
-    .fromClass[QuasiIORunner.BIOImpl[F]]
+    .from[QuasiIORunner.BIOImpl[F]]
     .modifyBy(_.annotateParameterIfExists[ExecutionContext]("cpu")) // scala.js
 
   make[QuasiIO2[F]]

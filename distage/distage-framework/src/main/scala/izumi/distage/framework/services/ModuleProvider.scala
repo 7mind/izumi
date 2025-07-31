@@ -77,11 +77,11 @@ object ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
       val roleInfoModule = new BootstrapModuleDef {
-        make[RolesInfo].fromValue(roles).exposed
-        make[RoleAppArgs].fromValue(args).exposed
-        make[ActivationInfo].fromValue(activationInfo).exposed
-        make[AppShutdownInitiator].fromValue(shutdownInitiator).exposed
-        make[Option[IzArtifact]].named("app.artifact").fromValue(appArtifact).exposed
+        make[RolesInfo].from(roles).exposed
+        make[RoleAppArgs].from(args).exposed
+        make[ActivationInfo].from(activationInfo).exposed
+        make[AppShutdownInitiator].from(shutdownInitiator).exposed
+        make[Option[IzArtifact]].named("app.artifact").from(appArtifact).exposed
       }
 
       val loggerModule = new LogstageModule(logRouter, true)
@@ -108,7 +108,7 @@ object ModuleProvider {
       ) ++ roleAppLocator.map {
         outerLocator =>
           new ModuleDef {
-            make[LocatorRef].named("roleapp").fromValue(outerLocator)
+            make[LocatorRef].named("roleapp").from(outerLocator)
             make[RoleAppPlanner].from((_: LocatorRef @Id("roleapp")).get.get[RoleAppPlanner])
             make[ConfigMerger].from((_: LocatorRef @Id("roleapp")).get.get[ConfigMerger])
           }
@@ -118,7 +118,7 @@ object ModuleProvider {
   }
 
   object LogstageFailureHandlerModule extends ModuleDef {
-    make[FailureHandler].noCapture {
+    make[FailureHandler].from {
       (logger: IzLogger) =>
         FailureHandler.Custom {
           case Exit.Error(error, trace) =>

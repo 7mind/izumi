@@ -16,14 +16,14 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[GlobalService]
 
       // this will not be used/instantiated
-      make[LocalService].fromClass[LocalServiceBadImpl]
+      make[LocalService].from[LocalServiceBadImpl]
 
       makeSubcontext[Int]
         .named("test")
         .withSubmodule {
           new ModuleDef {
             make[LocalService]
-              .fromClass[LocalServiceGoodImpl]
+              .from[LocalServiceGoodImpl]
               .annotateParameter[Arg]("x")
           }
         }
@@ -59,8 +59,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       makeSubcontext[Int]
         .named("test")
         .withSubmodule(new ModuleDef {
-          make[Arg].fromValue(Arg(2))
-          make[LocalService].fromClass[LocalServiceGoodImpl]
+          make[Arg].from(Arg(2))
+          make[LocalService].from[LocalServiceGoodImpl]
         })
         .extractWith {
           (summator: LocalService) =>
@@ -82,7 +82,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
   "support self references" in {
     val module = new ModuleDef {
       makeSubcontext[Int](new ModuleDef {
-        make[LocalRecursiveService].fromClass[LocalRecursiveServiceGoodImpl]
+        make[LocalRecursiveService].from[LocalRecursiveServiceGoodImpl]
       })
         .extractWith {
           (summator: LocalRecursiveService) =>
@@ -106,8 +106,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     val module = new ModuleDef {
       make[GlobalServiceDependency]
       make[GlobalService]
-      make[LocalService].fromClass[LocalServiceGoodImpl]
-      make[Arg].fromValue(Arg(1))
+      make[LocalService].from[LocalServiceGoodImpl]
+      make[Arg].from(Arg(1))
 
       makeSubcontext[Int]
         .named("test")
@@ -145,10 +145,10 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[GlobalService]
 
       makeSubcontext[Int](new ModuleDef {
-        make[LocalService].fromClass[LocalServiceGoodImpl]
+        make[LocalService].from[LocalServiceGoodImpl]
 
-        make[Arg].tagged(Repo.Dummy).fromValue(Arg(1))
-        make[Arg].tagged(Repo.Prod).fromValue(Arg(-1))
+        make[Arg].tagged(Repo.Dummy).from(Arg(1))
+        make[Arg].tagged(Repo.Prod).from(Arg(-1))
       })
         .extractWith {
           (summator: LocalService) =>

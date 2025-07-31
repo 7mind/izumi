@@ -49,7 +49,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val injector = mkInjector()
       val plan = injector.planUnsafe(
         PlannerInput(new ModuleDef {
-          make[MkS3Client].fromClass[Impl]
+          make[MkS3Client].from[Impl]
           make[S3Component]
           make[App]
         }, Roots(DIKey.get[App]), Activation.empty)
@@ -65,9 +65,9 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val injector = mkInjector()
       val plan = injector.planUnsafe(
         PlannerInput(new ModuleDef {
-          many[IntegrationComponent].addClass[S3Component]
+          many[IntegrationComponent].add[S3Component]
 
-          make[MkS3Client].fromClass[Impl]
+          make[MkS3Client].from[Impl]
           make[S3Upload]
           make[Ctx]
           make[S3Component]
@@ -91,7 +91,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           make[S3Upload]
           make[Ctx]
           make[S3Component]
-          many[IntegrationComponent].addClass[S3Component]
+          many[IntegrationComponent].add[S3Component]
           make[Initiator]
         }, Roots(DIKey.get[Ctx], DIKey.get[Initiator]), Activation.empty)
       )
@@ -126,8 +126,8 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val injector = mkInjector()
       val plan = injector.planUnsafe(
         PlannerInput(new ModuleDef {
-          make[T1].fromClass[Circular1]
-          make[T2].fromClass[Circular2]
+          make[T1].from[Circular1]
+          make[T2].from[Circular2]
         }, Roots(DIKey.get[T1]), Activation.empty)
       )
 

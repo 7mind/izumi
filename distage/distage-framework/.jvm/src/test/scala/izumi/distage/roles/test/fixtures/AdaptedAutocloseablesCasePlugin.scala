@@ -11,8 +11,8 @@ import izumi.logstage.api.logger.LogSink
 
 class AdaptedAutocloseablesCasePlugin extends PluginDef with RoleModuleDef {
   makeRole[AdaptedAutocloseablesCase]
-  many[LogSink].addClass[BrokenSink]
-  many[LogSink].addClass[BrokenSink2]
+  many[LogSink].add[BrokenSink]
+  many[LogSink].add[BrokenSink2]
   many[LogSink].add {
     new BrokenSink()
   }

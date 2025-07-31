@@ -26,7 +26,7 @@ class DisabledTestZIO extends Lifecycle.Simple[TestEnableDisable] with Integrati
 class MyDisabledTestZIO extends Spec1[Task] {
   override def config: TestConfig = super.config.copy(
     moduleOverrides = new ModuleDef {
-      make[TestEnableDisable].fromResourceClass[DisabledTestZIO]
+      make[TestEnableDisable].fromResource[DisabledTestZIO]
     }
   )
 
@@ -50,7 +50,7 @@ abstract class MyDisabledTestF[F0[_]: QuasiIO: DefaultModule, F[x] <: F0[x]: Tag
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = new ModuleDef {
-        make[TestEnableDisable].fromResourceClass[DisabledTestF[F]]
+        make[TestEnableDisable].fromResource[DisabledTestF[F]]
         addImplicit[Applicative[F]]
       }
     )
@@ -82,7 +82,7 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit FA: A
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
-        make[TestEnableDisable].fromResourceClass[DisabledTestF2[F]]
+        make[TestEnableDisable].fromResource[DisabledTestF2[F]]
         make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
       }
     )

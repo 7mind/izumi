@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 import scala.quoted.{Expr, Quotes, Type}
 
 object DischargeDummyMacro {
-  inline def dischargeDummy[I, N](inline function: N ?=> Functoid[I]): Functoid[I] = ${ dischargeDummyImpl[I, N]('function) }
+  inline def dischargeDummy[I, N <: FunctoidDummyImplicit](inline function: N ?=> Functoid[I]): Functoid[I] = ${ dischargeDummyImpl[I, N]('function) }
 
   def dischargeDummyImpl[I: Type, N: Type](
     originalFunction: Expr[N ?=> Functoid[I]]

@@ -67,7 +67,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         make[Res]
           .named("instance").fromResource(resResource)
 
-        make[Res].named("provider").fromResourceAdapt {
+        make[Res].named("provider").fromResource {
           (_: Res @Id("instance")) =>
             resResource
         }
@@ -170,7 +170,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
       val definition: ModuleDef = new ModuleDef {
         make[Res].named("instance").fromResource(resResource)
 
-        make[Res].named("provider").fromResourceAdapt {
+        make[Res].named("provider").fromResource {
           (_: Res @Id("instance")) =>
             resResource
         }
@@ -237,7 +237,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         // assertCompiles breaks on `make` macro
         assertCompiles("""
          new ModuleDef {
-           make[String].fromResourceAdapt { (_: Unit) => ZLayer.succeed("42") }
+           make[String].fromResource { (_: Unit) => ZLayer.succeed("42") }
          }
         """)
       }
@@ -245,7 +245,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         assertCompiles(
           """
          new ModuleDef {
-           make[String].fromResourceAdapt { (_: Unit) => ZLayer.succeed(42) }
+           make[String].fromResource { (_: Unit) => ZLayer.succeed(42) }
          }
       """
         )

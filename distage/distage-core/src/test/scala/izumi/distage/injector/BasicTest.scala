@@ -25,7 +25,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       new ModuleDef {
         make[TestClass]
         makeTrait[TestDependency3]
-        make[TestDependency0].fromClass[TestImpl0]
+        make[TestDependency0].from[TestImpl0]
         makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
@@ -57,7 +57,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import SetCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TypedService[Int]].fromClass[ServiceWithTypedSet]
+      make[TypedService[Int]].from[ServiceWithTypedSet]
       many[ExampleTypedCaseClass[Int]]
     })
 
@@ -148,7 +148,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
       many[JustTrait]
         .named("named.set")
-        .addClass[Impl3]
+        .add[Impl3]
     })
 
     val injector = mkInjector()
@@ -185,18 +185,18 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestClass]
         .named("named.test.class")
-      make[TestDependency0].fromClass[TestImpl0Bad]
+      make[TestDependency0].from[TestImpl0Bad]
       make[TestDependency0]
         .named("named.test.dependency.0")
-        .fromClass[TestImpl0Good]
+        .from[TestImpl0Good]
       make[TestInstanceBinding]
         .named("named.test")
         .from(TestInstanceBinding())
       // test SetIdFromImplName
       make[TestDependency0].namedByImpl
-        .fromClass[TestImpl0Good]
+        .from[TestImpl0Good]
       make[TestDependency0]
-        .fromClass[TestImpl0Bad]
+        .from[TestImpl0Bad]
         .namedByImpl
     })
 
@@ -211,8 +211,8 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency].fromClass[Impl1]
-      make[Dependency].fromClass[Impl2]
+      make[Dependency].from[Impl1]
+      make[Dependency].from[Impl2]
     })
 
     val injector = mkInjector()
@@ -257,27 +257,27 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       make[Service3]
 
       many[SetTrait]
-        .addClass[SetImpl1]
-        .addClass[SetImpl2]
-        .addClass[SetImpl3]
+        .add[SetImpl1]
+        .add[SetImpl2]
+        .add[SetImpl3]
 
       many[SetTrait]
         .named("n1")
-        .addClass[SetImpl1]
-        .addClass[SetImpl2]
-        .addClass[SetImpl3]
+        .add[SetImpl1]
+        .add[SetImpl2]
+        .add[SetImpl3]
 
       many[SetTrait]
         .named("n2")
-        .addClass[SetImpl1]
-        .addClass[SetImpl2]
-        .addClass[SetImpl3]
+        .add[SetImpl1]
+        .add[SetImpl2]
+        .add[SetImpl3]
 
       many[SetTrait]
         .named("n3")
-        .addClass[SetImpl1]
-        .addClass[SetImpl2]
-        .addClass[SetImpl3]
+        .add[SetImpl1]
+        .add[SetImpl2]
+        .add[SetImpl3]
     })
 
     val injector = mkInjector()
@@ -421,8 +421,8 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import Mutations01.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[SomethingUseful].fromValue(SomethingUseful("x"))
-      make[Mutable].fromValue(Mutable(1, None))
+      make[SomethingUseful].from(SomethingUseful("x"))
+      make[Mutable].from(Mutable(1, None))
       modify[Mutable].by {
         _.flatAp {
           (u: SomethingUseful) => (m: Mutable) =>
@@ -441,9 +441,9 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(
       new ModuleDef {
-        make[SomethingUseful].fromValue(SomethingUseful("x"))
+        make[SomethingUseful].from(SomethingUseful("x"))
 
-        make[Mutable].named("x").fromValue(Mutable(1, None))
+        make[Mutable].named("x").from(Mutable(1, None))
 
         modify[Mutable].named("x").by {
           _.flatAp {
@@ -480,9 +480,9 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(
       new ModuleDef {
-        make[SomethingUseful].fromValue(SomethingUseful("x"))
+        make[SomethingUseful].from(SomethingUseful("x"))
 
-        make[Mutable].fromValue(Mutable(1, None))
+        make[Mutable].from(Mutable(1, None))
 
         modify[Mutable].by {
           _.flatAp {
@@ -568,7 +568,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "stack does not overflow when producing very large dependency chains" in {
     val max = 4000
     val definition = new ModuleDef {
-      make[Int].named("0").fromValue(0)
+      make[Int].named("0").from(0)
       for (i <- 1 to max) {
         make[Int].named(s"$i").from((_: Int) + 1).annotateParameter[Int](s"${i - 1}")
       }
@@ -584,7 +584,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       new ModuleDef {
         make[Out]
         make[Dep1]
-        make[T2].named("wrong").fromClass[Dep2]
+        make[T2].named("wrong").from[Dep2]
       },
       Activation.empty,
       DIKey[Out],
@@ -609,18 +609,18 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       make[TestClass]
       make[TestGreeter].named(Some("named.greeter"))
       make[TestGreeter].named(None) // should bind without id
-      make[TestDependency].named(Some("named.test.before.from")).fromClass[TestImpl1]
-      make[TestDependency].named(None).fromClass[TestImpl1]
-      make[TestDependency].fromClass[TestImpl2].named(Some("named.test.after.from"))
+      make[TestDependency].named(Some("named.test.before.from")).from[TestImpl1]
+      make[TestDependency].named(None).from[TestImpl1]
+      make[TestDependency].from[TestImpl2].named(Some("named.test.after.from"))
 
       many[Service]
         .named(Some("named.set.test"))
-        .addClass[Service1]
-        .addClass[Service2]
+        .add[Service1]
+        .add[Service2]
 
       many[Service]
         .named(None)
-        .addClass[Service1]
+        .add[Service1]
     })
 
     val injector = mkInjector()

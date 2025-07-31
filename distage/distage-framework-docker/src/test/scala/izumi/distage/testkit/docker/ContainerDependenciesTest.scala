@@ -18,7 +18,7 @@ final class ContainerDependenciesTest extends AnyWordSpec {
       include(KafkaDockerModule[Identity])
       include(ZookeeperDockerModule[Identity])
       include(DockerSupportModule.default[Identity])
-      make[IzLogger].fromValue(IzLogger())
+      make[IzLogger].from(IzLogger())
     }
 
     assume(

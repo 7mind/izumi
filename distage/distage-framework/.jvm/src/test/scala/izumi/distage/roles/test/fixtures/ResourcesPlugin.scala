@@ -11,12 +11,12 @@ import izumi.distage.roles.test.fixtures.ResourcesPlugin._
 import izumi.fundamentals.platform.functional.Identity
 
 class ConflictPlugin extends PluginDef {
-  make[Conflict].tagged(Mode.Prod).fromClass[Conflict1]
-  make[Conflict].tagged(Mode.Test).fromClass[Conflict2]
-  make[Conflict].fromClass[Conflict3]
+  make[Conflict].tagged(Mode.Prod).from[Conflict1]
+  make[Conflict].tagged(Mode.Test).from[Conflict2]
+  make[Conflict].from[Conflict3]
 
-  make[UnsolvableConflict].fromClass[UnsolvableConflict1]
-  make[UnsolvableConflict].fromClass[UnsolvableConflict2]
+  make[UnsolvableConflict].from[UnsolvableConflict1]
+  make[UnsolvableConflict].from[UnsolvableConflict2]
 }
 
 trait ResourcesPluginBase extends ModuleDef {

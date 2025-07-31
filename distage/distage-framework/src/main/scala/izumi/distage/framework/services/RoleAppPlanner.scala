@@ -47,7 +47,7 @@ object RoleAppPlanner {
           BootConfig(
             bootstrap = _ =>
               bsModule overriddenBy new BootstrapModuleDef {
-                make[RoleAppPlanner].fromValue(self)
+                make[RoleAppPlanner].from(self)
               },
             activation = _ => activation,
             roots = _ => Roots(runtimeGcRoots),

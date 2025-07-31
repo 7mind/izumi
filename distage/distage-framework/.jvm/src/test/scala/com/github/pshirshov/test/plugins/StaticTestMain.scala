@@ -18,7 +18,7 @@ object StaticTestMain extends RoleAppMain.LauncherCats[cats.effect.IO] {
   override protected def pluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test.plugins") ++ staticTestMainPlugin[cats.effect.IO, Identity]
 
   private[plugins] def staticTestMainPlugin[F[_]: TagK, G[_]: TagK] = new PluginDef with RoleModuleDef {
-    makeRole[StaticTestRole[F]].fromEffectNoCapture {
+    makeRole[StaticTestRole[F]].fromEffect {
       ClassConstructor[StaticTestRole[F]]
         .flatAp((G: QuasiApplicative[G]) => G.pure(_: StaticTestRole[F]))
     }
@@ -33,7 +33,7 @@ object StaticTestMainBadEffect extends RoleAppMain.LauncherIdentity {
 class StaticTestMainLogIO2[F[+_, +_]: TagKK: Async2: DefaultModule2] extends RoleAppMain.LauncherBIO[F] {
 
   override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
-    make[Boolean].named("distage.roles.always-include-reference-role-configs").fromValue(true)
+    make[Boolean].named("distage.roles.always-include-reference-role-configs").from(true)
   }
 
   override protected def pluginConfig: PluginConfig =

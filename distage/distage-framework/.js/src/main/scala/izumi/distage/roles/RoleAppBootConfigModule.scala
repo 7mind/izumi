@@ -6,5 +6,5 @@ import izumi.distage.modules.DefaultModule
 import izumi.reflect.TagK
 
 class RoleAppBootConfigModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
-  make[AppConfig].fromValue(AppConfig.empty)
+  make[AppConfig].from(AppConfig.empty)
 }

@@ -23,8 +23,8 @@ object Fixture4 {
   object BadModule extends PluginDef with RoleModuleDef {
     makeSubcontext[Dep](
       new ModuleDef {
-        make[Dep].tagged(Mode.Prod).fromClass[DepGood]
-        make[Dep].tagged(Mode.Test).fromClass[DepBad]
+        make[Dep].tagged(Mode.Prod).from[DepGood]
+        make[Dep].tagged(Mode.Test).from[DepBad]
       }
     )
 
@@ -34,8 +34,8 @@ object Fixture4 {
   object GoodModule extends PluginDef with RoleModuleDef {
     makeSubcontext[Dep](
       new ModuleDef {
-        make[Dep].tagged(Mode.Prod).fromClass[DepGood]
-        make[Dep].tagged(Mode.Test).fromClass[DepBad]
+        make[Dep].tagged(Mode.Prod).from[DepGood]
+        make[Dep].tagged(Mode.Test).from[DepBad]
       }
     ).localDependency[MissingDep]
 

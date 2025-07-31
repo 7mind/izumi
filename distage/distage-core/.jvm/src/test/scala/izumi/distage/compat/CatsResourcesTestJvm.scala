@@ -76,7 +76,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
         (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
           IORuntime(cpuPool, blockingPool, scheduler, () => (), ioRuntimeConfig)
       }
-      make[ExecutionContext].named("cpu").fromResourceClass[CreateCPUPool]
+      make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
 
       final class CreateCPUPool(@unused ioRuntime: => IORuntime)
         extends Lifecycle.Of[Identity, ExecutionContext](
@@ -111,7 +111,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
         (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
           IORuntime(cpuPool, blockingPool, scheduler, () => (), ioRuntimeConfig)
       }
-      make[ExecutionContext].named("cpu").fromResourceClass[CreateCPUPool]
+      make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
 
       // DIFFERENCE: not by-name
       final class CreateCPUPool(@unused ioRuntime: IORuntime)
@@ -140,7 +140,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
     val definition: ModuleDef = new ModuleDef {
       make[Res].named("instance").fromResource(resResource)
 
-      make[Res].named("provider").fromResourceAdapt {
+      make[Res].named("provider").fromResource {
         (_: Res @Id("instance")) =>
           resResource
       }

@@ -17,20 +17,20 @@ class TestkitRunnerModule[F[_]: TagK: DefaultModule](reporter: TestReporter, isC
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
 
-  make[TestReporter].fromValue(reporter)
+  make[TestReporter].from(reporter)
   make[TestkitLogging]
 
-  make[Throwable => Boolean].fromValue(isCancellation)
+  make[Throwable => Boolean].from(isCancellation)
   make[TestStatusConverter]
-  make[TimedAction].fromClass[TimedActionImpl]
-  make[TestConfigLoader].fromClass[TestConfigLoader.TestConfigLoaderImpl]
+  make[TimedAction].from[TimedActionImpl]
+  make[TestConfigLoader].from[TestConfigLoader.TestConfigLoaderImpl]
   make[TestPlanner[F]]
-  make[TestTreeBuilder[F]].fromClass[TestTreeBuilder.TestTreeBuilderImpl[F]]
+  make[TestTreeBuilder[F]].from[TestTreeBuilder.TestTreeBuilderImpl[F]]
 
-  make[TimedActionF[Identity]].fromClass[TimedActionFImpl[Identity]]
-  make[ExtParTraverse[Identity]].fromClass[ExtParTraverse.ExtParTraverseImpl[Identity]]
+  make[TimedActionF[Identity]].from[TimedActionFImpl[Identity]]
+  make[ExtParTraverse[Identity]].from[ExtParTraverse.ExtParTraverseImpl[Identity]]
 
-  make[DistageTestRunner[F, Identity]].fromClass[DistageTestRunner[F, Identity]]
+  make[DistageTestRunner[F, Identity]].from[DistageTestRunner[F, Identity]]
 
   make[LogQueue].fromResource(ThreadingLogQueue.resource())
 }

@@ -17,8 +17,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val definition = new ModuleDef {
-      make[JustTrait].tagged(Repo.Dummy).fromClass[Impl0]
-      make[JustTrait].tagged(Repo.Prod).fromClass[Impl1]
+      make[JustTrait].tagged(Repo.Dummy).from[Impl0]
+      make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
     val injector1 = mkInjector()
@@ -38,8 +38,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val bsDefinition = new BootstrapModuleDef {
-      make[JustTrait].tagged(Repo.Dummy).fromClass[Impl0].exposed
-      make[JustTrait].tagged(Repo.Prod).fromClass[Impl1].exposed
+      make[JustTrait].tagged(Repo.Dummy).from[Impl0].exposed
+      make[JustTrait].tagged(Repo.Prod).from[Impl1].exposed
     }
     val appDefinition = Module.empty
 
@@ -60,7 +60,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val definition = new ModuleDef {
-      make[JustTrait].tagged(Repo.Dummy).fromClass[Impl0]
+      make[JustTrait].tagged(Repo.Dummy).from[Impl0]
     }
 
     val context = mkInjector()
@@ -74,8 +74,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val definition = new ModuleDef {
-      make[JustTrait].fromClass[Impl0]
-      make[JustTrait].tagged(Repo.Prod).fromClass[Impl1]
+      make[JustTrait].from[Impl0]
+      make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
     val instance = mkInjector()
@@ -88,8 +88,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val definition = new ModuleDef {
-      make[JustTrait].fromClass[Impl0]
-      make[JustTrait].tagged(Repo.Prod).fromClass[Impl1]
+      make[JustTrait].from[Impl0]
+      make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
     val instance = mkInjector()
@@ -102,8 +102,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val definition = new ModuleDef {
-      make[JustTrait].fromClass[Impl0]
-      make[JustTrait].tagged(Repo.Prod).fromClass[Impl1]
+      make[JustTrait].from[Impl0]
+      make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
     assertThrows[InjectorFailed] {
@@ -118,8 +118,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val definition = new ModuleDef {
-      make[JustTrait].fromClass[Impl0]
-      make[JustTrait].tagged(Repo.Prod).fromClass[Impl1]
+      make[JustTrait].from[Impl0]
+      make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
     assertThrows[InjectorFailed] {
@@ -133,8 +133,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val definition = new ModuleDef {
-      make[JustTrait].fromClass[Impl0]
-      make[JustTrait].tagged(Repo.Prod, Mode.Prod).fromClass[Impl1]
+      make[JustTrait].from[Impl0]
+      make[JustTrait].tagged(Repo.Prod, Mode.Prod).from[Impl1]
     }
 
     assertThrows[InjectorFailed] {
@@ -148,7 +148,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val definition = new ModuleDef {
-      make[JustTrait].tagged(Repo.Prod, Mode.Prod).fromClass[Impl1]
+      make[JustTrait].tagged(Repo.Prod, Mode.Prod).from[Impl1]
     }
 
     assert(mkInjector().produceGet[JustTrait](definition, Activation(Repo -> Repo.Prod)).unsafeGet().isInstanceOf[Impl1])
@@ -161,9 +161,9 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[SetTrait]
-        .addClass[SetImpl1].tagged(Repo.Prod)
-        .addClass[SetImpl2].tagged(Repo.Dummy)
-        .addClass[SetImpl5]
+        .add[SetImpl1].tagged(Repo.Prod)
+        .add[SetImpl2].tagged(Repo.Dummy)
+        .add[SetImpl5]
     }
 
     val instance = mkInjector()
@@ -182,8 +182,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[SetTrait]
-        .addClass[SetImpl1].tagged(Repo.Prod)
-        .addClass[SetImpl5]
+        .add[SetImpl1].tagged(Repo.Prod)
+        .add[SetImpl5]
     }
 
     intercept[InjectorFailed] {
@@ -199,10 +199,10 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[SetTrait]
-        .addClass[SetImpl1].tagged(Repo.Prod)
-        .addClass[SetImpl2].tagged(Repo.Dummy)
-        .addClass[SetImpl3].tagged(Repo.Dummy, Mode.Test)
-        .addClass[SetImpl5]
+        .add[SetImpl1].tagged(Repo.Prod)
+        .add[SetImpl2].tagged(Repo.Dummy)
+        .add[SetImpl3].tagged(Repo.Dummy, Mode.Test)
+        .add[SetImpl5]
     }
 
     intercept[InjectorFailed] {
@@ -218,8 +218,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[Service]
-        .addClass[Service1].tagged(Repo.Prod)
-        .addClass[Service1].tagged(Repo.Dummy)
+        .add[Service1].tagged(Repo.Prod)
+        .add[Service1].tagged(Repo.Dummy)
     }
 
     val set = mkInjector()
@@ -234,8 +234,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[Service]
-        .addClass[Service1]
-        .addClass[Service1].tagged(Repo.Dummy)
+        .add[Service1]
+        .add[Service1].tagged(Repo.Dummy)
     }
 
     intercept[InjectorFailed] {
@@ -251,8 +251,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       many[Service]
-        .addClass[Service1]
-        .addClass[Service1].tagged(Repo.Prod)
+        .add[Service1]
+        .add[Service1].tagged(Repo.Prod)
     }
 
     val set = mkInjector()
@@ -267,7 +267,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     val baseDef = new ModuleDef {
       many[SetTrait]
-        .addClass[SetImpl1].tagged(Repo.Prod)
+        .add[SetImpl1].tagged(Repo.Prod)
     }
 
     val definitionTodo = baseDef ++ new ModuleDef {
@@ -307,8 +307,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     class X(u: Unit @Id("x")) { val x: Unit = u }
 
     val definition = new ModuleDef {
-      make[Unit].named("x").tagged(Repo.Dummy).fromValue(())
-      make[Unit].named("x").tagged(Repo.Prod).fromValue(())
+      make[Unit].named("x").tagged(Repo.Dummy).from(())
+      make[Unit].named("x").tagged(Repo.Prod).from(())
       make[X]
     }
 

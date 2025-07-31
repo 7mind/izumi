@@ -13,7 +13,7 @@ import izumi.functional.Value
 class DockerSupportModule[F[_]: TagK](configModule: ModuleBase) extends ModuleDef {
   include(configModule)
 
-  make[DockerClientWrapper[F]].fromResourceClass[DockerClientWrapper.Resource[F]]
+  make[DockerClientWrapper[F]].fromResource[DockerClientWrapper.Resource[F]]
   make[DockerClientFactory].from(DockerClientFactory.impl)
 
   make[DefaultDockerClientConfig].from {
@@ -52,7 +52,7 @@ object DockerSupportModule {
     }
 
     final val defaultConfig = new ConfigModuleDef {
-      make[Docker.ClientConfig].fromValue(Docker.ClientConfig())
+      make[Docker.ClientConfig].from(Docker.ClientConfig())
     }
   }
 }

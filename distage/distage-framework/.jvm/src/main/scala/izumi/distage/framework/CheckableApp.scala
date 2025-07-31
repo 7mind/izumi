@@ -140,13 +140,13 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
     chosenConfigResource: Option[(ClassLoader, String)],
   ): ModuleDef = {
     new ModuleDef {
-      make[IzLogger].named("early").fromValue(IzLogger.NullLogger)
-      make[IzLogger].fromValue(IzLogger.NullLogger)
+      make[IzLogger].named("early").from(IzLogger.NullLogger)
+      make[IzLogger].from(IzLogger.NullLogger)
 
-      make[AppConfig].fromValue(AppConfig.empty)
-      make[RoleAppArgs].fromValue(RoleAppArgs.empty)
+      make[AppConfig].from(AppConfig.empty)
+      make[RoleAppArgs].from(RoleAppArgs.empty)
 
-      make[RoleProvider].noCapture {
+      make[RoleProvider].from {
         chosenRoles match {
           case RoleSelection.Everything =>
             namePredicateRoleProvider(_ => true)
@@ -167,7 +167,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
 
       chosenConfigResource match {
         case Some((classLoader, resourceName)) =>
-          make[ConfigLoader].fromValue(specificResourceConfigLoader(classLoader, resourceName))
+          make[ConfigLoader].from(specificResourceConfigLoader(classLoader, resourceName))
         case None =>
         // keep original ConfigLoader
       }

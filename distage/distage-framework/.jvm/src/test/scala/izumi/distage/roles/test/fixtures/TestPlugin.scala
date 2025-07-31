@@ -35,7 +35,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   many[Dummy]
 
   many[SetElement]
-    .addClass[SetElement1]
+    .add[SetElement1]
 
   makeRole[TestTask00[F]]
   makeRole[TestRole00[F]]
@@ -56,7 +56,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   makeRole[ConfigTestRole[F]]
   makeConfig[ConfigTestConfig]("configTest")
 
-  make[NotCloseable].fromClass[InheritedCloseable]
+  make[NotCloseable].from[InheritedCloseable]
 
   make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
   make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)

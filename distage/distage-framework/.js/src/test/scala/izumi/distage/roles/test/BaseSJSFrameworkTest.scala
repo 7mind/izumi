@@ -20,7 +20,7 @@ class BaseSJSFrameworkTest extends AsyncWordSpec {
           Seq(
             new PluginDef with RoleModuleDef {
               makeRole[TestTask00[cats.effect.IO]]
-              make[ExecutionContext].named("cpu").fromValue(executionContext)
+              make[ExecutionContext].named("cpu").from(executionContext)
             }
           )
         )
@@ -41,7 +41,7 @@ class BaseSJSFrameworkTest extends AsyncWordSpec {
             new PluginDef with RoleModuleDef {
               makeRole[TestTask00[zio.Task]]
               make[ExecutionContext].named("cpu").from(BaseSJSFrameworkTest.this.executionContext)
-              make[Executor].named("cpu").fromValue(Executor.fromExecutionContext(BaseSJSFrameworkTest.this.executionContext))
+              make[Executor].named("cpu").from(Executor.fromExecutionContext(BaseSJSFrameworkTest.this.executionContext))
             }
           )
         )

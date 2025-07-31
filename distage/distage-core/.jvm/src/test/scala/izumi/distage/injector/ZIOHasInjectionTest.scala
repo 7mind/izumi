@@ -11,9 +11,6 @@ import izumi.distage.model.reflection.TypedRef
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import org.scalatest.wordspec.AnyWordSpec
-import izumi.distage.model.definition.dsl.ScalaVersionSpecificMakeFromZIOEnvDsl
-import izumi.distage.model.definition.dsl.ScalaVersionSpecificAddFromZIOEnvDsl
-import izumi.distage.reflection.macros.IgnorableFunctoidDummyImplicit
 import zio.*
 
 import scala.annotation.nowarn
@@ -60,7 +57,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       import TypesCase1.*
 
       val definition = new ModuleDef {
-        make[Dep].fromClass[DepA]
+        make[Dep].from[DepA]
         make[TestClass2[Dep]].fromZIOEnv {
           (value: Dep) => ZIO.attempt(TestClass2(value))
         }
@@ -87,7 +84,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       import TypesCase1.*
 
       val definition = new ModuleDef {
-        make[Dep].fromClass[DepA]
+        make[Dep].from[DepA]
         make[TestClass2[Dep]].fromZIOEnv(ZIO.environmentWithZIO {
           (value: ZEnvironment[Dep]) =>
             ZIO.attempt(TestClass2(value.get))  
@@ -115,9 +112,9 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       }
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Dep].named("A").fromClass[DepA]
-        make[Dep].named("B").fromClass[DepB]
-        make[TestClass2[Dep]].named("A").fromZIOEnv[Dep @Id("A"), Nothing, TestClass2[Dep], IgnorableFunctoidDummyImplicit](ctorA)
+        make[Dep].named("A").from[DepA]
+        make[Dep].named("B").from[DepB]
+        make[TestClass2[Dep]].named("A").fromZIOEnv[Dep @Id("A"), Nothing, TestClass2[Dep]](ctorA)
         make[TestClass2[Dep]].named("B").fromZIOEnv(ctorB)
       })
 
@@ -148,8 +145,8 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       } yield TestClass3[Dep](a, b)
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[DepA].named("A").fromClass[DepA]
-        make[DepB].named("B").fromClass[DepB]
+        make[DepA].named("A").from[DepA]
+        make[DepB].named("B").from[DepB]
         make[TestClass3[Dep]].fromZIOEnv(ctorAB)
       })
 
@@ -173,6 +170,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
 
     "handle multi-parameter Has with mixed args & env injection and a refinement return" in {
       import TraitCase2.*
+
       import scala.language.reflectiveCalls
 
       def getDep1: URIO[Dependency1, Dependency1] = ZIO.environmentWith[Dependency1](_.get)

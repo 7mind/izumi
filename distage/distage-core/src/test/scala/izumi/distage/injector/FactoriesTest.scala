@@ -321,7 +321,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep1]
       make[Dep2]
-      make[TC[Any]].fromValue(TC1)
+      make[TC[Any]].from(TC1)
       makeFactory[ImplicitFactory]
     })
 

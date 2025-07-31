@@ -1,7 +1,6 @@
 package izumi.distage.injector
 
 import distage.*
-import izumi.distage.model.definition.dsl.ScalaVersionSpecificMakeDsl
 import izumi.functional.quasi.QuasiApplicative
 import izumi.reflect.Tag
 import org.scalatest.wordspec.AnyWordSpec
@@ -15,8 +14,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
-      make[Description].fromValue(Description("X"))
-      make[X].from(makeX)
+      make[Description].from(Description("X"))
+      make[X].from(bindImplicits(makeX))
     })
 
     val injector = mkInjector()
@@ -35,8 +34,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
-      make[Description[X]].fromValue(Description("X"))
-      make[X].from(makeX[Int])
+      make[Description[X]].from(Description("X"))
+      make[X].from(bindImplicits(makeX[Int]))
     })
 
     val injector = mkInjector()
@@ -55,14 +54,16 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
-      make[Description].fromValue(Description("X"))
+      make[Description].from(Description("X"))
       make[X].from {
-        (b: Int) =>
-          {
-            val a = 1
-            val desc = implicitly[Description]
-            X(b.toString + desc.description)
-          }
+        bindImplicits {
+          (b: Int) =>
+            {
+              val a = 1
+              val desc = implicitly[Description]
+              X(b.toString + desc.description)
+            }
+        }
       }
     })
 
@@ -84,7 +85,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
       make[Int].from(1)
       make[String].from("more-description")
       make[Description].from(Description("X"))
-      make[X].from(makeX)
+      make[X].from(bindImplicits(makeX))
     })
 
     val injector = mkInjector()
@@ -104,14 +105,16 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
       make[String].from("str")
-      make[Description].fromValue(Description("X"))
+      make[Description].from(Description("X"))
       make[X].from {
-        (b: Int) =>
-          {
-            val a = 1
-            val desc = implicitly[Description].description + implicitly[String]
-            X(desc + b.toString)
-          }
+        bindImplicits {
+          (b: Int) =>
+            {
+              val a = 1
+              val desc = implicitly[Description].description + implicitly[String]
+              X(desc + b.toString)
+            }
+        }
       }
     })
 
@@ -141,7 +144,9 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
       addImplicit[Pointed[F]]
       make[Int].named("TestService").from(getResult)
       make[F[String]].from {
-        (res: Int @Id("TestService")) => Pointed[F].point(s"Hello $res!")
+        bindImplicits {
+          (res: Int @Id("TestService")) => Pointed[F].point(s"Hello $res!")
+        }
       }
     }
 
@@ -168,7 +173,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
       addImplicit[Pointed[F]]
-      make[F[Any]].from(Pointed[F].point(1: Any))
+      make[F[Any]].from(bindImplicits(Pointed[F].point(1: Any)))
     }
 
     val injector = mkInjector()
@@ -185,13 +190,15 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
       make[X].from {
-        (b: Int) =>
-          {
-            val a = 1
-            implicit val description: Description = Description("desc")
-            val desc = implicitly[Description]
-            X(b.toString + desc.description)
-          }
+        bindImplicits {
+          (b: Int) =>
+            {
+              val a = 1
+              implicit val description: Description = Description("desc")
+              val desc = implicitly[Description]
+              X(b.toString + desc.description)
+            }
+        }
       }
     })
 
@@ -211,13 +218,15 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
       make[X].from {
-        (b: Int) =>
-          {
-            val a = 1
-            given description: Description = Description("desc")
-            val desc = implicitly[Description]
-            X(b.toString + desc.description)
-          }
+        bindImplicits {
+          (b: Int) =>
+            {
+              val a = 1
+              given description: Description = Description("desc")
+              val desc = implicitly[Description]
+              X(b.toString + desc.description)
+            }
+        }
       }
     })
 
@@ -238,7 +247,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
-      make[X].from(makeX[Int])
+      make[X].from(bindImplicits(makeX[Int]))
     })
 
     val injector = mkInjector()
@@ -263,7 +272,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
-      make[X].from(makeX)
+      make[X].from(bindImplicits(makeX))
     })
 
     val injector = mkInjector()
@@ -284,15 +293,16 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].from(1)
-      make[Description].fromValue(Description("desc"))
-      make[X].from(ScalaVersionSpecificMakeDsl.withAllImplicits(makeX))
+      make[Description].from(Description("desc"))
+      make[X].from(bindDIImplicits(makeX))
     })
 
     val injector = mkInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description]
+    val desc = context.get[Description]
+    assert(desc.description == "desc")
     context.get[X]
   }
 
@@ -301,16 +311,18 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     def definition[F[_]: TagK] = PlannerInput.everything(new ModuleDef {
       make[Int].fromEffect {
-        val x = Functoid[F[Int]] {
-          (F: QuasiApplicative[F]) =>
-            // ok case
-            Predef.require(implicitly[Tag[QuasiApplicative[F]]] ne null)
-            Predef.require(implicitly[Tag[F[Int]]] ne null)
+        bindImplicits {
+          val x = Functoid[F[Int]] {
+            (F: QuasiApplicative[F]) =>
+              // ok case
+              Predef.require(implicitly[Tag[QuasiApplicative[F]]] ne null)
+              Predef.require(implicitly[Tag[F[Int]]] ne null)
 
-            F.pure[Int](1)
+              F.pure[Int](1)
+          }
+          functoid = x
+          x
         }
-        functoid = x
-        x
       }
     })
 
@@ -328,15 +340,17 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
 
     def definition[F[_]: TagK] = PlannerInput.everything(new ModuleDef {
       make[Int].fromEffect {
-        // bad case
-        Predef.require(implicitly[Tag[QuasiApplicative[F]]] ne null)
-        Predef.require(implicitly[Tag[F[Int]]] ne null)
+        bindImplicits {
+          // bad case
+          Predef.require(implicitly[Tag[QuasiApplicative[F]]] ne null)
+          Predef.require(implicitly[Tag[F[Int]]] ne null)
 
-        val x = Functoid.apply[F[Int]] {
-          (F: QuasiApplicative[F]) => F.pure[Int](1)
+          val x = Functoid.apply[F[Int]] {
+            (F: QuasiApplicative[F]) => F.pure[Int](1)
+          }
+          functoid = x
+          x
         }
-        functoid = x
-        x
       }
     })
 
@@ -349,4 +363,67 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector {
     assert(context.get[Int] == 1)
   }
 
+  "support implicits in effects" in {
+    final case class Description(description: String)
+    final case class X(s: String)
+
+    def makeX[F[_]: QuasiApplicative](value: Int)(implicit desc: Description): F[X] =
+      QuasiApplicative.apply[F].pure(X(desc.description + value.toString))
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Int].from(1)
+      make[Description].from(Description("desc"))
+      make[X].fromEffect[Identity, X](bindImplicits(makeX[Identity]))
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    context.get[Description]
+    context.get[X]
+  }
+
+  "support implicits in resource class" in {
+    final case class Description(description: String)
+    final case class X(s: String)
+
+    class XResource(implicit desc: Description) extends Lifecycle.Simple[X] {
+      override def acquire: X = X(desc.description)
+      override def release(resource: X): Unit = ()
+    }
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Description].from(Description("desc"))
+      make[X].fromResource[XResource]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    context.get[Description]
+    context.get[X]
+  }
+
+  "support implicits in resource" in {
+    final case class Description(description: String)
+    final case class X(s: String)
+
+    def makeX(implicit desc: Description): Lifecycle[Identity, X] =
+      Lifecycle.make(X(desc.toString): Identity[X])(_ => ())
+
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[Description].from(Description("desc"))
+      make[X].fromResource(bindImplicits(makeX))
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    context.get[Description]
+    context.get[X]
+  }
 }

@@ -16,8 +16,8 @@ class RoleAppBootArgsModule[F[_]: TagK: DefaultModule](
   args: ArgV,
   requiredRoles: RequiredRoles,
 ) extends ModuleDef {
-  make[ArgV].fromValue(args)
-  make[RequiredRoles].fromValue(requiredRoles)
+  make[ArgV].from(args)
+  make[RequiredRoles].from(requiredRoles)
   make[RoleAppArgs].from {
     (parser: CLIParser, args: ArgV, handler: ParserFailureHandler, interceptor: AppArgsInterceptor, additionalRoles: RequiredRoles) =>
       parser.parse(args.args) match {
@@ -36,16 +36,16 @@ class RoleAppBootArgsModule[F[_]: TagK: DefaultModule](
       )
   }
 
-  make[RoleAppActivationParser].fromClass[RoleAppActivationParser.Impl]
-  make[ActivationParser].fromClass[ActivationParser.Impl]
+  make[RoleAppActivationParser].from[RoleAppActivationParser.Impl]
+  make[ActivationParser].from[ActivationParser.Impl]
   make[Activation].named("roleapp").from {
     (parser: ActivationParser, config: AppConfig) =>
       parser.parseActivation(config)
   }
 
-  make[AppArgsInterceptor].fromClass[AppArgsInterceptor.Impl]
+  make[AppArgsInterceptor].from[AppArgsInterceptor.Impl]
 
-  make[CLILoggerOptionsReader].fromClass[CLILoggerOptionsReader.CLILoggerOptionsReaderImpl]
+  make[CLILoggerOptionsReader].from[CLILoggerOptionsReader.CLILoggerOptionsReaderImpl]
   make[CLILoggerOptions].from {
     (reader: CLILoggerOptionsReader) =>
       reader.read()

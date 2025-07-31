@@ -125,47 +125,47 @@ object BootstrapLocator {
   }
 
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[Boolean].named("izumi.distage.interpreter.full-stacktraces").fromValue(fullStackTraces)
+    make[Boolean].named("izumi.distage.interpreter.full-stacktraces").from(fullStackTraces)
 
-    make[ProvisionOperationVerifier].fromClass[ProvisionOperationVerifier.Default]
+    make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 
-    make[MirrorProvider].fromValue(mirrorProvider)
+    make[MirrorProvider].from(mirrorProvider)
 
-    make[PlanSolver].fromClass[PlanSolver.Impl]
+    make[PlanSolver].from[PlanSolver.Impl]
     make[GraphQueries]
 
-    make[SemigraphSolver[DIKey, Int, InstantiationOp]].fromClass[SemigraphSolverImpl[DIKey, Int, InstantiationOp]]
+    make[SemigraphSolver[DIKey, Int, InstantiationOp]].from[SemigraphSolverImpl[DIKey, Int, InstantiationOp]]
 
-    make[ForwardingRefResolver].fromClass[ForwardingRefResolverDefaultImpl]
-    make[SanityChecker].fromClass[SanityCheckerDefaultImpl]
+    make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
+    make[SanityChecker].from[SanityCheckerDefaultImpl]
 
-    make[Planner].fromClass[PlannerDefaultImpl]
-    make[OperationExecutor].fromClass[OperationExecutorImpl]
-    make[PlanInterpreter].fromClass[PlanInterpreterNonSequentialRuntimeImpl]
+    make[Planner].from[PlannerDefaultImpl]
+    make[OperationExecutor].from[OperationExecutorImpl]
+    make[PlanInterpreter].from[PlanInterpreterNonSequentialRuntimeImpl]
 
-    make[SetStrategy].fromClass[SetStrategyDefaultImpl]
-    make[ProviderStrategy].fromClass[ProviderStrategyDefaultImpl]
-    make[ImportStrategy].fromClass[ImportStrategyDefaultImpl]
-    make[InstanceStrategy].fromClass[InstanceStrategyDefaultImpl]
-    make[SubcontextStrategy].fromClass[SubcontextStrategyDefaultImpl]
-    make[EffectStrategy].fromClass[EffectStrategyDefaultImpl]
-    make[ResourceStrategy].fromClass[ResourceStrategyDefaultImpl]
+    make[SetStrategy].from[SetStrategyDefaultImpl]
+    make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
+    make[ImportStrategy].from[ImportStrategyDefaultImpl]
+    make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
+    make[SubcontextStrategy].from[SubcontextStrategyDefaultImpl]
+    make[EffectStrategy].from[EffectStrategyDefaultImpl]
+    make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
 
     many[PlanningObserver]
     many[PlanningHook]
 
-    make[PlanningObserver].fromClass[PlanningObserverAggregate]
-    make[PlanningHook].fromClass[PlanningHookAggregate]
+    make[PlanningObserver].from[PlanningObserverAggregate]
+    make[PlanningHook].from[PlanningHookAggregate]
 
-    make[BindingTranslator].fromClass[BindingTranslator.Impl]
+    make[BindingTranslator].from[BindingTranslator.Impl]
 
-    make[ProxyProvider].tagged(Cycles.Proxy).fromValue(DynamicProxyProvider)
-    make[ProxyProvider].fromValue(new ProxyProviderFailingImpl(ProvisionerIssue.ProxyFailureCause.ProxiesDisabled()))
+    make[ProxyProvider].tagged(Cycles.Proxy).from(DynamicProxyProvider)
+    make[ProxyProvider].from(new ProxyProviderFailingImpl(ProvisionerIssue.ProxyFailureCause.ProxiesDisabled()))
 
-    make[ProxyStrategy].tagged(Cycles.Disable).fromClass[ProxyStrategyFailingImpl]
-    make[ProxyStrategy].fromClass[ProxyStrategyDefaultImpl]
+    make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
+    make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
 
-    make[FwdrefLoopBreaker].fromClass[FwdrefLoopBreaker.FwdrefLoopBreakerDefaultImpl]
+    make[FwdrefLoopBreaker].from[FwdrefLoopBreaker.FwdrefLoopBreakerDefaultImpl]
   }
 
   final val defaultBootstrapActivation: Activation = Activation(
@@ -176,8 +176,8 @@ object BootstrapLocator {
 
   private def selfReflectionModule(bindings0: BootstrapContextModule, bootstrapActivation: Activation): BootstrapModuleDef = {
     new BootstrapModuleDef {
-      make[Activation].named("bootstrapActivation").fromValue(bootstrapActivation)
-      make[BootstrapModule].fromValue(bindings0)
+      make[Activation].named("bootstrapActivation").from(bootstrapActivation)
+      make[BootstrapModule].from(bindings0)
     }
   }
 

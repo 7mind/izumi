@@ -76,7 +76,7 @@ object DockerPlugin extends PluginDef {
   }
 
   // this container will start once `DynamoContainer` is up and running
-  make[PostgresDocker.Container].fromResourceNoCapture {
+  make[PostgresDocker.Container].fromResource {
     PostgresDocker.make[Task].dependOnContainer(DynamoDocker)
   }
 

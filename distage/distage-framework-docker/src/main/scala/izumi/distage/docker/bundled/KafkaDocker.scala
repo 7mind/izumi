@@ -87,14 +87,14 @@ object KafkaKRaftDocker extends ContainerDef {
 }
 
 class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
-  make[KafkaDocker.Container].fromResourceNoCapture {
+  make[KafkaDocker.Container].fromResource {
     KafkaDocker
       .make[F]
       .connectToNetwork(KafkaZookeeperNetwork)
       .dependOnContainerPorts(ZookeeperDocker)(2181 -> "KAFKA_ZOOKEEPER_CONNECT")
   }
   
-  make[KafkaTwofaceDocker.Container].named("twoface").fromResourceNoCapture {
+  make[KafkaTwofaceDocker.Container].named("twoface").fromResource {
     KafkaTwofaceDocker
       .make[F]
       .connectToNetwork(KafkaZookeeperNetwork)
