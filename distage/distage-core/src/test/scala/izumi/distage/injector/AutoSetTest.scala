@@ -32,8 +32,8 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
 
   "AutoSets collect instances with the same type but different implementations" in {
     val definition = new ModuleDef {
-      make[Int].from(1)
-      make[Int].named("x").from(2)
+      make[Int].fromValue(1)
+      make[Int].named("x").fromValue(2)
       many[Int]
         .named("nonauto")
         .add(3)

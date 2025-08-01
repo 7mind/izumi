@@ -125,11 +125,11 @@ object BootstrapLocator {
   }
 
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[Boolean].named("izumi.distage.interpreter.full-stacktraces").from(fullStackTraces)
+    make[Boolean].named("izumi.distage.interpreter.full-stacktraces").fromValue(fullStackTraces)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 
-    make[MirrorProvider].from(mirrorProvider)
+    make[MirrorProvider].fromValue(mirrorProvider)
 
     make[PlanSolver].from[PlanSolver.Impl]
     make[GraphQueries]
@@ -159,8 +159,8 @@ object BootstrapLocator {
 
     make[BindingTranslator].from[BindingTranslator.Impl]
 
-    make[ProxyProvider].tagged(Cycles.Proxy).from(DynamicProxyProvider)
-    make[ProxyProvider].from(new ProxyProviderFailingImpl(ProvisionerIssue.ProxyFailureCause.ProxiesDisabled()))
+    make[ProxyProvider].tagged(Cycles.Proxy).fromValue(DynamicProxyProvider)
+    make[ProxyProvider].fromValue(new ProxyProviderFailingImpl(ProvisionerIssue.ProxyFailureCause.ProxiesDisabled()))
 
     make[ProxyStrategy].tagged(Cycles.Disable).from[ProxyStrategyFailingImpl]
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
@@ -176,8 +176,8 @@ object BootstrapLocator {
 
   private def selfReflectionModule(bindings0: BootstrapContextModule, bootstrapActivation: Activation): BootstrapModuleDef = {
     new BootstrapModuleDef {
-      make[Activation].named("bootstrapActivation").from(bootstrapActivation)
-      make[BootstrapModule].from(bindings0)
+      make[Activation].named("bootstrapActivation").fromValue(bootstrapActivation)
+      make[BootstrapModule].fromValue(bindings0)
     }
   }
 

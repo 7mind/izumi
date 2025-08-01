@@ -73,7 +73,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
     val def1 = PlannerInput
       .target[TestCaseClass2](
         new ModuleDef {
-          make[TestInstanceBinding].from(TestInstanceBinding())
+          make[TestInstanceBinding].fromValue(TestInstanceBinding())
           make[TestCaseClass2]
         }
       )

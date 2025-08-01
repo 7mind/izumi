@@ -6,7 +6,7 @@ import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.resources.*
 
 class BundledRolesModule[F[_]: TagK](version: String) extends ModuleDef with RoleModuleDef {
-  make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
+  make[ArtifactVersion].named("launcher-version").fromValue(ArtifactVersion(version))
 
   makeRole[ConfigWriter[F]]
   makeRole[Help[F]]

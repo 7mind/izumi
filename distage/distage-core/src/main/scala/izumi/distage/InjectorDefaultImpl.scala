@@ -105,12 +105,12 @@ object InjectorDefaultImpl {
     new ModuleDef {
       make[Bootloader]
       // Bootloader dependencies
-      make[InjectorFactory].from(parentFactory)
-      make[BootstrapModule].from(bsModule)
-      make[Module].named("defaultModule").from(defaultModule)
-      make[PlannerInput].from(input)
+      make[InjectorFactory].fromValue(parentFactory)
+      make[BootstrapModule].fromValue(bsModule)
+      make[Module].named("defaultModule").fromValue(defaultModule)
+      make[PlannerInput].fromValue(input)
       // not required by Bootloader
-      make[Activation].from(activation)
+      make[Activation].fromValue(activation)
     }
   }
 

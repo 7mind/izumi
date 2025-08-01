@@ -14,7 +14,7 @@ class DockerSupportModule[F[_]: TagK](configModule: ModuleBase) extends ModuleDe
   include(configModule)
 
   make[DockerClientWrapper[F]].fromResource[DockerClientWrapper.Resource[F]]
-  make[DockerClientFactory].from(DockerClientFactory.impl)
+  make[DockerClientFactory].fromValue(DockerClientFactory.impl)
 
   make[DefaultDockerClientConfig].from {
     (clientConfig: Docker.ClientConfig) =>
@@ -52,7 +52,7 @@ object DockerSupportModule {
     }
 
     final val defaultConfig = new ConfigModuleDef {
-      make[Docker.ClientConfig].from(Docker.ClientConfig())
+      make[Docker.ClientConfig].fromValue(Docker.ClientConfig())
     }
   }
 }

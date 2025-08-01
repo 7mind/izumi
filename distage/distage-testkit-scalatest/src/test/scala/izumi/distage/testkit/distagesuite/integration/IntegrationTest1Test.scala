@@ -83,7 +83,7 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit FA: A
     super.config.copy(
       moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
         make[TestEnableDisable].fromResource[DisabledTestF2[F]]
-        make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
+        make[ZEnvironment[Int]].named("zio-initial-env").fromValue(ZEnvironment(1))
       }
     )
   }

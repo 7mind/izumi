@@ -33,7 +33,7 @@ object StaticTestMainBadEffect extends RoleAppMain.LauncherIdentity {
 class StaticTestMainLogIO2[F[+_, +_]: TagKK: Async2: DefaultModule2] extends RoleAppMain.LauncherBIO[F] {
 
   override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
-    make[Boolean].named("distage.roles.always-include-reference-role-configs").from(true)
+    make[Boolean].named("distage.roles.always-include-reference-role-configs").fromValue(true)
   }
 
   override protected def pluginConfig: PluginConfig =

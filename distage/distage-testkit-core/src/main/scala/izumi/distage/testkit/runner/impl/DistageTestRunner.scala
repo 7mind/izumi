@@ -108,7 +108,7 @@ class DistageTestRunner[F[_]: TagK, G[_]](
             (runtimeLocator, runtimeInstantiationTiming) =>
               runtimeLocator.run {
                 (runner: QuasiIORunner[F], testTreeRunner: TestTreeRunner[F], logger: IzLogger @Id("distage-testkit")) =>
-                  //logger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
+                  logger.info(s"Processing ${allEnvTests.size -> "tests"} using ${TagK[F].tag -> "monad"}")
                   EnvResult.EnvSuccess(runtimeInstantiationTiming, runner.run(testTreeRunner.traverse(id, 0, testsTree, runtimeLocator)))
               }
           },

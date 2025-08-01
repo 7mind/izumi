@@ -30,7 +30,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val definition: ModuleBase = new ModuleDef {
         make[TestClass]
         make[TestDependency0].from[TestImpl0]
-        make[TestInstanceBinding].from(TestInstanceBinding())
+        make[TestInstanceBinding].fromValue(TestInstanceBinding())
 
         make[TestClass]
           .named("named.test.class")
@@ -38,7 +38,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           .named("named.test.dependency.0")
         make[TestInstanceBinding]
           .named("named.test")
-          .from(TestInstanceBinding())
+          .fromValue(TestInstanceBinding())
         many[JustTrait].named("named.empty.set")
         many[JustTrait]
           .add[Impl0]
@@ -759,7 +759,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
     "mutators do not override bindings or each other" in {
       val module = new ModuleDef {
-        make[Int].from(1)
+        make[Int].fromValue(1)
       } overriddenBy new ModuleDef {
         modify[Int](_ + 1)
       } overriddenBy new ModuleDef {
@@ -798,9 +798,9 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     "addDependency supports adding dependencies for .fromValue and .using bindings" in {
       val definition = new ModuleDef {
         make[Int]
-          .from(5)
+          .fromValue(5)
           .addDependency[String]
-        make[Unit].from(())
+        make[Unit].fromValue(())
         make[Unit].named("x").using[Unit].addDependency[String]
       }
 
@@ -822,7 +822,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val definition = new ModuleDef {
         make[Int].fromResource(Lifecycle.pure(5)).addDependency[String]
         make[Long].fromResource(() => Lifecycle.pure(5L)).addDependency[String]
-        make[Short].fromEffect(() => 5: Identity[Short]).addDependency[String]
+        make[Short].fromEffect[Identity, Short](() => 5: Identity[Short]).addDependency[String]
       }
 
       val verification = PlanVerifier().verify[Identity](definition, Roots.Everything, Set.empty, Set.empty)
@@ -843,11 +843,11 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     "modify & annotateParameter do not support adding dependencies for .fromValue and .using bindings" in {
       intercept[InvalidFunctoidModifier](new ModuleDef {
         make[Int]
-          .from(5)
+          .fromValue(5)
           .modifyBy(_.addDependency[String])
       }.bindings)
       intercept[InvalidFunctoidModifier](new ModuleDef {
-        make[Unit].from(())
+        make[Unit].fromValue(())
         make[Unit].named("x").using[Unit].annotateParameter[String]("special")
       }.bindings)
     }

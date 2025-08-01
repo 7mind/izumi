@@ -59,7 +59,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       makeSubcontext[Int]
         .named("test")
         .withSubmodule(new ModuleDef {
-          make[Arg].from(Arg(2))
+          make[Arg].fromValue(Arg(2))
           make[LocalService].from[LocalServiceGoodImpl]
         })
         .extractWith {
@@ -107,7 +107,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[GlobalServiceDependency]
       make[GlobalService]
       make[LocalService].from[LocalServiceGoodImpl]
-      make[Arg].from(Arg(1))
+      make[Arg].fromValue(Arg(1))
 
       makeSubcontext[Int]
         .named("test")
@@ -147,8 +147,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       makeSubcontext[Int](new ModuleDef {
         make[LocalService].from[LocalServiceGoodImpl]
 
-        make[Arg].tagged(Repo.Dummy).from(Arg(1))
-        make[Arg].tagged(Repo.Prod).from(Arg(-1))
+        make[Arg].tagged(Repo.Dummy).fromValue(Arg(1))
+        make[Arg].tagged(Repo.Prod).fromValue(Arg(-1))
       })
         .extractWith {
           (summator: LocalService) =>

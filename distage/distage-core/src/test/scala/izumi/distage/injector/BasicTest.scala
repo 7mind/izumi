@@ -29,7 +29,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
-        make[TestInstanceBinding].from(TestInstanceBinding())
+        make[TestInstanceBinding].fromValue(TestInstanceBinding())
       },
       Activation.empty,
       DIKey[TestDependency1],
@@ -191,7 +191,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         .from[TestImpl0Good]
       make[TestInstanceBinding]
         .named("named.test")
-        .from(TestInstanceBinding())
+        .fromValue(TestInstanceBinding())
       // test SetIdFromImplName
       make[TestDependency0].namedByImpl
         .from[TestImpl0Good]
@@ -236,7 +236,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase1.*
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestCaseClass2]
-      make[TestInstanceBinding].from(new TestInstanceBinding)
+      make[TestInstanceBinding].fromValue(new TestInstanceBinding)
     })
 
     val injector = mkInjector()
@@ -333,13 +333,13 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "handle set inclusions" in {
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Set[Int]].named("x").from(Set(1, 2, 3))
-      make[Set[Int]].named("y").from(Set(4, 5, 6))
+      make[Set[Int]].named("x").fromValue(Set(1, 2, 3))
+      make[Set[Int]].named("y").fromValue(Set(4, 5, 6))
       many[Int].refSet[Set[Int]]("x")
       many[Int].refSet[Set[Int]]("y")
 
-      make[Set[None.type]].from(Set(None))
-      make[Set[Some[Int]]].from(Set(Some(7)))
+      make[Set[None.type]].fromValue(Set(None))
+      make[Set[Some[Int]]].fromValue(Set(Some(7)))
       many[Option[Int]].refSet[Set[None.type]]
       many[Option[Int]].refSet[Set[Some[Int]]]
     })
@@ -352,7 +352,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "handle multiple set element binds" in {
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(7)
+      make[Int].fromValue(7)
 
       many[Int].add(0)
       many[Int].addSet(Set(1, 2, 3))
@@ -404,8 +404,8 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase7.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].named("port").from(80)
-      make[String].named("address").from("localhost")
+      make[Int].named("port").fromValue(80)
+      make[String].named("address").fromValue("localhost")
       make[ServerConfig].from(ServerConfig)
     })
 
@@ -421,8 +421,8 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import Mutations01.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[SomethingUseful].from(SomethingUseful("x"))
-      make[Mutable].from(Mutable(1, None))
+      make[SomethingUseful].fromValue(SomethingUseful("x"))
+      make[Mutable].fromValue(Mutable(1, None))
       modify[Mutable].by {
         _.flatAp {
           (u: SomethingUseful) => (m: Mutable) =>
@@ -441,9 +441,9 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(
       new ModuleDef {
-        make[SomethingUseful].from(SomethingUseful("x"))
+        make[SomethingUseful].fromValue(SomethingUseful("x"))
 
-        make[Mutable].named("x").from(Mutable(1, None))
+        make[Mutable].named("x").fromValue(Mutable(1, None))
 
         modify[Mutable].named("x").by {
           _.flatAp {
@@ -480,9 +480,9 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(
       new ModuleDef {
-        make[SomethingUseful].from(SomethingUseful("x"))
+        make[SomethingUseful].fromValue(SomethingUseful("x"))
 
-        make[Mutable].from(Mutable(1, None))
+        make[Mutable].fromValue(Mutable(1, None))
 
         modify[Mutable].by {
           _.flatAp {
@@ -568,7 +568,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "stack does not overflow when producing very large dependency chains" in {
     val max = 4000
     val definition = new ModuleDef {
-      make[Int].named("0").from(0)
+      make[Int].named("0").fromValue(0)
       for (i <- 1 to max) {
         make[Int].named(s"$i").from((_: Int) + 1).annotateParameter[Int](s"${i - 1}")
       }

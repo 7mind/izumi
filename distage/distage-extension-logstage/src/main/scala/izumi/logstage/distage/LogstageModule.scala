@@ -16,8 +16,8 @@ class LogstageModule(router: LogRouter, setupStaticLogRouter: Boolean) extends B
     .aliased[AbstractLogger]
     .exposed
 
-  make[LogRouter].from(router)
-  make[CustomContext].from(CustomContext.empty)
+  make[LogRouter].fromValue(router)
+  make[CustomContext].fromValue(CustomContext.empty)
 }
 
 object LogstageModule {

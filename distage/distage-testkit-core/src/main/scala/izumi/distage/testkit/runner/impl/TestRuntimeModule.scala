@@ -10,7 +10,7 @@ import izumi.distage.testkit.runner.impl.services.{ExtParTraverse, TimedActionF}
 import izumi.logstage.api.IzLogger
 
 class TestRuntimeModule[F[_]: TagK](params: EnvExecutionParams) extends ModuleDef {
-  make[EnvExecutionParams].from(params)
+  make[EnvExecutionParams].fromValue(params)
   make[PlanningOptions].from {
     (exec: EnvExecutionParams) =>
       exec.planningOptions

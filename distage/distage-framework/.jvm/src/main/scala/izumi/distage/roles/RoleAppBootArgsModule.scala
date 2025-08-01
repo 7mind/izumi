@@ -16,8 +16,8 @@ class RoleAppBootArgsModule[F[_]: TagK: DefaultModule](
   args: ArgV,
   requiredRoles: RequiredRoles,
 ) extends ModuleDef {
-  make[ArgV].from(args)
-  make[RequiredRoles].from(requiredRoles)
+  make[ArgV].fromValue(args)
+  make[RequiredRoles].fromValue(requiredRoles)
   make[RoleAppArgs].from {
     (parser: CLIParser, args: ArgV, handler: ParserFailureHandler, interceptor: AppArgsInterceptor, additionalRoles: RequiredRoles) =>
       parser.parse(args.args) match {

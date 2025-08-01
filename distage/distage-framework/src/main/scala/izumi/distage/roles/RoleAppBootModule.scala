@@ -57,9 +57,9 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   addImplicit[DefaultModule[F]]
 
   make[AppShutdownInitiator].using[AppShutdownStrategy[F]]
-  make[AppShutdownStrategy[F]].from(shutdownStrategy)
-  make[PluginConfig].named("main").from(pluginConfig)
-  make[PluginConfig].named("bootstrap").from(bootstrapPluginConfig)
+  make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
+  make[PluginConfig].named("main").fromValue(pluginConfig)
+  make[PluginConfig].named("bootstrap").fromValue(bootstrapPluginConfig)
   make[PluginLoader]
     .named("bootstrap")
     .aliased[PluginLoader]("main")
@@ -75,13 +75,13 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       loader.load(config)
   }
 
-  make[Option[IzArtifact]].named("app.artifact").from(Some(appArtifact))
+  make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
 
   make[CLIParser].from[CLIParserImpl]
   make[MultiModalArgsParser].from[MultiModalArgsParserImpl]
   make[SubArgsParser].from[SubArgsParserImpl]
 
-  make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
+  make[ParserFailureHandler].fromValue(ParserFailureHandler.TerminatingHandler)
 
   many[LibraryReference]
 
@@ -92,24 +92,24 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   make[StartupBanner].from[StartupBanner.Impl]
 
-  make[Activation].named("default").from(StandardAxis.prodActivation)
-  make[Activation].named("additional").from(Activation.empty)
+  make[Activation].named("default").fromValue(StandardAxis.prodActivation)
+  make[Activation].named("additional").fromValue(Activation.empty)
 
-  make[Boolean].named("distage.roles.reflection").from(DebugProperties.`izumi.distage.roles.reflection`.boolValue(default = true))
-  make[Boolean].named("distage.roles.logs.json").from(DebugProperties.`izumi.distage.roles.logs.json`.boolValue(default = false))
-  make[Boolean].named("distage.roles.ignore-mismatched-effect").from(DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(default = false))
-  make[Boolean].named("distage.roles.activation.ignore-unknown").from(DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.boolValue(default = false))
-  make[Boolean].named("distage.roles.activation.warn-unset").from(DebugProperties.`izumi.distage.roles.activation.warn-unset`.boolValue(default = true))
+  make[Boolean].named("distage.roles.reflection").fromValue(DebugProperties.`izumi.distage.roles.reflection`.boolValue(default = true))
+  make[Boolean].named("distage.roles.logs.json").fromValue(DebugProperties.`izumi.distage.roles.logs.json`.boolValue(default = false))
+  make[Boolean].named("distage.roles.ignore-mismatched-effect").fromValue(DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(default = false))
+  make[Boolean].named("distage.roles.activation.ignore-unknown").fromValue(DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.boolValue(default = false))
+  make[Boolean].named("distage.roles.activation.warn-unset").fromValue(DebugProperties.`izumi.distage.roles.activation.warn-unset`.boolValue(default = true))
 
-  make[Boolean].named("distage.roles.always-include-reference-role-configs").from(DebugProperties.`distage.roles.always-include-reference-role-configs`.boolValue(true))
+  make[Boolean].named("distage.roles.always-include-reference-role-configs").fromValue(DebugProperties.`distage.roles.always-include-reference-role-configs`.boolValue(true))
   make[Boolean]
-    .named("distage.roles.always-include-reference-common-configs").from(DebugProperties.`distage.roles.always-include-reference-common-configs`.boolValue(true))
-  make[Boolean].named("distage.roles.ignore-all-reference-configs").from(DebugProperties.`distage.roles.ignore-all-reference-configs`.boolValue(default = false))
+    .named("distage.roles.always-include-reference-common-configs").fromValue(DebugProperties.`distage.roles.always-include-reference-common-configs`.boolValue(true))
+  make[Boolean].named("distage.roles.ignore-all-reference-configs").fromValue(DebugProperties.`distage.roles.ignore-all-reference-configs`.boolValue(default = false))
   make[Boolean]
-    .named("distage.roles.enable-config-environment-overrides").from(DebugProperties.`distage.roles.enable-config-environment-overrides`.boolValue(default = true))
+    .named("distage.roles.enable-config-environment-overrides").fromValue(DebugProperties.`distage.roles.enable-config-environment-overrides`.boolValue(default = true))
 
-  make[PluginMergeStrategy].named("bootstrap").from(SimplePluginMergeStrategy)
-  make[PluginMergeStrategy].named("main").from(SimplePluginMergeStrategy)
+  make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
+  make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)
 
   make[ModuleValidator].from[ModuleValidator.ModuleValidatorImpl]
 
@@ -136,7 +136,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       rolesInfo.requiredComponents
   }
 
-  make[Set[Axis.AxisChoice]].named("unused-valid-axis-choices").from(unusedValidAxisChoices)
+  make[Set[Axis.AxisChoice]].named("unused-valid-axis-choices").fromValue(unusedValidAxisChoices)
   make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.Impl]
   make[ActivationInfo].from {
     (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>
@@ -179,11 +179,11 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   make[RoleAppEntrypoint[F]].from[RoleAppEntrypoint.Impl[F]]
 
-  make[FinalizerFilters[F]].from(FinalizerFilters.all[F])
+  make[FinalizerFilters[F]].fromValue(FinalizerFilters.all[F])
   make[AppResourceProvider[F]].from[AppResourceProvider.Impl[F]]
   make[AppResource[F]].from {
     (transformer: AppResourceProvider[F]) =>
       transformer.makeAppResource
   }
-  make[DummyImplicit].from(DummyImplicit.dummyImplicit)
+  make[DummyImplicit].fromValue(DummyImplicit.dummyImplicit)
 }

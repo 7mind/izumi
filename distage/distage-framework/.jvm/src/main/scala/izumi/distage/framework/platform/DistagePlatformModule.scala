@@ -13,19 +13,19 @@ import izumi.fundamentals.platform.{AbstractIzPlatform, IzPlatform}
 
 class DistagePlatformModule extends ModuleDef {
   // effectful
-  make[AbstractIzPlatform].from(IzPlatform)
-  make[IzClasspath].from(IzClasspath)
-  make[IzDNS].from(IzDNS)
-  make[IzFiles].from(IzFiles)
-  make[IzJvm].from(IzJvm)
-  make[IzOs].from(IzOs)
-  make[IzScala].from(IzScala)
-  make[IzSockets].from(IzSockets)
-  make[IzStack].from(IzStack)
-  make[IzUUID].from(IzUUID)
+  make[AbstractIzPlatform].fromValue(IzPlatform)
+  make[IzClasspath].fromValue(IzClasspath)
+  make[IzDNS].fromValue(IzDNS)
+  make[IzFiles].fromValue(IzFiles)
+  make[IzJvm].fromValue(IzJvm)
+  make[IzOs].fromValue(IzOs)
+  make[IzScala].fromValue(IzScala)
+  make[IzSockets].fromValue(IzSockets)
+  make[IzStack].fromValue(IzStack)
+  make[IzUUID].fromValue(IzUUID)
 
   // pure
-  make[IzHash].from(IzHash)
+  make[IzHash].fromValue(IzHash)
 
   // the rest of the pure helpers seem to be unnecessary
 }

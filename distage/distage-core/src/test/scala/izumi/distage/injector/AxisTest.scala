@@ -307,8 +307,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     class X(u: Unit @Id("x")) { val x: Unit = u }
 
     val definition = new ModuleDef {
-      make[Unit].named("x").tagged(Repo.Dummy).from(())
-      make[Unit].named("x").tagged(Repo.Prod).from(())
+      make[Unit].named("x").tagged(Repo.Dummy).fromValue(())
+      make[Unit].named("x").tagged(Repo.Prod).fromValue(())
       make[X]
     }
 
@@ -333,8 +333,8 @@ class AxisTest extends AnyWordSpec with MkInjector {
     case object Green extends Color
 
     def DefaultsModule = new ModuleDef {
-      make[Color].from(Green)
-      make[Color].tagged(Style.AllCaps).from(RED)
+      make[Color].fromValue(Green)
+      make[Color].tagged(Style.AllCaps).fromValue(RED)
     }
 
     assert(
@@ -350,9 +350,9 @@ class AxisTest extends AnyWordSpec with MkInjector {
     assertThrows[InjectorFailed](Injector().produceRun(DefaultsModule, Activation.empty)(println(_: Color)))
 
     def SpecificityModule = new ModuleDef {
-      make[Color].tagged(Mode.Test).from(Blue)
-      make[Color].tagged(Mode.Prod).from(Green)
-      make[Color].tagged(Mode.Prod, Style.AllCaps).from(RED)
+      make[Color].tagged(Mode.Test).fromValue(Blue)
+      make[Color].tagged(Mode.Prod).fromValue(Green)
+      make[Color].tagged(Mode.Prod, Style.AllCaps).fromValue(RED)
     }
 
     assert(

@@ -14,8 +14,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     def makeX(x: Int)(using desc: Description): X = X(desc.description)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
-      make[Description].from(Description("X"))
+      make[Int].fromValue(1)
+      make[Description].fromValue(Description("X"))
       make[X].from(bindImplicits(makeX))
     })
 
@@ -34,8 +34,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     def makeX[T](value: T)(implicit desc: Description[X]): X = X(desc.description)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
-      make[Description[X]].from(Description("X"))
+      make[Int].fromValue(1)
+      make[Description[X]].fromValue(Description("X"))
       make[X].from(bindImplicits(makeX[Int]))
     })
 
@@ -54,8 +54,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     def makeX(x: Int)(using desc: Description): X = X(desc.description)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
-      make[Description].from(Description("X"))
+      make[Int].fromValue(1)
+      make[Description].fromValue(Description("X"))
       make[X].from {
         bindImplicits {
           (b: Int) =>
@@ -83,9 +83,9 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     def makeX(x: Int)(using desc: Description, moreDesc: String): X = X(desc.description + moreDesc)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
-      make[String].from("more-description")
-      make[Description].from(Description("X"))
+      make[Int].fromValue(1)
+      make[String].fromValue("more-description")
+      make[Description].fromValue(Description("X"))
       make[X].from(bindImplicits(makeX))
     })
 
@@ -104,9 +104,9 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     def makeX(x: Int)(using desc: Description): X = X(desc.description)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
-      make[String].from("str")
-      make[Description].from(Description("X"))
+      make[Int].fromValue(1)
+      make[String].fromValue("str")
+      make[Description].fromValue(Description("X"))
       make[X].from {
         bindImplicits {
           (b: Int) =>
@@ -143,7 +143,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
 
     case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
       addImplicit[Pointed[F]]
-      make[Int].named("TestService").from(getResult)
+      make[Int].named("TestService").fromValue(getResult)
       make[F[String]].from {
         bindImplicits {
           (res: Int @Id("TestService")) => Pointed[F].point(s"Hello $res!")
@@ -189,7 +189,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     final case class X(s: String)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
+      make[Int].fromValue(1)
       make[X].from {
         bindImplicits {
           (b: Int) =>
@@ -217,7 +217,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     def makeX(x: Int)(using desc: Description): X = X(desc.description)
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
+      make[Int].fromValue(1)
       make[X].from {
         bindImplicits {
           (b: Int) =>
@@ -247,7 +247,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     implicit val description: Description[X] = Description[X]("description")
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
+      make[Int].fromValue(1)
       make[X].from(bindImplicits(makeX[Int]))
     })
 
@@ -272,7 +272,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     implicit val double: Double = 2.0
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
+      make[Int].fromValue(1)
       make[X].from(bindImplicits(makeX))
     })
 
@@ -293,8 +293,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     implicit val description: Description = Description("description")
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
-      make[Description].from(Description("desc"))
+      make[Int].fromValue(1)
+      make[Description].fromValue(Description("desc"))
       make[X].from(bindDIImplicits(makeX))
     })
 
@@ -372,8 +372,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
       QuasiApplicative.apply[F].pure(X(desc.description + value.toString))
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Int].from(1)
-      make[Description].from(Description("desc"))
+      make[Int].fromValue(1)
+      make[Description].fromValue(Description("desc"))
       make[X].fromEffect[Identity, X](bindImplicits(makeX[Identity]))
     })
 
@@ -395,7 +395,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     }
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Description].from(Description("desc"))
+      make[Description].fromValue(Description("desc"))
       make[X].fromResource[XResource]
     })
 
@@ -416,7 +416,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
 
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Description].from(Description("desc"))
+      make[Description].fromValue(Description("desc"))
       make[X].fromResource(bindImplicits(makeX))
     })
 

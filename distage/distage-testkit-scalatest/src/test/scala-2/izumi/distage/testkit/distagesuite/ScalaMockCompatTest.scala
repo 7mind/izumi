@@ -14,7 +14,7 @@ final class ScalaMockCompatTest extends Spec1[Identity] with MockFactory {
 
   override protected def config: TestConfig = super.config.copy(
     moduleOverrides = new ModuleDef {
-      make[TestClass].from(mock[TestClass])
+      make[TestClass].fromValue(mock[TestClass])
     }
   )
 

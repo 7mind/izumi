@@ -7,9 +7,9 @@ import izumi.fundamentals.platform.{AbstractIzPlatform, IzPlatform}
 
 class DistagePlatformModule extends ModuleDef {
   // effectful
-  make[AbstractIzPlatform].from(IzPlatform)
+  make[AbstractIzPlatform].fromValue(IzPlatform)
 
-  make[IzScala].from(IzScala)
+  make[IzScala].fromValue(IzScala)
 
   // pure
   make[IzHashFunction].from(() => IzSha256HashFunction.getImpl)

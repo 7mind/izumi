@@ -115,7 +115,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[GenericAssistedFactory]
-      make[Dependency].from(ConcreteDep())
+      make[Dependency].fromValue(ConcreteDep())
     })
 
     val injector = mkNoCyclesInjector()
@@ -135,8 +135,8 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[NamedAssistedFactory]
       makeTrait[Dependency]
-      make[Dependency].named("special").from(SpecialDep())
-      make[Dependency].named("veryspecial").from(VerySpecialDep())
+      make[Dependency].named("special").fromValue(SpecialDep())
+      make[Dependency].named("veryspecial").fromValue(VerySpecialDep())
     })
 
     val injector = mkNoCyclesInjector()
@@ -321,7 +321,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val definition = PlannerInput.everything(new ModuleDef {
       make[Dep1]
       make[Dep2]
-      make[TC[Any]].from(TC1)
+      make[TC[Any]].fromValue(TC1)
       makeFactory[ImplicitFactory]
     })
 
@@ -368,7 +368,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeFactory[AssistedFactory]
-      make[Dependency].from(ConcreteDep())
+      make[Dependency].fromValue(ConcreteDep())
     })
 
     val injector = mkNoCyclesInjector()

@@ -7,7 +7,7 @@ import izumi.fundamentals.platform.functional.Identity
 import scala.concurrent.ExecutionContext
 
 private[distage] trait CatsIOPlatformDependentSupportModule extends ModuleDef {
-  make[ExecutionContext].named("cpu").from(ExecutionContext.global)
+  make[ExecutionContext].named("cpu").fromValue(ExecutionContext.global)
   make[ExecutionContext].named("io").using[ExecutionContext]("cpu")
 
   make[IORuntime].from {

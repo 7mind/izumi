@@ -112,7 +112,7 @@ object ModuleDefDSL {
       from(ctor.provider)
     }
 
-    final def from[I <: T: Tag](instance: I): AfterBind =
+    final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     /**

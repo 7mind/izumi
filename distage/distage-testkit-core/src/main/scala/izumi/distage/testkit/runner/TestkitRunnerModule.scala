@@ -17,10 +17,10 @@ class TestkitRunnerModule[F[_]: TagK: DefaultModule](reporter: TestReporter, isC
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
 
-  make[TestReporter].from(reporter)
+  make[TestReporter].fromValue(reporter)
   make[TestkitLogging]
 
-  make[Throwable => Boolean].from(isCancellation)
+  make[Throwable => Boolean].fromValue(isCancellation)
   make[TestStatusConverter]
   make[TimedAction].from[TimedActionImpl]
   make[TestConfigLoader].from[TestConfigLoader.TestConfigLoaderImpl]

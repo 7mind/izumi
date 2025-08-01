@@ -28,8 +28,8 @@ abstract class MockAppPlugin[F[_]: TagK] extends PluginDef {
   make[MockCache[F]]
   make[MockCachedUserService[F]]
   make[UnavailableIntegrationCheck[F]]
-  make[ActiveComponent].from(TestActiveComponent).tagged(Mode.Test)
-  make[ActiveComponent].from(ProdActiveComponent).tagged(Mode.Prod)
+  make[ActiveComponent].fromValue(TestActiveComponent).tagged(Mode.Test)
+  make[ActiveComponent].fromValue(ProdActiveComponent).tagged(Mode.Prod)
 }
 
 trait ActiveComponent

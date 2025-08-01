@@ -109,7 +109,7 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
 
   override protected def config: TestConfig = super.config.copy(
     pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new izumi.distage.plugins.PluginDef {
-      make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
+      make[ZEnvironment[Int]].named("zio-initial-env").fromValue(ZEnvironment(1))
 
       make[SetCounter]
       make[SetCounter].named("unmemoized")
