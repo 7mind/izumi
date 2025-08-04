@@ -97,11 +97,11 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
                   else fromTerm
 
                 val res = newTypesFromTerm ++ newTypesFromArgs ++ acc
-                if (res.nonEmpty) {
-                  println(
-                    s"Got apply(TypeApply) dummies from `${fun.show}`\nnewTypesFromTerm=$newTypesFromTerm\nnewTypesFromArgs=$newTypesFromArgs\ntypes=$types\nfromTerm=$fromTerm\nfromargs=$fromArgs"
-                  )
-                }
+//                if (res.nonEmpty) {
+//                  println(
+//                    s"Got apply(TypeApply) dummies from `${fun.show}`\nnewTypesFromTerm=$newTypesFromTerm\nnewTypesFromArgs=$newTypesFromArgs\ntypes=$types\nfromTerm=$fromTerm\nfromargs=$fromArgs"
+//                  )
+//                }
                 res
               case _ => foldTrees(acc, args)(owner) ++ acc
             }
@@ -129,11 +129,8 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
     Implicits.searchIgnoring(dummyType)(knownSyms*) match {
       case succ: ImplicitSearchSuccess =>
         val newSym = succ.tree.symbol
-        println(s"XYGot newSYm $newSym")
         extractDummySymbolsFromImplicitSearch(newSym :: knownSyms)
-      case x: ImplicitSearchFailure =>
-        println(s"XYGOt failure for $dummyType ${x.explanation}")
-        knownSyms
+      case x: ImplicitSearchFailure => knownSyms
     }
   }
 

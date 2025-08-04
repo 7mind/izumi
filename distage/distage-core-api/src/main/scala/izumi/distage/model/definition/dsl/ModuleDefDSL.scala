@@ -11,7 +11,6 @@ import izumi.distage.model.definition.dsl.LifecycleAdapters.{LifecycleTag, ZIOEn
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, IdContract, SafeType}
-import izumi.distage.reflection.macros.IgnorableFunctoidDummyImplicit
 import izumi.functional.bio.data.Morphism1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
@@ -110,6 +109,10 @@ object ModuleDefDSL {
   trait MakeDSLBase[T, AfterBind] {
     final def from[I <: T: Tag](implicit ctor: ClassConstructor[I]): AfterBind = {
       from(ctor.provider)
+    }
+
+    final def from[I <: T: Tag](f: => I): AfterBind = {
+      from(Functoid.lift(f))
     }
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
@@ -398,8 +401,8 @@ object ModuleDefDSL {
     final def refEffect[F[_]: TagK, I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
 
-    final def addResource[R <: Lifecycle[LifecycleF, T]: ClassConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
-      addResource[R](ClassConstructor[R])
+    final def addResource[R <: Lifecycle[LifecycleF, T]](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer, ctor: ClassConstructor[R]): AfterAdd =
+      addResource[R](ctor.provider)(tag, pos, DummyImplicit.dummyImplicit)
 
     final def addResource[R](instance: R & Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag.*
@@ -448,6 +451,9 @@ object ModuleDefDSL {
       */
     final def addSet[I <: Set[? <: T]](function: Functoid[I])(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       multiSetAdd(ImplDef.ProviderImpl(function.get.ret, function.get), pos)
+
+    final def addSet[I <: Set[? <: T]: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
+      addSet(Functoid.lift(function))
 
     final def addSetValue[I <: Set[? <: T]: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)

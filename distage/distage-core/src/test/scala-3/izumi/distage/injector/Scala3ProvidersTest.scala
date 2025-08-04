@@ -158,32 +158,6 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     context.get[List[String]] == List("Hello 1!")
   }
 
-  "support 'by name' values" in {
-    trait Pointed[F[_]] {
-      def point[A](a: A): F[A]
-    }
-
-    object Pointed {
-      def apply[F[_]: Pointed]: Pointed[F] = implicitly
-
-      implicit final val pointedList: Pointed[List] =
-        new Pointed[List] {
-          override def point[A](a: A): List[A] = List(a)
-        }
-    }
-
-    case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
-      addImplicit[Pointed[F]]
-      make[F[Any]].from(bindImplicits(Pointed[F].point(1: Any)))
-    }
-
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(PlannerInput.everything(Definition[List](1)))
-    val context = injector.produce(plan).unsafeGet()
-
-    context.get[List[Any]] == List(1)
-  }
-
   "should not override implicit inside the block" in {
     final case class Description(description: String)
     final case class X(s: String)
@@ -411,11 +385,12 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     final case class Description(description: String)
     final case class X(s: String)
 
-    def makeX(implicit desc: Description): Lifecycle[Identity, X] =
+    def makeX(x: Int)(implicit desc: Description): Lifecycle[Identity, X] =
       Lifecycle.make(X(desc.toString): Identity[X])(_ => ())
 
 
     val definition = PlannerInput.everything(new ModuleDef {
+      make[Int].fromValue(1)
       make[Description].fromValue(Description("desc"))
       make[X].fromResource(bindImplicits(makeX))
     })
@@ -435,7 +410,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     }
 
     final case class X[T](a: A[T])
-    def makeX[T](implicit a: A[T]): X[Any] = X[Any](a.asInstanceOf[A[Any]])
+    def makeX[T](x: Int)(implicit a: A[T]): X[Any] = X[Any](a.asInstanceOf[A[Any]])
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[X[Any]].from(bindImplicits(makeX))

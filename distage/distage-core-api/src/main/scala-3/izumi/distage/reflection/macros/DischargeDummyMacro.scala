@@ -33,7 +33,6 @@ object DischargeDummyMacro {
         case Inlined(_, _, term) => rewrite(term)
         case Block(List(), term) => rewrite(term)
         case _ =>
-          println(s"discharge not done at all: ${originalFunction.show}")
           '{ ${ originalFunction }(using null.asInstanceOf[N]) }
       }
     }
