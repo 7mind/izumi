@@ -172,13 +172,13 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
         }
     }
 
-    case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
-      addImplicit[Pointed[F]]
-      make[F[Any]].from(bindImplicits(Pointed[F].point(1: Any)))
+    class Definition[F[+_]: TagK](getResult: Int, p: Pointed[F]) extends ModuleDef {
+      make[Pointed[F]].from(p)
+      make[F[Any]].from(bindImplicits(Pointed[F].point(1)))
     }
 
     val injector = mkInjector()
-    val plan = injector.planUnsafe(PlannerInput.everything(Definition[List](1)))
+    val plan = injector.planUnsafe(PlannerInput.everything(Definition[List](1, implicitly)))
     val context = injector.produce(plan).unsafeGet()
 
     assert(context.get[List[Any]] == List(1))
