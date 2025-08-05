@@ -6,17 +6,15 @@ import cats.effect.{IO, Resource, Sync}
 import distage.*
 import izumi.distage.compat.CatsResourcesTestJvm.*
 import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.dsl.LifecycleAdapters
-import izumi.distage.model.definition.dsl.LifecycleAdapters.LifecycleTag
 import izumi.distage.model.definition.{Id, ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.provisioning.proxies.DistageProxy
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
+import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
-import izumi.fundamentals.platform.assertions.ScalatestGuards
 
 import scala.annotation.unused
 import scala.concurrent.ExecutionContext

@@ -4,7 +4,6 @@ import cats.Parallel
 import cats.effect.kernel.{Async, GenTemporal, Sync}
 import cats.effect.std.Dispatcher
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.providers.Functoid
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.bio.{Clock1, Entropy1, SyncSafe1}
 import izumi.functional.quasi.*

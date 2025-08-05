@@ -11,7 +11,6 @@ import izumi.distage.model.definition.dsl.IncludesDSL.TagMergePolicy
 import izumi.distage.model.definition.{Binding, BindingOrigin, BindingTag, Bindings, ImplDef, Lifecycle, Module, ModuleBase}
 import izumi.distage.model.exceptions.dsl.{InvalidFunctoidModifier, ParameterNotFoundForAnnotation}
 import izumi.distage.model.planning.PlanIssue
-import izumi.distage.reflection.macros.IgnorableFunctoidDummyImplicit
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.exceptions.TestFailedException
