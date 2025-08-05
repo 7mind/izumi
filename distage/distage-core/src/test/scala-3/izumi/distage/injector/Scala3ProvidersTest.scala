@@ -155,7 +155,33 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(PlannerInput.everything(Definition[List](1)))
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[List[String]] == List("Hello 1!")
+    assert(context.get[List[String]] == List("Hello 1!"))
+  }
+
+  "support 'by name' values" in {
+    trait Pointed[F[_]] {
+      def point[A](a: A): F[A]
+    }
+
+    object Pointed {
+      def apply[F[_]: Pointed]: Pointed[F] = implicitly
+
+      implicit final val pointedList: Pointed[List] =
+        new Pointed[List] {
+          override def point[A](a: A): List[A] = List(a)
+        }
+    }
+
+    case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
+      addImplicit[Pointed[F]]
+      make[F[Any]].from(bindImplicits(Pointed[F].point(1: Any)))
+    }
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(PlannerInput.everything(Definition[List](1)))
+    val context = injector.produce(plan).unsafeGet()
+
+    assert(context.get[List[Any]] == List(1))
   }
 
   "should not override implicit inside the block" in {
@@ -388,7 +414,6 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     def makeX(x: Int)(implicit desc: Description): Lifecycle[Identity, X] =
       Lifecycle.make(X(desc.toString): Identity[X])(_ => ())
 
-
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].fromValue(1)
       make[Description].fromValue(Description("desc"))
@@ -406,7 +431,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
   "fail to find implicit for non specific type" in broken {
     trait A[T]
     object A {
-       implicit val intA: A[Int] = new A[Int]{}
+      implicit val intA: A[Int] = new A[Int] {}
     }
 
     final case class X[T](a: A[T])

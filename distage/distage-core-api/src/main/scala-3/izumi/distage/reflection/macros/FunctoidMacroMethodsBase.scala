@@ -5,7 +5,7 @@ import izumi.distage.model.providers.{AbstractFunctoid, Functoid}
 import scala.annotation.targetName
 import scala.language.implicitConversions
 
-trait FunctoidMacroMethodsBase {
+trait FunctoidMacroMethodsBase extends ByNameConversion {
   import FunctoidMacro.make
 
   inline implicit def apply[R](inline fun: () => R): Functoid[R] = make[R](fun)
@@ -55,4 +55,20 @@ trait FunctoidMacroMethodsBase {
   @targetName("apply32")
   inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] =
     make[R](fun)
+}
+
+trait ByNameConversion {
+  /**
+    * Allow conversion from argument-less blocks, but only within a `bindImplicits` block
+    *
+    * {{{
+    *   make[X].from(bindImplicits {
+    *     makeX
+    *   })
+    *
+    *   def makeX(implicit d: ImplicitDependency) = new X(d)
+    * }}}
+    */
+  inline implicit def applyInBindImplicit[R](inline fun: R)(using isInsideBindImplicits: FunctoidDummyImplicit): Functoid[R] =
+    FunctoidMacro.make[R](() => fun)
 }
