@@ -1,6 +1,6 @@
 package izumi.distage.reflection.macros
 
-import izumi.distage.model.providers.{AbstractFunctoid, Functoid}
+import izumi.distage.model.providers.Functoid
 
 import scala.annotation.targetName
 import scala.language.implicitConversions

@@ -2,14 +2,15 @@ package izumi.distage.testkit.distagesuite.integration
 
 import cats.Applicative
 import distage.{TagK, TagKK}
-import izumi.distage.model.provisioning.IntegrationCheck
+import izumi.distage.model.definition
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
-import izumi.functional.quasi.QuasiIO
+import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.{DefaultModule, DefaultModule2}
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.{Spec1, Spec2}
 import izumi.functional.bio.catz.*
 import izumi.functional.bio.{Applicative2, ApplicativeError2, F}
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.integration.ResourceCheck
 import zio.{Task, UIO, ZEnvironment, ZIO}
 
@@ -46,7 +47,7 @@ class DisabledTestF[F[_]](implicit F: Applicative[F]) extends Lifecycle.Basic[F,
   override def release(resource: TestEnableDisable): F[Unit] = F.unit
 }
 
-abstract class MyDisabledTestF[F0[_]: QuasiIO: DefaultModule, F[x] <: F0[x]: TagK](f0Tag: TagK[F0])(implicit F: Applicative[F]) extends Spec1[F0](using f0Tag, implicitly[DefaultModule[F0]]) {
+abstract class MyDisabledTestF[F0[_]: QuasiIO: DefaultModule, F[x] <: F0[x]: TagK](f0Tag: TagK[F0])(implicit F: Applicative[F]) extends Spec1[F0]()(f0Tag, implicitly[DefaultModule[F0]]) {
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = new ModuleDef {
