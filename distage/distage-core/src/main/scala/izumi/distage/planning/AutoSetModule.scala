@@ -21,11 +21,11 @@ abstract class AutoSetModule(name: Option[String]) extends BootstrapModuleDef {
     name match {
       case Some(id) =>
         many[T].named(id).exposed
-        many[PlanningHook].add(AutoSetHook[T](filter, name = id, weak = false))
+        many[PlanningHook].addValue(AutoSetHook[T](filter, name = id, weak = false))
 
       case None =>
         many[T].exposed
-        many[PlanningHook].add(AutoSetHook[T](filter, weak = false))
+        many[PlanningHook].addValue(AutoSetHook[T](filter, weak = false))
     }
     this
   }

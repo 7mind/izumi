@@ -2,7 +2,6 @@ package izumi.distage.reflection.macros
 
 import izumi.distage.model.reflection.*
 import izumi.fundamentals.reflection.ReflectiveCall
-import izumi.reflect.Tag
 
 import scala.quoted.{Expr, Quotes, Type}
 

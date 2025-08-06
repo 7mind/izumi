@@ -338,10 +338,13 @@ object ModuleDefDSL {
     final def add[I <: T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](ClassConstructor[I])
 
+    final def add[I <: T: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterAdd =
+      add(Functoid.lift(function))
+
     final def add[I <: T](function: Functoid[I])(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ProviderImpl(function.get.ret, function.get), pos)
 
-    final def add[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */

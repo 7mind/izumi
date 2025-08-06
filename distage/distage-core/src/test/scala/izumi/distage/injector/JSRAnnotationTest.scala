@@ -11,10 +11,10 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
   "JSR330 @Named anno" should {
     "work with combined annos when no functoid is involved" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").fromValue(80)
-        make[String].named("address").fromValue("localhost")
-        make[Int].named("port1").fromValue(90)
-        make[String].named("address1").fromValue("localhost1")
+        make[Int].named("port").from(80)
+        make[String].named("address").from("localhost")
+        make[Int].named("port1").from(90)
+        make[String].named("address1").from("localhost1")
         make[ServerConfig]
       })
 
@@ -29,8 +29,8 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with field annos when no functoid is involved" in {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port1").fromValue(90)
-        make[String].named("address1").fromValue("localhost1")
+        make[Int].named("port1").from(90)
+        make[String].named("address1").from("localhost1")
         make[ServerConfigWithFieldAnnos]
       })
 
@@ -42,8 +42,8 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with alias annos when no functoid is involved" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").fromValue(80)
-        make[String].named("address").fromValue("localhost")
+        make[Int].named("port").from(80)
+        make[String].named("address").from("localhost")
         make[ServerConfigWithTypeAnnos]
       })
 
@@ -54,10 +54,10 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
 
     "work with param annos when no functoid is involved" in brokenOnScala3 {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].named("port").fromValue(80)
-        make[String].named("address").fromValue("localhost")
-        make[Int].named("port1").fromValue(90)
-        make[String].named("address1").fromValue("localhost1")
+        make[Int].named("port").from(80)
+        make[String].named("address").from("localhost")
+        make[Int].named("port1").from(90)
+        make[String].named("address1").from("localhost1")
         make[ServerConfigWithParamAnnos].from(new ServerConfigWithParamAnnos(_, _, _, _))
       })
 

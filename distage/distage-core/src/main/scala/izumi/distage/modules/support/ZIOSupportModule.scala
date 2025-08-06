@@ -55,7 +55,7 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
 
   make[UnsafeRun2[ZIO[R, _, _]]].using[ZIORunner[R]]
 
-  make[BlockingIO2[ZIO[R, +_, +_]]].fromValue(BlockingIOInstances.BlockingZIODefaultR[ZIO, R])
+  make[BlockingIO2[ZIO[R, +_, +_]]].from(BlockingIOInstances.BlockingZIODefaultR[ZIO, R])
   
   make[ZIORunner[R]].from {
     (
@@ -75,7 +75,7 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   }
   make[FailureHandler].fromValue(FailureHandler.Default)
 
-  make[Executor].named("io").fromValue (
+  make[Executor].named("io").from (
     // no reason to use custom blocking pool, since this one is hardcoded in zio.internal.ZScheduler.submitBlocking
     Runtime.defaultBlockingExecutor
   )

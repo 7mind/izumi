@@ -26,10 +26,10 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
 
   make[QuasiIORunner[IO]].from(QuasiIORunner.mkFromCatsIORuntime _)
 
-  make[Async[IO]].fromValue(IO.asyncForIO)
-  make[Parallel[IO]].fromValue(IO.parallelForIO)
+  make[Async[IO]].from(IO.asyncForIO)
+  make[Parallel[IO]].from(IO.parallelForIO)
 
-  make[IORuntimeConfig].fromValue(IORuntimeConfig())
+  make[IORuntimeConfig].from(IORuntimeConfig())
 
   make[Scheduler].fromResource {
     Lifecycle

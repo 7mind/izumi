@@ -20,7 +20,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
 
   include(
     BundledRolesModule[F] overriddenBy new ModuleDef {
-      make[ArtifactVersion].named("launcher-version").fromValue(ArtifactVersion(version))
+      make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
     },
     TagMergePolicy.UseOnlyInner,
   )
@@ -58,8 +58,8 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
 
   make[NotCloseable].from[InheritedCloseable]
 
-  make[AxisComponent].fromValue(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
-  make[AxisComponent].fromValue(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)
+  make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
+  make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)
 
   makeConfig[TestServiceConf]("testservice")
   makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")

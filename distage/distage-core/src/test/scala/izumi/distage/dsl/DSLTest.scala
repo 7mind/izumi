@@ -29,7 +29,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       val definition: ModuleBase = new ModuleDef {
         make[TestClass]
         make[TestDependency0].from[TestImpl0]
-        make[TestInstanceBinding].fromValue(TestInstanceBinding())
+        make[TestInstanceBinding].from(TestInstanceBinding())
 
         make[TestClass]
           .named("named.test.class")
@@ -37,7 +37,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           .named("named.test.dependency.0")
         make[TestInstanceBinding]
           .named("named.test")
-          .fromValue(TestInstanceBinding())
+          .from(TestInstanceBinding())
         many[JustTrait].named("named.empty.set")
         many[JustTrait]
           .add[Impl0]
@@ -758,7 +758,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
     "mutators do not override bindings or each other" in {
       val module = new ModuleDef {
-        make[Int].fromValue(1)
+        make[Int].from(1)
       } overriddenBy new ModuleDef {
         modify[Int](_ + 1)
       } overriddenBy new ModuleDef {

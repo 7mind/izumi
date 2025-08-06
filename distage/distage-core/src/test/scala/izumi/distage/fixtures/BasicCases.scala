@@ -116,7 +116,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     }
 
     object ConfigModule extends ModuleDef {
-      make[scala.Predef.String].named("a").fromValue("applicationId")
+      make[scala.Predef.String].named("a").from("applicationId")
       make[Predef.String].named("b").from {
         (a: String @Id("a")) => a
       }

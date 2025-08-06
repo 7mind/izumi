@@ -88,7 +88,7 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
   cfg: => PostgresFlyWayDocker.Cfg = PostgresFlyWayDocker.Cfg()
 ) extends ModuleDef {
 
-  make[PostgresFlyWayDocker.Cfg].fromValue(cfg)
+  make[PostgresFlyWayDocker.Cfg].from(cfg)
 
   // Network binding, to be able to access Postgres container from the FlyWay container
   make[PostgresFlyWayDocker.FlyWayNetwork.Network].fromResource {

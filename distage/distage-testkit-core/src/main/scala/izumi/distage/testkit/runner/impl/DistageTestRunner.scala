@@ -143,11 +143,3 @@ class DistageTestRunner[F[_]: TagK, G[_]](
   }
 
 }
-/*
-  if (`AbstractMacroLogger_this₂`.acceptable(pos.get, izumi.logstage.api.Log.Level.Info))
-    `AbstractMacroLogger_this₂`
-      .unsafeLog(
-        izumi.logstage.api.Log.Entry.create(izumi.logstage.api.Log.Level.Info,
-        izumi.logstage.api.Log.Message.apply(scala.StringContext.apply("Processing ", " using ", ""),
-        izumi.logstage.api.Log.LogArg.apply[scala.Any]("tests", allEnvTests.size, false, scala.Some.apply[izumi.logstage.api.rendering.LogstageCodec[scala.Any]](izumi.logstage.api.rendering.LogstageCodec.LogstageCodecInt.asInstanceOf[izumi.logstage.api.rendering.LogstageCodec[scala.Any]])), izumi.logstage.api.Log.LogArg.apply[scala.Any]("monad", distage.TagK.apply[DistageTestRunner.this.F](DistageTestRunner.this.evidence$1).tag, false, scala.None)))(pos)) else ()
- */
