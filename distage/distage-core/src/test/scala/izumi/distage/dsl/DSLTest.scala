@@ -287,7 +287,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
     "Set bindings with the same source position but different implementations do not conflict" in {
       val definition: ModuleDef = new ModuleDef {
-        def int(int: Int) = many[Int].add(int)
+        def int(int: Int) = many[Int].addValue(int)
 
         int(1)
         int(2)
