@@ -23,8 +23,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description]
-    context.get[X]
+    assert(context.get[Description] == Description("X"))
+    assert(context.get[X] == X("X"))
   }
 
   "support bindings with function with type and implicit parameters" in {
@@ -43,8 +43,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description[X]]
-    context.get[X]
+    assert(context.get[Description[X]] == Description("X"))
+    assert(context.get[X] == X("X"))
   }
 
   "support binding inside code block" in {
@@ -72,8 +72,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description]
-    context.get[X]
+    assert(context.get[Description] == Description("X"))
+    assert(context.get[X] == X("1X"))
   }
 
   "support binding with more than one implicit parameter" in {
@@ -93,8 +93,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description]
-    context.get[X]
+    assert(context.get[Description] == Description("X"))
+    assert(context.get[X] == X("Xmore-description"))
   }
 
   "support binding inside block with more than one implicit parameter" in {
@@ -123,8 +123,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description]
-    context.get[X]
+    assert(context.get[Description] == Description("X"))
+    assert(context.get[X] == X("Xstr1"))
   }
 
   "support implicits with higher kinded types" in {
@@ -218,6 +218,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].fromValue(1)
+      make[Description].fromValue(Description("from-di"))
       make[X].from {
         bindImplicits {
           (b: Int) =>
@@ -235,7 +236,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[X]
+    assert(context.get[X] == X("1desc"))
   }
 
   "should ignore dummy implicit during implicit search if there is implicit defined outside of the object graph" in {
@@ -266,10 +267,10 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     final case class Description(description: String)
     final case class X(s: String)
 
-    def makeX(using desc: Description, d: Double): Functoid[X] = Functoid((x: Int) => X(d.toString + x.toString + desc.description))
+    def makeX(using desc: Description, d: Short): Functoid[X] = Functoid((x: Int) => X(d.toString + x.toString + desc.description))
 
-    implicit val desc: Description = Description("")
-    implicit val double: Double = 2.0
+    implicit val desc: Description = Description("desc")
+    implicit val double: Short = 2
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].fromValue(1)
@@ -280,8 +281,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Int]
-    context.get[X]
+    assert(context.get[X] == X("21desc"))
   }
 
   "ignore implicits defined and only use objects from the object graph" in {
@@ -381,8 +381,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description]
-    context.get[X]
+    assert(context.get[Description] == Description("desc"))
+    assert(context.get[X] == X("desc1"))
   }
 
   "support implicits in resource class" in {
@@ -403,8 +403,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description]
-    context.get[X]
+    assert(context.get[Description] == Description("desc"))
+    assert(context.get[X] == X("desc"))
   }
 
   "support implicits in resource" in {
@@ -412,7 +412,7 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     final case class X(s: String)
 
     def makeX(x: Int)(implicit desc: Description): Lifecycle[Identity, X] =
-      Lifecycle.make(X(desc.toString): Identity[X])(_ => ())
+      Lifecycle.make(X(desc.description): Identity[X])(_ => ())
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[Int].fromValue(1)
@@ -424,8 +424,8 @@ class Scala3ProvidersTest extends AnyWordSpec with MkInjector with ScalatestGuar
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    context.get[Description]
-    context.get[X]
+    assert(context.get[Description] == Description("desc"))
+    assert(context.get[X] == X("desc"))
   }
 
   "fail to find implicit for non specific type" in broken {
