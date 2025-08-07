@@ -170,7 +170,6 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
 
     "handle multi-parameter Has with mixed args & env injection and a refinement return" in {
       import TraitCase2.*
-
       import scala.language.reflectiveCalls
 
       def getDep1: URIO[Dependency1, Dependency1] = ZIO.environmentWith[Dependency1](_.get)
