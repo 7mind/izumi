@@ -6,8 +6,7 @@ import izumi.reflect.Tag
 import scala.quoted.{Expr, Quotes, Type}
 
 object FunctoidMacroHelpers {
-  // FIXME use Implicits.searchIgnoring
-  def generateSafeType[R: Type](using qctx: Quotes)(ignoreDuringImplicitsSearch: List[qctx.reflect.Symbol] = Nil): Expr[SafeType] = {
+  def generateSafeType[R: Type](using qctx: Quotes)(ignoreDuringImplicitsSearch: List[qctx.reflect.Symbol]): Expr[SafeType] = {
     val tagExpr = Expr
       .summonIgnoring[Tag[R]](ignoreDuringImplicitsSearch*)
       .getOrElse(qctx.reflect.report.errorAndAbort(s"Could not create Tag for ${Type.show[R]}"))

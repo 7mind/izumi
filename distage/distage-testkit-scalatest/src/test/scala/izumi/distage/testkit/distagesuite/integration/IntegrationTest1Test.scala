@@ -46,7 +46,8 @@ class DisabledTestF[F[_]](implicit F: Applicative[F]) extends Lifecycle.Basic[F,
   override def release(resource: TestEnableDisable): F[Unit] = F.unit
 }
 
-abstract class MyDisabledTestF[F0[_]: QuasiIO: DefaultModule, F[x] <: F0[x]: TagK](f0Tag: TagK[F0])(implicit F: Applicative[F]) extends Spec1[F0]()(f0Tag, implicitly[DefaultModule[F0]]) {
+abstract class MyDisabledTestF[F0[_]: QuasiIO: DefaultModule, F[x] <: F0[x]: TagK](f0Tag: TagK[F0])(implicit F: Applicative[F])
+  extends Spec1[F0]()(using f0Tag, implicitly[DefaultModule[F0]]) {
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = new ModuleDef {
@@ -59,7 +60,7 @@ abstract class MyDisabledTestF[F0[_]: QuasiIO: DefaultModule, F[x] <: F0[x]: Tag
   "My component" should {
     "this test should be skipped" in {
       (_: TestEnableDisable) =>
-        F.map[Unit, Unit](F.unit)(_ => throw new Throwable("Test was not skipped!"))
+        F.pure((throw new Throwable("Test was not skipped!")): Unit)
     }
   }
 }
