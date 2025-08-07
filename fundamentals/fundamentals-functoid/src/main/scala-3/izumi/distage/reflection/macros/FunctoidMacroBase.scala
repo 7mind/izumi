@@ -225,7 +225,7 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
               mbSym = mbSym,
               annotSym = mbSym,
               annotTpe = Left(tpeTree),
-              ignoreDuringImplicitsSearch
+              ignoreDuringImplicitsSearch,
             )
         }
       }
@@ -250,5 +250,7 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
           }.toList
       }
     }
+
   }
+
 }

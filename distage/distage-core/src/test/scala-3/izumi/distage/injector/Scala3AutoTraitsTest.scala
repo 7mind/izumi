@@ -10,6 +10,7 @@ import scala.language.reflectiveCalls
 class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
 
   "Scala 3 auto traits" should {
+
     "construct a basic trait" in {
       val classCtor1 = TraitConstructor[AClass1].get
       val aclass1 = classCtor1.unsafeApply(Seq(TypedRef(5))).asInstanceOf[AClass1]

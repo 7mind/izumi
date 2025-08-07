@@ -36,9 +36,9 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
       make[Int].named("x").fromValue(2)
       many[Int]
         .named("nonauto")
-        .add(3)
-        .add(4)
-        .add(5)
+        .addValue(3)
+        .addValue(4)
+        .addValue(5)
     }
 
     val injector = Injector[Identity](new BootstrapModuleDef {

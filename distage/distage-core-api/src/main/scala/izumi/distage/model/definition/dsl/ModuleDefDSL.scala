@@ -107,13 +107,11 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
 object ModuleDefDSL {
 
   trait MakeDSLBase[T, AfterBind] {
-    final def from[I <: T: Tag](implicit ctor: ClassConstructor[I]): AfterBind = {
-      from(ctor.provider)
-    }
+    final def from[I <: T: ClassConstructor]: AfterBind =
+      from(ClassConstructor[I])
 
-    final def from[I <: T: Tag](f: => I): AfterBind = {
-      from(Functoid.lift(f))
-    }
+    final def from[I <: T: Tag](function: => I): AfterBind =
+      from(Functoid.lift(function))
 
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
@@ -179,12 +177,12 @@ object ModuleDefDSL {
       bind(ImplDef.ProviderImpl(function.get.ret, function.get))
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
-    final def fromTrait[I <: T: Tag](implicit ctor: TraitConstructor[I]): AfterBind =
-      from(ctor.provider)
+    final def fromTrait[I <: T: TraitConstructor]: AfterBind =
+      from[I](TraitConstructor[I])
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
-    final def fromFactory[I <: T: Tag](implicit ctor: FactoryConstructor[I]): AfterBind =
-      from(ctor.provider)
+    final def fromFactory[I <: T: FactoryConstructor]: AfterBind =
+      from[I](FactoryConstructor[I])
 
     /**
       * Bind by reference to another bound key
@@ -349,11 +347,11 @@ object ModuleDefDSL {
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
     final def addTrait[I <: T: Tag: TraitConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
-      add(TraitConstructor[I])
+      add[I](TraitConstructor[I])
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
     final def addFactory[I <: T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
-      add(FactoryConstructor[I])
+      add[I](FactoryConstructor[I])
 
     /**
       * Bind by reference to another bound key
@@ -404,8 +402,8 @@ object ModuleDefDSL {
     final def refEffect[F[_]: TagK, I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
 
-    final def addResource[R <: Lifecycle[LifecycleF, T]](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer, ctor: ClassConstructor[R]): AfterAdd =
-      addResource[R](ctor.provider)(tag, pos, DummyImplicit.dummyImplicit)
+    final def addResource[R <: Lifecycle[LifecycleF, T]: ClassConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
+      addResource[R](ClassConstructor[R])(tag, pos, DummyImplicit.dummyImplicit)
 
     final def addResource[R](instance: R & Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag.*
@@ -456,7 +454,7 @@ object ModuleDefDSL {
       multiSetAdd(ImplDef.ProviderImpl(function.get.ret, function.get), pos)
 
     final def addSet[I <: Set[? <: T]: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
-      addSet(Functoid.lift(function))
+      addSet(Functoid.lift[I](function))
 
     final def addSetValue[I <: Set[? <: T]: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
@@ -584,7 +582,7 @@ object ModuleDefDSL {
 
   object SetDSLBase {
 
-    implicit final class AddFromZIOZEnv[T, AfterAdd, AfterMultiAdd](protected val dsl: SetDSLBase[T, AfterAdd, AfterMultiAdd]) extends AnyVal {
+    implicit final class AddFromZIOZEnv[T, AfterAdd](protected val dsl: SetDSLBase[T, AfterAdd, ?]) extends AnyVal {
       def addZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](effect: ZIO[R, E, I])(implicit pos: CodePositionMaterializer): AfterAdd = {
         dsl.addEffect[IO[E, _], I](ZEnvConstructor[R].map(effect.provideEnvironment(_)))
       }
@@ -652,7 +650,9 @@ object ModuleDefDSL {
         val provider = function.map2(ZEnvConstructor[R])(provideZEnvLifecycle)
         dsl.addResource[Lifecycle[ZIO[Any, E, _], I]](provider)
       }
+
     }
+
   }
 
   @inline private def provideZEnvLifecycle[R, E, A](lifecycle: Lifecycle[ZIO[R, E, _], A], zenv: ZEnvironment[R]): Lifecycle[ZIO[Any, E, _], A] = {

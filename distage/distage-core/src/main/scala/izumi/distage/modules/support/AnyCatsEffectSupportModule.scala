@@ -33,7 +33,7 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
       implicit F: Sync[F] => QuasiIO.fromCats[F, Sync]
     }
   make[QuasiAsync[F]].from {
-      implicit F: Async[F] => QuasiAsync.fromCats[F, Async]
+    implicit F: Async[F] => QuasiAsync.fromCats[F, Async]
   }
   make[QuasiTemporal[F]].from {
     implicit F: GenTemporal[F, Throwable] => QuasiTemporal.fromCats[F, GenTemporal]

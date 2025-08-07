@@ -74,16 +74,15 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "provide LocatorRef during initialization" in {
     import BasicCase1.*
 
-    val test = Functoid((ref: LocatorRef, test: TestClass0) => {
-      assert(ref.unsafeUnstableMutableLocator().instances.nonEmpty)
-      assert(test != null)
-      assert(ref.unsafeUnstableMutableLocator().get[TestClass0] eq test)
-      TestClass2(test)
-    }
-  )
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestClass0]
-      make[TestClass2].from(test)
+      make[TestClass2].from {
+        (ref: LocatorRef, test: TestClass0) =>
+          assert(ref.unsafeUnstableMutableLocator().instances.nonEmpty)
+          assert(test != null)
+          assert(ref.unsafeUnstableMutableLocator().get[TestClass0] eq test)
+          TestClass2(test)
+      }
     })
 
     val injector = mkInjector()

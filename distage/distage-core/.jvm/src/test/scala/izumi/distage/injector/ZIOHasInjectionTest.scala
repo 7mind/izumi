@@ -87,7 +87,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
         make[Dep].from[DepA]
         make[TestClass2[Dep]].fromZIOEnv(ZIO.environmentWithZIO {
           (value: ZEnvironment[Dep]) =>
-            ZIO.attempt(TestClass2(value.get))  
+            ZIO.attempt(TestClass2(value.get))
         })
       }
 

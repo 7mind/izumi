@@ -78,4 +78,5 @@ final class FunctoidParametersMacro[Q <: Quotes](using val qctx: Q)(idExtractor:
       case _ => tpe
     }
   }
+
 }

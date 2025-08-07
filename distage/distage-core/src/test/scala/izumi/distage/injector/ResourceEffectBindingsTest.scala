@@ -31,7 +31,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         new ModuleDef {
           make[Int].named("2").from(2)
           make[Int].fromEffect[Identity, Int] {
-            (i: Int @Id("2")) => Identity[Int](10 + i)
+            (i: Int @Id("2")) => 10 + i
           }
         },
         Roots(DIKey.get[Int]),
@@ -92,7 +92,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
         new ModuleDef {
           make[Int].named("2").from(2)
           make[Int].fromEffect[Identity, Int] {
-            (i: Int @Id("2")) => Identity[Int](10 + i)
+            (i: Int @Id("2")) => 10 + i
           }
         },
         Roots(DIKey.get[Int]),
@@ -384,7 +384,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenW
       val failure = resource
         .use {
           case Left(fail) =>
-            Suspend2 {  
+            Suspend2 {
               val nonSyntheticInstances = fail.failed.instances.filter(_._1 != DIKey.get[LocatorRef])
               assert(nonSyntheticInstances.isEmpty)
               fail
