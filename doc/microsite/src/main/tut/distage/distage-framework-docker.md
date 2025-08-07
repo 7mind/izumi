@@ -290,7 +290,7 @@ object TransactorFromConfigModule extends ModuleDef {
         url    = s"jdbc:postgresql://${config.host}:${config.port}/${config.database}",
         user   = config.username,
         pass   = config.password,
-      )(async)
+      )(using async)
   }
 }
 ```
