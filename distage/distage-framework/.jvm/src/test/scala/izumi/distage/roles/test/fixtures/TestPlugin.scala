@@ -15,7 +15,7 @@ import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, I
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.reflect.TagK
 
-class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with RoleModuleDef {
+class TestPluginBase[F[_]: TagK] extends PluginDef with RoleModuleDef {
   tag(Mode.Prod)
 
   include(
@@ -54,33 +54,36 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   make[TestRole00ResourceIntegrationCheck[F]]
 
   makeRole[ConfigTestRole[F]]
-  makeConfig[ConfigTestConfig]("configTest")
 
-  make[NotCloseable].from[InheritedCloseable]
+  include(new ConfigModuleDef {
+    makeConfig[ConfigTestConfig]("configTest")
 
-  make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
-  make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)
+    make[NotCloseable].from[InheritedCloseable]
 
-  makeConfig[TestServiceConf]("testservice")
-  makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
-  makeConfig[SetElementOnlyCfg]("setElementConfig")
+    make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
+    make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)
 
-  makeConfig[TestValueConf]("wrapped").named("v1")
-  makeConfig[TestValueConf]("wrapped.path.one").named("v2")
-  makeConfig[TestValueConf]("wrapped.path.two").named("v3")
+    makeConfig[TestServiceConf]("testservice")
+    makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
+    makeConfig[SetElementOnlyCfg]("setElementConfig")
 
-  makeConfig[IntegrationOnlyCfg2]("integrationOnlyCfg2")
-  modify[IntegrationOnlyCfg2] {
-    (conf: IntegrationOnlyCfg2) =>
-      IntegrationOnlyCfg2(conf.value + ":updated")
-  }
+    makeConfig[TestValueConf]("wrapped").named("v1")
+    makeConfig[TestValueConf]("wrapped.path.one").named("v2")
+    makeConfig[TestValueConf]("wrapped.path.two").named("v3")
 
-  makeConfig[TestServiceConf2]("testservice2")
-  modify[TestServiceConf2] {
-    (conf: TestServiceConf2) =>
-      TestServiceConf2(conf.strval + ":updated", conf.map, conf.list)
-  }
-  makeConfig[ListConf]("listconf")
+    makeConfig[IntegrationOnlyCfg2]("integrationOnlyCfg2")
+    modify[IntegrationOnlyCfg2] {
+      (conf: IntegrationOnlyCfg2) =>
+        IntegrationOnlyCfg2(conf.value + ":updated")
+    }
+
+    makeConfig[TestServiceConf2]("testservice2")
+    modify[TestServiceConf2] {
+      (conf: TestServiceConf2) =>
+        TestServiceConf2(conf.strval + ":updated", conf.map, conf.list)
+    }
+    makeConfig[ListConf]("listconf")
+  })
 
   include(GenericServiceConf.module[GenericServiceConf.Impl]("genericservice"))
 }

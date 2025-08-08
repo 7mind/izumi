@@ -11,7 +11,7 @@ sealed trait LoggingTarget {
   def level: Log.Level
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 object LoggingTarget {
   case class Level(level: Log.Level) extends LoggingTarget
   case class Config(config: LoggerPathConfig) extends LoggingTarget {

@@ -20,7 +20,7 @@ final case class RolesInfo(
 }
 
 object RolesInfo {
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   implicit val rolesInfoRenderable: Renderable[RolesInfo] = {
     roles =>
       import scala.collection.compat._

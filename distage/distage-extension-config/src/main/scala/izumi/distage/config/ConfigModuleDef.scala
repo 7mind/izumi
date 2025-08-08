@@ -33,7 +33,7 @@ trait ConfigModuleDef extends ModuleDef {
   @inline final def wireConfig[T: Tag: DIConfigReader](path: String): Functoid[T] = {
     ConfigModuleDef.wireConfig[T](path)
   }
-  @inline final def wireConfigWithDefault[T: Tag: DIConfigReader: DIConfigMeta](path: String)(default: => T): Functoid[T] = {
+  @inline final def wireConfigWithDefault[T: Tag: DIConfigReader](path: String)(default: => T): Functoid[T] = {
     ConfigModuleDef.wireConfigWithDefault[T](path)(default)
   }
 

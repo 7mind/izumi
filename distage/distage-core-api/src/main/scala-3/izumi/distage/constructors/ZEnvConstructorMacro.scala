@@ -1,14 +1,10 @@
 package izumi.distage.constructors
 
-import izumi.distage.model.providers.Functoid
-import izumi.distage.reflection.macros.FunctoidMacro
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.platform.reflection.ReflectionUtil
-import izumi.reflect.Tag
 import zio.ZEnvironment
 
-import scala.collection.immutable.ArraySeq
 import scala.quoted.{Expr, Quotes, Type}
 import scala.compiletime.summonInline
 

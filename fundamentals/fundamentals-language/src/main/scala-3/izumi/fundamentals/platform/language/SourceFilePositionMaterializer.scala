@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.language
 
-import scala.quoted.{Expr, Quotes, Type}
+import scala.quoted.{Expr, Quotes}
 
 final case class SourceFilePositionMaterializer(get: SourceFilePosition) extends AnyVal
 

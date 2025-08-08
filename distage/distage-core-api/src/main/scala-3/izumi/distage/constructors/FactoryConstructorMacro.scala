@@ -1,13 +1,9 @@
 package izumi.distage.constructors
 
-import izumi.distage.model.providers.Functoid
-import izumi.distage.reflection.macros.FunctoidMacro
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.reflection.ReflectiveCall
 
-import scala.collection.immutable.{ArraySeq, Queue}
-import scala.collection.mutable
 import scala.quoted.{Expr, Quotes, Type}
 import scala.util.control.NonFatal
 

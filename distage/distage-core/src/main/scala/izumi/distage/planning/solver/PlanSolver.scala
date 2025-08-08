@@ -35,7 +35,7 @@ object PlanSolver {
     weakSetMembers: Set[WeakEdge[DIKey]],
   )
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   class Impl(
     resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
     preps: GraphQueries,

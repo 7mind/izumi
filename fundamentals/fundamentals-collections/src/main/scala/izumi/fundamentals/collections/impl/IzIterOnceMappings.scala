@@ -2,7 +2,7 @@ package izumi.fundamentals.collections
 
 import scala.annotation.nowarn
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 final class IzMultiMaps[A, B](private val mmap: scala.collection.Map[A, Set[B]]) extends AnyVal {
   import scala.collection.compat._
 
@@ -11,7 +11,7 @@ final class IzMultiMaps[A, B](private val mmap: scala.collection.Map[A, Set[B]])
   }
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 final class IzIterOnceMappings[A, B](private val list: scala.collection.compat.IterableOnce[(A, B)]) extends AnyVal {
   import scala.collection.compat._
 
@@ -33,7 +33,7 @@ final class IzIterOnceMappings[A, B](private val list: scala.collection.compat.I
   }
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 final class IzIterMappings[A, B](private val list: Iterable[(A, B)]) extends AnyVal {
 
   import scala.collection.compat._

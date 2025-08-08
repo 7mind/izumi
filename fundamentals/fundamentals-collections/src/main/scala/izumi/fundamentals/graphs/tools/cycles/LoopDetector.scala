@@ -16,7 +16,7 @@ trait LoopDetector {
   }
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 object LoopDetector {
   import scala.collection.compat._
 

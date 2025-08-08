@@ -150,7 +150,7 @@ object Izumi {
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.20")
   final val scala213 = ScalaVersion("2.13.16")
-  final val scala300 = ScalaVersion("3.7.1")
+  final val scala300 = ScalaVersion("3.7.2")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -341,18 +341,25 @@ object Izumi {
         "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.12" % "${Version.SbtGen.value}"""".raw,
       )
 
-      val scala2Wconf = Seq(
+      val scala2Wconf = Seq[Const](
         "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent",
       )
-      val scala3Wconf = Seq(
+      val scala3Wconf = Seq[Const](
+        "-Wnonunit-statement",
+        "-Wall", // enable all warnings
         "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent", // disable harmful anti-SAM warning
+        //
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
         "-Wconf:msg=.this. qualifier will be deprecated:silent",
         "-Wconf:msg=scala.compiletime.uninitialized:silent",
         "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
         "-Wconf:msg=method in is not declared infix:silent",
@@ -362,18 +369,18 @@ object Izumi {
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) :=
-            Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options,
+            Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ scala2Wconf,
           SettingKey(Some(scala213), None) :=
-            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)),
+            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)) ++ scala2Wconf,
           SettingKey(Some(scala300), None) :=
             Seq[Const](
               "-source:3.7",
-            ) ++ Defaults.Scala3Options,
+              "-Xkind-projector:underscores",
+            ) ++ Defaults.Scala3Options
+              .filterNot(x => x == ("-Ykind-projector:underscores": Const) || x == ("-Xkind-projector:underscores": Const))
+              .filterNot(scala3Wconf.contains(_))
+            ++ scala3Wconf,
           SettingKey.Default := Const.EmptySeq,
-        ),
-        "scalacOptions" ++= Seq(
-          SettingKey(Some(scala300), None) := scala3Wconf,
-          SettingKey.Default := scala2Wconf,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
         "scalacOptions" += "-Wconf:cat=deprecation:warning",
@@ -528,9 +535,7 @@ object Izumi {
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq(Projects.fundamentals.basics),
-        settings = Seq(
-          disableScaladocOnScala3
-        ),
+        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.language,
@@ -624,11 +629,7 @@ object Izumi {
           Projects.fundamentals.collections,
           Projects.fundamentals.basics,
         ),
-        settings = Seq(
-          // DottyDoc crashes on fundamentals-bio (https://github.com/lampepfl/dotty/issues/18832)
-          // since trifunctor was removed (d3deae9aa3aed329dff03fa3b531d33843a5982a)
-          disableScaladocOnScala3
-        ),
+        settings = Seq.empty,
       ),
     ),
     pathPrefix = Projects.fundamentals.basePath,

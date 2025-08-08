@@ -1,15 +1,11 @@
 package izumi.distage.constructors
 
 import izumi.distage.model.providers.Functoid
-import izumi.distage.reflection.macros.FunctoidMacro
 
 import izumi.distage.model.reflection.Provider.ProviderType
 
 import scala.quoted.{Expr, Quotes, Type}
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
-
-import scala.annotation.experimental
-import scala.collection.immutable.ArraySeq
 
 object ClassConstructorMacro {
 

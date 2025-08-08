@@ -6,7 +6,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.nowarn
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 class IzEitherTest extends AnyWordSpec {
   import scala.collection.compat.*
 

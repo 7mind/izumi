@@ -7,7 +7,7 @@ import scala.annotation.nowarn
 import scala.collection.mutable
 
 // TODO: this class is not required for distage
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 final class CycleEraser[N](predecessorsMatrix: AdjacencyPredList[N], breaker: LoopBreaker[N]) {
   import scala.collection.compat._
 

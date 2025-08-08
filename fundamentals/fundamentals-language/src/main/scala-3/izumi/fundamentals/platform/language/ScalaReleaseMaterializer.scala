@@ -1,8 +1,6 @@
 package izumi.fundamentals.platform.language
 
-import scala.collection.immutable.{AbstractSeq, LinearSeq}
 import scala.quoted.{Expr, Quotes, Type}
-import scala.util.matching.Regex
 
 case class ScalaReleaseMaterializer(release: ScalaRelease)
 

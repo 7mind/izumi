@@ -281,7 +281,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
     "F.timeout interrupts the timed action correctly within an uninterruptible region" in {
       import scala.concurrent.duration.*
 
-      def test[F[+_, +_]: Async2: Temporal2: Primitives2: Fork2]: F[String, Assertion] = {
+      def test[F[+_, +_]: Async2: Temporal2: Fork2]: F[String, Assertion] = {
         for {
           fiber <- F.fork {
             F.uninterruptible(

@@ -11,7 +11,7 @@ trait ToposortLoopBreaker[T] {
   def onLoop(done: Seq[T], loopMembers: Map[T, Set[T]]): Either[ToposortError[T], ResolvedLoop[T]]
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 object ToposortLoopBreaker {
   import scala.collection.compat._
 

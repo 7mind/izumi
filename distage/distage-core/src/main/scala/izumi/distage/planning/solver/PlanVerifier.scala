@@ -20,7 +20,7 @@ import scala.annotation.{nowarn, tailrec}
 import scala.concurrent.duration.FiniteDuration
 
 /** @see [[izumi.distage.model.Injector.assert]] */
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 class PlanVerifier(
   queries: GraphQueries
 ) {

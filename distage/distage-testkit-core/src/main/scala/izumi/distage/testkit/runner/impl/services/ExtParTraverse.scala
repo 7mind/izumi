@@ -17,7 +17,7 @@ object ExtParTraverse {
     P: QuasiAsync[F],
   ) extends ExtParTraverse[F] {
 
-    @nowarn("msg=Unused import")
+    @nowarn("msg=[Uu]nused import")
     def apply[A, B](l: Iterable[A])(getParallelismGroup: A => Parallelism)(f: A => F[B]): F[List[B]] = {
       import scala.collection.compat.*
 

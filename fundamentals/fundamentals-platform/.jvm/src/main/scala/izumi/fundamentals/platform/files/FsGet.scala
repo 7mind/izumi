@@ -6,7 +6,7 @@ import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 trait FsGet {
   def getFs(uri: URI, loader: ClassLoader): Try[FileSystem] = {
     // this is like DCL, there might be races but we have no tool to prevent them

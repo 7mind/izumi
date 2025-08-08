@@ -97,7 +97,7 @@ object ForwardingRefResolverDefaultImpl {
   }
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 class ForwardingRefResolverDefaultImpl(
   breaker: FwdrefLoopBreaker
 ) extends ForwardingRefResolver {

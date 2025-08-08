@@ -1,8 +1,7 @@
 package izumi.fundamentals.platform.language
 
-import scala.annotation.{tailrec, targetName}
-import scala.collection.mutable
-import scala.quoted.{Expr, Quotes, Type}
+import scala.annotation.targetName
+import scala.quoted.{Expr, Quotes}
 
 final case class SourcePackageMaterializer(get: SourcePackage) extends AnyVal
 

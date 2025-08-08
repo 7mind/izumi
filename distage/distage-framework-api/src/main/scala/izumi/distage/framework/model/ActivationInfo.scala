@@ -5,7 +5,7 @@ import izumi.distage.model.definition.Axis.AxisChoice
 
 import scala.annotation.nowarn
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 final case class ActivationInfo(availableChoices: Map[Axis, Set[AxisChoice]]) extends AnyVal {
   import scala.collection.compat._
 

@@ -305,7 +305,7 @@ class SyntaxTest extends AnyWordSpec {
       F.when(false)(F.unit)
     }
     def y[F[+_, +_]: Temporal2: Fork2] = {
-      F.timeout(5.seconds)(F.forever(F.unit)) *>
+      F.timeout(5.seconds)(F.forever(F.fork(F.unit))) *>
       F.map(z[F])(_ => ())
     }
     def z[F[+_, +_]: Functor2]: F[Nothing, Unit] = {
@@ -351,7 +351,7 @@ class SyntaxTest extends AnyWordSpec {
       x[Either],
       z[Either],
     )
-    lazy val _ = (zioTest, monixTest, eitherTest)
+    val _ = () => (zioTest, monixTest, eitherTest)
   }
 
   "Support BIO syntax for ZIO with wildcard import" in {
@@ -369,7 +369,7 @@ class SyntaxTest extends AnyWordSpec {
         F.mkRef(0)
           .flatMap(ref => ref.update(_ + i) *> ref.get)
 
-      lazy val _ = adder[zio.IO](1)
+      val _ = adder[zio.IO](1)
     }
 
     locally {
@@ -379,7 +379,7 @@ class SyntaxTest extends AnyWordSpec {
         F.timeout(5.seconds)(F.forever(F.unit))
       }
 
-      lazy val _ =
+      val _ =
         y[zio.IO]
 //        y[monix.bio.IO],
     }

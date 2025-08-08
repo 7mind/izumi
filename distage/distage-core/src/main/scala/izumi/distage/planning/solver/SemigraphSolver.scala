@@ -35,7 +35,7 @@ trait SemigraphSolver[N, I, V] {
   ): Either[NEList[ConflictResolutionError[N, V]], Resolution[N, V]]
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 object SemigraphSolver {
   import scala.collection.compat._
   import scala.collection.immutable

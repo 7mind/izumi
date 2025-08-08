@@ -26,7 +26,7 @@ object ReflectionUtil {
       case NoPrefix() => true
       case TypeBounds(lo, hi) => allPartsStrong(lo) && allPartsStrong(hi)
       case TypeLambda(_, _, body) => allPartsStrong(body)
-      case strange => true
+      case /* strange */ _ => true
     }
   }
 

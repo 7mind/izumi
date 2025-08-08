@@ -44,7 +44,6 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
   ) {
     import qctx.reflect.*
 
-    private val dummyTypeSymbol: Symbol = TypeRepr.of[FunctoidDummyImplicit].typeSymbol
     private val unignorableDummyTypeSymbol: Symbol = TypeRepr.of[UnignorableDummyImplicit].typeSymbol
 
     def make[R: Type](fun: Expr[AnyRef]): Expr[Ftoid[R]] = {

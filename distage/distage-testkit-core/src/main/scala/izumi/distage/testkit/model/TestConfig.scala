@@ -202,7 +202,7 @@ object TestConfig {
     @inline implicit def fromAxisDIKeys[A](set: A)(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys =
       PriorAxisDIKeys(Map(MaxLevel -> toAxisDIKeys(set)))
 
-    @nowarn("msg=Unused import")
+    @nowarn("msg=[Uu]nused import")
     @inline implicit def fromPriorAxisDIKeys[A](map: Map[Int, A])(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys = {
       import scala.collection.compat.*
       PriorAxisDIKeys(map.view.mapValues(toAxisDIKeys).toMap)

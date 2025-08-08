@@ -1,7 +1,5 @@
 package izumi.distage.config.codec
 
-import izumi.distage.constructors.{ClassConstructor, FactoryConstructor}
-import izumi.reflect.Tag
 import pureconfig.{ConfigReader, Exported}
 
 import scala.deriving.Mirror

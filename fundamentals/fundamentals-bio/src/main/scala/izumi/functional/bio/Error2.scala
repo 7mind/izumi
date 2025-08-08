@@ -62,7 +62,7 @@ trait Error2[F[+_, +_]] extends ApplicativeError2[F] with Monad2[F] with ErrorAc
     catchAll(r: F[E, A])(e => flatMap(f(e))(if (_) fail(e) else retryUntilF(r)(f)))
   }
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   def partition[E, A](l: Iterable[F[E, A]]): F[Nothing, (List[E], List[A])] = {
     import scala.collection.compat.*
     map(traverse(l)(attempt[E, A]))(_.partitionMap(identity))

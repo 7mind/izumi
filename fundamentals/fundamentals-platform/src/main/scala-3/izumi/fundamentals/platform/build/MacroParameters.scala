@@ -1,7 +1,5 @@
 package izumi.fundamentals.platform.build
 
-import scala.quoted.{Expr, Quotes, Type}
-
 object MacroParameters {
 
   inline def scalaVersion(): Option[String] = macroSetting("scala-version")

@@ -9,7 +9,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class CatsConversionTest extends AnyWordSpec with PlatformDependentTestBase {
 
-  class X[F[+_, +_]: IO2](val ref: kernel.Ref[F[Throwable, _], Int])
+  class X[F[+_, +_]](val ref: kernel.Ref[F[Throwable, _], Int])
 
   "pickup conversion to Sync" in {
     def conv[F[+_, +_]: IO2: BlockingIO2]: F[Throwable, Int] = {

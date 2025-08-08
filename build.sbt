@@ -153,7 +153,11 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -176,38 +180,37 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -242,7 +245,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -250,7 +253,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -370,7 +373,11 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -393,38 +400,37 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -459,7 +465,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -467,7 +473,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -588,7 +594,11 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -611,38 +621,37 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -677,7 +686,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -685,7 +694,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -806,7 +815,11 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -829,38 +842,37 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -895,7 +907,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -903,7 +915,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -1028,7 +1040,11 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -1051,38 +1067,37 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -1113,15 +1128,11 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
       )
       case (_, _) => Seq.empty
     } },
-    Test / packageDoc / publishArtifact := false,
-    Compile / doc / sources := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq.empty
-      case (_, _) => (Compile / doc / sources).value
-    } }
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -1129,7 +1140,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -1259,7 +1270,11 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -1282,38 +1297,37 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -1348,7 +1362,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -1356,7 +1370,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -1482,7 +1496,11 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -1505,38 +1523,37 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -1571,7 +1588,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -1579,7 +1596,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -1707,7 +1724,11 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -1730,38 +1751,37 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -1796,7 +1816,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -1804,7 +1824,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -1938,7 +1958,11 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -1961,38 +1985,37 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -2029,7 +2052,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -2037,7 +2060,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -2172,7 +2195,11 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -2195,38 +2222,37 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -2257,15 +2283,11 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       )
       case (_, _) => Seq.empty
     } },
-    Test / packageDoc / publishArtifact := false,
-    Compile / doc / sources := { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq.empty
-      case (_, _) => (Compile / doc / sources).value
-    } }
+    Test / packageDoc / publishArtifact := false
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -2273,7 +2295,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -2410,7 +2432,11 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -2433,38 +2459,37 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -2499,7 +2524,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -2507,7 +2532,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -2537,7 +2562,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -2634,7 +2659,11 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -2657,38 +2686,37 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -2831,7 +2859,11 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -2854,38 +2886,37 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -2920,7 +2951,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -2928,7 +2959,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -3055,7 +3086,11 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -3078,38 +3113,37 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -3144,7 +3178,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -3152,7 +3186,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -3287,7 +3321,11 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -3310,38 +3348,37 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -3376,7 +3413,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -3384,7 +3421,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -3516,7 +3553,11 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -3539,38 +3580,37 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -3605,7 +3645,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -3613,7 +3653,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -3737,7 +3777,11 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -3760,38 +3804,37 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -3826,7 +3869,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -3834,7 +3877,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -3988,7 +4031,11 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -4011,38 +4058,37 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -4077,7 +4123,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -4085,7 +4131,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -4124,7 +4170,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -4221,7 +4267,11 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -4244,38 +4294,37 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -4326,7 +4375,7 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -4423,7 +4472,11 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -4446,38 +4499,37 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -4537,7 +4589,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -4634,7 +4686,11 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -4657,38 +4713,37 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -4740,7 +4795,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -4837,7 +4892,11 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -4860,38 +4919,37 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -5040,7 +5098,11 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -5063,38 +5125,37 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -5129,7 +5190,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -5137,7 +5198,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -5268,7 +5329,11 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -5291,38 +5356,37 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -5357,7 +5421,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jvmSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -5365,7 +5429,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .jsSettings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -5395,7 +5459,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -5492,7 +5556,11 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -5515,38 +5583,37 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -5602,7 +5669,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -5699,7 +5766,11 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -5722,38 +5793,37 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -5838,7 +5908,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "3.7.1",
+      "3.7.2",
       "2.13.16",
       "2.12.20"
     ),
@@ -5935,7 +6005,11 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -5958,38 +6032,37 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",
@@ -6198,7 +6271,11 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ywarn-unused-import",
         "-Ywarn-value-discard",
         "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified"
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
         "-Wconf:any:error",
@@ -6221,38 +6298,37 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wmacros:default",
         "-Ycache-plugin-class-loader:always",
         "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics"
-      )
-      case (_, "3.7.1") => Seq(
-        "-source:3.7",
-        "-release:8",
-        "-Ykind-projector:underscores",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-Xmax-inlines:64",
-        "-Wconf:msg=eta-expanded even though:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.7.1") => Seq(
-        "-Wconf:any:verbose",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
-      )
-      case (_, _) => Seq(
+        "-Wunused:-synthetics",
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
+      case (_, "3.7.2") => Seq(
+        "-source:3.7",
+        "-Xkind-projector:underscores",
+        "-release:8",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-Xmax-inlines:64",
+        "-Wnonunit-statement",
+        "-Wall",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=^interpolation uses toString$:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent"
+      )
+      case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
     scalacOptions += "-Wconf:cat=deprecation:warning",

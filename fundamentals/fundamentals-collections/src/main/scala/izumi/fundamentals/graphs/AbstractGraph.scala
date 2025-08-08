@@ -2,7 +2,7 @@ package izumi.fundamentals.graphs
 
 import scala.annotation.nowarn
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 final case class GraphMeta[N, +M](nodes: Map[N, M]) extends AnyVal {
   import scala.collection.compat._
 

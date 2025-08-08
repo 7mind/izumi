@@ -130,7 +130,7 @@ final class DummyImplicitsExtractorMacro[Q <: Quotes](using val qctx: Q) {
       case succ: ImplicitSearchSuccess =>
         val newSym = succ.tree.symbol
         extractDummySymbolsFromImplicitSearch(newSym :: knownSyms)
-      case x: ImplicitSearchFailure => knownSyms
+      case _: ImplicitSearchFailure => knownSyms
     }
   }
 

@@ -50,7 +50,7 @@ final class TraversalState(
 
   def status(): Map[DIKey, OpStatus] = _status.toMap
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   def next(finished: List[TimedFinalResult.Success], issues: List[TimedFinalResult.Failure]): TraversalState = {
     import scala.collection.compat._
 

@@ -19,7 +19,7 @@ import izumi.fundamentals.graphs.{DG, GraphMeta}
 
 import scala.annotation.nowarn
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
@@ -124,7 +124,7 @@ class PlannerDefaultImpl(
     }
   }
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   protected def addImports(plan: DG[DIKey, InstantiationOp], roots: Roots): DG[DIKey, SemiplanOp] = {
 
     val imports = plan.successors.links.view

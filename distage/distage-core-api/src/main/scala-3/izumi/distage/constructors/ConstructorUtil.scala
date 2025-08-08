@@ -289,7 +289,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
   def extractMethodParamLists(methodType: TypeRepr, methodSym: Symbol): ParamReprLists = {
     def go(t: TypeRepr, paramSymss: List[List[Symbol]]): ParamReprLists = {
       t match {
-        case mtpe @ MethodType(names, tpes, ret) =>
+        case MethodType(names, tpes, ret) =>
           names.iterator
             .zip(tpes)
             .zipAll(paramSymss match { case h :: _ => h; case _ => List.empty[Symbol] }, null, null.asInstanceOf[Symbol])

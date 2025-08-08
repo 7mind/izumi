@@ -20,7 +20,7 @@ import izumi.fundamentals.graphs.tools.gc.Tracer
 
 import scala.annotation.nowarn
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 class GraphQueries(
   bindingTranslator: BindingTranslator
 ) {

@@ -7,7 +7,7 @@ import scala.annotation.nowarn
 import scala.collection.compat.*
 import scala.language.implicitConversions
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 trait IzString extends IzPlatformSyntax {
   implicit def toRichString(s: String): String_Syntax = new String_Syntax(s)
 

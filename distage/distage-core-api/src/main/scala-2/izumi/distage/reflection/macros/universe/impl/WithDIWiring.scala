@@ -32,7 +32,7 @@ trait WithDIWiring { this: DIUniverseBase with WithDIAssociation with WithDISymb
       extends MacroWiring
 
     object Factory {
-      @nowarn("msg=Unused import")
+      @nowarn("msg=[Uu]nused import")
       def factoryProductDepsFromObjectGraph(factoryMethods: List[Factory.FactoryMethod]): List[Association] = {
         import izumi.fundamentals.collections.IzCollections._
         factoryMethods

@@ -333,24 +333,24 @@ object ModuleDefDSL {
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
 
-    final def add[I <: T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+    final def add[I <: T: ClassConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](ClassConstructor[I])
 
     final def add[I <: T: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterAdd =
       add(Functoid.lift(function))
 
-    final def add[I <: T](function: Functoid[I])(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def add[I <: T](function: Functoid[I])(implicit pos: CodePositionMaterializer, d: DummyImplicit): AfterAdd =
       appendElement(ImplDef.ProviderImpl(function.get.ret, function.get), pos)
 
     final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
-    final def addTrait[I <: T: Tag: TraitConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+    final def addTrait[I <: T: TraitConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](TraitConstructor[I])
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
-    final def addFactory[I <: T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+    final def addFactory[I <: T: FactoryConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](FactoryConstructor[I])
 
     /**

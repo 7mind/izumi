@@ -5,6 +5,7 @@ import pureconfig.*
 import pureconfig.error.*
 import pureconfig.generic.derivation.Utils
 
+import scala.annotation.publicInBinary
 import scala.compiletime.ops.int.+
 import scala.compiletime.{constValue, erasedValue, summonFrom}
 import scala.deriving.Mirror
@@ -222,7 +223,7 @@ object PureconfigInstances {
             |CoproductHint implementation.""".stripMargin
     }
 
-    private[config] val fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, CamelCase)
+    val fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, CamelCase)
 
   }
 

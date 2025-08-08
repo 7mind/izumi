@@ -23,7 +23,7 @@ final class ErrorAccumulatingOpsTestMiniBIO extends ErrorAccumulatingOpsTest[Min
   }
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 abstract class ErrorAccumulatingOpsTest[F[+_, +_]] extends AnyWordSpec {
   import scala.collection.compat.*
 

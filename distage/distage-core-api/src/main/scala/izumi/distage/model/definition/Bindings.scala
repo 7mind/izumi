@@ -19,7 +19,7 @@ object Bindings {
   def bindingFactory[T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     provider[T](FactoryConstructor[T])
 
-  def binding[T: Tag, I <: T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
+  def binding[T: Tag, I <: T: ClassConstructor](implicit pos: CodePositionMaterializer, d: DummyImplicit): SingletonBinding[DIKey.TypeKey] =
     provider[T](ClassConstructor[I])
 
   def binding[T: Tag, I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
@@ -46,15 +46,15 @@ object Bindings {
   def emptySet[T](implicit tag: Tag[Set[T]], pos: CodePositionMaterializer): EmptySetBinding[DIKey.TypeKey] =
     EmptySetBinding(DIKey.get[Set[T]], Set.empty, BindingOrigin(pos.get.position))
 
-  def setElement[T: Tag, I <: T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
+  def setElement[T: Tag, I <: T: ClassConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
     setElementProvider[T](ClassConstructor[I])
   }
 
-  def setElementTrait[T: Tag, I <: T: Tag: TraitConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
+  def setElementTrait[T: Tag, I <: T: TraitConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
     setElementProvider[T](TraitConstructor[I])
   }
 
-  def setElementFactory[T: Tag, I <: T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
+  def setElementFactory[T: Tag, I <: T: FactoryConstructor](implicit pos: CodePositionMaterializer): SetElementBinding = {
     setElementProvider[T](FactoryConstructor[I])
   }
 

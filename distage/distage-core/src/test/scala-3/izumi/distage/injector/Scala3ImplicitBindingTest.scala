@@ -1,7 +1,7 @@
 package izumi.distage.injector
 
 import distage.*
-import izumi.distage.model.exceptions.runtime.{MissingInstanceException, ProvisioningException}
+import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.functional.quasi.QuasiApplicative
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.reflect.Tag
@@ -73,9 +73,9 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
             (b: Int) =>
               {
                 locally {
-                  val a = 1
+                  val a = 2
                   val desc = implicitly[Description]
-                  X(b.toString + desc.description)
+                  X(b.toString + desc.description + a)
                 }
               }
           }
@@ -86,7 +86,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[X] == X("1X"))
+      assert(context.get[X] == X("1X2"))
     }
 
     "support binding with more than one implicit parameter" in {
@@ -115,9 +115,9 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
           bindImplicits {
             (b: Int) =>
               {
-                val a = 1
+                val a = 2
                 val desc = implicitly[Description].description + implicitly[String]
-                X(desc + b.toString)
+                X(desc + b.toString + a)
               }
           }
         }
@@ -127,7 +127,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[X] == X("Xstr1"))
+      assert(context.get[X] == X("Xstr12"))
     }
 
     "support implicits with higher kinded types" in {
@@ -438,18 +438,18 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       }
 
       final case class X[T](a: A[T])
-      def makeX[T](x: Int)(implicit a: A[T]): X[Any] = X[Any](a.asInstanceOf[A[Any]])
+      def makeX[T](implicit a: A[T]): X[Any] = X[Any](a.asInstanceOf[A[Any]])
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val definition = new ModuleDef {
         addImplicit[A[Int]]
         make[X[Any]].from(bindImplicits(makeX))
-      })
+      }
 
       val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
 
-      assert(context.find[X[Any]].isEmpty)
+      intercept[ProvisioningException] {
+        injector.produceGet[X[Any]](definition).unsafeGet()
+      }
     }
 
     "id annotation on explicit arguments still works" in {

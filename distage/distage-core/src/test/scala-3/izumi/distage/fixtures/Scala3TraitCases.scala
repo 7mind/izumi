@@ -1,6 +1,5 @@
 package izumi.distage.fixtures
 
-import izumi.distage.constructors.TraitConstructor
 import izumi.distage.model.definition.With
 
 object Scala3TraitCases {

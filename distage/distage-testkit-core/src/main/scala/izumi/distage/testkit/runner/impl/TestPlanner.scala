@@ -98,7 +98,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     * - tree-represented memoization plan with tests.
     * [[PackedEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   def groupTests[G[_]](distageTests: Seq[DistageTest[F]])(implicit G: QuasiIO[G], GA: QuasiAsync[G]): G[PlannedTests[F]] = {
     import scala.collection.compat.*
 

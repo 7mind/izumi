@@ -513,7 +513,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       mkInjector().produce(definition).unsafeGet()
     }
     assert(failure.errors.exists {
-      case DIError.ConflictResolutionFailed(ConflictResolutionError.UnconfiguredAxisInMutators(NEList(a @ _, b @ _))) => true
+      case DIError.ConflictResolutionFailed(ConflictResolutionError.UnconfiguredAxisInMutators(NEList(_, _))) => true
       case _ => false
     })
   }

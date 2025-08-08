@@ -74,7 +74,7 @@ object ConfigurableLogRouter {
     new ConfigurableLogRouter(logConfigService, buffer)
   }
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   def apply(rootThreshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, LoggingTarget], buffer: LogQueue): ConfigurableLogRouter = {
     import izumi.fundamentals.collections.IzCollections.*
 

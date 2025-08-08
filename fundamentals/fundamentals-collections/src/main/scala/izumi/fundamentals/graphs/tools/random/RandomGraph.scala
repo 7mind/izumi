@@ -7,7 +7,7 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 object RandomGraph {
   import scala.collection.compat._
 

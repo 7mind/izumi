@@ -191,7 +191,7 @@ object Plan {
       resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
     }
 
-    @nowarn("msg=Unused import")
+    @nowarn("msg=[Uu]nused import")
     def resolveImports(f: PartialFunction[ImportDependency, Any]): Plan = {
       import scala.collection.compat.*
 

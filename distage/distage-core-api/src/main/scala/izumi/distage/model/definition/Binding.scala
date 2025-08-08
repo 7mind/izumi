@@ -85,13 +85,13 @@ object Binding {
   }
 
   implicit final class WithImplementation[R](private val binding: ImplBinding { def withImplDef(implDef: ImplDef): R }) extends AnyVal {
-    def withImpl[T: Tag: ClassConstructor]: R =
+    def withImpl[T: ClassConstructor](implicit d: DummyImplicit): R =
       withImpl[T](ClassConstructor[T])
 
     def withImpl[T: Tag](instance: T): R =
       binding.withImplDef(ImplDef.InstanceImpl(SafeType.get[T], instance))
 
-    def withImpl[T: Tag](function: Functoid[T]): R =
+    def withImpl[T](function: Functoid[T]): R =
       binding.withImplDef(ImplDef.ProviderImpl(function.get.ret, function.get))
   }
 

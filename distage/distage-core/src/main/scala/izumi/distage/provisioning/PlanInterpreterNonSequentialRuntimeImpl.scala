@@ -67,7 +67,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
     val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext, privateBindings)
 
-    @nowarn("msg=Unused import")
+    @nowarn("msg=[Uu]nused import")
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[TraversalState, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]]] = {
       import scala.collection.compat.*
 
@@ -165,7 +165,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       .map(_.target).toSet
   }
 
-  private def failEarly[F[_]: TagK, A](
+  private def failEarly[F[_], A](
     ctx: ProvisionMutable[F],
     initial: TraversalState,
     issues: Iterable[ProvisionerIssue],
@@ -183,7 +183,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     F.pure(Left(ctx.makeFailure(failed, fullStackTraces)))
   }
 
-  private def integrationPlan[F[_]: TagK](
+  private def integrationPlan[F[_]](
     state: TraversalState,
     ctx: ProvisionMutable[F],
   )(implicit F: QuasiIO[F]
@@ -245,7 +245,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def addIntegrationCheckResult[F[_]: TagK](
+  private def addIntegrationCheckResult[F[_]](
     active: ProvisionMutable[F],
     integrationCheckFType: SafeType,
     result: TimedResult.Success,
@@ -276,7 +276,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def runIfIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
+  private def runIfIntegrationCheck[F[_]](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
     op match {
       case i: NewObjectOp.CurrentContextInstance =>
         if (i.implType <:< nullType) {
@@ -295,7 +295,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def checkOrFail[F[_]: TagK](key: DIKey, resource: Any)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
+  private def checkOrFail[F[_]](key: DIKey, resource: Any)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
     F.suspendF {
       resource
         .asInstanceOf[IntegrationCheck[F]]

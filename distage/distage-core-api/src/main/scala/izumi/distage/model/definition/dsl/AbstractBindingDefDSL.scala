@@ -13,6 +13,7 @@ import izumi.distage.model.reflection.{DIKey, MultiSetImplId, SetKeyMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 
 trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] with ScalaVersionSpecificBindDSL { self =>
@@ -383,6 +384,7 @@ object AbstractBindingDefDSL {
   }
 
   final class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
+    @nowarn("msg=unused pattern variable")
     override def interpret(): collection.Seq[ImplBinding] = {
       var b: SingletonBinding[DIKey.BasicKey] = initial
       var refs: List[SingletonBinding[DIKey.BasicKey]] = Nil

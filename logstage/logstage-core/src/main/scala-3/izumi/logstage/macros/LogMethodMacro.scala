@@ -1,7 +1,6 @@
 package izumi.logstage.macros
 
 import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
-import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{Level, Message, StrictMessage}
@@ -223,13 +222,12 @@ object LogMethodMacro {
   }
 
   private def mkParametersString(
-    using qctx: Quotes
+    using Quotes
   )(valExprss: List[List[Expr[Any]]],
     stringTree: Expr[String],
     bracketOpen: String,
     bracketClose: String,
   ): Expr[String] = {
-    import qctx.reflect.*
     val bOpenExpr = Expr(bracketOpen)
     val bCloseExpr = Expr(bracketClose)
     valExprss.foldLeft(stringTree) {

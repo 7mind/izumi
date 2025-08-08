@@ -26,7 +26,7 @@ class KeyMinimizer(
     styled(base, c.MAGENTA)
   }
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   private val index: Map[String, Int] = {
     import scala.collection.compat._
     allKeys.iterator

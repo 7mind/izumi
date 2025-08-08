@@ -3,7 +3,6 @@ package izumi.distage.plugins
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
 
-import scala.compiletime.error
 import scala.quoted.{Expr, Quotes, Type}
 
 /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
@@ -43,8 +42,6 @@ object StaticPluginLoader {
         } else {
           Symbol.requiredClass(canonicalName)
         }
-
-        val tpe = clsSym.typeRef
 
         val term = if (clsSym.flags.is(Flags.Module) || clsSym.isTerm) {
           val objRef = clsSym.companionModule.termRef

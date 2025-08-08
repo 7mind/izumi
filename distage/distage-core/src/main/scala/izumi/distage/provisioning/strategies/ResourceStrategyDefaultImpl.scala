@@ -24,7 +24,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
       case Right(_) =>
         val resourceKey = op.effectKey
         context.fetchKey(resourceKey, makeByName = false) match {
-          case Some(resource0) if op.isEffect[F] =>
+          case Some(resource0) if op.isEffect =>
             val resource = resource0.asInstanceOf[Lifecycle[F, Any]]
             // FIXME: make explicitly uninterruptible / save register finalizer sooner than now
             resource.acquire.flatMap {
