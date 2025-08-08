@@ -499,6 +499,16 @@ object Izumi {
     SettingKey(Some(scala300), None) := Const.EmptySeq,
     SettingKey.Default := "(Compile / doc / sources).value".raw,
   )
+  // Workaround for https://github.com/scala/scala3/issues/23698
+  private val disableUnidocOnScala3 =
+    """ScalaUnidoc / unidoc /unidocAllSources := {
+      |  val filess = (ScalaUnidoc/ unidoc /unidocAllSources).value
+      |  if(scalaVersion.value.startsWith("2.")) {
+      |    filess
+      |  } else {
+      |    filess.map(_.filterNot(_.toString.contains("/fundamentals-orphans/")))
+      |  }
+      |}""".stripMargin
 
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
@@ -878,6 +888,7 @@ object Izumi {
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
           ),
+          SettingDef.RawSettingDef(disableUnidocOnScala3),
           SettingDef.RawSettingDef("""Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
             _.withCopyright("7mind.io")
               .withRepository(uri("https://github.com/7mind/izumi"))

@@ -6121,6 +6121,14 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings,
     addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
     ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true),
+    ScalaUnidoc / unidoc /unidocAllSources := {
+      val filess = (ScalaUnidoc/ unidoc /unidocAllSources).value
+      if(scalaVersion.value.startsWith("2.")) {
+        filess
+      } else {
+        filess.map(_.filterNot(_.toString.contains("/fundamentals-orphans/")))
+      }
+    },
     Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
                 _.withCopyright("7mind.io")
                   .withRepository(uri("https://github.com/7mind/izumi"))
