@@ -204,7 +204,7 @@ If you need multiple singleton instances of the same type, you may create "named
 ```scala mdoc:silent
 import distage.Id
 
-def negateByer(otherByer: Byer): Byer = {
+def negateByer(otherByer: Byer @Id("byer-1")): Byer = {
   new Byer {
     def bye(name: String) =
      otherByer.bye(s"NOT-$name")
@@ -213,10 +213,7 @@ def negateByer(otherByer: Byer): Byer = {
 
 new ModuleDef {
   make[Byer].named("byer-1").from[PrintByer]
-  make[Byer].named("byer-2").from {
-    (otherByer: Byer @Id("byer-1")) =>
-      negateByer(otherByer)
-  }
+  make[Byer].named("byer-2").from(negateByer _)
 }
 ```
 
@@ -224,10 +221,17 @@ new ModuleDef {
 You can use `make[_].annotateParameter` method instead of an annotation, to attach a name component to an existing constructor:
 
 ```scala mdoc:silent
+def negateAnyByer(otherByer: Byer): Byer = {
+  new Byer {
+    def bye(name: String) =
+     otherByer.bye(s"NOT-$name")
+  }
+}
+
 new ModuleDef {
   // same binding as above
   make[Byer].named("byer-2")
-    .from(negateByer(_))
+    .from(negateAnyByer(_))
     .annotateParameter[Byer]("byer-1")
 }
 ```
@@ -240,6 +244,8 @@ object Ids {
   type Byer1 = Byer @Id(byer1Id)
 }
 ```
+
+Note: even though you can put `@Id` annotation on the parameter name like in Java, we recommend you to always put the annotation on the type for better compatibility, especially when using Scala 3.
 
 ### Non-singleton components
 

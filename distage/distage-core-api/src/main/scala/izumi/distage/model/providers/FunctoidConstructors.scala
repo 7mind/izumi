@@ -4,6 +4,7 @@ import izumi.distage.constructors.{ClassConstructor, FactoryConstructor, TraitCo
 import zio.ZEnvironment
 
 private[providers] trait FunctoidConstructors {
+
   /** Derive constructor for a concrete class `A` using [[ClassConstructor]] */
   def makeClass[A: ClassConstructor]: Functoid[A] = ClassConstructor[A]
 

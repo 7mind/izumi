@@ -1,41 +1,74 @@
 package izumi.distage.reflection.macros
 
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.*
-import izumi.distage.model.reflection.Provider.{ProviderImpl, ProviderType}
 
+import scala.annotation.targetName
 import scala.language.implicitConversions
-import scala.quoted.{Expr, Quotes, Type}
 
-trait FunctoidMacroMethods extends FunctoidMacroMethodsBase
+trait FunctoidMacroMethods extends ByNameConversion {
+  import FunctoidMacro.make
 
-object FunctoidMacro extends FunctoidMacroBase[Functoid] {
-  transparent inline def make[R](inline fun: AnyRef): Functoid[R] = ${ makeImpl[R]('fun) }
+  inline implicit def apply[R](inline fun: () => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
 
-  def makeImpl[R: Type](fun: Expr[AnyRef])(using qctx: Quotes): Expr[Functoid[R]] = {
-    val idExtractor = new IdExtractorImpl[qctx.type]()
-    val paramMacro = new FunctoidParametersMacro[qctx.type](idExtractor)
-    val implicitsExtractorMacro = new DummyImplicitsExtractorMacro[qctx.type]()
-    new FunctoidMacroImpl[qctx.type](paramMacro, implicitsExtractorMacro).make(fun)
-  }
+  // 23 to 32
+  @targetName("apply23")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply24")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply25")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply26")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply27")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply28")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply29")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply30")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] = make[R](fun)
+  @targetName("apply31")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] =
+    make[R](fun)
+  @targetName("apply32")
+  inline implicit def apply[R](inline fun: (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) => R): Functoid[R] =
+    make[R](fun)
+}
 
-  protected def generateFunctoid[R: Type](
-    using qctx: Quotes
-  )(paramDefs: List[Expr[LinkedParameter]],
-    originalFun: Expr[AnyRef],
-    ignoreDuringImplicitsSearch: List[qctx.reflect.Symbol],
-  ): Expr[Functoid[R]] = {
-    '{
-      val rawFn: AnyRef = ${ originalFun }
-      new Functoid[R](
-        new ProviderImpl[R](
-          ${ Expr.ofList(paramDefs) },
-          ${ FunctoidMacroHelpers.generateSafeType[R](using qctx)(ignoreDuringImplicitsSearch) },
-          rawFn,
-          (args: Seq[Any]) => ${ generateRawFnCall(paramDefs.size, 'rawFn, 'args) },
-          ProviderType.Function,
-        )
-      )
-    }
-  }
+trait ByNameConversion {
+  /**
+    * Allow conversion from argument-less blocks, but only within a `bindImplicits` block
+    *
+    * {{{
+    *   make[X].from(bindImplicits {
+    *     makeX
+    *   })
+    *
+    *   def makeX(implicit d: ImplicitDependency) = new X(d)
+    * }}}
+    */
+  inline implicit def apply[R](inline fun: R)(using isInsideBindImplicits: FunctoidDummyImplicit): Functoid[R] =
+    FunctoidMacro.make[R](() => fun)
 }

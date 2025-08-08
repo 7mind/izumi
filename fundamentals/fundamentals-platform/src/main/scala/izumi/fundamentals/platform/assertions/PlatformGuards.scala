@@ -13,5 +13,6 @@ trait PlatformGuards {
     ()
   }
 
+  /** Signifies a progression test. What's broken might eventually be unbroken. Do not use this other than for progression tests */
   def broken(f: => Any): Unit
 }

@@ -1,21 +1,37 @@
 package izumi.distage.injector
 
 import distage.*
+import izumi.distage.model.exceptions.runtime.{MissingInstanceException, ProvisioningException}
 import izumi.functional.quasi.QuasiApplicative
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.reflect.Tag
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
+  final case class Description(description: String)
+  final case class X(s: String)
+
+  def makeX(x: Int)(using desc: Description): X = X(s"${desc.description}$x")
+
+  trait Pointed[F[_]] {
+    def point[A](a: A): F[A]
+  }
+  object Pointed {
+    def apply[F[_]: Pointed]: Pointed[F] = implicitly
+
+    implicit final val pointedList: Pointed[List] =
+      new Pointed[List] {
+        override def point[A](a: A): List[A] = List(a)
+      }
+  }
+
+  class StaticTestRole[F[_]]
+
   "Scala 3 implicit bindings" should {
 
     "support bindings with function implicit parameters" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
-      def makeX(x: Int)(using desc: Description): X = X(desc.description)
-
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("X"))
@@ -26,15 +42,14 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[Description] == Description("X"))
-      assert(context.get[X] == X("X"))
+      assert(context.get[X] == X("X1"))
     }
 
     "support bindings with function with type and implicit parameters" in {
       final case class Description[T](description: String)
       final case class X(s: String)
 
-      def makeX[T](value: T)(implicit desc: Description[X]): X = X(desc.description)
+      def makeX[T](value: T)(implicit desc: Description[X]): X = X(desc.description + value)
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
@@ -46,16 +61,10 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[Description[X]] == Description("X"))
-      assert(context.get[X] == X("X"))
+      assert(context.get[X] == X("X1"))
     }
 
     "support binding inside code block" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
-      def makeX(x: Int)(using desc: Description): X = X(desc.description)
-
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("X"))
@@ -63,9 +72,11 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
           bindImplicits {
             (b: Int) =>
               {
-                val a = 1
-                val desc = implicitly[Description]
-                X(b.toString + desc.description)
+                locally {
+                  val a = 1
+                  val desc = implicitly[Description]
+                  X(b.toString + desc.description)
+                }
               }
           }
         }
@@ -75,37 +86,27 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[Description] == Description("X"))
       assert(context.get[X] == X("1X"))
     }
 
     "support binding with more than one implicit parameter" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
-      def makeX(x: Int)(using desc: Description, moreDesc: String): X = X(desc.description + moreDesc)
+      def makeX2(x: Int)(using desc: Description, moreDesc: String): X = X(desc.description + moreDesc + x)
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[String].fromValue("more-description")
         make[Description].fromValue(Description("X"))
-        make[X].from(bindImplicits(makeX))
+        make[X].from(bindImplicits(makeX2))
       })
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[Description] == Description("X"))
-      assert(context.get[X] == X("Xmore-description"))
+      assert(context.get[X] == X("Xmore-description1"))
     }
 
     "support binding inside block with more than one implicit parameter" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
-      def makeX(x: Int)(using desc: Description): X = X(desc.description)
-
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[String].fromValue("str")
@@ -126,26 +127,12 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[Description] == Description("X"))
       assert(context.get[X] == X("Xstr1"))
     }
 
     "support implicits with higher kinded types" in {
-      trait Pointed[F[_]] {
-        def point[A](a: A): F[A]
-      }
-
-      object Pointed {
-        def apply[F[_]: Pointed]: Pointed[F] = implicitly
-
-        implicit final val pointedList: Pointed[List] =
-          new Pointed[List] {
-            override def point[A](a: A): List[A] = List(a)
-          }
-      }
-
-      case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
-        addImplicit[Pointed[F]]
+      case class Definition[F[_]: TagK](getResult: Int, p: Pointed[F]) extends ModuleDef {
+        make[Pointed[F]].from(p)
         make[Int].named("TestService").fromValue(getResult)
         make[F[String]].from {
           bindImplicits {
@@ -155,26 +142,13 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       }
 
       val injector = mkInjector()
-      val plan = injector.planUnsafe(PlannerInput.everything(Definition[List](1)))
+      val plan = injector.planUnsafe(PlannerInput.everything(Definition[List](1, implicitly)))
       val context = injector.produce(plan).unsafeGet()
 
       assert(context.get[List[String]] == List("Hello 1!"))
     }
 
     "support 'by name' values" in {
-      trait Pointed[F[_]] {
-        def point[A](a: A): F[A]
-      }
-
-      object Pointed {
-        def apply[F[_]: Pointed]: Pointed[F] = implicitly
-
-        implicit final val pointedList: Pointed[List] =
-          new Pointed[List] {
-            override def point[A](a: A): List[A] = List(a)
-          }
-      }
-
       class Definition[F[+_]: TagK](getResult: Int, p: Pointed[F]) extends ModuleDef {
         make[Pointed[F]].from(p)
         make[F[Any]].from(bindImplicits(Pointed[F].point(1)))
@@ -188,19 +162,16 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "should not override implicit inside the block" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[X].from {
           bindImplicits {
             (b: Int) =>
               {
-                val a = 1
+                val a = 2
                 implicit val description: Description = Description("desc")
                 val desc = implicitly[Description]
-                X(b.toString + desc.description)
+                X(b.toString + desc.description + a)
               }
           }
         }
@@ -210,15 +181,10 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[X] == X("1desc"))
+      assert(context.get[X] == X("1desc2"))
     }
 
     "should not override given inside the block" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
-      def makeX(x: Int)(using desc: Description): X = X(desc.description)
-
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("from-di"))
@@ -226,10 +192,10 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
           bindImplicits {
             (b: Int) =>
               {
-                val a = 1
+                val a = 2
                 given description: Description = Description("desc")
                 val desc = implicitly[Description]
-                X(b.toString + desc.description)
+                X(b.toString + desc.description + a)
               }
           }
         }
@@ -239,7 +205,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      assert(context.get[X] == X("1desc"))
+      assert(context.get[X] == X("1desc2"))
     }
 
     "should ignore dummy implicit during implicit search if there is implicit defined outside of the object graph" in {
@@ -266,11 +232,9 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       assert(x.t2 == Tag[X])
     }
 
-    "should summon implicits if functoid passed to a function" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
-      def makeX(using desc: Description, d: Short): Functoid[X] = Functoid((x: Int) => X(d.toString + x.toString + desc.description))
+    "should discharge dummies if functoid macro did not do so" in {
+      def makeX(using desc: Description, d: Short): Functoid[X] =
+        Functoid((x: Int) => X(d.toString + x.toString + desc.description))
 
       implicit val desc: Description = Description("desc")
       implicit val double: Short = 2
@@ -288,25 +252,20 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "ignore implicits defined and only use objects from the object graph" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
-      def makeX(value: Int)(implicit desc: Description): X = X(desc.description)
+      def makeX(implicit desc: Description): X = X(desc.description)
 
       implicit val description: Description = Description("description")
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Int].fromValue(1)
         make[Description].fromValue(Description("desc"))
-        make[X].from(bindDIImplicits(makeX))
+        make[X].from(bindAllImplicits(makeX))
       })
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      val desc = context.get[Description]
-      assert(desc.description == "desc")
+      assert(context.get[Description].description == "desc")
       assert(context.get[X] == X("desc"))
     }
 
@@ -368,9 +327,6 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "support implicits in effects" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
       def makeX[F[_]: QuasiApplicative](value: Int)(implicit desc: Description): F[X] =
         QuasiApplicative.apply[F].pure(X(desc.description + value.toString))
 
@@ -389,9 +345,6 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "support implicits in resource class" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
       class XResource(implicit desc: Description) extends Lifecycle.Simple[X] {
         override def acquire: X = X(desc.description)
         override def release(resource: X): Unit = ()
@@ -411,9 +364,6 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "support implicits in resource" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
       def makeX(x: Int)(implicit desc: Description): Lifecycle[Identity, X] =
         Lifecycle.make(X(desc.description): Identity[X])(_ => ())
 
@@ -432,9 +382,6 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "support implicits in sets" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
       def makeX(x: Int)(implicit desc: Description): X = X(s"${desc.description}$x")
 
       val definition = PlannerInput.everything(new ModuleDef {
@@ -451,30 +398,28 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "support implicits in addSet" in {
-      final case class Description(description: String)
-      final case class X(s: String)
-
       def makeX(x: Int)(implicit desc: Description): X = X(s"${desc.description}$x")
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("desc"))
         many[X].add(bindImplicits(makeX))
-        many[X].named("set").addSet[Set[X]] {
+        many[X].named("set").addSet {
           bindImplicits {
-            Set(X(s"${implicitly[Int]}-${implicitly[Description].description}-${implicitly[Set[X]]}"))
-          }: Functoid[Set[X]] // Weird, inference breaks here due to `addSet` overload, but not in `from` which also has an overload
+            Functoid[Set[X]] { // inference breaks down here due to combination of `addSet` overload and picking up Functoid Function1 conversion instead of block conversion, because Set inherits Function1
+              Set(X(s"${implicitly[Int]}-${implicitly[Description].description}-${implicitly[Set[X]]}"))
+            }
+          }
         }
-        make[X].named("x").from {
-          bindImplicits {
+        make[X]
+          .named("x").from(bindImplicits {
             X(s"${implicitly[Int]}-${implicitly[Description].description}-${implicitly[Set[X]]}")
-          }
-        }
-        many[X].named("set2").addSet[Set[X]] {
-          bindImplicits {
-            (x: Int) => Set(X(s"${x + x}-${implicitly[Description].description}-${implicitly[Set[X]]}"))
-          }
-        }
+          })
+        many[X]
+          .named("set2").addSet(bindImplicits {
+            (x: Int) =>
+              Set(X(s"${x + x}-${implicitly[Description].description}-${implicitly[Set[X]]}"))
+          })
       })
 
       val injector = mkInjector()
@@ -486,7 +431,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       assert(context.get[X]("x") == X("1-desc-Set(X(desc1))"))
     }
 
-    "fail to find implicit for non specific type" in {
+    "fail to find implicit for non specific type (this is a Scala 3 inference limitation, not ours)" in {
       trait A[T]
       object A {
         implicit val intA: A[Int] = new A[Int] {}
@@ -504,9 +449,115 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition)
       val context = injector.produce(plan).unsafeGet()
 
-      broken {
-        assert(context.get[X[Any]] == X(A.intA))
+      assert(context.find[X[Any]].isEmpty)
+    }
+
+    "id annotation on explicit arguments still works" in {
+      def makeX(x: Int @Id("2"))(implicit description: Description): X = X(s"${description.description}$x")
+      def makeXN(@Id("2") x: Int)(implicit description: Description): X = X(s"${description.description}$x")
+
+      val definition = PlannerInput.everything(new ModuleDef {
+        make[Int].named("2").fromValue(2)
+        make[Description].fromValue(Description("desc"))
+        make[X].from(bindImplicits(makeX))
+        make[X].named("n").from(bindImplicits(makeXN))
+        make[X]
+          .named("x2").from(bindImplicits {
+            (x: Int @Id("2")) => X(((x + x) * 2).toString + implicitly[Description].description)
+          })
+      })
+
+      val injector = mkInjector()
+      val plan = injector.planUnsafe(definition)
+      val context = injector.produce(plan).unsafeGet()
+
+      assert(context.get[X] == X("desc2"))
+      assert(context.get[X]("n") == X("desc2"))
+      assert(context.get[X]("x2") == X("8desc"))
+    }
+
+    "id annotation on implicit arguments works" in {
+      def makeX(x: Int)(implicit description: Description @Id("p")): X = X(s"${description.description}$x")
+      def makeXU(x: Int)(using Description @Id("p")): X = X(s"${summon[Description].description}$x")
+      def makeXN(x: Int)(implicit @Id("p") description: Description): X = X(s"${description.description}$x")
+      def makeXNU(x: Int)(using @Id("p") description: Description): X = X(s"${summon[Description].description}$x")
+
+      val definition = PlannerInput.everything(new ModuleDef {
+        make[Int].fromValue(2)
+        make[Description].named("p").fromValue(Description("pest"))
+        make[X].from(bindImplicits(makeX))
+        make[X].named("using").from(bindImplicits(makeXU))
+        make[X].named("n").from(bindImplicits(makeXN))
+        make[X].named("nusing").from(bindImplicits(makeXNU))
+        make[X]
+          .named("block").from(bindImplicits {
+            (x: Int) => X(((x + x) * 2).toString + implicitly[Description @Id("p")].description)
+          })
+      })
+
+      val injector = mkInjector()
+      val plan = injector.planUnsafe(definition)
+      val context = injector.produce(plan).unsafeGet()
+
+      assert(context.get[X] == X("pest2"))
+      assert(context.get[X]("using") == X("pest2"))
+      assert(context.get[X]("n") == X("pest2"))
+      assert(context.get[X]("nusing") == X("pest2"))
+      assert(context.get[X]("block") == X("8pest"))
+    }
+
+    "progression test: id annotation support on implicit arguments names breaks if some of them are resolved" in {
+      def makeX(implicit description: Description @Id("p"), x: Int): X = X(s"${description.description}$x")
+      def makeXN(implicit @Id("p") description: Description, x: Int): X = X(s"${description.description}$x")
+
+      implicit val xInt: Int = 2
+
+      val definition = new ModuleDef {
+        make[Description].named("p").fromValue(Description("pest"))
+        make[X].from(bindImplicits(makeX))
+        make[X].named("n").from(bindImplicits(makeXN))
       }
+
+      val injector = mkInjector()
+
+      injector.produceRun(definition) {
+        (x: X) =>
+          assert(x == X("pest2"))
+      }
+
+      intercept[ProvisioningException] {
+        injector.produceRun(definition) {
+          (x: X @Id("n")) =>
+            assert(x == X("pest2"))
+        }
+      }
+    }
+
+    "progression test: Cannot support StaticTestRole[F] test case unless summonIgnoring is made transitive in the compiler" in {
+      // What's happening here: izumi.reflect.TagMacro makes a nested implicit searches to assemble a
+      // Tag.appliedTag(LightTypeTag...) expression. Because `summonIgnoring` is not transitive, nested searches find
+      // dummy parameters instead of recursing into macro.
+      // Because in Tag.appliedTag expression, every parameter is just `LightTypeTag`, it's impossible to recover the initial
+      // sought implicit type, because it's no longer anywhere in the tree, so it's impossible to recover from this state
+      // by discharging dummies. (In the usual case, e.g. `implicitly[Functor[T]](contextual$2: Dummy)` we recover the sought
+      // implicit type by taking it from `implicitly[Functor[T]]` part of the tree, which has a type `Functor[T] => Functor[T]`.
+      // But that's impossible in this case. In `Tag.appliedTag(contextual$2.tag)` expression, `Tag.appiedTag` has type
+      // `LightTypeTag* => LightTypeTag`, `contextual$2.tag` has type `LightTypeTag`, `contextual$2` has type `Dummy`,
+      // all while the initial sought implicit type was e.g. `Tag[StaticTestRole[F]]` – because the implicit search was
+      // done inside the macro, not by filling implicit holes in the tree, the initial type is unrecoverable via our simple
+      // dummy discharging strategy)
+      val err = intercept[TestFailedException](assertCompiles("""
+      def definition[F[_]: TagK, G[_]: TagK] = PlannerInput.everything(new ModuleDef {
+        make[StaticTestRole[F]].fromEffect {
+          bindImplicits {
+            ClassConstructor[StaticTestRole[F]]
+              .flatAp((G: QuasiApplicative[G]) => G.pure(_: StaticTestRole[F]))
+          }
+        }
+      })
+      """))
+      assert(err.getMessage.contains("Couldn't discharge dummy of type"))
+      assert(err.getMessage.contains(" & izumi.reflect.Tag[G["))
     }
 
   }

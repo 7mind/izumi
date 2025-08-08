@@ -28,7 +28,9 @@ import scala.collection.immutable.Queue
   */
 trait Locator {
 
+  /** @throws MissingInstanceException if `T` is missing */
   def get[T: Tag]: T
+  /** @throws MissingInstanceException if `T @Id(id)` is missing */
   def get[T: Tag](id: Identifier): T
 
   def find[T: Tag]: Option[T]
