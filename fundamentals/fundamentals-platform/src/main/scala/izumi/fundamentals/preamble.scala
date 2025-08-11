@@ -9,4 +9,4 @@ import izumi.fundamentals.platform.serialization.IzSerializable
 import izumi.fundamentals.platform.strings.IzString
 import izumi.fundamentals.platform.time.IzTimeOrderingSafe
 
-object preamble extends IzBoolean with IzBytes with IzCollections with IzEither with IzSerializable with IzString with IzThrowable with IzTimeOrderingSafe {}
+object preamble extends IzBoolean with IzBytes with IzCollections with IzEither with IzSerializable with IzString with IzThrowable with IzTimeOrderingSafe

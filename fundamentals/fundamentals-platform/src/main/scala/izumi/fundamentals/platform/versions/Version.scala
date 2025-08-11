@@ -5,11 +5,10 @@ import izumi.fundamentals.collections.nonempty.NEList
 import scala.annotation.tailrec
 import scala.util.Try
 
-trait Version {}
+trait Version
 
 object Version {
-  case class Canonical(components: NEList[Int], qualifiers: List[String]) extends Version {
-    override def toString: String = (components.mkString(".") +: qualifiers).mkString("-")
+  final case class Canonical(components: NEList[Int], qualifiers: List[String]) extends Version {
     def toSemver: Option[Semver] = {
       if (components.size == 3 && qualifiers.size < 2) {
         Some(Semver(components.head, components(1), components(2), qualifiers.headOption, None))
@@ -17,16 +16,19 @@ object Version {
         None
       }
     }
+
+    override def toString: String = (components.mkString(".") +: qualifiers).mkString("-")
   }
 
-  case class Semver(major: Int, minor: Int, patch: Int, pre: Option[String], build: Option[String]) extends Version {
+  final case class Semver(major: Int, minor: Int, patch: Int, pre: Option[String], build: Option[String]) extends Version {
     def canonical: Canonical = Canonical(NEList(major, minor, patch), List(pre, build).flatten)
 
     override def toString: String = List(Some(s"$major.$minor.$patch"), pre.map(s => s"-$s"), build.map(s => s"+$s")).flatten.mkString
-
   }
 
-  case class Unknown(version: String) extends Version
+  final case class Unknown(version: String) extends Version {
+    override def toString: String = version
+  }
 
   def parseSemver(version: String): Option[Semver] = {
     val semverPattern = """^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9.-]+))?(?:\+([a-zA-Z0-9.-]+))?$""".r
