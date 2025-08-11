@@ -10,12 +10,12 @@ object V {
   val scalatest = "3.2.19"
 
   val cats = "2.13.0"
-  val cats_effect = "3.6.1"
+  val cats_effect = "3.6.3"
 
   val discipline = "1.7.0"
   val discipline_scalatest = "2.3.0"
 
-  val zio = "2.1.19"
+  val zio = "2.1.20"
   val zio_interop_cats = "23.1.0.5"
 
   val monix = "3.4.0"
@@ -31,17 +31,17 @@ object V {
   val scala_java_time = "2.6.0"
 
   // java-only dependencies below
-  val classgraph = "4.8.180"
+  val classgraph = "4.8.181"
   val slf4j = "2.0.17"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
   val bytebuddy = "1.17.6"
-  val docker_java = "3.5.1"
+  val docker_java = "3.5.3"
 
   // microsite-only
   val doobie = "1.0.0-RC2"
 
   // test-only
-  val scalamock = "7.3.3"
+  val scalamock = "7.4.0"
 }

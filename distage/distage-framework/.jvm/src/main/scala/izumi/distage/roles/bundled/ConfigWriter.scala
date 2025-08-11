@@ -84,7 +84,7 @@ final class ConfigWriter[F[_]: TagK](
             role.descriptor.artifact.map(_.version).map(_.version)
           }
           val subLogger = logger("role" -> roleId)
-          val fileNameFull = outputFileName(roleId, roleVersion, options.asJson, Some("full"))
+          val fileNameFull = outputFileName(roleId, roleVersion.map(_.toString), options.asJson, Some("full"))
 
           val loaded = index(roleId)
 
@@ -102,7 +102,7 @@ final class ConfigWriter[F[_]: TagK](
           writeConfig(options, fileNameFull, mergedRoleConfig, None, subLogger)
 
           val min = minimizedConfig(mergedRoleConfig, role)
-          val fileNameMinimized = outputFileName(roleId, roleVersion, options.asJson, Some("minimized"))
+          val fileNameMinimized = outputFileName(roleId, roleVersion.map(_.toString), options.asJson, Some("minimized"))
           writeConfig(options, fileNameMinimized, min.config, Some(min.schema), subLogger)
         } catch {
           case exception: Throwable =>

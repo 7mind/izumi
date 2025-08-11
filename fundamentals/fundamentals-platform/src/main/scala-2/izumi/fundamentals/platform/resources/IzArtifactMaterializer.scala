@@ -19,10 +19,12 @@ object IzArtifactMaterializerMacro {
       q"""{
           import _root_.izumi.fundamentals.platform.build.{BuildAttributes => BA}
           import _root_.izumi.fundamentals.platform.build.{MacroParameters => MP}
+          import _root_.izumi.fundamentals.platform.versions.{Version => V}
+
 
           new ${typeOf[IzArtifactMaterializer]}(new ${typeOf[IzArtifact]}(
             new ${typeOf[IzArtifactId]}(MP.projectGroupId().getOrElse("???"), MP.artifactName().getOrElse("???")),
-            new ${typeOf[ArtifactVersion]}(MP.artifactVersion().getOrElse("???")),
+            new ${typeOf[ArtifactVersion]}(V.parse(MP.artifactVersion().getOrElse("???"))),
             new ${typeOf[BuildStatus]}(BA.userName().getOrElse("???"), BA.javaVersion().getOrElse("???"), MP.sbtVersion().getOrElse("???"), BA.buildTimestamp()),
             new ${typeOf[GitStatus]}(MP.gitBranch().getOrElse("???"), MP.gitRepoClean().getOrElse(false), MP.gitHeadCommit().getOrElse("???")),
           ))

@@ -21,6 +21,7 @@ import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.os.{IzOs, OsType}
 import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.fundamentals.platform.versions.Version
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogSink
 import org.scalatest.wordspec.AnyWordSpec
@@ -288,11 +289,11 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "produce config dumps and support minimization" in {
-      val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
+      val version = ArtifactVersion(Version.Unknown(s"0.0.0-${UUID.randomUUID().toString}"))
       val role00OverrideConf = getClass.getResource("/testrole00-override.conf").getPath
       withProperties(
         overrides ++
-        Map(TestPluginCatsIO.versionProperty -> version.version)
+        Map(TestPluginCatsIO.versionProperty -> version.version.toString)
       ) {
         TestEntrypoint.main(Array("-nc", "-c", role00OverrideConf, "-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
       }

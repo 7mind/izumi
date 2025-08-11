@@ -13,6 +13,7 @@ import izumi.distage.roles.test.fixtures.TestPluginCatsIO.{InheritedCloseable, N
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, IntegrationOnlyCfg2, SetElementOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.fundamentals.platform.versions.Version
 import izumi.reflect.TagK
 
 class TestPluginBase[F[_]: TagK] extends PluginDef with RoleModuleDef {
@@ -25,11 +26,11 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with RoleModuleDef {
     TagMergePolicy.UseOnlyInner,
   )
 
-  private def version: String = Option(System.getProperty(TestPluginCatsIO.versionProperty)) match {
+  private def version: Version = Option(System.getProperty(TestPluginCatsIO.versionProperty)) match {
     case Some(value) =>
-      value
+      Version.parse(value)
     case None =>
-      s"0.0.0-${System.currentTimeMillis()}"
+      Version.Unknown(s"0.0.0-${System.currentTimeMillis()}")
   }
 
   many[Dummy]
