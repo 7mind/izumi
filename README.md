@@ -63,14 +63,14 @@ Support Chats:
 
 Videos:
 
+* [FScala 2023: Izumi Framework: Reinvent Your Productivity With Modern Pure Functional Scala](https://www.youtube.com/watch?v=Wufg8SJqqd8)
 * [Izumi 1.0: Your Next Scala Stack](https://www.youtube.com/watch?v=o65sKWnFyk0)
 * [Scala, Functional Programming and Team Productivity](https://www.youtube.com/watch?v=QbdeVoL4hBk)
 * [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.youtube.com/watch?v=CzpvjkUukAs)
 * [Livecoding: DIStage & Bifunctor Tagless Final](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 * [DevInsideYou — Tagless Final with BIO](https://www.youtube.com/watch?v=ZdGK1uedAE0&t=580s)
 * [Source Talks — Pragmatic Pure FP approach to application design and testing with distage](https://www.youtube.com/watch?v=W60JO3TuFhc)
-* [(Talk + Livecoding) Izumi Framework: reinvent your productivity with modern pure functional Scala](https://www.youtube.com/watch?v=zwj5eVDqMI8)
-* [(Talk only) Izumi Framework: reinvent your productivity with modern pure functional Scala](https://www.youtube.com/watch?v=Zk0Il6I5MQI)
+* [(Talk + Livecoding) Izumi Framework: reinvent your productivity with modern pure functional Scala](https://www.youtube.com/watch?v=Zk0Il6I5MQI)
 
 Slides:
 

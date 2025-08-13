@@ -121,10 +121,11 @@ Use `include` to add it to your application:
 ```scala mdoc:reset:to-string
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.BundledRolesModule
+import izumi.fundamentals.platform.versions.Version
 import zio.Task
 
 object RolesPlugin extends PluginDef {
-  include(BundledRolesModule[Task](version = "1.0"))
+  include(BundledRolesModule[Task](Version.parse("1.0")))
 }
 ```
 
