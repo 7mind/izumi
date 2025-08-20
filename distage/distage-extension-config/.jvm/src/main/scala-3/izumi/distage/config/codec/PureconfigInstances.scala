@@ -5,11 +5,9 @@ import pureconfig.*
 import pureconfig.error.*
 import pureconfig.generic.derivation.Utils
 
-import scala.annotation.publicInBinary
 import scala.compiletime.ops.int.+
 import scala.compiletime.{constValue, erasedValue, summonFrom}
 import scala.deriving.Mirror
-import scala.util.chaining.*
 
 object PureconfigInstances {
 

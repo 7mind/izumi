@@ -1,6 +1,6 @@
 package izumi.distage.config.codec
 
-import pureconfig.{ConfigReader, Exported}
+import pureconfig.ConfigReader
 
 import scala.deriving.Mirror
 import scala.language.implicitConversions

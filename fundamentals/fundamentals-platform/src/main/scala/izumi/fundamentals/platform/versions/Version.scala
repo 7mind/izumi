@@ -2,11 +2,12 @@ package izumi.fundamentals.platform.versions
 
 import izumi.fundamentals.collections.nonempty.NEList
 
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 import scala.util.Try
 
-trait Version
+sealed trait Version
 
+@nowarn("msg=Iterables are not guaranteed to have a consistent order")
 object Version {
   final case class Canonical(components: NEList[Int], qualifiers: List[String]) extends Version {
     def toSemver: Option[Semver] = {

@@ -11,7 +11,6 @@ object TraitConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.ParamRepr
     util.requireConcreteTypeConstructor(TypeRepr.of[R], "TraitConstructor")
 
     val context = new ConstructorContext[R, qctx.type, util.type](util)
@@ -20,7 +19,6 @@ object TraitConstructorMacro {
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
   def makeImpl[R: Type](using qctx: Quotes)(util: ConstructorUtil[qctx.type], context: ConstructorContext[R, qctx.type, util.type]): Expr[TraitConstructor[R]] = {
-    import qctx.reflect.*
     import util.{MemberRepr, ParamRepr}
     import context.{flatCtorParams, methodDecls}
 

@@ -15,7 +15,7 @@ trait RouterFactory {
 
 object RouterFactory {
   class RouterFactoryConsoleSinkImpl extends RouterFactory {
-    @nowarn("msg=Unused import")
+    @nowarn("msg=[uU]nused import")
     override def createRouter(config: DeclarativeLoggerConfig, buffer: LogQueue): ConfigurableLogRouter = {
       import scala.collection.compat.*
 

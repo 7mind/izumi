@@ -326,7 +326,7 @@ abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F
   }
 }
 
-abstract class OverloadingTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
+abstract class OverloadingTest[F[_]: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
   "test overloading of `in`" in {
     () =>
       // `in` with Unit return type is ok
@@ -343,14 +343,14 @@ abstract class OverloadingTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1
   }
 }
 
-abstract class ActivationTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
+abstract class ActivationTest[F[_]: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
   "resolve bindings for the same key via activation axis" in {
     (activeComponent: ActiveComponent) =>
       assert(activeComponent == TestActiveComponent)
   }
 }
 
-abstract class ForcedRootTest[F[_]: QuasiIO: TagK: DefaultModule] extends Spec1[F] {
+abstract class ForcedRootTest[F[_]: TagK: DefaultModule] extends Spec1[F] {
   override protected def config: TestConfig = super.config.copy(
     moduleOverrides = new ModuleDef {
       make[ForcedRootResource[F]].fromResource[ForcedRootResource[F]]

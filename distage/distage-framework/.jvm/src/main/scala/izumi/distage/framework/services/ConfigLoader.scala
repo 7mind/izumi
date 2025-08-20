@@ -49,7 +49,7 @@ import scala.util.{Failure, Success, Try}
   */
 trait ConfigLoader extends AbstractConfigLoader
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[uU]nused import")
 object ConfigLoader {
   def empty: ConfigLoader = (_: String) => AppConfig(ConfigFactory.empty(), List.empty, List.empty)
 

@@ -13,8 +13,7 @@ object FactoryConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.{MemberRepr, ParamRepr, ParamReprLists, factoryUtil}
-    import factoryUtil.{FactoryProductData, InjectedDependencyParameter, MethodParameter}
+    import util.{MemberRepr, ParamRepr, factoryUtil}
     util.requireConcreteTypeConstructor(TypeRepr.of[R], "FactoryConstructor")
 
     val factoryContext = new ConstructorContext[R, qctx.type, util.type](util)

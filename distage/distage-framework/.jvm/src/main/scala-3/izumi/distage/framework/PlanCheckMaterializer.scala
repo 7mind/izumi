@@ -4,8 +4,6 @@ import dotty.tools.dotc.core.Contexts
 import izumi.distage.framework.model.PlanCheckResult
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.plugins.StaticPluginLoader
-import izumi.distage.plugins.load.LoadedPlugins
-import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.TypeUtil
 
