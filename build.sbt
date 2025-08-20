@@ -11,45 +11,6 @@ enablePlugins(SbtgenVerificationPlugin)
 
 disablePlugins(AssemblyPlugin)
 
-Global / Keys.commands ~= {
-  // Workaround for Intellij "Open cross-compiled projects as Scala 2" option pending upstream merge of https://github.com/JetBrains/sbt-structure/pull/73
-  xs =>
-    def numbersOf(version: String): (Int, Int, Int) = {
-      val prefix = version.split('.').filter(s => s.nonEmpty && s.forall(_.isDigit)).map(_.toInt).take(3)
-      val xs = prefix ++ Seq.fill(3 - prefix.length)(0)
-      (xs(0), xs(1), xs(2))
-    }
-
-    val preferScala2: Command = Command.command("preferScala2") { state =>
-      val (structure, data) = {
-        val extracted = Project.extract(state)
-        (extracted.structure, extracted.structure.data)
-      }
-
-      val scala3Projects = structure.allProjectRefs.filter { project =>
-        (project / Keys.scalaVersion).get(data).exists(_.startsWith("3."))
-      }
-
-      val (scala2Versions, crossScala2And3ProjectsCount) = scala3Projects.foldLeft((Set.empty[String], 0)) {
-        case ((scala2Versions, crossCount), project) =>
-          val projectScala2Versions = (project / Keys.crossScalaVersions).get(data).getOrElse(Seq.empty).filter(_.startsWith("2."))
-          (scala2Versions ++ projectScala2Versions, crossCount + (if (projectScala2Versions.nonEmpty) 1 else 0))
-      }
-
-      // We can only do this when all sbt projects cross-compile to Scala 2 & Scala 3
-      // See https://youtrack.jetbrains.com/issue/SCL-22619/
-      val canSetScala2VersionGlobally = crossScala2And3ProjectsCount > 0 &&
-        scala3Projects.length == crossScala2And3ProjectsCount
-      if (canSetScala2VersionGlobally) {
-        "++" + scala2Versions.maxBy(numbersOf) :: state
-      } else {
-        state
-      }
-    }
-
-    xs.filterNot(_.nameOption.contains("preferScala2")) :+ preferScala2
-}
-
 lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-basics"))
   .settings(
     libraryDependencies ++= Seq(

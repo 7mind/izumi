@@ -6,11 +6,12 @@ import scala.collection.mutable
 sealed trait AdjacencyList[N] {
   def links: Map[N, Set[N]]
 
-  type Self[NN]
+  type Self[NN] <: AdjacencyList[NN]
+  type Opposite[NN] <: AdjacencyList[NN]
 
   protected def factory[N1](links: Map[N1, Set[N1]]): Self[N1]
 
-  def transposed: AdjacencyList[N]
+  def transposed: Opposite[N]
 
   def asSucc: AdjacencySuccList[N] = AdjacencySuccList.factory(links)
   def asPred: AdjacencyPredList[N] = AdjacencyPredList.factory(links)
@@ -63,6 +64,7 @@ object AdjacencyList extends AdjListSyntax {
 
   final case class AdjacencyListUnknown[N] private[struct] (links: Map[N, Set[N]]) extends AdjacencyList[N] {
     override type Self[NN] = AdjacencyListUnknown[NN]
+    override type Opposite[NN] = AdjacencyListUnknown[NN]
 
     def transposed: AdjacencyListUnknown[N] = new AdjacencyListUnknown[N](transposedList)
 
@@ -113,6 +115,7 @@ trait AdjListSyntax {
 
 final case class AdjacencyPredList[N] private[struct] (links: Map[N, Set[N]]) extends AdjacencyList[N] {
   override type Self[NN] = AdjacencyPredList[NN]
+  override type Opposite[NN] = AdjacencySuccList[NN]
 
   def transposed: AdjacencySuccList[N] = new AdjacencySuccList[N](transposedList)
 
@@ -127,6 +130,7 @@ object AdjacencyPredList extends AdjListSyntax {
 
 final case class AdjacencySuccList[N] private[struct] (links: Map[N, Set[N]]) extends AdjacencyList[N] {
   override type Self[NN] = AdjacencySuccList[NN]
+  override type Opposite[NN] = AdjacencyPredList[NN]
 
   def transposed: AdjacencyPredList[N] = new AdjacencyPredList[N](transposedList)
 

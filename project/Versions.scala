@@ -1,6 +1,6 @@
 object V {
   // izumi
-  val izumi_reflect = "3.0.5"
+  val izumi_reflect = "3.0.6"
 
   // foundation
   val collection_compat = "2.13.0"
