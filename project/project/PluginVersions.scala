@@ -6,7 +6,7 @@ object PV {
   val sbt_paradox = "0.10.7"
   val sbt_ghpages = "0.8.0"
   val sbt_site = "1.7.0"
-  val sbt_unidoc = "0.5.0"
+  val sbt_unidoc = "0.6.0"
   val sbt_scoverage = "2.3.1"
   val sbt_pgp = "2.3.1"
   val sbt_assembly = "0.14.9"
