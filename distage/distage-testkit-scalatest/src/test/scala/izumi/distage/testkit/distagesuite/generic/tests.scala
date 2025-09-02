@@ -328,7 +328,8 @@ abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F
 
 abstract class OverloadingTest[F[_]: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
   "test overloading of `in`" in {
-    () =>
+    implicit F: QuasiIO[F] =>
+      F.discard()
       // `in` with Unit return type is ok
       assertCompiles(""" "test" in { println(""); QuasiIO[F].pure(()) }  """)
       // `in` with Assertion return type is ok
