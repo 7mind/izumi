@@ -6,7 +6,7 @@ import izumi.functional.bio.*
 import izumi.functional.bio.UnsafeRun2.{FailureHandler, ZIORunner}
 import izumi.functional.bio.retry.{Scheduler2, SchedulerInstances}
 import izumi.reflect.{Tag, TagK3}
-import zio.{Executor, IO, Runtime, ZEnvironment, ZIO, ZLayer}
+import zio.{Executor, IO, ZEnvironment, ZIO, ZLayer}
 
 import scala.concurrent.ExecutionContext
 
@@ -76,7 +76,8 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   make[FailureHandler].fromValue(FailureHandler.Default)
 
   make[Executor].named("io").from {
-    Runtime.defaultBlockingExecutor
+    // no reason to use custom blocking pool, since this one is hardcoded in zio.internal.ZScheduler.submitBlocking
+    zio.Runtime.defaultBlockingExecutor
   }
 
   make[ExecutionContext].named("cpu").from((_: Executor @Id("cpu")).asExecutionContext)
