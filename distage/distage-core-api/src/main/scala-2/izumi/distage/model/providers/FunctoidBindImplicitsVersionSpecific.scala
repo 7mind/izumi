@@ -1,0 +1,3 @@
+package izumi.distage.model.providers
+
+trait FunctoidBindImplicitsVersionSpecific

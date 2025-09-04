@@ -2,6 +2,6 @@ package izumi.distage.reflection.macros
 
 sealed trait FunctoidDummyImplicit
 
-final abstract class IgnorableFunctoidDummyImplicit extends FunctoidDummyImplicit
+final abstract class UnresolvedOnlyFunctoidDummyImplicit extends FunctoidDummyImplicit
 
-final abstract class UnignorableDummyImplicit extends FunctoidDummyImplicit
+final abstract class IndiscriminateFunctoidDummyImplicit extends FunctoidDummyImplicit

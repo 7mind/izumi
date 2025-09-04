@@ -8,7 +8,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstru
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagOntoSet, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.*
 import izumi.distage.model.exceptions.dsl.InvalidFunctoidModifier
-import izumi.distage.model.providers.Functoid
+import izumi.distage.model.providers.{Functoid, FunctoidBindImplicitsVersionSpecific}
 import izumi.distage.model.reflection.{DIKey, MultiSetImplId, SetKeyMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.reflect.Tag
@@ -16,7 +16,7 @@ import izumi.reflect.Tag
 import scala.annotation.nowarn
 import scala.collection.mutable
 
-trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] with ScalaVersionSpecificBindDSL { self =>
+trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends AbstractBindingDefDSLMacro[BindDSL] with FunctoidBindImplicitsVersionSpecific { self =>
   private final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
 
   protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty

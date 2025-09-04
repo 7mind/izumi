@@ -7,7 +7,7 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
   *
   * Example:
   * {{{
-  * class Program[F[_]: TagK: Monad] extends ModuleDef {
+  * class Program[F[_]: TagK] extends ModuleDef {
   *   make[TaglessProgram[F]]
   * }
   *

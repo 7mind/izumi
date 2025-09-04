@@ -72,6 +72,7 @@ object Functoid
   with SimpleDistageFunctoids
   with FunctoidLifecycleAdapters
   with FunctoidMacroMethods
-  with FunctoidConstructors {
+  with FunctoidConstructors
+  with FunctoidBindImplicitsVersionSpecific {
   override protected[providers] def create[A](provider: Provider): Functoid[A] = new Functoid[A](provider)
 }
