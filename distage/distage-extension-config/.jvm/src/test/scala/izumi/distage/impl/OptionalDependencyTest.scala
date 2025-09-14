@@ -2,9 +2,10 @@ package izumi.distage.impl
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
-import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2, BlockingIO2, Bracket2, Concurrent2, Error2, F, Fork2, Functor2, Guarantee2, IO2, Monad2, Panic2, Parallel2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2}
+import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2, BlockingIO2, Bracket2, Concurrent2, Error2, Exit, F, Fork2, Functor2, Guarantee2, IO2, Monad2, Panic2, Parallel2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2, TypedError}
 import izumi.functional.quasi.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.functional.{Identity, Identity2}
+import izumi.fundamentals.platform.language.IzScala
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -36,7 +37,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     assert(empty.module.bindings.isEmpty)
   }
 
-  "Using Lifecycle & QuasiIO objects succeeds event if there's no cats/zio/monix on the classpath" in {
+  "Using Lifecycle & QuasiIO objects succeeds even if there's no cats/zio/monix on the classpath" in {
     When("There's no cats/zio/monix on classpath")
     assertCompiles("import scala._")
     assertDoesNotCompile("import cats.kernel.Eq")
@@ -145,6 +146,42 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
 //    Then("Lifecycle.toCats doesn't work")
 //    assertDoesNotCompile("resource.toCats")
+  }
+
+  "Initializing bio objects succeeds even if there's no zio on the classpath (Scala 3 problem)" in {
+    izumi.functional.bio.Ref1
+    izumi.functional.bio.RefM2
+
+    izumi.functional.bio.Promise2
+
+    izumi.functional.bio.Semaphore1
+
+    izumi.functional.bio.Fiber2
+    izumi.functional.bio.FiberRef2
+
+    izumi.functional.lifecycle.Lifecycle
+
+    izumi.functional.bio.Exit
+  }
+
+  "Using Exit.Trace succeeds even if there's no zio on the classpath" in {
+    Exit
+    Exit.Trace
+    if (IzScala.scalaRelease.major >= 3) {
+      Exit.ZIOExit
+    }
+    Exit.Trace.ThrowableTrace
+    Exit.Trace.ZIOTrace
+    val mkt = new Exit.Trace.ThrowableTrace(_)
+    val t = mkt(new RuntimeException)
+    t.unsafeAttachTraceOrReturnNewThrowable(TypedError.wrapIfNotThrowable)
+    t.toString
+    t.asString
+
+    Exit.Trace.forTypedError(new RuntimeException())
+    t.unsafeAttachTraceOrReturnNewThrowable()
+
+    Exit.toString
   }
 
 }

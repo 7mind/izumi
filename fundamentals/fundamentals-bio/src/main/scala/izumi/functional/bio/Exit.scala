@@ -1,8 +1,9 @@
 package izumi.functional.bio
 
 import cats.effect.kernel.Outcome
-import izumi.fundamentals.platform.language.Quirks.Discarder
+import izumi.fundamentals.platform.language.Quirks.LazyDiscarder
 import zio.ZIO
+import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 sealed trait Exit[+E, +A] {
@@ -215,13 +216,13 @@ object Exit {
     }
 
     def withIsInterrupted[R, E, A](f: Boolean => A)(implicit trace: zio.Trace): ZIO[R, E, A] = {
-      withIsInterruptedF[R, E, A](b => ZIO.succeed(f(b)))
+      disableAutoTrace.forget
+      withIsInterruptedF[R, E, A](b => zioSucceed(f(b)))
     }
 
     def withIsInterruptedF[R, E, A](f: Boolean => ZIO[R, E, A])(implicit trace: zio.Trace): ZIO[R, E, A] = {
       ZIO.descriptorWith(desc => f(desc.interrupters.nonEmpty))
     }
-
   }
 
 //  object MonixExit {
@@ -267,8 +268,6 @@ object Exit {
     override final def bimap[E, A, E2, A2](r: Exit[E, A])(f: E => E2, g: A => A2): Exit[E2, A2] = r.leftMap(f).map(g)
     override final def leftMap[E, A, E2](r: Exit[E, A])(f: E => E2): Exit[E2, A] = r.leftMap(f)
     override final def flatMap[E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
-
-    disableAutoTrace.discard()
   }
 
 }

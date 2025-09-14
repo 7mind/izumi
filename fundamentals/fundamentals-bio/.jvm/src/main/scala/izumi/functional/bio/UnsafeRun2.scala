@@ -2,6 +2,7 @@ package izumi.functional.bio
 
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.UnsafeRun2.InterruptAction
+import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
 import zio.{Executor, Fiber, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
@@ -95,7 +96,7 @@ object UnsafeRun2 {
       Unsafe.unsafe {
         implicit unsafe =>
           runtime.unsafe
-            .fork(ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false))))
+            .fork(ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false))))
             .unsafe
             .addObserver(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))
       }
@@ -106,7 +107,7 @@ object UnsafeRun2 {
       val result = Unsafe.unsafe {
         implicit unsafe =>
           runtime.unsafe.run {
-            ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false)))
+            ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
           }
       }
       ZIOExit.toExit(result)(interrupted.get())
@@ -128,7 +129,7 @@ object UnsafeRun2 {
               ZIO
                 .acquireReleaseExitWith(ZIO.descriptor)(
                   (descriptor, exit: zio.Exit[E, A]) =>
-                    ZIO.succeed {
+                    zioSucceed {
                       exit match {
                         case zio.Exit.Failure(cause) if !cause.interruptors.forall(_ == descriptor.id) =>
                           ()
@@ -136,7 +137,7 @@ object UnsafeRun2 {
                           callback(ZIOExit.toExit(exit)(interrupted.get()))
                       }
                     }
-                )(_ => ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(ZIO.succeed(interrupted.set(false))))
+                )(_ => ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false))))
                 .interruptible
                 .forkDaemon
                 .map(_.interrupt.unit)
