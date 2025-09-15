@@ -10,6 +10,7 @@ import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.io.ByteArrayInputStream
+import scala.annotation.nowarn
 
 class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
@@ -182,6 +183,6 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     t.unsafeAttachTraceOrReturnNewThrowable()
 
     Exit.toString
-  }
+  }: @nowarn("msg=pure expression")
 
 }
