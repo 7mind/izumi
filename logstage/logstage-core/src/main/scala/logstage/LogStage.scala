@@ -37,6 +37,9 @@ trait LogStage {
   type Log = api.Log.type
   val Log: api.Log.type = api.Log
 
+  type Message = api.Log.Message
+  val Message: api.Log.Message.type = api.Log.Message
+
   type Level = api.Log.Level
   val Level: api.Log.Level.type = api.Log.Level
 

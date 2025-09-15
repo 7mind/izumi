@@ -4,7 +4,7 @@ import cats.Monad
 import cats.syntax.flatMap.*
 import izumi.functional.bio.SyncSafe1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log.{CustomContext, Entry, Message}
+import izumi.logstage.api.Log.{CustomContext, Entry}
 import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF}
 import logstage.UnsafeLogIO.{UnsafeLogIOSyncSafeInstance, UnsafeLogIOSyncSafeInstanceF}
 

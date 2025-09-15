@@ -2,7 +2,7 @@ package logstage
 
 import izumi.functional.bio.SyncSafe1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log.{Context, CustomContext, Entry, Message}
+import izumi.logstage.api.Log.{Context, CustomContext, Entry}
 
 import scala.annotation.unused
 import scala.language.implicitConversions
