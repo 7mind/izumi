@@ -60,6 +60,7 @@ object LogMessageMacro {
           assert(unpacked.nonEmpty)
           val parts = ArrayBuffer.empty[Either[String, Expr[LogArg]]]
 
+          @tailrec
           def collectPart(part: Term, parts: ArrayBuffer[Either[String, Expr[LogArg]]]): Unit = {
             part match {
               case Inlined(_, _, term) => collectPart(term, parts)
@@ -105,22 +106,15 @@ object LogMessageMacro {
             parts += Left("")
           }
 
-          val scParts = parts.collect {
-            case Left(s) =>
-              Expr(s)
-          }.toSeq
-          val args = parts.collect {
-            case Right(a) =>
-              a
-          }.toSeq
+          val (scParts, args) = parts.toSeq.partitionMap(_.left.map(s => Expr(s)))
 
           makeMessage(false, scParts, args)
         case Apply(Select(_, "stripMargin"), arg :: Nil) =>
           matchExpr(arg.asExprOf[String], multiline = true)
         case Select(Apply(Ident("augmentString"), arg :: Nil), "stripMargin") =>
           matchExpr(arg.asExprOf[String], multiline = true)
-        case Literal(c) =>
-          val cval = Seq(Expr(c.value.toString))
+        case Literal(StringConstant(s)) =>
+          val cval = Seq(Expr(s))
           makeMessage(multiline, cval, Seq.empty)
         case _ =>
           report.errorAndAbort(s"Failed to process $message")
@@ -136,7 +130,7 @@ object LogMessageMacro {
         case Ident(_) =>
           message +: parts
 
-        case Literal(c) =>
+        case Literal(StringConstant(_)) =>
           message +: parts
 
         case Apply(Select(left, "+"), right :: Nil) =>

@@ -4,7 +4,7 @@ import izumi.functional.bio.SyncSafe1
 import izumi.fundamentals.platform.language.IzScala
 import izumi.logstage.api.IzLogger
 import izumi.logstage.sink.ExampleService.ExampleDTO
-import logstage.LogIO
+import logstage.{Crit, Info, LogIO, Message}
 import logstage.strict.LogIOStrict
 import org.scalatest.Assertions
 import org.scalatest.exceptions.TestFailedException
@@ -15,6 +15,8 @@ import scala.util.Random
 @nowarn("msg=[Ee]xpression.*logger")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"
+
+  import org.scalatest.Assertions.assert
 
   @nowarn("msg=missing interpolator")
   def start(): Unit = {
@@ -34,20 +36,58 @@ class ExampleService(logger: IzLogger) {
     loggerWithSubcontext.raw.info(s"Both custom contexts will be added into this raw message. Dummy: $justAnArg")
     loggerWithSubcontext.raw("extra" -> "zzz").info(s"Even more custom context will be added into this raw message. Dummy: $justAnArg")
 
-    logger.crit(s"This is an expression with user-assigned name: ${Random.nextInt() -> "random value"}")
-    logger.crit(s"This is an expression with user-assigned name which will be hidden from text representations: ${Random.nextInt() -> "random value" -> null}")
+    val namedArg = Message(s"This is an expression with user-assigned name: ${Random.nextInt() -> "random value"}")
+    logger.log(Crit)(namedArg)
+    assert(namedArg.args.size == 1)
+    assert(namedArg.args.head.name == "random value")
+    assert(!namedArg.args.head.hiddenName)
 
-    logger.info(
+    val namedHiddenArg = Message(
+      s"This is an expression with user-assigned name which will be hidden from text representations: ${Random.nextInt() -> "random value" -> null}"
+    )
+    logger.log(Crit)(namedHiddenArg)
+    assert(namedHiddenArg.args.size == 1)
+    assert(namedHiddenArg.args.head.name == "random value")
+    assert(namedHiddenArg.args.head.hiddenName)
+
+    val hiddenArg = Message(s"Hidden arg: ${justAnArg -> null}")
+    logger.log(Info)(hiddenArg)
+    assert(hiddenArg.args.size == 1)
+    assert(hiddenArg.args.head.name == "justAnArg")
+    assert(hiddenArg.args.head.hiddenName)
+
+    val spcMessage = Message(
       s"This name will be converted from camel case to space-separated ('just and arg'). Note: spaces are replaced with underscores in non-colored sinks. ${justAnArg -> ' '}"
     )
-    logger.info(s"..Same with invisible name: ${justAnArg -> ' ' -> null}")
+    logger.log(Info)(spcMessage)
+    assert(spcMessage.args.size == 1)
+    assert(spcMessage.args.head.name == "just an arg")
+    assert(!spcMessage.args.head.hiddenName)
+
+    val spcMessageHidden = Message(s"..Same with invisible name: ${justAnArg -> ' ' -> null}")
+    logger.log(Info)(spcMessageHidden)
+    assert(spcMessageHidden.args.size == 1)
+    assert(spcMessageHidden.args.head.name == "just an arg")
+    assert(spcMessageHidden.args.head.hiddenName)
 
     val duplicatedParam = "DuplicatedParamVal"
-    logger.crit(s"Duplicated parameters will be displayed as lists in json form and with indexes in text form: $duplicatedParam, $duplicatedParam")
+    val duplicatedMsg = Message(s"Duplicated parameters will be displayed as lists in json form and with indexes in text form: $duplicatedParam, $duplicatedParam")
+    logger.log(Crit)(duplicatedMsg)
+    assert(duplicatedMsg.args.size == 2)
+    assert(duplicatedMsg.args.map(_.name) == List("duplicatedParam", "duplicatedParam"))
 
-    val x = ExampleDTO(1)
-    logger.crit(s"Argument name extracton: ${x.value}, ${x.method}")
-    logger.info(s"this.field value will have name 'field': $field")
+    val x = ExampleDTO(1, 2)
+    val argNameExtraction = Message(s"Argument name extracton: ${x.value}, ${x.value2} ${x.method}")
+    logger.log(Crit)(argNameExtraction)
+    assert(argNameExtraction.args.size == 3)
+    assert(argNameExtraction.args.map(_.name) == List("value", "value2", "method"))
+    assert(argNameExtraction.args.forall(!_.hiddenName))
+
+    val thisField = Message(s"this.field value will have name 'field': $field")
+    logger.log(Info)(thisField)
+    assert(thisField.args.size == 1)
+    assert(thisField.args.head.name == "field")
+    assert(!thisField.args.head.hiddenName)
 
     testExceptions()
     testCornercases()
@@ -155,7 +195,7 @@ class ExampleService(logger: IzLogger) {
 }
 
 object ExampleService {
-  case class ExampleDTO(value: Int) {
-    def method: Int = 1
+  case class ExampleDTO(value: Int, value2: Int) {
+    def method: Int = value + value2
   }
 }

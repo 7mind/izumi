@@ -1032,8 +1032,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
     def withContextBoundFuncF[A: Ordering](x: A, y: A): zio.Task[Boolean] = ZIO.attempt(Ordering[A].equiv(x, y))
 
     def withF(x: Int, y: Int): zio.IO[Nothing, Double] = {
-      println(x + y)
-      ZIO.succeed(println((x + y) * 2)) *>
+      ZIO.succeed((x + y) * 2) *>
       ZIO.succeed(x.toDouble + y.toDouble)
     }
 
