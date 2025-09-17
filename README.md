@@ -104,59 +104,15 @@ In the future we are going to (or may) implement more tools based on PPER approa
 2. Best in the world cluster orchestration tool
 3. Best in the world load testing/macro-benchmark tool
 
-Adopters
-========
-
-Are you using Izumi? Please consider opening a pull request to list your organization here:
-
-<a href="https://tinkoff.ru/">
-  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-best-bank.svg?sanitize=true" alt="Tinkoff"/>
-</a>
-<br/>
-
-<a href="https://www.raiffeisen.ru/en/">
-  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true" alt="Raiffeisen Bank Russia"/>
-</a>
-<br/>
-
-<a href="https://tele2.ru/">
-  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-tele2-ru.svg?sanitize=true" alt="Tele2 Russia"/>
-</a>
-<br/>
-
-<a href="https://evo.company/">
-  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-evo-pay.svg?sanitize=true" alt="Evo.Pay"/>
-</a>
-<br/>
-
-<a href="https://glidewell.io/">
-  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-glidewell.svg?sanitize=true" alt="Glidewell.io"/>
-</a>
-<br/>
-
-<a href="https://pitsdatarecovery.net/" title="PITS Global Data Recovery Services">
-  <img width="40%" src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-pits.svg?sanitize=true" alt="PITS Global Data Recovery Services"/>
-</a>
-<br/>
-
 Projects powered by Izumi
 ==========================
 - [d4s](https://github.com/PlayQ/d4s) - "Dynamo DB Database done Scala way". A library that allows accessing the DynamoDB in a purely-functional way.
 
-Credits
-=======
+Izumi on other platforms
+========================
 
-[![YourKit](https://www.yourkit.com/images/yklogo.png)](https://www.yourkit.com)
-
-YourKit supports open source projects with innovative and intelligent tools
-for monitoring and profiling Java and .NET applications.
-YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/),
-[YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and
-[YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
-
-[![Triplequote Hydra](https://triplequote.com/img/services/hydra-2.svg)](https://triplequote.com/)
-
-[Triplequote Hydra](https://triplequote.com/) is the world’s only parallel compiler for the Scala language. Hydra works by parallelizing all of the Scala compiler phases, taking full advantage of the many cores available in modern hardware.
+1. [Chibi Izumi](https://github.com/7mind/izumi-chibi-py) - a basic re-implementation of `distage-core` for Python.
+2. DICS - Dependency Injection for C#, an advanced re-implementation of `distage-core` for C# based on Roslyn Analyzers, with extensive Unity support. To be released.
 
 Contributors
 ============
@@ -167,3 +123,18 @@ See:
 
 - [Build notes](doc/md/build.md)
 - [Project flow](doc/md/flow.md)
+
+Adopters
+========
+Are you using Izumi? Please consider opening a pull request to list your organization here:
+
+|  |  |
+|--------------|-------|
+| [Tinkoff](https://tinkoff.ru/) | <img src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-best-bank.svg?sanitize=true" alt="Tinkoff" width="150"/> |
+| [Raiffeisen Bank Russia](https://www.raiffeisen.ru/en/) | <img src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-raiffeisen.svg?sanitize=true" alt="Raiffeisen Bank Russia" width="150"/> |
+| [Tele2 Russia](https://tele2.ru/) | <img src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-tele2-ru.svg?sanitize=true" alt="Tele2 Russia" width="150"/> |
+| [Evo.Pay](https://evo.company/) | <img src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-evo-pay.svg?sanitize=true" alt="Evo.Pay" width="150"/> |
+| [Glidewell.io](https://glidewell.io/) | <img src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-glidewell.svg?sanitize=true" alt="Glidewell.io" width="150"/> |
+| [PITS Global Data Recovery Services](https://pitsdatarecovery.net/) | <img src="https://raw.githubusercontent.com/7mind/izumi/develop/doc/microsite/src/main/tut/media/user-logo-pits.svg?sanitize=true" alt="PITS Global Data Recovery Services" width="150"/> |
+
+
