@@ -1,8 +1,8 @@
 package izumi.distage.roles.test
 
 import com.github.pshirshov.test.plugins.{DependingPlugin, EmptyTestPlugin, ObjectTestPlugin, StaticTestPlugin}
-import izumi.distage.plugins.{PluginConfig, StaticPluginLoader}
 import izumi.distage.plugins.load.PluginLoader
+import izumi.distage.plugins.{PluginConfig, StaticPluginLoader}
 import org.scalatest.wordspec.AnyWordSpec
 
 class StaticPluginLoaderTest extends AnyWordSpec {
