@@ -110,7 +110,7 @@ object Izumi {
     final val monix_all = Seq.empty[Library]
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
-    final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
+//    final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
@@ -127,7 +127,7 @@ object Izumi {
     final val projector = Library("org.typelevel", "kind-projector", V.kind_projector, LibraryType.Invariant)
       .more(LibSetting.Raw("cross CrossVersion.full"))
 
-    final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
+    final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant)
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
 
@@ -163,29 +163,14 @@ object Izumi {
   object Targets {
     // switch order to use 2.12 in IDEA
 //    val targetScala3 = Seq(scala212, scala213, scala300)
-    val targetScala2 = Seq(scala213, scala212)
     val targetScala3 = Seq(scala300, scala213, scala212)
 
-    private val jvmPlatform2 = PlatformEnv(
-      platform = Platform.Jvm,
-      language = targetScala2,
-      settings = Seq.empty,
-    )
-//    private val jsPlatform2 = PlatformEnv(
-//      platform = Platform.Js,
-//      language = targetScala,
-//      settings = Seq(
-//        "coverageEnabled" := false,
-//        "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withModuleKind(ModuleKind.CommonJSModule) }".raw,
-//      ),
-//    )
-
-    private val jvmPlatform3 = PlatformEnv(
+    private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala3,
       settings = Seq.empty,
     )
-    private val jsPlatform3 = PlatformEnv(
+    private val jsPlatform = PlatformEnv(
       platform = Platform.Js,
       language = targetScala3,
       settings = Seq(
@@ -201,13 +186,10 @@ object Izumi {
         "coverageEnabled" := false
       ),
     )
-//    final val cross = Seq(jvmPlatform2, jsPlatform2)
-//    final val jvm2 = Seq(jvmPlatform2)
-//    final val js = Seq(jsPlatform2)
 
-    final val cross3 = Seq(jvmPlatform3, jsPlatform3)
-    final val jvm3 = Seq(jvmPlatform3)
-    final val js3 = Seq(jsPlatform3)
+    final val cross = Seq(jvmPlatform, jsPlatform)
+    final val jvm = Seq(jvmPlatform)
+    final val js = Seq(jsPlatform)
 
     final val jvmSbt = Seq(jvmPlatformSbt)
   }
@@ -548,7 +530,6 @@ object Izumi {
         ) ++ Seq(
           circe_derivation_scala2 in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
           circe_generic in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
-          jawn in Scope.Test.all,
           circe_literal in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
@@ -592,7 +573,7 @@ object Izumi {
     ),
     pathPrefix = Projects.fundamentals.basePath,
     groups = Groups.fundamentals,
-    defaultPlatforms = Targets.cross3,
+    defaultPlatforms = Targets.cross,
   )
 
   final val allCatsOptional = cats_all.map(_ in Scope.Optional.all)
@@ -613,19 +594,19 @@ object Izumi {
           Projects.fundamentals.functoid,
           Projects.fundamentals.bio,
         ).map(_ in Scope.Compile.all),
-        platforms = Targets.cross3,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.proxyBytebuddy,
         libs = Seq(bytebuddy),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm3,
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.frameworkApi,
         libs = Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
-        platforms = Targets.cross3,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.core,
@@ -644,14 +625,14 @@ object Izumi {
           "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
         ),
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
-        platforms = Targets.cross3,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.config,
         libs = Seq(pureconfig_core, pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
-        platforms = Targets.cross3,
+        platforms = Targets.cross,
         settings = Seq.empty,
       ),
       Artifact(
@@ -660,17 +641,16 @@ object Izumi {
         depends = Seq(Projects.distage.config, Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-        platforms = Targets.cross3,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.plugins,
-        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect) ++
+        libs = Seq(fast_classpath_scanner in Scope.Compile.all) ++ Seq(scala_reflect) ++
           Seq( /* for ZIOResourcesZManagedTestJvm */ zio_managed, zio_interop_cats, cats_effect).map(_ in Scope.Test.jvm),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
-          Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all) ++
+          Seq(Projects.distage.core, Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all) ++
           Seq( /* for ZIOResourcesZManagedTestJvm */ Projects.fundamentals.platform tin Scope.Test.jvm),
-        platforms = Targets.cross3,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.framework,
@@ -680,7 +660,7 @@ object Izumi {
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
-        platforms = Targets.cross3,
+        platforms = Targets.cross,
         settings = Seq.empty,
       ),
       Artifact(
@@ -688,13 +668,13 @@ object Izumi {
         libs = allMonadsTest ++ Seq(docker_java_core, docker_java_transport_zerodep).map(_ in Scope.Compile.jvm),
         depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.testkitScalatest in Scope.Test.all),
-        platforms = Targets.jvm3,
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.testkitCore,
         libs = Nil,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm3,
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
@@ -705,7 +685,7 @@ object Izumi {
         depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm3,
+        platforms = Targets.jvm,
         settings = Seq(
           // Ignore scala-xml version conflict between scoverage where scalatest requires scala-xml v2
           // and scoverage requires scala-xml v1 on Scala 2.12,
@@ -719,14 +699,14 @@ object Izumi {
         depends = Seq(
           Projects.distage.testkitScalatest tin Scope.Test.all
         ),
-        platforms = Targets.jvm3,
+        platforms = Targets.jvm,
         settings = Seq(
           "skip" in SettingScope.Raw("publish") := true
         ),
       ),
     ),
     pathPrefix = Projects.distage.basePath,
-    defaultPlatforms = Targets.cross3,
+    defaultPlatforms = Targets.cross,
     groups = Groups.distage,
   )
 
@@ -747,7 +727,6 @@ object Izumi {
         name = Projects.logstage.renderingCirce,
         libs = Seq(
           circe_core in Scope.Compile.all,
-          jawn in Scope.Test.all,
           circe_parser in Scope.Test.all,
           circe_literal in Scope.Test.all,
           circe_generic in Scope.Test.all,
@@ -759,7 +738,7 @@ object Izumi {
         name = Projects.logstage.adapterSlf4j,
         libs = Seq(slf4j_api),
         depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm3,
+        platforms = Targets.jvm,
         settings = Seq(
           "compileOrder" in SettingScope.Compile := "CompileOrder.Mixed".raw,
           "compileOrder" in SettingScope.Test := "CompileOrder.Mixed".raw,
@@ -770,12 +749,12 @@ object Izumi {
         name = Projects.logstage.sinkSlf4j,
         libs = Seq(slf4j_api, slf4j_simple),
         depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm3,
+        platforms = Targets.jvm,
       ),
     ),
     pathPrefix = Projects.logstage.basePath,
     groups = Groups.logstage,
-    defaultPlatforms = Targets.cross3,
+    defaultPlatforms = Targets.cross,
   )
 
   val all = Seq(fundamentals, distage, logstage)
@@ -893,7 +872,7 @@ object Izumi {
     ),
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
-    defaultPlatforms = Targets.jvm3,
+    defaultPlatforms = Targets.jvm,
     dontIncludeInSuperAgg = true,
   )
 

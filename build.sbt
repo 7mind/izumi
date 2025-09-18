@@ -1788,7 +1788,6 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "io.circe" %%% "circe-core" % V.circe,
-      "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %%% "circe-literal" % V.circe % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -3598,7 +3597,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest" % V.scalatest % Test
+      "org.scalatest" %%% "scalatest" % V.scalatest % Test,
+      "io.github.classgraph" % "classgraph" % V.classgraph
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -3810,7 +3810,6 @@ lazy val `distage-extension-pluginsJVM` = `distage-extension-plugins`.jvm
   )
   .settings(
     libraryDependencies ++= Seq(
-      "io.github.classgraph" % "classgraph" % V.classgraph,
       "dev.zio" %% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "org.typelevel" %% "cats-effect" % V.cats_effect % Test
@@ -5125,7 +5124,6 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
       "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "io.circe" %%% "circe-core" % V.circe,
-      "org.typelevel" %% "jawn-parser" % V.jawn % Test,
       "io.circe" %%% "circe-parser" % V.circe % Test,
       "io.circe" %%% "circe-literal" % V.circe % Test,
       "io.circe" %%% "circe-generic" % V.circe % Test,
