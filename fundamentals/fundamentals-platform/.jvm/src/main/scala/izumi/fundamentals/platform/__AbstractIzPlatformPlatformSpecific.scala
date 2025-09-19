@@ -5,7 +5,7 @@ import izumi.fundamentals.platform.jvm.IzJvm
 import scala.collection
 
 trait __AbstractIzPlatformPlatformSpecific {
-  def isScalaJS: false = false
+  def isScalaJS: Boolean = false
 
   def getenvOption(s: String): Option[String] = Option(System.getenv(s))
 
