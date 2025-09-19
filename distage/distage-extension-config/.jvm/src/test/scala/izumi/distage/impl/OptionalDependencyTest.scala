@@ -6,6 +6,7 @@ import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2
 import izumi.functional.quasi.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.functional.{Identity, Identity2}
 import izumi.fundamentals.platform.language.IzScala
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -145,39 +146,87 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
       make[Int].from(0)
     }
 
+    // Doesn't compile on Scala 2.13
 //    Then("Lifecycle.toCats doesn't work")
 //    assertDoesNotCompile("resource.toCats")
   }
 
-  "Initializing bio objects succeeds even if there's no zio on the classpath (Scala 3 problem)" in {
-    izumi.functional.bio.Ref1
-    izumi.functional.bio.RefM2
+  "All bio objects with zio-specific defs initialize even if there's no zio on the classpath" in {
+    izumi.functional.bio.Ref1.discard()
+    izumi.functional.bio.RefM2.discard()
 
-    izumi.functional.bio.Promise2
+    izumi.functional.bio.Promise2.discard()
 
-    izumi.functional.bio.Semaphore1
+    izumi.functional.bio.Semaphore1.discard()
 
-    izumi.functional.bio.Fiber2
-    izumi.functional.bio.FiberRef2
+    izumi.functional.bio.Fiber2.discard()
+    izumi.functional.bio.FiberRef2.discard()
 
-    izumi.functional.lifecycle.Lifecycle
+    izumi.functional.bio.ForkInstances.discard()
+    izumi.functional.bio.PrimitivesInstances.discard()
+    izumi.functional.bio.PrimitivesLocal2.discard()
+    izumi.functional.bio.PrimitivesLocalInstances.discard()
+    izumi.functional.bio.PrimitivesM2.discard()
+    izumi.functional.bio.PrimitivesMInstances.discard()
+    izumi.functional.bio.Root.discard()
+    izumi.functional.bio.TemporalInstances.discard()
+    izumi.functional.bio.BlockingIO2.discard()
+    izumi.functional.bio.BlockingIOInstances.discard()
 
-    izumi.functional.bio.Exit
+    izumi.functional.lifecycle.Lifecycle.discard()
+
+    izumi.functional.bio.Exit.discard()
+    izumi.functional.bio.UnsafeRun2.discard()
+  }
+
+  "All bio objects with cats-specific defs initialize even if there's no cats on the classpath" in {
+    izumi.functional.bio.PanicSyntax.discard()
+    izumi.functional.bio.PrimitivesLocal2.discard()
+    izumi.functional.bio.Promise2.discard()
+    izumi.functional.bio.Ref1.discard()
+    izumi.functional.bio.Semaphore1.discard()
+    izumi.functional.bio.SyncSafe1.discard()
+    izumi.functional.bio.data.Morphism3.discard()
+    izumi.functional.lifecycle.Lifecycle.discard()
+
+    izumi.functional.quasi.QuasiIO.discard()
+    izumi.functional.quasi.QuasiIORunner.discard()
+    izumi.functional.quasi.QuasiAsync.discard()
+
+    // fails on Scala 2, but it's cats-specific
+    if (IzScala.scalaRelease.major == 2) {
+      intercept[java.lang.NoClassDefFoundError] {
+        new izumi.functional.bio.impl.PrimitivesFromBIOAndCats()(using null, null).discard()
+      }
+    } else {
+//      new izumi.functional.bio.impl.PrimitivesFromBIOAndCats()(using null, null).discard()
+    }
+    // cats-specific, but succeeds, doesn't use arguments in constructor
+    locally {
+      object x { type f[+x] = Any; type g[+x] = Nothing }
+      new izumi.functional.bio.impl.PrimitivesLocalFromCatsIO(null.asInstanceOf[izumi.functional.bio.data.Morphism1[x.f, x.g]])(using null).discard()
+    }
+    // reference doesn't even compile on Scala 3, but it's cats-specific
+//    intercept[java.lang.NoClassDefFoundError] {
+//      izumi.functional.bio.catz.discard()
+//    }
   }
 
   "Using Exit.Trace succeeds even if there's no zio on the classpath" in {
-    Exit
-    Exit.Trace
-    if (IzScala.scalaRelease.major >= 3) {
-      Exit.ZIOExit
+    Exit.discard()
+    Exit.Trace.discard()
+    // Exit.ZIOExit fails, but it's zio-specific
+    intercept[java.lang.NoClassDefFoundError] {
+      Exit.ZIOExit.discard()
     }
-    Exit.Trace.ThrowableTrace
-    Exit.Trace.ZIOTrace
-    val mkt = new Exit.Trace.ThrowableTrace(_)
-    val t = mkt(new RuntimeException)
+    Exit.CatsExit.discard() // CatsExit succeeds, even though it's cats-specific
+    Exit.Trace.ThrowableTrace.discard()
+    Exit.Trace.ZIOTrace.discard() // ZIOTrace succeeds, even though it's cats-specific
+    val mkT = new Exit.Trace.ThrowableTrace(_)
+    val t = mkT(new RuntimeException)
     t.unsafeAttachTraceOrReturnNewThrowable(TypedError.wrapIfNotThrowable)
-    t.toString
-    t.asString
+    t.toString.discard()
+    t.asString.discard()
 
     Exit.Trace.forTypedError(new RuntimeException())
     t.unsafeAttachTraceOrReturnNewThrowable()
