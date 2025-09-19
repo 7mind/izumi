@@ -217,7 +217,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     Exit.Trace.discard()
     // Exit.ZIOExit fails, but it's zio-specific
     intercept[java.lang.NoClassDefFoundError] {
-      Exit.ZIOExit.discard()
+      Exit.ZIOExit
     }
     Exit.CatsExit.discard() // CatsExit succeeds, even though it's cats-specific
     Exit.Trace.ThrowableTrace.discard()
