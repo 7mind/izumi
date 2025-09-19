@@ -3,7 +3,7 @@ package izumi.fundamentals.platform
 import scala.scalajs.js
 
 trait __AbstractIzPlatformPlatformSpecific {
-  def isScalaJS: true = true
+  def isScalaJS: Boolean = true
 
   def getenvOption(s: String): Option[String] = nodeEnv.flatMap(_.get(s))
 
