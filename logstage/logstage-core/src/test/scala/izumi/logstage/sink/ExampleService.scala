@@ -12,7 +12,6 @@ import org.scalatest.exceptions.TestFailedException
 import scala.annotation.nowarn
 import scala.util.Random
 
-@nowarn("msg=[Ee]xpression.*logger")
 class ExampleService(logger: IzLogger) {
   val field: String = "a value"
 
@@ -36,26 +35,6 @@ class ExampleService(logger: IzLogger) {
     loggerWithSubcontext.raw.info(s"Both custom contexts will be added into this raw message. Dummy: $justAnArg")
     loggerWithSubcontext.raw("extra" -> "zzz").info(s"Even more custom context will be added into this raw message. Dummy: $justAnArg")
 
-    val namedArg = Message(s"This is an expression with user-assigned name: ${Random.nextInt() -> "random value"}")
-    logger.log(Crit)(namedArg)
-    assert(namedArg.args.size == 1)
-    assert(namedArg.args.head.name == "random value")
-    assert(!namedArg.args.head.hiddenName)
-
-    val namedHiddenArg = Message(
-      s"This is an expression with user-assigned name which will be hidden from text representations: ${Random.nextInt() -> "random value" -> null}"
-    )
-    logger.log(Crit)(namedHiddenArg)
-    assert(namedHiddenArg.args.size == 1)
-    assert(namedHiddenArg.args.head.name == "random value")
-    assert(namedHiddenArg.args.head.hiddenName)
-
-    val hiddenArg = Message(s"Hidden arg: ${justAnArg -> null}")
-    logger.log(Info)(hiddenArg)
-    assert(hiddenArg.args.size == 1)
-    assert(hiddenArg.args.head.name == "justAnArg")
-    assert(hiddenArg.args.head.hiddenName)
-
     val spcMessage = Message(
       s"This name will be converted from camel case to space-separated ('just and arg'). Note: spaces are replaced with underscores in non-colored sinks. ${justAnArg -> ' '}"
     )
@@ -63,6 +42,26 @@ class ExampleService(logger: IzLogger) {
     assert(spcMessage.args.size == 1)
     assert(spcMessage.args.head.name == "just an arg")
     assert(!spcMessage.args.head.hiddenName)
+
+    val namedArg = Message(s"This is an expression with user-assigned name: ${Random.nextInt() -> "random value"}")
+    logger.log(Crit)(namedArg)
+    assert(namedArg.args.size == 1)
+    assert(namedArg.args.head.name == "random value")
+    assert(!namedArg.args.head.hiddenName)
+
+    val namedHiddenExpr = Message(
+      s"This is an expression with user-assigned name which will be hidden from text representations: ${Random.nextInt(5) -> "random value" -> null}"
+    )
+    logger.log(Crit)(namedHiddenExpr)
+    assert(namedHiddenExpr.args.size == 1)
+    assert(namedHiddenExpr.args.head.name == "random value")
+    assert(namedHiddenExpr.args.head.hiddenName)
+
+    val hiddenArg = Message(s"Hidden arg: ${justAnArg -> null}")
+    logger.log(Info)(hiddenArg)
+    assert(hiddenArg.args.size == 1)
+    assert(hiddenArg.args.head.name == "justAnArg")
+    assert(hiddenArg.args.head.hiddenName)
 
     val spcMessageHidden = Message(s"..Same with invisible name: ${justAnArg -> ' ' -> null}")
     logger.log(Info)(spcMessageHidden)
@@ -113,13 +112,20 @@ class ExampleService(logger: IzLogger) {
     val nullarg: Integer = null
     val exception = makeException("Boom!")
 
-    logger.warn("[Cornercase] non-interpolated expression: " + 1)
+    logger.warn("[Cornercase] non-interpolated expression: " + 1): @nowarn("msg=[Ee]xpression.*logger")
     logger.warn("[Cornercase] non-interpolated expression: " + arg1)
     logger.warn(arg1 + "[Cornercase] non-interpolated expression: " + arg1)
     logger.warn("[Cornercase] non-interpolated expression: " + arg1 + nullarg + exception)
 
-    logger.crit(s"[Cornercase] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}")
+    logger.crit(s"[Cornercase] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}"): @nowarn("msg=[Ee]xpression.*logger")
     logger.crit(s"[Cornercase] null value: $nullarg")
+
+    val incorrectHiddenExpr = Message(s"[Cornercase] Hidden anonymous expression: ${(5 + 2) -> null}"): @nowarn("msg=[Ee]xpression.*logger")
+    logger.log(Crit)(incorrectHiddenExpr)
+    assert(incorrectHiddenExpr.args.size == 1)
+    assert(incorrectHiddenExpr.args.head.value == (7, null))
+    assert(incorrectHiddenExpr.args.head.name `startsWith` "EXPRESSION:")
+    assert(!incorrectHiddenExpr.args.head.hiddenName)
 
     val badObj = new Object {
       override def toString: String = throw exception
@@ -154,7 +160,7 @@ class ExampleService(logger: IzLogger) {
       val instance = YesInstance(1)
       logStrict.crit(s"Suspended message: clap your hands! $instance")
     }
-    val expressionsOk = logStrict.crit(s"Suspended message: clap your hands! ${YesInstance(2)}")
+    val expressionsOk = logStrict.crit(s"Suspended message: clap your hands! ${YesInstance(2)}"): @nowarn("msg=[Ee]xpression.*logger")
     val subtypesOk = {
       val branch = Sealed.Branch("subtypes are fine in strict")
       logStrict.crit(s"Suspended message: clap your hands! $branch")
@@ -164,7 +170,7 @@ class ExampleService(logger: IzLogger) {
       logStrict.crit(s"Suspended message: clap your hands! $map")
     }
     val nullsOk = {
-      logStrict.crit(s"Suspended message: clap your hands! ${null}")
+      logStrict.crit(s"Suspended message: clap your hands! ${null}"): @nowarn("msg=[Ee]xpression.*logger")
     }
     val rawOk = {
       val map = Map("Str" -> Sealed.Branch("subtypes are fine in strict"))

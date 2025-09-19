@@ -169,7 +169,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     Exit
     Exit.Trace
     if (IzScala.scalaRelease.major >= 3) {
-      Exit.ZIOExit
+      Exit.ZIOExit: Unit
     }
     Exit.Trace.ThrowableTrace
     Exit.Trace.ZIOTrace

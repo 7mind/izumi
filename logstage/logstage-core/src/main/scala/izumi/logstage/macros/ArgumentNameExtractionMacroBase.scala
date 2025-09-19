@@ -50,12 +50,12 @@ abstract class ArgumentNameExtractionMacroBase {
        |   logger.info(s"My message: $$argument")
        |2) Chain:
        |   logger.info(s"My message: $${call.method} $${access.value}")
+       |5) Chain with hidden name:
+       |   logger.info(s"My message: $${access.value -> null}")
        |3) Named expression:
        |   logger.info(s"My message: $${Some.expression -> "argname"}")
        |4) Named expression, hidden name:
        |   logger.info(s"My message: $${Some.expression -> "argname" -> null}")
-       |5) Anonymous expression, hidden name:
-       |   logger.info(s"My message: $${Some.expression -> null}")
        |6) De-camelcased name:
        |   logger.info($${camelCaseName -> ' '})
        |""".stripMargin
@@ -94,7 +94,7 @@ abstract class ArgumentNameExtractionMacroBase {
       case v =>
         warning(
           v,
-          s"""Expression as a logger argument: $v
+          s"""Expression as a logger argument: ${showCode(v)}
              |
              |But Logstage expects you to use string interpolations instead, such as:
              |$example
@@ -102,6 +102,7 @@ abstract class ArgumentNameExtractionMacroBase {
              |Tree: ${showRaw(v)}
              |""".stripMargin,
         )
+
         reifiedPrefixedValue(mkStringConstant(showCode(v)), v, "EXPRESSION")
     }
   }
