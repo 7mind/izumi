@@ -6,6 +6,7 @@ import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2
 import izumi.functional.quasi.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.functional.{Identity, Identity2}
 import izumi.fundamentals.platform.language.IzScala
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import org.scalatest.GivenWhenThen
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -169,7 +170,7 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     Exit
     Exit.Trace
     if (IzScala.scalaRelease.major >= 3) {
-      Exit.ZIOExit: Unit
+      Exit.ZIOExit.discard()
     }
     Exit.Trace.ThrowableTrace
     Exit.Trace.ZIOTrace

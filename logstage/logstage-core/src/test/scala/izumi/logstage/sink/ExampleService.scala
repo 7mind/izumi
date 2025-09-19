@@ -123,7 +123,7 @@ class ExampleService(logger: IzLogger) {
     val incorrectHiddenExpr = Message(s"[Cornercase] Hidden anonymous expression: ${(5 + 2) -> null}"): @nowarn("msg=[Ee]xpression.*logger")
     logger.log(Crit)(incorrectHiddenExpr)
     assert(incorrectHiddenExpr.args.size == 1)
-    assert(incorrectHiddenExpr.args.head.value == (7, null))
+    assert(incorrectHiddenExpr.args.head.value == (7 -> null))
     assert(incorrectHiddenExpr.args.head.name `startsWith` "EXPRESSION:")
     assert(!incorrectHiddenExpr.args.head.hiddenName)
 
