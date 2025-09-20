@@ -34,14 +34,14 @@ object IzOs extends IzOs {
   }
 
   def osType: OsType = {
-    System.getProperty("os.name").toLowerCase match {
+    Option(System.getProperty("os.name")).map(_.toLowerCase).fold[OsType](OsType.Unknown) {
       case s if s.contains("windows") =>
         OsType.Windows
       case s if s.contains("darwin") || s.contains("mac") =>
         OsType.Mac
       case s if s.contains("linux") =>
         OsType.Linux
-      case _ =>
+      case _: String =>
         OsType.Unknown
     }
   }

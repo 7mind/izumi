@@ -22,6 +22,6 @@ trait IzPlatformFunctionCollection extends IzPlatformPureUtil
 /** A marker trait for packages with impure helpers (RNG access, clock access, filesystem access, etc)
   *
   * All these helpers should be added into DI context in [[izumi.distage.framework.platform.DistagePlatformModule]]
-  * and should be by injection, not by addressing the singletons directly.
+  * and should be used by injection, not by addressing the singletons directly.
   */
 trait IzPlatformEffectfulUtil extends IzPlatformUtil
