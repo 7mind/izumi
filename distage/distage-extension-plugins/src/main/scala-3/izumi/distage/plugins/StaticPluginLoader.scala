@@ -1,7 +1,7 @@
 package izumi.distage.plugins
 
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
+import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderClassgraphImpl}
 
 import scala.quoted.{Expr, Quotes, Type}
 
@@ -23,7 +23,7 @@ object StaticPluginLoader {
     val loadedPlugins = if (pluginPath == "") {
       LoadedPlugins.empty
     } else {
-      new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
+      new PluginLoaderClassgraphImpl().load(PluginConfig.packages(Seq(pluginPath)))
     }
 
     val quoted = instantiatePluginsInCode[PluginBase](loadedPlugins.loaded)

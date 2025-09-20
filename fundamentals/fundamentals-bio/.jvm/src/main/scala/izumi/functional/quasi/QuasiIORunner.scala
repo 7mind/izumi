@@ -26,15 +26,18 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
 
   implicit def fromBIO[F[_, _]: UnsafeRun2]: QuasiIORunner[F[Throwable, _]] = new BIOImpl[F]
 
+  def mkFromCatsIORuntime(ioRuntime: cats.effect.unsafe.IORuntime): QuasiIORunner[cats.effect.IO] = new CatsIOImpl()(using ioRuntime)
+  def mkFromCatsDispatcher[F[_]](dispatcher: cats.effect.std.Dispatcher[F]): QuasiIORunner[F] = new CatsDispatcherImpl[F]()(using dispatcher)
+
   final class BIOImpl[F[_, _]: UnsafeRun2] extends QuasiIORunner[F[Throwable, _]] {
     override def run[A](f: => F[Throwable, A]): A = UnsafeRun2[F].unsafeRun(f)
   }
 
-  final class CatsIOImpl(implicit ioRuntime: cats.effect.unsafe.IORuntime) extends QuasiIORunner[cats.effect.IO] {
+  final class CatsIOImpl()(implicit ioRuntime: cats.effect.unsafe.IORuntime) extends QuasiIORunner[cats.effect.IO] {
     override def run[A](f: => cats.effect.IO[A]): A = f.unsafeRunSync()(ioRuntime)
   }
 
-  final class CatsDispatcherImpl[F[_]](implicit dispatcher: cats.effect.std.Dispatcher[F]) extends QuasiIORunner[F] {
+  final class CatsDispatcherImpl[F[_]]()(implicit dispatcher: cats.effect.std.Dispatcher[F]) extends QuasiIORunner[F] {
     override def run[A](f: => F[A]): A = dispatcher.unsafeRunSync(f)
   }
 

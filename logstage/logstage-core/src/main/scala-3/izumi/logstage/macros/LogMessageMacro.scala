@@ -60,6 +60,7 @@ object LogMessageMacro {
           assert(unpacked.nonEmpty)
           val parts = ArrayBuffer.empty[Either[String, Expr[LogArg]]]
 
+          @tailrec
           def collectPart(part: Term, parts: ArrayBuffer[Either[String, Expr[LogArg]]]): Unit = {
             part match {
               case Inlined(_, _, term) => collectPart(term, parts)
@@ -105,22 +106,15 @@ object LogMessageMacro {
             parts += Left("")
           }
 
-          val scParts = parts.collect {
-            case Left(s) =>
-              Expr(s)
-          }.toSeq
-          val args = parts.collect {
-            case Right(a) =>
-              a
-          }.toSeq
+          val (scParts, args) = parts.toSeq.partitionMap(_.left.map(s => Expr(s)))
 
           makeMessage(false, scParts, args)
         case Apply(Select(_, "stripMargin"), arg :: Nil) =>
           matchExpr(arg.asExprOf[String], multiline = true)
         case Select(Apply(Ident("augmentString"), arg :: Nil), "stripMargin") =>
           matchExpr(arg.asExprOf[String], multiline = true)
-        case Literal(c) =>
-          val cval = Seq(Expr(c.value.toString))
+        case Literal(StringConstant(s)) =>
+          val cval = Seq(Expr(s))
           makeMessage(multiline, cval, Seq.empty)
         case _ =>
           report.errorAndAbort(s"Failed to process $message")
@@ -136,7 +130,7 @@ object LogMessageMacro {
         case Ident(_) =>
           message +: parts
 
-        case Literal(_) =>
+        case Literal(StringConstant(_)) =>
           message +: parts
 
         case Apply(Select(left, "+"), right :: Nil) =>
@@ -169,82 +163,7 @@ object LogMessageMacro {
     }
 
     def makeArg(expr: Expr[Any]): Expr[LogArg] = {
-      val (parts, realExpr, isHidden, codec) = extractArgName(Seq.empty, expr)
-      val vals: Expr[Seq[String]] = Expr.ofSeq(parts.map(n => Expr(n)))
-      '{ LogArg(${ vals }, ${ realExpr }, ${ Expr(isHidden) }, ${ codec }) }
-    }
-
-    def findCodec(expr: Expr[Any]): Expr[Option[LogstageCodec[Any]]] = {
-      val targ = expr.asTerm.tpe.widenTermRefByName
-      val sym = Symbol.requiredClass("izumi.logstage.api.rendering.LogstageCodec")
-      val appliedType = AppliedType(sym.typeRef, List(targ))
-      Implicits.search(appliedType) match {
-        case s: ImplicitSearchSuccess =>
-          val c = s.tree.asExprOf[LogstageCodec[?]]
-          '{ Some(${ c }.asInstanceOf[LogstageCodec[Any]]) }
-        case _ if strict =>
-          report.errorAndAbort(s"Implicit search failed for ${appliedType.show} for ${expr.show}, LogstageCodec instances are required in Strict mode")
-        case _ =>
-          Expr(None)
-      }
-    }
-
-    def extractArgName(acc: Seq[String], expr0: Expr[Any]): (Seq[String], Expr[Any], Boolean, Expr[Option[LogstageCodec[Any]]]) = {
-      def nameOf(id: Expr[Any]): Seq[String] = {
-        id.asTerm match {
-          case Literal(c) =>
-            acc :+ c.value.toString
-          case _ =>
-            report.errorAndAbort(s"Log argument name must be a literal: $id")
-        }
-      }
-      expr0 match {
-        case '{ ($expr: Any) -> $id -> null } =>
-          (nameOf(id), expr, true, findCodec(expr))
-
-        case '{ ($expr: Any) -> null } =>
-          (extractTermName(acc, expr.asTerm), expr, true, findCodec(expr))
-
-        case '{ ($expr: Any) -> $id } =>
-          (nameOf(id), expr, false, findCodec(expr))
-
-        case other =>
-          (extractTermName(acc, other.asTerm), other, false, findCodec(other))
-      }
-    }
-
-    @tailrec
-    def extractTermName(acc: Seq[String], term: Term): Seq[String] = {
-      term match {
-        case Ident(name) =>
-          acc :+ name
-        case Literal(c) =>
-          acc :+ c.toString
-        case This(idt) =>
-          idt match {
-            case Some(id) =>
-              acc :+ id
-            case None =>
-              acc :+ "this"
-          }
-
-        case Select(Ident("scala"), "Predef") =>
-          acc
-
-        case Select(e, s) => // ${x.value}
-          extractTermName(s +: acc, e)
-
-        case Apply(Select(e, s), Nil) => // ${x.getSomething}
-          extractTermName(s +: acc, e)
-
-        case Apply(Select(e, _), Ident(s) :: Nil) => // ${Predef.ops(x).getSomething}
-          extractTermName(s +: acc, e)
-
-        case _ =>
-          report.warning(s"Cannot extract argument name from: ${term.show}, tree: $term")
-          acc :+ s"EXPRESSION:${term.show}"
-
-      }
+      new ArgumentNameExtractionMacro[qctx.type](strict).recoverArgName(expr.asTerm)
     }
 
     matchExpr(message, multiline = false)

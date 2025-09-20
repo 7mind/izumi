@@ -18,8 +18,8 @@ class BasicLoggingTest extends AnyWordSpec {
       val arg1 = 1
       val arg2 = "argument 2"
 
-      val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}"): @nowarn("msg=Constant expression") @nowarn(
-        "msg=extract argument name"
+      val message = Message(
+        s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}"
       )
 
       val expectation = if (IzScala.scalaRelease.major == 3) {
@@ -46,10 +46,10 @@ class BasicLoggingTest extends AnyWordSpec {
       assert(message.args == expectation)
       assert(message.template.parts == expectedParts)
 
-      val message1 = Message(s"expression: ${Random.self.nextInt() + 1}"): @nowarn("msg=Expression") @nowarn("msg=extract argument name")
+      val message1 = Message(s"expression: ${Random.self.nextInt() + 1}")
       assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")
       assert(message1.template.parts == List("expression: ", ""))
-    }
+    }: @nowarn("msg=Constant expression") @nowarn("msg=Expression") @nowarn("msg=extract argument name")
 
     "support .stripMargin" in {
       val m = "M E S S A G E"

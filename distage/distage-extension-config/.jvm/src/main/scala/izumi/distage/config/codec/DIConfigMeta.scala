@@ -15,6 +15,7 @@ import scala.util.matching.Regex
 /**
   * Type information for generated config codec, used to generate JSON Schemas for config in ConfigWriter role.
   *
+  * @see [[izumi.distage.config.ConfigModuleDefNoMeta]] - disable DIConfigMeta generation
   * @see [[izumi.distage.roles.bundled.ConfigWriter]]
   * @see [[izumi.distage.roles.bundled.JsonSchemaGenerator]]
   * @see [[izumi.distage.config.model.ConfigDoc]]

@@ -203,7 +203,7 @@ trait Lifecycle[+F[_], +A] {
   /**
     * The action in `F` used to acquire the resource.
     *
-    * @note the `acquire` action is performed *uninterruptibly*,
+    * @note the `acquire` action is performed *uninterruptibly* by [[Lifecycle.SyntaxUse#use]] and other interpreters,
     * when `F` is an effect type that supports interruption/cancellation.
     */
   def acquire: F[InnerResource]
@@ -212,7 +212,7 @@ trait Lifecycle[+F[_], +A] {
     * The action in `F` used to release, close or deallocate the resource
     * after it has been acquired and used through [[Lifecycle.SyntaxUse#use]].
     *
-    * @note the `release` action is performed *uninterruptibly*,
+    * @note the `release` action is performed *uninterruptibly* by [[Lifecycle.SyntaxUse#use]] and other interpreters,
     * when `F` is an effect type that supports interruption/cancellation.
     */
   def release(resource: InnerResource): F[Unit]
@@ -230,6 +230,8 @@ trait Lifecycle[+F[_], +A] {
     * When consuming the output of `extract` you can use `_.fold(identity, F.pure)` to convert the `Either` to `F[B]`
     *
     * @see [[Lifecycle.Basic]] `extract` doesn't have to be defined when inheriting from `Lifecycle.Basic`
+    *
+    * @note the `extract` action is performed *interruptibly* by [[Lifecycle.SyntaxUse#use]] and other interpreters
     */
   def extract[B >: A](resource: InnerResource): Either[F[B], B]
 

@@ -1,22 +1,31 @@
 package izumi.fundamentals.platform
 
-import izumi.fundamentals.platform.jvm.IzJvm
 import izumi.fundamentals.platform.os.{IzOs, OsType}
 
-object IzPlatform extends AbstractIzPlatform {
-  def platform: ScalaPlatform = if (isGraalNativeImage) {
+object IzPlatform extends AbstractIzPlatform with __AbstractIzPlatformPlatformSpecific {
+  override def platform: ScalaPlatform = if (isScalaJS) {
+    ScalaPlatform.Js
+  } else if (isGraalNativeImage) {
     ScalaPlatform.GraalVMNativeImage
   } else {
     ScalaPlatform.JVM
   }
 
-  lazy val terminalColorsEnabled: Boolean = _terminalColorsEnabled
-  lazy val isHeadless: Boolean = _isHeadless
+  override def isGraalNativeImage: Boolean = !isScalaJS && {
+    val props = Seq(
+      "org.graalvm.nativeimage.imagecode",
+      "org.graalvm.nativeimage.kind",
+    )
+    props.exists(p => Option(System.getProperty(p)).isDefined)
+  }
+
+  override lazy val terminalColorsEnabled: Boolean = _terminalColorsEnabled
+  override lazy val isHeadless: Boolean = _isHeadless
 
   private def _isHeadless: Boolean = {
     import izumi.fundamentals.platform.strings.IzString.*
-    val hasDisplay = Option(System.getenv("DISPLAY")).isDefined
-    val hasXdgSession = Option(System.getenv("XDG_SESSION_TYPE")).isDefined
+    val hasDisplay = getenvOption("DISPLAY").isDefined
+    val hasXdgSession = getenvOption("XDG_SESSION_TYPE").isDefined
     val hasNoUIOnLinux = IzOs.osType == OsType.Linux && !hasDisplay && !hasXdgSession
 
     val hasAwtToolkit = Option(System.getProperty("awt.toolkit")).exists(_.nonEmpty)
@@ -52,17 +61,17 @@ object IzPlatform extends AbstractIzPlatform {
     }
 
     // http://jdebp.uk/Softwares/nosh/guide/TerminalCapabilities.html
-    val colorTermIsSet = Option(System.getenv("COLORTERM")).exists(_.nonEmpty)
+    val colorTermIsSet = getenvOption("COLORTERM").exists(_.nonEmpty)
     if (colorTermIsSet) {
       return true
     }
 
-    val termIsSet = Option(System.getenv("TERM")).exists(_.nonEmpty)
+    val termIsSet = getenvOption("TERM").exists(_.nonEmpty)
     if (termIsSet) {
       return true
     }
 
-    val isIdea = IzJvm.safeClasspathSeq().exists {
+    val isIdea = getClasspath().exists {
       s =>
         val lower = s.toLowerCase
         lower.contains("jetbrains") || lower.contains("intellijidea")
@@ -71,10 +80,7 @@ object IzPlatform extends AbstractIzPlatform {
       return true
     }
 
-    import java.lang.management.ManagementFactory
-    import scala.jdk.CollectionConverters.*
-    val runtimeMXBean = ManagementFactory.getRuntimeMXBean
-    val jvmArgs = runtimeMXBean.getInputArguments.asScala
+    val jvmArgs = getRuntimeMXBeanJVMArgs()
     val hasIdeaAgent = jvmArgs.exists {
       s =>
         val lower = s.toLowerCase
@@ -85,13 +91,5 @@ object IzPlatform extends AbstractIzPlatform {
     }
 
     false
-  }
-
-  def isGraalNativeImage: Boolean = {
-    val props = Seq(
-      "org.graalvm.nativeimage.imagecode",
-      "org.graalvm.nativeimage.kind",
-    )
-    props.exists(p => Option(System.getProperty(p)).isDefined)
   }
 }

@@ -3,7 +3,7 @@ package izumi.distage.plugins
 import izumi.distage.model.definition.ModuleBase
 
 import scala.language.experimental.macros
-import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
+import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderClassgraphImpl}
 import izumi.fundamentals.platform.language.SourcePackageMaterializer.SourcePackageMaterializerMacro
 import izumi.fundamentals.reflection.ReflectionUtil
 
@@ -50,7 +50,7 @@ object StaticPluginLoader {
       val loadedPlugins = if (pluginPath == "") {
         LoadedPlugins.empty
       } else {
-        new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
+        new PluginLoaderClassgraphImpl().load(PluginConfig.packages(Seq(pluginPath)))
       }
 
       val quoted: List[Tree] = instantiatePluginsInCode[PluginBase](c)(loadedPlugins.loaded)

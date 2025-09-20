@@ -47,6 +47,9 @@ package object logstage extends LogStage {
   override type Log = api.Log.type
   override final val Log: api.Log.type = api.Log
 
+  override type Message = api.Log.Message
+  override final val Message: api.Log.Message.type = api.Log.Message
+
   override type Level = api.Log.Level
   override final val Level: api.Log.Level.type = api.Log.Level
 

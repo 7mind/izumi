@@ -35,7 +35,6 @@ class JsonSchemaGenerator {
 
     index.get(meta.id.toString).flatMap(_.asObject) match {
       case Some(value) =>
-        println(s"adding $value")
         value.add("$defs", JsonObject(index.toSeq*).toJson).toJson
       case _ =>
         JsonObject("$comment" -> Json.fromString(s"Failed to generate schema for $meta, please report as a bug")).toJson
@@ -133,7 +132,6 @@ class JsonSchemaGenerator {
         JsonObject("type" -> Json.fromString("array"), "items" -> refOf(tpe)).toJson
 
       case ConfigMetaType.TOption(tpe) =>
-        println(s"XXX: $tpe")
         generateSchema(tpe, defs)
         refOf(tpe)
 

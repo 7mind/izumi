@@ -36,12 +36,12 @@ object V {
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.17.6"
-  val docker_java = "3.5.3"
+  val bytebuddy = "1.17.7"
+  val docker_java = "3.6.0"
 
   // microsite-only
   val doobie = "1.0.0-RC2"
 
   // test-only
-  val scalamock = "7.4.0"
+  val scalamock = "7.4.1"
 }

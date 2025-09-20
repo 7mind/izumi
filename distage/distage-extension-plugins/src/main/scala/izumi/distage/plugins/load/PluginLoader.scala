@@ -3,6 +3,7 @@ package izumi.distage.plugins.load
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 
 trait PluginLoader {
+  /** Will not scan if no packages are specified (add `"_root_"` package if you want to scan everything) */
   def load(config: PluginConfig): LoadedPlugins
 
   final def map(f: LoadedPlugins => LoadedPlugins): PluginLoader = c => f(load(c))
