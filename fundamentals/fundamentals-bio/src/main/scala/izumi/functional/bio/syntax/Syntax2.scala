@@ -63,7 +63,7 @@ object Syntax2 {
     @inline final def void: F[E, Unit] = F.void(r)
     @inline final def widen[A1](implicit @unused ev: A <:< A1): F[E, A1] = r.asInstanceOf[F[E, A1]]
 
-    @inline final def fromOptionOr[B](valueOnNone: => B)(implicit ev: A <:< Option[B]): F[E, B] = F.fromOptionOr(valueOnNone, widen)
+    @inline final def fromOptionOr[B, C](valueOnNone: => C)(implicit ev: A <:< Option[B], ev2: C <:< B): F[E, B] = F.fromOptionOr(valueOnNone, widen)
   }
 
   final class BifunctorOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Bifunctor2[F]) {
@@ -116,7 +116,8 @@ object Syntax2 {
     @inline final def iterateWhile(p: A => Boolean): F[E, A] = F.iterateWhile(r)(p)
     @inline final def iterateUntil(p: A => Boolean): F[E, A] = F.iterateUntil(r)(p)
 
-    @inline final def fromOptionF[E1 >: E, B](fallbackOnNone: => F[E1, B])(implicit ev: A <:< Option[B]): F[E1, B] = F.fromOptionF(fallbackOnNone, r.widen)
+    @inline final def fromOptionF[E1 >: E, B, C](fallbackOnNone: => F[E1, C])(implicit ev: A <:< Option[B], ev2: C <:< B): F[E1, B] =
+      F.fromOptionF(fallbackOnNone.widen, r.widen)
   }
 
   open class ErrorOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Error2[F]) extends ApplicativeErrorOps(r)(using F) {

@@ -405,28 +405,33 @@ class SyntaxTest extends AnyWordSpec {
   "BIO.retryUntil/retryUntilF/retryWhile/retryWhileF/fromOptionOr/fromOptionF/fromOption are callable" in {
     import izumi.functional.bio.{Error2, F, Functor2, Monad2}
 
-    def x[F[+_, +_]: Functor2](aOpt: F[String, Option[Unit]]) = {
-      aOpt.fromOptionOr(())
+    def x[F[+_, +_]: Functor2](aOpt: F[String, Option[Option[Unit]]]): F[String, Option[Unit]] = {
+      aOpt.fromOptionOr(None)
+      aOpt.fromOptionOr(Option(()))
+      aOpt.fromOptionOr(Option(5)): F[String, Option[AnyVal]]
+      aOpt.fromOptionOr(None)
     }
 
-    def y[F[+_, +_]: Monad2](aOpt: F[String, Option[Unit]]) = {
-      aOpt.fromOptionOr(())
-      aOpt.fromOptionF(F.unit)
+    def y[F[+_, +_]: Monad2](aOpt: F[String, Option[Option[Unit]]]): F[String, Option[Unit]] = {
+      aOpt.fromOptionOr(None)
+      aOpt.fromOptionF(F.pure(Option(())))
+      aOpt.fromOptionF(F.pure(Option(5))): F[String, Option[AnyVal]]
+      aOpt.fromOptionF(F.pure(None))
     }
 
-    def z[F[+_, +_]: Error2](a: F[String, Unit], aOpt: F[String, Option[Unit]]) = {
+    def z[F[+_, +_]: Error2](a: F[String, Unit], aOpt: F[String, Option[Option[Unit]]]) = {
       a.retryUntil(_ => true)
       a.retryUntilF(_ => F.pure(false))
       a.retryWhile(_ => false)
       a.retryWhileF(_ => F.pure(true))
-      aOpt.fromOptionOr(())
-      aOpt.fromOptionF(F.unit)
+      aOpt.fromOptionOr(None)
+//      aOpt.fromOptionF(F.pure(None))
       aOpt.fromOption("ooops")
     }
 
-    x[zio.IO](zio.ZIO.succeed(Option(())))
-    y[zio.IO](zio.ZIO.succeed(Option(())))
-    z[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(Option(())))
+    x[zio.IO](zio.ZIO.succeed(Option(Option(()))))
+    y[zio.IO](zio.ZIO.succeed(Option(Option(()))))
+    z[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(Option(Option(()))))
   }
 
   "Fiber#toCats syntax works" in {
