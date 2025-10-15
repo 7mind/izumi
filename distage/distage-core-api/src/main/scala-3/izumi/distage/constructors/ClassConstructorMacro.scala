@@ -93,7 +93,7 @@ object ClassConstructorMacro {
     type R <: R0 & Singleton
     (rtpe0: @unchecked) match {
       case given Type[R] =>
-        '{ new ClassConstructor[R](Functoid.singleton[R](${ tree.asExprOf[R] })) }
+        '{ new ClassConstructor[R](Functoid.singleton[R](${ tree.asExpr.asInstanceOf[Expr[R]] })) }
     }
   }
 

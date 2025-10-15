@@ -37,7 +37,7 @@ object MakeMacro {
     val tagT = '{ compiletime.summonInline[Tag[T]] }
     val codep = '{ compiletime.summonInline[CodePositionMaterializer] }
 
-    Apply(Apply(TypeApply(Select.unique(This(outerClass), "_make"), List(TypeTree.of[T])), List(functoid.asTerm)), List(tagT.asTerm, codep.asTerm)).asExprOf[BT]
+    Apply(Apply(TypeApply(Select.unique(This(outerClass), "_make"), List(TypeTree.of[T])), List(functoid.asTerm)), List(tagT.asTerm, codep.asTerm)).asExpr.asInstanceOf[Expr[BT]]
   }
 
   private def makeMethodImpl[T: Type, BT: Type](using qctx: Quotes)(outerClass: qctx.reflect.Symbol): Expr[BT] = {

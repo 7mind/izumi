@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.reflection
 
-import scala.quoted.{Quotes, Type}
+import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable
 import scala.annotation.tailrec
 
@@ -122,7 +122,7 @@ object ReflectionUtil {
 
     term match {
       case aterm @ Apply(Select(New(_), _), c :: _) =>
-        c.asExprOf[String].value.orElse {
+        c.asExpr.asInstanceOf[Expr[String]].value.orElse {
           report.errorAndAbort(s"$name annotation expects one literal String argument but got ${c.show} in tree ${aterm.show} ($aterm)")
         }
       case aterm =>

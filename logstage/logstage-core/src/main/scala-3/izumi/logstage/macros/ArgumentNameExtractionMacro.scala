@@ -158,7 +158,7 @@ class ArgumentNameExtractionMacro[Q <: Quotes](strict: Boolean)(using final val 
 
     maybeCodec match {
       case s: ImplicitSearchSuccess =>
-        val c = s.tree.asExprOf[LogstageCodec[?]]
+        val c = s.tree.asExpr.asInstanceOf[Expr[LogstageCodec[?]]]
         '{ Some(${ c }.asInstanceOf[LogstageCodec[Any]]) }
       case _ if strict =>
         report.errorAndAbort(

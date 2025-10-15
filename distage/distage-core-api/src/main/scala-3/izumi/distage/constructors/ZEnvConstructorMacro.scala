@@ -20,7 +20,7 @@ object ZEnvConstructorMacro {
     val typeRepr = TypeRepr.of[R].dealias.simplified
 
     if (typeRepr.typeSymbol == defn.AnyClass) {
-      '{ ZEnvConstructor.empty }.asExprOf[ZEnvConstructor[R]]
+      '{ ZEnvConstructor.empty }.asInstanceOf[Expr[ZEnvConstructor[R]]]
     } else {
       val deepIntersection = ReflectionUtil
         .intersectionMembers(typeRepr)
@@ -41,13 +41,13 @@ object ZEnvConstructorMacro {
                 val Typed(term, exprTpe) = exprAcc
                 given Type[A] = exprTpe.tpe.asType.asInstanceOf[Type[A]]
 
-                val addExpr = '{ ${ term.asExprOf[A] }.add[B](${ arg.asExprOf[B] })(using summonInline[zio.Tag[B]]) }
+                val addExpr = '{ ${ term.asExpr.asInstanceOf[Expr[A]] }.add[B](${ arg.asExpr.asInstanceOf[Expr[B]] })(using summonInline[zio.Tag[B]]) }
                 Typed(addExpr.asTerm, TypeTree.of[A & zio.ZEnvironment[B]])
               }
 
               params
                 .foldLeft(
-                  Typed('{ zio.ZEnvironment.apply[t](${ headParam.asExprOf[t] })(using summonInline[zio.Tag[t]]) }.asTerm, TypeTree.of[zio.ZEnvironment[t]])
+                  Typed('{ zio.ZEnvironment.apply[t](${ headParam.asExpr.asInstanceOf[Expr[t]] })(using summonInline[zio.Tag[t]]) }.asTerm, TypeTree.of[zio.ZEnvironment[t]])
                 ) {
                   case (expr, (arg, ParamRepr(_, _, tpe))) =>
                     tpe.asType match {

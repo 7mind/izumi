@@ -1,7 +1,6 @@
 package izumi.logstage.macros
 
 import izumi.logstage.api.Log.{LogArg, Message, StrictMessage}
-import izumi.logstage.api.rendering.LogstageCodec
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -77,7 +76,7 @@ object LogMessageMacro {
                   case None => parts += Left(c.value.toString)
                 }
               case chunk @ Ident(_) =>
-                val expr = Right(makeArg(chunk.asExprOf[Any]))
+                val expr = Right(makeArg(chunk.asExpr))
                 parts.lastOption match {
                   case Some(value) =>
                     value match {
@@ -87,7 +86,7 @@ object LogMessageMacro {
                   case None => parts ++= Seq(Left(""), expr)
                 }
               case chunk @ Apply(_, _) =>
-                val expr = Right(makeArg(chunk.asExprOf[Any]))
+                val expr = Right(makeArg(chunk.asExpr))
                 parts.lastOption match {
                   case Some(value) =>
                     value match {
@@ -110,9 +109,9 @@ object LogMessageMacro {
 
           makeMessage(false, scParts, args)
         case Apply(Select(_, "stripMargin"), arg :: Nil) =>
-          matchExpr(arg.asExprOf[String], multiline = true)
+          matchExpr(arg.asExpr.asInstanceOf[Expr[String]], multiline = true)
         case Select(Apply(Ident("augmentString"), arg :: Nil), "stripMargin") =>
-          matchExpr(arg.asExprOf[String], multiline = true)
+          matchExpr(arg.asExpr.asInstanceOf[Expr[String]], multiline = true)
         case Literal(StringConstant(s)) =>
           val cval = Seq(Expr(s))
           makeMessage(multiline, cval, Seq.empty)

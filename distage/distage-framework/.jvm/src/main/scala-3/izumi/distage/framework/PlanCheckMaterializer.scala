@@ -95,7 +95,7 @@ object PlanCheckMaterializer extends PlanCheckMaterializerCommon {
       }
     }
 
-    val roleAppMain = Ref(TypeRepr.of[AppMain].termSymbol).asExprOf[AppMain]
+    val roleAppMain = Ref(TypeRepr.of[AppMain].termSymbol).asExpr.asInstanceOf[Expr[AppMain]]
     val roles = getConstantType[Roles](badConstantErr[Roles]())
     val activations = getConstantType[Activations](badConstantErr[Activations]())
     val config = getConstantType[Config](badConstantErr[Config]())

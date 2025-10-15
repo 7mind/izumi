@@ -96,7 +96,7 @@ class ConstructorContext[R0, Q <: Quotes, U <: ConstructorUtil[Q]](using val rTy
       ReflectiveCall.call[ClassDef](ClassDef, "apply", clsSym, parents.toList, defs)
     }
     val applyNewTree = Typed(Apply(Select(New(TypeIdent(clsSym)), clsSym.primaryConstructor), Nil), resultTpeTree)
-    val traitCtorTree = '{ TraitConstructor.wrapInitialization[R](${ applyNewTree.asExprOf[R] })(compiletime.summonInline[WeakTag[R]]) }.asTerm
+    val traitCtorTree = '{ TraitConstructor.wrapInitialization[R](${ applyNewTree.asExpr.asInstanceOf[Expr[R]] })(compiletime.summonInline[WeakTag[R]]) }.asTerm
     val block = Block(List(clsDef), traitCtorTree)
     Typed(block, resultTpeTree)
   }
@@ -210,9 +210,9 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
             case (ParamRepr(_, _, paramTpe), idx) =>
               paramTpe match {
                 case ByNameUnwrappedTypeReprAsType('[t]) =>
-                  '{ ${ args.asExprOf[Seq[Any]] }.apply(${ Expr(idx) }).asInstanceOf[() => t].apply() }.asTerm
+                  '{ ${ args.asExpr.asInstanceOf[Expr[Seq[Any]]] }.apply(${ Expr(idx) }).asInstanceOf[() => t].apply() }.asTerm
                 case TypeReprAsType('[t]) =>
-                  '{ ${ args.asExprOf[Seq[Any]] }.apply(${ Expr(idx) }).asInstanceOf[t] }.asTerm
+                  '{ ${ args.asExpr.asInstanceOf[Expr[Seq[Any]]] }.apply(${ Expr(idx) }).asInstanceOf[t] }.asTerm
                 case _ =>
                   report.errorAndAbort(s"Invalid higher-kinded type $paramTpe ${paramTpe.show}")
               }
@@ -220,7 +220,7 @@ class ConstructorUtil[Q <: Quotes](using val qctx: Q) { self =>
 
           body(lamSym, argRefs)
       }: @nowarn("msg=match"),
-    ).asExprOf[Seq[Any] => R]
+    ).asExpr.asInstanceOf[Expr[Seq[Any] => R]]
   }
 
   def wrapCtorApplicationIntoFunctoidRawLambda[R: Type](paramss: ParamReprLists, constructorTerm: Term): Expr[Seq[Any] => R] = {

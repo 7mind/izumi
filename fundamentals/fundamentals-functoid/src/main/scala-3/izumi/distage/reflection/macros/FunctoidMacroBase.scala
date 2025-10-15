@@ -29,12 +29,12 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
 
     val fnAny = fnType.asType match {
       case '[a] =>
-        '{ ${ rawFn.asExprOf[Any] }.asInstanceOf[a] }
+        '{ ${ rawFn }.asInstanceOf[a] }
       case _ =>
         report.errorAndAbort(s"This is totally unexpected: ${fnType.show} type is higher-kinded type constructor, but expected a proper type")
     }
 
-    Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm)).asExprOf[Any]
+    Select.unique(fnAny.asTerm, "apply").appliedToArgs(params.map(_.asTerm)).asExpr
   }
 
   final class FunctoidMacroImpl[Q <: Quotes](
@@ -151,14 +151,14 @@ trait FunctoidMacroBase[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
             },
           )
 
-          (allLinkedParams, resultLambda.asExprOf[AnyRef], ignoreDuringImplicitSearch)
+          (allLinkedParams, resultLambda.asExpr.asInstanceOf[Expr[AnyRef]], ignoreDuringImplicitSearch)
         } else {
-          (analyzeLambdaOrMethodRef(singleParamList, body, ignoreDuringImplicitSearch)(), fun.asExprOf[AnyRef], ignoreDuringImplicitSearch)
+          (analyzeLambdaOrMethodRef(singleParamList, body, ignoreDuringImplicitSearch)(), fun.asExpr.asInstanceOf[Expr[AnyRef]], ignoreDuringImplicitSearch)
         }
       case Typed(term, _) => analyze(term)
       case Inlined(_, _, term) => analyze(term)
       case Block(List(), term) => analyze(term)
-      case otherExpr => (analyzeTypeOfExpr(otherExpr), fun.asExprOf[AnyRef], Nil)
+      case otherExpr => (analyzeTypeOfExpr(otherExpr), fun.asExpr.asInstanceOf[Expr[AnyRef]], Nil)
     }
 
     private def analyzeLambdaOrMethodRef(

@@ -130,7 +130,7 @@ object LogMethodMacro {
 
   private def blockWithVariables[A: Type](qctx: Quotes)(variables: List[qctx.reflect.ValDef])(expr: Expr[A]): Expr[A] = {
     import qctx.reflect.{Block, asTerm}
-    Block(variables, expr.asTerm).asExprOf[A]
+    Block(variables, expr.asTerm).asExpr.asInstanceOf[Expr[A]]
   }
 
   private def createVariablesAndLogMessage(

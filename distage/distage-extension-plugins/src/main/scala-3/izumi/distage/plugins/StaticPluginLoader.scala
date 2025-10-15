@@ -53,7 +53,7 @@ object StaticPluginLoader {
             s"Couldn't reflect runtime class of `${plugin.getClass}`, got non-type and non-object symbol=$clsSym typeRef=${clsSym.typeRef} companionModule=${clsSym.companionModule} companionClass=${clsSym.companionClass}"
           )
         }
-        Typed(term, TypeTree.of[T]).asExprOf[T]
+        Typed(term, TypeTree.of[T]).asExpr.asInstanceOf[Expr[T]]
     }.toList
   }
 

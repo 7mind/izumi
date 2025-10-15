@@ -24,9 +24,9 @@ object DischargeDummyMacro {
             val dummyParamSymbol = singleParamList.params.head.symbol
             val dummies = dummyArgs.iterator.map(d => d.term -> d.tpe).toMap
             recursivelyReplaceDummies(using qctx)(dummyImplicitsExtractorMacro, List(dummyParamSymbol))(body, Symbol.spliceOwner, dummies)
-              .asExprOf[Functoid[I]]
+              .asExpr.asInstanceOf[Expr[Functoid[I]]]
           } else {
-            body.asExprOf[Functoid[I]]
+            body.asExpr.asInstanceOf[Expr[Functoid[I]]]
           }
 
         case Typed(term, _) => rewrite(term)
