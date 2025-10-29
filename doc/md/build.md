@@ -4,12 +4,14 @@ Build notes
 Prerequisites
 -------------
 
-On mac:
+```bash
+nix develop
+```
+
+or with `direnv`:
 
 ```bash
-brew tap caskroom/versions
-brew update
-brew install homebrew/cask/java sbt
+direnv allow
 ```
 
 Docs

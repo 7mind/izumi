@@ -118,6 +118,7 @@ Contributors
 ============
 
 * Run `./sbtgen.sc` to generate a JVM-only sbt project, run `./sbtgen.sc --js` to generate a JVM+JS sbt crossproject
+* If working on sbtgen build files, use `scala-cli setup-ide ./sbtgen` to generate a BSP project for build files. You can attach the BSP project to existing izumi project in Intellij using `Import Module from Existing Sources...` action or open it in a separate window.
 
 See:
 

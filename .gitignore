@@ -23,6 +23,7 @@ build/project
 **/metals.sbt
 .bloop
 .bsp
+.scala-build
 .java-version
 
 # Created by .ignore support plugin (hsz.mobi)
@@ -116,4 +117,3 @@ project/plugins/project/
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
-

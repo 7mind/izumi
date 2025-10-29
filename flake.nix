@@ -31,6 +31,7 @@
             openssh
 
             docker
+            scala-cli
           ];
 
           shellHook = ''

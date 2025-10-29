@@ -1,8 +1,11 @@
-import $ivy.`io.7mind.izumi.sbt:sbtgen_2.13:0.0.107`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
 object Izumi {
+
+  def main(args: Array[String]): Unit = {
+    Entrypoint.main(izumi, settings, Seq("-o", ".") ++ args.toSeq)
+  }
 
   object V {
     val izumi_reflect = Version.VExpr("V.izumi_reflect")
@@ -46,10 +49,6 @@ object Izumi {
     val sbt_assembly = Version.VExpr("PV.sbt_assembly")
 
     val scala_js_version = Version.VExpr("PV.scala_js_version")
-  }
-
-  def entrypoint(args: Seq[String]) = {
-    Entrypoint.main(izumi, settings, Seq("-o", ".") ++ args)
   }
 
   val settings = GlobalSettings(
@@ -276,10 +275,6 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-        // scala-steward workaround
-        // add sbtgen version to sbt build to allow scala-steward to find it and update it in .sc files
-        // https://github.com/scala-steward-org/scala-steward/issues/696#issuecomment-545800968
-        "libraryDependencies" += s""""io.7mind.izumi.sbt" % "sbtgen_2.12" % "${Version.SbtGen.value}"""".raw,
       )
 
       val scala2Wconf = Seq[Const](
