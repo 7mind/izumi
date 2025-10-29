@@ -3,8 +3,7 @@
 set -euo pipefail
 if [[ "${DO_VERBOSE}" == 1 ]] ; then set -x ; fi
 
-
-set_scala_sbtgen_variables
+set_scala_variables
 
 set_jdk_path
 set_jvm_options
