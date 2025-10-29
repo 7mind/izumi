@@ -9,5 +9,5 @@ function run-test() {
     "$VERSION_COMMAND Test/compile" \
     "$VERSION_COMMAND test"
   
-  docker rm $(docker ps -aq) || true
+  docker rm "$(docker ps -aq)" || true
 }

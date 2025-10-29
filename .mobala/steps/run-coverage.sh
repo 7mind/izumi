@@ -11,5 +11,5 @@ function run-coverage() {
     "$VERSION_COMMAND test" \
     "$VERSION_COMMAND coverageReport"
   
-  docker rm $(docker ps -aq) || true
+  docker rm "$(docker ps -aq)" || true
 }
