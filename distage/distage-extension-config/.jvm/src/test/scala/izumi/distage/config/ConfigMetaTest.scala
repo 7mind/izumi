@@ -7,7 +7,7 @@ import izumi.distage.config.model.ConfTag
 import izumi.distage.model.PlannerInput
 import org.scalatest.wordspec.AnyWordSpec
 
-final class ConfigValueTest extends AnyWordSpec {
+final class ConfigMetaTest extends AnyWordSpec {
 
   def getConfTag(plannerInput: PlannerInput): ConfTag = {
     val tags = plannerInput.bindings.iterator.flatMap {

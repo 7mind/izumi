@@ -3240,7 +3240,6 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "com.softwaremill.magnolia1_2" %%% "magnolia" % V.magnolia,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     ) else Seq.empty }
   )
@@ -3456,11 +3455,20 @@ lazy val `distage-extension-configJVM` = `distage-extension-config`.jvm
       "com.github.pureconfig" %% "pureconfig-core" % V.pureconfig
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig
+      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
+      "com.softwaremill.magnolia1_2" %% "magnolia" % V.magnolia
     ) else Seq.empty }
   )
   .disablePlugins(AssemblyPlugin)
 lazy val `distage-extension-configJS` = `distage-extension-config`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.circe" %%% "circe-core" % V.circe,
+      "io.circe" %%% "circe-generic" % V.circe,
+      "io.circe" %%% "circe-parser" % V.circe % Test,
+      "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time % Test
+    )
+  )
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-logstage"))

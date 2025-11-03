@@ -81,13 +81,9 @@ object Izumi {
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
-    final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm
-    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
-      ScalaVersionScope.AllScala2
-    )
-    final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
-      ScalaVersionScope.AllScala2
-    )
+    final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto)
+    final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
+    final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto)
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
       .more(LibSetting.Raw("""excludeAll("dev.zio" %% "izumi-reflect")"""))
@@ -643,7 +639,17 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_core, pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
+        libs = Seq(
+          pureconfig_core in Scope.Compile.jvm,
+          pureconfig_magnolia in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.AllScala2),
+          magnolia in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.AllScala2),
+        ) ++ Seq(
+          circe_core in Scope.Compile.js,
+          circe_generic in Scope.Compile.js,
+        ) ++ Seq(
+          circe_parser in Scope.Test.js,
+          scala_java_time in Scope.Test.js,
+        ) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.cross,

@@ -3,7 +3,6 @@ package com.github.pshirshov.configapp
 import distage.config.ConfigModuleDef
 import izumi.distage.config.codec.{ConfigMetaType, DIConfigMeta}
 import izumi.distage.model.PlannerInput
-import pureconfig.ConfigReader
 
 import scala.collection.immutable.ListSet
 
@@ -50,14 +49,8 @@ class CustomCodecObject(val value: Int) {
     }
   }
 }
-object CustomCodecObject {
+object CustomCodecObject extends CustomCodecObjectPlatformSpecific {
   def apply(value: Int) = new CustomCodecObject(value)
-
-  implicit val pureconfigReader: ConfigReader[CustomCodecObject] = ConfigReader.fromStringOpt {
-    case "eaaxacaca" => Some(new CustomCodecObject(453))
-    case "a" => Some(new CustomCodecObject(45))
-    case _ => Some(new CustomCodecObject(1))
-  }
 
   implicit val diConfigMeta: DIConfigMeta[CustomCodecObject] = new DIConfigMeta[CustomCodecObject] {
     override def tpe: ConfigMetaType = {

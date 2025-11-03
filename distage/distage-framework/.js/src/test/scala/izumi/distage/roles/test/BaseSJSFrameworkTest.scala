@@ -28,7 +28,7 @@ class BaseSJSFrameworkTest extends AsyncWordSpec {
         override protected def requiredRoles(argv: ArgV): Vector[RoleArgs] = Vector(RoleArgs("testtask00"))
       }
       for {
-        _ <- main.main()
+        _ <- main.main(Array.empty)
       } yield {
         assert(true)
       }
@@ -49,7 +49,7 @@ class BaseSJSFrameworkTest extends AsyncWordSpec {
         override protected def requiredRoles(argv: ArgV): Vector[RoleArgs] = Vector(RoleArgs("testtask00"))
       }
       for {
-        _ <- main.main()
+        _ <- main.main(Array.empty)
       } yield {
         assert(true)
       }

@@ -74,7 +74,7 @@ object MetaInstances {
       ConfigMetaTypeId(Some(name.owner), name.short, name.typeArguments.map(convertId))
     }
 
-    private def extractAnnos(annos: Seq[Any]) = {
+    private def extractAnnos(annos: Seq[Any]): Option[String] = {
       Option(annos.collect { case d: ConfigDoc => d }.map(_.doc)).filter(_.nonEmpty).map(_.mkString("\n"))
     }
   }

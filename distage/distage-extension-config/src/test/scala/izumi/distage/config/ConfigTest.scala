@@ -3,7 +3,6 @@ package izumi.distage.config
 import com.github.pshirshov.configapp.SealedTrait.CaseClass2
 import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
 import com.github.pshirshov.configapp.*
-import com.typesafe.config.*
 import distage.{Injector, Mode, Repo}
 import izumi.distage.config.codec.ConfigMetaType
 import izumi.distage.config.model.{AppConfig, ConfTag}
@@ -14,15 +13,12 @@ import org.scalatest.wordspec.AnyWordSpec
 import scala.collection.immutable.ListSet
 
 final class ConfigTest extends AnyWordSpec {
+
   def mkConfigModule(path: String)(p: PlannerInput): PlannerInput = {
     p.copy(bindings =
       p.bindings ++
-        mkModule(ConfigFactory.load(path, ConfigParseOptions.defaults().setAllowMissing(false), ConfigResolveOptions.noSystem())))
-  }
-
-  def mkModule(config: Config): AppConfigModule = {
-    val appConfig = AppConfig(config, List.empty, List.empty)
-    new AppConfigModule(appConfig)
+      new AppConfigModule(AppConfig(TestConfigLoader.loadConfig(path), List.empty, List.empty))
+    )
   }
 
   "Config resolver" should {
@@ -182,7 +178,7 @@ final class ConfigTest extends AnyWordSpec {
 
       val confTags = defn.bindings.toList.flatMap(_.tags.collect { case c: ConfTag => c })
 
-      assert(confTags.map(_.tpe).toSet.size == 3)
+      assert(confTags.map(_.parser).toSet.size == 3)
     }
 
     "ConfigModuleDefNoMeta disables Meta generation" in {

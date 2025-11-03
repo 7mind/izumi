@@ -29,6 +29,8 @@ object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
     override def tpe: ConfigMetaType = configMetaType
   }
 
+  def empty[T]: DIConfigMeta[T] = DIConfigMeta(ConfigMetaType.TUnknown())
+
   implicit def deriveSeq[T, S[K] <: scala.collection.Seq[K]](implicit m: DIConfigMeta[T]): DIConfigMeta[S[T]] = new DIConfigMeta[S[T]] {
     override def tpe: ConfigMetaType = ConfigMetaType.TList(m.tpe)
   }
