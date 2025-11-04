@@ -15,7 +15,7 @@ case class OptionCaseClass(optInt: Option[Int], optCustomObject: Option[NestedOb
 
 case class BackticksCaseClass(`boo-lean`: Boolean)
 
-case class SealedCaseClass(sealedTrait1: SealedTrait1)
+case class SealedCaseClass(sealedTrait1: SealedTrait)
 
 case class TupleCaseClass(tuple: (Int, String, Boolean, Option[Either[Boolean, List[String]]]))
 
@@ -59,10 +59,10 @@ object CustomCodecObject extends CustomCodecObjectPlatformSpecific {
   }
 }
 
-sealed trait SealedTrait1
+sealed trait SealedTrait
 object SealedTrait {
-  case class CaseClass1(int: Int, string: String, boolean: Boolean, sealedTrait2: SealedTrait2) extends SealedTrait1
-  case class CaseClass2(int: Int, boolean: Boolean, sealedTrait2: SealedTrait2) extends SealedTrait1
+  case class CaseClass1(int: Int, string: String, boolean: Boolean, sealedTrait2: SealedTrait2) extends SealedTrait
+  case class CaseClass2(int: Int, boolean: Boolean, sealedTrait2: SealedTrait2) extends SealedTrait
 }
 
 sealed trait SealedTrait2
