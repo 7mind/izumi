@@ -1,9 +1,9 @@
 package izumi.distage.config
 
-import com.github.pshirshov.configapp.TestConfigReaders
 import izumi.distage.config.codec.ConfigMetaType
 import izumi.distage.config.codec.ConfigMetaType.*
 import izumi.distage.config.model.ConfTag
+import izumi.distage.config.test.configapp.TestConfigReaders
 import izumi.distage.model.PlannerInput
 import org.scalatest.wordspec.AnyWordSpec
 

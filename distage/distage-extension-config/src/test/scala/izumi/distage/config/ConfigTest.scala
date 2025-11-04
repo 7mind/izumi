@@ -1,11 +1,11 @@
 package izumi.distage.config
 
-import com.github.pshirshov.configapp.SealedTrait.CaseClass2
-import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
-import com.github.pshirshov.configapp.*
 import distage.{Injector, Mode, Repo}
 import izumi.distage.config.codec.ConfigMetaType
 import izumi.distage.config.model.{AppConfig, ConfTag}
+import izumi.distage.config.test.configapp.SealedTrait.CaseClass2
+import izumi.distage.config.test.configapp.SealedTrait2.{No, Yes}
+import izumi.distage.config.test.configapp.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import org.scalatest.wordspec.AnyWordSpec

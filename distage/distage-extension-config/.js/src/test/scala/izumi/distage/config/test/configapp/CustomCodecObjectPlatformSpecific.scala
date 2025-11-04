@@ -1,4 +1,4 @@
-package com.github.pshirshov.configapp
+package izumi.distage.config.test.configapp
 
 import io.circe.Decoder
 
