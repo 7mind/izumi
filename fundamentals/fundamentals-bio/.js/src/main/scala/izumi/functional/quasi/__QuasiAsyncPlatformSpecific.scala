@@ -2,6 +2,8 @@ package izumi.functional.quasi
 
 import izumi.fundamentals.platform.functional.Identity
 
+import scala.collection.compat.*
+
 private[izumi] object __QuasiAsyncPlatformSpecific {
 
   private[izumi] def quasiAsyncIdentity: QuasiAsync[Identity] = {
