@@ -1,5 +1,6 @@
 package izumi.distage.testkit.runner.impl.services
 
+import izumi.distage.config.DistageConfigImpl
 import izumi.distage.config.model.AppConfig
 import izumi.distage.testkit.model.TestEnvironment
 import izumi.logstage.api.IzLogger
@@ -12,7 +13,7 @@ trait TestConfigLoader {
 
 object TestConfigLoader {
 
-  class TestConfigLoaderImpl() extends TestConfigLoader {
+  class TestConfigLoaderImpl extends TestConfigLoader {
     private final val memoizedConfig = new ConcurrentHashMap[(String, BootstrapFactory, Option[AppConfig]), AppConfig]
 
     def loadConfig(env: TestEnvironment, envLogger: IzLogger): AppConfig = {
@@ -26,7 +27,9 @@ object TestConfigLoader {
                 appConfig =>
                   env.configOverrides match {
                     case Some(overrides) =>
-                      AppConfig.provided(overrides.config.withFallback(appConfig.config).resolve())
+                      val mergedConfig = DistageConfigImpl.withFallback(overrides.config, appConfig.config)
+                      val resolvedConfig = DistageConfigImpl.resolve(mergedConfig)
+                      AppConfig.provided(resolvedConfig)
                     case None =>
                       appConfig
                   }

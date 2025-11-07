@@ -7,6 +7,7 @@ import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
 import izumi.functional.quasi.*
 import izumi.fundamentals.platform.functional.Identity
 
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
@@ -19,6 +20,7 @@ object unsafe {
     implicit val quasiAsyncEither: QuasiAsync[Either[Throwable, _]] = {
       new QuasiAsync[Either[Throwable, _]] {
         override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Either[Throwable, A] = quasiAsyncTry.async[A](effect).toEither
+        override def fromFuture[A](effect: => Future[A]): Either[Throwable, A] = quasiAsyncTry.fromFuture[A](effect).toEither
         override def parTraverse[A, B](l: IterableOnce[A])(f: A => Either[Throwable, B]): Either[Throwable, List[B]] = quasiAsyncTry.parTraverse(l)(f(_).toTry).toEither
         override def parTraverse_[A](l: IterableOnce[A])(f: A => Either[Throwable, Unit]): Either[Throwable, Unit] = quasiAsyncTry.parTraverse_(l)(f(_).toTry).toEither
         override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => Either[Throwable, B]): Either[Throwable, List[B]] =
@@ -100,6 +102,10 @@ object unsafe {
         override def tapBothUntyped[A](eff: => Either[Throwable, A])(err: Any => Either[Throwable, Unit], succ: A => Either[Throwable, Unit]): Either[Throwable, A] = {
           quasiIOTry.tapBothUntyped(eff.toTry)(err(_).toTry, succ(_).toTry).toEither
         }
+
+        override def guaranteeOnInterrupt[A](fa: => Either[Throwable, A])(cleanupOnInterrupt: Exit.Trace[Nothing] => Either[Throwable, Unit]): Either[Throwable, A] = {
+          quasiIOTry.guaranteeOnInterrupt(fa.toTry)(cleanupOnInterrupt(_).toTry).toEither
+        }
       }
     }
 
@@ -127,6 +133,11 @@ object unsafe {
           Try {
             id.async[A](effect)
           }
+        override def fromFuture[A](effect: => Future[A]): Try[A] = {
+          Try {
+            id.fromFuture[A](effect)
+          }
+        }
         override def parTraverse[A, B](l: IterableOnce[A])(f: A => Try[B]): Try[List[B]] =
           Try {
             id.parTraverse(l)(f(_).get)
@@ -224,6 +235,12 @@ object unsafe {
           Try {
             id.tapBothUntyped(eff.get)(err(_).get, succ(_).get)
           }
+
+        override def guaranteeOnInterrupt[A](fa: => Try[A])(cleanupOnInterrupt: Exit.Trace[Nothing] => Try[Unit]): Try[A] = {
+          Try {
+            id.guaranteeOnInterrupt(fa.get)(cleanupOnInterrupt(_).get)
+          }
+        }
       }
     }
 

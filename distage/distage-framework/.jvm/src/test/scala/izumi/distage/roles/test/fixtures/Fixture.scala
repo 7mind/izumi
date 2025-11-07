@@ -85,7 +85,6 @@ object Fixture {
 
   abstract class ProbeCheck[F[_]: QuasiIO] extends ProbeResource[F] with IntegrationCheck[F] {
     override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].maybeSuspend {
-      System.err.println(s"!!!: $this")
       counter.onCheck(this)
       ResourceCheck.Success()
     }

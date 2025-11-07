@@ -11,7 +11,7 @@ trait Scheduler2[F[+_, +_]] extends SchedulerInstances with PredefinedHelper {
   def retry[E, S, A](eff: F[E, A])(policy: RetryPolicy[F, E, S]): F[E, A]
   def retryOrElse[E, E2, S, A, A1 >: A](eff: F[E, A])(policy: RetryPolicy[F, E, S])(orElse: E => F[E2, A1]): F[E2, A1]
 
-  def retryOrElseUntil[E, A, E2](r: F[E, A])(duration: FiniteDuration, orElse: E => F[E2, A]): F[E2, A]
+  def retryOrElseUntil[E, A, E2](eff: F[E, A])(duration: FiniteDuration, orElse: E => F[E2, A]): F[E2, A]
 }
 
 object Scheduler2 {

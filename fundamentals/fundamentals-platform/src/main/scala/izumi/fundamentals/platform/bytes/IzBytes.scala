@@ -10,4 +10,4 @@ trait IzBytes extends IzPlatformSyntax {
   implicit def toRichByteArray(bytes: Array[Byte]): IzByteArray = new IzByteArray(bytes)
 }
 
-object IzBytes extends IzBytes {}
+object IzBytes extends IzBytes

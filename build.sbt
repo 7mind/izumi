@@ -4388,7 +4388,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     `distage-extension-configJVM` % "test->compile;compile->compile",
     `distage-framework-apiJVM` % "test->compile;compile->compile",
     `distage-extension-logstageJVM` % "test->compile;compile->compile",
-    `distage-testkit-scalatest` % "test->compile"
+    `distage-testkit-scalatestJVM` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -4612,38 +4612,32 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"))
+lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-core"))
   .dependsOn(
-    `distage-frameworkJVM` % "test->compile;compile->compile"
+    `distage-framework` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
     ) else Seq.empty }
   )
   .settings(
-    crossScalaVersions := Seq(
-      "3.7.4",
-      "2.13.16",
-      "2.12.20"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -4829,62 +4823,82 @@ lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"
     } },
     Test / packageDoc / publishArtifact := false
   )
-  .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
-
-lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-scalatest"))
-  .dependsOn(
-    `distage-testkit-core` % "test->compile;compile->compile",
-    `distage-coreJVM` % "test->compile;compile->compile",
-    `distage-extension-pluginsJVM` % "test->compile;compile->compile",
-    `distage-frameworkJVM` % "test->test;compile->compile"
-  )
-  .settings(
-    libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "org.typelevel" %% "cats-core" % V.cats % Optional,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "org.scalatest" %% "scalatest-core" % V.scalatest,
-      "org.scalatest" %% "scalatest-diagrams" % V.scalatest,
-      "org.scalatest" %% "scalatest-featurespec" % V.scalatest,
-      "org.scalatest" %% "scalatest-flatspec" % V.scalatest,
-      "org.scalatest" %% "scalatest-freespec" % V.scalatest,
-      "org.scalatest" %% "scalatest-funspec" % V.scalatest,
-      "org.scalatest" %% "scalatest-funsuite" % V.scalatest,
-      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest,
-      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest,
-      "org.scalatest" %% "scalatest-propspec" % V.scalatest,
-      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest,
-      "org.scalatest" %% "scalatest-wordspec" % V.scalatest,
-      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.7.4",
+      "2.13.16",
+      "2.12.20"
     ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scalamock" %% "scalamock" % V.scalamock % Test
-    ) else Seq.empty }
+    scalaVersion := crossScalaVersions.value.head
   )
-  .settings(
+  .jsSettings(
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.16",
       "2.12.20"
     ),
     scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `distage-testkit-coreJVM` = `distage-testkit-core`.jvm
+  .disablePlugins(AssemblyPlugin)
+lazy val `distage-testkit-coreJS` = `distage-testkit-core`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scalajs-java-securerandom" % V.scalajs_java_securerandom cross CrossVersion.for3Use2_13
+    )
+  )
+  .disablePlugins(AssemblyPlugin)
+
+lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-scalatest"))
+  .dependsOn(
+    `distage-testkit-core` % "test->compile;compile->compile",
+    `distage-core` % "test->compile;compile->compile",
+    `distage-extension-plugins` % "test->compile;compile->compile",
+    `distage-framework` % "test->test;compile->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %%% "cats-core" % V.cats % Optional,
+      "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
+      "org.scalamock" %%% "scalamock" % V.scalamock % Test,
+      "org.scalatest" %%% "scalatest-core" % V.scalatest,
+      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest,
+      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest,
+      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest,
+      "org.scalatest" %%% "scalatest-freespec" % V.scalatest,
+      "org.scalatest" %%% "scalatest-funspec" % V.scalatest,
+      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest,
+      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest,
+      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest,
+      "org.scalatest" %%% "scalatest-propspec" % V.scalatest,
+      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest,
+      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest,
+      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+    ) else Seq.empty }
+  )
+  .settings(
     organization := "io.7mind.izumi",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -5071,12 +5085,38 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
     Test / packageDoc / publishArtifact := false,
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
   )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.7.4",
+      "2.13.16",
+      "2.12.20"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.7.4",
+      "2.13.16",
+      "2.12.20"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+  )
   .enablePlugins(SitePreviewPlugin)
+lazy val `distage-testkit-scalatestJVM` = `distage-testkit-scalatest`.jvm
+  .disablePlugins(AssemblyPlugin)
+lazy val `distage-testkit-scalatestJS` = `distage-testkit-scalatest`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.portable-scala" %%% "portable-scala-reflect" % V.portable_scala_reflect cross CrossVersion.for3Use2_13
+    )
+  )
   .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file("distage/distage-testkit-scalatest-sbt-module-filtering-test"))
   .dependsOn(
-    `distage-testkit-scalatest` % "test->compile,test"
+    `distage-testkit-scalatestJVM` % "test->compile,test"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -6248,8 +6288,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `distage-extension-pluginsJVM` % "test->compile;compile->compile",
     `distage-frameworkJVM` % "test->compile;compile->compile",
     `distage-framework-docker` % "test->compile;compile->compile",
-    `distage-testkit-core` % "test->compile;compile->compile",
-    `distage-testkit-scalatest` % "test->compile;compile->compile",
+    `distage-testkit-coreJVM` % "test->compile;compile->compile",
+    `distage-testkit-scalatestJVM` % "test->compile;compile->compile",
     `distage-testkit-scalatest-sbt-module-filtering-test` % "test->compile;compile->compile",
     `logstage-coreJVM` % "test->compile;compile->compile",
     `logstage-rendering-circeJVM` % "test->compile;compile->compile",
@@ -6866,8 +6906,10 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     `distage-frameworkJVM`,
     `distage-frameworkJS`,
     `distage-framework-docker`,
-    `distage-testkit-core`,
-    `distage-testkit-scalatest`,
+    `distage-testkit-coreJVM`,
+    `distage-testkit-coreJS`,
+    `distage-testkit-scalatestJVM`,
+    `distage-testkit-scalatestJS`,
     `distage-testkit-scalatest-sbt-module-filtering-test`
   )
 
@@ -6889,8 +6931,8 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     `distage-extension-pluginsJVM`,
     `distage-frameworkJVM`,
     `distage-framework-docker`,
-    `distage-testkit-core`,
-    `distage-testkit-scalatest`,
+    `distage-testkit-coreJVM`,
+    `distage-testkit-scalatestJVM`,
     `distage-testkit-scalatest-sbt-module-filtering-test`
   )
 
@@ -6909,7 +6951,9 @@ lazy val `distage-js` = (project in file(".agg/distage-distage-js"))
     `distage-extension-configJS`,
     `distage-extension-logstageJS`,
     `distage-extension-pluginsJS`,
-    `distage-frameworkJS`
+    `distage-frameworkJS`,
+    `distage-testkit-coreJS`,
+    `distage-testkit-scalatestJS`
   )
 
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))

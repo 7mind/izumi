@@ -10,4 +10,4 @@ trait IzJvm {
   def terminalColorsEnabled: Boolean = IzPlatform.terminalColorsEnabled
 }
 
-object IzJvm extends IzJvm {}
+object IzJvm extends IzJvm

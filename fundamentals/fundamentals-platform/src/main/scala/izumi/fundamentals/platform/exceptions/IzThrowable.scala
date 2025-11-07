@@ -10,4 +10,4 @@ trait IzThrowable extends IzPlatformSyntax {
   implicit def toRichThrowableStackTop(throwable: Throwable): IzThrowableStackTop_Syntax = new IzThrowableStackTop_Syntax(throwable, Set.empty)
 }
 
-object IzThrowable extends IzThrowable {}
+object IzThrowable extends IzThrowable

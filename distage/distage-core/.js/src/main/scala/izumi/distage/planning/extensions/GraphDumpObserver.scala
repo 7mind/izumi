@@ -2,6 +2,6 @@ package izumi.distage.planning.extensions
 
 import izumi.distage.model.planning.PlanningObserver
 
-final class GraphDumpObserver() extends PlanningObserver {}
+final class GraphDumpObserver() extends PlanningObserver
 
-object GraphDumpObserver {}
+object GraphDumpObserver

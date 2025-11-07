@@ -31,6 +31,30 @@ class SyntaxTest extends AnyWordSpec {
     y[zio.IO]
   }
 
+  "WeakAsync attachment/conversion works" in {
+    import izumi.functional.bio.{WeakAsync2, F}
+    import java.io.Closeable
+
+    def x[F[+_, +_]: WeakAsync2](a: F[Nothing, Unit], b: F[Nothing, Unit], c: F[Throwable, Closeable]) = {
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
+      a.zipWithPar(b)((a, b) => (a, b))
+      c.bracketAuto(_ => F.unit.flatMap(_ => F.unit).uninterruptible)
+      F.syncThrowable(())
+      F.sync(())
+      F.never
+      F.unit: F[Nothing, Unit]
+    }
+
+    def y[F[+_, +_]: WeakAsync2]: F[Nothing, Unit] = {
+      F.parTraverse_(List(1))(_ => F.unit)
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()), zio.ZIO.succeed(null: Closeable))
+    y[zio.IO]
+  }
+
   "BIOConcurrent attachment/conversion works" in {
     import izumi.functional.bio.{Concurrent2, F}
 
@@ -134,7 +158,7 @@ class SyntaxTest extends AnyWordSpec {
     import izumi.functional.bio.IO2
 
     class X[F[+_, +_]: IO2] {
-      def hello: F[Throwable, Unit] = IO2[F, Unit](println("hello world!"))
+      def hello: F[Throwable, Unit] = IO2(println("hello world!"))
     }
 
     assert(new X[zio.IO].hello != null)

@@ -1,11 +1,12 @@
 package izumi.functional.bio.impl
 
 import izumi.functional.bio.Exit.Trace
-import izumi.functional.bio.data.{Morphism2, RestoreInterruption2}
+import izumi.functional.bio.data.{InterruptAction, Morphism2, RestoreInterruption2}
 import izumi.functional.bio.impl.MiniBIO.Fail
-import izumi.functional.bio.{BlockingIO2, Exit, IO2}
+import izumi.functional.bio.{BlockingIO2, Exit, IO2, UnsafeRun2}
 
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.tailrec
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.language.implicitConversions
 
 /**
@@ -13,7 +14,7 @@ import scala.language.implicitConversions
   * analogous in purpose with [[cats.effect.kernel.SyncIO]]
   *
   * Sync-only, not interruptible, not async.
-  * For internal use. Prefer ZIO or cats-bio in production.
+  * This is a very primitive effect type. Prefer ZIO or cats-bio in production.
   *
   * This is safe to run in a synchronous environment,
   * Use MiniBIO.autoRun to gain access to components polymorphic over [[izumi.functional.bio.IO2]]
@@ -40,8 +41,6 @@ sealed trait MiniBIO[+E, +A] {
       override def apply(a: A0): MiniBIO[E1, B] = f(a)
     }
 
-    // FIXME: Scala 3.1.4 bug: false unexhaustive match warning
-    @nowarn("msg=pattern case: MiniBIO.FlatMap")
     @tailrec def runner(op: MiniBIO[Any, Any], stack: List[Any => MiniBIO[Any, Any]]): Exit.Uninterrupted[Any, Any] = op match {
 
       case MiniBIO.FlatMap(io, f) =>
@@ -97,7 +96,7 @@ sealed trait MiniBIO[+E, +A] {
   }
 }
 
-object MiniBIO {
+object MiniBIO extends MiniBIOPlatformSpecific {
   object autoRun {
     implicit def autoRunAlways[A](f: MiniBIO[Throwable, A]): A = f.run() match {
       case Exit.Success(value) =>
@@ -106,7 +105,7 @@ object MiniBIO {
         throw failure.toThrowable
     }
 
-    implicit def BIOMiniBIOHighPriority: IO2[MiniBIO] = BIOMiniBIO
+    implicit def BIOMiniBIOHighPriority: IO2[MiniBIO] & BlockingIO2[MiniBIO] = IO2MiniBIO
   }
 
   final case class Fail[+E](e: () => Exit.FailureUninterrupted[E]) extends MiniBIO[E, Nothing]
@@ -118,8 +117,8 @@ object MiniBIO {
   final case class FlatMap[E, A, +E1 >: E, +B](io: MiniBIO[E, A], f: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
   final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: Exit.FailureUninterrupted[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
 
-  implicit val BIOMiniBIO: IO2[MiniBIO] & BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
-    override def pure[A](a: A): MiniBIO[Nothing, A] = sync(a)
+  implicit val IO2MiniBIO: IO2[MiniBIO] & BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
+    override def pure[A](a: A): MiniBIO[Nothing, A] = Sync(() => Exit.Success(a))
     override def flatMap[E, A, B](r: MiniBIO[E, A])(f: A => MiniBIO[E, B]): MiniBIO[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.forTypedError(v)))
     override def terminate(v: => Throwable): MiniBIO[Nothing, Nothing] = Fail.terminate(v)
@@ -173,17 +172,43 @@ object MiniBIO {
       map(x)(_.reverse)
     }
 
-    override def shiftBlocking[E, A](f: MiniBIO[E, A]): MiniBIO[E, A] = f
-
-    override def syncBlocking[A](f: => A): MiniBIO[Throwable, A] = sync(f)
-
-    override def syncInterruptibleBlocking[A](f: => A): MiniBIO[Throwable, A] = sync(f)
-    override def uninterruptible[E, A](r: MiniBIO[E, A]): MiniBIO[E, A] = r
-    override def uninterruptibleExcept[E, A](r: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]): MiniBIO[E, A] = r(Morphism2(identity(_)))
+    override def uninterruptible[E, A](f: MiniBIO[E, A]): MiniBIO[E, A] = f
+    override def uninterruptibleExcept[E, A](f: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]): MiniBIO[E, A] = f(Morphism2.identity[MiniBIO])
     override def bracketExcept[E, A, B](
       acquire: RestoreInterruption2[MiniBIO] => MiniBIO[E, A]
     )(release: (A, Exit[E, B]) => MiniBIO[Nothing, Unit]
     )(use: A => MiniBIO[E, B]
-    ): MiniBIO[E, B] = bracketCase(acquire(Morphism2(identity(_))))(release)(use)
+    ): MiniBIO[E, B] = bracketCase(acquire(Morphism2.identity[MiniBIO]))(release)(use)
+
+    // BlockingIO2
+    override def shiftBlocking[E, A](f: MiniBIO[E, A]): MiniBIO[E, A] = f
+    override def syncInterruptibleBlocking[A](f: => A): MiniBIO[Throwable, A] = syncBlocking(f)
+    override def syncBlocking[A](f: => A): MiniBIO[Throwable, A] = syncThrowable(scala.concurrent.blocking(f))
+  }
+
+  implicit def UnsafeRunMiniBIO(implicit ec: ExecutionContext): UnsafeRun2[MiniBIO] = new MiniBIORunner()(using ec)
+
+  final class MiniBIORunner()(implicit ec: ExecutionContext) extends MiniBIOUnsafeRun2UnsafeRunSyncPlatformSpecific with UnsafeRun2[MiniBIO] {
+
+    override def unsafeRunAsync[E, A](io: => MiniBIO[E, A])(callback: Exit[E, A] => Unit): Unit = {
+      ec.execute(() => callback(io.run()))
+    }
+
+    override def unsafeRunAsyncAsFuture[E, A](io: => MiniBIO[E, A]): Future[Exit[E, A]] = {
+      Future(io.run())(ec)
+    }
+
+    override def unsafeRunAsyncInterruptible[E, A](io: => MiniBIO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[MiniBIO] = {
+      // MiniBIO doesn't support interruption or semantic (async) blocking
+      unsafeRunAsync(io)(callback)
+      InterruptAction(MiniBIO.IO2MiniBIO.unit)
+    }
+
+    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => MiniBIO[E, A]): (Future[Exit[E, A]], InterruptAction[MiniBIO]) = {
+      val promise = Promise[Exit[E, A]]()
+      val interrupt = unsafeRunAsyncInterruptible(io)(exit => promise.success(exit))
+      (promise.future, interrupt)
+    }
+
   }
 }

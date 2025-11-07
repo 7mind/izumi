@@ -13,6 +13,7 @@ import izumi.distage.roles.launcher.AppShutdownStrategy
 import izumi.distage.roles.launcher.ActivationParser
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
+import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RequiredRoles, RoleAppArgs, RoleArgs}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
@@ -133,5 +134,9 @@ object RoleAppMain {
   final case class ArgV(args: Array[String])
   object ArgV {
     def empty: ArgV = ArgV(Array.empty)
+  }
+
+  object Options extends ParserDef {
+    final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
   }
 }

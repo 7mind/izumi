@@ -1,7 +1,3 @@
-package izumi.fundamentals.orphans
-
-import scala.annotation.unused
-
 /**
   * `No More Orphans` type providers. See detail https://blog.7mind.io/no-more-orphans.html
   *
@@ -13,6 +9,9 @@ import scala.annotation.unused
   * @note For Scala 2, it appears necessary for the type in question to be higher-kinded and
   *       be top-level to not provoke compile failures when it's not found.
   */
+package izumi.fundamentals.orphans
+
+import scala.annotation.unused
 
 // cats-kernel
 
@@ -22,6 +21,22 @@ object `cats.kernel.PartialOrder with cats.kernel.Hash` {
   @inline implicit final def get[K[_]](
     implicit @unused guard: `cats.kernel.BoundedSemilattice`[K]
   ): `cats.kernel.PartialOrder with cats.kernel.Hash`[PartialOrderHashType] = null
+}
+
+final abstract class `cats.kernel.BoundedSemilattice`[K[_]]
+object `cats.kernel.BoundedSemilattice` {
+  @inline implicit final def get: `cats.kernel.BoundedSemilattice`[cats.kernel.BoundedSemilattice] = null
+}
+
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `cats.kernel.Monoid`[K[_]]
+object `cats.kernel.Monoid` {
+  @inline implicit final def get: `cats.kernel.Monoid`[cats.kernel.Monoid] = null
 }
 
 // cats-core
@@ -138,6 +153,17 @@ object `cats.effect.unsafe.IORuntime` {
   @inline implicit final def get: `cats.effect.unsafe.IORuntime`[cats.effect.unsafe.IORuntime] = null
 }
 
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `cats.effect.IO`[K[_]]
+object `cats.effect.IO` {
+  @inline implicit final def get: `cats.effect.IO`[cats.effect.IO] = null
+}
+
 // zio
 
 /**
@@ -175,4 +201,17 @@ object `zio.interop.CatsIOResourceSyntax` {
 //final abstract class `monix.bio.IO`[K[_, _]]
 //object `monix.bio.IO` {
 //  @inline implicit final def get: `monix.bio.IO`[monix.bio.IO] = null
+//}
+
+//// monix
+//
+///**
+//  * This instance uses 'no more orphans' trick to provide an Optional instance
+//  * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+//  *
+//  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+//  */
+//final abstract class `monix.eval.Task`[K[_]]
+//object `monix.eval.Task` {
+//  @inline implicit final def get: `monix.eval.Task`[monix.eval.Task] = null
 //}

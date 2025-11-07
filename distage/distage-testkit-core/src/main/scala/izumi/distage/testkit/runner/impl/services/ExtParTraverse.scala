@@ -7,7 +7,7 @@ import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import scala.annotation.nowarn
 
 trait ExtParTraverse[F[_]] {
-  def apply[A, B](l: Iterable[A])(getParallelismGroup: A => Parallelism)(f: A => F[B]): F[List[B]]
+  def groupedParTraverse[A, B](l: Iterable[A])(getParallelismGroup: A => Parallelism)(f: A => F[B]): F[List[B]]
 }
 
 object ExtParTraverse {
@@ -18,7 +18,7 @@ object ExtParTraverse {
   ) extends ExtParTraverse[F] {
 
     @nowarn("msg=[Uu]nused import")
-    def apply[A, B](l: Iterable[A])(getParallelismGroup: A => Parallelism)(f: A => F[B]): F[List[B]] = {
+    def groupedParTraverse[A, B](l: Iterable[A])(getParallelismGroup: A => Parallelism)(f: A => F[B]): F[List[B]] = {
       import scala.collection.compat.*
 
       val sorted = l.groupBy(getParallelismGroup).toList.sortBy {
@@ -27,8 +27,8 @@ object ExtParTraverse {
         case (Parallelism.Sequential, _) => 3
       }
       F.traverse(sorted) {
-        case (Parallelism.Fixed(n), l) if l.sizeIs > 1 => P.parTraverseN(n)(l)(f)
         case (Parallelism.Unlimited, l) if l.sizeIs > 1 => P.parTraverse(l)(f)
+        case (Parallelism.Fixed(n), l) if l.sizeIs > 1 && n > 1 => P.parTraverseN(n)(l)(f)
         case (_, l) => F.traverse(l)(f)
       }.map(_.flatten)
     }

@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import cats.effect.kernel.Outcome
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.language.Quirks.LazyDiscarder
 import zio.ZIO
 import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
@@ -11,9 +12,18 @@ sealed trait Exit[+E, +A] {
   def leftMap[E1](f: E => E1): Exit[E1, A]
   def flatMap[E1 >: E, B](f: A => Exit[E1, B]): Exit[E1, B]
   def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, A]
+
+  def isFailure: Boolean
+  def isUninterrupted: Boolean
+  def isSuccess: Boolean
+  def isInterrupted: Boolean
+
+  def asSuccess: Option[A]
+  def asFailure: Option[Exit.Failure[E]]
 }
 
 object Exit {
+  def apply[A](value: A): Exit.Success[A] = Exit.Success(value)
 
   /** Tracing information about the error `E` */
   trait Trace[+E] {
@@ -41,7 +51,8 @@ object Exit {
     override final def toString: String = asString
   }
   object Trace {
-    def forTypedError[E](error: E): Trace[E] = ThrowableTrace(TypedError.wrapIfNotThrowable(error))
+    def forTypedError[E](error: E): Trace[Nothing] = ThrowableTrace(TypedError.wrapIfNotThrowable(error))
+    def forThrowable(exception: Throwable): Trace[Nothing] = ThrowableTrace(exception)
 
     def forUnknownError: Trace[Nothing] = new Trace[Nothing] {
       override val asString: String = "<empty trace, unknown error>"
@@ -69,7 +80,7 @@ object Exit {
       override def map[E1](f: E => E1): Trace[E1] = ZIOTrace(cause.map(f))
     }
 
-    final case class ThrowableTrace(toThrowable: Throwable) extends Trace[Nothing] {
+    final case class ThrowableTrace(override val toThrowable: Throwable) extends Trace[Nothing] {
       override def asString: String = {
         import java.io.{PrintWriter, StringWriter}
         val sw = new StringWriter
@@ -82,13 +93,21 @@ object Exit {
     }
   }
 
-  sealed trait Uninterrupted[+E, +A] extends Exit[E, A]
+  sealed trait Uninterrupted[+E, +A] extends Exit[E, A] {
+    override final def isUninterrupted: Boolean = true
+    override final def isInterrupted: Boolean = false
+    override def asFailure: Option[FailureUninterrupted[E]]
+  }
 
   final case class Success[+A](value: A) extends Exit.Uninterrupted[Nothing, A] {
     override def map[B](f: A => B): Success[B] = Success(f(value))
     override def leftMap[E1](f: Nothing => E1): this.type = this
     override def flatMap[E1 >: Nothing, B](f: A => Exit[E1, B]): Exit[E1, B] = f(value)
     override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, A] = Right(value)
+    override def isSuccess: Boolean = true
+    override def isFailure: Boolean = false
+    override def asSuccess: Option[A] = Some(value)
+    override def asFailure: None.type = None
   }
 
   sealed trait Failure[+E] extends Exit[E, Nothing] {
@@ -102,9 +121,16 @@ object Exit {
 
     override final def map[B](f: Nothing => B): this.type = this
     override final def flatMap[E1 >: E, B](f: Nothing => Exit[E1, B]): this.type = this
+
+    override final def isFailure: Boolean = true
+    override final def isSuccess: Boolean = false
+    override final def asSuccess: None.type = None
+    override def asFailure: Some[Failure[E]]
   }
 
-  sealed trait FailureUninterrupted[+E] extends Exit.Failure[E] with Exit.Uninterrupted[E, Nothing]
+  sealed trait FailureUninterrupted[+E] extends Exit.Failure[E] with Exit.Uninterrupted[E, Nothing] {
+    override final def asFailure: Some[FailureUninterrupted[E]] = Some(this)
+  }
 
   final case class Error[+E](error: E, trace: Trace[E]) extends Exit.FailureUninterrupted[E] {
     override def toEither: Right[Nothing, E] = Right(error)
@@ -112,15 +138,20 @@ object Exit {
     override def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, Nothing] = Left(ev(error))
     override def leftMap[E1](f: E => E1): Error[E1] = Error[E1](f(error), trace.map(f))
   }
+  object Error {
+    def forTypedError[E](error: E): Error[E] = Error(error, Trace.forTypedError(error))
+    def forThrowable(exception: Throwable): Error[Throwable] = Error(exception, Trace.forThrowable(exception))
+  }
 
-  final case class Termination(compoundException: Throwable, allExceptions: List[Throwable], trace: Trace[Nothing]) extends Exit.FailureUninterrupted[Nothing] {
-    override def toEither: Left[List[Throwable], Nothing] = Left(allExceptions)
+  final case class Termination(compoundException: Throwable, allExceptions: NEList[Throwable], trace: Trace[Nothing]) extends Exit.FailureUninterrupted[Nothing] {
+    override def toEither: Left[List[Throwable], Nothing] = Left(allExceptions.toList)
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
     override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
     override def leftMap[E1](f: Nothing => E1): this.type = this
   }
   object Termination {
-    def apply(exception: Throwable, trace: Trace[Nothing]): Termination = new Termination(exception, List(exception), trace)
+    def apply(exception: Throwable, trace: Trace[Nothing]): Termination = new Termination(exception, NEList(exception), trace)
+    def forThrowable(exception: Throwable): Termination = new Termination(exception, NEList(exception), Trace.forThrowable(exception))
   }
 
   final case class Interruption(compoundException: Throwable, otherExceptions: List[Throwable], trace: Trace[Nothing]) extends Exit.Failure[Nothing] {
@@ -128,9 +159,13 @@ object Exit {
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
     override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
     override def leftMap[E1](f: Nothing => E1): this.type = this
+    override def isUninterrupted: Boolean = false
+    override def isInterrupted: Boolean = true
+    override def asFailure: Some[Failure[Nothing]] = Some(this)
   }
   object Interruption {
     def apply(otherExceptions: List[Throwable], trace: Trace[Nothing]): Interruption = new Interruption(trace.toThrowable, otherExceptions, trace)
+    def forTrace(trace: Trace[Nothing]): Interruption = new Interruption(trace.toThrowable, Nil, trace)
   }
 
   object ZIOExit {
@@ -169,7 +204,7 @@ object Exit {
             case e :: Nil => e
             case _ => zio.FiberFailure(cause)
           }
-          Termination(compound, exceptions, Trace.ZIOTrace(cause))
+          Termination(compound, NEList.from(exceptions).getOrElse(NEList(compound)), Trace.ZIOTrace(cause))
       }
     }
 
@@ -189,10 +224,8 @@ object Exit {
             case Error(error, _) =>
               zio.Cause.fail(error)
 
-            case Termination(_, headException :: tailExceptions, _) =>
-              tailExceptions.foldLeft(zio.Cause.die(headException))(_ ++ zio.Cause.die(_))
-            case Termination(compoundException, _, _) =>
-              zio.Cause.die(compoundException)
+            case Termination(_, nel, _) =>
+              nel.tail.foldLeft(zio.Cause.die(nel.head))(_ ++ zio.Cause.die(_))
 
             case Interruption(_, headException :: tailExceptions, _) =>
               zio.Cause.interrupt(zio.FiberId.None) ++ tailExceptions.foldLeft(zio.Cause.die(headException))(_ ++ zio.Cause.die(_))

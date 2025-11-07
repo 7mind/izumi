@@ -40,8 +40,8 @@ import scala.language.implicitConversions
   */
 trait Syntax2 extends Syntax2.ImplicitPuns {
   /**
-    * A convenient dependent summoner for BIO hierarchy.
-    * Auto-narrows to the most powerful available class:
+    * A convenient dependent-typed summoner for BIO hierarchy.
+    * Auto-narrows to the most powerful available type class:
     *
     * {{{
     *   import izumi.functional.bio.{F, Temporal2}
@@ -219,29 +219,34 @@ object Syntax2 {
       F.bracket[E1, A, B](r)(c => F.sync(c.close()))(use)
   }
 
-  class ParallelOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Parallel2[F]) {
+  trait ParallelOpsBase[F[+_, +_], +E, +A] {
+    protected val r: F[E, A]
+    implicit protected val F: Parallel2[F]
+
     @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
     @inline final infix def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
     @inline final infix def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
     @inline final infix def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
   }
-  final class ConcurrentOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Concurrent2[F]) extends ParallelOps(r)(using F) {
-    @inline final infix def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
-    @inline final def racePairUnsafe[E1 >: E, A1 >: A](
-      that: F[E1, A1]
-    ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
-  }
-  open class AsyncOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Async2[F]) extends IOOps(r)(using F) {
-    @inline final def zipWithPar[E1 >: E, B, C](that: F[E1, B])(f: (A, B) => C): F[E1, C] = F.zipWithPar(r, that)(f)
-    @inline final infix def zipPar[E1 >: E, B](that: F[E1, B]): F[E1, (A, B)] = F.zipPar(r, that)
-    @inline final infix def zipParLeft[E1 >: E, B](that: F[E1, B]): F[E1, A] = F.zipParLeft(r, that)
-    @inline final infix def zipParRight[E1 >: E, B](that: F[E1, B]): F[E1, B] = F.zipParRight(r, that)
+  final class ParallelOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Parallel2[F]) extends ParallelOpsBase[F, E, A]
+
+  final class WeakAsyncOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: WeakAsync2[F])
+    extends IOOps(r)(using F)
+    with ParallelOpsBase[F, E, A]
+
+  trait ConcurrentOpsBase[F[+_, +_], +E, +A] extends ParallelOpsBase[F, E, A] {
+    implicit protected val F: Concurrent2[F]
 
     @inline final infix def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race(r, that)
     @inline final def racePairUnsafe[E1 >: E, A1 >: A](
       that: F[E1, A1]
     ): F[E1, Either[(Exit[E1, A], Fiber2[F, E1, A1]), (Fiber2[F, E1, A], Exit[E1, A1])]] = F.racePairUnsafe(r, that)
   }
+  final class ConcurrentOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Concurrent2[F]) extends ConcurrentOpsBase[F, E, A]
+
+  open class AsyncOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Async2[F])
+    extends IOOps(r)(using F)
+    with ConcurrentOpsBase[F, E, A]
 
   final class TemporalOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Temporal2[F]) {
     @inline final def repeatUntil[E2 >: E, A2](tooManyAttemptsError: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
@@ -265,9 +270,13 @@ object Syntax2 {
     @inline implicit final def Fork2[F[+_, +_]: Fork2, E, A](self: F[E, A]): ForkOps[F, E, A] = new ForkOps[F, E, A](self)
     @inline final def Fork2[F[+_, +_]: Fork2]: Fork2[F] = implicitly
   }
-  trait ImplicitPunsAsync extends ImplicitPunsConcurrent {
+  trait ImplicitPunsAsync extends ImplicitPunsWeakAsync {
     @inline implicit final def Async2[F[+_, +_]: Async2, E, A](self: F[E, A]): AsyncOps[F, E, A] = new AsyncOps[F, E, A](self)
     @inline final def Async2[F[+_, +_]: Async2]: Async2[F] = implicitly
+  }
+  trait ImplicitPunsWeakAsync extends ImplicitPunsConcurrent {
+    @inline implicit final def WeakAsync2[F[+_, +_]: WeakAsync2, E, A](self: F[E, A]): WeakAsyncOps[F, E, A] = new WeakAsyncOps[F, E, A](self)
+    @inline final def WeakAsync2[F[+_, +_]: WeakAsync2]: WeakAsync2[F] = implicitly
   }
   trait ImplicitPunsConcurrent extends ImplicitPunsParallelErrorAccumulatingOps {
     @inline implicit final def Concurrent2[F[+_, +_]: Concurrent2, E, A](self: F[E, A]): ConcurrentOps[F, E, A] = new ConcurrentOps[F, E, A](self)

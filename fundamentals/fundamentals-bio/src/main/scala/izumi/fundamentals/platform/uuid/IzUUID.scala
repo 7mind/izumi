@@ -27,4 +27,4 @@ trait IzUUID extends IzPlatformEffectfulUtil {
   def getAdjustedTimestamp(uuid: UUID): Long
 }
 
-object IzUUID extends IzUUID with IzUUIDImpl {}
+object IzUUID extends IzUUID with IzUUIDImpl

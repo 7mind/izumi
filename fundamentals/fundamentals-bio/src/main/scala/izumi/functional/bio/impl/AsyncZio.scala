@@ -1,7 +1,7 @@
 package izumi.functional.bio.impl
 
 import izumi.functional.bio.Exit.ZIOExit
-import izumi.functional.bio.data.{Morphism3, RestoreInterruption2}
+import izumi.functional.bio.data.{InterruptAction, Morphism3, RestoreInterruption2}
 import izumi.functional.bio.{Async2, Exit, Fiber2, __PlatformSpecific}
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import zio._izumicompat_.{__ZIORaceCompat, __ZIOWithFiberRuntime}
@@ -33,7 +33,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
 
     ZIO.attempt(effect)
   }
-  @inline override final def suspend[A](effect: => ZIO[R, Throwable, A]): ZIO[R, Throwable, A] = {
+  @inline override final def suspendThrowable[A](effect: => ZIO[R, Throwable, A]): ZIO[R, Throwable, A] = {
     val byName: () => ZIO[R, Throwable, A] = () => effect
     implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
 
@@ -250,13 +250,13 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
 
     ZIO.asyncZIO(cb => register(cb apply _.fold(ZIO.fail(_), ZIO.succeed(_))))
   }
-  @inline override final def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): ZIO[R, E, A] = {
+  @inline override final def asyncCancelable[E, A](register: (Either[E, A] => Unit) => InterruptAction[ZIO[R, +_, +_]]): ZIO[R, E, A] = {
     implicit val trace: zio.Trace = InteropTracer.newTrace(register)
 
     ZIO.asyncInterrupt[R, E, A] {
       cb =>
         val canceler = register(cb apply _.fold(ZIO.fail(_), ZIO.succeed(_)))
-        Left(canceler)
+        Left(canceler.interrupt)
     }
   }
 
@@ -267,7 +267,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
     __PlatformSpecific.fromFutureJava(javaFuture)
   }
 
-  @inline override final def uninterruptible[E, A](r: ZIO[R, E, A]): ZIO[R, E, A] = r.uninterruptible(Tracer.instance.empty)
+  @inline override final def uninterruptible[E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = f.uninterruptible(Tracer.instance.empty)
 
   @inline override final def race[E, A](r1: ZIO[R, E, A], r2: ZIO[R, E, A]): ZIO[R, E, A] = {
     implicit val trace: zio.Trace = Tracer.instance.empty
@@ -299,7 +299,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
       .foreachPar(l.toList)(f(_).interruptible)
       .withParallelism(maxConcurrent)
   }
-  @inline override final def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
+  @inline override final def parTraverseN_[E, A](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, Unit]): ZIO[R, E, Unit] = {
     implicit val trace: zio.Trace = InteropTracer.newTrace(f)
 
     ZIO
@@ -309,7 +309,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
   @inline override final def parTraverseNCore[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
     ZIO.suspendSucceed(parTraverseN(java.lang.Runtime.getRuntime.availableProcessors() max 2)(l)(f))(InteropTracer.newTrace(f))
   }
-  @inline override final def parTraverseNCore_[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
+  @inline override final def parTraverseNCore_[E, A](l: Iterable[A])(f: A => ZIO[R, E, Unit]): ZIO[R, E, Unit] = {
     ZIO.suspendSucceed(parTraverseN_(java.lang.Runtime.getRuntime.availableProcessors() max 2)(l)(f))(InteropTracer.newTrace(f))
   }
   @inline override final def parTraverse[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
@@ -318,7 +318,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
     // do not force unlimited parallelism here, obey 'regional parallelism' (unlimited by default)
     ZIO.foreachPar(l.toList)(f(_).interruptible)
   }
-  @inline override final def parTraverse_[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
+  @inline override final def parTraverse_[E, A](l: Iterable[A])(f: A => ZIO[R, E, Unit]): ZIO[R, E, Unit] = {
     implicit val trace: zio.Trace = InteropTracer.newTrace(f)
 
     // do not force unlimited parallelism here, obey 'regional parallelism' (unlimited by default)
@@ -353,13 +353,13 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
   @inline override final def currentEC: ZIO[Any, Nothing, ExecutionContext] = ZIO.executor(Tracer.instance.empty).map(_.asExecutionContext)(Tracer.instance.empty)
   @inline override final def onEC[E, A](ec: ExecutionContext)(f: ZIO[R, E, A]): ZIO[R, E, A] = f.onExecutionContext(ec)(Tracer.instance.empty)
 
-  @inline override final def uninterruptibleExcept[E, A](r: RestoreInterruption2[ZIO[R, +_, +_]] => ZIO[R, E, A]): ZIO[R, E, A] = {
-    implicit val trace: zio.Trace = InteropTracer.newTrace(r)
+  @inline override final def uninterruptibleExcept[E, A](f: RestoreInterruption2[ZIO[R, +_, +_]] => ZIO[R, E, A]): ZIO[R, E, A] = {
+    implicit val trace: zio.Trace = InteropTracer.newTrace(f)
 
     ZIO.uninterruptibleMask {
       restore =>
         val restoreMorphism: Morphism3[ZIO, ZIO] = Morphism3(restore(_))
-        r(restoreMorphism)
+        f(restoreMorphism)
     }
   }
 

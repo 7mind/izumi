@@ -1,18 +1,17 @@
 package izumi.functional
 
-import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
-class CovariantHKTImplicitsBugTest extends AnyWordSpec with GivenWhenThen {
+class CovariantHKTImplicitsBugTest extends AnyWordSpec {
 
   "progression test: covariant HKT implicits are broken" in {
-    And("quite broken")
+    // quite broken
     val res1 = intercept[TestFailedException](assertCompiles("""
         val alg: SomeAlg[IO] = SomeAlg.mk()
       """))
     assert(res1.getMessage contains "implicit")
-    And("really broken")
+    // really broken
     val res2 = intercept[TestFailedException](assertCompiles("""
         val alg: SomeAlg[IO] = SomeAlg.mk[IO]()
       """))

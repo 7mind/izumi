@@ -12,7 +12,7 @@ final class ErrorAccumulatingOpsTestEither extends ErrorAccumulatingOpsTest[Eith
 }
 
 final class ErrorAccumulatingOpsTestMiniBIO extends ErrorAccumulatingOpsTest[MiniBIO] {
-  override implicit def F: Error2[MiniBIO] = MiniBIO.BIOMiniBIO
+  override implicit def F: Error2[MiniBIO] = MiniBIO.IO2MiniBIO
   override def unsafeRun[E, A](f: MiniBIO[E, A]): Either[E, A] = f.run() match {
     case Exit.Success(value) => Right(value)
     case uninterrupted: Exit.FailureUninterrupted[E] =>

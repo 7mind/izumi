@@ -63,7 +63,6 @@ trait LoggingFileSinkTest[T <: LogFile] extends AnyWordSpec with GivenWhenThen {
     }
 
     "continue writing data starts from existing non-empty file" in {
-
       val prefilledFiles = fileSvcUtils.provideSvc(dummyFolder)
       val randomFileSize = randomInt() + 1
 
@@ -270,8 +269,7 @@ object LoggingFileSinkTest {
     override val rotation: FileRotation,
     override val config: FileSinkConfig,
   ) extends FileSink[F](renderingPolicy, fileService, rotation, config) {
-
-    override def recoverOnFail(e: String): Unit = println()
+    override def recoverOnFail(e: String): Unit = ()
   }
 
   class FileSinkBrokenImpl[F <: LogFile](

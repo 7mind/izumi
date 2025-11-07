@@ -9,7 +9,7 @@ import izumi.logstage.api.IzLogger
 
 class ExitAfterSleepRole[F[_]](logger: IzLogger, shutdown: AppShutdownInitiator)(implicit F: QuasiIO[F]) extends RoleService[F] {
   def runBadSleepingThread(id: String, cont: () => Unit): Unit = {
-    def msg(s: String) = {
+    def msg(s: String): Unit = {
       println(s"$id: $s (direct message, will repeat in the logger)")
       logger.info(s"$id: $s (logged message)")
     }

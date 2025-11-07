@@ -1,10 +1,11 @@
 package izumi.functional.quasi
 
-import izumi.functional.bio.{Async2, F, Temporal2}
+import izumi.functional.bio.{F, Temporal2, WeakAsync2}
 import izumi.fundamentals.orphans.{`cats.effect.kernel.Async`, `cats.effect.kernel.GenTemporal`}
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.collection.compat.*
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 /**
@@ -19,6 +20,7 @@ import scala.concurrent.duration.FiniteDuration
   */
 trait QuasiAsync[F[_]] {
   def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A]
+  def fromFuture[A](effect: => Future[A]): F[A]
   def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]]
   def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit]
   def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]]
@@ -30,10 +32,13 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
 
   implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = __QuasiAsyncPlatformSpecific.quasiAsyncIdentity
 
-  implicit def fromBIO[F[+_, +_]: Async2]: QuasiAsync[F[Throwable, _]] = {
+  implicit def fromBIO[F[+_, +_]: WeakAsync2]: QuasiAsync[F[Throwable, _]] = {
     new QuasiAsync[F[Throwable, _]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
         F.async(effect)
+      }
+      override def fromFuture[A](effect: => Future[A]): F[Throwable, A] = {
+        F.fromFuture(effect)
       }
       override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Throwable, Unit]): F[Throwable, Unit] = {
         F.parTraverse_(l.iterator.to(Iterable))(f)
@@ -65,6 +70,9 @@ private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
     override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
       F.async_(effect)
     }
+    override def fromFuture[A](effect: => Future[A]): F[A] = {
+      F.fromFuture(F.delay(effect))
+    }
     override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
       cats.Parallel.parTraverse_(l.iterator.toList)(f)(using cats.instances.list.catsStdInstancesForList, P)
     }
@@ -81,7 +89,7 @@ private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
 }
 
 /**
-  * @note Dev note: This was split from QuasiAsync to stop distage-testkit runtime from depending on Temporal2 & Clock2,
+  * @note Dev note: This was split from QuasiAsync to stop distage-framework-docker runtime from depending on Temporal2 & Clock2,
   *       so that they wouldn't get memoized and the user could override them in tests without destroying memoization.
   */
 trait QuasiTemporal[F[_]] {

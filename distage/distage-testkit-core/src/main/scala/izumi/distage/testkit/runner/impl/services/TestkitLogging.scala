@@ -17,5 +17,4 @@ class TestkitLogging {
 
 object TestkitLogging {
   private final val enableDebugOutput: Boolean = DebugProperties.`izumi.distage.testkit.debug`.boolValue(false)
-
 }

@@ -1,8 +1,8 @@
 package izumi.distage.testkit.model
 
 import distage.DIKey
-import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.plan.repr.{DIRendering, KeyMinimizer}
+import izumi.distage.model.plan.{Plan, Roots}
 import izumi.fundamentals.platform.strings.IzConsoleColors
 
 final case class TestTree[F[_]](

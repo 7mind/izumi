@@ -13,7 +13,7 @@ import izumi.fundamentals.platform.functional.Identity
   * Internal use class, as with [[QuasiIO]], it's only public so that you can define your own instances,
   * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
   */
-trait QuasiIORunner[F[_]] {
+trait QuasiIORunner[F[_]] { self =>
   def run[A](f: => F[A]): A
 }
 

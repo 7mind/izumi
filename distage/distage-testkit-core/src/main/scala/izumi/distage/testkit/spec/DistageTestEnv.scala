@@ -1,38 +1,43 @@
 package izumi.distage.testkit.spec
 
-import distage.DIKey
 import distage.plugins.PluginLoader
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ActivationChoicesExtractor
-import izumi.distage.model.definition.BootstrapModuleDef
+import izumi.distage.model.definition.{BootstrapModuleDef, Module}
+import izumi.distage.model.reflection.DIKey
+import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.testkit.{DebugProperties, model}
+import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{TestConfig, TestEnvironment}
 import izumi.fundamentals.platform.cache.SyncCache
+import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
+import izumi.reflect.{AnyTag, TagK}
 
 trait DistageTestEnv {
-  private[distage] def loadEnvironment(testConfig: TestConfig): TestEnvironment = {
+  private[distage] def loadEnvironment[F[_]](testConfig: TestConfig, tagK: TagK[F], defaultModule: DefaultModule[F]): TestEnvironment = {
     val roles = loadRoles()
     val mergeStrategy = makeMergeStrategy()
     val pluginLoader = makePluginloader()
     def doMake(): TestEnvironment = {
-      makeEnv(testConfig, pluginLoader, roles, mergeStrategy)
+      makeEnv(testConfig, pluginLoader, roles, mergeStrategy, tagK, defaultModule)
     }
 
     if (DistageTestEnv.cache ne null) {
-      DistageTestEnv.cache.getOrCompute(DistageTestEnv.EnvCacheKey(testConfig, roles, mergeStrategy), doMake())
+      DistageTestEnv.cache.getOrCompute(DistageTestEnv.EnvCacheKey(testConfig, roles, mergeStrategy, tagK), doMake())
     } else {
       doMake()
     }
   }
 
-  private[distage] def makeEnv(
+  private[distage] def makeEnv[F[_]](
     testConfig: TestConfig,
     pluginLoader: PluginLoader,
     roles: RolesInfo,
     mergeStrategy: PluginMergeStrategy,
+    tagK: TagK[F],
+    defaultModule0: DefaultModule[F],
   ): TestEnvironment = {
     val appPlugins = pluginLoader.load(testConfig.pluginConfig)
     val bsPlugins = pluginLoader.load(testConfig.bootstrapPluginConfig)
@@ -42,9 +47,17 @@ trait DistageTestEnv {
 
     val bsModule = bootstrapModule overriddenBy DistageTestEnv.testkitBootstrapReflectiveModule(availableActivations)
 
-    model.TestEnvironment(
+    val defaultModule = if (DistageTestEnv.defaultModuleCache ne null) {
+      DistageTestEnv.defaultModuleCache.getOrCompute(tagK, defaultModule0.module)
+    } else {
+      defaultModule0.module
+    }
+
+    TestEnvironment(
       bsModule = bsModule,
       appModule = appModule,
+      effectType = tagK.asInstanceOf[TagK[AnyF]],
+      defaultModule = defaultModule,
       roles = roles,
       activationInfo = availableActivations,
       activation = testConfig.activation,
@@ -87,8 +100,15 @@ object DistageTestEnv {
       null
     }
   }
+  private[distage] final val defaultModuleCache: SyncCache[AnyTag, Module] = {
+    if (DebugProperties.`izumi.distage.testkit.defaultmodule.cache`.boolValue(true)) {
+      new SyncCache[AnyTag, Module]
+    } else {
+      null
+    }
+  }
 
-  private[distage] final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy)
+  private[distage] final case class EnvCacheKey(config: TestConfig, rolesInfo: RolesInfo, mergeStrategy: PluginMergeStrategy, tag: AnyTag)
 
   private[distage] def testkitBootstrapReflectiveModule(availableActivations: ActivationInfo): BootstrapModuleDef = new BootstrapModuleDef {
     //     Update `testkitBootstrapReflectiveKeys` if you add anything here

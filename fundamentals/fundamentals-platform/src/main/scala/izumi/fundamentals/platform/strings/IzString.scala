@@ -18,4 +18,4 @@ trait IzString extends IzPlatformSyntax {
   implicit def toRichStringBytes[A](s: Iterable[Byte]): String_IterableBytes_Syntax = new String_IterableBytes_Syntax(s)
 }
 
-object IzString extends IzString {}
+object IzString extends IzString

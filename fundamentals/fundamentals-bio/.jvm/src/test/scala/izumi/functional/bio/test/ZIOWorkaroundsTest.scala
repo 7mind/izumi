@@ -170,7 +170,7 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
               (l.succeed(()) *> ZIO.unit.forever)
                 .guaranteeExceptOnInterrupt(_ => outerInterruptRes1.set(Some(true))).guaranteeOnInterrupt(_ => outerInterruptRes2.set(Some(true))),
             )
-          )(identity).sandboxExit
+          )(_.void).sandboxExit
 
         results <- F.traverse(List(succRes, failRes, terminateRes, innerInterruptRes, parTraverseRes, outerInterruptRes1, outerInterruptRes2))(_.get)
       } yield assert(results == List(Some(true), Some(true), Some(true), Some(true), Some(true), None, Some(true)))

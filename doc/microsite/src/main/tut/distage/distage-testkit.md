@@ -886,7 +886,7 @@ Integration checks are executed only in `distage-testkit` tests and `distage-fra
 
 ### Customization
 
-`TestTreeRunner[F]` component may be overridden in test module (TestConfig `.pluginConfig` and/or `.moduleOverrides`) to use a custom test execution strategy
+@scaladoc[`TestTreeRunner`](izumi.distage.testkit.runner.impl.TestTreeRunner) component may be overridden in test module (TestConfig `.pluginConfig` and/or `.moduleOverrides`) to use a custom test execution strategy. This also applies to all dependencies of TestTreeRunner - @scaladoc[`IndividualTestRunner`](izumi.distage.testkit.runner.impl.IndividualTestRunner), as well as all content of @scaladoc[`TestRuntimeModule`](izumi.distage.testkit.runner.impl.TestRuntimeModule)
 
 ### References
 

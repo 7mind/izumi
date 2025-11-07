@@ -1,6 +1,6 @@
 object V {
   // izumi
-  val izumi_reflect = "3.0.6"
+  val izumi_reflect = "3.0.7"
 
   // foundation
   val collection_compat = "2.13.0"
@@ -28,8 +28,13 @@ object V {
   val magnolia = "1.1.10"
   val jawn = "1.6.0"
 
+  val portable_scala_reflect = "1.1.3"
+
   // good to drop - scala
   val scala_java_time = "2.6.0"
+
+  // js-only dependencies
+  val scalajs_java_securerandom = "1.0.0"
 
   // java-only dependencies below
   val classgraph = "4.8.181"
@@ -44,5 +49,5 @@ object V {
   val doobie = "1.0.0-RC2"
 
   // test-only
-  val scalamock = "7.4.1"
+  val scalamock = "7.5.2"
 }

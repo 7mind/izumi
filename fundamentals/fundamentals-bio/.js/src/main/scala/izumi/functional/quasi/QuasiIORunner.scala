@@ -27,11 +27,11 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
   def mkFromCatsDispatcher[F[_]](dispatcher: cats.effect.std.Dispatcher[F]): QuasiIORunner[F] = new CatsDispatcherImpl[F]()(using dispatcher)
 
   final class BIOImpl[F[_, _]: UnsafeRun2](implicit val ec: ExecutionContext) extends QuasiIORunner[F[Throwable, _]] {
-    override def runFuture[A](f: => F[Throwable, A]): Future[A] = UnsafeRun2[F].unsafeRunAsyncAsFuture(f).flatMap {
+    override def runFuture[A](f: => F[Throwable, A]): Future[A] = UnsafeRun2[F].unsafeRunAsyncAsFuture[Throwable, A](f).flatMap {
       case Exit.Success(value) =>
         Future.successful(value)
-      case failure: Exit.Failure[Throwable] @unchecked =>
-        Future.failed(failure.toThrowable(t => t))
+      case failure: Exit.Failure[Throwable] =>
+        Future.failed(failure.toThrowable)
     }
   }
 

@@ -13,4 +13,4 @@ trait IzFiles
   with FileAttributes
   with FsGet
 
-object IzFiles extends IzFiles {}
+object IzFiles extends IzFiles

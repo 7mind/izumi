@@ -5,8 +5,8 @@ import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.definition.Axis.AxisChoice
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.model.TestConfig.PriorAxisDIKeys.MaxLevel
-import izumi.distage.testkit.model.TestConfig.{AxisDIKeys, Parallelism, PriorAxisDIKeys}
+import izumi.distage.testkit.model.TestConfig.PriorityAxisDIKeys.MaxLevel
+import izumi.distage.testkit.model.TestConfig.{AxisDIKeys, Parallelism, PriorityAxisDIKeys}
 import izumi.distage.testkit.runner.impl.services.BootstrapFactory
 import izumi.logstage.api.Log
 
@@ -65,7 +65,7 @@ import scala.language.implicitConversions
   * @param planningOptions       [[PlanningOptions]], debug options for [[distage.Planner]]
   * @param logLevel              Log level for the [[logstage.IzLogger]] used in testkit and provided to the tests (will be overriden by plugin / module bindings if exist)
   * @param debugOutput           Print testkit debug messages, including those helping diagnose memoization environment issues,
-  *                              default: `false`, also controlled by [[DebugProperties.`izumi.distage.testkit.debug`]] system property
+  *                              default: `false`, also controlled by [[izumi.distage.testkit.DebugProperties.`izumi.distage.testkit.debug`]] system property
   */
 final case class TestConfig(
   // general options
@@ -74,7 +74,7 @@ final case class TestConfig(
   activation: Activation = StandardAxis.testProdActivation,
   moduleOverrides: Module = Module.empty,
   bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
-  memoizationRoots: PriorAxisDIKeys = PriorAxisDIKeys.empty,
+  memoizationRoots: PriorityAxisDIKeys = PriorityAxisDIKeys.empty,
   forcedRoots: AxisDIKeys = AxisDIKeys.empty,
   // parallelism options
   parallelEnvs: Parallelism = Parallelism.Unlimited,
@@ -95,15 +95,8 @@ final case class TestConfig(
   }
 }
 
-object TestConfig {
-  @deprecated("Use TestConfig() constructor instead, always provide pluginConfig explicitly", "1.2.3")
-  def forSuite(clazz: Class[?]): TestConfig = {
-    val packageName = clazz.getPackage.getName
-
-    TestConfig(
-      pluginConfig = PluginConfig.cached(Seq(packageName))
-    )
-  }
+object TestConfig extends TestConfigPlatformSpecific {
+  def empty: TestConfig = TestConfig(pluginConfig = PluginConfig.empty)
 
   final case class AxisDIKeys(keyMap: Map[Set[AxisChoice], Set[DIKey]]) extends AnyVal {
     /**
@@ -168,60 +161,51 @@ object TestConfig {
       AxisDIKeys(map.iterator.map { case (k, v) => k.toSet[AxisChoice] -> Set(v) }.toMap)
   }
 
-  final case class PriorAxisDIKeys(keys: Map[Int, AxisDIKeys]) extends AnyVal {
-    def ++(that: PriorAxisDIKeys): PriorAxisDIKeys = {
+  final case class PriorityAxisDIKeys(keys: Map[Int, AxisDIKeys]) extends AnyVal {
+    def ++(that: PriorityAxisDIKeys): PriorityAxisDIKeys = {
       val allKeys = ArraySeq.unsafeWrapArray((this.keys.iterator ++ that.keys.iterator).toArray)
       val updatedKeys = allKeys.groupBy(_._1).map { case (k, kvs) => k -> kvs.iterator.map(_._2).reduce(_ ++ _) }
-      PriorAxisDIKeys(updatedKeys)
+      PriorityAxisDIKeys(updatedKeys)
     }
-    def ++(that: AxisDIKeys)(implicit d: DummyImplicit): PriorAxisDIKeys = {
-      this ++ PriorAxisDIKeys(Map(MaxLevel -> that))
+    def ++(that: AxisDIKeys)(implicit d: DummyImplicit): PriorityAxisDIKeys = {
+      this ++ PriorityAxisDIKeys(Map(MaxLevel -> that))
     }
-    def ++[A](elem: (Int, A))(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys = {
+    def ++[A](elem: (Int, A))(implicit toAxisDIKeys: A => AxisDIKeys): PriorityAxisDIKeys = {
       addToLevel(elem._1, toAxisDIKeys(elem._2))
     }
 
-    def +(key: DIKey): PriorAxisDIKeys = addToLevel(MaxLevel, Set(key))
-    def +(priorKey: (Int, DIKey)): PriorAxisDIKeys = addToLevel(priorKey._1, Set(priorKey._2))
+    def +(key: DIKey): PriorityAxisDIKeys = addToLevel(MaxLevel, Set(key))
+    def +(priorKey: (Int, DIKey)): PriorityAxisDIKeys = addToLevel(priorKey._1, Set(priorKey._2))
 
-    def addToLevel(level: Int, keys: AxisDIKeys): PriorAxisDIKeys = {
-      this ++ PriorAxisDIKeys(Map(level -> keys))
+    def addToLevel(level: Int, keys: AxisDIKeys): PriorityAxisDIKeys = {
+      this ++ PriorityAxisDIKeys(Map(level -> keys))
     }
   }
-  object PriorAxisDIKeys {
-    def empty: PriorAxisDIKeys = PriorAxisDIKeys(Map.empty)
+  object PriorityAxisDIKeys {
+    def empty: PriorityAxisDIKeys = PriorityAxisDIKeys(Map.empty)
 
     final val MaxLevel = Int.MaxValue
 
-    @inline implicit def fromSet(set: Set[? <: DIKey]): PriorAxisDIKeys =
-      PriorAxisDIKeys(Map(MaxLevel -> AxisDIKeys.fromSet(set)))
+    @inline implicit def fromSet(set: Set[? <: DIKey]): PriorityAxisDIKeys =
+      PriorityAxisDIKeys(Map(MaxLevel -> AxisDIKeys.fromSet(set)))
 
-    @inline implicit def fromPriorSet(map: Map[Int, Set[? <: DIKey]]): PriorAxisDIKeys =
-      PriorAxisDIKeys(map.map { case (i, v) => i -> AxisDIKeys.fromSet(v) })
+    @inline implicit def fromPrioritySet(map: Map[Int, Set[? <: DIKey]]): PriorityAxisDIKeys =
+      PriorityAxisDIKeys(map.map { case (i, v) => i -> AxisDIKeys.fromSet(v) })
 
-    @inline implicit def fromAxisDIKeys[A](set: A)(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys =
-      PriorAxisDIKeys(Map(MaxLevel -> toAxisDIKeys(set)))
+    @inline implicit def fromAxisDIKeys[A](set: A)(implicit toAxisDIKeys: A => AxisDIKeys): PriorityAxisDIKeys =
+      PriorityAxisDIKeys(Map(MaxLevel -> toAxisDIKeys(set)))
 
     @nowarn("msg=[Uu]nused import")
-    @inline implicit def fromPriorAxisDIKeys[A](map: Map[Int, A])(implicit toAxisDIKeys: A => AxisDIKeys): PriorAxisDIKeys = {
+    @inline implicit def fromPriorityAxisDIKeys[A](map: Map[Int, A])(implicit toAxisDIKeys: A => AxisDIKeys): PriorityAxisDIKeys = {
       import scala.collection.compat.*
-      PriorAxisDIKeys(map.view.mapValues(toAxisDIKeys).toMap)
+      PriorityAxisDIKeys(map.view.mapValues(toAxisDIKeys).toMap)
     }
   }
 
-  @deprecated("renamed to Parallelism", "1.1.0")
-  type ParallelLevel = Parallelism
-
-  @deprecated("renamed to Parallelism", "1.1.0")
-  final val ParallelLevel = Parallelism
-
   sealed trait Parallelism
-
   object Parallelism {
     final case class Fixed(n: Int) extends Parallelism
-
     case object Unlimited extends Parallelism
-
     case object Sequential extends Parallelism
   }
 }

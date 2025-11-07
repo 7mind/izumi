@@ -1,4 +1,4 @@
-// inline discipline-scalatest because it's compiled vs 3.2 version of scalatest, and we use 3.3
+// inline discipline-scalatest because it's compiled vs 3.2 version of scalatest, and we use scalatest 3.3
 
 /*
  * Copyright (c) 2019 Typelevel
@@ -58,7 +58,7 @@ trait Discipline { self: Configuration =>
   ): Unit
 }
 
-trait FlatSpecDiscipline extends Discipline { self: AnyFlatSpecLike with Configuration =>
+trait FlatSpecDiscipline extends Discipline { self: AnyFlatSpecLike & Configuration =>
   final def checkAll(name: String, ruleSet: Laws#RuleSet)(implicit config: PropertyCheckConfiguration, prettifier: Prettifier, pos: Position): Unit =
     ruleSet.all.properties.toList match {
       case first :: rest =>
@@ -71,7 +71,7 @@ trait FlatSpecDiscipline extends Discipline { self: AnyFlatSpecLike with Configu
     }
 }
 
-trait FunSpecDiscipline extends Discipline { self: AnyFunSpecLike with Configuration =>
+trait FunSpecDiscipline extends Discipline { self: AnyFunSpecLike & Configuration =>
   final def checkAll(name: String, ruleSet: Laws#RuleSet)(implicit config: PropertyCheckConfiguration, prettifier: Prettifier, pos: Position): Unit =
     describe(name) {
       for ((id, prop) <- ruleSet.all.properties)
@@ -81,7 +81,7 @@ trait FunSpecDiscipline extends Discipline { self: AnyFunSpecLike with Configura
     }
 }
 
-trait FunSuiteDiscipline extends Discipline { self: AnyFunSuiteLike with Configuration =>
+trait FunSuiteDiscipline extends Discipline { self: AnyFunSuiteLike & Configuration =>
   final def checkAll(name: String, ruleSet: Laws#RuleSet)(implicit config: PropertyCheckConfiguration, prettifier: Prettifier, pos: Position): Unit =
     for ((id, prop) <- ruleSet.all.properties)
       test(s"$name.$id") {
@@ -89,7 +89,7 @@ trait FunSuiteDiscipline extends Discipline { self: AnyFunSuiteLike with Configu
       }
 }
 
-trait WordSpecDiscipline extends Discipline { self: AnyWordSpec with Configuration =>
+trait WordSpecDiscipline extends Discipline { self: AnyWordSpec & Configuration =>
 
   def checkAll(name: String, ruleSet: Laws#RuleSet)(implicit config: PropertyCheckConfiguration, prettifier: Prettifier, pos: Position): Unit =
     for ((id, prop) <- ruleSet.all.properties)

@@ -3,15 +3,25 @@ package izumi.functional.quasi
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.collection.compat.*
+import scala.concurrent.Future
 
-private[izumi] object __QuasiAsyncPlatformSpecific {
+private object __QuasiAsyncPlatformSpecific {
 
-  private[izumi] def quasiAsyncIdentity: QuasiAsync[Identity] = {
+  def quasiAsyncIdentity: QuasiAsync[Identity] = {
     new QuasiAsync[Identity] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
         var res: Either[Throwable, A] = null
         effect(res = _)
         res.fold(throw _, identity)
+      }
+
+      override def fromFuture[A](effect: => Future[A]): Identity[A] = {
+        effect.value match {
+          case Some(value) =>
+            value.get
+          case None =>
+            throw new RuntimeException("QuasiAsync.quasiAsyncIdentity.fromFuture: it's impossible to await Futures on Scala.js")
+        }
       }
 
       override def parTraverse_[A](l: IterableOnce[A])(f: A => Unit): Unit = {

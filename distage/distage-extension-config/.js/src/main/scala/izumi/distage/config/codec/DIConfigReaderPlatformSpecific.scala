@@ -22,7 +22,7 @@ private[codec] trait DIConfigReaderPlatformSpecific[A] { self: DIConfigReader[A]
   override final def decodeConfigWithDefault(path: String)(default: => A)(config: DistageConfigImpl)(implicit tag: Tag[A]): A = {
     unpackResult(config, path) {
       val pathParts = path.split('.')
-      val cursor = pathParts.foldLeft(Json.fromJsonObject(config).hcursor: ACursor)((c, field) => c.downField(field))
+      val cursor = pathParts.foldLeft(config.toJson.hcursor: ACursor)(_.downField(_))
 
       cursor.focus match {
         case None =>

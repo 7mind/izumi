@@ -205,9 +205,9 @@ object FreePanic {
     )(use: A => FreePanic[S, E, B]
     ): FreePanic[S, E, B] = acquire.bracketCase(release)(use)
     @inline override final def guarantee[E, A](f: FreePanic[S, E, A], cleanup: FreePanic[S, Nothing, Unit]): FreePanic[S, E, A] = f.guarantee(cleanup)
-    @inline override final def uninterruptible[E, A](r: FreePanic[S, E, A]): FreePanic[S, E, A] = FreePanic.Uninterruptible(r)
-    @inline override final def uninterruptibleExcept[E, A](r: RestoreInterruption2[FreePanic[S, +_, +_]] => FreePanic[S, E, A]): FreePanic[S, E, A] =
-      FreePanic.UninterruptibleExcept(r)
+    @inline override final def uninterruptible[E, A](f: FreePanic[S, E, A]): FreePanic[S, E, A] = FreePanic.Uninterruptible(f)
+    @inline override final def uninterruptibleExcept[E, A](f: RestoreInterruption2[FreePanic[S, +_, +_]] => FreePanic[S, E, A]): FreePanic[S, E, A] =
+      FreePanic.UninterruptibleExcept(f)
     @inline override final def bracketExcept[E, A, B](
       acquire: RestoreInterruption2[FreePanic[S, +_, +_]] => FreePanic[S, E, A]
     )(release: (A, Exit[E, B]) => FreePanic[S, Nothing, Unit]

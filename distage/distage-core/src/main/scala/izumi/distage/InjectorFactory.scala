@@ -62,6 +62,30 @@ trait InjectorFactory {
   def apply(): Injector[Identity]
 
   /**
+    * Alias for `apply[F]` that doesn't add a [[DefaultModule]] for F into bindings.
+    *
+    * `distage-core` doesn't require bindings provided by DefaultModule's, but some extensions, such as
+    * `distage-framework-docker` would expect them to be defined
+    */
+  final def withoutDefaultModule[F[_]: QuasiIO: TagK](
+    bootstrapBase: BootstrapContextModule = defaultBootstrap,
+    bootstrapActivation: Activation = defaultBootstrapActivation,
+    parent: Option[Locator] = None,
+    overrides: Seq[BootstrapModule] = Nil,
+    locatorPrivacy: LocatorPrivacy = defaultBootstrapLocatorPrivacy,
+    bootstrapRootsMode: BootstrapRootsMode = defaultBootstrapRootsMode,
+  ): Injector[F] = {
+    apply[F](
+      bootstrapBase = bootstrapBase,
+      bootstrapActivation = bootstrapActivation,
+      parent = parent,
+      overrides = overrides,
+      locatorPrivacy = locatorPrivacy,
+      bootstrapRootsMode = bootstrapRootsMode,
+    )(using QuasiIO[F], TagK[F], DefaultModule.empty[F])
+  }
+
+  /**
     * Create a new injector inheriting configuration, hooks and the object graph from a previous injection.
     *
     * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]

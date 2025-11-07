@@ -270,7 +270,7 @@ object TextTree {
     def asNode: TextTree[T]
   }
 
-  object InterpolationArg extends LowPrioInterpolationArg_1 {}
+  object InterpolationArg extends LowPrioInterpolationArg_1
 
   protected trait LowPrioInterpolationArg_1 extends LowPrioInterpolationArg_2 {
     implicit def arg_from_String[T](t: String): InterpolationArg[T] = new InterpolationArg[T] {

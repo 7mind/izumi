@@ -1,235 +1,256 @@
-<svg version="1.1" baseProfile="full" width="432.3" height="655.0" viewbox="0 0 432.25 655" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
-		<desc >[Functor2]&lt;--[Applicative2]
+<svg version="1.1" baseProfile="full" width="532.0" height="736.0" viewBox="0 0 532 736" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+	<desc >[Bifunctor2]&lt;--[ApplicativeError2]
+	[Functor2]&lt;--[Applicative2]
 	[Applicative2]&lt;--[Guarantee2]
 	[Applicative2]&lt;--[Monad2]
 	[Guarantee2]&lt;--[ApplicativeError2]
-	[Bifunctor2]&lt;--[ApplicativeError2]
 	[ApplicativeError2]&lt;--[Error2]
 	[Monad2]&lt;--[Error2]
 	[Error2]&lt;--[Bracket2]
 	[Bracket2]&lt;--[Panic2]
 	[Panic2]&lt;--[IO2]
 	
+	[Parallel2]&lt;--[WeakAsync2]
 	[Parallel2]&lt;--[Concurrent2]
 	[Concurrent2]&lt;--[Async2]
-	[IO2]&lt;--[Async2]
+	[IO2]&lt;--[WeakAsync2]
+	[WeakAsync2]&lt;--[Async2]
 	
 	[Temporal2]</desc>
 	<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="bold" font-style="normal">
-			<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="3.0" stroke-linejoin="round" stroke-linecap="round" stroke="#33322E">
-				<g stroke="transparent" fill="transparent">
-					<rect x="0.0" y="0.0" height="655.0" width="432.3" stroke="none"></rect>
-				</g>
+		<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="3.0" stroke-linejoin="round" stroke-linecap="round" stroke="#33322E">
+			<g stroke="transparent" fill="transparent">
+				<rect x="0.0" y="0.0" height="736.0" width="532.0" stroke="none"></rect>
+			</g>
 			<g transform="translate(8, 8)" fill="#33322E">
-					<g transform="translate(20, 20)" fill="#33322E" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal">
-						<g stroke-dasharray="6 6">
-							<path d="M198.3 37.7 L198.25 51 L198.25 71 L198.3 71.0 " fill="none"></path>
-						</g>
-					<path d="M203.6 44.3 L198.3 37.7 L192.9 44.3 L198.3 31.0 Z"></path>
+				<g transform="translate(20, 20)" fill="#33322E" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal">
 					<g stroke-dasharray="6 6">
-							<path d="M136.8 101.4 L52 122 L52 142 L52.0 142.0 " fill="none"></path>
-						</g>
-					<path d="M131.6 108.2 L136.8 101.4 L129.0 97.8 L143.3 99.9 Z"></path>
+						<path d="M81.8 182.7 L81.75 196 L120.63888888888889 216 L120.6 216.0 " fill="none"></path>
+					</g>
+					<path d="M87.1 189.3 L81.8 182.7 L76.4 189.3 L81.8 176.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M254.4 104.0 L312.25 122 L312.25 157.5 L312.25 157.5 L312.25 193 L312.25 193 L312.25 213 L312.3 213.0 " fill="none"></path>
-						</g>
-					<path d="M262.3 100.9 L254.4 104.0 L259.2 111.1 L248.0 102.0 Z"></path>
+						<path d="M298.0 38.7 L298 52 L298 72 L298.0 72.0 " fill="none"></path>
+					</g>
+					<path d="M303.3 45.3 L298.0 38.7 L292.7 45.3 L298.0 32.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M52.0 179.7 L52 193 L91.43661971830986 213 L91.4 213.0 " fill="none"></path>
-						</g>
-					<path d="M57.3 186.3 L52.0 179.7 L46.7 186.3 L52.0 173.0 Z"></path>
+						<path d="M258.1 106.8 L221.75 124 L221.75 144 L221.8 144.0 " fill="none"></path>
+					</g>
+					<path d="M254.3 114.5 L258.1 106.8 L249.8 104.9 L264.1 104.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M192.0 179.7 L192 193 L152.56338028169014 213 L152.6 213.0 " fill="none"></path>
-						</g>
-					<path d="M197.3 186.3 L192.0 179.7 L186.7 186.3 L192.0 173.0 Z"></path>
+						<path d="M323.7 108.1 L344 124 L344 160 L344 160 L344 196 L344 196 L344 216 L344.0 216.0 " fill="none"></path>
+					</g>
+					<path d="M332.2 108.0 L323.7 108.1 L325.7 116.4 L318.4 104.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M122.0 250.7 L122 264 L166.25 284.6016393442623 L166.3 284.6 " fill="none"></path>
-						</g>
-					<path d="M127.3 257.3 L122.0 250.7 L116.7 257.3 L122.0 244.0 Z"></path>
+						<path d="M221.8 182.7 L221.75 196 L182.86111111111111 216 L182.9 216.0 " fill="none"></path>
+					</g>
+					<path d="M227.1 189.3 L221.8 182.7 L216.4 189.3 L221.8 176.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M312.3 250.7 L312.25 264 L230.25 289.53508771929825 L230.3 289.5 " fill="none"></path>
-						</g>
-					<path d="M317.6 257.3 L312.3 250.7 L306.9 257.3 L312.3 244.0 Z"></path>
+						<path d="M151.8 254.7 L151.75 268 L196 288.89180327868854 L196.0 288.9 " fill="none"></path>
+					</g>
+					<path d="M157.1 261.3 L151.8 254.7 L146.4 261.3 L151.8 248.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M198.3 321.7 L198.25 335 L198.25 355 L198.3 355.0 " fill="none"></path>
-						</g>
-					<path d="M203.6 328.3 L198.3 321.7 L192.9 328.3 L198.3 315.0 Z"></path>
+						<path d="M344.0 254.7 L344 268 L260 294.0689655172414 L260.0 294.1 " fill="none"></path>
+					</g>
+					<path d="M349.3 261.3 L344.0 254.7 L338.7 261.3 L344.0 248.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M198.3 392.7 L198.25 406 L198.25 426 L198.3 426.0 " fill="none"></path>
-						</g>
-					<path d="M203.6 399.3 L198.3 392.7 L192.9 399.3 L198.3 386.0 Z"></path>
+						<path d="M228.0 326.7 L228 340 L228 360 L228.0 360.0 " fill="none"></path>
+					</g>
+					<path d="M233.3 333.3 L228.0 326.7 L222.7 333.3 L228.0 320.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M198.3 463.7 L198.25 477 L198.25 497 L198.3 497.0 " fill="none"></path>
-						</g>
-					<path d="M203.6 470.3 L198.3 463.7 L192.9 470.3 L198.3 457.0 Z"></path>
+						<path d="M228.0 398.7 L228 412 L228 432 L228.0 432.0 " fill="none"></path>
+					</g>
+					<path d="M233.3 405.3 L228.0 398.7 L222.7 405.3 L228.0 392.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M81.8 463.7 L81.75 477 L81.75 497 L81.8 497.0 " fill="none"></path>
-						</g>
-					<path d="M87.1 470.3 L81.8 463.7 L76.4 470.3 L81.8 457.0 Z"></path>
+						<path d="M228.0 470.7 L228 484 L228 504 L228.0 504.0 " fill="none"></path>
+					</g>
+					<path d="M233.3 477.3 L228.0 470.7 L222.7 477.3 L228.0 464.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M81.8 534.7 L81.75 548 L114.5669014084507 568 L114.6 568.0 " fill="none"></path>
-						</g>
-					<path d="M87.1 541.3 L81.8 534.7 L76.4 541.3 L81.8 528.0 Z"></path>
+						<path d="M115.4 538.8 L151.75 556 L183 576 L183.0 576.0 " fill="none"></path>
+					</g>
+					<path d="M123.7 536.9 L115.4 538.8 L119.2 546.5 L109.4 536.0 Z"></path>
 					<g stroke-dasharray="6 6">
-							<path d="M198.3 534.7 L198.25 548 L165.4330985915493 568 L165.4 568.0 " fill="none"></path>
-						</g>
-					<path d="M203.6 541.3 L198.3 534.7 L192.9 541.3 L198.3 528.0 Z"></path>
-					<g data-name="Functor2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Functor2">
-								<rect x="156.3" y="0.0" height="31.0" width="84.0" data-name="Functor2"></rect>
-							</g>
-						<g transform="translate(156.25, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Functor2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Functor2">
-									<text x="34.0" y="13.5" stroke="none" text-anchor="middle" data-name="Functor2">Functor2</text>
-								
-								</g>
-							</g>
-						</g>
-					<g data-name="Applicative2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Applicative2">
-								<rect x="143.3" y="71.0" height="31.0" width="110.0" data-name="Applicative2"></rect>
-							</g>
-						<g transform="translate(143.25, 71)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Applicative2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Applicative2">
-									<text x="47.0" y="13.5" stroke="none" text-anchor="middle" data-name="Applicative2">Applicative2</text>
-								
-								</g>
-							</g>
-						</g>
-					<g data-name="Guarantee2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Guarantee2">
-								<rect x="0.0" y="142.0" height="31.0" width="104.0" data-name="Guarantee2"></rect>
-							</g>
-						<g transform="translate(0, 142)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Guarantee2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Guarantee2">
-									<text x="44.0" y="13.5" stroke="none" text-anchor="middle" data-name="Guarantee2">Guarantee2</text>
-								
-								</g>
-							</g>
-						</g>
-					<g data-name="Monad2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Monad2">
-								<rect x="274.3" y="213.0" height="31.0" width="76.0" data-name="Monad2"></rect>
-							</g>
-						<g transform="translate(274.25, 213)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Monad2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Monad2">
-									<text x="30.0" y="13.5" stroke="none" text-anchor="middle" data-name="Monad2">Monad2</text>
-								
-								</g>
-							</g>
-						</g>
-					<g data-name="ApplicativeError2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="ApplicativeError2">
-								<rect x="47.5" y="213.0" height="31.0" width="149.0" data-name="ApplicativeError2"></rect>
-							</g>
-						<g transform="translate(47.5, 213)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ApplicativeError2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ApplicativeError2">
-									<text x="66.5" y="13.5" stroke="none" text-anchor="middle" data-name="ApplicativeError2">ApplicativeError2</text>
-								
-								</g>
-							</g>
-						</g>
+						<path d="M63.4 541.8 L55.5 556 L55.5 576 L55.5 576.0 " fill="none"></path>
+					</g>
+					<path d="M64.8 550.2 L63.4 541.8 L55.5 545.1 L66.6 536.0 Z"></path>
+					<g stroke-dasharray="6 6">
+						<path d="M55.5 614.7 L55.5 628 L97.86111111111111 648 L97.9 648.0 " fill="none"></path>
+					</g>
+					<path d="M60.8 621.3 L55.5 614.7 L50.2 621.3 L55.5 608.0 Z"></path>
+					<g stroke-dasharray="6 6">
+						<path d="M228.0 542.7 L228 556 L216.88888888888889 576 L216.9 576.0 " fill="none"></path>
+					</g>
+					<path d="M233.3 549.3 L228.0 542.7 L222.7 549.3 L228.0 536.0 Z"></path>
+					<g stroke-dasharray="6 6">
+						<path d="M208.0 614.7 L208 628 L165.63888888888889 648 L165.6 648.0 " fill="none"></path>
+					</g>
+					<path d="M213.3 621.3 L208.0 614.7 L202.7 621.3 L208.0 608.0 Z"></path>
 					<g data-name="Bifunctor2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Bifunctor2">
-								<rect x="144.0" y="142.0" height="31.0" width="96.0" data-name="Bifunctor2"></rect>
-							</g>
-						<g transform="translate(144, 142)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Bifunctor2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Bifunctor2">
-									<text x="40.0" y="13.5" stroke="none" text-anchor="middle" data-name="Bifunctor2">Bifunctor2</text>
+						<g fill="#eee8d5" stroke="#33322E" data-name="Bifunctor2">
+							<rect x="33.8" y="144.0" height="32.0" width="96.0" data-name="Bifunctor2"></rect>
+						</g>
+						<g transform="translate(33.75, 144)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Bifunctor2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Bifunctor2" data-compartment="0">
+								<text x="40.0" y="14.1" stroke="none" text-anchor="middle" data-name="Bifunctor2" data-compartment="0">Bifunctor2</text>
 								
-								</g>
 							</g>
 						</g>
+					</g>
+					<g data-name="ApplicativeError2">
+						<g fill="#eee8d5" stroke="#33322E" data-name="ApplicativeError2">
+							<rect x="77.3" y="216.0" height="32.0" width="149.0" data-name="ApplicativeError2"></rect>
+						</g>
+						<g transform="translate(77.25, 216)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ApplicativeError2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ApplicativeError2" data-compartment="0">
+								<text x="66.5" y="14.1" stroke="none" text-anchor="middle" data-name="ApplicativeError2" data-compartment="0">ApplicativeError2</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Functor2">
+						<g fill="#eee8d5" stroke="#33322E" data-name="Functor2">
+							<rect x="256.0" y="0.0" height="32.0" width="84.0" data-name="Functor2"></rect>
+						</g>
+						<g transform="translate(256, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Functor2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Functor2" data-compartment="0">
+								<text x="34.0" y="14.1" stroke="none" text-anchor="middle" data-name="Functor2" data-compartment="0">Functor2</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Applicative2">
+						<g fill="#eee8d5" stroke="#33322E" data-name="Applicative2">
+							<rect x="243.0" y="72.0" height="32.0" width="110.0" data-name="Applicative2"></rect>
+						</g>
+						<g transform="translate(243, 72)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Applicative2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Applicative2" data-compartment="0">
+								<text x="47.0" y="14.1" stroke="none" text-anchor="middle" data-name="Applicative2" data-compartment="0">Applicative2</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Guarantee2">
+						<g fill="#eee8d5" stroke="#33322E" data-name="Guarantee2">
+							<rect x="169.8" y="144.0" height="32.0" width="104.0" data-name="Guarantee2"></rect>
+						</g>
+						<g transform="translate(169.75, 144)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Guarantee2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Guarantee2" data-compartment="0">
+								<text x="44.0" y="14.1" stroke="none" text-anchor="middle" data-name="Guarantee2" data-compartment="0">Guarantee2</text>
+								
+							</g>
+						</g>
+					</g>
+					<g data-name="Monad2">
+						<g fill="#eee8d5" stroke="#33322E" data-name="Monad2">
+							<rect x="306.0" y="216.0" height="32.0" width="76.0" data-name="Monad2"></rect>
+						</g>
+						<g transform="translate(306, 216)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Monad2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Monad2" data-compartment="0">
+								<text x="30.0" y="14.1" stroke="none" text-anchor="middle" data-name="Monad2" data-compartment="0">Monad2</text>
+								
+							</g>
+						</g>
+					</g>
 					<g data-name="Error2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Error2">
-								<rect x="166.3" y="284.0" height="31.0" width="64.0" data-name="Error2"></rect>
-							</g>
-						<g transform="translate(166.25, 284)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Error2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Error2">
-									<text x="24.0" y="13.5" stroke="none" text-anchor="middle" data-name="Error2">Error2</text>
+						<g fill="#eee8d5" stroke="#33322E" data-name="Error2">
+							<rect x="196.0" y="288.0" height="32.0" width="64.0" data-name="Error2"></rect>
+						</g>
+						<g transform="translate(196, 288)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Error2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Error2" data-compartment="0">
+								<text x="24.0" y="14.1" stroke="none" text-anchor="middle" data-name="Error2" data-compartment="0">Error2</text>
 								
-								</g>
 							</g>
 						</g>
+					</g>
 					<g data-name="Bracket2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Bracket2">
-								<rect x="156.3" y="355.0" height="31.0" width="84.0" data-name="Bracket2"></rect>
-							</g>
-						<g transform="translate(156.25, 355)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Bracket2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Bracket2">
-									<text x="34.0" y="13.5" stroke="none" text-anchor="middle" data-name="Bracket2">Bracket2</text>
+						<g fill="#eee8d5" stroke="#33322E" data-name="Bracket2">
+							<rect x="186.0" y="360.0" height="32.0" width="84.0" data-name="Bracket2"></rect>
+						</g>
+						<g transform="translate(186, 360)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Bracket2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Bracket2" data-compartment="0">
+								<text x="34.0" y="14.1" stroke="none" text-anchor="middle" data-name="Bracket2" data-compartment="0">Bracket2</text>
 								
-								</g>
 							</g>
 						</g>
+					</g>
 					<g data-name="Panic2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Panic2">
-								<rect x="164.3" y="426.0" height="31.0" width="68.0" data-name="Panic2"></rect>
-							</g>
-						<g transform="translate(164.25, 426)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Panic2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Panic2">
-									<text x="26.0" y="13.5" stroke="none" text-anchor="middle" data-name="Panic2">Panic2</text>
+						<g fill="#eee8d5" stroke="#33322E" data-name="Panic2">
+							<rect x="194.0" y="432.0" height="32.0" width="68.0" data-name="Panic2"></rect>
+						</g>
+						<g transform="translate(194, 432)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Panic2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Panic2" data-compartment="0">
+								<text x="26.0" y="14.1" stroke="none" text-anchor="middle" data-name="Panic2" data-compartment="0">Panic2</text>
 								
-								</g>
 							</g>
 						</g>
+					</g>
 					<g data-name="IO2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="IO2">
-								<rect x="177.3" y="497.0" height="31.0" width="42.0" data-name="IO2"></rect>
-							</g>
-						<g transform="translate(177.25, 497)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="IO2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="IO2">
-									<text x="13.0" y="13.5" stroke="none" text-anchor="middle" data-name="IO2">IO2</text>
+						<g fill="#eee8d5" stroke="#33322E" data-name="IO2">
+							<rect x="207.0" y="504.0" height="32.0" width="42.0" data-name="IO2"></rect>
+						</g>
+						<g transform="translate(207, 504)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="IO2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="IO2" data-compartment="0">
+								<text x="13.0" y="14.1" stroke="none" text-anchor="middle" data-name="IO2" data-compartment="0">IO2</text>
 								
-								</g>
 							</g>
 						</g>
+					</g>
 					<g data-name="Parallel2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Parallel2">
-								<rect x="40.8" y="426.0" height="31.0" width="82.0" data-name="Parallel2"></rect>
-							</g>
-						<g transform="translate(40.75, 426)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Parallel2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Parallel2">
-									<text x="33.0" y="13.5" stroke="none" text-anchor="middle" data-name="Parallel2">Parallel2</text>
+						<g fill="#eee8d5" stroke="#33322E" data-name="Parallel2">
+							<rect x="34.5" y="504.0" height="32.0" width="82.0" data-name="Parallel2"></rect>
+						</g>
+						<g transform="translate(34.5, 504)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Parallel2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Parallel2" data-compartment="0">
+								<text x="33.0" y="14.1" stroke="none" text-anchor="middle" data-name="Parallel2" data-compartment="0">Parallel2</text>
 								
-								</g>
 							</g>
 						</g>
+					</g>
+					<g data-name="WeakAsync2">
+						<g fill="#eee8d5" stroke="#33322E" data-name="WeakAsync2">
+							<rect x="151.0" y="576.0" height="32.0" width="114.0" data-name="WeakAsync2"></rect>
+						</g>
+						<g transform="translate(151, 576)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="WeakAsync2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="WeakAsync2" data-compartment="0">
+								<text x="49.0" y="14.1" stroke="none" text-anchor="middle" data-name="WeakAsync2" data-compartment="0">WeakAsync2</text>
+								
+							</g>
+						</g>
+					</g>
 					<g data-name="Concurrent2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Concurrent2">
-								<rect x="26.3" y="497.0" height="31.0" width="111.0" data-name="Concurrent2"></rect>
-							</g>
-						<g transform="translate(26.25, 497)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Concurrent2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Concurrent2">
-									<text x="47.5" y="13.5" stroke="none" text-anchor="middle" data-name="Concurrent2">Concurrent2</text>
+						<g fill="#eee8d5" stroke="#33322E" data-name="Concurrent2">
+							<rect x="0.0" y="576.0" height="32.0" width="111.0" data-name="Concurrent2"></rect>
+						</g>
+						<g transform="translate(0, 576)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Concurrent2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Concurrent2" data-compartment="0">
+								<text x="47.5" y="14.1" stroke="none" text-anchor="middle" data-name="Concurrent2" data-compartment="0">Concurrent2</text>
 								
-								</g>
 							</g>
 						</g>
+					</g>
 					<g data-name="Async2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Async2">
-								<rect x="103.5" y="568.0" height="31.0" width="73.0" data-name="Async2"></rect>
-							</g>
-						<g transform="translate(103.5, 568)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Async2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Async2">
-									<text x="28.5" y="13.5" stroke="none" text-anchor="middle" data-name="Async2">Async2</text>
+						<g fill="#eee8d5" stroke="#33322E" data-name="Async2">
+							<rect x="95.3" y="648.0" height="32.0" width="73.0" data-name="Async2"></rect>
+						</g>
+						<g transform="translate(95.25, 648)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Async2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Async2" data-compartment="0">
+								<text x="28.5" y="14.1" stroke="none" text-anchor="middle" data-name="Async2" data-compartment="0">Async2</text>
 								
-								</g>
 							</g>
 						</g>
+					</g>
 					<g data-name="Temporal2">
-							<g fill="#eee8d5" stroke="#33322E" data-name="Temporal2">
-								<rect x="280.3" y="0.0" height="31.0" width="96.0" data-name="Temporal2"></rect>
-							</g>
-						<g transform="translate(280.25, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Temporal2">
-								<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Temporal2">
-									<text x="40.0" y="13.5" stroke="none" text-anchor="middle" data-name="Temporal2">Temporal2</text>
+						<g fill="#eee8d5" stroke="#33322E" data-name="Temporal2">
+							<rect x="380.0" y="0.0" height="32.0" width="96.0" data-name="Temporal2"></rect>
+						</g>
+						<g transform="translate(380, 0)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Temporal2" data-compartment="0">
+							<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Temporal2" data-compartment="0">
+								<text x="40.0" y="14.1" stroke="none" text-anchor="middle" data-name="Temporal2" data-compartment="0">Temporal2</text>
 								
-								</g>
 							</g>
 						</g>
 					</g>
 				</g>
 			</g>
 		</g>
-	</svg>
+	</g>
+</svg>

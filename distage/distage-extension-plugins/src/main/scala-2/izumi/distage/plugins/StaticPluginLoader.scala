@@ -8,7 +8,7 @@ import izumi.fundamentals.platform.language.SourcePackageMaterializer.SourcePack
 import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.macros.blackbox
-import scala.reflect.runtime.{universe => ru}
+import scala.reflect.runtime.universe as ru
 
 /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
   *

@@ -347,7 +347,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
       == Green
     )
 
-    assertThrows[InjectorFailed](Injector().produceRun(DefaultsModule, Activation.empty)(println(_: Color)))
+    assertThrows[InjectorFailed](Injector().produceRun(DefaultsModule, Activation.empty)(identity(_: Color)))
 
     def SpecificityModule = new ModuleDef {
       make[Color].tagged(Mode.Test).from(Blue)

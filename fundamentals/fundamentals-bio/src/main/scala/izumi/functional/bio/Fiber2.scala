@@ -6,6 +6,9 @@ import zio.IO
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 trait Fiber2[+F[+_, +_], +E, +A] {
+  /** @note Defect in Fiber will result in [[Exit.Termination]] in joiner.
+    *       If the fiber was interrupted, joining it would also result in [[Exit.Termination]], _NOT_ [[Exit.Interruption]]
+    */
   def join: F[E, A]
   def observe: F[Nothing, Exit[E, A]]
   def interrupt: F[Nothing, Unit]

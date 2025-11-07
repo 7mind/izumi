@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.Exit.ZIOExit
-import izumi.functional.bio.UnsafeRun2.InterruptAction
+import izumi.functional.bio.data.InterruptAction
 import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
 import zio.{Executor, Fiber, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
@@ -55,12 +55,6 @@ object UnsafeRun2 {
   }
 
   //  def createMonixBIO(s: Scheduler, opts: monix.bio.IO.Options): UnsafeRun2[monix.bio.IO] = new MonixBIORunner(s, opts)
-
-  /**
-    * @param interrupt May semantically block until the target computation either finishes completely or finishes running
-    *                  its finalizers, depending on the underlying effect type.
-    */
-  final case class InterruptAction[F[_, _]](interrupt: F[Nothing, Unit]) extends AnyVal
 
   sealed trait FailureHandler
   object FailureHandler {

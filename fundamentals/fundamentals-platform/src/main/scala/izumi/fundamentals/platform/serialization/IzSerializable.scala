@@ -20,4 +20,4 @@ trait IzSerializable extends IzPlatformSyntax {
 
 }
 
-object IzSerializable extends IzSerializable {}
+object IzSerializable extends IzSerializable

@@ -7,9 +7,9 @@ trait Parallel2[F[+_, +_]] extends RootBifunctor[F] {
   def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
   /** [[parTraverseN]] with `maxConcurrent` set to the number of cores, or 2 when on single-core processor */
   def parTraverseNCore[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
-  def parTraverse_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = InnerF.void(parTraverse(l)(f))
-  def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = InnerF.void(parTraverseN(maxConcurrent)(l)(f))
-  def parTraverseNCore_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = InnerF.void(parTraverseNCore(l)(f))
+  def parTraverse_[E, A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = InnerF.void(parTraverse(l)(f))
+  def parTraverseN_[E, A](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = InnerF.void(parTraverseN(maxConcurrent)(l)(f))
+  def parTraverseNCore_[E, A](l: Iterable[A])(f: A => F[E, Unit]): F[E, Unit] = InnerF.void(parTraverseNCore(l)(f))
 
   /**
     * Returns an effect that executes both effects,

@@ -1,13 +1,12 @@
 package izumi.distage.testkit.distagesuite.generic
 
 import distage.*
-import distage.plugins.PluginConfig
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.distagesuite.fixtures.*
 import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.*
-import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
+import izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec
 import izumi.functional.bio.{Exit, F, IO2}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
@@ -92,10 +91,10 @@ object DistageTestExampleBase {
   final case class DirectlyMemoizedSetElement1(counter: SetCounter @Id("directly-memoized")) extends DirectlyMemoizedSetElement
   final case class DirectlyMemoizedSetElement2(counter: SetCounter @Id("directly-memoized")) extends DirectlyMemoizedSetElement
 
-  trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
+  trait DistageMemoizeExample[F[_]] extends ScalatestAbstractDistageSpec[F] {
     override protected def config: TestConfig = {
       super.config.copy(
-        pluginConfig = PluginConfig.cached(classOf[ActiveComponent].getPackage.getName),
+        pluginConfig = DistageMemoizeExamplePlatformSpecific.pluginConfigForFixturesPkg,
         memoizationRoots = Map(
           1 -> Set(DIKey[MockCache[F]]),
           2 -> Set(DIKey[Set[SetElement]], DIKey[SetCounter], DIKey[DirectlyMemoizedSetElement1], DIKey[DirectlyMemoizedSetElement2]),
@@ -313,17 +312,6 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
     }
   }
 
-}
-
-abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
-  "distage test" should {
-    "sleep" in {
-      (_: MockUserRepository[F]) =>
-        for {
-          _ <- F.maybeSuspend(Thread.sleep(100))
-        } yield ()
-    }
-  }
 }
 
 abstract class OverloadingTest[F[_]: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {

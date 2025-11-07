@@ -10,7 +10,6 @@ import izumi.distage.model.plan.Roots
 import izumi.functional.bio.data.{Free, FreeError, FreePanic}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
-import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -22,7 +21,7 @@ object ResourceEffectBindingsTest {
   final type Ft[+A] = Suspend2[Throwable, A]
 }
 
-class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector with GivenWhenThen {
+class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
 
   "Effect bindings" should {
 

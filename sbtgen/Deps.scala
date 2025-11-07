@@ -36,6 +36,8 @@ object Izumi {
     val scala_java_time = Version.VExpr("V.scala_java_time")
     val scalamock = Version.VExpr("V.scalamock")
     val docker_java = Version.VExpr("V.docker_java")
+    val scalajs_java_securerandom = Version.VExpr("V.scalajs_java_securerandom")
+    val portable_scala_reflect = Version.VExpr("V.portable_scala_reflect")
   }
 
   object PV {
@@ -144,6 +146,8 @@ object Izumi {
 
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
+    final val scalajs_java_securerandom = Library("org.scala-js", "scalajs-java-securerandom", V.scalajs_java_securerandom, LibraryType.Auto)
+      .more(LibSetting.Raw("cross CrossVersion.for3Use2_13")) in Scope.Compile.js
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant)
     final val slf4j_simple = Library("org.slf4j", "slf4j-simple", V.slf4j, LibraryType.Invariant)
@@ -157,6 +161,9 @@ object Izumi {
     val docker_java_transport_zerodep = Library("com.github.docker-java", "docker-java-transport-zerodep", V.docker_java, LibraryType.Invariant)
 
     val javaXInject = Library("javax.inject", "javax.inject", "1", LibraryType.Invariant)
+
+    val portable_scala_reflect = Library("org.portable-scala", "portable-scala-reflect", V.portable_scala_reflect, LibraryType.Auto)
+      .more(LibSetting.Raw("cross CrossVersion.for3Use2_13"))
   }
 
   import Deps._
@@ -694,19 +701,20 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkitCore,
-        libs = Nil,
+        libs = Seq(scalajs_java_securerandom),
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
         libs = allMonadsOptional ++ Seq(
-          scalamock in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2)
+          scalamock in Scope.Test.all,
+          portable_scala_reflect in Scope.Compile.js,
         ) ++ scalatest_all.map(_ in Scope.Compile.all),
         depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm,
+        platforms = Targets.cross,
         settings = Seq(
           // Ignore scala-xml version conflict between scoverage where scalatest requires scala-xml v2
           // and scoverage requires scala-xml v1 on Scala 2.12,

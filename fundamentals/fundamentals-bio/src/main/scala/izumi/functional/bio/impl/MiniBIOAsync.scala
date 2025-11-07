@@ -1,0 +1,436 @@
+package izumi.functional.bio.impl
+
+import izumi.functional.bio.Exit.Trace
+import izumi.functional.bio.data.{InterruptAction, Morphism2, RestoreInterruption2}
+import izumi.functional.bio.impl.MiniBIOAsync.Fail
+import izumi.functional.bio.{BlockingIO2, Exit, UnsafeRun2, WeakAsync2}
+import izumi.fundamentals.platform.language.Quirks.Discarder
+
+import java.util.concurrent.atomic.AtomicReference
+import scala.annotation.tailrec
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
+
+/**
+  * [[MiniBIO]] extended with support for async operations via the Async constructor.
+  *
+  * This effect type does not support interruption.
+  *
+  * Made for use in distage-testkit. Prefer ZIO or cats-bio in production.
+  */
+sealed trait MiniBIOAsync[+E, +A] {
+
+  /**
+    * Runs the effect synchronously until the first async boundary.
+    * @return Left if the effect completes synchronously, or Right with a continuation if async execution is needed.
+    */
+  final def runSyncToFirstAsyncBoundary(): Either[Exit.Uninterrupted[E, A], ExecutionContext => Future[Exit.Uninterrupted[E, A]]] = {
+
+    final class Catcher[E0, A0, E1, B](
+      val recover: Exit.FailureUninterrupted[E0] => MiniBIOAsync[E1, B],
+      f: A0 => MiniBIOAsync[E1, B],
+    ) extends (A0 => MiniBIOAsync[E1, B]) {
+      override def apply(a: A0): MiniBIOAsync[E1, B] = f(a)
+    }
+
+    @tailrec def runner(
+      op: MiniBIOAsync[Any, Any],
+      stack: List[Any => MiniBIOAsync[Any, Any]],
+    ): Either[Exit.Uninterrupted[Any, Any], ExecutionContext => Future[Exit.Uninterrupted[Any, Any]]] = op match {
+
+      case MiniBIOAsync.FlatMap(io, f) =>
+        runner(io, f.asInstanceOf[Any => MiniBIOAsync[Any, Any]] :: stack)
+
+      case MiniBIOAsync.Redeem(io, err, succ) =>
+        runner(io, new Catcher(err, succ).asInstanceOf[Any => MiniBIOAsync[Any, Any]] :: stack)
+
+      case MiniBIOAsync.Sync(a) =>
+        val exit =
+          try { a() }
+          catch {
+            case t: Throwable =>
+              Exit.Termination(t, Trace.ThrowableTrace(t))
+          }
+        exit match {
+          case Exit.Success(value) =>
+            stack match {
+              case flatMap :: stackRest =>
+                val nextIO =
+                  try { flatMap(value) }
+                  catch {
+                    case t: Throwable =>
+                      Fail.terminate(t)
+                  }
+                runner(nextIO, stackRest)
+
+              case Nil =>
+                Left(exit)
+            }
+
+          case failure: Exit.FailureUninterrupted[?] =>
+            runner(Fail.halt(failure), stack)
+        }
+
+      case MiniBIOAsync.Fail(e) =>
+        val err =
+          try e()
+          catch {
+            case t: Throwable =>
+              Exit.Termination(t, Trace.ThrowableTrace(t))
+          }
+        val catcher = stack.dropWhile(!_.isInstanceOf[Catcher[?, ?, ?, ?]])
+        catcher match {
+          case value :: stackRest =>
+            runner(value.asInstanceOf[Catcher[Any, Any, Any, Any]].recover(err), stackRest)
+
+          case Nil =>
+            Left(err)
+        }
+
+      case MiniBIOAsync.Async(register) =>
+        // Hit async boundary - return continuation
+        Right {
+          (ec: ExecutionContext) =>
+            val promise = Promise[Exit.Uninterrupted[Any, Any]]()
+            try {
+              val callback = (exit: Exit.Uninterrupted[Any, Any]) => {
+                promise.trySuccess(exit)
+                ()
+              }
+              register(ec, callback)
+            } catch {
+              case t: Throwable =>
+                promise.trySuccess(Exit.Termination.forThrowable(t))
+            }
+
+            promise.future.flatMap {
+              case exit @ Exit.Success(value) =>
+                stack match {
+                  case flatMap :: stackRest =>
+                    val nextIO =
+                      try { flatMap(value) }
+                      catch {
+                        case t: Throwable =>
+                          Fail.terminate(t)
+                      }
+                    runnerAsync(nextIO, stackRest, ec)
+
+                  case Nil =>
+                    Future.successful(exit)
+                }
+
+              case failure: Exit.FailureUninterrupted[?] =>
+                Fail.halt(failure).runOnEC(ec)
+            }(using ec)
+        }
+    }
+
+    def runnerAsync(op: MiniBIOAsync[Any, Any], stack: List[Any => MiniBIOAsync[Any, Any]], ec: ExecutionContext): Future[Exit.Uninterrupted[Any, Any]] = {
+      runner(op, stack) match {
+        case Left(earlyResult) => Future.successful(earlyResult)
+        case Right(continuation) => continuation(ec)
+      }
+    }
+
+    runner(this, Nil).asInstanceOf[Either[Exit.Uninterrupted[E, A], ExecutionContext => Future[Exit.Uninterrupted[E, A]]]]
+  }
+
+  /**
+    * Runs the effect on the provided ExecutionContext
+    * @note Even for synchronous effects, execution will be deferred to the EC.
+    */
+  final def runOnEC(ec: ExecutionContext): Future[Exit.Uninterrupted[E, A]] = {
+    // Defer execution to EC to ensure true parallelism
+    val promise = Promise[Exit.Uninterrupted[E, A]]()
+    ec.execute(
+      () => {
+        runSyncToFirstAsyncBoundary() match {
+          case Left(result) => promise.success(result)
+          case Right(continuation) => continuation(ec).onComplete(promise.complete)(ec)
+        }
+      }
+    )
+    promise.future
+  }
+
+  /**
+    * Runs the effect on current thread up to first async boundary and
+    * then migrates execution to provided [[ExecutionContext]]
+    * @return Completed future if there were no Async nodes, completable future otherwise
+    */
+  final def runSyncToFirstAsyncBoundaryOrOnEC(ec: ExecutionContext): Future[Exit.Uninterrupted[E, A]] = {
+    runSyncToFirstAsyncBoundary() match {
+      case Left(exit) => Future.successful(exit)
+      case Right(mkFuture) => mkFuture(ec)
+    }
+  }
+
+}
+
+object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
+  final case class Fail[+E](e: () => Exit.FailureUninterrupted[E]) extends MiniBIOAsync[E, Nothing]
+  object Fail {
+    def terminate(t: Throwable): Fail[Nothing] = Fail(() => Exit.Termination(t, Trace.ThrowableTrace(t)))
+    def halt[E](e: => Exit.FailureUninterrupted[E]): Fail[E] = Fail(() => e)
+  }
+  final case class Sync[+E, +A](a: () => Exit.Uninterrupted[E, A]) extends MiniBIOAsync[E, A]
+  final case class FlatMap[E, A, +E1 >: E, +B](io: MiniBIOAsync[E, A], f: A => MiniBIOAsync[E1, B]) extends MiniBIOAsync[E1, B]
+  final case class Redeem[E, A, +E1, +B](
+    io: MiniBIOAsync[E, A],
+    err: Exit.FailureUninterrupted[E] => MiniBIOAsync[E1, B],
+    succ: A => MiniBIOAsync[E1, B],
+  ) extends MiniBIOAsync[E1, B]
+  final case class Async[+E, +A](register: (ExecutionContext, Exit.Uninterrupted[E, A] => Unit) => Unit) extends MiniBIOAsync[E, A]
+
+  implicit object WeakAsync2ForMiniBIOAsync extends WeakAsync2[MiniBIOAsync] with BlockingIO2[MiniBIOAsync] {
+    override def pure[A](a: A): MiniBIOAsync[Nothing, A] = Sync(() => Exit.Success(a))
+    override def flatMap[E, A, B](r: MiniBIOAsync[E, A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, B] = FlatMap(r, f)
+    override def fail[E](v: => E): MiniBIOAsync[E, Nothing] = Fail(() => Exit.Error.forTypedError(v))
+    override def terminate(v: => Throwable): MiniBIOAsync[Nothing, Nothing] = Fail.terminate(v)
+    override def sendInterruptToSelf: MiniBIOAsync[Nothing, Unit] = unit
+    override def fromSandboxExit[E, A](effect: => Exit.Uninterrupted[E, A]): MiniBIOAsync[E, A] = Sync(() => effect)
+
+    override def syncThrowable[A](effect: => A): MiniBIOAsync[Throwable, A] = Sync {
+      () =>
+        try {
+          Exit.Success(effect)
+        } catch { case e: Throwable => Exit.Error.forThrowable(e) }
+    }
+    override def sync[A](effect: => A): MiniBIOAsync[Nothing, A] = {
+      Sync(() => Exit.Success(effect))
+    }
+
+    override def redeem[E, A, E2, B](r: MiniBIOAsync[E, A])(err: E => MiniBIOAsync[E2, B], succ: A => MiniBIOAsync[E2, B]): MiniBIOAsync[E2, B] = {
+      Redeem[E, A, E2, B](
+        r,
+        {
+          case e: Exit.Termination => Fail.halt(e)
+          case Exit.Error(e, _) => err(e)
+        },
+        succ,
+      )
+    }
+
+    override def catchAll[E, A, E2](r: MiniBIOAsync[E, A])(f: E => MiniBIOAsync[E2, A]): MiniBIOAsync[E2, A] = redeem(r)(f, pure)
+
+    override def bracketCase[E, A, B](
+      acquire: MiniBIOAsync[E, A]
+    )(release: (A, Exit[E, B]) => MiniBIOAsync[Nothing, Unit]
+    )(use: A => MiniBIOAsync[E, B]
+    ): MiniBIOAsync[E, B] = {
+      // does not propagate error raised in release if `use` failed, in that case only error from `use` is preserved
+      flatMap(acquire)(
+        a =>
+          Redeem[E, B, E, B](
+            io = use(a),
+            err = e => Redeem[Nothing, Unit, E, Nothing](release(a, e), err = _ => Fail(() => e), succ = _ => Fail(() => e)),
+            succ = v => map(release(a, Exit.Success(v)))(_ => v),
+          )
+      )
+    }
+
+    override def sandbox[E, A](r: MiniBIOAsync[E, A]): MiniBIOAsync[Exit.FailureUninterrupted[E], A] = {
+      Redeem[E, A, Exit.FailureUninterrupted[E], A](r, e => fail(e), pure)
+    }
+
+    override def traverse[E, A, B](l: Iterable[A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, List[B]] = {
+      val x = l.foldLeft(pure(Nil): MiniBIOAsync[E, List[B]]) {
+        (acc, a) =>
+          flatMap(acc)(list => map(f(a))(_ :: list))
+      }
+      map(x)(_.reverse)
+    }
+
+    override def uninterruptible[E, A](f: MiniBIOAsync[E, A]): MiniBIOAsync[E, A] = f
+    override def uninterruptibleExcept[E, A](f: RestoreInterruption2[MiniBIOAsync] => MiniBIOAsync[E, A]): MiniBIOAsync[E, A] = f(Morphism2.identity[MiniBIOAsync])
+    override def bracketExcept[E, A, B](
+      acquire: RestoreInterruption2[MiniBIOAsync] => MiniBIOAsync[E, A]
+    )(release: (A, Exit[E, B]) => MiniBIOAsync[Nothing, Unit]
+    )(use: A => MiniBIOAsync[E, B]
+    ): MiniBIOAsync[E, B] = bracketCase(acquire(Morphism2.identity[MiniBIOAsync]))(release)(use)
+
+    // BlockingIO2
+    override def shiftBlocking[E, A](f: MiniBIOAsync[E, A]): MiniBIOAsync[E, A] = f
+    override def syncInterruptibleBlocking[A](f: => A): MiniBIOAsync[Throwable, A] = syncBlocking(f)
+    override def syncBlocking[A](f: => A): MiniBIOAsync[Throwable, A] = syncThrowable(scala.concurrent.blocking(f))
+
+    // WeakAsync2
+    override def async[E, A](register: (Either[E, A] => Unit) => Unit): MiniBIOAsync[E, A] = {
+      Async[E, A] {
+        (_, cb) =>
+          register {
+            case Right(v) => cb(Exit.Success(v))
+            case Left(e) => cb(Exit.Error.forTypedError(e))
+          }
+      }
+    }
+
+    override def fromFuture[A](mkFuture: ExecutionContext => Future[A]): MiniBIOAsync[Throwable, A] = {
+      Async[Throwable, A] {
+        (ec, cb) =>
+          mkFuture(ec).onComplete {
+            case Success(v) => cb(Exit.Success(v))
+            case Failure(e) => cb(Exit.Error.forThrowable(e))
+          }(ec)
+      }
+    }
+
+    // Parallel2
+    override def zipWithPar[E, A, B, C](fa: MiniBIOAsync[E, A], fb: MiniBIOAsync[E, B])(f: (A, B) => C): MiniBIOAsync[E, C] = {
+      Async[E, C] {
+        (ec, cb) =>
+          val futureA = fa.runOnEC(ec)
+          val futureB = fb.runOnEC(ec)
+          futureA
+            .zip(futureB)
+            .onComplete {
+              case Success((exitA, exitB)) =>
+                (exitA, exitB) match {
+                  case (Exit.Success(a), Exit.Success(b)) => cb(Exit.Success(f(a, b)))
+                  case (failure: Exit.FailureUninterrupted[E], _) => cb(failure)
+                  case (_, failure: Exit.FailureUninterrupted[E]) => cb(failure)
+                }
+              case Failure(t) =>
+                cb(Exit.Termination.forThrowable(t))
+            }(using ec)
+      }
+    }
+
+    override def parTraverse[E, A, B](l: Iterable[A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, List[B]] = {
+      parTraverseN(Int.MaxValue)(l)(f)
+    }
+
+    override def parTraverse_[E, A](l: Iterable[A])(f: A => MiniBIOAsync[E, Unit]): MiniBIOAsync[E, Unit] = {
+      parTraverseN_(Int.MaxValue)(l)(f)
+    }
+
+    override def parTraverseNCore[E, A, B](l: Iterable[A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, List[B]] = {
+      suspendSafe(parTraverseN(java.lang.Runtime.getRuntime.availableProcessors())(l)(f))
+    }
+
+    override def parTraverseNCore_[E, A](l: Iterable[A])(f: A => MiniBIOAsync[E, Unit]): MiniBIOAsync[E, Unit] = {
+      suspendSafe(parTraverseN_(java.lang.Runtime.getRuntime.availableProcessors())(l)(f))
+    }
+
+    override def parTraverseN[E, A, B](maxParallelism: Int)(l: Iterable[A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, List[B]] = {
+      // from https://github.com/zio/zio/blob/be0fc8a67388dba08c008b76d04197f875eecc9a/core/shared/src/main/scala/zio/ZIO.scala#L6319
+      if (l.isEmpty) {
+        pure(List.empty)
+      } else if (maxParallelism <= 1) {
+        traverse(l)(f)
+      } else {
+        suspendSafe {
+          val results = new Array[AnyRef](l.size)
+          map(parTraverseN_(maxParallelism)(l.zipWithIndex) {
+            case (a, i) =>
+              map(f(a)) {
+                b =>
+                  results(i) = b.asInstanceOf[AnyRef]
+              }
+          })(_ => results.toList.asInstanceOf[List[B]])
+        }
+      }
+    }
+
+    override def parTraverseN_[E, A](maxParallelism: Int)(l: Iterable[A])(f: A => MiniBIOAsync[E, Unit]): MiniBIOAsync[E, Unit] = {
+      // from https://github.com/zio/zio/blob/be0fc8a67388dba08c008b76d04197f875eecc9a/core/shared/src/main/scala/zio/ZIO.scala#L6341
+      val realParallelism = math.min(maxParallelism, l.size)
+      if (l.isEmpty) {
+        unit
+      } else if (realParallelism <= 1) {
+        traverse_(l)(f)
+      } else {
+        Async[E, Unit] {
+          (ec0, cb) =>
+            implicit val ec: ExecutionContext = ec0
+
+            import java.util.concurrent.ConcurrentLinkedQueue
+            import scala.jdk.CollectionConverters.*
+
+            val queue = new ConcurrentLinkedQueue[A](l.asJavaCollection)
+            // NB: parTraverse* must implement short-circuiting - even for an uninterruptible effect,
+            // - by analogy with traverse, but this capability is not used in distage-testkit because
+            // all the tests are sandboxed
+            val earlyFailure = new AtomicReference[Option[Exit.FailureUninterrupted[E]]](None)
+
+            val worker: MiniBIOAsync[E, Unit] = {
+              guaranteeOnFailure[E, Unit](
+                f = {
+                  def go(): MiniBIOAsync[E, Unit] = suspendSafe {
+                    if (earlyFailure.get().isDefined) {
+                      unit
+                    } else {
+                      queue.poll() match {
+                        case null => unit
+                        case a => flatMap(f(a))(_ => go())
+                      }
+                    }
+                  }
+                  go()
+                },
+                cleanupOnFailure = {
+                  failure =>
+                    val failureUninterrupted = failure match {
+                      case uninterrupted: Exit.FailureUninterrupted[E] => uninterrupted
+                      case i @ Exit.Interruption(_, _, _) => Exit.Termination.forThrowable(i.toThrowable)
+                    }
+                    sync(earlyFailure.compareAndSet(None, Some(failureUninterrupted)).discard())
+                },
+              )
+            }
+
+            val workerFutures = List.fill(realParallelism)(worker.runOnEC(ec))
+
+            Future
+              .sequence(workerFutures)
+              .onComplete {
+                case Success(exits) =>
+                  val mbFailure = earlyFailure.get().orElse(exits.collectFirst(Function.unlift(_.asFailure)))
+                  mbFailure match {
+                    case Some(failure) => cb(failure)
+                    case None => cb(Exit.Success(()))
+                  }
+                case Failure(t) =>
+                  cb(Exit.Termination(t, Trace.ThrowableTrace(t)))
+              }
+        }
+      }
+    }
+
+  }
+
+  implicit def UnsafeRunMiniBIOAsync(implicit ec: ExecutionContext): UnsafeRun2[MiniBIOAsync] = new MiniBIOAsyncRunner()(using ec)
+
+  final class MiniBIOAsyncRunner()(implicit ec: ExecutionContext) extends MiniBIOAsyncUnsafeRun2UnsafeRunSyncPlatformSpecific with UnsafeRun2[MiniBIOAsync] {
+
+    override def unsafeRunAsync[E, A](io: => MiniBIOAsync[E, A])(callback: Exit[E, A] => Unit): Unit = {
+      io.runOnEC(ec).onComplete {
+          case scala.util.Success(exit: Exit.Uninterrupted[E, A]) => callback(exit)
+          case scala.util.Failure(t) => callback(Exit.Termination(t, Exit.Trace.ThrowableTrace(t)))
+        }(ec)
+    }
+
+    override def unsafeRunAsyncAsFuture[E, A](io: => MiniBIOAsync[E, A]): Future[Exit[E, A]] = {
+      io.runOnEC(ec)
+    }
+
+    // MiniBIOAsync doesn't support interruption
+    override def unsafeRunAsyncInterruptible[E, A](io: => MiniBIOAsync[E, A])(callback: Exit[E, A] => Unit): InterruptAction[MiniBIOAsync] = {
+      val finished = Promise[Unit]()
+      unsafeRunAsync(io)(callback = {
+        exit =>
+          finished.success(())
+          callback(exit)
+      })
+      // block until finished
+      InterruptAction(MiniBIOAsync.Async((_, cb) => finished.future.onComplete(_ => cb(Exit.Success(())))))
+    }
+
+    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => MiniBIOAsync[E, A]): (Future[Exit[E, A]], InterruptAction[MiniBIOAsync]) = {
+      val promise = Promise[Exit[E, A]]()
+      val interrupt = unsafeRunAsyncInterruptible(io)(exit => promise.success(exit))
+      (promise.future, interrupt)
+    }
+  }
+
+}

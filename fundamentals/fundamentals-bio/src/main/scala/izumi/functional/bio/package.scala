@@ -4,7 +4,7 @@ import izumi.functional.bio.data.Isomorphism2
 import izumi.functional.bio.syntax.Syntax2
 
 /**
-  *  Current hierarchy (use http://www.nomnoml.com/ to render, rendered: https://izumi.7mind.io/bio/media/bio-relationship-hierarchy.svg)
+  *  Current hierarchy (rendered: [[https://izumi.7mind.io/bio/media/bio-relationship-hierarchy.svg]], use [[https://www.nomnoml.com/]] to render)
   *
   *  {{{
   *  [Functor2]<--[Bifunctor2]
@@ -14,17 +14,18 @@ import izumi.functional.bio.syntax.Syntax2
   *  [Applicative2]<--[Monad2]
   *  [Guarantee2]<--[ApplicativeError2]
   *  [ApplicativeError2]<--[Error2]
+  *  [Error2]<--[Temporal2]
   *  [Monad2]<--[Error2]
   *  [Error2]<--[Bracket2]
   *  [Bracket2]<--[Panic2]
   *  [Panic2]<--[IO2]
-  *  [IO2]<--[Async2]
+  *  [IO2]<--[WeakAsync2]
+  *  [WeakAsync2]<--[Async2]
   *
   *  [Monad2]<--[Parallel2]
+  *  [Parallel2]<--[WeakAsync2]
+  *  [Panic2]<--[Concurrent2]
   *  [Parallel2]<--[Concurrent2]
-  *  [Concurrent2]<--[Async2]
-  *
-  *  [Error2]<--[Temporal2]
   *  }}}
   *
   *  Auxiliary algebras:
@@ -55,20 +56,22 @@ import izumi.functional.bio.syntax.Syntax2
   *  Raw inheritance hierarchy:
   *
   *  {{{
+  *  [Bifunctor2]<--[ApplicativeError2]
   *  [Functor2]<--[Applicative2]
   *  [Applicative2]<--[Guarantee2]
   *  [Applicative2]<--[Monad2]
   *  [Guarantee2]<--[ApplicativeError2]
-  *  [Bifunctor2]<--[ApplicativeError2]
   *  [ApplicativeError2]<--[Error2]
   *  [Monad2]<--[Error2]
   *  [Error2]<--[Bracket2]
   *  [Bracket2]<--[Panic2]
   *  [Panic2]<--[IO2]
   *
+  *  [Parallel2]<--[WeakAsync2]
   *  [Parallel2]<--[Concurrent2]
   *  [Concurrent2]<--[Async2]
-  *  [IO2]<--[Async2]
+  *  [IO2]<--[WeakAsync2]
+  *  [WeakAsync2]<--[Async2]
   *
   *  [Temporal2]
   *  }}}
@@ -76,31 +79,43 @@ import izumi.functional.bio.syntax.Syntax2
   *  current hierarchy roots:
   *
   *  bifunctor:
-  *  - Functor3
-  *  - Bifunctor3
-  *  - Parallel3
-  *  - Temporal3
+  *  - [[Functor2]]
+  *  - [[Bifunctor2]]
+  *  - [[Parallel2]]
+  *  - [[Temporal2]]
   *
   *  standalone:
-  *  - Fork3
-  *  - BlockingIO3
-  *  - Primitives3
-  *  - PrimitivesM3
+  *  - [[Fork2]]
+  *  - [[BlockingIO2]]
+  *  - [[Primitives2]]
+  *  - [[PrimitivesM2]]
+  *
+  *  @note New BIO typeclass checklist:
+  *  {{{
+  *  [ ] - add syntax to `Syntax2` with the same name as the type
+  *  [ ] - add syntax for new root's `InnerF` with the same name as `InnerF` in `Syntax2`
+  *  [ ] - add new attachments in `RootInstanceLowPriority*`
+  *  [ ] - add conversion from itself to its `InnerF` to `RootInstanceLowPriority*`
+  *        (conversions implicit priority: from most specific `InnerF` to least specific)
+  *  [ ] - add conversion to equivalent cats typeclass if applicable in `CatsConversions`
+  *  [ ] - update hierarchy graph above, re-render SVG
+  *  [ ] - add syntax tests in `SyntaxTest`, runtime tests if applicable
+  *  }}}
+  *
+  * @note Real and raw (direct inheritance) hierarchies differ because of implicit ambiguities caused by
+  *       inheritance: [[https://typelevel.org/blog/2016/09/30/subtype-typeclasses.html]]
+  *
+  *       However, since Scala 3.7, the ambiguity problem has been resolved on Scala 3 using inverted given prioritization:
+  *       [[https://contributors.scala-lang.org/t/joining-the-dots-on-recent-implicit-prioritization-changes-and-some-scala-history/6814/3]]
+  *
+  *       So, when or if we drop support for Scala 2, we can revisit the design, remove `InnerF` pattern and make
+  *       real and raw hierarchy match.
   */
-/*
-  New BIO typeclass checklist:
-
-  [ ] - add syntax in BIOSyntax3 & BIOSyntax at the same name as type
-  [ ] - add syntax for new root's InnerF at the same name in BIOSyntax3 & BIOSyntax
-  [ ] - add new attachments in BIORootInstanceLowPriorityN
-  [ ] - add conversion BIOConvertToBIONewRoot in BIORootInstanceLowPriorityN
-        (conversions implicit priority: from most specific InnerF to least specific)
- */
 package object bio extends Syntax2 {
 
   /**
-    * A convenient dependent summoner for BIO hierarchy.
-    * Auto-narrows to the most powerful available class:
+    * A convenient dependent-typed summoner for BIO hierarchy.
+    * Auto-narrows to the most powerful available type class:
     *
     * {{{
     *   import izumi.functional.bio.{F, Temporal2}

@@ -23,15 +23,17 @@ import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.{LogQueue, LogRouter}
 
 import scala.annotation.nowarn
+import scala.annotation.unchecked.uncheckedVariance
 import scala.util.Try
 
 object TestPlanner {
 
-  final case class PackedEnv[F[_]](
+  final case class PackedEnv[+F[_]](
     envMergeCriteria: PackedEnvMergeCriteria,
     preparedTests: Seq[AlmostPreparedTest[F]],
     memoizationPlanTree: List[Plan],
@@ -39,7 +41,7 @@ object TestPlanner {
     highestDebugOutputInTests: Boolean,
     strengthenedKeys: Set[DIKey.SetElementKey],
   )
-  final case class AlmostPreparedTest[F[_]](
+  final case class AlmostPreparedTest[+F[_]](
     test: DistageTest[F],
     appModule: Module,
     targetKeys: Set[DIKey],
@@ -47,19 +49,19 @@ object TestPlanner {
   )
 
   final case class InjectorEquivalenceCriteria(
-    bsPlanMinusActivations: Vector[ExecutableOp],
+    bsPlanMinusActivations: Set[ExecutableOp],
     bsModuleMinusActivations: BootstrapModule,
   )
 
   final case class PackedEnvMergeCriteria(
     injectorEquivalenceCriteria: InjectorEquivalenceCriteria,
-    runtimePlan: Plan,
+    runtimePlanCriteria: Plan,
   )
 
-  final case class PreparedTestEnv(
-    envExec: EnvExecutionParams,
+  final case class PreparedTestEnv[F[_]](
+    envExec: EnvExecutionParams.Aux[F],
     runtimePlan: Plan,
-    memoizationInjector: Injector[Identity],
+    runtimeInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
   )
 
@@ -69,41 +71,36 @@ object TestPlanner {
     final case class DIErrors(errors: NEList[DIError]) extends PlanningFailure
   }
 
-  final case class PlannedTestEnvs[F[_]](
-    envs: Map[PreparedTestEnv, TestTree[F]]
+  final case class PlannedTestEnvs[+F[_]](
+    envs: Map[PreparedTestEnv[F], TestTree[F]] @uncheckedVariance
   )
   final case class PlannedTests[F[_]](
-    good: Seq[PlannedTestEnvs[F]], // in fact there should always be just one element
+    good: Seq[PlannedTestEnvs[F]],
     bad: Seq[(Seq[DistageTest[F]], PlanningFailure)],
   )
 }
 
-class TestPlanner[F[_]: TagK: DefaultModule](
+class TestPlanner(
   logging: TestkitLogging,
   configLoader: TestConfigLoader,
-  testTreeBuilder: TestTreeBuilder[F],
+  testTreeBuilder: TestTreeBuilder,
   testRunnerLocator: LocatorRef,
   logBuffer: LogQueue,
 ) {
-  // first we need to plan runtime for our monad, which is retained by TestTreeRunner. Identity is also supported.
-  private val runtimeGcRoots: Set[DIKey] = Set(
-    DIKey.get[QuasiIORunner[F]],
-    DIKey.get[TestTreeRunner[F]],
-  )
   /**
-    * Performs tests grouping by it's memoization environment.
-    * [[TestEnvironment.EnvExecutionParams]] - contains only parts of environment that will not affect plan.
+    * Group tests by their memoization environment.
+    * [[TestEnvironment.EnvExecutionParams]] - contains parts of environment that may radically affect planning.
     * Grouping by such structure will allow us to create memoization groups with shared logger and parallel execution policy.
-    * By result you'll got [[PackedEnv]] mapped to [[izumi.distage.testkit.runner.impl.TestTreeBuilder.TestTreeBuilderImpl.MemoizationTreeBuilder]]
+    * @return [[PackedEnv]] mapped to [[izumi.distage.testkit.runner.impl.TestTreeBuilder.TestTreeBuilderImpl.MemoizationTreeBuilder]]
     * - tree-represented memoization plan with tests.
     * [[PackedEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
   @nowarn("msg=[Uu]nused import")
-  def groupTests[G[_]](distageTests: Seq[DistageTest[F]])(implicit G: QuasiIO[G], GA: QuasiAsync[G]): G[PlannedTests[F]] = {
+  def planGroupTests[F[_]](distageTests: Seq[DistageTest[AnyF]], FA: QuasiAsync[F])(implicit F: QuasiIO[F]): F[PlannedTests[AnyF]] = {
     import scala.collection.compat.*
 
     for {
-      out <- G.traverse(
+      out <- F.traverse(
         distageTests
           .groupBy(_.environment.getExecParams)
           .view
@@ -111,64 +108,73 @@ class TestPlanner[F[_]: TagK: DefaultModule](
           .toSeq
       ) {
         case (envExec, testsByEnv) =>
-          val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
-
-          for {
-            memoizationEnvs <- GA.parTraverse(testsByEnv) {
-              case (env, tests) =>
-                G.maybeSuspend {
-                  // make a config loader for current env with logger
-                  val config = configLoader.loadConfig(env, configLoadLogger)
-
-                  // test loggers will not create polling threads and will log immediately
-                  val logConfigLoader = new LogConfigLoaderImpl(CLILoggerOptions(envExec.logLevel, json = false), configLoadLogger)
-                  val logConfig = logConfigLoader.loadLoggingConfig(config)
-                  val router = new RouterFactory.RouterFactoryConsoleSinkImpl().createRouter(logConfig, logBuffer)
-
-                  prepareGroupPlans(envExec, config, env, tests, router).left.map(bad => (tests, bad))
-                }
-            }
-          } yield {
-
-            val good = memoizationEnvs
-              .collect {
-                case Right(env) =>
-                  env
-              }
-              .filter(_.preparedTests.nonEmpty)
-
-            // merge environments together by equality of their shared & runtime plans
-            // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
-            // so this saves a lot of reallocation of memoized resources
-            val envsGroupedByPlanEquality = good.groupBy(_.envMergeCriteria)
-            val goodTrees: Map[PreparedTestEnv, TestTree[F]] = envsGroupedByPlanEquality.map {
-              case (criteria, packedEnv) =>
-                // injectors do NOT provide equality but we defined custom injector equvalence for the purpose
-                // any injector from the group would do
-                val memoizationInjector = packedEnv.head.envInjector
-                val runtimePlan = criteria.runtimePlan
-                assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
-
-                val memoizationTree = testTreeBuilder.build(memoizationInjector, runtimePlan, packedEnv)
-
-                val highestDebugOutputInTests = packedEnv.exists(_.highestDebugOutputInTests)
-                val env = PreparedTestEnv(envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
-                (env, memoizationTree)
-            }
-
-            val bad: Seq[(Seq[DistageTest[F]], PlanningFailure)] = memoizationEnvs.collect {
-              case Left((tests, problem)) =>
-                (tests, problem)
-            }
-
-            (PlannedTestEnvs(goodTrees), bad)
-          }
+          planTestEnvs[F, envExec.F](envExec, testsByEnv, FA)
       }
     } yield {
       val good = out.map(_._1)
       val bad = out.flatMap(_._2)
 
       PlannedTests(good, bad)
+    }
+  }
+
+  private def planTestEnvs[F[_], TestF[_]](
+    envExec: EnvExecutionParams.Aux[TestF],
+    testsByEnv: Map[TestEnvironment, Seq[DistageTest[AnyF]]],
+    FA: QuasiAsync[F],
+  )(implicit
+    F: QuasiIO[F]
+  ): F[(PlannedTestEnvs[AnyF], List[(Seq[DistageTest[AnyF]], PlanningFailure)])] = {
+    import envExec.{effectType, defaultModule}
+
+    // first we need to plan runtime for our monad, which is retained by TestTreeRunner. Identity is also supported.
+    val runtimeGcRoots: Set[DIKey] = Set(
+      DIKey.get[QuasiIORunner[TestF]],
+      DIKey.get[TestTreeRunner[TestF]],
+    )
+
+    val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
+
+    for {
+      memoizationEnvs <- FA.parTraverse(testsByEnv) {
+        case (env, tests) =>
+          F.maybeSuspend {
+
+            // make a config loader for current env with logger
+            val config = configLoader.loadConfig(env, configLoadLogger)
+
+            // test loggers will not create polling threads and will log immediately
+            val logConfigLoader = new LogConfigLoaderImpl(CLILoggerOptions(envExec.logLevel, json = false), configLoadLogger)
+            val logConfig = logConfigLoader.loadLoggingConfig(config)
+            val router = new RouterFactory.RouterFactoryConsoleSinkImpl().createRouter(logConfig, logBuffer)
+
+            prepareGroupPlans[TestF](envExec, config, env, tests.asInstanceOf[Seq[DistageTest[TestF]]], router, runtimeGcRoots).left.map(failure => (tests, failure))
+          }
+      }
+    } yield {
+      val (bad, good0) = memoizationEnvs.partitionMap(identity)
+      val good = good0.filter(_.preparedTests.nonEmpty)
+
+      // merge environments together by equality of their shared & runtime plans
+      // in a lot of cases memoization plan will be the same even with many minor changes to TestConfig,
+      // so this saves a lot of reallocation of memoized resources
+      val envsGroupedByPlanEquality = good.groupBy(_.envMergeCriteria)
+      val goodTrees: Map[PreparedTestEnv[TestF], TestTree[TestF]] = envsGroupedByPlanEquality.map {
+        case (mergeCriteria, packedEnvs) =>
+          // injectors do NOT provide equality, but we defined custom injector equivalence for the purpose
+          // any injector from the group would do
+          val memoizationInjector = packedEnvs.head.envInjector
+          val runtimePlan = mergeCriteria.runtimePlanCriteria
+          assert((runtimeGcRoots -- runtimePlan.keys).isEmpty)
+
+          val memoizationTree = testTreeBuilder.build(memoizationInjector, runtimePlan, packedEnvs)
+
+          val highestDebugOutputInTests = packedEnvs.exists(_.highestDebugOutputInTests)
+          val env = PreparedTestEnv[TestF](envExec, runtimePlan, memoizationInjector, highestDebugOutputInTests)
+          (env, memoizationTree)
+      }
+
+      (PlannedTestEnvs(goodTrees), bad)
     }
   }
 
@@ -183,13 +189,14 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     hackyKeys
   }
 
-  private def prepareGroupPlans(
+  private def prepareGroupPlans[TestF[_]: TagK: DefaultModule](
     envExec: EnvExecutionParams,
     config: AppConfig,
     env: TestEnvironment,
-    tests: Seq[DistageTest[F]],
+    tests: Seq[DistageTest[TestF]],
     router: LogRouter,
-  ): Either[PlanningFailure, PackedEnv[F]] = {
+    runtimeGcRoots: Set[DIKey],
+  ): Either[PlanningFailure, PackedEnv[TestF]] = {
     Try {
       val lateLogger = IzLogger(router)
 
@@ -197,10 +204,10 @@ class TestPlanner[F[_]: TagK: DefaultModule](
 
       // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
       val moduleProvider =
-        env.bootstrapFactory.makeModuleProvider[F](envExec.planningOptions, config, router, env.roles, env.activationInfo, fullActivation)
+        env.bootstrapFactory.makeModuleProvider[TestF](envExec.planningOptions, config, router, env.roles, env.activationInfo, fullActivation)
 
-      prepareTestEnv(envExec, env, tests, lateLogger, fullActivation, moduleProvider).left.map(errors => PlanningFailure.DIErrors(errors): PlanningFailure)
-    }.toEither.left.map(e => PlanningFailure.Exception(e): PlanningFailure).flatMap(identity)
+      prepareTestEnv(envExec, env, tests, lateLogger, fullActivation, moduleProvider, runtimeGcRoots).left.map(errors => PlanningFailure.DIErrors(errors))
+    }.toEither.left.map(e => PlanningFailure.Exception(e)).flatMap(identity)
   }
 
   private def makeTestActivation(config: AppConfig, env: TestEnvironment, lateLogger: IzLogger): Activation = {
@@ -227,13 +234,14 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private def prepareTestEnv(
+  private def prepareTestEnv[F[_]: TagK: DefaultModule](
     envExecutionParams: EnvExecutionParams,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
     lateLogger: IzLogger,
     fullActivation: Activation,
     moduleProvider: ModuleProvider,
+    runtimeGcRoots: Set[DIKey],
   ): Either[NEList[DIError], PackedEnv[F]] = {
     val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
     val appModule = {
@@ -242,7 +250,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       moduleProvider.appModules().merge overriddenBy env.appModule
     }
 
-    val (injectorEquivalence, injector) = {
+    val (injectorEquivalence, envInjector) = {
       // FIXME: Including both bootstrap Plan & bootstrap Module into merge criteria to prevent `Bootloader`
       //  becoming inconsistent across envs (if BootstrapModule isn't considered it could come from different env than expected).
 
@@ -256,7 +264,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       val injectorEnv = injector.providedEnvironment
 
       val variableBsKeys = allowedKeyVariations
-      val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.stepsUnordered.filterNot(variableBsKeys contains _.target).toVector
+      val bsPlanMinusVariableKeys = injectorEnv.bootstrapLocator.plan.stepsUnordered.filterNot(variableBsKeys contains _.target).toSet
       val bsModuleMinusVariableKeys = injectorEnv.bootstrapModule.drop(variableBsKeys)
 
       (InjectorEquivalenceCriteria(bsPlanMinusVariableKeys, bsModuleMinusVariableKeys), injector)
@@ -266,9 +274,9 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       planChecker <- Right(new PlanCircularDependencyCheck(envExecutionParams.planningOptions, lateLogger))
 
       // runtime plan with `runtimeGcRoots`
-      runtimePlan <- injector.plan(
+      runtimePlan <- envInjector.plan(
         PlannerInput(
-          appModule ++ new TestRuntimeModule(envExecutionParams),
+          appModule ++ new TestRuntimeModule[F](envExecutionParams),
           runtimeGcRoots,
           fullActivation,
         )
@@ -291,7 +299,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
         .map {
           case (testRoots, distageTests) =>
             for {
-              plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, testRoots, fullActivation)) else Right(Plan.empty)
+              plan <- if (testRoots.nonEmpty) envInjector.plan(PlannerInput(reducedAppModule, testRoots, fullActivation)) else Right(Plan.empty)
               _ <- Right(planChecker.showProxyWarnings(plan))
             } yield {
               distageTests.map(AlmostPreparedTest(_, reducedAppModule, plan.keys, fullActivation))
@@ -325,7 +333,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                 val levelModule = strengthenedAppModule.drop(allSharedKeys)
                 if (levelRoots.nonEmpty) {
                   for {
-                    plan <- prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule, planChecker)
+                    plan <- prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, envInjector, levelModule, planChecker)
                   } yield {
                     (acc ++ List(plan), allSharedKeys ++ plan.keys)
                   }
@@ -334,7 +342,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                 }
             }.map(_._1)
         } else {
-          prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, injector, strengthenedAppModule, planChecker).map(p => List(p))
+          prepareSharedPlan(envKeys, runtimeKeys, Set.empty, fullActivation, envInjector, strengthenedAppModule, planChecker).map(p => List(p))
         }
     } yield {
       val envMergeCriteria = PackedEnvMergeCriteria(injectorEquivalence, runtimePlan)
@@ -346,7 +354,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       }
 
       val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
-      PackedEnv(envMergeCriteria, testPlans, memoizationPlanTree, injector, highestDebugOutputInTests, strengthenedKeys)
+      PackedEnv(envMergeCriteria, testPlans, memoizationPlanTree, envInjector, highestDebugOutputInTests, strengthenedKeys)
     }
   }
 
@@ -357,18 +365,13 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     activation: Activation,
     injector: Planner,
     appModule: Module,
-    check: PlanCircularDependencyCheck,
+    planChecker: PlanCircularDependencyCheck,
   ): Either[NEList[DIError], Plan] = {
     val sharedKeys = envKeys.intersect(memoizationRoots) -- runtimeKeys
 
     for {
-      plan <-
-        if (sharedKeys.nonEmpty) {
-          injector.plan(PlannerInput(appModule, sharedKeys, activation))
-        } else {
-          Right(Plan.empty)
-        }
-      _ <- Right(check.showProxyWarnings(plan))
+      plan <- if (sharedKeys.nonEmpty) injector.plan(PlannerInput(appModule, sharedKeys, activation)) else Right(Plan.empty)
+      _ <- Right(planChecker.showProxyWarnings(plan))
     } yield {
       plan
     }

@@ -33,7 +33,7 @@ trait IO2[F[+_, +_]] extends Panic2[F] {
   def sync[A](effect: => A): F[Nothing, A]
 
   /** Capture a side-effectful block of code that can throw exceptions and returns another effect */
-  def suspend[A](effect: => F[Throwable, A]): F[Throwable, A] = flatten(syncThrowable(effect))
+  def suspendThrowable[A](effect: => F[Throwable, A]): F[Throwable, A] = flatten(syncThrowable(effect))
 
   /** Capture an _exception-safe_ side-effect that returns another effect */
   def suspendSafe[E, A](effect: => F[E, A]): F[E, A] = flatten(sync(effect))
@@ -105,4 +105,7 @@ trait IO2[F[+_, +_]] extends Panic2[F] {
       go()
     }
   }
+
+  @deprecated("renamed to suspendThrowable", "1.3")
+  def suspend[A](effect: => F[Throwable, A]): F[Throwable, A] = suspendThrowable(effect)
 }

@@ -8,7 +8,7 @@ import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger, TypeUt
 import scala.language.experimental.macros
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
-import scala.reflect.runtime.{universe => ru}
+import scala.reflect.runtime.universe as ru
 
 /**
   * This implicit performs a compile-time check for a given `distage`-based `App` when materialized.

@@ -29,7 +29,7 @@ class TestStatusConverter(
     }
   }
 
-  object CancellationException {
+  object TestCancellationException {
     def unapply(arg: ProvisioningException): Option[NEList[Throwable]] = {
       val suppressed = arg.getSuppressed.toVector
 
@@ -59,7 +59,7 @@ class TestStatusConverter(
   def failLevelInstantiation(cause: GroupResult.EnvLevelFailure): TestStatus.Setup = {
     val asThrowable = cause.failure.toThrowable
     asThrowable match {
-      case CancellationException(_) => // can't match, s is always a ProvisioningException
+      case TestCancellationException(_) => // can't match, s is always a ProvisioningException
         TestStatus.EarlyCancelled(cause, asThrowable) // this never happens right now
 
       case ProvisioningIntegrationException(failures) =>

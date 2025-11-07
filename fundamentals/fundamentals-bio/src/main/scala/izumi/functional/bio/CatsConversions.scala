@@ -9,6 +9,7 @@ import izumi.functional.bio.CatsConversions.*
 import izumi.functional.bio.Exit.CatsExit
 import izumi.functional.bio.SpecificityHelper.*
 import izumi.functional.bio.data.RestoreInterruption2
+import izumi.fundamentals.platform.language.Quirks.Discarder
 
 import scala.annotation.unused
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS, NANOSECONDS}
@@ -279,7 +280,7 @@ object CatsConversions {
     }
 
     @inline override final def defer[A](thunk: => F[Throwable, A]): F[Throwable, A] = {
-      F.suspend(thunk)
+      F.suspendThrowable(thunk)
     }
 
     override def unique: F[Throwable, Unique.Token] = {
@@ -505,23 +506,19 @@ object CatsConversions {
       super.backgroundOn(fa, ec)
 
     override final def async[A](k: (Either[Throwable, A] => Unit) => F[Throwable, Option[F[Throwable, Unit]]]): F[Throwable, A] =
-      F.suspend {
+      F.suspendThrowable {
         val p = scala.concurrent.Promise[Either[Throwable, A]]()
         def get: F[Throwable, A] = {
           F.flatMap(F.fromFuture(p.future))(F.fromEither(_))
         }
         F.uninterruptibleExcept(
           restore =>
-            F.flatMap(k {
-              e =>
-                p.trySuccess(e)
-                ()
-            }) {
+            F.flatMap(k(e => p.trySuccess(e).discard())) {
               case Some(canceler) => F.guaranteeOnInterrupt(restore(get), _ => F.orTerminate(canceler))
               case None =>
                 // This should become uninterruptible in CE 3.5.0 ??? https://github.com/typelevel/cats-effect/releases/tag/v3.5.0
                 // Yes, exactly, according to https://github.com/typelevel/cats-effect/issues/3725
-                F.uninterruptible(restore(get))
+                get // same as F.uninterruptible(restore(get)) because we're already in uninterruptible region
             }
         )
       }

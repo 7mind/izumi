@@ -12,7 +12,6 @@ import izumi.distage.model.provisioning.proxies.DistageProxy
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.GivenWhenThen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -27,11 +26,11 @@ object CatsResourcesTestJvm {
   class MessageQueueConnection
 
   class MyApp(@unused db: DBConnection, @unused mq: MessageQueueConnection, @unused r: IORuntime) {
-    val run: IO[Unit] = IO(println("Hello World!"))
+    val run: IO[Boolean] = IO.pure(true)
   }
 }
 
-final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with CatsIOPlatformDependentTest with ScalatestGuards {
+final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependentTest with ScalatestGuards {
 
   "`No More Orphans` type provider is accessible" in {
     def y[R[_[_]]: izumi.fundamentals.orphans.`cats.effect.kernel.Sync`](): Unit = ()
@@ -39,8 +38,8 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
   }
 
   "cats.Resource mdoc example works" in {
-    val dbResource = Resource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
-    val mqResource = Resource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
+    val dbResource = Resource.make(IO(new DBConnection))(_ => IO.unit)
+    val mqResource = Resource.make(IO(new MessageQueueConnection))(_ => IO.unit)
 
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
@@ -48,22 +47,19 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
       make[MyApp]
     }
 
-    catsIOUnsafeRunSync {
+    val res = catsIOUnsafeRunSync {
       Injector[IO]()
         .produce(module, Roots.Everything).use {
           objects =>
             objects.get[MyApp].run
         }
     }
+    assert(res)
   }
 
   "cats.Resource mdoc example works with cyclic IORuntime (by-name case)" in {
-    val dbResource = Resource.make(IO {
-      println("Connecting to DB!"); new DBConnection
-    })(_ => IO(println("Disconnecting DB")))
-    val mqResource = Resource.make(IO {
-      println("Connecting to Message Queue!"); new MessageQueueConnection
-    })(_ => IO(println("Disconnecting Message Queue")))
+    val dbResource = Resource.make(IO(new DBConnection))(_ => IO.unit)
+    val mqResource = Resource.make(IO(new MessageQueueConnection))(_ => IO.unit)
 
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
@@ -82,7 +78,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
         )
     }
 
-    catsIOUnsafeRunSync {
+    val res = catsIOUnsafeRunSync {
       Injector[IO]()
         .produce(module, Roots.Everything).use {
           objects =>
@@ -90,15 +86,12 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
             objects.get[MyApp].run
         }
     }
+    assert(res)
   }
 
   "cats.Resource mdoc example doesn't work with cyclic IORuntime (dynamic proxy case)" in {
-    val dbResource = Resource.make(IO {
-      println("Connecting to DB!"); new DBConnection
-    })(_ => IO(println("Disconnecting DB")))
-    val mqResource = Resource.make(IO {
-      println("Connecting to Message Queue!"); new MessageQueueConnection
-    })(_ => IO(println("Disconnecting Message Queue")))
+    val dbResource = Resource.make(IO(new DBConnection))(_ => IO.unit)
+    val mqResource = Resource.make(IO(new MessageQueueConnection))(_ => IO.unit)
 
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
@@ -118,7 +111,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
         )
     }
 
-    catsIOUnsafeRunSync {
+    val res = catsIOUnsafeRunSync {
       Injector[IO]()
         .produce(module, Roots.Everything).use {
           objects =>
@@ -126,6 +119,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
             objects.get[MyApp].run
         }
     }
+    assert(res)
   }
 
   "Lifecycle API should be compatible with provider and instance bindings of type cats.effect.Resource" in {
@@ -164,7 +158,6 @@ final class CatsResourcesTestJvm extends AnyWordSpec with GivenWhenThen with Cat
         val i2 = ctx.get[Res]("provider")
         assert(!(i1 eq i2))
         assert(i1.initialized && i2.initialized)
-        Then("ok")
         i1 -> i2
       }
     }

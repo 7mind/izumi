@@ -19,7 +19,7 @@ object Scala3TraitCases {
   trait ATrait1 {
     def a: Int
   }
-  class AClass1(override val a: Int) extends ATrait1 {}
+  class AClass1(override val a: Int) extends ATrait1
 
   class AClass2(cparam: Int) extends AnAbstractClass(cparam) {
     val a = "xxx"

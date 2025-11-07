@@ -1,32 +1,42 @@
 package izumi.distage.testkit.runner.impl
 
-import distage.{DIKey, Planner, PlannerInput}
+import distage.{DIKey, Identity, Planner, PlannerInput}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.testkit.model.{FailedTest, PreparedTest, TestGroup, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.PackedEnv
-import izumi.distage.testkit.runner.impl.services.TimedAction
+import izumi.distage.testkit.runner.impl.services.TimedActionF
 
 import scala.annotation.tailrec
-import scala.collection.concurrent.TrieMap
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 /**
   * Final test planning happens here.
   * This is the point where we actually apply memoization by removing memoized keys
   */
-trait TestTreeBuilder[F[_]] {
-  def build(planner: Planner, runtimePlan: Plan, iterator: Iterable[PackedEnv[F]]): TestTree[F]
+trait TestTreeBuilder {
+  def build[F[_]](planner: Planner, runtimePlan: Plan, packedEnvs: Iterable[PackedEnv[F]]): TestTree[F]
 }
 
 object TestTreeBuilder {
-  class TestTreeBuilderImpl[F[_]](
-    timed: TimedAction
-  ) extends TestTreeBuilder[F] {
-    final class MemoizationTreeBuilder(planner: Planner, levelPlan: Plan) {
+  class TestTreeBuilderImpl(
+    timedId: TimedActionF[Identity]
+  ) extends TestTreeBuilder {
 
-      private val children = TrieMap.empty[Plan, MemoizationTreeBuilder]
-      private val groups = ArrayBuffer.empty[PackedEnv[F]]
+    override def build[F[_]](planner: Planner, runtimePlan: Plan, packedEnvs: Iterable[PackedEnv[F]]): TestTree[F] = {
+      val tree = new MemoizationTreeBuilder[F](planner, runtimePlan)
+      // usually, we have a small amount of levels, so parallel executions make only worse here
+      packedEnvs.foreach {
+        env =>
+          val plans = env.memoizationPlanTree.filter(_.plan.meta.nodes.nonEmpty)
+          tree.addGroupByPath(plans, env)
+      }
+      tree.toImmutable
+    }
+
+    final class MemoizationTreeBuilder[F[_]](planner: Planner, levelPlan: Plan) {
+      private val children = mutable.HashMap.empty[Plan, MemoizationTreeBuilder[F]]
+      private val groups = mutable.ArrayBuffer.empty[PackedEnv[F]]
 
       def toImmutable: TestTree[F] = {
         toImmutable(Set.empty)
@@ -53,7 +63,7 @@ object TestTreeBuilder {
 
                 val maybePreparedTest = {
                   for {
-                    maybeNewTestPlan <- timed {
+                    maybeNewTestPlan <- timedId.timed {
                       if (newRoots.nonEmpty) {
                         /** (1) It's important to remember that .plan() would always return the same result regardless of the parent locator!
                           * (2) The planner here must preserve customizations (bootstrap modules) hence be the same as instantiated in TestPlanner
@@ -86,7 +96,7 @@ object TestTreeBuilder {
             TestGroup(goodTests, badTests, env.strengthenedKeys)
         }.toList
 
-        val children1 = children.map(_._2.toImmutable(sharedKeysAtThisLevel)).toList
+        val children1 = children.synchronized(children.map(_._2.toImmutable(sharedKeysAtThisLevel)).toList)
         TestTree(levelPlan, levelGroups, children1, parentKeys)
       }
 
@@ -102,15 +112,5 @@ object TestTreeBuilder {
       }
     }
 
-    override def build(planner: Planner, runtimePlan: Plan, iterator: Iterable[PackedEnv[F]]): TestTree[F] = {
-      val tree = new MemoizationTreeBuilder(planner, runtimePlan)
-      // usually, we have a small amount of levels, so parallel executions make only worse here
-      iterator.foreach {
-        env =>
-          val plans = env.memoizationPlanTree.filter(_.plan.meta.nodes.nonEmpty)
-          tree.addGroupByPath(plans, env)
-      }
-      tree.toImmutable
-    }
   }
 }

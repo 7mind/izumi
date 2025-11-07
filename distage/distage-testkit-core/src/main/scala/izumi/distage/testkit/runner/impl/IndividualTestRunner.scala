@@ -54,59 +54,72 @@ object IndividualTestRunner {
             TestStatus.Instantiating(plan, successfulPlanningTime, logPlan = (logging.enableDebugOutput || test.environment.debugOutput) && plan.keys.nonEmpty),
           )
         )
-        testRunResult <- timed
-          .apply(Injector.inherit(mainSharedLocator).produceDetailedCustomF[F](plan))
-          .use {
-            maybeLocator =>
-              maybeLocator.mapMerge(
-                {
-                  case (f, failedProvTime) =>
-                    for {
-                      result <- F.pure(IndividualTestResult.InstantiationFailure(meta, successfulPlanningTime, failedProvTime, f))
-                      _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, statusConverter.failInstantiation(result)))
-                    } yield {
-                      result
-                    }
-                },
-                {
-                  case (l, successfulProvTime) =>
-                    for {
-                      _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, TestStatus.Running(l, successfulPlanningTime, successfulProvTime)))
-                      successfulTestOutput <- timed {
-                        F.definitelyRecoverWithTrace(l.run(test.test).map(_ => Right(()): Either[(Throwable, Exit.Trace[Throwable]), Unit])) {
-                          (error, trace) =>
-                            F.pure(Left((error, trace)))
+        testRunResult <- F.uninterruptibleExcept {
+          restore =>
+            timed
+              .timedLifecycle(Injector.inherit(mainSharedLocator).produceDetailedCustomF[F](plan))
+              .use {
+                maybeLocator =>
+                  maybeLocator.foldEither(
+                    {
+                      case (f, failedProvTime) =>
+                        F.maybeSuspend[IndividualTestResult] {
+                          val result = IndividualTestResult.InstantiationFailure(meta, successfulPlanningTime, failedProvTime, f)
+                          reporter.testStatus(suiteId, depth, meta, statusConverter.failInstantiation(result))
+                          result
                         }
-                      }
-                      executionResult <- successfulTestOutput.mapMerge(
-                        {
-                          case ((exception, trace), failedExecTime) =>
-                            for {
-                              result <- F.pure(IndividualTestResult.ExecutionFailure(meta, successfulPlanningTime, successfulProvTime, failedExecTime, exception, trace))
-                              _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, statusConverter.failExecution(result)))
-                            } yield {
-                              result
-                            }
-
-                        },
-                        {
-                          case (_, testTiming) =>
-                            for {
-                              result <- F.pure(IndividualTestResult.TestSuccess(meta, successfulPlanningTime, successfulProvTime, testTiming))
-                              _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, statusConverter.success(result)))
-                            } yield {
-                              result
-                            }
-
-                        },
-                      )
-                    } yield {
-                      executionResult
-                    }
-                },
-              ): F[IndividualTestResult]
-          }
-
+                    },
+                    {
+                      case (locator, successfulProvTime) =>
+                        for {
+                          _ <- F.maybeSuspend(reporter.testStatus(suiteId, depth, meta, TestStatus.Running(locator, successfulPlanningTime, successfulProvTime)))
+                          successfulTestOutput <- timed.timedWith[Either[(Throwable, Exit.Trace[Throwable]), Unit]] {
+                            sampleTiming =>
+                              F.definitelyRecoverWithTrace {
+                                restore {
+                                  locator.run(test.test).map(_ => Right(()): Either[(Throwable, Exit.Trace[Throwable]), Unit])
+                                }.guaranteeOnInterrupt {
+                                  trace =>
+                                    sampleTiming().flatMap {
+                                      interruptedExecTime =>
+                                        F.maybeSuspend {
+                                          val exception = trace.unsafeAttachTraceOrReturnNewThrowable()
+                                          val result =
+                                            IndividualTestResult
+                                              .ExecutionFailure(meta, successfulPlanningTime, successfulProvTime, interruptedExecTime, exception, trace)
+                                          reporter.testStatus(suiteId, depth, meta, statusConverter.failExecution(result))
+                                        }
+                                    }
+                                }
+                              }(recoverWithTrace = (error, trace) => F.pure(Left((error, trace))))
+                          }
+                          executionResult <- successfulTestOutput
+                            .foldEither(
+                              {
+                                case ((exception, trace), failedExecTime) =>
+                                  F.maybeSuspend[IndividualTestResult] {
+                                    val result =
+                                      IndividualTestResult.ExecutionFailure(meta, successfulPlanningTime, successfulProvTime, failedExecTime, exception, trace)
+                                    reporter.testStatus(suiteId, depth, meta, statusConverter.failExecution(result))
+                                    result
+                                  }
+                              },
+                              {
+                                case (_, testTiming) =>
+                                  F.maybeSuspend[IndividualTestResult] {
+                                    val result = IndividualTestResult.TestSuccess(meta, successfulPlanningTime, successfulProvTime, testTiming)
+                                    reporter.testStatus(suiteId, depth, meta, statusConverter.success(result))
+                                    result
+                                  }
+                              },
+                            )
+                        } yield {
+                          executionResult
+                        }
+                    },
+                  )
+              }
+        }
       } yield {
         testRunResult
       }
@@ -119,8 +132,6 @@ object IndividualTestRunner {
            |
            |Test plan: $p""".stripMargin
       )
-
-      ()
     }
   }
 

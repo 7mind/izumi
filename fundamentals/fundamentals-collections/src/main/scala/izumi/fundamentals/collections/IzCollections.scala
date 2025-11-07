@@ -15,4 +15,4 @@ trait IzCollections extends IzPlatformSyntax {
 
 }
 
-object IzCollections extends IzCollections {}
+object IzCollections extends IzCollections

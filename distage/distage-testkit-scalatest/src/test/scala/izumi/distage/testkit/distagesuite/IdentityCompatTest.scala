@@ -1,7 +1,7 @@
 package izumi.distage.testkit.distagesuite
 
-import izumi.functional.quasi.QuasiIO
 import izumi.distage.testkit.scalatest.Spec1
+import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
 
 final class IdentityCompatTest extends Spec1[Identity] {

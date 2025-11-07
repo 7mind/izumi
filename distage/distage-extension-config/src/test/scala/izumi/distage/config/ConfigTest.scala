@@ -17,7 +17,7 @@ final class ConfigTest extends AnyWordSpec {
   def mkConfigModule(path: String)(p: PlannerInput): PlannerInput = {
     p.copy(bindings =
       p.bindings ++
-      new AppConfigModule(AppConfig(TestConfigLoader.loadConfig(path), List.empty, List.empty))
+      new AppConfigModule(AppConfig(DistageConfigTestConfigLoader.loadConfig(path), List.empty, List.empty))
     )
   }
 

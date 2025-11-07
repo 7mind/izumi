@@ -43,9 +43,9 @@ open class SchedulerImpl[F[+_, +_]: Temporal2](implicit clock: Clock2[F]) extend
     } yield next).flatten
   }
 
-  override def retryOrElseUntil[E, A, E2](r: F[E, A])(duration: FiniteDuration, orElse: E => F[E2, A]): F[E2, A] = {
+  override def retryOrElseUntil[E, A, E2](eff: F[E, A])(duration: FiniteDuration, orElse: E => F[E2, A]): F[E2, A] = {
     def loop(maxTime: ZonedDateTime): F[E2, A] = {
-      F.redeem[E, A, E2, A](r)(
+      F.redeem[E, A, E2, A](eff)(
         err = error =>
           F.flatMap[E2, ZonedDateTime, A](
             clock.nowZoned(ClockAccuracy.MILLIS)
