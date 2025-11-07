@@ -5,6 +5,9 @@ import org.scalatest.Assertion
 import org.scalatest.wordspec.AnyWordSpec
 import zio.ZIO
 
+import scala.annotation.nowarn
+
+@nowarn("msg=nreachable case")
 class ZIOWorkaroundsTest extends AnyWordSpec {
 
   val runtime = UnsafeRun2.createZIO()
