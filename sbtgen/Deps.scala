@@ -141,6 +141,7 @@ object Izumi {
       .more(LibSetting.Raw("cross CrossVersion.full"))
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant)
+
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
 
@@ -504,6 +505,7 @@ object Izumi {
         libs = Seq(
           izumi_reflect in Scope.Compile.all,
           scala_reflect,
+          fast_classpath_scanner in Scope.Provided.all,
         ),
         depends = Seq(
           Projects.fundamentals.functional,

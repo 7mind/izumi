@@ -49,17 +49,23 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
   }
 
   def readAsString(fileName: String): Option[String] = {
-    read(fileName).map {
-      is =>
-        val reader = new BufferedReader(new InputStreamReader(is))
-        try {
-          reader.lines.collect(Collectors.joining(System.lineSeparator))
-        } finally {
-          reader.close()
-        }
-    }
+    import IzIOStreams.*
+    read(fileName).map(_.streamToString())
   }
 
+}
+
+object IzIOStreams {
+  implicit final class ISTool(private val is: InputStream) {
+    def streamToString(): String = {
+      val reader = new BufferedReader(new InputStreamReader(is))
+      try {
+        reader.lines.collect(Collectors.joining(System.lineSeparator))
+      } finally {
+        reader.close()
+      }
+    }
+  }
 }
 
 final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVal {
