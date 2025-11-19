@@ -22,7 +22,7 @@ object ZIOSupportModule {
   *
   * Will also add the following components:
   *   - `ExecutionContext @Id("cpu")` for CPU-bound tasks (will be used for all tasks by default by [[zio.Runtime]])
-  *   - `ExecutionContext @Id("io")` for blocking IO tasks (tasks can be scheduled to it via [[izumi.functional.bio.BlockingIO2]] or [[zio.ZIO.blocking]])
+  *   - `ExecutionContext @Id("io")` for blocking IO tasks (tasks can be scheduled to it via [[izumi.functional.bio.BlockingIO2]] or [[zio.ZIO$.blocking]])
   *
   * Added into scope by [[izumi.distage.modules.DefaultModule]].
   * If [[https://github.com/zio/interop-cats/ interop-cats]] library is on the classpath during compilation,

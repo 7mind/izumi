@@ -288,7 +288,7 @@ object Syntax2 {
   trait ImplicitPunsIO extends ImplicitPunsPanic {
     @inline implicit final def IO2[F[+_, +_]: IO2, E, A](self: F[E, A]): IOOps[F, E, A] = new IOOps[F, E, A](self)
     /**
-      * Shorthand for [[IO2#syncThrowable]]
+      * Shorthand for [[IO2.syncThrowable]]
       *
       * {{{
       *   IO2(println("Hello world!"))

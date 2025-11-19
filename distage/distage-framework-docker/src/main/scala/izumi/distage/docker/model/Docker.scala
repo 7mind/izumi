@@ -123,7 +123,7 @@ object Docker {
     *
     * @param networks Docker networks to connect this container to
     *
-    * @param reuse    If true and [[ClientConfig#globalReuse]] is also true, keeps container alive after tests.
+    * @param reuse    If true and [[ClientConfig.globalReuse]] is also true, keeps container alive after tests.
     *                 If false, the container will be shut down.
     *                 default: true
     *
@@ -221,7 +221,7 @@ object Docker {
     * See `docker-reference.conf` for an example configuration.
     * You can `include` the reference configuration if you want to use defaults.
     *
-    * @param globalReuse  If true and container's [[ContainerConfig#reuse]] is also true, keeps container alive after
+    * @param globalReuse  If true and container's [[ContainerConfig.reuse]] is also true, keeps container alive after
     *                     initialization. If false, the container will be shut down.
     *
     * @param remote       Options to connect to a Remote or Custom Docker Daemon (e.g. custom unix socket or pipe),

@@ -10,7 +10,7 @@ import izumi.logstage.api.IzLogger
 
 /**
   * Note, besides replacing this class, activation parsing strategy can also be changed by using bootstrap modules or plugins
-  * and adding an override for `make[Activation].named("roleapp")` to [[izumi.distage.roles.RoleAppMain#roleAppBootOverrides]]
+  * and adding an override for `make[Activation].named("roleapp")` to [[izumi.distage.roles.RoleAppMain.roleAppBootOverrides]]
   */
 trait ActivationParser extends AbstractActivationParser
 

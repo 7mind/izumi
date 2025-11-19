@@ -22,19 +22,19 @@ object AppShutdownInitiator {
 /**
   * There are two possible graceful termination paths for an application:
   *
-  *   1) User explicitly calls [[AppShutdownStrategy#releaseAwaitLatch]]
+  *   1) User explicitly calls [[AppShutdownStrategy.releaseAwaitLatch]]
   *
   *   2) The application received SIGINT and the shutdown hook triggers.
   *
   *      It's important to remember that all other threads will continue to run until the shutdown hook finishes,
   *      after that they'll stop abruptly without even receiving any exceptions.
   *
-  *      Izumi runtime will call [[AppShutdownStrategy#finishShutdown]] when all the cleanups are done.
+  *      Izumi runtime will call [[AppShutdownStrategy.finishShutdown]] when all the cleanups are done.
   *
   *  Possible code paths:
   *
-  *    1) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#releaseAwaitLatch]] -> [[AppShutdownStrategy#finishShutdown]]
-  *    2) [[AppShutdownStrategy#awaitShutdown]] -> [[AppShutdownStrategy#finishShutdown]]
+  *    1) [[AppShutdownStrategy.awaitShutdown]] -> [[AppShutdownStrategy.releaseAwaitLatch]] -> [[AppShutdownStrategy.finishShutdown]]
+  *    2) [[AppShutdownStrategy.awaitShutdown]] -> [[AppShutdownStrategy.finishShutdown]]
   *
   * @see also [[izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy]]
   */

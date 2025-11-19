@@ -54,11 +54,11 @@ import scala.annotation.unused
   * }}}
   *
   * Or by converting from an existing [[cats.effect.Resource]], scoped [[zio.ZIO]] or a [[zio.managed.ZManaged]]:
-  *   - Use [[Lifecycle.fromCats]], [[Lifecycle.SyntaxLifecycleCats#toCats]] to convert from and to a [[cats.effect.Resource]]
-  *   - Use [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert from and to a scoped [[zio.ZIO]]
-  *   - And [[Lifecycle.fromZManaged]], [[Lifecycle.SyntaxLifecycleZManaged#toZManaged]] to convert from and to a [[zio.managed.ZManaged]]
+  *   - Use [[Lifecycle.fromCats]], [[Lifecycle.SyntaxLifecycleCats.toCats]] to convert from and to a [[cats.effect.Resource]]
+  *   - Use [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO.toZIO]] to convert from and to a scoped [[zio.ZIO]]
+  *   - And [[Lifecycle.fromZManaged]], [[Lifecycle.SyntaxLifecycleZManaged.toZManaged]] to convert from and to a [[zio.managed.ZManaged]]
   *
-  * Usage is done via [[Lifecycle.SyntaxUse#use use]]:
+  * Usage is done via [[Lifecycle.SyntaxUse.use use]]:
   *
   * {{{
   *   open(file1).use {
@@ -70,7 +70,7 @@ import scala.annotation.unused
   *   }
   * }}}
   *
-  * Lifecycles can be combined into larger Lifecycles via [[Lifecycle#flatMap]] (and the associated for-comprehension syntax):
+  * Lifecycles can be combined into larger Lifecycles via [[Lifecycle.flatMap]] (and the associated for-comprehension syntax):
   *
   * {{{
   *  val res: Lifecycle[IO, (BufferedReader, BufferedReader)] = {
@@ -127,7 +127,7 @@ import scala.annotation.unused
   *
   * The lifecycle of the entire object graph is itself expressed with `Lifecycle`,
   * you can control it by controlling the scope of `.use` or by manually invoking
-  * [[Lifecycle#acquire]] and [[Lifecycle#release]].
+  * [[Lifecycle.acquire]] and [[Lifecycle.release]].
   *
   * == Inheritance helpers ==
   *
@@ -203,16 +203,16 @@ trait Lifecycle[+F[_], +A] {
   /**
     * The action in `F` used to acquire the resource.
     *
-    * @note the `acquire` action is performed *uninterruptibly* by [[Lifecycle.SyntaxUse#use]] and other interpreters,
+    * @note the `acquire` action is performed *uninterruptibly* by [[Lifecycle.SyntaxUse.use]] and other interpreters,
     * when `F` is an effect type that supports interruption/cancellation.
     */
   def acquire: F[InnerResource]
 
   /**
     * The action in `F` used to release, close or deallocate the resource
-    * after it has been acquired and used through [[Lifecycle.SyntaxUse#use]].
+    * after it has been acquired and used through [[Lifecycle.SyntaxUse.use]].
     *
-    * @note the `release` action is performed *uninterruptibly* by [[Lifecycle.SyntaxUse#use]] and other interpreters,
+    * @note the `release` action is performed *uninterruptibly* by [[Lifecycle.SyntaxUse.use]] and other interpreters,
     * when `F` is an effect type that supports interruption/cancellation.
     */
   def release(resource: InnerResource): F[Unit]
@@ -231,7 +231,7 @@ trait Lifecycle[+F[_], +A] {
     *
     * @see [[Lifecycle.Basic]] `extract` doesn't have to be defined when inheriting from `Lifecycle.Basic`
     *
-    * @note the `extract` action is performed *interruptibly* by [[Lifecycle.SyntaxUse#use]] and other interpreters
+    * @note the `extract` action is performed *interruptibly* by [[Lifecycle.SyntaxUse.use]] and other interpreters
     */
   def extract[B >: A](resource: InnerResource): Either[F[B], B]
 
@@ -350,7 +350,7 @@ object Lifecycle extends LifecycleInstances {
 
   /**
     * Fork the specified action into a new fiber.
-    * When this `Lifecycle` is released, the fiber will be interrupted using [[izumi.functional.bio.Fiber2#interrupt]]
+    * When this `Lifecycle` is released, the fiber will be interrupted using [[izumi.functional.bio.Fiber2.interrupt]]
     *
     * @return The [[izumi.functional.bio.Fiber2 fiber]] running `f` action
     */
@@ -365,7 +365,7 @@ object Lifecycle extends LifecycleInstances {
 
   /**
     * Fork the specified action into a new fiber.
-    * When this `Lifecycle` is released, the fiber will be interrupted using [[cats.effect.Fiber#cancel]]
+    * When this `Lifecycle` is released, the fiber will be interrupted using [[cats.effect.kernel.Fiber.cancel]]
     *
     * @return The fiber running `f` action
     */
@@ -459,7 +459,7 @@ object Lifecycle extends LifecycleInstances {
       * this will leak the resource and cause it to never be cleaned up.
       *
       * This function usually only makes sense in code examples or at top-level,
-      * please use [[SyntaxUse#use]] otherwise!
+      * please use [[SyntaxUse.use]] otherwise!
       *
       * @note will acquire the resource without an uninterruptible section
       */
@@ -472,7 +472,7 @@ object Lifecycle extends LifecycleInstances {
       * The resource will be leaked unless the finalizer is used.
       *
       * This function usually only makes sense in code examples or at top-level,
-      * please use [[SyntaxUse#use]] otherwise!
+      * please use [[SyntaxUse.use]] otherwise!
       *
       * @note will acquire the resource without an uninterruptible section
       */
@@ -509,7 +509,7 @@ object Lifecycle extends LifecycleInstances {
         finalizers: kernel.Ref[F, List[F[Unit]]]
       ): F[A] = {
         // Because we have `.uninterruptibleMask` now it's safe to use CE Resource's native `allocated` method.
-        // However, note that while CE Resource can express `bracketCase`, when using [[cats.effect.Resource#allocated]]
+        // However, note that while CE Resource can express `bracketCase`, when using [[cats.effect.Resource.allocated]]
         // the ability to pass an `Outcome` to the finalizer is lost.
         // Moreover, Lifecycle itself has no ability to express `bracketCase` because `release` does not have
         // an `exit: Exit[E, A]` parameter.

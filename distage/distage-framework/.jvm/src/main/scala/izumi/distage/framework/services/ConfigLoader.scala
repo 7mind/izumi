@@ -28,7 +28,7 @@ import scala.util.{Failure, Success, Try}
   *   - `common-reference-dev.conf`
   *
   * NOTE: You can change default config locations by overriding `make[ConfigLocationProvider]`
-  * binding in [[izumi.distage.roles.RoleAppMain#roleAppBootOverrides]] (defaults defined in [[izumi.distage.roles.RoleAppBootModule]])
+  * binding in [[izumi.distage.roles.RoleAppMain.roleAppBootOverrides]] (defaults defined in [[izumi.distage.roles.RoleAppBootModule]])
   *
   * When explicit configs are passed to the role launcher on the command-line using the `-c` option, they have higher priority than all the reference configs.
   * Role-specific configs on the command-line (`-c` option after `:role` argument) override global command-line configs (`-c` option given before the first `:role` argument).
