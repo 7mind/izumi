@@ -13,6 +13,7 @@ object Izumi {
     val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
     val scalatest = Version.VExpr("V.scalatest")
+    val scalatestplus_scalacheck = Version.VExpr("V.scalatestplus_scalacheck")
     val cats = Version.VExpr("V.cats")
     val cats_effect = Version.VExpr("V.cats_effect")
     val discipline = Version.VExpr("V.discipline")
@@ -61,16 +62,33 @@ object Izumi {
     final val izumi_reflect = Library("dev.zio", "izumi-reflect", V.izumi_reflect, LibraryType.Auto)
 
     final val collection_compat = Library("org.scala-lang.modules", "scala-collection-compat", V.collection_compat, LibraryType.Auto)
-    final val scalatest = Library("org.scalatest", "scalatest", V.scalatest, LibraryType.Auto) in Scope.Test.all
+    final val scalatest_all = Seq(
+      // repeat `scalatest` dependencies, but exclude `scalatest-expectations`(2.13) and `scalatest_refspec`(sjs1_2.12)
+      // because they're missing in `3.3.0-alpha.2` release
+      Library("org.scalatest", "scalatest-core", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-diagrams", V.scalatest, LibraryType.Auto),
+//      Library("org.scalatest", "scalatest-expectations", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-featurespec", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-flatspec", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-freespec", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-funspec", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-funsuite", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-matchers-core", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-mustmatchers", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-propspec", V.scalatest, LibraryType.Auto),
+//      Library("org.scalatest", "scalatest-refspec", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-shouldmatchers", V.scalatest, LibraryType.Auto),
+      Library("org.scalatest", "scalatest-wordspec", V.scalatest, LibraryType.Auto),
+
+      // add scalatestplus scalacheck dependency because the versions have to match scalatest ones
+      Library("org.scalatestplus", "scalacheck-1-18", V.scalatestplus_scalacheck, LibraryType.Auto),
+    )
 
     final val cats_core = Library("org.typelevel", "cats-core", V.cats, LibraryType.Auto)
     final val cats_effect = Library("org.typelevel", "cats-effect", V.cats_effect, LibraryType.Auto)
-    final val cats_all = Seq(
-      cats_core,
-      cats_effect,
-    )
-    final val cats_effect_laws = Library("org.typelevel", "cats-effect-laws", V.cats_effect, LibraryType.Auto) in Scope.Test.all
-    final val cats_effect_testkit = Library("org.typelevel", "cats-effect-testkit", V.cats_effect, LibraryType.Auto) in Scope.Test.all
+    final val cats_all = Seq(cats_core, cats_effect)
+    final val cats_effect_laws = Library("org.typelevel", "cats-effect-laws", V.cats_effect, LibraryType.Auto)
+    final val cats_effect_testkit = Library("org.typelevel", "cats-effect-testkit", V.cats_effect, LibraryType.Auto)
 
     final val circe_core = Library("io.circe", "circe-core", V.circe, LibraryType.Auto)
     final val circe_parser = Library("io.circe", "circe-parser", V.circe, LibraryType.Auto)
@@ -78,8 +96,8 @@ object Izumi {
     final val circe_generic = Library("io.circe", "circe-generic", V.circe, LibraryType.Auto)
     final val circe_derivation_scala2 = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
 
-    final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
-    final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
+    final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto)
+    final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto)
 
     final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto)
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
@@ -104,7 +122,7 @@ object Izumi {
     //   https://github.com/monix/monix/pull/1533
     final val monix_all = Seq.empty[Library]
 
-    final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
+    final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant)
 //    final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
@@ -117,7 +135,7 @@ object Izumi {
       ScalaVersionScope.AllScala2
     )
 
-    final val bytebuddy = Library("net.bytebuddy", "byte-buddy", V.bytebuddy, LibraryType.Invariant) in Scope.Compile.jvm
+    final val bytebuddy = Library("net.bytebuddy", "byte-buddy", V.bytebuddy, LibraryType.Invariant)
 
     final val projector = Library("org.typelevel", "kind-projector", V.kind_projector, LibraryType.Invariant)
       .more(LibSetting.Raw("cross CrossVersion.full"))
@@ -126,8 +144,8 @@ object Izumi {
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
 
-    final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant) in Scope.Compile.jvm
-    final val slf4j_simple = Library("org.slf4j", "slf4j-simple", V.slf4j, LibraryType.Invariant) in Scope.Test.jvm
+    final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant)
+    final val slf4j_simple = Library("org.slf4j", "slf4j-simple", V.slf4j, LibraryType.Invariant)
 
     val doobie_all = Seq(
       Library("org.tpolecat", "doobie-core", V.doobie, LibraryType.Auto),
@@ -554,7 +572,7 @@ object Izumi {
         libs = allMonadsOptional ++
           Seq(zio_managed in Scope.Optional.all) ++
           Seq(zio_interop_tracer in Scope.Compile.all) ++
-          Seq(cats_effect_laws, cats_effect_testkit, scalatest, discipline, discipline_scalatest) ++
+          Seq(cats_effect_laws, cats_effect_testkit, discipline).map(_ in Scope.Test.all) ++
           Seq(zio_interop_cats in Scope.Test.all) ++
           Seq(scala_java_time in Scope.Test.js),
         depends = Seq(
@@ -593,7 +611,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.proxyBytebuddy,
-        libs = Seq(bytebuddy),
+        libs = Seq(bytebuddy in Scope.Compile.jvm),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
@@ -684,9 +702,8 @@ object Izumi {
       Artifact(
         name = Projects.distage.testkitScalatest,
         libs = allMonadsOptional ++ Seq(
-          scalamock in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
-          scalatest.dependency in Scope.Compile.all,
-        ),
+          scalamock in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2)
+        ) ++ scalatest_all.map(_ in Scope.Compile.all),
         depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
@@ -741,7 +758,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,
-        libs = Seq(slf4j_api),
+        libs = Seq(slf4j_api in Scope.Compile.all),
         depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
         settings = Seq(
@@ -752,7 +769,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.logstage.sinkSlf4j,
-        libs = Seq(slf4j_api, slf4j_simple),
+        libs = Seq(slf4j_api in Scope.Compile.all, slf4j_simple in Scope.Test.jvm),
         depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
       ),
@@ -922,8 +939,7 @@ object Izumi {
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All, ScalaVersionScope.AllScala2), compilerPlugin = true),
       collection_compat in Scope.Compile.all,
-      scalatest,
-    ),
+    ) ++ scalatest_all.map(_ in Scope.Test.all),
     rootPlugins = Projects.root.plugins,
     globalPlugins = Projects.plugins,
     pluginConflictRules = Map(assemblyPluginJvm.name -> true),
