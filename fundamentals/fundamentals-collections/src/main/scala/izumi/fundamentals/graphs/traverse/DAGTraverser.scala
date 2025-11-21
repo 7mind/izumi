@@ -1,10 +1,10 @@
 package izumi.fundamentals.graphs.traverse
 
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyList
 import izumi.fundamentals.graphs.traverse.DAGTraverser.{Marking, TraverseFailure}
 
 trait DAGTraverser[F[_], Node, Trace, Progress] {
-  def traverse(predecessors: IncidenceMatrix[Node]): F[Either[TraverseFailure[F, Node, Trace, Progress], Marking[Node, Trace]]]
+  def traverse(predecessors: AdjacencyList[Node]): F[Either[TraverseFailure[F, Node, Trace, Progress], Marking[Node, Trace]]]
 }
 
 object DAGTraverser {
@@ -25,7 +25,7 @@ object DAGTraverser {
     def get(n: N): Option[T] = trace.get(n)
   }
 
-  case class TraverseState[F[_], N, T, P](predecessors: IncidenceMatrix[N], marking: Marking[N, T], active: Map[N, MPromise[F, P, T]]) {
+  case class TraverseState[F[_], N, T, P](predecessors: AdjacencyList[N], marking: Marking[N, T], active: Map[N, MPromise[F, P, T]]) {
     def isFinished: Boolean = {
       active.isEmpty && marking.trace.keySet == predecessors.links.keySet
     }

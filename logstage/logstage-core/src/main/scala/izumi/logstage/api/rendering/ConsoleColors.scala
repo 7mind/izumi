@@ -10,5 +10,6 @@ object ConsoleColors {
     case Log.Level.Warn => Console.CYAN
     case Log.Level.Error => Console.YELLOW
     case Log.Level.Crit => Console.RED
+    case Log.Level.Audit => Console.RED
   }
 }

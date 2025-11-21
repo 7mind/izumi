@@ -12,7 +12,7 @@ import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.model.{Locator, PlannerInput}
 import izumi.functional.Renderable
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.{AdjacencyPredList, AdjacencySuccList}
 import izumi.fundamentals.graphs.tools.{Toposort, ToposortLoopBreaker}
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.fundamentals.platform.cache.CachedHashcode
@@ -43,7 +43,7 @@ final case class Plan(
 
 object Plan {
   def empty: Plan = Plan(
-    DG(IncidenceMatrix.empty, IncidenceMatrix.empty, GraphMeta.empty),
+    DG(AdjacencySuccList.empty, AdjacencyPredList.empty, GraphMeta.empty),
     PlannerInput.everything(ModuleBase.empty),
   )
 
@@ -106,9 +106,9 @@ object Plan {
       val replaced = newImports.toMap
       val removed = keys -- replaced.keySet
 
-      val s = IncidenceMatrix(plan.plan.predecessors.without(removed).links ++ replaced.keys.map(k => (k, Set.empty[DIKey])))
+      val s = AdjacencyPredList(plan.plan.predecessors.without(removed).links ++ replaced.keys.map(k => (k, Set.empty[DIKey])))
       val m = GraphMeta(plan.plan.meta.without(removed).nodes ++ replaced)
-      Plan(DG(s.transposed, s, m), plan.input)
+      Plan(DG.fromPred(s, m), plan.input)
     }
 
     def render()(implicit ev: Renderable[Plan]): String = ev.render(plan)
@@ -191,7 +191,7 @@ object Plan {
       resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
     }
 
-    @nowarn("msg=Unused import")
+    @nowarn("msg=[Uu]nused import")
     def resolveImports(f: PartialFunction[ImportDependency, Any]): Plan = {
       import scala.collection.compat.*
 

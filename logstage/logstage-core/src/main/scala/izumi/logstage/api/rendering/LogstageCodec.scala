@@ -1,7 +1,7 @@
 package izumi.logstage.api.rendering
 
-import scala.annotation.unused
-import izumi.fundamentals.platform.exceptions.IzThrowable._
+import izumi.fundamentals.platform.exceptions.IzThrowable.*
+import izumi.logstage.api.rendering.LogstageCodec.{ListCodec, MapCodec}
 
 trait LogstageCodec[-T] {
   def write(writer: LogstageWriter, value: T): Unit
@@ -14,14 +14,28 @@ trait LogstageCodec[-T] {
 object LogstageCodec extends LogstageCodecLowPriority {
   @inline def apply[T: LogstageCodec]: LogstageCodec[T] = implicitly
 
-  implicit def listCodec[T: LogstageCodec]: LogstageCodec[Iterable[T]] = new LogstageCodec[Iterable[T]] {
+  implicit final lazy val LogstageCodecThrowable: LogstageCodec[Throwable] = {
+    (w, t) =>
+      t match {
+        case null =>
+          w.writeNull()
+        case _ =>
+          w.openMap()
+          w.writeMapElement("type", Option(t.getClass).map(_.getName))
+          w.writeMapElement("message", Option(t.getMessage))
+          w.writeMapElement("stacktrace", Option(t.stacktraceString))
+          w.closeMap()
+      }
+  }
+
+  final case class ListCodec[T](tCodec: LogstageCodec[T]) extends LogstageCodec[Iterable[T]] {
     override def write(writer: LogstageWriter, value: Iterable[T]): Unit = {
       writer.openList()
 
       value.foreach {
         v =>
           writer.nextListElementOpen()
-          LogstageCodec[T].write(writer, v)
+          tCodec.write(writer, v)
           writer.nextListElementClose()
       }
 
@@ -29,30 +43,28 @@ object LogstageCodec extends LogstageCodecLowPriority {
     }
   }
 
-  implicit def mapCodec[K: LogstageCodec, V: LogstageCodec]: LogstageCodec[Map[K, V]] = new LogstageCodec[Map[K, V]] {
-    override def write(writer: LogstageWriter, value: Map[K, V]): Unit = {
+  final case class MapCodec[K, V](kCodec: LogstageCodec[K], vCodec: LogstageCodec[V]) extends LogstageCodec[collection.Map[K, V]] {
+    override def write(writer: LogstageWriter, value: collection.Map[K, V]): Unit = {
       writer.openMap()
       value.foreach {
         case (k, v) =>
           writer.nextMapElementOpen()
-          LogstageCodec[K].write(writer, k)
+          kCodec.write(writer, k)
           writer.mapElementSplitter()
-          LogstageCodec[V].write(writer, v)
+          vCodec.write(writer, v)
           writer.nextMapElementClose()
       }
       writer.closeMap()
-
     }
   }
 
-  // make null instance higher priority than all other LowPriority instances
-  // (`implicit object` is more specific than `implicit val` wrt specificity rule of implicit search)
-  implicit object LogstageCodecNull extends LogstageCodec[Null] {
-    override def write(writer: LogstageWriter, @unused value: Null): Unit = writer.writeNull()
-  }
 }
 
 sealed trait LogstageCodecLowPriority {
+  implicit final def listCodec[T: LogstageCodec]: LogstageCodec[Iterable[T]] = new ListCodec[T](LogstageCodec[T])
+
+  implicit final def mapCodec[K: LogstageCodec, V: LogstageCodec]: LogstageCodec[collection.Map[K, V]] = new MapCodec[K, V](LogstageCodec[K], LogstageCodec[V])
+
   implicit final lazy val LogstageCodecString: LogstageCodec[String] = _.write(_)
   implicit final lazy val LogstageCodecBoolean: LogstageCodec[Boolean] = _.write(_)
   implicit final lazy val LogstageCodecByte: LogstageCodec[Byte] = _.write(_)
@@ -64,19 +76,5 @@ sealed trait LogstageCodecLowPriority {
   implicit final lazy val LogstageCodecDouble: LogstageCodec[Double] = _.write(_)
   implicit final lazy val LogstageCodecBigDecimal: LogstageCodec[BigDecimal] = _.write(_)
   implicit final lazy val LogstageCodecBigInt: LogstageCodec[BigInt] = _.write(_)
-
-  implicit final lazy val LogstageCodecThrowable: LogstageCodec[Throwable] = {
-    (w, t) =>
-      Option(t) match {
-        case Some(_) =>
-          w.openMap()
-          w.writeMapElement("type", Option(t.getClass).map(_.getName))
-          w.writeMapElement("message", Option(t.getMessage))
-          w.writeMapElement("stacktrace", Option(t.stacktraceString))
-          w.closeMap()
-        case None =>
-          w.writeNull()
-      }
-  }
-
+  implicit final lazy val LogstageCodecUnit: LogstageCodec[Unit] = (s, unit) => s.write(unit.toString)
 }

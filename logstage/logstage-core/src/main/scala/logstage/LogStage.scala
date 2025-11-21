@@ -11,6 +11,10 @@ trait LogStage {
   val ConsoleSink: sink.ConsoleSink.type = sink.ConsoleSink
 
   type LogIORaw[F[_], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F, E]
+  type LogIO2Raw[F[_, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Nothing, _], E]
+  type LogIORaw2[F[_, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Nothing, _], E]
+  type LogIO3Raw[F[_, _, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Any, Nothing, _], E]
+  type LogIORaw3[F[_, _, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Any, Nothing, _], E]
 
   type LogQueue = izumi.logstage.api.logger.LogQueue
   val LogQueue: izumi.logstage.api.logger.LogQueue.type = izumi.logstage.api.logger.LogQueue
@@ -33,6 +37,9 @@ trait LogStage {
   type Log = api.Log.type
   val Log: api.Log.type = api.Log
 
+  type Message = api.Log.Message
+  val Message: api.Log.Message.type = api.Log.Message
+
   type Level = api.Log.Level
   val Level: api.Log.Level.type = api.Log.Level
 
@@ -42,4 +49,5 @@ trait LogStage {
   val Warn: api.Log.Level.Warn.type = api.Log.Level.Warn
   val Error: api.Log.Level.Error.type = api.Log.Level.Error
   val Crit: api.Log.Level.Crit.type = api.Log.Level.Crit
+  val Audit: api.Log.Level.Audit.type = api.Log.Level.Audit
 }

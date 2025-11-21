@@ -1,6 +1,13 @@
 package izumi.fundamentals.platform.exceptions
 
-object IzStack {
+import izumi.fundamentals.platform.IzPlatformEffectfulUtil
+
+trait IzStack extends IzPlatformEffectfulUtil {
+  def currentStack: String
+  def currentStack(acceptedPackages: Set[String]): String
+}
+
+object IzStack extends IzStack {
 
   import IzThrowable._
 

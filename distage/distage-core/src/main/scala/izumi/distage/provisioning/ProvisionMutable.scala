@@ -18,9 +18,10 @@ import scala.collection.mutable
 final class ProvisionMutable[F[_]: TagK](
   val plan: Plan,
   parentContext: Locator,
+  privateBindings: Set[DIKey],
 ) extends Provision[F] {
 
-  private val temporaryLocator = new LocatorDefaultImpl(plan, Option(parentContext), LocatorMeta.empty, this)
+  private val temporaryLocator = new LocatorDefaultImpl(plan, Option(parentContext), LocatorMeta.empty, this, privateBindings)
 
   private val locatorRef = new LocatorRef(new AtomicReference(Left(temporaryLocator)))
 
@@ -57,7 +58,7 @@ final class ProvisionMutable[F[_]: TagK](
   def finish(state: TraversalState): LocatorDefaultImpl[F] = {
     val meta = LocatorMeta(state.status())
     val finalLocator =
-      new LocatorDefaultImpl(plan, Option(parentContext), meta, toImmutable)
+      new LocatorDefaultImpl(plan, Option(parentContext), meta, toImmutable, privateBindings)
     locatorRef.ref.set(Right(finalLocator))
     finalLocator
   }

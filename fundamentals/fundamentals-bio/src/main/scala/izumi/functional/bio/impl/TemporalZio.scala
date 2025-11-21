@@ -12,7 +12,7 @@ import scala.concurrent.duration.Duration
 object TemporalZio extends TemporalZio[Any]
 
 open class TemporalZio[R]
-  extends AsyncZio[R] // use own implementation of timeout to match CE race behavior
+  extends AsyncZio[R] // use our own implementation of timeout to match CE race behavior
   with Temporal2[ZIO[R, +_, +_]] {
 
   @inline override final def sleep(duration: Duration): ZIO[R, Nothing, Unit] = {
@@ -24,7 +24,7 @@ open class TemporalZio[R]
   @inline override final def timeout[E, A](duration: Duration)(r: ZIO[R, E, A]): ZIO[R, E, Option[A]] = {
     implicit val trace: zio.Trace = Tracer.newTrace
 
-    this.race(r.map(Some(_)).interruptible, this.sleep(duration).as(None).interruptible)
+    this.race(r.interruptible.map(Some(_)), this.sleep(duration).interruptible.as(None))
   }
 
   disableAutoTrace.discard()

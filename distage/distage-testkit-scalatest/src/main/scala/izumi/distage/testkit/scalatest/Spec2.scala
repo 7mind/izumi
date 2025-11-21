@@ -18,6 +18,6 @@ abstract class Spec2[F[+_, +_]: DefaultModule2](implicit val tagBIO: TagKK[F])
   }
 
   override protected def config: TestConfig = super.config.copy(
-    moduleOverrides = LogIO2Module[F]()(tagBIO)
+    moduleOverrides = LogIO2Module[F]()(using tagBIO)
   )
 }

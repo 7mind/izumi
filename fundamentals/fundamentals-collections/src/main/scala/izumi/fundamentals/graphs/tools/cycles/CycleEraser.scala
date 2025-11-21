@@ -1,27 +1,27 @@
 package izumi.fundamentals.graphs.tools.cycles
 
 import izumi.fundamentals.graphs.DAGError
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.{AdjacencyList, AdjacencyPredList}
 
 import scala.annotation.nowarn
 import scala.collection.mutable
 
 // TODO: this class is not required for distage
-@nowarn("msg=Unused import")
-final class CycleEraser[N](predecessorsMatrix: IncidenceMatrix[N], breaker: LoopBreaker[N]) {
+@nowarn("msg=[Uu]nused import")
+final class CycleEraser[N](predecessorsMatrix: AdjacencyPredList[N], breaker: LoopBreaker[N]) {
   import scala.collection.compat._
 
   private val output: mutable.Map[N, mutable.LinkedHashSet[N]] = mutable.HashMap.empty
   private var current: mutable.Map[N, mutable.LinkedHashSet[N]] = asMut(predecessorsMatrix)
 
-  def run(): Either[DAGError[N], IncidenceMatrix[N]] = {
+  def run(): Either[DAGError[N], AdjacencyPredList[N]] = {
     val (noPreds, hasPreds) = current.partition(_._2.isEmpty)
 
     if (noPreds.isEmpty) {
       if (hasPreds.isEmpty) {
-        Right(IncidenceMatrix(output.toSeq*))
+        Right(AdjacencyPredList(output.toSeq*))
       } else {
-        val asMatrix = IncidenceMatrix(hasPreds.view.mapValues(_.toSet).toMap)
+        val asMatrix = AdjacencyPredList(hasPreds.view.mapValues(_.toSet).toMap)
 
         for {
           noLoops <- breaker.breakLoops(asMatrix).left.map(_ => DAGError.UnexpectedLoops[N]())
@@ -60,7 +60,7 @@ final class CycleEraser[N](predecessorsMatrix: IncidenceMatrix[N], breaker: Loop
     }
   }
 
-  private def verifyNoLoops(noLoops: IncidenceMatrix[N]): Either[DAGError[N], IncidenceMatrix[N]] = {
+  private def verifyNoLoops(noLoops: AdjacencyList[N]): Either[DAGError[N], AdjacencyList[N]] = {
     LoopDetector.Impl.findLoopMember(noLoops) match {
       case Some(value) =>
         Left(DAGError.LoopBreakerFailed(value))
@@ -69,7 +69,7 @@ final class CycleEraser[N](predecessorsMatrix: IncidenceMatrix[N], breaker: Loop
     }
   }
 
-  private def asMut(matrix: IncidenceMatrix[N]): mutable.Map[N, mutable.LinkedHashSet[N]] = {
+  private def asMut(matrix: AdjacencyList[N]): mutable.Map[N, mutable.LinkedHashSet[N]] = {
     mutable.HashMap.from(matrix.links.view.mapValues(_.to(mutable.LinkedHashSet)))
   }
 }

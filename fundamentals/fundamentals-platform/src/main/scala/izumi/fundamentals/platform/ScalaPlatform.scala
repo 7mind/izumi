@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform
 
-sealed trait ScalaPlatform {}
+sealed trait ScalaPlatform
 
 object ScalaPlatform {
   sealed trait AbstractJVM extends ScalaPlatform

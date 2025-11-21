@@ -124,6 +124,7 @@ object MiniBIO {
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.forTypedError(v)))
     override def terminate(v: => Throwable): MiniBIO[Nothing, Nothing] = Fail.terminate(v)
     override def sendInterruptToSelf: MiniBIO[Nothing, Unit] = unit
+    override def fromSandboxExit[E, A](effect: => Exit.Uninterrupted[E, A]): MiniBIO[E, A] = Sync(() => effect)
 
     override def syncThrowable[A](effect: => A): MiniBIO[Throwable, A] = Sync {
       () =>
@@ -131,7 +132,9 @@ object MiniBIO {
           Exit.Success(effect)
         } catch { case e: Throwable => Exit.Error(e, Trace.ThrowableTrace(e)) }
     }
-    override def sync[A](effect: => A): MiniBIO[Nothing, A] = Sync(() => Exit.Success(effect))
+    override def sync[A](effect: => A): MiniBIO[Nothing, A] = {
+      Sync(() => Exit.Success(effect))
+    }
 
     override def redeem[E, A, E2, B](r: MiniBIO[E, A])(err: E => MiniBIO[E2, B], succ: A => MiniBIO[E2, B]): MiniBIO[E2, B] = {
       Redeem[E, A, E2, B](

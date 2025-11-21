@@ -9,7 +9,7 @@ BIO Hierarchy
 
 Key syntactic features:
 
-1. Ergonomic `F` summoner that is a single point of entry to all methods in the hierarchy
+1. Universal summoner `F` is a single point of entry for all methods in the hierarchy
 2. Import-less syntax. Syntax is automatically available whenever any typeclass from the hierarchy is imported, e.g. immediately after IDE auto-import.
 
 These syntactic features allow you to write in a low ceremony, IDE-friendly and newcomer-friendly style:
@@ -17,9 +17,13 @@ These syntactic features allow you to write in a low ceremony, IDE-friendly and 
 ```scala mdoc:to-string
 import izumi.functional.bio.{F, Monad2, Primitives2}
 
-def adder[F[+_, +_]: Monad2: Primitives2](i: Int): F[Nothing, Int] =
-  F.mkRef(0)
-   .flatMap(ref => ref.update(_ + i) *> ref.get)
+def adder[F[+_, +_]: Monad2: Primitives2](i: Int): F[Nothing, Int] = {
+  for { // map and flatMap extension methods are available automatically by importing Monad2
+    ref <- F.mkRef(i) // mkRef method is available from Primitives2
+    _   <- ref.update(_ + i)
+    res <- ref.get
+  } yield res
+}
 ```
 
 Key semantic features:
@@ -79,27 +83,46 @@ Raw inheritance hierarchy:
 ## Syntax, Implicit Punning
 
 All implicit syntax in BIO is available automatically without wildcard imports
-with the help of so-called "implicit punning", as in the following example:
+with the help of so-called "implicit punning".
 
+Before (cats-effect):
 
-```scala mdoc:to-string
-import izumi.functional.bio.Monad2
+```scala reset:mdoc:to-string
+import cats.effect.{Ref, Sync}
 
-def loop[F[+_, +_]: Monad2]: F[Nothing, Nothing] = {
-  val unitEffect: F[Nothing, Unit] = Monad2[F].unit
-  unitEffect.flatMap(_ => loop)
+// have to import syntax extensions in every file for for-comprehensions to work
+import cats.syntax.all._
+
+def adder[F[_]: Sync](i: Int): F[Int] = {
+  for {
+    ref <- Ref.of(i)
+    _   <- ref.update(_ + i)
+    res <- ref.get
+  } yield res
 }
 ```
 
-Note: a `.flatMap` method is available on the `unitEffect` value of an abstract type parameter `F`,
-even though we did not import any syntax implicits using a wildcard import.
+After (BIO):
+
+```scala reset:mdoc:to-string
+// for-comprehensions work just by auto-importing Monad2 through the IDE
+import izumi.functional.bio.{Monad2, Primitives2}
+
+def adder[F[+_, +_]: Monad2: Primitives2](i: Int): F[Nothing, Int] = {
+  for {
+    ref <- F.mkRef(i) // typing `F.` lets IDE show all available TF methods
+    _   <- ref.update(_ + i)
+    res <- ref.get
+  } yield res
+}
+```
+
+Note: a `.flatMap` and `.map` methods that enable for-comprehensions are available even though we did not import any syntax implicits using a wildcard import.
 
 The `flatMap` method was added by the implicit punning on the `Monad2` name.
- In short, implicit punning just means that instead of creating a companion object for a type with the same name as the type,
-we create "companion" implicit conversions with the same name. So that whenever you import the type,
-you are also always importing the syntax-providing implicit conversions.
+Implicit punning is implemented by eschewing a companion object for a type and replacing it with "companion" implicit conversions with the same name as the type. That way whenever you import the type, you also always import the syntax-providing implicit conversions.
 
-This happens to be a great fit for Tagless Final Style, since nearly all TF code will import the names of the used typeclasses.
+This happens to be a great fit for Tagless Final Style, since nearly all TF code will import the names of the typeclasses used to add them to context bounds on `F` parameter.
 
 Implicit Punning for typeclass syntax relieves the programmer from having to manually import syntax implicits in every file in their codebase.
 

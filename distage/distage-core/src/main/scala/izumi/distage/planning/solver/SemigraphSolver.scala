@@ -8,7 +8,7 @@ import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyPredList
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
 import scala.annotation.{nowarn, tailrec}
@@ -35,7 +35,7 @@ trait SemigraphSolver[N, I, V] {
   ): Either[NEList[ConflictResolutionError[N, V]], Resolution[N, V]]
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 object SemigraphSolver {
   import scala.collection.compat._
   import scala.collection.immutable
@@ -273,7 +273,7 @@ object SemigraphSolver {
           (n, mapped)
       }
 
-      val result = IncidenceMatrix(rewritten ++ allRepls)
+      val result = AdjacencyPredList(rewritten ++ allRepls)
       val indexRemap: Map[MutSel[N], MutSel[N]] = finalElements.values.flatMap {
         f =>
           Seq((f, MutSel(f.key, None))) ++ result.links.keySet.filter(_.key == f.key).filterNot(_ == f).zipWithIndex.map {
@@ -297,12 +297,12 @@ object SemigraphSolver {
             (context, cleaned.toMap)
         }
 
-      val finalMatrix: IncidenceMatrix[MutSel[N]] = result.rewriteAll(indexRemap)
+      val finalMatrix: AdjacencyPredList[MutSel[N]] = result.rewriteAll(indexRemap)
       Right(Result(finalMatrix, indexRemap, outerReplMap))
     }
 
     private case class Result(
-      finalMatrix: IncidenceMatrix[MutSel[N]],
+      finalMatrix: AdjacencyPredList[MutSel[N]],
       indexRemap: Map[MutSel[N], MutSel[N]],
       outerReplMap: Map[MutSel[N], Map[N, MutSel[N]]],
     )

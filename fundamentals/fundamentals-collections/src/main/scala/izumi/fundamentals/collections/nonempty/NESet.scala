@@ -1025,5 +1025,5 @@ object NESet extends NESetInstances {
     @inline def fromNESet: Set[A] = if (option.isEmpty) Set.empty else option.get.toSet
   }
 
-  @inline implicit def asIterable[A](ne: NESet[A]): IterableOnce[A] = ne.toIterable
+  @inline implicit def asIterable[A](ne: NESet[A]): Iterable[A] = ne.toIterable
 }

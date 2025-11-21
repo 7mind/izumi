@@ -4,7 +4,7 @@ import distage.Id
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.*
 
 /**
@@ -18,8 +18,8 @@ class RunAllRoles[F[_]](
 )(implicit F: QuasiIO[F]
 ) extends RoleService[F]
   with BundledTask {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = {
-    Lifecycle.traverse_(allTasks)(_.start(roleParameters, freeArgs))
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = {
+    Lifecycle.traverse_(allTasks)(_.start(roleParameters))
   }
 }
 

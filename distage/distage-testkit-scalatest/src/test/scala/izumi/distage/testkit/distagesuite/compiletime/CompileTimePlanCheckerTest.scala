@@ -10,7 +10,7 @@ import izumi.distage.framework.model.exceptions.PlanCheckException
 import izumi.distage.framework.{PlanCheck, PlanCheckConfig}
 import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.reflection.DIKey
-import izumi.distage.roles.test.{TestEntrypoint, TestEntrypointPatchedLeak}
+import izumi.distage.roles.test.{CustomCheckEntrypoint, TestEntrypoint, TestEntrypointPatchedLeak}
 import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.language.literals.{LiteralBoolean, LiteralString}
 import logstage.LogIO2
@@ -306,6 +306,30 @@ final class CompileTimePlanCheckerTest extends AnyWordSpec with GivenWhenThen {
     val dep = loc.get[Fixture4.TargetRole].mkDep()
     close()
     assert(dep != null)
+  }
+
+  "Support custom checks" in {
+    val res = PlanCheck.runtime.checkApp(
+      CustomCheckEntrypoint,
+      PlanCheckConfig(
+        roles = "* -failingrole01 -failingrole02",
+        checkConfig = false,
+        excludeActivations = "mode:test",
+      ),
+    )
+    assert(res.maybeErrorMessage.exists(_.contains("Custom check failed")))
+
+    val err = intercept[TestFailedException](assertCompiles("""
+      new PlanCheck.Main(
+        CustomCheckEntrypoint,
+        PlanCheckConfig(
+          roles = "* -failingrole01 -failingrole02",
+          checkConfig = false,
+          excludeActivations = "mode:test",
+        ),
+      ).assertAgainAtRuntime()
+    """))
+    assert(err.getMessage.contains("Custom check failed"))
   }
 
   "progression test: role app fails check for excluded compound activations that are equivalent to just excluding `mode:test`" in {

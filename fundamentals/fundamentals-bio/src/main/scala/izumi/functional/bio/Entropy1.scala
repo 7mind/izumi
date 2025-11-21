@@ -2,7 +2,7 @@ package izumi.functional.bio
 
 import izumi.functional.bio.DivergenceHelper.{Divergent, Nondivergent}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.uuid.UUIDGen
+import izumi.fundamentals.platform.uuid.IzUUID
 
 import java.util.UUID
 import scala.annotation.{nowarn, unused}
@@ -29,7 +29,7 @@ trait Entropy1[F[_]] extends DivergenceHelper {
   def nextPrintableChar(): F[Char]
   def nextString(length: Int): F[String]
 
-  /** @see [[izumi.fundamentals.platform.uuid.UUIDGen]] */
+  /** @see [[izumi.fundamentals.platform.uuid.IzUUIDImpl]] */
   def nextTimeUUID(): F[UUID]
   def nextUUID(): F[UUID]
 
@@ -52,14 +52,14 @@ object Entropy1 extends LowPriorityEntropyInstances {
   object Standard extends ScalaEntropy {
     override protected def random: Random = scala.util.Random
 
-    override def nextTimeUUID(): UUID = UUIDGen.getTimeUUID()
+    override def nextTimeUUID(): UUID = IzUUID.generateTimeUUID()
     override def nextUUID(): UUID = UUID.randomUUID()
   }
 
   class Deterministic(seed: Long) extends ScalaEntropy {
     override protected val random: Random = new scala.util.Random(seed)
 
-    override def nextTimeUUID(): UUID = UUIDGen.getTimeUUID(math.abs(random.nextLong()))
+    override def nextTimeUUID(): UUID = IzUUID.getTimeUUID(math.abs(random.nextLong()))
     override def nextUUID(): UUID = new UUID(random.nextLong(), random.nextLong())
   }
 
@@ -143,7 +143,7 @@ sealed trait LowPriorityEntropyInstances {
       override def nextTimeUUID(): F[UUID] = F.syncSafe(impureEntropy.nextTimeUUID())
       override def nextUUID(): F[UUID] = F.syncSafe(impureEntropy.nextUUID())
       override def writeRandomBytes(bytes: Array[Byte]): F[Unit] = F.syncSafe(impureEntropy.writeRandomBytes(bytes))
-      override def withSeed(seed: Long): Entropy1[F] = fromImpureEntropy(impureEntropy.withSeed(seed), F)
+      override def withSeed(seed: Long): Entropy1[F] = fromImpureEntropy(using impureEntropy.withSeed(seed), F)
 
       @nowarn("msg=CanBuildFrom")
       override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]] =

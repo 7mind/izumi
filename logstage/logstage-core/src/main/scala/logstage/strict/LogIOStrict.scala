@@ -3,19 +3,22 @@ package logstage.strict
 import izumi.functional.bio.{SyncSafe1, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.*
-import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF, AbstractMacroStrictLogIO, EncodingAwareAbstractLogIO, LogIORaw}
+import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF, AbstractMacroLogIO, EncodingAwareAbstractLogIO, LogIORaw}
 import izumi.logstage.api.rendering.StrictEncoded
+import izumi.logstage.macros.EncodingMode
 import logstage.Level
 import logstage.UnsafeLogIO.{UnsafeLogIOSyncSafeInstance, UnsafeLogIOSyncSafeInstanceF}
 
 import scala.language.implicitConversions
 
-trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] with AbstractMacroStrictLogIO[F] {
+trait LogIOStrict[F[_]] extends EncodingAwareAbstractLogIO[F, StrictEncoded] with AbstractMacroLogIO[F] {
   override type Self[f[_]] = LogIOStrict[f]
+
+  override type EncMode = EncodingMode.Strict.type
 
   final def raw: LogIORaw[F, StrictEncoded] = new LogIORaw(this)
 
-  override def widen[G[_]](implicit ev: F[AnyRef] <:< G[AnyRef]): LogIOStrict[G] = this.asInstanceOf[LogIOStrict[G]]
+  override def widen[G[_]](implicit ev: F[Unit] <:< G[Unit]): LogIOStrict[G] = this.asInstanceOf[LogIOStrict[G]]
 }
 
 object LogIOStrict extends LowPriorityLogIOStrictInstances {
@@ -66,7 +69,7 @@ object LogIOStrict extends LowPriorityLogIOStrictInstances {
     }
   }
 
-  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[AnyRef] <:< G[AnyRef]): LogIOStrict[G] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: LogIOStrict[F])(implicit ev: F[Unit] <:< G[Unit]): LogIOStrict[G] = log.widen
 }
 
 sealed trait LowPriorityLogIOStrictInstances {

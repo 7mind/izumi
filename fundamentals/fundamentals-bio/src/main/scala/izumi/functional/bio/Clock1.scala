@@ -34,7 +34,7 @@ object Clock1 extends LowPriorityClockInstances {
 
   def apply[F[_]: Clock1]: Clock1[F] = implicitly
 
-  def fromImpure[F[_]: SyncSafe1](impureClock: Clock1[Identity]): Clock1[F] = fromImpureClock(impureClock, SyncSafe1[F])
+  def fromImpure[F[_]: SyncSafe1](impureClock: Clock1[Identity]): Clock1[F] = fromImpureClock(using impureClock, SyncSafe1[F])
 
   object Standard extends Clock1[Identity] {
 

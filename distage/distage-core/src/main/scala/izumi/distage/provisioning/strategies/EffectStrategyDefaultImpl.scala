@@ -22,7 +22,7 @@ class EffectStrategyDefaultImpl extends EffectStrategy {
       case Right(_) =>
         val effectKey = op.effectKey
         context.fetchKey(effectKey, makeByName = false) match {
-          case Some(action0) if op.isEffect[F] =>
+          case Some(action0) if op.isEffect =>
             val action = action0.asInstanceOf[F[Any]]
             action.map(newInstance => Right(Seq(NewObjectOp.NewInstance(op.target, op.instanceTpe, newInstance))))
           case Some(newInstance) =>

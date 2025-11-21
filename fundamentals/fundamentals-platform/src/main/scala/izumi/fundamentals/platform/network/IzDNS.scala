@@ -1,9 +1,15 @@
 package izumi.fundamentals.platform.network
 
+import izumi.fundamentals.platform.IzPlatformEffectfulUtil
+
 import java.net.InetSocketAddress
 import java.util.regex.{Matcher, Pattern}
 
-object IzDNS {
+trait IzDNS extends IzPlatformEffectfulUtil {
+  def resolve(endpoint: String, defaultPort: Int): InetSocketAddress
+}
+
+object IzDNS extends IzDNS {
   private val IPV6_PATTERN = Pattern.compile("^\\[([:a-fA-F0-9]+)\\](:(\\d+))?$")
   private val IPV4_PATTERN = Pattern.compile("^([\\.0-9]+)(:(\\d+))?$")
   private val ENDPOINT_TOKENS_PATTERN: Pattern = Pattern.compile(":")

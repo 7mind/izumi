@@ -6,19 +6,24 @@ import izumi.distage.InjectorFactory
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.distage.constructors.TraitConstructor
-import izumi.distage.framework.PlanCheck.runtime.RoleSelection
+import izumi.distage.framework.PlanCheck.RoleSelection
 import izumi.distage.framework.model.PlanCheckInput
 import izumi.distage.framework.services.ConfigLoader
 import izumi.distage.model.definition.{Binding, BootstrapModule, Id, Module, ModuleBase, ModuleDef, impl}
 import izumi.distage.model.plan.Roots
+import izumi.distage.model.planning.AxisPoint
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.SafeType
 import izumi.distage.modules.DefaultModule
+import izumi.distage.planning.solver.PlanVerifier
+import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.launcher.RoleProvider
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.collections.nonempty.NESet
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
@@ -43,6 +48,21 @@ trait CheckableApp {
     selectedRoles: RoleSelection,
     chosenConfigFile: Option[String],
   ): PlanCheckInput[AppEffectType]
+
+  /**
+    * Override this to execute additional arbitrary user-defined checks at compile-time (or runtime via `PlanCheck.runtime`)
+    *
+    * @throws Throwable You may throw a custom exception if your check error is not describable by [[izumi.distage.model.planning.PlanIssue]]
+    */
+  def customCheck(
+    planVerifier: PlanVerifier,
+    excludedActivations: Set[NESet[AxisPoint]],
+    checkConfig: Boolean,
+    planCheckInput: PlanCheckInput[AppEffectType],
+  ): PlanVerifierResult = {
+    Quirks.discard(planVerifier, excludedActivations, checkConfig, planCheckInput)
+    PlanVerifierResult.empty
+  }
 }
 object CheckableApp {
   type Aux[F[_]] = CheckableApp { type AppEffectType[A] = F[A] }
@@ -107,7 +127,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
             rolesInfo.requiredComponents
           ),
           roleNames = rolesInfo.requiredRoleNames,
-          providedKeys = injectorFactory.providedKeys[F](bsModule)(DefaultModule[F](Module.make(defaultModuleBindings))),
+          providedKeys = injectorFactory.providedKeys[F](bsModule)(using DefaultModule[F](Module.make(defaultModuleBindings))),
           configLoader = configLoader,
           appPlugins = appPlugins,
           bsPlugins = bsPlugins,
@@ -115,7 +135,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
     })
   }
 
-  protected[this] final def roleAppBootModulePlanCheckOverrides(
+  protected final def roleAppBootModulePlanCheckOverrides(
     chosenRoles: RoleSelection,
     chosenConfigResource: Option[(ClassLoader, String)],
   ): ModuleDef = {
@@ -124,7 +144,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
       make[IzLogger].fromValue(IzLogger.NullLogger)
 
       make[AppConfig].fromValue(AppConfig.empty)
-      make[RawAppArgs].fromValue(RawAppArgs.empty)
+      make[RoleAppArgs].fromValue(RoleAppArgs.empty)
 
       make[RoleProvider].from {
         chosenRoles match {
@@ -152,7 +172,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
         // keep original ConfigLoader
       }
 
-      private[this] def namePredicateRoleProvider(f: String => Boolean): Functoid[RoleProvider] = {
+      private def namePredicateRoleProvider(f: String => Boolean): Functoid[RoleProvider] = {
         // use Auto-Traits feature to override just the few specific methods of a class succinctly
         @impl trait NamePredicateRoleProvider extends RoleProvider.ReflectiveImpl {
           override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
@@ -167,7 +187,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
         TraitConstructor[NamePredicateRoleProvider]
       }
 
-      private[this] def specificResourceConfigLoader(classLoader: ClassLoader, resourceName: String): ConfigLoader = {
+      private def specificResourceConfigLoader(classLoader: ClassLoader, resourceName: String): ConfigLoader = {
         (_: String) =>
           val cfg = ConfigFactory.parseResources(classLoader, resourceName).resolve()
           if (cfg.origin().resource() eq null) {

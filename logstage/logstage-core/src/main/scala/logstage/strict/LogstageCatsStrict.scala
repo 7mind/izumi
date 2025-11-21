@@ -16,7 +16,7 @@ object LogstageCatsStrict {
         withDynamicContextStrict(logger.withCustomContext(context))(dynamic)
       }
 
-      override protected[this] def wrap[T](f: AbstractLogger => T): F[T] = {
+      override protected def wrap[T](f: AbstractLogger => T): F[T] = {
         dynamic.flatMap(ctx => SyncSafe1[F].syncSafe(f(logger.withCustomContext(ctx))))
       }
     }
@@ -28,7 +28,7 @@ object LogstageCatsStrict {
         withDynamicContextStrict(logger.withCustomContext(context))(dynamic)
       }
 
-      override protected[this] def wrap[A](f: AbstractLoggerF[F] => F[A]): F[A] = {
+      override protected def wrap[A](f: AbstractLoggerF[F] => F[A]): F[A] = {
         dynamic.flatMap(ctx => f(logger.withCustomContext(ctx)))
       }
     }
@@ -40,7 +40,7 @@ object LogstageCatsStrict {
   ) extends UnsafeLogIOSyncSafeInstance[F](logger)(F)
     with LogIOStrict[F] {
 
-    protected[this] def wrap[A](f: AbstractLogger => A): F[A]
+    protected def wrap[A](f: AbstractLogger => A): F[A]
 
     override final def unsafeLog(entry: Entry): F[Unit] = wrap(_.unsafeLog(entry))
     override final def log(entry: Entry): F[Unit] = wrap(_.log(entry))
@@ -53,7 +53,7 @@ object LogstageCatsStrict {
   ) extends UnsafeLogIOSyncSafeInstanceF[F](logger)(F)
     with LogIOStrict[F] {
 
-    protected[this] def wrap[A](f: AbstractLoggerF[F] => F[A]): F[A]
+    protected def wrap[A](f: AbstractLoggerF[F] => F[A]): F[A]
 
     override final def unsafeLog(entry: Entry): F[Unit] = wrap(_.unsafeLog(entry))
     override final def log(entry: Entry): F[Unit] = wrap(_.log(entry))

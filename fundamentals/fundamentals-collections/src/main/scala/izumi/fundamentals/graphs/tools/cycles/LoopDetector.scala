@@ -1,6 +1,6 @@
 package izumi.fundamentals.graphs.tools.cycles
 
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyList
 import izumi.fundamentals.graphs.tools.cycles.LoopDetector.Cycles
 
 import scala.annotation.nowarn
@@ -8,15 +8,15 @@ import scala.collection.mutable
 
 // TODO: this class is not required for distage
 trait LoopDetector {
-  def findCyclesForNode[T](node: T, graph: IncidenceMatrix[T]): Option[Cycles[T]]
-  def findLoopMember[T](graph: IncidenceMatrix[T]): Option[T]
+  def findCyclesForNode[T](node: T, graph: AdjacencyList[T]): Option[Cycles[T]]
+  def findLoopMember[T](graph: AdjacencyList[T]): Option[T]
 
-  final def findCyclesForNodes[T](nodes: Set[T], graph: IncidenceMatrix[T]): Set[Cycles[T]] = {
+  final def findCyclesForNodes[T](nodes: Set[T], graph: AdjacencyList[T]): Set[Cycles[T]] = {
     nodes.flatMap(findCyclesForNode(_, graph))
   }
 }
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 object LoopDetector {
   import scala.collection.compat._
 
@@ -25,7 +25,7 @@ object LoopDetector {
   final case class Cycles[T](node: T, loops: Seq[Loop[T]])
 
   object Impl extends LoopDetector {
-    def findCyclesForNode[T](node: T, graph: IncidenceMatrix[T]): Option[Cycles[T]] = {
+    def findCyclesForNode[T](node: T, graph: AdjacencyList[T]): Option[Cycles[T]] = {
       val loops = new mutable.HashSet[Loop[T]]()
       traceCycles(graph, loops)(node, Seq.empty, Set.empty)
       loops.toList match {
@@ -37,7 +37,7 @@ object LoopDetector {
 
     }
 
-    private def traceCycles[T](graph: IncidenceMatrix[T], loops: mutable.HashSet[Loop[T]])(current: T, path: Seq[T], seen: Set[T]): Unit = {
+    private def traceCycles[T](graph: AdjacencyList[T], loops: mutable.HashSet[Loop[T]])(current: T, path: Seq[T], seen: Set[T]): Unit = {
       if (seen.contains(current)) {
         loops.add(Loop(path :+ current))
         ()
@@ -53,7 +53,7 @@ object LoopDetector {
       }
     }
 
-    def findLoopMember[T](graph: IncidenceMatrix[T]): Option[T] = {
+    def findLoopMember[T](graph: AdjacencyList[T]): Option[T] = {
       val untested = mutable.HashMap.from(graph.links)
 
       while (untested.nonEmpty) {

@@ -5,29 +5,54 @@ import izumi.distage.config.model.*
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
+import izumi.logstage.api.Log.Level.Info
+import izumi.logstage.api.Log.Message
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
 trait ConfigMerger {
   def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], clue: String): Config
-  def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean, clue: String): Config
+  def mergeFilter(
+    logger: IzLogger,
+    filteringStrategy: ConfigFilteringStrategy,
+    filter: LoadedRoleConfigs => Boolean,
+  )(shared: List[ConfigLoadResult.Success],
+    role: List[LoadedRoleConfigs],
+    clue: String,
+  ): Config
+
   def foldConfigs(roleConfigs: List[ConfigLoadResult.Success]): Config
   def addSystemProps(config: Config): Config
 }
 
 object ConfigMerger {
-  class ConfigMergerImpl(logger: IzLogger @Id("early")) extends ConfigMerger {
+  class ConfigMergerImpl(
+    logger: IzLogger @Id("early"),
+    enableConfigEnvOverrides: Boolean @Id("distage.roles.enable-config-environment-overrides"),
+    filteringStrategy: ConfigFilteringStrategy,
+  ) extends ConfigMerger {
+
     override def merge(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], clue: String): Config = {
-      mergeFilter(shared, role, _.roleConfig.active, clue)
+      mergeFilter(logger, filteringStrategy, _.roleConfig.active)(shared, role, clue)
     }
 
-    override def mergeFilter(shared: List[ConfigLoadResult.Success], role: List[LoadedRoleConfigs], filter: LoadedRoleConfigs => Boolean, clue: String): Config = {
+    override def mergeFilter(
+      logger: IzLogger,
+      filteringStrategy: ConfigFilteringStrategy,
+      filter: LoadedRoleConfigs => Boolean,
+    )(shared0: List[ConfigLoadResult.Success],
+      role0: List[LoadedRoleConfigs],
+      clue: String,
+    ): Config = {
+      val shared = filteringStrategy.filterSharedConfigs(shared0)
+      val role = filteringStrategy.filterRoleConfigs(role0)
+
       val nonEmptyShared = shared.filterNot(_.config.isEmpty)
       val roleConfigs = role.flatMap(_.loaded)
       val nonEmptyRole = roleConfigs.filterNot(_.config.isEmpty)
 
-      val toMerge = (shared ++ role.filter(filter).flatMap(_.loaded)).filterNot(_.config.isEmpty)
+      val toMerge = (role.filter(filter).flatMap(_.loaded) ++ shared).filterNot(_.config.isEmpty)
 
       val folded = foldConfigs(toMerge)
 
@@ -36,22 +61,22 @@ object ConfigMerger {
       val sub = logger("config context" -> clue)
       sub.info(s"Config input: ${shared.size -> "shared configs"} of which ${nonEmptyShared.size -> "non empty shared configs"}")
       sub.info(s"Config input: ${roleConfigs.size -> "role configs"}  of which ${nonEmptyRole.size -> "non empty role configs"}")
-      sub.info(s"Output config has ${folded.entrySet().size() -> "root nodes"}")
-      sub.info(s"The following configs were used (ascending priority): ${repr.niceList() -> "used configs"}")
+      sub.info(s"Output config has ${folded.entrySet().size() -> "keys"}")
+      sub.info(s"The following configs were used (highest priority first): ${repr.niceList() -> "used configs"}")
 
-      val configRepr = (shared.map(c => (c.clue, true)) ++ role.flatMap(r => r.loaded.map(c => (s"${c.clue}, role=${r.roleConfig.role}", filter(r)))))
-        .map(c => s"${c._1}, active = ${c._2}")
+      val configRepr = shared.map(c => (c.clue, true)) ++
+        role
+          .flatMap(r => r.loaded.map(c => (s"${c.clue}, role=${r.roleConfig.role}", filter(r))))
+          .map(c => s"${c._1}, active = ${c._2}")
       logger.debug(s"Full list of processed configs: ${configRepr.niceList() -> "locations"}")
 
       folded
     }
 
     def foldConfigs(roleConfigs: List[ConfigLoadResult.Success]): Config = {
-      val fallbackOrdered = roleConfigs.reverse // rightmost config has the highest priority, so we need it to become leftmost
+      verifyConfigs(roleConfigs)
 
-      verifyConfigs(fallbackOrdered)
-
-      fallbackOrdered.foldLeft(ConfigFactory.empty()) {
+      roleConfigs.foldLeft(ConfigFactory.empty()) {
         case (acc, loaded) =>
           acc.withFallback(loaded.config)
       }
@@ -85,12 +110,21 @@ object ConfigMerger {
     }
 
     override def addSystemProps(config: Config): Config = {
-      val result = ConfigFactory
-        .systemProperties()
+      val envOverridesConfig = if (enableConfigEnvOverrides) {
+        ConfigFactory.systemEnvironmentOverrides()
+      } else {
+        ConfigFactory.empty()
+      }
+      val sysPropsConfig = ConfigFactory.systemProperties()
+      val result = envOverridesConfig
+        .withFallback(sysPropsConfig)
         .withFallback(config)
         .resolve()
-      logger.info(
-        s"Config with ${config.entrySet().size() -> "root nodes"} has been enhanced with system properties, new config has ${result.entrySet().size() -> "new root nodes"}"
+
+      logger.log(Info)(
+        Message(s"Config with ${config.entrySet().size() -> "keys"} has been enhanced with ") ++
+        (if (enableConfigEnvOverrides) Message(s"${envOverridesConfig.entrySet().size() -> "environment variable overrides"} and ") else Message.empty) ++
+        s"${sysPropsConfig.entrySet().size() -> "system properties"}, new config has ${result.entrySet().size() -> "new keys"}"
       )
 
       result

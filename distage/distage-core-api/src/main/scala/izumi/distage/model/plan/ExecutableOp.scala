@@ -107,7 +107,7 @@ object ExecutableOp {
       @inline def actionEffectType: SafeType = op.effectHKTypeCtor
       @inline def provisionerEffectType[F[_]: TagK]: SafeType = SafeType.getK[F]
 
-      @inline def isEffect[F[_]: TagK]: Boolean = {
+      @inline def isEffect: Boolean = {
         actionEffectType != SafeType.identityEffectType
       }
       @inline def isIncompatibleEffectType[F[_]: TagK]: Boolean = {
@@ -138,7 +138,7 @@ object ExecutableOp {
   }
 
   @tailrec
-  private[this] def opInstanceType(op: ExecutableOp): SafeType = {
+  private def opInstanceType(op: ExecutableOp): SafeType = {
     op match {
       case w: WiringOp =>
         w.wiring.instanceType

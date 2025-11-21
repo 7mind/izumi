@@ -11,4 +11,6 @@ object EncodingMode {
   case object NonStrict extends EncodingMode
   case object Strict extends EncodingMode
   case object Raw extends EncodingMode
+
+  def values: Set[EncodingMode] = Set(NonStrict, Strict, Raw)
 }

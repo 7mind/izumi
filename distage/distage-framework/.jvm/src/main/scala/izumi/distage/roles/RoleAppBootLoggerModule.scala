@@ -13,7 +13,7 @@ class RoleAppBootLoggerModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
   make[EarlyLoggerFactory].from[EarlyLoggerFactory.EarlyLoggerFactoryImpl]
 
   make[LogConfigLoader].from[LogConfigLoader.LogConfigLoaderImpl]
-  make[RouterFactory].from[RouterFactory.RouterFactoryImpl]
+  make[RouterFactory].from[RouterFactory.RouterFactoryConsoleSinkImpl]
   make[LateLoggerFactory].from[LateLoggerFactory.LateLoggerFactoryImpl]
   make[LogQueue].fromResource(ThreadingLogQueue.resource())
 

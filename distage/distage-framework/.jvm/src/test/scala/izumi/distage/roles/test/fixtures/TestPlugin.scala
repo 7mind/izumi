@@ -4,6 +4,7 @@ import cats.effect.IO
 import izumi.distage.config.ConfigModuleDef
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.StandardAxis.*
+import izumi.distage.model.definition.dsl.IncludesDSL.TagMergePolicy
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
@@ -12,20 +13,24 @@ import izumi.distage.roles.test.fixtures.TestPluginCatsIO.{InheritedCloseable, N
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, IntegrationOnlyCfg2, SetElementOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.fundamentals.platform.versions.Version
 import izumi.reflect.TagK
 
-class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with RoleModuleDef {
+class TestPluginBase[F[_]: TagK] extends PluginDef with RoleModuleDef {
   tag(Mode.Prod)
 
-  include(BundledRolesModule[F] overriddenBy new ModuleDef {
-    make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
-  })
+  include(
+    BundledRolesModule[F] overriddenBy new ModuleDef {
+      make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
+    },
+    TagMergePolicy.UseOnlyInner,
+  )
 
-  private def version = Option(System.getProperty(TestPluginCatsIO.versionProperty)) match {
+  private def version: Version = Option(System.getProperty(TestPluginCatsIO.versionProperty)) match {
     case Some(value) =>
-      value
+      Version.parse(value)
     case None =>
-      s"0.0.0-${System.currentTimeMillis()}"
+      Version.Unknown(s"0.0.0-${System.currentTimeMillis()}")
   }
 
   many[Dummy]
@@ -49,33 +54,37 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with ConfigModuleDef with Rol
   make[TestRole00Resource[F]]
   make[TestRole00ResourceIntegrationCheck[F]]
 
-  make[NotCloseable].from[InheritedCloseable]
-//  makeRole[ConfigWriter[F]]
-//  makeRole[Help[F]]
+  makeRole[ConfigTestRole[F]]
 
-  make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
-  make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)
+  include(new ConfigModuleDef {
+    makeConfig[ConfigTestConfig]("configTest")
 
-  makeConfig[TestServiceConf]("testservice")
-  makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
-  makeConfig[SetElementOnlyCfg]("setElementConfig")
+    make[NotCloseable].from[InheritedCloseable]
 
-  makeConfig[TestValueConf]("wrapped").named("v1")
-  makeConfig[TestValueConf]("wrapped.path.one").named("v2")
-  makeConfig[TestValueConf]("wrapped.path.two").named("v3")
+    make[AxisComponent].from(AxisComponentCorrect).tagged(AxisComponentAxis.Correct)
+    make[AxisComponent].from(AxisComponentIncorrect).tagged(AxisComponentAxis.Incorrect)
 
-  makeConfig[IntegrationOnlyCfg2]("integrationOnlyCfg2")
-  modify[IntegrationOnlyCfg2] {
-    (conf: IntegrationOnlyCfg2) =>
-      IntegrationOnlyCfg2(conf.value + ":updated")
-  }
+    makeConfig[TestServiceConf]("testservice")
+    makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
+    makeConfig[SetElementOnlyCfg]("setElementConfig")
 
-  makeConfig[TestServiceConf2]("testservice2")
-  modify[TestServiceConf2] {
-    (conf: TestServiceConf2) =>
-      TestServiceConf2(conf.strval + ":updated", conf.map, conf.list)
-  }
-  makeConfig[ListConf]("listconf")
+    makeConfig[TestValueConf]("wrapped").named("v1")
+    makeConfig[TestValueConf]("wrapped.path.one").named("v2")
+    makeConfig[TestValueConf]("wrapped.path.two").named("v3")
+
+    makeConfig[IntegrationOnlyCfg2]("integrationOnlyCfg2")
+    modify[IntegrationOnlyCfg2] {
+      (conf: IntegrationOnlyCfg2) =>
+        IntegrationOnlyCfg2(conf.value + ":updated")
+    }
+
+    makeConfig[TestServiceConf2]("testservice2")
+    modify[TestServiceConf2] {
+      (conf: TestServiceConf2) =>
+        TestServiceConf2(conf.strval + ":updated", conf.map, conf.list)
+    }
+    makeConfig[ListConf]("listconf")
+  })
 
   include(GenericServiceConf.module[GenericServiceConf.Impl]("genericservice"))
 }

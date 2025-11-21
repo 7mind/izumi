@@ -16,6 +16,7 @@ final class IdentityCompatTest extends Spec1[Identity] {
     "skip (should be ignored due to `assume`)" in {
       (_: QuasiIO[Identity]) =>
         assume(false)
+        assert(false)
     }
 
   }

@@ -1,13 +1,13 @@
 package izumi.fundamentals.platform.jvm
 
-import izumi.fundamentals.platform.IzPlatform
+import izumi.fundamentals.platform.{IzPlatform, IzPlatformEffectfulUtil}
 
 import java.lang.management.ManagementFactory
 import java.nio.file.{Path, Paths}
 import java.time.ZonedDateTime
 import scala.concurrent.duration.Duration
 
-trait IzJvm {
+trait IzJvm extends IzPlatformEffectfulUtil {
 
   import izumi.fundamentals.platform.time.IzTime._
 

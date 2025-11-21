@@ -3,7 +3,7 @@ package izumi.distage.roles.bundled
 import distage.Id
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.*
 
 /**
@@ -18,8 +18,8 @@ class RunAllTasks[F[_]](
 ) extends RoleTask[F]
   with BundledTask {
 
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
-    F.traverse_(allTasks)(t => t.start(roleParameters, freeArgs))
+  override def start(roleParameters: EntrypointArgs): F[Unit] = {
+    F.traverse_(allTasks)(t => t.start(roleParameters))
   }
 }
 

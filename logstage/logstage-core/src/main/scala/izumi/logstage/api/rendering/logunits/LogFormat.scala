@@ -34,7 +34,18 @@ object LogFormat {
       val templateBuilder = new StringBuilder()
       val messageBuilder = new StringBuilder()
 
+      // here we fix representation of "malformed" strings like arg1 + arg2 + arg3.
+      // While technically it IS correct to print all the args concatenated, it makes sense to separate them
       val staticParts = entry.message.template.parts
+        .foldLeft((Option.empty[String], Seq.empty[String])) {
+          case ((last, acc), part) =>
+            if (part == "" && last.contains("")) {
+              (Some(part), acc.init ++ Seq(" ", " "))
+            } else {
+              (Some(part), acc :+ part)
+            }
+        }._2
+
       val head = staticParts.head
       templateBuilder.append(handle(head))
       messageBuilder.append(handle(head))
@@ -58,7 +69,7 @@ object LogFormat {
     }
 
     def traceThrowables(options: RenderingOptions, entry: Log.Entry): String = {
-      import izumi.fundamentals.platform.exceptions.IzThrowable._
+      import izumi.fundamentals.platform.exceptions.IzThrowable.*
 
       val throwables = entry.throwables
       if (throwables.nonEmpty) {
@@ -87,7 +98,7 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def processUnbalanced(
+    @inline private def processUnbalanced(
       occurences: mutable.HashMap[String, Int],
       withColors: Boolean,
       hideKeys: Boolean,
@@ -110,7 +121,7 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def process(
+    @inline private def process(
       occurences: mutable.HashMap[String, Int],
       templateBuilder: mutable.StringBuilder,
       messageBuilder: mutable.StringBuilder,
@@ -163,26 +174,26 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def normalizeName(s: String): String = {
+    @inline private def normalizeName(s: String): String = {
       if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
         s
       } else {
-        import izumi.fundamentals.platform.strings.IzString._
+        import izumi.fundamentals.platform.strings.IzString.*
         s.replace(' ', '_').camelToUnderscores
       }
     }
 
-    @inline private[this] def handle(part: String): String = {
+    @inline private def handle(part: String): String = {
       StringContext.processEscapes(part)
     }
 
-    @inline private[this] def formatKvStrings(withColor: Boolean, name: String, value: String): String = {
+    @inline private def formatKvStrings(withColor: Boolean, name: String, value: String): String = {
       val key = wrapped(withColor, Console.GREEN, name)
       val v = wrapped(withColor, Console.CYAN, value)
       s"$key=$v"
     }
 
-    @inline private[this] def argToString(codec: Option[LogstageCodec[Any]], argValue: Any, withColors: Boolean): String = {
+    @inline private def argToString(codec: Option[LogstageCodec[Any]], argValue: Any, withColors: Boolean): String = {
       argValue match {
         case null =>
           wrapped(withColors, Console.YELLOW, "null")
@@ -204,7 +215,7 @@ object LogFormat {
             }
           } catch {
             case f: Throwable =>
-              import IzThrowable._
+              import IzThrowable.*
               val message = s"[${argValue.getClass.getName}#toString failed]\n${f.stacktraceString} "
               wrapped(withColors, Console.RED, message)
           }
@@ -213,7 +224,7 @@ object LogFormat {
 
     protected def toString(argValue: Any): String
 
-    @inline private[this] def wrapped(withColors: Boolean, color: String, message: String): String = {
+    @inline private def wrapped(withColors: Boolean, color: String, message: String): String = {
       if (withColors) {
         s"$color$message${Console.RESET}"
       } else {

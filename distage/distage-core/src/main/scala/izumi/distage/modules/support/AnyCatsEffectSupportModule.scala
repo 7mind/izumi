@@ -30,22 +30,22 @@ class AnyCatsEffectSupportModule[F[_]: TagK] extends ModuleDef {
     .aliased[QuasiApplicative[F]]
     .aliased[QuasiFunctor[F]]
     .from {
-      implicit F: Sync[F] => QuasiIO.fromCats
+      implicit F: Sync[F] => QuasiIO.fromCats[F, Sync]
     }
   make[QuasiAsync[F]].from {
-    implicit F: Async[F] => QuasiAsync.fromCats
+    implicit F: Async[F] => QuasiAsync.fromCats[F, Async]
   }
   make[QuasiTemporal[F]].from {
-    implicit F: GenTemporal[F, Throwable] => QuasiTemporal.fromCats
+    implicit F: GenTemporal[F, Throwable] => QuasiTemporal.fromCats[F, GenTemporal]
   }
   make[SyncSafe1[F]].from {
-    implicit F: Sync[F] => SyncSafe1.fromSync
+    implicit F: Sync[F] => SyncSafe1.fromSync[F, Sync]
   }
   make[Clock1[F]].from {
-    Clock1.fromImpure(_: Clock1[Identity])(_: SyncSafe1[F])
+    Clock1.fromImpure(_: Clock1[Identity])(using _: SyncSafe1[F])
   }
   make[Entropy1[F]].from {
-    Entropy1.fromImpure(_: Entropy1[Identity])(_: SyncSafe1[F])
+    Entropy1.fromImpure(_: Entropy1[Identity])(using _: SyncSafe1[F])
   }
 }
 

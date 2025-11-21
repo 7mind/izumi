@@ -34,7 +34,7 @@ import io.circe.Codec
   */
 abstract class WithCirce[A]()(implicit derivedCodec: => DerivationDerivedCodec[A]) {
   // workaround for https://github.com/milessabin/shapeless/issues/837
-  def this(proxy: WithCirce[A]) = this()(DerivationDerivedCodec(proxy.codec))
+  def this(proxy: WithCirce[A]) = this()(using DerivationDerivedCodec(proxy.codec))
 
   implicit lazy val codec: Codec.AsObject[A] = derivedCodec.value
 }

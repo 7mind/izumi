@@ -3,6 +3,7 @@ package izumi.distage.fixtures
 import java.util.concurrent.atomic.AtomicReference
 import izumi.distage.model.definition.Lifecycle
 import izumi.functional.bio.Exit
+import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.fundamentals.platform.language.Quirks.*
@@ -207,6 +208,20 @@ object ResourceCases {
                 release(a, Some(err)).flatMap(_ => fail(err))
             }.flatMap(res => release(a, None).map(_ => res))
         }
+      }
+
+      override def uninterruptibleExcept[A](f: RestoreInterruption1[Suspend2[E, _]] => Suspend2[E, A]): Suspend2[E, A] = {
+        f(Morphism1(identity))
+      }
+      
+      override def tapBothUntyped[A](eff: => Suspend2[E, A])(err: Any => Suspend2[E, Unit], succ: A => Suspend2[E, Unit]): Suspend2[E, A] = {
+        Suspend2(
+          () =>
+            Try(eff.run()).toEither.flatMap(identity) match {
+              case Left(error) => err(error).run().map(_ => throw error)
+              case Right(value) => succ(value).run().map(_ => value)
+            }
+        )
       }
     }
   }

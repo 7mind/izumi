@@ -4,7 +4,7 @@ import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.provisioning.{NewObjectOp, OpStatus}
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.provisioning.TraversalState.Current.{CannotProgress, Done, Step}
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyPredList
 
 import scala.annotation.nowarn
 import scala.collection.mutable
@@ -42,7 +42,7 @@ object TimedResult {
 
 final class TraversalState(
   val current: TraversalState.Current,
-  val preds: IncidenceMatrix[DIKey],
+  val preds: AdjacencyPredList[DIKey],
   val knownBroken: Set[DIKey],
   val failures: Vector[ProvisionerIssue],
   _status: mutable.HashMap[DIKey, OpStatus],
@@ -50,9 +50,9 @@ final class TraversalState(
 
   def status(): Map[DIKey, OpStatus] = _status.toMap
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   def next(finished: List[TimedFinalResult.Success], issues: List[TimedFinalResult.Failure]): TraversalState = {
-    import scala.collection.compat.*
+    import scala.collection.compat._
 
     val nextPreds = preds.without(finished.iterator.map(_.key).toSet)
 
@@ -77,6 +77,7 @@ final class TraversalState(
         CannotProgress(nextPreds)
       }
     } else {
+      // don't change this to .keys, there was no such method in old scala
       Step(current.map(_._1))
     }
 
@@ -92,7 +93,7 @@ final class TraversalState(
 }
 
 object TraversalState {
-  def apply(preds: IncidenceMatrix[DIKey]): TraversalState = {
+  def apply(preds: AdjacencyPredList[DIKey]): TraversalState = {
     val todo = mutable.HashMap[DIKey, OpStatus]()
     todo ++= preds.links.keySet.map(_ -> OpStatus.Planned())
     new TraversalState(
@@ -108,6 +109,6 @@ object TraversalState {
   object Current {
     final case class Step(steps: Iterable[DIKey]) extends Current
     final case class Done() extends Current
-    final case class CannotProgress(left: IncidenceMatrix[DIKey]) extends Current
+    final case class CannotProgress(left: AdjacencyPredList[DIKey]) extends Current
   }
 }

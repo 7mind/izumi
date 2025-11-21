@@ -1,6 +1,6 @@
 package izumi.logstage.adapter.jul
 
-import izumi.fundamentals.platform.language.SourceFilePosition
+import izumi.fundamentals.platform.language.{CodePosition, SourceFilePosition}
 import izumi.logstage.api.Log
 import logstage.LogRouter
 
@@ -19,7 +19,8 @@ import scala.collection.compat.immutable.ArraySeq
 class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler with JULTools with AutoCloseable {
   override def publish(record: LogRecord): Unit = {
     val level = toLevel(record)
-    if (router.acceptable(Log.LoggerId(record.getLoggerName), level)) {
+    val loggerName = record.getLoggerName match { case null => "null"; case s => s }
+    if (router.acceptable(Log.LoggerId(loggerName), level)) {
       router.log(mkEntry(record))
     }
   }
@@ -40,14 +41,13 @@ class LogstageJulLogger(router: LogRouter) extends java.util.logging.Handler wit
     }
   }
 
-  @inline private[this] def mkEntry(record: LogRecord): Log.Entry = {
+  @inline private def mkEntry(record: LogRecord): Log.Entry = {
 
     val loggerName = Option(record.getLoggerName).getOrElse("unknown")
-    val id = Log.LoggerId(loggerName)
 
     val thread = Thread.currentThread()
 
-    val ctx = Log.StaticExtendedContext(id, SourceFilePosition.unknown)
+    val ctx = Log.StaticExtendedContext(CodePosition(SourceFilePosition.unknown, loggerName))
     val threadData = Log.ThreadData(thread.getName, thread.getId)
 
     val params = Option(record.getParameters).toSeq.flatten
@@ -132,7 +132,7 @@ trait JULTools {
 
   def rootRef(): Logger = LogManager.getLogManager.getLogger("")
 
-  private[this] def forEachHandler(logger: Logger)(action: (Logger, java.util.logging.Handler) => Unit): Unit = {
+  private def forEachHandler(logger: Logger)(action: (Logger, java.util.logging.Handler) => Unit): Unit = {
     logger.synchronized {
       val handlers = logger.getHandlers
       for (handler <- handlers) {

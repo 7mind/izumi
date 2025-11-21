@@ -5,8 +5,9 @@ import distage.TagK
 import distage.config.AppConfig
 import io.circe.Json
 import izumi.distage.config.codec.ConfigMetaType
+import izumi.distage.config.codec.ConfigMetaType.ConfigField
 import izumi.distage.config.model.ConfTag
-import izumi.distage.framework.services.{ConfigMerger, RoleAppPlanner}
+import izumi.distage.framework.services.{ConfigFilteringStrategy, ConfigMerger, RoleAppPlanner}
 import izumi.distage.model.definition.{Binding, Id}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.planning.AxisPoint
@@ -16,23 +17,32 @@ import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.collections.nonempty.NESet
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import scala.annotation.{nowarn, unused}
+import scala.annotation.nowarn
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.Try
 
+/**
+  * Writes reference config into files, split by roles (includes only parts of the config used by the application).
+  *
+  * Also generates a JSON Schema description for config.
+  *
+  * @see [[izumi.distage.config.model.ConfigDoc]] annotation to attach comments to generated JSON Schema nodes
+  * @see [[izumi.distage.roles.bundled.JsonSchemaGenerator]]
+  */
 final class ConfigWriter[F[_]: TagK](
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
   roleAppPlanner: RoleAppPlanner,
   appConfig: AppConfig,
+  configMerger: ConfigMerger,
   F: QuasiIO[F],
 ) extends RoleTask[F]
   with BundledTask {
@@ -40,17 +50,16 @@ final class ConfigWriter[F[_]: TagK](
   // fixme: always include `activation` section in configs (Used in RoleAppLauncherImpl#configActivationSection, but not seen in config bindings, since it's not read by DI)
   //  should've been unnecessary after https://github.com/7mind/izumi/issues/779
   //  but, the contents of the MainAppModule (including `"activation"` config read) are not accessible here from `RoleAppPlanner` yet...
-  private[this] val _HackyMandatorySection = ConfigPath("activation", wildcard = true)
-  private val configMerger = new ConfigMerger.ConfigMergerImpl(logger)
+  private val _HackyMandatorySection = ConfigPath("activation", wildcard = true)
 
-  override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
+  override def start(roleParameters: EntrypointArgs): F[Unit] = {
     F.maybeSuspend {
       val config = ConfigWriter.parse(roleParameters)
       writeReferenceConfig(config)
     }
   }
 
-  private[this] def writeReferenceConfig(options: WriteReference): Unit = {
+  private def writeReferenceConfig(options: WriteReference): Unit = {
     val configPath = Paths.get(options.targetDir).toFile
     logger.info(s"Config ${configPath.getAbsolutePath -> "target directory"}...")
 
@@ -75,17 +84,25 @@ final class ConfigWriter[F[_]: TagK](
             role.descriptor.artifact.map(_.version).map(_.version)
           }
           val subLogger = logger("role" -> roleId)
-          val fileNameFull = outputFileName(roleId, roleVersion, options.asJson, Some("full"))
+          val fileNameFull = outputFileName(roleId, roleVersion.map(_.toString), options.asJson, Some("full"))
 
           val loaded = index(roleId)
 
           // TODO: mergeFilter considers system properties, we might want to AVOID that in configwriter
           subLogger.info(s"About to output configs...")
-          val mergedRoleConfig = configMerger.mergeFilter(appConfig.shared, List(loaded), _ => true, "configwriter")
+          val mergedRoleConfig = configMerger.mergeFilter(
+            logger,
+            ConfigFilteringStrategy(
+              _.filter(!_.isExplicit),
+              _.map(c => c.copy(loaded = c.loaded.filter(!_.isExplicit))),
+            ),
+            _ => true,
+          )(appConfig.shared, List(loaded), "configwriter")
+
           writeConfig(options, fileNameFull, mergedRoleConfig, None, subLogger)
 
           val min = minimizedConfig(mergedRoleConfig, role)
-          val fileNameMinimized = outputFileName(roleId, roleVersion, options.asJson, Some("minimized"))
+          val fileNameMinimized = outputFileName(roleId, roleVersion.map(_.toString), options.asJson, Some("minimized"))
           writeConfig(options, fileNameMinimized, min.config, Some(min.schema), subLogger)
         } catch {
           case exception: Throwable =>
@@ -95,7 +112,7 @@ final class ConfigWriter[F[_]: TagK](
     }
   }
 
-  private[this] def outputFileName(service: String, version: Option[String], asJson: Boolean, suffix: Option[String]): String = {
+  private def outputFileName(service: String, version: Option[String], asJson: Boolean, suffix: Option[String]): String = {
     val extension = if (asJson) "json" else "conf"
     val vstr = version.getOrElse("0.0.0-UNKNOWN")
     val suffixStr = suffix.fold("")("-" + _)
@@ -103,7 +120,7 @@ final class ConfigWriter[F[_]: TagK](
     s"$service$suffixStr-$vstr.$extension"
   }
 
-  private[this] def minimizedConfig(roleConfig: Config, role: RoleBinding): MinimizedConfig = {
+  private def minimizedConfig(roleConfig: Config, role: RoleBinding): MinimizedConfig = {
     val excludedActivations = Set.empty[NESet[AxisPoint]] // TODO: val chosenActivations = parseActivations(cfg.excludeActivations)
     val bindings = roleAppPlanner.bootloader.input.bindings
     val verifier = PlanVerifier()
@@ -121,7 +138,7 @@ final class ConfigWriter[F[_]: TagK](
     MinimizedConfig(out, schema)
   }
 
-  private[this] def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, schema: Option[Json], subLogger: IzLogger): Try[Unit] = {
+  private def writeConfig(options: WriteReference, fileName: String, typesafeConfig: Config, schema: Option[Json], subLogger: IzLogger): Try[Unit] = {
     val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
     val target = Paths.get(options.targetDir, fileName)
     val targetSchema = Paths.get(options.targetDir, s"$fileName.jsonschema")
@@ -130,13 +147,12 @@ final class ConfigWriter[F[_]: TagK](
       val cfg = typesafeConfig.root().render(configRenderOptions.setJson(options.asJson))
       val bytes = cfg.getBytes(StandardCharsets.UTF_8)
       Files.write(target, bytes)
-      subLogger.info(s"Reference config saved -> $target (${bytes.size} bytes)")
+      subLogger.info(s"Reference config saved -> $target (${bytes.size -> "size"} bytes)")
       schema.foreach {
         json =>
           val bytes = json.spaces2.getBytes(StandardCharsets.UTF_8)
         Files.write(targetSchema, bytes)
       }
-
     }.recover {
       case error: Throwable =>
         subLogger.error(s"Can't write reference config to $target, $error")
@@ -156,13 +172,13 @@ final class ConfigWriter[F[_]: TagK](
 
   private def unpackConfigPaths(path: Seq[String], meta0: ConfigMetaType): Seq[ConfigPath] = {
     meta0 match {
-      case ConfigMetaType.TCaseClass(_, fields) =>
-        fields.flatMap {
-          case (name, meta) =>
+      case cc: ConfigMetaType.TCaseClass =>
+        cc.fields.flatMap {
+          case ConfigField(name, meta, _) =>
             unpackConfigPaths(path :+ name, meta)
         }
-      case ConfigMetaType.TSealedTrait(_, branches) =>
-        branches.toSeq.flatMap {
+      case t: ConfigMetaType.TSealedTrait =>
+        t.branches.toSeq.flatMap {
           case (name, meta) =>
             unpackConfigPaths(path :+ name, meta)
         }
@@ -176,7 +192,7 @@ final class ConfigWriter[F[_]: TagK](
 object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
 
-  case class MinimizedConfig(config: Config, schema: Json)
+  final case class MinimizedConfig(config: Config, schema: Json)
 
   override def parserSchema: RoleParserSchema = {
     RoleParserSchema(id, Options, Some("Dump reference configs for all the roles"), None, freeArgsAllowed = false)
@@ -184,33 +200,27 @@ object ConfigWriter extends RoleDescriptor {
 
   /**
     * Configuration for [[ConfigWriter]]
-    *
-    * @param includeCommon Append shared sections from `common-reference.conf` into every written config
     */
   case class WriteReference(
     asJson: Boolean,
     targetDir: String,
-    includeCommon: Boolean,
     useLauncherVersion: Boolean,
   )
 
   object Options extends ParserDef {
     final val targetDir = arg("target", "t", "target directory", "<path>")
-    final val excludeCommon = flag("exclude-common", "ec", "do not include shared sections")
     final val useComponentVersion = flag("version-use-component", "vc", "use component version instead of launcher version")
     final val formatTypesafe = arg("format", "f", "output format, json is default", "{json|hocon}")
   }
 
-  def parse(p: RawEntrypointParams): WriteReference = {
+  def parse(p: EntrypointArgs): WriteReference = {
     val targetDir = p.findValue(Options.targetDir).map(_.value).getOrElse("config")
-    val includeCommon = p.hasNoFlag(Options.excludeCommon)
     val useLauncherVersion = p.hasNoFlag(Options.useComponentVersion)
     val asJson = !p.findValue(Options.formatTypesafe).map(_.value).contains("hocon")
 
     WriteReference(
       asJson,
       targetDir,
-      includeCommon,
       useLauncherVersion,
     )
   }

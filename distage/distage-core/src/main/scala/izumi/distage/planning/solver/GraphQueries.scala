@@ -15,12 +15,12 @@ import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.{ImmutableMultiMap, MutableMultiMap}
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import izumi.fundamentals.graphs.WeakEdge
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyList
 import izumi.fundamentals.graphs.tools.gc.Tracer
 
 import scala.annotation.nowarn
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 class GraphQueries(
   bindingTranslator: BindingTranslator
 ) {
@@ -31,28 +31,28 @@ class GraphQueries(
   }
 
   final def allImportingBindings(
-                                  matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
-                                  currentActivation: Set[AxisPoint],
-                                )(importedKey: DIKey,
-                                  d: DIKey,
-                                ): Set[OperationOrigin] = {
+    matrix: ImmutableMultiMap[DIKey, (InstantiationOp, Set[AxisPoint])],
+    currentActivation: Set[AxisPoint],
+  )(importedKey: DIKey,
+    d: DIKey,
+  ): Set[OperationOrigin] = {
     // FIXME: reuse formatting from conflictingAxisTagsHint
     matrix
       .getOrElse(d, Set.empty)
       .collect {
         case (op, activations) if activations.subsetOf(currentActivation) && (op match {
-          case CreateSet(_, members, _) => members
-          case op: ExecutableOp.WiringOp => op.wiring.requiredKeys
-          case op: ExecutableOp.MonadicOp => Set(op.effectKey)
-        }).contains(importedKey) =>
+              case CreateSet(_, members, _) => members
+              case op: ExecutableOp.WiringOp => op.wiring.requiredKeys
+              case op: ExecutableOp.MonadicOp => Set(op.effectKey)
+            }).contains(importedKey) =>
           op.origin.value
       }
   }
 
   def nextDepsToVisit(
-                       execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
-                       withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
-                     ): Right[Nothing, Seq[(Set[AxisPoint], Set[DIKey])]] = {
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
+    withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
+  ): Right[Nothing, Seq[(Set[AxisPoint], Set[DIKey])]] = {
     val next = withoutCurrentActivations.iterator.map {
       case (op, activations, _) =>
         // TODO: I'm not sure if it's "correct" to "activate" all the points together but it simplifies things greatly
@@ -69,9 +69,9 @@ class GraphQueries(
   }
 
   final def depsOf(
-                    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
-                    op: InstantiationOp,
-                  ): Set[DIKey] = {
+    execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
+    op: InstantiationOp,
+  ): Set[DIKey] = {
     op match {
       case cs: CreateSet =>
         // we completely ignore weak members, they don't make any difference in case they are unreachable through other paths
@@ -150,7 +150,7 @@ class GraphQueries(
 
         val noDependencies = dependees.filter(_._2.forall(_.isEmpty)).keySet
 
-        val depmatrix = IncidenceMatrix(dependees.map { case (prev, succs) => (prev, succs.flatten) })
+        val depmatrix = AdjacencyList(dependees.map { case (prev, succs) => (prev, succs.flatten) })
         val reachable = new Tracer[DIKey]().trace(depmatrix, Set.empty, noDependencies)
 
         val allKeys = allOps.map(_._1.key).toSet
@@ -229,7 +229,7 @@ class GraphQueries(
       .iterator
   }
 
-  protected[this] def getAxisPoints(b: Binding): Set[AxisPoint] = {
+  protected def getAxisPoints(b: Binding): Set[AxisPoint] = {
     b.tags.collect {
       case AxisTag(axisValue) =>
         axisValue.toAxisPoint

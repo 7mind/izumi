@@ -5,6 +5,8 @@ import izumi.distage.fixtures.CircularCases.*
 import izumi.distage.fixtures.InnerClassCases.{InnerClassStablePathsCase, InnerClassUnstablePathsCase}
 import izumi.distage.fixtures.ResourceCases.{CircularResourceCase, Ref, Suspend2}
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.assertions.ScalatestGuards
@@ -178,7 +180,28 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       assert(context.get[GenericCircular[Dependency]] eq context.get[Dependency].dep)
     }
 
-    "support named circular dependencies" in brokenOnScala3 {
+    "support generic circular dependencies when generics are erased by type-erasure" in {
+      import CircularCase5._
+
+      val definition = PlannerInput.everything(new ModuleDef {
+        make[ErasedCircular[Dependency]]
+        make[ErasedDependency[Dependency]]
+      })
+
+      val injector = mkInjector()
+      val context = injector.produce(definition).unsafeGet()
+
+      val erasedCircular = context.get[ErasedCircular[Dependency]]
+      val erasedDependency = context.get[ErasedDependency[Dependency]]
+
+      assert(erasedCircular != null)
+      assert(erasedDependency != null)
+
+      assert(erasedCircular.dep eq erasedDependency)
+      assert(erasedDependency.dep eq erasedCircular)
+    }
+
+    "support named circular dependencies" in {
       import CircularCase4.*
 
       val definition = PlannerInput.everything(new ModuleDef {
@@ -228,8 +251,8 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
           make[ComponentHolder]
           make[Root]
         },
-        Activation.empty,
         Roots(DIKey.get[Root]),
+        Activation.empty,
       )
 
       val injector = mkInjector()
@@ -368,8 +391,8 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
           make[S3Component].fromResource(s3ComponentResource[Fn] _)
           make[S3Client].fromResource(s3clientResource[Fn] _)
         },
-        Activation.empty,
         Roots(DIKey.get[S3Client]),
+        Activation.empty,
       )
 
       val injector = mkInjector()
@@ -391,6 +414,48 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
 
       val expectStopOps = startOps.reverse.map(_.invert)
       assert(context.get[Ref[Fn, Queue[Ops]]].get.unsafeRun().slice(2, 4) == expectStopOps)
+    }
+
+    "print dependencies of the cycle-breaking key in the error message when cycle support is disabled" in {
+      import CircularCase5._
+
+      val definition = PlannerInput.everything(new ModuleDef {
+        make[ErasedCircular[Dependency]]
+        make[ErasedDependency[Dependency]]
+      })
+
+      val injector = mkNoCyclesInjector()
+      val error = intercept[ProvisioningException](injector.produce(definition).unsafeGet())
+
+      assert(
+        error.getMessage.contains(
+          "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedCircular[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+        ) ||
+        error.getMessage.contains(
+          "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedDependency[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+        )
+      )
+    }
+
+    "print dependencies of the cycle-breaking key in the error message when proxy support is disabled, but is required to break cycle" in {
+      import CircularCase5._
+
+      val definition = PlannerInput.everything(new ModuleDef {
+        make[ErasedCircular[Dependency]]
+        make[ErasedDependency[Dependency]]
+      })
+
+      val injector = mkNoProxiesInjector()
+      val error = intercept[ProvisioningException](injector.produce(definition).unsafeGet())
+
+      assert(
+        error.getMessage.contains(
+          "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedCircular[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+        ) ||
+        error.getMessage.contains(
+          "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedDependency[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+        )
+      )
     }
 
   }

@@ -2,7 +2,7 @@ package izumi.distage.model.recursive
 
 import izumi.distage.InjectorFactory
 import izumi.distage.model.definition.errors.DIError
-import izumi.distage.model.definition.{Activation, BootstrapModule, Id, Module, ModuleBase}
+import izumi.distage.model.definition.{Activation, BootstrapModule, Id, LocatorPrivacy, Module, ModuleBase}
 import izumi.functional.quasi.QuasiIO
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.{Injector, PlannerInput}
@@ -23,6 +23,7 @@ final case class BootConfig(
   activation: Activation => Activation = identity,
   bootstrapActivation: Activation => Activation = identity,
   roots: Roots => Roots = identity,
+  locatorPrivacy: LocatorPrivacy => LocatorPrivacy = identity,
 )
 
 class Bootloader(
@@ -35,19 +36,18 @@ class Bootloader(
   def boot(config: BootConfig): Either[NEList[DIError], BootstrappedApp] = {
     val activation = config.activation(input.activation)
     val bootstrap = config.bootstrap(bootstrapModule)
+    val locatorPrivacy = config.locatorPrivacy(input.locatorPrivacy)
+
     val injector = injectorFactory(
       bootstrapActivation = config.bootstrapActivation(bootstrapActivation),
       overrides = Seq(bootstrap),
-    )(
-      QuasiIO[Identity],
-      TagK[Identity],
-      DefaultModule[Identity](defaultModule),
-    )
+      locatorPrivacy = locatorPrivacy,
+    )(using QuasiIO[Identity], TagK[Identity], DefaultModule[Identity](defaultModule))
     val module = config.appModule(input.bindings)
     val roots = config.roots(input.roots)
 
     for {
-      plan <- injector.plan(PlannerInput(module, activation, roots))
+      plan <- injector.plan(PlannerInput(module, roots, activation, locatorPrivacy))
     } yield {
       BootstrappedApp(injector, module, plan)
     }

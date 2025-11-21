@@ -20,11 +20,11 @@ abstract class AutoSetModule(name: Option[String]) extends BootstrapModuleDef {
   def registerOnly[T: Tag](filter: InclusionPredicate): AutoSetModule = {
     name match {
       case Some(id) =>
-        many[T].named(id)
+        many[T].named(id).exposed
         many[PlanningHook].addValue(AutoSetHook[T](filter, name = id, weak = false))
 
       case None =>
-        many[T]
+        many[T].exposed
         many[PlanningHook].addValue(AutoSetHook[T](filter, weak = false))
     }
     this

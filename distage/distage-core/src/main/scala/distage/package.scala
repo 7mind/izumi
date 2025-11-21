@@ -12,6 +12,9 @@ package object distage extends Distage {
   override type Activation = model.definition.Activation
   override val Activation: model.definition.Activation.type = model.definition.Activation
 
+  override type LocatorPrivacy = model.definition.LocatorPrivacy
+  override val LocatorPrivacy: model.definition.LocatorPrivacy.type = model.definition.LocatorPrivacy
+
   override type Roots = model.plan.Roots
   override val Roots: model.plan.Roots.type = model.plan.Roots
 

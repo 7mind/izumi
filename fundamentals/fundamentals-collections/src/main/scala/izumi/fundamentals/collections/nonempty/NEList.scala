@@ -1510,7 +1510,7 @@ object NEList extends NEListInstances {
     new NEList(list)
   }
 
-  @inline implicit def asIterable[A](nel: NEList[A]): IterableOnce[A] = nel.toIterable
+  @inline implicit def asIterable[A](nel: NEList[A]): Iterable[A] = nel.toIterable
 
   implicit final class OptionOps[+A](private val option: Option[NEList[A]]) extends AnyVal {
     @inline def fromNEList: List[A] = if (option.isEmpty) Nil else option.get.toList

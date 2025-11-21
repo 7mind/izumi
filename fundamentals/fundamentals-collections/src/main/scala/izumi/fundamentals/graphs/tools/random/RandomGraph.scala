@@ -1,17 +1,17 @@
 package izumi.fundamentals.graphs.tools.random
 
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyPredList
 
 import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 object RandomGraph {
   import scala.collection.compat._
 
-  def makeDG[N: Generator: ClassTag](nodes: Int, maxEdges: Int, random: Random = Random): IncidenceMatrix[N] = {
+  def makeDG[N: Generator: ClassTag](nodes: Int, maxEdges: Int, random: Random = Random): AdjacencyPredList[N] = {
     assert(nodes > 0)
     assert(maxEdges > 0)
     val ordered = makeShuffledNodes(nodes, random)
@@ -34,11 +34,11 @@ object RandomGraph {
       out.put(n, links)
     }
 
-    IncidenceMatrix(out.toMap)
+    AdjacencyPredList(out.toMap)
 
   }
 
-  def makeDAG[N: Generator: ClassTag](nodes: Int, maxEdges: Int, random: Random = Random): IncidenceMatrix[N] = {
+  def makeDAG[N: Generator: ClassTag](nodes: Int, maxEdges: Int, random: Random = Random): AdjacencyPredList[N] = {
     assert(nodes > 0)
     assert(maxEdges > 0)
     val ordered = makeShuffledNodes(nodes, random)
@@ -63,7 +63,7 @@ object RandomGraph {
       out.put(n, links)
     }
 
-    IncidenceMatrix(out.toMap)
+    AdjacencyPredList(out.toMap)
   }
 
   private def makeShuffledNodes[N: Generator: ClassTag](nodes: Int, random: Random): Array[N] = {

@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 sealed trait OperationOrigin {
   def toSynthetic: OperationOrigin.Synthetic
 
-  @inline final def toSourceFilePosition: SourceFilePosition = fold(SourceFilePosition.unknown, _.origin)
+  @inline final def toSourceFilePosition: SourceFilePosition = fold(SourceFilePosition.unknown, _.origin.position)
 
   @inline final def fold[A](onUnknown: => A, onDefined: Binding => A): A = this match {
     case defined: OperationOrigin.Defined => onDefined(defined.binding)

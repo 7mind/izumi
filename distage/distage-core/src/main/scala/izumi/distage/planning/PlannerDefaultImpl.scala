@@ -14,12 +14,12 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.solver.{PlanSolver, SemigraphSolver}
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyPredList
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 
 import scala.annotation.nowarn
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
@@ -88,7 +88,7 @@ class PlannerDefaultImpl(
     } yield {
       val mappedOps = mappedGraph.view.flatMap(_._2).toMap
       val mappedMatrix = mappedGraph.view.map(_._1).filter { case (k, _) => mappedOps.contains(k) }.toMap
-      val plan = DG.fromPred(IncidenceMatrix(mappedMatrix), GraphMeta(mappedOps))
+      val plan = DG.fromPred(AdjacencyPredList(mappedMatrix), GraphMeta(mappedOps))
       plan
     }
 
@@ -98,7 +98,7 @@ class PlannerDefaultImpl(
     hook.hookDefinition(module)
   }
 
-  protected[this] def updateKey(mutSel: MutSel[DIKey]): Either[NEList[DIError], DIKey] = {
+  protected def updateKey(mutSel: MutSel[DIKey]): Either[NEList[DIError], DIKey] = {
     mutSel.mut match {
       case Some(value) =>
         updateKey(mutSel.key, value)
@@ -107,7 +107,7 @@ class PlannerDefaultImpl(
     }
   }
 
-  protected[this] def updateKey(key: DIKey, mindex: Int): Either[NEList[DIError], DIKey] = {
+  protected def updateKey(key: DIKey, mindex: Int): Either[NEList[DIError], DIKey] = {
     key match {
       case DIKey.TypeKey(tpe, _) =>
         Right(DIKey.TypeKey(tpe, Some(mindex)))
@@ -124,8 +124,8 @@ class PlannerDefaultImpl(
     }
   }
 
-  @nowarn("msg=Unused import")
-  protected[this] def addImports(plan: DG[DIKey, InstantiationOp], roots: Roots): DG[DIKey, SemiplanOp] = {
+  @nowarn("msg=[Uu]nused import")
+  protected def addImports(plan: DG[DIKey, InstantiationOp], roots: Roots): DG[DIKey, SemiplanOp] = {
 
     val imports = plan.successors.links.view
       .filterKeys(k => !plan.meta.nodes.contains(k))
@@ -160,7 +160,7 @@ class PlannerDefaultImpl(
 
     val fullMeta = GraphMeta(plan.meta.nodes ++ imports ++ missingRootsImports)
 
-    DG.fromPred(IncidenceMatrix(plan.predecessors.links ++ allImports), fullMeta)
+    DG.fromPred(AdjacencyPredList(plan.predecessors.links ++ allImports), fullMeta)
   }
 
 }

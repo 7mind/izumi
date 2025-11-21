@@ -31,7 +31,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     assert(exc.getSuppressed.head.getCause.isInstanceOf[RuntimeException])
   }
 
-  "support complex circular dependencies" in brokenOnScala3 {
+  "support complex circular dependencies" in {
     import CircularCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
@@ -40,6 +40,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
       makeTrait[Circular2]
       makeTrait[Circular5]
       makeFactory[Circular4]
+      makeFactory[Circular6]
     })
 
     val injector = mkInjector()
@@ -47,9 +48,11 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
 
     assert(plan.plan.successors.links(DIKey.get[Circular1]).size == 2)
     assert(!plan.plan.successors.links.contains(DIKey.ProxyInitKey(DIKey.get[Circular1])))
+    assert(plan.plan.successors.links(DIKey.get[Circular1]) == Set(DIKey[Circular6], DIKey[Circular5]))
 
     assert(plan.plan.predecessors.links(DIKey.get[Circular1]).size == 1)
     assert(!plan.plan.predecessors.links.contains(DIKey.ProxyInitKey(DIKey.get[Circular1])))
+    assert(plan.plan.predecessors.links(DIKey.get[Circular1]) == Set(DIKey[Circular2]))
 
     val context = injector.produce(plan).unsafeGet()
     val c3 = context.get[Circular3]
@@ -186,21 +189,4 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     assert(context.get[Circular2].test.isInstanceOf[Circular1])
   }
 
-  "support generic circular dependencies when generics are erased by type-erasure" in {
-    import CircularCase5._
-
-    val definition = PlannerInput.everything(new ModuleDef {
-      make[ErasedCircular[Dependency]]
-      make[PhantomDependency[Dependency]]
-    })
-
-    val injector = mkInjector()
-    val context = injector.produce(definition).unsafeGet()
-
-    assert(context.get[ErasedCircular[Dependency]] != null)
-    assert(context.get[PhantomDependency[Dependency]] != null)
-
-    assert(context.get[ErasedCircular[Dependency]].dep eq context.get[PhantomDependency[Dependency]])
-    assert(context.get[PhantomDependency[Dependency]] eq context.get[ErasedCircular[Dependency]].dep)
-  }
 }

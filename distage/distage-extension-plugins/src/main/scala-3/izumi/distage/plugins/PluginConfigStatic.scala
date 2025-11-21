@@ -2,8 +2,6 @@ package izumi.distage.plugins
 
 import izumi.fundamentals.platform.language.SourcePackageMaterializer
 
-import scala.compiletime.error
-
 trait PluginConfigStatic {
   /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
     *
@@ -16,7 +14,7 @@ trait PluginConfigStatic {
     PluginConfig.const(plugins)
   }
 
-  /** Scan the the current source file's package *at compile-time* for classes and objects that inherit [[PluginBase]]
+  /** Scan the current source file's package *at compile-time* for classes and objects that inherit [[PluginBase]]
     *
     * WARN: may interact badly with incremental compilation
     * WARN: will _not_ find plugins defined in the current module, only those defined in dependency modules

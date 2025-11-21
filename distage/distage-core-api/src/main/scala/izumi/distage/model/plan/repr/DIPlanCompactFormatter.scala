@@ -5,7 +5,7 @@ import izumi.functional.Renderable
 
 object DIPlanCompactFormatter extends Renderable[Plan] {
 
-  import izumi.fundamentals.platform.strings.IzString._
+  import izumi.fundamentals.platform.strings.IzString.*
 
   override def render(plan: Plan): String = {
     val minimizer = KeyMinimizer(plan.plan.meta.nodes.keySet, DIRendering.colorsEnabled)

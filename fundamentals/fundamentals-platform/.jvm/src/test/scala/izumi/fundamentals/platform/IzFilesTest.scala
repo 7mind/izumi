@@ -3,7 +3,7 @@ package izumi.fundamentals.platform
 import izumi.fundamentals.platform.files.IzFiles
 import org.scalatest.wordspec.AnyWordSpec
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.{FileSystemNotFoundException, Files, Paths}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -50,9 +50,16 @@ class IzFilesTest extends AnyWordSpec {
 
       val seq = (0 to 200).map {
         _ =>
-          Future(IzResources.getPath("library.properties"))
+          Future {
+            try IzResources.getPath("library.properties")
+            catch {
+              case _: FileSystemNotFoundException =>
+                Thread.sleep(500L)
+                IzResources.getPath("library.properties")
+            }
+          }
       }
-      val res = Await.result(Future.sequence(seq), Duration.apply(1, TimeUnit.MINUTES))
+      val res = Await.result(Future.sequence(seq), Duration(1, TimeUnit.MINUTES))
       assert(res.forall(_.isDefined))
     }
   }

@@ -21,6 +21,10 @@ package object logstage extends LogStage {
   override final val ConsoleSink: sink.ConsoleSink.type = sink.ConsoleSink
 
   override type LogIORaw[F[_], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F, E]
+  override type LogIO2Raw[F[_, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Nothing, _], E]
+  override type LogIORaw2[F[_, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Nothing, _], E]
+  override type LogIO3Raw[F[_, _, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Any, Nothing, _], E]
+  override type LogIORaw3[F[_, _, _], E <: AnyEncoded] = izumi.logstage.api.logger.LogIORaw[F[Any, Nothing, _], E]
 
   override type LogQueue = izumi.logstage.api.logger.LogQueue
   override final val LogQueue: izumi.logstage.api.logger.LogQueue.type = izumi.logstage.api.logger.LogQueue
@@ -43,6 +47,9 @@ package object logstage extends LogStage {
   override type Log = api.Log.type
   override final val Log: api.Log.type = api.Log
 
+  override type Message = api.Log.Message
+  override final val Message: api.Log.Message.type = api.Log.Message
+
   override type Level = api.Log.Level
   override final val Level: api.Log.Level.type = api.Log.Level
 
@@ -52,5 +59,6 @@ package object logstage extends LogStage {
   override final val Warn: api.Log.Level.Warn.type = api.Log.Level.Warn
   override final val Error: api.Log.Level.Error.type = api.Log.Level.Error
   override final val Crit: api.Log.Level.Crit.type = api.Log.Level.Crit
+  override final val Audit: api.Log.Level.Audit.type = api.Log.Level.Audit
 
 }

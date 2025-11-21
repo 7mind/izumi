@@ -1,16 +1,15 @@
 package izumi.distage.roles.launcher
 
-import distage.{Id, *}
+import distage.*
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.Binding.ImplBinding
 import izumi.distage.model.reflection.SafeType
-import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.model.definition.RoleTag
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.{IzPlatform, ScalaPlatform}
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
@@ -22,16 +21,12 @@ trait RoleProvider {
 }
 
 object RoleProvider {
-  private[this] final val sysPropIgnoreMismatchedEffect = DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(false)
-  private[this] final val syspropRolesReflection = DebugProperties.`izumi.distage.roles.reflection`.boolValue(true)
 
   open class NonReflectiveImpl(
     logger: IzLogger @Id("early"),
     ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
-    parameters: RawAppArgs,
+    parameters: RoleAppArgs,
   ) extends RoleProvider {
-
-    protected[this] val isIgnoredMismatchedEffect: Boolean = sysPropIgnoreMismatchedEffect || ignoreMismatchedEffect
 
     def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo = {
       val rolesInfo = getInfo(
@@ -78,7 +73,7 @@ object RoleProvider {
 
     protected def findRoleBindings(bindings: Set[Binding], roleType: SafeType): Set[RoleBinding] = {
       bindings.collect {
-        case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) && checkRoleType(s.implementation.implType, roleType, log = !isIgnoredMismatchedEffect) =>
+        case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) && checkRoleType(s.implementation.implType, roleType, log = !ignoreMismatchedEffect) =>
           mkRoleBinding(s, s.tags.collectFirst { case RoleTag(roleDescriptor) => roleDescriptor }.get)
 
         case s: ImplBinding if s.implementation.implType <:< roleType =>
@@ -112,10 +107,10 @@ object RoleProvider {
     logger: IzLogger @Id("early"),
     ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
     reflectionEnabled: Boolean @Id("distage.roles.reflection"),
-    parameters: RawAppArgs,
+    parameters: RoleAppArgs,
   ) extends NonReflectiveImpl(logger, ignoreMismatchedEffect, parameters) {
 
-    protected[this] val isReflectionEnabled: Boolean = reflectionEnabled && syspropRolesReflection && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage
+    protected val isReflectionEnabled: Boolean = reflectionEnabled && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage
 
     override protected def handleMissingStaticMetadata(roleType: SafeType, s: ImplBinding): RoleBinding = {
       if (isReflectionEnabled) {

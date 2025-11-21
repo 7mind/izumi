@@ -4,30 +4,35 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
-import com.typesafe.config.ConfigFactory
-import distage.plugins.{PluginBase, PluginDef}
+import com.typesafe.config.{ConfigFactory, ConfigObject}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
+import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
-import izumi.distage.plugins.PluginConfig
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.os.{IzOs, OsType}
 import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.fundamentals.platform.versions.Version
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogSink
 import org.scalatest.wordspec.AnyWordSpec
 
-import java.io.File
+import java.io.{File, OutputStream, PrintStream}
+import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Paths}
+import java.nio.{BufferOverflowException, ByteBuffer}
 import java.util.UUID
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.*
 
 class RoleAppTest extends AnyWordSpec with WithProperties {
@@ -39,7 +44,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     "testservice.systemPropList.1" -> "222",
   )
 
-  class XXX_TestWhiteboxProbe extends PluginDef {
+  class XXX_TestWhiteboxProbe extends izumi.distage.plugins.PluginDef {
     val resources = new XXX_ResourceEffectsRecorder[IO]
     private var locator0: LocatorRef = null
     lazy val locator: Locator = locator0.get
@@ -90,7 +95,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               new TestPluginCatsIO,
               new AdaptedAutocloseablesCasePlugin,
               probe,
-              new PluginDef {
+              new izumi.distage.plugins.PluginDef {
                 make[TestResource[IO]].from[IntegrationResource0[IO]]
                 many[TestResource[IO]]
                   .ref[TestResource[IO]]
@@ -177,11 +182,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         options = PlanningOptions(),
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
+        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
         logger = logger,
-//        parser = new ActivationParser {
-//          override def parseActivation(config: AppConfig): Activation = ???
-//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -217,11 +219,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         options = PlanningOptions(),
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
+        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
         logger = logger,
-//        parser = new ActivationParser {
-//          override def parseActivation(config: AppConfig): Activation = ???
-//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -261,11 +260,8 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         options = PlanningOptions(),
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, Activation.empty, roots)),
+        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
         logger = logger,
-//        parser = new ActivationParser {
-//          override def parseActivation(config: AppConfig): Activation = ???
-//        },
       )
 
       val plans = roleAppPlanner.makePlan(roots)
@@ -293,9 +289,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "produce config dumps and support minimization" in {
-      val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
-      withProperties(overrides ++ Map(TestPluginCatsIO.versionProperty -> version.version)) {
-        TestEntrypoint.main(Array("-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
+      val version = ArtifactVersion(Version.Unknown(s"0.0.0-${UUID.randomUUID().toString}"))
+      val role00OverrideConf = getClass.getResource("/testrole00-override.conf").getPath
+      withProperties(
+        overrides ++
+        Map(TestPluginCatsIO.versionProperty -> version.version.toString)
+      ) {
+        TestEntrypoint.main(Array("-nc", "-c", role00OverrideConf, "-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
       }
 
       val cwCfg = cfg("configwriter-full", version)
@@ -326,6 +326,10 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role0CfgMinParsed.hasPath("testservice2"))
       assert(role0CfgMinParsed.hasPath("testservice"))
       assert(role0CfgMinParsed.hasPath("genericservice"))
+      assert(role0CfgMinParsed.hasPath("testservice.mapList"))
+      val l = role0CfgMinParsed.getList("testservice.mapList")
+      assert(l.get(0).asInstanceOf[ConfigObject].unwrapped().asScala.toMap == Map[String, Integer]("a" -> 1))
+      assert(l.get(1).asInstanceOf[ConfigObject].unwrapped().asScala.toMap == Map[String, Integer]("b" -> 2, "c" -> 3))
 
       assert(role0CfgMinParsed.hasPath("genericservice.genericField"))
       assert(role0CfgMinParsed.hasPath("genericservice.addedField"))
@@ -338,6 +342,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       // ConfigWriter DOES NOT consider system properties!
       assert(role0CfgMinParsed.getInt("testservice.systemPropInt") == 222)
       assert(role0CfgMinParsed.getList("testservice.systemPropList").unwrapped().asScala.toList == List(1, 2, 3))
+
+      // ConfigWriter DOES NOT consider non-reference configs!
+      assert(role0CfgMinParsed.getInt("testservice.explicitInt") == 111)
 
       val role3 = cfg("testrole03-full", version)
       val role3Min = cfg("testrole03-minimized", version)
@@ -392,6 +399,186 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       assert(role5CfgMinParsed.hasPath("rolelocal2"))
       assert(role5CfgMinParsed.hasPath("rolelocal2.bool"))
+
+      // JSON Schema Generator works:
+
+      val role0JsonSchema = jsonSchema("testrole00-minimized", version)
+
+      assert(role0JsonSchema.exists(), s"$role0JsonSchema exists")
+
+      val role0JsonSchemaParsed = io.circe.parser.parse(new String(Files.readAllBytes(role0JsonSchema.toPath), UTF_8)).toTry.get
+
+      val testServiceConfCursor = role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.TestServiceConf")
+      val testServiceDoc = testServiceConfCursor.downField("$comment").as[String].toTry.get
+      assert(testServiceDoc == "docstest: case class doc")
+      val fieldDoc = testServiceConfCursor.downField("properties").downField("intval").downField("$comment").as[String].toTry.get
+      assert(fieldDoc == "docstest: field doc")
+
+      val sealedTraitDoc =
+        role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.A").downField("$comment").as[String].toTry.get
+      assert(sealedTraitDoc == "docstest: sealed trait doc")
+
+      val a1Doc = role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.A1").downField("$comment").as[String].toTry.get
+      assert(a1Doc == "docstest: A1 doc")
+
+      val a2Doc = role0JsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.Fixture.A2").downField("$comment").as[String].toTry.get
+      assert(a2Doc == "docstest: A2 doc")
+
+      val configTestJsonSchema = jsonSchema("configtest-minimized", version)
+
+      assert(configTestJsonSchema.exists(), s"$configTestJsonSchema exists")
+
+      val configTestJsonSchemaParsed = io.circe.parser.parse(new String(Files.readAllBytes(configTestJsonSchema.toPath), UTF_8)).toTry.get
+
+      val configTestConfigCursor = configTestJsonSchemaParsed.hcursor.downField("$defs").downField("izumi.distage.roles.test.fixtures.ConfigTestConfig")
+      val configTestDoc = configTestConfigCursor.downField("$comment").as[String].toTry.get
+      assert(configTestDoc == "docstest: ConfigTestConfig doc")
+      val commonReferenceDevFieldDoc = configTestConfigCursor.downField("properties").downField("commonReferenceDev").downField("$comment").as[String].toTry.get
+      assert(commonReferenceDevFieldDoc == "docstest: field doc")
+    }
+
+    "prioritize configs as expected, support system property and system environment overrides" in {
+      import ConfigTestRole.configTestConfig
+
+      TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
+
+      assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+      assert(configTestConfig.commonReference == 2, "common-reference")
+      assert(configTestConfig.common == 3, "common")
+      assert(configTestConfig.applicationReference == 4, "application-reference")
+      assert(configTestConfig.application == 5, "application")
+      assert(configTestConfig.roleReference == 6, "role-reference")
+      assert(configTestConfig.role == 7, "role")
+
+      val roleOverrideConf = getClass.getResource("/configtest-role-override.conf").getPath
+
+      TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+      assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+      assert(configTestConfig.commonReference == 29, "common-reference")
+      assert(configTestConfig.common == 3, "common")
+      assert(configTestConfig.applicationReference == 9, "application-reference")
+      assert(configTestConfig.application == 5, "application")
+      assert(configTestConfig.roleReference == 9, "role-reference")
+      assert(configTestConfig.role == 7, "role")
+
+      withProperties(
+        DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false"
+      ) {
+        TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+        assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+        assert(configTestConfig.commonReference == 29, "common-reference")
+        assert(configTestConfig.common == 3, "common")
+        assert(configTestConfig.applicationReference == 9, "application-reference")
+        assert(configTestConfig.application == 5, "application")
+        assert(configTestConfig.roleReference == 9, "role-reference")
+        assert(configTestConfig.role == 5, "role")
+        ()
+      }
+
+      val commonOverrideConf = getClass.getResource("/configtest-common-override.conf").getPath
+
+      TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
+
+      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+      assert(configTestConfig.commonReference == 28, "common-reference")
+      assert(configTestConfig.common == 8, "common")
+      assert(configTestConfig.applicationReference == 8, "application-reference")
+      assert(configTestConfig.application == 8, "application")
+      assert(configTestConfig.roleReference == 6, "role-reference")
+      assert(configTestConfig.role == 7, "role")
+
+      TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+      assert(configTestConfig.commonReference == 289, "common-reference")
+      assert(configTestConfig.common == 8, "common")
+      assert(configTestConfig.applicationReference == 9, "application-reference")
+      assert(configTestConfig.application == 8, "application")
+      assert(configTestConfig.roleReference == 9, "role-reference")
+      assert(configTestConfig.role == 7, "role") // role reference beats explicit common config
+
+      withProperties(
+        DebugProperties.`distage.roles.always-include-reference-common-configs`.name -> "false"
+      ) {
+        TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
+
+        assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+        assert(configTestConfig.commonReference == 8, "common-reference")
+        assert(configTestConfig.common == 8, "common")
+        assert(configTestConfig.applicationReference == 8, "application-reference")
+        assert(configTestConfig.application == 8, "application")
+        assert(configTestConfig.roleReference == 6, "role-reference")
+        assert(configTestConfig.role == 7, "role")
+        ()
+      }
+
+      withProperties(
+        DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false"
+      ) {
+        TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+        assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+        assert(configTestConfig.commonReference == 289, "common-reference")
+        assert(configTestConfig.common == 8, "common")
+        assert(configTestConfig.applicationReference == 9, "application-reference")
+        assert(configTestConfig.application == 8, "application")
+        assert(configTestConfig.roleReference == 9, "role-reference")
+        assert(configTestConfig.role == 8, "role")
+        ()
+      }
+
+      TestEntrypoint.main(Array("-c", commonOverrideConf, "-nc", "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+
+      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+      assert(configTestConfig.commonReference == 89, "common-reference")
+      assert(configTestConfig.common == 8, "common")
+      assert(configTestConfig.applicationReference == 9, "application-reference")
+      assert(configTestConfig.application == 8, "application")
+      assert(configTestConfig.roleReference == 9, "role-reference")
+      assert(configTestConfig.role == 8, "role")
+
+      // system property config overrides
+
+      withProperties(
+        "configTest.commonReferenceDev" -> "20"
+      ) {
+        ConfigFactory.invalidateCaches()
+        TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
+
+        assert(configTestConfig.commonReferenceDev == 20, "common-reference-dev")
+        assert(configTestConfig.commonReference == 2, "common-reference")
+        assert(configTestConfig.common == 3, "common")
+        assert(configTestConfig.applicationReference == 4, "application-reference")
+        assert(configTestConfig.application == 5, "application")
+        assert(configTestConfig.roleReference == 6, "role-reference")
+        assert(configTestConfig.role == 7, "role")
+        ()
+      }
+
+      // system environment config overrides
+      IzOs.osType match {
+        case os @ (OsType.Windows | OsType.Unknown) =>
+          println(s"System Environment test not supported on $os")
+        case _ =>
+          EnvHacker.modifySystemEnvironment(_.put("CONFIG_FORCE_configTest_commonReferenceDev", "25"))
+          try {
+            ConfigFactory.invalidateCaches()
+            TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
+
+            assert(configTestConfig.commonReferenceDev == 25, "common-reference-dev")
+            assert(configTestConfig.commonReference == 2, "common-reference")
+            assert(configTestConfig.common == 3, "common")
+            assert(configTestConfig.applicationReference == 4, "application-reference")
+            assert(configTestConfig.application == 5, "application")
+            assert(configTestConfig.roleReference == 6, "role-reference")
+            assert(configTestConfig.role == 7, "role")
+            ()
+          } finally {
+            EnvHacker.modifySystemEnvironment(_.remove("CONFIG_FORCE_configTest_commonReferenceDev"))
+          }
+      }
     }
 
     "roles do not have access to components from MainAppModule" in {
@@ -433,6 +620,35 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       Fixture3.TestRoleAppMain.main(Array(":fixture3"))
     }
 
+    "TerminatingHandler reports error when exiting if an exception interrupts provisioning" in {
+      val oldErr = System.err
+      val errBuf = ByteBuffer.allocate(10 * 1024 * 1024)
+      val interceptErr = new PrintStream(
+        new OutputStream {
+          override def write(b: Int): Unit = {
+            oldErr.write(b)
+            try errBuf.put(b.toByte)
+            catch { case _: BufferOverflowException => () }
+            ()
+          }
+        },
+        true,
+      )
+      try {
+        System.setErr(interceptErr)
+        intercept[ProvisioningException] {
+          Fixture3.TestRoleAppMain.main(Array("--ignore-all-reference-configs", ":fixture3"))
+        }
+      } finally {
+        System.setErr(oldErr)
+      }
+      errBuf.flip()
+      val errString = new String(errBuf.array(), errBuf.arrayOffset(), errBuf.limit(), StandardCharsets.UTF_8)
+      assert(errString.contains("""Couldn't read configuration at path="basicConfig""""))
+      // error appears only once
+      assert(errString.indexOf("""Couldn't read configuration at path="basicConfig"""") == errString.lastIndexOf("""Couldn't read configuration at path="basicConfig""""))
+    }
+
     "LogIO2 binding is available in LauncherBIO for ZIO & MonixBIO" in {
       withProperties(
         DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name -> "true",
@@ -448,5 +664,42 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
   private def cfg(role: String, version: ArtifactVersion): File = {
     Paths.get(targetPath, s"$role-${version.version}.json").toFile
+  }
+  private def jsonSchema(role: String, version: ArtifactVersion): File = {
+    Paths.get(targetPath, s"$role-${version.version}.json.jsonschema").toFile
+  }
+
+  // from https://stackoverflow.com/a/77248141 & https://github.com/PulseBeat02/MessingWithUnsafe/blob/main/src/main/java/io/github/pulsebeat02/messingwithunsafe/unsafe/UnsafeProvider.java
+  private object EnvHacker {
+    def modifySystemEnvironment(f: java.util.Map[String, String] => Any): Unit = {
+      try {
+        val unwritable = System.getenv()
+        assert(unwritable eq System.getenv())
+        val writable = getField(unwritable.getClass, unwritable, "m")
+        f(writable)
+        ()
+      } catch {
+        case e: NoSuchFieldException =>
+          throw new AssertionError(e)
+      }
+    }
+
+    @nowarn("msg=deprecated")
+    private def getField[T <: AnyRef](clazz: Class[?], `object`: T, name: String): T = {
+      unsafe.getObject(`object`, unsafe.objectFieldOffset(clazz.getDeclaredField(name))).asInstanceOf[T]
+    }
+
+    private val unsafe: _root_.sun.misc.Unsafe = {
+      try {
+        val field = classOf[_root_.sun.misc.Unsafe].getDeclaredField("theUnsafe")
+        field.setAccessible(true)
+        val res = field.get(null).asInstanceOf[_root_.sun.misc.Unsafe]
+        field.setAccessible(false)
+        res
+      } catch {
+        case e @ (_: IllegalAccessException | _: NoSuchFieldException) =>
+          throw new AssertionError(e)
+      }
+    }
   }
 }

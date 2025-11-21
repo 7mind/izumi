@@ -1,7 +1,7 @@
 package logstage
 
 import izumi.functional.bio.{SyncSafe1, SyncSafe2}
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF}
 import izumi.logstage.api.rendering.AnyEncoded
@@ -37,12 +37,6 @@ object LogZIO {
     override final def unsafeLog(entry: Log.Entry): ZIO[LogIO3[ZIO], Nothing, Unit] =
       ZIO.serviceWithZIO(get(_).log(entry))
 
-    override final def acceptable(loggerId: Log.LoggerId, logLevel: Level): ZIO[LogIO3[ZIO], Nothing, Boolean] =
-      ZIO.serviceWithZIO(get(_).acceptable(loggerId, logLevel))
-
-    override final def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Boolean] =
-      ZIO.serviceWithZIO(get(_).acceptable(logLevel))
-
     override final def createEntry(logLevel: Level, message: Log.Message)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Log.Entry] =
       ZIO.serviceWithZIO(get(_).createEntry(logLevel, message))
 
@@ -52,6 +46,9 @@ object LogZIO {
     override final def withCustomContext(context: CustomContext): LogIO2[ZIO[LogIO3[ZIO], _, _]] = {
       new LogZIOImpl(get(_).withCustomContext(context))
     }
+
+    override def acceptable(position: CodePosition, logLevel: Level): ZIO[LogIO3[ZIO], Nothing, Boolean] =
+      ZIO.serviceWithZIO(get(_).acceptable(position, logLevel))
   }
 
   def withFiberId(logger: AbstractLogger): LogIO2[IO] = {
@@ -60,7 +57,7 @@ object LogZIO {
         withFiberId(logger.withCustomContext(context))
       }
 
-      override protected[this] def wrap[A](f: AbstractLogger => A): IO[Nothing, A] = {
+      override protected def wrap[A](f: AbstractLogger => A): IO[Nothing, A] = {
         addFiberIdToLogger(logger)(logger => ZIO.succeed(f(logger)))
       }
     }
@@ -72,7 +69,7 @@ object LogZIO {
         withDynamicContext(logger.withCustomContext(context))(dynamic)
       }
 
-      override protected[this] def wrap[A](f: AbstractLogger => A): ZIO[R, Nothing, A] = {
+      override protected def wrap[A](f: AbstractLogger => A): ZIO[R, Nothing, A] = {
         dynamic.flatMap(dynCtx => ZIO.succeed(f(logger.withCustomContext(dynCtx))))
       }
     }
@@ -84,7 +81,7 @@ object LogZIO {
         withFiberId(logger.withCustomContext(context))
       }
 
-      override protected[this] def wrap[A](f: AbstractLoggerF[IO[Nothing, _]] => IO[Nothing, A]): IO[Nothing, A] = {
+      override protected def wrap[A](f: AbstractLoggerF[IO[Nothing, _]] => IO[Nothing, A]): IO[Nothing, A] = {
         addFiberIdToLogger(logger)(f)
       }
     }
@@ -96,7 +93,7 @@ object LogZIO {
         withDynamicContext(logger.withCustomContext(context))(dynamic)
       }
 
-      override protected[this] def wrap[A](f: AbstractLoggerF[ZIO[R, Nothing, _]] => ZIO[R, Nothing, A]): ZIO[R, Nothing, A] = {
+      override protected def wrap[A](f: AbstractLoggerF[ZIO[R, Nothing, _]] => ZIO[R, Nothing, A]): ZIO[R, Nothing, A] = {
         dynamic.flatMap(dynCtx => f(logger.withCustomContext(dynCtx)))
       }
     }
@@ -168,7 +165,7 @@ object LogZIO {
     * @param thunk the effect for which context will be passed
     * @return effect with the passed context
     */
-  def withCustomContext[R: Tag, E, A](context: CustomContext)(thunk: ZIO[R, E, A]): ZIO[R & logstage.LogZIO, E, A] = {
+  def withCustomContext[R, E, A](context: CustomContext)(thunk: ZIO[R, E, A]): ZIO[R & logstage.LogZIO, E, A] = {
     thunk.updateService((logZIO: Service) => logZIO(context))
   }
 }

@@ -30,7 +30,7 @@ object LogZIOStrict {
         withFiberIdStrict(logger.withCustomContext(context))
       }
 
-      override protected[this] def wrap[A](f: AbstractLogger => A): IO[Nothing, A] = {
+      override protected def wrap[A](f: AbstractLogger => A): IO[Nothing, A] = {
         LogZIO.addFiberIdToLogger(logger)(logger => ZIO.succeed(f(logger)))
       }
     }
@@ -42,7 +42,7 @@ object LogZIOStrict {
         withDynamicContextStrict(logger.withCustomContext(context))(dynamic)
       }
 
-      override protected[this] def wrap[A](f: AbstractLogger => A): ZIO[R, Nothing, A] = {
+      override protected def wrap[A](f: AbstractLogger => A): ZIO[R, Nothing, A] = {
         dynamic.flatMap(dynCtx => ZIO.succeed(f(logger.withCustomContext(dynCtx))))
       }
     }
@@ -54,7 +54,7 @@ object LogZIOStrict {
         withFiberIdStrict(logger.withCustomContext(context))
       }
 
-      override protected[this] def wrap[A](f: AbstractLoggerF[IO[Nothing, _]] => IO[Nothing, A]): IO[Nothing, A] = {
+      override protected def wrap[A](f: AbstractLoggerF[IO[Nothing, _]] => IO[Nothing, A]): IO[Nothing, A] = {
         LogZIO.addFiberIdToLogger(logger)(f)
       }
     }
@@ -66,7 +66,7 @@ object LogZIOStrict {
         withDynamicContextStrict(logger.withCustomContext(context))(dynamic)
       }
 
-      override protected[this] def wrap[A](f: AbstractLoggerF[ZIO[R, Nothing, _]] => ZIO[R, Nothing, A]): ZIO[R, Nothing, A] = {
+      override protected def wrap[A](f: AbstractLoggerF[ZIO[R, Nothing, _]] => ZIO[R, Nothing, A]): ZIO[R, Nothing, A] = {
         dynamic.flatMap(dynCtx => f(logger.withCustomContext(dynCtx)))
       }
     }

@@ -1,5 +1,6 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.impl.MiniBIO
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -10,7 +11,19 @@ final class ErrorAccumulatingOpsTestEither extends ErrorAccumulatingOpsTest[Eith
   override def unsafeRun[E, A](f: Either[E, A]): Either[E, A] = f
 }
 
-@nowarn("msg=Unused import")
+final class ErrorAccumulatingOpsTestMiniBIO extends ErrorAccumulatingOpsTest[MiniBIO] {
+  override implicit def F: Error2[MiniBIO] = MiniBIO.BIOMiniBIO
+  override def unsafeRun[E, A](f: MiniBIO[E, A]): Either[E, A] = f.run() match {
+    case Exit.Success(value) => Right(value)
+    case uninterrupted: Exit.FailureUninterrupted[E] =>
+      uninterrupted match {
+        case Exit.Error(error, _) => Left(error)
+        case Exit.Termination(compoundException, _, _) => throw compoundException
+      }
+  }
+}
+
+@nowarn("msg=[Uu]nused import")
 abstract class ErrorAccumulatingOpsTest[F[+_, +_]] extends AnyWordSpec {
   import scala.collection.compat.*
 
@@ -88,6 +101,7 @@ abstract class ErrorAccumulatingOpsTest[F[+_, +_]] extends AnyWordSpec {
 
       val l2: Seq[F[String, Int]] = List(F.pure(1), F.pure(2), F.pure(3), F.fail("error"))
       assert(F.sequenceAccumErrorsNEList(l2).run() == Left(NEList("error")))
+      assert(F.traverseAccumErrorsNEList(List(1, 2, 3, 4))(F.fail(_)).run() == Left(NEList(1, 2, 3, 4)))
 
       val l3: Seq[F[List[String], Int]] = List(F.pure(1), F.pure(2), F.pure(3), F.fail(List("error")))
       assert(F.sequenceAccumErrors(l3).run() == Left(List("error")))

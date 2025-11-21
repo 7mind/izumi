@@ -64,5 +64,5 @@ object PluginConfig extends PluginConfigStatic {
   /** A [[PluginConfig]] that returns no plugins */
   lazy val empty: PluginConfig = const(Nil)
 
-  private[this] lazy val cacheEnabled: Boolean = DebugProperties.`izumi.distage.plugins.cache`.boolValue(true)
+  private lazy val cacheEnabled: Boolean = DebugProperties.`izumi.distage.plugins.cache`.boolValue(true)
 }

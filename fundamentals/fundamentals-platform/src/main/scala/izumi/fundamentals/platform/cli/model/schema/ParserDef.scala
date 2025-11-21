@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.cli.model.schema
 
-import izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawValue}
+import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RawValue}
 import izumi.fundamentals.platform.cli.model.schema.ParserDef._
 
 import scala.collection.mutable
@@ -19,7 +19,7 @@ import scala.collection.mutable
   * }}}
   */
 trait ParserDef {
-  private[this] val _all: mutable.LinkedHashMap[String, ArgDef] = mutable.LinkedHashMap[String, ArgDef]()
+  private val _all: mutable.LinkedHashMap[String, ArgDef] = mutable.LinkedHashMap[String, ArgDef]()
 
   def isEmpty: Boolean = _all.isEmpty
   def nonEmpty: Boolean = _all.nonEmpty
@@ -43,7 +43,7 @@ trait ParserDef {
     arg(name, None, doc, None)
   }
 
-  private[this] def arg(name: String, short: Option[String], doc: String, valueDoc: Option[String]): ArgDef = {
+  private def arg(name: String, short: Option[String], doc: String, valueDoc: Option[String]): ArgDef = {
     if (_all.contains(name)) {
       throw new IllegalArgumentException(s"Parameter $name/$short is already registered!")
     }
@@ -61,10 +61,10 @@ object ParserDef {
 
   object ArgDef {
     implicit final class ParameterDefExt(val parameter: ArgDef) extends AnyVal {
-      def findValue(parameters: RawEntrypointParams): Option[RawValue] = parameters.findValue(parameter)
-      def findValues(parameters: RawEntrypointParams): Vector[RawValue] = parameters.findValues(parameter)
-      def hasFlag(parameters: RawEntrypointParams): Boolean = parameters.hasFlag(parameter)
-      def hasNoFlag(parameters: RawEntrypointParams): Boolean = parameters.hasNoFlag(parameter)
+      def findValue(parameters: EntrypointArgs): Option[RawValue] = parameters.findValue(parameter)
+      def findValues(parameters: EntrypointArgs): Vector[RawValue] = parameters.findValues(parameter)
+      def hasFlag(parameters: EntrypointArgs): Boolean = parameters.hasFlag(parameter)
+      def hasNoFlag(parameters: EntrypointArgs): Boolean = parameters.hasNoFlag(parameter)
     }
   }
 

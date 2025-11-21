@@ -27,9 +27,10 @@ object FactoryCases {
     final case class AssistedTestClass(b: Dependency, a: Int)
     final case class NamedAssistedTestClass(@Id("special") b: Dependency, a: Int)
     final case class GenericAssistedTestClass[T, S](a: List[T], b: List[S], c: Dependency)
+    final case class AmbiguousTestClass(a: Dependency @Id("special"), b: Dependency @Id("veryspecial"))
 
     trait Factory {
-      def wiringTargetForDependency: Dependency
+      def factoryMethodForDependency0: Dependency
       def factoryMethodForDependency(): Dependency
       def x(): TestClass
     }
@@ -37,6 +38,10 @@ object FactoryCases {
     trait MixedAssistendNonAssisted {
       def assisted(): TestClass
       def nonAssisted(dependency: Dependency): TestClass
+    }
+
+    trait InvalidValFactory {
+      val abstractVal: Dependency
     }
 
     trait OverridingFactory {
@@ -48,12 +53,22 @@ object FactoryCases {
     }
 
     trait NamedAssistedFactory {
-      def dep: Dependency @Id("veryspecial")
+      def dep: Dependency @Id("veryspecial") // Id annotation is ignored after // makeFactory - change of semantics!
       def x(a: Int): NamedAssistedTestClass
     }
 
     trait GenericAssistedFactory {
       def x[T, S](t: List[T], s: List[S]): GenericAssistedTestClass[T, S]
+    }
+
+    trait AmbiguousOnlyParamNamesFactory {
+      def x(a: Dependency @Id("special"), b: Dependency @Id("veryspecial")): AmbiguousTestClass
+      def y(b: Dependency @Id("veryspecial"), a: Dependency @Id("special")): AmbiguousTestClass
+    }
+
+    trait AmbiguousOnlyIdFactory {
+      def x(special: Dependency @Id("special"), veryspecial: Dependency @Id("veryspecial")): AmbiguousTestClass
+      def y(veryspecial: Dependency @Id("veryspecial"), special: Dependency @Id("special")): AmbiguousTestClass
     }
 
     trait AbstractDependency
@@ -89,7 +104,7 @@ object FactoryCases {
       override def x(z: Int, y: Int, x: Int): Product @With[ProductImpl]
     }
 
-    class Dependency()
+    class Dependency
 
     final case class ProductImpl(x: Int, y: Int, z: Int, dependency: Dependency)
 

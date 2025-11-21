@@ -1,9 +1,8 @@
 package izumi.distage.plugins
 
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderDefaultImpl}
+import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderClassgraphImpl}
 
-import scala.compiletime.error
 import scala.quoted.{Expr, Quotes, Type}
 
 /** Scan the specified package *at compile-time* for classes and objects that inherit [[PluginBase]]
@@ -24,7 +23,7 @@ object StaticPluginLoader {
     val loadedPlugins = if (pluginPath == "") {
       LoadedPlugins.empty
     } else {
-      new PluginLoaderDefaultImpl().load(PluginConfig.packages(Seq(pluginPath)))
+      new PluginLoaderClassgraphImpl().load(PluginConfig.packages(Seq(pluginPath)))
     }
 
     val quoted = instantiatePluginsInCode[PluginBase](loadedPlugins.loaded)
@@ -44,8 +43,6 @@ object StaticPluginLoader {
           Symbol.requiredClass(canonicalName)
         }
 
-        val tpe = clsSym.typeRef
-
         val term = if (clsSym.flags.is(Flags.Module) || clsSym.isTerm) {
           val objRef = clsSym.companionModule.termRef
           Ref.term(objRef)
@@ -56,7 +53,7 @@ object StaticPluginLoader {
             s"Couldn't reflect runtime class of `${plugin.getClass}`, got non-type and non-object symbol=$clsSym typeRef=${clsSym.typeRef} companionModule=${clsSym.companionModule} companionClass=${clsSym.companionClass}"
           )
         }
-        Typed(term, TypeTree.of[T]).asExprOf[T]
+        Typed(term, TypeTree.of[T]).asExpr.asInstanceOf[Expr[T]]
     }.toList
   }
 

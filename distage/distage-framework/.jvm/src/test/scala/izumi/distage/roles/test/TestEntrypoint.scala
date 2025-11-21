@@ -12,7 +12,9 @@ import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 object TestEntrypoint extends TestEntrypointBase
 
 // for `CompTimePlanCheckerTest`
-object TestEntrypointPatchedLeak extends TestEntrypointBase {
+object TestEntrypointPatchedLeak extends TestEntrypointPatchedLeakBase
+
+trait TestEntrypointPatchedLeakBase extends TestEntrypointBase {
   override protected def roleAppBootOverrides(argv: RoleAppMain.ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
     modify[Module].named("roleapp") {
       _ ++ new ModuleDef {
@@ -33,5 +35,11 @@ class TestEntrypointBase extends RoleAppMain.LauncherCats[IO] {
 
   override protected def earlyFailureHandler(args: RoleAppMain.ArgV): AppFailureHandler = {
     AppFailureHandler.NullHandler
+  }
+}
+
+object ManualTestEntrypoint extends RoleAppMain.LauncherCats[IO] {
+  override protected def pluginConfig: PluginConfig = {
+    PluginConfig.cached(Seq(s"$thisPkg.fixtures"))
   }
 }

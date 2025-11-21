@@ -17,7 +17,7 @@ import scala.util.Try
 object AsyncZio extends AsyncZio[Any]
 
 open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
-  @inline override final def InnerF: this.type = this
+  @inline override def InnerF: this.type = this
 
   @inline override final def unit: ZIO[Any, Nothing, Unit] = ZIO.unit
   @inline override final def pure[A](a: A): ZIO[Any, Nothing, A] = ZIO.succeed(a)(Tracer.instance.empty)
@@ -77,6 +77,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
 
     ZIO.fromTry(effect)
   }
+  @inline override final def fromAttempt[A](effect: => A): ZIO[R, Throwable, A] = syncThrowable(effect)
 
   @inline override final def void[E, A](r: ZIO[R, E, A]): ZIO[R, E, Unit] = r.unit(Tracer.instance.empty)
   @inline override final def map[E, A, B](r: ZIO[R, E, A])(f: A => B): ZIO[R, E, B] = r.map(f)(InteropTracer.newTrace(f))
@@ -364,7 +365,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
                     .withIsInterruptedF(i => release(a, Exit.ZIOExit.toExit(e)(i)))
                     .foldCauseZIO(
                       cause2 => ZIO.refailCause(e.foldExit(_ ++ cause2, _ => cause2)),
-                      _ => ZIO.done(e),
+                      _ => e,
                     )
               }
         }

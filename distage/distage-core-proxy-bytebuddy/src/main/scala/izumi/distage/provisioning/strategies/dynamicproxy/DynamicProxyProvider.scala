@@ -15,7 +15,7 @@ import net.bytebuddy.matcher.{ElementMatcher, ElementMatchers}
 import java.lang.reflect.InvocationHandler
 
 object DynamicProxyProvider extends ProxyProvider {
-  def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): Either[ProvisionerIssue, DeferredInit] = {
+  override def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): Either[ProvisionerIssue, DeferredInit] = {
     for {
       nullDispatcher <- Right(new ByteBuddyNullMethodInterceptor(deferredKey))
       nullProxy <- mkDynamic(nullDispatcher, proxyContext)
@@ -67,21 +67,7 @@ object DynamicProxyProvider extends ProxyProvider {
           }
         } catch {
           case f: Throwable =>
-            Left(
-              ProvisionerIssue.ProxyInstantiationFailed(
-                proxyContext,
-                f,
-              )
-            )
-
-//            throw new ProxyInstantiationException(
-//              s"Failed to instantiate class with ByteBuddy, make sure you don't dereference proxied parameters in constructors: " +
-//              s"class=${proxyContext.runtimeClass}, params=${proxyContext.params}, exception=${f.stacktraceString}",
-//              clazz,
-//              proxyContext.params,
-//              proxyContext.op,
-//              f,
-//            )
+            Left(ProvisionerIssue.ProxyInstantiationFailed(proxyContext, f))
         }
       }
     } yield {

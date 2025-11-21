@@ -6,6 +6,8 @@ sealed trait ScalaRelease {
 }
 
 object ScalaRelease {
+  // it shouldn't be in fundamentals-basics but that's the best place because of the macro call site limitation of scala 2
+
   def parse(versionString: String): ScalaRelease = {
     val parts = versionString.split('.').toList
     parts match {
@@ -21,13 +23,13 @@ object ScalaRelease {
         ScalaRelease.Unknown(versionString)
     }
   }
-  private[this] object ParseInt {
+  private object ParseInt {
     def unapply(str: String): Option[Int] = {
       try { Some(Integer.parseInt(str)) }
       catch { case _: NumberFormatException => None }
     }
   }
-  private[this] object RemoveQualifier {
+  private object RemoveQualifier {
     def unapply(str: String): Some[String] = {
       Some(str.takeWhile(_ != '-'))
     }

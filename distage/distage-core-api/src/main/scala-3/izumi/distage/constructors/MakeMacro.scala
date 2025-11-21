@@ -1,6 +1,6 @@
 package izumi.distage.constructors
 
-import izumi.distage.constructors.{ClassConstructor, ClassConstructorMacro, ClassConstructorOptionalMakeDSL}
+import izumi.distage.constructors.{ClassConstructorMacro, ClassConstructorOptionalMakeDSL}
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.providers.Functoid
 import izumi.fundamentals.platform.language.CodePositionMaterializer
@@ -25,7 +25,7 @@ object MakeMacro {
 
     Expr.summon[ClassConstructorOptionalMakeDSL[T]] match {
       case Some(ctor) =>
-        applyMake[T, BT](outerClass)('{ $ctor.provider })
+        applyMake[T, BT](outerClass)('{ ${ ctor }.provider })
       case None =>
         makeMethodImpl[T, BT](outerClass)
     }
@@ -37,7 +37,7 @@ object MakeMacro {
     val tagT = '{ compiletime.summonInline[Tag[T]] }
     val codep = '{ compiletime.summonInline[CodePositionMaterializer] }
 
-    Apply(Apply(TypeApply(Select.unique(This(outerClass), "_make"), List(TypeTree.of[T])), List(functoid.asTerm)), List(tagT.asTerm, codep.asTerm)).asExprOf[BT]
+    Apply(Apply(TypeApply(Select.unique(This(outerClass), "_make"), List(TypeTree.of[T])), List(functoid.asTerm)), List(tagT.asTerm, codep.asTerm)).asExpr.asInstanceOf[Expr[BT]]
   }
 
   private def makeMethodImpl[T: Type, BT: Type](using qctx: Quotes)(outerClass: qctx.reflect.Symbol): Expr[BT] = {

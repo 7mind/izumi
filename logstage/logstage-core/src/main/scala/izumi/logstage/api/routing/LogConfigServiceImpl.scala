@@ -1,119 +1,91 @@
 package izumi.logstage.api.routing
 
+import izumi.fundamentals.collections.WildcardPrefixTree
+import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.language.CodePosition
 import izumi.logstage.api.Log
-import izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig, LoggerPathConfig}
-import izumi.logstage.api.routing.LogConfigServiceImpl.{ConfiguredLogTreeNode, LogTreeNode}
-
-import scala.annotation.tailrec
+import izumi.logstage.api.config.*
+import izumi.fundamentals.platform.strings.WildcardPrefixTreeTools.*
 
 class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService {
-  override def threshold(e: Log.LoggerId): Log.Level = {
-    configFor(e).threshold
+  private val configTree = {
+
+    val out = loggerConfig.entries.flatMap {
+      rule =>
+        val entries = rule.path.path.toSeq.map {
+          case LoggerPathElement.Pkg(name) => Some(name.theString)
+          case LoggerPathElement.Wildcard => None
+        }
+
+        val paths = if (rule.path.lines.nonEmpty) {
+          rule.path.lines.map {
+            line =>
+              entries :+ Some(lineSegment(line))
+          }
+        } else {
+          List(entries, entries :+ None)
+        }
+
+        paths.map {
+          path =>
+            (path.toList, rule.config)
+        }
+    } ++ List((List.empty, loggerConfig.root.config))
+
+    val result = WildcardPrefixTree.build[String, LoggerPathConfig](out)
+    assert(result.values.nonEmpty)
+    result
+  }
+
+  override def acceptable(id: Log.LoggerId, logLevel: Log.Level): Boolean = {
+    val query = id.id.split('.')
+    val cfg = queryConfig(query)
+    logLevel >= cfg.threshold
+  }
+
+  override def acceptable(position: CodePosition, logLevel: Log.Level): Boolean = {
+    val query = position.applicationPointId.split('.') :+ lineSegment(position.position.line)
+    val cfg = queryConfig(query)
+    logLevel >= cfg.threshold
   }
 
   override def config(e: Log.Entry): LogEntryConfig = {
-    LogEntryConfig(configFor(e.context.static.id).sinks)
-  }
+    val query = e.context.static.pos.applicationPointId.split('.') :+ lineSegment(e.context.static.pos.position.line)
 
-  private[this] val configTree = LogConfigServiceImpl.build(loggerConfig)
+    val cfg = queryConfig(query)
 
-  @inline private[this] def configFor(e: Log.LoggerId): LoggerPathConfig = {
-    val configPath = findConfig(e.id.split('.').toList, List.empty, configTree)
-    configPath
-      .collect {
-        case c: ConfiguredLogTreeNode => c
-      }.last.config
-  }
-
-  @tailrec
-  private final def findConfig(outPath: List[String], inPath: List[LogTreeNode], current: LogTreeNode): List[LogTreeNode] = {
-    outPath match {
-      case head :: tail =>
-        current.sub.get(head) match {
-          case Some(value) =>
-            findConfig(tail, inPath :+ current, value)
-          case None =>
-            inPath :+ current
-        }
-      case Nil =>
-        inPath :+ current
+    if (e.context.dynamic.level >= cfg.threshold) {
+      LogEntryConfig(cfg.sinks)
+    } else {
+      LogEntryConfig(List.empty)
     }
   }
 
-//  override def close(): Unit = {
-//    (loggerConfig.root.sinks ++ loggerConfig.entries.values.flatMap(_.sinks)).foreach(_.close())
-//  }
+  @inline private def queryConfig(query: Array[String]): LoggerPathConfig = {
+    val result = configTree.findBestMatch(query.toSeq).found.values
 
-  private[this] def print(node: LogTreeNode, level: Int): String = {
-    val sub = node.sub.values.map(s => print(s, level + 1))
-
-    def reprCfg(cfg: LoggerPathConfig) = {
-      s"${cfg.threshold} -> ${cfg.sinks}"
+    if (result.length == 1) {
+      result.head
+    } else if (result.length > 1) {
+      result.minBy(_.threshold)
+    } else {
+      // this should NOT happen, the root of the tree must be always configured
+      loggerConfig.root.config
     }
-
-    val repr = node match {
-      case LogConfigServiceImpl.LogTreeRootNode(config, _) =>
-        s"[${reprCfg(config)}]"
-      case LogConfigServiceImpl.LogTreeEmptyNode(id, _) =>
-        s"$id"
-      case LogConfigServiceImpl.LogTreeMainNode(id, config, _) =>
-        s"$id: ${reprCfg(config)}"
-    }
-
-    val out = (List(repr) ++ sub).mkString("\n")
-
-    import izumi.fundamentals.platform.strings.IzString.*
-    out.shift(2 * level)
   }
 
   override def toString: String = {
-    s"""Logger configuration (${this.hashCode()}):
-       |${print(configTree, 0)}
-       |""".stripMargin
-
-  }
-}
-
-object LogConfigServiceImpl {
-  sealed trait LogTreeNode {
-    def sub: Map[String, IdentifiedLogTreeNode]
-  }
-  sealed trait IdentifiedLogTreeNode extends LogTreeNode {
-    def id: String
+    s"${super.toString}\ndefault: ${loggerConfig.root.config}\n${configTree.print}"
   }
 
-  sealed trait ConfiguredLogTreeNode extends LogTreeNode {
-    def config: LoggerPathConfig
+  @inline private def lineSegment(line: Int): String = {
+    s"line.$line"
   }
 
-  case class LogTreeRootNode(config: LoggerPathConfig, sub: Map[String, IdentifiedLogTreeNode]) extends LogTreeNode with ConfiguredLogTreeNode
-  case class LogTreeEmptyNode(id: String, sub: Map[String, IdentifiedLogTreeNode]) extends IdentifiedLogTreeNode
-  case class LogTreeMainNode(id: String, config: LoggerPathConfig, sub: Map[String, IdentifiedLogTreeNode]) extends IdentifiedLogTreeNode with ConfiguredLogTreeNode
-
-  def build(config: LoggerConfig): LogTreeRootNode = {
-    val p = config.entries.iterator.map { case (k, v) => (k.split('.').toList, v) }.toList
-    LogTreeRootNode(config.root, buildLookupSubtree(p))
+  override def validate(fallback: TrivialLogger): Unit = {
+    if (configTree.maxValues > 1) {
+      fallback.err(s"Logger config contains contradictive entries in $this")
+    }
   }
 
-  private def buildLookupSubtree(entries: List[(List[String], LoggerPathConfig)]): Map[String, IdentifiedLogTreeNode] = {
-    buildSubtrees(entries).map(node => (node.id, node)).toMap
-  }
-
-  private def buildSubtrees(entries: List[(List[String], LoggerPathConfig)]): List[IdentifiedLogTreeNode] = {
-    entries
-      .groupBy(_._1.head).map {
-        case (cp, entries) =>
-          val truncatedEntries = entries.map { case (p, c) => (p.tail, c) }
-          val (current, sub) = truncatedEntries.partition(_._1.isEmpty)
-          val subTree: Map[String, IdentifiedLogTreeNode] = if (sub.isEmpty) Map.empty else buildLookupSubtree(sub)
-          current match {
-            case Nil =>
-              LogTreeEmptyNode(cp, subTree)
-            case head :: Nil =>
-              LogTreeMainNode(cp, head._2, subTree)
-            case list =>
-              throw new RuntimeException(s"BUG: More than one logger config bound to one path at $cp: $list")
-          }
-      }.toList
-  }
 }

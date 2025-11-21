@@ -1,12 +1,13 @@
 package izumi.distage.docker
 
 import izumi.distage.docker.ContainerNetworkDef.{ContainerNetwork, ContainerNetworkConfig}
-import izumi.distage.docker.impl.{DockerClientWrapper, FileLockMutex}
+import izumi.distage.docker.impl.DockerClientWrapper
 import izumi.distage.docker.model.Docker.DockerReusePolicy
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.providers.Functoid
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.fundamentals.platform.files.FileLockMutex
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.fundamentals.platform.strings.IzString.*
@@ -58,8 +59,8 @@ object ContainerNetworkDef {
   ) extends Lifecycle.Basic[F, ContainerNetwork[T]] {
     import client.rawClient
 
-    private[this] val prefix: String = prefixName.camelToUnderscores.replace("$", "")
-    private[this] val networkLabels: Map[String, String] = Map(
+    private val prefix: String = prefixName.camelToUnderscores.replace("$", "")
+    private val networkLabels: Map[String, String] = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       s"${DockerConst.Labels.networkDriverPrefix}.${config.driver}" -> true.toString,
       DockerConst.Labels.namePrefixLabel -> prefix,
@@ -74,10 +75,15 @@ object ContainerNetworkDef {
 
           logger.info(s"About to start or find ${prefix -> "network"}, ${maxAttempts -> "max lock retries"}...")
 
-          FileLockMutex.withLocalMutex(logger)(
-            s"distage-container-network-def-$prefix",
+          val filename = s"distage-container-network-def-$prefix"
+          FileLockMutex.withLocalMutex(
+            filename = filename,
             retryWait = retryWait,
             maxAttempts = maxAttempts,
+            attemptLog = (num, maxAttempts) => F.maybeSuspend(logger.debug(s"Attempt $num out of $maxAttempts to acquire file lock for image $filename.")),
+            failLog = attempts =>
+              F.maybeSuspend(logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container")),
+            lockAlreadyExistedLog = F.maybeSuspend(logger.debug(s"File lock already existed for image $filename")),
           ) {
             val labelsSet = networkLabels.toSet
             val existingNetworks = rawClient
@@ -116,7 +122,7 @@ object ContainerNetworkDef {
       }
     }
 
-    private[this] def createNewRandomizedNetwork(): F[ContainerNetwork[T]] = {
+    private def createNewRandomizedNetwork(): F[ContainerNetwork[T]] = {
       F.maybeSuspend {
         val name = config.name.getOrElse(s"$prefix-${UUID.randomUUID().toString.take(8)}")
         logger.info(s"Going to create new ${prefix -> "network"}->$name")
@@ -130,7 +136,7 @@ object ContainerNetworkDef {
       }
     }
 
-    private[this] def integrationCheckHack[A](f: => F[A]): F[A] = {
+    private def integrationCheckHack[A](f: => F[A]): F[A] = {
       // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
       F.definitelyRecoverUnsafeIgnoreTrace(f) {
         (c: Throwable) =>

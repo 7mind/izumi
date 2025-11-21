@@ -5,12 +5,12 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppArgsInterceptor
-import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RequiredRoles}
 import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 import izumi.reflect.TagK
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.roles.launcher.*
 import izumi.distage.model.definition.Activation
+import izumi.fundamentals.platform.cli.model.{RequiredRoles, RoleAppArgs}
 
 class RoleAppBootArgsModule[F[_]: TagK: DefaultModule](
   args: ArgV,
@@ -18,7 +18,7 @@ class RoleAppBootArgsModule[F[_]: TagK: DefaultModule](
 ) extends ModuleDef {
   make[ArgV].fromValue(args)
   make[RequiredRoles].fromValue(requiredRoles)
-  make[RawAppArgs].from {
+  make[RoleAppArgs].from {
     (parser: CLIParser, args: ArgV, handler: ParserFailureHandler, interceptor: AppArgsInterceptor, additionalRoles: RequiredRoles) =>
       parser.parse(args.args) match {
         case Left(error) =>
@@ -30,7 +30,7 @@ class RoleAppBootArgsModule[F[_]: TagK: DefaultModule](
 
   // TODO: stuff below not stubbed for js
   make[PlanningOptions].from {
-    (parameters: RawAppArgs) =>
+    (parameters: RoleAppArgs) =>
       PlanningOptions(
         addGraphVizDump = parameters.globalParameters.hasFlag(RoleAppMain.Options.dumpContext)
       )

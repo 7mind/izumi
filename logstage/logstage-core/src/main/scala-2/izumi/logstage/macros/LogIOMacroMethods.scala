@@ -1,111 +1,114 @@
 package izumi.logstage.macros
 
-import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro.getEnclosingPosition
+import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
+import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log.{Level, Message}
-import izumi.logstage.api.logger.AbstractLogIO
+import izumi.logstage.api.logger.{AbstractLogIO, AbstractMacroLogIO}
+import izumi.logstage.macros.EncodingModeExtractors.{getModeFromPrefixesEncModeTypeMember, getModeFromType}
 
 import scala.reflect.macros.blackbox
 
 object LogIOMacroMethods {
+
   def scTraceMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Trace, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Trace)
   }
 
   def scDebugMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Debug, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Debug)
   }
 
   def scInfoMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Info, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Info)
   }
 
   def scWarnMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Warn, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Warn)
   }
 
   def scErrorMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Error, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Error)
   }
 
   def scCritMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Crit, EncodingMode.NonStrict)
+    doLog(c)(message, Level.Crit)
   }
 
-  def scTraceMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Trace, EncodingMode.Strict)
+  def scAuditMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
+    doLog(c)(message, Level.Audit)
   }
 
-  def scDebugMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Debug, EncodingMode.Strict)
+  def scLogValues[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(level: c.Expr[Level])(values: c.Expr[Any]*): c.Expr[F[Unit]] = {
+    doLogValues(c)(level, values)
   }
 
-  def scInfoMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Info, EncodingMode.Strict)
+  def scLogMethod[XF[_], F[x] >: XF[x], A, EncMode: c.WeakTypeTag](
+    c: blackbox.Context { type PrefixType = AbstractMacroLogIO.LogMethod[XF, F, EncMode] }
+  )(function: c.Expr[A]
+  )(F: c.Expr[QuasiIO[F]]
+  ): c.Expr[F[A]] = {
+    import c.universe.*
+    val mode = getModeFromType[EncMode](c)
+    val prefixName = c.freshName(TermName("prefix"))
+    val self = c.Expr[AbstractLogIO[XF]](q"$prefixName.__getSelf")
+    val level = c.Expr[Level](q"$prefixName.__getSelfLevel")
+    val printTypes = c.Expr[Boolean](q"$prefixName.__printTypes")
+    val printImplicits = c.Expr[Boolean](q"$prefixName.__printImplicits")
+
+    val lmm = new LogMethodMacro[c.type](c)
+    lmm.logMethodIO[XF, F, QuasiIO[F], A](mode, prefixName, F, self, level, printTypes, printImplicits, function.tree)(
+      functionToUse = lmm.exprMaybeSuspend[F, A](_, function)
+    )
   }
 
-  def scWarnMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Warn, EncodingMode.Strict)
+  def scLogMethodF[F[_], A, EncMode: c.WeakTypeTag](
+    c: blackbox.Context { type PrefixType = AbstractMacroLogIO.LogMethodF[F, EncMode] }
+  )(function: c.Expr[F[A]]
+  )(F: c.Expr[QuasiPrimitives[F]]
+  ): c.Expr[F[A]] = {
+    import c.universe.*
+    val mode = getModeFromType[EncMode](c)
+    val prefixName = c.freshName(TermName("prefix"))
+    val self = c.Expr[AbstractLogIO[F]](q"$prefixName.__getSelf")
+    val level = c.Expr[Level](q"$prefixName.__getSelfLevel")
+    val printTypes = c.Expr[Boolean](q"$prefixName.__printTypes")
+    val printImplicits = c.Expr[Boolean](q"$prefixName.__printImplicits")
+
+    val lmm = new LogMethodMacro[c.type](c)
+    lmm.logMethodIO[F, F, QuasiPrimitives[F], A](mode, prefixName, F, self, level, printTypes, printImplicits, function.tree)(
+      functionToUse = _ => function
+    )
   }
 
-  def scErrorMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Error, EncodingMode.Strict)
-  }
-
-  def scCritMacroStrict[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Crit, EncodingMode.Strict)
-  }
-
-  def scTraceMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Trace, EncodingMode.Raw)
-  }
-
-  def scDebugMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Debug, EncodingMode.Raw)
-  }
-
-  def scInfoMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Info, EncodingMode.Raw)
-  }
-
-  def scWarnMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Warn, EncodingMode.Raw)
-  }
-
-  def scErrorMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Error, EncodingMode.Raw)
-  }
-
-  def scCritMacroRaw[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
-    doLog(c)(message, Level.Crit, EncodingMode.Raw)
-  }
-
-  private[this] def doLog[F[_]](
+  private def doLog[F[_]](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
   )(message: c.Expr[String],
     level: Level,
-    mode: EncodingMode,
-  ): c.universe.Expr[F[Unit]] = {
-    val m: c.Expr[Message] = mode.fold(c.universe.reify(Message.raw(message.splice))) {
-      strict =>
-        new LogMessageMacro0[c.type](c, strict = strict).logMessageMacro(message)
-    }
-    val l = level match {
-      case Level.Trace =>
-        c.universe.reify(Level.Trace)
-      case Level.Debug =>
-        c.universe.reify(Level.Debug)
-      case Level.Info =>
-        c.universe.reify(Level.Info)
-      case Level.Warn =>
-        c.universe.reify(Level.Warn)
-      case Level.Error =>
-        c.universe.reify(Level.Error)
-      case Level.Crit =>
-        c.universe.reify(Level.Crit)
-    }
+  ): c.Expr[F[Unit]] = {
+    val mode = getModeFromPrefixesEncModeTypeMember(c)
+    val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
+    val l = LogMessageMacro.reifyLevel(c)(level)
+    doLogImpl[F](c)(m, l)
+  }
 
+  private def doLogValues[F[_]](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(level: c.Expr[Level],
+    values: Seq[c.Expr[Any]],
+  ): c.Expr[F[Unit]] = {
+    val mode = getModeFromPrefixesEncModeTypeMember(c)
+    val message = LogValuesMacro.createMessageString(c)(values)
+    val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
+    doLogImpl(c)(m, level)
+  }
+
+  private def doLogImpl[F[_]](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(message: c.Expr[Message],
+    level: c.Expr[Level],
+  ): c.Expr[F[Unit]] = {
     c.universe.reify {
-      c.prefix.splice.log(l.splice)(m.splice)(getEnclosingPosition(c).splice)
+      c.prefix.splice.log(level.splice)(message.splice)(CodePositionMaterializerMacro.getEnclosingPosition(c).splice)
     }
   }
 

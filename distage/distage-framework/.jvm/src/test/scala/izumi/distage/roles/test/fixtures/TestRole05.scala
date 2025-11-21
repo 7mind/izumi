@@ -7,13 +7,17 @@ import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.test.fixtures.TestRole05.{TestRole05Dependency, TestRole05DependencyImpl1}
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
+import izumi.fundamentals.platform.uuid.IzUUID
 import izumi.reflect.TagK
 
+import scala.annotation.unused
+
 class TestRole05[F[_]: QuasiIO](
-  dependency: TestRole05Dependency
+  dependency: TestRole05Dependency,
+  @unused uuid: IzUUID,
 ) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
     assert(dependency.isInstanceOf[TestRole05DependencyImpl1])
   }) {
     _ =>
@@ -36,7 +40,8 @@ object TestRole05 extends RoleDescriptor {
   }
 
   final case class Rolelocal2SpecificConfig(bool: Boolean)
-  final case class Rolelocal1SpecificConfig(str: String)
+  case class Dummy(a: Int, b: String)
+  final case class Rolelocal1SpecificConfig(str: String, dummy: Option[Dummy])
 
   class Role05Module[F[_]: TagK] extends ModuleDef with ConfigModuleDef with RoleModuleDef {
     makeRole[TestRole05[F]]

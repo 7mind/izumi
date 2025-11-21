@@ -1,12 +1,9 @@
 package izumi.distage.constructors
 
-import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
 import izumi.fundamentals.reflection.ReflectiveCall
 
-import scala.collection.immutable.{ArraySeq, Queue}
-import scala.collection.mutable
 import scala.quoted.{Expr, Quotes, Type}
 import scala.util.control.NonFatal
 
@@ -16,8 +13,7 @@ object FactoryConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.{MemberRepr, ParamRepr, ParamReprLists, factoryUtil}
-    import factoryUtil.{FactoryProductData, InjectedDependencyParameter, MethodParameter}
+    import util.{MemberRepr, ParamRepr, factoryUtil}
     util.requireConcreteTypeConstructor(TypeRepr.of[R], "FactoryConstructor")
 
     val factoryContext = new ConstructorContext[R, qctx.type, util.type](util)
@@ -34,7 +30,12 @@ object FactoryConstructorMacro {
     var flatLambdaSigIndex = 0 // index of a new dependency to add to the outermost lambda requesting parameters
 
     val factoryProductData = factoryContext.methodDecls.map {
-      case MemberRepr(n, _, mbMethodSym, methodType, _) =>
+      case MemberRepr(n, isMethod, _, mbMethodSym, methodType, _) =>
+        if (!isMethod) {
+          report.errorAndAbort(
+            s"Abstract vals are forbidden in Factories, but found abstract val `$n`! All abstract definitions in Factories must produce new instances, not summon dependencies. For summoning dependencies into fields use makeTrait/fromTrait/TraitConstructor"
+          )
+        }
         factoryUtil.getFactoryProductData(resultTpe) {
           () =>
             val curIndex = flatLambdaSigIndex
@@ -67,7 +68,7 @@ object FactoryConstructorMacro {
             factoryContext.parentTypesParameterized,
             {
               (s: Symbol) =>
-                val methodSyms = factoryContext.methodDecls.generateDeclSymbols(s)
+                val methodSyms = factoryContext.methodDecls.generateDeclSymbols(forceLazyVals = false)(s)
                 methodSymbols = methodSyms
                 methodSyms
             },
@@ -110,7 +111,7 @@ object FactoryConstructorMacro {
 //      )
 //    }
 
-    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Factory })
+    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Constructor })
     '{ new FactoryConstructor[R](${ f }) }
 
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case NonFatal(t) => qctx.reflect.report.errorAndAbort(t.stacktraceString) }

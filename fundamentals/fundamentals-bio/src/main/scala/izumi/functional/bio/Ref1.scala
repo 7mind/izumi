@@ -30,6 +30,8 @@ object Ref1 {
 
       override def tryUpdate(f: A => A): IO[Nothing, Option[A]] = update(f).map(Some(_))(InteropTracer.newTrace(f)) // zio.Ref does not support try*
       override def tryModify[B](f: A => (B, A)): IO[Nothing, Option[B]] = modify(f).map(Some(_))(InteropTracer.newTrace(f)) // zio.Ref does not support try*
+
+      disableAutoTrace.discard()
     }
 
   def fromCats[F[+_, +_]: Panic2, A](ref: cats.effect.Ref[F[Throwable, _], A]): Ref2[F, A] =
@@ -57,5 +59,4 @@ object Ref1 {
     }
   }
 
-  disableAutoTrace.discard()
 }

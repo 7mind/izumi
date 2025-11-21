@@ -1,10 +1,10 @@
 package izumi.fundamentals.graphs.tools.cycles
 
 import izumi.fundamentals.graphs.GraphTraversalError.UnrecoverableLoops
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyList
 
 trait LoopBreaker[N] {
-  def breakLoops(withLoops: IncidenceMatrix[N]): Either[UnrecoverableLoops[N], IncidenceMatrix[N]]
+  def breakLoops(withLoops: AdjacencyList[N]): Either[UnrecoverableLoops[N], AdjacencyList[N]]
 }
 
 object LoopBreaker {

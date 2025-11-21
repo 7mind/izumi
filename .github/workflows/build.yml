@@ -17,135 +17,190 @@ jobs:
     steps:
       - id: checksecret_job
         env:
-          OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
-          OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
+          TOKEN_BITWARDEN_SM: ${{ secrets.TOKEN_BITWARDEN_SM }}
         run: |
-          echo "HAVE_SECRETS=${{ env.OPENSSL_IV != '' && env.OPENSSL_KEY != '' }}" >> $GITHUB_OUTPUT
+          echo "HAVE_SECRETS=${{ env.TOKEN_BITWARDEN_SM != '' }}" >> $GITHUB_OUTPUT
+
+#  wtf:
+#    runs-on: self-hosted
+#    steps:
+#      - uses: 7mind/github-env@minimal
+#      - run: |
+#          set -x
+#          set -e
+#          pwd
+#          ls -la "$(pwd)"
+#          rm -rf "$(pwd)/test"
+#          #mount
+#          docker ps -a
+#          docker rm $(docker ps -aq) || true
+#          docker run -v "$(pwd):/test:z" --rm --entrypoint=/bin/bash -t ubuntu -c "rm -rf /test/test"
+#          docker run -v "$(pwd):/test:z" --rm --entrypoint=/bin/bash -t ubuntu -c "ls -la /test"
+#
+#  test-selfhosted:
+#    runs-on: self-hosted
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        java: [ '22' ]
+#        scala: [ '2.13']
+#    steps:
+#      - uses: 7mind/github-env@minimal
+#      - name: Build and Test
+#        env:
+#          SCALA_VERSION: ${{ matrix.scala }}
+#          JAVA_VERSION: ${{ matrix.java }}
+#        run: ./build.sh nix gen test
+
   build-jvm:
     runs-on: ubuntu-latest
     needs: [ 'checksecret' ]
     strategy:
+      fail-fast: false
       matrix:
-        java: [ '11', '17' ]
+        java: [ '11', '17', '22' ]
         scala: [ '2.12', '2.13', '3' ]
     steps:
-      - uses: 7mind/github-env@main
-        with:
-          java-version: ${{ matrix.java }}
+      - uses: 7mind/github-env@minimal
       - name: Build and Test with Coverage
+        env:
+          SCALA_VERSION: ${{ matrix.scala }}
+          JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  != '3'
-        run: |
-          bash sbtgen.sc
-          bash .build.sh ${{ matrix.scala }} coverage
+        run: ./run --nix :gen :coverage
       - name: Build and Test without Coverage # coverage leads to verification errors on scala3
+        env:
+          SCALA_VERSION: ${{ matrix.scala }}
+          JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  == '3'
-        run: |
-          bash sbtgen.sc
-          bash .build.sh ${{ matrix.scala }} test
+        run: ./run --nix :gen :test
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
-#        continue-on-error: ${{ matrix.scala == '3' }}
         with:
           name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }}, JVM)
           path: '**/target/test-reports/TEST-*.xml'
           reporter: java-junit
-#          fail-on-error: ${{ matrix.scala != '3' }}
-      - uses: codecov/codecov-action@v3
-        if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
+      - uses: bitwarden/sm-action@v2
+        if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         with:
-          token: ${{ secrets.TOKEN_CODECOV }} # not required for public repos but works unreliable without it
-          verbose: true # optional (default = false)
-#          fail_ci_if_error: ${{ matrix.scala != '3' }}
-          files: cobertura.xml
+          access_token: ${{ secrets.TOKEN_BITWARDEN_SM }}
+          secrets: |
+            5e21669e-48b4-49ce-82f0-b193010a2ded > TOKEN_CODECOV
+      - uses: codecov/codecov-action@v4
+        if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
+        continue-on-error: true
+        with:
+          token: ${{ env.TOKEN_CODECOV }}
+          verbose: true
+          files: "**/cobertura.xml"
+          #          fail_ci_if_error: ${{ matrix.scala != '3' }}
           # TODO: do we need scoverage.xml? If so files: may be just omitted
           # files: cobertura.xml,scoverage.xml
           # flags: unittests
+      - uses: sbt/setup-sbt@v1 # setup sbt
       - name: Upload dependency graph
-        uses: scalacenter/sbt-dependency-submission@ab086b50c947c9774b70f39fc7f6e20ca2706c91
-        if: github.ref == 'develop'
+        if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
+        uses: scalacenter/sbt-dependency-submission@v3.1.0
+
   build-js:
     runs-on: ubuntu-latest
     needs: [ 'checksecret' ]
     strategy:
+      fail-fast: false
       matrix:
-        java: [ '11', '17' ]
+        java: [ '11', '17', '22' ]
         scala: [ '2.12', '2.13', '3' ]
     steps:
-      - uses: 7mind/github-env@main
-        with:
-          java-version: ${{ matrix.java }}
+      - uses: 7mind/github-env@minimal
       - name: Build and Test with Coverage
+        env:
+          SCALA_VERSION: ${{ matrix.scala }}
+          JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  != '3'
-        run: |
-          bash sbtgen.sc --nojvm --js
-          bash .build.sh ${{ matrix.scala }} coverage
+        run: ./run --nix :gen-jsonly :coverage
       - name: Build and Test without Coverage # coverage leads to verification errors on scala3
+        env:
+          SCALA_VERSION: ${{ matrix.scala }}
+          JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  == '3'
-        run: |
-          bash sbtgen.sc --nojvm --js
-          bash .build.sh ${{ matrix.scala }} test
+        run: ./run --nix :gen-jsonly :test
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
-#        continue-on-error: ${{ matrix.scala == '3' }}
         with:
           name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }}, JS)
           path: '**/target/test-reports/TEST-*.xml'
           reporter: java-junit
-#          fail-on-error: ${{ matrix.scala != '3' }}
+
   test-site:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17' ]
-        scala: [ '2.13']
+        java: [ '22' ]
+        scala: [ '2.13', '3' ]
     steps:
-      - uses: 7mind/github-env@main
-        with:
-          java-version: ${{ matrix.java }}
+      - uses: 7mind/github-env@minimal
       - name: Build Microsite
-        run: |
-          bash sbtgen.sc --js 
-          bash .build.sh ${{ matrix.scala }} site-test
+        env:
+          SCALA_VERSION: ${{ matrix.scala }}
+          JAVA_VERSION: ${{ matrix.java }}
+        run: ./run --nix :gen-js :site-test
+
   publish-site:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17' ]
+        java: [ '22' ]
         scala: [ '2.13']
     needs: [ 'build-jvm', 'build-js', 'test-site', 'checksecret' ]
     if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
     steps:
-      - uses: 7mind/github-env@main
+      - uses: 7mind/github-env@minimal
+      - uses: bitwarden/sm-action@v2
         with:
-          java-version: ${{ matrix.java }}
+          access_token: ${{ secrets.TOKEN_BITWARDEN_SM }}
+          secrets: |
+            4aeac969-5880-4e36-97a8-b193010ca904 > IZUMI_MICROSITE_KEY
       - uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ secrets.IZUMI_MICROSITE_KEY }}
+          key: ${{ env.IZUMI_MICROSITE_KEY }}
           known_hosts: 'unnecessary' # github.com is already there
       - name: Publish Microsite
-        run: |
-          bash sbtgen.sc --js 
-          bash .build.sh ${{ matrix.scala }} site-publish
+        env:
+          SCALA_VERSION: ${{ matrix.scala }}
+          JAVA_VERSION: ${{ matrix.java }}
+        run: ./run --nix :gen-js :site-publish
+
   publish-artifacts:
     runs-on: ubuntu-latest
     needs: [ 'build-jvm', 'build-js', 'checksecret' ]
     if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
     strategy:
+      fail-fast: false
       matrix:
         java: [ '11' ]
         scala: [ '2.12', '2.13', '3']
     steps:
-      - uses: 7mind/github-env@main
+      - uses: 7mind/github-env@minimal
+      - uses: bitwarden/sm-action@v2
         with:
-          java-version: ${{ matrix.java }}
+          access_token: ${{ secrets.TOKEN_BITWARDEN_SM }}
+          secrets: |
+            994f97a2-97a4-4fe1-806a-b1930104435f > SONATYPE_CREDENTIALS_FILE
+            749f4227-9f11-4ceb-9121-b1930110c3a9 > OPENSSL_KEY
+            a2fe5b5b-5f3f-47f8-961c-b1930110cea7 > OPENSSL_IV
       - name: Build and Publish to Sonatype
-#        continue-on-error: ${{ matrix.scala == '3' }}
         env:
-          OPENSSL_IV: ${{ secrets.OPENSSL_IV }}
-          OPENSSL_KEY: ${{ secrets.OPENSSL_KEY }}
+          SCALA_VERSION: ${{ matrix.scala }}
+          JAVA_VERSION: ${{ matrix.java }}
+          SONATYPE_SECRET: .secrets/credentials.sonatype-nexus.properties
         run: |
-          bash sbtgen.sc --js
-          bash .build.sh ${{ matrix.scala }} secrets publishScala
+          mkdir .secrets
+          echo "$SONATYPE_CREDENTIALS_FILE" > "$SONATYPE_SECRET"
+          openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
+          tar xvf secrets.tar
+          
+          ./run --nix :gen-js :publish-scala
+
   all-good:
     if: always()
     runs-on: ubuntu-latest

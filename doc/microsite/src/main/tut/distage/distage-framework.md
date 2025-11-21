@@ -23,11 +23,11 @@ version="$izumi.version$"
 To declare roles use @scaladoc[RoleModuleDef#makeRole](izumi.distage.roles.model.definition.RoleModuleDef):
 
 ```scala mdoc:reset:to-string
-import distage.plugins.PluginDef
+import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.RoleDescriptor
 import izumi.distage.roles.model.RoleTask
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import logstage.LogIO
 import zio.UIO
 
@@ -40,7 +40,7 @@ object AppPlugin extends PluginDef {
 }
 
 class ExampleRoleTask(log: LogIO[UIO]) extends RoleTask[UIO] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): UIO[Unit] = {
+  override def start(roleParameters: EntrypointArgs): UIO[Unit] = {
     log.info(s"Running ${ExampleRoleTask.id}!")
   }
 }
@@ -114,17 +114,18 @@ val logger = objects.get[LogIO[UIO]]
 
 - @scaladoc[Help](izumi.distage.roles.bundled.Help) - prints help message when launched `./launcher :help`
 - @scaladoc[ConfigWriter](izumi.distage.roles.bundled.ConfigWriter) - writes reference config into files, split by
-  roles (includes only parts of the config used by the application)
+  roles (includes only parts of the config used by the application). Also generates a JSON Schema description for config.
 
 Use `include` to add it to your application:
 
 ```scala mdoc:reset:to-string
-import distage.plugins.PluginDef
+import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.BundledRolesModule
+import izumi.fundamentals.platform.versions.Version
 import zio.Task
 
 object RolesPlugin extends PluginDef {
-  include(BundledRolesModule[Task](version = "1.0"))
+  include(BundledRolesModule[Task](Version.parse("1.0")))
 }
 ```
 
@@ -186,6 +187,60 @@ object WiringCheck extends SpecWiring(
 
 `distage-framework`'s Role-based applications are checkable out of the box, but applications assembled directly via `distage-core`'s `distage.Injector` APIs
 must implement the @scaladoc[CheckableApp](izumi.distage.framework.CheckableApp) trait to provide all the data necessary for the checks. You may use @scaladoc[CoreCheckableAppSimple](izumi.distage.framework.CoreCheckableAppSimple) implementation for applications definable by a single collection of modules.
+
+### Adding custom checks
+
+You may add your own custom checks that will be executed at compile-time by overriding `customCheck` method of @scaladoc[CheckableApp](izumi.distage.framework.CheckableApp) or its subtypes @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain) or @scaladoc[CoreCheckableAppSimple](izumi.distage.framework.CoreCheckableAppSimple).
+
+For example, you could check that all components that have types with names that contain "Required" – such as `make[RequiredInt].from(RequiredInt(5))` – are used by other components and fail otherwise:
+
+```scala mdoc:reset:to-string
+import distage.{DIKey, PlanVerifier}
+import distage.PlanVerifier.PlanVerifierResult
+import izumi.distage.framework.model.PlanCheckInput
+import izumi.distage.model.planning.AxisPoint
+import izumi.distage.plugins.PluginConfig
+import izumi.distage.roles.RoleAppMain
+import izumi.fundamentals.collections.nonempty.NESet
+
+object CustomCheckLauncher extends RoleAppMain.LauncherCats[cats.effect.IO] {
+
+  // test that all bindings with types that have 'Required'
+  // in their name are used in the application
+  override def customCheck(
+    planVerifier: PlanVerifier,
+    excludedActivations: Set[NESet[AxisPoint]],
+    checkConfig: Boolean,
+    planCheckInput: PlanCheckInput[AppEffectType],
+  ): PlanVerifierResult = {
+    val usedKeys = planVerifier.traceReachables(
+      planCheckInput.module,
+      planCheckInput.roots,
+      planCheckInput.providedKeys,
+      excludedActivations,
+    )
+    val requiredKeys = planCheckInput.module.keys.filter {
+      // filter out any set elements (to remove weak set elements)
+      case _: DIKey.SetElementKey => false
+      case anyKey => anyKey.tpe.tag.shortName.contains("Required")
+    }
+    val unused = requiredKeys -- usedKeys
+    if (unused.nonEmpty) {
+      throw new RuntimeException(
+        s"""Custom check failed, found unused Required bindings:
+           |  ${unused.map(_.tpe.tag.repr).mkString(", ")}""".stripMargin
+      )
+    } else {
+      PlanVerifierResult.empty
+    }
+  }
+
+  override def pluginConfig = PluginConfig.cached(
+    packagesEnabled = Seq("com.example.custom")
+  )
+
+}
+```
 
 ### Low-Level APIs
 
@@ -364,7 +419,8 @@ import com.example.petstore._
 "fakepackage com.example.petstore": Unit
 
 import distage.Injector
-import distage.plugins.{PluginConfig, PluginDef, PluginLoader}
+import distage.plugins.{PluginConfig, PluginLoader}
+import izumi.distage.plugins.PluginDef
 
 object PetStorePlugin extends PluginDef {
   make[PetRepository]

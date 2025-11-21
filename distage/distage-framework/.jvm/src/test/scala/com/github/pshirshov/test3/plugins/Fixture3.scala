@@ -3,9 +3,11 @@ package com.github.pshirshov.test3.plugins
 import com.github.pshirshov.test3.bootstrap.BootstrapFixture3.{BasicConfig, BootstrapComponent, UnsatisfiedDep}
 import izumi.distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.roles.RoleAppMain
+import izumi.distage.roles.launcher.AppFailureHandler
+import izumi.distage.roles.launcher.AppFailureHandler.TerminatingHandler
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.functional.Identity
 
 object Fixture3 {
@@ -13,6 +15,7 @@ object Fixture3 {
   object TestRoleAppMain extends RoleAppMain.LauncherIdentity {
     override protected def pluginConfig: PluginConfig = PluginConfig.cachedThisPkg
     override protected def bootstrapPluginConfig: PluginConfig = PluginConfig.cached("com.github.pshirshov.test3.bootstrap")
+    override protected def earlyFailureHandler(args: RoleAppMain.ArgV): AppFailureHandler = new TerminatingHandler(sysExit = _ => ())
   }
 
   object TestRoleAppMainFailing extends RoleAppMain.LauncherIdentity {
@@ -31,7 +34,7 @@ object Fixture3 {
     // There is no direct dependency on BootstrapComponent anywhere, however, since it's in bootstrap, it's always a Root
 //    val bootstrapComponent: BootstrapComponent
   ) extends RoleTask[Identity] {
-    override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Unit = ()
+    override def start(roleParameters: EntrypointArgs): Unit = ()
   }
   object Fixture3Role extends RoleDescriptor {
     final val id = "fixture3"

@@ -908,6 +908,6 @@ object NEMap {
     @inline def fromNEMap: Map[K, V] = if (option.isEmpty) Map.empty else option.get.toMap
   }
 
-  @inline implicit def asIterable[K, V](ne: NEMap[K, V]): IterableOnce[(K, V)] = ne.toIterable
+  @inline implicit def asIterable[K, V](ne: NEMap[K, V]): Iterable[(K, V)] = ne.toIterable
 
 }

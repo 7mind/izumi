@@ -9,13 +9,17 @@ import izumi.reflect.Tag
 trait AbstractLocator extends Locator {
   protected def lookupLocalUnsafe(key: DIKey): Option[Any]
 
-  private[distage] final def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]] = {
-    lookupLocalUnsafe(key)
-      .map {
-        value =>
-          require(key.tpe <:< SafeType.get[T], s"$key in not a subtype of ${SafeType.get[T]}")
-          TypedRef(value.asInstanceOf[T], key.tpe, isByName = false)
-      }
+  private[distage] final def lookupLocal[T: Tag](key: DIKey): Option[GenericTypedRef[T]] = {
+    if (key == AbstractLocator.locatorDIKey) {
+      Some(TypedRef(this.asInstanceOf[T], key.tpe, isByName = false))
+    } else {
+      lookupLocalUnsafe(key)
+        .map {
+          value =>
+            require(key.tpe <:< SafeType.get[T], s"$key in not a subtype of ${SafeType.get[T]}")
+            TypedRef(value.asInstanceOf[T], key.tpe, isByName = false)
+        }
+    }
   }
 
   override final def find[T: Tag]: Option[T] =
@@ -38,7 +42,7 @@ trait AbstractLocator extends Locator {
     lookupRef(key).map(_.value)
   }
 
-  override final def lookupRefOrThrow[T: Tag](key: DIKey): TypedRef[T] = {
+  override final def lookupRefOrThrow[T: Tag](key: DIKey): GenericTypedRef[T] = {
     lookupRef(key) match {
       case Some(value) =>
         value
@@ -47,13 +51,22 @@ trait AbstractLocator extends Locator {
     }
   }
 
-  override final def lookupRef[T: Tag](key: DIKey): Option[TypedRef[T]] = {
-    recursiveLookup(key, this)
+  override final def lookupRef[T: Tag](key: DIKey): Option[GenericTypedRef[T]] = {
+    recursiveLookup(key, this, this)
   }
 
-  private[this] final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[TypedRef[T]] = {
-    locator
-      .lookupLocal[T](key)
-      .orElse(locator.parent.flatMap(p => recursiveLookup[T](key, p)))
+  private final def recursiveLookup[T: Tag](key: DIKey, locator: Locator, origin: Locator): Option[GenericTypedRef[T]] = {
+    locator.lookupLocal[T](key) match {
+      case Some(_) if (locator ne origin) && locator.isPrivate(key) =>
+        None
+      case a @ Some(_) => a
+      case None =>
+        locator.parent.flatMap(p => recursiveLookup[T](key, p, origin))
+    }
+
   }
+}
+
+object AbstractLocator {
+  private val locatorDIKey: DIKey.TypeKey = DIKey.get[Locator]
 }

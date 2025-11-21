@@ -1,8 +1,6 @@
 package izumi.distage.config.codec
 
-import izumi.distage.constructors.{ClassConstructor, FactoryConstructor}
-import izumi.reflect.Tag
-import pureconfig.{ConfigReader, Exported}
+import pureconfig.ConfigReader
 
 import scala.deriving.Mirror
 import scala.language.implicitConversions
@@ -44,8 +42,7 @@ object PureconfigAutoDerive {
 
   inline implicit def materialize[A](implicit m: Mirror.Of[A]): PureconfigAutoDerive[A] = {
     import izumi.distage.config.codec.PureconfigInstances.auto.exportDerivedConfigReader
-    import izumi.distage.config.codec.PureconfigInstances.given
-    
+
     new PureconfigAutoDerive[A](izumi.distage.config.codec.PureconfigInstances.configReaderDerivation.derived[A](using m))
   }
 }

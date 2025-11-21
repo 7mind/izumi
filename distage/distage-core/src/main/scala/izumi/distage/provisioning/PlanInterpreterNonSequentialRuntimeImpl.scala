@@ -1,12 +1,13 @@
 package izumi.distage.provisioning
 
 import izumi.distage.LocatorDefaultImpl
-import izumi.distage.model.definition.{Id, Lifecycle}
+import izumi.distage.model.definition.{Binding, BindingTag, Id, Lifecycle, LocatorPrivacy}
 import izumi.distage.model.definition.errors.ProvisionerIssue
 import izumi.distage.model.definition.errors.ProvisionerIssue.IncompatibleEffectTypes
 import izumi.distage.model.definition.errors.ProvisionerIssue.ProvisionerExceptionIssue.{IntegrationCheckFailure, UnexpectedIntegrationCheck}
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.plan.ExecutableOp.*
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Plan, Roots}
 import izumi.distage.model.provisioning.*
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FailedProvisionInternal, FinalizerFilter}
@@ -55,16 +56,18 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       }).map(_.left.map(_.fail))
   }
 
-  private[this] def instantiateImpl[F[_]: TagK](
+  private def instantiateImpl[F[_]: TagK](
     plan: Plan,
     parentContext: Locator,
   )(implicit F: QuasiIO[F]
   ): F[Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
     val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
 
-    val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext)
+    val privateBindings = computePrivateBindings(plan)
 
-    @nowarn("msg=Unused import")
+    val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext, privateBindings)
+
+    @nowarn("msg=[Uu]nused import")
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[TraversalState, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]]] = {
       import scala.collection.compat.*
 
@@ -118,7 +121,51 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     } yield res
   }
 
-  private def failEarly[F[_]: TagK, A](
+  private def computePrivateBindings(plan: Plan): Set[DIKey] = {
+    def isRoot(target: DIKey): Boolean = {
+      plan.input.roots match {
+        case Roots.Of(roots) =>
+          roots.contains(target)
+        case Roots.Everything =>
+          true
+      }
+    }
+
+    def isPrivateBinding(target: DIKey, binding: Binding): Boolean = {
+      plan.input.locatorPrivacy match {
+        case LocatorPrivacy.PublicByDefault =>
+          binding.tags.contains(BindingTag.Confined)
+        case LocatorPrivacy.PrivateByDefault =>
+          !binding.tags.contains(BindingTag.Exposed)
+        case LocatorPrivacy.PublicRoots =>
+          !isRoot(target) && !binding.tags.contains(BindingTag.Exposed)
+      }
+    }
+
+    def isPrivate(op: ExecutableOp): Boolean = {
+      op.origin.value match {
+        case OperationOrigin.UserBinding(binding) =>
+          isPrivateBinding(op.target, binding)
+        case OperationOrigin.SyntheticBinding(binding) =>
+          isPrivateBinding(op.target, binding)
+        case OperationOrigin.Unknown =>
+          plan.input.locatorPrivacy match {
+            case LocatorPrivacy.PublicByDefault =>
+              false
+            case LocatorPrivacy.PrivateByDefault =>
+              true
+            case LocatorPrivacy.PublicRoots =>
+              isRoot(op.target)
+          }
+      }
+    }
+
+    plan.stepsUnordered
+      .filter(isPrivate)
+      .map(_.target).toSet
+  }
+
+  private def failEarly[F[_], A](
     ctx: ProvisionMutable[F],
     initial: TraversalState,
     issues: Iterable[ProvisionerIssue],
@@ -136,7 +183,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     F.pure(Left(ctx.makeFailure(failed, fullStackTraces)))
   }
 
-  private[this] def integrationPlan[F[_]: TagK](
+  private def integrationPlan[F[_]](
     state: TraversalState,
     ctx: ProvisionMutable[F],
   )(implicit F: QuasiIO[F]
@@ -160,7 +207,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def prioritize(ops: Iterable[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = ArraySeq.unsafeWrapArray {
+  private def prioritize(ops: Iterable[ExecutableOp], integrationPaths: Set[DIKey]): Seq[ExecutableOp] = ArraySeq.unsafeWrapArray {
     ops.toArray.sortBy {
       op =>
         val repr = op.target.tpe.tag.repr
@@ -198,7 +245,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def addIntegrationCheckResult[F[_]: TagK](
+  private def addIntegrationCheckResult[F[_]](
     active: ProvisionMutable[F],
     integrationCheckFType: SafeType,
     result: TimedResult.Success,
@@ -229,7 +276,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def runIfIntegrationCheck[F[_]: TagK](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
+  private def runIfIntegrationCheck[F[_]](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
     op match {
       case i: NewObjectOp.CurrentContextInstance =>
         if (i.implType <:< nullType) {
@@ -248,7 +295,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def checkOrFail[F[_]: TagK](key: DIKey, resource: Any)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
+  private def checkOrFail[F[_]](key: DIKey, resource: Any)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
     F.suspendF {
       resource
         .asInstanceOf[IntegrationCheck[F]]
@@ -262,7 +309,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private[this] def verifyEffectType[F[_]: TagK](
+  private def verifyEffectType[F[_]: TagK](
     ops: Iterable[ExecutableOp]
   )(implicit F: QuasiIO[F]
   ): F[Either[Iterable[IncompatibleEffectTypes], Unit]] = {

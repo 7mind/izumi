@@ -1,12 +1,8 @@
 package izumi.distage.constructors
 
-import izumi.distage.model.providers.{Functoid, FunctoidMacro}
 import izumi.distage.model.reflection.Provider.ProviderType
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
-import izumi.reflect.WeakTag
 
-import scala.collection.immutable.{ArraySeq, Queue}
-import scala.collection.mutable
 import scala.quoted.{Expr, Quotes, Type}
 
 object TraitConstructorMacro {
@@ -15,7 +11,6 @@ object TraitConstructorMacro {
     import qctx.reflect.*
 
     val util = new ConstructorUtil[qctx.type]()
-    import util.ParamRepr
     util.requireConcreteTypeConstructor(TypeRepr.of[R], "TraitConstructor")
 
     val context = new ConstructorContext[R, qctx.type, util.type](util)
@@ -24,7 +19,6 @@ object TraitConstructorMacro {
   } catch { case t: scala.quoted.runtime.StopMacroExpansion => throw t; case t: Throwable => qctx.reflect.report.errorAndAbort(t.stacktraceString) }
 
   def makeImpl[R: Type](using qctx: Quotes)(util: ConstructorUtil[qctx.type], context: ConstructorContext[R, qctx.type, util.type]): Expr[TraitConstructor[R]] = {
-    import qctx.reflect.*
     import util.{MemberRepr, ParamRepr}
     import context.{flatCtorParams, methodDecls}
 
@@ -32,7 +26,7 @@ object TraitConstructorMacro {
 
     val lamParams = {
       val byNameMethodArgs = methodDecls.map {
-        case MemberRepr(n, _, maybeSym, t, _) => ParamRepr(s"_$n", maybeSym, util.ensureByName(util.returnTypeOfMethodOrByName(t)))
+        case MemberRepr(n, _, _, maybeSym, t, _) => ParamRepr(s"_$n", maybeSym, util.ensureByName(util.returnTypeOfMethodOrByName(t)))
       }
       flatCtorParams ++ byNameMethodArgs
     }
@@ -72,7 +66,7 @@ object TraitConstructorMacro {
 //      )
 //    }
 
-    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Trait })
+    val f = util.makeFunctoid[R](lamParams, lamExpr, '{ ProviderType.Constructor })
     '{ new TraitConstructor[R](${ f }) }
   }
 

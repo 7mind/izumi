@@ -4,7 +4,7 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.functional.quasi.QuasiIO
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
-import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.logstage.api.IzLogger
 
 class ExitAfterSleepRole[F[_]](logger: IzLogger, shutdown: AppShutdownInitiator)(implicit F: QuasiIO[F]) extends RoleService[F] {
@@ -24,9 +24,9 @@ class ExitAfterSleepRole[F[_]](logger: IzLogger, shutdown: AppShutdownInitiator)
     }).start()
   }
 
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): Lifecycle[F, Unit] = Lifecycle.make(
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(
     F.maybeSuspend {
-      logger.info(s"[ExitInTwoSecondsRole] started: $roleParameters, $freeArgs")
+      logger.info(s"[ExitInTwoSecondsRole] started: $roleParameters")
       runBadSleepingThread("init", () => shutdown.releaseAwaitLatch())
     }
   ) {

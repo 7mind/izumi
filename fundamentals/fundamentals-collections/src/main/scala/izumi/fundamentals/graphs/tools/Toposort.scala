@@ -2,19 +2,19 @@ package izumi.fundamentals.graphs.tools
 
 import izumi.fundamentals.graphs.ToposortError
 import izumi.fundamentals.graphs.ToposortError.InconsistentInput
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyList
 
 import scala.annotation.{nowarn, tailrec}
 
 object Toposort {
 
-  final def cycleBreaking[T](predecessors: IncidenceMatrix[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
+  final def cycleBreaking[T](predecessors: AdjacencyList[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
     cycleBreaking(predecessors.links, Seq.empty, break)
   }
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   @tailrec
-  private[this] def cycleBreaking[T](predecessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
+  private def cycleBreaking[T](predecessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
     import scala.collection.compat._
     val (noPreds, hasPreds) = predecessors.partition(_._2.isEmpty)
 
@@ -24,7 +24,7 @@ object Toposort {
       } else { // circular dependency
         val maybeNext = for {
           loopMembers <- Right(hasPreds.view.filterKeys(isInvolvedIntoCycle(hasPreds)).toMap)
-          _ <- if (loopMembers.isEmpty) Left(InconsistentInput(IncidenceMatrix(hasPreds))) else Right(())
+          _ <- if (loopMembers.isEmpty) Left(InconsistentInput(AdjacencyList(hasPreds))) else Right(())
           resolved <- break.onLoop(done, loopMembers)
           next = hasPreds.view.filterKeys(k => !resolved.breakAt.contains(k)).mapValues(_ -- resolved.breakAt).toMap
 
@@ -47,11 +47,11 @@ object Toposort {
     }
   }
 
-  private[this] def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
+  private def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
     test(toPreds, Set.empty, key, key)
   }
 
-  private[this] def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
+  private def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
     val deps = toPreds.getOrElse(toTest, Set.empty)
 
     if (deps.contains(needle)) {

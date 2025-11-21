@@ -196,7 +196,7 @@ object RetryPolicy {
     exponential(baseDelay) && recurs(maxRetries)
   }
 
-  private[this] def multiply(delay: FiniteDuration, multiplier: Long): FiniteDuration = {
+  private def multiply(delay: FiniteDuration, multiplier: Long): FiniteDuration = {
     val base = BigInt(delay.toNanos)
     val result = base * BigInt(multiplier)
     val cappedResult = result min LongMax

@@ -3,11 +3,11 @@ package izumi.distage.model.plan.topology
 import izumi.distage.model.plan.topology.DepTreeNode.DepNode
 import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.reflection._
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyList
 
 import scala.collection.mutable
 
-final case class DependencyGraph(matrix: IncidenceMatrix[DIKey], kind: DependencyKind) {
+final case class DependencyGraph(matrix: AdjacencyList[DIKey], kind: DependencyKind) {
 
   /**
     * This method is relatively expensive

@@ -433,9 +433,9 @@ import izumi.distage.plugins.ForcedRecompilationToken.disabled._
 ```scala mdoc:fakepackage:to-string
 "fakepackage app": Unit
 
-import distage.plugins.PluginDef
 import distage.Activation
 import distage.StandardAxis.Repo
+import izumi.distage.plugins.PluginDef
 
 object BonusServicePlugin extends PluginDef {
   make[BonusService]
@@ -684,6 +684,18 @@ Technical note: divergence of memoization levels is calculated based on equality
 
 Note: [original github ticket](https://github.com/7mind/izumi/issues/1188)
 
+#### Forced Roots
+
+`forcedRoots` field of `TestConfig` specifies components to synthetically add to the dependencies of every test within this test suite / memoization environment.
+
+If forced root components are not memoized, they will be acquired and released for each test case.
+
+If memoized, they will be acquired and released once, before all and after all the tests within this memoization environment.
+
+They provide an alternative to ScalaTest's native `beforeEach/beforeAll` that can use functional effects instead of mutability (However, `All` here includes the entire memoization environment, not the enclosing test suite)
+
+Forced roots may be configured per-activation / combination of activations, e.g. you may force postgres table setup to happen only in test environments with `Repo -> Repo.Prod` activation.
+
 #### Examples
 
 The first example will acquire the `BonusService` for each test case. This will not use memoization.
@@ -841,7 +853,7 @@ uniquely defined by the test config options above. This would have pseudocode li
 
 ```
 rootComponents = planRoots(memoizationRoots, activation, forcedRoots, ...)
-memoizationEnvironment = getOrCreate(rootComponents)
+memoizationEnvironment = create(rootComponents, testPlans)
 memoizationStore = memoizationEnvironment.store
 ...
 for each test case
@@ -852,22 +864,9 @@ for each test case
       instance = memoizationStore.lookup(component)
     else
       instance = acquireComponent(component)
-      if (component is in memoizationRoot paths)
-        memoizationStore.add(component, instance)
     ...
 ```
 
-### Forced Roots
-
-`forcedRoots` field of `TestConfig` specifies components to synthetically add to the dependencies of every test within this test suite / memoization environment.
-
-If forced root components are not memoized, they will be acquired and released for each test case.
-
-If memoized, they will be acquired and released once, before all and after all the tests within this memoization environment.
-
-They provide an alternative to ScalaTest's native `beforeEach/beforeAll` that can use functional effects instead of mutability (However, `All` here includes the entire memoization environment, not the enclosing test suite)
-
-Forced roots may be configured per-activation / combination of activations, e.g. you may force postgres table setup to happen only in test environments with `Repo -> Repo.Prod` activation.
 
 ### Test Selection
 
@@ -884,6 +883,10 @@ This feature therefore allows you to selectively run only the fast in-memory tes
 by shutting down the docker daemon (or another source of external dependencies).
 
 Integration checks are executed only in `distage-testkit` tests and `distage-framework` @ref[roles](distage-framework.md#roles).
+
+### Customization
+
+`TestTreeRunner[F]` component may be overridden in test module (TestConfig `.pluginConfig` and/or `.moduleOverrides`) to use a custom test execution strategy
 
 ### References
 

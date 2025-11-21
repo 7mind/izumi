@@ -2,6 +2,7 @@ package izumi.fundamentals.platform.resources
 
 import izumi.fundamentals.platform.time.IzTime
 import izumi.fundamentals.platform.time.IzTime.*
+import izumi.fundamentals.platform.versions.Version
 
 import java.time.{Instant, LocalDateTime}
 
@@ -24,7 +25,7 @@ object IzArtifact {
 
   def undefined: IzArtifact = IzArtifact(
     IzArtifactId(UNDEFINED, UNDEFINED),
-    ArtifactVersion(UNDEFINED),
+    ArtifactVersion(Version.Unknown(UNDEFINED)),
     BuildStatus(UNDEFINED, UNDEFINED, UNDEFINED, LocalDateTime.ofInstant(Instant.EPOCH, IzTime.TZ_UTC)),
     GitStatus(UNDEFINED, repoClean = false, UNDEFINED),
   )

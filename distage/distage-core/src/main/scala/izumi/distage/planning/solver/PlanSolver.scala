@@ -35,10 +35,10 @@ object PlanSolver {
     weakSetMembers: Set[WeakEdge[DIKey]],
   )
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   class Impl(
-              resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
-              preps: GraphQueries,
+    resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
+    preps: GraphQueries,
   ) extends PlanSolver {
 
     import scala.collection.compat.*
@@ -116,7 +116,7 @@ object PlanSolver {
           case aob @ (Annotated(key, Some(_), axis), _, b) =>
             isProperlyActivatedSetElement(ac, axis) {
               unconfigured =>
-                Left(NEList(UnconfiguredMutatorAxis(key, b.origin, unconfigured)))
+                Left(NEList(UnconfiguredMutatorAxis(key, b.origin.position, unconfigured)))
             }.map(out => (aob, out))
           case aob =>
             Right((aob, true))
@@ -216,5 +216,5 @@ object PlanSolver {
 
   }
 
-  private[this] final val enableDebugVerify = DebugProperties.`izumi.distage.debug.verify-all`.boolValue(false)
+  private final val enableDebugVerify = DebugProperties.`izumi.distage.debug.verify-all`.boolValue(false)
 }

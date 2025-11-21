@@ -1,7 +1,7 @@
 package izumi.fundamentals.graphs
 
 import izumi.fundamentals.graphs.GraphTraversalError.UnrecoverableLoops
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.{AdjacencyList, AdjacencySuccList}
 import izumi.fundamentals.graphs.tools.cycles.LoopDetector.{Cycles, Impl, Loop}
 import izumi.fundamentals.graphs.tools.cycles.{LoopBreaker, LoopDetector}
 import org.scalatest.wordspec.AnyWordSpec
@@ -14,7 +14,7 @@ class GraphsTest extends AnyWordSpec {
     "support transposition" in {
       val transposed = directed.transposed
       val maybeOriginal = transposed.transposed
-      assert(maybeOriginal == directed)
+      assert(maybeOriginal.links == directed.links)
 
       assert(cyclic.transposed == cyclic)
     }
@@ -39,27 +39,27 @@ class GraphsTest extends AnyWordSpec {
   "GC" should {
     "remove unreachable nodes" in {
       val dagOut = for {
-        g <- DAG.fromSucc(collectableDag, GraphMeta(Map.empty[Int, String]))
+        g <- DAG.fromSucc(collectableDag.asSucc, GraphMeta(Map.empty[Int, String]))
         c <- g.gc(Set(6), Set.empty)
       } yield {
         c
       }
 
-      assert(dagOut.map(_.successors) == Right(collectedDag))
+      assert(dagOut.map(_.successors) == Right(collectedDag.asSucc))
 
       val cyclicOut = for {
-        g <- Right(DG.fromSucc(collectableCyclic, GraphMeta(Map.empty[Int, String])))
+        g <- Right(DG.fromSucc(collectableCyclic.asSucc, GraphMeta(Map.empty[Int, String])))
         c <- g.gc(Set(6), Set.empty)
       } yield {
         c
       }
 
-      assert(cyclicOut.map(_.successors) == Right(collectedCyclic))
+      assert(cyclicOut.map(_.successors) == Right(collectedCyclic.asSucc))
     }
 
     "support weak edges" in {
       val out = for {
-        g <- Right(DG.fromSucc(collectableLinear, GraphMeta(Map.empty[Int, String])))
+        g <- Right(DG.fromSucc(collectableLinear.asSucc, GraphMeta(Map.empty[Int, String])))
         c <- g.gc(Set(6), Set(WeakEdge(2, 3)))
       } yield {
         c
@@ -67,7 +67,7 @@ class GraphsTest extends AnyWordSpec {
 
       assert(
         out.map(_.successors) == Right(
-          IncidenceMatrix(
+          AdjacencySuccList(
             3 -> Set(4),
             4 -> Set(5),
             5 -> Set(6),
@@ -78,36 +78,52 @@ class GraphsTest extends AnyWordSpec {
     }
   }
 
+  "DG" should {
+    "support two instantiation ways" in {
+      val g1 = DG.fromSucc(dag.asSucc, GraphMeta.empty)
+      val g2 = DG.fromPred(dag.asPred, GraphMeta.empty)
+      assert(g1.successors.links == g2.predecessors.links)
+      assert(g1.predecessors.links == g2.successors.links)
+    }
+  }
+
   "DAG" should {
+    "support two instantiation ways" in {
+      val g1 = DAG.fromSucc(dag.asSucc, GraphMeta.empty).toOption.get
+      val g2 = DAG.fromPred(dag.asPred, GraphMeta.empty).toOption.get
+      assert(g1.successors.links == g2.predecessors.links)
+      assert(g1.predecessors.links == g2.successors.links)
+    }
+
     "not break on acyclic matrices" in {
-      assert(DAG.fromSucc(dag, GraphMeta.empty).map {
+      assert(DAG.fromSucc(dag.asSucc, GraphMeta.empty).map {
         (d: DAG[Int, String]) => d.successors
-      } == Right(dag))
-      assert(DAG.fromSucc(acyclic, GraphMeta.empty).map {
+      } == Right(dag.asSucc))
+      assert(DAG.fromSucc(acyclic.asSucc, GraphMeta.empty).map {
         (d: DAG[Int, Nothing]) => d.successors
-      } == Right(acyclic))
+      } == Right(acyclic.asSucc))
     }
 
     "break on cyclic matrices" in {
-      assert(DAG.fromSucc(cyclic, GraphMeta.empty).isLeft)
+      assert(DAG.fromSucc(cyclic.asSucc, GraphMeta.empty).isLeft)
     }
 
     "detect broken loop breakers" in {
       val brokenBreaker = new LoopBreaker[Int] {
-        override def breakLoops(withLoops: IncidenceMatrix[Int]): Either[UnrecoverableLoops[Int], IncidenceMatrix[Int]] = Right(withLoops)
+        override def breakLoops(withLoops: AdjacencyList[Int]): Either[UnrecoverableLoops[Int], AdjacencyList[Int]] = Right(withLoops)
       }
-      assert(DAG.fromSucc(cyclic, GraphMeta.empty, brokenBreaker).isLeft)
+      assert(DAG.fromSucc(cyclic.asSucc, GraphMeta.empty, brokenBreaker).isLeft)
     }
 
     "support loop breakers" in {
       val breaker = new LoopBreaker[Int] {
-        override def breakLoops(withLoops: IncidenceMatrix[Int]): Either[UnrecoverableLoops[Int], IncidenceMatrix[Int]] = {
+        override def breakLoops(withLoops: AdjacencyList[Int]): Either[UnrecoverableLoops[Int], AdjacencyList[Int]] = {
           Right(acyclic.transposed)
         }
       }
-      assert(DAG.fromSucc(cyclic, GraphMeta.empty, breaker).map {
+      assert(DAG.fromPred(cyclic.asPred, GraphMeta.empty, breaker).map {
         (d: DAG[Int, Nothing]) => d.successors
-      } == Right(acyclic))
+      } == Right(acyclic.asSucc))
     }
   }
 }

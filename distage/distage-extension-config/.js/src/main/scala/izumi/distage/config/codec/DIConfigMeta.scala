@@ -5,7 +5,11 @@ trait DIConfigMeta[A] {
 }
 
 object DIConfigMeta {
-  implicit def derived[A]: DIConfigMeta[A] = new DIConfigMeta[A] {
-    override def tpe: ConfigMetaType = ConfigMetaType.TUnknown()
+  def apply[T](configMetaType: ConfigMetaType): DIConfigMeta[T] = new DIConfigMeta[T] {
+    override def tpe: ConfigMetaType = configMetaType
   }
+
+  implicit def derived[A]: DIConfigMeta[A] = empty
+
+  def empty[A]: DIConfigMeta[A] = DIConfigMeta(ConfigMetaType.TUnknown())
 }

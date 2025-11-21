@@ -1,7 +1,6 @@
 package izumi.distage.testkit.distagesuite.tagged
 
 import distage.DIKey
-import distage.plugins.PluginDef
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.testkit.distagesuite.tagged.DistageTestTaggedAxesExampleBase.{DepsCounters, DummyDep, PrdDep}
 import izumi.distage.testkit.model.TestConfig
@@ -15,7 +14,7 @@ abstract class DistageTestTaggedAxesExampleBase extends SpecZIO with AssertZIO {
       Set(Repo.Prod) -> Set(DIKey[PrdDep]),
       Set(Repo.Dummy) -> Set(DIKey[DummyDep]),
     ),
-    pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new PluginDef {
+    pluginConfig = super.config.pluginConfig.enablePackage("izumi.distage.testkit.distagesuite") ++ new izumi.distage.plugins.PluginDef {
       make[PrdDep]
       make[DummyDep]
       make[DepsCounters]

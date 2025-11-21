@@ -63,7 +63,7 @@ object LifecycleAdapters {
           val _ = tagF
 
           a.zip(Functoid.identity[Sync[F]])
-            .map { case (resource, sync) => Lifecycle.fromCats(resource)(sync) }
+            .map { case (resource, sync) => Lifecycle.fromCats(resource)(using sync) }
         }
       }
     }
@@ -112,7 +112,7 @@ object LifecycleAdapters {
 
         override def apply(a: Functoid[ZLayer[R, E, A]])(implicit tag: LifecycleTag[Lifecycle.FromZIO[R, E, A]]): Functoid[Lifecycle.FromZIO[R, E, A]] = {
           import tag.tagFull
-          a.map(Lifecycle.fromZLayer(_)(zio.Tag[A]))
+          a.map(Lifecycle.fromZLayer(_)(using zio.Tag[A]))
         }
       }
     }

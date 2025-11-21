@@ -27,7 +27,7 @@ abstract class MockAppPlugin[F[_]: TagK] extends PluginDef {
   make[MockRedis[F]]
   make[MockCache[F]]
   make[MockCachedUserService[F]]
-  make[ApplePaymentProvider[F]]
+  make[UnavailableIntegrationCheck[F]]
   make[ActiveComponent].from(TestActiveComponent).tagged(Mode.Test)
   make[ActiveComponent].from(ProdActiveComponent).tagged(Mode.Prod)
 }
@@ -60,7 +60,7 @@ object MockCache {
   val instanceCounter = mutable.Map[AnyRef, AtomicInteger]()
 }
 
-class ApplePaymentProvider[F[_]: QuasiIO] extends IntegrationCheck[F] {
+class UnavailableIntegrationCheck[F[_]: QuasiIO] extends IntegrationCheck[F] {
   override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.ResourceUnavailable("Dummy unavailable resource for testing purposes", None))
 }
 

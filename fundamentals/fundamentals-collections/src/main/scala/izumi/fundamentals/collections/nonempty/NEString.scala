@@ -1544,5 +1544,5 @@ object NEString {
     new NEString(str)
   }
 
-  @inline implicit def asIterable(ne: NEString): IterableOnce[Char] = ne.toIterable
+  @inline implicit def asIterable(ne: NEString): Iterable[Char] = ne.toIterable
 }

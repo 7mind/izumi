@@ -15,11 +15,12 @@ import izumi.fundamentals.collections.nonempty.{NEList, NEMap, NESet}
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.TagK
 
+import java.util.concurrent.TimeUnit
 import scala.annotation.{nowarn, tailrec}
 import scala.concurrent.duration.FiniteDuration
 
 /** @see [[izumi.distage.model.Injector.assert]] */
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 class PlanVerifier(
   queries: GraphQueries
 ) {
@@ -135,7 +136,7 @@ class PlanVerifier(
       }.toOption.get // traverse can't fail
   }
 
-  protected[this] def checkConflicts(
+  protected def checkConflicts(
     allAxis: Map[String, Set[String]],
     withoutCurrentActivations: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
     execOpIndex: MutableMultiMap[DIKey, InstantiationOp],
@@ -161,7 +162,7 @@ class PlanVerifier(
     }
   }
 
-  protected[this] final def checkForConflictingAxisChoices(
+  protected final def checkForConflictingAxisChoices(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[ConflictingAxisChoices] = {
     ops.iterator.flatMap {
@@ -173,7 +174,7 @@ class PlanVerifier(
   }
 
   /** this method fails in case any bindings in the set have indistinguishable activations */
-  protected[this] final def checkForDuplicateActivations(
+  protected final def checkForDuplicateActivations(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[DuplicateActivations] = {
     val duplicateAxisMap = ops
@@ -189,7 +190,7 @@ class PlanVerifier(
   }
 
   /** this method fails in case any bindings in the set have indistinguishable activations */
-  @tailrec protected[this] final def checkForUnsolvableConflicts(
+  @tailrec protected final def checkForUnsolvableConflicts(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])]
   ): List[UnsolvableConflict] = {
     // TODO: in case we implement precedence rules the implementation should change
@@ -205,7 +206,7 @@ class PlanVerifier(
   }
 
   /** This method fails in case there are missing/uncovered points on any of the reachable axis */
-  protected[this] final def checkForUnsaturatedAxis(
+  protected final def checkForUnsaturatedAxis(
     allAxis: Map[String, Set[String]],
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
     excludedActivations: Set[NESet[AxisPoint]],
@@ -229,7 +230,7 @@ class PlanVerifier(
     }
   }
 
-  protected[this] final def checkForShadowedActivations(
+  protected final def checkForShadowedActivations(
     allAxis: Map[String, Set[String]],
     ops: Set[(ExecutableOp.InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
   ): List[ShadowedActivation] = {
@@ -255,7 +256,7 @@ class PlanVerifier(
     }.toList
   }
 
-  protected[this] def checkForIncompatibleEffectType(
+  protected def checkForIncompatibleEffectType(
     effectType: SafeType,
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
   ): List[IncompatibleEffectType] = {
@@ -270,7 +271,7 @@ object PlanVerifier {
   def apply(): PlanVerifier = Default
   def apply(preps: GraphQueries): PlanVerifier = new PlanVerifier(preps)
 
-  private[this] object Default extends PlanVerifier(new GraphQueries(new BindingTranslator.Impl))
+  private object Default extends PlanVerifier(new GraphQueries(new BindingTranslator.Impl))
 
   sealed abstract class PlanVerifierResult {
     def issues: Option[NESet[PlanIssue]]
@@ -279,6 +280,19 @@ object PlanVerifier {
 
     final def verificationPassed: Boolean = issues.isEmpty
     final def verificationFailed: Boolean = issues.nonEmpty
+
+    def combine(that: PlanVerifierResult): PlanVerifierResult = {
+      (this, that) match {
+        case (PlanVerifierResult.Incorrect(Some(i1), v1, t1), PlanVerifierResult.Incorrect(Some(i2), v2, t2)) =>
+          PlanVerifierResult.Incorrect(Some(i1 ++ i2), v1 ++ v2, t1 + t2)
+        case (fail: PlanVerifierResult.Incorrect, _: PlanVerifierResult.Correct) =>
+          fail
+        case (_: PlanVerifierResult.Correct, fail: PlanVerifierResult.Incorrect) =>
+          fail
+        case (PlanVerifierResult.Correct(v1, t1), PlanVerifierResult.Correct(v2, t2)) =>
+          PlanVerifierResult.Correct(v1 ++ v2, t1 + t2)
+      }
+    }
 
     final def throwOnError(): Unit = this match {
       case incorrect: PlanVerifierResult.Incorrect =>
@@ -299,5 +313,7 @@ object PlanVerifier {
   object PlanVerifierResult {
     final case class Incorrect(issues: Some[NESet[PlanIssue]], visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult
     final case class Correct(visitedKeys: Set[DIKey], time: FiniteDuration) extends PlanVerifierResult { override def issues: None.type = None }
+
+    def empty: PlanVerifierResult = PlanVerifierResult.Correct(Set.empty, FiniteDuration(0, TimeUnit.SECONDS))
   }
 }

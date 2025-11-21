@@ -1,6 +1,6 @@
 package izumi.fundamentals.graphs
 
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyList
 
 sealed trait AbstractGraphError
 
@@ -19,6 +19,6 @@ object GraphTraversalError {
 
 sealed trait ToposortError[N] extends GraphTraversalError[N]
 object ToposortError {
-  final case class UnexpectedLoop[N](done: Seq[N], matrix: IncidenceMatrix[N]) extends ToposortError[N]
-  final case class InconsistentInput[N](issues: IncidenceMatrix[N]) extends ToposortError[N]
+  final case class UnexpectedLoop[N](done: Seq[N], matrix: AdjacencyList[N]) extends ToposortError[N]
+  final case class InconsistentInput[N](issues: AdjacencyList[N]) extends ToposortError[N]
 }

@@ -14,6 +14,37 @@ import scala.language.reflectiveCalls
 @nowarn("msg=reflectiveSelectable")
 class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
+  "since 1.1.0, nullary methods in Factories produce new instances, not inject dependencies" in {
+    import FactoryCase1.*
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      makeFactory[Factory]
+      makeTrait[Dependency]
+    })
+
+    val injector = mkNoCyclesInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    val dep = context.get[Dependency]
+
+    val factory = context.get[Factory]
+    assert(factory.factoryMethodForDependency0 != null)
+    assert(factory.factoryMethodForDependency0 ne dep)
+  }
+
+  "abstract vals are forbidden in factories, since all abstract definitions must generate a new instance on call" in {
+    val err = intercept[TestFailedException](assertCompiles("""
+    import FactoryCase1.*
+
+    PlannerInput.everything(new ModuleDef {
+      makeFactory[FactoryCase1.InvalidValFactory]
+      makeTrait[FactoryCase1.Dependency]
+    })"""))
+
+    assert(err.getMessage.contains("Abstract vals are forbidden"))
+  }
+
   "handle factory injections" in {
     import FactoryCase1.*
 
@@ -23,15 +54,20 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       makeFactory[OverridingFactory]
       makeFactory[AssistedFactory]
       makeFactory[AbstractFactory]
+      makeFactory[AmbiguousOnlyParamNamesFactory]
     })
 
     val injector = mkNoCyclesInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
+    val dep = context.get[Dependency]
+
     val factory = context.get[Factory]
-    assert(factory.wiringTargetForDependency != null)
-    assert(factory.factoryMethodForDependency() != factory.wiringTargetForDependency)
+    assert(factory.factoryMethodForDependency0 != null)
+    assert(factory.factoryMethodForDependency0 ne dep)
+    assert(factory.factoryMethodForDependency() ne dep)
+    assert(factory.factoryMethodForDependency() != factory.factoryMethodForDependency0)
     assert(factory.factoryMethodForDependency() != factory.factoryMethodForDependency())
     assert(factory.x().b.isInstanceOf[Dependency])
 
@@ -50,6 +86,28 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val assistedFactory = context.get[AssistedFactory]
     assert(assistedFactory.x(1).a == 1)
     assert(assistedFactory.x(1).b.isInstanceOf[Dependency])
+
+    val ambiguousFactory = context.get[AmbiguousOnlyParamNamesFactory]
+    val d1 = ConcreteDep()
+    val d2 = ConcreteDep()
+    val amb1 = ambiguousFactory.x(d1, d2)
+    val amb2 = ambiguousFactory.y(d1, d2)
+    assert(d1 ne d2)
+    assert(amb1.a.eq(d1) && amb1.b.eq(d2))
+    assert(amb2.a.eq(d2) && amb2.b.eq(d1))
+  }
+
+  "progression test: should, but doesn't support disambiguation of factory parameters based on Id annotation, not param names" in {
+    def test(): Unit = assertCompiles("""
+    import FactoryCase1.AmbiguousOnlyIdFactory
+
+    val definition = PlannerInput.everything(new ModuleDef {
+      makeFactory[AmbiguousOnlyIdFactory]
+    })
+    """)
+
+    val exc = intercept[TestFailedException](test())
+    assert(exc.getMessage contains "Couldn't disambiguate between multiple arguments with the same type")
   }
 
   "handle generic arguments in factory methods" in {
@@ -208,6 +266,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       """)
     }
     brokenOnScala3 {
+      // assertCompiles breaks on `make` macro
       assert(!exc.getMessage.contains("Couldn't find position"))
     }
     brokenOnScala3 {
@@ -282,7 +341,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       makeFactory[InvalidImplicitFactory]
     }"""))
     assert(
-      res.getMessage.contains("contains types not required by constructor of the result type") ||
+      res.getMessage.contains("contains keys not required by constructor of the result type") ||
       res.getMessage.contains("has arguments which were not consumed by implementation constructor")
     )
     assert(res.getMessage.contains("UnrelatedTC["))
@@ -443,7 +502,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "support polymorphic factory types" in {
     import FactoryCase8.*
 
-    def definition[F[+_, +_]: TagKK] = PlannerInput.everything(new ModuleDef {
+    def definition[F[+_, +_]: TagKK]: PlannerInput = PlannerInput.everything(new ModuleDef {
       makeFactory[XFactory[F]]
       make[XContext[F]]
     })

@@ -7,7 +7,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.G
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.docker.impl.ContainerResource.PortDecl
 import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
-import izumi.distage.docker.model.Docker
+import izumi.distage.docker.model.{Docker, DockerFailureCause, DockerFailureException, DockerTimeoutException}
 import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
@@ -17,6 +17,7 @@ import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
+import izumi.fundamentals.platform.files.FileLockMutex
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString.*
@@ -41,7 +42,7 @@ open class ContainerResource[F[_], Tag](
 
   import client.rawClient
 
-  protected[this] val stableLabels: Map[String, String] = {
+  protected val stableLabels: Map[String, String] = {
     val reuseLabel = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       DockerConst.Labels.dependencies -> deps.map(_.id.name).toList.sorted.mkString(";"),
@@ -49,7 +50,7 @@ open class ContainerResource[F[_], Tag](
     reuseLabel ++ client.labels ++ config.userTags
   }
 
-  protected[this] def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
+  protected def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
     port match {
       case _: DockerPort.TCPBase => ExposedPort.tcp(number)
       case _: DockerPort.UDPBase => ExposedPort.udp(number)
@@ -107,7 +108,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def await(container0: DockerContainer[Tag]): F[DockerContainer[Tag]] = F.tailRecM((container0, 0)) {
+  protected def await(container0: DockerContainer[Tag]): F[DockerContainer[Tag]] = F.tailRecM((container0, 0)) {
     case (container, attempt) =>
       F.maybeSuspend {
         logger.debug(s"Awaiting until alive: $container...")
@@ -128,8 +129,8 @@ open class ContainerResource[F[_], Tag](
               Right(out)
             }
 
-          case Right(HealthCheckResult.Terminated(failure)) =>
-            F.fail(new RuntimeException(s"$container terminated with failure: $failure"))
+          case Right(HealthCheckResult.Terminated(failure, state)) =>
+            F.fail(DockerFailureException(s"$container terminated with failure: $failure", DockerFailureCause.Terminated(state)))
 
           case Right(last) =>
             val maxAttempts = config.healthCheckMaxAttempts
@@ -140,7 +141,7 @@ open class ContainerResource[F[_], Tag](
             } else {
               last match {
                 case HealthCheckResult.Failed(failure) =>
-                  F.fail(new TimeoutException(s"Health checks failed after $maxAttempts attempts for $container: $failure"))
+                  F.fail(DockerTimeoutException(s"Health checks failed after $maxAttempts attempts for $container: $failure"))
 
                 case HealthCheckResult.UnavailableWithMeta(unavailablePorts, unverifiedPorts) =>
                   val sb = new StringBuilder()
@@ -169,21 +170,30 @@ open class ContainerResource[F[_], Tag](
                   }
                   F.fail(new TimeoutException(sb.toString()))
 
-                case HealthCheckResult.Terminated(failure) =>
-                  F.fail(new RuntimeException(s"Unexpected condition: $container terminated with failure: $failure"))
+                case HealthCheckResult.Terminated(failure, state) =>
+                  F.fail(DockerFailureException(s"Unexpected condition: $container terminated with failure: $failure", DockerFailureCause.Terminated(state)))
 
                 case impossible: GoodHealthcheck =>
-                  F.fail(new TimeoutException(s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container"))
+                  F.fail(
+                    DockerFailureException(
+                      s"BUG: good healthcheck $impossible while health checks failed after $maxAttempts attempts: $container",
+                      DockerFailureCause.Bug,
+                    )
+                  )
               }
             }
 
           case Left(t) =>
-            F.fail(new RuntimeException(s"$container failed due to exception: ${t.stacktraceString}", t))
+            F.fail(DockerFailureException(s"$container failed due to exception: ${t.stacktraceString}", DockerFailureCause.Throwed(t), t))
         }
   }
 
   private def lostDependencies(inspection: InspectContainerResponse): Boolean = {
-    Option(inspection.getConfig.getLabels.get(DockerConst.Labels.dependencies)).filterNot(_.isEmpty).map(_.split(';')) match {
+    Option(inspection.getConfig)
+      .map(_.getLabels)
+      .map(_.get(DockerConst.Labels.dependencies))
+      .filterNot(_.isEmpty)
+      .map(_.split(';')) match {
       case Some(value) =>
         !value.forall {
           id =>
@@ -200,7 +210,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     logger.info(s"About to start or find container $imageName, ${config.pullTimeout -> "timeout"}...")
     fileLockMutex(s"distage-container-resource-$imageName:${config.ports.mkString(";")}") {
       for {
@@ -323,14 +333,14 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def runNew(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected def runNew(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
 
     val baseCmd = rawClient.createContainerCmd(imageName).withLabels(allPortLabels.asJava)
 
     val volumes = config.mounts.map {
-      case Docker.Mount(h, c, true) => new Bind(h, new Volume(c), true)
-      case Docker.Mount(h, c, _) => new Bind(h, new Volume(c))
+      case Docker.Mount(h, c, noCopy, isReadOnly) =>
+        new Bind(h, new Volume(c), if (isReadOnly) AccessMode.ro else AccessMode.DEFAULT, SELContext.DEFAULT, if (noCopy) noCopy else null)
     }
 
     val portsEnv = ports.map {
@@ -357,7 +367,7 @@ open class ContainerResource[F[_], Tag](
           .mut(config.platform)(_.withPlatform(_))
           .mut(registryAuth)(_.withAuthConfig(_))
           .mut(volumes.nonEmpty)(_.withVolumes(volumes.map(_.getVolume).asJava))
-          .mut(volumes.nonEmpty)(_.withBinds(volumes.toList.asJava))
+          .mut(volumes.nonEmpty)(c => c.withHostConfig(c.getHostConfig.withBinds(volumes.toList.asJava)))
           .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
           .get
 
@@ -373,7 +383,10 @@ open class ContainerResource[F[_], Tag](
 
         maybeMappedPorts match {
           case Left(value) =>
-            throw new RuntimeException(s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!")
+            throw DockerFailureException(
+              s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!",
+              DockerFailureCause.MissingPorts(value),
+            )
 
           case Right(mappedPorts) =>
             val container = DockerContainer[Tag](
@@ -403,7 +416,7 @@ open class ContainerResource[F[_], Tag](
     } yield result
   }
 
-  protected[this] def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
+  protected def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
     def pullWithRetry(attempt: Int = 0): F[Unit] = {
       F.maybeSuspend(
         Try {
@@ -457,7 +470,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def inspectContainerAndGetState(containerId: String): Either[Throwable, ContainerState] = {
+  protected def inspectContainerAndGetState(containerId: String): Either[Throwable, ContainerState] = {
     try {
       val status = rawClient.inspectContainerCmd(containerId).exec()
       status.getState match {
@@ -470,7 +483,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected[this] def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ReportedContainerConnectivity] = {
+  protected def mapContainerPorts(inspection: InspectContainerResponse): Either[UnmappedPorts, ReportedContainerConnectivity] = {
     val network = inspection.getNetworkSettings
     val labels = inspection.getConfig.getLabels
     val ports = config.ports.map {
@@ -507,13 +520,13 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  private[this] def renderImageName(registry: Option[String]) = {
+  private def renderImageName(registry: Option[String]) = {
     registry
       .filterNot(_.contains("index.docker.io"))
       .fold(config.image)(reg => s"$reg/${config.image}")
   }
 
-  private[this] def fileLockMutex[A](
+  private def fileLockMutex[A](
     name: String
   )(effect:
     // MUST be by-name because of QuasiIO[Identity]
@@ -521,10 +534,15 @@ open class ContainerResource[F[_], Tag](
   ): F[A] = {
     val retryWait = 200.millis
     val maxAttempts = (config.pullTimeout / retryWait).toInt
-    FileLockMutex.withLocalMutex(logger)(
-      name.replaceAll("[:/]", "_"),
+    val filename = name.replaceAll("[:/]", "_")
+    FileLockMutex.withLocalMutex(
+      filename = filename,
       retryWait = retryWait,
       maxAttempts = maxAttempts,
+      attemptLog = (num, maxAttempts) => F.maybeSuspend(logger.debug(s"Attempt $num out of $maxAttempts to acquire file lock for image $filename.")),
+      failLog =
+        attempts => F.maybeSuspend(logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container")),
+      lockAlreadyExistedLog = F.maybeSuspend(logger.debug(s"File lock already existed for image $filename")),
     )(effect)
   }
 }

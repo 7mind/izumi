@@ -1,13 +1,13 @@
 package izumi.fundamentals.graphs.tools.gc
 
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyList
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
 // TODO: this class is not required for distage
 class Tracer[N] {
-  def trace(matrix: IncidenceMatrix[N], exclusions: Set[(N, N)], toTrace: Set[N]): Set[N] = {
+  def trace(matrix: AdjacencyList[N], exclusions: Set[(N, N)], toTrace: Set[N]): Set[N] = {
     val reachable = mutable.HashSet[N]()
     reachable ++= toTrace
     trace(matrix, exclusions, toTrace, reachable)
@@ -15,7 +15,7 @@ class Tracer[N] {
   }
 
   @tailrec
-  private def trace(matrix: IncidenceMatrix[N], exclusions: Set[(N, N)], toTrace: Set[N], reachable: mutable.HashSet[N]): Unit = {
+  private def trace(matrix: AdjacencyList[N], exclusions: Set[(N, N)], toTrace: Set[N], reachable: mutable.HashSet[N]): Unit = {
     val allReachable = toTrace
       .flatMap(s => matrix.links(s).map(p => (s, p)))
 

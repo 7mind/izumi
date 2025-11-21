@@ -8,7 +8,7 @@ import izumi.functional.quasi.QuasiIO.syntax._
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.logstage.api.IzLogger
 
 trait RoleAppEntrypoint[F[_]] {
@@ -19,7 +19,7 @@ object RoleAppEntrypoint {
   class Impl[F[_]: TagK](
     roles: RolesInfo,
     lateLogger: IzLogger,
-    parameters: RawAppArgs,
+    parameters: RoleAppArgs,
     hook: AppShutdownStrategy[F],
   ) extends RoleAppEntrypoint[F] {
 
@@ -50,7 +50,7 @@ object RoleAppEntrypoint {
 
         val roleServices = rolesToRun.map {
           case (task, cfg) =>
-            task -> task.start(cfg.roleParameters, cfg.freeArgs)
+            task -> task.start(cfg.roleParameters)
         }
 
         Lifecycle
@@ -98,7 +98,7 @@ object RoleAppEntrypoint {
         case (task, cfg) =>
           val loggedTask = for {
             _ <- F.maybeSuspend(lateLogger.info(s"Task is about to start: $task"))
-            _ <- task.start(cfg.roleParameters, cfg.freeArgs)
+            _ <- task.start(cfg.roleParameters)
             _ <- F.maybeSuspend(lateLogger.info(s"Task finished: $task"))
           } yield ()
 

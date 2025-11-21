@@ -5,11 +5,11 @@ import izumi.distage.config.model.{GenericConfigSource, RoleConfig}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ConfigMerger.ConfigMergerImpl
-import izumi.distage.framework.services.{ConfigArgsProvider, ConfigLoader, ConfigLocationProvider, ModuleProvider}
+import izumi.distage.framework.services.{ConfigArgsProvider, ConfigFilteringStrategy, ConfigLoader, ConfigLocationProvider, ModuleProvider}
 import izumi.distage.model.definition.Activation
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.reflect.TagK
@@ -44,10 +44,17 @@ object BootstrapFactory {
         ConfigLoader.Args(
           None,
           List(RoleConfig(configBaseName, active = true, GenericConfigSource.ConfigDefault)),
-          alwaysIncludeReferenceRoleConfigs = true, // we expect no user-provided role configs in tests
         )
       )
-      val merger = new ConfigMergerImpl(logger)
+      val merger = new ConfigMergerImpl(
+        logger,
+        enableConfigEnvOverrides = true,
+        new ConfigFilteringStrategy.Raw(
+          alwaysIncludeReferenceRoleConfigs = true, // we expect no user-provided role configs in tests
+          alwaysIncludeReferenceCommonConfigs = true,
+          ignoreAll = false,
+        ),
+      )
       val locationProvider = makeConfigLocationProvider(configBaseName)
       new ConfigLoader.LocalFSImpl(logger, merger, locationProvider, argsProvider)
     }
@@ -66,10 +73,11 @@ object BootstrapFactory {
         options = options,
         config = config,
         roles = roles,
-        args = RawAppArgs.empty,
+        args = RoleAppArgs.empty,
         activationInfo = activationInfo,
         shutdownInitiator = AppShutdownInitiator.empty,
         roleAppLocator = None,
+        appArtifact = None,
       )
     }
   }

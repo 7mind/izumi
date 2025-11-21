@@ -12,6 +12,14 @@ import java.util.regex.Pattern
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.matching.Regex
 
+/**
+  * Type information for generated config codec, used to generate JSON Schemas for config in ConfigWriter role.
+  *
+  * @see [[izumi.distage.config.ConfigModuleDefNoMeta]] - disable DIConfigMeta generation
+  * @see [[izumi.distage.roles.bundled.ConfigWriter]]
+  * @see [[izumi.distage.roles.bundled.JsonSchemaGenerator]]
+  * @see [[izumi.distage.config.model.ConfigDoc]]
+  */
 trait DIConfigMeta[T] {
   def tpe: ConfigMetaType
 }
@@ -20,6 +28,8 @@ object DIConfigMeta extends LowPriorityDIConfigMetaInstances {
   def apply[T](configMetaType: ConfigMetaType): DIConfigMeta[T] = new DIConfigMeta[T] {
     override def tpe: ConfigMetaType = configMetaType
   }
+
+  def empty[T]: DIConfigMeta[T] = DIConfigMeta(ConfigMetaType.TUnknown())
 
   implicit def deriveSeq[T, S[K] <: scala.collection.Seq[K]](implicit m: DIConfigMeta[T]): DIConfigMeta[S[T]] = new DIConfigMeta[S[T]] {
     override def tpe: ConfigMetaType = ConfigMetaType.TList(m.tpe)

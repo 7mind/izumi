@@ -43,6 +43,11 @@ additional parameters.
 
 Example [postgres](https://hub.docker.com/_/postgres/) container definition:
 
+```scala mdoc:invisible
+// workaround doobie.util.pos.Pos macro failure inside mdoc on Scala 3
+implicit def overridePos: doobie.util.pos.Pos = doobie.util.pos.Pos("", 0)
+```
+
 ```scala mdoc:to-string
 import izumi.distage.docker.{ContainerDef, Docker}
 
@@ -132,7 +137,7 @@ dependent resource will fail with a `izumi.distage.model.exceptions.runtime.Prov
 ### Config API
 
 The @scaladoc[`DockerProviderExtensions`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions)
-provides additional APIs for modiying the container definition.
+provides additional APIs for modifying the container definition.
 
 #### modifyConfig
 
@@ -285,7 +290,7 @@ object TransactorFromConfigModule extends ModuleDef {
         url    = s"jdbc:postgresql://${config.host}:${config.port}/${config.database}",
         user   = config.username,
         pass   = config.password,
-      )(async)
+      )(using async)
   }
 }
 ```

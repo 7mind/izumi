@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.functional.quasi.*
 import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
+import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesLocal2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{TagK, TagKK}
 
@@ -30,30 +30,30 @@ class AnyBIOSupportModule[F[+_, +_]: TagKK](implicit t: TagK[F[Throwable, _]], t
 
   make[QuasiIORunner2[F]]
     .from[QuasiIORunner.BIOImpl[F]]
-    .annotateParameter[ExecutionContext]("cpu") // scala.js
+    .modifyBy(_.annotateParameterIfExists[ExecutionContext]("cpu")) // scala.js
 
   make[QuasiIO2[F]]
     .aliased[QuasiPrimitives2[F]]
     .aliased[QuasiApplicative2[F]]
     .aliased[QuasiFunctor2[F]]
     .from {
-      QuasiIO.fromBIO(_: IO2[F])
+      QuasiIO.fromBIO(using _: IO2[F])
     }
   make[QuasiAsync2[F]].from {
-    QuasiAsync.fromBIO(_: Async2[F])
+    QuasiAsync.fromBIO(using _: Async2[F])
   }
   make[QuasiTemporal2[F]].from {
-    QuasiTemporal.fromBIO(_: Temporal2[F])
+    QuasiTemporal.fromBIO(using _: Temporal2[F])
   }
   make[SyncSafe2[F]].from {
-    SyncSafe1.fromBIO(_: IO2[F])
+    SyncSafe1.fromBIO(using _: IO2[F])
   }
   make[SyncSafe1[F[Throwable, _]]].from((_: SyncSafe2[F]).widen[F[Throwable, _]])
   make[Clock2[F]].from {
-    Clock1.fromImpure(_: Clock1[Identity])(_: SyncSafe2[F])
+    Clock1.fromImpure(_: Clock1[Identity])(using _: SyncSafe2[F])
   }
   make[Entropy2[F]].from {
-    Entropy1.fromImpure(_: Entropy1[Identity])(_: SyncSafe2[F])
+    Entropy1.fromImpure(_: Entropy1[Identity])(using _: SyncSafe2[F])
   }
   make[Clock1[F[Throwable, _]]].from {
     Clock1.covarianceConversion[F[Nothing, _], F[Throwable, _]](_: Clock2[F])
@@ -72,7 +72,7 @@ object AnyBIOSupportModule extends ModuleDef {
     * `make[Fork2[F]]` and `make[Primitives2[F]]` are not required by [[AnyBIOSupportModule]]
     * but are added for completeness
     */
-  def withImplicits[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: PrimitivesM2: Scheduler2](
+  def withImplicits[F[+_, +_]: TagKK: Async2: Temporal2: UnsafeRun2: Fork2: Primitives2: PrimitivesM2: PrimitivesLocal2: Scheduler2](
     implicit t: TagK[F[Throwable, _]],
     tn: TagK[F[Nothing, _]],
   ): ModuleDef = new ModuleDef {
@@ -83,6 +83,7 @@ object AnyBIOSupportModule extends ModuleDef {
     addImplicit[Temporal2[F]]
     addImplicit[Primitives2[F]]
     addImplicit[PrimitivesM2[F]]
+    addImplicit[PrimitivesLocal2[F]]
     addImplicit[UnsafeRun2[F]]
     addImplicit[Scheduler2[F]]
   }

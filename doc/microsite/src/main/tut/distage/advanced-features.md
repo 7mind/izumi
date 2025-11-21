@@ -208,7 +208,7 @@ objects.find[Strong]
 
 // Weak is not
 
-objects.find[Strong]
+objects.find[Weak]
 
 // There's only Strong in the Set
 
@@ -265,7 +265,7 @@ Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` 
 NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
 
 ```scala mdoc:reset:to-string
-import distage.{BootstrapModuleDef, ModuleDef, Injector}
+import distage.{BootstrapModuleDef, ModuleDef, Injector, Identity, Lifecycle}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
 
@@ -289,11 +289,12 @@ def appModule = new ModuleDef {
   make[C]
 }
 
-val resources = Injector(bootstrapModule)
+val resources: Identity[Set[PrintResource]] = Injector[Identity](bootstrapModule)
   .produceGet[Set[PrintResource]](appModule)
   .use(set => set)
 
 resources.foreach(_.start())
+
 resources.toSeq.reverse.foreach(_.stop())
 ```
 
@@ -394,7 +395,7 @@ def module = new ModuleDef {
   make[InjectionInfo]
 }
 
-val input = PlannerInput(module, Activation.empty, Roots.target[InjectionInfo])
+val input = PlannerInput(module, Roots.target[InjectionInfo], Activation.empty)
 
 val injectionInfo = Injector().produce(input).unsafeGet().get[InjectionInfo]
 
@@ -461,7 +462,9 @@ There's one way to workaround this - turn the type member `A` into a type parame
 
 ```scala mdoc:to-string:reset:invisible
 class Path {
-  class A
+  class Inner
+
+  type A = Inner
 }
 ```
 
@@ -486,3 +489,116 @@ Injector().produceRun(pathModule(path1) ++ pathModule(path2)) {
 ```
 
 Now the example works, because the `A` type inside `pathModule(path1)` is `path1.A` and for `pathModule(path2)` it's `path2.A`, which matches their subsequent spelling in `(p1a: path1.A, p2a: path2.A) =>` in `produceRun`
+
+### Locator-private bindings
+
+You may use locator-private bindings, which will not be exposed in`Locator` produced by the interpreter.
+
+If the instance is locator-private, it cannot be seen by inherited locators.
+There are 3 locator privacy (@scaladoc[LocatorPrivacy](izumi.distage.model.definition.LocatorPrivacy)) modes:
+- PublicByDefault
+- PrivateByDefault
+- PublicRoots
+
+#### Public By Default
+All the bindings are public, unless explicitly marked as `confined`
+This is default behaviour.
+
+```scala mdoc:to-string:reset
+import distage.{Injector, LocatorPrivacy, ModuleDef, PlannerInput}
+
+class A
+class B
+class C
+
+def module = new ModuleDef {
+  make[A]
+  make[B].confined
+}
+val input = PlannerInput.everything(module).withLocatorPrivacy(LocatorPrivacy.PublicByDefault)
+val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
+
+val inheritedInjector = Injector.inherit(mainLocator)
+
+def module2 = new ModuleDef {
+  make[C]
+}
+val input2 = PlannerInput.everything(module2)
+val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
+
+assert(inheritedLocator.find[A].nonEmpty)
+assert(inheritedLocator.find[C].nonEmpty)
+// inherited and new binding are available
+
+assert(inheritedLocator.find[B].isEmpty)
+// but confined binding is not
+```
+
+#### Private By Default
+All the bindings are private, unless explicitly marked as `exposed`
+
+```scala mdoc:to-string:reset
+import distage.{Injector, LocatorPrivacy, ModuleDef, PlannerInput}
+
+class A
+class B
+class C
+
+def module = new ModuleDef {
+  make[A]
+  make[B].exposed
+}
+val input = PlannerInput.everything(module).withLocatorPrivacy(LocatorPrivacy.PrivateByDefault)
+
+val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
+
+val inheritedInjector = Injector.inherit(mainLocator)
+
+def module2 = new ModuleDef {
+  make[C]
+}
+val input2 = PlannerInput.everything(module2)
+val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
+
+assert(inheritedLocator.find[A].isEmpty)
+// binding is not available
+
+assert(inheritedLocator.find[B].nonEmpty)
+assert(inheritedLocator.find[C].nonEmpty)
+// but new and 'exposed' are
+```
+
+#### Public Roots
+Only planning GC roots are public
+This is default behaviour for bootstrap injectors.
+All bootstrap bindings, which need to be available in inherited locators, must be explicitly marked as `exposed`
+
+```scala mdoc:to-string:reset
+import distage.{Injector, LocatorPrivacy, ModuleDef, PlannerInput}
+
+class A
+class B
+class C
+
+def module = new ModuleDef {
+  make[A]
+  make[B]
+}
+val input = PlannerInput.target[A](module).withLocatorPrivacy(LocatorPrivacy.PublicRoots)
+
+val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
+
+val inheritedInjector = Injector.inherit(mainLocator)
+
+def module2 = new ModuleDef {
+  make[C]
+}
+val input2 = PlannerInput.everything(module2)
+val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
+
+assert(inheritedLocator.find[A].nonEmpty)
+// targeted binding is available
+
+assert(inheritedLocator.find[B].isEmpty)
+// but unrelated one is not
+```

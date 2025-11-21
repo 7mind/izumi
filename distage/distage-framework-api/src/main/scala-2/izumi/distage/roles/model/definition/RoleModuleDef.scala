@@ -1,8 +1,8 @@
 package izumi.distage.roles.model.definition
 
-import izumi.distage.constructors.macros.MakeMacro
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSL
+import izumi.distage.reflection.macros.constructors.MakeMacro
 import izumi.distage.roles.model.RoleDescriptor.GetRoleDescriptor
 import izumi.distage.roles.model.definition.RoleModuleDef.RoleModuleDefMacros
 
@@ -10,7 +10,7 @@ import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 trait RoleModuleDef extends ModuleDef {
-  final protected[this] def makeRole[T](implicit getRoleDescriptor: GetRoleDescriptor[T]): MakeDSL[T] = macro RoleModuleDefMacros.makeRole[T]
+  final protected def makeRole[T](implicit getRoleDescriptor: GetRoleDescriptor[T]): MakeDSL[T] = macro RoleModuleDefMacros.makeRole[T]
 }
 
 object RoleModuleDef {

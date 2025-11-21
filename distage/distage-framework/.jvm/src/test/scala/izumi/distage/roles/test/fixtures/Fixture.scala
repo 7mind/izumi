@@ -3,6 +3,7 @@ package izumi.distage.roles.test.fixtures
 import distage.config.ConfigModuleDef
 import distage.{LocatorRef, Tag}
 import izumi.distage.config.codec.{DIConfigMeta, DIConfigReader}
+import izumi.distage.config.model.ConfigDoc
 import izumi.distage.model.definition.Axis
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.roles.test.fixtures.roles.TestRole00.SetElementOnlyCfg
@@ -34,13 +35,25 @@ object Fixture {
     list: List[String],
   )
 
+  @ConfigDoc("docstest: case class doc")
   case class TestServiceConf(
-    intval: Int,
+    @ConfigDoc("docstest: field doc") intval: Int,
     strval: String,
     overridenInt: Int,
+    explicitInt: Int,
     systemPropInt: Int,
     systemPropList: List[Int],
+    mapList: List[Map[String, Int]],
+    a: A,
   )
+
+  @ConfigDoc("docstest: sealed trait doc")
+  sealed trait A
+
+  @ConfigDoc("docstest: A1 doc")
+  case class A1(v1: Int) extends A
+  @ConfigDoc("docstest: A2 doc")
+  case class A2(v2: String) extends A
 
   case class TestValueConf(value: Int)
 

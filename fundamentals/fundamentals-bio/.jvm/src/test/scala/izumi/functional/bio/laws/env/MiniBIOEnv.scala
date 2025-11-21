@@ -28,6 +28,6 @@ trait MiniBIOEnv extends TestInstances with EqThrowable {
       equalityTry[A].eqv(tl, tr)
   }
 
-  private[this] def equalityTry[A: Eq]: Eq[Try[A]] =
+  private def equalityTry[A: Eq]: Eq[Try[A]] =
     Eq.by(_.toEither)
 }

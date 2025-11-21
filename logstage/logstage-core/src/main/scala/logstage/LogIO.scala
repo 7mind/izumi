@@ -6,6 +6,7 @@ import izumi.logstage.api.Log.*
 import izumi.logstage.api.logger
 import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF, AbstractMacroLogIO}
 import izumi.logstage.api.rendering.{AnyEncoded, RenderingPolicy}
+import izumi.logstage.macros.EncodingMode
 import logstage.UnsafeLogIO.{UnsafeLogIOSyncSafeInstance, UnsafeLogIOSyncSafeInstanceF}
 
 import scala.annotation.unused
@@ -14,9 +15,11 @@ import scala.language.implicitConversions
 trait LogIO[F[_]] extends logger.EncodingAwareAbstractLogIO[F, AnyEncoded] with AbstractMacroLogIO[F] {
   override type Self[f[_]] = LogIO[f]
 
+  override type EncMode = EncodingMode.NonStrict.type
+
   final def raw: LogIORaw[F, AnyEncoded] = new logger.LogIORaw(this)
 
-  override def widen[G[_]](implicit @unused ev: F[AnyRef] <:< G[AnyRef]): LogIO[G] = this.asInstanceOf[LogIO[G]]
+  override def widen[G[_]](implicit @unused ev: F[Unit] <:< G[Unit]): LogIO[G] = this.asInstanceOf[LogIO[G]]
 }
 
 object LogIO extends LowPriorityLogIOInstances {
@@ -67,7 +70,7 @@ object LogIO extends LowPriorityLogIOInstances {
     }
   }
 
-  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[AnyRef] <:< G[AnyRef]): LogIO[G] = log.widen
+  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[Unit] <:< G[Unit]): LogIO[G] = log.widen
 
   implicit final class LogIO2Syntax[F[+_, +_]](private val log: LogIO2[F]) extends AnyVal {
     def fail(msg: Message)(implicit F: Error2[F], pos: CodePositionMaterializer): F[RuntimeException, Nothing] = {

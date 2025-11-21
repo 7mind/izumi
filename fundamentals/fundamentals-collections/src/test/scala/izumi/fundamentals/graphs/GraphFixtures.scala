@@ -1,9 +1,9 @@
 package izumi.fundamentals.graphs
 
-import izumi.fundamentals.graphs.struct.IncidenceMatrix
+import izumi.fundamentals.graphs.struct.AdjacencyList
 
 object GraphFixtures {
-  final val directed = IncidenceMatrix(
+  final val directed = AdjacencyList(
     1 -> Set(2, 3),
     2 -> Set(1, 4),
     5 -> Set(6, 3),
@@ -11,50 +11,50 @@ object GraphFixtures {
     7 -> Set.empty[Int],
   )
 
-  final val cyclic = IncidenceMatrix(
+  final val cyclic = AdjacencyList(
     1 -> Set(2),
     2 -> Set(1),
   )
 
-  final val acyclic = IncidenceMatrix(
+  final val acyclic = AdjacencyList(
     1 -> Set.empty[Int],
     2 -> Set(1),
   )
 
-  final val dag = IncidenceMatrix(
+  final val dag = AdjacencyList(
     1 -> Set(2, 3),
     2 -> Set(4),
     3 -> Set(4, 5),
   )
 
-  final val collectableDag = IncidenceMatrix(
+  final val collectableDag = AdjacencyList(
     1 -> Set(2, 3),
     2 -> Set(4),
     4 -> Set(5, 6),
   )
 
-  final val collectedDag = IncidenceMatrix(
+  final val collectedDag = AdjacencyList(
     1 -> Set(2),
     2 -> Set(4),
     4 -> Set(6),
     6 -> Set.empty[Int],
   )
 
-  final val collectableCyclic = IncidenceMatrix(
+  final val collectableCyclic = AdjacencyList(
     1 -> Set(2, 3),
     2 -> Set(4, 1),
     4 -> Set(5, 6),
     6 -> Set(6, 1),
   )
 
-  final val collectedCyclic = IncidenceMatrix(
+  final val collectedCyclic = AdjacencyList(
     1 -> Set(2),
     2 -> Set(1, 4),
     4 -> Set(6),
     6 -> Set(1, 6),
   )
 
-  final val collectableLinear = IncidenceMatrix(
+  final val collectableLinear = AdjacencyList(
     1 -> Set(2),
     2 -> Set(3),
     3 -> Set(4),

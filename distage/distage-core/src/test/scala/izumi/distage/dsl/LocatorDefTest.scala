@@ -1,6 +1,7 @@
 package izumi.distage.dsl
 
 import izumi.distage.fixtures.BasicCases.BasicCase1
+import izumi.distage.model.Locator
 import izumi.distage.model.definition.{Id, LocatorDef}
 import izumi.distage.model.exceptions.dsl.LocatorDefUninstantiatedBindingException
 import org.scalatest.wordspec.AnyWordSpec
@@ -123,6 +124,13 @@ class LocatorDefTest extends AnyWordSpec {
       assert(ctx.run(l1 _) == 10)
       assert(ctx.runOption(l1 _) == Some(10))
       assert(ctx.runOption(l2 _).isEmpty)
+    }
+
+    ".get[Locator] always returns self" in {
+      val ctx = new LocatorDef {}
+
+      assert(ctx.get[Locator] == ctx)
+      assert(ctx.run((l: Locator) => l) == ctx)
     }
 
   }

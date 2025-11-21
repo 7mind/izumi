@@ -1,4 +1,4 @@
-# Overview
+# Basics
 
 @@toc { depth=2 }
 
@@ -56,7 +56,7 @@ Add the `distage-core` library:
 If you're using Scala 3 you **must** enable `-Yretain-trees` for this library to work correctly:
 
 ```scala
-// REQUIRED options for Scala 3
+// REQUIRED option for Scala 3
 scalacOptions += "-Yretain-trees"
 ```
 
@@ -65,19 +65,25 @@ If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and eit
 ```scala
 // REQUIRED options for Scala 2.12
 scalacOptions += "-Ypartial-unification"
-scalacOptions += "-Xsource:2.13" // either this
-// scalacOptions += "-Xsource:3" // or this
+scalacOptions += "-Xsource:3" // or "-Xsource:2.13" if absolutely necessary
 ```
 
-Additionally, some source examples in this document use underscore syntax for type lambdas which you can enable with the following options:
+Additionally, some source examples in this document use [underscore syntax for type lambdas](https://docs.scala-lang.org/scala3/guides/migration/plugin-kind-projector.html) which you can enable with the following options:
+
+@@@vars
 
 ```scala
-// For kind-projector on Scala 2
+// For Scala 2
 scalacOptions += "-P:kind-projector:underscore-placeholders"
+scalacOptions += "-Xsource:3"
+
+addCompilerPlugin("org.typelevel" % "kind-projector" % "$kindprojector.version$" cross CrossVersion.full)
 
 // For Scala 3
 scalacOptions += "-Ykind-projector:underscores"
 ```
+
+@@@
 
 ### Hello World example
 
@@ -153,7 +159,7 @@ import distage.{Activation, Injector, Roots}
 
 val injector = Injector[Task]()
 
-val plan = injector.plan(HelloByeModule, Activation.empty, Roots.target[HelloByeApp]).getOrThrow()
+val plan = injector.plan(HelloByeModule, Roots.target[HelloByeApp], Activation.empty).getOrThrow()
 ```
 
 The series of steps must be executed to produce the object graph.
@@ -198,7 +204,7 @@ If you need multiple singleton instances of the same type, you may create "named
 ```scala mdoc:silent
 import distage.Id
 
-def negateByer(otherByer: Byer): Byer = {
+def negateByer(otherByer: Byer @Id("byer-1")): Byer = {
   new Byer {
     def bye(name: String) =
      otherByer.bye(s"NOT-$name")
@@ -207,10 +213,7 @@ def negateByer(otherByer: Byer): Byer = {
 
 new ModuleDef {
   make[Byer].named("byer-1").from[PrintByer]
-  make[Byer].named("byer-2").from {
-    (otherByer: Byer @Id("byer-1")) =>
-      negateByer(otherByer)
-  }
+  make[Byer].named("byer-2").from(negateByer _)
 }
 ```
 
@@ -218,10 +221,17 @@ new ModuleDef {
 You can use `make[_].annotateParameter` method instead of an annotation, to attach a name component to an existing constructor:
 
 ```scala mdoc:silent
+def negateAnyByer(otherByer: Byer): Byer = {
+  new Byer {
+    def bye(name: String) =
+     otherByer.bye(s"NOT-$name")
+  }
+}
+
 new ModuleDef {
   // same binding as above
   make[Byer].named("byer-2")
-    .from(negateByer(_))
+    .from(negateAnyByer(_))
     .annotateParameter[Byer]("byer-1")
 }
 ```
@@ -234,6 +244,8 @@ object Ids {
   type Byer1 = Byer @Id(byer1Id)
 }
 ```
+
+Note: even though you can put `@Id` annotation on the parameter name like in Java, we recommend you to always put the annotation on the type for better compatibility, especially when using Scala 3.
 
 ### Non-singleton components
 
@@ -300,7 +312,7 @@ def CombinedModule = HelloByeModule overriddenBy TwoImplsModule
 // Choose component configuration when making an Injector:
 
 runner.unsafeRun {
-  Injector()
+  Injector[Task]()
     .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.AllCaps))
     .use(_.run)
 }
@@ -308,7 +320,7 @@ runner.unsafeRun {
 // Check that result changes with a different configuration:
 
 runner.unsafeRun {
-  Injector()
+  Injector[Task]()
     .produceGet[HelloByeApp](CombinedModule, Activation(Style -> Style.Normal))
     .use(_.run)
 }
@@ -888,7 +900,7 @@ Injector().produceRun(axisIncrement, Activation(Mode -> Mode.Prod))((currentInt:
 
 ## Effect Bindings
 
-Sometimes we want to effectfully create a component, but the resulting component or data does not need to be deallocated.
+Sometimes we want to effectfully create a component, but the resulting component does not need to be deallocated.
 An example might be a global `Semaphore` to limit the parallelism of the entire application based on configuration,
 or a test implementation of some service made with `Ref`s.
 
@@ -1075,90 +1087,6 @@ val runtime = UnsafeRun2.createZIO()
 runtime.unsafeRun(main)
 ```
 
-### Converting ZIO environment dependencies to parameters
-
-Any ZIO Service that requires an environment can be turned into a service without an environment dependency by providing
-the dependency in each method using `.provide`.
-
-This pattern can be generalized by implementing an instance of `cats.Contravariant` (or `cats.tagless.FunctorK`) for your services
-and using it to turn environment dependencies into constructor parameters.
-
-In that way ZIO Environment can be used uniformly
-for declaration of dependencies, but the dependencies used inside the service do not leak to other services calling it.
-See: https://gitter.im/ZIO/Core?at=5dbb06a86570b076740f6db2
-
-Example:
-
-```scala mdoc:reset:to-string
-import distage.{Injector, ModuleDef, Functoid, Tag, TagK, ZEnvConstructor}
-import zio.{URIO, ZIO, ZEnvironment}
-
-trait Dependee[-R] {
-  def x(y: String): URIO[R, Int]
-}
-trait Depender[-R] {
-  def y: URIO[R, String]
-}
-
-trait ContravariantService[M[_]] {
-  def contramapZEnv[A, B](s: M[A])(f: ZEnvironment[B] => ZEnvironment[A]): M[B]
-}
-
-implicit val contra1: ContravariantService[Dependee] = new ContravariantService[Dependee] {
-  def contramapZEnv[A, B](fa: Dependee[A])(f: ZEnvironment[B] => ZEnvironment[A]): Dependee[B] = new Dependee[B] { def x(y: String) = fa.x(y).provideSomeEnvironment(f) }
-}
-implicit val contra2: ContravariantService[Depender] = new ContravariantService[Depender] {
-  def contramapZEnv[A, B](fa: Depender[A])(f: ZEnvironment[B] => ZEnvironment[A]): Depender[B] = new Depender[B] { def y = fa.y.provideSomeEnvironment(f) }
-}
-
-type DependeeR = Dependee[Any]
-type DependerR = Depender[Any]
-object dependee extends Dependee[DependeeR] {
-  def x(y: String) = ZIO.serviceWithZIO(_.x(y))
-}
-object depender extends Depender[DependerR] {
-  def y = ZIO.serviceWithZIO(_.y)
-}
-
-// cycle
-object dependerImpl extends Depender[DependeeR] {
-  def y: URIO[DependeeR, String] = dependee.x("hello").map(_.toString)
-}
-object dependeeImpl extends Dependee[DependerR] {
-  def x(y: String): URIO[DependerR, Int] = {
-    if (y == "hello") ZIO.succeed(5)
-    else depender.y.map(y.length + _.length)
-  }
-}
-
-/** Fulfill the environment dependencies of a service from the object graph */
-def fullfill[R: Tag: ZEnvConstructor, M[_]: TagK: ContravariantService](service: M[R]): Functoid[M[Any]] = {
-  ZEnvConstructor[R]
-    .map(zenv => implicitly[ContravariantService[M]].contramapZEnv(service)(_ => zenv))
-}
-
-def module = new ModuleDef {
-  make[Depender[Any]].from(fullfill(dependerImpl))
-  make[Dependee[Any]].from(fullfill(dependeeImpl))
-}
-
-import izumi.functional.bio.UnsafeRun2
-
-val runtime = UnsafeRun2.createZIO()
-
-runtime.unsafeRun {
-  Injector()
-    .produceRun(module) {
-      ZEnvConstructor[DependeeR].map {
-        (for {
-          r <- dependee.x("zxc")
-          _ <- ZIO.attempt(println(s"result: $r"))
-        } yield ()).provideEnvironment(_)
-      }
-    }
-}
-```
-
 ## Auto-Traits
 
 distage can instantiate traits and structural types.
@@ -1296,7 +1224,7 @@ Injector().produceRun(module overriddenBy new ModuleDef {
 
 `distage` can derive 'factory' implementations from suitable traits using `makeFactory` method.
 This feature is especially useful with `Akka`.
-All unimplemented methods _with parameters_ in a trait will be filled by factory methods:
+All unimplemented methods in a trait will be filled by factory methods:
 
 Given a class `ActorFactory`:
 
@@ -1351,7 +1279,7 @@ You can use this feature to concisely provide non-Singleton semantics for some o
 
 Factory implementations are derived at compile-time by @scaladoc[FactoryConstructor](izumi.distage.constructors.FactoryConstructor) macro and can be summoned at need.
 
-Since `distage` version `1.1.0` you have to bind factories explicitly using `makeFactory` and `fromFactory` methods, not implicitly via `make`; parameterless methods in factories now produce new instances instead of summoning a dependency.
+Since `distage` version `1.1.0` you have to bind factories explicitly using `makeFactory` and `fromFactory` methods, not implicitly via `make`. Parameterless methods in factories now produce new instances instead of summoning a dependency.
 
 ### @With annotation
 
@@ -1391,38 +1319,54 @@ Injector()
 
 ## Subcontexts
 
-Sometimes multiple components depend on the same piece of data that appears locally, after all the components were already wired.
-This data may need to be passed around repeatedly, possibly across the entire application. To do this, we may have to add an argument
+Sometimes multiple components depend on the same value that appears locally, after all the components were already wired.
+This value may need to be passed around repeatedly, possibly across the entire application. To do this, we may have to add an argument
 to most methods of an application, or have to use a Reader monad everywhere.
 
 For example, we could be adding distributed tracing to our application - after getting a RequestId from a request, we may
 need to carry it everywhere to add it to logs and metrics.
 
-Ideally, instead of adding the same argument to our methods, we'd want to just move that argument data out to the class constructor -
+Ideally, instead of adding the same argument to our methods, we'd want to just move that argument out to the class constructor -
 passing the argument just once during the construction of a class. However, we'd lose the ability to automatically wire our objects,
 since we can only get a RequestId from a request, it's not available when we initially wire our object graph.
 
-Since 1.2.0 this problem is addressed in distage using `Subcontext`s - using them we can define a wireable sub-graph of
-our components that depend on local data unavailable during wiring, but that we can then finish wiring once we pass them the data.
+Since 1.2.0 this problem is addressed in distage using `Subcontext` - with Subcontexts we can define a sub-graph of components that depend on local values unavailable during wiring, but that can be fully wired once we obtain the values.
 
-Starting with a graph that has no local dependencies:
+Starting with components that require a local dependency, `RequestId`, in method arguments:
 
 ```scala mdoc:reset:invisible:to-string
-class PetStoreRepository[F[+_, +_]]
-
-class Pet
+class Pet(val price: Int)
 class PetId
 class RequestId
 def RequestId(): RequestId = ???
 ```
 
 ```scala mdoc:to-string
-import izumi.functional.bio.IO2
+import izumi.functional.bio.{Error2, F, IO2}
 import distage.{ModuleDef, Subcontext, TagKK}
 
-class PetStoreBusinessLogic[F[+_, +_]] {
+class PetStoreRepository[F[+_, +_]] {
   // requestId is a method parameter
-  def buyPetLogic(requestId: RequestId, petId: PetId, payment: Int): F[Throwable, Pet] = ???
+  def findPet(requestId: RequestId, petId: PetId): F[Nothing, Option[Pet]] = ???
+  def removePet(requestId: RequestId, petId: PetId): F[Nothing, Boolean] = ???
+}
+
+class PetStoreBusinessLogic[F[+_, +_]: Error2](
+  petStoreRepository: PetStoreRepository[F]
+) {
+  def buyPet(requestId: RequestId, petId: PetId, payment: Int): F[Throwable, Pet] = {
+    petStoreRepository.findPet(requestId, petId).flatMap {
+      case Some(pet) if payment < pet.price =>
+        F.fail(new RuntimeException("Insufficient funds"))
+      case Some(pet) =>
+        for {
+          removed <- petStoreRepository.removePet(requestId, petId)
+          _       <- F.when(!removed)(F.fail(new RuntimeException("No such pet")))
+        } yield pet
+      case None =>
+        F.fail(new RuntimeException("No such pet"))
+    }
+  }
 }
 
 def module1[F[+_, +_]: TagKK] = new ModuleDef {
@@ -1435,23 +1379,39 @@ def module1[F[+_, +_]: TagKK] = new ModuleDef {
 class PetStoreAPIHandler[F[+_, +_]: IO2](
   petStoreBusinessLogic: PetStoreBusinessLogic[F]
 ) {
-  def buyPet(petId: PetId, payment: Int): F[Throwable, Pet] = {
-    petStoreBusinessLogic.buyPetLogic(RequestId(), petId, payment)
+  def buyPetAPI(petId: PetId, payment: Int): F[Throwable, Pet] = {
+    F.suspend {
+      val requestId = RequestId()
+      petStoreBusinessLogic.buyPet(RequestId(), petId, payment)
+    }
   }
 }
 ```
 
-We use `makeSubcontext` to delineate a portion of the graph that requires a `RequestId` to be wired:
+We'll now change `RequestId` from method to class argument and use `makeSubcontext` to define a dynamic sub-graph for components that require a `RequestId`:
 
 ```scala mdoc:override:to-string
-class HACK_OVERRIDE_PetStoreBusinessLogic[F[+_, +_]](
+class HACK_OVERRIDE_PetStoreBusinessLogic[F[+_, +_]: Error2](
   // requestId is a now a class parameter
-  requestId: RequestId
+  requestId: RequestId,
+  petStoreRepository: PetStoreRepository[F]
 ) {
-  def buyPetLogic(petId: PetId, payment: Int): F[Throwable, Pet] = ???
+  def buyPet(petId: PetId, payment: Int): F[Throwable, Pet] = {
+    petStoreRepository.findPet(requestId, petId).flatMap {
+      case Some(pet) if payment < pet.price =>
+        F.fail(new RuntimeException("Insufficient funds"))
+      case Some(pet) =>
+        for {
+          removed <- petStoreRepository.removePet(requestId, petId)
+          _       <- F.when(!removed)(F.fail(new RuntimeException("No such pet")))
+        } yield pet
+      case None =>
+        F.fail(new RuntimeException("No such pet"))
+    }
+  }
 }
 
-def module2[F[+_, +_] : TagKK] = new ModuleDef {
+def module2[F[+_, +_]: TagKK] = new ModuleDef {
   make[HACK_OVERRIDE_PetStoreAPIHandler[F]]
 
   makeSubcontext[PetStoreBusinessLogic[F]]
@@ -1463,20 +1423,22 @@ def module2[F[+_, +_] : TagKK] = new ModuleDef {
 }
 
 class HACK_OVERRIDE_PetStoreAPIHandler[F[+_, +_]: IO2: TagKK](
-  petStoreBusinessLogic: Subcontext[HACK_OVERRIDE_PetStoreBusinessLogic[F]]
+  petStoreBusinessLogicSubcontext: Subcontext[HACK_OVERRIDE_PetStoreBusinessLogic[F]]
 ) {
-  def buyPet(petId: PetId, payment: Int): F[Throwable, Pet] = {
-    // we have to pass the parameter and create the component now, since it's not already wired.
-    petStoreBusinessLogic
-      .provide[RequestId](RequestId())
+  def buyPetAPI(petId: PetId, payment: Int): F[Throwable, Pet] = {
+    // we have to create PetStoreBusinessLogic by passing the RequestId, since we didn't receive a constructed instance
+    val requestId = RequestId()
+    petStoreBusinessLogicSubcontext
+      .provide[RequestId](requestId)
       .produceRun {
-        _.buyPetLogic(petId, payment)
+        (businessLogic: HACK_OVERRIDE_PetStoreBusinessLogic[F]) =>
+          businessLogic.buyPet(petId, payment)
       }
   }
 }
 ```
 
-We managed to move RequestId from a method parameter that polluted every method signature, to a class parameter, that we pass to the subgraph just once - when the RequestId is generated.
+We successfully removed RequestId from method signatures, and we now have to pass it only once to create the Subcontext.
 
 Full example:
 
@@ -1486,7 +1448,7 @@ def HACK_OVERRIDE_IzLogger(): logstage.IzLogger = {
     val policy = izumi.logstage.api.rendering.RenderingPolicy.simplePolicy()
 
     override def flush(e: logstage.Log.Entry): Unit = {
-      val rendered = policy.render(e)
+      val rendered = policy.render(e.copy(message = logstage.Message.raw("\n    ") ++ e.message))
       println(rendered)
     }
 
@@ -1520,37 +1482,35 @@ final case class Pet(name: String, species: String, price: Int)
 final class PetStoreAPIHandler[F[+_, +_]: IO2: TagKK](
   petStoreBusinessLogic: Subcontext[PetStoreBusinessLogic[F]]
 ) {
-  def buyPet(petId: PetId, payment: Int): F[TransactionFailure, Pet] = {
+  def buyPetAPI(petId: PetId, payment: Int): F[TransactionFailure, Pet] = {
     for {
       requestId <- F.sync(RequestId(UUID.randomUUID()))
-      pet <- petStoreBusinessLogic
-              .provide[RequestId](requestId)
-              .produce[F[Throwable, _]]()
-              .mapK[F[Throwable, _], F[TransactionFailure, _]](Morphism1(_.orTerminate))
-              .use {
-                component =>
-                  component.buyPetLogic(petId, payment)
-              }
+      businessLogicLifecycle =
+        petStoreBusinessLogic
+          .provide[RequestId](requestId)
+          .produce[F[Throwable, _]]()
+          .mapK[F[Throwable, _], F[TransactionFailure, _]](Morphism1(_.orTerminate))
+      pet <- businessLogicLifecycle.use(_.buyPet(petId, payment))
     } yield pet
   }
 }
 
 final class PetStoreBusinessLogic[F[+_, +_]: Error2](
   requestId: RequestId,
-  petStoreReposistory: PetStoreReposistory[F],
+  petStoreRepository: PetStoreRepository[F],
   log: LogIO2[F],
 ) {
   private val contextLog = log.withCustomContext("requestId" -> requestId)
 
-  def buyPetLogic(petId: PetId, payment: Int): F[TransactionFailure, Pet] = {
+  def buyPet(petId: PetId, payment: Int): F[TransactionFailure, Pet] = {
     for {
-      pet <- petStoreReposistory.findPet(petId).fromOption(TransactionFailure.NoSuchPet)
+      pet <- petStoreRepository.findPet(petId).fromOption(TransactionFailure.NoSuchPet)
       _   <- if (payment < pet.price) {
           contextLog.error(s"Insufficient $payment, couldn't afford ${pet.price}") *>
           F.fail(TransactionFailure.InsufficientFunds)
         } else {
           for {
-            result <- petStoreReposistory.removePet(petId)
+            result <- petStoreRepository.removePet(petId)
             _      <- F.when(!result)(F.fail(TransactionFailure.NoSuchPet))
             _      <- contextLog.info(s"Successfully bought $pet with $petId for $payment! ${payment - pet.price -> "overpaid"}")
           } yield ()
@@ -1559,17 +1519,17 @@ final class PetStoreBusinessLogic[F[+_, +_]: Error2](
   }
 }
 
-trait PetStoreReposistory[F[+_, +_]] {
+trait PetStoreRepository[F[+_, +_]] {
   def findPet(petId: PetId): F[Nothing, Option[Pet]]
   def removePet(petId: PetId): F[Nothing, Boolean]
 }
-object PetStoreReposistory {
+object PetStoreRepository {
   final class Impl[F[+_, +_]: Monad2: Primitives2](
     requestId: RequestId,
     log: LogIO2[F],
-  ) extends Lifecycle.LiftF[F[Nothing, _], PetStoreReposistory[F]](for {
+  ) extends Lifecycle.LiftF[F[Nothing, _], PetStoreRepository[F]](for {
     state <- F.mkRef(Pets.builtinPetMap)
-  } yield new PetStoreReposistory[F] {
+  } yield new PetStoreRepository[F] {
     private val contextLog = log("requestId" -> requestId)
 
     override def findPet(petId: PetId): F[Nothing, Option[Pet]] = {
@@ -1606,22 +1566,18 @@ object Pets {
   )
 }
 
-object Module extends ModuleDef {
-  include(module[zio.IO])
+def module[F[+_, +_]: TagKK] = new ModuleDef {
+  make[PetStoreAPIHandler[F]]
 
-  def module[F[+_, +_]: TagKK] = new ModuleDef {
-    make[PetStoreAPIHandler[F]]
+  make[IzLogger].from(HACK_OVERRIDE_IzLogger())
+  include(LogIO2Module[F]())
 
-    make[IzLogger].from(HACK_OVERRIDE_IzLogger())
-    include(LogIO2Module[F]())
-
-    makeSubcontext[PetStoreBusinessLogic[F]]
-      .withSubmodule(new ModuleDef {
-        make[PetStoreReposistory[F]].fromResource[PetStoreReposistory.Impl[F]]
-        make[PetStoreBusinessLogic[F]]
-      })
-      .localDependency[RequestId]
-  }
+  makeSubcontext[PetStoreBusinessLogic[F]]
+    .withSubmodule(new ModuleDef {
+      make[PetStoreRepository[F]].fromResource[PetStoreRepository.Impl[F]]
+      make[PetStoreBusinessLogic[F]]
+    })
+    .localDependency[RequestId]
 }
 
 import izumi.functional.bio.UnsafeRun2
@@ -1630,16 +1586,18 @@ val runner = UnsafeRun2.createZIO()
 
 val result = runner.unsafeRun {
   Injector[zio.Task]()
-    .produceRun(Module) {
-      (p: PetStoreAPIHandler[zio.IO]) =>
-        p.buyPet(Pets.arnoldId, 100).attempt
+    .produceRun(module[zio.IO]) {
+      (petStoreAPI: PetStoreAPIHandler[zio.IO]) =>
+        petStoreAPI.buyPetAPI(Pets.arnoldId, 100).attempt
     }
 }
 ```
 
-Using subcontexts is more efficient than @ref[nesting Injectors](advanced-features.md#depending-on-locator) manually, since subcontexts are planned ahead of time - there's no planning step for subcontexts, only execution step.
+Subcontexts are more efficient than @ref[nested Injectors](advanced-features.md#depending-on-locator), since subcontexts are planned ahead of time - there's no additional planning step for subcontexts after initial wiring, only an execution step.
 
-Note: When your subcontext's submodule only contains one binding, you may be able to achieve the same result using an @ref[Auto-Factory](#auto-factories) instead.
+Note: If your Subcontext module contains only one binding, you can just replace it with an @ref[Auto-Factory](#auto-factories).
+
+- [Gitter discussion: Subcontexts implement what .NET calls Transient or Request scope](https://matrix.to/#/!fjiBThWZrkChOzTruT:gitter.im/$PxWlZnbRyGICEgi8y5HT5m-Z111EeJu9PFt906_6iFw?via=gitter.im&via=matrix.org&via=matrix.freyachat.eu)
 
 ## Tagless Final Style
 
@@ -1666,7 +1624,7 @@ First, the program we want to write:
 import cats.Monad
 import cats.effect.{Sync, IO}
 import cats.syntax.all._
-import distage.{Roots, ModuleDef, Injector, Tag, TagK, TagKK}
+import distage.{Injector, Lifecycle, Locator, Module, ModuleDef, Roots, Tag, TagK}
 
 trait Validation[F[_]] {
   def minSize(s: String, n: Int): F[Boolean]
@@ -1685,7 +1643,7 @@ object Interaction {
 }
 
 class TaglessProgram[F[_]: Monad: Validation: Interaction] {
-  def program: F[Unit] = for {
+  def run: F[Unit] = for {
     userInput <- Interaction[F].ask("Give me something with at least 3 chars and a number on it")
     valid     <- (Validation[F].minSize(userInput, 3), Validation[F].hasNumber(userInput)).mapN(_ && _)
     _         <- if (valid) Interaction[F].tell("awesomesauce!")
@@ -1693,15 +1651,15 @@ class TaglessProgram[F[_]: Monad: Validation: Interaction] {
   } yield ()
 }
 
-def ProgramModule[F[_]: TagK: Monad] = new ModuleDef {
+def ProgramModule[F[_]: TagK]: Module = new ModuleDef {
   make[TaglessProgram[F]]
 }
 ```
 
-@scaladoc[TagK](izumi.reflect.TagK) is `distage`'s analogue of `TypeTag` for higher-kinded types such as `F[_]`,
+[TagK](https://javadoc.io/static/dev.zio/izumi-reflect_2.13/3.0.6/izumi/reflect/index.html#TagK[K[_]]=izumi.reflect.HKTag[AnyRef{typeArg[A]=K[A]}]) is `distage`'s analogue of `TypeTag` for higher-kinded types such as `F[_]`,
 it allows preserving type-information at runtime for type parameters.
-You'll need to add a @scaladoc[TagK](izumi.reflect.TagK) context bound to create a module parameterized by an abstract `F[_]`.
-To parameterize by non-higher-kinded types, use just @scaladoc[Tag](izumi.reflect.Tag).
+You'll need to add a [TagK](https://javadoc.io/static/dev.zio/izumi-reflect_2.13/3.0.6/izumi/reflect/index.html#TagK[K[_]]=izumi.reflect.HKTag[AnyRef{typeArg[A]=K[A]}]) context bound to create a module parameterized by an abstract `F[_]`.
+To parameterize by non-higher-kinded types, use [Tag](https://javadoc.io/doc/dev.zio/izumi-reflect_2.13/latest/izumi/reflect/Tag.html) without the K.
 
 Now the interpreters for `Validation` and `Interaction`:
 
@@ -1716,68 +1674,76 @@ final class SyncInteraction[F[_]](implicit F: Sync[F]) extends Interaction[F] {
   def ask(s: String): F[String] = F.delay("This could have been user input 1")
 }
 
-def SyncInterpreters[F[_]: TagK: Sync] = {
-  new ModuleDef {
-    make[Validation[F]].from[SyncValidation[F]]
-    make[Interaction[F]].from[SyncInteraction[F]]
-  }
+def SyncInterpreters[F[_]: TagK]: Module = new ModuleDef {
+  make[Validation[F]].from[SyncValidation[F]]
+  make[Interaction[F]].from[SyncInteraction[F]]
 }
 
 // combine all modules
 
-def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
+def SyncProgram[F[_]: TagK]: Module = ProgramModule[F] ++ SyncInterpreters[F]
 
 // create object graph Lifecycle
 
-val objectsLifecycle = Injector[IO]().produce(SyncProgram[IO], Roots.Everything)
+val objectsLifecycle: Lifecycle[IO, Locator] = {
+  Injector[IO]().produce(SyncProgram[IO], Roots.target[TaglessProgram[IO]])
+}
 
 // run
 
 import cats.effect.unsafe.implicits.global
 
-objectsLifecycle.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
+val effect: IO[Unit] = objectsLifecycle.use(_.get[TaglessProgram[IO]].run)
+
+effect.unsafeRunSync()
 ```
 
 ### Effect-type polymorphism
 
-The program module is polymorphic over effect type. It can be instantiated by a different effect:
+The program module is polymorphic over effect type. It can be parameterized by a different effect type:
 
 ```scala mdoc:to-string
-import zio.interop.catz._
-import zio.Task
+import zio.{Task, ZIO}
 
-val ZIOProgram = ProgramModule[Task] ++ SyncInterpreters[Task]
+def ZIOModule: Module = ProgramModule[Task] ++ SyncInterpreters[Task]
 ```
 
-We may even choose different interpreters at runtime:
+We may even choose different interpreters at runtime via @ref[activation axis](#activation-axis):
 
 ```scala mdoc:to-string
 import zio.Console
+import zio.interop.catz._
 import distage.Activation
+import distage.StandardAxis.World
 
 object RealInteractionZIO extends Interaction[Task] {
   def tell(s: String): Task[Unit]  = Console.printLine(s)
   def ask(s: String): Task[String] = Console.printLine(s) *> Console.readLine
 }
 
-def RealInterpretersZIO = {
-  SyncInterpreters[Task] overriddenBy new ModuleDef {
-    make[Interaction[Task]].from(RealInteractionZIO)
-  }
+def ConfigurableInterpretersZIO: Module = new ModuleDef {
+  make[Validation[Task]].from[SyncValidation[Task]]
+  make[Interaction[Task]].tagged(World.Mock).from[SyncInteraction[Task]]
+  make[Interaction[Task]].tagged(World.Real).from(RealInteractionZIO)
 }
 
-def chooseInterpreters(isDummy: Boolean) = {
-  val interpreters = if (isDummy) SyncInterpreters[Task]
-                     else         RealInterpretersZIO
-  def module = ProgramModule[Task] ++ interpreters
+def chooseInterpreters(isDummy: Boolean): Lifecycle[Task, TaglessProgram[Task]] = {
+  val choice = if (isDummy) World.Mock else World.Real
+  val module = ProgramModule[Task] ++ ConfigurableInterpretersZIO
 
   Injector[Task]()
-    .produceGet[TaglessProgram[Task]](module, Activation.empty)
+    .produceGet[TaglessProgram[Task]](module, Activation(World -> choice))
 }
 
-// execute
+// run
 
-chooseInterpreters(true)
+import izumi.functional.bio.UnsafeRun2
+
+val runner: UnsafeRun2[zio.IO] = UnsafeRun2.createZIO()
+
+val zioEffect: Task[Unit] = chooseInterpreters(isDummy = true).use(_.run)
+
+runner.unsafeRun(zioEffect)
 ```
 
 ### Kind polymorphism
@@ -1785,6 +1751,8 @@ chooseInterpreters(true)
 Modules can be polymorphic over arbitrary kinds - use `TagKK` to abstract over bifunctors:
 
 ```scala mdoc:to-string
+import distage.TagKK
+
 class BifunctorIOModule[F[_, _]: TagKK] extends ModuleDef
 ```
 
@@ -1792,10 +1760,6 @@ Or use `Tag.auto.T` to abstract over any kind:
 
 ```scala mdoc:to-string
 class MonadTransformerModule[F[_[_], _]: Tag.auto.T] extends ModuleDef
-```
-
-```scala mdoc:to-string
-class EldritchModule[F[+_, -_[_, _], _[_[_, _], _], _]: Tag.auto.T] extends ModuleDef
 ```
 
 consult [izumi.reflect.HKTag](https://javadoc.io/doc/dev.zio/izumi-reflect_2.13/latest/izumi/reflect/HKTag.html) docs for more details.
@@ -1806,6 +1770,6 @@ Cats & ZIO instances and syntax are available automatically in `distage-core`, w
 However, distage *won't* bring in `cats` or `zio` as dependencies if you don't already depend on them.
 (see [No More Orphans](https://blog.7mind.io/no-more-orphans.html) blog post for details on how that works)
 
-@ref[Cats Resource & ZIO ZManaged Bindings](basics.md#resource-bindings-lifecycle) also work out of the box without any magic imports.
+@ref[Cats Resource & Scoped ZIO/ZManaged/ZLayer Bindings](basics.md#resource-bindings-lifecycle) also work out of the box without any magic imports.
 
 All relevant typeclass instances for chosen effect type, such as `ConcurrentEffect[F]`, are @ref[included by default](basics.md#out-of-the-box-typeclass-instances) (overridable by user bindings)

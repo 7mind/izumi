@@ -1,33 +1,85 @@
 package izumi.fundamentals.collections
 
 import izumi.fundamentals.collections
-import izumi.fundamentals.collections.WildcardPrefixTree.PathElement
+import izumi.fundamentals.collections.WildcardPrefixTree.{BestMatch, PathElement}
 
-case class WildcardPrefixTree[K, V](values: Seq[V], children: Map[PathElement[K], WildcardPrefixTree[K, V]]) {
-  def findSubtrees(prefix: List[K]): Seq[WildcardPrefixTree[K, V]] = {
-    prefix match {
-      case Nil =>
-        Seq(this)
-      case head :: tail =>
-        val exact = children.get(PathElement.Value(head))
-        val wildcard = children.get(PathElement.Wildcard)
-        (exact.toSeq ++ wildcard.toSeq).flatMap(_.findSubtrees(tail))
+import scala.annotation.tailrec
+
+final case class WildcardPrefixTree[K, V](values: Seq[V], children: Map[PathElement[K], WildcardPrefixTree[K, V]]) {
+  @tailrec
+  def findExactMatch(prefix: Iterable[K]): Option[WildcardPrefixTree[K, V]] = {
+    if (prefix.isEmpty) {
+      Some(this)
+    } else {
+      val exact = children.get(PathElement.Value(prefix.head))
+      val wildcard = children.get(PathElement.Wildcard)
+      exact.orElse(wildcard) match {
+        case Some(value) =>
+          value.findExactMatch(prefix.tail)
+        case None =>
+          None
+      }
     }
   }
 
-  def subtreeValues: Seq[V] = {
-    values ++ children.values.flatMap(_.subtreeValues)
+  def findBestMatch(prefix: Iterable[K]): BestMatch[K, V] = {
+    findBestMatchImpl(prefix, None)
+  }
+
+  @tailrec
+  private def findBestMatchImpl(prefix: Iterable[K], maybeFallback: Option[BestMatch[K, V]]): BestMatch[K, V] = {
+    if (prefix.isEmpty) {
+      BestMatch(this, prefix)
+    } else {
+      val maybeExact = children.get(PathElement.Value(prefix.head))
+      val maybeWildcard = children.get(PathElement.Wildcard)
+      (maybeExact, maybeWildcard, maybeFallback) match {
+        case (Some(exact), _, _) =>
+          val nextFallback = maybeWildcard.map(w => BestMatch(w, prefix.tail)).orElse(maybeFallback)
+          exact.findBestMatchImpl(prefix.tail, nextFallback)
+        case (None, Some(wildcard), _) =>
+          wildcard.findBestMatchImpl(prefix.tail, maybeFallback)
+        case (None, None, Some(BestMatch(fallback, unmatched))) =>
+          fallback.findBestMatchImpl(unmatched, None)
+        case (None, None, None) =>
+          BestMatch(this, prefix)
+      }
+    }
+  }
+
+  def findAllMatchingSubtrees(prefix: Iterable[K]): Seq[WildcardPrefixTree[K, V]] = {
+    if (prefix.isEmpty) {
+      Seq(this)
+    } else {
+      val exact = children.get(PathElement.Value(prefix.head))
+      val wildcard = children.get(PathElement.Wildcard)
+      (exact.toSeq ++ wildcard.toSeq).flatMap(_.findAllMatchingSubtrees(prefix.tail))
+    }
+  }
+
+  def allValuesFromSubtrees: Seq[V] = {
+    values ++ children.values.flatMap(_.allValuesFromSubtrees)
+  }
+
+  def maxValues: Int = {
+    (Seq(values.size) ++ children.values.map(_.maxValues)).max
   }
 }
 
 object WildcardPrefixTree {
+  case class BestMatch[K, V](found: WildcardPrefixTree[K, V], unmatched: Iterable[K])
+
   sealed trait PathElement[+V]
   object PathElement {
-    case class Value[V](value: V) extends PathElement[V]
+    final case class Value[V](value: V) extends PathElement[V]
     case object Wildcard extends PathElement[Nothing]
   }
 
   def build[P, V](pairs: Seq[(Seq[Option[P]], V)]): WildcardPrefixTree[P, V] = {
+    build(pairs, identity)
+  }
+
+  def build[P, V](pairs: Seq[(Seq[Option[P]], V)], map: (Seq[V] => Seq[V])): WildcardPrefixTree[P, V] = {
     val (currentValues, subValues) = pairs.partition(_._1.isEmpty)
 
     val next = subValues
@@ -45,10 +97,12 @@ object WildcardPrefixTree {
             case None =>
               PathElement.Wildcard
           }
-          wk -> build(group.map(_._2))
+          wk -> build(group.map(_._2), map)
       }
       .toMap
 
-    collections.WildcardPrefixTree(currentValues.map(_._2), next)
+    val values = map(currentValues.map(_._2))
+
+    collections.WildcardPrefixTree(values, next)
   }
 }

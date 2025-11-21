@@ -13,7 +13,8 @@ Key features:
 4. Console, File and SLF4J sinks included, File sink supports log rotation,
 5. Human-readable output and JSON output included,
 6. Method-level logging granularity. Can configure methods `com.example.Service.start` and `com.example.Service.doSomething` independently,
-7. Slf4J adapters: route legacy Slf4J logs into LogStage router
+7. Line-level logging granularity. Can configure select lines `com.example.Service:24,25` independently,
+8. Slf4J and JUL adapters: route legacy Slf4J logs into LogStage router
 
 ## Dependencies
 

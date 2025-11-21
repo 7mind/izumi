@@ -1,7 +1,7 @@
 package izumi.logstage.api
 
 import izumi.fundamentals.collections.IzCollections.*
-import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, SourceFilePosition}
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 import izumi.logstage.api.rendering.{AnyEncoded, LogstageCodec}
 
 object Log {
@@ -32,10 +32,11 @@ object Log {
       v.charAt(0).toLower match {
         case 't' => Log.Level.Trace
         case 'd' => Log.Level.Debug
-        case 'i' => Log.Level.Info
         case 'w' => Log.Level.Warn
         case 'e' => Log.Level.Error
         case 'c' => Log.Level.Crit
+        case 'a' => Log.Level.Audit
+        case _ => Log.Level.Info
       }
     }
 
@@ -63,6 +64,10 @@ object Log {
       protected val asInt = 50
     }
 
+    case object Audit extends Level {
+      protected val asInt = 60
+    }
+
   }
 
   final case class LogArgTyped[T](path: Seq[String], value: T, hiddenName: Boolean, codec: Option[LogstageCodec[T]]) {
@@ -72,7 +77,7 @@ object Log {
   type LogArg = LogArgTyped[Any]
   object LogArg {
     def apply[T](value: Seq[String], t: T, hiddenName: Boolean, codec: Option[LogstageCodec[T]]): LogArg = {
-      LogArgTyped(value, t, hiddenName, codec.map(t => t.asInstanceOf[LogstageCodec[Any]]))
+      new LogArgTyped[Any](value, t, hiddenName, codec.map(t => t.asInstanceOf[LogstageCodec[Any]]))
     }
   }
   type LogContext = Seq[LogArg]
@@ -99,13 +104,7 @@ object Log {
 
   final case class LoggerId(id: String) extends AnyVal
 
-  object LoggerId {
-    @inline final def fromCodePosition(pos: CodePosition): LoggerId = {
-      new LoggerId(pos.applicationPointId)
-    }
-  }
-
-  final case class StaticExtendedContext(id: LoggerId, position: SourceFilePosition)
+  final case class StaticExtendedContext(pos: CodePosition) extends AnyVal
 
   final case class ThreadData(threadName: String, threadId: Long)
 
@@ -127,7 +126,7 @@ object Log {
       val thread = Thread.currentThread()
       val tsMillis = System.currentTimeMillis()
       val dynamicContext = DynamicContext(logLevel, ThreadData(thread.getName, thread.getId), tsMillis)
-      val extendedStaticContext = StaticExtendedContext(LoggerId(pos.get.applicationPointId), pos.get.position)
+      val extendedStaticContext = StaticExtendedContext(pos.get)
 
       Log.Context(extendedStaticContext, dynamicContext, customContext)
     }
@@ -185,14 +184,14 @@ object Log {
     }
     def +(that: Message): Message = ++(that)
   }
-  /** Construct [[Message]] from a string interpolation using [[Message.apply]] */
+  /** Construct [[Message]] from a string interpolation using [[MessageMat.apply]] */
   object Message extends MessageMat {
     def raw(message: String): Message = Message(StringContext(message), Nil)
 
     def empty: Message = raw("")
   }
 
-  /** Construct [[Message]] from a string interpolation using [[StrictMessage.apply]] */
+  /** Construct [[Message]] from a string interpolation using [[StrictMessageMat.apply]] */
   object StrictMessage extends StrictMessageMat {
     def empty: Message = Message.empty
   }

@@ -5,8 +5,7 @@ import izumi.fundamentals.orphans.{`cats.effect.kernel.Async`, `cats.effect.kern
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.collection.compat.*
-import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.*
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Parallel & async operations for `F` required by `distage-*` libraries.
@@ -29,47 +28,7 @@ trait QuasiAsync[F[_]] {
 object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   def apply[F[_]: QuasiAsync]: QuasiAsync[F] = implicitly
 
-  implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = {
-    new QuasiAsync[Identity] {
-      override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
-        val promise = Promise[A]()
-        effect {
-          case Right(a) => promise.success(a)
-          case Left(f) => promise.failure(f)
-        }
-        Await.result(promise.future, FiniteDuration(1L, "minute"))
-      }
-
-      override def parTraverse_[A](l: IterableOnce[A])(f: A => Unit): Unit = {
-        parTraverse(l)(f)
-        ()
-      }
-
-      override def parTraverse[A, B](l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-        parTraverseIdentity(__QuasiAsyncPlatformSpecific.QuasiAsyncIdentityBlockingIOPool)(l)(f)
-      }
-
-      override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-        __QuasiAsyncPlatformSpecific
-          .QuasiAsyncIdentityCreateLimitedThreadPool(n)
-          .use {
-            limitedAsyncEC =>
-              parTraverseIdentity(limitedAsyncEC)(l)(f)
-          }
-      }
-
-      override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => Identity[Unit]): Identity[Unit] = {
-        parTraverseN(n)(l)(f)
-        ()
-      }
-    }
-  }
-
-  private[izumi] def parTraverseIdentity[A, B](ec0: ExecutionContext)(l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-    implicit val ec: ExecutionContext = ec0
-    val future = Future.sequence(l.iterator.map(a => Future(scala.concurrent.blocking(f(a)))))
-    Await.result(future, Duration.Inf).toList
-  }
+  implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = __QuasiAsyncPlatformSpecific.quasiAsyncIdentity
 
   implicit def fromBIO[F[+_, +_]: Async2]: QuasiAsync[F[Throwable, _]] = {
     new QuasiAsync[F[Throwable, _]] {
@@ -107,13 +66,13 @@ private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
       F.async_(effect)
     }
     override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
-      cats.Parallel.parTraverse_(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
+      cats.Parallel.parTraverse_(l.iterator.toList)(f)(using cats.instances.list.catsStdInstancesForList, P)
     }
     override def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
-      cats.Parallel.parTraverse(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList, P)
+      cats.Parallel.parTraverse(l.iterator.toList)(f)(using cats.instances.list.catsStdInstancesForList, P)
     }
     override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]] = {
-      F.parTraverseN(n)(l.iterator.toList)(f)(cats.instances.list.catsStdInstancesForList)
+      F.parTraverseN(n)(l.iterator.toList)(f)(using cats.instances.list.catsStdInstancesForList)
     }
     override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
       F.void(parTraverseN(n)(l)(f))

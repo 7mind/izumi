@@ -1,14 +1,14 @@
 package izumi.distage.roles.launcher
 
-import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RequiredRoles}
+import izumi.fundamentals.platform.cli.model.{RoleAppArgs, RequiredRoles}
 
 trait AppArgsInterceptor {
-  def rolesToLaunch(parsedArgs: RawAppArgs, requiredRoles: RequiredRoles): RawAppArgs
+  def rolesToLaunch(parsedArgs: RoleAppArgs, requiredRoles: RequiredRoles): RoleAppArgs
 }
 
 object AppArgsInterceptor {
   class Impl extends AppArgsInterceptor {
-    def rolesToLaunch(parsedArgs: RawAppArgs, requiredRoles: RequiredRoles): RawAppArgs = {
+    def rolesToLaunch(parsedArgs: RoleAppArgs, requiredRoles: RequiredRoles): RoleAppArgs = {
       val argRoles = parsedArgs.roles
       val argRoleNames = argRoles.map(_.role).toSet
       val nonOverridenRequiredRoles = requiredRoles.requiredRoles.filterNot(argRoleNames contains _.role)

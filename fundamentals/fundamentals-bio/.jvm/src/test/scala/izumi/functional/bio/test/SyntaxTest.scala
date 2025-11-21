@@ -1,5 +1,6 @@
 package izumi.functional.bio.test
 
+import izumi.functional.bio.PrimitivesLocal2
 import izumi.functional.bio.data.{Morphism1, Morphism2, Morphism3}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2}
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
@@ -22,7 +23,12 @@ class SyntaxTest extends AnyWordSpec {
       F.unit: F[Nothing, Unit]
     }
 
+    def y[F[+_, +_]: Parallel2]: F[Nothing, Unit] = {
+      F.parTraverse_(List(1))(_ => F.unit)
+    }
+
     x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+    y[zio.IO]
   }
 
   "BIOConcurrent attachment/conversion works" in {
@@ -35,10 +41,43 @@ class SyntaxTest extends AnyWordSpec {
       a.zipWithPar(b)((a, b) => (a, b))
       a.flatMap(_ => b).flatMap(_ => F.unit)
       a.guaranteeCase(_ => a.race(b).widenError[Throwable].catchAll(_ => F.unit `orElse` F.uninterruptible(F.race(a, b))).void)
+      F.fail("x"): F[String, Unit]
       F.unit: F[Nothing, Unit]
     }
 
+    def y[F[+_, +_]: Concurrent2]: F[Nothing, Unit] = {
+      F.parTraverse_(List(1))(_ => F.unit)
+      F.yieldNow
+    }
+
     x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+    y[zio.IO]
+  }
+
+  "ParallelErrorAccumulatingOps2 attachment/conversion works" in {
+    import izumi.functional.bio.{F, ParallelErrorAccumulatingOps2}
+
+    def x[F[+_, +_]: ParallelErrorAccumulatingOps2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+      a.zipPar(b)
+      a.zipParLeft(b)
+      a.zipParRight(b)
+      a.zipWithPar(b)((a, b) => (a, b))
+      a.flatMap(_ => b).flatMap(_ => F.unit)
+      F.fail("x"): F[String, Unit]
+      F.unit: F[Nothing, Unit]
+    }
+
+    def y[F[+_, +_]: ParallelErrorAccumulatingOps2]: F[Nothing, Unit] = {
+      F.parTraverse_(List(1))(_ => F.unit)
+    }
+
+    def a[F[+_, +_]: ParallelErrorAccumulatingOps2]: F[List[Int], Int] = {
+      F.parTraverseAccumErrors(List(1))(_ => a[F]).map(_.head)
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+    y[zio.IO]
+    a[zio.IO]
   }
 
   "BIOTemporal attachment/conversion works" in {
@@ -95,7 +134,7 @@ class SyntaxTest extends AnyWordSpec {
     import izumi.functional.bio.IO2
 
     class X[F[+_, +_]: IO2] {
-      def hello = IO2(println("hello world!"))
+      def hello: F[Throwable, Unit] = IO2[F, Unit](println("hello world!"))
     }
 
     assert(new X[zio.IO].hello != null)
@@ -244,7 +283,7 @@ class SyntaxTest extends AnyWordSpec {
     def yy[F[+_, +_]: Error2]: F[Option[Throwable], Unit] = {
       // Scala 3 Workaround
       import izumi.functional.bio.WithFilter
-      implicit val withFilterScala3Workaround: WithFilter[Option[Throwable]] = WithFilter.WithFilterOption(WithFilter.WithFilterNoSuchElementException)
+      implicit val withFilterScala3Workaround: WithFilter[Option[Throwable]] = WithFilter.WithFilterOption(using WithFilter.WithFilterNoSuchElementException)
       val _ = withFilterScala3Workaround
       // Scala 3 Workaround
 
@@ -266,7 +305,7 @@ class SyntaxTest extends AnyWordSpec {
       F.when(false)(F.unit)
     }
     def y[F[+_, +_]: Temporal2: Fork2] = {
-      F.timeout(5.seconds)(F.forever(F.unit)) *>
+      F.timeout(5.seconds)(F.forever(F.fork(F.unit))) *>
       F.map(z[F])(_ => ())
     }
     def z[F[+_, +_]: Functor2]: F[Nothing, Unit] = {
@@ -282,6 +321,10 @@ class SyntaxTest extends AnyWordSpec {
       F.mkRefM(4).flatMap(r => r.update(_ => F.pure(5)) *> r.get.map(_ - 1)) *>
       F.mkMutex.flatMap(m => m.bracket(F.pure(10)))
     }
+    def `attach PrimitivesLocal2 methods to BIO even when not imported`[F[+_, +_]: Monad2: PrimitivesLocal2]: F[Nothing, Int] = {
+      F.mkFiberRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1)) *>
+      F.mkFiberLocal(4).flatMap(m => m.locally(10)(m.get))
+    }
     def attachScheduler2[F[+_, +_]: Monad2: Scheduler2]: F[Nothing, Int] = {
       F.repeat(F.pure(42))(RetryPolicy.recurs(2))
     }
@@ -292,6 +335,7 @@ class SyntaxTest extends AnyWordSpec {
         z[zio.IO],
         `attach Primitives2 & Fork2 methods even when they aren't imported`[zio.IO],
         `attach PrimitivesM2 methods to BIO even when not imported`[zio.IO],
+        `attach PrimitivesLocal2 methods to BIO even when not imported`[zio.IO],
         attachScheduler2[zio.IO],
       )
     }
@@ -307,7 +351,7 @@ class SyntaxTest extends AnyWordSpec {
       x[Either],
       z[Either],
     )
-    lazy val _ = (zioTest, monixTest, eitherTest)
+    val _ = () => (zioTest, monixTest, eitherTest)
   }
 
   "Support BIO syntax for ZIO with wildcard import" in {
@@ -325,7 +369,7 @@ class SyntaxTest extends AnyWordSpec {
         F.mkRef(0)
           .flatMap(ref => ref.update(_ + i) *> ref.get)
 
-      lazy val _ = adder[zio.IO](1)
+      val _ = adder[zio.IO](1)
     }
 
     locally {
@@ -335,7 +379,7 @@ class SyntaxTest extends AnyWordSpec {
         F.timeout(5.seconds)(F.forever(F.unit))
       }
 
-      lazy val _ =
+      val _ =
         y[zio.IO]
 //        y[monix.bio.IO],
     }
@@ -361,28 +405,33 @@ class SyntaxTest extends AnyWordSpec {
   "BIO.retryUntil/retryUntilF/retryWhile/retryWhileF/fromOptionOr/fromOptionF/fromOption are callable" in {
     import izumi.functional.bio.{Error2, F, Functor2, Monad2}
 
-    def x[F[+_, +_]: Functor2](aOpt: F[String, Option[Unit]]) = {
-      aOpt.fromOptionOr(())
+    def x[F[+_, +_]: Functor2](aOpt: F[String, Option[Option[Unit]]]): F[String, Option[Unit]] = {
+      aOpt.fromOptionOr(None)
+      aOpt.fromOptionOr(Option(()))
+      aOpt.fromOptionOr(Option(5)): F[String, Option[AnyVal]]
+      aOpt.fromOptionOr(None)
     }
 
-    def y[F[+_, +_]: Monad2](aOpt: F[String, Option[Unit]]) = {
-      aOpt.fromOptionOr(())
-      aOpt.fromOptionF(F.unit)
+    def y[F[+_, +_]: Monad2](aOpt: F[String, Option[Option[Unit]]]): F[String, Option[Unit]] = {
+      aOpt.fromOptionOr(None)
+      aOpt.fromOptionF(F.pure(Option(())))
+      aOpt.fromOptionF(F.pure(Option(5))): F[String, Option[AnyVal]]
+      aOpt.fromOptionF(F.pure(None))
     }
 
-    def z[F[+_, +_]: Error2](a: F[String, Unit], aOpt: F[String, Option[Unit]]) = {
+    def z[F[+_, +_]: Error2](a: F[String, Unit], aOpt: F[String, Option[Option[Unit]]]) = {
       a.retryUntil(_ => true)
       a.retryUntilF(_ => F.pure(false))
       a.retryWhile(_ => false)
       a.retryWhileF(_ => F.pure(true))
-      aOpt.fromOptionOr(())
-      aOpt.fromOptionF(F.unit)
+      aOpt.fromOptionOr(None)
+//      aOpt.fromOptionF(F.pure(None))
       aOpt.fromOption("ooops")
     }
 
-    x[zio.IO](zio.ZIO.succeed(Option(())))
-    y[zio.IO](zio.ZIO.succeed(Option(())))
-    z[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(Option(())))
+    x[zio.IO](zio.ZIO.succeed(Option(Option(()))))
+    y[zio.IO](zio.ZIO.succeed(Option(Option(()))))
+    z[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(Option(Option(()))))
   }
 
   "Fiber#toCats syntax works" in {
@@ -419,6 +468,18 @@ class SyntaxTest extends AnyWordSpec {
     y[zio.IO]
     z[zio.IO]
     F.clock.nowZoned()
+  }
+
+  "unsafe.maybeSuspend is callable" in {
+    import izumi.functional.bio.{F, Applicative2}
+    import izumi.functional.bio.unsafe.MaybeSuspend2
+
+    def x[F[+_, +_]: Applicative2](implicit F0: MaybeSuspend2[F]): F[Nothing, Int] = {
+      F.maybeSuspend(scala.util.Random.nextLong()) *>
+      F0.maybeSuspend(scala.util.Random.nextInt())
+    }
+
+    x[zio.IO]
   }
 
 }

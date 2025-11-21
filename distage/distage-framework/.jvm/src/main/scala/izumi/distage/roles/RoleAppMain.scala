@@ -15,7 +15,7 @@ import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.bio.Async2
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.raw.{RawRoleParams, RequiredRoles}
+import izumi.fundamentals.platform.cli.model.{RequiredRoles, RoleArgs}
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
@@ -82,7 +82,7 @@ abstract class RoleAppMain[F[_]](
   protected def roleAppBootOverrides(@unused argv: ArgV): Module = Module.empty
 
   /** Roles always enabled in this [[RoleAppMain]] */
-  protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = Vector.empty
+  protected def requiredRoles(@unused argv: ArgV): Vector[RoleArgs] = Vector.empty
 
   def main(args: Array[String]): Unit = {
     val argv = ArgV(args)
@@ -208,6 +208,7 @@ object RoleAppMain {
   object Options extends ParserDef {
     final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
     final val logFormatParam = arg("log-format", "lf", "log format", "{text|json}")
+    final val ignoreAllReferenceConfigs = flag("ignore-all-reference-configs", "nc", "ignore all bundled reference configs")
     final val configParam = arg("config", "c", "path to config file", "<path>")
     final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
     final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")

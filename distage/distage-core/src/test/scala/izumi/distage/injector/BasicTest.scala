@@ -105,8 +105,13 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         })
 
         val injector = mkInjector()
-        injector.produce(injector.plan(definition)).unsafeGet().get[TestClass]
+        val ctx = injector.produce(injector.planUnsafe(definition)).unsafeGet()
+        ctx.get[TestClass]
         """)
+    }
+    brokenOnScala3 {
+      // assertCompiles breaks on `make` macro
+      assert(!res.getMessage.contains("Couldn't find position"))
     }
     brokenOnScala3 {
       assert(res.getMessage.contains("BadIdAnnotationException"))
@@ -508,7 +513,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       mkInjector().produce(definition).unsafeGet()
     }
     assert(failure.errors.exists {
-      case DIError.ConflictResolutionFailed(ConflictResolutionError.UnconfiguredAxisInMutators(NEList(a @ _, b @ _))) => true
+      case DIError.ConflictResolutionFailed(ConflictResolutionError.UnconfiguredAxisInMutators(NEList(_, _))) => true
       case _ => false
     })
   }
@@ -594,5 +599,35 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     assert(exc.getMessage.contains("related subtypes"))
     assert(exc.getMessage.contains("same type"))
+  }
+
+  "support named bindings with option" in {
+    import BasicCase10.*
+    import SetCase4.*
+    val definition = PlannerInput.everything(new ModuleDef {
+      make[TestClass]
+      make[TestGreeter].named(Some("named.greeter"))
+      make[TestGreeter].named(None) // should bind without id
+      make[TestDependency].named(Some("named.test.before.from")).from[TestImpl1]
+      make[TestDependency].named(None).from[TestImpl1]
+      make[TestDependency].from[TestImpl2].named(Some("named.test.after.from"))
+
+      many[Service]
+        .named(Some("named.set.test"))
+        .add[Service1]
+        .add[Service2]
+
+      many[Service]
+        .named(None)
+        .add[Service1]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.planUnsafe(definition)
+    val context = injector.produce(plan).unsafeGet()
+
+    assert(context.get[TestClass].correctWired())
+    assert(context.get[Set[Service]]("named.set.test").size == 2)
+    assert(context.get[Set[Service]].size == 1)
   }
 }

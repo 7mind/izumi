@@ -45,7 +45,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       }
 
       assert {
-        renderedMessages.exists(x => x.contains("\"map\" : {") && x.contains(raw""""Str" : "Branch(\"subtypes are fine in strict\")""""))
+        renderedMessages.exists(x => x.contains("\"map\" : {") && x.contains(raw""""Str" : "CustomBranchCodec(\"subtypes are fine in strict\")""""))
       }
     }
 
@@ -94,6 +94,7 @@ class LogstageCirceRenderingTest extends AnyWordSpec {
       assert(throwableMap("message") == json""""throwme"""")
       assert(throwableMap("stacktrace").asString.get.nonEmpty)
     }
+
   }
 
   def setupJsonLogger(debug: Boolean): (IzLogger, TestSink) = {

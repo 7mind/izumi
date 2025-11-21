@@ -2,7 +2,7 @@ package izumi.fundamentals.graphs
 
 import scala.annotation.nowarn
 
-@nowarn("msg=Unused import")
+@nowarn("msg=[Uu]nused import")
 final case class GraphMeta[N, +M](nodes: Map[N, M]) extends AnyVal {
   import scala.collection.compat._
 
@@ -23,6 +23,10 @@ object GraphMeta {
 
 trait AbstractGraph[N, +M] {
   def meta: GraphMeta[N, M]
+
+  def apply(nodeId: N): M = meta.nodes(nodeId)
+  def get(nodeId: N): Option[M] = meta.nodes.get(nodeId)
+  def values: Iterable[M] = meta.nodes.values
 }
 
 final case class Edge[N](predecessor: N, successor: N)

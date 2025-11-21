@@ -15,6 +15,7 @@ final class LocatorDefaultImpl[F[_]](
   val parent: Option[Locator],
   val meta: LocatorMeta,
   private val dependencyMap: Provision[F],
+  private val privateBindings: Set[DIKey],
 ) extends AbstractLocator {
 
   override protected def lookupLocalUnsafe(key: DIKey): Option[Any] =
@@ -31,4 +32,8 @@ final class LocatorDefaultImpl[F[_]](
 
   override def instances: immutable.Seq[IdentifiedRef] =
     dependencyMap.enumerate
+
+  override def isPrivate(key: DIKey): Boolean = {
+    privateBindings.contains(key)
+  }
 }

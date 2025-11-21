@@ -1,13 +1,11 @@
 package izumi.distage.constructors
 
-import izumi.distage.model.providers.{Functoid, FunctoidMacro}
+import izumi.distage.model.providers.Functoid
+
 import izumi.distage.model.reflection.Provider.ProviderType
 
 import scala.quoted.{Expr, Quotes, Type}
 import izumi.fundamentals.platform.exceptions.IzThrowable.toRichThrowable
-
-import scala.annotation.experimental
-import scala.collection.immutable.ArraySeq
 
 object ClassConstructorMacro {
 
@@ -68,7 +66,7 @@ object ClassConstructorMacro {
             val paramss = util.extractConstructorParamLists(typeRepr)
             val lamExpr = util.wrapCtorApplicationIntoFunctoidRawLambda[R](paramss, ctorTreeParameterized)
 
-            val f = util.makeFunctoid[R](paramss.flatten, lamExpr, '{ ProviderType.Class })
+            val f = util.makeFunctoid[R](paramss.flatten, lamExpr, '{ ProviderType.Constructor })
             '{ new ClassConstructor[R](${ f }) }
 
           case None =>
@@ -95,7 +93,7 @@ object ClassConstructorMacro {
     type R <: R0 & Singleton
     (rtpe0: @unchecked) match {
       case given Type[R] =>
-        '{ new ClassConstructor[R](Functoid.singleton[R](${ tree.asExprOf[R] })) }
+        '{ new ClassConstructor[R](Functoid.singleton[R](${ tree.asExpr.asInstanceOf[Expr[R]] })) }
     }
   }
 

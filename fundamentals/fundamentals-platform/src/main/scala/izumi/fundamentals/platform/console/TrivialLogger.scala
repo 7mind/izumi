@@ -58,15 +58,15 @@ final class TrivialLoggerImpl(
     new TrivialLoggerImpl(config, id, logMessages, logErrors, loggerLevel + delta)
   }
 
-  @inline private[this] def format(s: => String): String = {
+  @inline private def format(s: => String): String = {
     s"$id: $s"
   }
 
-  @inline private[this] def formatError(s: => String, e: => Throwable): String = {
+  @inline private def formatError(s: => String, e: => Throwable): String = {
     s"$id: $s\n${e.stacktraceString}"
   }
 
-  @inline private[this] def flush(level: Level, s: => String): Unit = {
+  @inline private def flush(level: Level, s: => String): Unit = {
     level match {
       case Level.Info =>
         if (logMessages) {
@@ -98,36 +98,26 @@ object TrivialLogger {
     new TrivialLoggerImpl(config, classTag[T].runtimeClass.getSimpleName, logMessages, logErrors, loggerLevel = 0)
   }
 
-  private[this] val enabled = new mutable.HashMap[String, Boolean]()
+  private val enabled = new mutable.HashMap[String, Int]()
 
   @nowarn("msg=return statement uses an exception")
-  private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
-    def check(): Boolean = {
+  private def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
+    def check(): Int = {
       val parts = sysProperty.split('.')
 
-      def cond(path: String): Boolean = {
-        System.getProperty(path).asBoolean().getOrElse(default)
+      def cond(path: String): Int = {
+        System.getProperty(path).asBoolean().fold(-1)(if (_) 1 else 0)
       }
 
-      var idx = 0
-      var out = false
-      var current = parts.head
-      val tail = parts.tail
-
-      while (idx < tail.length) {
-        out = cond(current)
-        if (out) {
-          idx = Int.MaxValue
-        } else {
-          val p = tail(idx)
-          current = s"$current.$p"
-          idx = idx + 1
-        }
-      }
-
-      out
+      parts
+        .foldLeft((-1, "")) {
+          case (done @ (1, _), _) => done
+          case ((_, prev), p) =>
+            val current = if (prev.isEmpty) p else s"$prev.$p"
+            (cond(current), current)
+        }._1
     }
 
-    config.forceLog || enabled.getOrElseUpdate(sysProperty, check())
+    config.forceLog || (enabled.getOrElseUpdate(sysProperty, check()) match { case 1 => true; case 0 => false; case _ => default })
   }
 }

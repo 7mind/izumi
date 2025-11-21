@@ -14,14 +14,14 @@ import scala.util.chaining.scalaUtilChainingOps
 object DistageTestsRegistrySingleton {
   final case class SuiteReporter(tracker: Tracker, reporter: Reporter)
 
-  protected[this] type Fake[T]
-  private[this] object Fake
-  private[this] val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
-  private[this] val statuses = new mutable.HashMap[SafeType, Option[mutable.HashMap[String, StatefulStatus]]]()
-  private[this] val suiteReporters = new mutable.HashMap[String, Either[mutable.ArrayBuffer[SuiteReporter => Unit], SuiteReporter]]()
-  private[this] val runTracker = new ConcurrentHashMap[SafeType, Fake.type]()
-  private[this] val knownSuites = new ConcurrentHashMap[(SafeType, String), Fake.type]()
-  private[this] val registrationOpen = new AtomicBoolean(true)
+  protected type Fake[T]
+  private object Fake
+  private val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
+  private val statuses = new mutable.HashMap[SafeType, Option[mutable.HashMap[String, StatefulStatus]]]()
+  private val suiteReporters = new mutable.HashMap[String, Either[mutable.ArrayBuffer[SuiteReporter => Unit], SuiteReporter]]()
+  private val runTracker = new ConcurrentHashMap[SafeType, Fake.type]()
+  private val knownSuites = new ConcurrentHashMap[(SafeType, String), Fake.type]()
+  private val registrationOpen = new AtomicBoolean(true)
 
   def disableRegistration(): Unit = {
     registrationOpen.set(false)
@@ -106,6 +106,6 @@ object DistageTestsRegistrySingleton {
     }
   }
 
-  @inline private[this] def castTest[F[_]](t: DistageTest[F]): DistageTest[Fake] = t.asInstanceOf[DistageTest[Fake]]
-  @inline private[this] def castArray[C[_], F[_]](a: C[DistageTest[Fake]]): C[DistageTest[F]] = a.asInstanceOf[C[DistageTest[F]]]
+  @inline private def castTest[F[_]](t: DistageTest[F]): DistageTest[Fake] = t.asInstanceOf[DistageTest[Fake]]
+  @inline private def castArray[C[_], F[_]](a: C[DistageTest[Fake]]): C[DistageTest[F]] = a.asInstanceOf[C[DistageTest[F]]]
 }

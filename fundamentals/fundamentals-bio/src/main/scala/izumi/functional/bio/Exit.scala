@@ -1,8 +1,9 @@
 package izumi.functional.bio
 
 import cats.effect.kernel.Outcome
-import izumi.fundamentals.platform.language.Quirks.Discarder
+import izumi.fundamentals.platform.language.Quirks.LazyDiscarder
 import zio.ZIO
+import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 sealed trait Exit[+E, +A] {
@@ -33,17 +34,14 @@ object Exit {
       */
     def unsafeAttachTraceOrReturnNewThrowable(conv: E => Throwable): Throwable
 
-    final def unsafeAttachTraceOrReturnNewThrowable(): Throwable = unsafeAttachTraceOrReturnNewThrowable(TypedError(_))
+    final def unsafeAttachTraceOrReturnNewThrowable(): Throwable = unsafeAttachTraceOrReturnNewThrowable(TypedError.wrapIfNotThrowable)
 
     def map[E1](f: E => E1): Trace[E1]
 
     override final def toString: String = asString
   }
   object Trace {
-    def forTypedError[E](error: E): Trace[E] = error match {
-      case t: Throwable => ThrowableTrace(t)
-      case e => ThrowableTrace(TypedError(e))
-    }
+    def forTypedError[E](error: E): Trace[E] = ThrowableTrace(TypedError.wrapIfNotThrowable(error))
 
     def forUnknownError: Trace[Nothing] = new Trace[Nothing] {
       override val asString: String = "<empty trace, unknown error>"
@@ -61,7 +59,8 @@ object Exit {
           case e => conv(e)
         }
         if (zio2ThrowableWithSuppressedAttached.getSuppressed.isEmpty) {
-          // Throwable has disabled suppression, return full cause instead (add stackless like its added in squashTraceWith, NB stackless removes Throwable stacktraces, not monadic traces)
+          // Throwable has disabled suppression, return full cause instead (add `stackless` like it's added in squashTraceWith,
+          // NB stackless removes native Throwable stacktraces, not monadic traces)
           zio.FiberFailure(zio.Cause.stackless(cause))
         } else {
           zio2ThrowableWithSuppressedAttached
@@ -217,13 +216,13 @@ object Exit {
     }
 
     def withIsInterrupted[R, E, A](f: Boolean => A)(implicit trace: zio.Trace): ZIO[R, E, A] = {
-      withIsInterruptedF[R, E, A](b => ZIO.succeed(f(b)))
+      disableAutoTrace.forget
+      withIsInterruptedF[R, E, A](b => zioSucceed(f(b)))
     }
 
     def withIsInterruptedF[R, E, A](f: Boolean => ZIO[R, E, A])(implicit trace: zio.Trace): ZIO[R, E, A] = {
       ZIO.descriptorWith(desc => f(desc.interrupters.nonEmpty))
     }
-
   }
 
 //  object MonixExit {
@@ -271,5 +270,4 @@ object Exit {
     override final def flatMap[E, A, B](r: Exit[E, A])(f: A => Exit[E, B]): Exit[E, B] = r.flatMap(f)
   }
 
-  disableAutoTrace.discard()
 }

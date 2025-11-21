@@ -31,7 +31,7 @@ class ThreadingLogQueue(sleepTime: FiniteDuration, batchSize: Int) extends LogQu
   private val queue = new ConcurrentLinkedQueue[ThreadingLogQueue.LoggingAction]()
   private val stop = new AtomicBoolean(false)
 
-  private val fallback = TrivialLogger.make[FallbackConsoleSink](DebugProperties.`izumi.logstage.routing.log-failures`.name, Config(forceLog = true))
+  private val fallback = TrivialLogger.make[ThreadingLogQueue](DebugProperties.`izumi.logstage.routing.log-failures`.name, Config(forceLog = true))
 
   private val pollingThread = {
     val result = new Thread(new ThreadGroup("logstage"), poller(), "logstage-poll")

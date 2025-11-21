@@ -67,9 +67,9 @@ class LogstageCirceRenderingPolicy(
     val eventInfo = Json.fromFields(
       Seq(
         "class" -> Json.fromString(new RichInt(formatted.template.hashCode).toHexString),
-        "logger" -> Json.fromString(entry.context.static.id.id),
-        "line" -> Json.fromInt(entry.context.static.position.line),
-        "file" -> Json.fromString(entry.context.static.position.file),
+        "logger" -> Json.fromString(entry.context.static.pos.applicationPointId),
+        "line" -> Json.fromInt(entry.context.static.pos.position.line),
+        "file" -> Json.fromString(entry.context.static.pos.position.file),
         "level" -> Json.fromString(entry.context.dynamic.level.toString.toLowerCase),
         "timestamp" -> Json.fromLong(entry.context.dynamic.tsMillis),
         "datetime" -> Json.fromString(entry.context.dynamic.tsMillis.asEpochMillisUtcZoned.isoFormatUtc),

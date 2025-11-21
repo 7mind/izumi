@@ -20,7 +20,7 @@ object ParserSchemaFormatter {
     sb.toString()
   }
 
-  private[this] def formatRoleHelp(rb: RoleParserSchema): String = {
+  private def formatRoleHelp(rb: RoleParserSchema): String = {
     val sb = new StringBuilder()
     if (withColors) {
       sb.append(Console.GREEN)
@@ -62,7 +62,7 @@ object ParserSchemaFormatter {
     sb.toString()
   }
 
-  private[this] def formatParser(parser: ParserDef, doc: Option[String], notes: Option[String], shift: Int, docShift: Int): String = {
+  private def formatParser(parser: ParserDef, doc: Option[String], notes: Option[String], shift: Int, docShift: Int): String = {
     val optDoc = if (parser.nonEmpty) {
       val opts = parser.enumerate.map(formatArg).mkString("\n\n")
       Some(
@@ -83,13 +83,13 @@ object ParserSchemaFormatter {
 
   }
 
-  private[this] def formatArg(arg: ArgDef): String = {
+  private def formatArg(arg: ArgDef): String = {
     val usage = (arg.name.short.map(_ => formatInfo(short = true, arg)).toSeq ++ Seq(formatInfo(short = false, arg))).mkString(", ")
 
     s"$usage\n    ${arg.doc}"
   }
 
-  private[this] def formatInfo(short: Boolean, arg: ArgDef): String = {
+  private def formatInfo(short: Boolean, arg: ArgDef): String = {
     val name = if (short) {
       arg.name.short.get
     } else {

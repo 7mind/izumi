@@ -59,7 +59,7 @@ object ContainerHealthCheck {
 
     final case class Failed(failure: String = "No diagnostics available") extends BadHealthcheck
 
-    final case class Terminated(failure: String) extends BadHealthcheck
+    final case class Terminated(failure: String, cause: ContainerState) extends BadHealthcheck
 
     final case class UnavailableWithMeta(
       unavailablePorts: UnavailablePorts,
@@ -82,11 +82,11 @@ object ContainerHealthCheck {
         case ContainerState.Running =>
           performCheck
 
-        case ContainerState.Exited(status) =>
-          HealthCheckResult.Terminated(s"Container unexpectedly exited with exit code=$status.")
+        case s: ContainerState.Exited =>
+          HealthCheckResult.Terminated(s"Container unexpectedly exited with exit code=${s.status}.", s)
 
-        case ContainerState.NotFound =>
-          HealthCheckResult.Terminated("Container not found, expected to find a running container.")
+        case s: ContainerState.NotFound.type =>
+          HealthCheckResult.Terminated("Container not found, expected to find a running container.", s)
       }
     }
   }

@@ -86,7 +86,7 @@ add to distage-example
 
 ## Documentation
 
-- @ref[Overview](basics.md)
+- @ref[Basics](basics.md)
 - @ref[Debugging](debugging.md)
 - @ref[Advanced Features](advanced-features.md)
 - @ref[distage-framework](distage-framework.md)

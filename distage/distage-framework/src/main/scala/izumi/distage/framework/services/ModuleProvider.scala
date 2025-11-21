@@ -4,6 +4,7 @@ import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.framework.platform.DistagePlatformModule
 import izumi.distage.model.definition.{Binding, BootstrapModule, BootstrapModuleDef, Id, Module, ModuleDef}
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.SafeType
@@ -15,7 +16,8 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleService, RoleTask}
 import izumi.functional.bio.Exit
 import izumi.functional.bio.UnsafeRun2.FailureHandler
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
+import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.{LogIOModule, LogstageModule}
@@ -65,18 +67,20 @@ object ModuleProvider {
     // pass-through
     config: AppConfig,
     roles: RolesInfo,
-    args: RawAppArgs,
+    args: RoleAppArgs,
     activationInfo: ActivationInfo,
     shutdownInitiator: AppShutdownInitiator,
+    appArtifact: Option[IzArtifact] @Id("app.artifact"),
     roleAppLocator: Option[LocatorRef] @Id("roleapp"),
   ) extends ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
       val roleInfoModule = new BootstrapModuleDef {
-        make[RolesInfo].fromValue(roles)
-        make[RawAppArgs].fromValue(args)
-        make[ActivationInfo].fromValue(activationInfo)
-        make[AppShutdownInitiator].fromValue(shutdownInitiator)
+        make[RolesInfo].fromValue(roles).exposed
+        make[RoleAppArgs].fromValue(args).exposed
+        make[ActivationInfo].fromValue(activationInfo).exposed
+        make[AppShutdownInitiator].fromValue(shutdownInitiator).exposed
+        make[Option[IzArtifact]].named("app.artifact").fromValue(appArtifact).exposed
       }
 
       val loggerModule = new LogstageModule(logRouter, true)
@@ -99,11 +103,13 @@ object ModuleProvider {
       Seq(
         LogIOModule[F](), // reuse IzLogger from BootstrapModule
         LogstageFailureHandlerModule,
+        new DistagePlatformModule(),
       ) ++ roleAppLocator.map {
         outerLocator =>
           new ModuleDef {
             make[LocatorRef].named("roleapp").fromValue(outerLocator)
             make[RoleAppPlanner].from((_: LocatorRef @Id("roleapp")).get.get[RoleAppPlanner])
+            make[ConfigMerger].from((_: LocatorRef @Id("roleapp")).get.get[ConfigMerger])
           }
       }
     }

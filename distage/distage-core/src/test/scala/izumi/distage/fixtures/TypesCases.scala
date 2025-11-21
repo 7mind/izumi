@@ -1,6 +1,5 @@
 package izumi.distage.fixtures
 
-
 object TypesCases {
 
   object TypesCase1 {
@@ -50,13 +49,14 @@ object TypesCases {
       def dep2: Dep2
     }
 
-    trait Trait3[T <: Dep] extends Trait1 {
+    trait Trait3[T <: Dep] {
       def dep: T
     }
+    trait Trait31[T <: Dep] extends Trait1 with Trait3[T]
 
     trait Trait4
 
-    trait Trait5[T <: Dep] extends Trait3[T] with Trait4 {
+    trait Trait5[T <: Dep] extends Trait31[T] with Trait4 {
       def dep: T
     }
 

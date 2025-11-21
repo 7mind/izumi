@@ -1,47 +1,46 @@
 package izumi.fundamentals.platform.cli
 
-import izumi.fundamentals.platform.cli.CLIParser._
-import izumi.fundamentals.platform.cli.impl.CLIParserState
-import izumi.fundamentals.platform.cli.model.raw._
+import izumi.fundamentals.platform.cli.CLIParser.*
+import izumi.fundamentals.platform.cli.model.*
 
-import scala.collection.mutable
+class CLIParserImpl(mmParser: MultiModalArgsParser, subArgsParser: SubArgsParser) extends CLIParser {
 
-class CLIParserImpl extends CLIParser {
-
-  def parse(args: Array[String]): Either[ParserError, RawAppArgs] = {
-    var state: CLIParserState = new CLIParserState.Initial()
-    val processed = mutable.ArrayBuffer[String]()
-    args.foreach {
-      arg =>
-        state = if (arg.startsWith(":") && arg.length > 1) {
-          state.addRole(arg.substring(1))
-        } else if (arg.startsWith("--") && arg.length > 2) {
-          val argv = arg.substring(2)
-          argv.indexOf('=') match {
-            case -1 =>
-              state.addFlag(arg)(RawFlag(argv))
-            case pos =>
-              val (k, v) = argv.splitAt(pos)
-              state.addParameter(arg)(RawValue(k, v.substring(1)))
-          }
-        } else if (arg == "--") {
-          state.splitter(processed.toVector)
-        } else if (arg.startsWith("-")) {
-          val argv = arg.substring(1)
-          state.openParameter(arg)(argv)
-        } else {
-          state.addFreeArg(processed.toVector)(arg)
-        }
-        processed += arg
-    }
-
+  def parse(args: Array[String]): Either[ParserError, RoleAppArgs] = {
     for {
-      roles <- state.freeze()
-      _ <- validate(roles)
-    } yield roles
+      mmargs <- mmParser.parse(args)
+      primArgs <- subArgsParser.parseSubArgs(mmargs.primaryArgs)
+
+      // Probably we should just remove this code and let role entrypoints to parse args independently
+      // Current issues:
+      // 1) Each role has to do parsing and reporting on its own, failures would look ugly
+      // 2) If a user wants to use their own parser/object mapper, they still receive parsed EntrypointArgs which they don't need
+      // Potential improvements:
+      // - Add parsers/implementations as type parameters/fields in role descriptors
+      // - Change def start(roleParameters: EntrypointArgs) signature to def start(roleParameters: ARG), where ARG is a type parameter of the role
+      // Not sure if it's really beneficial though
+
+      modalities = mmargs.modalities
+        .map(
+          m =>
+            subArgsParser
+              .parseSubArgs(m.args)
+              .map(parsed => (m.id, parsed))
+              .merge
+        )
+      modArgs = modalities.map {
+        case (id, params) =>
+          RoleArgs(id, params)
+      }
+      result = RoleAppArgs(primArgs, modArgs)
+
+      _ <- validate(result)
+
+    } yield {
+      result
+    }
   }
 
-  private[this] def validate(arguments: RawAppArgs): Either[ParserError, Unit] = {
+  private def validate(arguments: RoleAppArgs): Either[ParserError, Unit] = {
     val bad = arguments.roles.groupBy(_.role).filter(_._2.size > 1)
     if (bad.nonEmpty) {
       Left(ParserError.DuplicatedRoles(bad.keySet))

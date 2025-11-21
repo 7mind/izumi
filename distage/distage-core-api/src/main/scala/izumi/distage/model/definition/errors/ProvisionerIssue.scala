@@ -61,14 +61,6 @@ object ProvisionerIssue {
 
   final case class MissingInstance(key: DIKey) extends ProvisionerIssue
 
-  final case class UnsupportedOp(tpe: SafeType, op: ExecutableOp, context: String) extends ProvisionerIssue {
-    override def key: DIKey = op.target
-  }
-
-  final case class NoRuntimeClass(
-    key: DIKey
-  ) extends ProvisionerIssue
-
   final case class IncompatibleTypes(
     key: DIKey,
     expected: SafeType,
@@ -81,22 +73,30 @@ object ProvisionerIssue {
     clue: String,
   ) extends ProvisionerIssue
 
-  case class ProxyClassloadingFailed(context: ProxyContext, causes: Seq[Throwable]) extends ProvisionerIssue {
+  final case class UnsupportedProxyType(tpe: SafeType, op: ExecutableOp.ProxyOp.MakeProxy, context: String) extends ProvisionerIssue {
+    override def key: DIKey = op.target
+  }
+
+  final case class NoRuntimeClassForProxy(tpe: SafeType, op: ExecutableOp.ProxyOp.MakeProxy) extends ProvisionerIssue {
+    override def key: DIKey = op.target
+  }
+
+  final case class ProxyClassloadingFailed(context: ProxyContext, causes: Seq[Throwable]) extends ProvisionerIssue {
     override def key: DIKey = context.op.target
   }
 
-  case class ProxyInstantiationFailed(context: ProxyContext, cause: Throwable) extends ProvisionerIssue {
+  final case class ProxyInstantiationFailed(context: ProxyContext, cause: Throwable) extends ProvisionerIssue {
     override def key: DIKey = context.op.target
   }
 
   sealed trait ProxyFailureCause
   object ProxyFailureCause {
-    case class CantFindStrategyClass(name: String) extends ProxyFailureCause
-    case class ProxiesDisabled() extends ProxyFailureCause
+    final case class CantFindStrategyClass(name: String) extends ProxyFailureCause
+    final case class ProxiesDisabled() extends ProxyFailureCause
   }
-  case class ProxyProviderFailingImplCalled(key: DIKey, provider: Any, cause: ProxyFailureCause) extends ProvisionerIssue
+  final case class ProxyProviderFailingImplCalled(key: DIKey, provider: Any, context: ProxyContext, cause: ProxyFailureCause) extends ProvisionerIssue
 
-  case class ProxyStrategyFailingImplCalled(key: DIKey, strategy: Any) extends ProvisionerIssue
+  final case class ProxyStrategyFailingImplCalled(key: DIKey, op: ExecutableOp.ProxyOp.MakeProxy, strategy: Any) extends ProvisionerIssue
 
   final case class UnsupportedProxyOp(op: ExecutableOp) extends ProvisionerIssue {
     override def key: DIKey = op.target

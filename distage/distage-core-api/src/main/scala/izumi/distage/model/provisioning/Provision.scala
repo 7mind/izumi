@@ -24,7 +24,7 @@ trait Provision[+F[_]] {
     instances.get(key).orElse(imports.get(key))
   }
 
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   def enumerate: immutable.Seq[IdentifiedRef] = {
     import scala.collection.compat.*
     instances.map { case (k, v) => IdentifiedRef(k, v) }.to(scala.collection.immutable.Seq)
@@ -51,7 +51,7 @@ object Provision {
     override lazy val enumerate: immutable.Seq[IdentifiedRef] = super.enumerate
     override lazy val index: immutable.Map[DIKey, Any] = super.index
 
-    @nowarn("msg=Unused import")
+    @nowarn("msg=[Uu]nused import")
     override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {
       import scala.collection.compat.*
       ProvisionImmutable(

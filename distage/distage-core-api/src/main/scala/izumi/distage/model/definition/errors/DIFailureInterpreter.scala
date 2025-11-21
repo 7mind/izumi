@@ -27,7 +27,7 @@ class DIFailureInterpreter() {
     }
   }
 
-  protected[this] def conflictError(issues: List[ConflictResolutionFailed]): InjectorFailed = {
+  protected def conflictError(issues: List[ConflictResolutionFailed]): InjectorFailed = {
     val rawIssues = issues.map(_.error)
     val issueRepr = rawIssues.map(DIError.formatConflict).mkString("\n", "\n", "")
 

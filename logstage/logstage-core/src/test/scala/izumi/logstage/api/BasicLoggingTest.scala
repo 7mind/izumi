@@ -1,11 +1,14 @@
 package izumi.logstage.api
 
-import scala.annotation.nowarn
-import izumi.fundamentals.platform.language.{IzScala, SourceFilePosition}
+import izumi.fundamentals.platform.language.Quirks.Discarder
+import izumi.fundamentals.platform.language.{CodePosition, IzScala, SourceFilePosition}
 import izumi.logstage.api.Log.*
 import izumi.logstage.api.rendering.{LogstageCodec, RenderingOptions, StringRenderingPolicy}
+import izumi.logstage.api.strict.IzStrictLogger
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.nowarn
 import scala.util.Random
 
 class BasicLoggingTest extends AnyWordSpec {
@@ -15,7 +18,9 @@ class BasicLoggingTest extends AnyWordSpec {
       val arg1 = 1
       val arg2 = "argument 2"
 
-      val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}"): @nowarn("msg=Constant expression")
+      val message = Message(
+        s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}"
+      )
 
       val expectation = if (IzScala.scalaRelease.major == 3) {
         // on scala3 we get access to exact raw tree w/o optimizations
@@ -41,10 +46,10 @@ class BasicLoggingTest extends AnyWordSpec {
       assert(message.args == expectation)
       assert(message.template.parts == expectedParts)
 
-      val message1 = Message(s"expression: ${Random.self.nextInt() + 1}"): @nowarn("msg=Expression")
+      val message1 = Message(s"expression: ${Random.self.nextInt() + 1}")
       assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")
       assert(message1.template.parts == List("expression: ", ""))
-    }
+    }: @nowarn("msg=Constant expression") @nowarn("msg=Expression") @nowarn("msg=extract argument name")
 
     "support .stripMargin" in {
       val m = "M E S S A G E"
@@ -68,6 +73,94 @@ class BasicLoggingTest extends AnyWordSpec {
       assert(message3.template.parts.toList == List("Hello\nthere!\n"))
       assert(message3.args == List.empty)
     }
+
+    "correctly search codecs for wildcards" in {
+      import Fixture.*
+      final class SealedHolder[T <: Sealed](val value: T)
+      def withWildcard1(some: Some[?]): Message = {
+        Message(s"wildcard: ${some.value}")
+      }
+      def withWildcard2(sld: SealedHolder[? <: Sealed]): Message = {
+        Message(s"wildcard: ${sld.value}")
+      }
+      def withWildcard3(sld: SealedHolder[?]): Message = {
+        Message(s"wildcard: ${sld.value}")
+      }
+
+      val msg1 = withWildcard1(Some(1))
+      val msg2 = withWildcard2(new SealedHolder(Sealed.Branch("")))
+      val msg3 = withWildcard3(new SealedHolder(Sealed.Branch("")))
+
+      assert(msg1.args.head.codec.isEmpty)
+      assert(msg2.args.head.codec.contains(Sealed.codec))
+      if (IzScala.scalaRelease.major >= 3) {
+        assert(msg3.args.head.codec.contains(Sealed.codec))
+      }
+    }
+  }
+
+  "Strict logger" should {
+
+    "fail when LogstageCodec is not defined for type" in {
+      val testSink = new TestSink()
+      val logger = IzStrictLogger(sink = testSink)
+
+      val x = UndefCodec(1)
+      val y = UndefCodec(2)
+
+      (logger, x, y).discard()
+
+      val err = intercept[TestFailedException] {
+        assertCompiles(""" logger.info(s"got $x + $y") """)
+      }: @nowarn("msg=possible missing interpolator")
+      assert(err.getMessage().contains("Implicit search failed"))
+      assert(err.getMessage().contains("LogstageCodec["))
+      assert(err.getMessage().contains("UndefCodec]"))
+    }
+
+    "strict and strict raw logger should both fail to add variables with undefined codecs to context" in {
+      val testSink = new TestSink()
+      val strictLogger = IzStrictLogger(sink = testSink)
+      val rawStrictLogger = strictLogger.raw
+      val nonStrictLogger = IzLogger(sink = testSink)
+
+      val x = UndefCodec(1)
+      val y = UndefCodec(2)
+
+      (rawStrictLogger, strictLogger, x, y).discard()
+
+      val err1 = intercept[TestFailedException] {
+        assertCompiles(""" strictLogger.withCustomContext("x" -> x, "y" -> y) """)
+      }
+      assert(err1.getMessage().contains("StrictEncoded"))
+
+      val err2 = intercept[TestFailedException] {
+        assertCompiles(""" rawStrictLogger.withCustomContext("x" -> x, "y" -> y) """)
+      }
+      assert(err2.getMessage().contains("StrictEncoded"))
+
+      nonStrictLogger.withCustomContext("x" -> x, "y" -> y)
+    }
+
+  }
+
+  "Raw logger" should {
+
+    "ignore variables in string interpolation and just output raw String message" in {
+      val testSink = new TestSink()
+      val logger = IzStrictLogger(sink = testSink).raw
+
+      val x = UndefCodec(1)
+      val y = UndefCodec(2)
+
+      logger.info(s"got $x + $y = ${x.i + y.i}")
+
+      val Seq(entry) = testSink.fetch()
+
+      assert(entry.message.template.parts == Seq("got UndefCodec(1) + UndefCodec(2) = 3"))
+      assert(entry.message.args.isEmpty)
+    }
+
   }
 
   "String rendering policy" should {
@@ -181,16 +274,18 @@ class BasicLoggingTest extends AnyWordSpec {
     }
   }
 
-  private def render(p: StringRenderingPolicy, m: Message) = {
+  private def render(p: StringRenderingPolicy, m: Message): String = {
     p.render(
       Entry(
         m,
         Context(
-          StaticExtendedContext(LoggerId("test"), SourceFilePosition("test.scala", 0)),
+          StaticExtendedContext(CodePosition(SourceFilePosition("test.scala", 0), "test")),
           DynamicContext(Level.Warn, ThreadData("test", 0), 0),
           CustomContext(Seq.empty),
         ),
       )
     )
   }
+
+  case class UndefCodec(i: Int)
 }

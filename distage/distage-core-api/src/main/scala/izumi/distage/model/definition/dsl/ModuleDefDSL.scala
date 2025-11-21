@@ -10,7 +10,7 @@ import izumi.distage.model.definition.dsl.AnyKindShim.LifecycleF
 import izumi.distage.model.definition.dsl.LifecycleAdapters.{LifecycleTag, ZIOEnvLifecycleTag}
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
-import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.distage.model.reflection.{DIKey, IdContract, SafeType}
 import izumi.functional.bio.data.Morphism1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
@@ -24,7 +24,7 @@ import scala.collection.immutable.HashSet
   *
   * Example:
   * {{{
-  * class Program[F[_]: TagK: Monad] extends ModuleDef {
+  * class Program[F[_]: TagK] extends ModuleDef {
   *   make[TaglessProgram[F]]
   * }
   *
@@ -85,18 +85,18 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
   override final def iterator: Iterator[Binding] = freezeIterator()
   override final def keysIterator: Iterator[DIKey] = freezeIterator().map(_.key)
 
-  private[this] final def freeze(): Set[Binding] = {
+  private final def freeze(): Set[Binding] = {
     HashSet.newBuilder
       .++= {
         freezeIterator()
       }.result()
   }
-  private[this] final def freezeIterator(): Iterator[Binding] = {
-    val frozenTags0 = frozenTags
-    retaggedIncludes
-      .++(frozenState)
-      .map(_.addTags(frozenTags0))
-      .++(asIsIncludes)
+  private final def freezeIterator(): Iterator[Binding] = {
+    val frozenOuterTags = frozenTags
+
+    val bindingsWithGlobalTags = frozenState.map(_.addTags(frozenOuterTags))
+    val includesWithProcessedTags = includes.flatMap(_.interpret(frozenOuterTags))
+    bindingsWithGlobalTags ++ includesWithProcessedTags
   }
 
   override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] = new MakeDSL[T](ref, ref.key)
@@ -169,7 +169,7 @@ object ModuleDefDSL {
       *
       * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
       *
-      * @see [[izumi.distage.model.reflection.macros.FunctoidMacro]]]
+      * @see [[izumi.distage.reflection.macros.FunctoidMacro]]]
       * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
       * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
       */
@@ -327,30 +327,30 @@ object ModuleDefDSL {
       bind(ImplDef.ProviderImpl(provider.ret, provider))
     }
 
-    protected[this] def bind(impl: ImplDef): AfterBind
-    protected[this] def key: DIKey
+    protected def bind(impl: ImplDef): AfterBind
+    protected def key: DIKey
   }
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
 
-    final def add[I <: T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+    final def add[I <: T: ClassConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](ClassConstructor[I])
 
     final def add[I <: T: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterAdd =
       add(Functoid.lift(function))
 
-    final def add[I <: T](function: Functoid[I])(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def add[I <: T](function: Functoid[I])(implicit pos: CodePositionMaterializer, d: DummyImplicit): AfterAdd =
       appendElement(ImplDef.ProviderImpl(function.get.ret, function.get), pos)
 
     final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]] */
-    final def addTrait[I <: T: Tag: TraitConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+    final def addTrait[I <: T: TraitConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](TraitConstructor[I])
 
     /** @see [[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]] */
-    final def addFactory[I <: T: Tag: FactoryConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+    final def addFactory[I <: T: FactoryConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
       add[I](FactoryConstructor[I])
 
     /**
@@ -403,7 +403,7 @@ object ModuleDefDSL {
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
 
     final def addResource[R <: Lifecycle[LifecycleF, T]: ClassConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
-      addResource[R](ClassConstructor[R])
+      addResource[R](ClassConstructor[R])(tag, pos, DummyImplicit.dummyImplicit)
 
     final def addResource[R](instance: R & Lifecycle[LifecycleF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag.*
@@ -450,11 +450,11 @@ object ModuleDefDSL {
       *   many[T].addSet(Set(new T, new T, new T))
       * }}}
       */
-    final def addSet[I <: Set[? <: T]: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
-      addSet(Functoid.lift(function))
-
     final def addSet[I <: Set[? <: T]](function: Functoid[I])(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       multiSetAdd(ImplDef.ProviderImpl(function.get.ret, function.get), pos)
+
+    final def addSet[I <: Set[? <: T]: Tag](function: => I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
+      addSet(Functoid.lift[I](function))
 
     final def addSetValue[I <: Set[? <: T]: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance), pos)
@@ -480,8 +480,8 @@ object ModuleDefDSL {
     final def weakSet[I <: Set[? <: T]: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true), pos)
 
-    protected[this] def multiSetAdd(newImpl: ImplDef, pos: CodePositionMaterializer): AfterMultiAdd
-    protected[this] def appendElement(newImpl: ImplDef, pos: CodePositionMaterializer): AfterAdd
+    protected def multiSetAdd(newImpl: ImplDef, pos: CodePositionMaterializer): AfterMultiAdd
+    protected def appendElement(newImpl: ImplDef, pos: CodePositionMaterializer): AfterAdd
   }
 
   /** Workaround for https://github.com/lampepfl/dotty/issues/16406#issuecomment-1712058227 */
@@ -549,8 +549,8 @@ object ModuleDefDSL {
         * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: ClassConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
-        import tag.{R, E, A, ctorR, tagFull, resourceTag, ev}
-        val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
+        import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
+        val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(using tagFull)
         dsl.fromResource(provider)(resourceTag, DummyImplicit.dummyImplicit)
       }
 
@@ -618,8 +618,8 @@ object ModuleDefDSL {
         implicit tag: ZIOEnvLifecycleTag[R1, T],
         pos: CodePositionMaterializer,
       ): AfterAdd = {
-        import tag.{R, E, A, ctorR, tagFull, resourceTag, ev}
-        val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(tagFull)
+        import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
+        val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(using tagFull)
         dsl.addResource(provider)(resourceTag, pos, DummyImplicit.dummyImplicit)
       }
 
@@ -655,7 +655,7 @@ object ModuleDefDSL {
 
   }
 
-  @inline private[this] def provideZEnvLifecycle[R, E, A](lifecycle: Lifecycle[ZIO[R, E, _], A], zenv: ZEnvironment[R]): Lifecycle[ZIO[Any, E, _], A] = {
+  @inline private def provideZEnvLifecycle[R, E, A](lifecycle: Lifecycle[ZIO[R, E, _], A], zenv: ZEnvironment[R]): Lifecycle[ZIO[Any, E, _], A] = {
     lifecycle.mapK[ZIO[R, E, _], ZIO[Any, E, _]](Morphism1(_.provideEnvironment(zenv)))
   }
 
@@ -682,6 +682,8 @@ object ModuleDefDSL {
     "modifyBy",
     "addDependency",
     "addDependencies",
+    "exposed",
+    "confined",
   )
 
   final class MakeDSL[T](
@@ -694,15 +696,19 @@ object ModuleDefDSL {
       addOp(SetId(name))(new MakeNamedDSL[T](_, key.named(name)))
     }
 
+    def named[I: IdContract](name: Option[I]): MakeNamedDSL[T] = {
+      name.fold(new MakeNamedDSL[T](mutableState, key))(n => addOp(SetId(n))(new MakeNamedDSL[T](_, key.named(n))))
+    }
+
     def namedByImpl: MakeNamedDSL[T] = {
       addOp(SetIdFromImplName())(new MakeNamedDSL[T](_, key))
     }
 
-    override protected[this] def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
+    override protected def bind(impl: ImplDef): MakeDSLUnnamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLUnnamedAfterFrom[T](_))
     }
 
-    override protected[this] def toSame: SingletonRef => MakeDSL[T] = {
+    override protected def toSame: SingletonRef => MakeDSL[T] = {
       new MakeDSL[T](_, key)
     }
 
@@ -714,11 +720,11 @@ object ModuleDefDSL {
   ) extends MakeDSLMutBase[T, MakeNamedDSL[T]]
     with MakeDSLBase[T, MakeDSLNamedAfterFrom[T]] {
 
-    override protected[this] def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
+    override protected def bind(impl: ImplDef): MakeDSLNamedAfterFrom[T] = {
       addOp(SetImpl(impl))(new MakeDSLNamedAfterFrom[T](_))
     }
 
-    override protected[this] def toSame: SingletonRef => MakeNamedDSL[T] = {
+    override protected def toSame: SingletonRef => MakeNamedDSL[T] = {
       new MakeNamedDSL[T](_, key)
     }
 
@@ -733,11 +739,15 @@ object ModuleDefDSL {
       addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_))
     }
 
+    def named[I: IdContract](name: Option[I]): MakeDSLNamedAfterFrom[T] = {
+      name.fold(new MakeDSLNamedAfterFrom[T](mutableState))(name => addOp(SetId(name))(new MakeDSLNamedAfterFrom[T](_)))
+    }
+
     def namedByImpl: MakeDSLNamedAfterFrom[T] = {
       addOp(SetIdFromImplName())(new MakeDSLNamedAfterFrom[T](_))
     }
 
-    override protected[this] def toSame: SingletonRef => MakeDSLUnnamedAfterFrom[T] = {
+    override protected def toSame: SingletonRef => MakeDSLUnnamedAfterFrom[T] = {
       new MakeDSLUnnamedAfterFrom[T](_)
     }
 
@@ -746,14 +756,14 @@ object ModuleDefDSL {
   final class MakeDSLNamedAfterFrom[T](
     override protected val mutableState: SingletonRef
   ) extends MakeDSLMutBase[T, MakeDSLNamedAfterFrom[T]] {
-    override protected[this] def toSame: SingletonRef => MakeDSLNamedAfterFrom[T] = {
+    override protected def toSame: SingletonRef => MakeDSLNamedAfterFrom[T] = {
       new MakeDSLNamedAfterFrom[T](_)
     }
   }
 
-  sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] extends Any with AddDependencyDSL[T, Self] {
-    protected[this] def mutableState: SingletonRef
-    protected[this] def toSame: SingletonRef => Self
+  sealed trait MakeDSLMutBase[T, Self <: MakeDSLMutBase[T, Self]] extends Any with AddDependencyDSL[T, Self] with Tagging[Self] {
+    protected def mutableState: SingletonRef
+    protected def toSame: SingletonRef => Self
 
     final def tagged(tags: BindingTag*): Self = {
       addOp(AddTags(tags.toSet))(toSame)
@@ -775,20 +785,31 @@ object ModuleDefDSL {
       addOp(AliasTo(DIKey.get[T1].named(name), pos.get.position))(toSame)
     }
 
-    protected[this] final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
+    protected final def addOp[R](op: SingletonInstruction)(newState: SingletonRef => R): R = {
       newState(mutableState.append(op))
     }
 
-    override protected[this] def _modifyBy(f: Functoid[T] => Functoid[T]): Self = modifyBy(f)
+    override protected def _modifyBy(f: Functoid[T] => Functoid[T]): Self = modifyBy(f)
+
+    override protected def _addDependencies(keys: Iterable[DIKey]): Self = {
+      addOp(AddDependencies(keys))(toSame)
+    }
 
   }
 
   final class SetDSL[T](
     protected val mutableState: SetRef
-  ) extends SetDSLMutBase[T] {
-
+  ) extends SetDSLMutBase[T]
+    with Tagging[SetDSL[T]] {
+    def tagged(tags: BindingTag*): SetDSL[T] = {
+      addOp(SetInstruction.AddTagOntoSet(tags.toSet))(new SetDSL[T](_))
+    }
     def named(name: Identifier): SetNamedDSL[T] = {
       addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_))
+    }
+
+    def named[I: IdContract](name: Option[I]): SetNamedDSL[T] = {
+      name.fold(new SetNamedDSL[T](mutableState))(name => addOp(SetInstruction.SetIdAll(name))(new SetNamedDSL[T](_)))
     }
 
   }
@@ -796,17 +817,23 @@ object ModuleDefDSL {
   final class SetNamedDSL[T](
     override protected val mutableState: SetRef
   ) extends SetDSLMutBase[T]
+    with Tagging[SetNamedDSL[T]] {
+    def tagged(tags: BindingTag*): SetNamedDSL[T] = {
+      addOp(SetInstruction.AddTagOntoSet(tags.toSet))(new SetNamedDSL[T](_))
+    }
+  }
 
   final class SetElementDSL[T](
     override protected val mutableState: SetRef,
     mutableCursor: SetElementRef,
-  ) extends SetDSLMutBase[T] {
+  ) extends SetDSLMutBase[T]
+    with Tagging[SetElementDSL[T]] {
 
     def tagged(tags: BindingTag*): SetElementDSL[T] = {
       addOp(ElementAddTags(tags.toSet))
     }
 
-    private[this] def addOp(op: SetElementInstruction): SetElementDSL[T] = {
+    private def addOp(op: SetElementInstruction): SetElementDSL[T] = {
       val newState = mutableCursor.append(op)
       new SetElementDSL[T](mutableState, newState)
     }
@@ -815,30 +842,31 @@ object ModuleDefDSL {
   final class MultiSetElementDSL[T](
     override protected val mutableState: SetRef,
     mutableCursor: MultiSetElementRef,
-  ) extends SetDSLMutBase[T] {
+  ) extends SetDSLMutBase[T]
+    with Tagging[MultiSetElementDSL[T]] {
 
     def tagged(tags: BindingTag*): MultiSetElementDSL[T] =
       addOp(MultiAddTags(tags.toSet))
 
-    private[this] def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
+    private def addOp(op: MultiSetElementInstruction): MultiSetElementDSL[T] = {
       val newState = mutableCursor.append(op)
       new MultiSetElementDSL[T](mutableState, newState)
     }
   }
 
   sealed trait SetDSLMutBase[T] extends SetDSLBase[T, SetElementDSL[T], MultiSetElementDSL[T]] {
-    protected[this] def mutableState: SetRef
+    protected def mutableState: SetRef
 
-    protected[this] final def addOp[R](op: SetInstruction)(nextState: SetRef => R): R = {
+    protected final def addOp[R](op: SetInstruction)(nextState: SetRef => R): R = {
       nextState(mutableState.appendOp(op))
     }
 
-    override protected[this] final def appendElement(newElement: ImplDef, pos: CodePositionMaterializer): SetElementDSL[T] = {
+    override protected final def appendElement(newElement: ImplDef, pos: CodePositionMaterializer): SetElementDSL[T] = {
       val mutableCursor = new SetElementRef(newElement, pos.get.position)
       new SetElementDSL[T](mutableState.appendElem(mutableCursor), mutableCursor)
     }
 
-    override protected[this] final def multiSetAdd(newElements: ImplDef, pos: CodePositionMaterializer): MultiSetElementDSL[T] = {
+    override protected final def multiSetAdd(newElements: ImplDef, pos: CodePositionMaterializer): MultiSetElementDSL[T] = {
       val mutableCursor = new MultiSetElementRef(newElements, pos.get.position)
       new MultiSetElementDSL[T](mutableState.appendMultiElem(mutableCursor), mutableCursor)
     }

@@ -13,7 +13,7 @@ import izumi.distage.roles.launcher.AppShutdownStrategy
 import izumi.distage.roles.launcher.ActivationParser
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
-import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawRoleParams, RequiredRoles}
+import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RequiredRoles, RoleAppArgs, RoleArgs}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.reflect.TagK
@@ -41,10 +41,10 @@ abstract class RoleAppMain[F[_]](
   protected def roleAppBootOverrides(@unused argv: ArgV): Module = Module.empty
 
   /** Roles always enabled in this [[RoleAppMain]] */
-  protected def requiredRoles(@unused argv: ArgV): Vector[RawRoleParams] = Vector.empty
+  protected def requiredRoles(@unused argv: ArgV): Vector[RoleArgs] = Vector.empty
 
-  def main(): Future[Unit] = {
-    val argv = ArgV()
+  def main(args: Array[String]): Future[Unit] = {
+    val argv = ArgV.empty
     try {
       Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
         (appResource: AppResource[F]) =>
@@ -107,7 +107,7 @@ abstract class RoleAppMain[F[_]](
       appArtifact = artifact.get,
       unusedValidAxisChoices,
     ) ++ new ModuleDef {
-      make[RawAppArgs].fromValue(RawAppArgs(RawEntrypointParams.empty, additionalRoles.requiredRoles))
+      make[RoleAppArgs].fromValue(RoleAppArgs(EntrypointArgs.empty, additionalRoles.requiredRoles))
       make[PlanningOptions].fromValue(planningOptions())
       make[ActivationParser].from[ActivationParser.Impl]
       make[Activation].named("entrypoint").fromValue(activation())
@@ -130,9 +130,8 @@ abstract class RoleAppMain[F[_]](
 
 object RoleAppMain {
 
-  case class ArgV()
-
+  final case class ArgV(args: Array[String])
   object ArgV {
-    def empty: ArgV = ArgV()
+    def empty: ArgV = ArgV(Array.empty)
   }
 }

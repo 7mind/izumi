@@ -21,7 +21,7 @@ import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.{LogQueue, LogRouter}
@@ -37,7 +37,7 @@ object TestPlanner {
     memoizationPlanTree: List[Plan],
     envInjector: Injector[Identity],
     highestDebugOutputInTests: Boolean,
-    strengthenedKeys: Set[DIKey],
+    strengthenedKeys: Set[DIKey.SetElementKey],
   )
   final case class AlmostPreparedTest[F[_]](
     test: DistageTest[F],
@@ -98,7 +98,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     * - tree-represented memoization plan with tests.
     * [[PackedEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
-  @nowarn("msg=Unused import")
+  @nowarn("msg=[Uu]nused import")
   def groupTests[G[_]](distageTests: Seq[DistageTest[F]])(implicit G: QuasiIO[G], GA: QuasiAsync[G]): G[PlannedTests[F]] = {
     import scala.collection.compat.*
 
@@ -123,7 +123,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                   // test loggers will not create polling threads and will log immediately
                   val logConfigLoader = new LogConfigLoaderImpl(CLILoggerOptions(envExec.logLevel, json = false), configLoadLogger)
                   val logConfig = logConfigLoader.loadLoggingConfig(config)
-                  val router = new RouterFactory.RouterFactoryImpl().createRouter(logConfig, logBuffer)
+                  val router = new RouterFactory.RouterFactoryConsoleSinkImpl().createRouter(logConfig, logBuffer)
 
                   prepareGroupPlans(envExec, config, env, tests, router).left.map(bad => (tests, bad))
                 }
@@ -214,7 +214,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
         )
         val activationParser = new ActivationParser.Impl(
           roleAppActivationParser,
-          RawAppArgs.empty,
+          RoleAppArgs.empty,
           env.activationInfo,
           env.activation,
           Activation.empty,
@@ -227,7 +227,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     }
   }
 
-  private[this] def prepareTestEnv(
+  private def prepareTestEnv(
     envExecutionParams: EnvExecutionParams,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
@@ -269,8 +269,8 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       runtimePlan <- injector.plan(
         PlannerInput(
           appModule ++ new TestRuntimeModule(envExecutionParams),
-          fullActivation,
           runtimeGcRoots,
+          fullActivation,
         )
       )
       _ <- Right(planChecker.showProxyWarnings(runtimePlan))
@@ -291,7 +291,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
         .map {
           case (testRoots, distageTests) =>
             for {
-              plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, fullActivation, testRoots)) else Right(Plan.empty)
+              plan <- if (testRoots.nonEmpty) injector.plan(PlannerInput(reducedAppModule, testRoots, fullActivation)) else Right(Plan.empty)
               _ <- Right(planChecker.showProxyWarnings(plan))
             } yield {
               distageTests.map(AlmostPreparedTest(_, reducedAppModule, plan.keys, fullActivation))
@@ -301,15 +301,17 @@ class TestPlanner[F[_]: TagK: DefaultModule](
 
       // we need to "strengthen" all _memoized_ weak set instances that occur in our tests to ensure that they
       // be created and persist in memoized set. we do not use strengthened bindings afterwards, so non-memoized
-      // weak sets behave as usual
-      (strengthenedKeys, strengthenedAppModule) = reducedAppModule.foldLeftWith(List.empty[DIKey]) {
+      // weak sets behave as usual.
+      // NOTE: there's no check for memoization here. However, there is in TestTreeBuilder: we filter out non-memoized elements
+      // to not accidentally strengthen unmemoized keys.
+      (strengthenedKeys, strengthenedAppModule) = reducedAppModule.foldLeftWith(Set.empty[DIKey.SetElementKey]) {
         case (acc, b @ SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && (envKeys(key) || envKeys(r.key)) =>
-          (key :: acc) -> b.copy(implementation = r.copy(weak = false))
+          (acc + key) -> b.copy(implementation = r.copy(weak = false))
         case (acc, b) =>
           acc -> b
       }
 
-      orderedPlans <-
+      memoizationPlanTree <-
         if (env.memoizationRoots.keys.nonEmpty) {
           // we need to create plans for each level of memoization
           // every duplicated key will be removed
@@ -325,7 +327,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
                   for {
                     plan <- prepareSharedPlan(envKeys, runtimeKeys, levelRoots, fullActivation, injector, levelModule, planChecker)
                   } yield {
-                    ((acc ++ List(plan), allSharedKeys ++ plan.keys))
+                    (acc ++ List(plan), allSharedKeys ++ plan.keys)
                   }
                 } else {
                   Right((acc, allSharedKeys))
@@ -344,11 +346,11 @@ class TestPlanner[F[_]: TagK: DefaultModule](
       }
 
       val highestDebugOutputInTests = tests.exists(_.environment.debugOutput)
-      PackedEnv(envMergeCriteria, testPlans, orderedPlans, injector, highestDebugOutputInTests, strengthenedKeys.toSet)
+      PackedEnv(envMergeCriteria, testPlans, memoizationPlanTree, injector, highestDebugOutputInTests, strengthenedKeys)
     }
   }
 
-  private[this] def prepareSharedPlan(
+  private def prepareSharedPlan(
     envKeys: Set[DIKey],
     runtimeKeys: Set[DIKey],
     memoizationRoots: Set[DIKey],
@@ -362,7 +364,7 @@ class TestPlanner[F[_]: TagK: DefaultModule](
     for {
       plan <-
         if (sharedKeys.nonEmpty) {
-          injector.plan(PlannerInput(appModule, activation, sharedKeys))
+          injector.plan(PlannerInput(appModule, sharedKeys, activation))
         } else {
           Right(Plan.empty)
         }

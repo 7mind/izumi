@@ -17,7 +17,7 @@ import izumi.distage.roles.launcher.*
 import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
-import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, ParserFailureHandler}
+import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, MultiModalArgsParser, MultiModalArgsParserImpl, ParserFailureHandler, SubArgsParser, SubArgsParserImpl}
 import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
@@ -78,6 +78,9 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
 
   make[CLIParser].from[CLIParserImpl]
+  make[MultiModalArgsParser].from[MultiModalArgsParserImpl]
+  make[SubArgsParser].from[SubArgsParserImpl]
+
   make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
 
   many[LibraryReference]
@@ -92,11 +95,18 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Activation].named("default").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
 
-  make[Boolean].named("distage.roles.reflection").fromValue(true)
-  make[Boolean].named("distage.roles.logs.json").fromValue(false)
-  make[Boolean].named("distage.roles.ignore-mismatched-effect").fromValue(false)
-  make[Boolean].named("distage.roles.activation.ignore-unknown").fromValue(false)
-  make[Boolean].named("distage.roles.activation.warn-unset").fromValue(true)
+  make[Boolean].named("distage.roles.reflection").from(DebugProperties.`izumi.distage.roles.reflection`.boolValue(default = true))
+  make[Boolean].named("distage.roles.logs.json").from(DebugProperties.`izumi.distage.roles.logs.json`.boolValue(default = false))
+  make[Boolean].named("distage.roles.ignore-mismatched-effect").from(DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(default = false))
+  make[Boolean].named("distage.roles.activation.ignore-unknown").from(DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.boolValue(default = false))
+  make[Boolean].named("distage.roles.activation.warn-unset").from(DebugProperties.`izumi.distage.roles.activation.warn-unset`.boolValue(default = true))
+
+  make[Boolean].named("distage.roles.always-include-reference-role-configs").from(DebugProperties.`distage.roles.always-include-reference-role-configs`.boolValue(true))
+  make[Boolean]
+    .named("distage.roles.always-include-reference-common-configs").from(DebugProperties.`distage.roles.always-include-reference-common-configs`.boolValue(true))
+  make[Boolean].named("distage.roles.ignore-all-reference-configs").from(DebugProperties.`distage.roles.ignore-all-reference-configs`.boolValue(default = false))
+  make[Boolean]
+    .named("distage.roles.enable-config-environment-overrides").from(DebugProperties.`distage.roles.enable-config-environment-overrides`.boolValue(default = true))
 
   make[PluginMergeStrategy].named("bootstrap").fromValue(SimplePluginMergeStrategy)
   make[PluginMergeStrategy].named("main").fromValue(SimplePluginMergeStrategy)
@@ -119,7 +129,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   make[RolesInfo].from {
     (provider: RoleProvider, appModule: ModuleBase @Id("main"), tagK: TagK[F]) =>
-      provider.loadRoles[F](appModule)(tagK)
+      provider.loadRoles[F](appModule)(using tagK)
   }
   make[Set[DIKey]].named("distage.roles.roots").from {
     (rolesInfo: RolesInfo) =>
@@ -157,7 +167,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       roots: Set[DIKey] @Id("distage.roles.roots"),
       defaultModule: DefaultModule[F],
     ) =>
-      injectorFactory.bootloader(bsModule, bsActivation, defaultModule, PlannerInput(appModule, activation, roots))
+      injectorFactory.bootloader(bsModule, bsActivation, defaultModule, PlannerInput(appModule, roots, activation))
   }
 
   make[RoleAppPlanner].from[RoleAppPlanner.Impl[F]]

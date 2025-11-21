@@ -7,7 +7,7 @@ import scala.collection.compat.immutable.LazyList
 import scala.collection.compat.immutable.LazyList.#::
 import scala.collection.immutable.Queue
 
-trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
+trait ErrorAccumulatingOps2[F[+_, +_]] { F: Error2[F] =>
 
   /** `traverse` with error accumulation */
   def traverseAccumErrors[ColR[x] <: IterableOnce[x], ColL[_], E, A, B](
@@ -41,6 +41,21 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
       init = (),
       onRight = (acc: Unit, _: Unit) => acc,
       end = (acc: Unit) => acc,
+    )
+  }
+
+  /** `traverse` with error accumulation */
+  def traverseAccumErrorsNEList[ColR[x] <: IterableOnce[x], E, A, B](
+    col: ColR[A]
+  )(f: A => F[E, B]
+  )(implicit buildR: Factory[B, ColR[B]]
+  ): F[NEList[E], ColR[B]] = {
+    accumulateErrorsImpl(col)(
+      effect = f,
+      onLeft = (e: E) => Seq(e),
+      init = Queue.empty[B],
+      onRight = (ac: Queue[B], a: B) => ac :+ a,
+      end = (ac: Queue[B]) => ac.to(buildR),
     )
   }
 
@@ -108,7 +123,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
     flatTraverseAccumErrors(col)(identity)
   }
 
-  protected[this] def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](
+  protected def accumulateErrorsImpl[ColL[_], ColR[x] <: IterableOnce[x], E, E1, A, B, B1, AC](
     col: ColR[A]
   )(effect: A => F[E, B],
     onLeft: E => IterableOnce[E1],
@@ -125,7 +140,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
     ): F[ColL[E1], B1] = {
       lazyList match {
         case h #:: tail =>
-          redeem(effect(h))(
+          F.redeem(effect(h))(
             e => go(bad ++ onLeft(e), good, tail, allGood = false),
             v => {
               val newGood = onRight(good, v)
@@ -134,9 +149,9 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { this: Error2[F] =>
           )
         case _ =>
           if (allGood) {
-            pure(end(good))
+            F.pure(end(good))
           } else {
-            fail(bad.to(buildL))
+            F.fail(bad.to(buildL))
           }
       }
     }

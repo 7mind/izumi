@@ -13,13 +13,13 @@ import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 
-final class SubcontextImpl[A] private (
-  externalKeys: Set[DIKey],
-  parent: LocatorRef,
+open class SubcontextImpl[A](
+  val externalKeys: Set[DIKey],
+  val parent: LocatorRef,
   val plan: Plan,
-  functoid: Functoid[A],
-  providedExternals: Map[DIKey, AnyRef],
-  selfKey: DIKey,
+  val functoid: Functoid[A],
+  val providedExternals: Map[DIKey, AnyRef],
+  val selfKey: DIKey,
 ) extends Subcontext[A] {
 
   def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): Subcontext[A] = {
@@ -50,8 +50,8 @@ final class SubcontextImpl[A] private (
     produce().use(f)
   }
 
-  override def map[B: Tag](f: A => B): Subcontext[B] = {
-    new SubcontextImpl(externalKeys, parent, plan, functoid.map[B](f), providedExternals, selfKey)
+  override def unsafeModify[B](f: Functoid[A] => Functoid[B]): Subcontext[B] = {
+    new SubcontextImpl(externalKeys, parent, plan, f(functoid), providedExternals, selfKey)
   }
 
   private def doAdd(value: AnyRef, pos: CodePositionMaterializer, key: DIKey): SubcontextImpl[A] = {
@@ -72,6 +72,12 @@ final class SubcontextImpl[A] private (
 }
 
 object SubcontextImpl {
-  def empty[A](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[A], selfKey: DIKey) =
-    new SubcontextImpl[A](externalKeys, locatorRef, subplan, impl, Map.empty, selfKey)
+  def initial[A](externalKeys: Set[DIKey], parent: LocatorRef, subplan: Plan, functoid: Functoid[A], selfKey: DIKey): SubcontextImpl[A] = {
+    new SubcontextImpl[A](externalKeys, parent, subplan, functoid, Map.empty, selfKey)
+  }
+
+  @deprecated("Renamed to initial", "1.2.17")
+  def empty[A](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[A], selfKey: DIKey): SubcontextImpl[A] = {
+    initial(externalKeys, locatorRef, subplan, impl, selfKey)
+  }
 }

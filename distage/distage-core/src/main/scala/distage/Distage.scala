@@ -14,6 +14,9 @@ trait Distage {
   type Activation = model.definition.Activation
   val Activation: model.definition.Activation.type = model.definition.Activation
 
+  type LocatorPrivacy = model.definition.LocatorPrivacy
+  val LocatorPrivacy: model.definition.LocatorPrivacy.type = model.definition.LocatorPrivacy
+
   type Roots = model.plan.Roots
   val Roots: model.plan.Roots.type = model.plan.Roots
 

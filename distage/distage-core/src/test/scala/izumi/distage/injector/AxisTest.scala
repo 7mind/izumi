@@ -22,13 +22,13 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val injector1 = mkInjector()
-    val context1 = injector1.produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots(DIKey.get[JustTrait]))).unsafeGet()
+    val context1 = injector1.produce(PlannerInput(definition, Roots(DIKey.get[JustTrait]), Activation(Repo -> Repo.Prod))).unsafeGet()
 
     assert(context1.get[JustTrait].isInstanceOf[Impl1])
     assert(!context1.get[JustTrait].isInstanceOf[Impl0])
 
     val injector2 = mkInjector()
-    val context2 = injector2.produce(PlannerInput(definition, Activation(Repo -> Repo.Dummy), Roots(DIKey.get[JustTrait]))).unsafeGet()
+    val context2 = injector2.produce(PlannerInput(definition, Roots(DIKey.get[JustTrait]), Activation(Repo -> Repo.Dummy))).unsafeGet()
 
     assert(context2.get[JustTrait].isInstanceOf[Impl0])
     assert(!context2.get[JustTrait].isInstanceOf[Impl1])
@@ -38,19 +38,19 @@ class AxisTest extends AnyWordSpec with MkInjector {
     import BasicCase1._
 
     val bsDefinition = new BootstrapModuleDef {
-      make[JustTrait].tagged(Repo.Dummy).from[Impl0]
-      make[JustTrait].tagged(Repo.Prod).from[Impl1]
+      make[JustTrait].tagged(Repo.Dummy).from[Impl0].exposed
+      make[JustTrait].tagged(Repo.Prod).from[Impl1].exposed
     }
     val appDefinition = Module.empty
 
     val injector1 = Injector[Identity](bootstrapActivation = Activation(Repo -> Repo.Prod), overrides = Seq(bsDefinition))
-    val context1 = injector1.produce(PlannerInput(appDefinition, Activation.empty, Roots.Everything)).unsafeGet()
+    val context1 = injector1.produce(PlannerInput(appDefinition, Roots.Everything, Activation.empty)).unsafeGet()
 
     assert(context1.get[JustTrait].isInstanceOf[Impl1])
     assert(!context1.get[JustTrait].isInstanceOf[Impl0])
 
     val injector2 = Injector[Identity](bootstrapActivation = Activation(Repo -> Repo.Dummy), overrides = Seq(bsDefinition))
-    val context2 = injector2.produce(PlannerInput(appDefinition, Activation.empty, Roots.Everything)).unsafeGet()
+    val context2 = injector2.produce(PlannerInput(appDefinition, Roots.Everything, Activation.empty)).unsafeGet()
 
     assert(context2.get[JustTrait].isInstanceOf[Impl0])
     assert(!context2.get[JustTrait].isInstanceOf[Impl1])
@@ -64,7 +64,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val context = mkInjector()
-      .produce(PlannerInput(definition, Activation(Repo -> Repo.Prod), Roots.Everything))
+      .produce(PlannerInput(definition, Roots.Everything, Activation(Repo -> Repo.Prod)))
       .unsafeGet()
 
     assert(context.find[JustTrait].isEmpty)
@@ -167,7 +167,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val instance = mkInjector()
-      .produce(PlannerInput(definition, Activation(Repo -> Repo.Dummy), Roots(DIKey[Set[SetTrait]])))
+      .produce(PlannerInput(definition, Roots(DIKey[Set[SetTrait]]), Activation(Repo -> Repo.Dummy)))
       .unsafeGet()
       .get[Set[SetTrait]]
 
@@ -188,7 +188,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     intercept[InjectorFailed] {
       mkInjector()
-        .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
+        .produce(PlannerInput(definition, Roots(DIKey[Set[SetTrait]]), Activation()))
         .unsafeGet()
         .get[Set[SetTrait]]
     }
@@ -207,7 +207,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     intercept[InjectorFailed] {
       mkInjector()
-        .produce(PlannerInput(definition, Activation(), Roots(DIKey[Set[SetTrait]])))
+        .produce(PlannerInput(definition, Roots(DIKey[Set[SetTrait]]), Activation()))
         .unsafeGet()
         .get[Set[SetTrait]]
     }
@@ -223,7 +223,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val set = mkInjector()
-      .produce(PlannerInput(definition, Activation(Repo.Dummy), Roots(DIKey[Set[Service]])))
+      .produce(PlannerInput(definition, Roots(DIKey[Set[Service]]), Activation(Repo.Dummy)))
       .unsafeGet()
       .get[Set[Service]]
     assert(set.size == 1)
@@ -240,7 +240,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
 
     intercept[InjectorFailed] {
       mkInjector()
-        .produce(PlannerInput(definition, Activation(Repo.Dummy), Roots(DIKey[Set[Service]])))
+        .produce(PlannerInput(definition, Roots(DIKey[Set[Service]]), Activation(Repo.Dummy)))
         .unsafeGet()
         .get[Set[Service]]
     }
@@ -256,7 +256,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val set = mkInjector()
-      .produce(PlannerInput(definition, Activation(Repo.Dummy), Roots(DIKey[Set[Service]])))
+      .produce(PlannerInput(definition, Roots(DIKey[Set[Service]]), Activation(Repo.Dummy)))
       .unsafeGet()
       .get[Set[Service]]
     assert(set.size == 1)
@@ -275,28 +275,28 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val instance1 = mkInjector()
-      .produce(PlannerInput(definitionTodo, Activation(Repo.Dummy), Roots(DIKey[Set[SetTrait]])))
+      .produce(PlannerInput(definitionTodo, Roots(DIKey[Set[SetTrait]]), Activation(Repo.Dummy)))
       .unsafeGet()
       .get[Set[SetTrait]]
 
     assert(instance1.isEmpty)
 
     val instance2 = mkInjector()
-      .produce(PlannerInput(definitionTodo, Activation(Repo.Prod), Roots(DIKey[Set[SetTrait]])))
+      .produce(PlannerInput(definitionTodo, Roots(DIKey[Set[SetTrait]]), Activation(Repo.Prod)))
       .unsafeGet()
       .get[Set[SetTrait]]
 
     assert(instance2.size == 1)
 
     val instance3 = mkInjector()
-      .produce(PlannerInput(baseDef, Activation(Repo.Prod), Roots(DIKey[Set[SetTrait]])))
+      .produce(PlannerInput(baseDef, Roots(DIKey[Set[SetTrait]]), Activation(Repo.Prod)))
       .unsafeGet()
       .get[Set[SetTrait]]
 
     assert(instance3.size == 1)
 
     val instance4 = mkInjector()
-      .produce(PlannerInput(baseDef, Activation(Repo.Dummy), Roots(DIKey[Set[SetTrait]])))
+      .produce(PlannerInput(baseDef, Roots(DIKey[Set[SetTrait]]), Activation(Repo.Dummy)))
       .unsafeGet()
       .get[Set[SetTrait]]
 
@@ -313,7 +313,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     val instance = mkInjector()
-      .produce(PlannerInput(definition, Activation(Repo -> Repo.Dummy), Roots(DIKey[X])))
+      .produce(PlannerInput(definition, Roots(DIKey[X]), Activation(Repo -> Repo.Dummy)))
       .unsafeGet()
       .get[X]
 

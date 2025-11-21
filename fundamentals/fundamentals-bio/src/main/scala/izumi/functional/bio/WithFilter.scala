@@ -4,6 +4,8 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 
 trait WithFilter[+E] {
   def error(matchedValue: Any, pos: SourceFilePosition): E
+
+  def map[E1](f: E => E1): WithFilter[E1] = (a, pos) => f(error(a, pos))
 }
 
 object WithFilter extends WithFilterInstances1 {

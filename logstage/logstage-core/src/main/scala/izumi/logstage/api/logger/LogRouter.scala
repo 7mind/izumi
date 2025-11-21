@@ -2,14 +2,19 @@ package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.console.TrivialLogger.Config
+import izumi.fundamentals.platform.language.CodePosition
 import izumi.logstage.DebugProperties
 import izumi.logstage.api.Log
+import izumi.logstage.api.config.LoggingTarget
 import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.sink.ConsoleSink
 
 trait LogRouter extends AutoCloseable {
   def log(entry: Log.Entry): Unit
+
   def acceptable(id: Log.LoggerId, logLevel: Log.Level): Boolean
+
+  def acceptable(position: CodePosition, logLevel: Log.Level): Boolean
 
   override def close(): Unit = {}
 }
@@ -18,7 +23,7 @@ object LogRouter {
   def apply(
     threshold: Log.Level = Log.Level.Trace,
     sink: LogSink = ConsoleSink.ColoredConsoleSink,
-    levels: Map[String, Log.Level] = Map.empty,
+    levels: Map[String, LoggingTarget] = Map.empty,
     buffer: LogQueue = LogQueue.Immediate,
   ): ConfigurableLogRouter = {
     ConfigurableLogRouter(threshold, Seq(sink), levels, buffer)
@@ -28,14 +33,19 @@ object LogRouter {
     private val fallback: TrivialLogger = TrivialLogger.make[LogRouter](DebugProperties.`izumi.logstage.routing.log-failures`.name, Config(forceLog = true))
 
     override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = true
+    override def acceptable(position: CodePosition, logLevel: Log.Level): Boolean = true
 
     override def log(entry: Log.Entry): Unit = {
       fallback.log(entry.message.template.raw(entry.message.args.map(_.value)*) + s"\n{{ ${entry.toString} }}\n")
     }
+
   }
 
   lazy val nullRouter: LogRouter = new LogRouter {
     override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = false
+    override def acceptable(position: CodePosition, logLevel: Log.Level): Boolean = false
+
     override def log(entry: Log.Entry): Unit = {}
+
   }
 }

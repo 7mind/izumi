@@ -55,10 +55,11 @@ class ResourceRewriter(
 
   private def rewrite[TGT](tgt: SafeType, resourceType: SafeType)(convert: TGT => Lifecycle[Identity, TGT])(b: Binding): Seq[Binding] = {
     b match {
+      case b if b.isMutator => Seq(b) // do not rewrite mutators
       case implBinding: Binding.ImplBinding =>
         implBinding match {
           case binding: Binding.SingletonBinding[?] =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, tgt, resourceType) match {
+            rewriteImpl(convert, binding.key, binding.origin.position, binding.implementation, tgt, resourceType) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${tgt -> "type"}")
                 Seq(finish(binding, newImpl))
@@ -67,7 +68,7 @@ class ResourceRewriter(
             }
 
           case binding: Binding.SetElementBinding =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, tgt, resourceType) match {
+            rewriteImpl(convert, binding.key, binding.origin.position, binding.implementation, tgt, resourceType) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${tgt -> "type"}")
                 Seq(finish(binding, newImpl))
@@ -81,7 +82,7 @@ class ResourceRewriter(
     }
   }
 
-  @inline private[this] def quickSubtypeCheck(tgt: SafeType, implType: SafeType): Boolean = {
+  @inline private def quickSubtypeCheck(tgt: SafeType, implType: SafeType): Boolean = {
     if (tgt.hasPreciseClass && implType.hasPreciseClass) {
       tgt.closestClass.isAssignableFrom(implType.closestClass)
     } else {
