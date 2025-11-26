@@ -210,12 +210,31 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
   @inline override final def sandbox[E, A](r: ZIO[R, E, A]): ZIO[R, Exit.FailureUninterrupted[E], A] = {
     implicit val trace: zio.Trace = Tracer.instance.empty
 
-    // Assume no *external* interruption:
-    // either we're interrupted here - ergo we don't return from here anyway,
-    // or we're in an uninterruptible region - ergo we're not interrupted.
-    // In BIO (and cats-effect), only external interruption counts as 'interruption'
-    // Internal interruption is not a valid state (and is treated as a defect - Exit.Termination)
-    r.sandbox.mapError(ZIOExit.toExitUninterrupted)
+    r.foldCauseZIO[R, Exit.FailureUninterrupted[E], A](
+      failure = cause =>
+        ZIOExit.withIsInterruptedF {
+          extInterrupted =>
+            ZIOExit.toExit(cause)(extInterrupted) match {
+              case _: Exit.Interruption =>
+                // Due to https://github.com/zio/zio/issues/10260 we CAN actually catch
+                // external interruption with ZIO.sandbox, and we HAVE to rethrow it because
+                // BIO has to be portable and the equivalent of ZIO.sandbox cannot be
+                // implemented on Cats Effect
+                val interruptedCause0 = cause.stripFailures
+                val interruptedCause = if (interruptedCause0.isInterrupted) {
+                  interruptedCause0
+                } else {
+                  zio.Cause.interrupt(zio.FiberId.None) ++ interruptedCause0
+                }
+                ZIO.failCause(interruptedCause)
+              case uninterrupted: Exit.FailureUninterrupted[E] =>
+                // In BIO (and cats-effect), only external interruption counts as 'interruption'
+                // Internal interruption is not a valid state (and is treated as a defect - Exit.Termination)
+                ZIO.fail(uninterrupted)
+            }
+        },
+      success = ZIO.succeed(_),
+    )
   }
 
   @inline override final def yieldNow: ZIO[Any, Nothing, Unit] = ZIO.yieldNow(Tracer.instance.empty)
