@@ -1,7 +1,7 @@
 {
   description = "izumi build environment";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/24.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/25.05";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
