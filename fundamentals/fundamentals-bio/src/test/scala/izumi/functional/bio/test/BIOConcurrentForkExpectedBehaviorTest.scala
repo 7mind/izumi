@@ -12,18 +12,17 @@ abstract class BIOConcurrentForkExpectedBehaviorTest[F[+_, +_]: TagKK: Concurren
 ) extends AsyncWordSpec {
   val F: Panic2[F] = Concurrent2[F].InnerF
 
-  s"implementor ${TagKK[F].tag} of {Concurrent2,Primitives2,Fork2}" should {
+  s"implementation of {Concurrent2,Primitives2,Fork2} of ${TagKK[F].tag}" should {
 
     "have sandbox not catch external interruption, even when uninterruptible" in {
       val test: F[Nothing, Assertion] = for {
         caughtExtInterrupt <- F.mkRef(false)
         l1 <- F.mkLatch
-        l2 <- F.mkLatch
         fib = F.uninterruptibleExcept {
           restore =>
-            restore(l1.succeed(()) *> l2.await).sandbox.catchAll(_ => caughtExtInterrupt.set(true))
+            restore(l1.succeed(()) *> F.never).sandbox.catchAll(_ => caughtExtInterrupt.set(true))
         }
-        _ <- F.fork(fib).flatMap(_.interrupt)
+        _ <- F.fork(fib).flatMap(l1.await *> _.interrupt)
         caught <- caughtExtInterrupt.get
       } yield {
         assert(!caught)
