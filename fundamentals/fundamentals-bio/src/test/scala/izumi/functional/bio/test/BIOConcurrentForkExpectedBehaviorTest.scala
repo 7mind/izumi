@@ -5,12 +5,16 @@ import izumi.reflect.TagKK
 import org.scalatest.Assertion
 import org.scalatest.wordspec.AsyncWordSpec
 
-final class BIOConcurrentForkExpectedBehaviorTestZIO extends BIOConcurrentForkExpectedBehaviorTest[zio.IO](UnsafeRun2.createZIO())
+import scala.concurrent.ExecutionContext
+
+final class BIOConcurrentForkExpectedBehaviorTestZIO
+  extends BIOConcurrentForkExpectedBehaviorTest[zio.IO](ec => UnsafeRun2.createZIO(Some(zio.Executor.fromExecutionContext(ec))))
 
 abstract class BIOConcurrentForkExpectedBehaviorTest[F[+_, +_]: TagKK: Concurrent2: Primitives2: Fork2](
-  runner: UnsafeRun2[F]
+  mkRunner: ExecutionContext => UnsafeRun2[F]
 ) extends AsyncWordSpec {
   val F: Panic2[F] = Concurrent2[F].InnerF
+  val runner: UnsafeRun2[F] = mkRunner(this.executionContext)
 
   s"implementation of {Concurrent2,Primitives2,Fork2} of ${TagKK[F].tag}" should {
 
