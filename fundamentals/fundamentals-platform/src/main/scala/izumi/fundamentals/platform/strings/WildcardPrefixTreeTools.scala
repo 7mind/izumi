@@ -10,7 +10,7 @@ object WildcardPrefixTreeTools {
     }
 
     private def print(path: Seq[PathElement[K]], tree: WildcardPrefixTree[K, V]): String = {
-      import izumi.fundamentals.preamble.*
+      import IzString.{toRichIterable, toRichString}
 
       val pathRepr = if (path.isEmpty) {
         "/"

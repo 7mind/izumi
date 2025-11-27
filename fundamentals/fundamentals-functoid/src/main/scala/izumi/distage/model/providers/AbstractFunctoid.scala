@@ -4,7 +4,7 @@ import izumi.distage.model.definition.Identifier
 import izumi.distage.model.exceptions.dsl.ParameterNotFoundForAnnotation
 import izumi.distage.model.reflection.{DIKey, Provider, SafeType}
 import izumi.fundamentals.platform.language.Quirks.Discarder
-import izumi.fundamentals.preamble.toRichIterable
+import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.Tag
 
 import scala.annotation.unchecked.uncheckedVariance

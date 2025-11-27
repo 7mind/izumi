@@ -2,7 +2,7 @@ package izumi.distage.model.plan.repr
 
 import izumi.distage.model.Locator
 import izumi.functional.Renderable
-import izumi.fundamentals.preamble.{toRichIterable, toRichString}
+import izumi.fundamentals.platform.strings.IzString.{toRichIterable, toRichString}
 
 object LocatorFormatter extends Renderable[Locator] {
 
