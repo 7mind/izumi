@@ -248,10 +248,13 @@ object Syntax2 {
     extends IOOps(r)(using F)
     with ConcurrentOpsBase[F, E, A]
 
-  final class TemporalOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: Temporal2[F]) {
+  open class WeakTemporalOps[F[+_, +_], +E, +A](protected val r: F[E, A])(implicit protected val F: WeakTemporal2[F]) {
     @inline final def repeatUntil[E2 >: E, A2](tooManyAttemptsError: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
       F.repeatUntil[E2, A2](new FunctorOps(r)(using F.InnerF).widen)(tooManyAttemptsError, sleep, maxAttempts)
+  }
 
+  final class TemporalOps[F[+_, +_], +E, +A](override protected val r: F[E, A])(implicit override protected val F: Temporal2[F])
+    extends WeakTemporalOps[F, E, A](r)(using F) {
     @inline final def timeout(duration: Duration): F[E, Option[A]] = F.timeout(duration)(r)
     @inline final def timeoutFail[E1 >: E](e: => E1)(duration: Duration): F[E1, A] = F.timeoutFail(duration)(e, r)
   }
@@ -261,10 +264,15 @@ object Syntax2 {
   }
 
   trait ImplicitPuns extends ImplicitPunsTemporal
-  trait ImplicitPunsTemporal extends ImplicitPunsFork {
+  trait ImplicitPunsTemporal extends ImplicitPunsWeakTemporal {
     @inline implicit final def Temporal2[F[+_, +_]: Temporal2, E, A](self: F[E, A]): TemporalOps[F, E, A] = new TemporalOps[F, E, A](self)
     @inline implicit final def Temporal2[F[+_, +_]: Error2, E, A](self: F[E, A]): ErrorOps[F, E, A] = new ErrorOps[F, E, A](self)
     @inline final def Temporal2[F[+_, +_]: Temporal2]: Temporal2[F] = implicitly
+  }
+  trait ImplicitPunsWeakTemporal extends ImplicitPunsFork {
+    @inline implicit final def WeakTemporal2[F[+_, +_]: WeakTemporal2, E, A](self: F[E, A]): WeakTemporalOps[F, E, A] = new WeakTemporalOps[F, E, A](self)
+    @inline implicit final def WeakTemporal2[F[+_, +_]: Error2, E, A](self: F[E, A]): ErrorOps[F, E, A] = new ErrorOps[F, E, A](self)
+    @inline final def WeakTemporal2[F[+_, +_]: WeakTemporal2]: WeakTemporal2[F] = implicitly
   }
   trait ImplicitPunsFork extends ImplicitPunsAsync {
     @inline implicit final def Fork2[F[+_, +_]: Fork2, E, A](self: F[E, A]): ForkOps[F, E, A] = new ForkOps[F, E, A](self)

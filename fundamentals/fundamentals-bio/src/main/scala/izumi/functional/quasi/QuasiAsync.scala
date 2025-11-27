@@ -1,6 +1,6 @@
 package izumi.functional.quasi
 
-import izumi.functional.bio.{F, Temporal2, WeakAsync2}
+import izumi.functional.bio.{F, WeakAsync2, WeakTemporal2}
 import izumi.fundamentals.orphans.{`cats.effect.kernel.Async`, `cats.effect.kernel.GenTemporal`}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -105,7 +105,7 @@ object QuasiTemporal extends LowPriorityQuasiTimerInstances {
     }
   }
 
-  implicit def fromBIO[F[+_, +_]](implicit F: Temporal2[F]): QuasiTemporal[F[Throwable, _]] = new QuasiTemporal[F[Throwable, _]] {
+  implicit def fromBIO[F[+_, +_]](implicit F: WeakTemporal2[F]): QuasiTemporal[F[Throwable, _]] = new QuasiTemporal[F[Throwable, _]] {
     override def sleep(duration: FiniteDuration): F[Throwable, Unit] = {
       F.sleep(duration)
     }

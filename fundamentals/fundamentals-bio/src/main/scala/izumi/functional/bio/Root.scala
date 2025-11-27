@@ -36,34 +36,35 @@ sealed trait RootInstancesLowPriority1 extends RootInstancesLowPriority2 {
 
   @inline implicit final def AttachBifunctor[F[+_, +_]](@unused self: Functor2[F])(implicit Bifunctor: Bifunctor2[F]): Bifunctor.type =
     Bifunctor
+}
+
+sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
+  @inline implicit final def ConvertFromWeakTemporal[F[+_, +_]](implicit WeakTemporal: NotPredefined.Of[WeakTemporal2[F]]): Predefined.Of[Error2[F] & S8] =
+    Predefined(S8(WeakTemporal.InnerF))
+
   @inline implicit final def AttachConcurrent[F[+_, +_]](@unused self: Functor2[F])(implicit Concurrent: Concurrent2[F]): Concurrent.type =
     Concurrent
 }
 
-sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
+sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority30 {
   @inline implicit final def ConvertFromParallelErrorAccumulatingOps[F[+_, +_]](
     implicit ParallelErrorAccumulatingOps: NotPredefined.Of[ParallelErrorAccumulatingOps2[F]]
   ): Predefined.Of[Error2[F] & S3] =
     Predefined(S3(ParallelErrorAccumulatingOps.InnerF))
 
-  @inline implicit final def AttachParallelErrorAccumulatingOps[F[+_, +_]](
-    @unused self: Functor2[F]
-  )(implicit ParallelErrorAccumulatingOps: ParallelErrorAccumulatingOps2[F]
-  ): ParallelErrorAccumulatingOps.type = ParallelErrorAccumulatingOps
+  @inline implicit final def AttachParallel[F[+_, +_]](@unused self: Functor2[F])(implicit Parallel: Parallel2[F]): Parallel.type = Parallel
 }
 
-sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
+sealed trait RootInstancesLowPriority30 extends RootInstancesLowPriority4 {
   @inline implicit final def ConvertFromParallel[F[+_, +_]](implicit Parallel: NotPredefined.Of[Parallel2[F]]): Predefined.Of[Monad2[F] & S4] =
     Predefined(S4(Parallel.InnerF))
 
-  @inline implicit final def AttachParallel[F[+_, +_]](@unused self: Functor2[F])(implicit Parallel: Parallel2[F]): Parallel.type = Parallel
+  @inline implicit final def AttachWeakTemporal[F[+_, +_]](@unused self: Functor2[F])(implicit WeakTemporal: WeakTemporal2[F]): WeakTemporal.type = WeakTemporal
 }
 
 sealed trait RootInstancesLowPriority4 extends RootInstancesLowPriority5 {
   @inline implicit final def ConvertFromBifunctor[F[+_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor2[F]]): Predefined.Of[Functor2[F] & S7] =
     Predefined(S7(Bifunctor.InnerF))
-
-  @inline implicit final def AttachTemporal[F[+_, +_]](@unused self: Functor2[F])(implicit Temporal: Temporal2[F]): Temporal2[F] = Temporal
 }
 
 sealed trait RootInstancesLowPriority5 extends RootInstancesLowPriority6 {

@@ -2,7 +2,7 @@ package izumi.functional.bio.retry
 
 import izumi.functional.bio.PredefinedHelper.Predefined
 import izumi.functional.bio.impl.SchedulerImpl
-import izumi.functional.bio.{Clock2, PredefinedHelper, Temporal2}
+import izumi.functional.bio.{Clock2, PredefinedHelper, WeakTemporal2}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -20,6 +20,6 @@ object Scheduler2 {
 
 private[bio] sealed trait SchedulerInstances
 object SchedulerInstances {
-  @inline implicit def SchedulerFromTemporalAndClock[F[+_, +_]: Temporal2: Clock2]: Predefined.Of[Scheduler2[F]] =
+  @inline implicit def SchedulerFromTemporalAndClock[F[+_, +_]: WeakTemporal2: Clock2]: Predefined.Of[Scheduler2[F]] =
     Predefined(new SchedulerImpl[F[+_, +_]])
 }

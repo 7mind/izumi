@@ -124,6 +124,8 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
           import scala.concurrent.ExecutionContext.Implicits.global
           val _ = global
 
+          // FIXME use QuasiIOIdentity cached pool on JVM
+
           // MiniBIOAsync impl
           import izumi.functional.bio.Exit
           import izumi.functional.bio.impl.MiniBIOAsync

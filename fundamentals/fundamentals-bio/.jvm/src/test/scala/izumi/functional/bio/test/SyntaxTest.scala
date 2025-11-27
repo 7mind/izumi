@@ -104,6 +104,21 @@ class SyntaxTest extends AnyWordSpec {
     a[zio.IO]
   }
 
+  "WeakTemporal2 attachment/conversion works" in {
+    import izumi.functional.bio.{WeakTemporal2, F}
+
+    def x[F[+_, +_]: WeakTemporal2](a: F[Nothing, Unit], b: F[Nothing, Unit]) = {
+      a.flatMap(_ => b).flatMap(_ => F.unit)
+      a.widenError[Throwable].catchAll(_ => F.unit `orElse` b).void
+      F.unit: F[Nothing, Unit]
+
+      F.pure(Some(1)).repeatUntil("error", 5.seconds, 10)
+      F.sleep(5.seconds): F[Nothing, Unit]
+    }
+
+    x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
+  }
+
   "BIOTemporal attachment/conversion works" in {
     import izumi.functional.bio.{Temporal2, F}
 
@@ -112,6 +127,7 @@ class SyntaxTest extends AnyWordSpec {
       a.widenError[Throwable].catchAll(_ => F.unit `orElse` b).void
       F.unit: F[Nothing, Unit]
 
+      F.pure(Some(1)).repeatUntil("error", 5.seconds, 10)
       F.sleep(5.seconds): F[Nothing, Unit]
       F.timeout(5.seconds)(F.forever(F.unit)): F[Nothing, Option[Unit]]
     }
@@ -158,7 +174,7 @@ class SyntaxTest extends AnyWordSpec {
     import izumi.functional.bio.IO2
 
     class X[F[+_, +_]: IO2] {
-      def hello: F[Throwable, Unit] = IO2(println("hello world!"))
+      def hello: F[Throwable, Unit] = IO2[F, Unit](println("hello world!"))
     }
 
     assert(new X[zio.IO].hello != null)

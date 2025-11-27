@@ -3,11 +3,12 @@ package izumi.functional.bio.impl
 import izumi.functional.bio.Exit.Trace
 import izumi.functional.bio.data.{InterruptAction, Morphism2, RestoreInterruption2}
 import izumi.functional.bio.impl.MiniBIOAsync.Fail
-import izumi.functional.bio.{BlockingIO2, Exit, UnsafeRun2, WeakAsync2}
+import izumi.functional.bio.{BlockingIO2, Exit, UnsafeRun2, WeakAsync2, WeakTemporal2}
 import izumi.fundamentals.platform.language.Quirks.Discarder
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.tailrec
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
@@ -182,7 +183,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
   ) extends MiniBIOAsync[E1, B]
   final case class Async[+E, +A](register: (ExecutionContext, Exit.Uninterrupted[E, A] => Unit) => Unit) extends MiniBIOAsync[E, A]
 
-  implicit object WeakAsync2ForMiniBIOAsync extends WeakAsync2[MiniBIOAsync] with BlockingIO2[MiniBIOAsync] {
+  implicit object WeakAsync2ForMiniBIOAsync extends WeakAsync2[MiniBIOAsync] with BlockingIO2[MiniBIOAsync] with WeakTemporal2[MiniBIOAsync] {
     override def pure[A](a: A): MiniBIOAsync[Nothing, A] = Sync(() => Exit.Success(a))
     override def flatMap[E, A, B](r: MiniBIOAsync[E, A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIOAsync[E, Nothing] = Fail(() => Exit.Error.forTypedError(v))
@@ -397,6 +398,10 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
       }
     }
 
+    // WeakTemporal2
+    override def sleep(duration: Duration): MiniBIOAsync[Nothing, Unit] = {
+      sleepImpl(duration)
+    }
   }
 
   implicit def UnsafeRunMiniBIOAsync(implicit ec: ExecutionContext): UnsafeRun2[MiniBIOAsync] = new MiniBIOAsyncRunner()(using ec)

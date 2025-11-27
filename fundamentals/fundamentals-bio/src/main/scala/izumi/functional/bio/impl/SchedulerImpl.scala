@@ -1,7 +1,7 @@
 package izumi.functional.bio.impl
 
 import izumi.functional.bio.Clock1.ClockAccuracy
-import izumi.functional.bio.{Clock2, F, Temporal2}
+import izumi.functional.bio.{Clock2, F, WeakTemporal2}
 import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2}
@@ -10,7 +10,7 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.FiniteDuration
 
-open class SchedulerImpl[F[+_, +_]: Temporal2](implicit clock: Clock2[F]) extends Scheduler2[F] {
+open class SchedulerImpl[F[+_, +_]: WeakTemporal2](implicit clock: Clock2[F]) extends Scheduler2[F] {
 
   override def repeat[E, A, B](eff: F[E, A])(policy: RetryPolicy[F, A, B]): F[E, A] = {
     eff.flatMap(out => loop(out, policy.action)(F.pure(_))(eff.flatMap))

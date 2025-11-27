@@ -11,7 +11,7 @@ import scala.concurrent.*
 import scala.concurrent.duration.Duration
 
 private object __QuasiAsyncPlatformSpecific {
-  private val factory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true)
+  private val factory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true, priority = None)
 
   private final lazy val QuasiAsyncIdentityBlockingIOPool = ExecutionContext.fromExecutorService {
     Executors.newCachedThreadPool(factory)

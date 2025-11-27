@@ -1,7 +1,7 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.{Exit, F}
 import izumi.functional.bio.impl.MiniBIOAsync
+import izumi.functional.bio.{Exit, F}
 import org.scalatest.wordspec.AsyncWordSpec
 
 import scala.concurrent.{Future, Promise}

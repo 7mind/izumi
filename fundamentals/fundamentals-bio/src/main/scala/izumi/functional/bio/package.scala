@@ -14,7 +14,8 @@ import izumi.functional.bio.syntax.Syntax2
   *  [Applicative2]<--[Monad2]
   *  [Guarantee2]<--[ApplicativeError2]
   *  [ApplicativeError2]<--[Error2]
-  *  [Error2]<--[Temporal2]
+  *  [Error2]<--[WeakTemporal2]
+  *  [WeakTemporal2]<--[Temporal2]
   *  [Monad2]<--[Error2]
   *  [Error2]<--[Bracket2]
   *  [Bracket2]<--[Panic2]
@@ -73,7 +74,7 @@ import izumi.functional.bio.syntax.Syntax2
   *  [IO2]<--[WeakAsync2]
   *  [WeakAsync2]<--[Async2]
   *
-  *  [Temporal2]
+  *  [WeakTemporal2]<--[Temporal2]
   *  }}}
   *
   *  current hierarchy roots:
@@ -82,7 +83,7 @@ import izumi.functional.bio.syntax.Syntax2
   *  - [[Functor2]]
   *  - [[Bifunctor2]]
   *  - [[Parallel2]]
-  *  - [[Temporal2]]
+  *  - [[WeakTemporal2]]
   *
   *  standalone:
   *  - [[Fork2]]
@@ -101,7 +102,6 @@ import izumi.functional.bio.syntax.Syntax2
   *  [ ] - update hierarchy graph above, re-render SVG
   *  [ ] - add syntax tests in `SyntaxTest`, runtime tests if applicable
   *  }}}
-  *
   * @note Real and raw (direct inheritance) hierarchies differ because of implicit ambiguities caused by
   *       inheritance: [[https://typelevel.org/blog/2016/09/30/subtype-typeclasses.html]]
   *

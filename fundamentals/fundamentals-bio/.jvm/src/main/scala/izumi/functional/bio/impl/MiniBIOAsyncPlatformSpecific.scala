@@ -1,11 +1,36 @@
 package izumi.functional.bio.impl
 
+import izumi.functional.bio.UnsafeRun2.NamedThreadFactory
 import izumi.functional.bio.{Exit, UnsafeRun2}
 
-import scala.concurrent.duration.Duration
+import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor, TimeUnit}
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext}
 
 trait MiniBIOAsyncPlatformSpecific {
+
+  private[impl] lazy val scheduler: ScheduledExecutorService = {
+    val executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("MiniBIOAsync-timer", true, Some(Thread.MAX_PRIORITY)))
+    executor.setRemoveOnCancelPolicy(true)
+    executor
+  }
+
+  protected def sleepImpl(duration: Duration): MiniBIOAsync[Nothing, Unit] = {
+    duration match {
+      case finite: FiniteDuration =>
+        MiniBIOAsync.Async {
+          (_, cb) =>
+            scheduler.schedule(
+              (() => cb(Exit.Success(()))): Runnable,
+              finite.toNanos,
+              TimeUnit.NANOSECONDS,
+            )
+            ()
+        }
+      case _ =>
+        MiniBIOAsync.Async((_, _) => ())
+    }
+  }
 
   protected abstract class MiniBIOAsyncUnsafeRun2UnsafeRunSyncPlatformSpecific(implicit ec: ExecutionContext) extends UnsafeRun2[MiniBIOAsync] {
 

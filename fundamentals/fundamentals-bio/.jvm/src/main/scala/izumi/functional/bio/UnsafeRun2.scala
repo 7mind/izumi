@@ -196,7 +196,7 @@ object UnsafeRun2 {
   //    }
   //  }
 
-  final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
+  final class NamedThreadFactory(name: String, daemon: Boolean, priority: Option[Int]) extends ThreadFactory {
     @nowarn("msg=deprecated")
     private val parentGroup =
       Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
@@ -211,7 +211,9 @@ object UnsafeRun2 {
       val thread = new Thread(threadGroup, r)
       thread.setName(s"$name-$newThreadNumber-$threadHash")
       thread.setDaemon(daemon)
-
+      if (priority.isDefined) {
+        thread.setPriority(priority.get)
+      }
       thread
     }
 
