@@ -58,22 +58,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '11', '17', '22' ]
+        java: [ '17', '21' ]
         scala: [ '2.12', '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@minimal
       - name: Build and Test with Coverage
-        env:
-          SCALA_VERSION: ${{ matrix.scala }}
-          JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  != '3'
-        run: ./run --nix :gen :coverage
+        run: nix develop --command mdl --github-actions -u platform:jvm -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :coverage
       - name: Build and Test without Coverage # coverage leads to verification errors on scala3
-        env:
-          SCALA_VERSION: ${{ matrix.scala }}
-          JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  == '3'
-        run: ./run --nix :gen :test
+        run: nix develop --command mdl --github-actions -u platform:jvm -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :test
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         with:
@@ -108,22 +102,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '11', '17', '22' ]
+        java: [ '17', '21' ]
         scala: [ '2.12', '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@minimal
       - name: Build and Test with Coverage
-        env:
-          SCALA_VERSION: ${{ matrix.scala }}
-          JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  != '3'
-        run: ./run --nix :gen-jsonly :coverage
+        run: nix develop --command mdl --github-actions -u platform:js-nojvm -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :coverage
       - name: Build and Test without Coverage # coverage leads to verification errors on scala3
-        env:
-          SCALA_VERSION: ${{ matrix.scala }}
-          JAVA_VERSION: ${{ matrix.java }}
         if: matrix.scala  == '3'
-        run: ./run --nix :gen-jsonly :test
+        run: nix develop --command mdl --github-actions -u platform:js-nojvm -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :test
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         with:
@@ -135,21 +123,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '22' ]
+        java: [ '21' ]
         scala: [ '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@minimal
       - name: Build Microsite
-        env:
-          SCALA_VERSION: ${{ matrix.scala }}
-          JAVA_VERSION: ${{ matrix.java }}
-        run: ./run --nix :gen-js :site-test
+        run: nix develop --command mdl --github-actions -u platform:js -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :site-test
 
   publish-site:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '22' ]
+        java: [ '21' ]
         scala: [ '2.13']
     needs: [ 'build-jvm', 'build-js', 'test-site', 'checksecret' ]
     if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
@@ -166,9 +151,10 @@ jobs:
           known_hosts: 'unnecessary' # github.com is already there
       - name: Publish Microsite
         env:
-          SCALA_VERSION: ${{ matrix.scala }}
-          JAVA_VERSION: ${{ matrix.java }}
-        run: ./run --nix :gen-js :site-publish
+          CI_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+          CI_BRANCH: ${{ github.ref_name }}
+          CI_BRANCH_TAG: ${{ github.ref_name }}
+        run: nix develop --command mdl --github-actions -u platform:js -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :site-publish
 
   publish-artifacts:
     runs-on: ubuntu-latest
@@ -177,8 +163,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '11' ]
-        scala: [ '2.12', '2.13', '3']
+        java: [ '21' ]
+        scala: [ '2.13' ]
     steps:
       - uses: 7mind/github-env@minimal
       - uses: bitwarden/sm-action@v2
@@ -190,16 +176,19 @@ jobs:
             a2fe5b5b-5f3f-47f8-961c-b1930110cea7 > OPENSSL_IV
       - name: Build and Publish to Sonatype
         env:
-          SCALA_VERSION: ${{ matrix.scala }}
-          JAVA_VERSION: ${{ matrix.java }}
           SONATYPE_SECRET: .secrets/credentials.sonatype-nexus.properties
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          CI_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+          CI_BRANCH: ${{ github.ref_name }}
+          CI_BRANCH_TAG: ${{ github.ref_name }}
         run: |
           mkdir .secrets
           echo "$SONATYPE_CREDENTIALS_FILE" > "$SONATYPE_SECRET"
           openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
           tar xvf secrets.tar
           
-          ./run --nix :gen-js :publish-scala
+          nix develop --command mdl --github-actions -u platform:js -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :publish-scala
 
   all-good:
     if: always()

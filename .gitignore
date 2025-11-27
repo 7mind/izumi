@@ -26,6 +26,8 @@ build/project
 .scala-build
 .java-version
 
+.mdl/runs/
+
 # Created by .ignore support plugin (hsz.mobi)
 ### Scala template
 *.class
