@@ -17,76 +17,16 @@
 - `CI_BRANCH`
 
 # Axis
-- `platform`=`{jvm*|js}`
+- `platform`=`{jvm*|js|js-nojvm}`
 - `java_version`=`{11|17|21*|25}`
 - `scala_version`=`{2.12|2.13*|3}`
-
-# action: select-java-version
-
-Select Java version based on axis value
-
-## definition when `java_version: 11`
-
-```bash
-JAVA_VERSION_VAL="11"
-ret java-version:String="$JAVA_VERSION_VAL"
-```
-
-## definition when `java_version: 17`
-
-```bash
-JAVA_VERSION_VAL="17"
-ret java-version:String="$JAVA_VERSION_VAL"
-```
-
-## definition when `java_version: 21`
-
-```bash
-JAVA_VERSION_VAL="21"
-ret java-version:String="$JAVA_VERSION_VAL"
-```
-
-## definition when `java_version: 25`
-
-```bash
-JAVA_VERSION_VAL="25"
-ret java-version:String="$JAVA_VERSION_VAL"
-```
-
-
-# action: select-scala-version
-
-Select Scala version based on axis value
-
-## definition when `scala_version: 2.12`
-
-```bash
-SCALA_VERSION_VAL="2.12.20"
-ret scala-version:String="$SCALA_VERSION_VAL"
-```
-
-## definition when `scala_version: 2.13`
-
-```bash
-SCALA_VERSION_VAL="2.13.16"
-ret scala-version:String="$SCALA_VERSION_VAL"
-```
-
-## definition when `scala_version: 3`
-
-```bash
-SCALA_VERSION_VAL="3.7.4"
-ret scala-version:String="$SCALA_VERSION_VAL"
-```
 
 # action: setup-jdk
 
 Setup JDK path based on JAVA_VERSION
 
 ```bash
-dep action.select-java-version
-
-JAVA_VERSION_VAL="${action.select-java-version.java-version}"
+JAVA_VERSION_VAL="${sys.axis.java_version}"
 
 case "$JAVA_VERSION_VAL" in
   11)
@@ -147,13 +87,10 @@ ret java-options:String="$JAVA_OPTIONS"
 Setup Scala version variables
 
 ```bash
-dep action.select-scala-version
+SCALA_VERSION="${sys.axis.scala_version}"
 
-SCALA_VERSION_VAL="${action.select-scala-version.scala-version}"
+VERSION_COMMAND="++ $SCALA_VERSION"
 
-VERSION_COMMAND="++ $SCALA_VERSION_VAL"
-
-ret scala-version:String="$SCALA_VERSION_VAL"
 ret version-command:String="$VERSION_COMMAND"
 ```
 
@@ -219,8 +156,6 @@ fi
 
 Generate build files using sbtgen for the selected platform
 
-## definition when `platform: jvm`
-
 ```bash
 dep action.setup-jdk
 dep action.setup-jvm-options
@@ -232,31 +167,26 @@ PATH="${action.setup-jdk.path}"
 JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
 _JAVA_OPTIONS="$JAVA_OPTIONS"
 
-bash sbtgen.sc
-```
+PLATFORM="${sys.axis.platform}"
 
-## definition when `platform: js`
+if [[ "$PLATFORM" == "jvm" ]]; then
+  ARGS=()
+elif [[ "$PLATFORM" == "js" ]]; then
+  ARGS=("--js")
+elif [[ "$PLATFORM" == "js-nojvm" ]]; then
+  ARGS=("--nojvm", "--js")
+else
+  echo "Unknown platform: $PLATFORM" >&2
+  exit 0
+endif
 
-```bash
-dep action.setup-jdk
-dep action.setup-jvm-options
-dep action.setup-scala
-soft action.check-sbtgen-staleness
-
-JAVA_HOME="${action.setup-jdk.java-home}"
-PATH="${action.setup-jdk.path}"
-JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
-_JAVA_OPTIONS="$JAVA_OPTIONS"
-
-bash sbtgen.sc --js
+bash sbtgen.sc "${args[@]}"
 ```
 
 # action: test
 
 Run tests and binary compatibility checks
 
-## definition when `platform: jvm`
-
 ```bash
 soft action.gen retain.action.check-sbtgen-staleness
 
@@ -270,27 +200,7 @@ sbt -batch -no-colors -v \
   --java-home "$JAVA_HOME" \
   "$VERSION_COMMAND clean" \
   "$VERSION_COMMAND Test/compile" \
-  "$VERSION_COMMAND test" 
-
-docker rm "$(docker ps -aq)" || true
-```
-
-## definition when `platform: js`
-
-```bash
-soft action.gen retain.action.check-sbtgen-staleness
-
-JAVA_HOME="${action.setup-jdk.java-home}"
-PATH="${action.setup-jdk.path}"
-JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
-_JAVA_OPTIONS="$JAVA_OPTIONS"
-VERSION_COMMAND="${action.setup-scala.version-command}"
-
-sbt -batch -no-colors -v \
-  --java-home "$JAVA_HOME" \
-  "$VERSION_COMMAND clean" \
-  "$VERSION_COMMAND Test/compile" \
-  "$VERSION_COMMAND test" 
+  "$VERSION_COMMAND test"
 
 docker rm "$(docker ps -aq)" || true
 ```
@@ -298,30 +208,6 @@ docker rm "$(docker ps -aq)" || true
 # action: coverage
 
 Run coverage build
-
-## definition when `platform: jvm`
-
-```bash
-soft action.gen retain.action.check-sbtgen-staleness
-
-JAVA_HOME="${action.setup-jdk.java-home}"
-PATH="${action.setup-jdk.path}"
-JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
-_JAVA_OPTIONS="$JAVA_OPTIONS"
-VERSION_COMMAND="${action.setup-scala.version-command}"
-
-sbt -batch -no-colors -v \
-  --java-home "$JAVA_HOME" \
-  "$VERSION_COMMAND clean" \
-  coverage \
-  "$VERSION_COMMAND Test/compile" \
-  "$VERSION_COMMAND test" \
-  "$VERSION_COMMAND coverageReport"
-
-docker rm "$(docker ps -aq)" || true
-```
-
-## definition when `platform: js`
 
 ```bash
 soft action.gen retain.action.check-sbtgen-staleness
@@ -347,8 +233,6 @@ docker rm "$(docker ps -aq)" || true
 
 Build microsite for validation
 
-## definition when `platform: js`
-
 ```bash
 dep action.gen
 
@@ -368,8 +252,6 @@ sbt -batch -no-colors -v \
 # action: site-publish
 
 Publish microsite to GitHub Pages (skips on non-release branches)
-
-## definition when `platform: js`
 
 ```bash
 dep action.gen
@@ -406,8 +288,6 @@ sbt -batch -no-colors -v \
 # action: publish-scala
 
 Publish Scala artifacts to Sonatype (only on release branches/tags)
-
-## definition when `platform: js`
 
 ```bash
 dep action.gen

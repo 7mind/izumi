@@ -107,7 +107,7 @@ jobs:
     steps:
       - uses: 7mind/github-env@minimal
       - name: Build and Test with Coverage
-        run: nix develop --command mdl --github-actions -u platform:js -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :coverage
+        run: nix develop --command mdl --github-actions -u platform:js-nojvm -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :coverage
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         with:
