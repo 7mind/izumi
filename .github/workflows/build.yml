@@ -159,8 +159,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '21' ]
-        scala: [ '2.13' ]
+        java: [ '11' ]
+        scala: [ '2.12' '2.13' '3' ]
     steps:
       - uses: 7mind/github-env@minimal
       - uses: bitwarden/sm-action@v2
