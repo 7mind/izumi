@@ -1,7 +1,7 @@
 {
   description = "izumi build environment";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/24.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/release-25.11";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
@@ -44,6 +44,7 @@
             export JDK11=${pkgs.jdk11_headless}
             export JDK17=${pkgs.jdk17_headless}
             export JDK21=${pkgs.jdk21_headless}
+            export JDK25=${pkgs.jdk25_headless}
           '';
         };
       }
