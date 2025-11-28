@@ -233,16 +233,11 @@ object Izumi {
 
       final val topLevelSettings = Seq()
 
-      final val sharedAggSettings = outOfSource ++ Seq(
-        """SettingKey[Boolean]("ide-skip-project")""" := true,
-        "crossScalaVersions" := "Nil".raw,
-      )
+      final val sharedAggSettings = outOfSource
 
       final val rootSettings = Defaults.RootOptions ++ Defaults.SbtMetaRootOptions ++ Seq(
 //        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
 //          .root.id.value}").toFile""".raw,
-        "crossScalaVersions" := "Nil".raw,
-        "libraryDependencies" := "Nil".raw,
         "organization" in SettingScope.Build := "io.7mind.izumi",
         "publishTo" in SettingScope.Build :=
           """{

@@ -6795,9 +6795,10 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
 
 lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
@@ -6826,9 +6827,10 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
 
 lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -6846,9 +6848,10 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
 
 lazy val `fundamentals-js` = (project in file(".agg/fundamentals-fundamentals-js"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -6866,9 +6869,10 @@ lazy val `fundamentals-js` = (project in file(".agg/fundamentals-fundamentals-js
 
 lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
@@ -6896,9 +6900,10 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
 
 lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -6918,9 +6923,10 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
 
 lazy val `distage-js` = (project in file(".agg/distage-distage-js"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -6935,9 +6941,10 @@ lazy val `distage-js` = (project in file(".agg/distage-distage-js"))
 
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
@@ -6952,9 +6959,10 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
 
 lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -6966,9 +6974,10 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
 
 lazy val `logstage-js` = (project in file(".agg/logstage-logstage-js"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -6978,9 +6987,10 @@ lazy val `logstage-js` = (project in file(".agg/logstage-logstage-js"))
 
 lazy val `docs` = (project in file(".agg/doc-docs"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
@@ -6990,9 +7000,10 @@ lazy val `docs` = (project in file(".agg/doc-docs"))
 
 lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -7001,9 +7012,10 @@ lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
 
 lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(AssemblyPlugin)
@@ -7013,9 +7025,10 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
 
 lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -7024,9 +7037,10 @@ lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"
 
 lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -7038,9 +7052,10 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
 
 lazy val `izumi-js` = (project in file(".agg/.agg-js"))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    crossScalaVersions := Nil
+    SettingKey[Boolean]("ide-skip-project") := true
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
@@ -7051,6 +7066,8 @@ lazy val `izumi-js` = (project in file(".agg/.agg-js"))
 
 lazy val `izumi` = (project in file("."))
   .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
     publish / skip := true,
     Global / onChangedBuildSource := ReloadOnSourceChanges,
     ThisBuild / publishMavenStyle := true,
@@ -7081,8 +7098,6 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:git-described-version=${com.github.sbt.git.SbtGit.GitKeys.gitDescribedVersion.value.getOrElse("")}",
       s"-Xmacro-settings:git-head-commit=${com.github.sbt.git.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
     ),
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
     ThisBuild / organization := "io.7mind.izumi",
     ThisBuild / publishTo := {
       // https://github.com/sbt/sbt/issues/8131
