@@ -17,7 +17,7 @@
 - `CI_BRANCH`
 
 # Axis
-- `platform`=`{jvm*|js|js-nojvm}`
+- `platform`=`{jvm*|js}`
 - `java_version`=`{17|21*}`
 - `scala_version`=`{2.12|2.13*|3}`
 
@@ -236,22 +236,6 @@ _JAVA_OPTIONS="$JAVA_OPTIONS"
 bash sbtgen.sc --js
 ```
 
-## definition when `platform: js-nojvm`
-
-```bash
-dep action.setup-jdk
-dep action.setup-jvm-options
-dep action.setup-scala
-soft action.check-sbtgen-staleness
-
-JAVA_HOME="${action.setup-jdk.java-home}"
-PATH="${action.setup-jdk.path}"
-JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
-_JAVA_OPTIONS="$JAVA_OPTIONS"
-
-bash sbtgen.sc --nojvm --js
-```
-
 # action: test
 
 Run tests and binary compatibility checks
@@ -296,26 +280,6 @@ sbt -batch -no-colors -v \
 docker rm "$(docker ps -aq)" || true
 ```
 
-## definition when `platform: js-nojvm`
-
-```bash
-soft action.gen retain.action.check-sbtgen-staleness
-
-JAVA_HOME="${action.setup-jdk.java-home}"
-PATH="${action.setup-jdk.path}"
-JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
-_JAVA_OPTIONS="$JAVA_OPTIONS"
-VERSION_COMMAND="${action.setup-scala.version-command}"
-
-sbt -batch -no-colors -v \
-  --java-home "$JAVA_HOME" \
-  "$VERSION_COMMAND clean" \
-  "$VERSION_COMMAND Test/compile" \
-  "$VERSION_COMMAND test"
-
-docker rm "$(docker ps -aq)" || true
-```
-
 # action: coverage
 
 Run coverage build
@@ -343,28 +307,6 @@ docker rm "$(docker ps -aq)" || true
 ```
 
 ## definition when `platform: js`
-
-```bash
-soft action.gen retain.action.check-sbtgen-staleness
-
-JAVA_HOME="${action.setup-jdk.java-home}"
-PATH="${action.setup-jdk.path}"
-JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
-_JAVA_OPTIONS="$JAVA_OPTIONS"
-VERSION_COMMAND="${action.setup-scala.version-command}"
-
-sbt -batch -no-colors -v \
-  --java-home "$JAVA_HOME" \
-  "$VERSION_COMMAND clean" \
-  coverage \
-  "$VERSION_COMMAND Test/compile" \
-  "$VERSION_COMMAND test" \
-  "$VERSION_COMMAND coverageReport"
-
-docker rm "$(docker ps -aq)" || true
-```
-
-## definition when `platform: js-nojvm`
 
 ```bash
 soft action.gen retain.action.check-sbtgen-staleness
