@@ -31,9 +31,22 @@ trait WeakAsync2[F[+_, +_]] extends IO2[F] with Parallel2[F] {
     *     }
     *   }
     * }}}
+    *
+    * @note Effects created with [[async]], [[Async2.asyncF]], [[Async2.asyncWithOnInterrupt]],
+    *       [[fromFuture]] and [[Async2.fromFutureJava]] are INTERRUPTIBLE.
+    *
+    *       - In case of [[async]] and [[Async2.asyncF]] if the current fiber is interrupted,
+    *       the registered callback will be simply THROWN AWAY.
+    *
+    *       - If a cleanup action is required to wind down the async operation safely,
+    *       use [[Async2.asyncWithOnInterrupt]] to provide a cleanup action.
+    *
+    *       - If an async operation's callback CANNOT be safely discarded OR interrupted,
+    *       wrap your expression in [[Panic2.uninterruptible]].
     */
   def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
 
+  /** @note to implementors: The effect produced MUST be interruptible (cats.effect.IO's fromFuture is not!) */
   def fromFuture[A](mkFuture: ExecutionContext => Future[A]): F[Throwable, A]
 
   // defaults

@@ -250,7 +250,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
 
     ZIO.asyncZIO(cb => register(cb apply _.fold(ZIO.fail(_), ZIO.succeed(_))))
   }
-  @inline override final def asyncCancelable[E, A](register: (Either[E, A] => Unit) => InterruptAction[ZIO[R, +_, +_]]): ZIO[R, E, A] = {
+  @inline override final def asyncWithOnInterrupt[E, A](register: (Either[E, A] => Unit) => InterruptAction[ZIO[R, +_, +_]]): ZIO[R, E, A] = {
     implicit val trace: zio.Trace = InteropTracer.newTrace(register)
 
     ZIO.asyncInterrupt[R, E, A] {

@@ -35,10 +35,10 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   implicit def fromBIO[F[+_, +_]: WeakAsync2]: QuasiAsync[F[Throwable, _]] = {
     new QuasiAsync[F[Throwable, _]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
-        F.async(effect)
+        F.uninterruptible(F.async(effect))
       }
       override def fromFuture[A](effect: => Future[A]): F[Throwable, A] = {
-        F.fromFuture(effect)
+        F.uninterruptible(F.fromFuture(effect))
       }
       override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Throwable, Unit]): F[Throwable, Unit] = {
         F.parTraverse_(l.iterator.to(Iterable))(f)
@@ -68,10 +68,10 @@ private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
     private implicit val P: cats.Parallel[F] = cats.effect.kernel.instances.spawn.parallelForGenSpawn(F)
 
     override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = {
-      F.async_(effect)
+      F.uncancelable(_ => F.async_(effect))
     }
     override def fromFuture[A](effect: => Future[A]): F[A] = {
-      F.fromFuture(F.delay(effect))
+      F.uncancelable(_ => F.fromFuture(F.delay(effect)))
     }
     override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
       cats.Parallel.parTraverse_(l.iterator.toList)(f)(using cats.instances.list.catsStdInstancesForList, P)
