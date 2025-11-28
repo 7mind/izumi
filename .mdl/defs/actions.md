@@ -18,12 +18,19 @@
 
 # Axis
 - `platform`=`{jvm*|js}`
-- `java_version`=`{17|21*}`
+- `java_version`=`{11|17|21*|25}`
 - `scala_version`=`{2.12|2.13*|3}`
 
 # action: select-java-version
 
 Select Java version based on axis value
+
+## definition when `java_version: 11`
+
+```bash
+JAVA_VERSION_VAL="11"
+ret java-version:String="$JAVA_VERSION_VAL"
+```
 
 ## definition when `java_version: 17`
 
@@ -38,6 +45,14 @@ ret java-version:String="$JAVA_VERSION_VAL"
 JAVA_VERSION_VAL="21"
 ret java-version:String="$JAVA_VERSION_VAL"
 ```
+
+## definition when `java_version: 25`
+
+```bash
+JAVA_VERSION_VAL="25"
+ret java-version:String="$JAVA_VERSION_VAL"
+```
+
 
 # action: select-scala-version
 
