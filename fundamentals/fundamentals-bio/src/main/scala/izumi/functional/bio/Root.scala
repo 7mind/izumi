@@ -46,28 +46,39 @@ sealed trait RootInstancesLowPriority2 extends RootInstancesLowPriority3 {
     Concurrent
 }
 
-sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority30 {
+sealed trait RootInstancesLowPriority3 extends RootInstancesLowPriority4 {
   @inline implicit final def ConvertFromParallelErrorAccumulatingOps[F[+_, +_]](
     implicit ParallelErrorAccumulatingOps: NotPredefined.Of[ParallelErrorAccumulatingOps2[F]]
   ): Predefined.Of[Error2[F] & S3] =
     Predefined(S3(ParallelErrorAccumulatingOps.InnerF))
 
+  // workaround for Scala 2, on Scala 3 AttachParallel is enough
+  @inline implicit final def AttachParallelErrorAccumulatingOps[F[+_, +_]](
+    @unused self: Functor2[F]
+  )(implicit ParallelErrorAccumulatingOps: ParallelErrorAccumulatingOps2[F]
+  ): ParallelErrorAccumulatingOps.type = ParallelErrorAccumulatingOps
+}
+
+sealed trait RootInstancesLowPriority4 extends RootInstancesLowPriority5 {
+  @inline implicit final def ConvertFromParallel[F[+_, +_]](implicit Parallel: NotPredefined.Of[Parallel2[F]]): Predefined.Of[Monad2[F] & S4] =
+    Predefined(S4(Parallel.InnerF))
+
   @inline implicit final def AttachParallel[F[+_, +_]](@unused self: Functor2[F])(implicit Parallel: Parallel2[F]): Parallel.type = Parallel
 }
 
-sealed trait RootInstancesLowPriority30 extends RootInstancesLowPriority4 {
-  @inline implicit final def ConvertFromParallel[F[+_, +_]](implicit Parallel: NotPredefined.Of[Parallel2[F]]): Predefined.Of[Monad2[F] & S4] =
-    Predefined(S4(Parallel.InnerF))
+sealed trait RootInstancesLowPriority5 extends RootInstancesLowPriority6 {
+  // workaround for Scala 2, on Scala 3 AttachWeakParallel is enough
+  @inline implicit final def AttachTemporal[F[+_, +_]](@unused self: Functor2[F])(implicit Temporal: Temporal2[F]): Temporal.type = Temporal
+}
+
+sealed trait RootInstancesLowPriority6 extends RootInstancesLowPriority7 {
+  @inline implicit final def ConvertFromBifunctor[F[+_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor2[F]]): Predefined.Of[Functor2[F] & S7] =
+    Predefined(S7(Bifunctor.InnerF))
 
   @inline implicit final def AttachWeakTemporal[F[+_, +_]](@unused self: Functor2[F])(implicit WeakTemporal: WeakTemporal2[F]): WeakTemporal.type = WeakTemporal
 }
 
-sealed trait RootInstancesLowPriority4 extends RootInstancesLowPriority5 {
-  @inline implicit final def ConvertFromBifunctor[F[+_, +_]](implicit Bifunctor: NotPredefined.Of[Bifunctor2[F]]): Predefined.Of[Functor2[F] & S7] =
-    Predefined(S7(Bifunctor.InnerF))
-}
-
-sealed trait RootInstancesLowPriority5 extends RootInstancesLowPriority6 {
+sealed trait RootInstancesLowPriority7 extends RootInstancesLowPriority8 {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have zio-core as a dependency without REQUIRING a zio-core dependency.
@@ -79,7 +90,7 @@ sealed trait RootInstancesLowPriority5 extends RootInstancesLowPriority6 {
   @inline implicit final def BIOZIO[ZIO[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[Async2[ZIO[Any, +_, +_]]] = Predefined(AsyncZio.asInstanceOf[Async2[ZIO[Any, +_, +_]]])
 }
 
-sealed trait RootInstancesLowPriority6 extends RootInstancesLowPriority7 {
+sealed trait RootInstancesLowPriority8 extends RootInstancesLowPriority9 {
   @inline implicit final def BIOZIOR[ZIO[-_, +_, +_]: `zio.ZIO`, R]: Predefined.Of[Async2[ZIO[R, +_, +_]]] = Predefined(AsyncZio.asInstanceOf[Async2[ZIO[R, +_, +_]]])
 
 //  /**
@@ -92,10 +103,10 @@ sealed trait RootInstancesLowPriority6 extends RootInstancesLowPriority7 {
 //    AsyncMonix.asInstanceOf[Predefined.Of[Async2[MonixBIO]]]
 }
 
-sealed trait RootInstancesLowPriority7 extends RootInstancesLowPriority8 {
+sealed trait RootInstancesLowPriority9 extends RootInstancesLowPriority10 {
   @inline implicit final def BIOEither: Predefined.Of[Error2[Either]] = Predefined(BioEither)
 }
 
-sealed trait RootInstancesLowPriority8 {
+sealed trait RootInstancesLowPriority10 {
   @inline implicit final def BIOIdentity2: Predefined.Of[Monad2[Identity2]] = BioIdentity2.asInstanceOf[Predefined.Of[Monad2[Identity2]]]
 }
