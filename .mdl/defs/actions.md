@@ -74,11 +74,17 @@ dep action.select-java-version
 JAVA_VERSION_VAL="${action.select-java-version.java-version}"
 
 case "$JAVA_VERSION_VAL" in
+  11)
+    JAVA_HOME_VAL="${JDK11:-}"
+    ;;
   17)
     JAVA_HOME_VAL="${JDK17:-}"
     ;;
   21)
     JAVA_HOME_VAL="${JDK21:-}"
+    ;;
+  25)
+    JAVA_HOME_VAL="${JDK25:-}"
     ;;
   *)
     echo "Unsupported JAVA_VERSION: $JAVA_VERSION_VAL" >&2
