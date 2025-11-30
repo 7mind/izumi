@@ -63,11 +63,7 @@ jobs:
     steps:
       - uses: 7mind/github-env@minimal
       - name: Build and Test with Coverage
-        if: matrix.scala  != '3'
         run: nix develop --command mdl --github-actions -u platform:jvm -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :coverage
-      - name: Build and Test without Coverage # coverage leads to verification errors on scala3
-        if: matrix.scala  == '3'
-        run: nix develop --command mdl --github-actions -u platform:jvm -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :test
       - uses: dorny/test-reporter@v1
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         with:
@@ -183,7 +179,6 @@ jobs:
           echo "$SONATYPE_CREDENTIALS_FILE" > "$SONATYPE_SECRET"
           openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
           tar xvf secrets.tar
-          
           nix develop --command mdl --github-actions -u platform:js -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :publish-scala
 
   all-good:
