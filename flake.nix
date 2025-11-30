@@ -1,8 +1,7 @@
 {
   description = "izumi build environment";
 
-  # commit of branch `release-25.11` at the time. replace with `25.11` when it's released
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/166c9bd4e7f2a103b17dd2e23f6711bc7aa5dbbd";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/25.11";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
