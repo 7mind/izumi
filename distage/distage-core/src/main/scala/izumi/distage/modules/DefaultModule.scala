@@ -9,7 +9,7 @@ import izumi.functional.bio.{Async2, Fork2, Primitives2, PrimitivesLocal2, Primi
 import izumi.fundamentals.orphans.*
 import izumi.fundamentals.platform.functional.Identity
 
-import scala.annotation.unused
+import scala.annotation.{nowarn, unused}
 import izumi.reflect.{Tag, TagK, TagKK}
 
 /**
@@ -114,6 +114,7 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
     *
     * @see [[izumi.distage.modules.support.CatsIOSupportModule]]
     */
+  @nowarn("msg=package lang") /* 2.12 false shadowing warning on Java 25+ */
   implicit final def forCatsIO[IO[_]: `cats.effect.IO`]: DefaultModule[IO] = {
     DefaultModule(CatsIOSupportModule)
   }
