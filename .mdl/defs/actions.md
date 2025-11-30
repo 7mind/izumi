@@ -174,13 +174,13 @@ if [[ "$PLATFORM" == "jvm" ]]; then
 elif [[ "$PLATFORM" == "js" ]]; then
   ARGS=("--js")
 elif [[ "$PLATFORM" == "js-nojvm" ]]; then
-  ARGS=("--nojvm", "--js")
+  ARGS=("--nojvm" "--js")
 else
   echo "Unknown platform: $PLATFORM" >&2
   exit 0
-endif
+fi
 
-bash sbtgen.sc "${args[@]}"
+bash sbtgen.sc "${ARGS[@]}"
 ```
 
 # action: test
