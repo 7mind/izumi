@@ -10,9 +10,14 @@ import scala.concurrent.{ExecutionContext, Promise}
 
 final class BIOAsyncExpectedBehaviorTestZIO extends BIOAsyncExpectedBehaviorTest[zio.IO](ec => UnsafeRun2.createZIO(Some(zio.Executor.fromExecutionContext(ec))))
 
-abstract class BIOAsyncExpectedBehaviorTest[F[+_, +_]: TagKK: Async2: Fork2](
+abstract class BIOAsyncExpectedBehaviorTest[F[+_, +_]](
   mkRunner: ExecutionContext => UnsafeRun2[F]
-) extends AsyncWordSpec {
+)(implicit
+  val tagKK: TagKK[F],
+  val Async: Async2[F],
+  val Fork2: Fork2[F],
+) extends AsyncWordSpec
+  with BIOAsyncExpectedBehaviorTestPlatformSpecific[F] {
   val runner: UnsafeRun2[F] = mkRunner(this.executionContext)
 
   s"implementor ${TagKK[F].tag} of {Async2,Primitives2,Fork2}" should {
