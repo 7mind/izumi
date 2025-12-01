@@ -8,7 +8,6 @@ package object config {
     def empty: DistageConfigImpl = io.circe.JsonObject.empty
 
     def hasPath(config: DistageConfigImpl, path: String): Boolean = {
-      // Split path by dots and traverse the JSON object
       val pathParts = path.split('.')
       pathParts.foldLeft(config.toJson.hcursor: ACursor)(_.downField(_)).focus.isDefined
     }
