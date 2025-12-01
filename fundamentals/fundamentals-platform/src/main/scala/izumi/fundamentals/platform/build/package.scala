@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 package object build {
 
   @tailrec
-  private[build] def findProjectRoot(cp: Path): Option[Path] = {
+  private[platform] def findProjectRoot(cp: Path): Option[Path] = {
     if (cp.resolve("build.sbt").toFile.exists()) {
       Some(cp)
     } else {
