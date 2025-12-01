@@ -80,6 +80,7 @@ object TestPlanner {
   )
 }
 
+@nowarn("msg=[Uu]nused import")
 class TestPlanner(
   logging: TestkitLogging,
   configLoader: TestConfigLoader,
@@ -87,6 +88,8 @@ class TestPlanner(
   testRunnerLocator: LocatorRef,
   logBuffer: LogQueue,
 ) {
+  import scala.collection.compat.*
+
   /**
     * Group tests by their memoization environment.
     * [[TestEnvironment.EnvExecutionParams]] - contains parts of environment that may radically affect planning.
@@ -95,9 +98,7 @@ class TestPlanner(
     * - tree-represented memoization plan with tests.
     * [[PackedEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
-  @nowarn("msg=[Uu]nused import")
   def planGroupTests[F[_]](distageTests: Seq[DistageTest[AnyF]], FA: QuasiAsync[F])(implicit F: QuasiIO[F]): F[PlannedTests[AnyF]] = {
-    import scala.collection.compat.*
 
     for {
       out <- F.traverse(
@@ -148,7 +149,9 @@ class TestPlanner(
             val logConfig = logConfigLoader.loadLoggingConfig(config)
             val router = new RouterFactory.RouterFactoryConsoleSinkImpl().createRouter(logConfig, logBuffer)
 
-            prepareGroupPlans[TestF](envExec, config, env, tests.asInstanceOf[Seq[DistageTest[TestF]]], router, runtimeGcRoots).left.map(failure => (tests, failure))
+            prepareGroupPlans[TestF](envExec, config, env, tests.asInstanceOf[Seq[DistageTest[TestF]]], router, runtimeGcRoots)(using effectType, defaultModule).left.map(
+              failure => (tests, failure)
+            )
           }
       }
     } yield {

@@ -20,7 +20,7 @@ trait ScalatestAbstractDistageSpec[F[_]] extends AbstractDistageSpec[F] with Sho
   override protected def config: TestConfig = TestConfig.forSuite(this.getClass)
 
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
-  protected def makeTestEnv(): TestEnvironment = loadEnvironment(config, tagMonoIO, defaultModulesIO)
+  protected def makeTestEnv(): TestEnvironment = loadEnvironment[F](config, tagMonoIO, defaultModulesIO)
 
   protected def distageSuiteName: String = NameUtil.NameUtil.getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: SuiteId = SuiteId(this.getClass.getName)
