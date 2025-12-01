@@ -1678,6 +1678,11 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
 lazy val `fundamentals-platformJVM` = `fundamentals-platform`.jvm
   .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-platformJS` = `fundamentals-platform`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scala-js-macrotask-executor" % V.scalajs_macrotask_executor
+    )
+  )
   .enablePlugins(ScalaJSBundlerPlugin)
   .disablePlugins(AssemblyPlugin)
 

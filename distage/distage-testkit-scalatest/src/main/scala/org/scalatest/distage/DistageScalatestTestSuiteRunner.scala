@@ -8,6 +8,8 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.RunningSuiteHandle
 import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeIntellijTestReporter, ScalatestInitWorkaround}
 import izumi.distage.testkit.spec.AbstractDistageSpec
+import izumi.functional.bio.Exit
+import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -28,7 +30,16 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   override protected final def runNestedSuites(args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTests(testName: Option[String], args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTest(testName: String, args: Args): Status = throw new UnsupportedOperationException
-  override protected def withFixture(test: NoArgTest): Outcome = throw new UnsupportedOperationException
+  override protected final def withFixture(test: NoArgTest): Outcome = throw new UnsupportedOperationException
+
+  /**
+    * Override to enable global memoization on Scala.js.
+    * It will only work correctly if parallel execution is disabled, e.g.
+    * with `Test / parallelExecution := false` key in SBT.
+    * Because of that and because there are limited use cases for global
+    * memoization on JS, it is disabled by default.
+    */
+  protected def scalaJsForceGlobalMemoization: Boolean = DebugProperties.`izumi.distage.testkit.js.force.global.memoization`.boolValue(false)
 
   // create status early, so that runner can set it to `true` even before this test's
   // `run` method is called by scalatest, because all the suite's tests could have
@@ -40,30 +51,25 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
     DistageTestsRegistrySingleton.registerSuiteHandle(suiteId)(RunningSuiteHandle(args.tracker, args.reporter, status))
 
-    // If, we're running under sbt, scan the classpath manually to add all tests
-    // in the classloader before starting anything, because sbt runner
-    // instantiates & runs tests at the same time, so when `run` is called
-    // NOT all tests have been registered, so we must force all tests, otherwise
-    // we can't be sure.
+    // Note: because https://github.com/scalatest/scalatest/pull/2410 has not been merged,
+    // we're forced to keep a separate registration mechanism for non-sbt runners (e.g. Intellij)
     //
     // NON-sbt ScalatestRunner first instantiates ALL tests, THEN calls `.run` method,
-    // so for non-sbt runs we KNOW that all tests have already been registered, so we
-    // don't have to scan the classpath ourselves.
+    // so for non-sbt runs we KNOW that all tests have already been registered
     val isSbt = args.reporter.getClass.getName.contains("org.scalatest.tools.Framework")
 
+    val sjsDisableGlobalMemoization = IzPlatform.isScalaJS && !scalaJsForceGlobalMemoization
+
     try {
-      val testsToRun = if (ScalatestInitWorkaround.useGlobalMemoization) {
+      val testsToRun = if (!sjsDisableGlobalMemoization) {
         ScalatestInitWorkaround.collectAllTestkitTests(this, isSbt)
       } else {
-        // PER-INSTANCE MODE: Each suite runs only its own local tests
-        // All DistageScalatestTestSuiteRunner extend WithSingletonTestRegistration
-        println(s"Using per-instance test execution (deinverted mode - each suite runs its own tests)")
         NEList.from(registeredTests())
       }
 
       testsToRun match {
         case Some(tests) =>
-          doRun(tests.toList, testName, args, status, ScalatestInitWorkaround.useGlobalMemoization, isSbt)
+          doRun(tests.toList, testName, args, status, sjsDisableGlobalMemoization, isSbt)
         case None =>
         // In global memoization mode: Not the first runner - status will be completed by the actual runner
         // In per-instance mode: This shouldn't happen
@@ -84,7 +90,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     testName: Option[String],
     args: Args,
     status: StatefulStatus,
-    useGlobalMemoization: Boolean,
+    sjsDisableGlobalMemoization: Boolean,
     isSbt: Boolean,
   ): Unit = {
     val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`.name)
@@ -99,90 +105,46 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     val toRun = applyScalatestDefaultFiltering(args, testsInThisRun, testName)
 
     try {
-      if (toRun.nonEmpty) {
-        debugLogger.err(s"GOING TO RUN TESTS in ${tagMonoIO.tag.repr} (in class ${getClass.getName}):${toRun.map(_.meta.test.id.toString).niceList()}")
-        val testReporter = mkTestReporter(isSbt)
+      debugLogger.err(s"GOING TO RUN TESTS in ${tagMonoIO.tag.repr} (in class ${getClass.getName}):${toRun.map(_.meta.test.id.toString).niceList()}")
+      val testReporter = mkTestReporter(isSbt)
 
-        if (!IzPlatform.isScalaJS) {
-          // id impl
-          val testResults =
-            try TestkitRunnerModule.run[Identity](testReporter, (t: Throwable) => t.isInstanceOf[TestCanceledException], toRun)
-            finally {
-              if (useGlobalMemoization) {
-                // Global memoization mode: complete all statuses for F type
-                DistageTestsRegistrySingleton.completeStatuses()
-              } else {
-                // Per-instance mode: complete only this suite's status
+      val isJVM = !IzPlatform.isScalaJS
+      if (isJVM) {
+        val testResults = TestkitRunnerModule.run[Identity](testReporter, (t: Throwable) => t.isInstanceOf[TestCanceledException], toRun)
+        debugLogger.log(s"Got for ${tagMonoIO.tag}: testResults=${testResults.niceList()}")
+      } else {
+
+        val globalEc = IzPlatform.platformGlobalExecutionContext
+
+        TestkitRunnerModule
+          .run[MiniBIOAsync[Throwable, _]](testReporter, (t: Throwable) => t.isInstanceOf[TestCanceledException], toRun)
+          .runOnEC(globalEc)
+          .onComplete {
+            t =>
+              val res = t.fold(Exit.Error.forThrowable, identity).toThrowableEither
+
+              if (sjsDisableGlobalMemoization) {
                 if (!status.isCompleted()) {
+                  res.left.foreach(status.setFailedWith)
                   status.setCompleted()
                 }
+              } else {
+                DistageTestsRegistrySingleton.completeStatuses()
               }
-            }
-          debugLogger.log(s"Got for ${tagMonoIO.tag}: testResults=${testResults.niceList()}")
-        } else {
-          //    import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
-          import scala.concurrent.ExecutionContext.Implicits.global
-          val _ = global
 
-          // FIXME use QuasiIOIdentity cached pool on JVM
-
-          // MiniBIOAsync impl
-          import izumi.functional.bio.Exit
-          import izumi.functional.bio.impl.MiniBIOAsync
-
-          TestkitRunnerModule
-            .run[MiniBIOAsync[Throwable, _]](testReporter, (t: Throwable) => t.isInstanceOf[TestCanceledException], toRun)
-            .runOnEC(implicitly)
-            .onComplete {
-              t =>
-                val exit = t.fold(Exit.Error.forThrowable, identity)
-
-                if (useGlobalMemoization) {
-                  // Global memoization mode: complete all statuses for F type
-                  DistageTestsRegistrySingleton.completeStatuses()
-                } else {
-                  // Per-instance mode: complete only this suite's status
-                  if (!status.isCompleted()) {
-                    exit match {
-                      case Exit.Success(_) =>
-                        status.setCompleted()
-                      case Exit.Error(e, _) =>
-                        status.setFailedWith(e)
-                        status.setCompleted()
-                      case Exit.Termination(t, _, _) =>
-                        status.setFailedWith(t)
-                        status.setCompleted()
-                    }
-                  }
-                }
-
-                exit match {
-                  case Exit.Success(testResults) =>
-                    debugLogger.log(s"Got for ${tagMonoIO.tag}: testResults=${testResults.niceList()}")
-                  case Exit.Error(e, trace) =>
-                    val tx = trace.unsafeAttachTraceOrReturnNewThrowable()
-                    tx.printStackTrace()
-                    throw e
-                  case Exit.Termination(t, _, trace) =>
-                    val tx = trace.unsafeAttachTraceOrReturnNewThrowable()
-                    tx.printStackTrace()
-                    throw t
-                }
-            }
-        }
-
-      } else {
-        // No tests to run - still need to complete status in per-instance mode
-        if (!useGlobalMemoization) {
-          if (!status.isCompleted()) {
-            status.setCompleted()
-          }
-        }
+              res match {
+                case Right(testResults) =>
+                  debugLogger.log(s"Got for ${tagMonoIO.tag}: testResults=${testResults.niceList()}")
+                case Left(t) =>
+                  t.printStackTrace()
+                  throw t
+              }
+          }(using globalEc)
       }
     } catch {
       case t: Throwable =>
         // Make sure status is completed even when errors occur
-        if (!useGlobalMemoization) {
+        if (sjsDisableGlobalMemoization) {
           if (!status.isCompleted()) {
             status.setFailedWith(t)
             status.setCompleted()
@@ -190,7 +152,12 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         }
         t.printStackTrace()
         throw t
-    } finally {}
+    } finally {
+      if (!sjsDisableGlobalMemoization) {
+        // precaution. shouldn't be necessary
+        DistageTestsRegistrySingleton.completeStatuses()
+      }
+    }
   }
 
   private[distage] def mkTestReporter(isSbt: Boolean): TestReporter = {

@@ -1,5 +1,8 @@
 package izumi.fundamentals.platform
 
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor
+
+import scala.concurrent.ExecutionContext
 import scala.scalajs.js
 
 trait __AbstractIzPlatformPlatformSpecific {
@@ -10,6 +13,8 @@ trait __AbstractIzPlatformPlatformSpecific {
   def getRuntimeMXBeanJVMArgs(): Seq[String] = Nil
 
   def getClasspath(): Seq[String] = Nil
+
+  def platformGlobalExecutionContext: ExecutionContext = MacrotaskExecutor
 
   private lazy val nodeEnv: Option[js.Dictionary[String]] = {
     val process = js.Dynamic.global.process

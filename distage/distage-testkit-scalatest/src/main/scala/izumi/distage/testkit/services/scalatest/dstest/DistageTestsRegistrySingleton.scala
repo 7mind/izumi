@@ -1,6 +1,5 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, SuiteId}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.language.Quirks.Discarder
@@ -30,6 +29,52 @@ object DistageTestsRegistrySingleton {
   private val runningSuiteHandles = new mutable.HashMap[String, Either[mutable.ArrayBuffer[RunningSuiteHandle => Unit], RunningSuiteHandle]]()
   private val firstRunnerStarted = new AtomicBoolean(false)
   private val runnerFinished = new AtomicBoolean(false)
+
+  def collectAllTestkitTests[F[_]](instance: DistageScalatestTestSuiteRunner[F], isSbt: Boolean): Option[NEList[DistageTest[AnyF]]] = {
+    if (DistageTestsRegistrySingleton.permittedToRun()) {
+      println(s"Launching tests in from $instance")
+
+      val instantiatedClassNames = DistageTestsRegistrySingleton.currentInstantiatedSuites().map(_.suite.getClass.getName)
+      val discoveredClassNames: Set[String] = Runner.discoveredSuites.getOrElse {
+        if (isSbt) {
+          throw new RuntimeException(
+            s"""Impossible: distage-testkit-scalatest attempted initialization before ScalaTest completed classpath discovery! in=$instance
+               |
+               |Please report this as a bug to https://github.com/7mind/izumi/issues""".stripMargin
+          )
+        } else {
+          Set.empty[String]
+        }
+      }
+      val suiteClass = classOf[DistageScalatestTestSuiteRunner[F]]
+
+      (discoveredClassNames -- instantiatedClassNames).foreach {
+        clsName =>
+          val clazz = __ClassReflectionPlatformSpecific.clazzForName(clsName)
+          if (__ClassReflectionPlatformSpecific.subclassOf(clazz, suiteClass)) {
+            // instantiate tests to make them register themselves
+            __ClassReflectionPlatformSpecific.newInstance(clazz)
+          }
+      }
+
+      val allSuites = DistageTestsRegistrySingleton.currentInstantiatedSuites().map(_.suite)
+
+      println(s"XXX INSTANTIATED NEW SUITES = ${allSuites.map(_.getClass.getName).toSet -- instantiatedClassNames}")
+
+      import izumi.fundamentals.platform.strings.IzString.toRichIterable
+      println(s"found Suites (in $instance): ${allSuites.niceList()}")
+
+      // Gather tests from all suite instances for single-runner execution
+      // All DistageScalatestTestSuiteRunner instances extend WithSingletonTestRegistration
+      val allTests = allSuites.flatMap(_.registeredTests())
+
+      println(s"Gathered ${allTests.size} tests from ${allSuites.size} suites (global memoization mode)")
+
+      NEList.from(allTests)
+    } else {
+      None
+    }
+  }
 
   def permittedToRun(): Boolean = {
     firstRunnerStarted.compareAndSet(false, true)
@@ -100,55 +145,6 @@ object DistageTestsRegistrySingleton {
     }
     override def doSetStatus(suiteId: SuiteId)(f: StatefulStatus => Unit): Unit = {
       runReport(suiteId.suiteId)(s => f(s.status))
-    }
-  }
-}
-
-object ScalatestInitWorkaround {
-  val useGlobalMemoization: Boolean = __PlatformSpecific.scalaJSForceGlobalMemoization ||
-    DebugProperties.`izumi.distage.testkit.js.force.global.memoization`.boolValue(false)
-
-  def collectAllTestkitTests[F[_]](instance: DistageScalatestTestSuiteRunner[F], isSbt: Boolean): Option[NEList[DistageTest[AnyF]]] = {
-    if (DistageTestsRegistrySingleton.permittedToRun()) {
-      println(s"Launching tests in from $instance")
-
-      val instantiatedClassNames = DistageTestsRegistrySingleton.currentInstantiatedSuites().map(_.suite.getClass.getName)
-      val discoveredClassNames: Set[String] = Runner.discoveredSuites.getOrElse {
-        if (isSbt) {
-          throw new RuntimeException(
-            s"""Impossible: distage-testkit-scalatest attempted initialization before ScalaTest completed classpath discovery! in=$instance
-               |
-               |Please report this as a bug to https://github.com/7mind/izumi/issues""".stripMargin
-          )
-        } else Set.empty[String]
-      }
-      val suiteClass = classOf[DistageScalatestTestSuiteRunner[F]]
-
-      (discoveredClassNames -- instantiatedClassNames).foreach {
-        clsName =>
-          val clazz = __ClassReflectionPlatformSpecific.clazzForName(clsName)
-          if (__ClassReflectionPlatformSpecific.subclassOf(clazz, suiteClass)) {
-            // instantiate tests to make them register themselves
-            __ClassReflectionPlatformSpecific.newInstance(clazz)
-          }
-      }
-
-      val allSuites = DistageTestsRegistrySingleton.currentInstantiatedSuites().map(_.suite)
-
-      println(s"XXX INSTANTIATED NEW SUITES = ${allSuites.map(_.getClass.getName).toSet -- instantiatedClassNames}")
-
-      import izumi.fundamentals.platform.strings.IzString.toRichIterable
-      println(s"found Suites (in $instance): ${allSuites.niceList()}")
-
-      // Gather tests from all suite instances for single-runner execution
-      // All DistageScalatestTestSuiteRunner instances extend WithSingletonTestRegistration
-      val allTests = allSuites.flatMap(_.registeredTests())
-
-      println(s"Gathered ${allTests.size} tests from ${allSuites.size} suites (global memoization mode)")
-
-      NEList.from(allTests)
-    } else {
-      None
     }
   }
 }
