@@ -37,16 +37,14 @@ object PortableResource {
 
       val path = _path.valueOrAbort
       val check = _check.valueOrAbort
-      val names = doExtractResources(path)
 
-      val cl = Thread.currentThread().getContextClassLoader
-      val out = convertResources(names, cl)
-      if (check && out.isEmpty) {
+      val resources = extractResourceContents(path)
+
+      if (check && resources.isEmpty) {
         report.errorAndAbort(s"empty result while enumerating $path")
       }
-      Expr(out.toMap)
+      Expr(resources.toMap)
     }
 
   }
 }
-

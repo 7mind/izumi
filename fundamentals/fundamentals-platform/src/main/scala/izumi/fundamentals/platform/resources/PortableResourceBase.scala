@@ -2,7 +2,6 @@ package izumi.fundamentals.platform.resources
 
 import io.github.classgraph.ClassGraph
 import izumi.fundamentals.platform.resources.IzIOStreams.*
-import izumi.fundamentals.platform.resources.IzResources.toResources
 
 import java.io.{File, FileInputStream}
 import java.nio.file.{Files, Paths}
@@ -39,18 +38,27 @@ trait PortableResourceBase {
     sources
   }
 
-  protected def doExtractResources(sourcePath: String): List[String] = {
+  protected def extractResourceContents(
+    sourcePath: String,
+  ): Seq[(String, String)] = {
     val scanResult = new ClassGraph()
       .acceptPaths(sourcePath)
       .disableJarScanning()
       .disableModuleScanning()
       .disableNestedJarScanning()
-      //      .verbose()
       .scan
+
     try {
       import scala.jdk.CollectionConverters.*
-      val resourceNames = scanResult.getAllResources.getPaths.asScala.toList
-      resourceNames
+      scanResult.getAllResources.asScala.toSeq.map {
+        resource =>
+          val stream = resource.open()
+          try {
+            resource.getPath -> stream.streamToString()
+          } finally {
+            stream.close()
+          }
+      }
     } finally {
       scanResult.close()
     }
@@ -63,19 +71,5 @@ trait PortableResourceBase {
       Iterable.empty
     }
     Seq(file) ++ children.flatMap(walkTree)
-  }
-
-  protected def convertResources(r: List[String], classLoader: ClassLoader): Map[String, String] = {
-    r
-      .map {
-        r =>
-          val data = classLoader.readAsString(r)
-          (r, data)
-      }
-      .collect {
-        case (r, Some(c)) =>
-          (r, c)
-      }
-      .toMap
   }
 }

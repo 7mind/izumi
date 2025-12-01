@@ -27,16 +27,14 @@ object PortableResourceMacro extends PortableResourceBase {
     c: blackbox.Context
   )(path: c.Expr[String]
   ): c.Expr[Map[String, String]] = {
-    val cl = Thread.currentThread().getContextClassLoader
-    processResources[Map[String, String]](c)(path, check = true)(r => convertResources(r, cl))
+    processResources(c)(path, check = true)
   }
 
   def makeEmbedResourcesUnchecked(
     c: blackbox.Context
   )(path: c.Expr[String]
   ): c.Expr[Map[String, String]] = {
-    val cl = Thread.currentThread().getContextClassLoader
-    processResources[Map[String, String]](c)(path, check = false)(r => convertResources(r, cl))
+    processResources(c)(path, check = false)
   }
 
   private def processSources[T](
@@ -65,18 +63,21 @@ object PortableResourceMacro extends PortableResourceBase {
     c: blackbox.Context
   )(path: c.Expr[String],
     check: Boolean,
-  )(h: List[String] => T
-  )(implicit @unused l: c.universe.Liftable[T]
-  ): c.Expr[T] = {
+  ): c.Expr[Map[String, String]] = {
     import c.universe.*
     val sourcePath = getStringLiteral(c)(path.tree)
-    val names = doExtractResources(sourcePath)
 
-    if (check && names.isEmpty) {
+    val resources = extractResourceContents(sourcePath)
+    if (check && resources.isEmpty) {
       c.error(c.enclosingPosition, s"empty result while enumerating $sourcePath")
     }
-    val out = h(names)
-    c.Expr(q"$out")
+
+    val resourceTrees = resources.map {
+      case (resourcePath, content) =>
+        q"$resourcePath -> $content"
+    }
+
+    c.Expr[Map[String, String]](q"Map(..$resourceTrees)")
   }
 
   private def getStringLiteral(c: blackbox.Context)(tree: c.universe.Tree): String = {
@@ -85,38 +86,12 @@ object PortableResourceMacro extends PortableResourceBase {
     )
   }
 
-//  private def getBoolLiteral(c: blackbox.Context)(tree: c.universe.Tree): Boolean = {
-//    findBoolLiteral(tree).getOrElse(
-//      c.abort(c.enclosingPosition, "must use bool literal")
-//    )
-//  }
-//
-//  private def getIntLiteral(c: blackbox.Context)(tree: c.universe.Tree): Int = {
-//    findIntLiteral(tree).getOrElse(
-//      c.abort(c.enclosingPosition, "must use int literal")
-//    )
-//  }
-
   private def findStringLiteral(tree: Universe#Tree): Option[String] = {
     tree.collect {
       case l: Universe#LiteralApi if l.value.value.isInstanceOf[String] =>
         l.value.value.asInstanceOf[String]
     }.headOption
   }
-
-//  private def findBoolLiteral(tree: Universe#Tree): Option[Boolean] = {
-//    tree.collect {
-//      case l: Universe#LiteralApi if l.value.value.isInstanceOf[Boolean] =>
-//        l.value.value.asInstanceOf[Boolean]
-//    }.headOption
-//  }
-//
-//  private def findIntLiteral(tree: Universe#Tree): Option[Int] = {
-//    tree.collect {
-//      case l: Universe#LiteralApi if l.value.value.isInstanceOf[Int] =>
-//        l.value.value.asInstanceOf[Int]
-//    }.headOption
-//  }
 }
 
 object PortableResource {
