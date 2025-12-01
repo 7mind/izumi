@@ -42,5 +42,4 @@ object CLILoggerOptionsReader {
         .getOrElse(defaultLogFormatJson)
     }
   }
-
 }

@@ -6,7 +6,7 @@ import izumi.distage.testkit.model.DistageTest
 import izumi.distage.testkit.runner.TestkitRunnerModule
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.RunningSuiteHandle
-import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeIntellijTestReporter, ScalatestInitWorkaround}
+import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeIntellijTestReporter}
 import izumi.distage.testkit.spec.AbstractDistageSpec
 import izumi.functional.bio.Exit
 import izumi.functional.bio.impl.MiniBIOAsync
@@ -30,7 +30,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   override protected final def runNestedSuites(args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTests(testName: Option[String], args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTest(testName: String, args: Args): Status = throw new UnsupportedOperationException
-  override protected final def withFixture(test: NoArgTest): Outcome = throw new UnsupportedOperationException
+  override protected def withFixture(test: NoArgTest): Outcome = throw new UnsupportedOperationException
 
   /**
     * Override to enable global memoization on Scala.js.
@@ -62,7 +62,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
     try {
       val testsToRun = if (!sjsDisableGlobalMemoization) {
-        ScalatestInitWorkaround.collectAllTestkitTests(this, isSbt)
+        DistageTestsRegistrySingleton.collectAllTestkitTests(this, isSbt)
       } else {
         NEList.from(registeredTests())
       }

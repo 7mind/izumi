@@ -17,6 +17,7 @@ import izumi.distage.roles.launcher.*
 import izumi.distage.roles.launcher.AppResourceProvider.{AppResource, FinalizerFilters}
 import izumi.distage.roles.launcher.ModuleValidator.ValidatedModulePair
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
+import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, MultiModalArgsParser, MultiModalArgsParserImpl, ParserFailureHandler, SubArgsParser, SubArgsParserImpl}
 import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.IzLogger
@@ -51,7 +52,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   appArtifact: IzArtifact,
   unusedValidAxisChoices: Set[Axis.AxisChoice],
 ) extends ModuleDef {
-  include(new RoleAppBootPlatformModule[F]())
+  include(new RoleAppBootPlatformModule())
 
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
@@ -81,7 +82,13 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[MultiModalArgsParser].from[MultiModalArgsParserImpl]
   make[SubArgsParser].from[SubArgsParserImpl]
 
-  make[ParserFailureHandler].from(ParserFailureHandler.TerminatingHandler)
+  make[ParserFailureHandler].from {
+    if (IzPlatform.isScalaJS) {
+      ParserFailureHandler.NullHandler
+    } else {
+      ParserFailureHandler.TerminatingHandler
+    }
+  }
 
   many[LibraryReference]
 

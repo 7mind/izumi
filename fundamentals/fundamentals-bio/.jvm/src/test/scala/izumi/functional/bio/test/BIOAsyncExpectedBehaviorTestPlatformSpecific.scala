@@ -1,13 +1,13 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.F
+import izumi.functional.bio.{Async2, F}
 import izumi.reflect.TagKK
 import org.scalatest.Assertion
 
 import java.util.concurrent.CompletableFuture
 import scala.concurrent.Promise
 
-trait BIOAsyncExpectedBehaviorTestPlatformSpecific[F[+_, +_]] extends BIOAsyncExpectedBehaviorTest[F] {
+trait BIOAsyncExpectedBehaviorTestPlatformSpecific[F[+_, +_]] { this: BIOAsyncExpectedBehaviorTest[F] =>
 
   s"implementor ${TagKK[F].tag} of {Async2,Primitives2,Fork2} on JVM" should {
 

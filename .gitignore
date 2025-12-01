@@ -1,4 +1,4 @@
-.direnv
+.direnv/
 .hydra
 .idea
 *.jps

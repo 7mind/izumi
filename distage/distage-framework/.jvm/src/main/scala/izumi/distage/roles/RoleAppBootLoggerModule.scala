@@ -2,14 +2,12 @@ package izumi.distage.roles
 
 import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.modules.DefaultModule
 import izumi.distage.roles.launcher.*
 import izumi.logstage.api.logger.{LogQueue, LogRouter}
 import izumi.logstage.api.{IzLogger, Log}
-import izumi.reflect.TagK
 import logstage.ThreadingLogQueue
 
-class RoleAppBootLoggerModule[F[_]: TagK: DefaultModule]() extends ModuleDef {
+class RoleAppBootLoggerModule() extends ModuleDef {
   make[EarlyLoggerFactory].from[EarlyLoggerFactory.EarlyLoggerFactoryImpl]
 
   make[LogConfigLoader].from[LogConfigLoader.LogConfigLoaderImpl]

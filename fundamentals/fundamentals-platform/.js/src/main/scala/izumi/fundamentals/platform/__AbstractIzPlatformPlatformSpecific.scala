@@ -6,7 +6,7 @@ import scala.concurrent.ExecutionContext
 import scala.scalajs.js
 
 trait __AbstractIzPlatformPlatformSpecific {
-  def isScalaJS: Boolean = true
+  final val isScalaJS = true
 
   def getenvOption(s: String): Option[String] = nodeEnv.flatMap(_.get(s))
 

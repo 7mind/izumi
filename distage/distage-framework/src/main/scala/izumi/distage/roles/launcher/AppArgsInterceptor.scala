@@ -1,6 +1,6 @@
 package izumi.distage.roles.launcher
 
-import izumi.fundamentals.platform.cli.model.{RoleAppArgs, RequiredRoles}
+import izumi.fundamentals.platform.cli.model.{RequiredRoles, RoleAppArgs}
 
 trait AppArgsInterceptor {
   def rolesToLaunch(parsedArgs: RoleAppArgs, requiredRoles: RequiredRoles): RoleAppArgs

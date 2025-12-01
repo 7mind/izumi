@@ -1,20 +1,17 @@
 package izumi.distage.roles
 
 import distage.Injector
-import distage.config.AppConfig
-import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.{Activation, Axis, Module, ModuleDef}
+import izumi.distage.model.definition.{Axis, Module}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
-import izumi.distage.roles.launcher.AppShutdownStrategy
-import izumi.distage.roles.launcher.ActivationParser
+import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
-import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RequiredRoles, RoleAppArgs, RoleArgs}
+import izumi.fundamentals.platform.cli.model.{RequiredRoles, RoleArgs}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.reflect.TagK
@@ -22,6 +19,27 @@ import izumi.reflect.TagK
 import scala.annotation.unused
 import scala.concurrent.Future
 
+/**
+  * Create a launcher for role-based applications by extending this in a top-level object
+  *
+  * @example
+  *
+  * {{{
+  * import izumi.distage.framework.RoleAppMain
+  * import izumi.distage.plugins.PluginConfig
+  *
+  * object RoleLauncher extends RoleAppMain.LauncherBIO[zio.IO] {
+  *
+  *   override def pluginConfig: PluginConfig = {
+  *     PluginConfig.cached(pluginsPackage = "my.example.app.plugins")
+  *   }
+  *
+  * }
+  * }}}
+  *
+  * @see [[https://izumi.7mind.io/distage/distage-framework#roles Roles]]
+  * @see [[https://izumi.7mind.io/distage/distage-framework#plugins Plugins]]
+  */
 abstract class RoleAppMain[F[_]](
   implicit
   val tagK: TagK[F],
@@ -39,6 +57,24 @@ abstract class RoleAppMain[F[_]](
   protected def unusedValidAxisChoices: Set[Axis.AxisChoice] = Set.empty
   protected def shutdownStrategy: AppShutdownStrategy[F] = new AppShutdownStrategy.ImmediateExitShutdownStrategy[F]()
 
+  /**
+    * Overrides applied to [[roleAppBootModule]]
+    *
+    * @see [[izumi.distage.roles.RoleAppBootModule]] for initial values of [[roleAppBootModule]]
+    *
+    * @note Bootstrap Injector will always run under Identity, other effects (cats.effect.IO, zio.IO) are not available at this stage.
+    *
+    * @note The components added here are visible during the creation of the app, but *not inside* the app,
+    *       to override components *inside* the app, use `pluginConfig` & [[izumi.distage.plugins.PluginConfig#overriddenBy]]:
+    *
+    *       {{{
+    *       override def pluginConfig: PluginConfig = {
+    *         super.pluginConfig overriddenBy new PluginDef {
+    *           make[MyComponentX]]
+    *         }
+    *       }
+    *       }}}
+    */
   protected def roleAppBootOverrides(@unused argv: ArgV): Module = Module.empty
 
   /** Roles always enabled in this [[RoleAppMain]] */
@@ -53,8 +89,8 @@ abstract class RoleAppMain[F[_]](
       }
     } catch {
       case t: Throwable =>
-        // Future(earlyFailureHandler(argv).onError(t))
-        throw t
+        earlyFailureHandler(argv).onError(t)
+        Future.failed(t)
     }
   }
 
@@ -100,33 +136,22 @@ abstract class RoleAppMain[F[_]](
   }
 
   /** @see [[izumi.distage.roles.RoleAppBootModule]] for initial values */
-  def roleAppBootModule(@unused argv: ArgV, additionalRoles: RequiredRoles): Module = {
+  def roleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = {
     new RoleAppBootModule[F](
       shutdownStrategy = shutdownStrategy,
       pluginConfig = pluginConfig,
       bootstrapPluginConfig = bootstrapPluginConfig,
       appArtifact = artifact.get,
       unusedValidAxisChoices,
-    ) ++ new ModuleDef {
-      make[RoleAppArgs].fromValue(RoleAppArgs(EntrypointArgs.empty, additionalRoles.requiredRoles))
-      make[PlanningOptions].fromValue(planningOptions())
-      make[ActivationParser].from[ActivationParser.Impl]
-      make[Activation].named("entrypoint").fromValue(activation())
-      make[Activation].named("roleapp").from {
-        (parser: ActivationParser, config: AppConfig) =>
-          parser.parseActivation(config)
-      }
-    }
+    ) ++ new RoleAppBootArgsModule(
+      args = argv,
+      requiredRoles = additionalRoles,
+    )
   }
 
-  def planningOptions(): PlanningOptions = PlanningOptions()
-
-  def activation(): Activation = Activation.empty
-
-//  protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
-//    AppFailureHandler.NullHandler
-//  }
-
+  protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = {
+    AppFailureHandler.NullHandler
+  }
 }
 
 object RoleAppMain {
@@ -137,6 +162,8 @@ object RoleAppMain {
   }
 
   object Options extends ParserDef {
+    final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
+    final val logFormatParam = arg("log-format", "lf", "log format", "{text|json}")
     final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
   }
 }

@@ -5,6 +5,7 @@ import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.{Id, Lifecycle}
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.recursive.LocatorRef
+import izumi.distage.model.reflection.DIKey
 import izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters
 import izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
 import izumi.distage.roles.test.fixtures.Fixture.*
@@ -170,7 +171,7 @@ class FailingRole01[F[_]: QuasiIO](
 
 object FailingRole01 extends RoleDescriptor {
   final val expectedError =
-    "Instance is not available in the object graph: {type.izumi.distage.roles.launcher.AppResourceProvider.FinalizerFilters[cats.effect.IO[+_]]}"
+    s"Instance is not available in the object graph: ${DIKey[FinalizerFilters[cats.effect.IO]]}"
   override final val id = "failingrole01"
 }
 
