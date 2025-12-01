@@ -152,6 +152,14 @@ if (( newest_input_mtime > oldest_generated_mtime )); then
 fi
 ```
 
+# action: retain.action.check-sbtgen-staleness
+
+Retainer wrapper for sbtgen staleness check
+
+```bash
+dep action.check-sbtgen-staleness
+```
+
 # action: gen
 
 Generate build files using sbtgen for the selected platform
@@ -234,7 +242,7 @@ docker rm "$(docker ps -aq)" || true
 Build microsite for validation
 
 ```bash
-dep action.gen
+soft action.gen retain.action.check-sbtgen-staleness
 
 JAVA_HOME="${action.setup-jdk.java-home}"
 PATH="${action.setup-jdk.path}"
@@ -254,7 +262,7 @@ sbt -batch -no-colors -v \
 Publish microsite to GitHub Pages (skips on non-release branches)
 
 ```bash
-dep action.gen
+soft action.gen retain.action.check-sbtgen-staleness
 
 JAVA_HOME="${action.setup-jdk.java-home}"
 PATH="${action.setup-jdk.path}"
@@ -290,7 +298,7 @@ sbt -batch -no-colors -v \
 Publish Scala artifacts to Sonatype (only on release branches/tags)
 
 ```bash
-dep action.gen
+soft action.gen retain.action.check-sbtgen-staleness
 
 JAVA_HOME="${action.setup-jdk.java-home}"
 PATH="${action.setup-jdk.path}"
