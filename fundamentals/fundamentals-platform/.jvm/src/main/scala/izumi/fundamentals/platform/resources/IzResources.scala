@@ -1,17 +1,16 @@
 package izumi.fundamentals.platform.resources
 
-import java.io._
-import java.net.{URI, URL}
-import java.nio.file._
-import java.nio.file.attribute.BasicFileAttributes
-import java.util.jar.JarFile
-import java.util.stream.Collectors
-import java.util.zip.ZipEntry
-
 import izumi.fundamentals.platform.files.IzFiles
 import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, PathReference, RecursiveCopyOutput, ResourceLocation, UnloadablePathReference}
 import izumi.fundamentals.platform.resources.IzResourcesDirty.ContentIterator
 
+import java.io.*
+import java.net.{URI, URL}
+import java.nio.file.*
+import java.nio.file.attribute.BasicFileAttributes
+import java.util.jar.JarFile
+import java.util.stream.Collectors
+import java.util.zip.ZipEntry
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
@@ -55,18 +54,7 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
 
 }
 
-object IzIOStreams {
-  implicit final class ISTool(private val is: InputStream) {
-    def streamToString(): String = {
-      val reader = new BufferedReader(new InputStreamReader(is))
-      try {
-        reader.lines.collect(Collectors.joining(System.lineSeparator))
-      } finally {
-        reader.close()
-      }
-    }
-  }
-}
+
 
 final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVal {
 
