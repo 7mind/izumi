@@ -85,17 +85,17 @@ object PortableResourceMacro extends PortableResourceBase {
     )
   }
 
-  private def getBoolLiteral(c: blackbox.Context)(tree: c.universe.Tree): Boolean = {
-    findBoolLiteral(tree).getOrElse(
-      c.abort(c.enclosingPosition, "must use bool literal")
-    )
-  }
-
-  private def getIntLiteral(c: blackbox.Context)(tree: c.universe.Tree): Int = {
-    findIntLiteral(tree).getOrElse(
-      c.abort(c.enclosingPosition, "must use int literal")
-    )
-  }
+//  private def getBoolLiteral(c: blackbox.Context)(tree: c.universe.Tree): Boolean = {
+//    findBoolLiteral(tree).getOrElse(
+//      c.abort(c.enclosingPosition, "must use bool literal")
+//    )
+//  }
+//
+//  private def getIntLiteral(c: blackbox.Context)(tree: c.universe.Tree): Int = {
+//    findIntLiteral(tree).getOrElse(
+//      c.abort(c.enclosingPosition, "must use int literal")
+//    )
+//  }
 
   private def findStringLiteral(tree: Universe#Tree): Option[String] = {
     tree.collect {
@@ -104,19 +104,19 @@ object PortableResourceMacro extends PortableResourceBase {
     }.headOption
   }
 
-  private def findBoolLiteral(tree: Universe#Tree): Option[Boolean] = {
-    tree.collect {
-      case l: Universe#LiteralApi if l.value.value.isInstanceOf[Boolean] =>
-        l.value.value.asInstanceOf[Boolean]
-    }.headOption
-  }
-
-  private def findIntLiteral(tree: Universe#Tree): Option[Int] = {
-    tree.collect {
-      case l: Universe#LiteralApi if l.value.value.isInstanceOf[Int] =>
-        l.value.value.asInstanceOf[Int]
-    }.headOption
-  }
+//  private def findBoolLiteral(tree: Universe#Tree): Option[Boolean] = {
+//    tree.collect {
+//      case l: Universe#LiteralApi if l.value.value.isInstanceOf[Boolean] =>
+//        l.value.value.asInstanceOf[Boolean]
+//    }.headOption
+//  }
+//
+//  private def findIntLiteral(tree: Universe#Tree): Option[Int] = {
+//    tree.collect {
+//      case l: Universe#LiteralApi if l.value.value.isInstanceOf[Int] =>
+//        l.value.value.asInstanceOf[Int]
+//    }.headOption
+//  }
 }
 
 object PortableResource {
