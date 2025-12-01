@@ -9,7 +9,6 @@ import java.net.{URI, URL}
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.jar.JarFile
-import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -53,8 +52,6 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
   }
 
 }
-
-
 
 final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVal {
 
