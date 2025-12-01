@@ -5,7 +5,7 @@ import izumi.fundamentals.platform.functional.Identity
 import scala.collection.compat.*
 import scala.concurrent.Future
 
-private object __QuasiAsyncPlatformSpecific {
+private[quasi] object __QuasiAsyncPlatformSpecific {
 
   def quasiAsyncIdentity: QuasiAsync[Identity] = {
     new QuasiAsync[Identity] {
