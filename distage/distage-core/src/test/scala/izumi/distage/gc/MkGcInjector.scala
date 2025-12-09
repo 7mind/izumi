@@ -1,6 +1,6 @@
 package izumi.distage.gc
 
-import distage.{AutoSetModule, Injector}
+import distage.Injector
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.fundamentals.platform.functional.Identity
 
@@ -13,10 +13,10 @@ trait MkGcInjector {
       Seq.empty
     }
 
-    Injector((Seq(AutoSetModule().register[AutoCloseable]) ++ more)*)
+    Injector(bootstrapOverrides = more)
   }
 
   def mkNoProxiesInjector(): Injector[Identity] = {
-    Injector.NoProxies(AutoSetModule().register[AutoCloseable])
+    Injector.NoProxies()
   }
 }

@@ -43,13 +43,13 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
     val appDefinition = Module.empty
 
-    val injector1 = Injector[Identity](bootstrapActivation = Activation(Repo -> Repo.Prod), overrides = Seq(bsDefinition))
+    val injector1 = Injector[Identity](bootstrapActivation = Activation(Repo -> Repo.Prod), bootstrapOverrides = Seq(bsDefinition))
     val context1 = injector1.produce(PlannerInput(appDefinition, Roots.Everything, Activation.empty)).unsafeGet()
 
     assert(context1.get[JustTrait].isInstanceOf[Impl1])
     assert(!context1.get[JustTrait].isInstanceOf[Impl0])
 
-    val injector2 = Injector[Identity](bootstrapActivation = Activation(Repo -> Repo.Dummy), overrides = Seq(bsDefinition))
+    val injector2 = Injector[Identity](bootstrapActivation = Activation(Repo -> Repo.Dummy), bootstrapOverrides = Seq(bsDefinition))
     val context2 = injector2.produce(PlannerInput(appDefinition, Roots.Everything, Activation.empty)).unsafeGet()
 
     assert(context2.get[JustTrait].isInstanceOf[Impl0])

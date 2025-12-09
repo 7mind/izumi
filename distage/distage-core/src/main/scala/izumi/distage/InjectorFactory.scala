@@ -16,16 +16,6 @@ trait InjectorFactory {
   /**
     * Create a new Injector
     *
-    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
-    *
-    * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
-    *                  They can be used to customize the Injector, e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
-    */
-  def apply[F[_]: QuasiIO: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F]
-
-  /**
-    * Create a new Injector with custom parameters [[izumi.distage.model.definition.BootstrapContextModule]]
-    *
     * @tparam F                   The effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
     *
     * @param bootstrapBase        Initial bootstrap context module, such as [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
@@ -39,14 +29,14 @@ trait InjectorFactory {
     *                             recreate the bootstrap environment with new parameters. If you just want to reuse all components,
     *                             including the bootstrap environment, use [[inherit]]
     *
-    * @param overrides            Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
+    * @param bootstrapOverrides   Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                             They can be used to customize the Injector, e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
     */
   def apply[F[_]: QuasiIO: TagK: DefaultModule](
+    parent: Option[Locator] = None,
     bootstrapBase: BootstrapContextModule = defaultBootstrap,
     bootstrapActivation: Activation = defaultBootstrapActivation,
-    parent: Option[Locator] = None,
-    overrides: Seq[BootstrapModule] = Nil,
+    bootstrapOverrides: Seq[BootstrapModule] = Nil,
     locatorPrivacy: LocatorPrivacy = defaultBootstrapLocatorPrivacy,
     bootstrapRootsMode: BootstrapRootsMode = defaultBootstrapRootsMode,
   ): Injector[F]
@@ -55,10 +45,11 @@ trait InjectorFactory {
     * Create a new default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
     *
     * Use `apply[F]()` variant to specify a different effect type
+    *
+    * @note this method exists only because of Scala 2.12's sub-par implicit handling:
+    *       2.12 fails to default to `QuasiIO.quasiIOIdentity` when writing `Injector()` if cats-effect
+    *       is on the classpath because of recursive (on 2.12: diverging) instances in `cats.effect.kernel.Sync` object
     */
-  // Note: this method exists only because of Scala 2.12's sub-par implicit handling,
-  // 2.12 fails to default to `QuasiIO.quasiIOIdentity` when writing `Injector()` if cats-effect
-  // is on the classpath because of recursive (on 2.12: diverging) instances in `cats.effect.kernel.Sync` object
   def apply(): Injector[Identity]
 
   /**
@@ -68,9 +59,9 @@ trait InjectorFactory {
     * `distage-framework-docker` would expect them to be defined
     */
   final def withoutDefaultModule[F[_]: QuasiIO: TagK](
+    parent: Option[Locator] = None,
     bootstrapBase: BootstrapContextModule = defaultBootstrap,
     bootstrapActivation: Activation = defaultBootstrapActivation,
-    parent: Option[Locator] = None,
     overrides: Seq[BootstrapModule] = Nil,
     locatorPrivacy: LocatorPrivacy = defaultBootstrapLocatorPrivacy,
     bootstrapRootsMode: BootstrapRootsMode = defaultBootstrapRootsMode,
@@ -79,7 +70,7 @@ trait InjectorFactory {
       bootstrapBase = bootstrapBase,
       bootstrapActivation = bootstrapActivation,
       parent = parent,
-      overrides = overrides,
+      bootstrapOverrides = overrides,
       locatorPrivacy = locatorPrivacy,
       bootstrapRootsMode = bootstrapRootsMode,
     )(using QuasiIO[F], TagK[F], DefaultModule.empty[F])
@@ -107,8 +98,8 @@ trait InjectorFactory {
   def inheritWithNewDefaultModule[F[_]: QuasiIO: TagK](parent: Locator, defaultModule: DefaultModule[F]): Injector[F]
 
   /** Keys summonable by default in DI, *including* those added additionally by [[izumi.distage.modules.DefaultModule]] */
-  def providedKeys[F[_]: DefaultModule](overrides: BootstrapModule*): Set[DIKey]
-  def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey]
+  def providedKeys[F[_]: DefaultModule](bootstrapOverrides: BootstrapModule*): Set[DIKey]
+  def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, bootstrapOverrides: BootstrapModule*): Set[DIKey]
 
   def bootloader[F[_]](
     bootstrapModule: BootstrapModule,

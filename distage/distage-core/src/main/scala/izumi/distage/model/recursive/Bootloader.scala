@@ -40,7 +40,7 @@ class Bootloader(
 
     val injector = injectorFactory(
       bootstrapActivation = config.bootstrapActivation(bootstrapActivation),
-      overrides = Seq(bootstrap),
+      bootstrapOverrides = Seq(bootstrap),
       locatorPrivacy = locatorPrivacy,
     )(using QuasiIO[Identity], TagK[Identity], DefaultModule[Identity](defaultModule))
     val module = config.appModule(input.bindings)

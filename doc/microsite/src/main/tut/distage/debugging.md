@@ -84,7 +84,7 @@ Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable writ
 ```scala mdoc:reset:to-string
 import distage.{GraphDumpBootstrapModule, Injector}
 
-Injector(GraphDumpBootstrapModule)
+Injector(bootstrapOverrides = Seq(GraphDumpBootstrapModule))
 ```
 
 You'll need a `GraphViz` installation to render these files into a viewable PNG images:

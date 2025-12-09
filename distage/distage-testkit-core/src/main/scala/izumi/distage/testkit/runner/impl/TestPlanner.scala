@@ -262,7 +262,7 @@ class TestPlanner(
         // here we reuse all the components from test runner locator which are required as dependencies for IndividualTestRunner
         parent = Some(testRunnerLocator.get),
         bootstrapActivation = fullActivation,
-        overrides = Seq(bsModule),
+        bootstrapOverrides = Seq(bsModule),
       )
 
       val injectorEnv = injector.providedEnvironment

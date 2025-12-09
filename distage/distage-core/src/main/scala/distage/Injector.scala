@@ -13,20 +13,6 @@ object Injector extends InjectorFactory {
   /**
     * Create a new Injector
     *
-    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
-    *
-    * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
-    *                  They can be used to customize the Injector, e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
-    */
-  override def apply[F[_]: QuasiIO: TagK: DefaultModule](
-    overrides: BootstrapModule*
-  ): Injector[F] = {
-    bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, defaultBootstrapLocatorPrivacy, defaultBootstrapRootsMode)
-  }
-
-  /**
-    * Create a new Injector with custom parameters [[izumi.distage.model.definition.BootstrapContextModule]]
-    *
     * @tparam F                   The effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
     *
     * @param bootstrapBase        Initial bootstrap context module, such as [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
@@ -40,24 +26,28 @@ object Injector extends InjectorFactory {
     *                             recreate the bootstrap environment with new parameters. If you just want to reuse all components,
     *                             including the bootstrap environment, use [[inherit]]
     *
-    * @param overrides            Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
+    * @param bootstrapOverrides   Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                             They can be used to customize the Injector, e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
     */
   override def apply[F[_]: QuasiIO: TagK: DefaultModule](
+    parent: Option[Locator] = None,
     bootstrapBase: BootstrapContextModule = defaultBootstrap,
     bootstrapActivation: Activation = defaultBootstrapActivation,
-    parent: Option[Locator] = None,
-    overrides: Seq[BootstrapModule] = Nil,
+    bootstrapOverrides: Seq[BootstrapModule] = Nil,
     bootstrapLocatorPrivacy: LocatorPrivacy = defaultBootstrapLocatorPrivacy,
     bootstrapRootsMode: BootstrapRootsMode = defaultBootstrapRootsMode,
   ): Injector[F] = {
-    bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, bootstrapLocatorPrivacy, bootstrapRootsMode)
+    bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, bootstrapOverrides, bootstrapLocatorPrivacy, bootstrapRootsMode)
   }
 
   /**
-    * Create a default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
+    * Create a new default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
     *
     * Use `apply[F]()` variant to specify a different effect type
+    *
+    * @note this method exists only because of Scala 2.12's sub-par implicit handling:
+    *       2.12 fails to default to `QuasiIO.quasiIOIdentity` when writing `Injector()` if cats-effect
+    *       is on the classpath because of recursive (on 2.12: diverging) instances in `cats.effect.kernel.Sync` object
     */
   override def apply(): Injector[Identity] = apply[Identity]()
 
@@ -86,13 +76,13 @@ object Injector extends InjectorFactory {
     inheritWithNewDefaultModuleImpl(this, parent, defaultModule)
   }
 
-  override def providedKeys[F[_]: DefaultModule](overrides: BootstrapModule*): Set[DIKey] = {
-    providedKeys[F](defaultBootstrap, overrides*)
+  override def providedKeys[F[_]: DefaultModule](bootstrapOverrides: BootstrapModule*): Set[DIKey] = {
+    providedKeys[F](defaultBootstrap, bootstrapOverrides*)
   }
 
-  override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
+  override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, bootstrapOverrides: BootstrapModule*): Set[DIKey] = {
     (bootstrapBase.keysIterator ++
-    overrides.iterator.flatMap(_.keysIterator) ++
+    bootstrapOverrides.iterator.flatMap(_.keysIterator) ++
     BootstrapLocator.selfReflectionKeys.iterator ++
     IdentitySupportModule.keysIterator ++
     DefaultModule[F].keysIterator ++
@@ -120,19 +110,16 @@ object Injector extends InjectorFactory {
   private[Injector] sealed abstract class InjectorBootstrap(
     cycleChoice: Cycles.AxisChoiceDef
   ) extends InjectorFactory {
-    override final def apply[F[_]: QuasiIO: TagK: DefaultModule](overrides: BootstrapModule*): Injector[F] = {
-      bootstrap(this, defaultBootstrap, defaultBootstrapActivation, None, overrides, defaultBootstrapLocatorPrivacy, defaultBootstrapRootsMode)
-    }
 
     override final def apply[F[_]: QuasiIO: TagK: DefaultModule](
+      parent: Option[Locator],
       bootstrapBase: BootstrapContextModule,
       bootstrapActivation: Activation,
-      parent: Option[Locator],
-      overrides: Seq[BootstrapModule],
+      bootstrapOverrides: Seq[BootstrapModule],
       locatorPrivacy: LocatorPrivacy,
       bootstrapRootsMode: BootstrapRootsMode,
     ): Injector[F] = {
-      bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, overrides, locatorPrivacy, bootstrapRootsMode)
+      bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, bootstrapOverrides, locatorPrivacy, bootstrapRootsMode)
     }
 
     override final def apply(): Injector[Identity] = apply[Identity]()
@@ -145,12 +132,12 @@ object Injector extends InjectorFactory {
       inheritWithNewDefaultModuleImpl(this, parent, defaultModule)
     }
 
-    override def providedKeys[F[_]: DefaultModule](overrides: BootstrapModule*): Set[DIKey] = {
-      Injector.providedKeys[F](overrides*)
+    override def providedKeys[F[_]: DefaultModule](bootstrapOverrides: BootstrapModule*): Set[DIKey] = {
+      Injector.providedKeys[F](bootstrapOverrides*)
     }
 
-    override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Set[DIKey] = {
-      Injector.providedKeys[F](bootstrapBase, overrides*)
+    override def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, bootstrapOverrides: BootstrapModule*): Set[DIKey] = {
+      Injector.providedKeys[F](bootstrapBase, bootstrapOverrides*)
     }
 
     override protected final def defaultBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap
@@ -164,11 +151,11 @@ object Injector extends InjectorFactory {
     bootstrapBase: BootstrapContextModule,
     activation: Activation,
     parent: Option[Locator],
-    overrides: Seq[BootstrapModule],
+    bootstrapOverrides: Seq[BootstrapModule],
     locatorPrivacy: LocatorPrivacy,
     bootstrapRootsMode: BootstrapRootsMode,
   ): Injector[F] = {
-    val bootstrapLocator = BootstrapLocator.bootstrap(bootstrapBase, activation, overrides, parent, locatorPrivacy, bootstrapRootsMode)
+    val bootstrapLocator = BootstrapLocator.bootstrap(bootstrapBase, activation, bootstrapOverrides, parent, locatorPrivacy, bootstrapRootsMode)
     inheritWithNewDefaultModuleImpl(injectorFactory, bootstrapLocator, implicitly)
   }
 

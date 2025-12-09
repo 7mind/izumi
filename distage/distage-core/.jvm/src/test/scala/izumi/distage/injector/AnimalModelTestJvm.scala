@@ -10,23 +10,28 @@ import org.scalatest.wordspec.AnyWordSpec
 class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
   "animal model" must {
     "produce valid plans" in {
-      import AnimalModelTestJvm._
-      val definition = PlannerInput(new ModuleDef {
-        make[Cluster]
-        make[UserRepo].from[UserRepoImpl]
-        make[AccountsRepo].from[AccountsRepoImpl]
-        make[UsersService].from[UserServiceImpl]
-        make[AccountingService].from[AccountingServiceImpl]
-        make[UsersApiImpl]
-        make[AccountsApiImpl]
-        make[UnrequiredDep]
-        make[App]
-      }, Roots(DIKey.get[App]), Activation.empty)
+      import AnimalModelTestJvm.*
+
+      val definition = PlannerInput(
+        new ModuleDef {
+          make[Cluster]
+          make[UserRepo].from[UserRepoImpl]
+          make[AccountsRepo].from[AccountsRepoImpl]
+          make[UsersService].from[UserServiceImpl]
+          make[AccountingService].from[AccountingServiceImpl]
+          make[UsersApiImpl]
+          make[AccountsApiImpl]
+          make[UnrequiredDep]
+          make[App]
+        },
+        Roots(DIKey.get[App]),
+        Activation.empty,
+      )
 
       val debug = false
 
       val injector = if (debug) {
-        Injector[Identity](GraphDumpBootstrapModule())
+        Injector[Identity](bootstrapOverrides = Seq(GraphDumpBootstrapModule()))
       } else {
         Injector()
       }
