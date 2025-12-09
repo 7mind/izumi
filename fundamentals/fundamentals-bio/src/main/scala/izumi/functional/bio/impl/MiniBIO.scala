@@ -105,7 +105,7 @@ object MiniBIO extends MiniBIOPlatformSpecific {
         throw failure.toThrowable
     }
 
-    implicit def BIOMiniBIOHighPriority: IO2[MiniBIO] & BlockingIO2[MiniBIO] = IO2MiniBIO
+    implicit def IOForMiniBIOHighPriority: IO2[MiniBIO] & BlockingIO2[MiniBIO] = IOForMiniBIO
   }
 
   final case class Fail[+E](e: () => Exit.FailureUninterrupted[E]) extends MiniBIO[E, Nothing]
@@ -117,7 +117,7 @@ object MiniBIO extends MiniBIOPlatformSpecific {
   final case class FlatMap[E, A, +E1 >: E, +B](io: MiniBIO[E, A], f: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
   final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: Exit.FailureUninterrupted[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
 
-  implicit val IO2MiniBIO: IO2[MiniBIO] & BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
+  implicit val IOForMiniBIO: IO2[MiniBIO] & BlockingIO2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] {
     override def pure[A](a: A): MiniBIO[Nothing, A] = Sync(() => Exit.Success(a))
     override def flatMap[E, A, B](r: MiniBIO[E, A])(f: A => MiniBIO[E, B]): MiniBIO[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => Exit.Error(v, Trace.forTypedError(v)))
@@ -188,7 +188,7 @@ object MiniBIO extends MiniBIOPlatformSpecific {
 
   implicit def UnsafeRunMiniBIO(implicit ec: ExecutionContext): UnsafeRun2[MiniBIO] = new MiniBIORunner()(using ec)
 
-  final class MiniBIORunner()(implicit ec: ExecutionContext) extends MiniBIOUnsafeRun2UnsafeRunSyncPlatformSpecific with UnsafeRun2[MiniBIO] {
+  final class MiniBIORunner()(implicit ec: ExecutionContext) extends MiniBIOUnsafeRunPlatformSpecific {
 
     override def unsafeRunAsync[E, A](io: => MiniBIO[E, A])(callback: Exit[E, A] => Unit): Unit = {
       ec.execute(() => callback(io.run()))
@@ -201,7 +201,7 @@ object MiniBIO extends MiniBIOPlatformSpecific {
     override def unsafeRunAsyncInterruptible[E, A](io: => MiniBIO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[MiniBIO] = {
       // MiniBIO doesn't support interruption or semantic (async) blocking
       unsafeRunAsync(io)(callback)
-      InterruptAction(MiniBIO.IO2MiniBIO.unit)
+      InterruptAction(MiniBIO.IOForMiniBIO.unit)
     }
 
     override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => MiniBIO[E, A]): (Future[Exit[E, A]], InterruptAction[MiniBIO]) = {

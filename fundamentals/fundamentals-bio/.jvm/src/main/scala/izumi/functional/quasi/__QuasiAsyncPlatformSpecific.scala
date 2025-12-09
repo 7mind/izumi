@@ -33,19 +33,19 @@ private[quasi] object __QuasiAsyncPlatformSpecific {
       }
 
       override def parTraverse_[A](l: IterableOnce[A])(f: A => Unit): Unit = {
-        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsync2ForMiniBIOAsync.parTraverse_)(QuasiAsyncIdentityBlockingIOPool)
+        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverse_)(QuasiAsyncIdentityBlockingIOPool)
       }
 
       override def parTraverse[A, B](l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsync2ForMiniBIOAsync.parTraverse)(QuasiAsyncIdentityBlockingIOPool)
+        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverse)(QuasiAsyncIdentityBlockingIOPool)
       }
 
       override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsync2ForMiniBIOAsync.parTraverseN(n))(QuasiAsyncIdentityBlockingIOPool)
+        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverseN(n))(QuasiAsyncIdentityBlockingIOPool)
       }
 
       override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => Identity[Unit]): Identity[Unit] = {
-        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsync2ForMiniBIOAsync.parTraverseN_(n))(QuasiAsyncIdentityBlockingIOPool)
+        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverseN_(n))(QuasiAsyncIdentityBlockingIOPool)
       }
     }
   }
@@ -56,7 +56,7 @@ private[quasi] object __QuasiAsyncPlatformSpecific {
   )(parTraverseImpl: Iterable[A] => (A => MiniBIOAsync[Throwable, B]) => MiniBIOAsync[Throwable, C]
   )(ec: ExecutionContext
   ): Identity[C] = {
-    val F = MiniBIOAsync.WeakAsync2ForMiniBIOAsync
+    val F = MiniBIOAsync.WeakAsyncForMiniBIOAsync
     val future = parTraverseImpl(l.iterator.to(Iterable))(a => F.syncBlocking(f(a))).runSyncToFirstAsyncBoundaryOrOnEC(ec)
     Await.result(future, Duration.Inf) match {
       case Exit.Success(value) => value

@@ -21,7 +21,7 @@ trait BIOAsyncExpectedBehaviorTestPlatformSpecific[F[+_, +_]] { this: BIOAsyncEx
       } yield {
         assert(canceled)
       }
-      runner.unsafeRunAsyncAsFuture(test).map(_.toThrowableEither.toTry.get)
+      runner.unsafeRunAsyncAsFuture(test).map(_.toTry.get)
     }
 
   }

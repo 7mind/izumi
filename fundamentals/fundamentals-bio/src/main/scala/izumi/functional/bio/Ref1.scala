@@ -19,7 +19,8 @@ trait Ref1[+F[_], A] {
 }
 
 object Ref1 {
-  def fromZIO[A](ref: Ref[A]): Ref2[IO, A] =
+  def fromZIO[A](ref: Ref[A]): Ref2[IO, A] = {
+    disableAutoTrace.discard()
     new Ref2[IO, A] {
       override def get: IO[Nothing, A] = ref.get(Tracer.newTrace)
       override def set(a: A): IO[Nothing, Unit] = ref.set(a)(Tracer.newTrace)
@@ -30,9 +31,8 @@ object Ref1 {
 
       override def tryUpdate(f: A => A): IO[Nothing, Option[A]] = update(f).map(Some(_))(InteropTracer.newTrace(f)) // zio.Ref does not support try*
       override def tryModify[B](f: A => (B, A)): IO[Nothing, Option[B]] = modify(f).map(Some(_))(InteropTracer.newTrace(f)) // zio.Ref does not support try*
-
-      disableAutoTrace.discard()
     }
+  }
 
   def fromCats[F[+_, +_]: Panic2, A](ref: cats.effect.Ref[F[Throwable, _], A]): Ref2[F, A] =
     new Ref2[F, A] {

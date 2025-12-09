@@ -12,7 +12,7 @@ private[bio] object __PlatformSpecific {
     val byName: () => CompletionStage[A] = () => javaFuture
     implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
 
-    ZIO.fromCompletionStage(javaFuture)
+    ZIO.fromCompletionStage(javaFuture)(using trace)
   }
 
   disableAutoTrace.discard()

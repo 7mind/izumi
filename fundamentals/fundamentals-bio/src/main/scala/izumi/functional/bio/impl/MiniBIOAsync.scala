@@ -183,7 +183,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
   ) extends MiniBIOAsync[E1, B]
   final case class Async[+E, +A](register: (ExecutionContext, Exit.Uninterrupted[E, A] => Unit) => Unit) extends MiniBIOAsync[E, A]
 
-  implicit object WeakAsync2ForMiniBIOAsync extends WeakAsync2[MiniBIOAsync] with BlockingIO2[MiniBIOAsync] with WeakTemporal2[MiniBIOAsync] {
+  implicit object WeakAsyncForMiniBIOAsync extends WeakAsync2[MiniBIOAsync] with BlockingIO2[MiniBIOAsync] with WeakTemporal2[MiniBIOAsync] {
     override def pure[A](a: A): MiniBIOAsync[Nothing, A] = Sync(() => Exit.Success(a))
     override def flatMap[E, A, B](r: MiniBIOAsync[E, A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIOAsync[E, Nothing] = Fail(() => Exit.Error.forTypedError(v))
@@ -406,7 +406,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
 
   implicit def UnsafeRunMiniBIOAsync(implicit ec: ExecutionContext): UnsafeRun2[MiniBIOAsync] = new MiniBIOAsyncRunner()(using ec)
 
-  final class MiniBIOAsyncRunner()(implicit ec: ExecutionContext) extends MiniBIOAsyncUnsafeRun2UnsafeRunSyncPlatformSpecific with UnsafeRun2[MiniBIOAsync] {
+  final class MiniBIOAsyncRunner()(implicit ec: ExecutionContext) extends MiniBIOAsyncUnsafeRunPlatformSpecific {
 
     override def unsafeRunAsync[E, A](io: => MiniBIOAsync[E, A])(callback: Exit[E, A] => Unit): Unit = {
       io.runOnEC(ec).onComplete {

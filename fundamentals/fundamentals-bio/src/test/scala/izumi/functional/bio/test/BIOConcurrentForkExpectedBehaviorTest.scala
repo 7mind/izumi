@@ -31,7 +31,7 @@ abstract class BIOConcurrentForkExpectedBehaviorTest[F[+_, +_]: TagKK: Concurren
       } yield {
         assert(!caught)
       }
-      runner.unsafeRunAsyncAsFuture(test).map(_.toThrowableEither.toTry.get)
+      runner.unsafeRunAsyncAsFuture(test).map(_.toTry.get)
     }
 
   }

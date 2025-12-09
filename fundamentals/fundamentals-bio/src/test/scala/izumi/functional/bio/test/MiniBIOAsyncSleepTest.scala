@@ -10,7 +10,7 @@ import scala.util.Success
 
 class MiniBIOAsyncSleepTest extends AsyncWordSpec {
 
-  import MiniBIOAsync.WeakAsync2ForMiniBIOAsync
+  import MiniBIOAsync.WeakAsyncForMiniBIOAsync
 
   override implicit def executionContext: ExecutionContext = ExecutionContext.global
 

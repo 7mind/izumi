@@ -16,16 +16,16 @@ trait RefM2[F[+_, +_], A] {
 }
 
 object RefM2 {
-  def fromZIO[R, A](ref: Ref.Synchronized[A]): RefM2[ZIO[R, +_, +_], A] =
+  def fromZIO[R, A](ref: Ref.Synchronized[A]): RefM2[ZIO[R, +_, +_], A] = {
+    disableAutoTrace.discard()
     new RefM2[ZIO[R, +_, +_], A] {
       override def get: ZIO[R, Nothing, A] = ref.get(Tracer.newTrace)
       override def set(a: A): ZIO[R, Nothing, Unit] = ref.set(a)(Tracer.newTrace)
       override def modify[E, B](f: A => ZIO[R, E, (B, A)]): ZIO[R, E, B] = ref.modifyZIO(f)(InteropTracer.newTrace(f))
       override def update[E](f: A => ZIO[R, E, A]): ZIO[R, E, A] = ref.updateAndGetZIO(f)(InteropTracer.newTrace(f))
       override def update_[E](f: A => ZIO[R, E, A]): ZIO[R, E, Unit] = ref.updateZIO(f)(InteropTracer.newTrace(f))
-
-      disableAutoTrace.discard()
     }
+  }
 
   def createFromBIO[F[+_, +_]: IO2: Primitives2, A](a: A): F[Nothing, RefM2[F, A]] = {
     for {

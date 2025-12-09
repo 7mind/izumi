@@ -3,7 +3,7 @@ package izumi.functional.bio
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.data.InterruptAction
 import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
-import zio.{Executor, Fiber, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
+import zio.{Executor, Fiber, FiberId, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import java.util.concurrent.ThreadFactory
@@ -20,6 +20,9 @@ trait UnsafeRun2[F[_, _]] {
 
   def unsafeRunAsyncInterruptible[E, A](io: => F[E, A])(callback: Exit[E, A] => Unit): InterruptAction[F]
   def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => F[E, A]): (Future[Exit[E, A]], InterruptAction[F])
+
+  // FIXME: add methods for unsafeRunSyncToFirstBoundaryOrAsyncAsInteruptibleFuture
+  // FIXME: better support for sync-only effects - make unsafeRunAsync variants able to return synchronously?
 }
 
 object UnsafeRun2 {
@@ -69,11 +72,11 @@ object UnsafeRun2 {
     val initialEnv: ZEnvironment[R],
   ) extends UnsafeRun2[ZIO[R, +_, +_]] {
 
-    lazy val runtime: Runtime[R] = Unsafe
-      .unsafe {
-        implicit unsafe =>
-          Runtime.unsafe.fromLayer(runtimeConfiguration)
-      }.mapEnvironment(_ => initialEnv)
+    lazy val runtime: Runtime[R] = {
+      Runtime.unsafe
+        .fromLayer(runtimeConfiguration)(using implicitly[zio.Trace], Unsafe)
+        .mapEnvironment(_ => initialEnv)
+    }
 
     override def unsafeRun[E, A](io: => ZIO[R, E, A]): A = {
       unsafeRunSync(io) match {
@@ -85,26 +88,18 @@ object UnsafeRun2 {
       }
     }
 
-    override def unsafeRunAsync[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): Unit = {
-      val interrupted = new AtomicBoolean(true)
-      Unsafe.unsafe {
-        implicit unsafe =>
-          runtime.unsafe
-            .fork(ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false))))
-            .unsafe
-            .addObserver(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))
-      }
-    }
-
     override def unsafeRunSync[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
       val interrupted = new AtomicBoolean(true)
-      val result = Unsafe.unsafe {
-        implicit unsafe =>
-          runtime.unsafe.run {
-            ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
-          }
-      }
+      val result = runtime.unsafe.run {
+        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
+      }(using implicitly[zio.Trace], Unsafe)
       ZIOExit.toExit(result)(interrupted.get())
+    }
+
+    override def unsafeRunAsync[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): Unit = {
+      val interrupted = new AtomicBoolean(true)
+      val fiber = runtime.unsafe.fork(ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false))))(using implicitly[zio.Trace], Unsafe)
+      fiber.unsafe.addObserver(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))(using Unsafe)
     }
 
     override def unsafeRunAsyncAsFuture[E, A](io: => ZIO[R, E, A]): Future[Exit[E, A]] = {
@@ -115,30 +110,9 @@ object UnsafeRun2 {
 
     override def unsafeRunAsyncInterruptible[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): InterruptAction[ZIO[R, +_, +_]] = {
       val interrupted = new AtomicBoolean(true)
-
-      val cancelerEffect = Unsafe.unsafe {
-        implicit u =>
-          runtime.unsafe
-            .run {
-              ZIO
-                .acquireReleaseExitWith(ZIO.descriptor)(
-                  (descriptor, exit: zio.Exit[E, A]) =>
-                    zioSucceed {
-                      exit match {
-                        case zio.Exit.Failure(cause) if !cause.interruptors.forall(_ == descriptor.id) =>
-                          ()
-                        case _ =>
-                          callback(ZIOExit.toExit(exit)(interrupted.get()))
-                      }
-                    }
-                )(_ => ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false))))
-                .interruptible
-                .forkDaemon
-                .map(_.interrupt.unit)
-            }.getOrThrowFiberFailure()
-      }
-
-      InterruptAction(cancelerEffect)
+      val fiber = runtime.unsafe.fork(ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false))))(using implicitly[zio.Trace], Unsafe)
+      fiber.unsafe.addObserver(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))(using Unsafe)
+      InterruptAction(fiber.interruptAs(FiberId.None).void)
     }
 
     override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => ZIO[R, E, A]): (Future[Exit[E, A]], InterruptAction[ZIO[R, +_, +_]]) = {

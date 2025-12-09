@@ -34,7 +34,7 @@ abstract class BIOAsyncExpectedBehaviorTest[F[+_, +_]](
       } yield {
         succeed
       }
-      runner.unsafeRunAsyncAsFuture(test).map(_.toThrowableEither.toTry.get)
+      runner.unsafeRunAsyncAsFuture(test).map(_.toTry.get)
     }
 
   }

@@ -77,7 +77,7 @@ object Clock1 extends LowPriorityClockInstances {
 
     override def nowLocal(accuracy: ClockAccuracy, zone: ZoneId): LocalDateTime = underlying.nowLocal(accuracy, zone)
     override def nowOffset(accuracy: ClockAccuracy, zone: ZoneId): OffsetDateTime = underlying.nowOffset(accuracy, zone)
-    override def nowZoned(accuracy: ClockAccuracy, zone: ZoneId): Identity[ZonedDateTime] = underlying.nowZoned(accuracy, zone)
+    override def nowZoned(accuracy: ClockAccuracy, zone: ZoneId): ZonedDateTime = underlying.nowZoned(accuracy, zone)
     override def monotonicNano: Long = nano
   }
 
@@ -88,7 +88,7 @@ object Clock1 extends LowPriorityClockInstances {
 
     override def nowLocal(accuracy: ClockAccuracy, zone: ZoneId): LocalDateTime = ClockAccuracy.applyAccuracy(time.toLocalDateTime, accuracy)
     override def nowOffset(accuracy: ClockAccuracy, zone: ZoneId): OffsetDateTime = ClockAccuracy.applyAccuracy(time.toOffsetDateTime, accuracy)
-    override def nowZoned(accuracy: ClockAccuracy, zone: ZoneId): Identity[ZonedDateTime] = ClockAccuracy.applyAccuracy(time, accuracy)
+    override def nowZoned(accuracy: ClockAccuracy, zone: ZoneId): ZonedDateTime = ClockAccuracy.applyAccuracy(time, accuracy)
     override def monotonicNano: Long = nano
   }
 
@@ -99,7 +99,7 @@ object Clock1 extends LowPriorityClockInstances {
 
     override def nowLocal(accuracy: ClockAccuracy, zone: ZoneId): LocalDateTime = ClockAccuracy.applyAccuracy(time.toLocalDateTime, accuracy)
     override def nowOffset(accuracy: ClockAccuracy, zone: ZoneId): OffsetDateTime = ClockAccuracy.applyAccuracy(time, accuracy)
-    override def nowZoned(accuracy: ClockAccuracy, zone: ZoneId): Identity[ZonedDateTime] = ClockAccuracy.applyAccuracy(time.toZonedDateTime, accuracy)
+    override def nowZoned(accuracy: ClockAccuracy, zone: ZoneId): ZonedDateTime = ClockAccuracy.applyAccuracy(time.toZonedDateTime, accuracy)
     override def monotonicNano: Long = nano
   }
 

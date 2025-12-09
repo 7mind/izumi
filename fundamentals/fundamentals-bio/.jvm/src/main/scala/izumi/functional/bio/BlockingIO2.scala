@@ -10,20 +10,20 @@ import zio.{Executor, ZIO}
 
 trait BlockingIO2[F[+_, +_]] extends BlockingIOInstances with DivergenceHelper with PredefinedHelper {
 
-  /** Execute a blocking action in `Blocking` thread pool, current task will be safely parked until the blocking task finishes * */
+  /** Execute a blocking action on a `Blocking` thread pool; current task will be safely parked until the blocking task finishes * */
   def shiftBlocking[E, A](f: F[E, A]): F[E, A]
 
-  /** Execute a blocking impure task in `Blocking` thread pool, current task will be safely parked until the blocking task finishes * */
-  def syncBlocking[A](f: => A): F[Throwable, A]
+  /** Execute a blocking impure effect on a `Blocking` thread pool; current task will be safely parked until the blocking task finishes * */
+  def syncBlocking[A](effect: => A): F[Throwable, A]
 
-  /** Execute a blocking impure task in `Blocking` thread pool, current task will be safely parked until the blocking task finishes
+  /** Execute a blocking impure effect on a `Blocking` thread pool; current task will be safely parked until the blocking task finishes
     *
-    * If canceled, the task _MAY_ be killed via [[java.lang.Thread#interrupt]], there is no guarantee that this method may promptly,
+    * If canceled, the task _MAY_ be killed via [[java.lang.Thread#interrupt]]. There is no guarantee that this method may promptly,
     * or ever, interrupt the enclosed task, and it may be legally implemented as an alias to [[syncBlocking]]
     *
     * THIS IS USUALLY UNSAFE unless calling well-written libraries that specifically handle [[java.lang.InterruptedException]]
     */
-  def syncInterruptibleBlocking[A](f: => A): F[Throwable, A]
+  def syncInterruptibleBlocking[A](effect: => A): F[Throwable, A]
 
 }
 object BlockingIO2 {
@@ -33,7 +33,42 @@ object BlockingIO2 {
 private[bio] sealed trait BlockingIOInstances
 object BlockingIOInstances extends BlockingIOInstancesLowPriority {
 
-  def BlockingZIOFromExecutor[R](blockingExecutor: Executor): BlockingIO2[ZIO[R, +_, +_]] = new BlockingIO2[ZIO[R, +_, +_]] {
+  def BlockingZIOFromExecutor[R](blockingExecutor: Executor): BlockingIO2[ZIO[R, +_, +_]] = {
+    new BlockingZIOFromExecutorImpl[R](blockingExecutor)
+  }
+
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have zio-core as a dependency without REQUIRING a zio-core dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    */
+  @inline implicit final def BlockingZIODefault[Zio[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[BlockingIO2[Zio[Any, +_, +_]]] = {
+    Predefined(BlockingZio.asInstanceOf[BlockingIO2[Zio[Any, +_, +_]]])
+  }
+
+  object BlockingZio extends BlockingZio[Any]
+  open class BlockingZio[R] extends BlockingIO2[ZIO[R, +_, +_]] {
+    override def shiftBlocking[E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = {
+      disableAutoTrace.discard()
+      implicit val trace: zio.Trace = Tracer.newTrace
+      ZIO.blocking(f)
+    }
+
+    override def syncBlocking[A](effect: => A): ZIO[Any, Throwable, A] = {
+      val byName: () => A = () => effect
+      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
+      ZIO.attemptBlocking(effect)
+    }
+
+    override def syncInterruptibleBlocking[A](effect: => A): ZIO[Any, Throwable, A] = {
+      val byName: () => A = () => effect
+      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
+      ZIO.attemptBlockingInterrupt(effect)
+    }
+  }
+
+  open class BlockingZIOFromExecutorImpl[R](blockingExecutor: Executor) extends BlockingIO2[ZIO[R, +_, +_]] {
     override def shiftBlocking[E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = {
       implicit val trace: zio.Trace = Tracer.newTrace
       ZIO.environmentWithZIO[R] {
@@ -43,45 +78,19 @@ object BlockingIOInstances extends BlockingIOInstancesLowPriority {
           }
       }
     }
-    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
-      val byName: () => A = () => f
+    override def syncBlocking[A](effect: => A): ZIO[Any, Throwable, A] = {
+      val byName: () => A = () => effect
       implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
       ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
-        ZIO.attemptBlocking(f)
+        ZIO.attemptBlocking(effect)
       }
     }
-    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
-      val byName: () => A = () => f
+    override def syncInterruptibleBlocking[A](effect: => A): ZIO[Any, Throwable, A] = {
+      val byName: () => A = () => effect
       implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
       ZIO.provideLayer(zio.Runtime.setBlockingExecutor(blockingExecutor)) {
-        ZIO.attemptBlockingInterrupt(f)
+        ZIO.attemptBlockingInterrupt(effect)
       }
-    }
-  }
-
-  /**
-    * This instance uses 'no more orphans' trick to provide an Optional instance
-    * only IFF you have zio-core as a dependency without REQUIRING a zio-core dependency.
-    *
-    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-    */
-  @inline implicit final def BlockingZIODefault[Zio[-_, +_, +_]: `zio.ZIO`]: Predefined.Of[BlockingIO2[Zio[Any, +_, +_]]] =
-    Predefined(BlockingZio.asInstanceOf[BlockingIO2[Zio[Any, +_, +_]]])
-
-  object BlockingZio extends BlockingZio[Any]
-  open class BlockingZio[R] extends BlockingIO2[ZIO[R, +_, +_]] {
-    override def shiftBlocking[E, A](f: ZIO[R, E, A]): ZIO[R, E, A] = ZIO.blocking(f)(Tracer.newTrace)
-
-    override def syncBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
-      val byName: () => A = () => f
-      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
-      ZIO.attemptBlocking(f)
-    }
-
-    override def syncInterruptibleBlocking[A](f: => A): ZIO[Any, Throwable, A] = {
-      val byName: () => A = () => f
-      implicit val trace: zio.Trace = InteropTracer.newTrace(byName)
-      ZIO.attemptBlockingInterrupt(f)
     }
   }
 
@@ -91,7 +100,6 @@ object BlockingIOInstances extends BlockingIOInstancesLowPriority {
 //    override def syncInterruptibleBlocking[A](f: => A): monix.bio.IO[Throwable, A] = syncBlocking(f)
 //  }
 
-  disableAutoTrace.discard()
 }
 
 sealed trait BlockingIOInstancesLowPriority {

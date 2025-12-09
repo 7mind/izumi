@@ -12,6 +12,6 @@ trait MiniBIOAsyncTestPlatformSpecific {
   }
 
   def blockingAwait(promise: Promise[Unit]): MiniBIOAsync[Throwable, Unit] = {
-    MiniBIOAsync.WeakAsync2ForMiniBIOAsync.syncThrowable(Await.result(promise.future, Duration.Inf))
+    MiniBIOAsync.WeakAsyncForMiniBIOAsync.syncThrowable(Await.result(promise.future, Duration.Inf))
   }
 }

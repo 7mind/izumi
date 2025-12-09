@@ -7,11 +7,14 @@ import zio.ZIO
 import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 
+import scala.util.{Failure, Try}
+
 sealed trait Exit[+E, +A] {
   def map[B](f: A => B): Exit[E, B]
   def leftMap[E1](f: E => E1): Exit[E1, A]
   def flatMap[E1 >: E, B](f: A => Exit[E1, B]): Exit[E1, B]
   def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, A]
+  def toTry(implicit ev: E <:< Throwable): Try[A]
 
   def isFailure: Boolean
   def isUninterrupted: Boolean
@@ -104,6 +107,7 @@ object Exit {
     override def leftMap[E1](f: Nothing => E1): this.type = this
     override def flatMap[E1 >: Nothing, B](f: A => Exit[E1, B]): Exit[E1, B] = f(value)
     override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, A] = Right(value)
+    override def toTry(implicit ev: Nothing <:< Throwable): Try[A] = scala.util.Success(value)
     override def isSuccess: Boolean = true
     override def isFailure: Boolean = false
     override def asSuccess: Option[A] = Some(value)
@@ -136,6 +140,7 @@ object Exit {
     override def toEither: Right[Nothing, E] = Right(error)
     override def toEitherCompound: Right[Nothing, E] = Right(error)
     override def toThrowableEither(implicit ev: E <:< Throwable): Either[Throwable, Nothing] = Left(ev(error))
+    override def toTry(implicit ev: E <:< Throwable): Try[Nothing] = Failure(ev(error))
     override def leftMap[E1](f: E => E1): Error[E1] = Error[E1](f(error), trace.map(f))
   }
   object Error {
@@ -147,6 +152,7 @@ object Exit {
     override def toEither: Left[List[Throwable], Nothing] = Left(allExceptions.toList)
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
     override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
+    override def toTry(implicit ev: Nothing <:< Throwable): Try[Nothing] = Failure(compoundException)
     override def leftMap[E1](f: Nothing => E1): this.type = this
   }
   object Termination {
@@ -158,6 +164,7 @@ object Exit {
     override def toEither: Left[List[Throwable], Nothing] = Left(List(compoundException))
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
     override def toThrowableEither(implicit ev: Nothing <:< Throwable): Either[Throwable, Nothing] = Left(compoundException)
+    override def toTry(implicit ev: Nothing <:< Throwable): Try[Nothing] = Failure(compoundException)
     override def leftMap[E1](f: Nothing => E1): this.type = this
     override def isUninterrupted: Boolean = false
     override def isInterrupted: Boolean = true

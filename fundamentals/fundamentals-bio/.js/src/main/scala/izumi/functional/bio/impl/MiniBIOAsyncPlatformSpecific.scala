@@ -22,5 +22,6 @@ trait MiniBIOAsyncPlatformSpecific {
     }
   }
 
-  protected abstract class MiniBIOAsyncUnsafeRun2UnsafeRunSyncPlatformSpecific(implicit @unused ec: ExecutionContext) extends UnsafeRun2[MiniBIOAsync]
+  protected abstract class MiniBIOAsyncUnsafeRunPlatformSpecific(implicit @unused ec: ExecutionContext) extends UnsafeRun2[MiniBIOAsync]
+
 }

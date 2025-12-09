@@ -9,7 +9,7 @@ import scala.util.Success
 
 class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecific {
 
-  import MiniBIOAsync.WeakAsync2ForMiniBIOAsync
+  import MiniBIOAsync.WeakAsyncForMiniBIOAsync
 
   "MiniBIOAsync" should {
 

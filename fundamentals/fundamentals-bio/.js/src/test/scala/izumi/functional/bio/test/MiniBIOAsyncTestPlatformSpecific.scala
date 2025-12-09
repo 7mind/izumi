@@ -9,6 +9,6 @@ trait MiniBIOAsyncTestPlatformSpecific extends AsyncWordSpec {
   val parallelEc: ExecutionContext = this.executionContext
 
   def blockingAwait(promise: Promise[Unit]): MiniBIOAsync[Throwable, Unit] = {
-    MiniBIOAsync.WeakAsync2ForMiniBIOAsync.fromFuture(promise.future)
+    MiniBIOAsync.WeakAsyncForMiniBIOAsync.fromFuture(promise.future)
   }
 }

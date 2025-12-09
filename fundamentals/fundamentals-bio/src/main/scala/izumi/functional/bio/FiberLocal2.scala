@@ -21,7 +21,8 @@ trait FiberRef2[F[_, _], A] extends FiberLocal2[F, A] {
 }
 
 object FiberRef2 {
-  def fromZIO[R, A](ref: FiberRef[A]): FiberRef2[ZIO[R, +_, +_], A] =
+  def fromZIO[R, A](ref: FiberRef[A]): FiberRef2[ZIO[R, +_, +_], A] = {
+    disableAutoTrace.discard()
     new FiberRef2[ZIO[R, +_, +_], A] {
       override def get: ZIO[R, Nothing, A] = ref.get(Tracer.newTrace)
       override def locally[E, B](a: A)(f: => ZIO[R, E, B]): ZIO[R, E, B] = ref.locally(a)(f)(InteropTracer.newTrace(() => f))
@@ -31,9 +32,8 @@ object FiberRef2 {
       override def update(f: A => A): ZIO[R, Nothing, A] = ref.updateAndGet(f)(InteropTracer.newTrace(f))
       override def update_(f: A => A): ZIO[R, Nothing, Unit] = ref.update(f)(InteropTracer.newTrace(f))
       override def modify[B](f: A => (B, A)): ZIO[R, Nothing, B] = ref.modify(f)(InteropTracer.newTrace(f))
-
-      disableAutoTrace.discard()
     }
+  }
 
   def fromCatsIOLocal[F[+_, +_]: Panic2, A](fromIO: cats.effect.IO ~> F[Throwable, _])(ioLocal: IOLocal[A]): FiberRef2[F, A] = {
     new FiberRef2[F, A] {

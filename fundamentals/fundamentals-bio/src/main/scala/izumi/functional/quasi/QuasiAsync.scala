@@ -96,11 +96,11 @@ trait QuasiTemporal[F[_]] {
   def sleep(duration: FiniteDuration): F[Unit]
 }
 
-object QuasiTemporal extends LowPriorityQuasiTimerInstances {
+object QuasiTemporal extends LowPriorityQuasiTemporalInstances {
   def apply[F[_]: QuasiTemporal]: QuasiTemporal[F] = implicitly
 
   implicit lazy val quasiTimerIdentity: QuasiTemporal[Identity] = new QuasiTemporal[Identity] {
-    override def sleep(duration: FiniteDuration): Identity[Unit] = {
+    override def sleep(duration: FiniteDuration): Unit = {
       Thread.sleep(duration.toMillis)
     }
   }
@@ -112,7 +112,7 @@ object QuasiTemporal extends LowPriorityQuasiTimerInstances {
   }
 }
 
-private[quasi] sealed trait LowPriorityQuasiTimerInstances {
+private[quasi] sealed trait LowPriorityQuasiTemporalInstances {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
