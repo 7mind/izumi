@@ -298,12 +298,16 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         many[DynamoDDLGroup]
       })
 
-      val injector = Injector[Identity](
-        AutoSetModule()
-          .register[RoleComponent]
-          .register[RoleService]
-          .register[IntegrationComponent]
-          .register[AutoCloseable]
+      val injector = Injector[Identity](bootstrapOverrides =
+        Seq(
+          AutoSetModule()
+            .register[RoleComponent](weak = false)
+            .register[RoleService](weak = false)
+            .register[IntegrationComponent](weak = false),
+          new AutoSetModule {
+            register[AutoCloseable](weak = false)
+          },
+        )
       )
 
       val plan = injector.planUnsafe(definition)

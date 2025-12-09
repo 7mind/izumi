@@ -18,16 +18,16 @@ object AutosetTestModule extends PluginDef {
 }
 
 object AutosetTestBsModule extends BootstrapPluginDef {
-  many[PlanningHook].add(AutoSetHook[TestTrait])
-
+  many[PlanningHook]
+    .add(AutoSetHook[TestTrait](weak = true))
 }
 
-final class AutosetTest extends Spec1[Identity] {
+final class AutoSetTestkitTest extends Spec1[Identity] {
 
   "autosets" should {
     "be compatible with testkit" in {
       (t: Set[TestTrait], impl: TestService) =>
-        assert(t.toSet[AnyRef].contains(impl: AnyRef))
+        assert(t.toSet[AnyRef].contains(impl))
     }
   }
 

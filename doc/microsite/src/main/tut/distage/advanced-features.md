@@ -259,57 +259,72 @@ objects.get[Set[Elem]]
 
 ### Auto-Sets
 
-AutoSet @scaladoc[Planner](izumi.distage.model.Planner) Hooks can traverse the plan and collect all future objects that match a predicate.
-
-Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` them after the application has finished work.
-NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
+Auto-Set @scaladoc[PlanningHooks](izumi.distage.model.planning.PlanningHook) can traverse the plan and collect all bindings with *implementation types* that are `_ <: T` into a `Set[T]` set binding available for summoning. Filters, in addition to filtering by subtype, may be passed to @scaladoc[AutoSetHook](izumi.distage.planning.AutoSetHook) or to @scaladoc[AutoSetModule.register](izumi.distage.planning.AutoSetModule#register).
 
 ```scala mdoc:reset:to-string
-import distage.{BootstrapModuleDef, ModuleDef, Injector, Identity, Lifecycle}
-import izumi.distage.model.planning.PlanningHook
-import izumi.distage.planning.AutoSetHook
+import distage.{AutoSetModule, BootstrapModule, ModuleDef, Injector, Identity}
 
-class PrintResource(name: String) {
+class PrintService(
+  name: String
+) {
   def start(): Unit = println(s"$name started")
-  def stop(): Unit = println(s"$name stopped")
 }
 
-class A extends PrintResource("A")
-class B(val a: A) extends PrintResource("B")
-class C(val b: B) extends PrintResource("C")
+trait A
+class AImpl extends PrintService("A") with A
+class B(val a: A) extends PrintService("B")
+class C(val b: B) extends PrintService("C")
 
-def bootstrapModule = new BootstrapModuleDef {
-  many[PlanningHook]
-    .add(AutoSetHook[PrintResource])
+def bootstrapModule: BootstrapModule = new AutoSetModule {
+  register[PrintService](weak = false)
 }
 
 def appModule = new ModuleDef {
-  make[A]
+  make[A].from[AImpl]
   make[B]
   make[C]
 }
 
-val resources: Set[PrintResource] = Injector[Identity](bootstrapModule)
-  .produceGet[Set[PrintResource]](appModule)
-  .use(set => set)
+val services: Set[PrintService] = Injector[Identity](bootstrapOverrides = Seq(bootstrapModule))
+  .produceGet[Set[PrintService]](appModule)
+  .unsafeGet()
 
-require(resources.size == 3)
+require(services.size == 3)
 
-resources.foreach(_.start())
-
-resources.toSeq.reverse.foreach(_.stop())
+services.foreach(_.start())
 ```
 
-Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependencies - Auto-Sets preserve ordering, unlike user-defined @ref[Sets](basics.md#set-bindings)
+Calling `.foreach` on an auto-set is safe: the actions will be executed in dependency order, Auto-Sets preserve ordering, unlike user-defined @ref[Sets](basics.md#set-bindings) e.g. When `C` depends on `B` depends on `A`, autoset order is: `A, B, C`, to start call: `A, B, C`, to close call: `C, B, A`.  When using an auto-set for finalization, you must `.reverse` the autoset.
 
-e.g. If `C` depends on `B` depends on `A`, autoset order is: `A, B, C`, to start call: `A, B, C`, to close call: `C, B, A`.  When using an auto-set for finalization, you must `.reverse` the autoset.
+The `weak` parameter controls whether Auto-Set should depend weakly or strongly on the bindings it matches. If `weak = true`, auto-set will only contain bindings that are retained by another GC root.
 
-Note: Auto-Sets are assembled *after* @ref[Garbage Collection](advanced-features.md#dependency-pruning), as such they cannot contain garbage by construction. Because of this they effectively cannot be used as GC Roots.
+Example:
+
+```scala mdoc:to-string
+def weakAutoSetModule: BootstrapModule = new AutoSetModule {
+  register[PrintService](weak = true)
+}
+
+val servicesDepsOfB: Set[PrintService] = Injector[Identity](bootstrapOverrides = Seq(weakAutoSetModule))
+  .produceRun(appModule) {
+    (_: B, set: Set[PrintService]) =>
+      set
+  }
+
+require(servicesDepsOfB.size == 2)
+
+servicesDepsOfB.foreach(_.start())
+
+val servicesDepsOfNothing: Set[PrintService] = Injector[Identity](bootstrapOverrides = Seq(weakAutoSetModule))
+  .produceGet[Set[PrintService]](appModule)
+  .unsafeGet()
+
+require(servicesDepsOfNothing.isEmpty)
+```
 
 Further reading:
 
-- MacWire calls the same concept ["Multi Wiring"](https://github.com/softwaremill/macwire#multi-wiring-wireset)
-
+- MacWire calls the same concept ["Multi Wiring"](https://github.com/softwaremill/macwire?tab=readme-ov-file#multi-wiring-wireset-and-wirelist)
 
 ### Depending on Locator
 

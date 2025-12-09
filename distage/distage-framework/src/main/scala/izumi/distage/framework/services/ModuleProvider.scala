@@ -94,8 +94,8 @@ object ModuleProvider {
         platformModule,
         loggerModule,
         appConfigModule, // make config available for bootstrap plugins
-        AutoSetModule("all-custom-roles").registerOnly[RoleService[F]](AutoSetFilterBundledService),
-        AutoSetModule("all-custom-tasks").registerOnly[RoleTask[F]](AutoSetFilterBundledService),
+        AutoSetModule("all-custom-roles").registerOnly[RoleService[F]](AutoSetFilterBundledService, weak = false),
+        AutoSetModule("all-custom-tasks").registerOnly[RoleTask[F]](AutoSetFilterBundledService, weak = false),
       )
     }
 

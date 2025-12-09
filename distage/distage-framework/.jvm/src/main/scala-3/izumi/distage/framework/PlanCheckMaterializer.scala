@@ -125,7 +125,7 @@ object PlanCheckMaterializer extends PlanCheckMaterializerCommon {
           val fatalWarnings = try {
             ctx.settings.Wconf.value.contains("any:error")
             || ctx.settings.Werror.value
-          } catch { case t: Throwable => true }
+          } catch { case _: Throwable => true }
           if (fatalWarnings) {
             qctx.reflect.report.info(shortMessage)
           } else {
