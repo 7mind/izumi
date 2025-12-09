@@ -179,7 +179,10 @@ object QuasiIO extends LowPriorityQuasiIOInstances {
       catch { case t: Throwable => cleanupOnFailure(t); throw t }
     }
     override def guaranteeOnInterrupt[A](fa: => Identity[A])(cleanupOnInterrupt: Exit.Trace[Nothing] => Identity[Unit]): Identity[A] = {
-      fa
+      try { fa }
+      catch {
+        case t: InterruptedException => cleanupOnInterrupt(Exit.Trace.forThrowable(t)); throw t
+      }
     }
     override def fail[A](t: => Throwable): Identity[A] = throw t
     override def traverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = l.iterator.map(f).toList
