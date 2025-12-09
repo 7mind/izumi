@@ -3,13 +3,17 @@ package izumi.distage.testkit.runner.impl
 import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
 
 private[impl] trait RunnerToFPlatformSpecific {
-  final class Impl[F[_]](
+  type PlatformDefaultImpl[F[_]] = BlockingImpl[F]
+
+  final class BlockingImpl[F[_]](
     F: QuasiIO[F]
   ) extends RunnerToF[F] {
     override def runToF[G[_], A](runner: QuasiIORunner[G], f: () => G[A]): F[A] = {
-      F.maybeSuspend(runner.run(f()))
+      F.maybeSuspend {
+        scala.concurrent.blocking {
+          runner.runBlocking(f())
+        }
+      }
     }
   }
-
-  implicit def fromQuasiIO[F[_]](implicit F: QuasiIO[F]): RunnerToF[F] = new Impl(F)
 }

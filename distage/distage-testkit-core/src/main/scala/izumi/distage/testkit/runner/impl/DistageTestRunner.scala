@@ -7,7 +7,7 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.*
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.fundamentals.platform.uuid.IzUUID
 import izumi.logstage.api.IzLogger
@@ -16,7 +16,7 @@ import logstage.Log
 import scala.concurrent.duration.FiniteDuration
 
 object DistageTestRunner {
-  case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism)
+  final case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism)
 }
 
 class DistageTestRunner[F[_]](
@@ -28,8 +28,7 @@ class DistageTestRunner[F[_]](
   runnerToF: RunnerToF[F],
   // Only test planning and running parallel envs use runner effect's parallelism capabilities.
   // Parallel suites & tests use parallelism capabilities of their own effect type.
-  extParTraverse: ExtParTraverse[F],
-  FA: QuasiAsync[F],
+  parTraverseExt: ParTraverseExt[F],
 )(implicit
   tagK: TagK[F],
   F: QuasiIO[F],
@@ -44,7 +43,7 @@ class DistageTestRunner[F[_]](
       reporter.beginScope(id)
 
       timed
-        .timed(planner.planGroupTests[F](tests, FA)(using F))
+        .timed(planner.planGroupTests[F](tests, parTraverseExt)(using F))
         .flatMap {
           envs =>
             F.suspendF {
@@ -54,7 +53,7 @@ class DistageTestRunner[F[_]](
               val toRun = envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
               logEnvironmentsInfo(toRun, envs.timing.duration)
 
-              extParTraverse
+              parTraverseExt
                 .groupedParTraverse(toRun)(_._1.envExec.parallelEnvs) {
                   case (env, testsTree) =>
                     proceedEnv(id, env, testsTree)
@@ -124,7 +123,7 @@ class DistageTestRunner[F[_]](
                 logger.info(s"Processing ${allEnvTests.size -> "tests"} using ${effectType.tag -> "monad"}")
 
                 runnerToF
-                  .runToF(runner, () => testTreeRunner.traverse(id, 0, runtimeLocator, testsTree))
+                  .runToF(runner, () => testTreeRunner.traverse(id, 0, runtimeLocator, envExec.parallelEnvs, testsTree))
                   .map[EnvResult](EnvResult.EnvSuccess(runtimeInstantiationTiming, _))
             },
         )

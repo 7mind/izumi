@@ -2,8 +2,9 @@ package izumi.distage.testkit.runner.impl
 
 import distage.{Injector, Locator, TagK}
 import izumi.distage.testkit.model.*
+import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.impl.services.{ExtParTraverse, TestStatusConverter, TimedActionF}
+import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestStatusConverter, TimedActionF}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 
@@ -12,6 +13,7 @@ trait TestTreeRunner[F[_]] {
     id: ScopeId,
     depth: Int,
     parent: Locator,
+    levelParallelism: Parallelism,
     tree: TestTree[F],
   ): F[List[GroupResult]]
 }
@@ -23,7 +25,7 @@ object TestTreeRunner {
     statusConverter: TestStatusConverter,
     timed: TimedActionF[F],
     runner: IndividualTestRunner[F],
-    extParTraverse: ExtParTraverse[F],
+    parTraverseExt: ParTraverseExt[F],
   )(implicit F: QuasiIO[F]
   ) extends TestTreeRunner[F] {
 
@@ -31,6 +33,7 @@ object TestTreeRunner {
       id: ScopeId,
       depth: Int,
       parent: Locator,
+      levelParallelism: Parallelism,
       tree: TestTree[F],
     ): F[List[GroupResult]] = {
       timed.timedLifecycle(Injector.inherit(parent).produceDetailedCustomF[F](tree.levelPlan)).use {
@@ -48,12 +51,16 @@ object TestTreeRunner {
             },
             {
               case (levelLocator, levelInstantiationTiming) =>
-                for {
-                  results <- proceedMemoizationLevel(id, depth, levelLocator, tree.groups)
-                  subResults <- F.traverse(tree.nested)(subTree => traverse(id, depth + 1, levelLocator, subTree))
-                } yield {
-                  List(GroupResult.GroupSuccess(results, levelInstantiationTiming)) ++ subResults.flatten
-                }
+                parTraverseExt
+                  .configuredParTraverse(levelParallelism)(
+                    List(
+                      proceedMemoizationLevel(id, depth, levelLocator, tree.groups)
+                        .map(results => List[GroupResult](GroupResult.GroupSuccess(results, levelInstantiationTiming))),
+                      parTraverseExt
+                        .groupedParTraverse(tree.nested)(_ => levelParallelism)(subTree => traverse(id, depth + 1, levelLocator, levelParallelism, subTree))
+                        .map(_.flatten),
+                    )
+                  )(identity).map(_.flatten)
             },
           )
       }
@@ -78,7 +85,7 @@ object TestTreeRunner {
       // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
       // we assume that individual tests within a suite can't have different values of `parallelSuites`
       // (because of TestConfig structure & that difference even if happens wouldn't be actionable at the level of suites anyway)
-      extParTraverse
+      parTraverseExt
         .groupedParTraverse(testsBySuite)(_._1.suiteParallelism) {
           case (suiteData, preparedTests) =>
             F.bracket(
@@ -93,7 +100,7 @@ object TestTreeRunner {
                 }
             ) {
               _ =>
-                extParTraverse.groupedParTraverse(preparedTests)(_.test.environment.parallelTests) {
+                parTraverseExt.groupedParTraverse(preparedTests)(_.test.environment.parallelTests) {
                   test => runner.proceedTest(id, depth, deepestSharedLocator, test)
                 }
             }

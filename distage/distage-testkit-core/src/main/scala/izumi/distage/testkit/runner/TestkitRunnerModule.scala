@@ -33,9 +33,9 @@ class TestkitRunnerModule[F[_]: TagK: QuasiIO: QuasiAsync](
   make[TestTreeBuilder].from[TestTreeBuilder.TestTreeBuilderImpl]
 
   make[TimedActionF[F]].from[TimedActionFImpl[F]]
-  make[ExtParTraverse[F]].from[ExtParTraverse.ExtParTraverseImpl[F]]
+  make[ParTraverseExt[F]].from[ParTraverseExt.ParTraverseExtImpl[F]]
 
-  make[RunnerToF[F]].from[RunnerToF.Impl[F]]
+  make[RunnerToF[F]].from[RunnerToF.PlatformDefaultImpl[F]]
   make[DistageTestRunner[F]].from[DistageTestRunner[F]]
 
   make[LogQueue].fromResource(ThreadingLogQueue.resource())

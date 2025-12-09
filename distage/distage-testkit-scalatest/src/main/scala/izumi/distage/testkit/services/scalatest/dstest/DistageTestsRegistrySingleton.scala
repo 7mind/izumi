@@ -1,7 +1,6 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
 import izumi.distage.testkit.model.{DistageTest, SuiteId}
-import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
@@ -22,7 +21,6 @@ object DistageTestsRegistrySingleton {
   final case class RunningSuiteHandle(
     tracker: Tracker,
     reporter: Reporter,
-    status: StatefulStatus,
   )
 
   private val instantiatedSuiteHandles = new mutable.HashMap[String, InstantiatedSuiteHandle[AnyF]]()
@@ -30,9 +28,9 @@ object DistageTestsRegistrySingleton {
   private val firstRunnerStarted = new AtomicBoolean(false)
   private val runnerFinished = new AtomicBoolean(false)
 
-  def collectAllTestkitTests[F[_]](instance: DistageScalatestTestSuiteRunner[F], isSbt: Boolean): Option[NEList[DistageTest[AnyF]]] = {
+  def collectAllTestkitTests[F[_]](instance: DistageScalatestTestSuiteRunner[F], isSbt: Boolean): Option[List[DistageTest[AnyF]]] = {
     if (DistageTestsRegistrySingleton.permittedToRun()) {
-      println(s"Launching tests in from $instance")
+      println(s"Launching tests from $instance")
 
       val instantiatedClassNames = DistageTestsRegistrySingleton.currentInstantiatedSuites().map(_.suite.getClass.getName)
       val discoveredClassNames: Set[String] = Runner.discoveredSuites.getOrElse {
@@ -70,14 +68,10 @@ object DistageTestsRegistrySingleton {
 
       println(s"Gathered ${allTests.size} tests from ${allSuites.size} suites (global memoization mode)")
 
-      NEList.from(allTests)
+      Some(allTests)
     } else {
       None
     }
-  }
-
-  def permittedToRun(): Boolean = {
-    firstRunnerStarted.compareAndSet(false, true)
   }
 
   def resetRegistry(): Unit = synchronized {
@@ -103,11 +97,7 @@ object DistageTestsRegistrySingleton {
     }
   }
 
-  def currentInstantiatedSuites(): List[InstantiatedSuiteHandle[AnyF]] = synchronized {
-    instantiatedSuiteHandles.valuesIterator.toList
-  }
-
-  def completeStatuses(): Unit = synchronized {
+  def completeAllStatuses(): Unit = synchronized {
     instantiatedSuiteHandles.foreach {
       case (suiteName, suiteHandle) =>
         if (!suiteHandle.status.isCompleted()) {
@@ -128,23 +118,49 @@ object DistageTestsRegistrySingleton {
     }
   }
 
-  def runReport(suiteId: String)(f: RunningSuiteHandle => Unit): Unit = synchronized {
+  def changeStatus(suiteId: String)(f: InstantiatedSuiteHandle[AnyF] => Unit): Unit = synchronized {
+    val suiteHandle = instantiatedSuiteHandles.getOrElse(
+      suiteId, {
+        val t = new RuntimeException(s"Tried to change status of non-instantiated suite `$suiteId` - all suites must be instantiated before distage-testkit starts")
+        t.printStackTrace()
+        throw t
+      },
+    )
+    println(s"!!! found instantiated suitehandle for $suiteId")
+    f(suiteHandle)
+  }
+
+  def mkSuiteHandlerById(): SuiteHandlerById = new SuiteHandlerById {
+
+    override def doReportEvent(suiteId: SuiteId)(f: Ordinal => Event): Unit = {
+      runReport(suiteId.suiteId) {
+        case RunningSuiteHandle(tracker, reporter) =>
+          reporter.apply(f(tracker.nextOrdinal()))
+      }
+    }
+
+    override def doSetStatus(suiteId: SuiteId)(f: StatefulStatus => Unit): Unit = {
+      changeStatus(suiteId.suiteId)(s => f(s.status))
+    }
+  }
+
+  private[dstest] def permittedToRun(): Boolean = {
+    firstRunnerStarted.compareAndSet(false, true)
+  }
+
+  private[dstest] def currentInstantiatedSuites(): List[InstantiatedSuiteHandle[AnyF]] = synchronized {
+    instantiatedSuiteHandles.valuesIterator.toList
+  }
+
+  private[dstest] def runReport(suiteId: String)(f: RunningSuiteHandle => Unit): Unit = synchronized {
     runningSuiteHandles.getOrElseUpdate(suiteId, Left(mutable.ArrayBuffer.empty)) match {
       case Left(reports) =>
-        println(s"!!! suitehandle not found for $suiteId report delayed")
+        println(s"!!! runnning suitehandle not found for $suiteId report delayed")
         (reports += f).discard()
       case Right(suiteReporter) =>
-        println(s"!!! found suitehandle for $suiteId")
+        println(s"!!! found running suitehandle for $suiteId")
         f(suiteReporter)
     }
   }
 
-  def mkSuiteHandlerById(): SuiteHandlerById = new SuiteHandlerById {
-    override def doReportEvent(suiteId: SuiteId)(f: Ordinal => Event): Unit = {
-      runReport(suiteId.suiteId)(s => s.reporter(f(s.tracker.nextOrdinal())))
-    }
-    override def doSetStatus(suiteId: SuiteId)(f: StatefulStatus => Unit): Unit = {
-      runReport(suiteId.suiteId)(s => f(s.status))
-    }
-  }
 }

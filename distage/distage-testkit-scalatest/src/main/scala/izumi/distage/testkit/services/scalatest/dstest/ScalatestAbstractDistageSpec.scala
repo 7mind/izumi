@@ -13,6 +13,7 @@ import org.scalatest.verbs.{CanVerb, MustVerb, ShouldVerb, StringVerbBlockRegist
 import zio.ZIO
 
 import scala.annotation.unused
+import scala.language.implicitConversions
 
 @org.scalatest.Finders(value = Array("org.scalatest.finders.WordSpecFinder"))
 trait ScalatestAbstractDistageSpec[F[_]] extends AbstractDistageSpec[F] with ShouldVerb with MustVerb with CanVerb with DistageTestEnv with WithTestRegistration[F] {
@@ -22,7 +23,7 @@ trait ScalatestAbstractDistageSpec[F[_]] extends AbstractDistageSpec[F] with Sho
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
   protected def makeTestEnv(): TestEnvironment = loadEnvironment[F](config, tagMonoIO, defaultModulesIO)
 
-  protected def distageSuiteName: String = NameUtil.NameUtil.getSimpleNameOfAnObjectsClass(this)
+  protected def distageSuiteName: String = NameUtil.exportNameUtil.getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: SuiteId = SuiteId(this.getClass.getName)
 
   protected implicit val subjectRegistrationFunction1: StringVerbBlockRegistration = (desc, verb, _, f) => registerBranch(desc, verb, f)
@@ -37,6 +38,27 @@ trait ScalatestAbstractDistageSpec[F[_]] extends AbstractDistageSpec[F] with Sho
 }
 
 object ScalatestAbstractDistageSpec {
+
+  trait For1[F[_]] extends ScalatestAbstractDistageSpec[F] {
+    protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
+      new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, Seq(s), this, testEnv)
+    }
+  }
+
+  trait For2[F[+_, +_]] extends ScalatestAbstractDistageSpec[F[Throwable, _]] {
+    implicit def tagBIO: TagKK[F]
+
+    protected implicit def convertToWordSpecStringWrapperDS2(s: String): DSWordSpecStringWrapper2[F] = {
+      new DSWordSpecStringWrapper2(context, distageSuiteName, distageSuiteId, Seq(s), this, testEnv)
+    }
+  }
+
+  trait ForZIO extends ScalatestAbstractDistageSpec[ZIO[Any, Throwable, _]] {
+    protected implicit def convertToWordSpecStringWrapperDS3(s: String): DSWordSpecStringWrapperZIO = {
+      new DSWordSpecStringWrapperZIO(context, distageSuiteName, distageSuiteId, Seq(s), this, testEnv)
+    }
+  }
+
   final case class SuiteContext(prefix: Seq[String]) extends AnyVal {
     def toName(name: Seq[String]): Seq[String] = prefix ++ name
   }

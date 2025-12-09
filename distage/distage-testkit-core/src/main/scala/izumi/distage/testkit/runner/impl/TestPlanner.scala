@@ -12,14 +12,15 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.LogConfigLoader.LogConfigLoaderImpl
 import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleAppActivationParser, RouterFactory}
+import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
 import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.*
-import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestkitLogging}
+import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestConfigLoader, TestkitLogging}
 import izumi.distage.testkit.spec.DistageTestEnv
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
@@ -98,7 +99,7 @@ class TestPlanner(
     * - tree-represented memoization plan with tests.
     * [[PackedEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
-  def planGroupTests[F[_]](distageTests: Seq[DistageTest[AnyF]], FA: QuasiAsync[F])(implicit F: QuasiIO[F]): F[PlannedTests[AnyF]] = {
+  def planGroupTests[F[_]](distageTests: Seq[DistageTest[AnyF]], parTraverseExt: ParTraverseExt[F])(implicit F: QuasiIO[F]): F[PlannedTests[AnyF]] = {
 
     for {
       out <- F.traverse(
@@ -109,7 +110,7 @@ class TestPlanner(
           .toSeq
       ) {
         case (envExec, testsByEnv) =>
-          planTestEnvs[F, envExec.F](envExec, testsByEnv, FA)
+          planTestEnvs[F, envExec.F](envExec, testsByEnv, parTraverseExt)
       }
     } yield {
       val good = out.map(_._1)
@@ -122,7 +123,7 @@ class TestPlanner(
   private def planTestEnvs[F[_], TestF[_]](
     envExec: EnvExecutionParams.Aux[TestF],
     testsByEnv: Map[TestEnvironment, Seq[DistageTest[AnyF]]],
-    FA: QuasiAsync[F],
+    parTraverseExt: ParTraverseExt[F],
   )(implicit
     F: QuasiIO[F]
   ): F[(PlannedTestEnvs[AnyF], List[(Seq[DistageTest[AnyF]], PlanningFailure)])] = {
@@ -137,7 +138,7 @@ class TestPlanner(
     val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
 
     for {
-      memoizationEnvs <- FA.parTraverse(testsByEnv) {
+      memoizationEnvs <- parTraverseExt.configuredParTraverse(Parallelism.Unlimited)(testsByEnv) {
         case (env, tests) =>
           F.maybeSuspend {
 
