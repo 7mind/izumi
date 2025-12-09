@@ -289,9 +289,11 @@ def appModule = new ModuleDef {
   make[C]
 }
 
-val resources: Identity[Set[PrintResource]] = Injector[Identity](bootstrapModule)
+val resources: Set[PrintResource] = Injector[Identity](bootstrapModule)
   .produceGet[Set[PrintResource]](appModule)
   .use(set => set)
+
+require(resources.size == 3)
 
 resources.foreach(_.start())
 
