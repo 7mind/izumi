@@ -425,8 +425,8 @@ object Lifecycle extends LifecycleInstances {
     Lifecycle.liftF(F.fail(error))
   }
 
-  implicit final class SyntaxUse[F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    def use[B](use: A => F[B])(implicit F: QuasiPrimitives[F]): F[B] = {
+  implicit final class SyntaxUse[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
+    def use[G[x] >: F[x], B](use: A => G[B])(implicit F: QuasiPrimitives[G]): G[B] = {
       F.bracket(acquire = resource.acquire)(release = resource.release)(
         use = a =>
           F.suspendF(resource.extract(a) match {
@@ -434,6 +434,13 @@ object Lifecycle extends LifecycleInstances {
             case Right(value) => use(value)
           })
       )
+    }
+  }
+
+  // workaround for inference issues for Identity on Scala 3 only
+  implicit final class SyntaxUseIdentity[+A](private val resource: Lifecycle[Identity, A]) extends AnyVal {
+    def use[B](use: A => B)(implicit F: QuasiPrimitives[Identity]): B = {
+      SyntaxUse[Identity, A](resource).use[Identity, B](use)(using F)
     }
   }
 
@@ -967,7 +974,8 @@ private[izumi] sealed trait LifecycleInstances extends LifecycleCatsInstances {
   implicit final def monad2ForLifecycle[F[+_, +_]: Functor2](implicit P: QuasiPrimitives[F[Any, +_]]): Monad2[Lifecycle2[F, +_, +_]] =
     new Monad2[Lifecycle2[F, +_, +_]] {
       override def map[E, A, B](r: Lifecycle[F[E, _], A])(f: A => B): Lifecycle[F[E, _], B] = r.map(f)
-      override def flatMap[E, A, B](r: Lifecycle2[F, E, A])(f: A => Lifecycle2[F, E, B]): Lifecycle2[F, E, B] = r.flatMap(f)(using P.asInstanceOf[QuasiPrimitives[F[E, +_]]])
+      override def flatMap[E, A, B](r: Lifecycle2[F, E, A])(f: A => Lifecycle2[F, E, B]): Lifecycle2[F, E, B] =
+        r.flatMap(f)(using P.asInstanceOf[QuasiPrimitives[F[E, +_]]])
       override def pure[A](a: A): Lifecycle2[F, Nothing, A] = Lifecycle.pure[F[Nothing, _]](a)(using P.asInstanceOf[QuasiPrimitives[F[Nothing, +_]]])
     }
 }
