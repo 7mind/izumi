@@ -34,7 +34,6 @@
             nodejs
             nodePackages.npm
 
-            gitMinimal
             openssh
 
             mudyla.packages.${system}.default
