@@ -4,17 +4,19 @@ import izumi.functional.bio.Exit
 import izumi.functional.bio.UnsafeRun2.NamedThreadFactory
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks.Discarder
 
-import java.util.concurrent.Executors
+import java.util.concurrent.{ConcurrentHashMap, Executors}
 import scala.collection.compat.*
 import scala.concurrent.*
 import scala.concurrent.duration.Duration
 
 private[quasi] object __QuasiAsyncPlatformSpecific {
-  private val factory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true, priority = None)
 
-  private final lazy val QuasiAsyncIdentityBlockingIOPool = ExecutionContext.fromExecutorService {
-    Executors.newCachedThreadPool(factory)
+  private final lazy val QuasiAsyncIdentityBlockingIOPool = {
+    val factory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true, priority = None)
+    val threadPool = Executors.newCachedThreadPool(factory)
+    ExecutionContext.fromExecutorService(threadPool)
   }
 
   def quasiAsyncIdentity: QuasiAsync[Identity] = {
@@ -56,9 +58,29 @@ private[quasi] object __QuasiAsyncPlatformSpecific {
   )(parTraverseImpl: Iterable[A] => (A => MiniBIOAsync[Throwable, B]) => MiniBIOAsync[Throwable, C]
   )(ec: ExecutionContext
   ): Identity[C] = {
+    val parTraverseThreads = ConcurrentHashMap.newKeySet[Thread]()
     val F = MiniBIOAsync.WeakAsyncForMiniBIOAsync
-    val future = parTraverseImpl(l.iterator.to(Iterable))(a => F.syncBlocking(f(a))).runSyncToFirstAsyncBoundaryOrOnEC(ec)
-    Await.result(future, Duration.Inf) match {
+    val future = parTraverseImpl(l.iterator.to(Iterable)) {
+      a =>
+        F.syncBlocking {
+          val thread = Thread.currentThread()
+          parTraverseThreads.add(thread)
+          try {
+            f(a)
+          } finally {
+            parTraverseThreads.remove(thread).discard()
+          }
+        }
+    }.runSyncToFirstAsyncBoundaryOrOnEC(ec)
+    val result =
+      try {
+        Await.result(future, Duration.Inf)
+      } catch {
+        case t: InterruptedException =>
+          parTraverseThreads.forEach(_.interrupt())
+          throw t
+      }
+    result match {
       case Exit.Success(value) => value
       case failure: Exit.FailureUninterrupted[Throwable] => throw failure.toThrowable
     }
