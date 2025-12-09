@@ -5,9 +5,11 @@ import izumi.distage.{constructors, model, modules, planning}
 
 trait Distage {
 
+  type Injector[F[_]] = model.Injector[F]
+  val Injector: model.Injector.type = model.Injector
+
   type ModuleDef = model.definition.ModuleDef
 
-  type Injector[F[_]] = model.Injector[F]
   type Planner = model.Planner
   type Producer = model.Producer
 

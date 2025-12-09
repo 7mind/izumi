@@ -3,9 +3,11 @@ import izumi.distage.{constructors, model, modules, planning}
 
 package object distage extends Distage {
 
+  override type Injector[F[_]] = model.Injector[F]
+  override val Injector: model.Injector.type = model.Injector
+
   override type ModuleDef = model.definition.ModuleDef
 
-  override type Injector[F[_]] = model.Injector[F]
   override type Planner = model.Planner
   override type Producer = model.Producer
 
