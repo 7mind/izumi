@@ -180,6 +180,8 @@ object LifecycleAdapters {
         val tagA: Tag[A0] = implicitly
       }
     }
+
+    disableAutoTrace.discard()
   }
 
   private[definition] sealed trait ZIOEnvLifecycleTagLowPriority extends ZIOEnvLifecycleTagLowPriority1 {
@@ -196,5 +198,4 @@ object LifecycleAdapters {
     } = ZIOEnvLifecycleTag.trifunctorResourceTag[R1, F0, R0, DottyNothing, A0, A1]
   }
 
-  disableAutoTrace.discard()
 }

@@ -48,6 +48,7 @@ private[providers] trait FunctoidLifecycleAdapters {
     scoped: => ZIO[Scope & R, E, A]
   )(implicit tag: Tag[Lifecycle.FromZIO[R, E, A]]
   ): Functoid[Lifecycle.FromZIO[R, E, A]] = {
+    disableAutoTrace.discard()
     Functoid.lift(Lifecycle.fromZIO[R](scoped))
   }
 
@@ -103,6 +104,4 @@ private[providers] trait FunctoidLifecycleAdapters {
   ): Functoid[Lifecycle.FromZIO[R, Nothing, A]] = {
     Functoid.lift(Lifecycle.fromZLayer(layer)(using zio.Tag[A]))
   }
-
-  disableAutoTrace.discard()
 }

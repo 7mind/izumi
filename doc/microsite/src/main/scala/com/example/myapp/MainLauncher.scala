@@ -14,7 +14,7 @@ object MainLauncher extends RoleAppMain.LauncherIdentity() {
 }
 
 class ExampleRole extends RoleTask[Identity] {
-  override def start(roleParameters: EntrypointArgs): Identity[Unit] =
+  override def start(roleParameters: EntrypointArgs): Unit =
     println("hello wolrd")
 }
 object ExampleRole extends RoleDescriptor {

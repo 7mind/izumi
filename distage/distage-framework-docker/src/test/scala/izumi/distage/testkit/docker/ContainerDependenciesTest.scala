@@ -33,7 +33,7 @@ final class ContainerDependenciesTest extends AnyWordSpec {
       Injector()
         .produceRun(module) {
           (kafka: KafkaDocker.Container, zk: ZookeeperDocker.Container) =>
-            (kafka.id, zk.id): Identity[(ContainerId, ContainerId)]
+            (kafka.id, zk.id)
         }
     }
 
