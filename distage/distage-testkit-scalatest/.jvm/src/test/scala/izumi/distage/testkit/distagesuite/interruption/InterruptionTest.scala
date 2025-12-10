@@ -8,13 +8,17 @@ import izumi.distage.testkit.services.scalatest.dstest.{ScalatestAbstractDistage
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.AsyncGlobalSuitesControlHandle
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
+import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
+import izumi.fundamentals.platform.versions.Version
 import izumi.logstage.api.IzLogger
+import zio.BuildInfo
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.duration.DurationInt
+import scala.math.Ordering.Implicits.infixOrderingOps
 
 abstract class InterruptionTest extends Spec1[Identity] {
 
@@ -31,15 +35,26 @@ abstract class InterruptionTest extends Spec1[Identity] {
       lazy val countDownStart: CountDownLatch = new CountDownLatch(tests.size - suites.size)
       lazy val countDownStopped: CountDownLatch = new CountDownLatch(tests.size - suites.size)
 
-      lazy val suites = modifySuites(mkSuites[Identity] ++ mkSuites[cats.effect.IO] ++ mkSuites[zio.Task])
+      def zioSuites: Seq[InterruptibleTestSuite[AnyF]] = {
+        val zioVersion = Version.parseSemver(BuildInfo.version).get.canonical
+        // FIXME: test interruption only on versions after https://github.com/zio/zio/pull/10276 is released
+        if (zioVersion > Version.Canonical(NEList(2, 1, 24), Nil)
+          || (zioVersion.components == NEList(2, 1, 23) && zioVersion.qualifiers.nonEmpty)) {
+          mkSuites[zio.Task]
+        } else {
+          Nil
+        }
+      }
+
+      lazy val suites = modifySuites(mkSuites[Identity] ++ mkSuites[cats.effect.IO] ++ zioSuites)
       lazy val tests: Seq[DistageTest[AnyF]] = suites.flatMap(_.registeredTests())
 
+      def mkSuites[F[_]: TagK: DefaultModule]: Seq[InterruptibleTestSuite[AnyF]] = {
+        (1 to 3).map(id => mkSuiteFor[F](id))
+      }
       def mkSuiteFor[F[_]: TagK: DefaultModule](id: Int): InterruptibleTestSuite[AnyF] = {
         new InterruptibleTestSuite[F](id, countDownStart, () => countDownStopped.countDown(), () => allTestsInterrupted.set(false))
           .asInstanceOf[InterruptibleTestSuite[AnyF]]
-      }
-      def mkSuites[F[_]: TagK: DefaultModule]: Seq[InterruptibleTestSuite[AnyF]] = {
-        (1 to 3).map(id => mkSuiteFor[F](id))
       }
 
       val t = new Thread({

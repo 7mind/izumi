@@ -71,6 +71,7 @@ object Version {
       }
     }
   }
+
   def parse(version: String): Version = {
     parseSemver(version) match {
       case Some(semver) => semver
