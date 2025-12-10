@@ -4,7 +4,7 @@ import distage.TagK
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax._
+import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}

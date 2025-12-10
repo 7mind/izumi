@@ -1,5 +1,5 @@
 package izumi.distage.model.plan.topology
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 
 sealed trait DepTreeNode {
   def level: Int

@@ -1,7 +1,7 @@
 package izumi.distage.gc
 
 import distage.ModuleDef
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 
 object GcCases {
 

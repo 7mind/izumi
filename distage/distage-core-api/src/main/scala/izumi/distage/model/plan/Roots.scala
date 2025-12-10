@@ -1,6 +1,6 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 import izumi.fundamentals.collections.nonempty.NESet
 import izumi.reflect.Tag
 

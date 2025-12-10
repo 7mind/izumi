@@ -1,6 +1,6 @@
 package izumi.fundamentals.collections
 
-import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.collections.IzCollections.*
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.mutable

@@ -1,6 +1,6 @@
 package izumi.logstage.api.rendering.logunits
 
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.Log
 import izumi.logstage.api.rendering.logunits.Renderer.Aggregate
 import izumi.logstage.api.rendering.{ConsoleColors, RenderingOptions}

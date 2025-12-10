@@ -4,7 +4,7 @@ import izumi.dummy.{DummyFile, DummyFileServiceImpl}
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.rendering.RenderingPolicy
-import izumi.logstage.sink.FileServiceUtils._
+import izumi.logstage.sink.FileServiceUtils.*
 import izumi.logstage.sink.LoggingFileSinkTest.{FileSinkBrokenImpl, randomInt, _}
 import izumi.logstage.sink.file.FileServiceImpl.RealFile
 import izumi.logstage.sink.file.FileSink.FileIdentity

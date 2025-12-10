@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform.cli.model.schema
 
 import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RawValue}
-import izumi.fundamentals.platform.cli.model.schema.ParserDef._
+import izumi.fundamentals.platform.cli.model.schema.ParserDef.*
 
 import scala.collection.mutable
 

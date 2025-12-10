@@ -1,7 +1,7 @@
 package izumi.distage.modules.typeclass
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.functional.bio._
+import izumi.functional.bio.*
 import izumi.functional.bio.retry.Scheduler2
 import izumi.reflect.TagKK
 

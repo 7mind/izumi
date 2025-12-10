@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform
 
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import scala.annotation.unused
 import org.scalatest.wordspec.AnyWordSpec
 

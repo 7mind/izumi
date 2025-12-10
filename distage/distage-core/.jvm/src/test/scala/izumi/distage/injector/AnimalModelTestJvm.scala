@@ -1,6 +1,6 @@
 package izumi.distage.injector
 
-import distage._
+import distage.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Activation
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule

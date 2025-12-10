@@ -5,7 +5,7 @@ import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{AvailablePorts, HealthCheckResult}
 import izumi.distage.docker.healthcheck.ContainerHealthCheckBase.PortCandidate
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
 abstract class ContainerHealthCheckBase extends ContainerHealthCheck {

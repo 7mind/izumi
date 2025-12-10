@@ -1,6 +1,6 @@
 package izumi
 
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 import izumi.reflect.{Tag, TagK}
 import org.scalatest.wordspec.AnyWordSpec
 

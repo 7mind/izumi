@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.cache
 
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 
 import scala.collection.mutable
 

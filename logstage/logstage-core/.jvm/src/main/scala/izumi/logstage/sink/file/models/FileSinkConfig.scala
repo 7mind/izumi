@@ -1,6 +1,6 @@
 package izumi.logstage.sink.file.models
 
-import LogPayloadSize._
+import LogPayloadSize.*
 
 final case class FileSinkConfig private (fileSizeInBytes: Option[Int], fileSizeSoft: Option[Int]) {
 

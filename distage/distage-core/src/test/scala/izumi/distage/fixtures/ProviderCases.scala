@@ -1,7 +1,7 @@
 package izumi.distage.fixtures
 
 import izumi.distage.model.definition.Id
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import scala.annotation.unused
 
 object ProviderCases {

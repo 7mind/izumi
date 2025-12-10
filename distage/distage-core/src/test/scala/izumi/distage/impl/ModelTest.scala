@@ -1,6 +1,6 @@
 package izumi.distage.impl
 
-import distage._
+import distage.*
 import org.scalatest.wordspec.AnyWordSpec
 
 class ModelTest extends AnyWordSpec {

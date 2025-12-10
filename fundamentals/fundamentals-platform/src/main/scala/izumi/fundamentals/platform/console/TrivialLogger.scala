@@ -1,8 +1,8 @@
 package izumi.fundamentals.platform.console
 
 import izumi.fundamentals.platform.console.TrivialLogger.{Config, Level}
-import izumi.fundamentals.platform.exceptions.IzThrowable._
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.exceptions.IzThrowable.*
+import izumi.fundamentals.platform.strings.IzString.*
 
 import scala.annotation.nowarn
 import scala.collection.mutable

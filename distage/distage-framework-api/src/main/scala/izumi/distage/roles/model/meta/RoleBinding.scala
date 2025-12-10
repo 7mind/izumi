@@ -1,7 +1,7 @@
 package izumi.distage.roles.model.meta
 
 import izumi.distage.model.definition.Binding
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 import izumi.distage.roles.model.RoleDescriptor
 
 final case class RoleBinding(

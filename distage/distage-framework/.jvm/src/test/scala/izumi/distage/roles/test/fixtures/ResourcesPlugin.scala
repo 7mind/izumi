@@ -4,10 +4,10 @@ import java.util.concurrent.{ExecutorService, Executors}
 
 import cats.effect.IO
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.definition.StandardAxis._
+import izumi.distage.model.definition.StandardAxis.*
 import izumi.distage.plugins.PluginDef
-import izumi.distage.roles.test.fixtures.Fixture._
-import izumi.distage.roles.test.fixtures.ResourcesPlugin._
+import izumi.distage.roles.test.fixtures.Fixture.*
+import izumi.distage.roles.test.fixtures.ResourcesPlugin.*
 import izumi.fundamentals.platform.functional.Identity
 
 class ConflictPlugin extends PluginDef {

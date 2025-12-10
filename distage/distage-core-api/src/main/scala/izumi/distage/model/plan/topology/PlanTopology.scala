@@ -1,6 +1,6 @@
 package izumi.distage.model.plan.topology
 
-import izumi.distage.model.reflection._
+import izumi.distage.model.reflection.*
 
 /**
   * This class represents direct node dependencies and allows to retrieve full transitive dependencies for a node

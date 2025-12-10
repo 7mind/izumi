@@ -1,6 +1,6 @@
 package izumi.distage.docker.healthcheck
 
-import izumi.distage.docker.model.Docker._
+import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult
 import izumi.fundamentals.collections.nonempty.{NEList, NEMap}

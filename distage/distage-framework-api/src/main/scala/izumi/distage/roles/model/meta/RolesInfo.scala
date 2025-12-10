@@ -4,7 +4,7 @@ import izumi.distage.model.reflection.DIKey
 import izumi.functional.Renderable
 
 import scala.collection.compat.immutable.ArraySeq
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 
 import scala.annotation.nowarn
 

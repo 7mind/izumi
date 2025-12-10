@@ -6,6 +6,7 @@ import izumi.distage.model.definition.{Activation, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.provisioning.proxies.DistageProxy
 import izumi.distage.planning.AutoSetModule
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.immutable
@@ -13,7 +14,7 @@ import scala.collection.immutable
 class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
   "Garbage-collecting injector" should {
     "keep proxies alive in case of intersecting loops" in {
-      import GcCases.InjectorCase1._
+      import GcCases.InjectorCase1.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
@@ -49,7 +50,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "keep by-name loops alive" in {
-      import GcCases.InjectorCase2._
+      import GcCases.InjectorCase2.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
@@ -69,7 +70,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "keep plans alive in case of complex loops" in {
-      import GcCases.InjectorCase3._
+      import GcCases.InjectorCase3.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
@@ -95,7 +96,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "keep plans alive in case of even more complex loops" in {
-      import GcCases.InjectorCase4._
+      import GcCases.InjectorCase4.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
@@ -118,7 +119,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "keep proxies alive in case of pathologically intersecting loops" in {
-      import GcCases.InjectorCase5._
+      import GcCases.InjectorCase5.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
@@ -142,7 +143,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "keep proxies alive in case of pathologically intersecting loops with final classes" in {
-      import GcCases.InjectorCase9._
+      import GcCases.InjectorCase9.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
@@ -162,7 +163,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "keep proxies alive in case of pathologically intersecting provider loops" in {
-      import GcCases.InjectorCase6._
+      import GcCases.InjectorCase6.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
@@ -202,7 +203,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "keep proxies alive in case of pathologically intersecting loops with by-name edges" in {
-      import GcCases.InjectorCase7._
+      import GcCases.InjectorCase7.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
@@ -224,7 +225,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "prefer non-final loop break" in {
-      import GcCases.InjectorCase11._
+      import GcCases.InjectorCase11.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(
@@ -245,7 +246,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "handle cglib by-name circular dependencies with sets" in {
-      import GcCases.InjectorCase12._
+      import GcCases.InjectorCase12.*
 
       val injector = Injector[Identity](bootstrapOverrides = Seq(AutoSetModule().register[AutoCloseable](weak = false)))
       val plan = injector.planUnsafe(
@@ -266,7 +267,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     }
 
     "handle cglib by-name circular dependencies with sets through refs" in {
-      import GcCases.InjectorCase12._
+      import GcCases.InjectorCase12.*
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(

@@ -2,11 +2,11 @@ package izumi.logstage.sink.file
 
 import java.util.concurrent.ConcurrentHashMap
 
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.sink.file.FileSink.FileIdentity
 import izumi.logstage.sink.file.models.LogFile
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.collection.concurrent
 import scala.util.Try
 

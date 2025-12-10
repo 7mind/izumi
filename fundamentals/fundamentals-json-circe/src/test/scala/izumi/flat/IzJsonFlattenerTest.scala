@@ -1,7 +1,7 @@
 package izumi.flat
 
 import io.circe.Json
-import io.circe.literal._
+import io.circe.literal.*
 import izumi.fundamentals.json.flat.JsonFlattener
 import org.scalatest.Assertion
 import org.scalatest.wordspec.AnyWordSpec

@@ -1,16 +1,16 @@
 package izumi.distage.model.plan.repr
 
-import izumi.distage.model.plan.ExecutableOp.MonadicOp._
-import izumi.distage.model.plan.ExecutableOp.ProxyOp._
-import izumi.distage.model.plan.ExecutableOp.WiringOp._
+import izumi.distage.model.plan.ExecutableOp.MonadicOp.*
+import izumi.distage.model.plan.ExecutableOp.ProxyOp.*
+import izumi.distage.model.plan.ExecutableOp.WiringOp.*
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp, _}
-import izumi.distage.model.plan.Wiring.MonadicWiring._
-import izumi.distage.model.plan.Wiring.SingletonWiring._
+import izumi.distage.model.plan.Wiring.MonadicWiring.*
+import izumi.distage.model.plan.Wiring.SingletonWiring.*
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.EqualizedOperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Wiring}
 import izumi.distage.model.reflection.{DIKey, LinkedParameter, Provider}
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 
 trait OpFormatter {
   def format(op: ExecutableOp): String

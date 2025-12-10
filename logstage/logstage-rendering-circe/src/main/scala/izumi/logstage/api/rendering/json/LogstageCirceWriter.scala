@@ -1,7 +1,7 @@
 package izumi.logstage.api.rendering.json
 
 import io.circe.Json
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.rendering.json.LogstageCirceWriter.Token
 import izumi.logstage.api.rendering.{LogstageCodec, LogstageWriter}
 

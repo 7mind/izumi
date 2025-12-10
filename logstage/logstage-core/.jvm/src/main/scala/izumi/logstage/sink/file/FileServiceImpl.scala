@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{FileAlreadyExistsException, Files, Paths, StandardOpenOption}
 
-import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.sink.file.FileServiceImpl.RealFile
 import izumi.logstage.sink.file.models.LogFile
 

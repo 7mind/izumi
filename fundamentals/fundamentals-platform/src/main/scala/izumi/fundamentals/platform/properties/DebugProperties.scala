@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.properties
 
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 
 /**
   * Marker trait for objects that hold names of Java Properties

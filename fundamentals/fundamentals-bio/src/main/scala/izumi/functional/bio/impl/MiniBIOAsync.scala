@@ -351,7 +351,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
             val queue = new ConcurrentLinkedQueue[A](l.asJavaCollection)
             // NB: parTraverse* must implement short-circuiting - even for an uninterruptible effect,
             // - by analogy with traverse, but this capability is not used in distage-testkit because
-            // all the tests are sandboxed
+            // all tests are sandboxed
             val earlyFailure = new AtomicReference[Option[Exit.FailureUninterrupted[E]]](None)
 
             val worker: MiniBIOAsync[E, Unit] = {

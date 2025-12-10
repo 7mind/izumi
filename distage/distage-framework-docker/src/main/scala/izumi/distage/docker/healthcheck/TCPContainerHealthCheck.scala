@@ -1,14 +1,14 @@
 package izumi.distage.docker.healthcheck
 
-import izumi.distage.docker.model.Docker._
+import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.DockerContainer
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{AvailablePorts, HealthCheckResult, UnavailablePorts}
 import izumi.distage.docker.healthcheck.ContainerHealthCheckBase.{FailedPort, GoodPort, PortCandidate}
-import izumi.functional.IzEither._
-import izumi.fundamentals.collections.IzCollections._
+import izumi.functional.IzEither.*
+import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.collections.nonempty.{NEList, NEMap}
 import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
-import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
 class TCPContainerHealthCheck extends ContainerHealthCheckBase {
