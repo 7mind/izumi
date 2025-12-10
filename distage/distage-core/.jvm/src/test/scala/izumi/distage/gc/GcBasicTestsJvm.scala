@@ -247,7 +247,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "handle cglib by-name circular dependencies with sets" in {
       import GcCases.InjectorCase12._
 
-      val injector = Injector(bootstrapOverrides = Seq(AutoSetModule().register[AutoCloseable](weak = false)))
+      val injector = Injector[Identity](bootstrapOverrides = Seq(AutoSetModule().register[AutoCloseable](weak = false)))
       val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
