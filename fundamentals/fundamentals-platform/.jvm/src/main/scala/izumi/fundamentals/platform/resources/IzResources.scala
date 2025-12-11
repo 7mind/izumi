@@ -18,27 +18,23 @@ import scala.util.{Failure, Success}
 final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
 
   def getPath(resPath: String): Option[PathReference] = {
-    if (Paths.get(resPath).toFile.exists()) {
-      return Some(LoadablePathReference(Paths.get(resPath), null))
-    }
-
     val u = classLoader.getResource(resPath)
     if (u == null) {
-      return None
-    }
+      None
+    } else {
+      try {
+        Some(LoadablePathReference(Paths.get(u.toURI), null))
+      } catch {
+        case _: FileSystemNotFoundException =>
+          IzFiles.getFs(u.toURI, classLoader) match {
+            case Failure(_) =>
+              Some(UnloadablePathReference(u.toURI))
 
-    try {
-      Some(LoadablePathReference(Paths.get(u.toURI), null))
-    } catch {
-      case _: FileSystemNotFoundException =>
-        IzFiles.getFs(u.toURI, classLoader) match {
-          case Failure(_) =>
-            Some(UnloadablePathReference(u.toURI))
+            case Success(fs) =>
+              Some(LoadablePathReference(fs.provider().getPath(u.toURI), fs))
+          }
 
-          case Success(fs) =>
-            Some(LoadablePathReference(fs.provider().getPath(u.toURI), fs))
-        }
-
+      }
     }
   }
 
