@@ -40,6 +40,7 @@ final class ContainerDependenciesTest extends AnyWordSpec {
     val (k1, zk1) = runContainers()
     val (k11, zk11) = runContainers()
 
+    // reused
     assert(k11 == k1)
     assert(zk11 == zk1)
 

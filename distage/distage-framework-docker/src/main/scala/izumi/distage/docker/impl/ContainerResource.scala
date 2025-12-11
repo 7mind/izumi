@@ -42,7 +42,7 @@ open class ContainerResource[F[_], Tag](
 
   import client.rawClient
 
-  protected val stableLabels: Map[String, String] = {
+  protected lazy val stableLabels: Map[String, String] = {
     val reuseLabel = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       DockerConst.Labels.dependencies -> deps.map(_.id.name).toList.sorted.mkString(";"),

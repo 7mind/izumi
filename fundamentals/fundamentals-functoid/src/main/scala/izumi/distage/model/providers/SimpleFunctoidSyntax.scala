@@ -9,5 +9,6 @@ trait SimpleFunctoidSyntax[Ftoid[+X] <: AbstractFunctoid[X, Ftoid]] {
 object SimpleFunctoidSyntax {
   final class SyntaxMapSame[A, Ftoid[+X] <: AbstractFunctoid[X, Ftoid]](private val functoid: Ftoid[A]) extends AnyVal {
     def mapSame(f: A => A): Ftoid[A] = functoid.map(f)(using functoid.returnTypeTag)
+    def mapSame2[B](that: Ftoid[B])(f: (A, B) => A): Ftoid[A] = functoid.map2(that)(f)(using functoid.returnTypeTag)
   }
 }
