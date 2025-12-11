@@ -85,7 +85,7 @@ abstract class RoleAppMain[F[_]](
     try {
       Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
         (appResource: AppResource[F]) =>
-          appResource.resource.use(r => r.run())
+          appResource.resource.use(_.run())
       }
     } catch {
       case t: Throwable =>
@@ -110,15 +110,15 @@ abstract class RoleAppMain[F[_]](
     *
     * @note All resources will be leaked. Use [[replLocatorWithClose]] if you need resource cleanup within a REPL session.
     */
-  def replLocator(argV: ArgV = ArgV.empty): F[Locator] = {
-    quasi.map(replLocatorWithClose(argV))(_._1)
+  def replLocator(args: String*)(implicit F: QuasiIO[F]): F[Locator] = {
+    F.map(replLocatorWithClose(args*))(_._1)
   }
 
-  def replLocatorWithClose(argV: ArgV = ArgV.empty): F[(Locator, () => F[Unit])] = {
+  def replLocatorWithClose(args: String*)(implicit F: QuasiIO[F]): F[(Locator, () => F[Unit])] = {
     val combinedLifecycle: Lifecycle[F, Locator] = {
       Injector
         .NoProxies[Identity]()
-        .produceGet[AppResource[F]](roleAppBootModule(argV)).toEffect[F]
+        .produceGet[AppResource[F]](roleAppBootModule(ArgV(args.toArray))).toEffect[F]
         .flatMap(_.resource.toEffect[F])
         .flatMap(_.appResource)
     }

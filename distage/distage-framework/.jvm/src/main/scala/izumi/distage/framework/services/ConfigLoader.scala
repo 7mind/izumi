@@ -42,7 +42,7 @@ import scala.util.{Failure, Success, Try}
   * Here configs will be loaded in the following order, with higher priority earlier:
   *
   *   - explicits: `role1.conf`, `role2.conf`, `global.conf`,
-  *   - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, ,`application[-reference,-dev].conf`, `common[-reference,-dev].conf`
+  *   - resources: `role1[-reference,-dev].conf`, `role2[-reference,-dev].conf`, `application[-reference,-dev].conf`, `common[-reference,-dev].conf`
   *
   * @see [[ConfigLocationProvider]]
   * @see [[ConfigLoader.LocalFSImpl]]

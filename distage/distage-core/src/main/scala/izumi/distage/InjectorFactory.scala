@@ -55,8 +55,8 @@ trait InjectorFactory {
   /**
     * Alias for `apply[F]` that doesn't add a [[DefaultModule]] for F into bindings.
     *
-    * `distage-core` doesn't require bindings provided by DefaultModule's, but some extensions, such as
-    * `distage-framework-docker` would expect them to be defined
+    * `distage-core` doesn't require bindings provided by DefaultModule, but some extensions,
+    * such as `distage-framework-docker` expect them to be defined
     */
   final def withoutDefaultModule[F[_]: QuasiIO: TagK](
     parent: Option[Locator] = None,
