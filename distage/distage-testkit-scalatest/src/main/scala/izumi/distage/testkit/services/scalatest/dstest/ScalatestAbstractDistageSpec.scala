@@ -74,19 +74,19 @@ object ScalatestAbstractDistageSpec {
   ) extends DISyntaxBase[F]
     with DSWordSpecStringWrapperLowPriorityIdentityOverloads[F] {
 
-    def in(function: Functoid[F[Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    infix def in(function: Functoid[F[Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeIO(function, pos.get)
     }
 
-    def in(function: Functoid[F[Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+    infix def in(function: Functoid[F[Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeIO(function, pos.get)
     }
 
-    def in(value: => F[Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    infix def in(value: => F[Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeIO(() => value, pos.get)
     }
 
-    def in(value: => F[Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+    infix def in(value: => F[Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeIO(() => value, pos.get)
     }
 
@@ -108,19 +108,19 @@ object ScalatestAbstractDistageSpec {
   ) extends DISyntaxBIOBase[F]
     with DSWordSpecStringWrapperLowPriorityIdentityOverloads[F[Throwable, _]] {
 
-    def in(function: Functoid[F[Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    infix def in(function: Functoid[F[Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(function.asInstanceOf[Functoid[F[Any, Any]]], pos.get)
     }
 
-    def in(function: Functoid[F[Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+    infix def in(function: Functoid[F[Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(function.asInstanceOf[Functoid[F[Any, Any]]], pos.get)
     }
 
-    def in(value: => F[Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    infix def in(value: => F[Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(() => value.asInstanceOf[F[Any, Any]], pos.get)
     }
 
-    def in(value: => F[Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+    infix def in(value: => F[Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(() => value.asInstanceOf[F[Any, Any]], pos.get)
     }
 
@@ -142,7 +142,7 @@ object ScalatestAbstractDistageSpec {
   ) extends DISyntaxBIOBase[ZIO[Any, +_, +_]]
     with DSWordSpecStringWrapperLowPriorityIdentityOverloads[ZIO[Any, Throwable, _]] {
 
-    def in[R: ZEnvConstructor](function: Functoid[ZIO[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    infix def in[R: ZEnvConstructor](function: Functoid[ZIO[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(
         function.map2(ZEnvConstructor[R]) {
           case (eff, r) => eff.provideEnvironment(r)
@@ -151,7 +151,7 @@ object ScalatestAbstractDistageSpec {
       )
     }
 
-    def in[R: ZEnvConstructor](function: Functoid[ZIO[R, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+    infix def in[R: ZEnvConstructor](function: Functoid[ZIO[R, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(
         function.map2(ZEnvConstructor[R]) {
           case (eff, r) => eff.provideEnvironment(r)
@@ -160,27 +160,27 @@ object ScalatestAbstractDistageSpec {
       )
     }
 
-    def in[R: ZEnvConstructor](value: => ZIO[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    infix def in[R: ZEnvConstructor](value: => ZIO[R, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(ZEnvConstructor[R].map(value.provideEnvironment(_)), pos.get)
     }
 
-    def in[R: ZEnvConstructor](value: => ZIO[R, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+    infix def in[R: ZEnvConstructor](value: => ZIO[R, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(ZEnvConstructor[R].map(value.provideEnvironment(_)), pos.get)
     }
 
-    def in(function: Functoid[ZIO[Any, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    infix def in(function: Functoid[ZIO[Any, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(function, pos.get)
     }
 
-    def in(function: Functoid[ZIO[Any, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+    infix def in(function: Functoid[ZIO[Any, Any, Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(function, pos.get)
     }
 
-    def in(value: => ZIO[Any, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
+    infix def in(value: => ZIO[Any, Any, Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(() => value, pos.get)
     }
 
-    def in(value: => ZIO[Any, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
+    infix def in(value: => ZIO[Any, Any, Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
       takeBIO(() => value, pos.get)
     }
 
@@ -192,23 +192,23 @@ object ScalatestAbstractDistageSpec {
 
   trait DSWordSpecStringWrapperLowPriorityIdentityOverloads[F[_]] extends DISyntaxBase[F] {
 
-    def in(function: Functoid[Unit])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
+    infix def in(function: Functoid[Unit])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
       takeAny(function, pos.get)
     }
 
-    def in(function: Functoid[Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
+    infix def in(function: Functoid[Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
       takeAny(function, pos.get)
     }
 
-    def in(value: => Unit)(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
+    infix def in(value: => Unit)(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
       takeAny(() => value, pos.get)
     }
 
-    def in(value: => Assertion)(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
+    infix def in(value: => Assertion)(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): Unit = {
       takeAny(() => value, pos.get)
     }
 
-    def skip(@unused value: => Any)(implicit pos: SourceFilePositionMaterializer): Unit = {
+    infix def skip(@unused value: => Any)(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeFunIO[Nothing, QuasiIO[F]](cancel, pos.get)
     }
 
