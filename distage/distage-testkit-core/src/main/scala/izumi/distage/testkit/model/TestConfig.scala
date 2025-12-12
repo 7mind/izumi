@@ -116,7 +116,7 @@ object TestConfig {
       *  Note that this rule currently differs from the rule of activation for bindings themselves, specifically
       *  you cannot specify multiple axis values for _the same_ axis on bindings.
       *
-      *  @see [[izumi.distage.model.planning.ActivationChoices#allValid]]
+      *  @see [[izumi.distage.model.planning.ActivationChoices.allValid]]
       */
     def getActiveKeys(activation: Activation): Set[DIKey] = {
       def activatedSection(axisValues: Set[AxisChoice], activation: Activation): Boolean = {

@@ -51,7 +51,7 @@ object PlanCheckInput {
   /**
     * Provide empty config for the purpose of checking config bindings ([[izumi.distage.config.ConfigModuleDef]])
     *
-    * If the app uses config bindings and disables loading, [[izumi.distage.framework.PlanCheckConfig#checkConfig]]
+    * If the app uses config bindings and disables loading, [[izumi.distage.framework.PlanCheckConfig.checkConfig]]
     * should be set to `false` for `PlanCheck` to pass
     */
   def noConfig[F[_]](

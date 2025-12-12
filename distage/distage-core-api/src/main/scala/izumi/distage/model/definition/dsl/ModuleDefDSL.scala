@@ -167,7 +167,7 @@ object ModuleDefDSL {
       *   make[X].from(X.apply _) // summons special Int
       * }}}
       *
-      * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid#map2]] methods
+      * Functoid forms an applicative functor via its  [[izumi.distage.model.providers.Functoid.pure]] & [[izumi.distage.model.providers.Functoid.map2]] methods
       *
       * @see [[izumi.distage.reflection.macros.FunctoidMacro]]]
       * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
@@ -261,7 +261,7 @@ object ModuleDefDSL {
       *
       * The resource will be released when the [[izumi.distage.model.Locator]]
       * holding it is released. Typically, after `.use` is called on the result of
-      * [[izumi.distage.model.Injector#produce]]
+      * [[izumi.distage.model.Injector.produce]]
       *
       * You can create resources with [[Lifecycle.make]], by inheriting from [[Lifecycle]]
       * or by converting an existing [[cats.effect.Resource]]

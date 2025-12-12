@@ -27,7 +27,7 @@ object DebugProperties extends properties.DebugProperties {
 
   /**
     * Discover any component that inherits from [[izumi.distage.roles.model.AbstractRole]] and has a companion object that inherits [[izumi.distage.roles.model.RoleDescriptor]]
-    * as a role, not only those additionally added using [[izumi.distage.roles.model.definition.RoleModuleDef#makeRole]],
+    * as a role, not only those additionally added using [[izumi.distage.roles.model.definition.RoleModuleDef.makeRole]],
     * companions of such components will be instantiated reflectively, unlike ones from `RoleModuleDef`.
     *
     * Default: `true`, for the sake of keeping compatibility with code written before [[izumi.distage.roles.model.definition.RoleModuleDef]],

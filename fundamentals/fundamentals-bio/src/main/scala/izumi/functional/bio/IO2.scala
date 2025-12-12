@@ -10,7 +10,7 @@ trait IO2[F[+_, +_]] extends Panic2[F] {
     *
     * @note `sync` means `synchronous`, that is, a blocking CPU effect, as opposed to a non-blocking
     *       [[izumi.functional.bio.Async2#async asynchronous]] effect or a
-    *       long blocking I/O effect ([[izumi.functional.bio.BlockingIO2#syncBlocking]])
+    *       long blocking I/O effect ([[izumi.functional.bio.BlockingIO2.syncBlocking]])
     */
   def syncThrowable[A](effect: => A): F[Throwable, A]
 
@@ -28,7 +28,7 @@ trait IO2[F[+_, +_]] extends Panic2[F] {
     * @note If you're not completely sure that a captured block can't throw, use [[syncThrowable]]
     * @note `sync` means `synchronous`, that is, a blocking CPU effect, as opposed to a non-blocking
     *       [[izumi.functional.bio.Async2#async asynchronous]] effect or a
-    *       long blocking I/O effect ([[izumi.functional.bio.BlockingIO2#syncBlocking]])
+    *       long blocking I/O effect ([[izumi.functional.bio.BlockingIO2.syncBlocking]])
     */
   def sync[A](effect: => A): F[Nothing, A]
 

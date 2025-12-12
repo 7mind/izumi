@@ -69,7 +69,7 @@ abstract class RoleAppMain[F[_]](
     * @note Bootstrap Injector will always run under Identity, other effects (cats.effect.IO, zio.IO) are not available at this stage.
     *
     * @note The components added here are visible during the creation of the app, but *not inside* the app,
-    *       to override components *inside* the app, use `pluginConfig` & [[izumi.distage.plugins.PluginConfig#overriddenBy]]:
+    *       to override components *inside* the app, use `pluginConfig` & [[izumi.distage.plugins.PluginConfig.overriddenBy]]:
     *
     *       {{{
     *       override def pluginConfig: PluginConfig = {

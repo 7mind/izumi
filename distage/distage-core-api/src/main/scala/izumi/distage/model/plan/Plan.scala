@@ -145,7 +145,7 @@ object Plan {
       *
       * @return a non-empty list of unresolved imports if present
       *
-      * @see [[distage.Injector#assert]] for a check you can use in tests
+      * @see [[izumi.distage.model.Injector.assert]] for a check you can use in tests
       */
     def unresolvedImports(ignoredImports: DIKey => Boolean = Set.empty): Option[NEList[ImportDependency]] = {
       val nonMagicImports = plan.stepsUnordered.iterator.collect {
@@ -178,7 +178,7 @@ object Plan {
       * `Locator`, by BootstrapContext, or they may be materialized by
       * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
       *
-      * @see [[distage.Injector#assert]] for a check you can use in tests
+      * @see [[izumi.distage.model.Injector.assert]] for a check you can use in tests
       */
     def allImports: Iterable[ImportDependency] = {
       plan.stepsUnordered.collect { case i: ImportDependency => i }

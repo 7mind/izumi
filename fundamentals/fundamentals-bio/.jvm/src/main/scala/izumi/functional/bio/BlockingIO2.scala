@@ -18,7 +18,7 @@ trait BlockingIO2[F[+_, +_]] extends BlockingIOInstances with DivergenceHelper w
 
   /** Execute a blocking impure task in `Blocking` thread pool, current task will be safely parked until the blocking task finishes
     *
-    * If canceled, the task _MAY_ be killed via [[java.lang.Thread#interrupt]], there is no guarantee that this method may promptly,
+    * If canceled, the task _MAY_ be killed via [[java.lang.Thread.interrupt]], there is no guarantee that this method may promptly,
     * or ever, interrupt the enclosed task, and it may be legally implemented as an alias to [[syncBlocking]]
     *
     * THIS IS USUALLY UNSAFE unless calling well-written libraries that specifically handle [[java.lang.InterruptedException]]

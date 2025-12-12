@@ -13,7 +13,7 @@ object Injector extends InjectorFactory {
   /**
     * Create a new Injector
     *
-    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
+    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector.produce produce]]
     *
     * @param overrides Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                  They can be used to customize the Injector, e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
@@ -27,7 +27,7 @@ object Injector extends InjectorFactory {
   /**
     * Create a new Injector with custom parameters [[izumi.distage.model.definition.BootstrapContextModule]]
     *
-    * @tparam F                   The effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
+    * @tparam F                   The effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector.produce produce]]
     *
     * @param bootstrapBase        Initial bootstrap context module, such as [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
     *
@@ -64,9 +64,9 @@ object Injector extends InjectorFactory {
   /**
     * Create a new injector inheriting configuration, hooks and the object graph from a previous injection.
     *
-    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
+    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector.produce produce]]
     *
-    * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
+    * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Injector.produce produce]]
     */
   override def inherit[F[_]: QuasiIO: TagK](parent: Locator): Injector[F] = {
     new InjectorDefaultImpl(this, parent, definition.Module.empty)
@@ -78,9 +78,9 @@ object Injector extends InjectorFactory {
     * Unlike [[inherit]] this will fully (re)create the `defaultModule` in subsequent injections,
     * without reusing the existing instances in `parent`.
     *
-    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
+    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector.produce produce]]
     *
-    * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
+    * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Injector.produce produce]]
     */
   override def inheritWithNewDefaultModule[F[_]: QuasiIO: TagK](parent: Locator, defaultModule: DefaultModule[F]): Injector[F] = {
     inheritWithNewDefaultModuleImpl(this, parent, defaultModule)

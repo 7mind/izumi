@@ -32,7 +32,7 @@ import izumi.reflect.TagK
   *
   * This will also add some other useful components:
   *
-  *   - GraphViz dump hook will be enabled if [[PlanningOptions#addGraphVizDump]] is enabled (via `--debug-dump-graph` commandline parameter)
+  *   - GraphViz dump hook will be enabled if [[PlanningOptions.addGraphVizDump]] is enabled (via `--debug-dump-graph` commandline parameter)
   *   - `IzLogger` will be passed in from the outer context
   *   - `LogIO[F]` will be available with the application's effect type
   *   - `LocatorRef @Id("roleapp")` allows accessing components from outer context if needed

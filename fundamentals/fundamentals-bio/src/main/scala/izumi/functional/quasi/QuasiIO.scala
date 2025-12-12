@@ -61,10 +61,10 @@ trait QuasiIO[F[_]] extends QuasiPrimitives[F] {
 
   /**
     * Like [[definitelyRecoverUnsafeIgnoreTrace]], but the second parameter to the callback
-    * contains the effect's debugging information, possibly convertable to a Throwable via [[Exit.Trace#toThrowable]],
-    * or that could be used to mutably enhance the left-hand-side Throwable value via [[Exit.Trace#unsafeAttachTrace]]
+    * contains the effect's debugging information, possibly convertable to a Throwable via [[Exit.Trace.toThrowable]],
+    * or that could be used to mutably enhance the left-hand-side Throwable value via [[Exit.Trace.unsafeAttachTraceOrReturnNewThrowable]]
     *
-    * @note [[Exit.Trace#unsafeAttachTrace]] may perform side-effects to the original Throwable argument on the left,
+    * @note [[Exit.Trace.unsafeAttachTraceOrReturnNewThrowable]] may perform side effects to the original Throwable argument on the left,
     * the left throwable should be DISCARDED after calling the callback.
     * (e.g. in case of `ZIO`, the callback will mutate the throwable and attach a ZIO Trace to it.)
     */

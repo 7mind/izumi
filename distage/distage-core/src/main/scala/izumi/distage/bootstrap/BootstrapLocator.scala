@@ -30,7 +30,7 @@ object BootstrapLocator {
     * e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
     *
     * The passed activation will affect _only_ the bootstrapping of the injector itself (see [[izumi.distage.bootstrap.BootstrapLocator]]),
-    * to set activation choices, pass `Activation` to [[izumi.distage.model.Planner#plan]] or [[izumi.distage.model.PlannerInput]].
+    * to set activation choices, pass `Activation` to [[izumi.distage.model.Planner.plan]] or [[izumi.distage.model.PlannerInput]].
     *
     * @param bootstrapBase Initial bootstrap context module, such as [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
     * @param bootstrapActivation A map of axes of configuration to choices along these axes

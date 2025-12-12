@@ -16,7 +16,7 @@ import scala.annotation.unused
   *
   * @note Since this is an abstract class, you cannot mix it with other classes or use it as a mixin.
   *       Instead, you may inherit from [[PluginBase]], which is a trait – but in that case compile-time checks will not
-  *       re-run when the class is updated in that case. Alternatively, you may use [[izumi.distage.model.definition.dsl.IncludesDSL#include]]
+  *       re-run when the class is updated in that case. Alternatively, you may use [[izumi.distage.model.definition.dsl.IncludesDSL.include]]
   *       to compose modules as values instead of using inheritance.
   *
   * @param recompilationToken Makes compile-time checks re-run when the source code of this `PluginDef` is changed, if it's used in the checked role.

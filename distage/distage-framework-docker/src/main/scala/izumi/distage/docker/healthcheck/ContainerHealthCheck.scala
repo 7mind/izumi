@@ -47,7 +47,7 @@ object ContainerHealthCheck {
   /**
     * Waits until container runs to completion with expected `exitCode`.
     *
-    * @note WARNING: [[ContainerConfig#autoRemove]] MUST be set to `false` for this check to pass
+    * @note WARNING: [[ContainerConfig.autoRemove]] MUST be set to `false` for this check to pass
     */
   def exitCodeCheck(exitCode: Int = 0): ContainerHealthCheck = new ExitSuccessCheck(exitCode)
 
