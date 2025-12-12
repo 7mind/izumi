@@ -12,7 +12,7 @@ import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.functional.Identity
 
 trait SubcontextHandler[+E] {
-  def handle(binding: Binding, c: ImplDef.ContextImpl): Either[E, SingletonWiring]
+  def handle(binding: Binding, c: ImplDef.SubcontextImplDef): Either[E, SingletonWiring]
 }
 
 object SubcontextHandler {
@@ -20,7 +20,7 @@ object SubcontextHandler {
     planner: Planner,
     input: PlannerInput,
   ) extends SubcontextHandler[LocalContextPlanningFailure] {
-    override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextPlanningFailure, SingletonWiring] = {
+    override def handle(binding: Binding, c: ImplDef.SubcontextImplDef): Either[LocalContextPlanningFailure, SingletonWiring] = {
       val roots = c.extractingFunction.diKeys.toSet
       for {
         subplan <- planner
@@ -38,7 +38,7 @@ object SubcontextHandler {
     verifier: PlanVerifier,
     excludedActivations: Set[NESet[AxisPoint]],
   ) extends SubcontextHandler[LocalContextVerificationFailure] {
-    override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[LocalContextVerificationFailure, SingletonWiring] = {
+    override def handle(binding: Binding, c: ImplDef.SubcontextImplDef): Either[LocalContextVerificationFailure, SingletonWiring] = {
       val roots = c.extractingFunction.diKeys.toSet
       val verifierResult = verifier.verify[Identity](c.module, Roots(roots), c.externalKeys, excludedActivations)
 
@@ -65,7 +65,7 @@ object SubcontextHandler {
   }
 
   class TracingHandler() extends SubcontextHandler[Nothing] {
-    override def handle(binding: Binding, c: ImplDef.ContextImpl): Either[Nothing, SingletonWiring] = {
+    override def handle(binding: Binding, c: ImplDef.SubcontextImplDef): Either[Nothing, SingletonWiring] = {
       Right(SingletonWiring.PrepareSubcontext(c.extractingFunction, Plan.empty, c.implType, c.externalKeys, Set.empty))
     }
   }

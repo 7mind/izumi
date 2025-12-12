@@ -65,22 +65,22 @@ If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and eit
 ```scala
 // REQUIRED options for Scala 2.12
 scalacOptions += "-Ypartial-unification"
-scalacOptions += "-Xsource:3" // or "-Xsource:2.13" if absolutely necessary
+scalacOptions += "-Xsource:3" // or at least "-Xsource:2.13"
 ```
 
-Additionally, some source examples in this document use [underscore syntax for type lambdas](https://docs.scala-lang.org/scala3/guides/migration/plugin-kind-projector.html) which you can enable with the following options:
+Additionally, all source examples in this document use [underscore syntax for type lambdas](https://docs.scala-lang.org/scala3/guides/migration/plugin-kind-projector.html) which you can enable with the following options:
 
 @@@vars
 
 ```scala
+// For Scala 3
+scalacOptions += "-Xkind-projector:underscores" // or "-Ykind-projector:underscores" on old versions
+
 // For Scala 2
 scalacOptions += "-P:kind-projector:underscore-placeholders"
 scalacOptions += "-Xsource:3"
 
 addCompilerPlugin("org.typelevel" % "kind-projector" % "$kindprojector.version$" cross CrossVersion.full)
-
-// For Scala 3
-scalacOptions += "-Ykind-projector:underscores"
 ```
 
 @@@
@@ -1414,7 +1414,7 @@ class HACK_OVERRIDE_PetStoreBusinessLogic[F[+_, +_]: Error2](
 def module2[F[+_, +_]: TagKK] = new ModuleDef {
   make[HACK_OVERRIDE_PetStoreAPIHandler[F]]
 
-  makeSubcontext[PetStoreBusinessLogic[F]]
+  makeSubcontext[F[Throwable, _], PetStoreBusinessLogic[F]]
     .withSubmodule(new ModuleDef {
       make[PetStoreRepository[F]]
       make[HACK_OVERRIDE_PetStoreBusinessLogic[F]]
@@ -1423,7 +1423,7 @@ def module2[F[+_, +_]: TagKK] = new ModuleDef {
 }
 
 class HACK_OVERRIDE_PetStoreAPIHandler[F[+_, +_]: IO2: TagKK](
-  petStoreBusinessLogicSubcontext: Subcontext[HACK_OVERRIDE_PetStoreBusinessLogic[F]]
+  petStoreBusinessLogicSubcontext: Subcontext[F[Throwable, _], HACK_OVERRIDE_PetStoreBusinessLogic[F]]
 ) {
   def buyPetAPI(petId: PetId, payment: Int): F[Throwable, Pet] = {
     // we have to create PetStoreBusinessLogic by passing the RequestId, since we didn't receive a constructed instance
@@ -1480,17 +1480,16 @@ object TransactionFailure {
 final case class Pet(name: String, species: String, price: Int)
 
 final class PetStoreAPIHandler[F[+_, +_]: IO2: TagKK](
-  petStoreBusinessLogic: Subcontext[PetStoreBusinessLogic[F]]
+  petStoreBusinessLogic: Subcontext[F[Throwable, _], PetStoreBusinessLogic[F]]
 ) {
-  def buyPetAPI(petId: PetId, payment: Int): F[TransactionFailure, Pet] = {
+  def buyPetAPI(petId: PetId, payment: Int): F[Throwable, Either[TransactionFailure, Pet]] = {
     for {
       requestId <- F.sync(RequestId(UUID.randomUUID()))
       businessLogicLifecycle =
         petStoreBusinessLogic
           .provide[RequestId](requestId)
-          .produce[F[Throwable, _]]()
-          .mapK[F[Throwable, _], F[TransactionFailure, _]](Morphism1(_.orTerminate))
-      pet <- businessLogicLifecycle.use(_.buyPet(petId, payment))
+          .produce()
+      pet <- businessLogicLifecycle.use(_.buyPet(petId, payment).attempt)
     } yield pet
   }
 }
@@ -1572,7 +1571,7 @@ def module[F[+_, +_]: TagKK] = new ModuleDef {
   make[IzLogger].from(HACK_OVERRIDE_IzLogger())
   include(LogIO2Module[F]())
 
-  makeSubcontext[PetStoreBusinessLogic[F]]
+  makeSubcontext[F[Throwable, _], PetStoreBusinessLogic[F]]
     .withSubmodule(new ModuleDef {
       make[PetStoreRepository[F]].fromResource[PetStoreRepository.Impl[F]]
       make[PetStoreBusinessLogic[F]]
@@ -1588,7 +1587,7 @@ val result = runner.unsafeRun {
   Injector[zio.Task]()
     .produceRun(module[zio.IO]) {
       (petStoreAPI: PetStoreAPIHandler[zio.IO]) =>
-        petStoreAPI.buyPetAPI(Pets.arnoldId, 100).attempt
+        petStoreAPI.buyPetAPI(Pets.arnoldId, 100)
     }
 }
 ```

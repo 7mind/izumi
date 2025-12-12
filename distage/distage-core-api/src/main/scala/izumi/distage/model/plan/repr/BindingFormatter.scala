@@ -35,8 +35,8 @@ object BindingFormatter {
           s"value($instance: $implType)"
         case ImplDef.ProviderImpl(_, function) =>
           s"call($function)"
-        case ImplDef.ContextImpl(_, function, _, _) =>
-          s"context($function)"
+        case ImplDef.SubcontextImplDef(_, function, _, _) =>
+          s"subcontext($function)"
         case ImplDef.EffectImpl(_, effectHKTypeCtor, effectImpl) =>
           s"effect[$effectHKTypeCtor](${formatImplDef(effectImpl)})"
         case ImplDef.ResourceImpl(_, effectHKTypeCtor, resourceImpl) =>
@@ -44,7 +44,7 @@ object BindingFormatter {
       }
     }
 
-    private def formatTags(tags: Set[BindingTag]) = {
+    private def formatTags(tags: Set[BindingTag]): String = {
       if (tags.isEmpty) "" else s".tagged($tags)"
     }
   }

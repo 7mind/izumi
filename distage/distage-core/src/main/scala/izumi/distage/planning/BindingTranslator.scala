@@ -146,7 +146,7 @@ object BindingTranslator {
         case r: ImplDef.ReferenceImpl =>
           Right(SingletonWiring.Reference(r.implType, r.key, r.weak))
 
-        case c: ImplDef.ContextImpl =>
+        case c: ImplDef.SubcontextImplDef =>
           handler.handle(binding, c)
       }
     }

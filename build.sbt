@@ -1459,7 +1459,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
       "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
       "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
       "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect
+      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect,
+      "io.github.classgraph" % "classgraph" % V.classgraph % Provided
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),

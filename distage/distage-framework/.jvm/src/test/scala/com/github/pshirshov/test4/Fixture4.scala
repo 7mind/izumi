@@ -21,7 +21,7 @@ object Fixture4 {
   }
 
   object BadModule extends PluginDef with RoleModuleDef {
-    makeSubcontext[Dep](
+    makeSubcontext[Identity, Dep](
       new ModuleDef {
         make[Dep].tagged(Mode.Prod).from[DepGood]
         make[Dep].tagged(Mode.Test).from[DepBad]
@@ -32,7 +32,7 @@ object Fixture4 {
   }
 
   object GoodModule extends PluginDef with RoleModuleDef {
-    makeSubcontext[Dep](
+    makeSubcontext[Identity, Dep](
       new ModuleDef {
         make[Dep].tagged(Mode.Prod).from[DepGood]
         make[Dep].tagged(Mode.Test).from[DepBad]
@@ -43,7 +43,7 @@ object Fixture4 {
   }
 
   class TargetRole(
-    val depCtx: Subcontext[Dep]
+    val depCtx: Subcontext[Identity, Dep]
   ) extends RoleService[Identity] {
     def mkDep(): Dep = {
       depCtx

@@ -1,17 +1,17 @@
 package izumi.distage
 
 import izumi.distage.model.definition.Identifier
-import izumi.functional.lifecycle.Lifecycle
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.providers.Functoid
+import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 
 /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]] */
-trait Subcontext[A] {
-  def produce[F[_]: QuasiIO: TagK](): Lifecycle[F, A]
+trait Subcontext[F[_], +A] {
+  def produce()(implicit F: QuasiIO[F], tagK: TagK[F]): Lifecycle[F, A]
 
   /**
     * Same as `.produce[F]().use(f)`
@@ -19,16 +19,14 @@ trait Subcontext[A] {
     * @note Resources allocated by the subcontext will be closed after `f` exits.
     *       Use `produce` if you need to extend the lifetime of the Subcontext's resources.
     */
-  def produceRun[F[_]: QuasiIO: TagK, B](f: A => F[B]): F[B]
+  def produceRun[B](f: A => F[B])(implicit F: QuasiIO[F], tagK: TagK[F]): F[B]
 
-  final def produceRunSimple[B](f: A => B): B = produceRun[Identity, B](f)
-
-  def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): Subcontext[A]
-  def provide[T: Tag](name: Identifier)(value: T)(implicit pos: CodePositionMaterializer): Subcontext[A]
+  def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): Subcontext[F, A]
+  def provide[T: Tag](name: Identifier)(value: T)(implicit pos: CodePositionMaterializer): Subcontext[F, A]
 
   def plan: Plan
 
-  final def map[B: Tag](f: A => B): Subcontext[B] = unsafeModify(_.map(f))
+  final def map[B: Tag](f: A => B): Subcontext[F, B] = unsafeModify(_.map(f))
 
   /**
     * Unsafely substitute the Functoid that extracts the root component.
@@ -36,7 +34,7 @@ trait Subcontext[A] {
     * Note, because the `plan` has been calculated ahead of time with `A`
     * as the root, it's not possible to request additional components
     * via Functoid that weren't already in the graph as dependencies of `A`
-    * – everything that `A` doesn't depend is not in the plan.
+    * – everything that `A` doesn't depend on is not in the plan.
     *
     * Example:
     *
@@ -58,7 +56,7 @@ trait Subcontext[A] {
     * }}}
     *
     * A binding for `String` is defined in the submodule, but is not referenced by `Int @Id("five")` binding.
-    * Therefore it was removed by garbage collection and cannot be extracted with this Subcontext. You'd have to create
+    * Therefore, it was removed by garbage collection and cannot be extracted with this Subcontext. You'd have to create
     * another `Subcontext[String]` with the same submodule to create `String`:
     *
     * {{{
@@ -75,8 +73,13 @@ trait Subcontext[A] {
     * [[https://izumi.7mind.io/distage/advanced-features.html#depending-on-locator nested injection]]
     * directly.
     */
-  def unsafeModify[B](f: Functoid[A] => Functoid[B]): Subcontext[B]
+  def unsafeModify[B](f: Functoid[A] => Functoid[B]): Subcontext[F, B]
 
-  @deprecated("Renamed to produceRunSimple", "1.2.17")
-  final def produceRun[B](f: A => B): B = produceRunSimple[B](f)
+  @inline final def widen[B >: A]: Subcontext[F, B] = this
+  @inline final def widen[B](implicit ev: A <:< B): Subcontext[F, B] = this.asInstanceOf[Subcontext[F, B]]
+  @inline final def widenF[G[x] >: F[x]]: Subcontext[G, A] = this.asInstanceOf[Subcontext[G, A]]
+  @inline final def widenF[G[_]](implicit ev: F[Unit] <:< G[Unit]): Subcontext[G, A] = this.asInstanceOf[Subcontext[G, A]]
+
+  @deprecated("use regular produceRun with Subcontext[F = Identity]", "1.3.0")
+  final def produceRunSimple[B](f: A => B)(implicit ev: F[Unit] <:< Identity[Unit]): B = this.widenF[Identity].produceRun[B](f)
 }

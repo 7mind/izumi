@@ -105,7 +105,7 @@ class ResourceRewriter(
           implDef match {
             case _: ImplDef.ReferenceImpl =>
               DontChange
-            case _: ImplDef.ContextImpl =>
+            case _: ImplDef.SubcontextImplDef =>
               DontChange
 
             case _: ImplDef.InstanceImpl =>

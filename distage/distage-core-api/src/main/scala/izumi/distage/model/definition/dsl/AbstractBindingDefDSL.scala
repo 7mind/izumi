@@ -11,7 +11,7 @@ import izumi.distage.model.exceptions.dsl.InvalidFunctoidModifier
 import izumi.distage.model.providers.{Functoid, FunctoidBindImplicitsVersionSpecific}
 import izumi.distage.model.reflection.{DIKey, MultiSetImplId, SetKeyMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
-import izumi.reflect.Tag
+import izumi.reflect.{Tag, TagK}
 
 import scala.annotation.nowarn
 import scala.collection.mutable
@@ -51,13 +51,21 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
     _bindDSLAfterFrom[T](ref)
   }
 
-  /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]] */
-  final protected def makeSubcontext[T: Tag](submodule: ModuleBase): SubcontextDSL[T] = {
-    val ref = _registered(new SubcontextRef(Bindings.subcontext[T](submodule, Functoid.identity[T], Set.empty)))
+  /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]]
+    *
+    * @tparam F effect type to use for Subcontext's Injector. You may either match your outer Injector's effect type
+    *           or use [[distage.Identity]] if the subcontext does not use effect or resource bindings
+    */
+  final protected def makeSubcontext[F[_]: TagK, T: Tag](submodule: ModuleBase): SubcontextDSL[T] = {
+    val ref = _registered(new SubcontextRef(Bindings.subcontext[F, T](submodule, Functoid.identity[T], Set.empty)))
     new SubcontextDSL[T](ref)
   }
-  /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]] */
-  final protected def makeSubcontext[T: Tag]: SubcontextDSL[T] = makeSubcontext[T](ModuleBase.empty)
+  /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]]
+    *
+    * @tparam F effect type to use for Subcontext's Injector. You may either match your outer Injector's effect type
+    *           or use [[distage.Identity]] if the subcontext does not use effect or resource bindings
+    */
+  final protected def makeSubcontext[F[_]: TagK, T: Tag]: SubcontextDSL[T] = makeSubcontext[F, T](ModuleBase.empty)
 
   /**
     * Set bindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
@@ -202,8 +210,8 @@ trait AbstractBindingDefDSL[BindDSL[_], BindDSLAfterFrom[_], SetDSL[_]] extends 
       final protected def _make[T: Tag](provider: Functoid[T])(implicit pos: CodePositionMaterializer): BindDSL[T] = self._make[T](provider)
       final protected def makeTrait[T: Tag: TraitConstructor]: BindDSLAfterFrom[T] = self.makeTrait[T]
       final protected def makeFactory[T: Tag: FactoryConstructor]: BindDSLAfterFrom[T] = self.makeFactory[T]
-      final protected def makeSubcontext[T: Tag](submodule: ModuleBase): SubcontextDSL[T] = self.makeSubcontext[T](submodule)
-      final protected def makeSubcontext[T: Tag]: SubcontextDSL[T] = self.makeSubcontext[T]
+      final protected def makeSubcontext[F[_]: TagK, T: Tag](submodule: ModuleBase): SubcontextDSL[T] = self.makeSubcontext[F, T](submodule)
+      final protected def makeSubcontext[F[_]: TagK, T: Tag]: SubcontextDSL[T] = self.makeSubcontext[F, T]
 
       final protected def many[T](implicit tag: Tag[Set[T]], pos: CodePositionMaterializer): SetDSL[T] = self.many[T]
 
@@ -554,9 +562,9 @@ object AbstractBindingDefDSL {
 
   final class SubcontextRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SubcontextInstruction] = mutable.Queue.empty) extends BindingRef {
     override def interpret(): collection.Seq[ImplBinding] = {
-      require(initial.implementation.isInstanceOf[ImplDef.ContextImpl])
+      require(initial.implementation.isInstanceOf[ImplDef.SubcontextImplDef])
       var b: SingletonBinding[DIKey.BasicKey] = initial
-      def bImpl(): ImplDef.ContextImpl = (b.implementation: @unchecked) match { case implDef: ImplDef.ContextImpl => implDef }
+      def bImpl(): ImplDef.SubcontextImplDef = (b.implementation: @unchecked) match { case implDef: ImplDef.SubcontextImplDef => implDef }
       ops.foreach {
         case SubcontextInstruction.AddTags(tags) =>
           b = b.addTags(tags)

@@ -273,7 +273,9 @@ trait Lifecycle[+F[_], +A] {
   final def void[G[x] >: F[x]: QuasiFunctor]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
 
   @inline final def widen[B >: A]: Lifecycle[F, B] = this
+  @inline final def widen[B](implicit ev: A <:< B): Lifecycle[F, B] = this.asInstanceOf[Lifecycle[F, B]]
   @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, A] = this
+  @inline final def widenF[G[_]](implicit ev: F[Unit] <:< G[Unit]): Lifecycle[G, A] = this.asInstanceOf[Lifecycle[G, A]]
 }
 
 object Lifecycle extends LifecycleInstances {

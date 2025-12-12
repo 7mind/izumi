@@ -23,7 +23,7 @@ package object distage extends Distage {
 
   override type LocatorRef = model.recursive.LocatorRef
 
-  override type Subcontext[A] = izumi.distage.Subcontext[A]
+  override type Subcontext[F[_], A] = izumi.distage.Subcontext[F, A]
 
   override type PlanVerifier = solver.PlanVerifier
   override val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier

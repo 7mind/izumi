@@ -437,7 +437,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(commonReferenceDevFieldDoc == "docstest: field doc")
     }
 
-    "prioritize configs as expected, support system property and system environment overrides" in {
+    "prioritize configs as expected, support system property" in {
       import ConfigTestRole.configTestConfig
 
       TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
@@ -556,11 +556,14 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         assert(configTestConfig.role == 7, "role")
         ()
       }
+    }
 
-      // system environment config overrides
+    "support system environment overrides" in {
+      import ConfigTestRole.configTestConfig
+
       IzOs.osType match {
         case os @ (OsType.Windows | OsType.Unknown) =>
-          println(s"System Environment test not supported on $os")
+          cancel(s"System Environment test not supported on $os")
         case _ =>
           EnvHacker.modifySystemEnvironment(_.put("CONFIG_FORCE_configTest_commonReferenceDev", "25"))
           try {
