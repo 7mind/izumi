@@ -323,7 +323,8 @@ object Izumi {
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) :=
-            Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ scala2Wconf,
+            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ scala2Wconf)
+              .filterNot(_ ==  ("-Ywarn-unused:_": Const)),
           SettingKey(Some(scala213), None) :=
             (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)) ++ scala2Wconf,
           SettingKey(Some(scala300), None) :=
