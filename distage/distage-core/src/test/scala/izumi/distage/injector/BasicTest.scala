@@ -12,6 +12,7 @@ import izumi.distage.model.definition.errors.{ConflictResolutionError, DIError}
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.reflection.IdContract
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
@@ -562,6 +563,82 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     assert(set.contains(xyz2))
     assert(set.exists(_ != xyz1))
     assert(set.exists(_ != xyz2))
+  }
+
+  "Can use mutation contexts to register and accumulate sets with private ids" in {
+    case class AccumComponent[+T](set: Set[AccumComponent[Any]], elem: T)
+
+    case class DependencyTag(tpe: SafeType)
+    object DependencyTag {
+      def get[T](implicit tag: Tag[AccumComponent[T]]): DependencyTag = DependencyTag(SafeType.get[AccumComponent[T]])
+
+      implicit def tagIdContract: IdContract[DependencyTag] = new IdContract[DependencyTag] {
+        override def repr(v: DependencyTag): String = s"container:${v.tpe}"
+      }
+    }
+
+    object AccumComponent {
+      def make[T: Tag](implicit mutateModule: ModuleDefDSL#MutationContext): Functoid[AccumComponent[T]] = {
+        new mutateModule.dsl {
+          many[AccumComponent[Any]]
+            .named(DependencyTag.get[T])
+        }
+        ClassConstructor[AccumComponent[T]]
+          .annotateParameter[Set[AccumComponent[Any]]](DependencyTag.get[T])
+      }
+
+      implicit class FunctoidOps[T](private val target: Functoid[AccumComponent[T]]) {
+        def addDependencyOn[D: Tag](implicit tag: Tag[T], mutateModule: ModuleDefDSL#MutationContext): Functoid[AccumComponent[T]] = {
+          addToAccumSet[D]
+          target.addDependency[AccumComponent[D]]
+        }
+
+        private def addToAccumSet[D: Tag](implicit tag: Tag[T], mutateModule: ModuleDefDSL#MutationContext): Unit = {
+          new mutateModule.dsl {
+            many[AccumComponent[Any]]
+              .named(DependencyTag.get[T])
+              .ref[AccumComponent[D]]
+          }.discard()
+        }
+      }
+    }
+
+    val definition = new ModuleDef {
+      make[AccumComponent[Byte]].from {
+        AccumComponent
+          .make[Byte]
+          .addDependencyOn[Int]
+          .addDependencyOn[String]
+          .addDependencyOn[Boolean]
+      }
+
+      make[AccumComponent[Int]].from {
+        AccumComponent
+          .make[Int]
+          .addDependencyOn[String]
+          .addDependencyOn[Boolean]
+      }
+      make[AccumComponent[String]].from {
+        AccumComponent
+          .make[String]
+          .addDependencyOn[Boolean]
+      }
+      make[AccumComponent[Boolean]].from {
+        AccumComponent
+          .make[Boolean]
+      }
+
+      make[Byte].from(8.toByte)
+      make[Int].from(5)
+      make[String].from("abc")
+      make[Boolean].from(true)
+    }
+
+    val locator = mkInjector().produce(definition, Roots.target[AccumComponent[Byte]]).unsafeGet()
+
+    val accumComponent = locator.get[AccumComponent[Byte]]
+
+    assert(accumComponent.set.map(_.elem) == Set(5, "abc", true))
   }
 
   "stack does not overflow when producing very large dependency chains" in {
