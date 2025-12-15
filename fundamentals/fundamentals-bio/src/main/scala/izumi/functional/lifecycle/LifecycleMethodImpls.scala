@@ -1,6 +1,6 @@
 package izumi.functional.lifecycle
 
-import izumi.functional.bio.data.RestoreInterruption1
+import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
 import izumi.functional.quasi.{QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
 
 private[lifecycle] object LifecycleMethodImpls {
@@ -156,6 +156,15 @@ private[lifecycle] object LifecycleMethodImpls {
             }
         }
       }
+    }
+  }
+
+  @inline final def mapKImpl[F[_], G[_], A](self: Lifecycle[F, A], f: Morphism1[F, G]): Lifecycle[G, A] = {
+    new Lifecycle[G, A] {
+      override type InnerResource = self.InnerResource
+      override def acquire: G[InnerResource] = f(self.acquire)
+      override def release(res: InnerResource): G[Unit] = f(self.release(res))
+      override def extract[B >: A](res: InnerResource): Either[G[B], B] = self.extract(res).left.map(f(_))
     }
   }
 

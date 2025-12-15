@@ -181,7 +181,7 @@ import scala.annotation.unused
   *
   * And inject successfully using `make[A].fromResource[A.Resource[F]]` syntax of [[izumi.distage.model.definition.dsl.ModuleDefDSL]].
   *
-  * The following helpers ease defining `Lifecycle` sub-classes using traditional inheritance where `acquire`/`release` parts are defined as methods:
+  * The following helpers ease defining `Lifecycle` subclasses using traditional inheritance where `acquire`/`release` parts are defined as methods:
   *
   *  - [[Lifecycle.Basic]]
   *  - [[Lifecycle.Simple]]
@@ -191,6 +191,7 @@ import scala.annotation.unused
   *  - [[Lifecycle.SelfNoClose]]
   *  - [[Lifecycle.NoClose]]
   *
+  * @see [[Lifecycle.SyntaxUse.use]] - main entrypoint
   * @see [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource ModuleDef.fromResource]]
   * @see [[https://typelevel.org/cats-effect/datatypes/resource.html cats.effect.Resource]]
   * @see [[https://zio.dev/1.0.18/reference/resource/zmanaged/ zio.managed.ZManaged]]
@@ -271,6 +272,9 @@ trait Lifecycle[+F[_], +A] {
     wrapRelease[G]((release, res) => QuasiApplicative[G].map2(f(res), release(res))((_, _) => ()))
 
   final def void[G[x] >: F[x]: QuasiFunctor]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
+
+  final def mapK[G[x] >: F[x], H[_]](f: Morphism1[G, H]): Lifecycle[H, A] =
+    LifecycleMethodImpls.mapKImpl[G, H, A](this, f)
 
   @inline final def widen[B >: A]: Lifecycle[F, B] = this
   @inline final def widen[B](implicit ev: A <:< B): Lifecycle[F, B] = this.asInstanceOf[Lifecycle[F, B]]
@@ -428,6 +432,20 @@ object Lifecycle extends LifecycleInstances {
   }
 
   implicit final class SyntaxUse[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
+    /**
+      * The main entrypoint for using a Lifecycle
+      *
+      * @example
+      * {{{
+      * open(file1).use {
+      *   reader1 =>
+      *     open(file2).use {
+      *       reader2 =>
+      *         readFiles(reader1, reader2)
+      *     }
+      * }
+      * }}}
+      */
     def use[G[x] >: F[x], B](use: A => G[B])(implicit F: QuasiPrimitives[G]): G[B] = {
       F.bracket(acquire = resource.acquire)(release = resource.release)(
         use = a =>
@@ -439,8 +457,8 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  // workaround for inference issues for Identity on Scala 3 only
   implicit final class SyntaxUseIdentity[+A](private val resource: Lifecycle[Identity, A]) extends AnyVal {
+    /** workaround for inference issues on Scala 3 for [[Lifecycle.SyntaxUse#use]] when F = Identity */
     def use[B](use: A => B)(implicit F: QuasiPrimitives[Identity]): B = {
       SyntaxUse[Identity, A](resource).use[Identity, B](use)(using F)
     }
@@ -579,19 +597,6 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  implicit final class SyntaxLifecycleMapK[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    def mapK[G[x] >: F[x], H[_]](f: Morphism1[G, H]): Lifecycle[H, A] = {
-      new Lifecycle[H, A] {
-        override type InnerResource = resource.InnerResource
-        override def acquire: H[InnerResource] = f(resource.acquire)
-        override def release(res: InnerResource): H[Unit] = f(resource.release(res))
-        override def extract[B >: A](res: InnerResource): Either[H[B], B] = resource.extract(res).left.map {
-          (fa: F[A]) => f(fa.asInstanceOf[G[B]])
-        }
-      }
-    }
-  }
-
   implicit final class SyntaxLifecycleCats[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
     /** Convert [[Lifecycle]] to [[cats.effect.Resource]] */
     def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
@@ -651,7 +656,7 @@ object Lifecycle extends LifecycleInstances {
     *   class IntRes extends Lifecycle.Of(Lifecycle.pure(1000))
     * }}}
     *
-    * For binding resource values using class syntax in [[ModuleDef]]:
+    * For binding resource values using class syntax in [[distage.ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
@@ -676,7 +681,7 @@ object Lifecycle extends LifecycleInstances {
     *   class IntRes extends Lifecycle.OfCats(Resource.pure(1000))
     * }}}
     *
-    * For binding resource values using class syntax in [[ModuleDef]]:
+    * For binding resource values using class syntax in [[distage.ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
@@ -746,7 +751,7 @@ object Lifecycle extends LifecycleInstances {
     *   )(release = _ => IO.unit)
     * }}}
     *
-    * For binding resources using class syntax in [[ModuleDef]]:
+    * For binding resources using class syntax in [[distage.ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
@@ -768,7 +773,7 @@ object Lifecycle extends LifecycleInstances {
     *   class IntRes extends Lifecycle.Make_(IO(1000))(IO.unit)
     * }}}
     *
-    * For binding resources using class syntax in [[ModuleDef]]:
+    * For binding resources using class syntax in [[distage.ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
@@ -785,7 +790,7 @@ object Lifecycle extends LifecycleInstances {
     *   class IntRes extends Lifecycle.MakePair(IO(1000 -> IO.unit))
     * }}}
     *
-    * For binding resources using class syntax in [[ModuleDef]]:
+    * For binding resources using class syntax in [[distage.ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
@@ -806,7 +811,7 @@ object Lifecycle extends LifecycleInstances {
     *   class IntRes extends Lifecycle.LiftF(acquire = IO(1000))
     * }}}
     *
-    * For binding resources using class syntax in [[ModuleDef]]:
+    * For binding resources using class syntax in [[distage.ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
@@ -833,7 +838,7 @@ object Lifecycle extends LifecycleInstances {
     *   )
     * }}}
     *
-    * For binding resources using class syntax in [[ModuleDef]]:
+    * For binding resources using class syntax in [[distage.ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
@@ -852,7 +857,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     *
-    * For binding resource values using class syntax in [[ModuleDef]]:
+    * For binding resource values using class syntax in [[distage.ModuleDef]]:
     *
     * {{{
     *   val module = new ModuleDef {
