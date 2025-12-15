@@ -63,8 +63,8 @@ object MakeMacro {
         }
       }.foldOverTree(None, t)(Symbol.noSymbol)
         .getOrElse {
-          report.errorAndAbort("You MUST enable -Yretain-trees compiler option for distage to work! " +
-            s"Couldn't find position=$p in tree=${t.show}, all positions=${allPos(t)}")
+          report.errorAndAbort("You MUST enable -Yretain-trees compiler option for distage to work!\n" +
+            s"Couldn't find Position=$p\n in Tree=${t.show}\n All positions=${allPos(t)}")
         }
     }
 
