@@ -44,6 +44,8 @@ class SyntaxTest extends AnyWordSpec {
       F.syncThrowable(())
       F.sync(())
       F.never
+      F.orTerminateK
+      F.orTerminateCats
       F.unit: F[Nothing, Unit]
     }
 
@@ -66,6 +68,8 @@ class SyntaxTest extends AnyWordSpec {
       a.flatMap(_ => b).flatMap(_ => F.unit)
       a.guaranteeCase(_ => a.race(b).widenError[Throwable].catchAll(_ => F.unit `orElse` F.uninterruptible(F.race(a, b))).void)
       F.fail("x"): F[String, Unit]
+      F.orTerminateK
+      F.orTerminateCats
       F.unit: F[Nothing, Unit]
     }
 

@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
 import cats.~>
-import izumi.functional.bio.data.RestoreInterruption2
+import izumi.functional.bio.data.{Morphism1, RestoreInterruption2}
 
 trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
   def terminate(v: => Throwable): F[Nothing, Nothing]
@@ -99,6 +99,10 @@ trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
     catchAll(r)(terminate(_))
   }
 
+  @inline final def orTerminateK: Morphism1[F[Throwable, _], F[Nothing, _]] = {
+    Morphism1(orTerminate)
+  }
+
   /** @note Will return either [[Exit.Success]], [[Exit.Error]] or [[Exit.Termination]].
    *       [[Exit.Interruption]] cannot be sandboxed. Use [[guaranteeOnInterrupt]] for cleanups on interruptions. */
   @inline final def sandboxExit[E, A](r: F[E, A]): F[Nothing, Exit.Uninterrupted[E, A]] = {
@@ -117,8 +121,8 @@ trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
 
 private[bio] sealed trait PanicSyntax
 object PanicSyntax {
-  implicit final class PanicOrTerminateK[F[+_, +_]](private val F: Panic2[F]) extends AnyVal {
-    def orTerminateK[R]: F[Throwable, _] ~> F[Nothing, _] = {
+  implicit final class PanicOrTerminateCats[F[+_, +_]](private val F: Panic2[F]) extends AnyVal {
+    def orTerminateCats: F[Throwable, _] ~> F[Nothing, _] = {
       new (F[Throwable, _] ~> F[Nothing, _]) {
         override def apply[A](fa: F[Throwable, A]): F[Nothing, A] = F.orTerminate(fa)
       }
