@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.functional.quasi.*
 import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesLocal2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
+import izumi.functional.bio.{Async2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesLocal2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2, WeakAsync2, WeakTemporal2}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{TagK, TagKK}
 
@@ -79,8 +79,10 @@ object AnyBIOSupportModule extends ModuleDef {
     include(AnyBIOSupportModule[F])
 
     addImplicit[Async2[F]]
+    addImplicit[WeakAsync2[F]]
     addImplicit[Fork2[F]]
     addImplicit[Temporal2[F]]
+    addImplicit[WeakTemporal2[F]]
     addImplicit[Primitives2[F]]
     addImplicit[PrimitivesM2[F]]
     addImplicit[PrimitivesLocal2[F]]

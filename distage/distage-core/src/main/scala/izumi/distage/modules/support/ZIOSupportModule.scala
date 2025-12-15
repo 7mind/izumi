@@ -84,21 +84,28 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   make[ExecutionContext].named("io").from((_: Executor @Id("io")).asExecutionContext)
 
   addImplicit[Async2[zio.IO]]
+  addImplicit[WeakAsync2[zio.IO]]
   addImplicit[Temporal2[zio.IO]]
+  addImplicit[WeakTemporal2[zio.IO]]
   addImplicit[Fork2[zio.IO]]
   addImplicit[Primitives2[zio.IO]]
   addImplicit[PrimitivesM2[zio.IO]]
   addImplicit[PrimitivesLocal2[zio.IO]]
+  make[Scheduler2[zio.IO]].from {
+    SchedulerInstances.SchedulerFromTemporalAndClock[zio.IO](using _: Temporal2[zio.IO], _: Clock2[zio.IO])
+  }
   if (!(Tag[R] =:= Tag[Any])) {
     addImplicit[Async2[ZIO[R, +_, +_]]]
+    addImplicit[WeakAsync2[ZIO[R, +_, +_]]]
     addImplicit[Temporal2[ZIO[R, +_, +_]]]
+    addImplicit[WeakTemporal2[ZIO[R, +_, +_]]]
     addImplicit[Fork2[ZIO[R, +_, +_]]]
     addImplicit[Primitives2[ZIO[R, +_, +_]]]
+    addImplicit[PrimitivesM2[ZIO[R, +_, +_]]]
     addImplicit[PrimitivesLocal2[ZIO[R, +_, +_]]]
-  }
-
-  make[Scheduler2[ZIO[R, +_, +_]]].from {
-    SchedulerInstances.SchedulerFromTemporalAndClock(using _: Temporal2[ZIO[R, +_, +_]], _: Clock2[ZIO[R, +_, +_]])
+    make[Scheduler2[ZIO[R, +_, +_]]].from {
+      SchedulerInstances.SchedulerFromTemporalAndClock[ZIO[R, +_, +_]](using _: Temporal2[ZIO[R, +_, +_]], _: Clock2[ZIO[R, +_, +_]])
+    }
   }
 
   addImplicit[TransZio[IO]]

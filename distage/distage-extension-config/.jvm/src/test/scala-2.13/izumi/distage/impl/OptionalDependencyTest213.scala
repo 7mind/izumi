@@ -1,7 +1,7 @@
 package izumi.distage.impl
 
 import izumi.functional.bio.impl.BioEither
-import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2, BlockingIO2, Bracket2, Concurrent2, Error2, Fork2, Functor2, Guarantee2, IO2, Monad2, Panic2, Parallel2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2}
+import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2, BlockingIO2, Bracket2, Concurrent2, Error2, Fork2, Functor2, Guarantee2, IO2, Monad2, Panic2, Parallel2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2, WeakAsync2, WeakTemporal2}
 import org.scalatest.wordspec.AnyWordSpec
 
 class OptionalDependencyTest213 extends AnyWordSpec {
@@ -23,7 +23,9 @@ class OptionalDependencyTest213 extends AnyWordSpec {
     assert(new optSearch2[Parallel2].find == null)
     assert(new optSearch2[IO2].find == null)
     assert(new optSearch2[Async2].find == null)
+    assert(new optSearch2[WeakAsync2].find == null)
     assert(new optSearch2[Temporal2].find == null)
+    assert(new optSearch2[WeakTemporal2].find == null)
     assert(new optSearch2[Concurrent2].find == null)
 
     assert(new optSearch2[Fork2].find == null)

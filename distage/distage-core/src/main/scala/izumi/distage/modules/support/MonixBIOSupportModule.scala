@@ -43,9 +43,11 @@
 //  make[IO.Options].from(IO.defaultOptions)
 //
 //  addImplicit[Async2[IO]]
+//  addImplicit[WeakAsync2[IO]]
 //  make[Temporal2[IO]].from {
 //    implicit T: Timer[UIO] => implicitly[Temporal2[IO]]
 //  }
+//  make[WeakTemporal2[IO]].from((t: Temporal2[IO]) => (t: WeakTemporal2[IO]))
 //  addImplicit[Fork2[IO]]
 //  addImplicit[Primitives2[IO]]
 //  addImplicit[PrimitivesM2[IO]]

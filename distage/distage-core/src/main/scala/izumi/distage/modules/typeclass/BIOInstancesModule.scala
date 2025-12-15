@@ -40,8 +40,10 @@ object BIOInstancesModule {
     include(BIOInstancesModule[F])
 
     addImplicit[Async2[F]]
+    addImplicit[WeakAsync2[F]]
     addImplicit[Fork2[F]]
     addImplicit[Temporal2[F]]
+    addImplicit[WeakTemporal2[F]]
     addImplicit[Primitives2[F]]
     addImplicit[PrimitivesM2[F]]
     addImplicit[PrimitivesLocal2[F]]
