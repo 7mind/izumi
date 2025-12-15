@@ -164,7 +164,7 @@ private[lifecycle] object LifecycleMethodImpls {
       override type InnerResource = self.InnerResource
       override def acquire: G[InnerResource] = f(self.acquire)
       override def release(res: InnerResource): G[Unit] = f(self.release(res))
-      override def extract[B >: A](res: InnerResource): Either[G[B], B] = self.extract(res).left.map(f(_))
+      override def extract[B >: A](res: InnerResource): Either[G[B], B] = self.extract(res).left.map(fa => f(fa.asInstanceOf[F[B]]))
     }
   }
 
