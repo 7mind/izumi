@@ -95,7 +95,6 @@ object TestTreeRunner {
             )(release =
               _ =>
                 F.maybeSuspend {
-                  println(s"AAAAA\nAAAAA : $id = $depth = ${suiteData.meta}")
                   reporter.endLevel(id, depth, suiteData.meta)
                 }
             ) {

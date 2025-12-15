@@ -71,7 +71,6 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
           }
         } catch {
           case t: Throwable =>
-            println("TESTS--INTERRUPTED-future-spawn-catch")
             runtimeLifecycle.release(alloc)
             asyncSuitesHandle.completeOuterSuite(Some(t))
             asyncSuitesHandle.completeAllSuitesIfGlobal()

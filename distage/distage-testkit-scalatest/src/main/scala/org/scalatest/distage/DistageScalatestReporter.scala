@@ -49,7 +49,7 @@ class DistageScalatestReporter(
       s =>
         s.setCompleted()
         println(s"!!! suite status set for ${id.suiteId}")
-        // FIXME WTF SHOULDNT BE IN REPORTER ???
+        // FIXME SHOULDN'T BE IN REPORTER ???
     }
   }
 

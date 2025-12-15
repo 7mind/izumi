@@ -1,6 +1,8 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
+import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, SuiteId}
+import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
@@ -30,7 +32,8 @@ object DistageTestsRegistrySingleton {
 
   def collectAllTestkitTests[F[_]](instance: DistageScalatestTestSuiteRunner[F], isSbt: Boolean): Option[List[DistageTest[AnyF]]] = {
     if (DistageTestsRegistrySingleton.permittedToRun()) {
-      println(s"Launching tests from $instance")
+      val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestsRegistrySingleton.type](DebugProperties.`izumi.distage.testkit.debug`.name)
+      debugLogger.log(s"Launching tests from $instance")
 
       val instantiatedClassNames = DistageTestsRegistrySingleton.currentInstantiatedSuites().map(_.suite.getClass.getName)
       val discoveredClassNames: Set[String] = Runner.discoveredSuites.getOrElse {
@@ -57,16 +60,16 @@ object DistageTestsRegistrySingleton {
 
       val allSuites = DistageTestsRegistrySingleton.currentInstantiatedSuites().map(_.suite)
 
-      println(s"XXX INSTANTIATED NEW SUITES = ${allSuites.map(_.getClass.getName).toSet -- instantiatedClassNames}")
+      debugLogger.log(s"Instantiated new suites ${allSuites.map(_.getClass.getName).toSet -- instantiatedClassNames}")
 
       import izumi.fundamentals.platform.strings.IzString.toRichIterable
-      println(s"found Suites (in $instance): ${allSuites.niceList()}")
+      debugLogger.log(s"found Suites (in $instance): ${allSuites.niceList()}")
 
       // Gather tests from all suite instances for single-runner execution
       // All DistageScalatestTestSuiteRunner instances extend WithSingletonTestRegistration
       val allTests = allSuites.flatMap(_.registeredTests())
 
-      println(s"Gathered ${allTests.size} tests from ${allSuites.size} suites (global memoization mode)")
+      debugLogger.log(s"Gathered ${allTests.size} tests from ${allSuites.size} suites (global memoization mode)")
 
       Some(allTests)
     } else {
@@ -90,7 +93,6 @@ object DistageTestsRegistrySingleton {
       instantiatedSuiteHandles
         .getOrElseUpdate(
           suiteId, {
-            println(s"NEWSTATUS for $suiteId")
             InstantiatedSuiteHandle(instance, new StatefulStatus)
           },
         ).status
@@ -101,7 +103,6 @@ object DistageTestsRegistrySingleton {
     instantiatedSuiteHandles.foreach {
       case (suiteName, suiteHandle) =>
         if (!suiteHandle.status.isCompleted()) {
-          println(s"DISASTER? $suiteName didn't complete on its own!")
           suiteHandle.status.setCompleted()
         }
     }
@@ -112,7 +113,6 @@ object DistageTestsRegistrySingleton {
     runningSuiteHandles.getOrElseUpdate(suiteId, Right(suiteReporter)) match {
       case Left(reports) =>
         runningSuiteHandles(suiteId) = Right(suiteReporter)
-        println(s"REGISTERED_SUITEHANDLE for $suiteId")
         reports.foreach(_.apply(suiteReporter))
       case Right(_) =>
     }
@@ -126,7 +126,6 @@ object DistageTestsRegistrySingleton {
         throw t
       },
     )
-    println(s"!!! found instantiated suitehandle for $suiteId")
     f(suiteHandle)
   }
 
@@ -155,10 +154,8 @@ object DistageTestsRegistrySingleton {
   private[dstest] def runReport(suiteId: String)(f: RunningSuiteHandle => Unit): Unit = synchronized {
     runningSuiteHandles.getOrElseUpdate(suiteId, Left(mutable.ArrayBuffer.empty)) match {
       case Left(reports) =>
-        println(s"!!! runnning suitehandle not found for $suiteId report delayed")
         (reports += f).discard()
       case Right(suiteReporter) =>
-        println(s"!!! found running suitehandle for $suiteId")
         f(suiteReporter)
     }
   }

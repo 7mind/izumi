@@ -152,7 +152,6 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         testRunnerRuntime().runTests(asyncGlobalSuitesControl, testReporter, _.isInstanceOf[TestCanceledException], testsToRun)
       } catch {
         case t: Throwable =>
-          println("TESTS--INTERRUPTED-outer-catch")
           asyncGlobalSuitesControl.completeOuterSuite(Some(t))
           asyncGlobalSuitesControl.completeAllSuitesIfGlobal()
           throw t
