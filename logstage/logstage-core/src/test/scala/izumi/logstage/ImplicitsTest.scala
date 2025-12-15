@@ -10,7 +10,6 @@ import logstage.{LogIO, LogIO2}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
-// TODO: scala3
 class ImplicitsTest extends AnyWordSpec {
 
   "create LogIO from IO and Sync" in {
@@ -68,9 +67,9 @@ class ImplicitsTest extends AnyWordSpec {
       _ <- logIO()
       _ <- logThrowable[Suspend2]()
       _ <- syncSafeLogThrowable[Suspend2]()
-      _ <- logIO()(log0)
-      _ <- logThrowable[Suspend2]()(log0)
-      _ <- syncSafeLogThrowable[Suspend2]()(Suspend2.syncSafeInstance)
+      _ <- logIO()(using log0)
+      _ <- logThrowable[Suspend2]()(using log0)
+      _ <- syncSafeLogThrowable[Suspend2]()(using Suspend2.syncSafeInstance)
       _ <- expectThrowable[Suspend2](log0.info(""))
     } yield ()
   }

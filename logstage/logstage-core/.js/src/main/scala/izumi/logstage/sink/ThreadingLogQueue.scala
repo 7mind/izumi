@@ -1,31 +1,62 @@
 package izumi.logstage.sink
 
-import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks.*
 import izumi.functional.lifecycle.Lifecycle
+import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.{LogQueue, LogSink}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.annotation.unused
+import scala.collection.mutable
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
-class ThreadingLogQueue(sleepTime: FiniteDuration, batchSize: Int) extends LogQueue with AutoCloseable {
-  (sleepTime, batchSize).discard()
-  def start(): Unit = {}
+class ThreadingLogQueue(@unused sleepTime: FiniteDuration, @unused batchSize: Int) extends LogQueue with AutoCloseable {
+  private var started = false
+  private var queuedMsgs: mutable.Queue[(LogSink, Log.Entry)] = null
 
-  override def append(entry: Log.Entry, target: LogSink): Unit = {
-    target.flush(entry)
+  def start(): Unit = {
+    synchronized {
+      started = true
+      flushQueued()
+    }
   }
 
-  override def close(): Unit = {}
+  override def append(entry: Log.Entry, target: LogSink): Unit = {
+    if (started) {
+      flushQueued()
+      target.flush(entry)
+    } else {
+      synchronized {
+        if (queuedMsgs eq null) {
+          queuedMsgs = mutable.Queue.empty
+        }
+        queuedMsgs += (target -> entry)
+        ()
+      }
+    }
+  }
+
+  override def close(): Unit = {
+    synchronized {
+      flushQueued()
+      started = false
+    }
+  }
+
+  protected def flushQueued(): Unit = {
+    synchronized {
+      if ((queuedMsgs ne null) && queuedMsgs.nonEmpty) {
+        queuedMsgs.removeAll().foreach { case (tgt, ent) => tgt.flush(ent) }
+      }
+    }
+  }
 }
 
 object ThreadingLogQueue {
-  def resource(sleepTime: FiniteDuration = scala.concurrent.duration.DurationInt(50).millis, batchSize: Int = 100): Lifecycle[Identity, ThreadingLogQueue] = Lifecycle
-    .make[Identity, ThreadingLogQueue] {
+  def resource(sleepTime: FiniteDuration = 50.millis, batchSize: Int = 100): Lifecycle[Identity, ThreadingLogQueue] = {
+    Lifecycle.fromAutoCloseable[ThreadingLogQueue] {
       val buffer = new ThreadingLogQueue(sleepTime, batchSize)
       buffer.start()
       buffer
-    } {
-      buffer => buffer.close()
     }
+  }
 }

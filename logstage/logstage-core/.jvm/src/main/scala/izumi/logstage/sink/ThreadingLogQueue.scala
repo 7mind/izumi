@@ -17,14 +17,13 @@ import scala.concurrent.duration.*
 object ThreadingLogQueue {
   case class LoggingAction(entry: Log.Entry, target: LogSink)
 
-  def resource(sleepTime: FiniteDuration = 50.millis, batchSize: Int = 100): Lifecycle[Identity, ThreadingLogQueue] = Lifecycle
-    .make[Identity, ThreadingLogQueue] {
+  def resource(sleepTime: FiniteDuration = 50.millis, batchSize: Int = 100): Lifecycle[Identity, ThreadingLogQueue] = {
+    Lifecycle.fromAutoCloseable[ThreadingLogQueue] {
       val buffer = new ThreadingLogQueue(sleepTime, batchSize)
       buffer.start()
       buffer
-    } {
-      _.close()
     }
+  }
 }
 
 class ThreadingLogQueue(sleepTime: FiniteDuration, batchSize: Int) extends LogQueue with AutoCloseable {
