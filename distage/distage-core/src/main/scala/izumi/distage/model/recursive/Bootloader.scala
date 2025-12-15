@@ -38,7 +38,7 @@ class Bootloader(
     val bootstrap = config.bootstrap(bootstrapModule)
     val locatorPrivacy = config.locatorPrivacy(input.locatorPrivacy)
 
-    val injector = injectorFactory(
+    val injector = injectorFactory[Identity](
       bootstrapActivation = config.bootstrapActivation(bootstrapActivation),
       bootstrapOverrides = Seq(bootstrap),
       locatorPrivacy = locatorPrivacy,

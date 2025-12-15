@@ -5,7 +5,7 @@ import izumi.distage.model.providers.Functoid
 import scala.annotation.targetName
 import scala.language.implicitConversions
 
-trait FunctoidMacroMethods extends ByNameConversion {
+trait FunctoidMacroMethods extends FunctoidMacroByNameConversion {
   import FunctoidMacro.make
 
   inline implicit def apply[R](inline fun: () => R): Functoid[R] = make[R](fun)
@@ -57,7 +57,7 @@ trait FunctoidMacroMethods extends ByNameConversion {
     make[R](fun)
 }
 
-trait ByNameConversion {
+trait FunctoidMacroByNameConversion {
   /**
     * Allow conversion from argument-less blocks, but only within a `bindImplicits` block
     *
