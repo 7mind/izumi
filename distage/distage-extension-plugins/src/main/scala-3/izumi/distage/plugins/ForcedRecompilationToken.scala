@@ -32,16 +32,68 @@ object ForcedRecompilationToken {
 
   object UniqueRecompilationTokenMacro {
     final val compilerLaunchId = java.util.UUID.randomUUID().toString
+    var cachedTypedTree: Quotes#reflectModule#Term | Null = null
 
     // TODO: research if caching typed trees optimization is possible and meaningful in Dotty
-    def materializeImpl[T](using quotes: Quotes): Expr[ForcedRecompilationToken[T]] = {
-      import quotes.reflect.*
-      val typeTree = ConstantType(StringConstant(compilerLaunchId))
-      typeTree.asType.asInstanceOf[Type[T]] match {
-        case given Type[uuid] =>
-          '{ null.asInstanceOf[ForcedRecompilationToken[uuid]] }
+    //       I'm not sure whether `cachedTypedTree` used here _actually_ avoids retyping or not at all
+    def materializeImpl[T](using qctx: Quotes): Expr[ForcedRecompilationToken[T]] = {
+      import qctx.reflect.*
+
+      UniqueRecompilationTokenMacro.synchronized {
+        if (cachedTypedTree eq null) {
+          val tree = {
+            def charToType(c: Char): TypeRepr = c match {
+              case '1' => TypeRepr.of[_root_.scala.Product1.type]
+              case '2' => TypeRepr.of[_root_.scala.Product2.type]
+              case '3' => TypeRepr.of[_root_.scala.Product3.type]
+              case '4' => TypeRepr.of[_root_.scala.Product4.type]
+              case '5' => TypeRepr.of[_root_.scala.Product5.type]
+              case '6' => TypeRepr.of[_root_.scala.Product6.type]
+              case '7' => TypeRepr.of[_root_.scala.Product7.type]
+              case '8' => TypeRepr.of[_root_.scala.Product8.type]
+              case '9' => TypeRepr.of[_root_.scala.Product9.type]
+              case '0' => TypeRepr.of[_root_.scala.Product10.type]
+              case 'a' => TypeRepr.of[_root_.scala.Int]
+              case 'b' => TypeRepr.of[_root_.scala.Long]
+              case 'c' => TypeRepr.of[_root_.scala.Short]
+              case 'd' => TypeRepr.of[_root_.scala.Byte]
+              case 'e' => TypeRepr.of[_root_.scala.Double]
+              case 'f' => TypeRepr.of[_root_.scala.Boolean]
+            }
+
+            val uuidEncodedAsEithersTpe = compilerLaunchId.filterNot(_ == '-').foldRight(TypeRepr.of[_root_.scala.Unit]) {
+              (c, t) => TypeRepr.of[scala.util.Either].appliedTo(List(charToType(c), t))
+            }
+            val appliedTpe = TypeRepr.of[ForcedRecompilationToken].appliedTo(uuidEncodedAsEithersTpe)
+
+            Typed(Literal(NullConstant()), TypeTree.of(using appliedTpe.asType))
+          }
+          cachedTypedTree = tree
+        }
+        cachedTypedTree.asInstanceOf[qctx.reflect.Term].asExpr.asInstanceOf[Expr[ForcedRecompilationToken[T]]]
       }
     }
   }
+
+  // an implementation for better days!
+  // As of December 2025, Intellij "Incrementality type: IDEA" doesn't regard changes in singleton types as "real",
+  // so instead we have to use the trick above to encode the UUID as Eithers. (on Scala 3 either!)
+  // For sbt / zinc, the situation is even worse as it doesn't even recognize full-blown
+  // changes to a class' super-class, but there's nothing we could do workaround that.
+  // See zinc issue: https://github.com/sbt/zinc/issues/1574
+  // ^ same comment as 5 years ago, but it was Scala 2 at that time witH the same issue.
+
+//  object UniqueRecompilationTokenMacro {
+//    final val compilerLaunchId = java.util.UUID.randomUUID().toString
+//
+//    def materializeImpl[T](using quotes: Quotes): Expr[ForcedRecompilationToken[T]] = {
+//      import quotes.reflect.*
+//      val typeTree = ConstantType(StringConstant(compilerLaunchId))
+//      typeTree.asType.asInstanceOf[Type[T]] match {
+//        case given Type[uuid] =>
+//          '{ null.asInstanceOf[ForcedRecompilationToken[uuid]] }
+//      }
+//    }
+//  }
 
 }
