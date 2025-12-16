@@ -11,7 +11,7 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 class ThreadingLogQueue(@unused sleepTime: FiniteDuration, @unused batchSize: Int) extends LogQueue with AutoCloseable {
   private var started = false
-  private var queuedMsgs: mutable.Queue[(LogSink, Log.Entry)] = null
+  private var queuedMsgs: mutable.ListBuffer[(LogSink, Log.Entry)] = null
 
   def start(): Unit = {
     synchronized {
@@ -27,7 +27,7 @@ class ThreadingLogQueue(@unused sleepTime: FiniteDuration, @unused batchSize: In
     } else {
       synchronized {
         if (queuedMsgs eq null) {
-          queuedMsgs = mutable.Queue.empty
+          queuedMsgs = mutable.ListBuffer.empty
         }
         queuedMsgs += (target -> entry)
         ()
@@ -45,7 +45,8 @@ class ThreadingLogQueue(@unused sleepTime: FiniteDuration, @unused batchSize: In
   protected def flushQueued(): Unit = {
     synchronized {
       if ((queuedMsgs ne null) && queuedMsgs.nonEmpty) {
-        queuedMsgs.removeAll().foreach { case (tgt, ent) => tgt.flush(ent) }
+        queuedMsgs.foreach { case (tgt, ent) => tgt.flush(ent) }
+        queuedMsgs.remove(0, queuedMsgs.size)
       }
     }
   }
