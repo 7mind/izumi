@@ -9,8 +9,6 @@ import com.github.sbt.git.SbtGit.GitKeys._
 
 enablePlugins(SbtgenVerificationPlugin)
 
-disablePlugins(AssemblyPlugin)
-
 lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-basics"))
   .settings(
     libraryDependencies ++= Seq(
@@ -239,9 +237,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-basicsJVM` = `fundamentals-basics`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-basicsJS` = `fundamentals-basics`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functional"))
   .dependsOn(
@@ -474,9 +470,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-functionalJVM` = `fundamentals-functional`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-functionalJS` = `fundamentals-functional`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-collections"))
   .dependsOn(
@@ -710,9 +704,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-collectionsJVM` = `fundamentals-collections`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-collectionsJS` = `fundamentals-collections`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-literals"))
   .dependsOn(
@@ -946,9 +938,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-literalsJVM` = `fundamentals-literals`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-literalsJS` = `fundamentals-literals`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-orphans"))
   .dependsOn(
@@ -1186,9 +1176,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-orphansJVM` = `fundamentals-orphans`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-orphansJS` = `fundamentals-orphans`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-language"))
   .dependsOn(
@@ -1431,10 +1419,8 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-languageJVM` = `fundamentals-language`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-languageJS` = `fundamentals-language`.js
   .enablePlugins(ScalaJSBundlerPlugin)
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-platform"))
   .dependsOn(
@@ -1676,7 +1662,6 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-platformJVM` = `fundamentals-platform`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-platformJS` = `fundamentals-platform`.js
   .settings(
     libraryDependencies ++= Seq(
@@ -1684,7 +1669,6 @@ lazy val `fundamentals-platformJS` = `fundamentals-platform`.js
     )
   )
   .enablePlugins(ScalaJSBundlerPlugin)
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functoid"))
   .dependsOn(
@@ -1921,9 +1905,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-functoidJVM` = `fundamentals-functoid`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-functoidJS` = `fundamentals-functoid`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-json-circe"))
   .dependsOn(
@@ -2171,9 +2153,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-json-circeJVM` = `fundamentals-json-circe`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-json-circeJS` = `fundamentals-json-circe`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-bio"))
   .dependsOn(
@@ -2419,14 +2399,12 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-bioJVM` = `fundamentals-bio`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `fundamentals-bioJS` = `fundamentals-bio`.js
   .settings(
     libraryDependencies ++= Seq(
       "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time % Test
     )
   )
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-core-api"))
   .dependsOn(
@@ -2671,9 +2649,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-core-apiJVM` = `distage-core-api`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `distage-core-apiJS` = `distage-core-api`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-proxy-bytebuddy"))
   .dependsOn(
@@ -2894,7 +2870,6 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     Test / packageDoc / publishArtifact := false
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-framework-api"))
   .dependsOn(
@@ -3128,9 +3103,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-framework-apiJVM` = `distage-framework-api`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `distage-framework-apiJS` = `distage-framework-api`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-core"))
   .dependsOn(
@@ -3376,7 +3349,6 @@ lazy val `distage-coreJVM` = `distage-core`.jvm
   .dependsOn(
     `distage-core-proxy-bytebuddy` % "test->compile;compile->compile"
   )
-  .disablePlugins(AssemblyPlugin)
 lazy val `distage-coreJS` = `distage-core`.js
   .settings(
     libraryDependencies ++= Seq(
@@ -3384,7 +3356,6 @@ lazy val `distage-coreJS` = `distage-core`.js
     )
   )
   .enablePlugins(ScalaJSBundlerPlugin)
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-config"))
   .dependsOn(
@@ -3628,7 +3599,6 @@ lazy val `distage-extension-configJVM` = `distage-extension-config`.jvm
       "com.softwaremill.magnolia1_2" %% "magnolia" % V.magnolia
     ) else Seq.empty }
   )
-  .disablePlugins(AssemblyPlugin)
 lazy val `distage-extension-configJS` = `distage-extension-config`.js
   .settings(
     libraryDependencies ++= Seq(
@@ -3638,7 +3608,6 @@ lazy val `distage-extension-configJS` = `distage-extension-config`.js
       "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time % Test
     )
   )
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-logstage"))
   .dependsOn(
@@ -3663,6 +3632,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
       "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
       "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
       "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %%% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -3875,9 +3845,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-extension-logstageJVM` = `distage-extension-logstage`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `distage-extension-logstageJS` = `distage-extension-logstage`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-plugins"))
   .dependsOn(
@@ -4126,9 +4094,7 @@ lazy val `distage-extension-pluginsJVM` = `distage-extension-plugins`.jvm
       "javax.inject" % "javax.inject" % "1" % Test
     )
   )
-  .disablePlugins(AssemblyPlugin)
 lazy val `distage-extension-pluginsJS` = `distage-extension-plugins`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-framework"))
   .dependsOn(
@@ -4383,9 +4349,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-frameworkJVM` = `distage-framework`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `distage-frameworkJS` = `distage-framework`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-framework-docker` = project.in(file("distage/distage-framework-docker"))
   .dependsOn(
@@ -4615,7 +4579,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     Test / packageDoc / publishArtifact := false
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-core"))
   .dependsOn(
@@ -4848,14 +4811,12 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-testkit-coreJVM` = `distage-testkit-core`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `distage-testkit-coreJS` = `distage-testkit-core`.js
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-java-securerandom" % V.scalajs_java_securerandom cross CrossVersion.for3Use2_13
     )
   )
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-scalatest"))
   .dependsOn(
@@ -5110,14 +5071,12 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-testkit-scalatestJVM` = `distage-testkit-scalatest`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `distage-testkit-scalatestJS` = `distage-testkit-scalatest`.js
   .settings(
     libraryDependencies ++= Seq(
       "org.portable-scala" %%% "portable-scala-reflect" % V.portable_scala_reflect cross CrossVersion.for3Use2_13
     )
   )
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file("distage/distage-testkit-scalatest-sbt-module-filtering-test"))
   .dependsOn(
@@ -5338,7 +5297,6 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     publish / skip := true
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("logstage/logstage-core"))
   .dependsOn(
@@ -5577,14 +5535,12 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `logstage-coreJVM` = `logstage-core`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `logstage-coreJS` = `logstage-core`.js
   .settings(
     libraryDependencies ++= Seq(
       "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time
     )
   )
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("logstage/logstage-rendering-circe"))
   .dependsOn(
@@ -5610,6 +5566,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
       "io.circe" %%% "circe-parser" % V.circe % Test,
       "io.circe" %%% "circe-literal" % V.circe % Test,
       "io.circe" %%% "circe-generic" % V.circe % Test,
+      "org.typelevel" %%% "cats-effect" % V.cats_effect % Test,
       "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -5822,9 +5779,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `logstage-rendering-circeJVM` = `logstage-rendering-circe`.jvm
-  .disablePlugins(AssemblyPlugin)
 lazy val `logstage-rendering-circeJS` = `logstage-rendering-circe`.js
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-slf4j"))
   .dependsOn(
@@ -6048,7 +6003,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j"))
   .dependsOn(
@@ -6270,7 +6224,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     Test / packageDoc / publishArtifact := false
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
 
 lazy val `microsite` = project.in(file("doc/microsite"))
   .dependsOn(
@@ -6589,7 +6542,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                 }
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin, SitePreviewPlugin)
-  .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
+  .disablePlugins(ScoverageSbtPlugin)
 
 lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   .settings(
@@ -6809,7 +6762,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
+  .disablePlugins(ScoverageSbtPlugin)
 
 lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
@@ -6819,7 +6772,6 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
     SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `fundamentals-basicsJVM`,
     `fundamentals-basicsJS`,
@@ -6850,7 +6802,6 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `fundamentals-basicsJVM`,
     `fundamentals-functionalJVM`,
@@ -6871,7 +6822,6 @@ lazy val `fundamentals-js` = (project in file(".agg/fundamentals-fundamentals-js
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `fundamentals-basicsJS`,
     `fundamentals-functionalJS`,
@@ -6893,7 +6843,6 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `distage-core-apiJVM`,
     `distage-core-apiJS`,
@@ -6925,7 +6874,6 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `distage-core-apiJVM`,
     `distage-core-proxy-bytebuddy`,
@@ -6948,7 +6896,6 @@ lazy val `distage-js` = (project in file(".agg/distage-distage-js"))
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `distage-core-apiJS`,
     `distage-framework-apiJS`,
@@ -6969,7 +6916,6 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
     SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `logstage-coreJVM`,
     `logstage-coreJS`,
@@ -6986,7 +6932,6 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `logstage-coreJVM`,
     `logstage-rendering-circeJVM`,
@@ -7001,7 +6946,6 @@ lazy val `logstage-js` = (project in file(".agg/logstage-logstage-js"))
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `logstage-coreJS`,
     `logstage-rendering-circeJS`
@@ -7015,7 +6959,6 @@ lazy val `docs` = (project in file(".agg/doc-docs"))
     SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `microsite`
   )
@@ -7027,7 +6970,6 @@ lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `microsite`
   )
@@ -7040,7 +6982,6 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
     SettingKey[Boolean]("ide-skip-project") := true
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `sbt-izumi-deps`
   )
@@ -7052,7 +6993,6 @@ lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `sbt-izumi-deps`
   )
@@ -7064,7 +7004,6 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `fundamentals-jvm`,
     `distage-jvm`,
@@ -7079,7 +7018,6 @@ lazy val `izumi-js` = (project in file(".agg/.agg-js"))
     publish / skip := true,
     SettingKey[Boolean]("ide-skip-project") := true
   )
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `fundamentals-js`,
     `distage-js`,
@@ -7164,7 +7102,6 @@ lazy val `izumi` = (project in file("."))
     ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
   )
   .enablePlugins(SitePreviewPlugin)
-  .disablePlugins(AssemblyPlugin)
   .aggregate(
     `fundamentals`,
     `distage`,

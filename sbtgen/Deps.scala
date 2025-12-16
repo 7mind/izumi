@@ -50,7 +50,6 @@ object Izumi {
     val sbt_unidoc = Version.VExpr("PV.sbt_unidoc")
     val sbt_scoverage = Version.VExpr("PV.sbt_scoverage")
     val sbt_pgp = Version.VExpr("PV.sbt_pgp")
-    val sbt_assembly = Version.VExpr("PV.sbt_assembly")
 
     val scala_js_version = Version.VExpr("PV.scala_js_version")
   }
@@ -217,21 +216,16 @@ object Izumi {
     final val jvmSbt = Seq(jvmPlatformSbt)
   }
 
-  final val assemblyPluginJvm = Plugin("AssemblyPlugin", Platform.Jvm)
-  final val assemblyPluginJs = Plugin("AssemblyPlugin", Platform.Js)
-
   object Projects {
 
     final val plugins = Plugins(
       Seq(Plugin("SitePreviewPlugin")),
-      Seq(assemblyPluginJs, assemblyPluginJvm),
     )
 
     object root {
       final val id = ArtifactId("izumi")
       final val plugins = Plugins(
         enabled = Seq(Plugin("SbtgenVerificationPlugin")),
-        disabled = Seq(Plugin("AssemblyPlugin")),
       )
 
       final val outOfSource = Seq(
@@ -669,7 +663,10 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.extensionLogstage,
-        libs = Seq(zio_core in Scope.Test.all),
+        libs = Seq(
+          cats_effect in Scope.Test.all,
+          zio_core in Scope.Test.all
+        ),
         depends = Seq(Projects.distage.config, Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
@@ -762,6 +759,7 @@ object Izumi {
           circe_parser in Scope.Test.all,
           circe_literal in Scope.Test.all,
           circe_generic in Scope.Test.all,
+          cats_effect in Scope.Test.all,
           zio_core in Scope.Test.all,
         ),
         depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
@@ -952,9 +950,7 @@ object Izumi {
     ) ++ scalatest_all.map(_ in Scope.Test.all),
     rootPlugins = Projects.root.plugins,
     globalPlugins = Projects.plugins,
-    pluginConflictRules = Map(assemblyPluginJvm.name -> true),
     appendPlugins = Defaults.SbtGenPlugins ++ Seq(
-      SbtPlugin("com.eed3si9n", "sbt-assembly", PV.sbt_assembly),
       SbtPlugin("com.github.sbt", "sbt-pgp", PV.sbt_pgp),
       SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
       SbtPlugin("com.github.sbt", "sbt-unidoc", PV.sbt_unidoc),
