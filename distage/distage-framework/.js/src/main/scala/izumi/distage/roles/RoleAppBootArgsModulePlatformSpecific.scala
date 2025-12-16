@@ -4,6 +4,6 @@ import izumi.distage.framework.config.PlanningOptions
 
 trait RoleAppBootArgsModulePlatformSpecific {
   def mkPlanningOptionsPlatformSpecific: PlanningOptions = {
-    PlanningOptions()
+    PlanningOptions.default
   }
 }

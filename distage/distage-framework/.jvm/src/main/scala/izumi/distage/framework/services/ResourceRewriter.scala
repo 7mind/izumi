@@ -1,10 +1,9 @@
 package izumi.distage.framework.services
 
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
-import izumi.distage.model.definition.*
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.ImplDef.DirectImplDef
-import izumi.distage.model.definition.Lifecycle.makeSimple
+import izumi.distage.model.definition.*
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.functional.Identity
@@ -158,12 +157,15 @@ object ResourceRewriter {
   }
 
   final case class RewriteRules(
-    applyRewrites: Boolean = true
+    applyRewrites: Boolean
   )
+  object RewriteRules {
+    def enabled: RewriteRules = RewriteRules(applyRewrites = true)
+  }
 
   /** Like [[Lifecycle.fromAutoCloseable]], but with added logging */
   def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): Lifecycle[Identity, A] = {
-    makeSimple(acquire) {
+    Lifecycle.makeSimple(acquire) {
       ac =>
         logger.info(s"Closing $ac...")
         ac.close()
@@ -172,7 +174,7 @@ object ResourceRewriter {
 
   /** Like [[Lifecycle.fromExecutorService]], but with added logging */
   def fromExecutorService[A <: ExecutorService](logger: IzLogger, acquire: => A): Lifecycle[Identity, A] = {
-    makeSimple(acquire) {
+    Lifecycle.makeSimple(acquire) {
       es =>
         if (!(es.isShutdown || es.isTerminated)) {
           logger.info(s"Stopping $es...")

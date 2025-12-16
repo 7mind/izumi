@@ -34,6 +34,11 @@ final case class EntrypointArgs(
   def findValues(parameter: ArgDef): Vector[RawValue] = values.filter(parameter.name matches _.name)
   def hasFlag(parameter: ArgDef): Boolean = flags.exists(parameter.name matches _.name)
   def hasNoFlag(parameter: ArgDef): Boolean = !hasFlag(parameter)
+
+  def findValue(parameter: Option[ArgDef]): Option[RawValue] = parameter.flatMap(findValue)
+  def findValues(parameter: Option[ArgDef]): Vector[RawValue] = parameter.toVector.flatMap(findValues)
+  def hasFlag(parameter: Option[ArgDef]): Boolean = parameter.fold(false)(hasFlag)
+  def hasNoFlag(parameter: Option[ArgDef]): Boolean = parameter.fold(true)(hasNoFlag)
 }
 object EntrypointArgs {
   def empty: EntrypointArgs = EntrypointArgs(Vector.empty, Vector.empty, Vector.empty, Vector.empty)
@@ -51,9 +56,7 @@ object RawValue {
 
   implicit final class MaybeValueExt(val value: Option[RawValue]) extends AnyVal {
     def asFile: Option[File] = value.map(_.asFile)
-
     def asPath: Option[Path] = asFile.map(_.toPath)
-
     def asString: Option[String] = value.map(_.value)
   }
 }

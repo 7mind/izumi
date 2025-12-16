@@ -19,11 +19,11 @@ object ConfigLocationProvider {
     }
   }
 
-  // ascending priority. application overrides common
+  /** highest priority first, `application` overrides `common` */
   private def defaultBaseConfigs: Seq[String] = Seq("application", "common")
 
+  /** highest priority first, `x.conf` overrides `x-reference.conf` overrides `x-reference-dev.conf` */
   private def defaultConfigReferences(name: String): Seq[ConfigSource] = {
-    // highest priority first, x.conf overrides x-reference.conf
     Seq(
       ConfigSource.Resource(s"$name.conf"),
       ConfigSource.Resource(s"$name-reference.conf"),

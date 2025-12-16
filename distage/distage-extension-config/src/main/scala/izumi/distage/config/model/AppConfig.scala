@@ -2,8 +2,6 @@ package izumi.distage.config.model
 
 import izumi.distage.config.DistageConfigImpl
 
-import java.io.File
-
 final case class AppConfig(
   config: DistageConfigImpl,
   shared: List[ConfigLoadResult.Success],
@@ -23,17 +21,6 @@ object AppConfig {
   val empty: AppConfig = AppConfig(DistageConfigImpl.empty, List.empty, List.empty)
   def provided(config: DistageConfigImpl): AppConfig = AppConfig(config, List.empty, List.empty)
 }
-
-sealed trait GenericConfigSource
-object GenericConfigSource {
-  final case class ConfigFile(file: File) extends GenericConfigSource
-
-  case object ConfigDefault extends GenericConfigSource
-}
-
-final case class RoleConfig(role: String, active: Boolean, configSource: GenericConfigSource)
-
-final case class LoadedRoleConfigs(roleConfig: RoleConfig, loaded: Seq[ConfigLoadResult.Success])
 
 sealed trait ConfigLoadResult {
   def clue: String

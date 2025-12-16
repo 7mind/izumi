@@ -84,7 +84,7 @@ final case class TestConfig(
   configBaseName: String = "test",
   configOverrides: Option[AppConfig] = None,
   bootstrapFactory: BootstrapFactory = BootstrapFactory.Impl,
-  planningOptions: PlanningOptions = PlanningOptions(),
+  planningOptions: PlanningOptions = PlanningOptions.default,
   logLevel: Log.Level = Log.Level.Info,
   debugOutput: Boolean = false,
   activationStrategy: TestActivationStrategy = TestActivationStrategy.LoadConfig(ignoreUnknown = false, warnUnset = true),

@@ -91,6 +91,7 @@ class ZIOZManagedHasInjectionTest extends AnyWordSpec with ScalatestGuards {
                 override val dep1 = d1
                 override val dep2 = d2
                 override val dep3 = d3
+                @nowarn("msg=unused")
                 var acquired = false
               }
               _ <- ZIO.acquireRelease(

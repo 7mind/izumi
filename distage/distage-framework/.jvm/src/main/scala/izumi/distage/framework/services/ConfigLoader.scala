@@ -1,17 +1,18 @@
 package izumi.distage.framework.services
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
+import izumi.distage.config.DistageConfigImpl
 import izumi.distage.config.model.*
 import izumi.distage.model.definition.Id
 import izumi.distage.model.exceptions.DIException
-import izumi.functional.IzEither.*
+import izumi.functional.bio.F
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
-import java.io.{File, FileNotFoundException}
+import java.io.FileNotFoundException
 import scala.annotation.nowarn
 import scala.util.{Failure, Success, Try}
 
@@ -47,57 +48,56 @@ import scala.util.{Failure, Success, Try}
   * @see [[ConfigLocationProvider]]
   * @see [[ConfigLoader.LocalFSImpl]]
   */
-trait ConfigLoader extends AbstractConfigLoader
+trait ConfigLoader {
+  def loadConfig(clue: String): AppConfig
+
+  final def map(f: AppConfig => AppConfig): ConfigLoader = (clue: String) => f(loadConfig(clue))
+}
 
 @nowarn("msg=[uU]nused import")
 object ConfigLoader {
-  def empty: ConfigLoader = (_: String) => AppConfig(ConfigFactory.empty(), List.empty, List.empty)
-
-  import scala.collection.compat.*
-
-  final case class Args(
-    global: Option[File],
-    configs: List[RoleConfig],
-  )
   final class ConfigLoaderException(message: String, val failures: List[Throwable]) extends DIException(message)
+
+  def empty: ConfigLoader = _ => AppConfig(DistageConfigImpl.empty, List.empty, List.empty)
 
   open class LocalFSImpl(
     logger: IzLogger @Id("early"),
     merger: ConfigMerger,
     configLocation: ConfigLocationProvider,
-    args: ConfigArgsProvider,
+    configArgs: ConfigLoaderArgs,
   ) extends ConfigLoader {
+    import scala.collection.compat.*
+
     protected def resourceClassLoader: ClassLoader = getClass.getClassLoader
 
-    def loadConfig(clue: String): AppConfig = {
-      val configArgs = args.args()
-
+    /** @throws ConfigLoaderException if configuration can't be loaded */
+    override def loadConfig(clue: String): AppConfig = {
       val maybeLoadedRoleConfigs = configArgs.configs.map {
         roleConfig =>
-          val references = configLocation.forRole(roleConfig.role).map(loadConfigSource(false, _))
+          val references = configLocation.forRole(roleConfig.role).map(loadConfigSource(isExplicit = false, _))
           val loaded = roleConfig.configSource match {
-            case GenericConfigSource.ConfigFile(file) =>
-              val explicit = Seq(loadConfigSource(true, ConfigSource.File(file)))
+            case RoleConfigSource.ConfigFile(file) =>
+              val explicit = Seq(loadConfigSource(isExplicit = true, ConfigSource.File(file)))
               explicit ++ references
-            case GenericConfigSource.ConfigDefault =>
+            case RoleConfigSource.ConfigDefault =>
               references
           }
           (roleConfig, loaded)
       }
 
-      val loadedCommonExplicitConfigs = configArgs.global.map(ConfigSource.File(_)).map(loadConfigSource(true, _))
-      val loadedCommonReferenceConfigs = configLocation.commonReferenceConfigs.map(loadConfigSource(false, _))
+      val loadedCommonExplicitConfigs = configArgs.global.map(ConfigSource.File(_)).map(loadConfigSource(isExplicit = true, _))
+      val loadedCommonReferenceConfigs = configLocation.commonReferenceConfigs.map(loadConfigSource(isExplicit = false, _))
       val loaded = for {
-        loadedCommonConfigs <- (loadedCommonExplicitConfigs ++ loadedCommonReferenceConfigs).map(_.toEither).toList.biSequenceScalar
-        loadedRoleConfigs <- maybeLoadedRoleConfigs.map {
+        loadedCommonConfigs <- F[Either].traverseAccumErrorsNEList(loadedCommonExplicitConfigs.toList ++ loadedCommonReferenceConfigs)(_.toEither)
+        loadedRoleConfigs <- F[Either].traverseAccumErrors(maybeLoadedRoleConfigs) {
           case (roleConfig, loaded) =>
-            loaded.map(_.toEither).biSequenceScalar match {
+            F[Either].traverseAccumErrorsNEList(loaded)(_.toEither) match {
               case Left(failures) =>
                 Left(failures)
               case Right(configLoadResults) =>
                 Right(LoadedRoleConfigs(roleConfig, configLoadResults))
             }
-        }.biSequence
+        }
       } yield (loadedCommonConfigs, loadedRoleConfigs)
 
       loaded match {
@@ -114,7 +114,7 @@ object ConfigLoader {
     protected def loadConfigSource(isExplicit: Boolean, configSource: ConfigSource): ConfigLoadResult = {
       configSource match {
         case r: ConfigSource.Resource =>
-          def tryLoadResource(): Try[Config] = {
+          def tryLoadResource(): Try[DistageConfigImpl] = {
             Try(ConfigFactory.parseResources(resourceClassLoader, r.name)).flatMap {
               cfg =>
                 if (cfg.origin().resource() eq null) {
@@ -125,30 +125,27 @@ object ConfigLoader {
 
           IzResources(resourceClassLoader).getPath(r.name) match {
             case Some(LoadablePathReference(path, _)) =>
-              doLoad(s"$r (available: $path)", configSource, isExplicit, tryLoadResource())
+              doLoad(s"$r (available: $path)", configSource, isExplicit)(tryLoadResource())
             case Some(UnloadablePathReference(path)) =>
-              doLoad(s"$r (exists: $path)", configSource, isExplicit, tryLoadResource())
+              doLoad(s"$r (exists: $path)", configSource, isExplicit)(tryLoadResource())
             case None =>
-              doLoad(s"$r (missing)", configSource, isExplicit, Success(ConfigFactory.empty()))
+              doLoad(s"$r (missing)", configSource, isExplicit)(Success(DistageConfigImpl.empty))
           }
 
         case f: ConfigSource.File =>
           if (f.file.exists()) {
-            doLoad(
-              s"$f (exists: ${f.file.getCanonicalPath})",
-              configSource,
-              isExplicit,
+            doLoad(s"$f (exists: ${f.file.getCanonicalPath})", configSource, isExplicit) {
               Try(ConfigFactory.parseFile(f.file)).flatMap {
                 cfg => if (cfg.origin().filename() ne null) Success(cfg) else Failure(new FileNotFoundException(s"Couldn't find config file $f"))
-              },
-            )
+              }
+            }
           } else {
-            doLoad(s"$f (missing)", configSource, isExplicit, Failure(new FileNotFoundException(f.file.getCanonicalPath)))
+            doLoad(s"$f (missing)", configSource, isExplicit)(Failure(new FileNotFoundException(f.file.getCanonicalPath)))
           }
       }
     }
 
-    private def doLoad(clue: String, source: ConfigSource, isExplicit: Boolean, loader: => Try[Config]): ConfigLoadResult = {
+    private def doLoad(clue: String, source: ConfigSource, isExplicit: Boolean)(loader: => Try[DistageConfigImpl]): ConfigLoadResult = {
       loader match {
         case Failure(exception) => ConfigLoadResult.Failure(clue, source, isExplicit, exception)
         case Success(value) => ConfigLoadResult.Success(clue, source, isExplicit, value)

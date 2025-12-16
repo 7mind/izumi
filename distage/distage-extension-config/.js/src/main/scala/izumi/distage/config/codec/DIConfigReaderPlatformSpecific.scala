@@ -2,6 +2,7 @@ package izumi.distage.config.codec
 
 import io.circe.{ACursor, Json}
 import izumi.distage.config.DistageConfigImpl
+import izumi.distage.config.codec.DIConfigReaderPlatformSpecific.splitUnquotedConfigPath
 import izumi.distage.config.model.exceptions.DIConfigReadException
 import izumi.reflect.Tag
 
@@ -21,7 +22,7 @@ private[codec] trait DIConfigReaderPlatformSpecific[A] { self: DIConfigReader[A]
 
   override final def decodeConfigWithDefault(path: String)(default: => A)(config: DistageConfigImpl)(implicit tag: Tag[A]): A = {
     unpackResult(config, path) {
-      val pathParts = path.split('.')
+      val pathParts = splitUnquotedConfigPath(path)
       val cursor = pathParts.foldLeft(config.toJson.hcursor: ACursor)(_.downField(_))
 
       cursor.focus match {
@@ -49,4 +50,17 @@ private[codec] trait DIConfigReaderPlatformSpecific[A] { self: DIConfigReader[A]
         value
     }
   }
+}
+
+private[config] object DIConfigReaderPlatformSpecific {
+
+  def splitUnquotedConfigPath(path: String): Array[String] = {
+    if (path.contains('"')) {
+      throw new IllegalArgumentException(
+        "Quoted config paths are not supported in Scala.js version of distage-extension-config. Open a GitHub issue or PR if you need this."
+      )
+    }
+    path.split('.')
+  }
+
 }

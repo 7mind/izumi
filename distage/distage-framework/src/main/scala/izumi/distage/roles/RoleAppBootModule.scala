@@ -34,7 +34,7 @@ import izumi.reflect.TagK
   * 4. Load raw config
   * 5. Create "late logger" using config
   * 6. Enumerate app plugins and bootstrap plugins
-  * 7. Enumerate available roles, show role info and and apply merge strategy/conflict resolution
+  * 7. Enumerate available roles, show role info and apply merge strategy/conflict resolution
   * 8. Validate loaded roles (for non-emptyness and conflicts between bootstrap and app plugins)
   * 9. Build plan for [[izumi.functional.quasi.QuasiIORunner]]
   * 10. Build plan for integration checks
@@ -56,11 +56,13 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
-
-  make[AppShutdownInitiator].using[AppShutdownStrategy[F]]
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
   make[PluginConfig].named("main").fromValue(pluginConfig)
   make[PluginConfig].named("bootstrap").fromValue(bootstrapPluginConfig)
+  make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
+  make[Set[Axis.AxisChoice]].named("unused-valid-axis-choices").fromValue(unusedValidAxisChoices)
+
+  make[AppShutdownInitiator].using[AppShutdownStrategy[F]]
   make[PluginLoader]
     .named("bootstrap")
     .aliased[PluginLoader]("main")
@@ -75,8 +77,6 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
     (loader: PluginLoader @Id("main"), config: PluginConfig @Id("main")) =>
       loader.load(config)
   }
-
-  make[Option[IzArtifact]].named("app.artifact").fromValue(Some(appArtifact))
 
   make[CLIParser].from[CLIParserImpl]
   make[MultiModalArgsParser].from[MultiModalArgsParserImpl]
@@ -142,7 +142,6 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
       rolesInfo.requiredComponents
   }
 
-  make[Set[Axis.AxisChoice]].named("unused-valid-axis-choices").fromValue(unusedValidAxisChoices)
   make[ActivationChoicesExtractor].from[ActivationChoicesExtractor.Impl]
   make[ActivationInfo].from {
     (activationExtractor: ActivationChoicesExtractor, appModule: ModuleBase @Id("main")) =>

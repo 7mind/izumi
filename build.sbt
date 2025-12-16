@@ -127,6 +127,8 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -154,6 +156,8 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -360,6 +364,8 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -387,6 +393,8 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -594,6 +602,8 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -621,6 +631,8 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -828,6 +840,8 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -855,6 +869,8 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -1066,6 +1082,8 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -1093,6 +1111,8 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -1309,6 +1329,8 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -1336,6 +1358,8 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -1549,6 +1573,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -1576,6 +1602,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -1795,6 +1823,8 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -1822,6 +1852,8 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -2041,6 +2073,8 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -2068,6 +2102,8 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -2289,6 +2325,8 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -2316,6 +2354,8 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -2539,6 +2579,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -2566,6 +2608,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -2779,6 +2823,8 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -2806,6 +2852,8 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -2993,6 +3041,8 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -3020,6 +3070,8 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -3233,6 +3285,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -3260,6 +3314,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -3480,6 +3536,8 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -3507,6 +3565,8 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -3735,6 +3795,8 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -3762,6 +3824,8 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -3973,6 +4037,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -4000,6 +4066,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -4239,6 +4307,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -4266,6 +4336,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -4350,6 +4422,11 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-frameworkJVM` = `distage-framework`.jvm
 lazy val `distage-frameworkJS` = `distage-framework`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.circe" %%% "circe-parser" % V.circe
+    )
+  )
 
 lazy val `distage-framework-docker` = project.in(file("distage/distage-framework-docker"))
   .dependsOn(
@@ -4488,6 +4565,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -4515,6 +4594,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -4701,6 +4782,8 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -4728,6 +4811,8 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -4960,6 +5045,8 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -4987,6 +5074,8 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -5205,6 +5294,8 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -5232,6 +5323,8 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -5425,6 +5518,8 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -5452,6 +5547,8 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -5669,6 +5766,8 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -5696,6 +5795,8 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -5909,6 +6010,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -5936,6 +6039,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -6133,6 +6238,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -6160,6 +6267,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -6386,6 +6495,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -6413,6 +6524,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
@@ -6667,6 +6780,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.16") => Seq(
@@ -6694,6 +6809,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(

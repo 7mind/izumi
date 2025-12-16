@@ -1,11 +1,11 @@
 package izumi.logstage.api.routing
 
 import izumi.fundamentals.platform.language.CodePosition
-
-import java.util.concurrent.atomic.AtomicReference
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.sink.ConsoleSink
+
+import java.util.concurrent.atomic.AtomicReference
 
 /**
   * When not configured, `logstage-adapter-slf4j` will log messages with level `>= Info` to `stdout`.

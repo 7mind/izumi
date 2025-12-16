@@ -10,7 +10,7 @@ import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
-import izumi.distage.roles.launcher.LogConfigLoader.LogConfigLoaderImpl
+import izumi.distage.roles.launcher.LoggerConfigLoader.LogConfigLoaderImpl
 import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleAppActivationParser, RouterFactory}
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams

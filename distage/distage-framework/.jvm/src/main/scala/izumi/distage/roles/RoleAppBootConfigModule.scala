@@ -1,17 +1,12 @@
 package izumi.distage.roles
 
-import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.services.{ConfigArgsProvider, ConfigFilteringStrategy, ConfigLoader, ConfigLocationProvider, ConfigMerger}
+import izumi.distage.framework.services.{ConfigFilteringStrategy, ConfigLoader, ConfigLoaderArgs, ConfigLocationProvider, ConfigMerger}
 import izumi.distage.model.definition.ModuleDef
 
 class RoleAppBootConfigModule() extends ModuleDef {
-  make[ConfigLoader].from[ConfigLoader.LocalFSImpl]
+  make[ConfigFilteringStrategy].from[ConfigFilteringStrategy.Default]
   make[ConfigMerger].from[ConfigMerger.ConfigMergerImpl]
   make[ConfigLocationProvider].from(ConfigLocationProvider.Default)
-  make[ConfigArgsProvider].from[ConfigArgsProvider.Default]
-  make[ConfigFilteringStrategy].from[ConfigFilteringStrategy.Default]
-  make[AppConfig].from {
-    (configLoader: ConfigLoader) =>
-      configLoader.loadConfig("application startup")
-  }
+  make[ConfigLoaderArgs].from(ConfigLoaderArgs.fromRoleArgs _)
+  make[ConfigLoader].from[ConfigLoader.LocalFSImpl]
 }

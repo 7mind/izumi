@@ -8,7 +8,7 @@ trait PreparedAppSyntaxPlatformSpecific {
       app.runner.runFuture {
         app.appResource.use {
           appLocator =>
-            app.roleAppEntrypoint.runTasksAndRoles(appLocator, app.effect)
+            app.roleAppEntrypoint.runTasksAndRoles(appLocator, app.effect, app.effectAsync)
         }(using app.effect)
       }
     }

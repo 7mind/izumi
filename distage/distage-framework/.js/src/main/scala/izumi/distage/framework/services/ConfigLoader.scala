@@ -1,9 +1,13 @@
 package izumi.distage.framework.services
 
-import distage.config.AppConfig
+import izumi.distage.config.model.AppConfig
 
-trait ConfigLoader extends AbstractConfigLoader
+trait ConfigLoader {
+  def loadConfig(clue: String): AppConfig
+
+  final def map(f: AppConfig => AppConfig): ConfigLoader = (clue: String) => f(loadConfig(clue))
+}
 
 object ConfigLoader {
-  def empty: ConfigLoader = (_: String) => AppConfig.empty
+  def empty: ConfigLoader = _ => AppConfig.empty
 }

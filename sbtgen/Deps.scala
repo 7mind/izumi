@@ -295,6 +295,8 @@ object Izumi {
         "-Wconf:msg=parameter.*x\\\\$4.in.anonymous.function.is.never.used:silent",
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
         "-Wconf:cat=lint-eta-sam:silent",
       )
       val scala3Wconf = Seq[Const](
@@ -363,6 +365,7 @@ object Izumi {
         ),
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala213), None) := Seq(
+            // have to use Xsource:3 instead of Xsource:3-cross because the latter is not supported on 2.12
             "-Xsource:3",
             "-Xmigration",
             "-Wconf:cat=scala3-migration:silent",
@@ -684,7 +687,8 @@ object Izumi {
       Artifact(
         name = Projects.distage.framework,
         libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(scala3_compiler) ++ Seq(
-          circe_parser in Scope.Test.all
+          circe_parser in Scope.Test.all,
+          circe_parser in Scope.Compile.js,
         ),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++

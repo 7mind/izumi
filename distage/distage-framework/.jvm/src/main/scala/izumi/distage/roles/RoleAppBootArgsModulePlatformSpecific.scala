@@ -6,7 +6,7 @@ import izumi.fundamentals.platform.cli.model.RoleAppArgs
 trait RoleAppBootArgsModulePlatformSpecific {
   def mkPlanningOptionsPlatformSpecific: RoleAppArgs => PlanningOptions = {
     (parameters: RoleAppArgs) =>
-      PlanningOptions(
+      PlanningOptions.default.copy(
         addGraphVizDump = parameters.globalParameters.hasFlag(RoleAppMain.Options.dumpContext)
       )
   }

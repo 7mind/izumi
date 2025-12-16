@@ -15,6 +15,7 @@ import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
 import cats.effect.kernel.Sync
 import cats.effect.IO as CIO
+import izumi.fundamentals.platform.IzPlatform
 import zio.{Task, ZEnvironment, ZIO}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
@@ -107,7 +108,13 @@ object DistageTestExampleBase {
 abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
-    pluginConfig = super.config.pluginConfig.enablePackage("xxx") ++ new izumi.distage.plugins.PluginDef {
+    pluginConfig = (
+      if (IzPlatform.isScalaJS) {
+        super.config.pluginConfig
+      } else {
+        super.config.pluginConfig.enablePackage("xxx")
+      }
+    ) ++ new izumi.distage.plugins.PluginDef {
       make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
 
       make[SetCounter]

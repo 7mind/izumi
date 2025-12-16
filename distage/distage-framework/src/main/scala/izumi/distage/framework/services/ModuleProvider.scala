@@ -108,6 +108,7 @@ object ModuleProvider {
         outerLocator =>
           new ModuleDef {
             make[LocatorRef].named("roleapp").fromValue(outerLocator)
+            // expose RoleAppPlanner and ConfigMerger for ConfigWriter
             make[RoleAppPlanner].from((_: LocatorRef @Id("roleapp")).get.get[RoleAppPlanner])
             make[ConfigMerger].from((_: LocatorRef @Id("roleapp")).get.get[ConfigMerger])
           }

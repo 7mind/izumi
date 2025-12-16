@@ -1,18 +1,18 @@
 package izumi.distage.roles.launcher
 
-import distage.TagK
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.logstage.api.IzLogger
+import izumi.reflect.TagK
 
 trait RoleAppEntrypoint[F[_]] {
-  def runTasksAndRoles(locator: Locator, effect: QuasiIO[F]): F[Unit]
+  def runTasksAndRoles(locator: Locator, effect: QuasiIO[F], effectAsync: QuasiAsync[F]): F[Unit]
 }
 
 object RoleAppEntrypoint {
@@ -23,16 +23,16 @@ object RoleAppEntrypoint {
     hook: AppShutdownStrategy[F],
   ) extends RoleAppEntrypoint[F] {
 
-    override def runTasksAndRoles(locator: Locator, effect: QuasiIO[F]): F[Unit] = {
+    override def runTasksAndRoles(locator: Locator, effect: QuasiIO[F], effectAsync: QuasiAsync[F]): F[Unit] = {
       implicit val F: QuasiIO[F] = effect
       val roleIndex = getRoleIndex(locator)
       for {
         _ <- runTasks(roleIndex)
-        _ <- runRoles(roleIndex)
+        _ <- runRoles(roleIndex)(using F, effectAsync)
       } yield ()
     }
 
-    protected def runRoles(index: Map[String, AbstractRole[F]])(implicit F: QuasiIO[F]): F[Unit] = {
+    protected def runRoles(index: Map[String, AbstractRole[F]])(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit] = {
       val rolesToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {

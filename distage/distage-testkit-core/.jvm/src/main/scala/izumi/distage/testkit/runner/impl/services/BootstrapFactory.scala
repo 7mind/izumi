@@ -1,11 +1,11 @@
 package izumi.distage.testkit.runner.impl.services
 
 import distage.config.AppConfig
-import izumi.distage.config.model.{GenericConfigSource, RoleConfig}
+import izumi.distage.config.model.{RoleConfig, RoleConfigSource}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ConfigMerger.ConfigMergerImpl
-import izumi.distage.framework.services.{ConfigArgsProvider, ConfigFilteringStrategy, ConfigLoader, ConfigLocationProvider, ModuleProvider}
+import izumi.distage.framework.services.{ConfigFilteringStrategy, ConfigLoader, ConfigLoaderArgs, ConfigLocationProvider, ModuleProvider}
 import izumi.distage.model.definition.Activation
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
@@ -40,12 +40,7 @@ object BootstrapFactory {
     }
 
     override def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader = {
-      val argsProvider = ConfigArgsProvider.const(
-        ConfigLoader.Args(
-          None,
-          List(RoleConfig(configBaseName, active = true, GenericConfigSource.ConfigDefault)),
-        )
-      )
+      val configLoaderArgs = ConfigLoaderArgs(global = None, configs = List(RoleConfig(configBaseName, active = true, RoleConfigSource.ConfigDefault)))
       val merger = new ConfigMergerImpl(
         logger,
         enableConfigEnvOverrides = true,
@@ -56,7 +51,7 @@ object BootstrapFactory {
         ),
       )
       val locationProvider = makeConfigLocationProvider(configBaseName)
-      new ConfigLoader.LocalFSImpl(logger, merger, locationProvider, argsProvider)
+      new ConfigLoader.LocalFSImpl(logger, merger, locationProvider, configLoaderArgs)
     }
 
     override def makeModuleProvider[F[_]: TagK](

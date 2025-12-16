@@ -5,7 +5,6 @@ import izumi.fundamentals.platform.language.{CodePosition, CodePositionMateriali
 import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.{AbstractLogger, AbstractLoggerF}
 import izumi.logstage.api.rendering.AnyEncoded
-import izumi.reflect.Tag
 import logstage.LogstageCats.{WrappedLogIO, WrappedLogIOF}
 import zio.{IO, ZIO}
 
@@ -133,7 +132,7 @@ object LogZIO {
     * @param thunk the effect for which context will be passed
     * @return effect with the passed context
     */
-  def withCustomContext[R: Tag, E, A](context: (String, AnyEncoded)*)(thunk: ZIO[R, E, A]): ZIO[R & logstage.LogZIO, E, A] = {
+  def withCustomContext[R, E, A](context: (String, AnyEncoded)*)(thunk: ZIO[R, E, A]): ZIO[R & logstage.LogZIO, E, A] = {
     withCustomContext[R, E, A](CustomContext(context*))(thunk)
   }
 

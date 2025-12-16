@@ -179,7 +179,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
-        options = PlanningOptions(),
+        options = PlanningOptions.default,
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
@@ -216,7 +216,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
-        options = PlanningOptions(),
+        options = PlanningOptions.default,
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
@@ -257,7 +257,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val roots = Set(DIKey.get[Set[TestResource[Identity]]]: DIKey, DIKey.get[Set[TestResource[IO]]]: DIKey)
 
       val roleAppPlanner = new RoleAppPlanner.Impl[IO](
-        options = PlanningOptions(),
+        options = PlanningOptions.default,
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
         bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
