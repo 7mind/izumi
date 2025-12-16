@@ -101,7 +101,7 @@ object DistageTestsRegistrySingleton {
 
   def completeAllStatuses(): Unit = synchronized {
     instantiatedSuiteHandles.foreach {
-      case (suiteName, suiteHandle) =>
+      case (_, suiteHandle) =>
         if (!suiteHandle.status.isCompleted()) {
           suiteHandle.status.setCompleted()
         }

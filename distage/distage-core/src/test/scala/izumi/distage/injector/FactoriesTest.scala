@@ -267,7 +267,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     }
     brokenOnScala3 {
       // assertCompiles breaks on `make` macro
-      assert(!exc.getMessage.contains("Couldn't find position"))
+      assert(!exc.getMessage.contains("Yretain-trees"))
     }
     brokenOnScala3 {
       assert(exc.getMessage.contains("Factory cannot produce factories"))

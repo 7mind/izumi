@@ -112,7 +112,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     }
     brokenOnScala3 {
       // assertCompiles breaks on `make` macro
-      assert(!res.getMessage.contains("Couldn't find position"))
+      assert(!res.getMessage.contains("Yretain-trees"))
     }
     brokenOnScala3 {
       assert(res.getMessage.contains("BadIdAnnotationException"))
