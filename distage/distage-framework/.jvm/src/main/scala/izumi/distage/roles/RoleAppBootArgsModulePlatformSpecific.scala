@@ -4,7 +4,7 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 
 trait RoleAppBootArgsModulePlatformSpecific {
-  def mkPlanningOptions: RoleAppArgs => PlanningOptions = {
+  def mkPlanningOptionsPlatformSpecific: RoleAppArgs => PlanningOptions = {
     (parameters: RoleAppArgs) =>
       PlanningOptions(
         addGraphVizDump = parameters.globalParameters.hasFlag(RoleAppMain.Options.dumpContext)

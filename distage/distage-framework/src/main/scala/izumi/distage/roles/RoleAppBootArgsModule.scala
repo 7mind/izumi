@@ -26,7 +26,7 @@ class RoleAppBootArgsModule(
   }
 
   make[PlanningOptions].from {
-    mkPlanningOptions
+    mkPlanningOptionsPlatformSpecific
   }
 
   make[RoleAppActivationParser].from[RoleAppActivationParser.Impl]

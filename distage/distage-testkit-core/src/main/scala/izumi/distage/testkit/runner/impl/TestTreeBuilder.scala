@@ -25,7 +25,7 @@ object TestTreeBuilder {
 
     override def build[F[_]](planner: Planner, runtimePlan: Plan, packedEnvs: Iterable[PackedEnv[F]]): TestTree[F] = {
       val tree = new MemoizationTreeBuilder[F](planner, runtimePlan)
-      // usually, we have a small amount of levels, so parallel executions make only worse here
+      // usually, we have a small amount of levels, so executing in parallel would only make things worse
       packedEnvs.foreach {
         env =>
           val plans = env.memoizationPlanTree.filter(_.plan.meta.nodes.nonEmpty)

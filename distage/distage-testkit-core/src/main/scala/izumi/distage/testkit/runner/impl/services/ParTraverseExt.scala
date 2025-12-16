@@ -21,7 +21,7 @@ object ParTraverseExt {
   ) extends ParTraverseExt[F] {
     import scala.collection.compat.*
 
-    def groupedParTraverse[A, B](l0: Iterable[A])(getParallelismGroup: A => Parallelism)(f: A => F[B]): F[List[B]] = {
+    override def groupedParTraverse[A, B](l0: Iterable[A])(getParallelismGroup: A => Parallelism)(f: A => F[B]): F[List[B]] = {
       val sorted = l0.groupBy(getParallelismGroup).toList.sortBy {
         case (Parallelism.Unlimited, _) => 1
         case (Parallelism.Fixed(_), _) => 2
