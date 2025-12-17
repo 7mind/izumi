@@ -74,7 +74,7 @@ object RoleProvider {
         case s: ImplBinding if s.tags.exists(_.isInstanceOf[RoleTag]) && checkRoleType(s.implementation.implType, roleType, log = !ignoreMismatchedEffect) =>
           mkRoleBinding(s, s.tags.collectFirst { case RoleTag(roleDescriptor) => roleDescriptor }.get)
 
-        case s: ImplBinding if s.implementation.implType <:< roleType =>
+        case s: ImplBinding if s.implementation.implType <:< roleType && !s.isMutator =>
           handleMissingStaticMetadata(roleType, s)
       }
     }
