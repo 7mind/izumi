@@ -176,7 +176,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
         // use Auto-Traits feature to override just the few specific methods of a class succinctly
         @impl trait NamePredicateRoleProvider extends RoleProvider.NonReflectiveImpl {
           override protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
-            f(b.descriptor.id)
+            f(b.id)
           }
           override protected def getInfo(bindings: Set[Binding], requiredRoles: Set[String], roleType: SafeType): RolesInfo = {
             requiredRoles.discard()

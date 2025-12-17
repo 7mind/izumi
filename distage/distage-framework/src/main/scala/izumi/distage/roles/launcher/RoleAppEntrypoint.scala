@@ -117,7 +117,7 @@ object RoleAppEntrypoint {
         b =>
           rolesLocator.lookupInstance[AbstractRole[F]](b.binding.key) match {
             case Some(value) =>
-              Seq(b.descriptor.id -> value)
+              Seq(b.id -> value)
             case _ =>
               Seq.empty
           }

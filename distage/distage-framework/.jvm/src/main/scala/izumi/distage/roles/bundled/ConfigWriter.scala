@@ -77,7 +77,7 @@ final class ConfigWriter[F[_]: TagK](
     allRoles.foreach {
       role =>
         try {
-          val roleId = role.descriptor.id
+          val roleId = role.id
           val roleVersion = if (options.useLauncherVersion) {
             Some(launcherVersion.version)
           } else {
@@ -106,7 +106,7 @@ final class ConfigWriter[F[_]: TagK](
           writeConfig(options, fileNameMinimized, min.config, Some(min.schema), subLogger)
         } catch {
           case exception: Throwable =>
-            logger.crit(s"Cannot process role ${role.descriptor.id}")
+            logger.crit(s"Cannot process role ${role.id}")
             throw exception
         }
     }

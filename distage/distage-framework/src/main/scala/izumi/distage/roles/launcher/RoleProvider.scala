@@ -40,8 +40,8 @@ object RoleProvider {
       val availableRoleBindings = findRoleBindings(bindings, roleType)
       val requiredRoleBindings = availableRoleBindings.filter(isRoleEnabled(requiredRoles))
 
-      val roleNames = availableRoleBindings.map(_.descriptor.id)
-      val requiredRoleNames = requiredRoleBindings.iterator.map(_.descriptor.id).toSet
+      val roleNames = availableRoleBindings.map(_.id)
+      val requiredRoleNames = requiredRoleBindings.iterator.map(_.id).toSet
       val unrequiredRoleNames = roleNames.diff(requiredRoleNames)
 
       val rolesInfo = RolesInfo(
@@ -53,7 +53,7 @@ object RoleProvider {
         unrequiredRoleNames = unrequiredRoleNames,
       )
 
-      val missing = requiredRoles.diff(availableRoleBindings.map(_.descriptor.id))
+      val missing = requiredRoles.diff(availableRoleBindings.map(_.id))
       if (missing.nonEmpty) {
         logger.crit(s"Missing ${missing.niceList() -> "roles"}")
         throw new DIAppBootstrapException(s"""Unknown roles:${missing.niceList("    ")}
@@ -89,9 +89,9 @@ object RoleProvider {
     }
 
     protected def checkRoleType(implType: SafeType, roleType: SafeType, log: Boolean): Boolean = {
-      val res = implType <:< roleType
-      if (!res && log) logger.warn(s"Found role binding with incompatible effect type $implType (expected to be a subtype of $roleType)")
-      res
+      val isCompatible = implType <:< roleType
+      if (!isCompatible && log) logger.warn(s"Found role binding with incompatible effect type $implType (expected to be a subtype of $roleType)")
+      isCompatible
     }
 
     protected def mkRoleBinding(roleBinding: ImplBinding, roleDescriptor: RoleDescriptor): RoleBinding = {

@@ -25,13 +25,13 @@ object RolesInfo {
     roles =>
       import scala.collection.compat._
 
-      val requestedNames = roles.requiredRoleBindings.map(_.descriptor.id)
+      val requestedNames = roles.requiredRoleBindings.map(_.id)
       ArraySeq
         .unsafeWrapArray {
           roles.availableRoleBindings.iterator.map {
             r =>
-              val active = if (requestedNames.contains(r.descriptor.id)) "[+]" else "[ ]"
-              s"$active ${r.descriptor.id}, ${r.binding.key}, source=${r.descriptor.artifact.getOrElse("N/A")}"
+              val active = if (requestedNames.contains(r.id)) "[+]" else "[ ]"
+              s"$active ${r.id}, ${r.binding.key}, source=${r.descriptor.artifact.getOrElse("N/A")}"
           }.toArray
         }.sorted.niceList()
   }
