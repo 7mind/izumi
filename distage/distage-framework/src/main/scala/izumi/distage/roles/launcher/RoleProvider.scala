@@ -85,7 +85,7 @@ object RoleProvider {
     }
 
     protected def isRoleEnabled(requiredRoles: Set[String])(b: RoleBinding): Boolean = {
-      requiredRoles.contains(b.descriptor.id) || requiredRoles.contains(b.tpe.tag.shortName.toLowerCase)
+      requiredRoles.contains(b.id)
     }
 
     protected def checkRoleType(implType: SafeType, roleType: SafeType, log: Boolean): Boolean = {
