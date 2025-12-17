@@ -7,6 +7,5 @@ class RoleAppBootPlatformModule() extends ModuleDef {
   include(new RoleAppBootConfigModule())
   include(new RoleAppBootLoggerModule())
 
-  make[RoleProvider].from[RoleProvider.ReflectiveImpl]
-
+  make[RoleProvider].from[RoleProvider.NonReflectiveImpl]
 }

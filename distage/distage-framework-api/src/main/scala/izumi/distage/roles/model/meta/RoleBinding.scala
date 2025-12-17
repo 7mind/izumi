@@ -6,7 +6,8 @@ import izumi.distage.roles.model.RoleDescriptor
 
 final case class RoleBinding(
   binding: Binding,
-  runtimeClass: Class[?],
-  tpe: SafeType,
+  implType: SafeType,
   descriptor: RoleDescriptor,
-)
+) {
+  val id: String = descriptor.id
+}

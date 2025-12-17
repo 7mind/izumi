@@ -102,7 +102,6 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Activation].named("default").fromValue(StandardAxis.prodActivation)
   make[Activation].named("additional").fromValue(Activation.empty)
 
-  make[Boolean].named("distage.roles.reflection").from(DebugProperties.`izumi.distage.roles.reflection`.boolValue(default = true))
   make[Boolean].named("distage.roles.logs.json").from(DebugProperties.`izumi.distage.roles.logs.json`.boolValue(default = false))
   make[Boolean].named("distage.roles.ignore-mismatched-effect").from(DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(default = false))
   make[Boolean].named("distage.roles.activation.ignore-unknown").from(DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.boolValue(default = false))

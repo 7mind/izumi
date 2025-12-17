@@ -9,9 +9,7 @@ import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
-import izumi.fundamentals.platform.{IzPlatform, ScalaPlatform}
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
-import izumi.fundamentals.reflection.TypeUtil
 import izumi.logstage.api.IzLogger
 
 import scala.annotation.unused
@@ -97,62 +95,8 @@ object RoleProvider {
     }
 
     protected def mkRoleBinding(roleBinding: ImplBinding, roleDescriptor: RoleDescriptor): RoleBinding = {
-      val runtimeClass = roleBinding.key.tpe.closestClass
       val implType = roleBinding.implementation.implType
-      RoleBinding(roleBinding, runtimeClass, implType, roleDescriptor)
-    }
-  }
-
-  open class ReflectiveImpl(
-    logger: IzLogger @Id("early"),
-    ignoreMismatchedEffect: Boolean @Id("distage.roles.ignore-mismatched-effect"),
-    reflectionEnabled: Boolean @Id("distage.roles.reflection"),
-    parameters: RoleAppArgs,
-  ) extends NonReflectiveImpl(logger, ignoreMismatchedEffect, parameters) {
-
-    protected val isReflectionEnabled: Boolean = reflectionEnabled && IzPlatform.platform != ScalaPlatform.GraalVMNativeImage
-
-    override protected def handleMissingStaticMetadata(roleType: SafeType, s: ImplBinding): RoleBinding = {
-      if (isReflectionEnabled) {
-        reflectCompanionBinding(s)
-      } else {
-        super.handleMissingStaticMetadata(roleType, s)
-      }
-    }
-
-    protected def reflectCompanionBinding(roleBinding: ImplBinding): RoleBinding = {
-      if (isReflectionEnabled) {
-        reflectCompanionDescriptor(roleBinding.key.tpe) match {
-          case Some(descriptor) =>
-            logger.warn(
-              s"""${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"}: using deprecated reflective look-up of `RoleDescriptor` companion object.
-                 |Please use `RoleModuleDef` & `makeRole` to create a role binding explicitly, instead.
-                 |
-                 |Reflective lookup of `RoleDescriptor` will be removed in a future version.""".stripMargin
-            )
-            mkRoleBinding(roleBinding, descriptor)
-
-          case None =>
-            logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no companion object inherited from RoleDescriptor")
-            throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no companion object inherited from RoleDescriptor")
-        }
-      } else {
-        logger.crit(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no RoleDescriptor, companion reflection is disabled")
-        throw new DIAppBootstrapException(s"role=${roleBinding.key} defined at=${roleBinding.origin} has no RoleDescriptor, companion reflection is disabled")
-      }
-    }
-
-    protected def reflectCompanionDescriptor(role: SafeType): Option[RoleDescriptor] = {
-      val roleClassName = role.closestClass.getName
-      try {
-        Some(TypeUtil.instantiateObject[RoleDescriptor](Class.forName(s"$roleClassName$$")))
-      } catch {
-        case t: Throwable =>
-          logger.crit(s"""Failed to reflect RoleDescriptor companion object for $role: $t
-                         |Please create a companion object extending `izumi.distage.roles.model.RoleDescriptor` for `$roleClassName`
-                         |""".stripMargin)
-          None
-      }
+      RoleBinding(roleBinding, implType, roleDescriptor)
     }
   }
 
