@@ -2,19 +2,19 @@
 out: index.html
 ---
 
-# DIStage
+# distage
 
 ```scala mdoc:reset:invisible:to-string
 System.setProperty(izumi.fundamentals.platform.PlatformProperties.`izumi.app.disable-terminal-colors`.name, "true")
 ```
 
-`distage` is a pragmatic module system for Scala and Scala.js. It combines the simplicity and expressiveness of pure FP with the flexibility and extreme late-binding, traditionally associated with Java dependency injection frameworks, such as Guice.
+`distage` is a pragmatic dependency injection library for Scala and Scala.js. It combines the simplicity and expressiveness of pure FP with the flexibility and extreme late-binding, traditionally associated with Java dependency injection frameworks, such as Guice.
 
 `distage` supports any Scala style, whether it's @ref[Tagless Final Style](basics.md#tagless-final-style), @ref[ZIO Layer](basics.md#zio-environment-bindings), ordinary FP, actor-based or imperative Scala.
 
 ## Getting started
 
-The best way get started is to clone [`distage-example`](https://github.com/7mind/distage-example) project and play around with it.
+The best way to get started is to clone [`distage-example`](https://github.com/7mind/distage-example) project and play around with it.
 
 It shows how to write an idiomatic `distage` application from scratch and how to:
 
@@ -40,7 +40,7 @@ add to distage-example
 
 2. **Cross-platform**:
 
-    `distage` is available for JVM, Scala.js and Graal Native Image.
+    `distage` is available for JVM, Scala.js and GraalVM Native Image.
 
 3. **Compile-time error detection**:
 
