@@ -186,7 +186,7 @@ val plan = injector.plan(HelloByeModule, Roots.target[HelloByeApp], Activation.e
 
 The series of steps must be executed to produce the object graph.
 
-`Injector.produce` will interpret the steps into a @ref[`Lifecycle`](basics.md#resource-bindings-lifecycle) value holding the lifecycle of the object graph:
+`Injector.produce` will interpret the steps into a @ref[`Lifecycle`](basics.md#lifecycle-bindings) value holding the lifecycle of the object graph:
 
 ```scala mdoc:to-string
 import izumi.functional.bio.UnsafeRun2
@@ -215,9 +215,17 @@ runner.unsafeRun(effect)
 
 `distage` creates components at most once, even if multiple other objects depend on them.
 
-A given component `X` will be the _same_ `X` everywhere in the object graph, i.e. a singleton.
+A given component `X` will be the _same_ instance everywhere in the object graph, i.e. a singleton.
 
-It's impossible to create non-singletons in `distage`. However, you may write singleton components that provide methods to create other components, `distage` can even fill in implementations for you via @ref[Auto-Factories](#auto-factories)
+#### Non-singleton components
+
+It's impossible to create non-singleton components in `distage`.
+
+However, you may write singleton components that provide methods to create other components; `distage`'s @ref[Auto-Factories](#auto-factories) can even generate implementations for your factories, removing the associated boilerplate.
+
+While Auto-Factories may remove the boilerplate of generating factories for singular components, if you need to create a new non-trivial subgraph dynamically, you may want to run a nested `Injector`. @ref[Subcontexts](#subcontexts) provide an alternative, very fast implementation for nested object graphs and cover almost all use cases that require nested Injectors.
+
+For the very dynamic cases that can't be handled by Subcontexts, you may manually use `Injector.inherit` to reuse components from the outer object graph in your new nested object graph: see @ref[Injector Inheritance](advanced-features.md#injector-inheritance).
 
 ### Named components
 
@@ -268,12 +276,6 @@ object Ids {
 ```
 
 Note: even though you can put `@Id` annotation on the parameter name like in Java, we recommend you to always put the annotation on the type for better compatibility, especially when using Scala 3.
-
-### Non-singleton components
-
-You cannot embed non-singletons into the object graph, but you may create them as normal using factories. `distage`'s @ref[Auto-Factories](#auto-factories) can generate implementations for your factories, removing the associated boilerplate.
-
-While Auto-Factories may remove the boilerplate of generating factories for singular components, if you need to create a new non-trivial subgraph dynamically, you'll need to run `Injector` again. @ref[Subcontexts](#subcontexts) feature automates running nested Injectors and makes it easier to define nested object graphs. You may also manually use `Injector.inherit` to reuse components from the outer object graph in your new nested object graph, see @ref[Injector Inheritance](advanced-features.md#injector-inheritance).
 
 ## Activation Axis
 
@@ -457,7 +459,7 @@ Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test))(println(
 Try { Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))(println(_: Color)) }.isFailure
 ```
 
-## Resource Bindings, Lifecycle
+## Lifecycle Bindings
 
 You can specify component lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.functional.lifecycle.Lifecycle), cats-effect [Resource](https://typelevel.org/cats-effect/docs/std/resource), or ZIO [Scope](https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1)/[ZLayer](https://zio.dev/reference/contextual/zlayer)/
 [ZManaged](https://zio.dev/1.0.18/reference/resource/zmanaged/)
@@ -1609,7 +1611,7 @@ Brief introduction to tagless final:
 Advantages of `distage` as a driver for TF compared to implicits:
 
 - easy explicit overrides
-- easy @ref[effectful instantiation](basics.md#effect-bindings) and @ref[resource management](basics.md#resource-bindings-lifecycle)
+- easy @ref[effectful instantiation](basics.md#effect-bindings) and @ref[resource management](basics.md#lifecycle-bindings)
 - extremely easy & scalable @ref[test](distage-testkit.md) context setup due to the above
 - multiple different implementations of a capability for a type, using disambiguation by `@Id`
 
@@ -1767,6 +1769,6 @@ Cats & ZIO instances and syntax are available automatically in `distage-core`, w
 However, distage *won't* bring in `cats` or `zio` as dependencies if you don't already depend on them.
 (see [No More Orphans](https://blog.7mind.io/no-more-orphans.html) blog post for details on how that works)
 
-@ref[Cats Resource & Scoped ZIO/ZManaged/ZLayer Bindings](basics.md#resource-bindings-lifecycle) also work out of the box without any magic imports.
+@ref[Cats Resource & Scoped ZIO/ZManaged/ZLayer Bindings](basics.md#lifecycle-bindings) also work out of the box without any magic imports.
 
 All relevant typeclass instances for chosen effect type, such as `Sync[F]`, are @ref[included by default](basics.md#out-of-the-box-typeclass-instances) (overridable by user bindings)
