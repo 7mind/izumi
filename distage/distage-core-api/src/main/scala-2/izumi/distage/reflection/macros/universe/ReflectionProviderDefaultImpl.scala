@@ -79,7 +79,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
              |  * When trying to create a constructor for the result of `$factoryMethod` - `$tpe`
              |  * Type `${factoryMethod.owner}` has been considered a factory because it's an abstract type and contains unimplemented abstract methods with parameters
              |  * Type `$tpe` has been considered a factory because it's an abstract type and contains unimplemented abstract methods with parameters
-             |  * Did you forget a `distage.With` annotation on the factory method to specify a non-abstract implementation type?
+             |  * Did you forget a `distage.With` annotation on the factory method to specify a concrete implementation type?
              |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.
              |
              |  * $mms
