@@ -53,7 +53,7 @@ Add the `distage-core` library:
   version="$izumi.version$"
 }
 
-If you're using Scala 3 you **MUST** enable `-Yretain-trees` for this library to work correctly:
+If you're using Scala 3, you **MUST** enable `-Yretain-trees` for this library to work correctly:
 
 ```scala
 // REQUIRED option for Scala 3
@@ -62,7 +62,7 @@ scalacOptions += "-Yretain-trees"
 scalacOptions += "-Xkind-projector:underscores" // or "-Ykind-projector:underscores" on old versions
 ```
 
-If you're using Scala `2.12` you **MUST** enable `-Ypartial-unification` and either `-Xsource:2.13` or `-Xsource:3` for this library to work correctly:
+If you're using Scala `2.12`, you **MUST** enable `-Ypartial-unification` and either `-Xsource:2.13` or `-Xsource:3` for this library to work correctly:
 
 ```scala
 // REQUIRED options for Scala 2.12
@@ -160,7 +160,7 @@ final class HelloByeApp(
 ```
 
 To actually run the `HelloByeApp`, we have to wire implementations of `Greeter` and `Byer` into it.
-We will not do it directly. First we'll only declare the component interfaces we have, and the implementations we want for them:
+To do it, we'll declare the component interfaces we need via `make`, and the implementations we want for them via `.from`:
 
 ```scala mdoc:to-string
 import distage.ModuleDef
@@ -217,7 +217,7 @@ runner.unsafeRun(effect)
 
 A given component `X` will be the _same_ `X` everywhere in the object graph, i.e. a singleton.
 
-It's impossible to create non-singletons in `distage`.
+It's impossible to create non-singletons in `distage`. However, you may write singleton components that provide methods to create other components, `distage` can even fill in implementations for you via @ref[Auto-Factories](#auto-factories)
 
 ### Named components
 
@@ -459,15 +459,15 @@ Try { Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal)
 
 ## Resource Bindings, Lifecycle
 
-You can specify object lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.functional.lifecycle.Lifecycle), [cats.effect.Resource](https://typelevel.org/cats-effect/docs/std/resource), [scoped zio.ZIO](https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1), [zio.ZLayer](https://zio.dev/reference/contextual/zlayer) or
-[zio.managed.ZManaged](https://zio.dev/1.0.18/reference/resource/zmanaged/)
-values specifying the allocation and finalization actions of an object.
+You can specify component lifecycle by injecting @scaladoc[distage.Lifecycle](izumi.functional.lifecycle.Lifecycle), cats-effect [Resource](https://typelevel.org/cats-effect/docs/std/resource), or ZIO [Scope](https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1)/[ZLayer](https://zio.dev/reference/contextual/zlayer)/
+[ZManaged](https://zio.dev/1.0.18/reference/resource/zmanaged/)
+values that specify the allocation and finalization actions for a component.
 
-When ran, distage `Injector` itself returns a `Lifecycle` value that describes actions to create and finalize the object graph; the `Lifecycle` value is pure and can be reused multiple times.
+When ran, distage `Injector` itself returns a `Lifecycle` value with actions to allocate and finalize the object graph; the `Lifecycle` value is pure and can be reused multiple times.
 
 A `Lifecycle` is executed using its `.use` method, the function passed to `use` will receive an allocated resource and when the function exits the resource will be deallocated. `Lifecycle` is generally not invalidated after `.use` and may be executed multiple times.
 
-Example with `cats.effect.Resource`:
+Example with cats-effect `Resource`:
 
 ```scala mdoc:reset:to-string
 import distage.{Roots, ModuleDef, Injector}
@@ -519,7 +519,7 @@ objectGraphResource
   .unsafeRunSync()
 ```
 
-Lifecycle management with `Lifecycle` is also available without an effect type, via `Lifecycle.Simple` and `Lifecycle.Mutable`:
+Lifecycle management with `Lifecycle` is also available without an effect type, via `Lifecycle.Simple`, `Lifecycle.Mutable`, `Lifecycle.makeSimple` and by using `distage.Identity` wherever an `F[_]` type is required:
 
 ```scala mdoc:reset:to-string
 import distage.{Lifecycle, ModuleDef, Injector}
@@ -556,8 +556,8 @@ println(closedInit.initialized)
 
 `Lifecycle` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap`, `.mapK` methods.
 
-You can convert between a `Lifecycle` and `cats.effect.Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods,
-and between a `Lifecycle` and scoped `zio.ZIO`/`zio.managed.ZManaged`/`zio.ZLayer` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
+You can convert between a `Lifecycle` and cats-effect `Resource` via `Lifecycle#toCats`/`Lifecycle.fromCats` methods.
+You can also convert between a `Lifecycle` and scoped `ZIO`/`ZManaged`/`ZLayer` via `Lifecycle#toZIO`/`Lifecycle.fromZIO` methods.
 
 ### Inheritance helpers
 
@@ -646,9 +646,9 @@ The following helpers ease defining `Lifecycle` subclasses using traditional inh
 Typeclass instances for popular typeclass hierarchies are included by default for the effect type in which `distage` is running.
 
 Whenever your effect type implements @ref[BIO](../bio/00_bio.md) or [cats-effect](https://typelevel.org/cats-effect/) typeclasses, their instances will be summonable without adding them into modules.
-This applies for `ZIO`, `cats.effect.IO`, `monix`, `monix-bio` and any other effect type with relevant typeclass instances in implicit scope.
+This applies for `ZIO`, `cats.effect.IO` and any other effect type with relevant typeclass instances in implicit scope.
 
-- For `ZIO`, `monix-bio` and any other implementors of @ref[BIO](../bio/00_bio.md) typeclasses, `BIO` hierarchy instances will be included.
+- For `ZIO`, and any other implementors of @ref[BIO](../bio/00_bio.md) typeclasses, `BIO` hierarchy instances will be included.
 - For `ZIO`, `cats-effect` instances will be included only if ZIO [`interop-cats`](https://github.com/zio/interop-cats/) library is on the classpath.
 
 Example usage:
@@ -681,8 +681,6 @@ See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) implicit for
 what exact components are available for each effect type, see
 @scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule),
 @scaladoc[CatsIOSupportModule](izumi.distage.modules.support.CatsIOSupportModule),
-@scaladoc[MonixSupportModule](izumi.distage.modules.support.MonixSupportModule),
-@scaladoc[MonixBIOSupportModule](izumi.distage.modules.support.MonixBIOSupportModule),
 @scaladoc[ZIOCatsEffectInstancesModule](izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule), respectively.
 
 DefaultModule occurs as an implicit parameter in `distage` entrypoints that require an effect type parameter, namely: `Injector[F]()` in `distage-core`, @ref[`extends RoleAppMain[F]`](distage-framework.md#roles) and @ref[`extends PlanCheck.Main[F]`](distage-framework.md#compile-time-checks) in `distage-framework` and @ref[`extends Spec1[F]`](distage-testkit.md) in `distage-testkit`.
@@ -1613,10 +1611,9 @@ Advantages of `distage` as a driver for TF compared to implicits:
 - easy explicit overrides
 - easy @ref[effectful instantiation](basics.md#effect-bindings) and @ref[resource management](basics.md#resource-bindings-lifecycle)
 - extremely easy & scalable @ref[test](distage-testkit.md) context setup due to the above
-- multiple different implementations for a type using disambiguation by `@Id`
+- multiple different implementations of a capability for a type, using disambiguation by `@Id`
 
-For example, let's take [`freestyle`'s tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
-and make it better by replacing dependencies on global `import`ed implementations with explicit modules.
+For example, let's remix [`freestyle`'s tagless example](https://web.archive.org/web/20200521212452/http://frees.io/docs/core/handlers/#tagless-interpretation) and make it better by replacing dependencies on global `import`ed implementations with explicit modules.
 
 First, the program we want to write:
 
@@ -1700,7 +1697,7 @@ effect.unsafeRunSync()
 
 ### Effect-type polymorphism
 
-The program module is polymorphic over effect type. It can be parameterized by a different effect type:
+The program modules above are polymorphic over effect type. They can be parameterized by a different effect type:
 
 ```scala mdoc:to-string
 import zio.{Task, ZIO}
@@ -1766,10 +1763,10 @@ consult [izumi.reflect.HKTag](https://javadoc.io/doc/dev.zio/izumi-reflect_2.13/
 
 ## Cats & ZIO Integration
 
-Cats & ZIO instances and syntax are available automatically in `distage-core`, without wildcard imports, if your project depends on `cats-core`, `cats-effect` or `zio`.
+Cats & ZIO instances and syntax are available automatically in `distage-core`, without wildcard imports, if your project depends on `cats-core`, `cats-effect` or `zio` (optionally with `interop-cats`).
 However, distage *won't* bring in `cats` or `zio` as dependencies if you don't already depend on them.
 (see [No More Orphans](https://blog.7mind.io/no-more-orphans.html) blog post for details on how that works)
 
 @ref[Cats Resource & Scoped ZIO/ZManaged/ZLayer Bindings](basics.md#resource-bindings-lifecycle) also work out of the box without any magic imports.
 
-All relevant typeclass instances for chosen effect type, such as `ConcurrentEffect[F]`, are @ref[included by default](basics.md#out-of-the-box-typeclass-instances) (overridable by user bindings)
+All relevant typeclass instances for chosen effect type, such as `Sync[F]`, are @ref[included by default](basics.md#out-of-the-box-typeclass-instances) (overridable by user bindings)
