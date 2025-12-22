@@ -35,6 +35,7 @@ object SourcePackageMaterializer {
         .map(_.toString.trim)
         .mkString(".")
 
+      // Use Typed notes to avoid retypechecking (this required internal.setType on Scala 2, but seems like Typed(..) achieves the same on Scala 3)
       Typed(Literal(StringConstant(applicationIdPkgOnly)), TypeTree.of[String]).asExpr.asInstanceOf[Expr[String]]
     }
   }

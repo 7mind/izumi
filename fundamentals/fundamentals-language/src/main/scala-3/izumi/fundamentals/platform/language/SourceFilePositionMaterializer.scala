@@ -22,6 +22,7 @@ object SourceFilePositionMaterializer {
       val name = pos.sourceFile.name
       val line = pos.startLine + 1
 
+      // Use Typed nodes to avoid retypechecking (this required internal.setType on Scala 2, but seems like Typed(..) achieves the same on Scala 3)
       '{
         SourceFilePosition(
           ${ Literal(StringConstant(name)).asExpr.asInstanceOf[Expr[String]] }: String,
