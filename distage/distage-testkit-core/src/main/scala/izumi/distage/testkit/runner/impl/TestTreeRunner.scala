@@ -70,40 +70,39 @@ object TestTreeRunner {
       id: ScopeId,
       depth: Int,
       deepestSharedLocator: Locator,
-      levelGroups: Iterable[TestGroup[F]],
+      levelGroups: List[TestGroup[F]],
     ): F[List[IndividualTestResult]] = {
       val testsBySuite = levelGroups.flatMap {
         group =>
           group.preparedTests.groupBy {
             preparedTest =>
-              val testId = preparedTest.test.meta.test.id
+              val suiteMeta = preparedTest.test.suiteMeta
               val parallelLevel = preparedTest.test.environment.parallelSuites
-              DistageTestRunner.SuiteData(testId.suite, preparedTest.test.suiteMeta, parallelLevel)
+              (suiteMeta, parallelLevel)
           }
       }
-      // now we are ready to run each individual test
-      // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-      // we assume that individual tests within a suite can't have different values of `parallelSuites`
-      // (because of TestConfig structure & that difference even if happens wouldn't be actionable at the level of suites anyway)
-      parTraverseExt
-        .groupedParTraverse(testsBySuite)(_._1.suiteParallelism) {
-          case (suiteData, preparedTests) =>
-            F.bracket(
-              acquire = F.maybeSuspend {
-                reporter.beginLevel(id, depth, suiteData.meta)
-              }
-            )(release =
-              _ =>
-                F.maybeSuspend {
-                  reporter.endLevel(id, depth, suiteData.meta)
+      val suiteMetas = testsBySuite.map(_._1._1)
+      F.bracket(
+        acquire = F.maybeSuspend(reporter.beginLevel(id, depth, suiteMetas))
+      )(release = _ => F.maybeSuspend(reporter.endLevel(id, depth, suiteMetas))) {
+        _ =>
+          // now we are ready to run each individual test
+          // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
+          // we assume that individual tests within a suite can't have different values of `parallelSuites`
+          // (because of TestConfig structure & that difference even if happens wouldn't be actionable at the level of suites anyway)
+          parTraverseExt
+            .groupedParTraverse(testsBySuite)(_._1._2) {
+              case ((suiteMeta, _), preparedTests) =>
+                F.bracket(
+                  acquire = F.maybeSuspend(reporter.beginSuite(id, depth, suiteMeta))
+                )(release = _ => F.maybeSuspend(reporter.endSuite(id, depth, suiteMeta))) {
+                  _ =>
+                    parTraverseExt.groupedParTraverse(preparedTests)(_.test.environment.parallelTests) {
+                      test => runner.proceedTest(id, depth, deepestSharedLocator, test)
+                    }
                 }
-            ) {
-              _ =>
-                parTraverseExt.groupedParTraverse(preparedTests)(_.test.environment.parallelTests) {
-                  test => runner.proceedTest(id, depth, deepestSharedLocator, test)
-                }
-            }
-        }.map(_.flatten)
+            }.map(_.flatten)
+      }
     }
   }
 }

@@ -2,7 +2,6 @@ package izumi.distage.testkit.runner.impl
 
 import distage.*
 import izumi.distage.testkit.model.*
-import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.*
@@ -14,10 +13,6 @@ import izumi.logstage.api.IzLogger
 import logstage.Log
 
 import scala.concurrent.duration.FiniteDuration
-
-object DistageTestRunner {
-  final case class SuiteData(id: SuiteId, meta: SuiteMeta, suiteParallelism: Parallelism)
-}
 
 class DistageTestRunner[F[_]](
   reporter: TestReporter,

@@ -26,13 +26,21 @@ class SafeIntellijTestReporter(
     underlying.endScope(id)
   }
 
-  override def beginLevel(scope: ScopeId, depth: Int, id: SuiteMeta): Unit = {
-    underlying.beginLevel(scope, depth, id)
+  override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = {
+    underlying.beginLevel(scope, depth, suites)
   }
 
-  override def endLevel(scope: ScopeId, depth: Int, id: SuiteMeta): Unit = {
-    finish(predicate = _.test.id.suite == id.suiteId)
-    underlying.endLevel(scope, depth, id)
+  override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = {
+    underlying.endLevel(scope, depth, suites)
+  }
+
+  override def beginSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = {
+    underlying.beginSuite(scopeId, depth, suiteMeta)
+  }
+
+  override def endSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = {
+    finish(predicate = _.test.id.suite == suiteMeta.suiteId)
+    underlying.endSuite(scopeId, depth, suiteMeta)
   }
 
   override def testStatus(scope: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus): Unit = {

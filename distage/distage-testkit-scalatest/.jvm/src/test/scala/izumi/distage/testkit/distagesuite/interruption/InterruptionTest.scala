@@ -134,8 +134,10 @@ abstract class InterruptionTest extends Spec1[Identity] {
   private def emptySuiteReporter(): TestReporter = new TestReporter {
     override def beginScope(id: ScopeId): Unit = ()
     override def endScope(id: ScopeId): Unit = ()
-    override def beginLevel(scope: ScopeId, depth: Int, id: SuiteMeta): Unit = ()
-    override def endLevel(scope: ScopeId, depth: Int, id: SuiteMeta): Unit = ()
+    override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
+    override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
+    override def beginSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
+    override def endSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
     override def testSetupStatus(scopeId: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus.Setup): Unit = ()
     override def testStatus(scope: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus): Unit = ()
   }

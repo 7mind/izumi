@@ -20,7 +20,11 @@ class DistageScalatestReporter(
 
   override def endScope(@unused id: ScopeId): Unit = {}
 
-  override def beginLevel(scope: ScopeId, depth: Int, id: SuiteMeta): Unit = {
+  override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = {}
+
+  override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = {}
+
+  override def beginSuite(scope: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = {
     // Don't report SuiteStarting & SuiteCompleted events because Scalatest sends these events on its own
 //    suiteHandler.doReportEvent(id.suiteId)(
 //      SuiteStarting(
@@ -33,8 +37,13 @@ class DistageScalatestReporter(
 //    )
   }
 
-  override def endLevel(scope: ScopeId, depth: Int, id: SuiteMeta): Unit = {
-    println(s"!!!suite level completed $depth ${id.suiteId} trying to set status")
+  override def endSuite(scope: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = {
+    // uneasy with setStatus being in reporter, but where else should it go?
+    suiteHandler.doSetStatus(suiteMeta.suiteId) {
+      mutStatus =>
+        mutStatus.setCompleted()
+    }
+    // Don't report SuiteStarting & SuiteCompleted events because Scalatest sends these events on its own
 //    suiteHandler.doReportEvent(id.suiteId)(
 //      SuiteCompleted(
 //        _,
@@ -45,12 +54,6 @@ class DistageScalatestReporter(
 //        duration = None,
 //      )
 //    )
-    suiteHandler.doSetStatus(id.suiteId) {
-      s =>
-        s.setCompleted()
-        println(s"!!! suite status set for ${id.suiteId}")
-        // FIXME SHOULDN'T BE IN REPORTER ???
-    }
   }
 
   override def testSetupStatus(scopeId: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus.Setup): Unit = {
