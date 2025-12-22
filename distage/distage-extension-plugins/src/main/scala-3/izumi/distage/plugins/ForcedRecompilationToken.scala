@@ -34,8 +34,6 @@ object ForcedRecompilationToken {
     final val compilerLaunchId = java.util.UUID.randomUUID().toString
     var cachedTypedTree: Quotes#reflectModule#Term | Null = null
 
-    // TODO: research if caching typed trees optimization is possible and meaningful in Dotty
-    //       I'm not sure whether `cachedTypedTree` used here _actually_ avoids retyping or not at all
     def materializeImpl[T](using qctx: Quotes): Expr[ForcedRecompilationToken[T]] = {
       import qctx.reflect.*
 
@@ -66,6 +64,9 @@ object ForcedRecompilationToken {
             }
             val appliedTpe = TypeRepr.of[ForcedRecompilationToken].appliedTo(uuidEncodedAsEithersTpe)
 
+            // NB: Typed node here DOES avoid retyping. Or at least, if a wrong type tree is put on the LHS,
+            //     ClassCastException DOES happen at runtime, which ought to confirm it. (And if Typed wrapper is removed,
+            //     type error happens at compile-time, not in runtime)
             Typed(Literal(NullConstant()), TypeTree.of(using appliedTpe.asType))
           }
           cachedTypedTree = tree
