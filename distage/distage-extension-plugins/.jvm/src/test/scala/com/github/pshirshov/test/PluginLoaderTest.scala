@@ -8,7 +8,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class PluginLoaderTest extends AnyWordSpec {
   "Load plugins list at runtime time" in {
     val plugins = PluginLoader().load(PluginConfig.packages(Seq("com.github.pshirshov.test.plugins")))
-    val expected = Set(
+    val expected = Set[Class[?]](
       EmptyTestPlugin.getClass,
       classOf[StaticTestPlugin],
       classOf[StaticTestPlugin2],
