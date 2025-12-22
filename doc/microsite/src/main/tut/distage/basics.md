@@ -807,9 +807,9 @@ Further reading:
 
 ## Mutator Bindings
 
-Mutations can be attached to any component using `modify[X]` keyword.
+Mutators can be attached to any component using `modify[X]` keyword.
 
-If present, they will be applied in an undefined order after the component has been created, but _before_ it is visible to any other component.
+If present, mutators will be applied in an undefined order after the component has been created, but _before_ it is visible to any other component.
 
 Mutators provide a way to do partial overrides or slight modifications of some existing component without redefining it fully.
 
@@ -831,7 +831,7 @@ def incrementWithDep = new ModuleDef {
   make[String].fromValue("hello")
   make[Int].named("a-few").fromValue(2)
 
-  // mutators may use other components and add additional dependencies
+  // mutators may add dependencies on other components
   modify[Int].by(_.flatAp {
     (s: String, few: Int @Id("a-few")) => (currentInt: Int) =>
       s.length + few + currentInt
