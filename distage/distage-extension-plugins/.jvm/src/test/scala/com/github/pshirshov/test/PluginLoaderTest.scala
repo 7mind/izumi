@@ -18,8 +18,6 @@ class PluginLoaderTest extends AnyWordSpec {
       ObjectTestPlugin.getClass,
     )
     assert(plugins.size == expected.size)
-    assert(
-      plugins.result.map(_.getClass).toSet == expected
-    )
+    assert(plugins.result.map(_.getClass).toSet == expected)
   }
 }
