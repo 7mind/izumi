@@ -12,15 +12,22 @@ object SourceFilePositionMaterializer {
   object SourceFilePositionMaterializerMacro {
     def getSourceFilePositionMaterializer(using qctx: Quotes): Expr[SourceFilePositionMaterializer] = {
       val pos = getSourceFilePosition()
-      '{ SourceFilePositionMaterializer(${ pos }) }
+      '{ SourceFilePositionMaterializer(${ pos }): SourceFilePositionMaterializer }
     }
 
     def getSourceFilePosition()(using qctx: Quotes): Expr[SourceFilePosition] = {
-      val pos = qctx.reflect.Position.ofMacroExpansion
+      import qctx.reflect.*
+
+      val pos = Position.ofMacroExpansion
       val name = pos.sourceFile.name
       val line = pos.startLine + 1
 
-      '{ SourceFilePosition(${ Expr(name) }, ${ Expr(line) }) }
+      '{
+        SourceFilePosition(
+          ${ Literal(StringConstant(name)).asExpr.asInstanceOf[Expr[String]] }: String,
+          ${ Literal(IntConstant(line)).asExpr.asInstanceOf[Expr[Int]] }: Int
+        ): SourceFilePosition
+      }
     }
   }
 }

@@ -38,6 +38,8 @@ object CodePositionMaterializer {
     }
 
     def getApplicationPointIdOf(chain: Seq[qctx.reflect.Symbol]): Expr[String] = {
+      import qctx.reflect.*
+
       val applicationId = chain.tail
         .flatMap {
           case s if s.isPackageDef =>
@@ -52,7 +54,7 @@ object CodePositionMaterializer {
         .map(_.trim)
         .mkString(".")
 
-      Expr(applicationId)
+      Typed(Literal(StringConstant(applicationId)), TypeTree.of[String]).asExpr.asInstanceOf[Expr[String]]
     }
 
     private def goodSymbol(using qctx: Quotes)(s: qctx.reflect.Symbol): Boolean = {
@@ -82,12 +84,12 @@ object CodePositionMaterializer {
       val sourcePos = SourceFilePositionMaterializer.SourceFilePositionMaterializerMacro.getSourceFilePosition()
       val applicationId = getApplicationPointId()
 
-      '{ CodePosition(${ sourcePos }, ${ applicationId }) }
+      '{ CodePosition(${ sourcePos }, ${ applicationId }): CodePosition }
     }
 
     def getCodePositionMaterializer()(using qctx: Quotes): Expr[CodePositionMaterializer] = {
       val pos = getEnclosingPosition()
-      '{ CodePositionMaterializer(${ pos }) }
+      '{ CodePositionMaterializer(${ pos }): CodePositionMaterializer }
     }
 
   }

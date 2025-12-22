@@ -17,10 +17,12 @@ object SourcePackageMaterializer {
   object SourcePackageMaterializerMacro {
     def getSourcePackageMaterializer()(using qctx: Quotes): Expr[SourcePackageMaterializer] = {
       val packageStr = getSourcePackageString()
-      '{ SourcePackageMaterializer(SourcePackage(${ packageStr })) }
+      '{ SourcePackageMaterializer(SourcePackage(${ packageStr }): SourcePackage): SourcePackageMaterializer }
     }
 
     def getSourcePackageString()(using qctx: Quotes): Expr[String] = {
+      import qctx.reflect.*
+
       val st = CodePositionMaterializer.CodePositionMaterializerMacro.ownershipChain()
 
       val applicationIdPkgOnly = st.tail
@@ -33,7 +35,7 @@ object SourcePackageMaterializer {
         .map(_.toString.trim)
         .mkString(".")
 
-      Expr(applicationIdPkgOnly)
+      Typed(Literal(StringConstant(applicationIdPkgOnly)), TypeTree.of[String]).asExpr.asInstanceOf[Expr[String]]
     }
   }
 }
