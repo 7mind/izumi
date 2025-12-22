@@ -105,7 +105,7 @@ You may activate GraphViz dump for a `distage-framework` @ref[Role-based applica
 
 #### Testkit activation
 
-You may activate GraphViz dump in `distage-testkit` tests by setting `PlanningOptions(addGraphVizDump = true)` in `config`:
+You may activate GraphViz dump in `distage-testkit` tests by setting `planningOptions.addGraphVizDump` to true in `config`:
 
 ```scala mdoc:reset
 import izumi.distage.testkit.scalatest.Spec2
@@ -114,9 +114,7 @@ import izumi.distage.framework.config.PlanningOptions
 
 final class MyTest extends Spec2[zio.IO] {
   override def config: TestConfig = super.config.copy(
-    planningOptions = PlanningOptions(
-      addGraphVizDump = true,
-    )
+    planningOptions = PlanningOptions.default.copy(addGraphVizDump = true)
   )
 }
 ```
@@ -133,7 +131,7 @@ import zio.IO
 
 abstract class MyRoleLauncher extends RoleAppMain.LauncherBIO[IO] {
   override protected def roleAppBootOverrides(argv: RoleAppMain.ArgV): Module = new ModuleDef {
-    make[PlanningOptions].from(PlanningOptions(addGraphVizDump = true))
+    modify[PlanningOptions](_.copy(addGraphVizDump = true))
   }
 }
 ```
