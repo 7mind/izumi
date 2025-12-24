@@ -18,18 +18,17 @@
 
 package izumi.fundamentals.platform.uuid
 
-import java.net.{InetAddress, NetworkInterface}
 import java.nio.ByteBuffer
-import java.security.{MessageDigest, SecureRandom}
-import java.util
-import java.util.{Collections, Random, UUID}
+import java.util.{Random, UUID}
 
 /**
   * The goods are here: www.ietf.org/rfc/rfc4122.txt.
   */
-trait IzUUIDImpl extends IzUUID {
+trait IzUUIDImpl extends IzUUID with IzUUIDPlatformSpecific {
   // A grand day! millis at 00:00:00.000 15 Oct 1582.
   private val START_EPOCH: Long = -12219292800000L
+
+  protected val secureRandom: java.util.Random = new __SecureRandomPlatformSpecific.SecureRandomImpl()
 
   private val clockSeqAndNode: Long = makeClockSeqAndNode()
 
@@ -48,8 +47,6 @@ trait IzUUIDImpl extends IzUUID {
   private val MIN_CLOCK_SEQ_AND_NODE: Long = 0x8080808080808080L
 
   private val MAX_CLOCK_SEQ_AND_NODE: Long = 0x7F7F7F7F7F7F7F7FL
-
-  private val secureRandom: SecureRandom = new SecureRandom()
 
   private var lastNanos: Long = _
 
@@ -181,17 +178,13 @@ trait IzUUIDImpl extends IzUUID {
     * doesn't at all guarantee the uniqueness of the resulting UUID.
     */
   def maxTimeUUID(timestamp: Long): UUID = {
+    // unix timestamp are milliseconds precision, uuid timestamp are 100's
+    // nanoseconds precision. If we ask for the biggest uuid have unix
+    // timestamp 1ms, then we should not extend 100's nanoseconds
     // precision by taking 10000, but rather 19999.
     val uuidTstamp: Long = fromUnixTimestamp(timestamp + 1) - 1
     new UUID(createTime(uuidTstamp), MAX_CLOCK_SEQ_AND_NODE)
   }
-
-  // unix timestamp are milliseconds precision, uuid timestamp are 100's
-  // nanoseconds precision. If we ask for the biggest uuid have unix
-  // timestamp 1ms, then we should not extend 100's nanoseconds
-  // unix timestamp are milliseconds precision, uuid timestamp are 100's
-  // nanoseconds precision. If we ask for the biggest uuid have unix
-  // timestamp 1ms, then we should not extend 100's nanoseconds
 
   /**
     * @param uuid
@@ -294,49 +287,6 @@ trait IzUUIDImpl extends IzUUID {
     // sets the version to 1.
     msb |= 0x0000000000001000L
     msb
-  }
-
-  private def getAllLocalAddresses(): util.Collection[InetAddress] = {
-    val localAddresses = new util.HashSet[InetAddress]()
-    val nets = NetworkInterface.getNetworkInterfaces
-    while (nets.hasMoreElements) localAddresses.addAll(Collections.list(nets.nextElement().getInetAddresses))
-    localAddresses
-  }
-
-  private def makeNode(): Long = {
-    /*
-     * We don't have access to the MAC address but need to generate a node part
-     * that identify this host as uniquely as possible.
-     * The spec says that one option is to take as many source that identify
-     * this node as possible and hash them together. That's what we do here by
-     * gathering all the ip of this host.
-     * Note that FBUtilities.getBroadcastAddress() should be enough to uniquely
-     * identify the node *in the cluster* but it triggers DatabaseDescriptor
-     * instanciation and the UUID generator is used in Stress for instance,
-     * where we don't want to require the yaml.
-     */
-
-    val localAddresses: util.Collection[InetAddress] = getAllLocalAddresses()
-    if (localAddresses.isEmpty)
-      throw new RuntimeException("Cannot generate the node component of the UUID because cannot retrieve any IP addresses.")
-    // ideally, we'd use the MAC address, but java doesn't expose that.
-    val hash: Array[Byte] = doHash(localAddresses)
-    var node: Long = 0
-    for (i <- 0 until Math.min(6, hash.length))
-      node |= (0x00000000000000FF & hash(i).toLong) << (5 - i) * 8
-    assert((0xFF00000000000000L & node) == 0)
-    // bit (least significant bit of the first octet of the node ID) must be 1.
-    node | 0x0000010000000000L
-  }
-
-  // Since we don't use the mac address, the spec says that multicast
-  // Since we don't use the mac address, the spec says that multicast
-
-  private def doHash(data: util.Collection[InetAddress]): Array[Byte] = {
-    import scala.jdk.CollectionConverters.*
-    val messageDigest: MessageDigest = MessageDigest.getInstance("MD5")
-    for (addr <- data.asScala) messageDigest.update(addr.getAddress)
-    messageDigest.digest()
   }
 }
 

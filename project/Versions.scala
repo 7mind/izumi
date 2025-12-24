@@ -28,6 +28,8 @@ object V {
   val magnolia = "1.1.10"
   val jawn = "1.6.0"
 
+  val scalajs_macrotask_executor = "1.1.1"
+
   // good to drop - scala
   val scala_java_time = "2.6.0"
 

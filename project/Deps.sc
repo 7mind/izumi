@@ -33,6 +33,7 @@ object Izumi {
     val scala_java_time = Version.VExpr("V.scala_java_time")
     val scalamock = Version.VExpr("V.scalamock")
     val docker_java = Version.VExpr("V.docker_java")
+    val scalajs_macrotask_executor = Version.VExpr("V.scalajs_macrotask_executor")
   }
 
   object PV {
@@ -141,6 +142,7 @@ object Izumi {
 
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
+    final val scalajs_macrotask_executor = Library("org.scala-js", "scala-js-macrotask-executor", V.scalajs_macrotask_executor, LibraryType.Auto)
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant) in Scope.Compile.jvm
     final val slf4j_simple = Library("org.slf4j", "slf4j-simple", V.slf4j, LibraryType.Invariant) in Scope.Test.jvm
@@ -685,7 +687,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkitCore,
-        libs = Nil,
+        libs = Seq.empty,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
