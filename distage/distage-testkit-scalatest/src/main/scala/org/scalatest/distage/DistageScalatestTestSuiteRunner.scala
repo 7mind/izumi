@@ -108,16 +108,19 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     isSbt: Boolean,
   ): Unit = {
     val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`.name)
-    debugLogger.log(s"Scalatest Args: $args")
-    debugLogger.log(s"""tagsToInclude: ${args.filter.tagsToInclude}
-                       |tagsToExclude: ${args.filter.tagsToExclude}
-                       |dynaTags: ${args.filter.dynaTags}
-                       |excludeNestedSuites: ${args.filter.excludeNestedSuites}
-                       |""".stripMargin)
+
+    debugLogger.log(
+      s"""Scalatest
+         |  Args: $args
+         |  tagsToInclude: ${args.filter.tagsToInclude}
+         |  tagsToExclude: ${args.filter.tagsToExclude}
+         |  dynaTags: ${args.filter.dynaTags}
+         |  excludeNestedSuites: ${args.filter.excludeNestedSuites}""".stripMargin
+    )
 
     val testsToRun = applyScalatestDefaultFiltering(args, testsInThisRun, testName)
 
-    debugLogger.err(s"GOING TO RUN TESTS in ${tagMonoIO.tag.repr} (in class ${getClass.getName}):${testsToRun.map(_.meta.test.id.toString).niceList()}")
+    debugLogger.err(s"GOING TO RUN TESTS in ${tagMonoIO.tag.repr} (from class ${getClass.getName}):${testsToRun.map(_.meta.test.id.toString).niceList()}")
 
     val asyncGlobalSuitesControl = new AsyncGlobalSuitesControlHandle {
       override def completeOuterSuite(mbFailure: Option[Throwable]): Unit = {

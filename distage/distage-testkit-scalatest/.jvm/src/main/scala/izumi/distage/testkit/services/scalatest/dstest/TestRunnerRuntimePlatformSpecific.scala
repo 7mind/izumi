@@ -27,7 +27,7 @@ private[dstest] trait TestRunnerRuntimePlatformSpecific {
   }
 
   final def defaultBlockingRuntime: TestRunnerRuntime = {
-    blockingRuntimeFor[MiniBIOAsync[Throwable, _]](TestRunnerRuntime.miniBIOAsyncTestECLifecycle())
+    blockingRuntimeFor[MiniBIOAsync[Throwable, _]](TestRunnerRuntime.runnerLifecycleForMiniBIOAsync())
   }
 
   final def blockingRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync](

@@ -40,7 +40,7 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
   }
 
   def defaultAsyncRuntime: TestRunnerRuntime = {
-    asyncRuntimeFor[MiniBIOAsync[Throwable, _]](miniBIOAsyncTestECLifecycle())
+    asyncRuntimeFor[MiniBIOAsync[Throwable, _]](runnerLifecycleForMiniBIOAsync())
   }
 
   /** Construct async test runtime using distage itself. DefaultModule[F] always contains a recipe for `QuasiIORunner[F]` */
@@ -99,7 +99,7 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
     }
   }
 
-  def miniBIOAsyncTestECLifecycle(): Lifecycle[Identity, QuasiIORunner[MiniBIOAsync[Throwable, _]]] = {
+  def runnerLifecycleForMiniBIOAsync(): Lifecycle[Identity, QuasiIORunner[MiniBIOAsync[Throwable, _]]] = {
     for {
       ec <- testECLifecycle()
     } yield {
