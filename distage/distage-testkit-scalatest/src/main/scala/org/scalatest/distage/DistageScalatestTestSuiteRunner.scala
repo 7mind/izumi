@@ -118,7 +118,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
          |  excludeNestedSuites: ${args.filter.excludeNestedSuites}""".stripMargin
     )
 
-    val testsToRun = applyScalatestDefaultFiltering(args, testsInThisRun, testName)
+    val testsToRun = _applyScalatestDefaultFiltering(args, testsInThisRun, testName)
 
     debugLogger.err(s"GOING TO RUN TESTS in ${tagMonoIO.tag.repr} (from class ${getClass.getName}):${testsToRun.map(_.meta.test.id.toString).niceList()}")
 
@@ -138,7 +138,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
       }
     }
 
-    val testReporter = mkTestReporter(isSbt)
+    val testReporter = _mkTestReporter(isSbt)
 
     _doRunTests(debugLogger, asyncGlobalSuitesControl, testReporter, testsToRun)
   }
@@ -173,7 +173,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     }
   }
 
-  private[distage] def mkTestReporter(isSbt: Boolean): TestReporter = {
+  protected def _mkTestReporter(isSbt: Boolean): TestReporter = {
     val suiteHandler = DistageTestsRegistrySingleton.mkSuiteHandlerById()
     val scalatestReporter = new DistageScalatestReporter(suiteHandler)
     if (isSbt) scalatestReporter else new SafeIntellijTestReporter(scalatestReporter)
@@ -217,7 +217,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     }
   }
 
-  private def applyScalatestDefaultFiltering[F0[_]](args: Args, testsInThisRuntime: Seq[DistageTest[F0]], testName: Option[String]): Seq[DistageTest[F0]] = {
+  protected def _applyScalatestDefaultFiltering[F0[_]](args: Args, testsInThisRuntime: Seq[DistageTest[F0]], testName: Option[String]): Seq[DistageTest[F0]] = {
     testName match {
       case None =>
         testsInThisRuntime.filter {
