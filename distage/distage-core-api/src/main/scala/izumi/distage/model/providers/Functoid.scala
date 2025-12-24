@@ -60,7 +60,7 @@ import izumi.distage.reflection.macros.FunctoidMacroMethods
   *
   * @see [[izumi.distage.reflection.macros.FunctoidMacro]]]
   * @see Functoid is based on the Magnet Pattern: [[http://spray.io/blog/2012-12-13-the-magnet-pattern/]]
-  * @see Essentially Functoid is a function-like entity with additional properties, so it's funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
+  * @see Essentially Functoid is a function-like entity with additional properties, so its funny name is reasonable enough: [[https://en.wiktionary.org/wiki/-oid#English]]
   */
 final case class Functoid[+A](get: Provider) extends AbstractFunctoid[A, Functoid] {
   override protected def create[B](provider: Provider): Functoid[B] = Functoid.create[B](provider)
