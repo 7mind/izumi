@@ -125,7 +125,7 @@ object PlanCheckMaterializer {
               // silence test output
               ()
             } else if (fatalWarnings) {
-              c.info(c.enclosingPosition, pkg + message, force = true)
+              c.info(c.enclosingPosition, message, force = true)
             } else {
               c.warning(c.enclosingPosition, message)
             }
