@@ -34,7 +34,6 @@ object V {
   val scala_java_time = "2.6.0"
 
   // js-only dependencies
-  val scalajs_java_securerandom = "1.0.0"
   val scalajs_macrotask_executor = "1.1.1"
 
   // java-only dependencies below

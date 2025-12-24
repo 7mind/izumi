@@ -53,7 +53,7 @@ object Entropy1 extends LowPriorityEntropyInstances {
     override protected def random: Random = scala.util.Random
 
     override def nextTimeUUID(): UUID = IzUUID.generateTimeUUID()
-    override def nextUUID(): UUID = UUID.randomUUID()
+    override def nextUUID(): UUID = IzUUID.generateRandomUUID()
   }
 
   class Deterministic(seed: Long) extends ScalaEntropy {

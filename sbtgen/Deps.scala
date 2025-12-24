@@ -146,8 +146,6 @@ object Izumi {
 
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
-    final val scalajs_java_securerandom = Library("org.scala-js", "scalajs-java-securerandom", V.scalajs_java_securerandom, LibraryType.Auto)
-      .more(LibSetting.Raw("cross CrossVersion.for3Use2_13"))
     final val scalajs_macrotask_executor = Library("org.scala-js", "scala-js-macrotask-executor", V.scalajs_macrotask_executor, LibraryType.Auto)
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant)
@@ -705,7 +703,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkitCore,
-        libs = Seq(scalajs_java_securerandom in Scope.Compile.js),
+        libs = Seq.empty,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
         platforms = Targets.cross,
       ),

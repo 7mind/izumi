@@ -10,6 +10,7 @@ trait IzUUID extends IzPlatformEffectfulUtil {
 
   def generateTimeUUID(): UUID
   def generateTimeUUIDBytes(): Array[Byte]
+  def generateRandomUUID(): UUID
 
   def getTimeUUID(when: Long): UUID
   def getTimeUUIDFromMicros(whenInMicros: Long): UUID

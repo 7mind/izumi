@@ -4897,11 +4897,6 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-testkit-coreJVM` = `distage-testkit-core`.jvm
 lazy val `distage-testkit-coreJS` = `distage-testkit-core`.js
-  .settings(
-    libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-java-securerandom" % V.scalajs_java_securerandom cross CrossVersion.for3Use2_13
-    )
-  )
 
 lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-scalatest"))
   .dependsOn(
