@@ -17,4 +17,7 @@ object RenderingPolicy {
   def simplePolicy(renderingLayout: Option[Renderer.Aggregate] = None): StringRenderingPolicy = {
     new StringRenderingPolicy(RenderingOptions.simple, renderingLayout)
   }
+  def richPolicy(renderingLayout: Option[Renderer.Aggregate] = None): StringRenderingPolicy = {
+    new StringRenderingPolicy(RenderingOptions.rich, renderingLayout)
+  }
 }

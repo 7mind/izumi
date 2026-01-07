@@ -22,4 +22,5 @@ object ConsoleSink {
 
   object ColoredConsoleSink extends ConsoleSink(RenderingPolicy.coloringPolicy())
   object SimpleConsoleSink extends ConsoleSink(RenderingPolicy.simplePolicy())
+  object RichConsoleSink extends ConsoleSink(RenderingPolicy.richPolicy())
 }
