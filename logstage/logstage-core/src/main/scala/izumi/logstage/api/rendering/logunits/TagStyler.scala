@@ -1,6 +1,6 @@
 package izumi.logstage.api.rendering.logunits
 
-import izumi.logstage.api.rendering.logunits.TagStyler.MessageToken.{CloseTag, OpenTag, PlainText}
+import izumi.logstage.api.rendering.logunits.TagStyler.MessageToken.{CloseTagToken, OpenTagToken, PlainText}
 import izumi.logstage.api.rendering.logunits.TagStyler.ParserState.{InTag, InText}
 
 import scala.collection.mutable
@@ -10,8 +10,8 @@ object TagStyler {
   sealed trait MessageToken
   object MessageToken {
     case class PlainText(text: String) extends MessageToken
-    case class OpenTag(name: String) extends MessageToken
-    case class CloseTag(name: String) extends MessageToken
+    case class OpenTagToken(name: String) extends MessageToken
+    case class CloseTagToken(name: String) extends MessageToken
   }
 
   sealed trait ParserState
@@ -22,26 +22,59 @@ object TagStyler {
 
   sealed trait StyleTag {
     def render: String
+    val isSelfClosing: Boolean = false
   }
-  object StyleTag {
+  private object StyleTag {
     val RESET = "\u001b[0m"
     def apply(name: String): StyleTag = {
       name match {
         case "b" | "bold" => Bold
         case "i" | "italic" => Italic
-        case "u" | "underline" => Underlined
-        case _ => throw new RuntimeException("Can not apply style: unknown tag")
+        case "u" | "underlined" => Underlined
+        case "r" | "reversed" => Reversed
+        case Color(color) => ColorTag(color)
+        case n => Ignore(n)
       }
     }
 
-    case object Bold extends StyleTag {
+    private case object Bold extends StyleTag {
       override def render: String = "\u001b[1m"
     }
-    case object Italic extends StyleTag {
+    private case object Italic extends StyleTag {
       override def render: String = "\u001b[3m"
     }
-    case object Underlined extends StyleTag {
+    private case object Underlined extends StyleTag {
       override def render: String = "\u001b[4m"
+    }
+    private case object Reversed extends StyleTag {
+      override def render: String = "\u001b[7m"
+    }
+    private case class ColorTag(color: String) extends StyleTag {
+      override def render: String = color.toLowerCase match {
+        case "black" => "\u001b[30m"
+        case "red" => "\u001b[31m"
+        case "green" => "\u001b[32m"
+        case "yellow" => "\u001b[33m"
+        case "blue" => "\u001b[34m"
+        case "magenta" => "\u001b[35m"
+        case "cyan" => "\u001b[36m"
+        case "white" => "\u001b[37m"
+        case _ => "" // fallback if color is unknown
+      }
+    }
+
+    private object Color {
+      def unapply(tag: String): Option[String] = {
+        val name = if (tag.startsWith("/")) tag.drop(1) else tag
+        if (name.startsWith("c:")) Some(name.drop(2))
+        else if (name.startsWith("color:")) Some(name.drop(6))
+        else None
+      }
+    }
+
+    private case class Ignore(name: String) extends StyleTag {
+      override def render: String = ""
+      override val isSelfClosing = true
     }
   }
 
@@ -73,7 +106,7 @@ object TagStyler {
             parserState = InTag(true)
           } else if (char == '>') {
             val tagName = textBuffer.toString
-            tokens += (if (isClosing) CloseTag(tagName) else OpenTag(tagName))
+            tokens += (if (isClosing) CloseTagToken(tagName) else OpenTagToken(tagName))
             textBuffer.clear()
             parserState = InText
           } else {
@@ -92,11 +125,11 @@ object TagStyler {
       tokens
         .map {
           case PlainText(text) => text
-          case OpenTag(name) =>
+          case OpenTagToken(name) =>
             val tag = StyleTag(name)
-            activeTags.add(tag)
+            if (!tag.isSelfClosing) activeTags.add(tag)
             tag.render
-          case CloseTag(name) =>
+          case CloseTagToken(name) =>
             val tag = StyleTag(name)
             activeTags.remove(tag)
             StyleTag.RESET + renderTags(activeTags.toSet)
