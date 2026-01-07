@@ -4,22 +4,18 @@ import distage.{DefaultModule, Identity, Module, TagK}
 import izumi.distage.testkit.model.{DistageTest, FullMeta, ScopeId, SuiteMeta, TestConfig, TestStatus}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.scalatest.Spec1
-import izumi.distage.testkit.services.scalatest.dstest.{ScalatestAbstractDistageSpec, TestRunnerRuntime}
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.AsyncGlobalSuitesControlHandle
+import izumi.distage.testkit.services.scalatest.dstest.{ScalatestAbstractDistageSpec, TestRunnerRuntime}
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
-import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
-import izumi.fundamentals.platform.versions.Version
 import izumi.logstage.api.IzLogger
-import zio.BuildInfo
 
 import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.duration.DurationInt
-import scala.math.Ordering.Implicits.infixOrderingOps
 
 abstract class InterruptionTest extends Spec1[Identity] {
 
@@ -36,18 +32,7 @@ abstract class InterruptionTest extends Spec1[Identity] {
       lazy val countDownStart: CountDownLatch = new CountDownLatch(tests.size - suites.size)
       lazy val countDownStopped: CountDownLatch = new CountDownLatch(tests.size - suites.size)
 
-      def zioSuites: Seq[InterruptibleTestSuite[AnyF]] = {
-        val zioVersion = Version.parseSemver(BuildInfo.version).get.canonical
-        // FIXME: test interruption only on versions after https://github.com/zio/zio/pull/10276 is released
-        if (zioVersion > Version.Canonical(NEList(2, 1, 24), Nil)
-          || (zioVersion.components == NEList(2, 1, 23) && zioVersion.qualifiers.nonEmpty)) {
-          mkSuites[zio.Task]
-        } else {
-          Nil
-        }
-      }
-
-      lazy val suites = modifySuites(mkSuites[Identity] ++ mkSuites[cats.effect.IO] ++ zioSuites)
+      lazy val suites = modifySuites(mkSuites[Identity] ++ mkSuites[cats.effect.IO] ++ mkSuites[zio.Task])
       lazy val tests: Seq[DistageTest[AnyF]] = suites.flatMap(_.registeredTests())
 
       def mkSuites[F[_]: TagK: DefaultModule]: Seq[InterruptibleTestSuite[AnyF]] = {
