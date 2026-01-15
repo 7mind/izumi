@@ -61,21 +61,42 @@ object TagStyler {
   }
 
   private def renderTokens(tokens: Seq[Seq[MessageToken]], stylesheet: Map[String, Seq[StyleTag]]): Seq[String] = {
-    val activeTags = mutable.Set[StyleTag]()
-    def renderPart(tokens: Seq[MessageToken]): String = {
-      StyleTag.renderTags(activeTags.toSeq) +
-      tokens
-        .map {
-          case PlainText(text) => text
+    val activeStyles = mutable.Stack[StyleTag]()
+    var isResetNeeded = false
+
+    def renderPart(partTokens: Seq[MessageToken]): String = {
+      val sb = new StringBuilder
+      sb.append(StyleTag.renderTags(activeStyles.toSeq))
+      for (token <- partTokens) {
+        token match {
+          case PlainText(text) =>
+            if (isResetNeeded) {
+              sb.append(StyleTag.RESET)
+              sb.append(StyleTag.renderTags(activeStyles.toSeq))
+              isResetNeeded = false
+            }
+            sb.append(text)
+
           case OpenTagToken(name) =>
             val tag = StyleTag(name, stylesheet)
-            if (!tag.isSelfClosing) activeTags.add(tag)
-            tag.render
+            if (!tag.isSelfClosing) {
+              activeStyles.push(tag)
+            }
+            sb.append(tag.render)
+
           case CloseTagToken(name) =>
             val tag = StyleTag(name, stylesheet)
-            activeTags.remove(tag)
-            StyleTag.RESET + StyleTag.renderTags(activeTags.toSeq)
-        }.mkString("")
+            activeStyles.filterInPlace(_ != tag)
+            isResetNeeded = true
+        }
+      }
+
+      if (isResetNeeded && activeStyles.isEmpty) {
+        sb.append(StyleTag.RESET)
+        isResetNeeded = false
+      }
+
+      sb.toString
     }
 
     tokens.map(renderPart)
