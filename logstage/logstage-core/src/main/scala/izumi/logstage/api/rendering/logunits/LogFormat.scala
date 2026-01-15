@@ -46,7 +46,7 @@ object LogFormat {
             }
         }._2
 
-      val staticParts = if (options.richFormatting) TagStyler.applyTagsStyles(staticPartsRaw) else staticPartsRaw
+      val staticParts = if (options.richFormatting) TagStyler.applyTagsStyles(staticPartsRaw, options.richStylesheet) else staticPartsRaw
 
       val head = staticParts.head
       templateBuilder.append(handle(head))
