@@ -27,6 +27,7 @@ object unsafe {
           quasiAsyncTry.parTraverseN(n)(l)(f(_).toTry).toEither
         override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => Either[Throwable, Unit]): Either[Throwable, Unit] =
           quasiAsyncTry.parTraverseN_(n)(l)(f(_).toTry).toEither
+        override def maybeSuspendInterruptible[A](eff: => A): Either[Throwable, A] = quasiAsyncTry.maybeSuspendInterruptible(eff).toEither
       }
     }
 
@@ -154,6 +155,7 @@ object unsafe {
           Try {
             id.parTraverseN_(n)(l)(f(_).get)
           }
+        override def maybeSuspendInterruptible[A](eff: => A): Try[A] = Try(eff)
       }
     }
 

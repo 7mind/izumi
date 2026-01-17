@@ -162,11 +162,12 @@ final class InterruptionTestDefaultBlockingZIOAsyncRunner extends InterruptionTe
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[zio.Task]
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[zio.Task])
 //  override def modifyInnerModule: Module => Module = super.modifyInnerModule ++ new ModuleDef {
-//    make[RunnerToF[]]
+//    make[RunnerToF].from[RunnerToF.Async]
 //  }
-
   // FIXME override RunnerToF, override TestkitRunnerModule
 }
+
+// another test case - multiple envs cause outer parTraverse to happen. Test with multiple envs?
 
 final class InterruptionTestDefaultBlockingCIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[cats.effect.IO]
@@ -175,4 +176,12 @@ final class InterruptionTestDefaultBlockingCIO extends InterruptionTest {
 final class InterruptionTestDefaultAsyncCIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO]
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[cats.effect.IO])
+}
+final class InterruptionTestDefaultAsyncCIOAsyncRunnerToF extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO]
+  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[cats.effect.IO])
+  //  override def modifyInnerModule: Module => Module = super.modifyInnerModule ++ new ModuleDef {
+  //    make[RunnerToF].from[RunnerToF.Async]
+  //  }
+  // FIXME override RunnerToF, override TestkitRunnerModule
 }
