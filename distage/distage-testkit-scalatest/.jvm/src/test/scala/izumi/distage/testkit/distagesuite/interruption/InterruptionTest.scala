@@ -1,11 +1,13 @@
 package izumi.distage.testkit.distagesuite.interruption
 
-import distage.{DefaultModule, Identity, Module, TagK}
+import distage.{DefaultModule, Identity, Module, ModuleDef, TagK}
 import izumi.distage.testkit.model.{DistageTest, FullMeta, ScopeId, SuiteMeta, TestConfig, TestStatus}
 import izumi.distage.testkit.runner.api.TestReporter
+import izumi.distage.testkit.runner.impl.RunnerToF
 import izumi.distage.testkit.scalatest.Spec1
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.AsyncGlobalSuitesControlHandle
 import izumi.distage.testkit.services.scalatest.dstest.{ScalatestAbstractDistageSpec, TestRunnerRuntime}
+import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -21,6 +23,9 @@ abstract class InterruptionTest extends Spec1[Identity] {
 
   def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = identity
   def modifyInnerModule: Module => Module = identity
+  final def asyncRunnerToFOverride[F[_]: TagK]: Module = new ModuleDef {
+    make[RunnerToF[F]].from[RunnerToF.AsyncImpl[F]]
+  }
 
   "Test runner" should {
     "propagate Thread Interrupt signal to all underlying test runtimes, including Identity" in {
@@ -141,6 +146,12 @@ final class InterruptionTestDefaultBlocking extends InterruptionTest {
 final class InterruptionTestDefaultAsync extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntime
 }
+final class InterruptionTestDefaultAsyncAsyncRunnerToF extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.asyncRuntimeFor[MiniBIOAsync[Throwable, _]](
+    TestRunnerRuntime.runnerLifecycleForMiniBIOAsync(),
+    asyncRunnerToFOverride[MiniBIOAsync[Throwable, _]],
+  )
+}
 
 object timed {
   private def deadline: ZonedDateTime = LocalDateTime.of(2025, 12, 25, 0, 0, 0).atZone(ZoneOffset.UTC)
@@ -157,14 +168,14 @@ final class InterruptionTestDefaultAsyncZIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task]
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[zio.Task])
 }
+final class InterruptionTestDefaultAsyncZIOAsyncRunnerToF extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
+  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[zio.Task])
+}
 
 final class InterruptionTestDefaultBlockingZIOAsyncRunner extends InterruptionTest {
-  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[zio.Task]
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[zio.Task])
-//  override def modifyInnerModule: Module => Module = super.modifyInnerModule ++ new ModuleDef {
-//    make[RunnerToF].from[RunnerToF.Async]
-//  }
-  // FIXME override RunnerToF, override TestkitRunnerModule
 }
 
 // another test case - multiple envs cause outer parTraverse to happen. Test with multiple envs?
@@ -173,15 +184,15 @@ final class InterruptionTestDefaultBlockingCIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[cats.effect.IO]
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
+final class InterruptionTestDefaultBlockingCIOAsyncRunnerToF extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
+  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[cats.effect.IO])
+}
 final class InterruptionTestDefaultAsyncCIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO]
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
 final class InterruptionTestDefaultAsyncCIOAsyncRunnerToF extends InterruptionTest {
-  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO]
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = timed `apply` _.filter(_.tagMonoIO == TagK[cats.effect.IO])
-  //  override def modifyInnerModule: Module => Module = super.modifyInnerModule ++ new ModuleDef {
-  //    make[RunnerToF].from[RunnerToF.Async]
-  //  }
-  // FIXME override RunnerToF, override TestkitRunnerModule
 }

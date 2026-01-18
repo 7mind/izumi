@@ -1,5 +1,6 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
+import distage.Module
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.{DistageTest, EnvResult}
 import izumi.distage.testkit.runner.TestkitRunnerModule
@@ -26,12 +27,24 @@ private[dstest] trait TestRunnerRuntimePlatformSpecific {
     blockingRuntimeFor[F](TestRunnerRuntime.defaultRunnerLifecycleFor[F])
   }
 
+  /** Construct blocking test runtime using distage itself. DefaultModule[F] always contains a recipe for `QuasiIORunner[F]` */
+  def defaultBlockingRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync: DefaultModule](runnerModuleOverrides: Module): TestRunnerRuntime = {
+    blockingRuntimeFor[F](TestRunnerRuntime.defaultRunnerLifecycleFor[F], runnerModuleOverrides)
+  }
+
   final def defaultBlockingRuntime: TestRunnerRuntime = {
     blockingRuntimeFor[MiniBIOAsync[Throwable, _]](TestRunnerRuntime.runnerLifecycleForMiniBIOAsync())
   }
 
   final def blockingRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync](
     runnerLifecycle: Lifecycle[Identity, QuasiIORunner[F]]
+  ): TestRunnerRuntime = {
+    blockingRuntimeFor(runnerLifecycle, Module.empty)
+  }
+
+  final def blockingRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync](
+    runnerLifecycle: Lifecycle[Identity, QuasiIORunner[F]],
+    runnerModuleOverrides: Module,
   ): TestRunnerRuntime = new TestRunnerRuntime {
     override def runTests[F0[_]](
       asyncSuitesHandle: AsyncGlobalSuitesControlHandle,
@@ -40,7 +53,7 @@ private[dstest] trait TestRunnerRuntimePlatformSpecific {
       testsToRun: Seq[DistageTest[F0]],
     ): Either[List[EnvResult], AsyncResult[List[EnvResult]]] = {
       Left(runnerLifecycle.use {
-        _.runBlocking(TestkitRunnerModule.run[F](testReporter, isTestCancellation, testsToRun))
+        _.runBlocking(TestkitRunnerModule.runWithOverrides[F](testReporter, isTestCancellation, testsToRun, runnerModuleOverrides))
       })
     }
   }

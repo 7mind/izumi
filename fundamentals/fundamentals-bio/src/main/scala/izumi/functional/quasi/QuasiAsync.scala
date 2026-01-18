@@ -45,7 +45,7 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
         F.uninterruptible(F.async(effect))
       }
       override def fromFuture[A](effect: => Future[A]): F[Throwable, A] = {
-        F.uninterruptible(F.fromFuture(effect))
+        F.fromFuture(effect)
       }
       override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Throwable, Unit]): F[Throwable, Unit] = {
         F.parTraverse_(l.iterator.to(Iterable))(f)
@@ -81,7 +81,7 @@ private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
       F.uncancelable(_ => F.async_(effect))
     }
     override def fromFuture[A](effect: => Future[A]): F[A] = {
-      F.uncancelable(_ => F.fromFuture(F.delay(effect)))
+      F.fromFutureCancelable(F.delay(effect -> F.unit))
     }
     override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
       cats.Parallel.parTraverse_(l.iterator.toList)(f)(using cats.instances.list.catsStdInstancesForList, P)
