@@ -7,6 +7,7 @@ import izumi.functional.bio.{BlockingIO2, Exit, UnsafeRun2, WeakAsync2, WeakTemp
 import izumi.fundamentals.platform.language.Quirks.Discarder
 
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -269,10 +270,24 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
     override def fromFuture[A](mkFuture: ExecutionContext => Future[A]): MiniBIOAsync[Throwable, A] = {
       Async[Throwable, A] {
         (ec, cb) =>
-          mkFuture(ec).onComplete {
-            case Success(v) => cb(Exit.Success(v))
-            case Failure(e) => cb(Exit.Error.forThrowable(e))
-          }(ec)
+          val future = try {
+            Right(mkFuture(ec))
+          } catch {
+            case t: Throwable =>
+              Left(t)
+          }
+          future match {
+            case Left(t) =>
+              cb(Exit.Termination.forThrowable(t))
+            case Right(value) =>
+              try {
+                val result = scala.concurrent.blocking(scala.concurrent.Await.result(value, scala.concurrent.duration.Duration.Inf))
+                cb(Exit.Success(result))
+              } catch {
+                case t: Throwable =>
+                  cb(Exit.Error.forThrowable(t))
+              }
+          }
       }
     }
 
@@ -421,14 +436,30 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
 
     // MiniBIOAsync doesn't support interruption
     override def unsafeRunAsyncInterruptible[E, A](io: => MiniBIOAsync[E, A])(callback: Exit[E, A] => Unit): InterruptAction[MiniBIOAsync] = {
-      val finished = Promise[Unit]()
-      unsafeRunAsync(io)(callback = {
-        exit =>
-          finished.success(())
-          callback(exit)
-      })
-      // block until finished
-      InterruptAction(MiniBIOAsync.Async((_, cb) => finished.future.onComplete(_ => cb(Exit.Success(())))))
+      val runningThreads = ConcurrentHashMap.newKeySet[Thread]()
+      val trackedEc = new ExecutionContext {
+        override def execute(runnable: Runnable): Unit = {
+          ec.execute(() => {
+            val thread = Thread.currentThread()
+            runningThreads.add(thread).discard()
+            try {
+              runnable.run()
+            } finally {
+              runningThreads.remove(thread).discard()
+            }
+          })
+        }
+        override def reportFailure(cause: Throwable): Unit = ec.reportFailure(cause)
+      }
+      io.runOnEC(trackedEc).onComplete {
+        case scala.util.Success(exit: Exit.Uninterrupted[E, A]) => callback(exit)
+        case scala.util.Failure(t) => callback(Exit.Termination(t, Exit.Trace.ThrowableTrace(t)))
+      }(ec)
+      InterruptAction(
+        MiniBIOAsync.WeakAsyncForMiniBIOAsync.sync {
+          runningThreads.forEach(_.interrupt())
+        }
+      )
     }
 
     override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => MiniBIOAsync[E, A]): (Future[Exit[E, A]], InterruptAction[MiniBIOAsync]) = {
