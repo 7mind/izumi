@@ -148,52 +148,87 @@ abstract class InterruptionTest extends Spec1[Identity] {
 
 }
 
-final class InterruptionTestDefaultBlocking extends InterruptionTest {
+// another test case - multiple envs cause outer parTraverse to happen. Test with multiple envs?
+
+final class InterruptionTestBlockingMiniBIOAsync_AllEffects extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntime
 }
-final class InterruptionTestDefaultAsync extends InterruptionTest {
+final class InterruptionTestBlockingMiniBIOAsyncAsyncRunnerToF_AllEffects extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.blockingRuntimeFor[MiniBIOAsync[Throwable, _]](
+    TestRunnerRuntime.runnerLifecycleForMiniBIOAsync(),
+    asyncRunnerToFOverride[MiniBIOAsync[Throwable, _]],
+  )
+}
+final class InterruptionTestAsyncMiniBIOAsyncAsync_AllEffects extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntime
 }
-final class InterruptionTestDefaultAsyncAsyncRunnerToF extends InterruptionTest {
+final class InterruptionTestAsyncMiniBIOAsyncAsyncAsyncRunnerToF_AllEffects extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.asyncRuntimeFor[MiniBIOAsync[Throwable, _]](
     TestRunnerRuntime.runnerLifecycleForMiniBIOAsync(),
     asyncRunnerToFOverride[MiniBIOAsync[Throwable, _]],
   )
 }
 
-final class InterruptionTestDefaultBlockingZIO extends InterruptionTest {
+// ZIO
+
+final class InterruptionTestBlockingZIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[zio.Task]
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
 }
-final class InterruptionTestDefaultAsyncZIO extends InterruptionTest {
+final class InterruptionTestBlockingZIOAsyncRunnerToFF extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
+  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
+}
+final class InterruptionTestAsyncZIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task]
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
 }
-final class InterruptionTestDefaultAsyncZIOAsyncRunnerToF extends InterruptionTest {
+final class InterruptionTestAsyncZIOAsyncRunnerToF extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
 }
 
-final class InterruptionTestDefaultBlockingZIOAsyncRunner extends InterruptionTest {
+final class InterruptionTestBlockingZIO_AllEffects extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[zio.Task]
+}
+final class InterruptionTestBlockingZIOAsyncRunnerToF_AllEffects extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
-  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
+}
+final class InterruptionTestAsyncZIO_AllEffects extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task]
+}
+final class InterruptionTestAsyncZIOAsyncRunnerToF_AllEffects extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
 }
 
-// another test case - multiple envs cause outer parTraverse to happen. Test with multiple envs?
+// CIO
 
-final class InterruptionTestDefaultBlockingCIO extends InterruptionTest {
+final class InterruptionTestBlockingCIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[cats.effect.IO]
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
-final class InterruptionTestDefaultBlockingCIOAsyncRunnerToF extends InterruptionTest {
+final class InterruptionTestBlockingCIOAsyncRunnerToF extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
-final class InterruptionTestDefaultAsyncCIO extends InterruptionTest {
+final class InterruptionTestAsyncCIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO]
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
-final class InterruptionTestDefaultAsyncCIOAsyncRunnerToF extends InterruptionTest {
+final class InterruptionTestAsyncCIOAsyncRunnerToF extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
   override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
+}
+
+final class InterruptionTestBlockingCIO_AllEffects extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[cats.effect.IO]
+}
+final class InterruptionTestBlockingCIOAsyncRunnerToF_AllEffects extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
+}
+final class InterruptionTestAsyncCIO_AllEffects extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO]
+}
+final class InterruptionTestAsyncCIOAsyncRunnerToF_AllEffects extends InterruptionTest {
+  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
 }
