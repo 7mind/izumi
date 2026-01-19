@@ -29,7 +29,7 @@ import izumi.functional.bio.syntax.Syntax2
   *  [Parallel2]<--[Concurrent2]
   *  }}}
   *
-  *  Auxiliary algebras:
+  *  Auxiliary algebras (rendered: [[https://izumi.7mind.io/bio/media/algebras.svg]]):
   *
   *  {{{
   *  [cats.effect.*]<:--[CatsConversions]
@@ -48,13 +48,19 @@ import izumi.functional.bio.syntax.Syntax2
   *  [PrimitivesM2]<:--[RefM2]
   *  [PrimitivesM2]<:--[Mutex2]
   *
+  *  [PrimitivesLocal2]
+  *  [PrimitivesLocal2]<--[FiberRef2]
+  *  [PrimitivesLocal2]<--[FiberLocal2]
+  *
   *  [Entropy1]<:--[Entropy2]
   *  [Clock1]<:--[Clock2]
+  *
+  *  [Scheduler2]
   *
   *  [UnsafeRun2]
   *  }}}
   *
-  *  Raw inheritance hierarchy:
+  *  Raw inheritance hierarchy (rendered: [[https://izumi.7mind.io/bio/media/bio-hierarchy.svg]]):
   *
   *  {{{
   *  [Bifunctor2]<--[ApplicativeError2]

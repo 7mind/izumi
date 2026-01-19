@@ -32,9 +32,9 @@ object ZIOSupportModule {
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
 class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
-  include(AnyBIOSupportModule[ZIO[Any, +_, +_]])
+  include(AnyBIOSupportModule.usingDependencies[ZIO[Any, +_, +_]])
   if (!(Tag[R] =:= Tag[Any])) {
-    include(AnyBIOSupportModule[ZIO[R, +_, +_]])
+    include(AnyBIOSupportModule.usingDependencies[ZIO[R, +_, +_]])
   }
 
   addImplicit[TagK3[ZIO]]

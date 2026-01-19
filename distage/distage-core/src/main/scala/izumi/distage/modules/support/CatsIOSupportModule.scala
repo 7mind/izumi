@@ -22,7 +22,7 @@ object CatsIOSupportModule extends CatsIOSupportModule
   */
 trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportModule {
   // QuasiIO & cats-effect instances
-  include(AnyCatsEffectSupportModule[IO])
+  include(AnyCatsEffectSupportModule.usingAsyncParallel[IO])
 
   make[QuasiIORunner[IO]].from(QuasiIORunner.mkFromCatsIORuntime _)
 

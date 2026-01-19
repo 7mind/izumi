@@ -1,6 +1,6 @@
 package izumi.functional.quasi
 
-import izumi.functional.bio.{BlockingIO2, F, WeakAsync2, WeakTemporal2}
+import izumi.functional.bio.{BlockingIO2, WeakAsync2, WeakTemporal2}
 import izumi.fundamentals.orphans.{`cats.effect.kernel.Async`, `cats.effect.kernel.GenTemporal`}
 import izumi.fundamentals.platform.functional.Identity
 
