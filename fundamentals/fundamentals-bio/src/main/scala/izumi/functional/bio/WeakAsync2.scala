@@ -43,6 +43,8 @@ trait WeakAsync2[F[+_, +_]] extends IO2[F] with Parallel2[F] {
     *
     *       - If an async operation's callback CANNOT be safely discarded OR interrupted,
     *       wrap your expression in [[Panic2.uninterruptible]].
+    *
+    * @note to implementors: The effect produced MUST be interruptible.
     */
   def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
 

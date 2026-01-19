@@ -37,6 +37,8 @@ trait Async2[F[+_, +_]] extends Concurrent2[F] with WeakAsync2[F] {
     *
     *       - If an async operation's callback CANNOT be safely discarded OR interrupted,
     *       wrap your expression in [[Panic2.uninterruptible]].
+    *
+    * @note to implementors: The effect produced MUST be interruptible.
     */
   override def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
 
@@ -55,6 +57,8 @@ trait Async2[F[+_, +_]] extends Concurrent2[F] with WeakAsync2[F] {
     *
     *       - If an async operation's callback CANNOT be safely discarded OR interrupted,
     *       wrap your expression in [[Panic2.uninterruptible]].
+    *
+    * @note to implementors: The effect produced MUST be interruptible.
     */
   def asyncF[E, A](register: (Either[E, A] => Unit) => F[E, Unit]): F[E, A]
 
@@ -73,6 +77,8 @@ trait Async2[F[+_, +_]] extends Concurrent2[F] with WeakAsync2[F] {
     *
     *       - If an async operation's callback CANNOT be safely discarded OR interrupted,
     *       wrap your expression in [[Panic2.uninterruptible]].
+    *
+    * @note to implementors: The effect produced MUST be interruptible.
     */
   def asyncWithOnInterrupt[E, A](register: (Either[E, A] => Unit) => InterruptAction[F]): F[E, A]
 
