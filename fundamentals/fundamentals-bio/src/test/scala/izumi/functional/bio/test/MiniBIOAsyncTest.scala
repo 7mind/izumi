@@ -4,6 +4,7 @@ import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.bio.{Exit, F}
 import org.scalatest.wordspec.AsyncWordSpec
 
+import scala.concurrent.duration.*
 import scala.concurrent.{Future, Promise}
 import scala.util.Success
 
@@ -36,6 +37,42 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
         case Exit.Success(value) => assert(value == 777)
         case _ => fail("Expected Success")
       }
+    }
+
+    "fromFuture should be interruptible" in {
+      val gate = Promise[Unit]()
+      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
+      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(F.fromFuture(gate.future))
+      val result = for {
+        _ <- interrupt.interrupt.runOnEC(executionContext)
+        exit <- withTimeout(future, 2.seconds)
+      } yield {
+        exit match {
+          case Exit.Termination(t, _, _) => assert(t.isInstanceOf[InterruptedException])
+          case other => fail(s"Expected Termination(InterruptedException), got $other")
+        }
+      }
+      result
+    }
+
+    "async should be interruptible" in {
+      val started = Promise[Unit]()
+      val effect = F.async[Throwable, Unit] { _ =>
+        started.success(())
+      }
+      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
+      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+      val result = for {
+        _ <- started.future
+        _ <- interrupt.interrupt.runOnEC(executionContext)
+        exit <- withTimeout(future, 2.seconds)
+      } yield {
+        exit match {
+          case Exit.Termination(t, _, _) => assert(t.isInstanceOf[InterruptedException])
+          case other => fail(s"Expected Termination(InterruptedException), got $other")
+        }
+      }
+      result
     }
 
     "support parTraverse" in {
