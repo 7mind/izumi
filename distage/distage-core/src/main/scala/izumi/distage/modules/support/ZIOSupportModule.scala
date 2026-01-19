@@ -6,7 +6,7 @@ import izumi.functional.bio.*
 import izumi.functional.bio.UnsafeRun2.{FailureHandler, ZIORunner}
 import izumi.functional.bio.retry.{Scheduler2, SchedulerInstances}
 import izumi.reflect.{Tag, TagK3}
-import zio.{Executor, IO, ZEnvironment, ZIO, ZLayer}
+import zio.{Executor, ZEnvironment, ZIO, ZLayer}
 
 import scala.concurrent.ExecutionContext
 
@@ -33,8 +33,38 @@ object ZIOSupportModule {
   */
 class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   include(AnyBIOSupportModule.usingDependencies[ZIO[Any, +_, +_]])
+
+  // async + temporal
+  addImplicit[Async2[zio.IO]]
+  addImplicit[Temporal2[zio.IO]]
+
+  // aux algebras
+  make[UnsafeRun2[ZIO[R, _, _]]].using[ZIORunner[R]]
+  addImplicit[BlockingIO2[zio.IO]]
+  addImplicit[Fork2[zio.IO]]
+  addImplicit[Primitives2[zio.IO]]
+  addImplicit[PrimitivesM2[zio.IO]]
+  addImplicit[PrimitivesLocal2[zio.IO]]
+  make[Scheduler2[zio.IO]].from {
+    SchedulerInstances.SchedulerFromTemporalAndClock[zio.IO](using _: WeakTemporal2[zio.IO], _: Clock2[zio.IO])
+  }
+
   if (!(Tag[R] =:= Tag[Any])) {
     include(AnyBIOSupportModule.usingDependencies[ZIO[R, +_, +_]])
+
+    // async + temporal
+    addImplicit[Async2[ZIO[R, +_, +_]]]
+    addImplicit[Temporal2[ZIO[R, +_, +_]]]
+
+    // aux algebras
+    addImplicit[BlockingIO2[ZIO[R, +_, +_]]]
+    addImplicit[Fork2[ZIO[R, +_, +_]]]
+    addImplicit[Primitives2[ZIO[R, +_, +_]]]
+    addImplicit[PrimitivesM2[ZIO[R, +_, +_]]]
+    addImplicit[PrimitivesLocal2[ZIO[R, +_, +_]]]
+    make[Scheduler2[ZIO[R, +_, +_]]].from {
+      SchedulerInstances.SchedulerFromTemporalAndClock[ZIO[R, +_, +_]](using _: WeakTemporal2[ZIO[R, +_, +_]], _: Clock2[ZIO[R, +_, +_]])
+    }
   }
 
   addImplicit[TagK3[ZIO]]
@@ -52,10 +82,6 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
 
   // assume default environment is `Any`, otherwise let the error message guide the user here.
   make[ZEnvironment[Any]].named("zio-initial-env").fromValue(ZEnvironment.empty)
-
-  make[UnsafeRun2[ZIO[R, _, _]]].using[ZIORunner[R]]
-
-  make[BlockingIO2[ZIO[R, +_, +_]]].from(BlockingIOInstances.BlockingZIODefaultR[ZIO, R])
 
   make[ZIORunner[R]].from {
     (
@@ -83,30 +109,5 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   make[ExecutionContext].named("cpu").from((_: Executor @Id("cpu")).asExecutionContext)
   make[ExecutionContext].named("io").from((_: Executor @Id("io")).asExecutionContext)
 
-  addImplicit[Async2[zio.IO]]
-  addImplicit[WeakAsync2[zio.IO]]
-  addImplicit[Temporal2[zio.IO]]
-  addImplicit[WeakTemporal2[zio.IO]]
-  addImplicit[Fork2[zio.IO]]
-  addImplicit[Primitives2[zio.IO]]
-  addImplicit[PrimitivesM2[zio.IO]]
-  addImplicit[PrimitivesLocal2[zio.IO]]
-  make[Scheduler2[zio.IO]].from {
-    SchedulerInstances.SchedulerFromTemporalAndClock[zio.IO](using _: Temporal2[zio.IO], _: Clock2[zio.IO])
-  }
-  if (!(Tag[R] =:= Tag[Any])) {
-    addImplicit[Async2[ZIO[R, +_, +_]]]
-    addImplicit[WeakAsync2[ZIO[R, +_, +_]]]
-    addImplicit[Temporal2[ZIO[R, +_, +_]]]
-    addImplicit[WeakTemporal2[ZIO[R, +_, +_]]]
-    addImplicit[Fork2[ZIO[R, +_, +_]]]
-    addImplicit[Primitives2[ZIO[R, +_, +_]]]
-    addImplicit[PrimitivesM2[ZIO[R, +_, +_]]]
-    addImplicit[PrimitivesLocal2[ZIO[R, +_, +_]]]
-    make[Scheduler2[ZIO[R, +_, +_]]].from {
-      SchedulerInstances.SchedulerFromTemporalAndClock[ZIO[R, +_, +_]](using _: Temporal2[ZIO[R, +_, +_]], _: Clock2[ZIO[R, +_, +_]])
-    }
-  }
-
-  addImplicit[TransZio[IO]]
+  addImplicit[TransZio[zio.IO]]
 }
