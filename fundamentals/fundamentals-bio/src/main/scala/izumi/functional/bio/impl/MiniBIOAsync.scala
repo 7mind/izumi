@@ -270,24 +270,10 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
     override def fromFuture[A](mkFuture: ExecutionContext => Future[A]): MiniBIOAsync[Throwable, A] = {
       Async[Throwable, A] {
         (ec, cb) =>
-          val future = try {
-            Right(mkFuture(ec))
-          } catch {
-            case t: Throwable =>
-              Left(t)
-          }
-          future match {
-            case Left(t) =>
-              cb(Exit.Termination.forThrowable(t))
-            case Right(value) =>
-              try {
-                val result = scala.concurrent.blocking(scala.concurrent.Await.result(value, scala.concurrent.duration.Duration.Inf))
-                cb(Exit.Success(result))
-              } catch {
-                case t: Throwable =>
-                  cb(Exit.Error.forThrowable(t))
-              }
-          }
+          mkFuture(ec).onComplete {
+            case Success(v) => cb(Exit.Success(v))
+            case Failure(e) => cb(Exit.Error.forThrowable(e))
+          }(ec)
       }
     }
 
