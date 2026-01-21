@@ -2,10 +2,9 @@ package org.slf4j.impl;
 
 import izumi.logstage.adapter.slf4j.LogstageLoggerFactory;
 import org.slf4j.ILoggerFactory;
-import org.slf4j.spi.LoggerFactoryBinder;
 
-@SuppressWarnings("ALL")
-public final class StaticLoggerBinder implements LoggerFactoryBinder {
+@SuppressWarnings("deprecation")
+public final class StaticLoggerBinder implements org.slf4j.spi.LoggerFactoryBinder {
 
     // to avoid constant folding by the compiler, this field must *not* be final
     public static String REQUESTED_API_VERSION = "1.6"; // !final

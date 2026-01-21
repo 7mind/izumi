@@ -6,6 +6,9 @@ import izumi.distage.model.PlannerInput
 import izumi.reflect.macrortti.LTag
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.nowarn
+
+@nowarn("msg=unused")
 class HigherKindsTest extends AnyWordSpec with MkInjector {
 
   "support tagless final style module definitions" in {

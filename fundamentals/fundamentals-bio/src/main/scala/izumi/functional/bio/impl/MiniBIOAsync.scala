@@ -118,18 +118,18 @@ sealed trait MiniBIOAsync[+E, +A] {
                             Fail.terminate(t)
                         }
                       runnerAsync(nextIO, stackRest, resumeEc)
-                case Nil =>
-                  Future.successful(success)
-              }
+                    case Nil =>
+                      Future.successful(success)
+                  }
                 case failure: Exit.FailureUninterrupted[?] =>
                   runnerAsync(Fail.halt(failure), stack, resumeEc)
               }
-              next.onComplete(resultPromise.tryComplete)(using ExecutionContext.parasitic)
+              next.onComplete(resultPromise.tryComplete)(using resumeEc)
             }
 
             val interruptAction = () => {
               if (resumed.compareAndSet(false, true)) {
-                continue(Exit.Termination.forThrowable(new InterruptedException), ExecutionContext.global)
+                continue(Exit.Termination.forThrowable(new InterruptedException), ec)
               }
               ()
             }
@@ -150,7 +150,7 @@ sealed trait MiniBIOAsync[+E, +A] {
                 }
             }
 
-            resultPromise.future.onComplete(_ => asyncInterrupt.clear(interruptAction))(using ExecutionContext.parasitic)
+            resultPromise.future.onComplete(_ => asyncInterrupt.clear(interruptAction))(using ec)
             resultPromise.future
         }
     }
@@ -176,7 +176,7 @@ sealed trait MiniBIOAsync[+E, +A] {
       () => {
         runSyncToFirstAsyncBoundary() match {
           case Left(result) => promise.success(result)
-          case Right(continuation) => continuation(ec).onComplete(promise.complete)(ec)
+          case Right(continuation) => continuation(ec).onComplete(promise.complete)(using ec)
         }
       }
     )
@@ -193,7 +193,7 @@ sealed trait MiniBIOAsync[+E, +A] {
         } else {
           runSyncToFirstAsyncBoundaryInterruptible(asyncInterrupt) match {
             case Left(result) => promise.success(result)
-            case Right(continuation) => continuation(ec).onComplete(promise.complete)(using ExecutionContext.parasitic)
+            case Right(continuation) => continuation(ec).onComplete(promise.complete)(using ec)
           }
         }
       }
@@ -354,7 +354,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
           mkFuture(ec).onComplete {
             case Success(v) => cb(Exit.Success(v))
             case Failure(e) => cb(Exit.Error.forThrowable(e))
-          }(using ExecutionContext.parasitic)
+          }(using ec)
       }
     }
 
@@ -376,21 +376,21 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
               val (futureA, interruptA) = fa.runOnECInterruptible(ec)
               val (futureB, interruptB) = fb.runOnECInterruptible(ec)
               interruptsRef.set(List(interruptA, interruptB))
-              {
-                given ExecutionContext = ExecutionContext.parasitic
-                futureA
-                  .zip(futureB)
-                  .onComplete {
-                    case Success((exitA, exitB)) =>
-                      (exitA, exitB) match {
-                        case (Exit.Success(a), Exit.Success(b)) => cb(Exit.Success(f(a, b)))
-                        case (failure: Exit.FailureUninterrupted[E], _) => cb(failure)
-                        case (_, failure: Exit.FailureUninterrupted[E]) => cb(failure)
-                      }
-                    case Failure(t) =>
-                      cb(Exit.Termination.forThrowable(t))
-                  }
-              }
+              val combined: Future[(Exit.Uninterrupted[E, A], Exit.Uninterrupted[E, B])] =
+                futureA.flatMap {
+                  exitA =>
+                    futureB.map(exitB => (exitA, exitB))(using ec)
+                }(using ec)
+              combined.onComplete {
+                case Success((exitA: Exit.Success[A], exitB: Exit.Success[B])) =>
+                  cb(Exit.Success(f(exitA.value, exitB.value)))
+                case Success((exitA: Exit.FailureUninterrupted[E], _)) =>
+                  cb(exitA)
+                case Success((_, exitB: Exit.FailureUninterrupted[E])) =>
+                  cb(exitB)
+                case Failure(t) =>
+                  cb(Exit.Termination.forThrowable(t))
+              }(using ec)
           },
           cleanup = cleanup,
         )
@@ -495,21 +495,18 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
                 interruptsRef.set(workerHandles.map(_._2))
                 val workerFutures = workerHandles.map(_._1)
 
-                {
-                  given ExecutionContext = ExecutionContext.parasitic
-                  Future
-                    .sequence(workerFutures)
-                    .onComplete {
-                      case Success(exits) =>
-                        val mbFailure = earlyFailure.get().orElse(exits.collectFirst(Function.unlift(_.asFailure)))
-                        mbFailure match {
-                          case Some(failure) => cb(failure)
-                          case None => cb(Exit.Success(()))
-                        }
-                      case Failure(t) =>
-                        cb(Exit.Termination(t, Trace.ThrowableTrace(t)))
-                    }
-                }
+                Future
+                  .sequence(workerFutures)
+                  .onComplete {
+                    case Success(exits) =>
+                      val mbFailure = earlyFailure.get().orElse(exits.collectFirst(Function.unlift(_.asFailure)))
+                      mbFailure match {
+                        case Some(failure) => cb(failure)
+                        case None => cb(Exit.Success(()))
+                      }
+                    case Failure(t) =>
+                      cb(Exit.Termination(t, Trace.ThrowableTrace(t)))
+                  }(using ec)
             },
             cleanup = cleanup,
           )
@@ -531,7 +528,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
       io.runOnEC(ec).onComplete {
           case scala.util.Success(exit: Exit.Uninterrupted[E, A]) => callback(exit)
           case scala.util.Failure(t) => callback(Exit.Termination(t, Exit.Trace.ThrowableTrace(t)))
-        }(ec)
+        }(using ec)
     }
 
     override def unsafeRunAsyncAsFuture[E, A](io: => MiniBIOAsync[E, A]): Future[Exit[E, A]] = {
@@ -551,7 +548,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
           continuation(ec).onComplete {
             case scala.util.Success(exit: Exit.Uninterrupted[E, A]) => callback(exit)
             case scala.util.Failure(t) => callback(Exit.Termination(t, Exit.Trace.ThrowableTrace(t)))
-          }(ec)
+          }(using ec)
       }
       InterruptAction(MiniBIOAsync.WeakAsyncForMiniBIOAsync.sync(asyncInterrupt.interrupt()))
     }

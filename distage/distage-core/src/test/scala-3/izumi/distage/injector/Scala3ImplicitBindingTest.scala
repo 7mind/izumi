@@ -8,6 +8,9 @@ import izumi.reflect.Tag
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.annotation.nowarn
+
+@nowarn("msg=unused")
 class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   final case class Description(description: String)

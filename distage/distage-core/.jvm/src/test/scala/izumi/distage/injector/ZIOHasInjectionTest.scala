@@ -17,6 +17,7 @@ import scala.annotation.nowarn
 import scala.util.Try
 
 @nowarn("msg=reflectiveSelectable")
+@nowarn("msg=unused")
 class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with ScalatestGuards {
 
   import izumi.distage.fixtures.TraitCases.TraitCase2.*

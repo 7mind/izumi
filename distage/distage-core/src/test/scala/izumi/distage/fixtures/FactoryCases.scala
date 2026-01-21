@@ -2,6 +2,8 @@ package izumi.distage.fixtures
 
 import izumi.distage.model.definition.{Id, With}
 
+import scala.annotation.unused
+
 object FactoryCases {
 
   object FactoryCase1 {
@@ -89,7 +91,7 @@ object FactoryCases {
       def x(): Factory
     }
 
-    abstract class AbstractClassFactory(private val t: TestClass) {
+    abstract class AbstractClassFactory(@unused private val t: TestClass) {
       def x(a: Int): AssistedTestClass
     }
 

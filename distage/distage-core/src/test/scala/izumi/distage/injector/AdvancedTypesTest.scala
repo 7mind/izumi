@@ -12,6 +12,7 @@ import scala.annotation.nowarn
 import scala.language.reflectiveCalls
 
 @nowarn("msg=reflectiveSelectable")
+@nowarn("msg=unused")
 class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "support generics" in {

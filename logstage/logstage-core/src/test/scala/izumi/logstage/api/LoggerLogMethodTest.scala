@@ -13,8 +13,10 @@ import org.scalatest.wordspec.AnyWordSpec
 import zio.{Task, ZEnvironment, ZIO}
 import izumi.logstage.api.zioUtil.runZIO
 
+import scala.annotation.nowarn
 import scala.util.{Failure, Success, Try}
 
+@nowarn("msg=unused local definition")
 class LoggerLogMethodTest extends AnyWordSpec {
   private val tc = new TestClass
 

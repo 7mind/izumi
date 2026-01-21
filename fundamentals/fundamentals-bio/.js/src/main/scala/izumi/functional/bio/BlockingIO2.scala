@@ -16,15 +16,15 @@ object BlockingIO2 {
 private[bio] sealed trait BlockingIOInstances
 object BlockingIOInstances {
 
-  implicit def fromSyncSafe2[F[+_, +_]: SyncSafe2]: Predefined.Of[BlockingIO2[F]] = Predefined(new BlockingIO2[F] {
+  def fromSyncSafe2[F[+_, +_]: SyncSafe2]: Predefined.Of[BlockingIO2[F]] = Predefined(new BlockingIO2[F] {
     override def shiftBlocking[E, A](f: F[E, A]): F[E, A] = f
     override def syncBlocking[A](f: => A): F[Throwable, A] = SyncSafe2[F].syncSafe(f)
     override def syncInterruptibleBlocking[A](f: => A): F[Throwable, A] = SyncSafe2[F].syncSafe(f)
   })
 
-  def BlockingZIODefault: BlockingIO2[zio.IO] = fromSyncSafe2[zio.IO]
+  implicit def BlockingZIODefault: BlockingIO2[zio.IO] = fromSyncSafe2[zio.IO]
 
-  def BlockingZIODefaultR[F[-_, +_, +_]: `zio.ZIO`, R]: BlockingIO2[F[R, +_, +_]] =
+  implicit def BlockingZIODefaultR[F[-_, +_, +_]: `zio.ZIO`, R]: BlockingIO2[F[R, +_, +_]] =
     fromSyncSafe2[zio.ZIO[R, +_, +_]].asInstanceOf[BlockingIO2[F[R, +_, +_]]]
 
 }

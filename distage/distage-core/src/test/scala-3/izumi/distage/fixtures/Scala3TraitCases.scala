@@ -2,6 +2,9 @@ package izumi.distage.fixtures
 
 import izumi.distage.model.definition.With
 
+import scala.annotation.nowarn
+
+@nowarn("msg=unused")
 object Scala3TraitCases {
 
   class AClass(a: String)

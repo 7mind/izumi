@@ -2,6 +2,9 @@ package izumi.distage.fixtures
 
 import izumi.distage.model.definition.Id
 
+import scala.annotation.nowarn
+
+@nowarn("msg=unused")
 object HigherKindCases {
 
   object HigherKindsCase1 {

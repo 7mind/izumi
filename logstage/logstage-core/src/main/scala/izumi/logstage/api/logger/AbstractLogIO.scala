@@ -23,7 +23,7 @@ trait AbstractLogIO[F[_]] extends UnsafeLogIO[F] {
 
 object AbstractLogIO extends LowPriorityAbstractLogIOInstances {
   final class SyntaxWidenError[F[+_, +_], E, Self0[f[_]]](private[AbstractLogIO] val logIO: AbstractLogIO[F[E, _]] { type Self[f[_]] = Self0[f] }) extends AnyVal {
-    def widenError[E1](implicit @unused ev: E <:< E1): Self0[F[E1, _]] = logIO.asInstanceOf[Self0[F[E1, _]]]
+    def widenError[E1](implicit ev: E <:< E1): Self0[F[E1, _]] = { val _ = ev; logIO.asInstanceOf[Self0[F[E1, _]]] }
   }
 
   @inline implicit final def SyntaxWidenError[F[+_, +_], E, Self0[f[_]]](logIO: AbstractLogIO[F[E, _]] { type Self[f[_]] = Self0[f] }): SyntaxWidenError[F, E, Self0] = {
