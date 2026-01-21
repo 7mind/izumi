@@ -56,6 +56,7 @@ abstract class InterruptionTest extends Spec1[Identity] {
         () =>
           this._doRunTests(TrivialLogger.make[this.type]("abc"), asyncGlobalSuitesControlHandle, testReporter, tests)
       })
+      println(s"InterruptionTest: runner thread=${t.getName} current=${Thread.currentThread().getName}")
       t.setUncaughtExceptionHandler((_, _) => ())
       t.start()
 
@@ -65,6 +66,7 @@ abstract class InterruptionTest extends Spec1[Identity] {
       // Note: on JVM at least one thread MUST block on tests,
       // otherwise it there would be no thread available to actually
       // receive the interrupt signal from SBT upon pressing Ctrl-C
+      println(s"InterruptionTest: interrupting runner thread=${t.getName} current=${Thread.currentThread().getName}")
 
       assert(t.isAlive)
       t.interrupt()
