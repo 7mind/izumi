@@ -6,8 +6,8 @@ import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
 import zio.{Executor, Fiber, FiberId, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.{CompletableFuture, ThreadFactory, TimeUnit, TimeoutException}
 import scala.annotation.nowarn
 import scala.concurrent.Future
 
@@ -90,9 +90,26 @@ object UnsafeRun2 {
 
     override def unsafeRunSync[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
       val interrupted = new AtomicBoolean(true)
-      val result = runtime.unsafe.run {
-        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
-      }(using implicitly[zio.Trace], Unsafe)
+      val effect = ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
+      val resultFuture = new CompletableFuture[zio.Exit[E, A]]()
+      val fiber = runtime.unsafe.fork(effect)(using implicitly[zio.Trace], Unsafe)
+      fiber.unsafe.addObserver(exit => { resultFuture.complete(exit); () })(using Unsafe)
+      var wasInterrupted = false
+      while (!resultFuture.isDone) {
+        try {
+          resultFuture.get(50L, TimeUnit.MILLISECONDS)
+        } catch {
+          case _: TimeoutException =>
+            ()
+          case _: InterruptedException =>
+            wasInterrupted = true
+            runtime.unsafe.run(fiber.interruptAs(FiberId.None))(using implicitly[zio.Trace], Unsafe)
+        }
+      }
+      if (wasInterrupted) {
+        Thread.currentThread().interrupt()
+      }
+      val result = resultFuture.get()
       ZIOExit.toExit(result)(interrupted.get())
     }
 
