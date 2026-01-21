@@ -13,9 +13,6 @@ import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
-import org.scalatest.wordspec.AnyWordSpec
-
-import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.duration.DurationInt

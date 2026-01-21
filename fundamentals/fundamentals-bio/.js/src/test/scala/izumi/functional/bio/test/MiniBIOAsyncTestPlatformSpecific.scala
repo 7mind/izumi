@@ -14,7 +14,7 @@ trait MiniBIOAsyncTestPlatformSpecific extends AsyncWordSpec {
     MiniBIOAsync.WeakAsyncForMiniBIOAsync.fromFuture(promise.future)
   }
 
-  def withTimeout[A](future: scala.concurrent.Future[A], duration: FiniteDuration)(using executionContext: ExecutionContext): scala.concurrent.Future[A] = {
+  def withTimeout[A](future: scala.concurrent.Future[A], duration: FiniteDuration)(implicit executionContext: ExecutionContext): scala.concurrent.Future[A] = {
     val timeoutPromise = Promise[A]()
     val handle: SetTimeoutHandle = setTimeout(duration) {
       timeoutPromise.failure(new RuntimeException(s"timeout after $duration"))

@@ -42,10 +42,17 @@ trait MiniBIOAsyncPlatformSpecific {
     }
 
     override final def unsafeRunSync[E, A](io: => MiniBIOAsync[E, A]): Exit[E, A] = {
-      io.runSyncToFirstAsyncBoundary() match {
+      val asyncInterrupt = new MiniBIOAsync.AsyncInterruptRef
+      io.runSyncToFirstAsyncBoundaryInterruptible(asyncInterrupt) match {
         case Left(exit) => exit
         case Right(continuation) =>
-          Await.result(continuation(ec), Duration.Inf)
+          try {
+            Await.result(continuation(ec), Duration.Inf)
+          } catch {
+            case interrupted: InterruptedException =>
+              asyncInterrupt.interrupt()
+              Exit.Termination.forThrowable(interrupted)
+          }
       }
     }
 

@@ -42,14 +42,11 @@ private[distage] object __DistageScalatestTestSuiteRunnerPlatformSpecific {
     }
 
     try {
-      println(s"DistageScalatestTestSuiteRunner: awaiting results on ${Thread.currentThread().getName}")
       Await.result(resultsPromise.future, Duration.Inf).discard()
     } catch {
       case t: Throwable =>
-        println(s"DistageScalatestTestSuiteRunner: await interrupted on ${Thread.currentThread().getName}: ${t.getClass.getName}")
         asyncGlobalSuitesControl.completeOuterSuite(Some(t))
     } finally {
-      println(s"DistageScalatestTestSuiteRunner: earlyShutdown on ${Thread.currentThread().getName}")
       earlyShutdown.apply()
       asyncGlobalSuitesControl.completeOuterSuite(None)
       asyncGlobalSuitesControl.completeAllSuitesIfGlobal()
