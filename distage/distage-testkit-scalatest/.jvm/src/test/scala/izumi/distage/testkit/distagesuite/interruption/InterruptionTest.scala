@@ -116,11 +116,11 @@ abstract class InterruptionTest extends Spec1[Identity] {
         }
       }
 
-      nSecondsTest(5)
-      nSecondsTest(6)
-      nSecondsTest(7)
-      nSecondsTest(8)
-      nSecondsTest(9)
+      nSecondsTest(10)
+      nSecondsTest(11)
+      nSecondsTest(12)
+      nSecondsTest(13)
+      nSecondsTest(14)
 
     }
 
