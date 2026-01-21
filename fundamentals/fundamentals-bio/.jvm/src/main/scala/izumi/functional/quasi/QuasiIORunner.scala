@@ -27,9 +27,35 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
   def apply[F[_]: QuasiIORunner]: QuasiIORunner[F] = implicitly
 
   implicit object IdentityImpl extends QuasiIORunner[Identity] {
+    private final val IdentityThreadNamePrefix = "quasi-identity-runner"
     override def runBlocking[A](f: => A): A = f
     override def runFuture[A](f: => A): Future[A] = Future.successful(f)
-    override def runFutureInterruptible[A](f: => A): (Future[A], () => Future[Unit]) = (Future.successful(f), () => Future.unit)
+    override def runFutureInterruptible[A](f: => A): (Future[A], () => Future[Unit]) = {
+      val promise = scala.concurrent.Promise[A]()
+      val thread = new Thread(
+        new Runnable {
+          override def run(): Unit = {
+            try {
+              val result = f
+              promise.trySuccess(result)
+              ()
+            } catch {
+              case t: Throwable =>
+                promise.tryFailure(t)
+                ()
+            }
+          }
+        },
+        s"$IdentityThreadNamePrefix-${java.util.UUID.randomUUID()}",
+      )
+      thread.setDaemon(true)
+      thread.start()
+      val interruptAction = () => {
+        thread.interrupt()
+        Future.unit
+      }
+      (promise.future, interruptAction)
+    }
   }
 
   implicit def fromBIO[F[+_, +_]: UnsafeRun2]: QuasiIORunner[F[Throwable, _]] = new BIOImpl[F]
