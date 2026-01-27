@@ -4,9 +4,10 @@ sealed trait StyleTag {
   def render: String
   val isSelfClosing: Boolean = false
 }
+sealed trait BasicStyleTag extends StyleTag
 object StyleTag {
   val RESET = "\u001b[0m"
-  def apply(name: String, stylesheet: Map[String, Seq[StyleTag]]): StyleTag = {
+  def apply(name: String, stylesheet: Map[String, Seq[BasicStyleTag]]): StyleTag = {
     name match {
       case "b" | "bold" => Bold
       case "i" | "italic" => Italic
@@ -25,19 +26,19 @@ object StyleTag {
     tags.map(_.render).mkString("")
   }
 
-  case object Bold extends StyleTag {
+  case object Bold extends BasicStyleTag {
     override def render: String = "\u001b[1m"
   }
-  case object Italic extends StyleTag {
+  case object Italic extends BasicStyleTag {
     override def render: String = "\u001b[3m"
   }
-  case object Underlined extends StyleTag {
+  case object Underlined extends BasicStyleTag {
     override def render: String = "\u001b[4m"
   }
-  case object Reversed extends StyleTag {
+  case object Reversed extends BasicStyleTag {
     override def render: String = "\u001b[7m"
   }
-  case class ColorTag(color: String) extends StyleTag {
+  case class ColorTag(color: String) extends BasicStyleTag {
     override def render: String = color.toLowerCase match {
       case "black" => "\u001b[30m"
       case "red" => "\u001b[31m"
@@ -51,7 +52,7 @@ object StyleTag {
     }
   }
 
-  case class CustomTag(name: String, styles: Seq[StyleTag]) extends StyleTag {
+  case class CustomTag(name: String, styles: Seq[BasicStyleTag]) extends StyleTag {
     override def render: String = {
       renderTags(styles)
     }

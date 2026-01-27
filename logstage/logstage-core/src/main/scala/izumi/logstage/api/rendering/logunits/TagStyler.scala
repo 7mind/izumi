@@ -20,7 +20,7 @@ object TagStyler {
     case class InTag(isClosing: Boolean) extends ParserState
   }
 
-  def applyTagsStyles(parts: Seq[String], stylesheet: Map[String, Seq[StyleTag]]): Seq[String] = {
+  def applyTagsStyles(parts: Seq[String], stylesheet: Map[String, Seq[BasicStyleTag]]): Seq[String] = {
     renderTokens(parseMessageParts(parts), stylesheet)
   }
 
@@ -60,7 +60,7 @@ object TagStyler {
     tokens.toSeq
   }
 
-  private def renderTokens(tokens: Seq[Seq[MessageToken]], stylesheet: Map[String, Seq[StyleTag]]): Seq[String] = {
+  private def renderTokens(tokens: Seq[Seq[MessageToken]], stylesheet: Map[String, Seq[BasicStyleTag]]): Seq[String] = {
     val activeStyles = mutable.Stack[StyleTag]()
     var isResetNeeded = false
 

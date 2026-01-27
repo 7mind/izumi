@@ -2,8 +2,7 @@ package izumi.logstage.sink
 
 import izumi.logstage.api.{IzLogger, Log, TestSink}
 import izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
-import izumi.logstage.api.rendering.logunits.LogFormat
-import izumi.logstage.api.rendering.logunits.StyleTag
+import izumi.logstage.api.rendering.logunits.{BasicStyleTag, LogFormat, StyleTag}
 import izumi.logstage.api.rendering.logunits.StyleTag.{Bold, ColorTag, Italic, Reversed, Underlined}
 import izumi.logstage.sink.ConsoleSink.RichConsoleSink
 import logstage.ConfigurableLogRouter
@@ -184,7 +183,7 @@ object LoggingRichConsoleSinkTest {
     IzLogger(router)
   }
 
-  def setupRichTestLogger(stylesheet: Map[String, Seq[StyleTag]] = Map.empty): (IzLogger, TestSink, RenderingOptions) = {
+  def setupRichTestLogger(stylesheet: Map[String, Seq[BasicStyleTag]] = Map.empty): (IzLogger, TestSink, RenderingOptions) = {
     val richOptions = RenderingOptions.rich(stylesheet)
     val testSink = new TestSink(Some(new StringRenderingPolicy(richOptions, None)))
     val logger = IzLogger(threshold = Log.Level.Trace, sink = testSink)
