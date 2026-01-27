@@ -40,6 +40,10 @@ trait AbstractLoggerF[F[_]] {
     ifAcceptable(pos.get, logLevel)(unsafeLog(Log.Entry(messageThunk, context)))
   }
 
+  @inline final def messageOnly(message: Log.Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+    ifAcceptable(pos.get, Log.Level.Info)(unsafeLog(Log.Entry.create(Log.Level.Info, message, messageOnly = true)(pos)))
+  }
+
   @inline protected def ifAcceptable(position: CodePosition, logLevel: Log.Level)(action: => F[Unit]): F[Unit]
 }
 

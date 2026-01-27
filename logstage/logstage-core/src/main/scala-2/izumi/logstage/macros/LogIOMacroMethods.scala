@@ -37,6 +37,9 @@ object LogIOMacroMethods {
   def scAuditMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
     doLog(c)(message, Level.Audit)
   }
+  def scMessageOnlyMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
+    doMessageOnly(c)(message)
+  }
 
   def scTraceToMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[F[Unit]] = {
     doLogTo(c)(sinkKey, message, Level.Trace)
@@ -160,6 +163,17 @@ object LogIOMacroMethods {
   ): c.Expr[F[Unit]] = {
     c.universe.reify {
       c.prefix.splice.logTo(sinkKey.splice)(level.splice)(message.splice)(CodePositionMaterializerMacro.getEnclosingPosition(c).splice)
+    }
+  }
+
+  private def doMessageOnly[F[_]](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(message: c.Expr[String]
+  ): c.Expr[F[Unit]] = {
+    val mode = getModeFromPrefixesEncModeTypeMember(c)
+    val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
+    c.universe.reify {
+      c.prefix.splice.messageOnly(m.splice)(CodePositionMaterializerMacro.getEnclosingPosition(c).splice)
     }
   }
 

@@ -17,6 +17,10 @@ trait AbstractLogIO[F[_]] extends UnsafeLogIO[F] {
 
   def logTo(sinkKey: String)(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
 
+  final def messageOnly(message: Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+    log(Entry.create(Level.Info, message, messageOnly = true)(pos))
+  }
+
   def withCustomContext(context: CustomContext): Self[F]
   final def apply(context: CustomContext): Self[F] = withCustomContext(context)
 

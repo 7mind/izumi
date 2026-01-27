@@ -36,11 +36,17 @@ class StringRenderingPolicy(
   }
 
   override def render(entry: Log.Entry): String = {
-    renderer.render(entry, context)
+    val r = if (entry.context.messageOnly) StringRenderingPolicy.messageOnlyTemplate else renderer
+    r.render(entry, context)
   }
 }
 
 object StringRenderingPolicy {
+  val messageOnlyTemplate: Renderer.Aggregate = new Renderer.Aggregate(
+    Seq(
+      new Extractor.Message()
+    )
+  )
   val template: Renderer.Aggregate = new Renderer.Aggregate(
     Seq(
       new Styler.LevelColor(
