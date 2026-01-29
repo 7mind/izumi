@@ -84,9 +84,8 @@ object TagStyler {
             }
             sb.append(tag.render)
 
-          case CloseTagToken(name) =>
-            val tag = StyleTag(name, stylesheet)
-            activeStyles.filterInPlace(_ != tag)
+          case CloseTagToken(_) =>
+            activeStyles.pop()
             isResetNeeded = true
         }
       }
