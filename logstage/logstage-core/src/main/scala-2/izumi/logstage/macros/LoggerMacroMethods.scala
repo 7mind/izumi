@@ -36,9 +36,6 @@ object LoggerMacroMethods {
   def scAuditMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     doLog(c)(message, Level.Audit)
   }
-  def scMessageOnlyMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
-    doMessageOnly(c)(message)
-  }
 
   def scTraceToMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[Unit] = {
     doLogTo(c)(sinkKey, message, Level.Trace)
@@ -140,22 +137,6 @@ object LoggerMacroMethods {
       if (self.acceptable(position.get, level.splice)) {
         val ctx = Log.Context.recordContext(level.splice, Log.CustomContext.empty, Some(sinkKey.splice))(position)
         self.unsafeLog(Log.Entry(message.splice, ctx))
-      }
-    }
-  }
-
-  private def doMessageOnly(
-    c: blackbox.Context { type PrefixType = AbstractLogger }
-  )(message: c.Expr[String]
-  ): c.Expr[Unit] = {
-    val mode = getModeFromPrefixesEncModeTypeMember(c)
-    val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
-    c.universe.reify {
-      val self = c.prefix.splice
-      val position = CodePositionMaterializerMacro.getEnclosingPosition(c).splice
-      val level = Log.Level.Info
-      if (self.acceptable(position.get, level)) {
-        self.unsafeLog(Log.Entry.create(level, m.splice, messageOnly = true)(position))
       }
     }
   }

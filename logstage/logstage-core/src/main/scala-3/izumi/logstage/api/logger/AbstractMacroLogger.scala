@@ -22,7 +22,6 @@ trait AbstractMacroLogger { this: AbstractLogger { type EncMode <: Singleton } =
   transparent inline final def error(inline message: String): Unit = logImpl(Log.Level.Error, message)
   transparent inline final def crit(inline message: String): Unit = logImpl(Log.Level.Crit, message)
   transparent inline final def audit(inline message: String): Unit = logImpl(Log.Level.Audit, message)
-  transparent inline final def messageOnly(inline message: String): Unit = messageOnlyImpl(message)
 
   transparent inline final def traceTo(sinkKey: String)(inline message: String): Unit = logToImpl(sinkKey, Log.Level.Trace, message)
   transparent inline final def debugTo(sinkKey: String)(inline message: String): Unit = logToImpl(sinkKey, Log.Level.Debug, message)
@@ -54,16 +53,6 @@ trait AbstractMacroLogger { this: AbstractLogger { type EncMode <: Singleton } =
     if (acceptable(pos.get, level)) {
       val ctx = Log.Context.recordContext(level, Log.CustomContext.empty, Some(sinkKey))(pos)
       unsafeLog(Log.Entry(LogMessageMacro.createMessageWithMode[EncMode](message), ctx))
-    }
-  }
-
-  private[AbstractMacroLogger] transparent inline final def messageOnlyImpl(inline message: String): Unit = {
-    val pos = CodePositionMaterializer.materialize
-    val level = Log.Level.Info
-    if (acceptable(pos.get, level)) {
-      unsafeLog(
-        Log.Entry.create(level, LogMessageMacro.createMessageWithMode[EncMode](message), messageOnly = true)(pos)
-      )
     }
   }
 }
