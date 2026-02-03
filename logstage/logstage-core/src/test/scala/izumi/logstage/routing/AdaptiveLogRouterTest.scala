@@ -24,15 +24,15 @@ class AdaptiveLogRouterTest extends AnyWordSpec {
 
       val logger = IzLogger(router)
 
-      logger.logTo("file")(Log.Level.Info)("file")
+      logger.infoTo("file")("test log to file")
       assert(fileSink.fetch().size == 1)
       assert(consoleSink.fetch().isEmpty)
 
-      logger.logTo("console")(Log.Level.Info)("console")
+      logger.warnTo("console")("test log to console")
       assert(fileSink.fetch().size == 1)
       assert(consoleSink.fetch().size == 1)
 
-      logger.log(Log.Level.Info)("default(both)")
+      logger.log(Log.Level.Info)("default test log to both sinks")
       assert(fileSink.fetch().size == 2)
       assert(consoleSink.fetch().size == 2)
     }

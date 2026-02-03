@@ -17,6 +17,14 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Single
   transparent inline final def crit(inline message: String): F[Unit] = logImpl(Log.Level.Crit, message)
   transparent inline final def audit(inline message: String): F[Unit] = logImpl(Log.Level.Audit, message)
 
+  transparent inline final def traceTo(sinkKey: String)(inline message: String): F[Unit] = logToImpl(sinkKey, Log.Level.Trace, message)
+  transparent inline final def debugTo(sinkKey: String)(inline message: String): F[Unit] = logToImpl(sinkKey, Log.Level.Debug, message)
+  transparent inline final def infoTo(sinkKey: String)(inline message: String): F[Unit] = logToImpl(sinkKey, Log.Level.Info, message)
+  transparent inline final def warnTo(sinkKey: String)(inline message: String): F[Unit] = logToImpl(sinkKey, Log.Level.Warn, message)
+  transparent inline final def errorTo(sinkKey: String)(inline message: String): F[Unit] = logToImpl(sinkKey, Log.Level.Error, message)
+  transparent inline final def critTo(sinkKey: String)(inline message: String): F[Unit] = logToImpl(sinkKey, Log.Level.Crit, message)
+  transparent inline final def auditTo(sinkKey: String)(inline message: String): F[Unit] = logToImpl(sinkKey, Log.Level.Audit, message)
+
   transparent inline final def logValues(level: Log.Level)(inline values: Any*): F[Unit] = {
     ${ LogValuesMacro.logValuesIO[F, EncMode]('{ this }, '{ level }, '{ values }) }
   }
@@ -43,5 +51,9 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Single
 
   private[AbstractMacroLogIO] transparent inline final def logImpl(inline level: Log.Level, inline message: String): F[Unit] = {
     this.log(level)(LogMessageMacro.createMessageWithMode[EncMode](message))(CodePositionMaterializer.materialize)
+  }
+
+  private[AbstractMacroLogIO] transparent inline final def logToImpl(inline sinkKey: String, inline level: Log.Level, inline message: String): F[Unit] = {
+    this.logTo(sinkKey)(level)(LogMessageMacro.createMessageWithMode[EncMode](message))(CodePositionMaterializer.materialize)
   }
 }

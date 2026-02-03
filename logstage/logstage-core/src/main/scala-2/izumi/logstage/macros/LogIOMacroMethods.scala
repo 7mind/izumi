@@ -38,6 +38,34 @@ object LogIOMacroMethods {
     doLog(c)(message, Level.Audit)
   }
 
+  def scTraceToMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[F[Unit]] = {
+    doLogTo(c)(sinkKey, message, Level.Trace)
+  }
+
+  def scDebugToMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[F[Unit]] = {
+    doLogTo(c)(sinkKey, message, Level.Debug)
+  }
+
+  def scInfoToMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[F[Unit]] = {
+    doLogTo(c)(sinkKey, message, Level.Info)
+  }
+
+  def scWarnToMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[F[Unit]] = {
+    doLogTo(c)(sinkKey, message, Level.Warn)
+  }
+
+  def scErrorToMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[F[Unit]] = {
+    doLogTo(c)(sinkKey, message, Level.Error)
+  }
+
+  def scCritToMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[F[Unit]] = {
+    doLogTo(c)(sinkKey, message, Level.Crit)
+  }
+
+  def scAuditToMacro[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[F[Unit]] = {
+    doLogTo(c)(sinkKey, message, Level.Audit)
+  }
+
   def scLogValues[F[_]](c: blackbox.Context { type PrefixType = AbstractLogIO[F] })(level: c.Expr[Level])(values: c.Expr[Any]*): c.Expr[F[Unit]] = {
     doLogValues(c)(level, values)
   }
@@ -91,6 +119,18 @@ object LogIOMacroMethods {
     doLogImpl[F](c)(m, l)
   }
 
+  private def doLogTo[F[_]](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(sinkKey: c.Expr[String],
+    message: c.Expr[String],
+    level: Level,
+  ): c.Expr[F[Unit]] = {
+    val mode = getModeFromPrefixesEncModeTypeMember(c)
+    val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
+    val l = LogMessageMacro.reifyLevel(c)(level)
+    doLogToImpl[F](c)(sinkKey, m, l)
+  }
+
   private def doLogValues[F[_]](
     c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
   )(level: c.Expr[Level],
@@ -109,6 +149,17 @@ object LogIOMacroMethods {
   ): c.Expr[F[Unit]] = {
     c.universe.reify {
       c.prefix.splice.log(level.splice)(message.splice)(CodePositionMaterializerMacro.getEnclosingPosition(c).splice)
+    }
+  }
+
+  private def doLogToImpl[F[_]](
+    c: blackbox.Context { type PrefixType = AbstractLogIO[F] }
+  )(sinkKey: c.Expr[String],
+    message: c.Expr[Message],
+    level: c.Expr[Level],
+  ): c.Expr[F[Unit]] = {
+    c.universe.reify {
+      c.prefix.splice.logTo(sinkKey.splice)(level.splice)(message.splice)(CodePositionMaterializerMacro.getEnclosingPosition(c).splice)
     }
   }
 

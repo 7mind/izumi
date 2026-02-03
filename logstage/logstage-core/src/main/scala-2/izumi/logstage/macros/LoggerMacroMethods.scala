@@ -37,6 +37,34 @@ object LoggerMacroMethods {
     doLog(c)(message, Level.Audit)
   }
 
+  def scTraceToMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[Unit] = {
+    doLogTo(c)(sinkKey, message, Level.Trace)
+  }
+
+  def scDebugToMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[Unit] = {
+    doLogTo(c)(sinkKey, message, Level.Debug)
+  }
+
+  def scInfoToMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[Unit] = {
+    doLogTo(c)(sinkKey, message, Level.Info)
+  }
+
+  def scWarnToMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[Unit] = {
+    doLogTo(c)(sinkKey, message, Level.Warn)
+  }
+
+  def scErrorToMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[Unit] = {
+    doLogTo(c)(sinkKey, message, Level.Error)
+  }
+
+  def scCritToMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[Unit] = {
+    doLogTo(c)(sinkKey, message, Level.Crit)
+  }
+
+  def scAuditToMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(sinkKey: c.Expr[String])(message: c.Expr[String]): c.Expr[Unit] = {
+    doLogTo(c)(sinkKey, message, Level.Audit)
+  }
+
   def scLogValues(c: blackbox.Context { type PrefixType = AbstractLogger })(level: c.Expr[Level])(values: c.Expr[Any]*): c.Expr[Unit] = {
     doLogValues(c)(level, values)
   }
@@ -60,6 +88,18 @@ object LoggerMacroMethods {
     doLogImpl(c)(m, l)
   }
 
+  private def doLogTo(
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(sinkKey: c.Expr[String],
+    message: c.Expr[String],
+    level: Level,
+  ): c.Expr[Unit] = {
+    val mode = getModeFromPrefixesEncModeTypeMember(c)
+    val m = LogMessageMacro.createMessageWithMode(c)(message, mode)
+    val l = LogMessageMacro.reifyLevel(c)(level)
+    doLogToImpl(c)(sinkKey, m, l)
+  }
+
   private def doLogValues(
     c: blackbox.Context { type PrefixType = AbstractLogger }
   )(level: c.Expr[Level],
@@ -81,6 +121,22 @@ object LoggerMacroMethods {
       val position = CodePositionMaterializerMacro.getEnclosingPosition(c).splice
       if (self.acceptable(position.get, level.splice)) {
         self.unsafeLog(Log.Entry.create(level.splice, message.splice)(position))
+      }
+    }
+  }
+
+  private def doLogToImpl(
+    c: blackbox.Context { type PrefixType = AbstractLogger }
+  )(sinkKey: c.Expr[String],
+    message: c.Expr[Message],
+    level: c.Expr[Level],
+  ): c.Expr[Unit] = {
+    c.universe.reify {
+      val self = c.prefix.splice
+      val position = CodePositionMaterializerMacro.getEnclosingPosition(c).splice
+      if (self.acceptable(position.get, level.splice)) {
+        val ctx = Log.Context.recordContext(level.splice, Log.CustomContext.empty, Some(sinkKey.splice))(position)
+        self.unsafeLog(Log.Entry(message.splice, ctx))
       }
     }
   }

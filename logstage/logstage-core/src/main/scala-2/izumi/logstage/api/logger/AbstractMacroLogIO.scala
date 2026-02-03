@@ -18,6 +18,14 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Single
   final def crit(message: String): F[Unit] = macro scCritMacro[F]
   final def audit(message: String): F[Unit] = macro scAuditMacro[F]
 
+  final def traceTo(sinkKey: String)(message: String): F[Unit] = macro scTraceToMacro[F]
+  final def debugTo(sinkKey: String)(message: String): F[Unit] = macro scDebugToMacro[F]
+  final def infoTo(sinkKey: String)(message: String): F[Unit] = macro scInfoToMacro[F]
+  final def warnTo(sinkKey: String)(message: String): F[Unit] = macro scWarnToMacro[F]
+  final def errorTo(sinkKey: String)(message: String): F[Unit] = macro scErrorToMacro[F]
+  final def critTo(sinkKey: String)(message: String): F[Unit] = macro scCritToMacro[F]
+  final def auditTo(sinkKey: String)(message: String): F[Unit] = macro scAuditToMacro[F]
+
   final def logValues(level: Level)(values: Any*): F[Unit] = macro scLogValues[F]
 
   final def logMethodF(level: Level, printTypes: Boolean = false, printImplicits: Boolean = false): LogMethodF[F, EncMode] =
