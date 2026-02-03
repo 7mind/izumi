@@ -45,6 +45,8 @@ object LogstageCatsStrict {
     override final def unsafeLog(entry: Entry): F[Unit] = wrap(_.unsafeLog(entry))
     override final def log(entry: Entry): F[Unit] = wrap(_.log(entry))
     override final def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = wrap(_.log(logLevel)(messageThunk))
+    override final def logTo(sinkKey: String)(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] =
+      wrap(_.logTo(sinkKey)(logLevel)(messageThunk))
   }
 
   private[logstage] abstract class WrappedLogIOStrictF[F[_]](
@@ -58,5 +60,7 @@ object LogstageCatsStrict {
     override final def unsafeLog(entry: Entry): F[Unit] = wrap(_.unsafeLog(entry))
     override final def log(entry: Entry): F[Unit] = wrap(_.log(entry))
     override final def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = wrap(_.log(logLevel)(messageThunk))
+    override final def logTo(sinkKey: String)(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] =
+      wrap(_.logTo(sinkKey)(logLevel)(messageThunk))
   }
 }
