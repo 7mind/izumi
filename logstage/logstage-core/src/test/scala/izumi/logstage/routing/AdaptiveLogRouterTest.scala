@@ -78,5 +78,23 @@ class AdaptiveLogRouterTest extends AnyWordSpec {
         } yield ()
       }
     }
+
+    "route sink filtered by threshold" in {
+      val consoleSink = new TestSink()
+
+      val router = ConfigurableLogRouter.makeAdaptive(
+        Log.Level.Warn,
+        Map(
+          "console" -> Seq(consoleSink)
+        ),
+        Map.empty,
+        LogQueue.Immediate,
+      )
+
+      val logger = IzLogger(router)
+      logger.debugTo("console")("below threshold")
+
+      assert(consoleSink.fetch().isEmpty)
+    }
   }
 }
