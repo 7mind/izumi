@@ -422,7 +422,7 @@ SLF4JBridgeHandler.install()
 
 ## Adaptive log routers
 
-You can configure the sinks that way, so you can choose them during log. This will allow you to route your logs, based on your needs.
+Adaptive routers let you register named sink groups and then pick the target sinks per log entry.
 Use `makeAdaptive` method, to pass sinks in form of `Map[String, Seq[LogSink]]`. Then you can use the key to select the desired sinks:
 
 ```scala
