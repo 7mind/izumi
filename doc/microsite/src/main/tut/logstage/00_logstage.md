@@ -440,7 +440,7 @@ logger.infoTo("console")("test log to console")
 
 ## Rich formatter for logs
 
-`Rich` rendering option for logs, give ability to use html-like tags, to add more style to logs.
+`Rich` rendering lets you embed lightweight markup tags in log messages and map them to ANSI styles, so you can highlight parts of the output with colors and text decorations.
 For now, there are such tags available:
 
 - `<b>`, `<bold>`
