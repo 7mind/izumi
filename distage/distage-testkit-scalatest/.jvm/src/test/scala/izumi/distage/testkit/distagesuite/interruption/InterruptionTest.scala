@@ -19,6 +19,10 @@ import scala.concurrent.duration.DurationInt
 
 abstract class InterruptionTest extends Spec1[Identity] {
 
+  private final val InterruptionStressRepetitions = 50
+  private final val multiplier = 10
+  def repeat(n: Int)(f: => Any): Unit = (1 to n).foreach(_ => f)
+
   def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = identity
   def modifyInnerModule: Module => Module = identity
   final def asyncRunnerToFOverride[F[_]: TagK]: Module = new ModuleDef {
@@ -26,9 +30,11 @@ abstract class InterruptionTest extends Spec1[Identity] {
   }
 
   "Test runner" should {
-    "propagate Thread Interrupt signal to all underlying test runtimes, including Identity" in {
-      val asyncGlobalSuitesControlHandle: AsyncGlobalSuitesControlHandle = emptySuiteControl()
-      val testReporter: TestReporter = emptySuiteReporter()
+    (1 to InterruptionStressRepetitions).foreach {
+      n =>
+        s"propagate Thread Interrupt signal to all underlying test runtimes, including Identity $n" in repeat(multiplier) {
+          val asyncGlobalSuitesControlHandle: AsyncGlobalSuitesControlHandle = emptySuiteControl()
+          val testReporter: TestReporter = emptySuiteReporter()
 
       val allTestsInterrupted = new AtomicBoolean(true)
 
