@@ -7,7 +7,7 @@ import zio.{Executor, Fiber, FiberId, Runtime, Supervisor, Trace, UIO, Unsafe, Z
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import java.util.concurrent.{CompletableFuture, ThreadFactory, TimeUnit, TimeoutException}
+import java.util.concurrent.{CompletableFuture, ThreadFactory, TimeoutException}
 import scala.annotation.nowarn
 import scala.concurrent.Future
 
@@ -120,20 +120,18 @@ object UnsafeRun2 {
       })(using Unsafe)
       debugState("unsafeRunSync.afterAddObserver", interrupted)
       var wasInterrupted = false
-      while (!resultFuture.isDone) {
-        try {
-          debugState("unsafeRunSync.loop.beforeGet", interrupted)
-          resultFuture.get(50L, TimeUnit.MILLISECONDS)
-        } catch {
-          case _: TimeoutException =>
-            ()
-          case _: InterruptedException =>
-            debugState("unsafeRunSync.loop.caughtInterruptedException", interrupted)
-            wasInterrupted = true
-            debugState("unsafeRunSync.loop.beforeInterruptFiber", interrupted)
-            runtime.unsafe.run(fiber.interruptAs(FiberId.None))(using implicitly[zio.Trace], Unsafe)
-            debugState("unsafeRunSync.loop.afterInterruptFiber", interrupted)
-        }
+      try {
+        debugState("unsafeRunSync.loop.beforeGet", interrupted)
+        resultFuture.get()
+      } catch {
+        case _: TimeoutException =>
+          ()
+        case _: InterruptedException =>
+          debugState("unsafeRunSync.loop.caughtInterruptedException", interrupted)
+          wasInterrupted = true
+          debugState("unsafeRunSync.loop.beforeInterruptFiber", interrupted)
+          runtime.unsafe.run(fiber.interruptAs(FiberId.None))(using implicitly[zio.Trace], Unsafe)
+          debugState("unsafeRunSync.loop.afterInterruptFiber", interrupted)
       }
       debugState("unsafeRunSync.loop.done", interrupted)
       if (wasInterrupted) {
