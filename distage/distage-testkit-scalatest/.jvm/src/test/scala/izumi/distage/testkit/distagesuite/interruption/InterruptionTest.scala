@@ -36,50 +36,51 @@ abstract class InterruptionTest extends Spec1[Identity] {
           val asyncGlobalSuitesControlHandle: AsyncGlobalSuitesControlHandle = emptySuiteControl()
           val testReporter: TestReporter = emptySuiteReporter()
 
-      val allTestsInterrupted = new AtomicBoolean(true)
+          val allTestsInterrupted = new AtomicBoolean(true)
 
-      lazy val countDownStart: CountDownLatch = new CountDownLatch(tests.size - suites.size)
-      lazy val countDownStopped: CountDownLatch = new CountDownLatch(tests.size - suites.size)
+          lazy val countDownStart: CountDownLatch = new CountDownLatch(tests.size - suites.size)
+          lazy val countDownStopped: CountDownLatch = new CountDownLatch(tests.size - suites.size)
 
-      lazy val suites = modifySuites(mkSuites[Identity] ++ mkSuites[cats.effect.IO] ++ mkSuites[zio.Task])
+          lazy val suites = modifySuites(mkSuites[Identity] ++ mkSuites[cats.effect.IO] ++ mkSuites[zio.Task])
 //      lazy val suites = modifySuites(mkSuites[Identity])
 //      lazy val suites = modifySuites(mkSuites[cats.effect.IO])
 //      lazy val suites = modifySuites(mkSuites[zio.Task])
-      lazy val tests: Seq[DistageTest[AnyF]] = suites.flatMap(_.registeredTests())
+          lazy val tests: Seq[DistageTest[AnyF]] = suites.flatMap(_.registeredTests())
 
-      def mkSuites[F[_]: TagK: DefaultModule]: Seq[InterruptibleTestSuite[AnyF]] = {
-        (1 to 3).map(id => mkSuiteFor[F](id))
-      }
-      def mkSuiteFor[F[_]: TagK: DefaultModule](id: Int): InterruptibleTestSuite[AnyF] = {
-        new InterruptibleTestSuite[F](id, countDownStart, () => countDownStopped.countDown(), () => allTestsInterrupted.set(false))
-          .asInstanceOf[InterruptibleTestSuite[AnyF]]
-      }
+          def mkSuites[F[_]: TagK: DefaultModule]: Seq[InterruptibleTestSuite[AnyF]] = {
+            (1 to 3).map(id => mkSuiteFor[F](id))
+          }
+          def mkSuiteFor[F[_]: TagK: DefaultModule](id: Int): InterruptibleTestSuite[AnyF] = {
+            new InterruptibleTestSuite[F](id, countDownStart, () => countDownStopped.countDown(), () => allTestsInterrupted.set(false))
+              .asInstanceOf[InterruptibleTestSuite[AnyF]]
+          }
 
-      val t = new Thread({
-        () =>
-          this._doRunTests(TrivialLogger.make[this.type]("abc"), asyncGlobalSuitesControlHandle, testReporter, tests)
-      })
-      t.setUncaughtExceptionHandler((_, _) => ())
-      t.start()
+          val t = new Thread({
+            () =>
+              this._doRunTests(TrivialLogger.make[this.type]("abc"), asyncGlobalSuitesControlHandle, testReporter, tests)
+          })
+          t.setUncaughtExceptionHandler((_, _) => ())
+          t.start()
 
-      countDownStart.await(20L, TimeUnit.SECONDS)
-      assert(countDownStart.getCount == 0L)
+          countDownStart.await(20L, TimeUnit.SECONDS)
+          assert(countDownStart.getCount == 0L)
 
-      // Note: on JVM at least one thread MUST block on tests,
-      // otherwise it there would be no thread available to actually
-      // receive the interrupt signal from SBT upon pressing Ctrl-C
-      assert(t.isAlive)
-      t.interrupt()
-      t.join()
+          // Note: on JVM at least one thread MUST block on tests,
+          // otherwise it there would be no thread available to actually
+          // receive the interrupt signal from SBT upon pressing Ctrl-C
+          assert(t.isAlive)
+          t.interrupt()
+          t.join()
 
-      assert(allTestsInterrupted.get())
+          assert(allTestsInterrupted.get())
 
-      countDownStopped.await(20L, TimeUnit.SECONDS)
-      assert(countDownStopped.getCount == 0L)
+          countDownStopped.await(20L, TimeUnit.SECONDS)
+          assert(countDownStopped.getCount == 0L)
 
-      assert(allTestsInterrupted.get())
+          assert(allTestsInterrupted.get())
 
-      ()
+          ()
+        }
     }
   }
 
