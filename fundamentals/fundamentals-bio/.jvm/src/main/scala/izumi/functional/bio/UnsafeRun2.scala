@@ -4,10 +4,13 @@ import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.data.InterruptAction
 import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
 import zio.{Executor, Fiber, FiberId, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Promise}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import java.util.concurrent.{CompletableFuture, ThreadFactory, TimeUnit, TimeoutException}
 import scala.annotation.nowarn
 import scala.concurrent.Future
 
@@ -106,34 +109,33 @@ object UnsafeRun2 {
       val interrupted = new AtomicBoolean(true)
       debugState("unsafeRunSync.enter", interrupted)
       val effect = ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
-      val resultFuture = new CompletableFuture[zio.Exit[E, A]]()
+      val resultPromise = Promise[zio.Exit[E, A]]()
       debugState("unsafeRunSync.beforeFork", interrupted)
       val fiber = runtime.unsafe.fork(effect)(using implicitly[zio.Trace], Unsafe)
       debugState("unsafeRunSync.afterFork", interrupted)
-      fiber.unsafe.addObserver(exit => {
-        val thread = Thread.currentThread()
-        println(
-          s"[ZIORunner][unsafeRunSync.observer] thread=${thread.getName}:${thread.getId} isInterrupted=${thread.isInterrupted} interruptedState=${interrupted.get()} exitTag=${if (exit.isSuccess) "Success" else "Failure"}"
-        )
-        resultFuture.complete(exit)
-        ()
-      })(using Unsafe)
+      fiber.unsafe.addObserver(
+        exit => {
+          val thread = Thread.currentThread()
+          println(
+            s"[ZIORunner][unsafeRunSync.observer] thread=${thread.getName}:${thread.getId} isInterrupted=${thread.isInterrupted} interruptedState=${interrupted
+                .get()} exitTag=${if (exit.isSuccess) "Success" else "Failure"}"
+          )
+          resultPromise.trySuccess(exit)
+          ()
+        }
+      )(using Unsafe)
       debugState("unsafeRunSync.afterAddObserver", interrupted)
       var wasInterrupted = false
-      while (!resultFuture.isDone) {
-        try {
-          debugState("unsafeRunSync.loop.beforeGet", interrupted)
-          resultFuture.get(50L, TimeUnit.MILLISECONDS)
-        } catch {
-          case _: TimeoutException =>
-            ()
-          case _: InterruptedException =>
-            debugState("unsafeRunSync.loop.caughtInterruptedException", interrupted)
-            wasInterrupted = true
-            debugState("unsafeRunSync.loop.beforeInterruptFiber", interrupted)
-            runtime.unsafe.run(fiber.interruptAs(FiberId.None))(using implicitly[zio.Trace], Unsafe)
-            debugState("unsafeRunSync.loop.afterInterruptFiber", interrupted)
-        }
+      try {
+        debugState("unsafeRunSync.loop.beforeGet", interrupted)
+        Await.result(resultPromise.future, Duration.Inf)
+      } catch {
+        case _: InterruptedException =>
+          debugState("unsafeRunSync.loop.caughtInterruptedException", interrupted)
+          wasInterrupted = true
+          debugState("unsafeRunSync.loop.beforeInterruptFiber", interrupted)
+          runtime.unsafe.run(fiber.interruptAs(FiberId.None))(using implicitly[zio.Trace], Unsafe)
+          debugState("unsafeRunSync.loop.afterInterruptFiber", interrupted)
       }
       debugState("unsafeRunSync.loop.done", interrupted)
       if (wasInterrupted) {
@@ -141,7 +143,7 @@ object UnsafeRun2 {
         Thread.currentThread().interrupt()
         debugState("unsafeRunSync.afterRestoreThreadInterrupt", interrupted)
       }
-      val result = resultFuture.get()
+      val result = Await.result(resultPromise.future, Duration.Inf) // seems necessary?
       val converted = ZIOExit.toExit(result)(interrupted.get())
       debugState("unsafeRunSync.afterToExit", interrupted)
       println(s"[ZIORunner][unsafeRunSync.converted] convertedClass=${converted.getClass.getName}")
