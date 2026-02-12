@@ -41,7 +41,7 @@ for i in $(seq 1 "$N"); do
 
   echo "===== ITERATION ${i}/${N} START $(date -Is) =====" | tee -a "$LOG"
 
-  if direnv exec . sbt ";project distage-testkit-scalatestJVM; testOnly ${TEST}" > "$ITER_LOG" 2>&1; then
+  if direnv exec . sbt --java-home "$JAVA_HOME" ";project distage-testkit-scalatestJVM; testOnly ${TEST}" > "$ITER_LOG" 2>&1; then
     cat "$ITER_LOG" >> "$LOG"
 
     ITER_NOT_INTERRUPTED="$(rg -c "second test was not interrupted" "$ITER_LOG" || echo 0)"
