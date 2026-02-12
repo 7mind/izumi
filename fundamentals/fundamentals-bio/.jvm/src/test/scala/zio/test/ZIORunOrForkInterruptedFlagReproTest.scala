@@ -55,10 +55,11 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
       println(s"[LayeredRepro][bad] runnerHung=$badRunnerHung")
       println(s"[LayeredRepro][bad] totalInterrupted=$badTotalInterrupted")
       println(s"[LayeredRepro][bad] totalNotInterrupted=$badTotalNotInterrupted")
-      badReproduced.take(10).foreach { r =>
-        println(
-          s"[LayeredRepro][bad][reproduced] attempt=${r.attempt} started=${r.allStarted} runnerAlive=${r.runnerStillAlive} interrupted=${r.interruptedCount} notInterrupted=${r.notInterruptedCount} stoppedObserved=${r.allStoppedObserved} runnerOutcome=${r.runnerOutcome}"
-        )
+      badReproduced.take(10).foreach {
+        r =>
+          println(
+            s"[LayeredRepro][bad][reproduced] attempt=${r.attempt} started=${r.allStarted} runnerAlive=${r.runnerStillAlive} interrupted=${r.interruptedCount} notInterrupted=${r.notInterruptedCount} stoppedObserved=${r.allStoppedObserved} runnerOutcome=${r.runnerOutcome}"
+          )
       }
 
       println(s"[LayeredRepro][good] style=${GoodStyle.name} attempts=$Attempts")
@@ -105,10 +106,11 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
       println(s"[AllEffectsRepro][good] zioNotInterruptedTotal=$goodZioNotInterrupted")
       println(s"[AllEffectsRepro][good] failedStarts=$goodFailedStarts failedStops=$goodFailedStops runnerHung=$goodRunnerHung")
 
-      badResults.filter(_.zioNotInterruptedCount > 0).take(5).foreach { r =>
-        println(
-          s"[AllEffectsRepro][bad][reproduced] attempt=${r.attempt} zioInterrupted=${r.zioInterruptedCount} zioNotInterrupted=${r.zioNotInterruptedCount} catsInterrupted=${r.catsInterruptedCount} catsNotInterrupted=${r.catsNotInterruptedCount} identityInterrupted=${r.identityInterruptedCount} identityNotInterrupted=${r.identityNotInterruptedCount} runnerOutcome=${r.runnerOutcome}"
-        )
+      badResults.filter(_.zioNotInterruptedCount > 0).take(5).foreach {
+        r =>
+          println(
+            s"[AllEffectsRepro][bad][reproduced] attempt=${r.attempt} zioInterrupted=${r.zioInterruptedCount} zioNotInterrupted=${r.zioNotInterruptedCount} catsInterrupted=${r.catsInterruptedCount} catsNotInterrupted=${r.catsNotInterruptedCount} identityInterrupted=${r.identityInterruptedCount} identityNotInterrupted=${r.identityNotInterruptedCount} runnerOutcome=${r.runnerOutcome}"
+          )
       }
 
       assert(badFailedStarts == 0, s"all-effects bad: some attempts did not start all tests: failedStarts=$badFailedStarts")
@@ -126,14 +128,14 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
     }
   }
 
-  private final case class AttemptState(
+  private case class AttemptState(
     startedLatch: CountDownLatch,
     stoppedLatch: CountDownLatch,
     interruptedCounter: AtomicInteger,
     notInterruptedCounter: AtomicInteger,
   )
 
-  private final case class AttemptResult(
+  private case class AttemptResult(
     attempt: Int,
     style: String,
     allStarted: Boolean,
@@ -144,7 +146,7 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
     runnerOutcome: String,
   )
 
-  private final case class AllEffectsAttemptState(
+  private case class AllEffectsAttemptState(
     startedLatch: CountDownLatch,
     stoppedLatch: CountDownLatch,
     zioInterruptedCounter: AtomicInteger,
@@ -155,7 +157,7 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
     identityNotInterruptedCounter: AtomicInteger,
   )
 
-  private final case class AllEffectsAttemptResult(
+  private case class AllEffectsAttemptResult(
     attempt: Int,
     style: String,
     allStarted: Boolean,
@@ -190,7 +192,8 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
       }.toList
 
       try {
-        Await.result(Future.sequence(futures)(using implicitly, ec), Duration.Inf)
+        implicit val ec0: ExecutionContext = ec
+        val _ = Await.result(Future.sequence(futures), Duration.Inf)
       } catch {
         case t: InterruptedException =>
           runningThreads.forEach(_.interrupt())
@@ -437,15 +440,14 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
             ZIO.acquireReleaseWith(ZIO.unit)(_ => ZIO.succeed(state.stoppedLatch.countDown())) {
               _ =>
                 (ZIO.succeed(state.startedLatch.countDown()) *>
-                  ZIO.sleep(duration).onInterrupt(ZIO.succeed(state.zioInterruptedCounter.incrementAndGet()).unit)
-                ) *>
-                  ZIO.succeed {
-                    val thread = Thread.currentThread()
-                    val value = state.zioNotInterruptedCounter.incrementAndGet()
-                    println(
-                      s"[AllEffectsRepro][zio][signalNotInterrupted] attempt=$attempt suite=$suiteId test=$testId total=$value thread=${thread.getName}:${thread.getId}"
-                    )
-                  }
+                ZIO.sleep(duration).onInterrupt(ZIO.succeed(state.zioInterruptedCounter.incrementAndGet()).unit)) *>
+                ZIO.succeed {
+                  val thread = Thread.currentThread()
+                  val value = state.zioNotInterruptedCounter.incrementAndGet()
+                  println(
+                    s"[AllEffectsRepro][zio][signalNotInterrupted] attempt=$attempt suite=$suiteId test=$testId total=$value thread=${thread.getName}:${thread.getId}"
+                  )
+                }
             }
         }
     }
@@ -462,15 +464,14 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
             val duration = scala.concurrent.duration.DurationInt(10 + testId).seconds
             val io =
               (IO.delay(state.startedLatch.countDown()) *>
-                IO.sleep(duration).onCancel(IO.delay(state.catsInterruptedCounter.incrementAndGet()).void)
-              ) *>
-                IO.delay {
-                  val thread = Thread.currentThread()
-                  val value = state.catsNotInterruptedCounter.incrementAndGet()
-                  println(
-                    s"[AllEffectsRepro][cats][signalNotInterrupted] attempt=$attempt suite=$suiteId test=$testId total=$value thread=${thread.getName}:${thread.getId}"
-                  )
-                }
+              IO.sleep(duration).onCancel(IO.delay(state.catsInterruptedCounter.incrementAndGet()).void)) *>
+              IO.delay {
+                val thread = Thread.currentThread()
+                val value = state.catsNotInterruptedCounter.incrementAndGet()
+                println(
+                  s"[AllEffectsRepro][cats][signalNotInterrupted] attempt=$attempt suite=$suiteId test=$testId total=$value thread=${thread.getName}:${thread.getId}"
+                )
+              }
             io.guarantee(IO.delay(state.stoppedLatch.countDown()))
         }
     }
@@ -649,15 +650,14 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
     ZIO.acquireReleaseWith(ZIO.unit)(_ => ZIO.succeed(state.stoppedLatch.countDown())) {
       _ =>
         (ZIO.succeed(state.startedLatch.countDown()) *>
-          ZIO.sleep(duration).onInterrupt(ZIO.succeed(state.interruptedCounter.incrementAndGet()).unit)
-        ) *>
-          ZIO.succeed {
-            val thread = Thread.currentThread()
-            val value = state.notInterruptedCounter.incrementAndGet()
-            println(
-              s"[LayeredRepro][signalNotInterrupted] attempt=$attempt env=$envId suite=$suiteId test=$testId total=$value thread=${thread.getName}:${thread.getId}"
-            )
-          }
+        ZIO.sleep(duration).onInterrupt(ZIO.succeed(state.interruptedCounter.incrementAndGet()).unit)) *>
+        ZIO.succeed {
+          val thread = Thread.currentThread()
+          val value = state.notInterruptedCounter.incrementAndGet()
+          println(
+            s"[LayeredRepro][signalNotInterrupted] attempt=$attempt env=$envId suite=$suiteId test=$testId total=$value thread=${thread.getName}:${thread.getId}"
+          )
+        }
     }
   }
 
@@ -666,14 +666,15 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
     envEffect: ZIO[Any, Throwable, Unit],
     style: RunnerStyle,
   ): ZIO[Any, Throwable, Unit] = {
-    ZIO.attemptBlockingInterrupt {
-      scala.concurrent.blocking {
-        style.runSync(runtime, envEffect)
+    ZIO
+      .attemptBlockingInterrupt {
+        scala.concurrent.blocking {
+          style.runSync(runtime, envEffect)
+        }
+      }.flatMap {
+        case zio.Exit.Success(value) => ZIO.succeed(value)
+        case zio.Exit.Failure(cause) => ZIO.failCause(cause)
       }
-    }.flatMap {
-      case zio.Exit.Success(value) => ZIO.succeed(value)
-      case zio.Exit.Failure(cause) => ZIO.failCause(cause)
-    }
   }
 
 }
