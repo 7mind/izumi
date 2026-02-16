@@ -14,8 +14,8 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 
 class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
-  private final val Attempts = sys.props.get("izumi.repro.attempts").flatMap(_.toIntOption).getOrElse(20)
-  private final val AllEffectsAttempts = sys.props.get("izumi.repro.allEffectsAttempts").flatMap(_.toIntOption).getOrElse(200)
+  private final val Attempts = sys.props.get("izumi.repro.attempts").flatMap(_.toIntOption).getOrElse(200)
+  private final val AllEffectsAttempts = sys.props.get("izumi.repro.allEffectsAttempts").flatMap(_.toIntOption).getOrElse(2000)
   private final val Envs = 3
   private final val SuitesPerEnv = 3
   private final val TestsPerSuite = 5
