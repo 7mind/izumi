@@ -3,7 +3,6 @@ set -euo pipefail
 
 N="${1:-30}"
 MODE="${2:-blocking}"
-MAX_OOM_RETRIES="${3:-3}"
 BLOCKING_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestBlockingZIO_AllEffects"
 ASYNC_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestAsyncZIO_AllEffects"
 TS="$(date +%Y%m%d-%H%M%S)"
@@ -32,7 +31,7 @@ if ! command -v notify-send >/dev/null 2>&1; then
   exit 3
 fi
 
-echo "Running ${N} iterations (fresh sbt per iteration, fail-fast, OOM retries=${MAX_OOM_RETRIES})"
+echo "Running ${N} iterations (fresh sbt per iteration, fail-fast, unlimited OOM retries)"
 echo "Mode: ${MODE}"
 echo "Test: ${TEST}"
 echo "Log: ${LOG}"
@@ -63,18 +62,7 @@ for i in $(seq 1 "$N"); do
       echo "===== ITERATION ${i}/${N} PASS $(date -Is) =====" | tee -a "$LOG"
       break
     else
-      # SBT exited non-zero — check if it was OOM/thread exhaustion
-      ITER_OOM="$(rg -c "unable to create native thread" "$ITER_LOG" || echo 0)"
-      if [ "$ITER_OOM" -gt 0 ] && [ "$oom_retries" -lt "$MAX_OOM_RETRIES" ]; then
-        oom_retries=$((oom_retries + 1))
-        OOM_RETRIES_TOTAL=$((OOM_RETRIES_TOTAL + 1))
-        echo "===== ITERATION ${i}/${N} OOM-RETRY ${oom_retries}/${MAX_OOM_RETRIES} $(date -Is) =====" | tee -a "$LOG"
-        cat "$ITER_LOG" >> "$LOG"
-        rm -f "$ITER_LOG"
-        continue
-      fi
-
-      # Check for actual test failure markers even in non-zero exit
+      # Check for actual test failure markers before retrying on OOM
       ITER_NOT_INTERRUPTED="$(rg -c "second test was not interrupted" "$ITER_LOG" || echo 0)"
       ITER_FAILED_MARKERS="$(rg -c "\\*\\*\\* [0-9]+ TESTS FAILED \\*\\*\\*" "$ITER_LOG" || echo 0)"
       cat "$ITER_LOG" >> "$LOG"
@@ -87,12 +75,13 @@ for i in $(seq 1 "$N"); do
         exit 1
       fi
 
+      ITER_OOM="$(rg -c "unable to create native thread" "$ITER_LOG" || echo 0)"
       if [ "$ITER_OOM" -gt 0 ]; then
-        echo "===== ITERATION ${i}/${N} OOM-EXHAUSTED $(date -Is) =====" | tee -a "$LOG"
-        echo "Thread exhaustion after ${MAX_OOM_RETRIES} retries in iteration ${i}" | tee -a "$LOG"
-        notify-send "interruption-loop failed" "Iteration ${i}/${N} OOM after ${MAX_OOM_RETRIES} retries. Log: ${LOG}"
+        oom_retries=$((oom_retries + 1))
+        OOM_RETRIES_TOTAL=$((OOM_RETRIES_TOTAL + 1))
+        echo "===== ITERATION ${i}/${N} OOM-RETRY ${oom_retries} $(date -Is) =====" | tee -a "$LOG"
         rm -f "$ITER_LOG"
-        exit 1
+        continue
       fi
 
       echo "===== ITERATION ${i}/${N} FAIL $(date -Is) =====" | tee -a "$LOG"
