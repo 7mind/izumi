@@ -395,25 +395,33 @@ startedLatch = new CountDownLatch(TotalTestsAllEffects)  // ALL tests
 So ALL tests are guaranteed to have started when the interrupt is sent.
 No late workers → no race condition.
 
-## Concrete TODO for Reproduction
+## RESOLUTION: Bug in InterruptionTest latch initialization
 
-1. **Replace the repro test's `IdentityParallelRunner`** with `QuasiAsync[Identity].parTraverse_`
-   which delegates to `parTraverseIdentityImpl` using MiniBIO internally.
+### Root Cause
 
-2. **Match the latch initialization**: Use `totalTests - suitesCount` or similar to allow
-   interruption before all tests start, matching the actual InterruptionTest behavior.
+The bug was in `InterruptionTest.scala` itself, not in ZIO or unsafeRun implementations.
 
-3. **Match the nesting structure**: The actual code has multiple nested levels of par traverse
-   (suite-level → test-level), matching the test tree runner architecture.
+```scala
+// BUG: tests.size = 45, suites.size = 9, so countDownStart = 36
+lazy val countDownStart: CountDownLatch = new CountDownLatch(tests.size - suites.size)
+```
 
-4. **Use the actual ZIORunner.v_good/v_badRunOrFork** for the outer sync mechanism,
-   or faithfully replicate its CompletableFuture + OneShot logic.
+This allowed the interrupt to fire after only 36 of 45 tests had started. Up to 9 tests
+could be queued in the MiniBIO executor but not yet running when `parTraverseThreads.forEach(_.interrupt())`
+was called, missing those workers entirely.
 
-5. **Consider adding debug instrumentation** to `__QuasiAsyncPlatformSpecific.parTraverseIdentityImpl` to log:
-   - When each worker thread is added/removed from `parTraverseThreads`
-   - When the main thread catches InterruptedException
-   - When each worker is interrupted
-   - When each worker's Thread.sleep throws InterruptedException
+### Fix
+
+Replaced CountDownLatch with per-test Promise handles derived from `tests`. Each test gets
+its own Promise, and the main thread awaits `Future.sequence(allPromises)`. Since the
+promises are structurally derived from `tests.map(_ => Promise[Unit]())`, a size mismatch
+is impossible.
+
+### Why the repro test couldn't reproduce
+
+The repro test (`ZIORunOrForkInterruptedFlagReproTest`) used `CountDownLatch(TotalTestsAllEffects)`
+which waited for ALL tests. This eliminated the race window entirely, so the repro test
+correctly passed every time — the bug was specifically in InterruptionTest's latch count.
 
 ## Debug Run Commands
 
@@ -427,3 +435,100 @@ direnv exec . sbt --batch ";project fundamentals-bioJVM; testOnly zio.test.ZIORu
 # Run the full interruption loop
 bash debug/interruption-loop.sh 10
 ```
+
+
+### ADDENDUM
+
+# Interruption Signal Investigation
+
+## Problem Statement
+
+Rare failures to interrupt tests running in `Identity` effect type in `InterruptionTestBlockingZIO_AllEffects`.
+- With `v_good` (fork + CompletableFuture wait): rare Identity test non-interruption
+- With `v_badRunOrFork` (runOrFork): also fails to interrupt inner ZIO tests
+
+## Key files
+
+- Test: `distage/distage-testkit-scalatest/.jvm/src/test/scala/izumi/distage/testkit/distagesuite/interruption/InterruptionTest.scala`
+- ZIO Runner: `fundamentals/fundamentals-bio/.jvm/src/main/scala/izumi/functional/bio/UnsafeRun2.scala` (ZIORunner class, v_good/v_badRunOrFork methods)
+- Repro test: `fundamentals/fundamentals-bio/.jvm/src/test/scala/zio/test/ZIORunOrForkInterruptedFlagReproTest.scala`
+- Identity par traverse: `fundamentals/fundamentals-bio/.jvm/src/main/scala/izumi/functional/quasi/__QuasiAsyncPlatformSpecific.scala`
+- Reproduction script: `debug/interruption-loop.sh`
+
+## Root Cause Identity interruption failures: Bug in InterruptionTest latch initialization
+
+The bug was in `InterruptionTest.scala` itself, not in ZIO or unsafeRun implementations.
+
+```scala
+// BUG: tests.size = 45, suites.size = 9, so countDownStart = 36
+lazy val countDownStart: CountDownLatch = new CountDownLatch(tests.size - suites.size)
+```
+
+The test has 9 suites (3 effect types × 3 suites each) with 5 tests per suite = 45 tests total.
+The CountDownLatch was initialized to `45 - 9 = 36`, so the interrupt fired after only 36 of 45
+tests had called `countDown()`. Up to 9 tests could be queued on the MiniBIO executor but not yet
+running when `parTraverseThreads.forEach(_.interrupt())` was called, missing those workers entirely.
+
+### Race scenario
+
+1. `countDownStart.await()` returns (36/45 tests started)
+2. `t.interrupt()` → ZIO fiber interrupted → blocking thread interrupted
+3. Suite thread S1 interrupted → `parTraverseThreads.forEach(_.interrupt())` → misses workers not yet in the set
+4. Late-starting worker enters `Thread.sleep(...)` with nobody to interrupt it
+5. Sleep completes normally → `signalNotInterrupted()` → test reports failure
+
+### Why the repro test couldn't reproduce
+
+The repro test (`ZIORunOrForkInterruptedFlagReproTest`) used `CountDownLatch(TotalTestsAllEffects)`
+which waited for ALL tests. This eliminated the race window entirely, so the repro test
+correctly passed every time.
+
+## Fix Applied
+
+Two changes to `InterruptionTest.scala`:
+
+### 1. Replaced CountDownLatch with per-test unique Promises
+
+Each `nSecondsTest(n)` creates its own `Promise[Unit]` for started and stopped signals
+during suite construction. These promises are appended to shared `ConcurrentLinkedQueue[Future[Unit]]`
+collectors (append-only, never polled). Each test body closes over its own unique promise.
+
+The main thread awaits `Future.sequence(allStartedFutures)` and `Future.sequence(allStoppedFutures)`.
+
+Structural guarantee: each `nSecondsTest` call both registers one `in { ... }` test AND appends
+one future to the collector. After suite construction, `assert(startedPromises.size() == tests.size)`
+validates the 1:1 correspondence. A size mismatch is structurally impossible.
+
+## Next Steps: Verification
+
+### Verify fix with parallel stress test
+
+Run the interruption loop 3 times in parallel using git worktrees to stress-test
+that the fix is correct under load:
+
+```bash
+# Create 3 worktrees from the current branch
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git worktree add /tmp/exchange/wt-int-1 "$BRANCH"
+git worktree add /tmp/exchange/wt-int-2 "$BRANCH"
+git worktree add /tmp/exchange/wt-int-3 "$BRANCH"
+
+# Run 30 iterations in each worktree in parallel
+(cd /tmp/exchange/wt-int-1 && bash debug/interruption-loop.sh 30) &
+(cd /tmp/exchange/wt-int-2 && bash debug/interruption-loop.sh 30) &
+(cd /tmp/exchange/wt-int-3 && bash debug/interruption-loop.sh 30) &
+wait
+# Check all three logs for failures
+
+# Cleanup
+git worktree remove /tmp/exchange/wt-int-1
+git worktree remove /tmp/exchange/wt-int-2
+git worktree remove /tmp/exchange/wt-int-3
+```
+
+### Investigate v_badRunOrFork separately
+
+The v_badRunOrFork ZIO non-interruption may be a real ZIO/unsafeRun issue
+(Race 6 in the original analysis: fire-and-forget interruption without awaiting).
+This is separate from the InterruptionTest latch bug and should be investigated
+independently once the Identity fix is confirmed.

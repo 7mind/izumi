@@ -13,9 +13,11 @@ import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
+
+import java.util.concurrent.{ConcurrentLinkedQueue, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 
 abstract class InterruptionTest extends Spec1[Identity] {
 
@@ -33,26 +35,42 @@ abstract class InterruptionTest extends Spec1[Identity] {
     (1 to InterruptionStressRepetitions).foreach {
       n =>
         s"propagate Thread Interrupt signal to all underlying test runtimes, including Identity $n" in repeat(multiplier) {
+          implicit val ec: ExecutionContext = ExecutionContext.global
           val asyncGlobalSuitesControlHandle: AsyncGlobalSuitesControlHandle = emptySuiteControl()
           val testReporter: TestReporter = emptySuiteReporter()
 
           val allTestsInterrupted = new AtomicBoolean(true)
 
-          lazy val countDownStart: CountDownLatch = new CountDownLatch(tests.size - suites.size)
-          lazy val countDownStopped: CountDownLatch = new CountDownLatch(tests.size - suites.size)
+          // Append-only collectors; each nSecondsTest registers its own unique promises during suite construction
+          val startedPromises = new ConcurrentLinkedQueue[Future[Unit]]()
+          val stoppedPromises = new ConcurrentLinkedQueue[Future[Unit]]()
 
-          lazy val suites = modifySuites(mkSuites[Identity] ++ mkSuites[cats.effect.IO] ++ mkSuites[zio.Task])
-//      lazy val suites = modifySuites(mkSuites[Identity])
-//      lazy val suites = modifySuites(mkSuites[cats.effect.IO])
-//      lazy val suites = modifySuites(mkSuites[zio.Task])
-          lazy val tests: Seq[DistageTest[AnyF]] = suites.flatMap(_.registeredTests())
-
-          def mkSuites[F[_]: TagK: DefaultModule]: Seq[InterruptibleTestSuite[AnyF]] = {
-            (1 to 3).map(id => mkSuiteFor[F](id))
+          def mkSuites[F0[_]: TagK: DefaultModule]: Seq[InterruptibleTestSuite[AnyF]] = {
+            (1 to 3).map(id => mkSuiteFor[F0](id))
           }
-          def mkSuiteFor[F[_]: TagK: DefaultModule](id: Int): InterruptibleTestSuite[AnyF] = {
-            new InterruptibleTestSuite[F](id, countDownStart, () => countDownStopped.countDown(), () => allTestsInterrupted.set(false))
-              .asInstanceOf[InterruptibleTestSuite[AnyF]]
+          def mkSuiteFor[F0[_]: TagK: DefaultModule](id: Int): InterruptibleTestSuite[AnyF] = {
+            new InterruptibleTestSuite[F0](
+              id,
+              startedPromises = startedPromises,
+              stoppedPromises = stoppedPromises,
+              signalNotInterrupted = () => allTestsInterrupted.set(false),
+            ).asInstanceOf[InterruptibleTestSuite[AnyF]]
+          }
+
+          val suites = modifySuites(mkSuites[Identity] ++ mkSuites[cats.effect.IO] ++ mkSuites[zio.Task])
+          val tests: Seq[DistageTest[AnyF]] = suites.flatMap(_.registeredTests())
+
+          // Each nSecondsTest added exactly one started + one stopped promise during suite construction
+          assert(startedPromises.size() == tests.size, s"started promises ${startedPromises.size()} != tests ${tests.size}")
+          assert(stoppedPromises.size() == tests.size, s"stopped promises ${stoppedPromises.size()} != tests ${tests.size}")
+
+          val allStartedFutures: Seq[Future[Unit]] = {
+            import scala.jdk.CollectionConverters.*
+            startedPromises.asScala.toSeq
+          }
+          val allStoppedFutures: Seq[Future[Unit]] = {
+            import scala.jdk.CollectionConverters.*
+            stoppedPromises.asScala.toSeq
           }
 
           val t = new Thread({
@@ -62,11 +80,10 @@ abstract class InterruptionTest extends Spec1[Identity] {
           t.setUncaughtExceptionHandler((_, _) => ())
           t.start()
 
-          countDownStart.await(20L, TimeUnit.SECONDS)
-          assert(countDownStart.getCount == 0L)
+          Await.result(Future.sequence(allStartedFutures), scala.concurrent.duration.Duration(30, TimeUnit.SECONDS))
 
           // Note: on JVM at least one thread MUST block on tests,
-          // otherwise it there would be no thread available to actually
+          // otherwise there would be no thread available to actually
           // receive the interrupt signal from SBT upon pressing Ctrl-C
           assert(t.isAlive)
           t.interrupt()
@@ -74,8 +91,7 @@ abstract class InterruptionTest extends Spec1[Identity] {
 
           assert(allTestsInterrupted.get())
 
-          countDownStopped.await(20L, TimeUnit.SECONDS)
-          assert(countDownStopped.getCount == 0L)
+          Await.result(Future.sequence(allStoppedFutures), scala.concurrent.duration.Duration(30, TimeUnit.SECONDS))
 
           assert(allTestsInterrupted.get())
 
@@ -86,8 +102,8 @@ abstract class InterruptionTest extends Spec1[Identity] {
 
   final class InterruptibleTestSuite[F[_]](
     id: Int,
-    countDownLatch: => CountDownLatch,
-    signalStopped: () => Unit,
+    startedPromises: ConcurrentLinkedQueue[Future[Unit]],
+    stoppedPromises: ConcurrentLinkedQueue[Future[Unit]],
     signalNotInterrupted: () => Unit,
   )(implicit override val tagMonoIO: TagK[F],
     override val defaultModulesIO: DefaultModule[F],
@@ -98,6 +114,12 @@ abstract class InterruptionTest extends Spec1[Identity] {
     "when tests are interrupted they" should {
 
       def nSecondsTest(n: Int): Unit = {
+        // Each test gets its own unique promises, registered into the append-only collectors
+        val myStarted = Promise[Unit]()
+        val myStopped = Promise[Unit]()
+        startedPromises.add(myStarted.future)
+        stoppedPromises.add(myStopped.future)
+
         s"be interrupted before $n seconds pass" in {
           (FT: QuasiTemporal[F], F0: QuasiIO[F], logger: IzLogger) =>
             implicit val F: QuasiIO[F] = F0
@@ -105,8 +127,7 @@ abstract class InterruptionTest extends Spec1[Identity] {
               _ <- F.guaranteeOnInterrupt {
                 F.suspendF {
                   logger.info(s"\n $n second test started for $id:$tagMonoIO")
-                  countDownLatch.countDown()
-                  //                countDownLatch.await()
+                  myStarted.success(())
                   FT.sleep(n.seconds)
                 }
               } {
@@ -119,15 +140,15 @@ abstract class InterruptionTest extends Spec1[Identity] {
                 signalNotInterrupted()
                 logger.crit(s"\n $n second test was not interrupted for $id:$tagMonoIO")
               }
-            } yield ())(F.maybeSuspend(signalStopped()))
+            } yield ())(F.maybeSuspend(myStopped.success(())))
         }
       }
 
-      nSecondsTest(10)
-      nSecondsTest(11)
-      nSecondsTest(12)
-      nSecondsTest(13)
-      nSecondsTest(14)
+      nSecondsTest(20)
+      nSecondsTest(21)
+      nSecondsTest(22)
+      nSecondsTest(23)
+      nSecondsTest(24)
 
     }
 
