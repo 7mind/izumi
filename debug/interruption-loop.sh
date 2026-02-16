@@ -6,6 +6,7 @@ MODE="${2:-blocking}"
 BLOCKING_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestBlockingZIO_AllEffects"
 ASYNC_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestAsyncZIO_AllEffects"
 TS="$(date +%Y%m%d-%H%M%S)"
+mkdir -p /tmp/exchange
 LOG="/tmp/exchange/interruption-loop-${TS}.log"
 
 if ! [[ "$N" =~ ^[0-9]+$ ]] || [ "$N" -le 0 ]; then

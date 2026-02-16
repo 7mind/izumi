@@ -21,8 +21,8 @@ import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 
 abstract class InterruptionTest extends Spec1[Identity] {
 
-  private final val InterruptionStressRepetitions = 50
-  private final val multiplier = 10
+  private final val parallelRuns = 50
+  private final val sequentialRuns = 10
   def repeat(n: Int)(f: => Any): Unit = (1 to n).foreach(_ => f)
 
   def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = identity
@@ -32,9 +32,9 @@ abstract class InterruptionTest extends Spec1[Identity] {
   }
 
   "Test runner" should {
-    (1 to InterruptionStressRepetitions).foreach {
+    (1 to parallelRuns).foreach {
       n =>
-        s"propagate Thread Interrupt signal to all underlying test runtimes, including Identity $n" in repeat(multiplier) {
+        s"propagate Thread Interrupt signal to all underlying test runtimes, including Identity $n" in repeat(sequentialRuns) {
           implicit val ec: ExecutionContext = ExecutionContext.global
           val asyncGlobalSuitesControlHandle: AsyncGlobalSuitesControlHandle = emptySuiteControl()
           val testReporter: TestReporter = emptySuiteReporter()
