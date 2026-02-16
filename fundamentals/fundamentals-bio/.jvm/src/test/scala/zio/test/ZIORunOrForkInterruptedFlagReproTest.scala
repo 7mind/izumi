@@ -69,6 +69,12 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
       println(s"[LayeredRepro][good] totalInterrupted=$goodTotalInterrupted")
       println(s"[LayeredRepro][good] totalNotInterrupted=$goodTotalNotInterrupted")
 
+      // we still fail to reproduce non-interruption
+      // BAD!
+      assert(badReproduced.isEmpty)
+      assert(goodTotalNotInterrupted == 0)
+      // end BAD!
+
       assert(badFailedStarts == 0, s"fork-no-await: some attempts did not start all tests: failedStarts=$badFailedStarts")
       assert(badFailedStops == 0, s"fork-no-await: some attempts did not stop all tests in time: failedStops=$badFailedStops")
       assert(badRunnerHung == 0, s"fork-no-await: runner thread remained alive in some attempts: runnerHung=$badRunnerHung")
@@ -105,6 +111,21 @@ class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
       println(s"[AllEffectsRepro][good] reproducedAttempts=$goodReproducedAttempts")
       println(s"[AllEffectsRepro][good] zioNotInterruptedTotal=$goodZioNotInterrupted")
       println(s"[AllEffectsRepro][good] failedStarts=$goodFailedStarts failedStops=$goodFailedStops runnerHung=$goodRunnerHung")
+
+      // we still fail to reproduce non-interruption
+      // BAD!
+      (badResults ++ goodResults).foreach {
+        x =>
+          x.productIterator.zip(x.productElementNames).foreach {
+            case (i: Int, s) =>
+              val ignored = Set("zioInterruptedCount", "catsInterruptedCount", "identityInterruptedCount", "attempt")
+              if (!ignored(s)) {
+                assert(i == 0, s"$s not 0")
+              }
+            case _ =>
+          }
+      }
+      // end BAD!
 
       badResults.filter(_.zioNotInterruptedCount > 0).take(5).foreach {
         r =>
