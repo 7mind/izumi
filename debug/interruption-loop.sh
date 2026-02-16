@@ -3,6 +3,7 @@ set -euo pipefail
 
 N="${1:-30}"
 MODE="${2:-blocking}"
+MAX_OOM_RETRIES="${3:-3}"
 BLOCKING_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestBlockingZIO_AllEffects"
 ASYNC_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestAsyncZIO_AllEffects"
 TS="$(date +%Y%m%d-%H%M%S)"
@@ -31,38 +32,75 @@ if ! command -v notify-send >/dev/null 2>&1; then
   exit 3
 fi
 
-echo "Running ${N} iterations (fresh sbt per iteration, fail-fast)"
+echo "Running ${N} iterations (fresh sbt per iteration, fail-fast, OOM retries=${MAX_OOM_RETRIES})"
 echo "Mode: ${MODE}"
 echo "Test: ${TEST}"
 echo "Log: ${LOG}"
 
+OOM_RETRIES_TOTAL=0
+
 for i in $(seq 1 "$N"); do
   ITER_LOG="/tmp/exchange/interruption-loop-${TS}-iter-${i}.log"
 
-  echo "===== ITERATION ${i}/${N} START $(date -Is) =====" | tee -a "$LOG"
+  oom_retries=0
+  while true; do
+    echo "===== ITERATION ${i}/${N} START $(date -Is) =====" | tee -a "$LOG"
 
-  if direnv exec . sbt --java-home "$JAVA_HOME" ";project distage-testkit-scalatestJVM; testOnly ${TEST}" > "$ITER_LOG" 2>&1; then
-    cat "$ITER_LOG" >> "$LOG"
+    if direnv exec . sbt --java-home "$JAVA_HOME" ";project distage-testkit-scalatestJVM; testOnly ${TEST}" > "$ITER_LOG" 2>&1; then
+      cat "$ITER_LOG" >> "$LOG"
 
-    ITER_NOT_INTERRUPTED="$(rg -c "second test was not interrupted" "$ITER_LOG" || echo 0)"
-    ITER_FAILED_MARKERS="$(rg -c "\\*\\*\\* [0-9]+ TESTS FAILED \\*\\*\\*" "$ITER_LOG" || echo 0)"
+      ITER_NOT_INTERRUPTED="$(rg -c "second test was not interrupted" "$ITER_LOG" || echo 0)"
+      ITER_FAILED_MARKERS="$(rg -c "\\*\\*\\* [0-9]+ TESTS FAILED \\*\\*\\*" "$ITER_LOG" || echo 0)"
 
-    if [ "$ITER_NOT_INTERRUPTED" -gt 0 ] || [ "$ITER_FAILED_MARKERS" -gt 0 ]; then
+      if [ "$ITER_NOT_INTERRUPTED" -gt 0 ] || [ "$ITER_FAILED_MARKERS" -gt 0 ]; then
+        echo "===== ITERATION ${i}/${N} FAIL $(date -Is) =====" | tee -a "$LOG"
+        echo "Detected flakiness markers in iteration ${i}: not-interrupted=${ITER_NOT_INTERRUPTED}, failed-markers=${ITER_FAILED_MARKERS}" | tee -a "$LOG"
+        notify-send "interruption-loop failed" "Iteration ${i}/${N} flakiness markers detected. Log: ${LOG}"
+        rm -f "$ITER_LOG"
+        exit 1
+      fi
+
+      echo "===== ITERATION ${i}/${N} PASS $(date -Is) =====" | tee -a "$LOG"
+      break
+    else
+      # SBT exited non-zero — check if it was OOM/thread exhaustion
+      ITER_OOM="$(rg -c "unable to create native thread" "$ITER_LOG" || echo 0)"
+      if [ "$ITER_OOM" -gt 0 ] && [ "$oom_retries" -lt "$MAX_OOM_RETRIES" ]; then
+        oom_retries=$((oom_retries + 1))
+        OOM_RETRIES_TOTAL=$((OOM_RETRIES_TOTAL + 1))
+        echo "===== ITERATION ${i}/${N} OOM-RETRY ${oom_retries}/${MAX_OOM_RETRIES} $(date -Is) =====" | tee -a "$LOG"
+        cat "$ITER_LOG" >> "$LOG"
+        rm -f "$ITER_LOG"
+        continue
+      fi
+
+      # Check for actual test failure markers even in non-zero exit
+      ITER_NOT_INTERRUPTED="$(rg -c "second test was not interrupted" "$ITER_LOG" || echo 0)"
+      ITER_FAILED_MARKERS="$(rg -c "\\*\\*\\* [0-9]+ TESTS FAILED \\*\\*\\*" "$ITER_LOG" || echo 0)"
+      cat "$ITER_LOG" >> "$LOG"
+
+      if [ "$ITER_NOT_INTERRUPTED" -gt 0 ] || [ "$ITER_FAILED_MARKERS" -gt 0 ]; then
+        echo "===== ITERATION ${i}/${N} FAIL $(date -Is) =====" | tee -a "$LOG"
+        echo "Detected flakiness markers in iteration ${i}: not-interrupted=${ITER_NOT_INTERRUPTED}, failed-markers=${ITER_FAILED_MARKERS}" | tee -a "$LOG"
+        notify-send "interruption-loop failed" "Iteration ${i}/${N} flakiness markers detected. Log: ${LOG}"
+        rm -f "$ITER_LOG"
+        exit 1
+      fi
+
+      if [ "$ITER_OOM" -gt 0 ]; then
+        echo "===== ITERATION ${i}/${N} OOM-EXHAUSTED $(date -Is) =====" | tee -a "$LOG"
+        echo "Thread exhaustion after ${MAX_OOM_RETRIES} retries in iteration ${i}" | tee -a "$LOG"
+        notify-send "interruption-loop failed" "Iteration ${i}/${N} OOM after ${MAX_OOM_RETRIES} retries. Log: ${LOG}"
+        rm -f "$ITER_LOG"
+        exit 1
+      fi
+
       echo "===== ITERATION ${i}/${N} FAIL $(date -Is) =====" | tee -a "$LOG"
-      echo "Detected flakiness markers in iteration ${i}: not-interrupted=${ITER_NOT_INTERRUPTED}, failed-markers=${ITER_FAILED_MARKERS}" | tee -a "$LOG"
-      notify-send "interruption-loop failed" "Iteration ${i}/${N} flakiness markers detected. Log: ${LOG}"
+      notify-send "interruption-loop failed" "Iteration ${i}/${N} sbt command failed. Log: ${LOG}"
       rm -f "$ITER_LOG"
       exit 1
     fi
-
-    echo "===== ITERATION ${i}/${N} PASS $(date -Is) =====" | tee -a "$LOG"
-  else
-    cat "$ITER_LOG" >> "$LOG"
-    echo "===== ITERATION ${i}/${N} FAIL $(date -Is) =====" | tee -a "$LOG"
-    notify-send "interruption-loop failed" "Iteration ${i}/${N} sbt command failed. Log: ${LOG}"
-    rm -f "$ITER_LOG"
-    exit 1
-  fi
+  done
 
   rm -f "$ITER_LOG"
 done
@@ -71,6 +109,7 @@ PASSED="$(rg -c "===== ITERATION [0-9]+/[0-9]+ PASS" "$LOG" || echo 0)"
 FAILED_ITERS="$(rg -c "===== ITERATION [0-9]+/[0-9]+ FAIL" "$LOG" || echo 0)"
 FAILED_MARKERS="$(rg -c "\\*\\*\\* [0-9]+ TESTS FAILED \\*\\*\\*" "$LOG" || echo 0)"
 NOT_INTERRUPTED="$(rg -c "second test was not interrupted" "$LOG" || echo 0)"
+OOM_RETRIED="$(rg -c "OOM-RETRY" "$LOG" || echo 0)"
 
 echo
 echo "Summary:"
@@ -79,6 +118,7 @@ echo "  iteration pass count: ${PASSED}"
 echo "  iteration fail count: ${FAILED_ITERS}"
 echo "  failed run markers:   ${FAILED_MARKERS}"
 echo "  not-interrupted logs: ${NOT_INTERRUPTED}"
+echo "  OOM retries total:    ${OOM_RETRIES_TOTAL}"
 echo "  log file: ${LOG}"
 
 if [ "$FAILED_ITERS" -gt 0 ] || [ "$FAILED_MARKERS" -gt 0 ] || [ "$NOT_INTERRUPTED" -gt 0 ]; then
@@ -87,4 +127,4 @@ if [ "$FAILED_ITERS" -gt 0 ] || [ "$FAILED_MARKERS" -gt 0 ] || [ "$NOT_INTERRUPT
   exit 1
 fi
 
-notify-send "interruption-loop succeeded" "All ${N} iterations passed. Log: ${LOG}"
+notify-send "interruption-loop succeeded" "All ${N} iterations passed (${OOM_RETRIES_TOTAL} OOM retries). Log: ${LOG}"
