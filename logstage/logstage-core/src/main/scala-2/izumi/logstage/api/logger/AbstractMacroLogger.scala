@@ -24,6 +24,14 @@ trait AbstractMacroLogger { this: AbstractLogger { type EncMode <: Singleton } =
   final def crit(message: String): Unit = macro scCritMacro
   final def audit(message: String): Unit = macro scAuditMacro
 
+  final def traceTo(sinkKey: String)(message: String): Unit = macro scTraceToMacro
+  final def debugTo(sinkKey: String)(message: String): Unit = macro scDebugToMacro
+  final def infoTo(sinkKey: String)(message: String): Unit = macro scInfoToMacro
+  final def warnTo(sinkKey: String)(message: String): Unit = macro scWarnToMacro
+  final def errorTo(sinkKey: String)(message: String): Unit = macro scErrorToMacro
+  final def critTo(sinkKey: String)(message: String): Unit = macro scCritToMacro
+  final def auditTo(sinkKey: String)(message: String): Unit = macro scAuditToMacro
+
   final def logValues(level: Level)(values: Any*): Unit = macro scLogValues
 
   final def logMethod(level: Level, printTypes: Boolean = false, printImplicits: Boolean = false): LogMethod[EncMode] =

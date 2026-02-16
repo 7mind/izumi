@@ -33,6 +33,9 @@ object LogZIO {
     override final def log(logLevel: Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Unit] =
       ZIO.serviceWithZIO(get(_).log(logLevel)(messageThunk))
 
+    override final def logTo(sinkKey: String)(logLevel: Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): ZIO[LogIO3[ZIO], Nothing, Unit] =
+      ZIO.serviceWithZIO(get(_).logTo(sinkKey)(logLevel)(messageThunk))
+
     override final def unsafeLog(entry: Log.Entry): ZIO[LogIO3[ZIO], Nothing, Unit] =
       ZIO.serviceWithZIO(get(_).log(entry))
 

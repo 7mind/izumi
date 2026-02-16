@@ -16,6 +16,8 @@ final class LogIORaw[F[_], E <: AnyEncoded](
 
   override def log(entry: Log.Entry): F[Unit] = delegate.log(entry)
   override def log(logLevel: Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): F[Unit] = delegate.log(logLevel)(messageThunk)
+  override def logTo(sinkKey: String)(logLevel: Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): F[Unit] =
+    delegate.logTo(sinkKey)(logLevel)(messageThunk)
   override def withCustomContext(context: Log.CustomContext): Self[F] = new LogIORaw(delegate.withCustomContext(context))
   override def unsafeLog(entry: Log.Entry): F[Unit] = delegate.unsafeLog(entry)
   override def createEntry(logLevel: Level, message: Log.Message)(implicit pos: CodePositionMaterializer): F[Log.Entry] = delegate.createEntry(logLevel, message)

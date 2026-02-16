@@ -35,6 +35,15 @@ trait AbstractLoggerF[F[_]] {
     ifAcceptable(pos.get, logLevel)(unsafeLog(Log.Entry.create(logLevel, messageThunk)(pos)))
   }
 
+  @inline final def logTo(sinkKey: String)(logLevel: Log.Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+    val context = Log.Context.recordContext(logLevel, CustomContext.empty, Some(sinkKey))(pos)
+    ifAcceptable(pos.get, logLevel)(unsafeLog(Log.Entry(messageThunk, context)))
+  }
+
+  @inline final def messageOnly(message: => Log.Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+    ifAcceptable(pos.get, Log.Level.Info)(unsafeLog(Log.Entry.create(Log.Level.Info, message, messageOnly = true)(pos)))
+  }
+
   @inline protected def ifAcceptable(position: CodePosition, logLevel: Log.Level)(action: => F[Unit]): F[Unit]
 }
 

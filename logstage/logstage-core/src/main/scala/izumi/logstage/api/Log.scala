@@ -114,6 +114,8 @@ object Log {
     static: StaticExtendedContext,
     dynamic: DynamicContext,
     customContext: CustomContext,
+    sinkRouteKey: Option[String] = None,
+    messageOnly: Boolean = false,
   ) {
     def ++(that: CustomContext): Context = {
       copy(customContext = customContext + that)
@@ -122,13 +124,19 @@ object Log {
   }
   object Context {
     /** Record surrounding source code location, current thread and timestamp */
-    @inline final def recordContext(logLevel: Log.Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): Context = {
+    @inline final def recordContext(
+      logLevel: Log.Level,
+      customContext: CustomContext,
+      sinkRouteKey: Option[String] = None,
+      messageOnly: Boolean = false,
+    )(implicit pos: CodePositionMaterializer
+    ): Context = {
       val thread = Thread.currentThread()
       val tsMillis = System.currentTimeMillis()
       val dynamicContext = DynamicContext(logLevel, ThreadData(thread.getName, thread.getId), tsMillis)
       val extendedStaticContext = StaticExtendedContext(pos.get)
 
-      Log.Context(extendedStaticContext, dynamicContext, customContext)
+      Log.Context(extendedStaticContext, dynamicContext, customContext, sinkRouteKey, messageOnly)
     }
   }
 
@@ -159,8 +167,8 @@ object Log {
 
   object Entry {
     /** Create an Entry recording a `message` along with current thread, timestamp and source code location */
-    @inline final def create(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): Entry = {
-      Log.Entry(message, Context.recordContext(logLevel, CustomContext.empty)(pos))
+    @inline final def create(logLevel: Level, message: Message, messageOnly: Boolean = false)(implicit pos: CodePositionMaterializer): Entry = {
+      Log.Entry(message, Context.recordContext(logLevel, CustomContext.empty, None, messageOnly)(pos))
     }
   }
 

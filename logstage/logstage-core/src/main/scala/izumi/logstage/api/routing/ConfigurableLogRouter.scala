@@ -74,8 +74,34 @@ object ConfigurableLogRouter {
     new ConfigurableLogRouter(logConfigService, buffer)
   }
 
+  def makeAdaptive(
+    rootThreshold: Log.Level = Log.Level.Trace,
+    sinksRoutes: Map[String, Seq[LogSink]],
+    levels: Map[String, LoggingTarget] = Map.empty,
+    buffer: LogQueue = LogQueue.Immediate,
+  ): ConfigurableLogRouter = {
+    val sinks = sinksRoutes.values.flatten.toList.distinct
+    val loggerConfig = buildLoggerConfig(rootThreshold, sinks, levels)
+    val configService = new AdaptiveLogConfigServiceImpl(loggerConfig, sinksRoutes)
+    configService.validate(fallback)
+
+    new ConfigurableLogRouter(configService, buffer)
+  }
+
   @nowarn("msg=[Uu]nused import")
   def apply(rootThreshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, LoggingTarget], buffer: LogQueue): ConfigurableLogRouter = {
+    val loggerConfig = buildLoggerConfig(rootThreshold, sinks, levels)
+    val configService = new LogConfigServiceImpl(loggerConfig)
+    configService.validate(fallback)
+
+    ConfigurableLogRouter(configService, buffer)
+  }
+
+  private def buildLoggerConfig(
+    rootThreshold: Log.Level,
+    sinks: Seq[LogSink],
+    levels: Map[String, LoggingTarget],
+  ): LoggerConfig = {
     import izumi.fundamentals.collections.IzCollections.*
 
     def toConfig(target: LoggingTarget) = {
@@ -96,10 +122,7 @@ object ConfigurableLogRouter {
 
     val rootRule = LoggerRule(LoggerPath(NEList(LoggerPathElement.Wildcard), Set.empty), LoggerPathConfig(rootThreshold, sinks))
 
-    val configService = new LogConfigServiceImpl(LoggerConfig(levelConfigs, rootRule))
-    configService.validate(fallback)
-
-    ConfigurableLogRouter(configService, buffer)
+    LoggerConfig(levelConfigs, rootRule)
   }
 
 }

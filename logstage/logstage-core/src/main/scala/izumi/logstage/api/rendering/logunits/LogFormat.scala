@@ -36,7 +36,7 @@ object LogFormat {
 
       // here we fix representation of "malformed" strings like arg1 + arg2 + arg3.
       // While technically it IS correct to print all the args concatenated, it makes sense to separate them
-      val staticParts = entry.message.template.parts
+      val staticPartsRaw = entry.message.template.parts
         .foldLeft((Option.empty[String], Seq.empty[String])) {
           case ((last, acc), part) =>
             if (part == "" && last.contains("")) {
@@ -45,6 +45,8 @@ object LogFormat {
               (Some(part), acc :+ part)
             }
         }._2
+
+      val staticParts = if (options.richFormatting) TagStyler.applyTagsStyles(staticPartsRaw, options.richStylesheet) else staticPartsRaw
 
       val head = staticParts.head
       templateBuilder.append(handle(head))

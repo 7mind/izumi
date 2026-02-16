@@ -47,6 +47,10 @@ object LogIOStrict extends LowPriorityLogIOStrictInstances {
         logger.log(logLevel)(messageThunk)
       }
 
+      override def logTo(sinkKey: String)(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+        logger.logTo(sinkKey)(logLevel)(messageThunk)
+      }
+
       override def withCustomContext(context: CustomContext): LogIOStrict[F] = {
         fromLogger[F](logger.withCustomContext(context))
       }
@@ -61,6 +65,10 @@ object LogIOStrict extends LowPriorityLogIOStrictInstances {
 
       override def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
         F.syncSafe(logger.log(logLevel)(messageThunk))
+      }
+
+      override def logTo(sinkKey: String)(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
+        F.syncSafe(logger.logTo(sinkKey)(logLevel)(messageThunk))
       }
 
       override def withCustomContext(context: CustomContext): LogIOStrict[F] = {

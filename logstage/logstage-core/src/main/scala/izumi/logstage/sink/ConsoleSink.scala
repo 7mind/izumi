@@ -3,6 +3,7 @@ package izumi.logstage.sink
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 import izumi.logstage.api.rendering.RenderingPolicy
+import izumi.logstage.api.rendering.logunits.BasicStyleTag
 
 class ConsoleSink(policy: RenderingPolicy) extends LogSink {
   override def flush(e: Log.Entry): Unit = {
@@ -22,4 +23,5 @@ object ConsoleSink {
 
   object ColoredConsoleSink extends ConsoleSink(RenderingPolicy.coloringPolicy())
   object SimpleConsoleSink extends ConsoleSink(RenderingPolicy.simplePolicy())
+  class RichConsoleSink(stylesheet: Map[String, Seq[BasicStyleTag]]) extends ConsoleSink(RenderingPolicy.richPolicy(stylesheet))
 }
