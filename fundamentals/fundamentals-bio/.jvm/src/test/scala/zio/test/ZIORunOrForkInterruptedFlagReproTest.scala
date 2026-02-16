@@ -3,6 +3,8 @@ package zio.test
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import cats.syntax.all.*
+import izumi.functional.quasi.QuasiAsync
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{FiberId, Runtime, Unsafe, ZIO, durationInt}
 
