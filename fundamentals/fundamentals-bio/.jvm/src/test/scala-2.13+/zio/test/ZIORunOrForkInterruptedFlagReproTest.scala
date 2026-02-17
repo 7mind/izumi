@@ -3,17 +3,14 @@ package zio.test
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import cats.syntax.all.*
-import izumi.functional.quasi.QuasiAsync
-import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{FiberId, Runtime, Unsafe, ZIO, durationInt}
 
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{CompletableFuture, CountDownLatch, Executors, TimeUnit}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import java.util.concurrent.{CompletableFuture, ConcurrentHashMap, CountDownLatch, Executors, TimeUnit}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 class ZIORunOrForkInterruptedFlagReproTest extends AnyWordSpec {
   private final val Attempts = sys.props.get("izumi.repro.attempts").flatMap(_.toIntOption).getOrElse(200)
