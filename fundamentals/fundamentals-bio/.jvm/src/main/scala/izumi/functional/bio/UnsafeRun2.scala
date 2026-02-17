@@ -104,7 +104,7 @@ object UnsafeRun2 {
 
     //      ZIOExit.toExit(runtime.unsafe.run(io)(using implicitly, zio.Unsafe))(true) // ZIO's runtime.unsafe.run doesn't work
     override def unsafeRunSync[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
-      v_badRunOrFork(io)
+      v_badInitial(io)
     }
 
     def v_good[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
@@ -213,6 +213,14 @@ object UnsafeRun2 {
           debugState("unsafeRunSync.afterToExit.left", interrupted)
           converted
       }
+    }
+
+    def v_badInitial[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
+      val interrupted = new AtomicBoolean(true)
+      val result = runtime.unsafe.run {
+        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
+      }(using implicitly[zio.Trace], Unsafe)
+      ZIOExit.toExit(result)(interrupted.get())
     }
 
     override def unsafeRunAsync[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): Unit = {
