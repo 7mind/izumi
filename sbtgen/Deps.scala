@@ -1,5 +1,5 @@
-import izumi.sbtgen._
-import izumi.sbtgen.model._
+import izumi.sbtgen.*
+import izumi.sbtgen.model.*
 
 object Izumi {
 
