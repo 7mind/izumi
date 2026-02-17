@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export INTERRUPTION_STRESS_TEST="true"
+
 N="${1:-30}"
 MODE="${2:-blocking}"
 BLOCKING_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestBlockingZIO_AllEffects"

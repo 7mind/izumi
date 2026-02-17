@@ -21,9 +21,11 @@ import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 
 abstract class InterruptionTest extends Spec1[Identity] {
 
-  private final val parallelRuns = 50
-  private final val sequentialRuns = 10
-  def repeat(n: Int)(f: => Any): Unit = (1 to n).foreach(_ => f)
+  private final val stressTest = Option(System.getenv("INTERRUPTION_STRESS_TEST")).contains("true")
+
+  private final val parallelRuns = if (stressTest) 50 else 1
+  private final val sequentialRuns = if (stressTest) 10 else 1
+  private final def repeat(n: Int)(f: => Any): Unit = (1 to n).foreach(_ => f)
 
   def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = identity
   def modifyInnerModule: Module => Module = identity
