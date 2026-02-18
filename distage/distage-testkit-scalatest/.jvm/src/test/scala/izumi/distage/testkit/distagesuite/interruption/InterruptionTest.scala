@@ -1,7 +1,7 @@
 package izumi.distage.testkit.distagesuite.interruption
 
 import distage.{DefaultModule, Identity, Module, ModuleDef, TagK}
-import izumi.distage.testkit.model.{DistageTest, FullMeta, ScopeId, SuiteMeta, TestConfig, TestStatus}
+import izumi.distage.testkit.model.{DistageTest, FullMeta, ScopeId, SuiteMeta, TestStatus}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.RunnerToF
 import izumi.distage.testkit.scalatest.Spec1
@@ -14,24 +14,25 @@ import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
 
-import java.util.concurrent.{ConcurrentLinkedQueue, TimeUnit}
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.jdk.CollectionConverters.*
+import scala.util.chaining.scalaUtilChainingOps
 
 abstract class InterruptionTest extends Spec1[Identity] {
 
-  private final val stressTest = Option(System.getenv("INTERRUPTION_STRESS_TEST")).contains("true")
+  protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = identity
 
-  private final val parallelRuns = if (stressTest) 50 else 1
-  private final val sequentialRuns = if (stressTest) 10 else 1
-  private final def repeat(n: Int)(f: => Any): Unit = (1 to n).foreach(_ => f)
-
-  def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = identity
-  def modifyInnerModule: Module => Module = identity
   final def asyncRunnerToFOverride[F[_]: TagK]: Module = new ModuleDef {
     make[RunnerToF[F]].from[RunnerToF.AsyncImpl[F]]
   }
+
+  private final val isStressTest = Option(System.getenv("INTERRUPTION_STRESS_TEST")).contains("true")
+  private final val parallelRuns = if (isStressTest) 50 else 1
+  private final val sequentialRuns = if (isStressTest) 10 else 1
+  private final def repeat(n: Int)(f: => Any): Unit = (1 to n).foreach(_ => f)
 
   "Test runner" should {
     (1 to parallelRuns).foreach {
@@ -43,37 +44,25 @@ abstract class InterruptionTest extends Spec1[Identity] {
 
           val allTestsInterrupted = new AtomicBoolean(true)
 
-          // Append-only collectors; each nSecondsTest registers its own unique promises during suite construction
-          val startedPromises = new ConcurrentLinkedQueue[Future[Unit]]()
-          val stoppedPromises = new ConcurrentLinkedQueue[Future[Unit]]()
-
-          def mkSuites[F0[_]: TagK: DefaultModule]: Seq[InterruptibleTestSuite[AnyF]] = {
-            (1 to 3).map(id => mkSuiteFor[F0](id))
-          }
           def mkSuiteFor[F0[_]: TagK: DefaultModule](id: Int): InterruptibleTestSuite[AnyF] = {
             new InterruptibleTestSuite[F0](
-              id,
-              startedPromises = startedPromises,
-              stoppedPromises = stoppedPromises,
+              id = id,
               signalNotInterrupted = () => allTestsInterrupted.set(false),
             ).asInstanceOf[InterruptibleTestSuite[AnyF]]
+          }
+          def mkSuites[F0[_]: TagK: DefaultModule]: Seq[InterruptibleTestSuite[AnyF]] = {
+            (1 to 3).map(mkSuiteFor[F0])
           }
 
           val suites = modifySuites(mkSuites[Identity] ++ mkSuites[cats.effect.IO] ++ mkSuites[zio.Task])
           val tests: Seq[DistageTest[AnyF]] = suites.flatMap(_.registeredTests())
 
-          // Each nSecondsTest added exactly one started + one stopped promise during suite construction
-          assert(startedPromises.size() == tests.size, s"started promises ${startedPromises.size()} != tests ${tests.size}")
-          assert(stoppedPromises.size() == tests.size, s"stopped promises ${stoppedPromises.size()} != tests ${tests.size}")
+          val startedTests: Seq[Future[Unit]] = suites.flatMap(_.startedTests.asScala)
+          val stoppedTests: Seq[Future[Unit]] = suites.flatMap(_.stoppedTests.asScala)
 
-          val allStartedFutures: Seq[Future[Unit]] = {
-            import scala.jdk.CollectionConverters.*
-            startedPromises.asScala.toSeq
-          }
-          val allStoppedFutures: Seq[Future[Unit]] = {
-            import scala.jdk.CollectionConverters.*
-            stoppedPromises.asScala.toSeq
-          }
+          // Each nSecondsTest added exactly one started + one stopped promise during suite construction
+          assert(startedTests.size == tests.size)
+          assert(stoppedTests.size == tests.size)
 
           val t = new Thread({
             () =>
@@ -82,7 +71,7 @@ abstract class InterruptionTest extends Spec1[Identity] {
           t.setUncaughtExceptionHandler((_, _) => ())
           t.start()
 
-          Await.result(Future.sequence(allStartedFutures), scala.concurrent.duration.Duration(30, TimeUnit.SECONDS))
+          Await.result(Future.sequence(startedTests), 30.seconds)
 
           // Note: on JVM at least one thread MUST block on tests,
           // otherwise there would be no thread available to actually
@@ -93,7 +82,7 @@ abstract class InterruptionTest extends Spec1[Identity] {
 
           assert(allTestsInterrupted.get())
 
-          Await.result(Future.sequence(allStoppedFutures), scala.concurrent.duration.Duration(30, TimeUnit.SECONDS))
+          Await.result(Future.sequence(stoppedTests), 30.seconds)
 
           assert(allTestsInterrupted.get())
 
@@ -104,23 +93,19 @@ abstract class InterruptionTest extends Spec1[Identity] {
 
   final class InterruptibleTestSuite[F[_]](
     id: Int,
-    startedPromises: ConcurrentLinkedQueue[Future[Unit]],
-    stoppedPromises: ConcurrentLinkedQueue[Future[Unit]],
     signalNotInterrupted: () => Unit,
   )(implicit override val tagMonoIO: TagK[F],
     override val defaultModulesIO: DefaultModule[F],
   ) extends ScalatestAbstractDistageSpec.For1[F] {
 
-    override protected def config: TestConfig = super.config.copy(moduleOverrides = modifyInnerModule(super.config.moduleOverrides))
+    val startedTests: ConcurrentLinkedQueue[Future[Unit]] = new ConcurrentLinkedQueue[Future[Unit]]()
+    val stoppedTests: ConcurrentLinkedQueue[Future[Unit]] = new ConcurrentLinkedQueue[Future[Unit]]()
 
     "when tests are interrupted they" should {
 
       def nSecondsTest(n: Int): Unit = {
-        // Each test gets its own unique promises, registered into the append-only collectors
-        val myStarted = Promise[Unit]()
-        val myStopped = Promise[Unit]()
-        startedPromises.add(myStarted.future)
-        stoppedPromises.add(myStopped.future)
+        val startedLatch = Promise[Unit]().tap(startedTests `add` _.future)
+        val stoppedLatch = Promise[Unit]().tap(stoppedTests `add` _.future)
 
         s"be interrupted before $n seconds pass" in {
           (FT: QuasiTemporal[F], F0: QuasiIO[F], logger: IzLogger) =>
@@ -129,7 +114,7 @@ abstract class InterruptionTest extends Spec1[Identity] {
               _ <- F.guaranteeOnInterrupt {
                 F.suspendF {
                   logger.info(s"\n $n second test started for $id:$tagMonoIO")
-                  myStarted.success(())
+                  startedLatch.success(())
                   FT.sleep(n.seconds)
                 }
               } {
@@ -142,7 +127,7 @@ abstract class InterruptionTest extends Spec1[Identity] {
                 signalNotInterrupted()
                 logger.crit(s"\n $n second test was not interrupted for $id:$tagMonoIO")
               }
-            } yield ())(F.maybeSuspend(myStopped.success(())))
+            } yield ())(F.maybeSuspend(stoppedLatch.success(())))
         }
       }
 
@@ -199,19 +184,19 @@ final class InterruptionTestAsyncMiniBIOAsyncAsyncAsyncRunnerToF_AllEffects exte
 
 final class InterruptionTestBlockingZIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[zio.Task]
-  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
+  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
 }
 final class InterruptionTestBlockingZIOAsyncRunnerToFF extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
-  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
+  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
 }
 final class InterruptionTestAsyncZIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task]
-  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
+  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
 }
 final class InterruptionTestAsyncZIOAsyncRunnerToF extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
-  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
+  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
 }
 
 final class InterruptionTestBlockingZIO_AllEffects extends InterruptionTest {
@@ -231,19 +216,19 @@ final class InterruptionTestAsyncZIOAsyncRunnerToF_AllEffects extends Interrupti
 
 final class InterruptionTestBlockingCIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[cats.effect.IO]
-  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
+  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
 final class InterruptionTestBlockingCIOAsyncRunnerToF extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultBlockingRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
-  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
+  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
 final class InterruptionTestAsyncCIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO]
-  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
+  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
 final class InterruptionTestAsyncCIOAsyncRunnerToF extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
-  override def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
+  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
 
 final class InterruptionTestBlockingCIO_AllEffects extends InterruptionTest {
