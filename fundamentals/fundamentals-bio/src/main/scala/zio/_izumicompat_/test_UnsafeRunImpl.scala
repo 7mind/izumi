@@ -2,9 +2,9 @@ package zio._izumicompat_
 
 import izumi.functional.bio.Exit
 import izumi.functional.bio.Exit.ZIOExit
-import zio.{Cause, Chunk, FiberId, FiberRef, StackTrace, Supervisor, Trace, Unsafe, ZIO, internal}
+import zio.{Cause, Chunk, FiberId, StackTrace, Trace, Unsafe, ZIO, internal}
 import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
-import zio.internal.{FiberRuntime, FiberScope, OneShot}
+import zio.internal.OneShot
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
@@ -159,30 +159,6 @@ class test_UnsafeRunImpl[R](runtime: zio.Runtime[R]) {
   }
 
   def v_goodUnsafeRun[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
-    def interned_Run[E0, A0](effect: ZIO[R, E0, A0])(implicit trace: Trace, unsafe: Unsafe): zio.Exit[E0, A0] = {
-      runtime.unsafe.runOrFork(effect) match {
-        case Left(fiber) =>
-          import internal.OneShot
-          val result = OneShot.make[zio.Exit[E0, A0]]
-          fiber.unsafe.addObserver(result.set)
-          scala.concurrent.blocking {
-            try {
-              result.get()
-            } catch {
-              case t: InterruptedException =>
-                val interrupted = OneShot.make[zio.Exit[Nothing, zio.Exit[E0, A0]]]
-                val interruptionFiber = makeFiber(fiber.interruptAs(FiberId.None))
-                interruptionFiber.addObserver(interrupted.set)
-                interruptionFiber.start(fiber.interruptAs(FiberId.None))
-                interrupted.get()
-                throw t
-            }
-          }
-        case Right(exit) =>
-          exit
-      }
-    }
-
     val interrupted = new AtomicBoolean(true)
     debugState("v_goodUnsafeRun.enter")
     val effect = ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
@@ -291,26 +267,4 @@ class test_UnsafeRunImpl[R](runtime: zio.Runtime[R]) {
     }(using implicitly[zio.Trace], Unsafe)
     ZIOExit.toExit(result)(interrupted.get())
   }
-
-  private def makeFiber[E, A](
-    zio: ZIO[R, E, A]
-  )(implicit trace: Trace,
-    unsafe: Unsafe,
-  ): internal.FiberRuntime[E, A] = {
-    val fiberIdGen = runtime.fiberRefs.getOrDefault(FiberRef.currentFiberIdGenerator)
-    val fiberId = fiberIdGen.make(trace)
-    val fiberRefs = runtime.fiberRefs.updatedAs(fiberId)(FiberRef.currentEnvironment, runtime.environment)
-    val fiber = FiberRuntime[E, A](fiberId, fiberRefs.forkAs(fiberId), runtime.runtimeFlags)
-
-    FiberScope.global.add(null, runtime.runtimeFlags, fiber)
-
-    val supervisor = fiber.getSupervisor()
-
-    if (supervisor ne Supervisor.none) {
-      supervisor.onStart(runtime.environment, zio, None, fiber)
-    }
-
-    fiber
-  }
-
 }
