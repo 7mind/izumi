@@ -226,12 +226,20 @@ PATH="${action.setup-jdk.path}"
 JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
 _JAVA_OPTIONS="$JAVA_OPTIONS"
 VERSION_COMMAND="${action.setup-scala.version-command}"
+PLATFORM="${sys.axis.platform}"
+
+if [[ "$PLATFORM" == "js-nojvm" ]]; then
+  BEFORE_TEST_ARGS=("set ThisBuild / Test / parallelExecution := false")
+else
+  BEFORE_TEST_ARGS=()
+fi
 
 sbt -batch -no-colors -v \
   --java-home "$JAVA_HOME" \
   "$VERSION_COMMAND clean" \
   coverage \
   "$VERSION_COMMAND Test/compile" \
+  "${BEFORE_TEST_ARGS[@]}" \
   "$VERSION_COMMAND test" \
   "$VERSION_COMMAND coverageReport"
 
