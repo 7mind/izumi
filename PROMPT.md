@@ -1,6 +1,18 @@
 Problem: I am investigating rare occurences of failure to interrupt tests that run in 'Identity' effect type.
 
-The reproduction script is in ./debug/interruption-loop.sh
+The reproduction script is in `./debug/interruption-loop.sh`, use it to reproduce the issue as in:
+
+```bash
+./debug/interruption-loop.sh 100
+```
+
+and
+
+```bash
+./debug/interruption-loop.sh 100 async
+```
+
+for async test.
 
 The flow starts with InterruptionTestBlockingZIO_AllEffects in `InterruptionTest.scala` in distage-testkit-scalatest/.jvm
 
@@ -41,3 +53,21 @@ Current goals:
 4. Once both failures ARE REPRODUCED COMPREHENSIVELY - that is the tests capture these failures, not their absence. Work on purifying them from MiniBIOAsync / bio dependencies such that they only require ZIO (+scalatest itself)
 
 /ultrathink
+
+
+Addendum:
+
+The plan has changed. Previous agent has uncovered that failures for both `v_good` and `v_badRunOrFork` had nothing to do with bugs in upstream ZIO runtime.
+They were caused by a stupid typo in the test itself. However, the current impl of UnsafeRun2 uses `v_initial`. This one reproduces failures to interrupt in ZIO (not Identity) tests:
+
+```
+230484: n=23 second test was not interrupted for id=1:tagMonoIO=Tag[λ %0 → ZIO[-Any,+Throwable,+0]]
+230486: n=23 second test was not interrupted for id=3:tagMonoIO=Tag[λ %0 → ZIO[-Any,+Throwable,+0]]
+230488: n=23 second test was not interrupted for id=2:tagMonoIO=Tag[λ %0 → ZIO[-Any,+Throwable,+0]]
+230490: n=23 second test was not interrupted for id=1:tagMonoIO=Tag[λ %0 → ZIO[-Any,+Throwable,+0]]
+230492: n=23 second test was not interrupted for id=2:tagMonoIO=Tag[λ %0 → ZIO[-Any,+Throwable,+0]]
+230494: n=23 second test was not interrupted for id=3:tagMonoIO=Tag[λ %0 → ZIO[-Any,+Throwable,+0]]
+230496: n=23 second test was not interrupted for id=1:tagMonoIO=Tag[λ %0 → ZIO[-Any,+Throwable,+0]]
+230498: n=23 second test was not interrupted for id=3:tagMonoIO=Tag[λ %0 → ZIO[-Any,+Throwable,+0]]
+230500: n=23 second test was not interrupted for id=2:tagMonoIO=Tag[λ %0 → ZIO[-Any,+Throwable,+0]]
+```

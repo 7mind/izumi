@@ -187,20 +187,22 @@ object UnsafeRun2 {
           )(using Unsafe)
           debugState("unsafeRunSync.afterAddObserver", interrupted)
           var wasInterrupted = false
-          try {
-            debugState("unsafeRunSync.loop.beforeGet", interrupted)
-            resultFuture.get()
-          } catch {
-            case _: InterruptedException =>
-              debugState("unsafeRunSync.loop.caughtInterruptedException", interrupted)
-              wasInterrupted = true
-              debugState("unsafeRunSync.loop.beforeInterruptFiber", interrupted)
-              import zio._izumicompat_.__ZIOOneShot.OneShot
-              val interruptedOneShot = OneShot.make[zio.Exit[Nothing, zio.Exit[E, A]]]
-              val interruptionFiber = runtime.unsafe.fork(fiber.interruptAs(FiberId.None))(using implicitly[zio.Trace], Unsafe)
-              interruptionFiber.unsafe.addObserver(interruptedOneShot.set)(Unsafe)
-              interruptedOneShot.get() // wait until interruption is finished
-              debugState("unsafeRunSync.loop.afterInterruptFiber", interrupted)
+          scala.concurrent.blocking {
+            try {
+              debugState("unsafeRunSync.loop.beforeGet", interrupted)
+              resultFuture.get()
+            } catch {
+              case _: InterruptedException =>
+                debugState("unsafeRunSync.loop.caughtInterruptedException", interrupted)
+                wasInterrupted = true
+                debugState("unsafeRunSync.loop.beforeInterruptFiber", interrupted)
+                import zio._izumicompat_.__ZIOOneShot.OneShot
+                val interruptedOneShot = OneShot.make[zio.Exit[Nothing, zio.Exit[E, A]]]
+                val interruptionFiber = runtime.unsafe.fork(fiber.interruptAs(FiberId.None))(using implicitly[zio.Trace], Unsafe)
+                interruptionFiber.unsafe.addObserver(interruptedOneShot.set)(Unsafe)
+                interruptedOneShot.get() // wait until interruption is finished
+                debugState("unsafeRunSync.loop.afterInterruptFiber", interrupted)
+            }
           }
           debugState("unsafeRunSync.loop.done", interrupted)
           if (wasInterrupted) {
