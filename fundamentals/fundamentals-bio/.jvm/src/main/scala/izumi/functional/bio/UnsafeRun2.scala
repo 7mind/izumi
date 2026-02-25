@@ -99,7 +99,7 @@ object UnsafeRun2 {
 
     //      ZIOExit.toExit(runtime.unsafe.run(io)(using implicitly, zio.Unsafe))(true) // ZIO's runtime.unsafe.run doesn't work
     override def unsafeRunSync[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
-      new test_UnsafeRunImpl[R](runtime).v_fixedInitial(io)
+      new test_UnsafeRunImpl[R](runtime).v_badInitial(io)
     }
 
     override def unsafeRunAsync[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): Unit = {
