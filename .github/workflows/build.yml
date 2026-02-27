@@ -187,17 +187,11 @@ jobs:
       - uses: sbt/setup-sbt@v1
       - uses: VirtusLab/scala-cli-setup@v1
       - name: Generate Build Files
-        shell: bash
-        run: scala-cli ./sbtgen/ --java-home "$JAVA_HOME" --server=false --main-class Izumi
+        run: scala-cli ./sbtgen/ --java-home "$env:JAVA_HOME" --server=false --main-class Izumi
       - name: Build and Test
-        shell: bash
         env:
           _JAVA_OPTIONS: '-Xmx4000M -XX:ReservedCodeCacheSize=384M -XX:NonProfiledCodeHeapSize=256M -XX:MaxMetaspaceSize=1024M'
-        run: |
-          sbt -batch -no-colors -v \
-            "++ ${{ matrix.scala }} clean" \
-            "++ ${{ matrix.scala }} Test/compile" \
-            "++ ${{ matrix.scala }} test"
+        run: sbt -batch -no-colors -v "++ ${{ matrix.scala }} clean" "++ ${{ matrix.scala }} Test/compile" "++ ${{ matrix.scala }} test"
 
   build-js-windows:
     runs-on: windows-latest
@@ -215,17 +209,11 @@ jobs:
       - uses: sbt/setup-sbt@v1
       - uses: VirtusLab/scala-cli-setup@v1
       - name: Generate Build Files
-        shell: bash
-        run: scala-cli ./sbtgen/ --java-home "$JAVA_HOME" --server=false --main-class Izumi -- --nojvm --js
+        run: scala-cli ./sbtgen/ --java-home "$env:JAVA_HOME" --server=false --main-class Izumi -- --nojvm --js
       - name: Build and Test
-        shell: bash
         env:
           _JAVA_OPTIONS: '-Xmx4000M -XX:ReservedCodeCacheSize=384M -XX:NonProfiledCodeHeapSize=256M -XX:MaxMetaspaceSize=1024M'
-        run: |
-          sbt -batch -no-colors -v \
-            "++ ${{ matrix.scala }} clean" \
-            "++ ${{ matrix.scala }} Test/compile" \
-            "++ ${{ matrix.scala }} test"
+        run: sbt -batch -no-colors -v "++ ${{ matrix.scala }} clean" "++ ${{ matrix.scala }} Test/compile" "++ ${{ matrix.scala }} test"
 
   test-site:
     runs-on: ubuntu-latest
