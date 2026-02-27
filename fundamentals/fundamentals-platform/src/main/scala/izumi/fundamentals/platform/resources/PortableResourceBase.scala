@@ -21,7 +21,7 @@ trait PortableResourceBase {
           Seq.empty
         } else {
           walkTree(rootDir.toFile)
-            .map(p => (p.toPath, rootDir.relativize(p.toPath).toFile.getPath))
+            .map(p => (p.toPath, GlobParser.normalizeSeparators(rootDir.relativize(p.toPath).toFile.getPath)))
             .filter {
               case (p, r) =>
                 Files.isRegularFile(p) && GlobParser.matchesPattern(r, glob)

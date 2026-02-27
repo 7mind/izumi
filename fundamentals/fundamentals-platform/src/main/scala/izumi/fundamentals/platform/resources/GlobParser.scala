@@ -14,18 +14,22 @@ object GlobParser {
     excludePatterns: List[String]
   )
 
+  /** Normalize path separators to forward slashes (for Windows compatibility) */
+  def normalizeSeparators(path: String): String = path.replace('\\', '/')
+
   /** Parse glob expression like "basePath/{pattern1,pattern2,!exclude}"
     * or legacy "pattern" (base path extracted automatically)
     */
   def parseGlobExpr(pathExpr: String): GlobPattern = {
+    val normalized = normalizeSeparators(pathExpr)
     // Check for explicit base path syntax: basePath/{patterns}
-    val braceStart = pathExpr.indexOf('{')
-    val braceEnd = pathExpr.lastIndexOf('}')
+    val braceStart = normalized.indexOf('{')
+    val braceEnd = normalized.lastIndexOf('}')
 
     if (braceStart != -1 && braceEnd != -1 && braceEnd > braceStart) {
       // Explicit base path syntax
-      val basePath = pathExpr.substring(0, braceStart)
-      val patternsStr = pathExpr.substring(braceStart + 1, braceEnd)
+      val basePath = normalized.substring(0, braceStart)
+      val patternsStr = normalized.substring(braceStart + 1, braceEnd)
       val patterns = patternsStr.split(',').map(_.trim).filter(_.nonEmpty).toList
 
       val (excludePatterns, includePatterns) = patterns.partition(_.startsWith("!"))
@@ -34,7 +38,7 @@ object GlobParser {
       GlobPattern(basePath, includePatterns, cleanExcludes)
     } else {
       // Legacy syntax or simple pattern - extract base path automatically
-      val patterns = pathExpr.split(',').map(_.trim).filter(_.nonEmpty).toList
+      val patterns = normalized.split(',').map(_.trim).filter(_.nonEmpty).toList
 
       val (excludePatterns, includePatterns) = patterns.partition(_.startsWith("!"))
       val cleanExcludes = excludePatterns.map(_.drop(1)) // Remove '!' prefix
@@ -128,7 +132,7 @@ object GlobParser {
   /** Check if path matches a glob pattern */
   def matchesGlob(path: String, pattern: String): Boolean = {
     val regex = globToRegex(pattern)
-    path.matches(regex)
+    normalizeSeparators(path).matches(regex)
   }
 
   /** Check if path matches the parsed glob pattern (any include and no excludes) */
