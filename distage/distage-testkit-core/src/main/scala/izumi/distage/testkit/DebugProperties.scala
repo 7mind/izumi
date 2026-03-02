@@ -19,4 +19,10 @@ object DebugProperties extends properties.DebugProperties {
 
   /** Force global test memoization on Scala.js (legacy mode), default: `false` */
   final val `izumi.distage.testkit.js.force.global.memoization` = BoolProperty("izumi.distage.testkit.js.force.global.memoization")
+
+  /** Skip tests when encountering **any** distage-framework-docker failures. Otherwise, only skip tests if docker socket is not available
+    *
+    * Can also be enabled by setting env var `IZUMI_SKIP_DOCKER_FAILURES` to `true`
+    */
+  final val `izumi.distage.testkit.skip.docker.failures` = BoolProperty("izumi.distage.testkit.skip.docker.failures")
 }

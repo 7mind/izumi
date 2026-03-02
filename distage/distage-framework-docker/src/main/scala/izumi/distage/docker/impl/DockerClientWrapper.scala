@@ -1,7 +1,7 @@
 package izumi.distage.docker.impl
 
 import com.github.dockerjava.api.DockerClient
-import com.github.dockerjava.api.exception.NotModifiedException
+import com.github.dockerjava.api.exception.{NotFoundException, NotModifiedException}
 import com.github.dockerjava.api.model.{AuthConfig, Container}
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientConfig}
 import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
@@ -11,7 +11,6 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.strings.IzString.*
@@ -64,8 +63,10 @@ class DockerClientWrapper[F[_]](
 
         logger.info(s"Removed $containerId ($context)")
       } catch {
+        case failure: NotFoundException =>
+          logger.debug(s"Got failure during container remove $containerId: not found, container already removed. $failure")
         case failure: Throwable =>
-          logger.warn(s"Got failure during container remove $containerId ${failure.stacktraceString -> "failure"}")
+          logger.warn(s"Got failure during container remove $containerId $failure")
       }
     }
   }

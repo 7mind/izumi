@@ -1,7 +1,7 @@
 package izumi.distage.docker.impl
 
 import com.github.dockerjava.api.command.InspectContainerResponse
-import com.github.dockerjava.api.exception.NotFoundException
+import com.github.dockerjava.api.exception.{NotFoundException, UnauthorizedException}
 import com.github.dockerjava.api.model.*
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
@@ -23,7 +23,7 @@ import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
-import java.util.concurrent.{TimeUnit, TimeoutException}
+import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
@@ -168,7 +168,7 @@ open class ContainerResource[F[_], Tag](
                     sb.append(s"Unchecked ports:\n")
                     sb.append(portErrors.niceList())
                   }
-                  F.fail(new TimeoutException(sb.toString()))
+                  F.fail(DockerTimeoutException(sb.toString()))
 
                 case HealthCheckResult.Terminated(failure, state) =>
                   F.fail(DockerFailureException(s"Unexpected condition: $container terminated with failure: $failure", DockerFailureCause.Terminated(state)))
@@ -418,6 +418,11 @@ open class ContainerResource[F[_], Tag](
 
   protected def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
     def pullWithRetry(attempt: Int = 0): F[Unit] = {
+      def isIrrecoverableDockerException(t: Throwable) = t match {
+        case _: NotFoundException | _: UnauthorizedException => true
+        case _ => false
+      }
+
       F.maybeSuspend(
         Try {
           val pullCmd = Value(rawClient.pullImageCmd(imageName))
@@ -429,9 +434,9 @@ open class ContainerResource[F[_], Tag](
       ).flatMap {
           case Success(true) => // pulled successfully
             F.unit
-          case Success(_) => // timed out
+          case Success(false) => // timed out
             F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull timeout exception.", None)))
-          case Failure(t) if config.pullAttempts > attempt => // exponential retry
+          case Failure(t) if config.pullAttempts > attempt && !isIrrecoverableDockerException(t) => // exponential retry
             val sleepDuration = {
               val sleep = config.pullAttemptInitialSleep * math.pow(2.0, attempt.toDouble).toLong
               if (sleep > config.pullAttemptMaxSleep) {
@@ -440,10 +445,10 @@ open class ContainerResource[F[_], Tag](
                 sleep
               }
             }
-            logger.warn(s"Failed to pull image `$imageName`, will retry after $sleepDuration, ${t.getMessage -> "error"}")
+            logger.warn(s"Failed to pull image `$imageName`, will retry after $sleepDuration, ${t -> "error"}")
             T.sleep(sleepDuration).flatMap(_ => pullWithRetry(attempt + 1))
           case Failure(t) => // failure occurred (e.g. rate limiter failure)
-            F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull failed due to: ${t.getMessage}", Some(t))))
+            F.fail(new IntegrationCheckException(ResourceCheck.ResourceUnavailable(s"Image `$imageName` pull failed due to: $t", Some(t))))
         }
     }
 

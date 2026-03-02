@@ -2,12 +2,14 @@ package izumi.distage.testkit.runner
 
 import distage.{Injector, Module, TagK}
 import izumi.distage.model.definition.ModuleDef
+import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, EnvResult}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.services.*
 import izumi.distage.testkit.runner.impl.services.TimedActionF.TimedActionFImpl
 import izumi.distage.testkit.runner.impl.{DistageTestRunner, RunnerToF, TestPlanner, TestTreeBuilder}
 import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.logger.LogQueue
@@ -21,11 +23,16 @@ class TestkitRunnerModule[F[_]: TagK: QuasiIO: QuasiAsync](
   addImplicit[QuasiIO[F]]
   addImplicit[QuasiAsync[F]]
   make[TestReporter].fromValue(reporter)
+
   make[Throwable => Boolean].fromValue(isTestCancellation)
+  make[Boolean].named("izumi.distage.testkit.skip.docker.failures").from {
+    DebugProperties.`izumi.distage.testkit.skip.docker.failures`.boolValue(default = false) ||
+    IzPlatform.getenvOption("IZUMI_SKIP_DOCKER_FAILURES").contains("true")
+  }
+  make[TestStatusConverter]
 
   make[TestkitLogging]
 
-  make[TestStatusConverter]
   make[TimedActionF[Identity]].from[TimedActionFImpl[Identity]]
   make[TestConfigLoader].from[TestConfigLoader.TestConfigLoaderImpl]
 
