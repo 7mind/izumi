@@ -60,7 +60,7 @@ object KafkaKRaftDocker extends ContainerDef {
     Config(
       // arm64 image is missing on public aws ecr
       // registry = Some("public.ecr.aws"),
-      image = "adobe/kafka:2.13-3.9.1",
+      image = "soldevelo/kafka:3.7.1",
       ports = Seq(primaryPort),
       env = ContainerEnvironment.from {
         ports =>
