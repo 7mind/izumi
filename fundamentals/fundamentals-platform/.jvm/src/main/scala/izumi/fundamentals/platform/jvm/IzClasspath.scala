@@ -2,7 +2,8 @@ package izumi.fundamentals.platform.jvm
 
 import izumi.fundamentals.platform.IzPlatformEffectfulUtil
 
-import java.net.{URLClassLoader, URLDecoder}
+import java.io.File
+import java.net.URLClassLoader
 import scala.annotation.tailrec
 
 trait IzClasspath extends IzPlatformEffectfulUtil {
@@ -11,7 +12,7 @@ trait IzClasspath extends IzPlatformEffectfulUtil {
 
     Seq(
       classLoaderCp,
-      System.getProperty("java.class.path").split(':').toSeq,
+      System.getProperty("java.class.path").split(File.pathSeparatorChar).toSeq,
     ).flatten
   }
 
@@ -33,7 +34,7 @@ trait IzClasspath extends IzPlatformEffectfulUtil {
     val clCp = classLoader match {
       case Some(u: URLClassLoader) =>
         u.getURLs
-          .map(u => URLDecoder.decode(u.getFile, "UTF-8"))
+          .map(u => new File(u.toURI).getPath)
           .toSeq
       case _ =>
         Seq.empty

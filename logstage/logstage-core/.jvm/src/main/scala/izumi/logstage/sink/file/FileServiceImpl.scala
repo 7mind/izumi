@@ -21,8 +21,10 @@ object FileServiceImpl {
 
     private def filePath = Paths.get(name)
 
-    private def fileSrc = Try {
-      Source.fromFile(this.name)
+    private def withFileSrc[A](f: Source => A): A = {
+      val src = Source.fromFile(this.name)
+      try f(src)
+      finally src.close()
     }
 
     private val outputSink = {
@@ -38,11 +40,11 @@ object FileServiceImpl {
     }
 
     override def size: Int = {
-      fileSrc.map(_.getLines().size).get
+      withFileSrc(_.getLines().size)
     }
 
     override def getContent: Iterable[String] = {
-      fileSrc.map(_.getLines().toList).get
+      withFileSrc(_.getLines().toList)
     }
 
     override def append(item: String): Unit = {

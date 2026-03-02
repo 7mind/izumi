@@ -26,6 +26,7 @@ object FileServiceUtils {
   implicit class FileServiceOps[T <: LogFile](svc: FileService[T]) {
     def withPreparedData(f: => List[(FileIdentity, List[String])]): Unit = {
       val st = svc.storage
+      st.values.foreach(_.beforeDelete())
       st.clear()
       f.foreach {
         case (id, msgs) =>

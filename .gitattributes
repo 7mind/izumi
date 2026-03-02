@@ -1,9 +1,9 @@
 *                           text=auto
 .git*                       text export-ignore
 
-*.sbt                       text
-*.scala                     text
-*.java                      text
+*.sbt                       text eol=lf
+*.scala                     text eol=lf
+*.java                      text eol=lf
 *.txt                       text
 
 .classpath                 -text whitespace=cr-at-eol merge=union
