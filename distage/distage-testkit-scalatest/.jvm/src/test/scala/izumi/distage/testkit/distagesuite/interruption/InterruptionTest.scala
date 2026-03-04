@@ -1,13 +1,11 @@
 package izumi.distage.testkit.distagesuite.interruption
 
-import distage.{DefaultModule, Identity, Module, ModuleDef, TagK}
+import distage.{DefaultModule, Identity, TagK}
 import izumi.distage.testkit.model.{DistageTest, FullMeta, ScopeId, SuiteMeta, TestStatus}
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.impl.RunnerToF
 import izumi.distage.testkit.scalatest.Spec1
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.AsyncGlobalSuitesControlHandle
 import izumi.distage.testkit.services.scalatest.dstest.{ScalatestAbstractDistageSpec, TestRunnerRuntime}
-import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -24,10 +22,6 @@ import scala.util.chaining.scalaUtilChainingOps
 abstract class InterruptionTest extends Spec1[Identity] {
 
   protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = identity
-
-  final def asyncRunnerToFOverride[F[_]: TagK]: Module = new ModuleDef {
-    make[RunnerToF[F]].from[RunnerToF.AsyncImpl[F]]
-  }
 
   private final val isStressTest = Option(System.getenv("INTERRUPTION_STRESS_TEST")).contains("true")
   private final val parallelRuns = if (isStressTest) 50 else 1
@@ -164,12 +158,6 @@ abstract class InterruptionTest extends Spec1[Identity] {
 final class InterruptionTestAsyncMiniBIOAsyncAsync_AllEffects extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntime
 }
-final class InterruptionTestAsyncMiniBIOAsyncAsyncAsyncRunnerToF_AllEffects extends InterruptionTest {
-  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.asyncRuntimeFor[MiniBIOAsync[Throwable, _]](
-    TestRunnerRuntime.runnerLifecycleForMiniBIOAsync(),
-    asyncRunnerToFOverride[MiniBIOAsync[Throwable, _]],
-  )
-}
 
 // ZIO
 
@@ -177,16 +165,9 @@ final class InterruptionTestAsyncZIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task]
   override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
 }
-final class InterruptionTestAsyncZIOAsyncRunnerToF extends InterruptionTest {
-  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
-  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[zio.Task])
-}
 
 final class InterruptionTestAsyncZIO_AllEffects extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task]
-}
-final class InterruptionTestAsyncZIOAsyncRunnerToF_AllEffects extends InterruptionTest {
-  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task](asyncRunnerToFOverride[zio.Task])
 }
 
 // CIO
@@ -195,14 +176,7 @@ final class InterruptionTestAsyncCIO extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO]
   override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
 }
-final class InterruptionTestAsyncCIOAsyncRunnerToF extends InterruptionTest {
-  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
-  override protected def modifySuites: Seq[InterruptibleTestSuite[AnyF]] => Seq[InterruptibleTestSuite[AnyF]] = _.filter(_.tagMonoIO == TagK[cats.effect.IO])
-}
 
 final class InterruptionTestAsyncCIO_AllEffects extends InterruptionTest {
   override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO]
-}
-final class InterruptionTestAsyncCIOAsyncRunnerToF_AllEffects extends InterruptionTest {
-  override protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultAsyncRuntimeFor[cats.effect.IO](asyncRunnerToFOverride[cats.effect.IO])
 }

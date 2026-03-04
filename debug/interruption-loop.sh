@@ -6,7 +6,6 @@ export INTERRUPTION_STRESS_TEST="true"
 N="${1:-30}"
 MODE="${2:-async}"
 ASYNC_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestAsyncZIO_AllEffects"
-ASYNC_RUNNER_TO_F_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestAsyncZIOAsyncRunnerToF_AllEffects"
 TS="$(date +%Y%m%d-%H%M%S)"
 mkdir -p /tmp/exchange
 LOG="/tmp/exchange/interruption-loop-${TS}.log"
@@ -20,11 +19,8 @@ case "$MODE" in
   async)
     TEST="$ASYNC_TEST"
     ;;
-  async-runner-to-f)
-    TEST="$ASYNC_RUNNER_TO_F_TEST"
-    ;;
   *)
-    echo "MODE must be one of: async, async-runner-to-f. Got: $MODE" >&2
+    echo "MODE must be: async. Got: $MODE" >&2
     exit 2
     ;;
 esac
