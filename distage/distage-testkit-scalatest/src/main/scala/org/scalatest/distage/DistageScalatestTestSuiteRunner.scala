@@ -49,7 +49,6 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     * }}}
     *
     * @see [[TestRunnerRuntime]]
-    * @see [[TestRunnerRuntime.defaultBlockingRuntimeFor]]
     * @see [[TestRunnerRuntime.defaultAsyncRuntimeFor]]
     */
   protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultPlatformRuntime
