@@ -19,7 +19,7 @@ object AnyBIOSupportModule {
     *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
     *  - Adds [[izumi.functional.bio]] typeclass instances for `F[+_, +_]`
     *
-    * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`, `make[Fork2[F]]`, `make[BlockingIO2[F]]`
+    * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`, `make[Fork2[F]]`
     * Optional additions: `make[Primitives2[F]]`, `make[PrimitivesM2[F]]`, `make[Scheduler2[F]]` and all other aux algebras in [[BIOInstancesModule.auxAlgebrasImplicits]]
     */
   def usingDependencies[F[+_, +_]: TagKK](implicit t: TagK[F[Throwable, _]], tn: TagK[F[Nothing, _]]): ModuleDef = new ModuleDef {
@@ -41,7 +41,7 @@ object AnyBIOSupportModule {
         QuasiIO.fromBIO(using _: IO2[F])
       }
     make[QuasiAsync2[F]].from {
-      QuasiAsync.fromBIO(using _: WeakAsync2[F], _: BlockingIO2[F])
+      QuasiAsync.fromBIO(using _: WeakAsync2[F])
     }
     make[QuasiTemporal2[F]].from {
       QuasiTemporal.fromBIO(using _: Temporal2[F])

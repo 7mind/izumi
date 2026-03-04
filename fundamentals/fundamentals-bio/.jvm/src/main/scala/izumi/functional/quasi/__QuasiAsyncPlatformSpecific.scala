@@ -49,8 +49,6 @@ private[quasi] object __QuasiAsyncPlatformSpecific {
       override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => Identity[Unit]): Identity[Unit] = {
         parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverseN_(n))(QuasiAsyncIdentityBlockingIOPool)
       }
-
-      override def maybeSuspendInterruptible[A](eff: => A): Identity[A] = eff
     }
   }
 

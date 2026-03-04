@@ -39,8 +39,6 @@ private[quasi] object __QuasiAsyncPlatformSpecific {
       override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => Identity[Unit]): Identity[Unit] = {
         parTraverse_(l)(f)
       }
-
-      override def maybeSuspendInterruptible[A](eff: => A): Identity[A] = eff
     }
   }
 

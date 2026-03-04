@@ -1,6 +1,6 @@
 package izumi.functional.quasi
 
-import izumi.functional.bio.{BlockingIO2, WeakAsync2, WeakTemporal2}
+import izumi.functional.bio.{WeakAsync2, WeakTemporal2}
 import izumi.fundamentals.orphans.{`cats.effect.kernel.Async`, `cats.effect.kernel.GenTemporal`}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -25,13 +25,6 @@ trait QuasiAsync[F[_]] {
   def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit]
   def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]]
   def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit]
-
-  /** Capture a side-effectful block that is interruptible/cancelable.
-    * For cats.effect.IO this uses `IO.interruptible`, for ZIO this uses `ZIO.attemptBlockingInterrupt`.
-    *
-    * THIS IS USUALLY UNSAFE unless calling well-written libraries that specifically handle [[java.lang.InterruptedException]].
-    */
-  def maybeSuspendInterruptible[A](eff: => A): F[A]
 }
 
 object QuasiAsync extends LowPriorityQuasiAsyncInstances {
@@ -39,7 +32,7 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
 
   implicit lazy val quasiAsyncIdentity: QuasiAsync[Identity] = __QuasiAsyncPlatformSpecific.quasiAsyncIdentity
 
-  implicit def fromBIO[F[+_, +_]](implicit F: WeakAsync2[F], B: BlockingIO2[F]): QuasiAsync[F[Throwable, _]] = {
+  implicit def fromBIO[F[+_, +_]](implicit F: WeakAsync2[F]): QuasiAsync[F[Throwable, _]] = {
     new QuasiAsync[F[Throwable, _]] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = {
         F.uninterruptible(F.async(effect))
@@ -58,9 +51,6 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
       }
       override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => F[Throwable, Unit]): F[Throwable, Unit] = {
         F.parTraverseN_(n)(l.iterator.to(Iterable))(f)
-      }
-      override def maybeSuspendInterruptible[A](eff: => A): F[Throwable, A] = {
-        B.syncInterruptibleBlocking(eff)
       }
     }
   }
@@ -94,9 +84,6 @@ private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
     }
     override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = {
       F.void(parTraverseN(n)(l)(f))
-    }
-    override def maybeSuspendInterruptible[A](eff: => A): F[A] = {
-      F.interruptible(eff)
     }
   }
 }
