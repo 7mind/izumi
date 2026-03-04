@@ -4,9 +4,9 @@ set -euo pipefail
 export INTERRUPTION_STRESS_TEST="true"
 
 N="${1:-30}"
-MODE="${2:-blocking}"
-BLOCKING_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestBlockingZIO_AllEffects"
+MODE="${2:-async}"
 ASYNC_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestAsyncZIO_AllEffects"
+ASYNC_RUNNER_TO_F_TEST="izumi.distage.testkit.distagesuite.interruption.InterruptionTestAsyncZIOAsyncRunnerToF_AllEffects"
 TS="$(date +%Y%m%d-%H%M%S)"
 mkdir -p /tmp/exchange
 LOG="/tmp/exchange/interruption-loop-${TS}.log"
@@ -17,22 +17,23 @@ if ! [[ "$N" =~ ^[0-9]+$ ]] || [ "$N" -le 0 ]; then
 fi
 
 case "$MODE" in
-  blocking)
-    TEST="$BLOCKING_TEST"
-    ;;
   async)
     TEST="$ASYNC_TEST"
     ;;
+  async-runner-to-f)
+    TEST="$ASYNC_RUNNER_TO_F_TEST"
+    ;;
   *)
-    echo "MODE must be one of: blocking, async. Got: $MODE" >&2
+    echo "MODE must be one of: async, async-runner-to-f. Got: $MODE" >&2
     exit 2
     ;;
 esac
 
-if ! command -v notify-send >/dev/null 2>&1; then
-  echo "notify-send is required but was not found in PATH" >&2
-  exit 3
-fi
+notify() {
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send "$@" || true
+  fi
+}
 
 echo "Running ${N} iterations (fresh sbt per iteration, fail-fast, unlimited OOM retries)"
 echo "Mode: ${MODE}"
@@ -57,7 +58,7 @@ for i in $(seq 1 "$N"); do
       if [ "$ITER_NOT_INTERRUPTED" -gt 0 ] || [ "$ITER_FAILED_MARKERS" -gt 0 ]; then
         echo "===== ITERATION ${i}/${N} FAIL $(date -Is) =====" | tee -a "$LOG"
         echo "Detected flakiness markers in iteration ${i}: not-interrupted=${ITER_NOT_INTERRUPTED}, failed-markers=${ITER_FAILED_MARKERS}" | tee -a "$LOG"
-        notify-send "interruption-loop failed" "Iteration ${i}/${N} flakiness markers detected. Log: ${LOG}"
+        notify "interruption-loop failed" "Iteration ${i}/${N} flakiness markers detected. Log: ${LOG}"
         rm -f "$ITER_LOG"
         exit 1
       fi
@@ -73,7 +74,7 @@ for i in $(seq 1 "$N"); do
       if [ "$ITER_NOT_INTERRUPTED" -gt 0 ] || [ "$ITER_FAILED_MARKERS" -gt 0 ]; then
         echo "===== ITERATION ${i}/${N} FAIL $(date -Is) =====" | tee -a "$LOG"
         echo "Detected flakiness markers in iteration ${i}: not-interrupted=${ITER_NOT_INTERRUPTED}, failed-markers=${ITER_FAILED_MARKERS}" | tee -a "$LOG"
-        notify-send "interruption-loop failed" "Iteration ${i}/${N} flakiness markers detected. Log: ${LOG}"
+        notify "interruption-loop failed" "Iteration ${i}/${N} flakiness markers detected. Log: ${LOG}"
         rm -f "$ITER_LOG"
         exit 1
       fi
@@ -88,7 +89,7 @@ for i in $(seq 1 "$N"); do
       fi
 
       echo "===== ITERATION ${i}/${N} FAIL $(date -Is) =====" | tee -a "$LOG"
-      notify-send "interruption-loop failed" "Iteration ${i}/${N} sbt command failed. Log: ${LOG}"
+      notify "interruption-loop failed" "Iteration ${i}/${N} sbt command failed. Log: ${LOG}"
       rm -f "$ITER_LOG"
       exit 1
     fi
@@ -115,8 +116,8 @@ echo "  log file: ${LOG}"
 
 if [ "$FAILED_ITERS" -gt 0 ] || [ "$FAILED_MARKERS" -gt 0 ] || [ "$NOT_INTERRUPTED" -gt 0 ]; then
   echo "Detected failure/flakiness markers." >&2
-  notify-send "interruption-loop failed" "Failure markers found in summary. Log: ${LOG}"
+  notify "interruption-loop failed" "Failure markers found in summary. Log: ${LOG}"
   exit 1
 fi
 
-notify-send "interruption-loop succeeded" "All ${N} iterations passed (${OOM_RETRIES_TOTAL} OOM retries). Log: ${LOG}"
+notify "interruption-loop succeeded" "All ${N} iterations passed (${OOM_RETRIES_TOTAL} OOM retries). Log: ${LOG}"
