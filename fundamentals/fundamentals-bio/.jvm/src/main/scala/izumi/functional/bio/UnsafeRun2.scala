@@ -3,7 +3,6 @@ package izumi.functional.bio
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.data.InterruptAction
 import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
-import zio._izumicompat_.test_UnsafeRunImpl
 import zio.{Executor, Fiber, FiberId, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
@@ -99,7 +98,11 @@ object UnsafeRun2 {
 
     //      ZIOExit.toExit(runtime.unsafe.run(io)(using implicitly, zio.Unsafe))(true) // ZIO's runtime.unsafe.run doesn't work
     override def unsafeRunSync[E, A](io: => ZIO[R, E, A]): Exit[E, A] = {
-      new test_UnsafeRunImpl[R](runtime).v_fixedInitial(io)
+      val interrupted = new AtomicBoolean(true)
+      val result = runtime.unsafe.run {
+        ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
+      }(using implicitly[zio.Trace], Unsafe)
+      ZIOExit.toExit(result)(interrupted.get())
     }
 
     override def unsafeRunAsync[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): Unit = {
