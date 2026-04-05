@@ -129,8 +129,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -159,8 +158,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -368,8 +366,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -398,8 +395,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -608,8 +604,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -638,8 +633,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -848,8 +842,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -878,8 +871,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -1092,8 +1084,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -1122,8 +1113,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -1341,8 +1331,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -1371,8 +1360,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -1587,8 +1575,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -1617,8 +1604,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -1839,8 +1825,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -1869,8 +1854,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -2091,8 +2075,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -2121,8 +2104,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -2345,8 +2327,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -2375,8 +2356,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -2601,8 +2581,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -2631,8 +2610,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -2847,8 +2825,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -2877,8 +2854,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -3067,8 +3043,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -3097,8 +3072,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -3313,8 +3287,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -3343,8 +3316,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -3566,8 +3538,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -3596,8 +3567,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -3840,8 +3810,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -3870,8 +3839,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -4084,8 +4052,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -4114,8 +4081,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -4356,8 +4322,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -4386,8 +4351,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -4616,8 +4580,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -4646,8 +4609,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -4835,8 +4797,7 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -4865,8 +4826,7 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -5095,8 +5055,7 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -5125,8 +5084,7 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -5346,8 +5304,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -5376,8 +5333,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -5572,8 +5528,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -5602,8 +5557,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -5822,8 +5776,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -5852,8 +5805,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -6068,8 +6020,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -6098,8 +6049,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -6298,8 +6248,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -6328,8 +6277,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -6557,8 +6505,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -6587,8 +6534,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -6844,8 +6790,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -6874,8 +6819,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-Wconf:msg=shadows:silent"
+        "-Wconf:cat=lint-eta-sam:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
