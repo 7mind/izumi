@@ -36,13 +36,13 @@ class StringRenderingPolicy(
   }
 
   override def render(entry: Log.Entry): String = {
-    val r = if (entry.context.messageOnly) StringRenderingPolicy.messageOnlyTemplate else renderer
+    val r = if (entry.context.messageOnly) StringRenderingPolicy.printMessageTemplate else renderer
     r.render(entry, context)
   }
 }
 
 object StringRenderingPolicy {
-  val messageOnlyTemplate: Renderer.Aggregate = new Renderer.Aggregate(
+  val printMessageTemplate: Renderer.Aggregate = new Renderer.Aggregate(
     Seq(
       new Extractor.Message()
     )

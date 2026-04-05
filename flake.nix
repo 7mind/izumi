@@ -22,6 +22,7 @@
           inherit system;
           config.allowUnfree = true;
         };
+        defaultJdk = pkgs.jdk25_headless;
       in
       {
         devShells.default = pkgs.mkShell {
@@ -29,7 +30,7 @@
             ncurses
 
             coursier
-            sbt
+            (sbt.override { jre = defaultJdk; })
 
             nodejs
             nodePackages.npm

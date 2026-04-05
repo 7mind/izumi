@@ -419,3 +419,49 @@ You might need to do the following in order for the adapter to properly initiali
 SLF4JBridgeHandler.removeHandlersForRootLogger()
 SLF4JBridgeHandler.install()
 ```
+
+## Adaptive log routers
+
+Adaptive routers let you register named sink groups and then pick the target sinks per log entry.
+Use `makeAdaptive` method, to pass sinks in form of `Map[String, Seq[LogSink]]`. Then you can use the key to select the desired sinks:
+
+```scala
+val router = ConfigurableLogRouter.makeAdaptive(
+  sinksRoutes = Map(
+    "file" -> Seq(fileSink),
+    "console" -> Seq(consoleSink)
+  )
+)
+val logger = IzLogger(router)
+
+logger.infoTo("file")("test log to file")
+logger.infoTo("console")("test log to console")
+```
+
+## Rich formatter for logs
+
+`Rich` rendering lets you embed lightweight markup tags in log messages and map them to ANSI styles, so you can highlight parts of the output with colors and text decorations.
+For now, there are such tags available:
+
+- `<b>`, `<bold>`
+- `<i>`, `<italic>`
+- `<u>`, `<underlined>`
+- `<r>`, `<reversed>`
+- `<color:black>`, `<color:red>`, `<color:green>`, `<color:yellow>`, `<color:blue>`,
+  `<color:magenta>`, `<color:cyan>`, `<color:white>`
+- `<c:%custom_tag_name%>`
+
+Custom tags allows you to make short versions for complex styles.
+For example: `<b><color:red>` => `<c:important>`
+To declare custom tags, you need to pass them in form of map, when configuring sink:
+
+```scala
+val router = ConfigurableLogRouter(
+  sink = new RichConsoleSink(Map("important" -> Seq(Bold, ColorTag("red"))))
+)
+val logger = IzLogger(router)
+
+logger.info("This is <b> bold </b> and <i> italic </i> and <u> underlined </u> and <r> reversed </r> text!")
+```
+
+<img alt="logstage-sample-output-rich-format" src="media/00-logstage-sample-output-rich-format.png" height="128"/>

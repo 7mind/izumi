@@ -211,12 +211,36 @@ class GlobParserTest extends AnyWordSpec {
     }
   }
 
-  "GlobParser edge cases" should {
-    "handle backslashes in patterns" in {
-      // This is mostly for Windows compatibility, though paths use forward slashes
-      val regex = GlobParser.globToRegex("path\\with\\backslash")
-      assert(regex.contains("\\\\"))
+  "GlobParser Windows compatibility" should {
+    "normalize backslash-separated paths in matchesGlob" in {
+      assert(GlobParser.matchesGlob("dir\\file.txt", "dir/file.txt"))
+      assert(GlobParser.matchesGlob("dir\\file.txt", "*/file.txt"))
+      assert(GlobParser.matchesGlob("a\\b\\c\\file.txt", "**/*.txt"))
+      assert(GlobParser.matchesGlob("src\\main\\Test.scala", "src/**/Test.scala"))
+      assert(!GlobParser.matchesGlob("a\\b\\file.txt", "*/file.txt"))
     }
+
+    "normalize backslash-separated paths in matchesPattern" in {
+      val pattern = GlobParser.GlobPattern("", List("**/*.scala"), List("**/*Test*"))
+      assert(GlobParser.matchesPattern("src\\Main.scala", pattern))
+      assert(!GlobParser.matchesPattern("src\\MainTest.scala", pattern))
+    }
+
+    "normalize backslashes in parseGlobExpr input" in {
+      val pattern = GlobParser.parseGlobExpr("src\\main\\scala{**\\*.scala,!**\\*Test*}")
+      assert(pattern.basePath == "src/main/scala")
+      assert(pattern.includePatterns == List("**/*.scala"))
+      assert(pattern.excludePatterns == List("**/*Test*"))
+    }
+
+    "normalize backslashes in legacy parseGlobExpr input" in {
+      val pattern = GlobParser.parseGlobExpr("src\\main\\scala\\**\\*.scala")
+      assert(pattern.basePath == "src/main/scala")
+      assert(pattern.includePatterns == List("**/*.scala"))
+    }
+  }
+
+  "GlobParser edge cases" should {
 
     "handle pattern with only exclude patterns" in {
       val pattern = GlobParser.parseGlobExpr("src{!**/*Test*}")
