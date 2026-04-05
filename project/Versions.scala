@@ -24,7 +24,8 @@ object V {
 
   val circe = "0.14.14"
   val circe_derivation = "0.13.0-M5"
-  val pureconfig = "0.17.8"
+  val pureconfig = "0.17.10"
+  val pureconfig_212 = "0.17.8" // last version with Scala 2.12 support // FIXME: remove after dropping Scala 2.12
   val magnolia = "1.1.10"
   val jawn = "1.6.0"
 

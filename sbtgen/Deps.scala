@@ -26,6 +26,7 @@ object Izumi {
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
     val pureconfig = Version.VExpr("V.pureconfig")
+    val pureconfig_212 = Version.VExpr("V.pureconfig_212")
     val magnolia = Version.VExpr("V.magnolia")
     val jawn = Version.VExpr("V.jawn")
     val doobie = Version.VExpr("V.doobie")
@@ -101,8 +102,12 @@ object Izumi {
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto)
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto)
 
+    // FIXME: remove after dropping Scala 2.12
+    // pureconfig 0.17.9+ dropped Scala 2.12 support, so we need version-conditional deps
     final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto)
+    final val pureconfig_core_212 = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig_212, LibraryType.Auto)
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
+    final val pureconfig_magnolia_212 = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig_212, LibraryType.Auto)
     final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto)
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
@@ -168,7 +173,7 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.20")
+  final val scala212 = ScalaVersion("2.12.21")
   final val scala213 = ScalaVersion("2.13.18")
   final val scala300 = ScalaVersion("3.7.4")
 
@@ -647,8 +652,10 @@ object Izumi {
       Artifact(
         name = Projects.distage.config,
         libs = Seq(
-          pureconfig_core in Scope.Compile.jvm,
-          pureconfig_magnolia in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.AllScala2),
+          pureconfig_core in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.Versions(scala213, scala300)),
+          pureconfig_core_212 in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.Versions(scala212)),
+          pureconfig_magnolia in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.Versions(scala213)),
+          pureconfig_magnolia_212 in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.Versions(scala212)),
           magnolia in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.AllScala2),
         ) ++ Seq(
           circe_core in Scope.Compile.js,

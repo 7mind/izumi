@@ -82,7 +82,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -129,7 +129,8 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -158,7 +159,8 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -200,7 +202,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -225,7 +227,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -233,7 +235,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -319,7 +321,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -366,7 +368,8 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -395,7 +398,8 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -437,7 +441,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -462,7 +466,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -470,7 +474,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -557,7 +561,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -604,7 +608,8 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -633,7 +638,8 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -675,7 +681,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -700,7 +706,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -708,7 +714,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -795,7 +801,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -842,7 +848,8 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -871,7 +878,8 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -913,7 +921,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -938,7 +946,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -946,7 +954,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -1037,7 +1045,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1084,7 +1092,8 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -1113,7 +1122,8 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -1155,7 +1165,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1180,7 +1190,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -1188,7 +1198,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -1284,7 +1294,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1331,7 +1341,8 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -1360,7 +1371,8 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -1402,7 +1414,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1427,7 +1439,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -1435,7 +1447,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -1528,7 +1540,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1575,7 +1587,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -1604,7 +1617,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -1646,7 +1660,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1671,7 +1685,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -1679,7 +1693,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -1778,7 +1792,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -1825,7 +1839,8 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -1854,7 +1869,8 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -1896,7 +1912,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -1921,7 +1937,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -1929,7 +1945,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -2028,7 +2044,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2075,7 +2091,8 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -2104,7 +2121,8 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -2146,7 +2164,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2173,7 +2191,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -2181,7 +2199,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -2280,7 +2298,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2327,7 +2345,8 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -2356,7 +2375,8 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -2398,7 +2418,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2423,7 +2443,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -2431,7 +2451,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -2534,7 +2554,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2581,7 +2601,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -2610,7 +2631,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -2652,7 +2674,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2677,7 +2699,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -2685,7 +2707,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -2725,7 +2747,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -2778,7 +2800,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -2825,7 +2847,8 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -2854,7 +2877,8 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -2896,7 +2920,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -2996,7 +3020,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3043,7 +3067,8 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -3072,7 +3097,8 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -3114,7 +3140,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3139,7 +3165,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3147,7 +3173,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -3240,7 +3266,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3287,7 +3313,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -3316,7 +3343,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -3358,7 +3386,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3383,7 +3411,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3391,7 +3419,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -3491,7 +3519,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3538,7 +3566,8 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -3567,7 +3596,8 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -3609,7 +3639,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3634,7 +3664,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3642,7 +3672,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -3651,12 +3681,25 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-extension-configJVM` = `distage-extension-config`.jvm
   .settings(
-    libraryDependencies ++= Seq(
-      "com.github.pureconfig" %% "pureconfig-core" % V.pureconfig
-    ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig,
       "com.softwaremill.magnolia1_2" %% "magnolia" % V.magnolia
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.12.21"
+    ) contains scalaVersion.value) Seq(
+      "com.github.pureconfig" %% "pureconfig-core" % V.pureconfig_212,
+      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig_212
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.18"
+    ) contains scalaVersion.value) Seq(
+      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig
+    ) else Seq.empty },
+    libraryDependencies ++= { if (Seq(
+      "2.13.18",
+      "3.7.4"
+    ) contains scalaVersion.value) Seq(
+      "com.github.pureconfig" %% "pureconfig-core" % V.pureconfig
     ) else Seq.empty }
   )
 lazy val `distage-extension-configJS` = `distage-extension-config`.js
@@ -3750,7 +3793,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -3797,7 +3840,8 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -3826,7 +3870,8 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -3868,7 +3913,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -3893,7 +3938,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -3901,7 +3946,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -3992,7 +4037,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4039,7 +4084,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -4068,7 +4114,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -4110,7 +4157,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4135,7 +4182,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -4143,7 +4190,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -4262,7 +4309,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4309,7 +4356,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -4338,7 +4386,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -4380,7 +4429,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4405,7 +4454,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -4413,7 +4462,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -4467,7 +4516,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -4520,7 +4569,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4567,7 +4616,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -4596,7 +4646,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -4638,7 +4689,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4737,7 +4788,7 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -4784,7 +4835,8 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -4813,7 +4865,8 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -4855,7 +4908,7 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -4880,7 +4933,7 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -4888,7 +4941,7 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -4995,7 +5048,7 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5042,7 +5095,8 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -5071,7 +5125,8 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -5113,7 +5168,7 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -5139,7 +5194,7 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -5147,7 +5202,7 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -5191,7 +5246,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -5244,7 +5299,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5291,7 +5346,8 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -5320,7 +5376,8 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -5362,7 +5419,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -5468,7 +5525,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5515,7 +5572,8 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -5544,7 +5602,8 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -5586,7 +5645,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -5611,7 +5670,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -5619,7 +5678,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -5716,7 +5775,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -5763,7 +5822,8 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -5792,7 +5852,8 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -5834,7 +5895,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -5859,7 +5920,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -5867,7 +5928,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -5907,7 +5968,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -5960,7 +6021,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -6007,7 +6068,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -6036,7 +6098,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -6078,7 +6141,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -6135,7 +6198,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -6188,7 +6251,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -6235,7 +6298,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -6264,7 +6328,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -6306,7 +6371,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -6392,7 +6457,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     crossScalaVersions := Seq(
       "3.7.4",
       "2.13.18",
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     organization := "io.7mind.izumi",
@@ -6445,7 +6510,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -6492,7 +6557,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -6521,7 +6587,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -6563,7 +6630,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
@@ -6676,7 +6743,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   )
   .settings(
     crossScalaVersions := Seq(
-      "2.12.20"
+      "2.12.21"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -6730,7 +6797,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.20") => Seq(
+      case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
@@ -6777,7 +6844,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
@@ -6806,7 +6874,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent"
       )
       case (_, "3.7.4") => Seq(
         "-source:3.7",
@@ -6848,7 +6917,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.20") => Seq(
+      case (false, "2.12.21") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
       )
