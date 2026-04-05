@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
     inputs: {}
   push:
-    branches: [ "develop" ]
+    # release/* branches are excluded — publishing happens off of tags only,
+    # to avoid duplicate jobs when both branch and tag are pushed together
+    branches: [ "develop", "!release/**" ]
     tags: [ "v**" ]
   pull_request:
     branches: [ "develop" ]
