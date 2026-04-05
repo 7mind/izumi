@@ -1,6 +1,7 @@
 .direnv
 .hydra
 .idea
+.mdl
 *.jps
 /local.sbt
 .secrets*

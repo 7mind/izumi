@@ -22,6 +22,7 @@ object Izumi {
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
     val pureconfig = Version.VExpr("V.pureconfig")
+    val pureconfig_212 = Version.VExpr("V.pureconfig_212")
     val magnolia = Version.VExpr("V.magnolia")
     val jawn = Version.VExpr("V.jawn")
     val doobie = Version.VExpr("V.doobie")
@@ -82,9 +83,18 @@ object Izumi {
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto) in Scope.Test.all
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto) in Scope.Test.all
 
-    final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm
+    // pureconfig 0.17.9+ dropped Scala 2.12 support, so we need version-conditional deps
+    final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
+      ScalaVersionScope.Versions(scala213, scala300)
+    )
+    final val pureconfig_core_212 = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig_212, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
+      ScalaVersionScope.Versions(scala212)
+    )
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
-      ScalaVersionScope.AllScala2
+      ScalaVersionScope.Versions(scala213)
+    )
+    final val pureconfig_magnolia_212 = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig_212, LibraryType.Auto) in Scope.Compile.jvm.scalaVersion(
+      ScalaVersionScope.Versions(scala212)
     )
     final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto) in Scope.Compile.all.scalaVersion(
       ScalaVersionScope.AllScala2
@@ -149,8 +159,8 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.20")
-  final val scala213 = ScalaVersion("2.13.16")
+  final val scala212 = ScalaVersion("2.12.21")
+  final val scala213 = ScalaVersion("2.13.18")
   final val scala300 = ScalaVersion("3.3.6")
 
   object Groups {
@@ -288,6 +298,7 @@ object Izumi {
         "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:cat=lint-eta-sam:silent",
+        "-Wconf:msg=shadows:silent",
       )
       val scala3Wconf = Seq(
         "-Wconf:any:verbose",
@@ -631,7 +642,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(pureconfig_core, pureconfig_magnolia, magnolia) ++ Seq(scala_reflect),
+        libs = Seq(pureconfig_core, pureconfig_core_212, pureconfig_magnolia, pureconfig_magnolia_212, magnolia) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
         platforms = Targets.cross,
