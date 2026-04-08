@@ -16,51 +16,50 @@ object FileLockMutex {
     retryWait: FiniteDuration,
     maxAttempts: Int,
     attemptLog: (Int, Int) => F[Unit],
-    failLog: Int => F[Unit],
     // MUST be by-name because of QuasiIO[Identity]
     lockAlreadyExistedLog: => F[Unit],
-  )(effect:
-    // MUST be by-name because of QuasiIO[Identity]
-    => F[A]
+  )(fail: Int => F[A],
+    succ: FileLock => F[A],
   )(implicit
     F: QuasiIO[F],
     P: QuasiAsync[F],
     T: QuasiTemporal[F],
   ): F[A] = {
-    allocate[F](filename, retryWait, maxAttempts, attemptLog, failLog, lockAlreadyExistedLog).use(_ => effect)
+    allocate[F, A](filename, retryWait, maxAttempts, attemptLog, lockAlreadyExistedLog)(fail, succ).use(F.pure)
   }
 
-  def allocate[F[_]](
+  def allocate[F[_], A](
     filename: String,
     retryWait: FiniteDuration,
     maxAttempts: Int,
     attemptLog: (Int, Int) => F[Unit],
-    failLog: Int => F[Unit],
     // MUST be by-name because of QuasiIO[Identity]
     lockAlreadyExistedLog: => F[Unit],
+  )(fail: Int => F[A],
+    succ: FileLock => F[A],
   )(implicit
     F: QuasiIO[F],
     P: QuasiAsync[F],
     T: QuasiTemporal[F],
-  ): Lifecycle[F, Option[FileLock]] = {
+  ): Lifecycle[F, A] = {
     def retryOnFileLock(
       // MUST be by-name because of QuasiIO[Identity]
       doAcquire: => F[FileLock]
-    ): F[Option[FileLock]] = {
+    ): F[(A, Option[FileLock])] = {
       F.tailRecM(0) {
         attempts =>
           F.when(attempts != 0) {
             attemptLog(attempts, maxAttempts)
           }.flatMap {
               _ =>
-                F.definitelyRecoverUnsafeIgnoreTrace[Either[Int, Option[FileLock]]](
-                  doAcquire.map(lock => Right(Option(lock)))
+                F.definitelyRecoverUnsafeIgnoreTrace[Either[Int, (A, Option[FileLock])]](
+                  doAcquire.flatMap(lock => succ(lock).map(a => Right((a, Some(lock)))))
                 )(recover = {
                   case _: OverlappingFileLockException =>
                     if (attempts < maxAttempts) {
                       T.sleep(retryWait).map(_ => Left(attempts + 1))
                     } else {
-                      failLog(attempts).map(_ => Right(None))
+                      fail(attempts).map(a => Right((a, None)))
                     }
                   case err =>
                     F.fail(err)
@@ -82,7 +81,7 @@ object FileLockMutex {
       }
     }
 
-    def acquireLock(channel: AsynchronousFileChannel): F[Option[FileLock]] = {
+    def acquireLock(channel: AsynchronousFileChannel): F[(A, Option[FileLock])] = {
       retryOnFileLock {
         P.async[FileLock] {
           cb =>
@@ -106,10 +105,10 @@ object FileLockMutex {
           Lifecycle.make(
             acquire = acquireLock(channel)
           )(release = {
-            case Some(lock) => F.maybeSuspend(lock.close())
-            case None => F.unit
+            case (_, Some(lock)) => F.maybeSuspend(lock.close())
+            case (_, None) => F.unit
           })
-      }
+      }.map(_._1)
   }
 
 }

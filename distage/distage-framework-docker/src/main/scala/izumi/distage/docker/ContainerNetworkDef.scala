@@ -6,6 +6,7 @@ import izumi.distage.docker.model.Docker.DockerReusePolicy
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.providers.Functoid
+import izumi.functional.quasi.QuasiIO.syntax.QuasiIOSyntax
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.files.FileLockMutex
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -76,15 +77,8 @@ object ContainerNetworkDef {
           logger.info(s"About to start or find ${prefix -> "network"}, ${maxAttempts -> "max lock retries"}...")
 
           val filename = s"distage-container-network-def-$prefix"
-          FileLockMutex.withLocalMutex(
-            filename = filename,
-            retryWait = retryWait,
-            maxAttempts = maxAttempts,
-            attemptLog = (num, maxAttempts) => F.maybeSuspend(logger.debug(s"Attempt $num out of $maxAttempts to acquire file lock for image $filename.")),
-            failLog = attempts =>
-              F.maybeSuspend(logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container")),
-            lockAlreadyExistedLog = F.maybeSuspend(logger.debug(s"File lock already existed for image $filename")),
-          ) {
+
+          def acquireContainerNetwork: F[ContainerNetwork[T]] = {
             val labelsSet = networkLabels.toSet
             val existingNetworks = rawClient
               .listNetworksCmd().exec().asScala.toList
@@ -104,6 +98,18 @@ object ContainerNetworkDef {
                   }
               }
           }
+          FileLockMutex.withLocalMutex(
+            filename = filename,
+            retryWait = retryWait,
+            maxAttempts = maxAttempts,
+            attemptLog = (num, maxAttempts) => F.maybeSuspend(logger.debug(s"Attempt $num out of $maxAttempts to acquire file lock for image $filename.")),
+            lockAlreadyExistedLog = F.maybeSuspend(logger.debug(s"File lock already existed for image $filename")),
+          )(
+            fail = attempts =>
+              F.maybeSuspend(logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container"))
+                .flatMap(_ => acquireContainerNetwork),
+            succ = _ => acquireContainerNetwork,
+          )
         } else {
           createNewRandomizedNetwork()
         }

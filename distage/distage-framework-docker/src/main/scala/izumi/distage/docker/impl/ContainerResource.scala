@@ -520,7 +520,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  private def renderImageName(registry: Option[String]) = {
+  private def renderImageName(registry: Option[String]): String = {
     registry
       .filterNot(_.contains("index.docker.io"))
       .fold(config.image)(reg => s"$reg/${config.image}")
@@ -540,10 +540,13 @@ open class ContainerResource[F[_], Tag](
       retryWait = retryWait,
       maxAttempts = maxAttempts,
       attemptLog = (num, maxAttempts) => F.maybeSuspend(logger.debug(s"Attempt $num out of $maxAttempts to acquire file lock for image $filename.")),
-      failLog =
-        attempts => F.maybeSuspend(logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container")),
       lockAlreadyExistedLog = F.maybeSuspend(logger.debug(s"File lock already existed for image $filename")),
-    )(effect)
+    )(
+      fail = attempts =>
+        F.maybeSuspend(logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container"))
+          .flatMap(_ => effect),
+      succ = _ => effect,
+    )
   }
 }
 
