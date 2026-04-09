@@ -423,6 +423,7 @@ open class ContainerResource[F[_], Tag](
           val pullCmd = Value(rawClient.pullImageCmd(imageName))
             .mut(registry)(_.withRegistry(_))
             .mut(registryAuth)(_.withAuthConfig(_))
+            .mut(config.platform)(_.withPlatform(_))
             .get
           pullCmd.start().awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS)
         }
