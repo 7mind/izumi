@@ -46,17 +46,22 @@ abstract class DockerPullWithPlatformTest[F[+_, +_]: DefaultModule2: TagKK: IO2]
       (client: DockerClientWrapper[F[Throwable, _]], containerResource: ContainerResource[F[Throwable, _], HelloWorldRiscV64Docker.Tag]) =>
         val imageRef = "hello-world:latest"
 
-        def removeImage(): F[Nothing, Unit] =
+        def removeImage(): F[Nothing, Unit] = {
           F.syncThrowable(client.rawClient.removeImageCmd(imageRef).withForce(true).exec()).void.catchAll(_ => F.unit)
-
-        def verifyImageNotPulled: F[Throwable, NotFoundException] = F.syncThrowable {
-          intercept[NotFoundException](client.rawClient.inspectImageCmd(imageRef).exec())
         }
 
-        def verifyImagePulled: F[Throwable, Assertion] = F.syncThrowable {
-          val inspection = client.rawClient.inspectImageCmd(imageRef).exec()
-          assert(inspection.getArch == "riscv64")
-          assert(inspection.getOs == "linux")
+        def verifyImageNotPulled: F[Throwable, NotFoundException] = {
+          F.syncThrowable {
+            intercept[NotFoundException](client.rawClient.inspectImageCmd(imageRef).exec())
+          }
+        }
+
+        def verifyImagePulled: F[Throwable, Assertion] = {
+          F.syncThrowable {
+            val inspection = client.rawClient.inspectImageCmd(imageRef).exec()
+            assert(inspection.getArch == "riscv64")
+            assert(inspection.getOs == "linux")
+          }
         }
 
         (for {
