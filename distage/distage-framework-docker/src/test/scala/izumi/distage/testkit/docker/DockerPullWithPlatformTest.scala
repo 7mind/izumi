@@ -6,7 +6,7 @@ import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
 import izumi.distage.docker.model.Docker.DockerReusePolicy
-import izumi.distage.testkit.docker.DockerPullWithPlatformTest.*
+import izumi.distage.testkit.docker.DockerPullWithPlatformTest.{HelloWorldRiscV64Docker, imageName}
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec2
 import izumi.functional.bio.{F, IO2}
@@ -15,10 +15,12 @@ import org.scalatest.Assertion
 final class DockerPullWithPlatformTestZIO extends DockerPullWithPlatformTest[zio.IO]
 
 object DockerPullWithPlatformTest {
+  val imageName = "library/hello-world:latest"
+
   object HelloWorldRiscV64Docker extends ContainerDef {
     override def config: Config = {
       Config(
-        image = "library/hello-world:latest",
+        image = imageName,
         ports = Seq.empty,
         autoRemove = false,
         reuse = DockerReusePolicy.ReuseDisabled,
@@ -44,21 +46,19 @@ abstract class DockerPullWithPlatformTest[F[+_, +_]: DefaultModule2: TagKK: IO2]
 
     "pull hello-world for linux/riscv64 and verify image architecture" in {
       (client: DockerClientWrapper[F[Throwable, _]], containerResource: ContainerResource[F[Throwable, _], HelloWorldRiscV64Docker.Tag]) =>
-        val imageRef = "hello-world:latest"
-
         def removeImage(): F[Nothing, Unit] = {
-          F.syncThrowable(client.rawClient.removeImageCmd(imageRef).withForce(true).exec()).void.catchAll(_ => F.unit)
+          F.syncThrowable(client.rawClient.removeImageCmd(imageName).withForce(true).exec()).void.catchAll(_ => F.unit)
         }
 
         def verifyImageNotPulled: F[Throwable, NotFoundException] = {
           F.syncThrowable {
-            intercept[NotFoundException](client.rawClient.inspectImageCmd(imageRef).exec())
+            intercept[NotFoundException](client.rawClient.inspectImageCmd(imageName).exec())
           }
         }
 
         def verifyImagePulled: F[Throwable, Assertion] = {
           F.syncThrowable {
-            val inspection = client.rawClient.inspectImageCmd(imageRef).exec()
+            val inspection = client.rawClient.inspectImageCmd(imageName).exec()
             assert(inspection.getArch == "riscv64")
             assert(inspection.getOs == "linux")
           }
