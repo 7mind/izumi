@@ -1,6 +1,6 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import distage.Module
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.model.{DistageTest, EnvResult}
 import izumi.distage.testkit.runner.TestkitRunnerModule
@@ -41,17 +41,12 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
   }
 
   def defaultAsyncRuntime: TestRunnerRuntime = {
-    asyncRuntimeFor[MiniBIOAsync[Throwable, _]](runnerLifecycleForMiniBIOAsync())
+    asyncRuntimeFor[MiniBIOAsync[Throwable, _]](runnerLifecycleForMiniBIOAsync(), Nil)
   }
 
   /** Construct async test runtime using distage itself. DefaultModule[F] always contains a recipe for `QuasiIORunner[F]` */
   def defaultAsyncRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync: DefaultModule]: TestRunnerRuntime = {
-    asyncRuntimeFor[F](defaultRunnerLifecycleFor[F])
-  }
-
-  /** Construct async test runtime using distage itself. DefaultModule[F] always contains a recipe for `QuasiIORunner[F]` */
-  def defaultAsyncRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync: DefaultModule](runnerModuleOverrides: Module): TestRunnerRuntime = {
-    asyncRuntimeFor[F](defaultRunnerLifecycleFor[F], runnerModuleOverrides)
+    asyncRuntimeFor[F](defaultRunnerLifecycleFor[F], Nil)
   }
 
   def defaultRunnerLifecycleFor[F[_]: TagK: DefaultModule]: Lifecycle[Identity, QuasiIORunner[F]] = {
@@ -59,14 +54,8 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
   }
 
   def asyncRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync](
-    runtimeLifecycle: Lifecycle[Identity, QuasiIORunner[F]]
-  ): TestRunnerRuntime = {
-    asyncRuntimeFor(runtimeLifecycle, Module.empty)
-  }
-
-  def asyncRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync](
     runtimeLifecycle: Lifecycle[Identity, QuasiIORunner[F]],
-    runnerModuleOverrides: Module,
+    runnerOverrides: List[ModuleBase],
   ): TestRunnerRuntime = new TestRunnerRuntime {
     override def runTests[F0[_]](
       asyncSuitesHandle: AsyncGlobalSuitesControlHandle,
@@ -80,7 +69,7 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
         try {
           val runtime = runtimeLifecycle.extract(alloc).merge
           runtime.runFutureInterruptible {
-            TestkitRunnerModule.runWithOverrides[F](testReporter, isTestCancellation, testsToRun, runnerModuleOverrides)
+            TestkitRunnerModule.run[F](testReporter, isTestCancellation, testsToRun, runnerOverrides)
           }
         } catch {
           case t: Throwable =>
