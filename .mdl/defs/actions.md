@@ -9,12 +9,11 @@
 - `USER`
 - `OPENSSL_IV`
 - `OPENSSL_KEY`
-- `SONATYPE_USERNAME`
-- `SONATYPE_PASSWORD`
+- `SONATYPE_SECRET`
 - `NODE_AUTH_TOKEN`
+- `CI_BRANCH`
 - `CI_BRANCH_TAG`
 - `CI_PULL_REQUEST`
-- `CI_BRANCH`
 - `CI`
 
 # Axis
@@ -323,21 +322,9 @@ JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
 _JAVA_OPTIONS="$JAVA_OPTIONS"
 VERSION_COMMAND="${action.setup-scala.version-command}"
 
-SONATYPE_USERNAME_VAL="${env.SONATYPE_USERNAME}"
-SONATYPE_PASSWORD_VAL="${env.SONATYPE_PASSWORD}"
 CI_PULL_REQUEST_VAL="${env.CI_PULL_REQUEST}"
 CI_BRANCH_VAL="${env.CI_BRANCH}"
 CI_BRANCH_TAG_VAL="${env.CI_BRANCH_TAG}"
-
-if [[ -z "$SONATYPE_USERNAME_VAL" ]]; then
-  echo "Missing SONATYPE_USERNAME, skipping publish"
-  exit 0
-fi
-
-if [[ -z "$SONATYPE_PASSWORD_VAL" ]]; then
-  echo "Missing SONATYPE_PASSWORD, skipping publish"
-  exit 0
-fi
 
 if [[ "$CI_PULL_REQUEST_VAL" == "true" ]]; then
   echo "Publishing not allowed on pull requests"
@@ -349,9 +336,10 @@ if [[ "$CI_BRANCH_VAL" != "develop" && ! "$CI_BRANCH_TAG_VAL" =~ ^v ]]; then
   exit 0
 fi
 
-CREDENTIALS_FILE="${sys.project-root}/.secrets/credentials.sonatype-nexus.properties"
-mkdir -p "$(dirname "$CREDENTIALS_FILE")"
-printf "%s\n" "realm=Sonatype Nexus Repository Manager" "host=central.sonatype.com" "user=${SONATYPE_USERNAME_VAL}" "password=${SONATYPE_PASSWORD_VAL}" > "$CREDENTIALS_FILE"
+if [[ ! -f "$SONATYPE_SECRET" ]] ; then
+  echo "SONATYPE_SECRET=$SONATYPE_SECRET is not a file, failing publish"
+  exit 1
+fi
 
 if [[ "$CI_BRANCH_TAG_VAL" =~ ^v.*$ ]]; then
   sbt -batch -no-colors -v \

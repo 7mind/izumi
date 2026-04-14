@@ -177,11 +177,9 @@ jobs:
       - name: Build and Publish to Sonatype
         env:
           SONATYPE_SECRET: .secrets/credentials.sonatype-nexus.properties
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          CI_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
           CI_BRANCH: ${{ github.ref_name }}
           CI_BRANCH_TAG: ${{ github.ref_name }}
+          CI_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
         run: |
           mkdir .secrets
           echo "$SONATYPE_CREDENTIALS_FILE" > "$SONATYPE_SECRET"
