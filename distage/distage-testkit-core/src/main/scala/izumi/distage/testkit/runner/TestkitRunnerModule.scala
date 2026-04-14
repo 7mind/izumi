@@ -1,7 +1,7 @@
 package izumi.distage.testkit.runner
 
-import distage.{Injector, Module, TagK}
-import izumi.distage.model.definition.ModuleDef
+import distage.{Injector, TagK}
+import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, EnvResult}
 import izumi.distage.testkit.runner.api.TestReporter
@@ -66,17 +66,9 @@ object TestkitRunnerModule {
     reporter: TestReporter,
     isTestCancellation: Throwable => Boolean,
     tests: Seq[DistageTest[AnyF]],
+    runnerOverrides: List[ModuleBase],
   ): F[List[EnvResult]] = {
-    runWithOverrides(reporter, isTestCancellation, tests, Module.empty)
-  }
-
-  def runWithOverrides[F[_]: TagK: QuasiIO: QuasiAsync](
-    reporter: TestReporter,
-    isTestCancellation: Throwable => Boolean,
-    tests: Seq[DistageTest[AnyF]],
-    runnerModuleOverrides: Module,
-  ): F[List[EnvResult]] = {
-    val runnerModule = new TestkitRunnerModule[F](reporter, isTestCancellation) overriddenBy runnerModuleOverrides
+    val runnerModule = new TestkitRunnerModule[F](reporter, isTestCancellation) overriddenBy runnerOverrides.merge
     Injector
       .withoutDefaultModule[F]()
       .produceRun(runnerModule) {
