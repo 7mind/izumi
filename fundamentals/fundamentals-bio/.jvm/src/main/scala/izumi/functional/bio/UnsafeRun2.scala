@@ -72,11 +72,6 @@ object UnsafeRun2 {
     val initialEnv: ZEnvironment[R],
   ) extends UnsafeRun2[ZIO[R, +_, +_]] {
 
-    private def debugThread(marker: String): Unit = {
-      val thread = Thread.currentThread()
-      println(s"[ZIORunner][$marker] thread=${thread.getName}:${thread.getId} isInterrupted=${thread.isInterrupted}")
-    }
-
     lazy val runtime: Runtime[R] = {
       Runtime.unsafe
         .fromLayer(runtimeConfiguration)(using implicitly[zio.Trace], Unsafe)
@@ -84,14 +79,11 @@ object UnsafeRun2 {
     }
 
     override def unsafeRun[E, A](io: => ZIO[R, E, A]): A = {
-      debugThread("unsafeRun.enter")
       unsafeRunSync(io) match {
         case Exit.Success(value) =>
-          debugThread("unsafeRun.exit.success")
           value
 
         case failure: Exit.Failure[?] =>
-          debugThread("unsafeRun.exit.failure")
           throw failure.trace.unsafeAttachTraceOrReturnNewThrowable()
       }
     }
