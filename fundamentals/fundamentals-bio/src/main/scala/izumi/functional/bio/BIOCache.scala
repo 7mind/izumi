@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.cache.*
+import izumi.functional.lifecycle.Lifecycle
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -14,11 +15,25 @@ import scala.concurrent.duration.FiniteDuration
   *   - '''At-most-once''' `compute` invocation PER caller: each `computeIfAbsent`
   *     call invokes its own `compute` at most once. Concurrent callers dedup via a
   *     shared `Computing` marker.
-  *   - '''Strict freshness barrier''' for `put`/`invalidate`/`invalidateAll`: an
-  *     in-flight producer whose `Computing` is removed cannot publish its result.
+  *   - '''Publish freshness.''' `put` / `invalidate` / `invalidateAll` / `close`
+  *     displace any in-flight `Computing`, and a producer whose `Computing` is
+  *     removed cannot publish its result (the own-Computing-still-in-slot /
+  *     orphan-bucket checks in `doCompute`'s publish modify both block it).
+  *     New callers issued AFTER one of those operations returns see the
+  *     post-operation state.
+  *   - '''Waiter dedup follows Guava loader-result semantics for per-key writes.'''
+  *     A waiter that has already received `Some(v_A)` from its producer's promise
+  *     returns `v_A` even if `put(k, v_B)` or `invalidate(k)` linearizes between
+  *     the signal and the wake. Their newer state is observed by subsequent
+  *     `get` / `computeIfAbsent` calls, NOT by already-signaled waiters. This
+  *     does NOT hold for `invalidateAll` or `close`: those swap the whole
+  *     bucket structure, so the waiter's captured `parkedBucketRef` is orphan
+  *     and the waiter retries (`invalidateAll`) or fails fast with
+  *     `IllegalStateException` (`close`).
   *   - '''No waiter hangs.''' Control-plane operations IMMEDIATELY signal any
-  *     displaced `Computing`'s promise so parked waiters always wake and retry
-  *     against the freshest cache state. A wedged producer cannot wedge its waiters.
+  *     displaced `Computing`'s promise so waiters that hadn't been signaled yet
+  *     always wake and retry against the freshest cache state. A wedged producer
+  *     cannot wedge its waiters.
   *   - Per-entry and global TTL with lazy or eager eviction strategies.
   *   - Configurable reference types (strong, weak, soft) via [[CacheRefType]] typeclass.
   *
@@ -44,7 +59,7 @@ import scala.concurrent.duration.FiniteDuration
   *
   * '''Waiter wake-up.''' Callers parked on another fiber's in-flight load wake when:
   *   - The producer fiber terminates (success / typed failure / interrupt).
-  *   - Any of `put`/`invalidate`/`invalidateAll`/`shutdown` runs on the same key
+  *   - Any of `put`/`invalidate`/`invalidateAll`/`close` runs on the same key
   *     and displaces the producer's `Computing` from its bucket — they IMMEDIATELY
   *     signal the displaced promise `None`.
   *
@@ -61,7 +76,7 @@ import scala.concurrent.duration.FiniteDuration
   * contract); only waiters are retry-signaled when the slot changes hands.
   *
   * '''No waiter wedge.''' A hung producer cannot wedge its waiters: any
-  * control-plane operation (including `shutdown`) releases them. The caller only
+  * control-plane operation (including `close`) releases them. The caller only
   * needs to worry about the producer's OWN liveness.
   *
   * Recommended pattern — apply `Temp.timeout` on every call:
@@ -82,9 +97,9 @@ import scala.concurrent.duration.FiniteDuration
   *     (the waiter never entered `doCompute`), so the Computing entry stays and peer
   *     waiters remain parked. Waiter timeouts provide per-call liveness but do not
   *     free peers.
-  *   - `shutdown` also unblocks every parked waiter by signaling all in-flight
+  *   - `close` also unblocks every parked waiter by signaling all in-flight
   *     promises `None` (released waiters fail with `IllegalStateException`, see
-  *     [[BIOCache#shutdown]]).
+  *     [[BIOCache#close]]).
   *
   * Consequence: apply `Temp.timeout` uniformly to every `computeIfAbsent` call.
   * Whichever call ends up being the producer will then provide the shared bound;
@@ -108,27 +123,50 @@ trait BIOCache[F[+_, +_], K, V] {
     */
   def get(key: K): F[Nothing, Option[V]]
 
-  /** Put a value using the global default TTL (if configured).
+  /** Put a value using the global default TTL (if configured), replacing any
+    * existing live entry for the key. Returns the previous live value if one
+    * was present at modify-commit time, otherwise `None`.
     *
-    * Replaces any existing entry for the key (Ready or in-flight Computing) with a
-    * new Ready AND immediately signals the displaced Computing's promise (if any)
-    * with `None` — releasing parked waiters. The modify + signal step is fully
-    * uninterruptible, so the cache state and waiter-release are always consistent.
+    * The modify step also displaces any in-flight `Computing` for the key and
+    * signals its promise with `None` — releasing parked waiters that haven't
+    * been signaled yet. The whole step is uninterruptible, so cache state and
+    * waiter-release are consistent.
     *
-    * '''Interaction with parked waiters.''' Waiters released by put retry through
-    * `computeImpl` and hit put's `Ready`, returning put's value. The displaced
-    * producer keeps running on its own fiber; its direct caller receives its
-    * computed `v` (loader-result contract), but its publish is rejected and its
-    * promise signal is a no-op.
+    * Return value:
+    *   - `Some(v_prev)` iff the bucket contained a live, non-expired `Ready(k, v_prev, …)`
+    *     whose wrapped reference (`StrongRef` / `WeakCacheRef` / `SoftCacheRef`)
+    *     still yields `Some(v_prev)` at commit time.
+    *   - `None` iff the slot was empty, held an in-flight `Computing` (no previous
+    *     cached value), held an expired `Ready` (cleaned out by the same modify),
+    *     or held a `Ready` whose weak/soft wrapper had already been GC-reclaimed.
+    *   - `None` if the cache is closed (post-close `put` is a silent no-op).
     *
-    * If you need deterministic ordering against a specific in-flight load, coordinate
-    * at the caller layer (e.g., `invalidate` + fresh-call sequencing).
+    * '''Interaction with parked waiters.''' The behavior splits by whether `put`
+    * linearizes before or after the producer's publish step (same two-timing
+    * breakdown as [[invalidate]]):
+    *
+    *   - '''Before publish:''' producer's `Computing` is in the bucket at the
+    *     time of `put`; `put` installs its `Ready` and signals the displaced
+    *     `Computing`'s promise with `None`. The waiter wakes with `None`,
+    *     retries via `computeImpl`, and hits put's `Ready`. Producer keeps
+    *     running; its later publish is rejected; its own `succeed(None)` is
+    *     a no-op.
+    *   - '''After publish''' (bucket already had `Ready(TA)`, `Computing` is
+    *     gone): `put` replaces the existing `Ready` with its own; there is no
+    *     `Computing` to signal. The producer's own `succeed(Some(v_A))` is the
+    *     first signal the waiter sees; the waiter's freshness check observes
+    *     `closedFlag == false` and the bucket `Ref2` unchanged (no structure
+    *     swap), so it returns `v_A` per Guava loader-result dedup. Subsequent
+    *     `get` / `computeIfAbsent` calls see `put`'s newer value.
+    *
+    * If you need deterministic ordering against a specific in-flight load,
+    * coordinate at the caller layer (e.g., `invalidate` + fresh-call sequencing).
     */
-  def put(key: K, value: V): F[Nothing, Unit]
+  def put(key: K, value: V): F[Nothing, Option[V]]
 
-  /** Put a value with an explicit TTL. See [[put]] for semantics (including the
-    * timing-dependent parked-waiter interaction). */
-  def putWithTTL(key: K, value: V, ttl: FiniteDuration): F[Nothing, Unit]
+  /** Put a value with an explicit TTL. See [[put]] for semantics — including the
+    * return value and the timing-dependent parked-waiter interaction. */
+  def putWithTTL(key: K, value: V, ttl: FiniteDuration): F[Nothing, Option[V]]
 
   /** Get the existing value or compute it. Concurrent `computeIfAbsent` calls for the
     * same key are deduplicated: one fiber is the producer (runs `compute`); others park
@@ -155,7 +193,7 @@ trait BIOCache[F[+_, +_], K, V] {
     *
     * '''Waiter liveness.''' Waiters parked on an in-flight producer wake when the
     * producer fiber completes (success/failure/interrupt) OR when any control-plane
-    * operation (`put`/`invalidate`/`invalidateAll`/`shutdown`) on the same key
+    * operation (`put`/`invalidate`/`invalidateAll`/`close`) on the same key
     * displaces the producer's `Computing` — those operations signal the displaced
     * promise `None` in the same uninterruptible step as the bucket mutation.
     * Callers therefore do NOT need `Temp.timeout` to rescue waiters from a hung
@@ -167,7 +205,7 @@ trait BIOCache[F[+_, +_], K, V] {
     *     return it — no bucket read, no wrapper unwrap.
     *   - `None` iff publication was REJECTED (a foreign `Ready` or `Computing`
     *     now owns the slot — via racing `put`, post-invalidate successor, newer
-    *     compute, or shutdown fence). Parked waiters retry through `computeImpl`:
+    *     compute, or close fence). Parked waiters retry through `computeImpl`:
     *     they then observe the freshest available state (racing put's `Ready`,
     *     successor's `Computing`, or an empty slot / closed cache).
     *
@@ -186,7 +224,7 @@ trait BIOCache[F[+_, +_], K, V] {
   /** Like [[computeIfAbsent]] but with an explicit TTL for the computed value. */
   def computeIfAbsentWithTTL[E](key: K, ttl: FiniteDuration, compute: F[E, V]): F[E, V]
 
-  /** Remove a single entry present at call time (strict freshness barrier).
+  /** Remove a single entry present at call time.
     *
     * Atomically (uninterruptibly) removes any `Ready` or `Computing` for the key AND
     * signals the displaced `Computing`'s promise (if any) with `None` — releasing
@@ -194,24 +232,55 @@ trait BIOCache[F[+_, +_], K, V] {
     * or `computeIfAbsent` may add a new entry for this key before or after this call
     * returns.
     *
-    * '''Interaction with in-flight loads.''' Parked waiters wake, retry through
-    * `computeImpl`, and observe the freshest cache state. The displaced producer
-    * keeps running: its direct caller receives its computed `v` (loader-result
-    * contract); its publish is rejected (no own `Computing` in slot); its promise
-    * signal is a no-op. Cost: a pre-invalidate producer's successful load is NOT
-    * cached (the next caller recomputes) — intentional, since `invalidate`
-    * explicitly communicates that the prior value is stale.
+    * '''Interaction with in-flight loads.''' The net effect on waiters depends on
+    * whether `invalidate` linearizes before or after the producer's publish step:
+    *
+    *   - '''If `invalidate` linearizes BEFORE the producer's publish modify:''' the
+    *     producer's `Computing` is in the bucket at the time of `invalidate`;
+    *     `invalidate` removes it and signals its promise with `None`. The waiter
+    *     wakes with `None` and retries via `computeImpl`, observing the post-
+    *     `invalidate` cache state (typically an empty slot where it installs
+    *     its own `Computing`). The producer keeps running but its subsequent
+    *     publish modify sees no own `Computing` in the slot and is rejected;
+    *     its own `succeed(None)` is a no-op because the displacer already
+    *     signaled. The producer's direct caller still receives its computed
+    *     `v` (loader-result contract). The producer's `v` is NOT cached —
+    *     intentional, since `invalidate` explicitly communicates that the
+    *     prior value is stale.
+    *   - '''If `invalidate` linearizes AFTER the producer's publish modify'''
+    *     (bucket already has `Ready(TA)`, `Computing` is gone): `invalidate`
+    *     simply removes the `Ready`; there is no `Computing` to signal. The
+    *     producer's own `succeed(Some(v_A))` is the first signal the waiter
+    *     sees; the waiter's freshness check observes `closedFlag == false`
+    *     and the bucket `Ref2` unchanged (no structure swap), so it returns
+    *     `v_A` per Guava loader-result dedup. The cache itself ends empty;
+    *     subsequent `get` / `computeIfAbsent` calls see the post-`invalidate`
+    *     state.
+    *
+    * In both timings the cache is empty after `invalidate` returns. The
+    * difference is whether the already-parked waiter sees `v_A` (second
+    * timing) or retries and (typically) recomputes (first timing).
     */
   def invalidate(key: K): F[Nothing, Unit]
 
-  /** Remove all entries present at call time (strict freshness barrier).
+  /** Remove all entries present at call time.
     *
-    * Clears every bucket AND signals every displaced `Computing`'s promise `None`
-    * in one uninterruptible step. Same strict-freshness + release semantics as
-    * [[invalidate]]. NOT atomic w.r.t. concurrent writes: the traversal processes
-    * buckets one at a time, so a `put`/`computeIfAbsent` on an already-cleared
-    * bucket may repopulate before this call returns. For an atomic flush, construct
-    * a new cache.
+    * Atomically swaps the whole bucket structure to a fresh empty one via a single
+    * `AtomicReference.getAndSet`; then drains in-flight producer promises on the
+    * orphaned vector with `None` so parked waiters wake.
+    *
+    * '''Waiter behavior is stricter than [[invalidate]].''' The atomic structure
+    * swap installs a fresh `Vector` of fresh per-bucket `Ref2`s, so every parked
+    * waiter's captured `parkedBucketRef` is `ne` to `bucketFor(key)` on wake. That
+    * identity mismatch forces a retry through `computeImpl` — INCLUDING waiters
+    * whose producer already signaled `Some(v_A)`. Unlike `invalidate` (which keeps
+    * the bucket `Ref2` intact and therefore honors Guava loader-result dedup for
+    * already-signaled waiters), `invalidateAll` fully fences all parked waiters.
+    *
+    * A `put` / `computeIfAbsent` that captured the old vector pre-swap writes to
+    * the orphan (invisible to post-swap readers) — matches
+    * `java.util.concurrent.ConcurrentHashMap.clear` semantics. Post-swap callers
+    * start from an empty vector.
     */
   def invalidateAll: F[Nothing, Unit]
 
@@ -221,47 +290,60 @@ trait BIOCache[F[+_, +_], K, V] {
   /** All current keys (approximate snapshot). */
   def keys: F[Nothing, Set[K]]
 
-  /** Full-close: terminal lifecycle operation that tears down the cache.
+  /** Snapshot of all (key, value) pairs present and alive at read time.
+    *
+    * Iterates the current bucket vector once and collects every non-expired
+    * `Ready` whose wrapped reference still yields `Some(v)`. Bucket reads are
+    * per-bucket atomic but NOT a single global atomic: concurrent mutations in
+    * other buckets linearize independently. The returned map is therefore a
+    * consistent per-bucket snapshot, not a strictly-consistent whole-cache
+    * snapshot — same guarantees as [[size]] and [[keys]] (and Java
+    * `ConcurrentHashMap.entrySet` iterators).
+    *
+    * Expired / GC-reclaimed / in-flight-`Computing` entries are omitted.
+    */
+  def toMap: F[Nothing, Map[K, V]]
+
+  /** Terminal close: tears down the cache.
     *
     *   - Sets the cache's closed flag (fences new loader admission).
     *   - Stops the background eviction fiber (if any).
-    *   - Per-bucket uninterruptible sweep: clears EVERY entry (both `Ready` and
-    *     `Computing`) and signals every `Computing`'s promise `None`.
+    *   - Atomically replaces the internal bucket structure with a fresh empty
+    *     one (see [[ConcurrentHashMapCache]] scaladoc: "Atomic swap semantics").
+    *   - Signals every in-flight `Computing`'s promise with `None` so parked
+    *     waiters wake, retry via `computeImpl`, and observe the closed flag →
+    *     fail fast with `IllegalStateException`.
     *
     * Does '''NOT''' interrupt producer fibers themselves — producer lifecycle is
     * the caller's responsibility (supervision / timeouts / explicit cancellation).
+    * A pre-close producer completes its `compute`, publishes to an orphaned
+    * bucket (no longer referenced by the cache), and returns `v` to its direct
+    * caller per Guava loader-result semantics; that value is NOT visible to any
+    * post-close reader.
     *
-    * Post-shutdown behavior (all operations are safe to call; shutdown clears
-    * every bucket, so the cache holds no state):
-    *   - `computeIfAbsent` / `computeIfAbsentWithTTL` → every key miss fails
-    *     with `IllegalStateException` (defect via `F.terminate`). Since shutdown
-    *     sweeps every bucket to empty, all post-shutdown calls take the miss
-    *     branch. (The implementation's hit branch is unfenced by design —
-    *     hits never start a loader — but no hit is observable after a shutdown
-    *     sweep unless a concurrent in-flight producer had completed publication
-    *     before the sweep committed, which is a narrow harmless window: the
-    *     sweep then removes that Ready on its next modify.)
+    * Post-close behavior (all operations are safe to call):
+    *   - `computeIfAbsent` / `computeIfAbsentWithTTL` → fails with
+    *     `IllegalStateException` (defect via `F.terminate`). The closed-flag
+    *     check in the admission path rejects new loaders before they run.
     *   - `put` / `putWithTTL` / `invalidate` / `invalidateAll` → silent no-op.
     *     These operations cannot propagate a typed error, and a dropped
-    *     post-shutdown mutation is safer than a fiber-killing defect for
+    *     post-close mutation is safer than a fiber-killing defect for
     *     lifecycle-racing code.
-    *   - `get` → returns `None` (cache is empty).
+    *   - `get` → returns `None` (the active structure is empty).
     *   - `size` → returns `0`. `keys` → returns empty set.
     *
-    * Idempotent: calling shutdown twice is safe.
+    * Idempotent: calling close twice is safe.
     *
-    * '''Breaking change vs. traditional "eviction-fiber-only" shutdown''': this
-    * cache treats shutdown as a terminal liveness fence, not a benign finalizer.
-    * The defect on post-shutdown `computeIfAbsent` is intentional — it prevents
-    * duplicate loader execution after teardown, which is a correctness hazard
-    * under side-effecting loaders. Wrap cache construction in a bracket so
-    * `shutdown` is always the last operation:
+    * Terminal by design: the defect on post-close `computeIfAbsent` is
+    * intentional — it prevents duplicate loader execution after teardown,
+    * which is a correctness hazard for side-effecting loaders. Wrap cache
+    * construction in a bracket so `close` is always the last operation:
     *
     * {{{
-    *   F.bracket(BIOCache.makeEager(config))(_.shutdown)(cache => use(cache))
+    *   F.bracket(BIOCache.makeEager(config))(_.close)(cache => use(cache))
     * }}}
     */
-  def shutdown: F[Nothing, Unit]
+  def close: F[Nothing, Unit]
 }
 
 object BIOCache {
@@ -304,22 +386,23 @@ object BIOCache {
     *
     * Starts a background fiber that periodically scans and evicts expired entries.
     *
-    * '''Caller responsibility.''' Wrap the returned effect in a bracket (or equivalent
-    * resource-scoped pattern) so that `shutdown` is always called on scope exit:
+    * '''Prefer [[makeEagerResource]].''' This raw constructor returns the cache
+    * as an effect; an interrupt delivered between the effect completing and the
+    * caller installing their own close path leaks the background eviction fiber.
+    * The internal construction masks interrupts around fork + registration, but
+    * it cannot protect the handoff after the function returns — that is the
+    * caller's responsibility.
+    *
+    * If you need a raw effect, wrap it in a bracket (or equivalent
+    * resource-scoped pattern) so that `close` is always called on scope exit:
     *
     * {{{
     *   F.bracket(
     *     acquire = BIOCache.makeEager(config)
-    *   )(release = _.shutdown)(
+    *   )(release = _.close)(
     *     use = cache => ...
     *   )
     * }}}
-    *
-    * Without a bracket, an interrupt delivered between `makeEager` returning and
-    * the caller installing their own shutdown path will leak the background
-    * eviction fiber. The internal construction masks interrupts around fork +
-    * registration, but it cannot protect the handoff after the function returns —
-    * that is the caller's responsibility.
     *
     * @param config must have `eagerEvictionInterval` set, otherwise behaves like [[make]]
     */
@@ -334,5 +417,27 @@ object BIOCache {
     config: CacheConfig
   ): F[Nothing, BIOCache[F, K, V]] = {
     ConcurrentHashMapCache.createWithEviction[F, K, R, V](config)
+  }
+
+  /** Resource-safe counterpart of [[makeEager]]: acquires an eager cache and
+    * guarantees `close` on scope exit, even if an interrupt arrives between
+    * allocation and the first use of the resource.
+    *
+    * This is the recommended constructor for eager caches. Use it whenever the
+    * cache's lifetime can be expressed as a `Lifecycle` scope.
+    */
+  def makeEagerResource[F[+_, +_]: IO2: Primitives2: Temporal2: Fork2, K, V](
+    config: CacheConfig
+  ): Lifecycle[F[Nothing, _], BIOCache[F, K, V]] = {
+    makeEagerResourceWithRef[F, K, StrongRef, V](config)
+  }
+
+  /** Resource-safe counterpart of [[makeEagerWithRef]]. */
+  def makeEagerResourceWithRef[F[+_, +_]: IO2: Primitives2: Temporal2: Fork2, K, R[_]: CacheRefType, V](
+    config: CacheConfig
+  ): Lifecycle[F[Nothing, _], BIOCache[F, K, V]] = {
+    Lifecycle.make[F[Nothing, _], BIOCache[F, K, V]](
+      acquire = ConcurrentHashMapCache.createWithEviction[F, K, R, V](config)
+    )(release = _.close)
   }
 }

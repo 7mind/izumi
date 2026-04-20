@@ -333,7 +333,7 @@ class BIOCacheRefTest extends AnyWordSpec with Matchers {
           F.flatMap(cache.put("a", new String("val"))) { _ =>
             F.flatMap(implicitly[Temporal2[IO]].sleep(200.millis)) { _ =>
               F.flatMap(cache.size) { s =>
-                F.map(cache.shutdown)(_ => s)
+                F.map(cache.close)(_ => s)
               }
             }
           }

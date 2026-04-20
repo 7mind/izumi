@@ -45,13 +45,13 @@ import scala.concurrent.duration.FiniteDuration
   * OR a control-plane op on the same key signals the displaced promise. Control-plane
   * release is always via `None`, so waiters retry through `computeImpl` and observe
   * the freshest available cache state. This guarantees no waiter can be wedged by a
-  * hung producer — any control-plane operation (including `shutdown`) unblocks it.
+  * hung producer — any control-plane operation (including `close`) unblocks it.
   *
   * ==Producer publication (Guava semantics)==
   *
   * When a producer finishes `compute`, it publishes `Ready(v)` only if its OWN
   * `Computing` marker is still in the slot. Any other state — empty slot (our
-  * Computing was removed by `invalidate`/`invalidateAll`/`shutdown` or by a
+  * Computing was removed by `invalidate`/`invalidateAll`/`close` or by a
   * successor that has since terminated), foreign `Computing` (a successor owns
   * the slot), or any `Ready` (from `put` or a newer compute) — blocks publication.
   * This is a strict freshness barrier: pre-invalidate loads cannot repopulate the
@@ -92,33 +92,45 @@ import scala.concurrent.duration.FiniteDuration
   *
   * ==Waiter freshness barriers==
   *
-  * All freshness-barrier state lives INSIDE each bucket's [[BucketState]]:
-  * `closed` (shutdown marker), `invGen` (invalidateAll/shutdown generation),
-  * and `keyEpochs` (per-key put/invalidate counter). A waiter's post-wake
-  * decision is therefore made from a SINGLE atomic `bucketRef.get`
-  * snapshot — there is no inter-atomic race between separate counters.
+  *   - Cache-wide `closedFlag` (AtomicBoolean): flipped by [[close]] BEFORE
+  *     the structure swap. Checked by every admission path in `computeImpl`
+  *     and by waiters on wake. Monotonic — once `true`, stays `true`.
+  *   - Structure swap (atomic `structureRef` replacement by [[invalidateAll]]
+  *     / [[close]]): each swap installs a fresh Vector of fresh per-bucket
+  *     `Ref2`s. Waiters capture their bucket's `Ref2` identity at park time
+  *     and compare on wake via `eq` — a mismatch means the structure was
+  *     replaced, forcing a retry.
   *
-  *   - `state.closed` → fail fast with IllegalStateException.
-  *   - `state.invGen > parked` → [[invalidateAll]] / [[shutdown]] visited
-  *     this bucket → retry.
-  *   - `state.keyEpochs(k) > parked` → [[put]] / [[invalidate]] on THIS
-  *     key fired → retry. No hash-collision false positives.
+  * Per-key writes (`put(k)` / `invalidate(k)`) displace in-flight `Computing`
+  * markers by signaling their promise `None` from inside the same modify,
+  * so parked waiters wake and retry. They do NOT impose a post-wake retry
+  * on already-succeeded waiters: if the producer reaches `succeed(Some(v))`
+  * before the `put`/`invalidate`, the waiter returns `v` (Guava loader-result
+  * dedup). `put`'s newer value is observed by subsequent `computeIfAbsent`
+  * / `get` calls, not by already-parked waiters.
   *
   * Benign events (TTL expiry, weak/soft GC cleanup, successor compute-publish)
-  * do NOT bump either counter. Already-deduped waiters whose producer succeeded
+  * do NOT swap the structure. Already-deduped waiters whose producer succeeded
   * receive its `Some(v)` — Guava's loader-result dedup is preserved.
   *
-  * ==Non-atomic flush / close==
+  * ==Atomic structure swap for [[invalidateAll]] and [[close]]==
   *
-  * [[invalidateAll]] and [[shutdown]] are BUCKET-by-bucket operations, not
-  * globally atomic. Each bucket's state transition is linearizable with
-  * any concurrent same-bucket op, but concurrent callers on buckets the
-  * traversal hasn't reached yet may still observe pre-flush / pre-close
-  * state. This matches `java.util.ConcurrentHashMap.clear` semantics. For
-  * an atomic flush, construct a new cache.
+  * Both operations are O(1)-visible: a single `structureRef.getAndSet`
+  * replaces the entire bucket vector. After the swap:
+  *   - New `currentBuckets` reads see the fresh (empty) vector.
+  *   - In-flight ops that captured the OLD vector pre-swap continue on
+  *     orphaned `Ref2`s; their effects are invisible to post-swap readers.
+  *     Matches Java `ConcurrentHashMap.clear` semantics for races between
+  *     `clear()` and concurrent reads/writes.
+  *   - Parked waiters on old-vector `Computing` promises are woken with
+  *     `None` via the post-swap drain step; they retry in `computeImpl`
+  *     against the fresh vector (or fail fast if `closedFlag` is set).
+  *
+  * For a globally-atomic flush that also serializes against in-flight ops,
+  * construct a new cache.
   */
 private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
-  buckets: Vector[Ref2[F, BucketState[K, R[V]]]],
+  initialBuckets: Vector[Ref2[F, BucketState[K, R[V]]]],
   config: CacheConfig,
   evictionFiberRef: Ref2[F, Option[Fiber2[F, Nothing, Unit]]],
 )(implicit
@@ -127,59 +139,105 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
   R: CacheRefType[R],
 ) extends BIOCache[F, K, V] {
 
-  // Cache-wide shutdown fence. Flipped to `true` at the START of
-  // `shutdown` — BEFORE bucket traversal — to fence new admissions on
-  // buckets the traversal has not yet visited. Per-bucket `state.closed`
-  // remains the linearization-point fact that a waiter reads from its
-  // single-atomic bucket snapshot; this cache-wide flag is an ADDITIONAL
-  // belt-and-suspenders check at admission time in `computeImpl` so that
-  // no new `Computing` is installed after shutdown starts, even in a
-  // bucket whose state.closed has not yet been written.
+  // Linearization point for concurrent `close` callers. The first caller to
+  // CAS a non-null promise here becomes the unique teardown winner — it also
+  // flips `closedFlag` and runs the interrupt / swap / drain steps, then
+  // signals the promise on completion. Subsequent callers observe the
+  // installed promise and `await` it, so once ANY `close` returns, teardown
+  // is observably complete.
   //
-  // Monotonic: once flipped true, stays true. `invalidateAll` does NOT
-  // touch this flag — it is per-bucket non-atomic by design, matching
-  // `ConcurrentHashMap.clear` semantics.
+  // Payload is the RAW `Exit.Uninterrupted[Nothing, Unit]` of the winner's
+  // sandboxed teardown. Winner completes with `Exit.Success(())` on success
+  // or the original `Exit.Termination(compoundException, allExceptions,
+  // trace)` on defect. Both winner and losers replay the SAME exit via
+  // `F.fromSandboxExit(exit)`. The invariant is CONSISTENCY, not max
+  // fidelity: whatever `F.fromSandboxExit` collapses (the default IO2 impl
+  // passes only `compoundException` to `terminate`, dropping
+  // `allExceptions` and `trace`), it collapses identically for every
+  // caller. Winner and losers therefore re-raise identical observable
+  // throwables.
+  //
+  // The alternative of signaling losers via `Promise2.terminate(throwable)`
+  // would break consistency: losers would re-raise a DIFFERENT cause than
+  // the winner's own `F.fromSandboxExit(exit)`, because losers would go
+  // through `await`'s `terminate`-path while the winner goes through
+  // `fromSandboxExit`'s own `terminate(compoundException)` path. By
+  // publishing the whole Exit and forcing both paths through
+  // `F.fromSandboxExit`, we get a single canonical collapse.
+  //
+  // Created LAZILY (inside `close` via `P.mkPromise`, not at construction)
+  // so (a) caches that are never closed don't allocate a promise, and
+  // (b) the ordering of Primitives2.mkPromise calls observed by
+  // test instrumentation is not perturbed by an unconditional init-time
+  // promise allocation.
+  private[this] val closedPromiseRef: java.util.concurrent.atomic.AtomicReference[Promise2[F, Nothing, Exit.Uninterrupted[Nothing, Unit]]] =
+    new java.util.concurrent.atomic.AtomicReference(null)
+
+  // ==Atomic swap semantics==
+  //
+  // The bucket structure is NOT a fixed `val Vector[Ref2]`. It lives in an
+  // `AtomicReference` that `invalidateAll` / `close` atomically replace with a
+  // fresh Vector of fresh per-bucket `Ref2`s. After the swap CAS:
+  //   - Every new `currentBuckets` read returns the fresh vector.
+  //   - In-flight operations that captured the OLD vector (via `currentBuckets`
+  //     or `bucketFor(key)`) continue on the orphaned old `Ref2`s. Their
+  //     effects are invisible to post-swap readers, which matches Guava /
+  //     ConcurrentHashMap semantics for races between clear() and concurrent
+  //     reads/writes.
+  //   - Parked waiters detect the swap by comparing their captured bucket
+  //     `Ref2` identity to the current `bucketFor(key)` at wake time (see
+  //     `WaitCtx.parkedBucketRef` and `awaitAndRetry`). A mismatch forces a
+  //     retry against the fresh structure.
+  //
+  // This replaces the previous per-bucket traversal design: `invalidateAll`
+  // and `close` are now O(1) visible (one CAS), and subsequent bucket reads
+  // see the fresh structure immediately.
+  private[this] val structureRef: java.util.concurrent.atomic.AtomicReference[Vector[Ref2[F, BucketState[K, R[V]]]]] =
+    new java.util.concurrent.atomic.AtomicReference(initialBuckets)
+
+  // Cache-wide close fence. Flipped `true` atomically at the START of `close`,
+  // BEFORE the structureRef swap. Read inside every admission-path bucket
+  // modify closure in `computeImpl` so that no new `Computing` is installed
+  // after close begins — even on buckets the old vector still exposes to an
+  // in-flight caller that captured it pre-swap.
+  //
+  // Monotonic: once flipped true, stays true. `invalidateAll` does NOT touch
+  // this flag (invalidateAll does not terminate the cache).
   private[this] val closedFlag: java.util.concurrent.atomic.AtomicBoolean =
     new java.util.concurrent.atomic.AtomicBoolean(false)
 
   // Freshness-fence design:
   //
-  //   - `globalEpoch` (AtomicLong, bumped ATOMICALLY before traversal by
-  //     `invalidateAll` / `shutdown`): global barrier. Any waiter whose
-  //     parked globalEpoch is less than the current globalEpoch retries on
-  //     wake, regardless of which bucket they are in or the traversal order.
-  //
-  //   - per-key `BucketState.keyEpochs(k)` (bumped atomically inside
-  //     `put(k)` / `invalidate(k)` modify closures): per-key barrier.
-  //     Only waiters parked on `k` see the advance. A write on a
-  //     hash-colliding different key bumps a separate map entry, so
-  //     unrelated waiters are never disturbed — no duplicate-compute
-  //     hazard under short-TTL / weak-ref caches where a false-positive
-  //     retry could land on a cleaned-out bucket and spawn a second
-  //     compute.
+  //   - Structure swap (via `structureRef.getAndSet`): global barrier for
+  //     `invalidateAll` / `close`. Waiters detect the swap by bucket-`Ref2`
+  //     identity mismatch at wake time.
   //
   //   - `Computing.originToken` / `Ready.origin`: per-producer identity used
   //     ONLY by `doCompute`'s own cleanup (match our own Computing/Ready on
   //     failure rollback). NOT part of the waiter freshness check.
   //
+  // Per-key writes (`put` / `invalidate`) collect any displaced `Computing`
+  // promise inside their bucket modify and signal it `None` post-commit;
+  // parked waiters wake and retry via `computeImpl`. Once a waiter's
+  // producer has already signaled `Some(v)`, the waiter keeps `v` —
+  // consistent with Guava's loader-result dedup contract. `invalidateAll`
+  // / `close` drain the OLD vector's promises after the swap CAS; waiters
+  // retry and observe the swap via `Ref2` identity mismatch.
+  //
   // Benign cleanup (TTL expiry, weak/soft GC, successor compute-publish)
-  // does NOT bump either counter, so already-deduped waiters are never
-  // hijacked. This is the Guava loader-result dedup contract.
-  //
-  // Memory: one AtomicLong cache-wide + one Long per bucket. Independent of
-  // key cardinality; invulnerable to adversarial unique-key workloads.
-  //
-  // No in-flight promise tracker is needed — `put` / `invalidate` /
-  // `invalidateAll` / `shutdown` collect any displaced `Computing` promise
-  // inside their bucket modify and signal it `None` post-commit.
+  // does NOT swap, so already-deduped waiters are never hijacked.
 
-  private[this] val numBuckets = buckets.size
+  private[this] def currentBuckets: Vector[Ref2[F, BucketState[K, R[V]]]] =
+    structureRef.get()
 
   private[this] def bucketFor(key: K): Ref2[F, BucketState[K, R[V]]] = {
+    val vec = currentBuckets
     val h = key.hashCode()
     val spread = h ^ (h >>> 16) // spread high bits (from ConcurrentHashMap)
-    buckets(Math.floorMod(spread, numBuckets))
+    vec(Math.floorMod(spread, vec.size))
   }
+
+  private[this] val initialCapacity: Int = Math.max(1, config.initialCapacity)
 
   private[this] def isExpired(expiresAtNano: Long, nowNano: Long): Boolean = {
     expiresAtNano != Long.MaxValue && (nowNano - expiresAtNano) >= 0
@@ -212,26 +270,26 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
       cleaned.find(_.key == key) match {
         case Some(Ready(_, stored, _, _)) =>
           R.get(stored) match {
-            case s @ Some(_) => (s, BucketState(state.invGen, state.closed, state.keyEpochs, cleaned))
+            case s @ Some(_) => (s, BucketState(cleaned))
             case None =>
-              (None, BucketState(state.invGen, state.closed, state.keyEpochs, cleaned.filterNot(_.key == key)))
+              (None, BucketState(cleaned.filterNot(_.key == key)))
           }
-        case _ => (None, BucketState(state.invGen, state.closed, state.keyEpochs, cleaned))
+        case _ => (None, BucketState(cleaned))
       }
     }
   }
 
-  override def put(key: K, value: V): F[Nothing, Unit] = putImpl(key, value, None)
+  override def put(key: K, value: V): F[Nothing, Option[V]] = putImpl(key, value, None)
 
-  override def putWithTTL(key: K, value: V, ttl: FiniteDuration): F[Nothing, Unit] = putImpl(key, value, Some(ttl))
+  override def putWithTTL(key: K, value: V, ttl: FiniteDuration): F[Nothing, Option[V]] = putImpl(key, value, Some(ttl))
 
   /** Collect `Computing` promises from displaced entries. Signaled post-commit
-    * with `None` via `Promise2.succeed` (itself CAS-atomic). `Ready` entries do
-    * NOT carry a promise reference under the generation-based freshness design:
-    * waiters validate freshness by comparing `BucketState.gen` captured at park
-    * time against the current gen on wake, so displacers don't need to veto the
-    * producer's `Some(v)` through the promise — a gen-advance already forces
-    * the waiter onto the retry path.
+    * with `None` via `Promise2.succeed` (itself CAS-atomic) so parked waiters
+    * wake and retry via `computeImpl`. `Ready` entries do NOT carry a promise
+    * reference — `put`/`invalidate` don't need to signal Ready entries, only
+    * displace in-flight `Computing`s. Global barriers (`invalidateAll`/`close`)
+    * are detected via the bucket `Ref2` identity mismatch from the structure
+    * swap; no per-key counter is needed.
     */
   private[this] def collectDisplacedSignals(
     entries: List[BucketEntry[K, R[V]]],
@@ -244,28 +302,36 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
     }
   }
 
-  private[this] def putImpl(key: K, value: V, ttl: Option[FiniteDuration]): F[Nothing, Unit] = {
-    // Full-close: post-shutdown puts are silent no-ops.
+  private[this] def putImpl(key: K, value: V, ttl: Option[FiniteDuration]): F[Nothing, Option[V]] = {
+    // Full-close: post-close puts are silent no-ops (return None).
     //
-    // Otherwise: install our Ready, bump the bucket's `gen` (per-key barrier),
+    // Otherwise: install our Ready, capture the previous live value (if any),
     // collect any displaced Computing's promise — all in ONE atomic modify.
-    // Signal collected promises `None` post-commit. Fully uninterruptible.
+    // Signal collected promises `None` post-commit so parked waiters wake and
+    // retry. Fully uninterruptible.
     F.uninterruptible(
       F.flatMap(bucketFor(key).modify { state =>
-        if (state.closed || closedFlag.get()) {
-          (Nil: List[Promise2[F, Nothing, Option[V]]], state)
+        if (closedFlag.get()) {
+          ((None: Option[V], Nil: List[Promise2[F, Nothing, Option[V]]]), state)
         } else {
           // Read clock INSIDE modify so CAS retries see a fresh timestamp.
           val nowNano = System.nanoTime()
+          val cleaned = cleanBucket(state.entries, nowNano)
+          // Previous live value at commit time: only a live, non-expired
+          // `Ready` counts. Expired entries have been removed by `cleanBucket`
+          // above; an in-flight `Computing` yields no previous value; a
+          // weak/soft `Ready` whose wrapper has been GC-reclaimed yields None.
+          val previous: Option[V] = cleaned.collectFirst {
+            case Ready(k, storedV, _, _) if k == key => R.get(storedV.asInstanceOf[R[V]])
+          }.flatten
           val stored = R.wrap(value)
           val expiry = computeExpiry(nowNano, ttl)
           val displaced = collectDisplacedSignals(state.entries, _ == key)
-          val cleaned = cleanBucket(state.entries, nowNano)
           val newEntries = Ready[K, R[V]](key, stored, expiry, null) :: cleaned.filterNot(_.key == key)
-          (displaced, BucketState(state.invGen, state.closed, bumpKeyEpoch(state.keyEpochs, key), newEntries))
+          ((previous, displaced), BucketState(newEntries))
         }
-      }) { promises =>
-        F.void(F.traverse(promises)(_.succeed(None: Option[V])))
+      }) { case (previous, promises) =>
+        F.map(F.void(F.traverse(promises)(_.succeed(None: Option[V]))))(_ => previous)
       }
     )
   }
@@ -280,36 +346,31 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
     * of `computeImpl` / `awaitAndRetry` where we detect `closedFlag == true`.
     */
   private[this] def failClosed[E]: F[E, V] =
-    F.terminate(new IllegalStateException("BIOCache: computeIfAbsent called after shutdown"))
+    F.terminate(new IllegalStateException("BIOCache: computeIfAbsent called after close"))
 
   // Action tags for computeImpl dispatch (avoids GADT variance issues with sealed trait)
   private[this] val ActionHit = 0
   private[this] val ActionWait = 1
   private[this] val ActionCompute = 2
-  private[this] val ActionClosed = 3 // cache is shut down; fail fast
+  private[this] val ActionClosed = 3 // cache is closed; fail fast
+  private[this] val ActionSwapped = 4 // bucketRef is orphaned by invalidateAll/close; retry
 
 
-  /** Wait-path context: the in-flight producer's promise, plus the two
-    * monotonic barrier counters captured at park time.
+  /** Wait-path context captured at park time inside `computeImpl`'s modify.
     *
     * On wake with `Some(v)`:
-    *   - if `globalEpoch` has advanced → invalidateAll/shutdown fired → retry;
-    *   - else if the bucket's `gen` has advanced → a `put`/`invalidate`
-    *     within this bucket fired → retry (includes rare false-positive
-    *     retries on hash-colliding unrelated keys, which are cheap —
-    *     ActionHit re-reads, no compute re-run);
-    *   - otherwise → accept v (matching Ready, benign TTL/GC cleanup,
-    *     successor compute — none of which bump either counter, so
-    *     already-deduped waiters are never hijacked). */
-  private[this] final class WaitCtx(val promise: AnyRef, val parkedInvGen: Long, val parkedKeyEpoch: Long)
-
-  /** Bump the per-key barrier epoch. Called inside bucket modify closures
-    * for `put` / `invalidate` so the epoch advance is atomic with the
-    * bucket mutation. Waiters that captured the old epoch see the advance
-    * on wake and take the retry path. */
-  private[this] def bumpKeyEpoch(keyEpochs: Map[K, Long], key: K): Map[K, Long] = {
-    keyEpochs.updated(key, keyEpochs.getOrElse(key, 0L) + 1)
-  }
+    *   - if `closedFlag` is set → fail fast;
+    *   - else if `bucketFor(key) ne parkedBucketRef` → `invalidateAll` /
+    *     `close` swapped the whole structure → retry against the fresh vector;
+    *   - otherwise → accept `v` (Guava-style loader-result dedup:
+    *     the producer computed `v`; waiters receive the same `v` unless an
+    *     explicit global barrier linearized in between). A racing
+    *     `put(k)` / `invalidate(k)` does NOT force a waiter retry; its
+    *     effect is observed by NEW callers on the post-displacement bucket. */
+  private[this] final class WaitCtx(
+    val promise: AnyRef,
+    val parkedBucketRef: Ref2[F, BucketState[K, R[V]]],
+  )
 
   private[this] def computeImpl[E](key: K, ttl: Option[FiniteDuration], compute: F[E, V]): F[E, V] = {
     val bucketRef = bucketFor(key)
@@ -326,43 +387,109 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
           // treated as live (ActionHit on an expired entry).
           val nowNano = System.nanoTime()
           val cleaned = cleanBucket(state.entries, nowNano)
-            cleaned.find(_.key == key) match {
+          // Orphan check: if `structureRef` was swapped between our
+          // `bucketFor(key)` capture and this modify commit, `bucketRef` is
+          // now orphan — installing Computing here would never be observable
+          // via the live structure, and any waiter that also captured the
+          // orphan would park on a promise no public op can ever signal. Bail
+          // out with ActionSwapped and let the caller re-enter computeImpl
+          // against the fresh vector. Since modify's CAS is atomic against
+          // concurrent same-bucket ops, this check combined with
+          // drainPromises' CAS on old buckets eliminates the hang window.
+          if (bucketRef ne bucketFor(key)) {
+            // Orphan bucket — don't touch state (it's unreachable via the live
+            // structure; cleaning it is pointless). CAS on state→state is a
+            // no-op that still serializes with concurrent drainPromises,
+            // ensuring any Computing installed before we reached this check
+            // is visible to drain on its CAS retry.
+            ((ActionSwapped, null), state)
+          } else cleaned.find(_.key == key) match {
               case Some(Ready(_, stored, _, _)) =>
                 R.get(stored) match {
                   case Some(v) =>
-                    ((ActionHit, v.asInstanceOf[AnyRef]), BucketState(state.invGen, state.closed, state.keyEpochs, cleaned))
+                    ((ActionHit, v.asInstanceOf[AnyRef]), BucketState(cleaned))
                   case None =>
-                    if (state.closed || closedFlag.get()) ((ActionClosed, null), BucketState(state.invGen, state.closed, state.keyEpochs, cleaned))
+                    if (closedFlag.get()) ((ActionClosed, null), BucketState(cleaned))
                     else {
-                      // Replace the dead Ready with our Computing. This is NOT
-                      // a freshness barrier (it's a benign-GC-triggered
-                      // reload), so do NOT bump gen.
+                      // Replace the dead Ready with our Computing (benign-GC
+                      // reload).
                       val newEntries = Computing[K, R[V]](key, promise, myOriginToken) :: cleaned.filterNot(_.key == key)
-                      ((ActionCompute, null), BucketState(state.invGen, state.closed, state.keyEpochs, newEntries))
+                      ((ActionCompute, null), BucketState(newEntries))
                     }
                 }
               case Some(c: Computing[K, R[V]] @unchecked) =>
-                val parkedInvGen = state.invGen
-                val parkedKeyEpoch = state.keyEpochs.getOrElse(key, 0L)
-                ((ActionWait, new WaitCtx(c.promise, parkedInvGen, parkedKeyEpoch)), BucketState(state.invGen, state.closed, state.keyEpochs, cleaned))
+                ((ActionWait, new WaitCtx(c.promise, bucketRef)), BucketState(cleaned))
               case _ =>
-                if (state.closed || closedFlag.get()) ((ActionClosed, null), BucketState(state.invGen, state.closed, state.keyEpochs, cleaned))
+                if (closedFlag.get()) ((ActionClosed, null), BucketState(cleaned))
                 else {
-                  // Empty slot → install our Computing. Not a barrier, gen untouched.
+                  // Empty slot → install our Computing.
                   val newEntries = Computing[K, R[V]](key, promise, myOriginToken) :: cleaned.filterNot(_.key == key)
-                  ((ActionCompute, null), BucketState(state.invGen, state.closed, state.keyEpochs, newEntries))
+                  ((ActionCompute, null), BucketState(newEntries))
                 }
             }
           }) { case (tag, payload) =>
+            // Post-CAS fence re-check.
+            //
+            // Inside-closure reads of `closedFlag` / `bucketFor(key)` race the
+            // bucket CAS commit: a caller whose closure evaluated both guards
+            // as false can still have `close` flip `closedFlag` AND swap
+            // `structureRef` in the window between closure return and CAS
+            // commit. Without a post-CAS re-check, such a caller would admit
+            // a `Computing` on a now-orphan bucket and start the loader —
+            // violating the `close` contract that admissions are rejected
+            // before the loader runs. Re-reading both atomics AFTER the CAS
+            // linearizes the admission decision with close: if either atomic
+            // has moved, we roll back (ActionCompute) or return a fresh/failure
+            // view (ActionHit/ActionWait) accordingly.
             if (tag == ActionHit) {
-              F.pure(payload.asInstanceOf[V])
+              // Stale-hit guard: a Ready we read from the bucket could belong
+              // to the orphan (swap) or predate close. Live bucket post-swap
+              // is empty, so only an orphan read can produce a Ready here.
+              if (closedFlag.get() || (bucketRef ne bucketFor(key))) {
+                if (closedFlag.get()) failClosed
+                else computeImpl(key, ttl, compute)
+              } else F.pure(payload.asInstanceOf[V])
             } else if (tag == ActionWait) {
               val ctx = payload.asInstanceOf[WaitCtx]
-              restore(awaitAndRetry(key, ttl, compute, ctx.promise, ctx.parkedInvGen, ctx.parkedKeyEpoch))
+              // Waiter-side freshness is handled in `awaitAndRetry` (it
+              // re-reads closedFlag and orphan identity on wake),
+              // so no rollback is required here — we did not install state.
+              restore(awaitAndRetry(key, ttl, compute, ctx.promise, ctx.parkedBucketRef))
             } else if (tag == ActionClosed) {
               failClosed
+            } else if (tag == ActionSwapped) {
+              // Structure was swapped; re-enter from the top so we capture a
+              // fresh bucketRef from the live `currentBuckets`.
+              computeImpl(key, ttl, compute)
             } else {
-              doCompute(key, bucketRef, promise, myOriginToken, ttl, compute, restore)
+              // ActionCompute: our `Computing` is in the bucket. Close out
+              // the admission/close race window by re-checking both fences
+              // after the CAS commit. If close has been observed (flag or
+              // swap) since the closure returned, we must:
+              //   1. Remove our `Computing` from the (now orphan) bucket.
+              //   2. Signal our promise with `None` so any waiter that parked
+              //      on us between CAS and this re-check wakes and retries
+              //      (they will see closedFlag and fail-fast).
+              //   3. Either fail-fast (if closed) or retry through computeImpl
+              //      on the fresh structure.
+              val promiseRef: AnyRef = promise.asInstanceOf[AnyRef]
+              if (closedFlag.get() || (bucketRef ne bucketFor(key))) {
+                F.flatMap(bucketRef.update_ { state =>
+                  BucketState(
+                    state.entries.filterNot {
+                      case Computing(k, p, _) => k == key && (p eq promiseRef)
+                      case _ => false
+                    },
+                  )
+                }) { _ =>
+                  F.flatMap(F.void(promise.succeed(None: Option[V]))) { _ =>
+                    if (closedFlag.get()) failClosed
+                    else computeImpl(key, ttl, compute)
+                  }
+                }
+              } else {
+                doCompute(key, bucketRef, promise, myOriginToken, ttl, compute, restore)
+              }
             }
           }
         }
@@ -401,34 +528,33 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
     ttl: Option[FiniteDuration],
     compute: F[E, V],
     existingPromiseAnyRef: AnyRef,
-    parkedInvGen: Long,
-    parkedKeyEpoch: Long,
+    parkedBucketRef: Ref2[F, BucketState[K, R[V]]],
   ): F[E, V] = {
     val existingPromise = existingPromiseAnyRef.asInstanceOf[Promise2[F, Nothing, Option[V]]]
     F.flatMap(existingPromise.await) {
       case Some(v) =>
-        // Post-wake freshness validation from a SINGLE atomic bucket read:
-        // `state.closed`, `state.invGen`, and `state.keyEpochs(key)` all
-        // come from one `bucketRef.get` snapshot. No inter-atomic race.
+        // Post-wake freshness validation. Two atomic reads:
         //
-        //   - state.closed → fail fast (shutdown reached this bucket).
-        //   - state.invGen > parked → invalidateAll/shutdown reached this
-        //     bucket → retry.
-        //   - state.keyEpochs(key) > parked → put/invalidate on THIS key
-        //     fired → retry.
-        //   - Otherwise → accept v. Guava's loader-result dedup is
-        //     preserved.
-        F.flatMap(bucketFor(key).get) { state =>
-          if (state.closed || closedFlag.get()) failClosed
-          else if (state.invGen > parkedInvGen) computeImpl(key, ttl, compute)
-          else if (state.keyEpochs.getOrElse(key, 0L) > parkedKeyEpoch) computeImpl(key, ttl, compute)
-          else F.pure(v)
-        }
+        //   1. `bucketFor(key)` via `structureRef.get()` — detects a swap
+        //      by `invalidateAll` / `close` that replaced the whole vector
+        //      (fresh `Ref2` identity `ne` our `parkedBucketRef`).
+        //   2. `closedFlag.get()` — post-check fence.
+        //
+        // Decisions:
+        //   - `closedFlag` set → fail fast.
+        //   - `bucketFor(key) ne parkedBucketRef` → structure swap linearized
+        //     before this check; our parked snapshot is stale → retry.
+        //   - Otherwise → accept v (Guava loader-result dedup). A racing
+        //     `put(k)` / `invalidate(k)` on the same bucket does NOT force
+        //     a waiter retry: the producer computed v, we get v. `put`'s
+        //     newer value is observed by NEW callers, not by already-parked
+        //     waiters.
+        if (closedFlag.get()) failClosed
+        else if (bucketFor(key) ne parkedBucketRef) computeImpl(key, ttl, compute)
+        else F.pure(v)
       case None =>
-        F.flatMap(bucketFor(key).get) { state =>
-          if (state.closed || closedFlag.get()) failClosed
-          else computeImpl(key, ttl, compute)
-        }
+        if (closedFlag.get()) failClosed
+        else computeImpl(key, ttl, compute)
     }
   }
 
@@ -471,82 +597,59 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
         // -- uninterruptible from here (outer mask in effect, except `restore`-wrapped regions) --
         exit match {
           case Exit.Success(v) =>
-            // `nowNano` is read INSIDE the `bucketRef.update_` closure below so that a
-            // CAS retry (triggered by contention on the bucket) uses a fresh clock
-            // reading for `cleanBucket`'s TTL filter. Capturing `nowNano` once before
-            // the CAS would let an already-expired put-Ready appear live on the retry
-            // path, causing the producer to skip publication behind a stale entry.
-            // `computeExpiry` is evaluated once at publish time — fine, since the
-            // expiry is relative to the wall clock at insertion.
-            F.flatMap(F.sync(System.nanoTime())) { insertNano =>
-              val storedV = R.wrap(v)
-              val expiry = computeExpiry(insertNano, ttl)
-              // Guava-style producer-result semantics: the caller invoked `compute` and
-              // produced `v`; both the caller and parked waiters receive `v`, regardless
-              // of whether a racing put/invalidate displaced the bucket. The cache state
-              // may diverge (only when a racing put has already installed its own Ready)
-              // — that only affects NEW callers, not this in-flight load's waiters.
-              //
-              // Publication rule: publish `Ready(v)` ONLY IF our own `Computing` is
-              // still in the slot. Anything else (empty slot, foreign `Computing`,
-              // any `Ready`) blocks publication.
-              //
-              //   - Own `Computing` present → publish. Normal happy path.
-              //   - Empty slot → DO NOT publish. Our Computing was removed by some
-              //     control-plane op (`invalidate`/`invalidateAll`/`shutdown`) or by
-              //     the failure-path of a successor that transiently held the slot.
-              //     Either way, "our Computing is gone" is strong evidence that a
-              //     freshness barrier (or termination) fired since we started; a load
-              //     that began before that barrier must not repopulate the cache, or
-              //     it would resurrect pre-invalidate data past an explicit refresh
-              //     boundary even when the replacement load failed.
-              //   - Foreign `Computing` → DO NOT publish. A successor is refreshing;
-              //     it is authoritative.
-              //   - Any foreign `Ready` → DO NOT publish. `put` is authoritative;
-              //     a newer compute-produced `Ready` is fresher than ours.
-              //
-              // Cost: if `invalidate` fires mid-compute and no successor runs, our
-              // successful load is NOT cached — the next caller recomputes. This is
-              // an intentional tradeoff for strict freshness. Loader-result semantics
-              // are preserved for the producer's direct caller (it still receives
-              // `v`); only cache state and waiter signals diverge.
-              //
-              // Under weak/soft caches, the promise pins V strongly while alive, but
-              // the promise is NOT referenced from the cache (Ready.origin is the
-              // separate `originToken`). Once the producer fiber and all parked
-              // waiters finish, the promise is GC-eligible and V is free to be
-              // reclaimed through the cache's weak/soft wrapper as usual.
-              // Publish Ready iff own Computing still present. The waiter-side
-              // freshness check is the generation counter — displacers that arrive
-              // after we publish will bump gen in their own modify, forcing any
-              // parked waiter that wakes with Some(v) onto the retry path. No
-              // promise ref needs to live inside Ready.
-              F.flatMap(bucketRef.modify { state =>
-                val retryNano = System.nanoTime()
-                val cleaned = cleanBucket(state.entries, retryNano)
-                if (state.closed || closedFlag.get()) {
-                  (false, BucketState(state.invGen, state.closed, state.keyEpochs, cleaned))
+            // Guava-style producer-result semantics: the caller invoked `compute`
+            // and produced `v`; both the caller and parked waiters receive `v`,
+            // regardless of whether a racing put/invalidate displaced the bucket.
+            // Cache state may diverge — that only affects NEW callers, not this
+            // in-flight load's waiters.
+            //
+            // Publication rule: publish `Ready(v)` ONLY IF
+            //   (a) `bucketRef` is still the live bucket for this key
+            //       (`structureRef` was not swapped since admission), AND
+            //   (b) `closedFlag` is false, AND
+            //   (c) our own `Computing` marker is still in the slot.
+            //
+            // Any other state blocks publication:
+            //   - Structure swapped → our bucketRef is orphan; publishing would
+            //     leak to an unreachable structure. Skip.
+            //   - Closed → cache is terminally closed.
+            //   - Empty slot → our Computing was removed by some control-plane op.
+            //   - Foreign Computing → a successor is refreshing; it is authoritative.
+            //   - Any foreign Ready → put/newer compute is authoritative.
+            //
+            // Clock, `storedV`, and `expiry` are computed INSIDE the modify
+            // closure so each CAS retry uses a fresh clock reading — otherwise
+            // contention could shorten the TTL arbitrarily by reusing a stale
+            // `nowNano` across retries, potentially publishing an entry that
+            // is already expired at commit time.
+            val storedV = R.wrap(v)
+            F.flatMap(bucketRef.modify { state =>
+              val nowNano = System.nanoTime()
+              val cleaned = cleanBucket(state.entries, nowNano)
+              if (bucketRef ne bucketFor(key)) {
+                // Structure was swapped out from under us; bucketRef is orphan.
+                // Do NOT publish — our Ready would land on an unreachable Ref2.
+                (false, BucketState(cleaned))
+              } else if (closedFlag.get()) {
+                (false, BucketState(cleaned))
+              } else {
+                val ownsComputing = cleaned.exists(e => e.key == key && isOwnedComputing(e, promiseRef))
+                if (ownsComputing) {
+                  val expiry = computeExpiry(nowNano, ttl)
+                  (true, BucketState(Ready[K, R[V]](key, storedV, expiry, originToken) :: cleaned.filterNot(_.key == key)))
                 } else {
-                  val ownsComputing = cleaned.exists(e => e.key == key && isOwnedComputing(e, promiseRef))
-                  if (ownsComputing) {
-                    // Publish our Ready. This is NOT a freshness barrier
-                    // (it's the resolution of our own in-flight compute), so
-                    // do NOT bump gen.
-                    (true, BucketState(state.invGen, state.closed, state.keyEpochs, Ready[K, R[V]](key, storedV, expiry, originToken) :: cleaned.filterNot(_.key == key)))
-                  } else {
-                    (false, BucketState(state.invGen, state.closed, state.keyEpochs, cleaned))
-                  }
+                  (false, BucketState(cleaned))
                 }
-              }) { published =>
-                val payload: Option[V] = if (published) Some(v) else None
-                F.map(F.void(myPromise.succeed(payload)))(_ => v)
               }
+            }) { published =>
+              val payload: Option[V] = if (published) Some(v) else None
+              F.map(F.void(myPromise.succeed(payload)))(_ => v)
             }
           case _: Exit.FailureUninterrupted[?] =>
             // Computation failed — remove Computing entry (if we still own it), signal
             // waiters with `None` (no value available → they retry via computeImpl).
             F.flatMap(bucketRef.update_ { state =>
-              BucketState(state.invGen, state.closed, state.keyEpochs, state.entries.filterNot(e => e.key == key && isOwnedComputing(e, promiseRef)))
+              BucketState(state.entries.filterNot(e => e.key == key && isOwnedComputing(e, promiseRef)))
             }) { _ =>
               F.flatMap(F.void(myPromise.succeed(None: Option[V]))) { _ =>
                 F.fromSandboxExit(exit)
@@ -560,7 +663,7 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
       // stale entry persists.
       { (_: Exit.Failure[E]) =>
         F.flatMap(bucketRef.update_ { state =>
-          BucketState(state.invGen, state.closed, state.keyEpochs, state.entries.filterNot(isOurEntry))
+          BucketState(state.entries.filterNot(isOurEntry))
         }) { _ =>
           F.void(myPromise.succeed(None: Option[V]))
         }
@@ -569,17 +672,18 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
   }
 
   override def invalidate(key: K): F[Nothing, Unit] = {
-    // Per-key barrier: remove entries for `key` and bump the bucket's `gen`.
-    // Waiters parked in this bucket detect the gen advance on wake and retry.
+    // Remove entries for `key` and collect any displaced in-flight
+    // Computing's promise. Signal collected promises `None` post-commit
+    // so parked waiters wake and retry.
     F.uninterruptible(
       F.flatMap(bucketFor(key).modify { state =>
-        if (state.closed || closedFlag.get()) {
+        if (closedFlag.get()) {
           (Nil: List[Promise2[F, Nothing, Option[V]]], state)
         } else {
           val nowNano = System.nanoTime()
           val displaced = collectDisplacedSignals(state.entries, _ == key)
           val cleaned = cleanBucket(state.entries, nowNano)
-          (displaced, BucketState(state.invGen, state.closed, bumpKeyEpoch(state.keyEpochs, key), cleaned.filterNot(_.key == key)))
+          (displaced, BucketState(cleaned.filterNot(_.key == key)))
         }
       }) { promises =>
         F.void(F.traverse(promises)(_.succeed(None: Option[V])))
@@ -587,34 +691,67 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
     )
   }
 
+  /** Build a fresh Vector of `initialCapacity` brand-new `Ref2[BucketState]`s.
+    * Used by `invalidateAll` and `close` to install a clean structure via
+    * `structureRef.getAndSet`. Each Ref2 is a new object identity — parked
+    * waiters with a captured old bucket Ref2 will fail the `eq` check on
+    * wake and retry against the fresh structure. */
+  private[this] def freshBuckets: F[Nothing, Vector[Ref2[F, BucketState[K, R[V]]]]] = {
+    F.map(F.traverse((0 until initialCapacity).toList)(_ => P.mkRef(BucketState[K, R[V]](Nil))))(_.toVector)
+  }
+
   override def invalidateAll: F[Nothing, Unit] = {
-    // Per-bucket global barrier: traverse every bucket and update its
-    // state atomically in one CAS — bump `invGen`, drop `keyEpochs`, clear
-    // entries. Each bucket's update is linearizable with any concurrent
-    // per-bucket operation (put/invalidate/computeImpl modify). Like
-    // `java.util.ConcurrentHashMap.clear`, invalidation is NOT atomic
-    // across the whole cache: concurrent callers on buckets the traversal
-    // hasn't reached yet may still observe pre-flush state. This is the
-    // fundamental tradeoff of bucket-partitioned caches.
+    // Atomic swap semantics: a single CAS replaces the entire bucket vector.
+    //   1. Build a fresh vector of fresh `Ref2`s.
+    //   2. `structureRef.getAndSet(newVec)` atomically swaps — the linearization
+    //      point of `invalidateAll`. After this instant every `currentBuckets`
+    //      read returns the fresh vector.
+    //   3. Drain old-vector promises: signal every in-flight `Computing`'s
+    //      promise with `None` so parked waiters wake. On wake they compare
+    //      `bucketFor(key) ne parkedBucketRef` (different identity → structure
+    //      swapped) and retry through `computeImpl` on the fresh vector.
+    //
+    // In-flight operations that captured the OLD vector before step 2 keep
+    // running against the orphaned `Ref2`s: their effects are invisible to
+    // post-swap readers. Matches `java.util.ConcurrentHashMap.clear` —
+    // concurrent pre-call operations may complete with their own local view.
+    //
+    // Post-close no-op: if the cache is closed, `close` already swapped and
+    // drained; `invalidateAll` is a silent no-op to avoid racing with close's
+    // teardown.
     F.uninterruptible(
-      F.flatMap(F.traverse(buckets.toList) { ref =>
-        ref.modify { state =>
-          if (state.closed || closedFlag.get()) {
-            (Nil: List[Promise2[F, Nothing, Option[V]]], state)
-          } else {
-            val displaced = collectDisplacedSignals(state.entries, _ => true)
-            (displaced, BucketState(state.invGen + 1, state.closed, Map.empty[K, Long], Nil: List[BucketEntry[K, R[V]]]))
-          }
-        }
-      }) { perBucketPromises =>
-        F.void(F.traverse(perBucketPromises.flatten)(_.succeed(None: Option[V])))
+      if (closedFlag.get()) F.unit
+      else F.flatMap(freshBuckets) { newVec =>
+        val oldVec = structureRef.getAndSet(newVec)
+        drainPromises(oldVec)
       }
     )
   }
 
+  /** Drain all in-flight `Computing` promises from the given (usually
+    * orphaned) bucket vector. Each bucket is visited in its own modify,
+    * collecting promises and returning the state unchanged. Collected
+    * promises are signaled `None` post-traversal so parked waiters wake.
+    *
+    * Used by `invalidateAll` and `close` AFTER the atomic structure swap.
+    * The drain is NOT part of the swap's linearization — it is purely
+    * liveness cleanup on the orphaned structure. Missing a promise here
+    * only means the waiter eventually wakes when the producer signals;
+    * it does not affect correctness. */
+  private[this] def drainPromises(vec: Vector[Ref2[F, BucketState[K, R[V]]]]): F[Nothing, Unit] = {
+    F.flatMap(F.traverse(vec.toList) { ref =>
+      ref.modify { state =>
+        val displaced = collectDisplacedSignals(state.entries, _ => true)
+        (displaced, state)
+      }
+    }) { perBucketPromises =>
+      F.void(F.traverse(perBucketPromises.flatten)(_.succeed(None: Option[V])))
+    }
+  }
+
   override def size: F[Nothing, Int] = {
     F.flatMap(F.sync(System.nanoTime())) { nowNano =>
-      F.map(F.traverse(buckets.toList) { ref =>
+      F.map(F.traverse(currentBuckets.toList) { ref =>
         F.map(ref.get) { state =>
           state.entries.count {
             case r: Ready[_, _] => !isExpired(r.expiresAtNano, nowNano) && R.get(r.stored.asInstanceOf[R[V]]).isDefined
@@ -627,7 +764,7 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
 
   override def keys: F[Nothing, Set[K]] = {
     F.flatMap(F.sync(System.nanoTime())) { nowNano =>
-      F.map(F.traverse(buckets.toList) { ref =>
+      F.map(F.traverse(currentBuckets.toList) { ref =>
         F.map(ref.get) { state =>
           state.entries.collect {
             case r @ Ready(k, _, expiresAtNano, _) if !isExpired(expiresAtNano, nowNano) && R.get(r.stored.asInstanceOf[R[V]]).isDefined => k
@@ -637,58 +774,100 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
     }
   }
 
-  override def shutdown: F[Nothing, Unit] = {
-    // End-to-end uninterruptible: once shutdown starts, it MUST reach the bucket
-    // sweep + promise signaling step. An interrupt delivered after reading
-    // `evictionFiberRef` but before the sweep would leave Computing markers in
-    // place and parked waiters wedged — defeating the liveness guarantee.
+  override def toMap: F[Nothing, Map[K, V]] = {
+    // Per-bucket atomic snapshot; cross-bucket concurrent mutations linearize
+    // independently. Matches `java.util.concurrent.ConcurrentHashMap.entrySet`
+    // iterator semantics (weakly consistent).
     //
-    // Steps (atomic w.r.t. caller interruption):
-    //   1. Set `closedRef := true`. This fences future `computeIfAbsent` calls and
-    //      released waiter-retries: they see the closed flag in `checkOpen` and fail
-    //      fast with IllegalStateException rather than starting a fresh loader after
-    //      teardown. Without this flag, signaling `None` to parked waiters would let
-    //      them retry via `computeImpl` and spawn a new compute after shutdown — a
-    //      duplicate-load hazard for side-effecting loaders.
-    //   2. Stop the background eviction fiber, if any.
-    //   3. Sweep every bucket: remove `Computing` entries AND signal their promises
-    //      with `None`. Combined with step 1, released waiters observe "closed" and
-    //      fail fast (no retry, no new compute). `put`/`get`/`invalidate*` remain
-    //      functional post-shutdown because they do not trigger loaders.
-    //
-    // Producer fibers themselves are NOT interrupted from here; the caller is
-    // expected to cancel them via their own supervision (timeouts, fiber scope).
-    // This step only releases waiters.
-    F.uninterruptible(
-      // Step 1: flip the cache-wide `closedFlag` BEFORE any bucket
-      // traversal. All subsequent `computeImpl` admissions check this
-      // flag inside their modify closure and fail fast, even on buckets
-      // whose `state.closed` has not yet been written by step 3. This is
-      // the fence that Codex's "shutdown does not fence new loads"
-      // finding requires.
-      F.flatMap(F.sync(closedFlag.set(true))) { _ =>
-        F.flatMap(evictionFiberRef.get) { fiberOpt =>
-        F.flatMap(fiberOpt match {
-          case Some(fiber) => fiber.interrupt
-          case None => F.unit
-        }) { _ =>
-          // Step 3: per-bucket terminal close. Each bucket's modify sets
-          // `closed=true`, bumps `invGen`, drops `keyEpochs`, and clears
-          // `entries`. Computing promises are signaled `None` so parked
-          // waiters wake; their post-wake snapshot has `state.closed=true`
-          // → they fail fast. New `computeIfAbsent` calls on already-closed
-          // buckets take the `ActionClosed` path; calls on buckets the
-          // traversal hasn't reached yet may still succeed (per-bucket
-          // non-atomic semantics, documented).
-          F.flatMap(F.traverse(buckets.toList) { ref =>
-            ref.modify { state =>
-              val displaced = collectDisplacedSignals(state.entries, _ => true)
-              (displaced, BucketState(state.invGen + 1, closed = true, Map.empty[K, Long], Nil: List[BucketEntry[K, R[V]]]))
-            }
-          }) { perBucketPromises =>
-            F.void(F.traverse(perBucketPromises.flatten)(_.succeed(None: Option[V])))
-          }
+    // Expired entries and GC-reclaimed weak/soft values are filtered. In-flight
+    // `Computing` entries carry no value and are skipped.
+    F.flatMap(F.sync(System.nanoTime())) { nowNano =>
+      F.map(F.traverse(currentBuckets.toList) { ref =>
+        F.map(ref.get) { state =>
+          state.entries.collect {
+            case Ready(k, storedV, expiresAtNano, _) if !isExpired(expiresAtNano, nowNano) =>
+              R.get(storedV.asInstanceOf[R[V]]).map(v => (k, v))
+          }.flatten
         }
+      })(_.flatten.toMap)
+    }
+  }
+
+  override def close: F[Nothing, Unit] = {
+    // Terminal close via atomic swap:
+    //   1. Flip `closedFlag` to `true` BEFORE the swap. All subsequent
+    //      admissions in `computeImpl` read it inside their modify closure
+    //      and fail fast — even on buckets of the OLD vector that an
+    //      in-flight caller may still be operating on pre-swap.
+    //   2. Interrupt the background eviction fiber (if any).
+    //   3. `structureRef.getAndSet(freshEmptyVector)` atomically replaces the
+    //      whole bucket structure. Post-swap `currentBuckets` reads return an
+    //      empty vector — no state remains.
+    //   4. Drain old-vector promises: wake every parked waiter with `None`.
+    //      On wake they observe `closedFlag.get() == true` and fail fast with
+    //      IllegalStateException (no retry, no new compute).
+    //   5. Signal `closedPromise` so any concurrent `close` caller that lost
+    //      the `closedFlag.getAndSet` race wakes and returns.
+    //
+    // Producer fibers themselves are NOT interrupted from here; the caller
+    // is expected to cancel them via their own supervision (timeouts, fiber
+    // scope). Pre-close producers complete their compute, publish to the
+    // orphaned bucket (invisible to post-close readers), and return `v` to
+    // their direct caller per Guava loader-result semantics.
+    //
+    // Idempotent AND teardown-linearizable: two concurrent `close` callers
+    // both observe "close completed" only AFTER the winning caller has
+    // finished teardown. The loser awaits `closedPromise`; the winner
+    // signals it after drain. Without this, a loser that got `true` from
+    // `getAndSet` could return F.unit while teardown is still in flight —
+    // violating the contract that once any `close` returns, the cache is
+    // fully quiesced.
+    F.uninterruptible(
+      F.flatMap(P.mkPromise[Nothing, Exit.Uninterrupted[Nothing, Unit]]) { candidate =>
+        F.flatMap(F.sync {
+          // CAS-install the candidate as the shared close promise. Exactly
+          // one concurrent caller wins this CAS; only that caller flips
+          // closedFlag, interrupts the eviction fiber, swaps structureRef,
+          // and drains. Losers observe the winner's promise and await it.
+          val installed = closedPromiseRef.compareAndSet(null, candidate)
+          val promise = if (installed) candidate else closedPromiseRef.get()
+          if (installed) {
+            // Flip admission fence. No getAndSet needed — CAS-install already
+            // gave us exclusive teardown rights.
+            closedFlag.set(true)
+          }
+          (installed, promise)
+        }) { case (shouldTearDown, winnerPromise) =>
+          // Unified replay: EVERY caller — winner and losers alike —
+          // re-raises its `close` outcome by awaiting `winnerPromise`
+          // and passing the resulting Exit through `F.fromSandboxExit`.
+          // The winner's extra work is solely the teardown + publish
+          // step; its replay is the same code path as any loser's.
+          //
+          // Routing winner through `await` (rather than re-raising
+          // from a local exit variable) makes the published Exit the
+          // SOLE source of every caller's terminal effect. A hypothetical
+          // regression where the winner synthesized an observably
+          // equivalent exit via a different code path (e.g.,
+          // `F.terminate(sameThrowable)`) is mechanically eliminated
+          // by construction — there is no other source to synthesize
+          // from. Await on an already-completed promise is O(1).
+          val teardownAndPublish: F[Nothing, Unit] = if (shouldTearDown) {
+            val teardown: F[Nothing, Unit] =
+              F.flatMap(evictionFiberRef.get) { fiberOpt =>
+                F.flatMap(fiberOpt match {
+                  case Some(fiber) => fiber.interrupt
+                  case None => F.unit
+                }) { _ =>
+                  F.flatMap(freshBuckets) { emptyVec =>
+                    val oldVec = structureRef.getAndSet(emptyVec)
+                    drainPromises(oldVec)
+                  }
+                }
+              }
+            F.flatMap(F.sandboxExit(teardown))(exit => F.void(winnerPromise.succeed(exit)))
+          } else F.unit
+          F.flatMap(teardownAndPublish)(_ => F.flatMap(winnerPromise.await)(F.fromSandboxExit(_)))
         }
       }
     )
@@ -710,9 +889,9 @@ private[bio] final class ConcurrentHashMapCache[F[+_, +_], K, R[_], V](
 
   private[cache] def evictExpired: F[Nothing, Unit] = {
     F.flatMap(F.sync(System.nanoTime())) { nowNano =>
-      F.traverse_(buckets.toList) { ref =>
+      F.traverse_(currentBuckets.toList) { ref =>
         ref.update_ { state =>
-          BucketState(state.invGen, state.closed, state.keyEpochs, cleanBucket(state.entries, nowNano))
+          BucketState(cleanBucket(state.entries, nowNano))
         }
       }
     }
@@ -733,54 +912,28 @@ private[bio] sealed trait BucketEntry[K, +S] {
   *               cleanup to match and remove a Ready that THIS very call published
   *               (defect rollback). `null` for entries installed by `put`. Control ops
   *               do not inspect origin.
-  *
-  *               Freshness races (producer publishes, control-plane op arrives
-  *               between publish commit and producer's `succeed(Some(v))`) are handled
-  *               by the per-key epoch counter in [[BucketState#keyEpochs]], not by
-  *               any field on `Ready` — see [[BucketState]] scaladoc and
-  *               [[ConcurrentHashMapCache.awaitAndRetry]].
   */
 private[bio] final case class Ready[K, S](key: K, stored: S, expiresAtNano: Long, origin: AnyRef) extends BucketEntry[K, S]
 
-/** Per-bucket state wrapper. All freshness-barrier flags live INSIDE
-  * this structure so that waiters and ops can make decisions from a
-  * SINGLE atomic snapshot read.
+/** Per-bucket state wrapper. The bucket is a single-field value — `entries`
+  * is the current `List[BucketEntry]` in this bucket.
   *
-  *   - `invGen`: monotonic counter bumped by [[ConcurrentHashMapCache.invalidateAll]]
-  *     and [[ConcurrentHashMapCache.shutdown]] inside this bucket's
-  *     atomic modify. Per-bucket global-barrier marker.
-  *   - `closed`: flipped to `true` inside [[ConcurrentHashMapCache.shutdown]]'s
-  *     per-bucket modify. Per-bucket shutdown marker.
-  *   - `keyEpochs`: per-key monotonic counter bumped ATOMICALLY inside
-  *     `put(k)` / `invalidate(k)` bucket-modify closures. Per-key scoping
-  *     eliminates hash-collision false-positive retries: a write on a
-  *     DIFFERENT key does not touch this key's epoch.
+  * Barriers live OUTSIDE the per-bucket state:
+  *   - [[ConcurrentHashMapCache.closedFlag]] (cache-wide AtomicBoolean) fences
+  *     admissions after `close`.
+  *   - Atomic structure swap via [[ConcurrentHashMapCache.structureRef]] on
+  *     `invalidateAll` / `close`. Waiters detect this by capturing the bucket
+  *     `Ref2` identity at park time (see `WaitCtx.parkedBucketRef`) and
+  *     comparing it to `bucketFor(key)` on wake — a mismatch means the whole
+  *     structure was replaced, forcing a retry against the fresh vector.
   *
-  * Because all three live in the same `BucketState` and every modifier
-  * uses the same `Ref2` CAS, a single `bucketRef.get` yields a mutually
-  * consistent snapshot — there is no inter-atomic race window for
-  * waiter decisions. The tradeoff: `invalidateAll` / `shutdown` operate
-  * per-bucket (matching `java.util.ConcurrentHashMap.clear` semantics)
-  * rather than atomically across the whole cache. In-flight operations
-  * whose bucket has not yet been visited can still complete normally.
-  *
-  * Waiters capture `(invGen, keyEpochs.getOrElse(key, 0L))` at park time.
-  * On wake with `Some(v)` they compare against the current snapshot: an
-  * advance in either counter forces a retry. `closed` forces a fail-fast.
-  *
-  * Benign bucket operations (computeIfAbsent, get, cleanBucket, TTL/GC
-  * cleanup, Ready publication by doCompute) do NOT bump any counter.
-  *
-  * Memory: `keyEpochs.size` is bounded per bucket by the number of
-  * distinct keys `put`/`invalidate`d since the last `invalidateAll` /
-  * `shutdown`. For adversarial workloads that hammer `invalidate` with
-  * ever-new keys without ever calling `invalidateAll`, operators should
-  * invoke `invalidateAll` periodically to reclaim barrier metadata.
+  * `put(k)` / `invalidate(k)` displace any in-flight `Computing(k, ...)` by
+  * signaling its promise `None` from inside the same modify, so parked waiters
+  * wake and retry. They do NOT carry an additional per-key barrier counter:
+  * waiters follow Guava loader-result semantics and return the producer's `v`
+  * on wake (after verifying no structure swap / close has linearized).
   */
 private[bio] final case class BucketState[K, S](
-  invGen: Long,
-  closed: Boolean,
-  keyEpochs: Map[K, Long],
   entries: List[BucketEntry[K, S]],
 )
 
@@ -794,9 +947,9 @@ private[bio] final case class BucketState[K, S](
   *                in `Ready.origin`). Used ONLY by `doCompute`'s
   *                `guaranteeOnFailure` cleanup to match and remove a Ready
   *                that THIS very call published (defect rollback). NOT part
-  *                of the waiter freshness check — that uses `globalEpoch`
-  *                and per-bucket `gen` counters (see
-  *                [[ConcurrentHashMapCache.awaitAndRetry]]).
+  *                of the waiter freshness check — that uses
+  *                [[ConcurrentHashMapCache.structureRef]] identity
+  *                (see [[ConcurrentHashMapCache.awaitAndRetry]]).
   */
 private[bio] final case class Computing[K, S](key: K, promise: AnyRef, originToken: AnyRef) extends BucketEntry[K, Nothing]
 
@@ -809,7 +962,7 @@ private[bio] object ConcurrentHashMapCache {
     R: CacheRefType[R],
   ): F[Nothing, BIOCache[F, K, V]] = {
     val n = Math.max(1, config.initialCapacity)
-    F.flatMap(F.traverse((0 until n).toList)(_ => P.mkRef(BucketState[K, R[V]](0L, false, Map.empty[K, Long], Nil)))) { bucketList =>
+    F.flatMap(F.traverse((0 until n).toList)(_ => P.mkRef(BucketState[K, R[V]](Nil)))) { bucketList =>
       F.map(P.mkRef(Option.empty[Fiber2[F, Nothing, Unit]])) { fiberRef =>
         new ConcurrentHashMapCache[F, K, R, V](bucketList.toVector, config, fiberRef): BIOCache[F, K, V]
       }
@@ -825,7 +978,7 @@ private[bio] object ConcurrentHashMapCache {
     FK: Fork2[F],
   ): F[Nothing, BIOCache[F, K, V]] = {
     val n = Math.max(1, config.initialCapacity)
-    F.flatMap(F.traverse((0 until n).toList)(_ => P.mkRef(BucketState[K, R[V]](0L, false, Map.empty[K, Long], Nil)))) { bucketList =>
+    F.flatMap(F.traverse((0 until n).toList)(_ => P.mkRef(BucketState[K, R[V]](Nil)))) { bucketList =>
       val buckets = bucketList.toVector
       F.flatMap(P.mkRef(Option.empty[Fiber2[F, Nothing, Unit]])) { fiberRef =>
         val cache = new ConcurrentHashMapCache[F, K, R, V](buckets, config, fiberRef)
@@ -837,7 +990,7 @@ private[bio] object ConcurrentHashMapCache {
               }
             // Leak-safe construction:
             //   - `uninterruptible` around `fork + fiberRef.set` makes registration
-            //     atomic: `shutdown` can always find the fiber once the block completes.
+            //     atomic: `close` can always find the fiber once the block completes.
             //   - `guaranteeOnFailure` is a belt-and-braces catch for the small window
             //     where a caller-level interrupt is delivered as the `uninterruptible`
             //     region exits (e.g., a masked interrupt latches until unmask, then
@@ -846,7 +999,7 @@ private[bio] object ConcurrentHashMapCache {
             //     and interrupts the eviction fiber, preventing a leak.
             //
             // Caller contract (still required): wrap construction in a bracket/Resource
-            // that calls `shutdown` on scope exit. The internal safety net only covers
+            // that calls `close` on scope exit. The internal safety net only covers
             // interruption delivered WHILE `createWithEviction` itself is running.
             F.guaranteeOnFailure[Nothing, BIOCache[F, K, V]](
               F.uninterruptible(

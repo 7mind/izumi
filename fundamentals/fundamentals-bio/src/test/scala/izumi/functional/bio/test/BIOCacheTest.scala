@@ -77,6 +77,122 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
+    "put returns None for a fresh slot and Some(previous) on overwrite" in run {
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
+        for {
+          first <- cache.put("a", 1)
+          second <- cache.put("a", 2)
+          third <- cache.put("a", 3)
+          afterInvalidate <- cache.invalidate("a").flatMap(_ => cache.put("a", 9))
+        } yield {
+          assert(first.isEmpty, s"first put on empty slot returns None; got $first")
+          assert(second.contains(1), s"put on existing Ready(1) returns Some(1); got $second")
+          assert(third.contains(2), s"put on existing Ready(2) returns Some(2); got $third")
+          assert(afterInvalidate.isEmpty, s"put after invalidate finds an empty slot; got $afterInvalidate")
+        }
+      }
+    }
+
+    "put returns None if the existing Ready is TTL-expired (treated as absent)" in run {
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
+        for {
+          fresh <- cache.putWithTTL("a", 1, 1.nano)
+          // Wait long enough for the 1-ns TTL to expire.
+          _ <- Temp.sleep(20.millis)
+          afterExpiry <- cache.put("a", 2)
+          currentGet <- cache.get("a")
+        } yield {
+          assert(fresh.isEmpty, s"fresh slot returns None; got $fresh")
+          assert(afterExpiry.isEmpty, s"put over an expired Ready returns None (expired entries aren't observable); got $afterExpiry")
+          assert(currentGet.contains(2), s"cache reflects the new put; got $currentGet")
+        }
+      }
+    }
+
+    "put returns None post-close (silent no-op)" in run {
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
+        for {
+          _ <- cache.put("a", 1)
+          _ <- cache.close
+          postClose <- cache.put("a", 2)
+          cached <- cache.get("a")
+        } yield {
+          assert(postClose.isEmpty, s"post-close put returns None; got $postClose")
+          // The atomic swap inside close clears the structure, so the pre-close "a" is gone too.
+          assert(cached.isEmpty, s"post-close cache is empty; got $cached")
+        }
+      }
+    }
+
+    "toMap snapshots all live entries" in run {
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig(initialCapacity = 4))) { cache =>
+        val pairs = (0 until 20).map(i => (s"k$i", i * 10))
+        for {
+          _ <- F.traverse(pairs.toList) { case (k, v) => cache.put(k, v) }
+          snap <- cache.toMap
+        } yield {
+          assert(snap == pairs.toMap, s"toMap returns the full set of puts; got $snap vs expected ${pairs.toMap}")
+        }
+      }
+    }
+
+    "toMap excludes expired entries and entries overwritten by later puts" in run {
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
+        for {
+          _ <- cache.put("alive", 1)
+          _ <- cache.putWithTTL("expiring", 99, 1.nano)
+          _ <- Temp.sleep(20.millis)
+          _ <- cache.put("alive", 2) // overwrite
+          snap <- cache.toMap
+        } yield {
+          assert(snap == Map("alive" -> 2), s"toMap reflects overwrites and drops expired; got $snap")
+        }
+      }
+    }
+
+    "toMap is empty after invalidateAll" in run {
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
+        for {
+          _ <- F.traverse((0 until 8).toList)(i => cache.put(s"k$i", i))
+          before <- cache.toMap
+          _ <- cache.invalidateAll
+          after <- cache.toMap
+        } yield {
+          assert(before.size == 8, s"before invalidateAll: got $before")
+          assert(after.isEmpty, s"after invalidateAll: got $after")
+        }
+      }
+    }
+
+    "toMap skips keys with in-flight Computing (no cached value yet)" in run {
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
+        F.flatMap(Prims.mkLatch) { started =>
+          F.flatMap(Prims.mkLatch) { mayFinish =>
+            val compute: F[Nothing, Int] =
+              F.flatMap(started.succeed(()))(_ => F.map(mayFinish.await)(_ => 42))
+            for {
+              _ <- cache.put("alreadyCached", 7)
+              producerFib <- Fk.fork(cache.computeIfAbsent[Nothing]("inFlight", compute))
+              _ <- started.await
+              snapWhileInFlight <- cache.toMap
+              _ <- mayFinish.succeed(())
+              _ <- producerFib.join
+              snapAfter <- cache.toMap
+            } yield {
+              assert(
+                snapWhileInFlight == Map("alreadyCached" -> 7),
+                s"in-flight Computing is NOT surfaced by toMap; got $snapWhileInFlight",
+              )
+              assert(
+                snapAfter == Map("alreadyCached" -> 7, "inFlight" -> 42),
+                s"once producer publishes, toMap includes the new pair; got $snapAfter",
+              )
+            }
+          }
+        }
+      }
+    }
+
     "invalidate a key" in run {
       F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
         F.flatMap(cache.put("a", 1)) { _ =>
@@ -296,7 +412,7 @@ abstract class BIOCacheTest[F[+_, +_]](
           F.flatMap(Temp.sleep(200.millis)) { _ =>
             // Entry should have been evicted by background fiber
             F.flatMap(cache.size) { s =>
-              F.flatMap(cache.shutdown) { _ =>
+              F.flatMap(cache.close) { _ =>
                 F.pure(assert(s == 0))
               }
             }
@@ -305,28 +421,28 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "shutdown stops eager eviction fiber" in run {
+    "close stops eager eviction fiber" in run {
       val config = CacheConfig(eagerEvictionInterval = Some(10.millis))
       F.flatMap(BIOCache.makeEager[F, String, Int](config)) { cache =>
         // Shutdown must complete within a reasonable window — proves the background fiber
         // was successfully interrupted rather than leaking. If `createWithEviction` failed
-        // to register the fiber in `fiberRef`, shutdown would silently no-op and this test
+        // to register the fiber in `fiberRef`, close would silently no-op and this test
         // would still pass — that path is covered separately by the leak-regression test
         // "createWithEviction does not leak eviction fiber on interrupt".
-        F.flatMap(Temp.timeout(5.seconds)(cache.shutdown)) { firstShutdown =>
-          // Idempotent: a second shutdown must also complete (not hang on an absent fiber).
-          F.flatMap(Temp.timeout(5.seconds)(cache.shutdown)) { secondShutdown =>
-            // Post-shutdown full-close: put is a silent no-op, get returns None,
+        F.flatMap(Temp.timeout(5.seconds)(cache.close)) { firstShutdown =>
+          // Idempotent: a second close must also complete (not hang on an absent fiber).
+          F.flatMap(Temp.timeout(5.seconds)(cache.close)) { secondShutdown =>
+            // Post-close full-close: put is a silent no-op, get returns None,
             // size/keys return 0/empty. The cache is terminal.
             F.flatMap(cache.put("a", 1)) { _ =>
               F.flatMap(cache.get("a")) { got =>
                 F.flatMap(cache.size) { sz =>
                   F.map(cache.keys) { ks =>
-                    assert(firstShutdown.isDefined, "first shutdown must complete promptly (fiber gone)")
-                    assert(secondShutdown.isDefined, "second shutdown must be idempotent — no hang")
-                    assert(got.isEmpty, s"post-shutdown put is a no-op; get returns None. Got $got")
-                    assert(sz == 0, s"post-shutdown cache is empty; size = 0. Got $sz")
-                    assert(ks.isEmpty, s"post-shutdown cache has no keys. Got $ks")
+                    assert(firstShutdown.isDefined, "first close must complete promptly (fiber gone)")
+                    assert(secondShutdown.isDefined, "second close must be idempotent — no hang")
+                    assert(got.isEmpty, s"post-close put is a no-op; get returns None. Got $got")
+                    assert(sz == 0, s"post-close cache is empty; size = 0. Got $sz")
+                    assert(ks.isEmpty, s"post-close cache has no keys. Got $ks")
                   }
                 }
               }
@@ -336,11 +452,11 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "put releases waiter on a wedged producer WITHOUT needing shutdown (release semantics)" in run {
+    "put releases waiter on a wedged producer WITHOUT needing close (release semantics)" in run {
       // Scenario: A is wedged in I/O. Waiter B is parked on A's promise. `put`
       // displaces A's Computing and signals A's promise `None` immediately —
       // releasing B. B retries `computeImpl`, hits put's Ready(42), returns 42.
-      // No shutdown, no caller timeout, no tracker.
+      // No close, no caller timeout, no tracker.
       F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
         F.flatMap(Prims.mkLatch) { aStarted =>
           val hangForever: F[Nothing, Int] =
@@ -369,15 +485,15 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "shutdown releases parked waiters on a wedged producer with IllegalStateException (Codex HIGH regressions)" in run {
+    "close releases parked waiters on a wedged producer with IllegalStateException (Codex HIGH regressions)" in run {
       // Codex-flagged scenarios:
-      //   (HIGH #2) Without a shutdown-side release, a producer stuck in external I/O
+      //   (HIGH #2) Without a close-side release, a producer stuck in external I/O
       //   leaves parked waiters hung forever.
-      //   (HIGH, subsequent round) If shutdown released waiters by simply signaling
+      //   (HIGH, subsequent round) If close released waiters by simply signaling
       //   `None`, they would retry via `computeImpl` and start fresh loaders AFTER
       //   teardown — duplicating side effects.
       //
-      // The combined fix: shutdown sets `closedRef`, sweeps every bucket (removes
+      // The combined fix: close sets `closedRef`, sweeps every bucket (removes
       // `Computing` markers), and signals their promises with `None`. The waiter's
       // `awaitAndRetry` sees `None` → calls `checkOpen`, which observes `closedRef =
       // true` and fails fast with IllegalStateException via `F.terminate`. No retry,
@@ -397,12 +513,12 @@ abstract class BIOCacheTest[F[+_, +_]](
             F.flatMap(producerStarted.await) { _ =>
               F.flatMap(Fk.fork(F.sandboxExit(cache.computeIfAbsent[Nothing]("k", F.pure(99))))) { waiterFib =>
                 F.flatMap(awaitBlocked(waiterFib, 200.millis)) { _ =>
-                  F.flatMap(cache.shutdown) { _ =>
+                  F.flatMap(cache.close) { _ =>
                     F.flatMap(Temp.timeout(3.seconds)(waiterFib.join)) { waiterExitOpt =>
                       F.map(producerFib.interrupt) { _ =>
                         assert(
                           waiterExitOpt.isDefined,
-                          "shutdown must release parked waiter — without the shutdown-signal path, " +
+                          "close must release parked waiter — without the close-signal path, " +
                             "the waiter hangs forever on a wedged producer's promise.",
                         )
                         val exit = waiterExitOpt.get
@@ -413,7 +529,7 @@ abstract class BIOCacheTest[F[+_, +_]](
                         assert(
                           isIllegalState,
                           s"released waiter must fail with IllegalStateException (cache closed) — NOT " +
-                            s"retry and run a new loader after shutdown. Got exit: $exit",
+                            s"retry and run a new loader after close. Got exit: $exit",
                         )
                       }
                     }
@@ -426,7 +542,7 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "createWithEviction construction under interrupt: every successful build has a working shutdown" in run {
+    "createWithEviction construction under interrupt: every successful build has a working close" in run {
       // Smoke test for the fork+set race fix in `createWithEviction`.
       //
       // Without `F.uninterruptible`, an interrupt between `FK.fork(evictionLoop)` and
@@ -435,10 +551,10 @@ abstract class BIOCacheTest[F[+_, +_]](
       // delegates to ZIO's `forkDaemon`, which is not auto-killed on parent interrupt).
       //
       // Limitation: a genuinely leaked fiber is not externally observable without
-      // instrumentation — the cache reference is lost, and shutdown cannot be called on
+      // instrumentation — the cache reference is lost, and close cannot be called on
       // it. This test therefore does NOT directly observe the leak; it validates the
       // complementary invariant: for every outcome where the construction succeeded, the
-      // fiber IS registered and shutdown completes promptly. This catches a weaker
+      // fiber IS registered and close completes promptly. This catches a weaker
       // failure mode (fiberRef left unset despite construction succeeding) and exercises
       // the construction path under racing interrupts.
       val config = CacheConfig(eagerEvictionInterval = Some(5.millis))
@@ -451,7 +567,7 @@ abstract class BIOCacheTest[F[+_, +_]](
       }) { exits =>
         F.flatMap(F.traverse(exits) {
           case Exit.Success(cache) =>
-            F.map(Temp.timeout(5.seconds)(cache.shutdown))(r => Some(r.isDefined))
+            F.map(Temp.timeout(5.seconds)(cache.close))(r => Some(r.isDefined))
           case _ =>
             F.pure(None)
         }) { shutdownResults =>
@@ -700,12 +816,19 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "put AFTER producer signaled: waiter sees put's value via gen-check retry (strict freshness)" in run {
-      // Strict freshness barrier: even when the producer wins the promise CAS
-      // before a later `put`, the waiter's post-wake generation check detects
-      // the control-plane op that fired between park and resume. Waiter retries
-      // through `computeImpl` and hits put's Ready, returning 999. This closes
-      // the "producer won promise-CAS, waiter returns stale" race Codex flagged.
+    "put AFTER producer signaled: waiter still returns producer's value (Guava loader-result dedup)" in run {
+      // Under Guava loader-result dedup, a waiter that already received
+      // `Some(v_A)` from its producer's promise returns `v_A` even if a later
+      // `put(k, v_B)` linearized between the producer's signal and the waiter's
+      // wake. The cache itself reflects `v_B` for subsequent callers; the
+      // waiter's decision is tied to the producer it was parked on.
+      //
+      // The earlier "strict freshness" variant of this test asserted the
+      // opposite (waiter retries through `computeImpl` and hits put's Ready).
+      // We dropped that invariant together with the per-key `keyEpochs` map —
+      // it was carrying a whole per-bucket `Map[K, Long]` to enforce a racing
+      // property with no caller-observable benefit (the producer's call
+      // already returned `v_A` to its own caller).
       //
       // Deterministic via an instrumented Primitives2 that fires `put(999)` as a
       // side-effect of the producer's `succeed(...)` call, guaranteeing that put
@@ -768,13 +891,12 @@ abstract class BIOCacheTest[F[+_, +_]](
               } yield {
                 assert(producerResult == 1, s"producer returns its own computed value 1 (loader-result); got $producerResult")
                 assert(
-                  waiterResult.contains(999),
-                  s"waiter's post-wake gen check detected put and routed through retry → " +
-                    s"hit put's Ready(999). Got $waiterResult. If 1, the freshness barrier " +
-                    "regressed — a producer-won promise-CAS let stale data cross the barrier.",
+                  waiterResult.contains(1),
+                  s"waiter receives producer's v=1 via promise payload (Guava loader-result dedup); got $waiterResult. " +
+                    "A value of 999 would mean strict-freshness-for-waiters was still being enforced — that's the invariant we deliberately removed when we dropped keyEpochs.",
                 )
-                // Cache reflects put's value for NEW callers AND the waiter saw it.
-                assert(cached.contains(999), s"cache reflects put(999); got $cached")
+                // Cache reflects put's value for NEW callers, even though the waiter saw the producer's value.
+                assert(cached.contains(999), s"cache reflects put(999) for post-put callers; got $cached")
               }
             }
           }
@@ -782,28 +904,21 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "expired Ready + later put: put IS an explicit barrier — waiter retries past A's Ready [Codex HIGH regression]" in run {
-      // Under the per-key-epoch freshness model, `put(k, _)` ALWAYS bumps
-      // keyEpochs(k). The bump is atomic with the bucket modify and is
-      // independent of what state the bucket held (live Ready, expired Ready,
-      // empty, etc.). Any waiter parked on a producer for key `k` with a
-      // lower epoch sees the advance on wake and retries.
+    "expired Ready + later put: waiter still returns producer's value (Guava loader-result dedup)" in run {
+      // Guava loader-result dedup: an already-parked waiter that receives
+      // `Some(v_A)` from its producer's promise returns `v_A`, even if a
+      // `put(k, v_B)` linearized between the producer's signal and the waiter's
+      // wake. The expired-Ready setup used to exercise the per-key epoch
+      // barrier; we deleted that barrier (it carried a `Map[K, Long]` per
+      // bucket with no caller-observable benefit), so the test now pins the
+      // dedup invariant instead: producer's call returns its own `v`, and so
+      // does the waiter.
       //
       // Scenario:
       //   1. Producer A publishes Ready(TA) with 1ns TTL (immediately expired).
-      //   2. Waiter B parked on pA. keyEpoch(k) captured at park time = 0.
-      //   3. put(k, 999, 1.hour) runs AFTER A's Ready has TTL-expired. The
-      //      bucket's cleaned entries no longer contain A's Ready (expired),
-      //      but put bumps keyEpoch(k) to 1 regardless — put is an explicit
-      //      user-intent barrier, not inferred from bucket state.
-      //   4. A signals pA.succeed(Some(1)). B wakes.
-      //   5. B checks: keyEpoch(k)=1 > parked=0 → retry → hits Ready(999) →
-      //      returns 999. B sees the explicit put barrier.
-      //
-      // This contrasts with "dedup preserved" (benign TTL/GC + successor
-      // compute) where compute does NOT bump keyEpoch, so the waiter accepts
-      // A's value. The distinction: user-action barriers (put/invalidate)
-      // always bump; internal cache plumbing (compute/publish/TTL) never does.
+      //   2. Waiter B parks on pA.
+      //   3. put(k, 999, 1.hour) runs AFTER A's Ready has TTL-expired.
+      //   4. A signals pA.succeed(Some(1)). B wakes, returns 1.
       import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
       val promiseIndex = new AtomicInteger(0)
       val cacheRef = new AtomicReference[BIOCache[F, String, Int]](null)
@@ -858,10 +973,9 @@ abstract class BIOCacheTest[F[+_, +_]](
               } yield {
                 assert(producerResult == 1, s"producer returns own v (loader-result); got $producerResult")
                 assert(
-                  waiterResult.contains(999),
-                  s"Codex HIGH regression: put is an explicit keyEpoch barrier — waiter must " +
-                    s"retry past A. Expected Some(999) (put's value via retry hit); got $waiterResult. " +
-                    "If 1 → waiter missed put's epoch bump and leaked A's stale v (bug).",
+                  waiterResult.contains(1),
+                  s"waiter receives producer's v=1 via promise payload (Guava loader-result dedup); got $waiterResult. " +
+                    "A value of 999 would mean the per-key epoch barrier came back — we intentionally removed it.",
                 )
               }
             }
@@ -870,20 +984,19 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "publish → invalidate → successor publish → invalidate → old waiter wake: older tombstone survives under multi-mutation [Codex HIGH regression]" in run {
-      // Regression for Codex HIGH: "Barrier history is lost after a later
-      // same-key mutation". Sequence:
+    "publish → invalidate → successor publish → invalidate → old waiter wake: waiter returns producer's v (Guava loader-result dedup)" in run {
+      // Under Guava loader-result dedup, an already-parked waiter whose
+      // producer signaled `Some(v_A)` returns `v_A` regardless of any
+      // interleaved `invalidate` / successor-publish / re-invalidate
+      // sequence. We dropped the per-origin tombstone machinery together
+      // with the `keyEpochs` map; this test now pins that dedup invariant.
+      //
+      // Sequence (driven by the instrumented succeed below):
       //   1. Producer A publishes Ready(origin=TA). B parks on pA with TA.
-      //   2. invalidate(k) → Tombstone(TA).
-      //   3. Successor C publishes Ready(TC). Bucket: [Ready(TC), Tombstone(TA)].
-      //   4. Another invalidate(k) → displaces Ready(TC).
-      //      WITHOUT full-preserve fix: preserveBarrierFor emits [Tombstone(TC)]
-      //      ONLY (freshTombs from Ready(TC) only), erasing Tombstone(TA).
-      //   5. A signals pA.succeed(Some(1)). B wakes.
-      //   6. WITHOUT full-preserve fix: no tombstone with token=TA visible →
-      //      accept stale v=1 across TWO crossed barriers (bug).
-      //   7. WITH full-preserve fix: Tombstone(TA) and Tombstone(TC) both
-      //      retained → per-origin check finds Tombstone(TA) → retry.
+      //   2. invalidate(k) displaces no Computing here (A already published).
+      //   3. Successor C publishes Ready(TC).
+      //   4. Another invalidate(k) removes Ready(TC).
+      //   5. A signals pA.succeed(Some(1)). B wakes, returns 1.
       import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
       val promiseIndex = new AtomicInteger(0)
       val cacheRef = new AtomicReference[BIOCache[F, String, Int]](null)
@@ -929,11 +1042,10 @@ abstract class BIOCacheTest[F[+_, +_]](
             F.flatMap(Prims.mkLatch) { mayFinish =>
               val compute: F[Nothing, Int] =
                 F.flatMap(started.succeed(()))(_ => F.map(mayFinish.await)(_ => 1))
-              val waiterSentinel = -55
               for {
                 producerFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", compute))
                 _ <- started.await
-                waiterFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", F.pure(waiterSentinel)))
+                waiterFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", F.pure(-55)))
                 _ <- awaitBlocked(waiterFib, 300.millis)
                 _ <- mayFinish.succeed(())
                 producerResult <- producerFib.join
@@ -941,11 +1053,9 @@ abstract class BIOCacheTest[F[+_, +_]](
               } yield {
                 assert(producerResult == 1, s"producer returns own v (loader-result); got $producerResult")
                 assert(
-                  waiterResult.contains(waiterSentinel),
-                  s"Codex HIGH regression: older tombstone must survive multi-mutation sequence. " +
-                    s"Expected Some($waiterSentinel); got $waiterResult. " +
-                    "If 1 → Tombstone(TA) erased by later invalidate-of-successor, stale v leaked across TWO barriers (bug). " +
-                    "If 999 → retry hit Ready(TC) but it was also invalidated, so cache should be empty → waiter runs its own compute.",
+                  waiterResult.contains(1),
+                  s"waiter receives producer's v=1 via promise payload (Guava loader-result dedup); got $waiterResult. " +
+                    "Anything else would mean strict freshness for waiters was still being enforced — we intentionally removed it.",
                 )
               }
             }
@@ -954,25 +1064,18 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "publish → invalidate → successor publish → old waiter wake: waiter retries (tombstone survives successor) [Codex HIGH regression]" in run {
-      // Regression for Codex HIGH: "Successor compute can erase the freshness
-      // barrier for an older waiter". Sequence:
-      //   1. Producer A publishes Ready(origin=TA).
-      //   2. Waiter B parked on pA, parkedOriginToken=TA.
-      //   3. invalidate(k) runs → Tombstone(k, TA).
-      //   4. Successor C computes and publishes Ready(origin=TC).
-      //      WITHOUT fix: C's publish did `cleaned.filterNot(_.key == key)`
-      //      and wiped the tombstone. Bucket ends with only Ready(TC).
-      //   5. A signals pA.succeed(Some(1)). B wakes.
-      //   6. WITHOUT fix: no tombstone; per-origin check finds no matching
-      //      tombstone → accept stale v=1.
-      //   7. WITH fix: C's publish preserves tombstones, and the per-origin
-      //      check finds Tombstone(TA) with token matching parkedOriginToken
-      //      → retry. Retry hits Ready(TC) → return 999.
+    "publish → invalidate → successor publish → old waiter wake: waiter returns producer's v (Guava loader-result dedup)" in run {
+      // Guava loader-result dedup: a waiter whose producer signaled
+      // `Some(v_A)` returns `v_A` regardless of whether `invalidate(k)` or
+      // a successor's `compute` / publish linearized in between. We removed
+      // the per-origin tombstone machinery; the producer's promise payload
+      // is authoritative for already-deduped waiters.
       //
-      // Deterministic via instrumented Primitives2: producer's `succeed` first
-      // triggers invalidate(k), then runs a full computeIfAbsent successor
-      // that publishes 999, THEN signals the waiter.
+      // Sequence (driven by the instrumented succeed below):
+      //   1. Producer A publishes its Ready. Waiter B parks on pA.
+      //   2. invalidate(k) runs.
+      //   3. Successor C publishes Ready(999).
+      //   4. A signals pA.succeed(Some(1)). B wakes, returns 1.
       import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
       val promiseIndex = new AtomicInteger(0)
       val cacheRef = new AtomicReference[BIOCache[F, String, Int]](null)
@@ -1027,10 +1130,9 @@ abstract class BIOCacheTest[F[+_, +_]](
               } yield {
                 assert(producerResult == 1, s"producer returns own v (loader-result); got $producerResult")
                 assert(
-                  waiterResult.contains(999),
-                  s"Codex HIGH regression: tombstone must survive successor's publish so older " +
-                    s"waiter retries past the invalidate barrier. Expected Some(999) (retry hits C's " +
-                    s"Ready); got $waiterResult. If 1 → stale pre-invalidate v leaked (bug).",
+                  waiterResult.contains(1),
+                  s"waiter receives producer's v=1 via promise payload (Guava loader-result dedup); got $waiterResult. " +
+                    "A value of 999 would mean the waiter retried past an invalidate barrier — that invariant was intentionally dropped with keyEpochs.",
                 )
               }
             }
@@ -1039,19 +1141,17 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "publish → invalidate → invalidate: same-key follow-up preserves tombstone; waiter retries [Codex HIGH regression]" in run {
-      // Regression for Codex HIGH: "Same-key follow-up mutations can erase the
-      // only freshness barrier". Sequence:
-      //   1. Producer A publishes Ready(origin=TA).
-      //   2. Waiter B parked on pA (not yet woken).
-      //   3. invalidate(k) → leaves Tombstone(TA). Bucket: [Tombstone(TA)].
-      //   4. invalidate(k) again → without fix, tombstoneTokensFor sees only a
-      //      Tombstone (no Ready/Computing), emits no new tombstones, and
-      //      filterNot(_.key == key) erases the existing tombstone. Bucket empty.
-      //   5. A signals Some(1). B wakes.
-      //   6. WITHOUT fix: empty bucket, gen unchanged → B returns stale v=1.
-      //   7. WITH fix: preserveBarrierFor keeps the existing tombstone →
-      //      B sees tombstone → retry.
+    "publish → invalidate → invalidate: waiter returns producer's v (Guava loader-result dedup)" in run {
+      // Guava loader-result dedup: a waiter whose producer signaled
+      // `Some(v_A)` returns `v_A` regardless of any sequence of
+      // `invalidate` calls that linearize between the signal and the wake.
+      // We dropped the tombstone / per-origin barrier machinery; the
+      // producer's promise payload is authoritative.
+      //
+      // Sequence:
+      //   1. Producer A publishes Ready. B parks on pA.
+      //   2. invalidate(k); invalidate(k) again.
+      //   3. A signals pA.succeed(Some(1)). B wakes, returns 1.
       import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
       val promiseIndex = new AtomicInteger(0)
       val cacheRef = new AtomicReference[BIOCache[F, String, Int]](null)
@@ -1095,11 +1195,10 @@ abstract class BIOCacheTest[F[+_, +_]](
             F.flatMap(Prims.mkLatch) { mayFinish =>
               val compute: F[Nothing, Int] =
                 F.flatMap(started.succeed(()))(_ => F.map(mayFinish.await)(_ => 1))
-              val waiterSentinel = -77
               for {
                 producerFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", compute))
                 _ <- started.await
-                waiterFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", F.pure(waiterSentinel)))
+                waiterFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", F.pure(-77)))
                 _ <- awaitBlocked(waiterFib, 300.millis)
                 _ <- mayFinish.succeed(())
                 producerResult <- producerFib.join
@@ -1107,10 +1206,9 @@ abstract class BIOCacheTest[F[+_, +_]](
               } yield {
                 assert(producerResult == 1, s"producer returns own v (loader-result); got $producerResult")
                 assert(
-                  waiterResult.contains(waiterSentinel),
-                  s"Codex HIGH regression: second invalidate must preserve tombstone. " +
-                    s"Expected Some($waiterSentinel); got $waiterResult. " +
-                    "If 1 → tombstone erased by same-key follow-up, stale v leaked across barrier (bug).",
+                  waiterResult.contains(1),
+                  s"waiter receives producer's v=1 via promise payload (Guava loader-result dedup); got $waiterResult. " +
+                    "Any other value would mean a tombstone-style barrier survived a follow-up invalidate — that invariant was intentionally dropped.",
                 )
               }
             }
@@ -1205,25 +1303,18 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "put with expired TTL + cleanBucket sweeps put's Ready: waiter retries (NOT stale producer v) [Codex HIGH regression]" in run {
-      // Regression for Codex HIGH: "Parked waiters can return stale producer
-      // values after a later `put` if that replacement is cleaned before
-      // validation". Scenario:
-      //   1. Producer A publishes Ready(originToken=TA), waiter B still parked.
-      //   2. `put(k, 999, 1.nano)` runs. Without the fix this leaves only
-      //      `Ready(origin=null, expires≈now)`. With the fix it ALSO leaves
-      //      `Tombstone(k, TA, now)`.
-      //   3. Any bucket op (here: `get`) triggers `cleanBucket`. The expired
-      //      put-Ready is removed. Without the fix the slot is now empty.
-      //      With the fix the Tombstone survives (<60s old).
-      //   4. Producer's promise signals `Some(1)`. Waiter wakes.
-      //   5. Post-wake freshness check:
-      //        - without fix: empty keyEntries → benign TTL cleanup branch →
-      //          returns producer's stale 1. BUG.
-      //        - with fix: Tombstone present → retry → compute own value.
+    "put with expired TTL + cleanBucket sweeps put's Ready: waiter still returns producer's v (Guava loader-result dedup)" in run {
+      // Under Guava loader-result dedup, a waiter whose producer signaled
+      // `Some(v_A)` returns `v_A` even if a `put(k, _, 1.nano)` and a
+      // follow-up `cleanBucket`-triggering `get` linearize between the
+      // signal and the wake. The per-origin tombstone machinery that used
+      // to enforce retry here was removed together with the `keyEpochs`
+      // map; the producer's promise payload is authoritative.
       //
-      // Deterministic via an instrumented Primitives2 that sequences
-      // put→sleep→get BEFORE the producer's `succeed` signals the waiter.
+      // Sequence (driven by the instrumented succeed below):
+      //   1. Producer A publishes Ready(originToken=TA), waiter B parked.
+      //   2. put(k, 999, 1.nano); sleep; get(k) (sweeps the put's Ready).
+      //   3. A signals pA.succeed(Some(1)). B wakes, returns 1.
       import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
       val promiseIndex = new AtomicInteger(0)
       val cacheRef = new AtomicReference[BIOCache[F, String, Int]](null)
@@ -1269,11 +1360,10 @@ abstract class BIOCacheTest[F[+_, +_]](
             F.flatMap(Prims.mkLatch) { mayFinish =>
               val compute: F[Nothing, Int] =
                 F.flatMap(started.succeed(()))(_ => F.map(mayFinish.await)(_ => 1))
-              val waiterSentinel = -42
               for {
                 producerFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", compute))
                 _ <- started.await
-                waiterFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", F.pure(waiterSentinel)))
+                waiterFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", F.pure(-42)))
                 _ <- awaitBlocked(waiterFib, 300.millis)
                 _ <- mayFinish.succeed(())
                 producerResult <- producerFib.join
@@ -1281,10 +1371,9 @@ abstract class BIOCacheTest[F[+_, +_]](
               } yield {
                 assert(producerResult == 1, s"producer returns own v (loader-result); got $producerResult")
                 assert(
-                  waiterResult.contains(waiterSentinel),
-                  s"Codex HIGH regression: waiter must RETRY because put left a Tombstone " +
-                    s"that survived cleanBucket. Expected Some($waiterSentinel); got $waiterResult. " +
-                    "If 1 → waiter returned producer's stale v despite put displacement (bug).",
+                  waiterResult.contains(1),
+                  s"waiter receives producer's v=1 via promise payload (Guava loader-result dedup); got $waiterResult. " +
+                    "Any other value would mean a tombstone-style post-wake retry fired — that invariant was intentionally dropped with keyEpochs.",
                 )
               }
             }
@@ -1782,7 +1871,7 @@ abstract class BIOCacheTest[F[+_, +_]](
                         F.flatMap(Temp.sleep(50.millis)) { _ =>
                           F.flatMap(Temp.timeout(5.seconds)(producerFib.join)) { pResult =>
                             F.flatMap(Temp.timeout(5.seconds)(waiterFib.join)) { wResult =>
-                              F.flatMap(cache.shutdown) { _ =>
+                              F.flatMap(cache.close) { _ =>
                                 F.map(runCount.get) { count =>
                                   assert(pResult.contains(42), s"producer returns 42; got $pResult")
                                   assert(
@@ -2450,14 +2539,22 @@ abstract class BIOCacheTest[F[+_, +_]](
       }
     }
 
-    "invalidateAll is non-atomic: concurrent put may survive if racing the traversal" in run {
-      // Honest contract test: invalidateAll clears entries PRESENT AT CALL TIME, but is NOT
-      // a global barrier. A concurrent put racing the per-bucket traversal may land on an
-      // already-cleared bucket and persist. This test documents and pins the behavior.
+    "invalidateAll atomic-swap: pre-call puts are cleared; concurrent puts may land on old or new structure" in run {
+      // Honest contract test: invalidateAll performs an atomic structure swap
+      // at one linearization point. All puts that completed BEFORE the swap
+      // are guaranteed cleared (their entries were in the orphaned vector).
+      // Puts that race CONCURRENTLY may land on either side of the swap
+      // depending on when each put's `bucketFor` captured `structureRef`:
+      //   - If `bucketFor` captured the OLD vector before the swap, the put
+      //     writes to an orphaned Ref2 → invisible to post-swap readers.
+      //   - If `bucketFor` captured the NEW vector after the swap, the put
+      //     writes to the live Ref2 → survives.
       //
-      // Strategy: start invalidateAll in one fiber, race many puts to distinct keys. Some
-      // puts may survive. Cache size at return is `put_survived <= puts.size`. Critically,
-      // we assert the weaker (and honest) contract: anything that didn't race stays cleared.
+      // Strategy: pre-populate, fork invalidateAll, race many fresh puts. Assert:
+      //   (a) all pre-existing entries are gone (they existed before the swap
+      //       was even forked).
+      //   (b) the number of concurrent-put survivors is in [0, N] — we don't
+      //       assert a specific count because the race is non-deterministic.
       F.flatMap(BIOCache.make[F, Int, Int](CacheConfig(initialCapacity = 16))) { cache =>
         // Pre-populate.
         F.flatMap(F.traverse((0 until 100).toList)(i => cache.put(i, i))) { _ =>
@@ -2492,6 +2589,541 @@ abstract class BIOCacheTest[F[+_, +_]](
                   }
                 }
               }
+            }
+          }
+        }
+      }
+    }
+
+    // ---- Atomic structure swap regressions ----
+
+    "invalidateAll swap: parked waiter detects structure replacement and retries [atomic-swap regression]" in run {
+      // Regression for the atomic-swap design: when `invalidateAll` runs while
+      // a waiter is parked, the bucket `Ref2` captured at park time is swapped
+      // out. On wake the waiter MUST detect the identity mismatch (`bucketFor(key)
+      // ne parkedBucketRef`) and retry against the fresh (empty) structure —
+      // not accept the producer's pre-flush `Some(v)`.
+      //
+      // Deterministic setup: an instrumented producer promise runs
+      // invalidateAll + a concurrent put BEFORE signaling the waiter's promise.
+      // The waiter wakes with Some(v_producer) and must observe that its
+      // bucket Ref2 was replaced; retry hits put's fresh Ready.
+      import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
+      val promiseIndex = new AtomicInteger(0)
+      val cacheRef = new AtomicReference[BIOCache[F, String, Int]](null)
+      val defaultPrimsForCache: Primitives2[F] = Prims
+      val instrumented: Primitives2[F] = new Primitives2[F] {
+        override def mkRef[A](a: A): F[Nothing, Ref2[F, A]] = defaultPrimsForCache.mkRef(a)
+        override def mkSemaphore(permits: Long): F[Nothing, Semaphore2[F]] = defaultPrimsForCache.mkSemaphore(permits)
+        override def mkPromise[E, A]: F[Nothing, Promise2[F, E, A]] = {
+          val idx = promiseIndex.getAndIncrement()
+          F.map(defaultPrimsForCache.mkPromise[E, A]) { inner =>
+            new Promise2[F, E, A] {
+              override def await: F[E, A] = inner.await
+              override def poll: F[Nothing, Option[F[E, A]]] = inner.poll
+              override def fail(e: E): F[Nothing, Boolean] = inner.fail(e)
+              override def terminate(t: Throwable): F[Nothing, Boolean] = inner.terminate(t)
+              override def succeed(a: A): F[Nothing, Boolean] = {
+                if (idx == 0) {
+                  val c = cacheRef.get()
+                  if (c ne null) {
+                    F.flatMap(c.invalidateAll) { _ =>
+                      F.flatMap(c.put("k", 999)) { _ =>
+                        inner.succeed(a)
+                      }
+                    }
+                  } else inner.succeed(a)
+                } else inner.succeed(a)
+              }
+            }
+          }
+        }
+      }
+      val cacheF: F[Nothing, BIOCache[F, String, Int]] =
+        ConcurrentHashMapCache.create[F, String, StrongRef, Int](CacheConfig())(
+          BIO,
+          instrumented,
+          implicitly[CacheRefType[StrongRef]],
+        )
+      F.flatMap(cacheF) { cache =>
+        F.flatMap(F.sync(cacheRef.set(cache))) { _ =>
+          F.flatMap(Prims.mkLatch) { started =>
+            F.flatMap(Prims.mkLatch) { mayFinish =>
+              val compute: F[Nothing, Int] =
+                F.flatMap(started.succeed(()))(_ => F.map(mayFinish.await)(_ => 1))
+              for {
+                producerFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", compute))
+                _ <- started.await
+                waiterFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", F.pure(-1)))
+                _ <- awaitBlocked(waiterFib, 300.millis)
+                _ <- mayFinish.succeed(())
+                producerResult <- producerFib.join
+                waiterResult <- Temp.timeout(5.seconds)(waiterFib.join)
+              } yield {
+                assert(producerResult == 1, s"producer returns own v (loader-result); got $producerResult")
+                assert(
+                  waiterResult.contains(999),
+                  s"atomic-swap regression: waiter must detect bucket Ref2 identity mismatch and retry. " +
+                    s"Expected Some(999) (retry hits put's Ready in the fresh structure); got $waiterResult. " +
+                    "If 1 → waiter accepted producer's pre-swap v; structure-swap detection regressed.",
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    "invalidateAll swap: pre-swap producer publishes to orphan bucket; post-swap get returns None [atomic-swap regression]" in run {
+      // The producer started before invalidateAll. It captures the OLD bucket
+      // Ref2 at Computing-install time. After invalidateAll swaps, the producer
+      // completes and publishes its Ready — but to the orphaned Ref2 that the
+      // cache's structureRef no longer references. A subsequent `get` on the
+      // same key must return None (the new empty structure has no such Ready).
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
+        F.flatMap(Prims.mkLatch) { started =>
+          F.flatMap(Prims.mkLatch) { mayFinish =>
+            val compute: F[Nothing, Int] =
+              F.flatMap(started.succeed(()))(_ => F.map(mayFinish.await)(_ => 42))
+            for {
+              producerFib <- Fk.fork(cache.computeIfAbsent[Nothing]("orphan", compute))
+              _ <- started.await
+              // Swap the structure out from under the producer.
+              _ <- cache.invalidateAll
+              // Release the producer; it publishes to the orphan bucket.
+              _ <- mayFinish.succeed(())
+              producerResult <- producerFib.join
+              // Post-swap read: must NOT see the orphan publication.
+              result <- cache.get("orphan")
+            } yield {
+              assert(producerResult == 42, s"producer's direct caller receives own v (loader-result); got $producerResult")
+              assert(
+                result.isEmpty,
+                s"atomic-swap regression: producer's publish landed on orphaned bucket; post-swap get must return None. Got $result.",
+              )
+            }
+          }
+        }
+      }
+    }
+
+    "invalidateAll + concurrent computeIfAbsent: no orphan-admission hangs [Codex HIGH regression]" in run {
+      // Codex HIGH regression: a caller that captured oldVec pre-swap could
+      // install Computing on the now-orphaned bucket. Future callers on the
+      // same oldVec (rare, but possible with stashed references) would park
+      // on a promise that no public op can signal — hang.
+      //
+      // The fix: admission modify checks `bucketRef ne bucketFor(key)`. If
+      // orphan, aborts with ActionSwapped and retries from the top against
+      // the fresh structure.
+      //
+      // Stress: 100 concurrent computeIfAbsent calls racing 50 invalidateAll
+      // calls. If any admission hangs, the test times out.
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig(initialCapacity = 8))) { cache =>
+        F.flatMap(Fk.fork(F.tailRecM[Nothing, Int, Int](0) { i =>
+          if (i >= 50) F.pure(Right(i))
+          else F.map(F.*>(cache.invalidateAll, Temp.sleep(1.milli)))(_ => Left(i + 1))
+        })) { invalidatorFib =>
+          F.flatMap(F.traverse((0 until 100).toList)(i => Fk.fork(cache.computeIfAbsent[Nothing](s"k$i", F.pure(i))))) { computeFibs =>
+            F.flatMap(invalidatorFib.join) { _ =>
+              F.flatMap(Temp.timeout(10.seconds)(F.traverse(computeFibs)(_.join))) { results =>
+                F.pure {
+                  assert(
+                    results.exists(r => r.size == 100),
+                    s"admission hang regression: expected all 100 computeIfAbsent calls to complete; got ${results.map(_.size)}. " +
+                      "Timeout → a caller parked on an orphan-bucket promise.",
+                  )
+                  assert(
+                    results.exists(_.forall(_ >= 0)),
+                    s"expected all results to be the requested i; got $results",
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    "close + concurrent computeIfAbsent: no orphan-admission hangs [Codex HIGH regression]" in run {
+      // Same orphan-admission concern, but for close instead of invalidateAll.
+      // A caller that captured oldVec pre-close could install Computing on
+      // orphan after close's swap. Fix: admission modify checks BOTH
+      // `closedFlag` and `bucketRef ne bucketFor(key)`. Either aborts.
+      //
+      // Stress: spawn many concurrent computeIfAbsent calls, call close. All
+      // computeIfAbsent calls must terminate (succeed or fail) — NOT hang.
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig(initialCapacity = 8))) { cache =>
+        F.flatMap(F.traverse((0 until 50).toList)(i => Fk.fork(F.sandboxExit(cache.computeIfAbsent[Nothing](s"k$i", F.pure(i)))))) { computeFibs =>
+          F.flatMap(cache.close) { _ =>
+            F.flatMap(Temp.timeout(10.seconds)(F.traverse(computeFibs)(_.join))) { results =>
+              F.pure {
+                assert(
+                  results.exists(_.size == 50),
+                  s"close admission-hang regression: expected all 50 computeIfAbsent calls to complete (succeed or fail); got ${results.map(_.size)}. " +
+                    "Timeout → a caller parked on an orphan-bucket promise post-close.",
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    "publish modify orphan check: pre-swap producer's Ready does NOT land on live structure [Codex HIGH regression]" in run {
+      // Codex HIGH regression: before the orphan-check fix in doCompute's
+      // publish modify, a producer whose bucketRef was captured pre-swap
+      // could publish Ready on the orphan bucket. That Ready was invisible
+      // to post-swap readers (good), but IF the publish's CAS serialized
+      // after drain and the orphan bucket were somehow consulted by a
+      // later caller, stale data could leak.
+      //
+      // Deterministic test: start a producer, invalidateAll, release the
+      // producer. Its publish modify runs on orphan bucketRef, sees
+      // `bucketRef ne bucketFor(key)`, and skips publication. A subsequent
+      // `get(key)` returns None.
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
+        F.flatMap(Prims.mkLatch) { started =>
+          F.flatMap(Prims.mkLatch) { mayFinish =>
+            val compute: F[Nothing, Int] =
+              F.flatMap(started.succeed(()))(_ => F.map(mayFinish.await)(_ => 42))
+            for {
+              producerFib <- Fk.fork(cache.computeIfAbsent[Nothing]("k", compute))
+              _ <- started.await
+              // Swap the structure out from under the in-flight producer.
+              _ <- cache.invalidateAll
+              // Release the producer; its publish modify MUST see orphan
+              // and skip publication.
+              _ <- mayFinish.succeed(())
+              producerResult <- producerFib.join
+              // Post-swap read: the fresh empty structure has nothing.
+              afterGet <- cache.get("k")
+            } yield {
+              assert(producerResult == 42, s"producer's direct caller receives own v (loader-result); got $producerResult")
+              assert(
+                afterGet.isEmpty,
+                s"publish-orphan-check regression: producer's Ready must NOT be visible via the live structure post-swap. Got $afterGet",
+              )
+            }
+          }
+        }
+      }
+    }
+
+    "close fence: no compute invocation starts AFTER close has returned [Codex HIGH regression]" in run {
+      // Directly targets the post-CAS admission/close race: a caller whose
+      // in-closure guards (`closedFlag`, `bucketFor(key)`) both evaluated to
+      // "open" before `close` flipped them can still win the old-bucket CAS
+      // afterward and call `compute`. The fix is a post-CAS re-check in
+      // `computeImpl` that rolls back the `Computing` and fails-fast with
+      // `IllegalStateException` if either fence has moved.
+      //
+      // Invariant: once `close` returns, NO further `compute` invocation may
+      // start. We flip an external `AtomicBoolean` immediately after `close`
+      // returns; any `compute` function that observes it true recorded a
+      // violation. The test is stressed across many iterations with many
+      // concurrent admissions so the interleaving is forced to materialize.
+      val iterations = 80
+      val concurrentCalls = 64
+      F.map(
+        F.traverse((0 until iterations).toList) { _ =>
+          F.flatMap(BIOCache.make[F, String, Int](CacheConfig(initialCapacity = 8))) { cache =>
+            val closeReturnedFlag = new java.util.concurrent.atomic.AtomicBoolean(false)
+            val violationCount = new java.util.concurrent.atomic.AtomicInteger(0)
+            val compute: F[Nothing, Int] = F.sync {
+              if (closeReturnedFlag.get()) { val _ = violationCount.incrementAndGet() }
+              1
+            }
+            F.flatMap(Prims.mkLatch) { startBarrier =>
+              F.flatMap(F.traverse((0 until concurrentCalls).toList) { i =>
+                Fk.fork(F.flatMap(startBarrier.await)(_ => F.sandboxExit(cache.computeIfAbsent[Nothing](s"k$i", compute))))
+              }) { fibs =>
+                F.flatMap(startBarrier.succeed(())) { _ =>
+                  F.flatMap(cache.close) { _ =>
+                    F.flatMap(F.sync(closeReturnedFlag.set(true))) { _ =>
+                      F.map(F.traverse(fibs)(_.join))(_ => violationCount.get())
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ) { perIterationViolations =>
+        val total = perIterationViolations.sum
+        assert(
+          total == 0,
+          s"close fence regression: $total compute invocations started AFTER close returned. Per-iteration non-zero: " +
+            perIterationViolations.zipWithIndex.filter(_._1 != 0).map { case (n, i) => s"iter$i=$n" }.mkString(", "),
+        )
+      }
+    }
+
+    "concurrent close callers all return only after teardown is complete [Codex HIGH regression]" in run {
+      // Stop-hook finding: `closedFlag.getAndSet(true)` returns the previous
+      // value; the loser (observed `true`) previously returned F.unit
+      // IMMEDIATELY while the winner was still interrupting the eviction
+      // fiber, swapping structureRef, and draining promises. That breaks the
+      // contract "once close returns, teardown is complete": a loser that
+      // forked closure on close's return could observe a not-yet-closed
+      // cache (e.g., structureRef still pointing at the pre-swap vector).
+      //
+      // Fix: shared CAS-installed `closedPromise`. Winner signals it after
+      // the drain; losers await it.
+      //
+      // Property this test pins: after ANY `close` call returns, the atomic
+      // structure swap has been observed. If a loser returned early
+      // (pre-swap), a subsequent `get` on a pre-populated key would still
+      // see its Ready. With the fix, losers block on the winner's post-drain
+      // signal, so `get` is guaranteed to observe the fresh empty vector.
+      //
+      // Asserting ONLY on post-close computeIfAbsent defecting is NOT
+      // sufficient: the winner flips `closedFlag` BEFORE teardown, so even
+      // in the broken version, admission would defect on ActionClosed. We
+      // have to observe post-swap state (pre-populated entries gone) to
+      // actually verify teardown completion.
+      val entriesToPopulate = 32
+      val concurrentClosers = 16
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig(initialCapacity = 8))) { cache =>
+        F.flatMap(F.traverse((0 until entriesToPopulate).toList)(i => cache.put(s"k$i", i))) { _ =>
+          F.flatMap(Prims.mkLatch) { startBarrier =>
+            F.flatMap(F.traverse((0 until concurrentClosers).toList) { _ =>
+              Fk.fork(F.flatMap(startBarrier.await) { _ =>
+                F.flatMap(cache.close) { _ =>
+                  // Every pre-populated key MUST be gone after our close
+                  // returns. Any `Some(_)` is proof the loser returned
+                  // before the winner's `structureRef.getAndSet(emptyVec)`
+                  // was observable — teardown wasn't complete.
+                  F.map(F.traverse((0 until entriesToPopulate).toList)(i => cache.get(s"k$i"))) { results =>
+                    results.count(_.isDefined)
+                  }
+                }
+              })
+            }) { fibs =>
+              F.flatMap(startBarrier.succeed(())) { _ =>
+                F.map(F.traverse(fibs)(_.join)) { perCallerLeaks =>
+                  val totalLeaks = perCallerLeaks.sum
+                  assert(
+                    totalLeaks == 0,
+                    s"concurrent-close ordering regression: $totalLeaks of ${concurrentClosers * entriesToPopulate} post-close `get` reads saw a pre-close Ready. " +
+                      s"Per-caller leak counts: $perCallerLeaks. " +
+                      "This means at least one `close` returned BEFORE the winner's structureRef swap was observable — " +
+                      "violating the contract that teardown is complete when close returns.",
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    "concurrent close: losers observe the SAME defect as the winner [Codex HIGH regression]" in run {
+      // Stop-hook finding: `winnerPromise.terminate(f.trace.toThrowable)`
+      // would collapse a structured `Exit.Failure` (multi-defect
+      // Termination or interrupt trace) into a single `Die(throwable)`
+      // — losers' `await` would re-raise a DIFFERENT cause than the
+      // winner's own `F.fromSandboxExit(exit)`. Fix: encode the full
+      // `Exit.Uninterrupted[Nothing, Unit]` as the promise payload;
+      // losers replay it identically via `fromSandboxExit`.
+      //
+      // To actually PROVE the invariant (not just the observable
+      // consequence), this test uses an instrumented `Primitives2`
+      // that wraps every `Promise2` to count `succeed` / `terminate`
+      // / `await` calls. The fixed code path — Exit-valued promise
+      // with `succeed(exit)` + shared `fromSandboxExit` — must exhibit
+      // EXACTLY one `succeed` call, ZERO `terminate` calls, and
+      // (concurrentClosers - 1) `await` calls. An output-only eq
+      // check on the re-raised throwable would ALSO pass under the
+      // broken `Promise2.terminate(throwable)` path (since that path
+      // still re-raises the same sentinel singleton) — the structural
+      // counts are what distinguish the two implementations.
+      //
+      // We also force a teardown defect by instrumenting `mkRef` to
+      // terminate on the first `P.mkRef` call made by `freshBuckets`
+      // inside the winner's `close`. All 8 concurrent `close` callers
+      // — winner included — must observe a failure exit via
+      // `F.sandboxExit`. A caller returning `Success` would prove the
+      // previous `F.guarantee(..., succeed(()))` masking had returned.
+      import java.util.concurrent.atomic.AtomicInteger
+      val capacity = 8
+      val concurrentClosers = 8
+      // Construction uses `capacity` mkRefs for buckets + 1 for fiberRef = capacity + 1.
+      // Winner's `close` then calls `freshBuckets` which runs `capacity` more mkRefs.
+      // Failing on the FIRST of those (index = capacity + 1) reliably defects the
+      // winner's teardown at a deterministic point.
+      val failAtRefIndex = capacity + 1
+      val refCounter = new AtomicInteger(0)
+      val sentinelDefect = new RuntimeException("close-teardown sentinel defect")
+      // Promise usage counters + payload capture. Only `close`'s
+      // candidate promises are allocated in this test (no
+      // `computeIfAbsent` calls → no producer promises), so every
+      // counted call is attributable to the close serialization path.
+      //
+      // `succeededExitRef` captures the exact `Exit` INSTANCE that the
+      // winner passes to `Promise2.succeed(exit)`. `awaitedExits`
+      // collects the EXACT instances that each loser receives from
+      // `Promise2.await`. Asserting they are `eq` proves that what
+      // winner publishes is what losers replay — closing the
+      // Exit-valued promise plumbing loop structurally.
+      import java.util.concurrent.ConcurrentLinkedQueue
+      val promiseSucceedCount = new AtomicInteger(0)
+      val promiseTerminateCount = new AtomicInteger(0)
+      val promiseFailCount = new AtomicInteger(0)
+      val promiseAwaitCount = new AtomicInteger(0)
+      val succeededExitRef = new java.util.concurrent.atomic.AtomicReference[AnyRef](null)
+      val awaitedExits = new ConcurrentLinkedQueue[AnyRef]()
+      val defaultPrims: Primitives2[F] = Prims
+      val instrumented: Primitives2[F] = new Primitives2[F] {
+        override def mkRef[A](a: A): F[Nothing, Ref2[F, A]] = {
+          val idx = refCounter.getAndIncrement()
+          if (idx == failAtRefIndex) F.terminate(sentinelDefect)
+          else defaultPrims.mkRef(a)
+        }
+        override def mkSemaphore(permits: Long): F[Nothing, Semaphore2[F]] = defaultPrims.mkSemaphore(permits)
+        override def mkPromise[E, A]: F[Nothing, Promise2[F, E, A]] = {
+          F.map(defaultPrims.mkPromise[E, A]) { inner =>
+            new Promise2[F, E, A] {
+              override def await: F[E, A] = {
+                F.flatMap(F.sync(promiseAwaitCount.incrementAndGet())) { _ =>
+                  F.map(inner.await) { a =>
+                    awaitedExits.add(a.asInstanceOf[AnyRef])
+                    a
+                  }
+                }
+              }
+              override def poll: F[Nothing, Option[F[E, A]]] = inner.poll
+              override def succeed(a: A): F[Nothing, Boolean] = {
+                F.flatMap(F.sync {
+                  // Only the FIRST successful succeed's payload is
+                  // semantically "the exit losers will see". Later
+                  // calls (if any) are Promise2 no-ops. Capture the
+                  // first via CAS.
+                  succeededExitRef.compareAndSet(null, a.asInstanceOf[AnyRef])
+                  promiseSucceedCount.incrementAndGet()
+                })(_ => inner.succeed(a))
+              }
+              override def fail(e: E): F[Nothing, Boolean] = F.flatMap(F.sync(promiseFailCount.incrementAndGet()))(_ => inner.fail(e))
+              override def terminate(t: Throwable): F[Nothing, Boolean] = F.flatMap(F.sync(promiseTerminateCount.incrementAndGet()))(_ => inner.terminate(t))
+            }
+          }
+        }
+      }
+      val cacheF: F[Nothing, BIOCache[F, String, Int]] =
+        ConcurrentHashMapCache.create[F, String, StrongRef, Int](CacheConfig(initialCapacity = capacity))(
+          BIO,
+          instrumented,
+          implicitly[CacheRefType[StrongRef]],
+        )
+      F.flatMap(cacheF) { cache =>
+        F.flatMap(Prims.mkLatch) { startBarrier =>
+          F.flatMap(F.traverse((0 until concurrentClosers).toList) { _ =>
+            Fk.fork(F.flatMap(startBarrier.await)(_ => F.sandboxExit(cache.close)))
+          }) { fibs =>
+            F.flatMap(startBarrier.succeed(())) { _ =>
+              F.map(F.traverse(fibs)(_.join)) { exits =>
+                val successes = exits.count {
+                  case Exit.Success(_) => true
+                  case _ => false
+                }
+                val terminations = exits.collect { case t: Exit.Termination => t }
+                val observedThrowables = terminations.map(_.compoundException)
+                val allMatchSentinel = observedThrowables.forall(_ eq sentinelDefect)
+                assert(
+                  successes == 0 && terminations.size == concurrentClosers,
+                  s"defect-propagation regression (existence): winner's teardown defected but $successes of $concurrentClosers close callers observed SUCCESS (expected 0 successes + $concurrentClosers terminations, got $successes successes + ${terminations.size} terminations). " +
+                    "A success on any loser would mean the defect was masked — the promise payload lost fidelity or signaling branched on success-only.",
+                )
+                assert(
+                  allMatchSentinel,
+                  s"defect-propagation regression (identity): expected every close caller's observable throwable to be the SAME sentinel defect (via `eq`); got ${observedThrowables.size} throwables of which ${observedThrowables.count(_ eq sentinelDefect)} matched.",
+                )
+                // Structural invariant checks — what actually pins
+                // the Exit-valued promise replay path. Three layers:
+                //
+                // 1. Call-count check. Fixed path: exactly 1 succeed,
+                //    0 fail/terminate, and `concurrentClosers` awaits
+                //    — winner re-raises via the SAME `await` +
+                //    `fromSandboxExit` path as losers, so every caller
+                //    awaits the promise exactly once. A regression to
+                //    `Promise2.terminate(throwable)` would give
+                //    terminate > 0 or succeed < 1. A regression where
+                //    winner re-raised from a local exit variable
+                //    would give await count == losers, not all
+                //    callers — catching the winner-path divergence
+                //    regression Codex flagged.
+                //
+                // 2. Payload-identity check. The EXIT instance passed
+                //    to `Promise2.succeed(exit)` must be byte-for-byte
+                //    the same object that every `await` returns —
+                //    for BOTH winner and losers. This proves the
+                //    promise is the SOLE data channel, not a
+                //    coordination signal layered on top of a local
+                //    re-raise.
+                //
+                // 3. Observable-effect identity (already asserted):
+                //    every caller's re-raised throwable is `eq` to
+                //    the sentinel.
+                //
+                // A regression in any of these three layers fails
+                // this test. Combined they structurally pin the
+                // `succeed(exit)` + unified `await + fromSandboxExit`
+                // replay path. Routing winner through `await` makes
+                // the published Exit the SOLE source of every
+                // caller's terminal effect — no alternate code path
+                // can reproduce it.
+                val expectedAwaits = concurrentClosers
+                assert(
+                  promiseSucceedCount.get() == 1,
+                  s"replay-path regression (succeed count): expected EXACTLY 1 Promise2.succeed call (winner signaling the raw Exit); got ${promiseSucceedCount.get()}. " +
+                    "If 0, the winner is not publishing the exit; if >1, CAS-install is not uniquely serializing.",
+                )
+                assert(
+                  promiseTerminateCount.get() == 0 && promiseFailCount.get() == 0,
+                  s"replay-path regression (channel): expected ZERO Promise2.terminate/fail calls (the fix routes ALL teardown results through succeed(exit) + fromSandboxExit); got terminate=${promiseTerminateCount.get()}, fail=${promiseFailCount.get()}. " +
+                    "Any nonzero count proves the broken `Promise2.terminate(throwable)` signaling path has regressed.",
+                )
+                assert(
+                  promiseAwaitCount.get() == expectedAwaits,
+                  s"replay-path regression (await count): expected $expectedAwaits Promise2.await calls (one per close caller, INCLUDING the winner); got ${promiseAwaitCount.get()}. " +
+                    "A count < concurrentClosers proves the winner re-raises from a local exit variable rather than the shared promise — the winner-path replay divergence regression.",
+                )
+                val publishedExit = succeededExitRef.get()
+                assert(
+                  publishedExit != null,
+                  "replay-path regression (payload capture): winner did not publish any Exit via succeed; succeededExitRef is null.",
+                )
+                import scala.jdk.CollectionConverters.*
+                val awaitedSnapshot = awaitedExits.iterator().asScala.toList
+                val allEqToPublished = awaitedSnapshot.forall(_ eq publishedExit)
+                assert(
+                  awaitedSnapshot.size == expectedAwaits && allEqToPublished,
+                  s"replay-path regression (payload identity): expected every loser's Promise2.await return value to be the SAME instance winner passed to Promise2.succeed; got ${awaitedSnapshot.size} await returns of which ${awaitedSnapshot.count(_ eq publishedExit)} were `eq` to the published exit. " +
+                    "A per-caller synthesized Exit would trip this check even when counts match.",
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    "close swap: post-close computeIfAbsent admission defects with IllegalStateException [atomic-swap regression]" in run {
+      // After close, closedFlag is true. Any new computeIfAbsent reads it inside
+      // the admission modify and returns ActionClosed. The fiber terminates with
+      // IllegalStateException via F.terminate (caught by sandboxExit as a defect).
+      F.flatMap(BIOCache.make[F, String, Int](CacheConfig())) { cache =>
+        F.flatMap(cache.close) { _ =>
+          F.flatMap(F.sandboxExit(cache.computeIfAbsent[Nothing]("k", F.pure(1)))) { exit =>
+            F.pure {
+              val failed = exit match {
+                case Exit.Success(_) => false
+                case _: Exit.Failure[?] => true
+              }
+              assert(
+                failed,
+                s"post-close computeIfAbsent must defect (IllegalStateException). Got success: $exit",
+              )
             }
           }
         }
