@@ -15,7 +15,6 @@ class BIOCachePropertyTest extends AnyWordSpec with Matchers with ScalaCheckProp
   private val F: IO2[IO] = implicitly
 
   private def unsafeRun[A](f: IO[Nothing, A]): A = runner.unsafeRun(f)
-  private def unsafeRunE[E, A](f: IO[E, A]): Exit[E, A] = runner.unsafeRunSync(f)
 
   "BIOCache property tests" should {
 
