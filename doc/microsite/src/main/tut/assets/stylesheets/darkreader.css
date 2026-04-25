@@ -16,13 +16,20 @@
  * data-darkreader-inline-* attributes; the Material theme has effectively no
  * inline styles, so impact is nil.
  *
- * Applied unconditionally — dark is the default for everyone, regardless of
- * OS color-scheme preference. Users who need the light theme (visual
- * accessibility, low-glare environments, personal preference) can disable
- * this stylesheet via the in-page toggle button rendered by
- * assets/javascripts/scheme-switch.js, which persists their choice in
- * localStorage. The toggle works by setting `link.disabled = true` on the
- * <link> element pointing at this file.
+ * The <link> pointing at this file is gated by an inline <script> in <head>
+ * (see paradox-overlay/page.st) which adjusts the link's `media` attribute
+ * based on localStorage["izumi-color-scheme"]:
+ *   "light"  -> media="not all" -> dark suppressed, white shows through
+ *   anything else (including absent) -> media="all" -> dark applies
+ * For visitors with JavaScript disabled, the link defaults to
+ *   media="not (prefers-color-scheme: light)"
+ * so dark applies on dark/no-preference OS and the white theme shows on
+ * explicit light-mode OS — a graceful degradation when the JS toggle is
+ * unavailable.
+ *
+ * The in-page toggle button is rendered by
+ *   assets/javascripts/scheme-switch.js
+ * which writes the localStorage entry and updates `link.media` live.
  */
 
 
@@ -813,4 +820,34 @@ pre.prettyprint { border-color: currentcolor; }
   --darkreader-neutral-text: #f9f7f4;
   --darkreader-neutral-background: #1f2223;
 }
+
+/*
+ * High-contrast / forced-colors mode (Windows High Contrast, etc.).
+ * Browsers in this mode automatically substitute system colors for
+ * background-color, color, border-color, etc. — but only if author CSS
+ * doesn't override with !important values that block the substitution.
+ * Since Dark Reader's rules above use !important everywhere, we explicitly
+ * undo decorative effects that interfere with high-contrast palettes:
+ * - shadows and filters obscure system foreground colors
+ * - Dark Reader's image filter (invert + hue-rotate) destroys image legibility
+ * Color/background properties don't need to be reverted here; the browser's
+ * forced-colors substitution wins over our !important declarations
+ * automatically (per CSS Color Adjustment spec).
+ */
+@media (forced-colors: active) {
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+  img,
+  svg,
+  video,
+  picture {
+    filter: none !important;
+  }
+}
+
 
