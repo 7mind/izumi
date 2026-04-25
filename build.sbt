@@ -6626,6 +6626,10 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
                 _.withCopyright("7mind.io")
                   .withRepository(uri("https://github.com/7mind/izumi"))
+                  // Default dark theme: a static dump of Dark Reader (Dynamic mode) applied to the
+                  // white Material theme. Loaded after the Material stylesheets so its !important rules win.
+                  // Asset is staged via mdoc passthrough from src/main/tut/assets/stylesheets/darkreader.css.
+                  .withCustomStylesheet("assets/stylesheets/darkreader.css")
                 //        .withColor("222", "434343")
               },
     ScalaUnidoc / siteSubdirName := DocKeys.prefix.value("api"),
