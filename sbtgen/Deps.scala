@@ -861,6 +861,11 @@ object Izumi {
               // white Material theme. Loaded after the Material stylesheets so its !important rules win.
               // Asset is staged via mdoc passthrough from src/main/tut/assets/stylesheets/darkreader.css.
               .withCustomStylesheet("assets/stylesheets/darkreader.css")
+              // Visitor-facing toggle that disables the dark stylesheet at runtime via
+              // link.disabled and persists the choice to localStorage. Provides a
+              // fixed-position floating button; primarily intended as a visual-accessibility
+              // override for users who need the lighter Material theme.
+              .withCustomJavaScript("assets/javascripts/scheme-switch.js")
             //        .withColor("222", "434343")
           }"""),
           "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """DocKeys.prefix.value("api")""".raw,

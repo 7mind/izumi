@@ -15,6 +15,14 @@
  * The --inline rules (rgb-attribute fallbacks) are inert without JS to set the
  * data-darkreader-inline-* attributes; the Material theme has effectively no
  * inline styles, so impact is nil.
+ *
+ * Applied unconditionally — dark is the default for everyone, regardless of
+ * OS color-scheme preference. Users who need the light theme (visual
+ * accessibility, low-glare environments, personal preference) can disable
+ * this stylesheet via the in-page toggle button rendered by
+ * assets/javascripts/scheme-switch.js, which persists their choice in
+ * localStorage. The toggle works by setting `link.disabled = true` on the
+ * <link> element pointing at this file.
  */
 
 
@@ -805,3 +813,4 @@ pre.prettyprint { border-color: currentcolor; }
   --darkreader-neutral-text: #f9f7f4;
   --darkreader-neutral-background: #1f2223;
 }
+
