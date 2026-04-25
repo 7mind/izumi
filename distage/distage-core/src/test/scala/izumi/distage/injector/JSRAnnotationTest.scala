@@ -15,7 +15,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
         make[String].named("address").from("localhost")
         make[Int].named("port1").from(90)
         make[String].named("address1").from("localhost1")
-        make[ServerConfig]
+        make[ServerConfig].fromSelf
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -31,7 +31,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port1").from(90)
         make[String].named("address1").from("localhost1")
-        make[ServerConfigWithFieldAnnos]
+        make[ServerConfigWithFieldAnnos].fromSelf
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()
@@ -44,7 +44,7 @@ class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuar
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].named("port").from(80)
         make[String].named("address").from("localhost")
-        make[ServerConfigWithTypeAnnos]
+        make[ServerConfigWithTypeAnnos].fromSelf
       })
 
       val context = Injector.Standard().produce(definition).unsafeGet()

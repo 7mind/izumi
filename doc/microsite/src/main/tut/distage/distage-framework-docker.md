@@ -333,7 +333,7 @@ class PostgresExampleAppIntegrationTest extends Spec1[IO] with AssertCIO {
       include(TransactorFromConfigModule)
       include(PostgresUsingDockerModule)
       include(DistageFrameworkModules)
-      make[PostgresExampleApp]
+      make[PostgresExampleApp].fromSelf
     },
     memoizationRoots = Set(
       DIKey[PostgresServerConfig]
@@ -364,7 +364,7 @@ def postgresDockerIntegrationExample = {
     include(PostgresUsingDockerModule)
     include(DistageFrameworkModules)
 
-    make[PostgresExampleApp]
+    make[PostgresExampleApp].fromSelf
   }
 
   Injector[IO]().produceRun(applicationModules) {

@@ -96,7 +96,7 @@ object DockerPlugin extends PluginDef {
       AvailablePort.local(pgPort)
   }
 
-  make[PgSvcExample]
+  make[PgSvcExample].fromSelf
 
   include(new ConfigModuleDef {
     makeConfigNamed[Int]("postgres.port")

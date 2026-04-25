@@ -117,15 +117,15 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
     ) ++ new izumi.distage.plugins.PluginDef {
       make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
 
-      make[SetCounter]
-      make[SetCounter].named("unmemoized")
-      make[SetCounter].named("directly-memoized")
+      make[SetCounter].fromSelf
+      make[SetCounter].named("unmemoized").fromSelf
+      make[SetCounter].named("directly-memoized").fromSelf
 
-      make[SetElement1]
-      make[SetElement2]
-      make[SetElement3]
-      make[SetElement4]
-      make[SetElement4Retainer]
+      make[SetElement1].fromSelf
+      make[SetElement2].fromSelf
+      make[SetElement3].fromSelf
+      make[SetElement4].fromSelf
+      make[SetElement4Retainer].fromSelf
 
       many[SetElement]
         .weak[SetElement1]
@@ -140,11 +140,11 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         .weak[SetElement3]
         .weak[SetElement4]
 
-      make[UnmemoizedSetElement1]
-      make[UnmemoizedSetElement2]
-      make[UnmemoizedSetElement3]
-      make[UnmemoizedSetElement4]
-      make[UnmemoizedSetElement4Retainer]
+      make[UnmemoizedSetElement1].fromSelf
+      make[UnmemoizedSetElement2].fromSelf
+      make[UnmemoizedSetElement3].fromSelf
+      make[UnmemoizedSetElement4].fromSelf
+      make[UnmemoizedSetElement4Retainer].fromSelf
 
       many[UnmemoizedSetElement]
         .weak[UnmemoizedSetElement1]
@@ -152,8 +152,8 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
         .weak[UnmemoizedSetElement3]
         .weak[UnmemoizedSetElement4]
 
-      make[DirectlyMemoizedSetElement1]
-      make[DirectlyMemoizedSetElement2]
+      make[DirectlyMemoizedSetElement1].fromSelf
+      make[DirectlyMemoizedSetElement2].fromSelf
 
       many[DirectlyMemoizedSetElement]
         .weak[DirectlyMemoizedSetElement1]
@@ -350,7 +350,7 @@ abstract class ForcedRootTest[F[_]: TagK: DefaultModule] extends Spec1[F] {
   override protected def config: TestConfig = super.config.copy(
     moduleOverrides = new ModuleDef {
       make[ForcedRootResource[F]].fromResource[ForcedRootResource[F]]
-      make[ForcedRootProbe]
+      make[ForcedRootProbe].fromSelf
     },
     forcedRoots = Set(DIKey.get[ForcedRootResource[F]]),
   )

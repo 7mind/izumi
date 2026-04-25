@@ -28,7 +28,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
     import ProviderCase3._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TestDependency].named("classdeftypeann1")
+      make[TestDependency].named("classdeftypeann1").fromSelf
       make[TestClass].from(implType _)
     })
 
@@ -46,7 +46,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
     import ProviderCase3._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TestDependency].named("classdeftypeann1")
+      make[TestDependency].named("classdeftypeann1").fromSelf
       make[TestClass].from {
         (t: TestDependency @Id("classdeftypeann1")) => new TestClass(t)
       }

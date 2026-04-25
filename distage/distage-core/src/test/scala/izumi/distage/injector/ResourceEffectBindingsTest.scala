@@ -363,12 +363,12 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
 
       val definition = PlannerInput.everything(new ModuleDef {
         makeTrait[NotInContext]
-        make[TestClass]
+        make[TestClass].fromSelf
         makeTrait[TestDependency3]
         make[TestDependency0].from[TestImpl0]
         makeTrait[TestDependency1]
-        make[TestCaseClass]
-        make[LocatorDependent]
+        make[TestCaseClass].fromSelf
+        make[LocatorDependent].fromSelf
         make[TestInstanceBinding].fromResource(new Lifecycle.Basic[Option, TestInstanceBinding] {
           override def acquire: Option[TestInstanceBinding] = None
           override def release(resource: TestInstanceBinding): Option[Unit] = None

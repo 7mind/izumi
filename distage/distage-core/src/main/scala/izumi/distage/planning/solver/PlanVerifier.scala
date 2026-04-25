@@ -1,13 +1,15 @@
 package izumi.distage.planning.solver
 
-import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
 import izumi.distage.model.exceptions.PlanVerificationException
 import izumi.distage.model.plan.ExecutableOp.{InstantiationOp, MonadicOp}
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, Roots}
 import izumi.distage.model.planning.PlanIssue.*
 import izumi.distage.model.planning.{AxisPoint, PlanIssue}
 import izumi.distage.model.reflection.DIKey.SetElementKey
-import izumi.distage.model.reflection.{DIKey, SafeType}
+import izumi.distage.model.reflection.Provider.{ErrorMakeWithoutFromMarker, ProviderType}
+import izumi.distage.model.reflection.{DIKey, Provider, SafeType}
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.planning.{BindingTranslator, SubcontextHandler}
 import izumi.fundamentals.collections.MutableMultiMap
@@ -84,15 +86,18 @@ class PlanVerifier(
         }
       }
     }
+    val deprecationIssues: Set[PlanIssue] = PlanVerifier.findBareMakeDeprecations(bindings)
+
     traversal
       .traverse[F](bindings, roots, providedKeys, excludedActivations).left.map {
         failure =>
-          val issues = failure.issues.map(f => PlanIssue.CantVerifyLocalContext(f)).toSet[PlanIssue]
+          val issues = failure.issues.map(f => PlanIssue.CantVerifyLocalContext(f)).toSet[PlanIssue] ++ deprecationIssues
           PlanVerifierResult.Incorrect(Some(NESet.unsafeFrom(issues)), Set.empty, failure.time)
       }.map {
         result =>
-          result.maybeIssues match {
-            case issues @ Some(_) => PlanVerifierResult.Incorrect(issues, result.visitedKeys, result.time)
+          val combined: Set[PlanIssue] = result.maybeIssues.fold(Set.empty[PlanIssue])(_.toSet) ++ deprecationIssues
+          NESet.from(combined) match {
+            case Some(issues) => PlanVerifierResult.Incorrect(Some(issues), result.visitedKeys, result.time)
             case None => PlanVerifierResult.Correct(result.visitedKeys, result.time)
           }
       }.merge
@@ -272,6 +277,46 @@ object PlanVerifier {
   def apply(preps: GraphQueries): PlanVerifier = new PlanVerifier(preps)
 
   private object Default extends PlanVerifier(new GraphQueries(new BindingTranslator.Impl))
+
+  /**
+    * Locate any [[izumi.distage.model.definition.Binding]] whose impl is the marker functoid produced by
+    * a bare `make[T]` call (no follow-up `.from`-like method). Each such binding becomes a
+    * [[PlanIssue.BareMakeDeprecation]].
+    */
+  private[planning] def findBareMakeDeprecations(bindings: ModuleBase): Set[PlanIssue] = {
+    bindings.iterator.flatMap {
+      case b: Binding.ImplBinding =>
+        bareMakeMarker(b.implementation).map {
+          marker =>
+            PlanIssue.BareMakeDeprecation(
+              key = b.key,
+              op = OperationOrigin.UserBinding(b),
+              tpeStr = marker.tpeStr,
+              methods = marker.nonWhitelistedMethods,
+              message = marker.message,
+            )
+        }
+      case _ => None
+    }.toSet[PlanIssue]
+  }
+
+  @scala.annotation.tailrec
+  private def bareMakeMarker(impl: ImplDef): Option[ErrorMakeWithoutFromMarker] = impl match {
+    case ImplDef.ProviderImpl(_, function) => providerMarker(function)
+    case ImplDef.SubcontextImplDef(_, function, _, _) => providerMarker(function)
+    case ImplDef.EffectImpl(_, _, inner) => bareMakeMarker(inner)
+    case ImplDef.ResourceImpl(_, _, inner) => bareMakeMarker(inner)
+    case _: ImplDef.ReferenceImpl | _: ImplDef.InstanceImpl => None
+  }
+
+  private def providerMarker(provider: Provider): Option[ErrorMakeWithoutFromMarker] = {
+    if (provider.providerType == ProviderType.ErrorMakeWithoutFrom) {
+      provider.underlying match {
+        case m: ErrorMakeWithoutFromMarker => Some(m)
+        case _ => None
+      }
+    } else None
+  }
 
   sealed abstract class PlanVerifierResult {
     def issues: Option[NESet[PlanIssue]]

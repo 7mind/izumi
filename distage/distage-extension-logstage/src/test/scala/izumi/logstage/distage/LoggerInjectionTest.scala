@@ -27,8 +27,8 @@ class LoggerInjectionTest extends AnyWordSpec {
       val router = ConfigurableLogRouter(IzLogger.Level.Trace, testSink)
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[ExampleService]
-        make[ExampleApp]
+        make[ExampleService].fromSelf
+        make[ExampleApp].fromSelf
       })
 
       val loggerModule = new LogstageModule(router, false)

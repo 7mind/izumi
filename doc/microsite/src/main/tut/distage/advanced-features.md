@@ -30,9 +30,9 @@ class C() {
 }
 
 def module = new ModuleDef {
-  make[A]
-  make[B]
-  make[C]
+  make[A].fromSelf
+  make[B].fromSelf
+  make[C].fromSelf
 }
 
 // create an object graph from description in `module`
@@ -67,9 +67,9 @@ class C() {
 }
 
 def module = new ModuleDef {
-  make[A]
-  make[B]
-  make[C]
+  make[A].fromSelf
+  make[B].fromSelf
+  make[C].fromSelf
 }
 ```
 
@@ -95,9 +95,9 @@ class B(val a: A)
 class C(val c: C)
 
 def module = new ModuleDef {
-  make[A]
-  make[B]
-  make[C]
+  make[A].fromSelf
+  make[B].fromSelf
+  make[C].fromSelf
 }
 
 val objects = Injector().produce(module, Roots(DIKey[A], DIKey[C])).unsafeGet()
@@ -141,9 +141,9 @@ class C(self: => C) {
 }
 
 def module = new ModuleDef {
-  make[A]
-  make[B]
-  make[C]
+  make[A].fromSelf
+  make[B].fromSelf
+  make[C].fromSelf
 }
 
 // disable proxies and execute the module
@@ -186,8 +186,8 @@ final case class Weak() extends Elem {
 }
 
 def module = new ModuleDef {
-  make[Strong]
-  make[Weak]
+  make[Strong].fromSelf
+  make[Weak].fromSelf
 
   many[Elem]
     .ref[Strong]
@@ -230,8 +230,8 @@ final class Weak extends Elem {
 }
 
 def module = new ModuleDef {
-  make[Strong]
-  make[Weak]
+  make[Strong].fromSelf
+  make[Weak].fromSelf
 
   many[Elem]
     .ref[Strong]
@@ -281,8 +281,8 @@ def bootstrapModule: BootstrapModule = new AutoSetModule {
 
 def appModule = new ModuleDef {
   make[A].from[AImpl]
-  make[B]
-  make[C]
+  make[B].fromSelf
+  make[C].fromSelf
 }
 
 val services: Set[PrintService] = Injector[Identity](bootstrapOverrides = Seq(bootstrapModule))
@@ -342,9 +342,9 @@ class B
 class C
 
 def module = new ModuleDef {
-  make[A]
-  make[B]
-  make[C]
+  make[A].fromSelf
+  make[B].fromSelf
+  make[C].fromSelf
 }
 
 val objects = Injector().produce(module, Roots(DIKey[A], DIKey[B], DIKey[C])).unsafeGet()
@@ -391,7 +391,7 @@ class Printer(a: A, b: B, c: C) {
     println(s"I've got A=$a, B=$b, C=$c, all here!")
 }
 
-childInjector.produceRun(new ModuleDef { make[Printer] }) {
+childInjector.produceRun(new ModuleDef { make[Printer].fromSelf }) {
   (_: Printer).printEm()
 }
 ```
@@ -409,7 +409,7 @@ import distage.{Roots, ModuleDef, PlannerInput, Injector, Activation}
 class InjectionInfo(val plannerInput: PlannerInput)
 
 def module = new ModuleDef {
-  make[InjectionInfo]
+  make[InjectionInfo].fromSelf
 }
 
 val input = PlannerInput(module, Roots.target[InjectionInfo], Activation.empty)
@@ -437,7 +437,7 @@ class Path {
 val path = new Path
 
 def module = new ModuleDef {
-  make[path.A]
+  make[path.A].fromSelf
 }
 
 Injector()
@@ -452,7 +452,7 @@ not the full type information available to the compiler, therefore the following
 
 ```scala mdoc:to-string
 def pathModule(p: Path) = new ModuleDef {
-  make[p.A]
+  make[p.A].fromSelf
 }
 
 val path1 = new Path
@@ -493,7 +493,7 @@ object Path {
 }
 
 def pathModule[A: Tag: ClassConstructor](p: Path.Aux[A]) = new ModuleDef {
-  make[A]
+  make[A].fromSelf
 }
 
 val path1 = new Path
@@ -529,8 +529,8 @@ class B
 class C
 
 def module = new ModuleDef {
-  make[A]
-  make[B].confined
+  make[A].fromSelf
+  make[B].confined.fromSelf
 }
 val input = PlannerInput.everything(module).withLocatorPrivacy(LocatorPrivacy.PublicByDefault)
 val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
@@ -538,7 +538,7 @@ val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
 val inheritedInjector = Injector.inherit(mainLocator)
 
 def module2 = new ModuleDef {
-  make[C]
+  make[C].fromSelf
 }
 val input2 = PlannerInput.everything(module2)
 val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
@@ -562,8 +562,8 @@ class B
 class C
 
 def module = new ModuleDef {
-  make[A]
-  make[B].exposed
+  make[A].fromSelf
+  make[B].exposed.fromSelf
 }
 val input = PlannerInput.everything(module).withLocatorPrivacy(LocatorPrivacy.PrivateByDefault)
 
@@ -572,7 +572,7 @@ val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
 val inheritedInjector = Injector.inherit(mainLocator)
 
 def module2 = new ModuleDef {
-  make[C]
+  make[C].fromSelf
 }
 val input2 = PlannerInput.everything(module2)
 val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()
@@ -598,8 +598,8 @@ class B
 class C
 
 def module = new ModuleDef {
-  make[A]
-  make[B]
+  make[A].fromSelf
+  make[B].fromSelf
 }
 val input = PlannerInput.target[A](module).withLocatorPrivacy(LocatorPrivacy.PublicRoots)
 
@@ -608,7 +608,7 @@ val mainLocator = Injector().produce(Injector().planUnsafe(input)).unsafeGet()
 val inheritedInjector = Injector.inherit(mainLocator)
 
 def module2 = new ModuleDef {
-  make[C]
+  make[C].fromSelf
 }
 val input2 = PlannerInput.everything(module2)
 val inheritedLocator = inheritedInjector.produce(inheritedInjector.planUnsafe(input2)).unsafeGet()

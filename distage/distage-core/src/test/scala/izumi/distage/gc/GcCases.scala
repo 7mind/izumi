@@ -219,8 +219,8 @@ object GcCases {
     final case class Weak() extends Elem
 
     final val module = new ModuleDef {
-      make[Strong]
-      make[Weak]
+      make[Strong].fromSelf
+      make[Weak].fromSelf
 
       many[Elem]
         .ref[Strong]

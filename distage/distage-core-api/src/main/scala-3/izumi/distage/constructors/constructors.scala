@@ -1,10 +1,8 @@
 package izumi.distage.constructors
 
-import izumi.distage.model.definition.dsl.ModuleDefDSL
-import izumi.distage.model.exceptions.macros.{TraitInitializationFailedException, UnsupportedDefinitionException}
+import izumi.distage.model.exceptions.macros.TraitInitializationFailedException
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.SafeType
-import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.{Tag, WeakTag}
 
 import zio.ZEnvironment
@@ -114,19 +112,7 @@ object ClassConstructorOptionalMakeDSL {
     new ClassConstructorOptionalMakeDSL.Impl[T](functoid)
   }
 
-  def errorConstructor[T](tpe: String, nonWhitelistedMethods: List[String]): ClassConstructorOptionalMakeDSL.Impl[T] = {
-    ClassConstructorOptionalMakeDSL[T](Functoid.lift[Nothing](throwError(tpe, nonWhitelistedMethods)))
-  }
-
-  def throwError(tpe: String, nonWhitelistedMethods: List[String]): Nothing = {
-
-    throw new UnsupportedDefinitionException(
-      s"""`make[$tpe]` DSL failure: Called an empty error constructor, because constructor for $tpe WAS NOT generated.
-         |Because after `make` there were following method calls in the same expression:${nonWhitelistedMethods.niceList()}
-         |
-         |These calls were assumed to be `.from`-like method calls, since they are not in the allowed list: ${ModuleDefDSL.MakeDSLNoOpMethodsWhitelist}
-         |The assumption is that all not explicitly allowed calls will eventually call any of `.from`/`.using`/`.todo` and fill in the constructor.
-         |""".stripMargin
-    )
+  def errorConstructor[T: Tag](tpe: String, nonWhitelistedMethods: List[String]): ClassConstructorOptionalMakeDSL.Impl[T] = {
+    ClassConstructorOptionalMakeDSL[T](Functoid._errorMakeWithoutFrom[T](tpe, nonWhitelistedMethods))
   }
 }

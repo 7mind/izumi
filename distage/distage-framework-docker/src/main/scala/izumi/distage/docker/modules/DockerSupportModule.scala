@@ -38,7 +38,7 @@ class DockerSupportModule[F[_]: TagK](configModule: ModuleBase) extends ModuleDe
       Lifecycle.fromAutoCloseable(clientFactory.makeClient(clientConfig, rawClientConfig))
   }
 
-  make[DockerIntegrationCheck[F]]
+  make[DockerIntegrationCheck[F]].fromSelf
 }
 
 object DockerSupportModule {

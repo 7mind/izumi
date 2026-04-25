@@ -23,11 +23,11 @@ class PlanOperationsTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput(
       new ModuleDef {
-        make[PrimaryComponent]
-        make[IntegrationComponent]
-        make[SharedComponent0]
-        make[SharedComponent1]
-        make[SharedComponent2]
+        make[PrimaryComponent].fromSelf
+        make[IntegrationComponent].fromSelf
+        make[SharedComponent0].fromSelf
+        make[SharedComponent1].fromSelf
+        make[SharedComponent2].fromSelf
       },
       primary ++ sub,
       Activation.empty,

@@ -2,6 +2,7 @@ package izumi.distage.reflection.macros.constructors
 
 import izumi.distage.constructors.{ClassConstructorOptionalMakeDSL, DebugProperties}
 import izumi.distage.model.definition.dsl.ModuleDefDSL
+import izumi.fundamentals.platform.strings.IzString.toRichString
 import izumi.fundamentals.reflection.TrivialMacroLogger
 
 import scala.annotation.nowarn
@@ -76,6 +77,32 @@ object MakeMacro {
         case Some(nonwhiteListedMethods) =>
           if (nonwhiteListedMethods.isEmpty) {
             logger.log(s"""For $tpe found no `.from`-like calls in $maybeTree""".stripMargin)
+
+            // `makeRole[T]` (and similar wrappers in user code that delegate through `MakeMacro.make`)
+            // expand to `make[T].tagged(...)` synthetically. The chain that reaches us only contains
+            // whitelisted methods, but the user did not write a bare `make[T]` — so don't emit the
+            // deprecation warning in that case. `MakeMacro.make` is invoked as a regular method from
+            // those wrappers, so `c.enclosingMacros(1)` points at the wrapping distage macro itself
+            // instead of `make`.
+            val calledFromAnotherDistageMacro = c.enclosingMacros.tail.exists {
+              ctx =>
+                val sym = ctx.macroApplication.symbol
+                sym != null && sym != NoSymbol &&
+                sym.fullName.startsWith("izumi.distage.") &&
+                sym.fullName != "izumi.distage.reflection.macros.constructors.MakeMacro.make" &&
+                !sym.fullName.endsWith(".classConstructorOptionalMakeDSL")
+            }
+
+            if (!calledFromAnotherDistageMacro) {
+              val message =
+                s"""`make[$tpe]` without a following `.from`-like call is deprecated and will fail at runtime in a future version.
+                   |Use `make[$tpe].fromSelf` (equivalent to `make[$tpe].from[$tpe]`) to keep auto-deriving the constructor for $tpe.""".stripMargin
+              if (System.getProperty("izumi.distage.fatal-deprecations").asBoolean().getOrElse(false)) {
+                c.error(c.enclosingPosition, message)
+              } else {
+                c.warning(c.enclosingPosition, message)
+              }
+            }
 
             q"""_root_.izumi.distage.constructors.ClassConstructorOptionalMakeDSL.apply[$tpe](${ClassConstructorMacro.mkClassConstructor[T](c)}.provider)"""
           } else {

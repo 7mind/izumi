@@ -74,7 +74,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
       .target[TestCaseClass2](
         new ModuleDef {
           make[TestInstanceBinding].fromValue(TestInstanceBinding())
-          make[TestCaseClass2]
+          make[TestCaseClass2].fromSelf
         }
       )
       .withLocatorPrivacy(LocatorPrivacy.PublicRoots)

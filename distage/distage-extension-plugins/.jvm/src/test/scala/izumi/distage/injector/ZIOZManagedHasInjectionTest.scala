@@ -79,9 +79,9 @@ class ZIOZManagedHasInjectionTest extends AnyWordSpec with ScalatestGuards {
       def getDep2: URIO[Dependency2, Dependency2] = ZIO.environmentWith[Dependency2](_.get)
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Dependency1]
-        make[Dependency2]
-        make[Dependency3]
+        make[Dependency1].fromSelf
+        make[Dependency2].fromSelf
+        make[Dependency3].fromSelf
         make[Trait3 { def acquired: Boolean }].fromZIOEnv(
           (d3: Dependency3) =>
             for {

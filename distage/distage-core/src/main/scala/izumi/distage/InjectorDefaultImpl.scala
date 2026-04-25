@@ -103,7 +103,7 @@ object InjectorDefaultImpl {
     input: PlannerInput,
   ): ModuleDef = {
     new ModuleDef {
-      make[Bootloader]
+      make[Bootloader].fromSelf
       // Bootloader dependencies
       make[InjectorFactory].fromValue(parentFactory)
       make[BootstrapModule].fromValue(bsModule)

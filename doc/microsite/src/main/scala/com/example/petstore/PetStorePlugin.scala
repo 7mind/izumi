@@ -3,9 +3,9 @@ package com.example.petstore
 import izumi.distage.plugins.PluginDef
 
 object PetStorePlugin extends PluginDef {
-  make[PetRepository]
-  make[PetStoreService]
-  make[PetStoreController]
+  make[PetRepository].fromSelf
+  make[PetStoreService].fromSelf
+  make[PetStoreController].fromSelf
 }
 
 class PetRepository

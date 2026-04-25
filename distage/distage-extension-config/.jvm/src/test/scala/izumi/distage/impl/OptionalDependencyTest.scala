@@ -158,8 +158,8 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 
     Then("ModuleDef syntax works")
     new ModuleDef {
-      make[Some[Int]]
-      make[None.type]
+      make[Some[Int]].fromSelf
+      make[None.type].fromSelf
       make[Int].from(0)
     }
 

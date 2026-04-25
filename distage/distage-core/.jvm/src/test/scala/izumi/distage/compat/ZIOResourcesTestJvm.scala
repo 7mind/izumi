@@ -43,7 +43,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
       val module = new ModuleDef {
         make[DBConnection].fromResource(dbResource)
         make[MessageQueueConnection].fromResource(mqResource)
-        make[MyApp]
+        make[MyApp].fromSelf
       }
 
       unsafeRun(Injector[Task]().produceRun(module) {
@@ -148,7 +148,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
       val module = new ModuleDef {
         make[DBConnection].fromResource(dbResource)
         make[MessageQueueConnection].fromResource(mqResource)
-        make[MyApp]
+        make[MyApp].fromSelf
       }
 
       unsafeRun(Injector[Task]().produceRun(module) {

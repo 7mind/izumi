@@ -112,7 +112,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     class MyClass(val a: (scala.Predef.String {}) @Id("a"), val b: String @Id("b"))
 
     object MyClassModule extends ModuleDef {
-      make[MyClass]
+      make[MyClass].fromSelf
     }
 
     object ConfigModule extends ModuleDef {

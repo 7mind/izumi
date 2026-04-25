@@ -9,6 +9,6 @@ class DependingPlugin extends SneakyPlugin {
 object DependingPlugin extends App {
   class NestedDoublePlugin extends SneakyPlugin
   object NestedDoublePlugin extends SneakyPlugin {
-    make[TestDepending]
+    make[TestDepending].fromSelf
   }
 }

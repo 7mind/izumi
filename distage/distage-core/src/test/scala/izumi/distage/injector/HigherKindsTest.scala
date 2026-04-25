@@ -18,7 +18,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
       addImplicit[Pointed[F]]
 
       make[TestTrait].from[TestServiceClass[F]]
-      make[TestServiceClass[F]]
+      make[TestServiceClass[F]].fromSelf
       makeTrait[TestServiceTrait[F]]
       make[Int].named("TestService").from(getResult)
       make[F[String]].from {
@@ -97,7 +97,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     import HigherKindsCase1.*
 
     abstract class Parent[C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
-      make[TestProvider[C, R]]
+      make[TestProvider[C, R]].fromSelf
     }
 
     assert(new Parent[Int, List] {}.bindings.head.key.tpe == SafeType.get[TestProvider[Int, List]])
@@ -107,7 +107,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     import HigherKindsCase1.*
 
     abstract class Parent[A: Tag, C: Tag, R[_]: TagK: Pointed] extends ModuleDef {
-      make[TestProvider0[A, C, R]]
+      make[TestProvider0[A, C, R]].fromSelf
     }
 
     assert(new Parent[Int, Boolean, List] {}.bindings.head.key.tpe == SafeType.get[TestProvider0[Int, Boolean, List]])
@@ -117,7 +117,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     import HigherKindsCase1.*
 
     abstract class Parent[A: Tag, F[_]: TagK, R[_]: TagK: Pointed] extends ModuleDef {
-      make[TestProvider1[A, F, R]]
+      make[TestProvider1[A, F, R]].fromSelf
     }
 
     assert(new Parent[Int, List, List] {}.bindings.head.key.tpe == SafeType.get[TestProvider1[Int, List, List]])
@@ -127,7 +127,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     import HigherKindsCase1.*
 
     abstract class Parent[F[_]: TagK, R[_]: TagK: Pointed, A: Tag] extends ModuleDef {
-      make[TestProvider2[F, R, A]]
+      make[TestProvider2[F, R, A]].fromSelf
     }
 
     assert(new Parent[List, List, Int] {}.bindings.head.key.tpe == SafeType.get[TestProvider2[List, List, Int]])
@@ -137,20 +137,20 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     import izumi.distage.fixtures.HigherKindCases.HigherKindsCase2.*
 
     class Definition[F[+_, +_]: TagKK: TestCovariantTC, G[_]: TagK, A: Tag](v: F[String, Int]) extends ModuleDef {
-      make[TestCovariantTC[F]]
-      make[TestCovariantTC[Either]]
+      make[TestCovariantTC[F]].fromSelf
+      make[TestCovariantTC[Either]].fromSelf
       final val t0 = Tag[TestCovariantTC[F]]
 
-      make[TestClassFG[F, G]]
-      make[TestClassFG[Either, G]]
-      make[TestClassFG[F, Option]]
-      make[TestClassFG[Either, Option]]
+      make[TestClassFG[F, G]].fromSelf
+      make[TestClassFG[Either, G]].fromSelf
+      make[TestClassFG[F, Option]].fromSelf
+      make[TestClassFG[Either, Option]].fromSelf
       final val t1 = Tag[TestClassFG[F, G]]
 
-      make[TestClassFA[F, A]]
-      make[TestClassFA[Either, A]]
-      make[TestClassFA[F, Int]]
-      make[TestClassFA[Either, Int]]
+      make[TestClassFA[F, A]].fromSelf
+      make[TestClassFA[Either, A]].fromSelf
+      make[TestClassFA[F, Int]].fromSelf
+      make[TestClassFA[Either, Int]].fromSelf
       final val t2 = Tag[TestClassFA[F, A]]
 
       make[F[String, Int]].from(v)

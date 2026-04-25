@@ -51,8 +51,8 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with RoleModuleDef {
   makeRole[FailingRole01[F]]
   makeRole[FailingRole02[F]]
 
-  make[TestRole00Resource[F]]
-  make[TestRole00ResourceIntegrationCheck[F]]
+  make[TestRole00Resource[F]].fromSelf
+  make[TestRole00ResourceIntegrationCheck[F]].fromSelf
 
   makeRole[ConfigTestRole[F]]
 
