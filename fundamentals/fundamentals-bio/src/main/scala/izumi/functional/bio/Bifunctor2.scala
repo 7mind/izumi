@@ -1,8 +1,10 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.syntax.Bifunctor2ExtensionMethods
+
 import scala.annotation.unused
 
-trait Bifunctor2[F[+_, +_]] extends RootBifunctor[F] {
+trait Bifunctor2[F[+_, +_]] extends RootBifunctor[F] with Bifunctor2ExtensionMethods {
   def InnerF: Functor2[F]
 
   def bimap[E, A, E2, A2](r: F[E, A])(f: E => E2, g: A => A2): F[E2, A2]

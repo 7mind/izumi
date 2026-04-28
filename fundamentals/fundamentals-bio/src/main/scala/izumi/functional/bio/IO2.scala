@@ -1,9 +1,11 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.syntax.IO2ExtensionMethods
+
 import scala.collection.compat.*
 import scala.util.Try
 
-trait IO2[F[+_, +_]] extends Panic2[F] {
+trait IO2[F[+_, +_]] extends Panic2[F] with IO2ExtensionMethods {
 
   /**
     * Capture a side-effectful block of code that can throw exceptions

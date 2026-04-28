@@ -2,8 +2,9 @@ package izumi.functional.bio
 
 import cats.~>
 import izumi.functional.bio.data.{Morphism1, RestoreInterruption2}
+import izumi.functional.bio.syntax.Panic2ExtensionMethods
 
-trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax {
+trait Panic2[F[+_, +_]] extends Bracket2[F] with PanicSyntax with Panic2ExtensionMethods {
   def terminate(v: => Throwable): F[Nothing, Nothing]
 
   /** @note Will return either [[Exit.Success]], [[Exit.Error]] or [[Exit.Termination]].

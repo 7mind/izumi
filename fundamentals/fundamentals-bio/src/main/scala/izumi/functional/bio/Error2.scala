@@ -1,10 +1,11 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.syntax.Error2ExtensionMethods
 import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
 
 import scala.annotation.nowarn
 
-trait Error2[F[+_, +_]] extends ApplicativeError2[F] with Monad2[F] with ErrorAccumulatingOps2[F] {
+trait Error2[F[+_, +_]] extends ApplicativeError2[F] with Monad2[F] with ErrorAccumulatingOps2[F] with Error2ExtensionMethods {
 
   def catchAll[E, A, E2](r: F[E, A])(f: E => F[E2, A]): F[E2, A]
 

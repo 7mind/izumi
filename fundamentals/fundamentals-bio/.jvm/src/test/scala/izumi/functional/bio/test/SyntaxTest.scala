@@ -307,30 +307,16 @@ class SyntaxTest extends AnyWordSpec {
       } yield ()
     }
     def z[F[+_, +_]: Error2]: F[String, Unit] = {
-      // Scala 3 Workaround
-      import izumi.functional.bio.WithFilter.WithFilterString
-      // Scala 3 Workaround
-
       for {
         case (1, 2) <- F.pure((2, 1)).widen[Any].widenError[String]
       } yield ()
     }
     def xx[F[+_, +_]: Error2]: F[Unit, Unit] = {
-      // Scala 3 Workaround
-      import izumi.functional.bio.WithFilter.WithFilterUnit
-      // Scala 3 Workaround
-
       for {
         case (1, 2) <- F.pure((2, 1)).widen[Any].widenError[Unit]
       } yield ()
     }
     def yy[F[+_, +_]: Error2]: F[Option[Throwable], Unit] = {
-      // Scala 3 Workaround
-      import izumi.functional.bio.WithFilter
-      implicit val withFilterScala3Workaround: WithFilter[Option[Throwable]] = WithFilter.WithFilterOption(using WithFilter.WithFilterNoSuchElementException)
-      val _ = withFilterScala3Workaround
-      // Scala 3 Workaround
-
       for {
         case (1, 2) <- F.pure((2, 1)).widen[Any].widenError[Option[Throwable]]
       } yield ()

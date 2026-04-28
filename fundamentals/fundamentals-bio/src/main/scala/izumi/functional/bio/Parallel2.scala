@@ -1,6 +1,8 @@
 package izumi.functional.bio
 
-trait Parallel2[F[+_, +_]] extends RootBifunctor[F] {
+import izumi.functional.bio.syntax.Parallel2ExtensionMethods
+
+trait Parallel2[F[+_, +_]] extends RootBifunctor[F] with Parallel2ExtensionMethods {
   def InnerF: Monad2[F]
 
   def parTraverse[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]

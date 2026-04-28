@@ -13,7 +13,7 @@ import scala.concurrent.duration.FiniteDuration
 open class SchedulerImpl[F[+_, +_]: WeakTemporal2](implicit clock: Clock2[F]) extends Scheduler2[F] {
 
   override def repeat[E, A, B](eff: F[E, A])(policy: RetryPolicy[F, A, B]): F[E, A] = {
-    eff.flatMap(out => loop(out, policy.action)(F.pure(_))(eff.flatMap))
+    eff.flatMap(out => loop(out, policy.action)(F.pure(_))((f: A => F[E, A]) => eff.flatMap(f)))
   }
 
   override def retry[E, S, A](eff: F[E, A])(policy: RetryPolicy[F, E, S]): F[E, A] = {
@@ -21,7 +21,7 @@ open class SchedulerImpl[F[+_, +_]: WeakTemporal2](implicit clock: Clock2[F]) ex
   }
 
   override def retryOrElse[E, E2, S, A, A1 >: A](eff: F[E, A])(policy: RetryPolicy[F, E, S])(orElse: E => F[E2, A1]): F[E2, A1] = {
-    eff.catchAll(err => loop(err, policy.action)(orElse)(eff.catchAll))
+    eff.catchAll(err => loop(err, policy.action)(orElse)((f: E => F[E2, A1]) => eff.catchAll(f)))
   }
 
   protected def loop[E, S, A, B](
