@@ -211,17 +211,17 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     izumi.functional.quasi.QuasiAsync.discard()
 
     // fails on Scala 2, but it's cats-specific
-    if (IzScala.scalaRelease.major == 2) {
+    (if (IzScala.scalaRelease.major == 2) {
       intercept[java.lang.NoClassDefFoundError] {
         new izumi.functional.bio.impl.PrimitivesFromBIOAndCats()(using null, null).discard()
       }
     } else {
 //      new izumi.functional.bio.impl.PrimitivesFromBIOAndCats()(using null, null).discard()
-    }
+    }): @nowarn("msg=deprecated")
     // cats-specific, but succeeds, doesn't use arguments in constructor
     locally {
       object x { type f[+x] = Any; type g[+x] = Nothing }
-      new izumi.functional.bio.impl.PrimitivesLocalFromCatsIO(null.asInstanceOf[izumi.functional.bio.data.Morphism1[x.f, x.g]])(using null).discard()
+      (new izumi.functional.bio.impl.PrimitivesLocalFromCatsIO(null.asInstanceOf[izumi.functional.bio.data.Morphism1[x.f, x.g]])(using null).discard()): @nowarn("msg=deprecated")
     }
     // reference doesn't even compile on Scala 3, but it's cats-specific
 //    intercept[java.lang.NoClassDefFoundError] {

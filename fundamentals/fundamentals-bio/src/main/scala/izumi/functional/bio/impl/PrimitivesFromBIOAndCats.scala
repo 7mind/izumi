@@ -4,6 +4,7 @@ import cats.effect.std.Semaphore
 import cats.effect.kernel.{Deferred, GenConcurrent, Ref, Sync}
 import izumi.functional.bio.{Async2, Fork2, Primitives2, Promise2, Ref2, Semaphore2, catz}
 
+@deprecated("Use izumi.functional.bio.impl.CatsToBIO.asyncToBIO for the full CE→BIO conversion. PrimitivesFromBIOAndCats is a partial derivation kept for binary-compat; it will be removed in M5 when Quasi* is deleted.", "1.3.0")
 open class PrimitivesFromBIOAndCats[F[+_, +_]: Async2: Fork2]() extends Primitives2[F] {
   private val Concurrent: GenConcurrent[F[Throwable, _], Throwable] = {
     catz.BIOToConcurrent(using Async2, Async2, Fork2, this)
