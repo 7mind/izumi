@@ -168,3 +168,46 @@ The test must also change: the `runtimeClass eq classOf[Any]` and `ct eq Bifunct
 **Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/Bifunctorized.scala:21-24
 **Description:** Scaladoc on `assert` reads "For internal use by submerging code paths..." — describing PR-04 behaviour, not what `assert` does in PR-01. Users reading the freshly-shipped object will be confused. Folds into D03's fix.
 **Fix:** Scaladoc at Bifunctorized.scala:21-24 rewritten to describe internal-escape-hatch semantics: "Unchecked reinterpret cast. Internal escape hatch used by `bifunctorize` and conversion-typeclass implementations that have already encoded their own error channel."
+
+## [PR-02-D01] Companion-object placement of test fixtures `FA`/`FB` is decorative
+**Status:** resolved
+**Severity:** minor
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/test/scala/izumi/functional/bio/SubmergedTypedErrorTest.scala:77-81 (and 8 per-`in` imports at lines 10,16,22,29,38,55,62,68)
+**Description:** `object SubmergedTypedErrorTest { trait FA[A]; trait FB[A] }` is the same defect class as PR-01-D16. The reviewer empirically verified that inlining `private trait FA[A]` / `private trait FB[A]` as class-body members compiles and passes 19/19 on Scala 3.7.4, 2.13.18, and 2.12.21. The executor's stated rationale ("Scala 3 'infinite loop' warning from `implicit val tagFA: TagK[FA] = TagK[FA]`") was a non-sequitur: no such implicit val exists or is needed — the materializer macro derives `TagK[FA]` at each call site.
+**Suggested fix:** Move `FA` and `FB` to `private trait FA[A]` / `private trait FB[A]` at the top of the class body (matching post-D16 `BifunctorizedTypeTest` layout). Remove `object SubmergedTypedErrorTest { … }` and the eight per-`in`-block `import SubmergedTypedErrorTest.…` lines (the traits become directly visible at the method scope).
+**Fix:** `FA` and `FB` inlined as `private trait FA[A]` / `private trait FB[A]` at the top of `SubmergedTypedErrorTest` class body. Removed `object SubmergedTypedErrorTest { … }` companion and all 8 inline imports. 19/19 pass on Scala 3.7.4, 2.13.18, 2.12.21.
+
+## [PR-02-D02] NPE risk on null payload — consistency-with-prior-art behaviour
+**Status:** resolved (deferred — consistent with `TypedError.scala`)
+**Severity:** minor
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/SubmergedTypedError.scala:24
+**Description:** `s"Submerged typed error of class=${payload.getClass.getName}..."` will NPE if `payload` is `null` (legal at type `Any`). Failure happens inside the `RuntimeException` superconstructor, which is a confusing site for the failure.
+**Fix:** No code change. The same latent NPE exists in `TypedError.scala:4` (`error.getClass.getName`). Adding `Objects.requireNonNull` here without applying the same change to `TypedError` would create inconsistency. PR-02 follows the codebase convention; if null-guarding is desired, address `TypedError` and `SubmergedTypedError` together in a future cleanup. CLAUDE.md "fail fast" applies — null submerges are user errors and the failure happens close enough to the call site.
+
+## [PR-02-D03] Scala-2-style wildcard `[_]` in pattern matches
+**Status:** resolved (deferred — codebase mixes styles)
+**Severity:** nit
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/SubmergedTypedError.scala:39,50
+**Description:** Pattern matches use `SubmergedTypedError[_]` (Scala 2 style). Scala 3 prefers `[?]` under `-source:future`.
+**Fix:** No change. The codebase mixes both styles; the project hasn't enabled the deprecation. Cross-build green on all three Scala versions.
+
+## [PR-02-D04] `asInstanceOf` cast in `apply` lacks a one-line comment for the soundness argument
+**Status:** resolved (deferred — nit, reviewer accepted as design intent)
+**Severity:** nit
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/SubmergedTypedError.scala:40
+**Description:** The cast is soundness-by-tag-equality; the LightTypeTag equality at the guard implies same monofunctor `F` by spec §3.2. The class-level scaladoc already documents the discriminator semantics so the cast is reachable for an attentive reader. A line-level comment would help skim-readers but isn't necessary.
+**Fix:** No change. The class scaladoc carries the design intent.
+
+## [PR-02-D05] Symmetric test case (unapplying FB on inner existingFB) is implicit, not explicit
+**Status:** resolved (deferred — transitively covered)
+**Severity:** nit
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/test/scala/izumi/functional/bio/SubmergedTypedErrorTest.scala:34
+**Description:** Test 4 checks unapplying FB on the OUTER returns None. The symmetric case — unapplying FB on the INNER `existingFB` returns Some(42) — is transitively covered by test 1 (over FB) but not stated explicitly. Adding a 2-line assertion would round out coverage.
+**Fix:** No change. The transitive coverage suffices for PR-02.
+
+## [PR-02-D06] Inconsistent line-style between `SubmergedTypedError` and `TypedError` extends clauses
+**Status:** resolved (deferred — both styles exist)
+**Severity:** nit
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/SubmergedTypedError.scala:20-28
+**Description:** `SubmergedTypedError` opens params on the class declaration line and indents the `extends RuntimeException(...)` block. `TypedError.scala:4` keeps everything on one line. Both styles exist elsewhere.
+**Fix:** No change. Multi-line form is more readable for this 4-arg superconstructor call.

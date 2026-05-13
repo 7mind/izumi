@@ -26,7 +26,7 @@ art is fetched in `./docs/drafts/prior-art/{izumi-1766,cats-mtl-619}.patch`.
 One line per PR here; sub-task detail stays in the plan doc.
 
 - [x] **PR-01** — `Bifunctorized` opaque type & companion: `bifunctorize`/`debifunctorize`, implicit conversions, `toMonofunctor` syntax. Pure plumbing, no CE instances yet.
-- [ ] **PR-02** — `SubmergedTypedError[F]`: TagK-discriminated submarine throwable + companion `apply`/`unapply` (idempotent).
+- [x] **PR-02** — `SubmergedTypedError[F]`: TagK-discriminated submarine throwable + companion `apply`/`unapply` (idempotent).
 - [ ] **PR-03** — `Exit.Trace` documentation note for `SubmergedTypedError`; no new trace subtype unless PR-04 proves a structural need.
 - [ ] **PR-04** — CE→BIO conversion ladder (`MonadToBIO`…`AsyncToBIO`) in `CatsToBIOConversions.scala` + impl in `impl/CatsToBIO.scala`. Core of M1.
 - [ ] **PR-05** — `BifunctorizedNoOpInstances`: high-priority no-op identity instances so `bifunctorize(zio) eq zio` holds (Goal 4).
@@ -63,3 +63,11 @@ Detail and rationale live in `./docs/drafts/20260513-2106-bifunctorization-plan.
   - The test lives in `.jvm/` because the Goal-4 verification ("`bifunctorize(zio) eq zio`") uses `zio.ZIO`, which is JVM-only on this sub-module's classpath.
   - `DummyF`/`DummyBox`/`dummyFClassTag` are `private` members of the test class (no companion object required despite an intermediate round suggesting otherwise — empirically refuted in round 3).
   - 18 defects opened and resolved across 3 review rounds; all minor or nit, no major. See `./defects.md` for the full audit trail. D17 flags an implicit-search regression risk that may surface in PR-02..PR-08: any helper parameterised on `F[_]` that previously summoned `ClassTag[Bifunctorized[F, E, A]]` may now need an additional `ClassTag[F[A]]` constraint threaded through.
+
+- **PR-02** (2026-05-13) — Introduced `izumi.functional.bio.SubmergedTypedError[F[_]]`: a Throwable wrapper used to submerge typed errors of arbitrary payload type into a monofunctor `F[_]`'s Throwable channel, discriminated by `TagK[F].tag` (a `LightTypeTag` value). Two files: new `SubmergedTypedError.scala` (55 lines — class + companion with idempotent `apply` and `unapply`; `writableStackTrace=false` for cheap construction) and `SubmergedTypedErrorTest.scala` (8 cases — same-`F` round-trip, cross-`F` isolation, idempotency, cross-`F` nesting, non-Throwable payloads, Throwable-cause chaining, empty stack trace, `getMessage` format). Verification: `sbt --batch '++2.12.21!' 'project fundamentals-bioJVM' 'Test/testOnly izumi.functional.bio.SubmergedTypedErrorTest izumi.functional.bio.BifunctorizedTypeTest'` → 19/19 pass (also 2.13.18 and 3.7.4). No regression in PR-01 tests.
+
+  Notes / surprises:
+  - **Discriminator: `LightTypeTag` (not `TagK`).** The captured field is `tag.tag` from `izumi.reflect.TagK[F].tag`, exploiting izumi-reflect's structural-equality contract on `LightTypeTag` (cached/interned). This is the **load-bearing departure from cats-mtl PR 619**, which discriminates by per-region `AnyRef` marker — see `bifunctorization.md`'s prior-art note and plan §3.2. Future maintainers: do NOT switch the discriminator to `AnyRef` instance identity ("for performance") — that would silently regress to cats-mtl algebraic-effects scoping, breaking the "same-F handlers compose" invariant.
+  - **Idempotent `apply`.** Same-`F` `SubmergedTypedError` wrapping returns the existing instance unchanged (verified by `eq` in test 3). Different-`F` wrapping does NOT collapse — that's the discriminator working as intended (test 4).
+  - **Wildcard `[_]` (not `[?]`)** in pattern matches. The codebase mixes both styles; the `_` form works on all three Scala versions without a deprecation warning.
+  - **PR-01-D16 echo (decorative companion object) recurred** as PR-02-D01 and was fixed the same way — fixtures inlined as class-body `private trait`s. Future PRs: do NOT move test fixtures to companion objects unless empirically required (the reviewer's pre-validation confirmed inlining works on 2.12/2.13/3 here as well).
