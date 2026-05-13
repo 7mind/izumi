@@ -287,3 +287,57 @@ Actual: raises `SubmergedTypedError[IO]` wrapping `rt`. A user's downstream `IO.
 **Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/impl/CatsToBIO.scala:163-165, 285, 300, 312
 **Description:** Several `.asInstanceOf[F[A]]` / `.asInstanceOf[F[Unit]]` / `.asInstanceOf[A => F[B]]` casts at the bifunctor-erasure seam. These are correct by construction (`Bifunctorized[F, E, A] =:= F[A]` at the erased level) but a centralized `private def coerce[A](b: Bifunctorized[F, ?, A]): F[A]` helper would document the rationale once.
 **Fix:** Deferred — readability nit; functional correctness unaffected.
+
+## [PR-05-D01] `NoOp` declared as abstract type rather than type alias — Scala variance constraint
+**Status:** resolved (deviation locked in — empirically justified)
+**Severity:** minor (design constraint, not a defect)
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/Bifunctorized.scala (the `type NoOp` declaration)
+**Description:** Spec/plan §3.3 sketches `type NoOp[F[+_, +_], +E, +A] = Bifunctorized[F[E, *], E, A]` (transparent alias). Reviewer empirically verified the alias form FAILS on all three Scala versions with a covariance error:
+- Scala 3.7.4: "covariant type parameter E occurs in invariant position in izumi.functional.bio.Bifunctorized.Bifunctorized[[_] =>> F[E, _], E, A]"
+- Scala 2.13.18: "covariant type E occurs in invariant position in type ... NoOp"
+- Scala 2.12.21: same as 2.13.18
+The covariant `E` ends up in an invariant slot of the `F[E, *]` partial application. Switching `E` to invariant makes the type compile but breaks `NoOp[F, +_, +_]` partial applications elsewhere ("Type argument NoOp[F, _, _] does not conform to upper bound").
+**Fix:** Declared as an abstract type `type NoOp[F[+_, +_], +E, +A]` with explicit `+E, +A` variance. Runtime representation is still `F[E, A]` (via `asInstanceOf` at the `bifunctorIsAlreadyBifunctor` factory). Side effect: `BifunctorizedOps.unwrap` doesn't apply to `NoOp` values — see PR-05-D04 for the resolution.
+
+## [PR-05-D02] `BifunctorizedNoOpInstances` mixed into `object Bifunctorized` rather than `bio` package object
+**Status:** resolved (deviation locked in — empirically justified, more strongly than executor stated)
+**Severity:** minor (design constraint, not a defect)
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/Bifunctorized.scala line 6 (`object Bifunctorized extends BifunctorizedNoOpInstances`)
+**Description:** Spec/plan §3.3 implies mixing `BifunctorizedNoOpInstances` into `bio/package.scala`. Reviewer empirically verified that the package-object mixin causes 13 compile errors across `SyntaxTest` AND `ZIOWorkaroundsTest` (`F.x[zio.IO]` style summons trigger unbound `IO2[X]` searches that the no-op factory greedily satisfies via `F = NoOp[NoOp[ZIO, _, _], _, _]`, deeply-nested NoOp chains).
+**Fix:** Mixed into `object Bifunctorized` (the companion of `NoOp`) so the implicit is scoped to `NoOp[...]` searches via the companion-of-RHS-of-alias rule — no general `IO2[X]` pollution. Cross-build green: 444/444 fundamentals-bioJVM tests pass on Scala 3.7.4 (and 32/32 PR-01..PR-05 tests on all three Scala versions).
+
+## [PR-05-D03] `bifunctorIsAlreadyBifunctor` constrained to `Predefined.Of[IO2[F]]` — rationale was falsified
+**Status:** resolved
+**Severity:** minor
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/BifunctorizedNoOpInstances.scala line 23 — input `implicit F: Predefined.Of[IO2[F]]` vs spec's plain `implicit F: IO2[F]`
+**Description:** Executor justified the `Predefined.Of[IO2[F]]` constraint with an implicit-search-recursion rationale: "plain `IO2[F]` would let the implicit's output (`Predefined.Of[IO2[NoOp[F, +_, +_]]]`) satisfy its own input, causing implicit-search recursion." Reviewer empirically falsified: plain `IO2[F]` compiles cleanly on all three Scala versions and passes all 444 fundamentals-bioJVM tests. The constraint has a different (unstated) effect — it restricts the factory to bifunctors registered as `Predefined.Of` in `Root.scala` (currently only ZIO via `BIOZIO`/`BIOZIOR`). User-defined bifunctors with plain `implicit val IO2[MyBio]` are silently excluded from the no-op path.
+**Suggested fix:** Revert to spec-prescribed plain `implicit F: IO2[F]`. Empirical: spec form works, opens the factory to user-registered plain `IO2` bifunctors per spec intent ("for actual bifunctors"). Verify all 444 tests still pass on Scala 3.7.4 and the 32 PR-01..PR-05 tests pass on 2.12.21 and 2.13.18 after the revert.
+**Fix:** Reverted to plain `implicit F: IO2[F]` at `BifunctorizedNoOpInstances.scala:23`. The falsified implicit-search-recursion rationale removed from scaladoc; replaced with empirically-correct description (abstract-type JVM erasure, zero allocation, `Predefined.Of` outranking via the priority cascade). 32/32 PR-01..PR-05 tests pass on Scala 3.7.4, 2.13.18, 2.12.21 after the revert. Implicit-priority test still resolves the no-op over CE→BIO without ambiguity.
+
+## [PR-05-D04] `BifunctorizedOps.unwrap` doesn't apply to `NoOp[F, E, A]` values — UX gap
+**Status:** resolved
+**Severity:** minor
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/Bifunctorized.scala (Bifunctorized object companion); also forced a workaround `unwrapNoOp` in `BifunctorizedNoOpTest.scala:14-15`
+**Description:** Because PR-05-D01's deviation declares `NoOp` as an abstract type (not a subtype of `Bifunctorized[F[E, *], E, A]`), the existing `BifunctorizedOps[F[_], E, A](b: Bifunctorized[F, E, A]).unwrap: F[A]` extension doesn't match for `NoOp` values. Users calling `someNoOp.unwrap` get "value unwrap is not a member of Bifunctorized.NoOp[...]". The test introduced a per-file `unwrapNoOp` helper as a workaround, but this isn't exposed to library users.
+**Suggested fix:** Add a parallel implicit-class extension in `object Bifunctorized`:
+```scala
+implicit final class BifunctorizedNoOpOps[F[+_, +_], E, A](private val b: Bifunctorized.NoOp[F, E, A]) extends AnyVal {
+  @inline def unwrap: F[E, A] = b.asInstanceOf[F[E, A]]
+}
+```
+Note return type differs from `BifunctorizedOps.unwrap` — `F[E, A]` (binary) vs `F[A]` (unary). After adding, drop `unwrapNoOp` helper from the test and verify all 32 PR-01..PR-05 tests still pass.
+**Fix:** Added `BifunctorizedNoOpOps[F[+_, +_], E, A]` AnyVal extension in `object Bifunctorized` (immediately after `BifunctorizedOps`) providing `.unwrap: F[E, A]` via `asInstanceOf`. The test-local `unwrapNoOp` helper was removed; the three call sites now use `someNoOp.unwrap` directly. 32/32 PR-01..PR-05 tests pass on all three Scala versions.
+
+## [PR-05-D05] Goal 4 not satisfied for `Either` — `IO2`-only ladder excludes Error2-only bifunctors
+**Status:** resolved (deferred — known limitation; widening the ladder is a substantial follow-up)
+**Severity:** minor (was reviewer-flagged "major"; downgraded because the codebase's existing test coverage doesn't exercise Either-via-Bifunctorized and the spec's mention of Either is via the literal-construction example `bifunctorize(Left(new Throwable()))`, not a Goal-4 acceptance test)
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/BifunctorizedNoOpInstances.scala
+**Description:** Reviewer empirically verified that `implicitly[IO2[Bifunctorized.NoOp[Either, ?, ?]]]` does NOT resolve under current PR-05. `Root.BIOEither` (if it exists — to be verified) provides at most `Error2[Either]`, not `IO2[Either]` (Either is not a full effect type). The IO2-only no-op factory doesn't apply. Spec section "Conversion of effect values" mentions `bifunctorize(Left(new Throwable()))` as a real-bifunctor example.
+**Fix:** Deferred to a separate follow-up PR (call it PR-05a) before M1 closes. Scope: extend `BifunctorizedNoOpInstances` with `Functor2`/`Applicative2`/`Monad2`/`Error2` mirrors (plan §3.3 sketch alludes to this with "…Functor2, Applicative2, Monad2, Error2, …, Async2 mirrors"). For Either specifically: `bifunctorErrorIsAlreadyBifunctor[F[+_, +_]](implicit F: Error2[F]): Predefined.Of[Error2[Bifunctorized.NoOp[F, +_, +_]]] = Predefined(F.asInstanceOf[…])` at a lower priority than the IO2 factory. Verify `assertCompiles("implicitly[Error2[Bifunctorized.NoOp[Either, ?, ?]]]")` and a round-trip test against an Either value.
+
+## [PR-05-D06] Multi-stage Goal-4 `eq`-chain not exercised in tests
+**Status:** resolved (deferred — single-stage covers the load-bearing invariant; multi-stage would be additional defense)
+**Severity:** nit
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/.jvm/src/test/scala/izumi/functional/bio/BifunctorizedNoOpTest.scala
+**Description:** Tests cover single-stage Goal-4 (`F.fail("oops").unwrap` is a ZIO instance — load-bearing). A multi-stage chain (`F.flatMap(F.pure(1))(i => F.pure(i+1))` produces a ZIO at every step) is not exercised. A future maintainer who accidentally allocates a wrapper somewhere in the chain wouldn't be caught.
+**Fix:** Deferred. The single-stage test catches the most likely regressions (the typeclass dictionary casts).

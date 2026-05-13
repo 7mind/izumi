@@ -3,7 +3,7 @@ package izumi.functional.bio
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-object Bifunctorized {
+object Bifunctorized extends BifunctorizedNoOpInstances {
 
   /** Opaque newtype lifting a monofunctor effect type `F[_]` into a bifunctor.
     *
@@ -17,6 +17,18 @@ object Bifunctorized {
     * on a no-cats classpath.
     */
   type Bifunctorized[F[_], +E, +A]
+
+  /** No-op partial-application alias for an already-bifunctor `F[+_, +_]`. Equal at runtime
+    * to `F[E, A]` (the wrapper is type-level identity, same as [[Bifunctorized]]). Used by
+    * [[BifunctorizedNoOpInstances]] to provide zero-cost typeclass instances when the
+    * underlying `F` is already a bifunctor with a BIO instance.
+    *
+    * Declared as an abstract type (not a `type` alias to `Bifunctorized[F[E, *], E, A]`)
+    * to keep `+E, +A` covariant — placing `E` inside `F[E, *]`'s type-lambda forces
+    * invariance under Scala 3's variance bookkeeping. The runtime representation is
+    * still `F[E, A]` (cast via `asInstanceOf` inside [[BifunctorizedNoOpInstances]]).
+    */
+  type NoOp[F[+_, +_], +E, +A]
 
   /** Unchecked reinterpret cast. Internal escape hatch used by `bifunctorize`
     * and conversion-typeclass implementations that have already encoded their
@@ -66,6 +78,14 @@ object Bifunctorized {
     */
   implicit final class BifunctorizedOps[F[_], E, A](private val b: Bifunctorized[F, E, A]) extends AnyVal {
     @inline def unwrap: F[A] = b.asInstanceOf[F[A]]
+  }
+
+  /** `.unwrap` syntax on a `NoOp[F, E, A]` value, returning the underlying `F[E, A]`. Mirrors
+    * [[BifunctorizedOps.unwrap]] for the no-op shape. Return type is `F[E, A]` (binary `F`)
+    * rather than `F[A]` because `NoOp`'s first parameter is the bifunctor `F[+_, +_]`.
+    */
+  implicit final class BifunctorizedNoOpOps[F[+_, +_], E, A](private val b: Bifunctorized.NoOp[F, E, A]) extends AnyVal {
+    @inline def unwrap: F[E, A] = b.asInstanceOf[F[E, A]]
   }
 
 }
