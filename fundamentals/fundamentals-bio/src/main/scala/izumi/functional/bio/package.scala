@@ -174,4 +174,6 @@ package object bio extends Syntax2 {
     @inline def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
   }
 
+  type Bifunctorized[F[_], +E, +A] = izumi.functional.bio.Bifunctorized.Bifunctorized[F, E, A]
+
 }
