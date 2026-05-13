@@ -83,6 +83,10 @@ object Exit {
       override def map[E1](f: E => E1): Trace[E1] = ZIOTrace(cause.map(f))
     }
 
+    /** Trace built from a raw [[java.lang.Throwable]]. Also covers [[SubmergedTypedError]] —
+      * the trace carries the submerged exception as-is; consumers that need to recover the
+      * typed payload do so via `SubmergedTypedError.unapply` against the captured throwable.
+      */
     final case class ThrowableTrace(override val toThrowable: Throwable) extends Trace[Nothing] {
       override def asString: String = {
         import java.io.{PrintWriter, StringWriter}

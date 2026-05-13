@@ -211,3 +211,77 @@ The test must also change: the `runtimeClass eq classOf[Any]` and `ct eq Bifunct
 **Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/SubmergedTypedError.scala:20-28
 **Description:** `SubmergedTypedError` opens params on the class declaration line and indents the `extends RuntimeException(...)` block. `TypedError.scala:4` keeps everything on one line. Both styles exist elsewhere.
 **Fix:** No change. Multi-line form is more readable for this 4-arg superconstructor call.
+
+## [PR-04-D01] `bifunctorize`/`debifunctorize` un-submerging — spec/impl mismatch (DESIGN QUESTION)
+**Status:** open (escalated — user input required)
+**Severity:** minor (per reviewer); blocks closure of PR-04 pending design decision
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/Bifunctorized.scala:33-38 (PR-01's `bifunctorize`/`debifunctorize`) AND the implementation of `fail`/`catchAll` in /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/impl/CatsToBIO.scala:173-175 (PR-04)
+**Description:** The spec section "Conversion of effect values" in `bifunctorization.md` says verbatim:
+- "the Throwable error must be Submerged, converted into a typed error during `bifunctorize`"
+- "In `debifunctorize`, a typed error must be de-Submerged, unwrapped, as its expected to be in order for monofunctor's native methods to work with it."
+
+Current implementation (PR-01 + PR-04):
+- `bifunctorize` is type-level identity (PR-01). It does NOT submerge — submerging happens later, in PR-04's BIO instance methods like `fail`.
+- `debifunctorize` is type-level identity (PR-01). It does NOT un-submerge.
+
+**Reproduction (reviewer empirically verified on Scala 2.13.18):**
+```scala
+val rt = new RuntimeException("oops")
+val b: Bifunctorized[IO, Throwable, Int] = F.fail(rt)     // submerges into SubmergedTypedError[IO](rt)
+val io: IO[Int] = Bifunctorized.debifunctorize(b)
+io.unsafeRunSync()
+```
+Expected per spec: raises `rt` raw.
+Actual: raises `SubmergedTypedError[IO]` wrapping `rt`. A user's downstream `IO.handleErrorWith { case re: RuntimeException => … }` will NOT catch `re` — they get the wrapper.
+
+**Design tensions:**
+1. If `bifunctorize` should submerge (per spec text), it needs `TagK[F]` + `cats.ApplicativeError[F, Throwable]` (or equivalent). That breaks Goal 5 (cats imports in `Bifunctorized.scala`) unless the submerging variant lives separately in `CatsToBIOConversions`.
+2. If `debifunctorize` should un-submerge (per spec text), same constraint applies.
+3. Goal 4 (`bifunctorize(zio) eq zio` for real bifunctors) is compatible — the no-op identity path (PR-05) handles bifunctors; the submerging variant only applies for monofunctors with cats.
+
+**Three possible resolutions (USER must pick):**
+1. **Option A — spec-compliant.** Add cats-mediated `bifunctorize` / `debifunctorize` overloads in `CatsToBIOConversions` requiring `TagK[F]` and `cats.ApplicativeError[F, Throwable]`. PR-01's cats-free versions get renamed `unsafeBifunctorize` / `unsafeDebifunctorize` (or `assertBifunctorized` / `assertMonofunctorized`) to avoid trapping users.
+2. **Option B — current behavior is OK, amend the spec.** Update `bifunctorization.md` to clarify that submerging is internal to BIO operations (`fail`/`catchAll`), not at the type-level conversion. Document the user expectation: interact with `Bifunctorized` via BIO methods; raw F operations on the unwrapped value see the submerged shape.
+3. **Option C — hybrid.** Keep PR-01's identity `bifunctorize`/`debifunctorize`. Add a separate `toMonofunctorChecked[F[_]: TagK: cats.ApplicativeError]` syntax that un-submerges. Users who care explicitly call it; users who don't get the current behavior.
+
+**Recommendation:** I recommend Option B (amend spec). The current implementation is internally consistent and zero-cost for the common case. Users who unwrap to F and then use raw F methods are explicitly leaving the BIO abstraction; they should expect to see the wire-level representation. Option A breaks Goal 4 for monofunctors (wrap allocates) and inflates the public API surface; Option C is a halfway-house with no clear win.
+
+**Suggested fix:** Pending user decision. PR-04 should not close until this is resolved or a definitive deferral rationale is recorded. Other minor findings in this round (D02-D06 below) are tractable independently.
+
+## [PR-04-D02] Plan §2 PR-04 says "sync/syncThrowable do not submerge" — contradicts implementation
+**Status:** under fix
+**Severity:** minor
+**Location:** /home/kai/src/izumi/docs/drafts/20260513-2106-bifunctorization-plan.md §2 PR-04
+**Description:** The plan text reads "`sync`/`syncThrowable` do *not* submerge — defects stay raw, per Goal 2." The implementation correctly distinguishes: `sync` (typed channel = `Nothing`) does not submerge — defects stay raw; `syncThrowable` (typed channel = `Throwable`) DOES submerge, via `convertThrowable` at CatsToBIO.scala:304-306, because the typed channel is `Throwable` and the wrap-as-`SubmergedTypedError[F]` makes it catchable by `catchAll[Throwable]`. The plan conflates the two cases.
+**Suggested fix:** Edit plan §2 PR-04 to read: "`sync` does not submerge (typed channel is `Nothing`, so any thrown exception is a defect). `syncThrowable` / `syncBlocking` / `syncInterruptibleBlocking` / `fromFuture` / `fromFutureJava` DO submerge any caught Throwable into `SubmergedTypedError[F]` — their typed channel is `Throwable`, and the unified contract is that typed-channel content always flows through `SubmergedTypedError[F]`."
+
+## [PR-04-D03] Missing test coverage for `syncThrowable`/`syncBlocking`/`fromFuture` round-trips
+**Status:** under fix
+**Severity:** minor
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/.jvm/src/test/scala/izumi/functional/bio/CatsToBIOTest.scala
+**Description:** Coverage for `Bifunctorized[F, Throwable, A]` typed-error operations is missing. Tests cover `fail` (typed-error path) and `sync` (defect path) but not the synchronous-Throwable-typed surface (`syncThrowable`, `syncBlocking`, `syncInterruptibleBlocking`, `fromFuture`, `fromFutureJava`).
+**Suggested fix:** Add three short test cases:
+1. `F.syncThrowable { throw t } catchAll _ => F.pure(0)` returns 0 — confirms `syncThrowable` submerges and `catchAll[Throwable]` recovers via the submerged path.
+2. `F.syncBlocking { throw t }` unhandled, unwrapped, raises a `SubmergedTypedError[IO]` carrying `t`.
+3. `F.fromFuture(_ => Future.failed(t)) catchAll _ => F.pure(0)` returns 0 — future failures round-trip through the typed-error path.
+
+## [PR-04-D04] `shiftBlocking` passthrough is a documented degradation
+**Status:** resolved (deferred — flagged for M6 microsite)
+**Severity:** minor
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/impl/CatsToBIO.scala:177-180
+**Description:** `shiftBlocking` is identity. CE3's `cats.effect.kernel.Async` does not expose a generic blocking-pool handle; `cats.effect.IO.blocking` is IO-specific. Library code using `BlockingIO2#shiftBlocking` on CE-backed `Bifunctorized` will silently behave as identity, exposing the compute pool to thread starvation for long blocking I/O.
+**Fix:** No code change. Inline comment already documents the limitation. Migration guide (M6) will note this caveat. A future PR could add an IO-specific specialization (`shiftBlocking` delegating to `IO.blocking` when `F = cats.effect.IO`) but that's out of M1 scope.
+
+## [PR-04-D05] Scaladoc references plan §5 `[QUESTION]` (dangling reference once M1 closes)
+**Status:** resolved (deferred — cosmetic)
+**Severity:** nit
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/CatsToBIOConversions.scala:14-16
+**Description:** Reference to "`[QUESTION]` note in the PR-04 plan" will rot once the plan doc is archived after M1.
+**Fix:** Cosmetic only. The scaladoc body conveys the same information.
+
+## [PR-04-D06] Repeated `asInstanceOf[F[A]]` casts in `impl/CatsToBIO.scala` could use a centralized helper
+**Status:** resolved (deferred — nit; readability would marginally improve)
+**Severity:** nit
+**Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/impl/CatsToBIO.scala:163-165, 285, 300, 312
+**Description:** Several `.asInstanceOf[F[A]]` / `.asInstanceOf[F[Unit]]` / `.asInstanceOf[A => F[B]]` casts at the bifunctor-erasure seam. These are correct by construction (`Bifunctorized[F, E, A] =:= F[A]` at the erased level) but a centralized `private def coerce[A](b: Bifunctorized[F, ?, A]): F[A]` helper would document the rationale once.
+**Fix:** Deferred — readability nit; functional correctness unaffected.
