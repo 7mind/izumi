@@ -60,11 +60,11 @@ object Bifunctorized {
 }
 ```
 
-Where in order to make the untyped Throwable error embedded into the monofunctor `F` effect type manipulable via e.g. `Error2#catchAll` and other typed error BIO hierarchy methods, the Throwable error must be Submerged, converted into a typed error during `bifunctorize`.
+Where in order to make typed errors raised via BIO methods (e.g. `Error2#fail`) discriminable from defects in the monofunctor `F`'s Throwable channel, typed errors are Submerged via `SubmergedTypedError[F]` (TagK-discriminated, see [`SubmergedTypedError`](fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/SubmergedTypedError.scala)). The submerging happens inside the BIO instance's methods (`fail`, `syncThrowable`, `fromFuture`, etc. — anywhere a typed error materialises). `bifunctorize` and `debifunctorize` themselves remain type-level identity to preserve Goal 4 (`bifunctorize(zioValue) eq zioValue`) and zero-cost transitions for the common case.
 
-In `debifunctorize`, a typed error must be de-Submerged, unwrapped, as its expected to be in order for monofunctor's native methods to work with it.
+A user who interacts with a `Bifunctorized[F, Throwable, A]` value via BIO methods (`catchAll`, `flatMap`, etc.) sees typed errors as if they were a native typed-error channel. A user who unwraps via `debifunctorize` or `.toMonofunctor` and then uses raw `F` methods (e.g. `cats.effect.IO.handleErrorWith`) sees the wire-level representation: typed errors appear as `SubmergedTypedError[F]` instances in the Throwable channel. The matched pattern `case SubmergedTypedError(payload) => …` extracts the original payload when needed.
 
-Note: where the bifunctorized effect value is a bifunctor already, such as `bifunctorize(Left(new Throwable()))`, no submerging should happen.
+Note: where the bifunctorized effect value is a bifunctor already, such as `bifunctorize(Left(new Throwable()))`, no submerging happens at all — the BIO instance for the already-bifunctor case is a no-op identity (Goal 4).
 
 ## Transparent bifunctorization at seams
 

@@ -213,7 +213,7 @@ The test must also change: the `runtimeClass eq classOf[Any]` and `ct eq Bifunct
 **Fix:** No change. Multi-line form is more readable for this 4-arg superconstructor call.
 
 ## [PR-04-D01] `bifunctorize`/`debifunctorize` un-submerging — spec/impl mismatch (DESIGN QUESTION)
-**Status:** open (escalated — user input required)
+**Status:** resolved (Option B chosen — spec amended; current implementation kept)
 **Severity:** minor (per reviewer); blocks closure of PR-04 pending design decision
 **Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/Bifunctorized.scala:33-38 (PR-01's `bifunctorize`/`debifunctorize`) AND the implementation of `fail`/`catchAll` in /home/kai/src/izumi/fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/impl/CatsToBIO.scala:173-175 (PR-04)
 **Description:** The spec section "Conversion of effect values" in `bifunctorization.md` says verbatim:
@@ -247,13 +247,15 @@ Actual: raises `SubmergedTypedError[IO]` wrapping `rt`. A user's downstream `IO.
 **Recommendation:** I recommend Option B (amend spec). The current implementation is internally consistent and zero-cost for the common case. Users who unwrap to F and then use raw F methods are explicitly leaving the BIO abstraction; they should expect to see the wire-level representation. Option A breaks Goal 4 for monofunctors (wrap allocates) and inflates the public API surface; Option C is a halfway-house with no clear win.
 
 **Suggested fix:** Pending user decision. PR-04 should not close until this is resolved or a definitive deferral rationale is recorded. Other minor findings in this round (D02-D06 below) are tractable independently.
+**Fix:** Resolved via Option B in autonomous-loop continuation. Spec amended at `bifunctorization.md` lines 63-67 to document that submerging happens inside BIO instance methods (not at type-level `bifunctorize`/`debifunctorize`), with explicit user guidance about the wire-level shape when unwrapping. `Bifunctorized.bifunctorize`/`debifunctorize` remain zero-cost type-level identity, preserving Goal 4 and the no-allocation common case. Users who use BIO methods see typed-error semantics; users who unwrap and call raw `F` methods see `SubmergedTypedError[F]` in the Throwable channel and use the documented `SubmergedTypedError.unapply` extractor when they need the original payload.
 
 ## [PR-04-D02] Plan §2 PR-04 says "sync/syncThrowable do not submerge" — contradicts implementation
-**Status:** under fix
+**Status:** resolved
 **Severity:** minor
 **Location:** /home/kai/src/izumi/docs/drafts/20260513-2106-bifunctorization-plan.md §2 PR-04
 **Description:** The plan text reads "`sync`/`syncThrowable` do *not* submerge — defects stay raw, per Goal 2." The implementation correctly distinguishes: `sync` (typed channel = `Nothing`) does not submerge — defects stay raw; `syncThrowable` (typed channel = `Throwable`) DOES submerge, via `convertThrowable` at CatsToBIO.scala:304-306, because the typed channel is `Throwable` and the wrap-as-`SubmergedTypedError[F]` makes it catchable by `catchAll[Throwable]`. The plan conflates the two cases.
 **Suggested fix:** Edit plan §2 PR-04 to read: "`sync` does not submerge (typed channel is `Nothing`, so any thrown exception is a defect). `syncThrowable` / `syncBlocking` / `syncInterruptibleBlocking` / `fromFuture` / `fromFutureJava` DO submerge any caught Throwable into `SubmergedTypedError[F]` — their typed channel is `Throwable`, and the unified contract is that typed-channel content always flows through `SubmergedTypedError[F]`."
+**Fix:** Plan §2 PR-04 scope paragraph updated to disambiguate `sync` (no submerging, defect path) from `syncThrowable`/`syncBlocking`/`syncInterruptibleBlocking`/`fromFuture`/`fromFutureJava` (submerge into `SubmergedTypedError[F]` because their typed channel is `Throwable`).
 
 ## [PR-04-D03] Missing test coverage for `syncThrowable`/`syncBlocking`/`fromFuture` round-trips
 **Status:** under fix
