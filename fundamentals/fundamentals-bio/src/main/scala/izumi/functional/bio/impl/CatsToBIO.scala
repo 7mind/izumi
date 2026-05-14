@@ -9,6 +9,8 @@ import izumi.functional.bio.{
   Async2,
   Bifunctorized,
   BlockingIO2,
+  Clock1,
+  Clock2,
   Exit,
   Fiber2,
   Fork2,
@@ -21,6 +23,7 @@ import izumi.functional.bio.{
 }
 import izumi.reflect.TagK
 
+import java.time.{Instant, LocalDateTime, OffsetDateTime, ZoneOffset, ZonedDateTime}
 import java.util.concurrent.CompletionStage
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{CancellationException, ExecutionContext, Future}
@@ -53,12 +56,14 @@ object CatsToBIO {
     Temporal2[Bifunctorized[F, +_, +_]] &
     Fork2[Bifunctorized[F, +_, +_]] &
     BlockingIO2[Bifunctorized[F, +_, +_]] &
-    Primitives2[Bifunctorized[F, +_, +_]] = {
+    Primitives2[Bifunctorized[F, +_, +_]] &
+    Clock2[Bifunctorized[F, +_, +_]] = {
     new Async2[Bifunctorized[F, +_, +_]]
       with Temporal2[Bifunctorized[F, +_, +_]]
       with Fork2[Bifunctorized[F, +_, +_]]
       with BlockingIO2[Bifunctorized[F, +_, +_]]
-      with Primitives2[Bifunctorized[F, +_, +_]] {
+      with Primitives2[Bifunctorized[F, +_, +_]]
+      with Clock2[Bifunctorized[F, +_, +_]] {
 
       private[this] implicit val P: Parallel[F] = cats.effect.instances.spawn.parallelForGenSpawn(F)
 
@@ -99,6 +104,13 @@ object CatsToBIO {
 
       override def async[E, A](register: (Either[E, A] => Unit) => Unit): Bifunctorized[F, E, A] = {
         Bifunctorized.assert(F.async_[A](cb => register(e => cb(e.left.map(payload => SubmergedTypedError[F](payload))))))
+      }
+      // Use cats-effect's `Async.never` (which registers an idle finalizer making `get`
+      // poll'able / cancelable) instead of the default `async(_ => ())` derivation from
+      // `WeakAsync2.never`. The default translates to `F.async_(...)` whose `get` is NOT
+      // poll'able — making the fiber uncancelable, which deadlocks any race against `never`.
+      override def never: Bifunctorized[F, Nothing, Nothing] = {
+        Bifunctorized.assert(F.never[Nothing])
       }
       override def asyncF[E, A](register: (Either[E, A] => Unit) => Bifunctorized[F, E, Unit]): Bifunctorized[F, E, A] = {
         Bifunctorized.assert(F.async[A] {
@@ -244,7 +256,33 @@ object CatsToBIO {
       }
 
       override def race[E, A](r1: Bifunctorized[F, E, A], r2: Bifunctorized[F, E, A]): Bifunctorized[F, E, A] = {
-        Bifunctorized.assert(F.map(F.race(r1.unwrap, r2.unwrap))((e: Either[A, A]) => e.fold(identity[A], identity[A])))
+        // Derived from `racePairUnsafe` to honor the cats-effect "race derives from racePair" law:
+        // interrupt the loser, then surface the winner's outcome (success / typed fail / defect /
+        // cancellation). If the winner was canceled, fall back to the other side via `join`.
+        flatMap(racePairUnsafe(r1, r2)) {
+          case Left((exitA, fiberB)) =>
+            exitA match {
+              case Exit.Success(a) =>
+                flatMap(fiberB.interrupt)(_ => pure(a))
+              case Exit.Error(e, _) =>
+                flatMap(fiberB.interrupt)(_ => fail(e))
+              case Exit.Termination(t, _, _) =>
+                flatMap(fiberB.interrupt)(_ => terminate(t))
+              case Exit.Interruption(_, _, _) =>
+                fiberB.join
+            }
+          case Right((fiberA, exitB)) =>
+            exitB match {
+              case Exit.Success(a) =>
+                flatMap(fiberA.interrupt)(_ => pure(a))
+              case Exit.Error(e, _) =>
+                flatMap(fiberA.interrupt)(_ => fail(e))
+              case Exit.Termination(t, _, _) =>
+                flatMap(fiberA.interrupt)(_ => terminate(t))
+              case Exit.Interruption(_, _, _) =>
+                fiberA.join
+            }
+        }
       }
 
       override def racePairUnsafe[E, A, B](fa: Bifunctorized[F, E, A], fb: Bifunctorized[F, E, B]): Bifunctorized[F, E, Either[
@@ -318,6 +356,37 @@ object CatsToBIO {
       }
       override def unit: Bifunctorized[F, Nothing, Unit] = {
         Bifunctorized.assert(F.unit)
+      }
+
+      // Clock2 overrides: route to cats-effect Async's native `realTime` / `monotonic` so that
+      // a `TestContext`-driven Ticker (or other virtual clock) is honored, instead of falling
+      // back to `Clock1.Standard` which reads `System.currentTimeMillis()` / `System.nanoTime()`.
+      override def epoch: Bifunctorized[F, Nothing, Long] = {
+        Bifunctorized.assert(F.map(F.realTime)(_.toMillis))
+      }
+      override def monotonicNano: Bifunctorized[F, Nothing, Long] = {
+        Bifunctorized.assert(F.map(F.monotonic)(_.toNanos))
+      }
+      @deprecated("use nowZoned")
+      override def now(accuracy: Clock1.ClockAccuracy): Bifunctorized[F, Nothing, ZonedDateTime] = {
+        Bifunctorized.assert(F.map(F.realTime) { d =>
+          Clock1.ClockAccuracy.applyAccuracy(ZonedDateTime.ofInstant(Instant.ofEpochMilli(d.toMillis), ZoneOffset.UTC), accuracy)
+        })
+      }
+      override def nowZoned(accuracy: Clock1.ClockAccuracy, zone: java.time.ZoneId): Bifunctorized[F, Nothing, ZonedDateTime] = {
+        Bifunctorized.assert(F.map(F.realTime) { d =>
+          Clock1.ClockAccuracy.applyAccuracy(ZonedDateTime.ofInstant(Instant.ofEpochMilli(d.toMillis), zone), accuracy)
+        })
+      }
+      override def nowLocal(accuracy: Clock1.ClockAccuracy, zone: java.time.ZoneId): Bifunctorized[F, Nothing, LocalDateTime] = {
+        Bifunctorized.assert(F.map(F.realTime) { d =>
+          Clock1.ClockAccuracy.applyAccuracy(LocalDateTime.ofInstant(Instant.ofEpochMilli(d.toMillis), zone), accuracy)
+        })
+      }
+      override def nowOffset(accuracy: Clock1.ClockAccuracy, zone: java.time.ZoneId): Bifunctorized[F, Nothing, OffsetDateTime] = {
+        Bifunctorized.assert(F.map(F.realTime) { d =>
+          Clock1.ClockAccuracy.applyAccuracy(OffsetDateTime.ofInstant(Instant.ofEpochMilli(d.toMillis), zone), accuracy)
+        })
       }
     }
   }
