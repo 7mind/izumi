@@ -12,7 +12,7 @@ Status: `[ ]` planned · `[~]` in progress · `[x]` done · `[!]` blocked
 
 - [x] **M1** — Bifunctorized core + CE→BIO conversion ladder + cats laws (Goals 1, 2, 4, 5, 7). **Closed 2026-05-13.** All 9 PRs landed; 109/109 cats laws pass + 42/42 fundamentals-bio tests + 8/8 Goal-5 sanity, on Scala 3.7.4, 2.13.18, 2.12.21. See `docs/changes/M1-bifunctorized-core.md` for the closure summary.
 - [x] **M2** — Identity → MiniBIO bridge + `Bifunctorized.IdentityBifunctorized` (Goals 3, 4, 7). **Closed 2026-05-13.** Single coherent PR (M2-PR-01..04 folded); cross-build verification 8/8 + 144/144 regression on all three Scala versions.
-- [ ] **M3** — Lifecycle bifunctorization, replace `QuasiIO/QuasiPrimitives/QuasiFunctor/QuasiApplicative` constraints (Goals 3, 6, 7).
+- [x] **M3** — Lifecycle bifunctorization (parallel BIO surface only — in-place Quasi*→BIO migration of `Lifecycle.scala` folded into M5). **Closed 2026-05-14.** `LifecycleBifunctorized` ships 7 factories (`make`, `makePair`, `liftF`, `pure`, `suspend`, `fail`, `unit`) bridged to existing `Lifecycle.make` via the pre-existing `QuasiIO.fromBIO` derivation at `QuasiIO.scala:201`. 572/572 tests pass on Scala 3.7.4, 2.13.18, 2.12.21.
 - [ ] **M4** — Injector / Subcontext / Producer / LogIO seams accept `F[+_, +_]: IO2` with monofunctor overload (Goals 3, 6, 7).
 - [ ] **M5** — `Quasi*` sweep + deletion across the 9 sub-modules that currently reference it (Goals 6, 7).
 - [ ] **M6** — Microsite, migration guide, release notes (Goal 7).
