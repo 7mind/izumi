@@ -12,39 +12,39 @@ import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finali
 import izumi.distage.model.provisioning.Provision.{ProvisionImmutable, ProvisionInstances}
 import izumi.distage.model.reflection.*
 import izumi.distage.model.reflection.Provider.UnsafeProviderCallArgsMismatched
-import izumi.functional.bio.IO1
+import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.strings.IzString.*
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 trait PlanInterpreter {
-  def run[F[_]: TagK: IO1](
+  def run[F[+_, +_]: TagKK: IO2](
     plan: Plan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
-  ): Lifecycle[F, Either[FailedProvision, Locator]]
+  ): Lifecycle[F, Throwable, Either[FailedProvision, Locator]]
 }
 
 object PlanInterpreter {
-  trait FinalizerFilter[F[_]] {
+  trait FinalizerFilter[F[+_, +_]] {
     def filter(finalizers: collection.Seq[Finalizer[F]]): collection.Seq[Finalizer[F]]
   }
   object FinalizerFilter {
-    def all[F[_]]: FinalizerFilter[F] = identity
+    def all[F[+_, +_]]: FinalizerFilter[F] = identity
   }
 
-  final case class Finalizer[+F[_]](key: DIKey, effect: () => F[Unit], fType: SafeType)
+  final case class Finalizer[F[+_, +_]](key: DIKey, effect: () => F[Nothing, Unit], fType: SafeType)
   object Finalizer {
-    def apply[F[_]: TagK](key: DIKey, effect: () => F[Unit]): Finalizer[F] = {
+    def apply[F[+_, +_]: TagKK](key: DIKey, effect: () => F[Nothing, Unit]): Finalizer[F] = {
       new Finalizer(key, effect, SafeType.getK[F])
     }
   }
 
   final case class FailedProvisionMeta(status: Map[DIKey, OpStatus])
 
-  final case class FailedProvisionInternal[F[_]](provision: ProvisionImmutable[F], fail: FailedProvision)
+  final case class FailedProvisionInternal[F[+_, +_]](provision: ProvisionImmutable[F], fail: FailedProvision)
 
   final case class FailedProvision(
     failed: ProvisionInstances,
@@ -80,9 +80,9 @@ object PlanInterpreter {
   }
 
   object FailedProvision {
-    implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision, Locator]) extends AnyVal {
+    implicit final class FailedProvisionExt[F[+_, +_]](private val p: Either[FailedProvision, Locator]) extends AnyVal {
       /** @throws ProvisioningException in `F` effect type */
-      def failOnFailure()(implicit F: IO1[F]): F[Locator] = {
+      def failOnFailure()(implicit F: IO2[F]): F[Throwable, Locator] = {
         p.fold(f => F.fail(f.toThrowable), F.pure)
       }
       def throwOnFailure(): Locator = p match {

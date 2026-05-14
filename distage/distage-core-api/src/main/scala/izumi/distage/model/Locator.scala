@@ -12,8 +12,8 @@ import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, GenericTypedRef}
 import izumi.functional.Renderable
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.bio.Primitives1
-import izumi.reflect.{Tag, TagK}
+import izumi.functional.bio.{IO2, Primitives2}
+import izumi.reflect.{Tag, TagK, TagKK}
 
 import scala.collection.immutable
 import scala.collection.immutable.Queue
@@ -39,7 +39,7 @@ trait Locator {
   def lookupInstanceOrThrow[T: Tag](key: DIKey): T
   def lookupInstance[T: Tag](key: DIKey): Option[T]
 
-  def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
+  def finalizers[F[+_, +_]: TagKK]: collection.Seq[Finalizer[F]]
   private[distage] def lookupLocal[T: Tag](key: DIKey): Option[GenericTypedRef[T]]
 
   def lookupRefOrThrow[T: Tag](key: DIKey): GenericTypedRef[T]
@@ -131,8 +131,8 @@ trait Locator {
 }
 
 object Locator {
-  implicit final class SyntaxLocatorRun[F[_]](private val resource: Lifecycle[F, Locator]) extends AnyVal {
-    def run[B](function: Functoid[F[B]])(implicit F: Primitives1[F]): F[B] =
+  implicit final class SyntaxLocatorRun[F[+_, +_], E](private val resource: Lifecycle[F, E, Locator]) extends AnyVal {
+    def run[B](function: Functoid[F[E, B]])(implicit F: IO2[F], P: Primitives2[F]): F[E, B] =
       resource.use(_.run(function))
   }
 
@@ -143,7 +143,7 @@ object Locator {
     override def instances: immutable.Seq[IdentifiedRef] = Nil
     override def plan: Plan = Plan.empty
     override def parent: Option[Locator] = None
-    override def finalizers[F[_]: TagK]: Seq[Finalizer[F]] = Nil
+    override def finalizers[F[+_, +_]: TagKK]: Seq[Finalizer[F]] = Nil
     override def index: Map[DIKey, Any] = Map.empty
     override def meta: LocatorMeta = LocatorMeta.empty
     override def isPrivate(key: DIKey): Boolean = false

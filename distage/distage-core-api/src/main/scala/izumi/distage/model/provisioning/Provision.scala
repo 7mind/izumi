@@ -8,7 +8,7 @@ import izumi.distage.model.reflection.DIKey
 import scala.annotation.nowarn
 import scala.collection.{Map, Seq, immutable, mutable}
 
-trait Provision[+F[_]] {
+trait Provision[F[+_, +_]] {
   /**
     * This is an ordered collection!
     *
@@ -40,7 +40,7 @@ object Provision {
     imports: Map[DIKey, Any],
   )
 
-  final case class ProvisionImmutable[+F[_]](
+  final case class ProvisionImmutable[F[+_, +_]](
     // LinkedHashMap for ordering
     instancesImpl: mutable.LinkedHashMap[DIKey, Any],
     imports: Map[DIKey, Any],
