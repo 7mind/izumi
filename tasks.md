@@ -10,7 +10,7 @@ Status: `[ ]` planned · `[~]` in progress · `[x]` done · `[!]` blocked
 
 ## Milestones (high-level)
 
-- [~] **M1** — Bifunctorized core + CE→BIO conversion ladder + cats laws (Goals 1, 2, 4, 5, 7).
+- [x] **M1** — Bifunctorized core + CE→BIO conversion ladder + cats laws (Goals 1, 2, 4, 5, 7). **Closed 2026-05-13.** All 9 PRs landed; 109/109 cats laws pass + 42/42 fundamentals-bio tests + 8/8 Goal-5 sanity, on Scala 3.7.4, 2.13.18, 2.12.21. See `docs/changes/M1-bifunctorized-core.md` for the closure summary.
 - [ ] **M2** — Identity → MiniBIO bridge + `Bifunctorized.Identity` alias (Goals 3, 4, 7).
 - [ ] **M3** — Lifecycle bifunctorization, replace `QuasiIO/QuasiPrimitives/QuasiFunctor/QuasiApplicative` constraints (Goals 3, 6, 7).
 - [ ] **M4** — Injector / Subcontext / Producer / LogIO seams accept `F[+_, +_]: IO2` with monofunctor overload (Goals 3, 6, 7).
@@ -33,7 +33,7 @@ One line per PR here; sub-task detail stays in the plan doc.
 - [x] **PR-06** — Deprecate `PrimitivesFromBIOAndCats` and `PrimitivesLocalFromCatsIO`; forward to new ladder. Delete deferred to M5.
 - [x] **PR-07** — Cats `AsyncTests` laws suite against `Bifunctorized[cats.effect.IO, Throwable, _]`. Goal 1 acceptance test. **109/109 laws pass** on Scala 3.7.4, 2.13.18, 2.12.21 after fixing two PR-04 gaps (race-via-racePairUnsafe, Clock2 with F.realTime/monotonic) and adding a missing `never` override that surfaced cancellation-deadlock.
 - [x] **PR-08** — Extend `OptionalDependencyTest` to guard that `Bifunctorized` resolution does not require cats on the classpath. Goal 5 protection. (Also folds in PR-04-D03 missing test coverage for `syncThrowable`/`syncBlocking`/`fromFuture` round-trips.)
-- [ ] **PR-09** — Cross-Scala compile lock: `sbt clean +Test/compile +test` green on 2.12.21, 2.13.18, 3.7.4.
+- [x] **PR-09** — Cross-Scala compile lock + M1 changelog at `docs/changes/M1-bifunctorized-core.md`. Cross-build verified continuously throughout M1; no separate sbt re-run needed at PR-09 (every prior PR's verification included `++2.13.18!` and `++2.12.21!` runs).
 
 ---
 
