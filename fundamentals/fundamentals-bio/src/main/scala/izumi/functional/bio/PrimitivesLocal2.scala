@@ -1,7 +1,5 @@
 package izumi.functional.bio
 
-import izumi.functional.bio.data.~>
-import izumi.functional.bio.impl.PrimitivesLocalFromCatsIO
 import izumi.fundamentals.orphans.`zio.ZIO`
 
 trait PrimitivesLocal2[F[+_, +_]] extends PrimitivesLocalInstances {
@@ -10,8 +8,6 @@ trait PrimitivesLocal2[F[+_, +_]] extends PrimitivesLocalInstances {
 }
 object PrimitivesLocal2 {
   @inline def apply[F[+_, +_]: PrimitivesLocal2]: PrimitivesLocal2[F] = implicitly
-
-  def PrimitivesFromCatsIO[F[+_, +_]: Panic2](fromIO: cats.effect.IO ~> F[Throwable, _]) = new PrimitivesLocalFromCatsIO[F](fromIO)
 }
 
 private[bio] sealed trait PrimitivesLocalInstances

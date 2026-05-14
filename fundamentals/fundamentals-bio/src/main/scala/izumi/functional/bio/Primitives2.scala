@@ -1,7 +1,6 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.data.{Morphism1, ~>>}
-import izumi.functional.bio.impl.PrimitivesFromBIOAndCats
 import izumi.fundamentals.orphans.`zio.ZIO`
 
 trait Primitives2[F[+_, +_]] extends PrimitivesInstances {
@@ -20,8 +19,6 @@ object Primitives2 {
       override def mkSemaphore(permits: Long): G[Nothing, Semaphore2[G]] = fg(self.mkSemaphore(permits)).map(_.mapK(fg: Morphism1[F[Nothing, _], G[Nothing, _]]))
     }
   }
-
-  @inline def PrimitivesFromCatsPrimitives[F[+_, +_]: Async2: Fork2]: Primitives2[F] = new PrimitivesFromBIOAndCats[F]
 }
 
 private[bio] sealed trait PrimitivesInstances
