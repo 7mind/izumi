@@ -5,10 +5,10 @@ import izumi.fundamentals.platform.functional.Identity
 import scala.collection.compat.*
 import scala.concurrent.Future
 
-private[bio] object __QuasiAsyncPlatformSpecific {
+private[bio] object __Async1PlatformSpecific {
 
-  def quasiAsyncIdentity: QuasiAsync[Identity] = {
-    new QuasiAsync[Identity] {
+  def async1Identity: Async1[Identity] = {
+    new Async1[Identity] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
         var res: Either[Throwable, A] = null
         effect(res = _)
@@ -20,7 +20,7 @@ private[bio] object __QuasiAsyncPlatformSpecific {
           case Some(value) =>
             value.get
           case None =>
-            throw new RuntimeException("QuasiAsync.quasiAsyncIdentity.fromFuture: it's impossible to await Futures on Scala.js")
+            throw new RuntimeException("Async1.async1Identity.fromFuture: it's impossible to await Futures on Scala.js")
         }
       }
 

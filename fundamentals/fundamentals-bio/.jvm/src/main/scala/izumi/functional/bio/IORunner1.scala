@@ -11,21 +11,21 @@ import scala.concurrent.Future
   * An `unsafeRun` for `F`. Required for `distage-framework` apps and `distage-testkit` tests,
   * but is provided automatically by [[izumi.distage.modules.DefaultModule]] for all existing Scala effect types.
   *
-  * Unlike `QuasiIO` there's nothing 'quasi' about it – it makes sense. But named like that for consistency anyway.
+  * Unlike `IO1` there's nothing 'quasi' about it – it makes sense. But named like that for consistency anyway.
   *
-  * Internal use class, as with [[QuasiIO]], it's only public so that you can define your own instances,
+  * Internal use class, as with [[IO1]], it's only public so that you can define your own instances,
   * better use [[izumi.functional.bio]] or [[cats]] typeclasses for application logic.
   */
-trait QuasiIORunner[F[_]] { self =>
+trait IORunner1[F[_]] { self =>
   def runBlocking[A](f: => F[A]): A
   def runFuture[A](f: => F[A]): Future[A]
   def runFutureInterruptible[A](f: => F[A]): (Future[A], () => Future[Unit])
 }
 
-object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
-  def apply[F[_]: QuasiIORunner]: QuasiIORunner[F] = implicitly
+object IORunner1 extends LowPriorityIORunner1Instances {
+  def apply[F[_]: IORunner1]: IORunner1[F] = implicitly
 
-  implicit object IdentityImpl extends QuasiIORunner[Identity] {
+  implicit object IdentityImpl extends IORunner1[Identity] {
     private final val IdentityThreadNamePrefix = "quasi-identity-runner"
     override def runBlocking[A](f: => A): A = f
     override def runFuture[A](f: => A): Future[A] = Future.successful(f)
@@ -57,13 +57,13 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
     }
   }
 
-  implicit def fromBIO[F[+_, +_]: UnsafeRun2]: QuasiIORunner[F[Throwable, _]] = new BIOImpl[F]
+  implicit def fromBIO[F[+_, +_]: UnsafeRun2]: IORunner1[F[Throwable, _]] = new BIOImpl[F]
 
-  def mkFromCatsIORuntime(ioRuntime: cats.effect.unsafe.IORuntime): QuasiIORunner[cats.effect.IO] = new CatsIOImpl()(using ioRuntime)
+  def mkFromCatsIORuntime(ioRuntime: cats.effect.unsafe.IORuntime): IORunner1[cats.effect.IO] = new CatsIOImpl()(using ioRuntime)
 
-  def mkFromCatsDispatcher[F[_]](dispatcher: cats.effect.std.Dispatcher[F]): QuasiIORunner[F] = new CatsDispatcherImpl[F]()(using dispatcher)
+  def mkFromCatsDispatcher[F[_]](dispatcher: cats.effect.std.Dispatcher[F]): IORunner1[F] = new CatsDispatcherImpl[F]()(using dispatcher)
 
-  final class BIOImpl[F[+_, +_]: UnsafeRun2] extends QuasiIORunner[F[Throwable, _]] {
+  final class BIOImpl[F[+_, +_]: UnsafeRun2] extends IORunner1[F[Throwable, _]] {
     override def runBlocking[A](f: => F[Throwable, A]): A = UnsafeRun2[F].unsafeRun(f)
     override def runFuture[A](f: => F[Throwable, A]): Future[A] = {
       UnsafeRun2[F].unsafeRunAsyncAsFuture(f).transformedFuture(_.flatMap(_.toTry))
@@ -74,7 +74,7 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
     }
   }
 
-  final class CatsIOImpl()(implicit ioRuntime: cats.effect.unsafe.IORuntime) extends QuasiIORunner[cats.effect.IO] {
+  final class CatsIOImpl()(implicit ioRuntime: cats.effect.unsafe.IORuntime) extends IORunner1[cats.effect.IO] {
     override def runBlocking[A](f: => cats.effect.IO[A]): A = f.unsafeRunSync()(using ioRuntime)
     override def runFuture[A](f: => IO[A]): Future[A] = f.unsafeToFuture()(using ioRuntime)
     override def runFutureInterruptible[A](f: => IO[A]): (Future[A], () => Future[Unit]) = {
@@ -82,14 +82,14 @@ object QuasiIORunner extends LowPriorityQuasiIORunnerInstances {
     }
   }
 
-  final class CatsDispatcherImpl[F[_]]()(implicit dispatcher: cats.effect.std.Dispatcher[F]) extends QuasiIORunner[F] {
+  final class CatsDispatcherImpl[F[_]]()(implicit dispatcher: cats.effect.std.Dispatcher[F]) extends IORunner1[F] {
     override def runBlocking[A](f: => F[A]): A = dispatcher.unsafeRunSync(f)
     override def runFuture[A](f: => F[A]): Future[A] = dispatcher.unsafeToFuture(f)
     override def runFutureInterruptible[A](f: => F[A]): (Future[A], () => Future[Unit]) = dispatcher.unsafeToFutureCancelable(f)
   }
 
-  implicit class QuasiIORunnerOps[F[_]](private val runner: QuasiIORunner[F]) extends AnyVal {
-    def contramapK[G[_]](g: Morphism1[G, F]): QuasiIORunner[G] = new QuasiIORunner[G] {
+  implicit class IORunner1Ops[F[_]](private val runner: IORunner1[F]) extends AnyVal {
+    def contramapK[G[_]](g: Morphism1[G, F]): IORunner1[G] = new IORunner1[G] {
       override def runBlocking[A](f: => G[A]): A = runner.runBlocking(g(f))
       override def runFuture[A](f: => G[A]): Future[A] = runner.runFuture(g(f))
       override def runFutureInterruptible[A](f: => G[A]): (Future[A], () => Future[Unit]) = runner.runFutureInterruptible(g(f))

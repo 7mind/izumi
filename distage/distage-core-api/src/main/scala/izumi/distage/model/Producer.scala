@@ -1,7 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.Lifecycle
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.fundamentals.platform.functional.Identity
@@ -12,16 +12,16 @@ import izumi.reflect.TagK
   * @throws izumi.distage.model.exceptions.runtime.ProvisioningException produce* methods raise this exception in `F` effect type on failure
   */
 trait Producer {
-  private[distage] def produceDetailedFX[F[_]: TagK: QuasiIO](plan: Plan, filter: FinalizerFilter[F]): Lifecycle[F, Either[FailedProvision, Locator]]
-  private[distage] final def produceFX[F[_]: TagK: QuasiIO](plan: Plan, filter: FinalizerFilter[F]): Lifecycle[F, Locator] = {
+  private[distage] def produceDetailedFX[F[_]: TagK: IO1](plan: Plan, filter: FinalizerFilter[F]): Lifecycle[F, Either[FailedProvision, Locator]]
+  private[distage] final def produceFX[F[_]: TagK: IO1](plan: Plan, filter: FinalizerFilter[F]): Lifecycle[F, Locator] = {
     produceDetailedFX[F](plan, filter).evalMap(_.failOnFailure())
   }
 
   /** Produce [[izumi.distage.model.Locator]] interpreting effect- and resource-bindings into the provided `F` */
-  final def produceCustomF[F[_]: TagK: QuasiIO](plan: Plan): Lifecycle[F, Locator] = {
+  final def produceCustomF[F[_]: TagK: IO1](plan: Plan): Lifecycle[F, Locator] = {
     produceFX[F](plan, FinalizerFilter.all[F])
   }
-  final def produceDetailedCustomF[F[_]: TagK: QuasiIO](plan: Plan): Lifecycle[F, Either[FailedProvision, Locator]] = {
+  final def produceDetailedCustomF[F[_]: TagK: IO1](plan: Plan): Lifecycle[F, Either[FailedProvision, Locator]] = {
     produceDetailedFX[F](plan, FinalizerFilter.all[F])
   }
 

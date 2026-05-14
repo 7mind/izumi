@@ -4,7 +4,7 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.*
 import izumi.fundamentals.platform.strings.IzString.*
@@ -14,7 +14,7 @@ import scala.annotation.unused
 class Help[F[_]](
   roleInfo: RolesInfo,
   activationInfo: ActivationInfo,
-  F: QuasiIO[F],
+  F: IO1[F],
 ) extends RoleTask[F]
   with BundledTask {
 

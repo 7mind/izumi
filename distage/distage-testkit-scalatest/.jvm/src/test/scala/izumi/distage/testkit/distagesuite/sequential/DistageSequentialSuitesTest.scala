@@ -8,8 +8,8 @@ import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstan
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.scalatest.Spec1
-import izumi.functional.bio.QuasiIO.syntax.QuasiIOSyntax
-import izumi.functional.bio.{QuasiIO, QuasiTemporal}
+import izumi.functional.bio.IO1.syntax.IO1Syntax
+import izumi.functional.bio.{IO1, Temporal1}
 import izumi.logstage.api.Log
 import zio.Task
 
@@ -25,7 +25,7 @@ object DistageSequentialSuitesTest {
 
 abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
   suitesCounter: AtomicInteger
-)(implicit F: QuasiIO[F]
+)(implicit F: IO1[F]
 ) extends Spec1[F] {
   private val maxSuites = 1
   private val maxTests = 2
@@ -42,7 +42,7 @@ abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
     )
   }
 
-  private def checkCounters: QuasiTemporal[F] => F[Unit] = {
+  private def checkCounters: Temporal1[F] => F[Unit] = {
     FT =>
       F.suspendF {
         val testsCounterVal = testsCounter.addAndGet(1)

@@ -2,7 +2,7 @@ package izumi.functional.bio.unsafe
 
 import izumi.functional.bio.impl.BioEither
 import izumi.functional.bio.{Error2, Parallel2, ParallelErrorAccumulatingOps2}
-import izumi.functional.bio.QuasiAsync
+import izumi.functional.bio.Async1
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.collection.compat.{Factory, IterableOnce}
@@ -14,7 +14,7 @@ object UnsafeInstances {
   private object Lawless_ParallelErrorAccumulatingOpsEitherImpl extends Parallel2[Either] with ParallelErrorAccumulatingOps2[Either] {
     override val InnerF: Error2[Either] = BioEither
 
-    private val idAsync: QuasiAsync[Identity] = QuasiAsync.quasiAsyncIdentity
+    private val idAsync: Async1[Identity] = Async1.async1Identity
 
     override def parTraverseAccumErrors[ColL[_], E, A, B](
       col: Iterable[A]

@@ -17,7 +17,7 @@
 ///**
 //  * `monix.bio.IO` effect type support for `distage` resources, effects, roles & tests
 //  *
-//  *  - Adds [[izumi.functional.bio.QuasiIO]] instances to support using `monix-bio` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+//  *  - Adds [[izumi.functional.bio.IO1]] instances to support using `monix-bio` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
 //  *  - Adds [[izumi.functional.bio]] typeclass instances for `monix-bio`
 //  *  - Adds `cats-effect` typeclass instances for `monix-bio`
 //  *
@@ -32,7 +32,7 @@
 //  * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
 //  */
 //trait MonixBIOSupportModule extends ModuleDef with MonixBIOPlatformDependentSupportModule {
-//  // QuasiIO & BIO instances
+//  // IO1 & BIO instances
 //  include(AnyBIOSupportModule[IO])
 //  // cats-effect instances
 //  include(CatsEffectInstancesModule[Task])

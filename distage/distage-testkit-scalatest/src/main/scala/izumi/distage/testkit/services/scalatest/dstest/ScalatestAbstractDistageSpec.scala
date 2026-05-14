@@ -5,7 +5,7 @@ import izumi.distage.constructors.ZEnvConstructor
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec.*
 import izumi.distage.testkit.spec.*
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer}
 import org.scalatest.Assertion
 import org.scalatest.distage.{NameUtil, TestCancellation}
@@ -209,10 +209,10 @@ object ScalatestAbstractDistageSpec {
     }
 
     infix def skip(@unused value: => Any)(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeFunIO[Nothing, QuasiIO[F]](cancel, pos.get)
+      takeFunIO[Nothing, IO1[F]](cancel, pos.get)
     }
 
-    private def cancel[A](F: QuasiIO[F]): F[A] = {
+    private def cancel[A](F: IO1[F]): F[A] = {
       F.maybeSuspend(cancelNow())
     }
 

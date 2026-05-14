@@ -1,10 +1,10 @@
 package izumi.functional.lifecycle
 
 import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
-import izumi.functional.bio.{QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
+import izumi.functional.bio.{Functor1, IO1, Primitives1, Ref0}
 
 private[lifecycle] object LifecycleMethodImpls {
-  @inline final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: QuasiFunctor[F]): Lifecycle[F, B] = {
+  @inline final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: Functor1[F]): Lifecycle[F, B] = {
     new Lifecycle[F, B] {
       type InnerResource = self.InnerResource
 
@@ -20,10 +20,10 @@ private[lifecycle] object LifecycleMethodImpls {
     }
   }
 
-  @inline final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: QuasiPrimitives[F]): Lifecycle[F, B] = {
-    import QuasiIO.syntax.*
+  @inline final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: Primitives1[F]): Lifecycle[F, B] = {
+    import IO1.syntax.*
     new Lifecycle[F, B] {
-      override type InnerResource = QuasiRef[F, List[() => F[Unit]]]
+      override type InnerResource = Ref0[F, List[() => F[Unit]]]
 
       private def useAppendFinalizer[T, U](finalizers: InnerResource)(lifecycle: Lifecycle[F, T])(use: lifecycle.InnerResource => F[U]): F[U] = {
         F.uninterruptibleExcept(
@@ -93,11 +93,11 @@ private[lifecycle] object LifecycleMethodImpls {
     self: Lifecycle[F, A]
   )(failure: Throwable => Lifecycle[F, B],
     success: A => Lifecycle[F, B],
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): Lifecycle[F, B] = {
-    import QuasiIO.syntax.*
+    import IO1.syntax.*
     new Lifecycle[F, B] {
-      override type InnerResource = QuasiRef[F, List[() => F[Unit]]]
+      override type InnerResource = Ref0[F, List[() => F[Unit]]]
 
       private def extractAppendFinalizer[T](finalizers: InnerResource)(lifecycleCtor: () => Lifecycle[F, T]): F[T] = {
         F.uninterruptibleExcept {
@@ -134,11 +134,11 @@ private[lifecycle] object LifecycleMethodImpls {
   @inline final def makeUninterruptibleExceptImpl[F[_], A](
     acquire0: RestoreInterruption1[F] => F[A]
   )(release0: A => F[Unit]
-  )(implicit F: QuasiPrimitives[F]
+  )(implicit F: Primitives1[F]
   ): Lifecycle[F, A] = {
-    import QuasiIO.syntax.*
+    import IO1.syntax.*
     new Lifecycle[F, A] {
-      override type InnerResource = QuasiRef[F, List[() => F[Unit]]]
+      override type InnerResource = Ref0[F, List[() => F[Unit]]]
 
       override def acquire: F[InnerResource] = {
         F.mkRef(Nil)

@@ -7,7 +7,7 @@ import izumi.distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.model.definition.RoleModuleDef
-import izumi.functional.bio.QuasiApplicative
+import izumi.functional.bio.Applicative1
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagKK
@@ -25,7 +25,7 @@ object StaticTestMain extends RoleAppMain.Launcher1[cats.effect.IO] {
   private[plugins] def staticTestMainPlugin[F[_]: TagK, G[_]: TagK]: ModuleBase = new PluginDef with RoleModuleDef {
     makeRole[StaticTestRole[F]].fromEffect {
       ClassConstructor[StaticTestRole[F]]
-        .flatAp((G: QuasiApplicative[G]) => G.pure(_: StaticTestRole[F]))
+        .flatAp((G: Applicative1[G]) => G.pure(_: StaticTestRole[F]))
     }
     makeRole[DependingRole[F]]
   }

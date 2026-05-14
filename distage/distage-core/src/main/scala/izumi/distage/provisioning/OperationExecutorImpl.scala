@@ -1,7 +1,7 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import ProvisionerIssue.ProvisionerExceptionIssue.UnexpectedStepProvisioning
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, NonImportOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.strategies.*
@@ -21,7 +21,7 @@ class OperationExecutorImpl(
   override def execute[F[_]: TagK](
     context: ProvisioningKeyProvider,
     step: NonImportOp,
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     F.definitelyRecoverWithTrace(
       executeUnsafe(context, step)
@@ -31,7 +31,7 @@ class OperationExecutorImpl(
   private def executeUnsafe[F[_]: TagK](
     context: ProvisioningKeyProvider,
     step: NonImportOp,
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = step match {
     case op: CreateSet =>
       setStrategy.makeSet(context, op)

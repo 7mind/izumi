@@ -1,8 +1,8 @@
 package izumi.fundamentals.platform.files
 
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.bio.QuasiIO.syntax.*
-import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.{Async1, IO1, Temporal1}
 
 import java.io.File
 import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock, OverlappingFileLockException}
@@ -16,14 +16,14 @@ object FileLockMutex {
     retryWait: FiniteDuration,
     maxAttempts: Int,
     attemptLog: (Int, Int) => F[Unit],
-    // MUST be by-name because of QuasiIO[Identity]
+    // MUST be by-name because of IO1[Identity]
     lockAlreadyExistedLog: => F[Unit],
   )(fail: Int => F[A],
     succ: FileLock => F[A],
   )(implicit
-    F: QuasiIO[F],
-    P: QuasiAsync[F],
-    T: QuasiTemporal[F],
+    F: IO1[F],
+    P: Async1[F],
+    T: Temporal1[F],
   ): F[A] = {
     allocate[F, A](filename, retryWait, maxAttempts, attemptLog, lockAlreadyExistedLog)(fail, succ).use(F.pure)
   }
@@ -33,17 +33,17 @@ object FileLockMutex {
     retryWait: FiniteDuration,
     maxAttempts: Int,
     attemptLog: (Int, Int) => F[Unit],
-    // MUST be by-name because of QuasiIO[Identity]
+    // MUST be by-name because of IO1[Identity]
     lockAlreadyExistedLog: => F[Unit],
   )(fail: Int => F[A],
     succ: FileLock => F[A],
   )(implicit
-    F: QuasiIO[F],
-    P: QuasiAsync[F],
-    T: QuasiTemporal[F],
+    F: IO1[F],
+    P: Async1[F],
+    T: Temporal1[F],
   ): Lifecycle[F, A] = {
     def retryOnFileLock(
-      // MUST be by-name because of QuasiIO[Identity]
+      // MUST be by-name because of IO1[Identity]
       doAcquire: => F[FileLock]
     ): F[(A, Option[FileLock])] = {
       F.tailRecM(0) {

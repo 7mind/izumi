@@ -2,7 +2,7 @@ package izumi.distage.testkit.spec
 
 import distage.{Tag, TagK}
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.language.SourceFilePosition
 
 trait DISyntaxBase[F[_]] {
@@ -12,7 +12,7 @@ trait DISyntaxBase[F[_]] {
 
   protected final def takeAny(function: Functoid[Any], pos: SourceFilePosition): Unit = {
     val f: Functoid[F[Any]] = function.flatAp {
-      (F: QuasiIO[F]) => (a: Any) =>
+      (F: IO1[F]) => (a: Any) =>
         F.pure(a)
     }
 

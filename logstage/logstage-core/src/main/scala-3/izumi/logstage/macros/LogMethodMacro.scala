@@ -1,6 +1,6 @@
 package izumi.logstage.macros
 
-import izumi.functional.bio.{QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{IO1, Primitives1}
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{Level, Message, StrictMessage}
@@ -17,7 +17,7 @@ object LogMethodMacro {
     logger: Expr[AbstractLogIO[F]],
     printTypes: Expr[Boolean],
     printImplicits: Expr[Boolean],
-    qp: Expr[QuasiIO[G]],
+    qp: Expr[IO1[G]],
   )(using Quotes
   ): Expr[G[A]] = {
     logMethodIOF[A, F, G, EncMode](level, '{ ${ qp }.maybeSuspend(${ function }) }, function, logger, printTypes, printImplicits, qp)
@@ -30,7 +30,7 @@ object LogMethodMacro {
     logger: Expr[AbstractLogIO[F]],
     printTypes: Expr[Boolean],
     printImplicits: Expr[Boolean],
-    qp: Expr[QuasiPrimitives[G]],
+    qp: Expr[Primitives1[G]],
   )(using qctx: Quotes
   ): Expr[G[A]] = {
     import qctx.reflect.*

@@ -10,16 +10,16 @@ import scala.collection.compat.*
 import scala.concurrent.*
 import scala.concurrent.duration.Duration
 
-private[bio] object __QuasiAsyncPlatformSpecific {
+private[bio] object __Async1PlatformSpecific {
 
-  private final lazy val QuasiAsyncIdentityBlockingIOPool = {
-    val factory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true, priority = None)
+  private final lazy val Async1IdentityBlockingIOPool = {
+    val factory = new NamedThreadFactory("IO1-cached-pool", daemon = true, priority = None)
     val threadPool = Executors.newCachedThreadPool(factory)
     ExecutionContext.fromExecutorService(threadPool)
   }
 
-  def quasiAsyncIdentity: QuasiAsync[Identity] = {
-    new QuasiAsync[Identity] {
+  def async1Identity: Async1[Identity] = {
+    new Async1[Identity] {
       override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): Identity[A] = {
         val promise = Promise[A]()
         effect {
@@ -34,19 +34,19 @@ private[bio] object __QuasiAsyncPlatformSpecific {
       }
 
       override def parTraverse_[A](l: IterableOnce[A])(f: A => Unit): Unit = {
-        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverse_)(QuasiAsyncIdentityBlockingIOPool)
+        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverse_)(Async1IdentityBlockingIOPool)
       }
 
       override def parTraverse[A, B](l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverse)(QuasiAsyncIdentityBlockingIOPool)
+        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverse)(Async1IdentityBlockingIOPool)
       }
 
       override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => Identity[B]): Identity[List[B]] = {
-        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverseN(n))(QuasiAsyncIdentityBlockingIOPool)
+        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverseN(n))(Async1IdentityBlockingIOPool)
       }
 
       override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => Identity[Unit]): Identity[Unit] = {
-        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverseN_(n))(QuasiAsyncIdentityBlockingIOPool)
+        parTraverseIdentityImpl(l, f)(MiniBIOAsync.WeakAsyncForMiniBIOAsync.parTraverseN_(n))(Async1IdentityBlockingIOPool)
       }
     }
   }

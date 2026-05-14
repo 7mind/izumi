@@ -8,7 +8,7 @@ import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.reflect.TagK
 
@@ -25,7 +25,7 @@ final class InjectorDefaultImpl[F[_]](
   val bootstrapLocator: Locator,
   val defaultModule: Module,
 )(implicit
-  override val F: QuasiIO[F],
+  override val F: IO1[F],
   override val tagK: TagK[F],
 ) extends Injector[F] {
 
@@ -46,7 +46,7 @@ final class InjectorDefaultImpl[F[_]](
     planner.rewrite(module)
   }
 
-  override private[distage] def produceDetailedFX[G[_]: TagK: QuasiIO](
+  override private[distage] def produceDetailedFX[G[_]: TagK: IO1](
     plan: Plan,
     filter: FinalizerFilter[G],
   ): Lifecycle[G, Either[FailedProvision, Locator]] = {

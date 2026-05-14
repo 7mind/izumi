@@ -3,11 +3,11 @@ package izumi.distage.roles.test.fixtures
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.logstage.api.IzLogger
 
-class ExitAfterSleepRole[F[_]](logger: IzLogger, shutdown: AppShutdownInitiator)(implicit F: QuasiIO[F]) extends RoleService[F] {
+class ExitAfterSleepRole[F[_]](logger: IzLogger, shutdown: AppShutdownInitiator)(implicit F: IO1[F]) extends RoleService[F] {
   def runBadSleepingThread(id: String, cont: () => Unit): Unit = {
     def msg(s: String): Unit = {
       println(s"$id: $s (direct message, will repeat in the logger)")

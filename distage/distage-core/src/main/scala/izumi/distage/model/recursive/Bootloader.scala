@@ -3,7 +3,7 @@ package izumi.distage.model.recursive
 import izumi.distage.InjectorFactory
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id, LocatorPrivacy, Module, ModuleBase}
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.{Injector, PlannerInput}
 import izumi.distage.modules.DefaultModule
@@ -42,7 +42,7 @@ class Bootloader(
       bootstrapActivation = config.bootstrapActivation(bootstrapActivation),
       bootstrapOverrides = Seq(bootstrap),
       locatorPrivacy = locatorPrivacy,
-    )(using QuasiIO[Identity], TagK[Identity], DefaultModule[Identity](defaultModule))
+    )(using IO1[Identity], TagK[Identity], DefaultModule[Identity](defaultModule))
     val module = config.appModule(input.bindings)
     val roots = config.roots(input.roots)
 

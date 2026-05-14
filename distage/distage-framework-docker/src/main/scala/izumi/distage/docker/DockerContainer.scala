@@ -5,7 +5,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerCo
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
 import izumi.distage.docker.model.Docker.*
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.functional.bio.{Async1, IO1, Temporal1}
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.IzLogger
 
@@ -36,7 +36,7 @@ object DockerContainer {
 
   def resource[F[_]](
     conf: ContainerDef
-  ): (DockerClientWrapper[F], IzLogger, QuasiIO[F], QuasiAsync[F], QuasiTemporal[F]) => ContainerResource[F, conf.Tag] = {
+  ): (DockerClientWrapper[F], IzLogger, IO1[F], Async1[F], Temporal1[F]) => ContainerResource[F, conf.Tag] = {
     new ContainerResource[F, conf.Tag](conf.config, _, _, Set.empty)(using _, _, _)
   }
 

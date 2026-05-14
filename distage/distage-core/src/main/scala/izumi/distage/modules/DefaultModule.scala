@@ -1,7 +1,7 @@
 package izumi.distage.modules
 
 import izumi.distage.model.definition.{Module, ModuleDef}
-import izumi.functional.bio.{QuasiApplicative, QuasiAsync, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives, QuasiTemporal}
+import izumi.functional.bio.{Applicative1, Async1, Functor1, IO1, IORunner1, Primitives1, Temporal1}
 import izumi.distage.modules.support.*
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
 import izumi.functional.bio.retry.Scheduler2
@@ -18,7 +18,7 @@ import izumi.reflect.{Tag, TagK, TagKK}
   * Automatically provides default runtime environments & typeclasses instances for effect types.
   * All the defaults are overrideable via [[izumi.distage.model.definition.ModuleDef]]
   *
-  *  - Adds [[izumi.functional.bio.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.bio.IO1]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
   *  - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
   *
@@ -31,7 +31,7 @@ import izumi.reflect.{Tag, TagK, TagKK}
   *   - Any `F[_]` with `cats-effect` instances
   *   - Any `F[+_, +_]` with [[izumi.functional.bio]] instances
   *   - Any `F[-_, +_, +_]` with [[izumi.functional.bio]] instances
-  *   - Any `F[_]` with [[izumi.functional.bio.QuasiIO]] instances
+  *   - Any `F[_]` with [[izumi.functional.bio.IO1]] instances
   */
 final case class DefaultModule[F[_]](module: Module) extends AnyVal {
   @inline def to[G[_]]: DefaultModule[G] = new DefaultModule[G](module)
@@ -56,7 +56,7 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     *
     * This adds cats typeclass instances to the default effect module if you have `cats-effect` and `zio-interop-cats` on classpath,
-    * otherwise the default effect module for ZIO will be [[forZIO]], containing BIO & QuasiIO instances, but no `cats-effect` instances.
+    * otherwise the default effect module for ZIO will be [[forZIO]], containing BIO & IO1 instances, but no `cats-effect` instances.
     */
   implicit def forZIOPlusCats[K[_[_], _], A[_[_]], ZIO[_, _, _], R](
     implicit
@@ -151,15 +151,15 @@ sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModul
 }
 
 sealed trait LowPriorityDefaultModulesInstances5 {
-  implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiTemporal: QuasiIORunner]: DefaultModule[F] = {
+  implicit final def fromIO1[F[_]: TagK: IO1: Async1: Temporal1: IORunner1]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
-      addImplicit[QuasiFunctor[F]]
-      addImplicit[QuasiApplicative[F]]
-      addImplicit[QuasiPrimitives[F]]
-      addImplicit[QuasiIO[F]]
-      addImplicit[QuasiAsync[F]]
-      addImplicit[QuasiTemporal[F]]
-      addImplicit[QuasiIORunner[F]]
+      addImplicit[Functor1[F]]
+      addImplicit[Applicative1[F]]
+      addImplicit[Primitives1[F]]
+      addImplicit[IO1[F]]
+      addImplicit[Async1[F]]
+      addImplicit[Temporal1[F]]
+      addImplicit[IORunner1[F]]
     })
   }
 }

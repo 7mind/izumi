@@ -13,8 +13,8 @@ import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.functional.Value
-import izumi.functional.bio.QuasiIO.syntax.*
-import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.{Async1, IO1, Temporal1}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.files.FileLockMutex
@@ -35,9 +35,9 @@ open class ContainerResource[F[_], Tag](
   val logger: IzLogger,
   val deps: Set[DockerContainer[Any]],
 )(implicit
-  val F: QuasiIO[F],
-  val P: QuasiAsync[F],
-  val T: QuasiTemporal[F],
+  val F: IO1[F],
+  val P: Async1[F],
+  val T: Temporal1[F],
 ) extends Lifecycle.Basic[F, DockerContainer[Tag]] {
 
   import client.rawClient
@@ -62,9 +62,9 @@ open class ContainerResource[F[_], Tag](
     client: DockerClientWrapper[F] = client,
     logger: IzLogger = logger,
     deps: Set[DockerContainer[Any]] = deps,
-    F: QuasiIO[F] = F,
-    P: QuasiAsync[F] = P,
-    T: QuasiTemporal[F] = T,
+    F: IO1[F] = F,
+    P: Async1[F] = P,
+    T: Temporal1[F] = T,
   ): ContainerResource[F, Tag] = {
     new ContainerResource[F, Tag](config, client, logger, deps)(F, P, T)
   }
@@ -535,7 +535,7 @@ open class ContainerResource[F[_], Tag](
   private def fileLockMutex[A](
     name: String
   )(effect:
-    // MUST be by-name because of QuasiIO[Identity]
+    // MUST be by-name because of IO1[Identity]
     => F[A]
   ): F[A] = {
     val retryWait = 200.millis

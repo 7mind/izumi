@@ -5,14 +5,14 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
-import izumi.functional.bio.{QuasiAsync, QuasiIO}
-import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.{Async1, IO1}
+import izumi.functional.bio.IO1.syntax.*
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
 
 trait RoleAppEntrypoint[F[_]] {
-  def runTasksAndRoles(locator: Locator, effect: QuasiIO[F], effectAsync: QuasiAsync[F]): F[Unit]
+  def runTasksAndRoles(locator: Locator, effect: IO1[F], effectAsync: Async1[F]): F[Unit]
 }
 
 object RoleAppEntrypoint {
@@ -23,8 +23,8 @@ object RoleAppEntrypoint {
     hook: AppShutdownStrategy[F],
   ) extends RoleAppEntrypoint[F] {
 
-    override def runTasksAndRoles(locator: Locator, effect: QuasiIO[F], effectAsync: QuasiAsync[F]): F[Unit] = {
-      implicit val F: QuasiIO[F] = effect
+    override def runTasksAndRoles(locator: Locator, effect: IO1[F], effectAsync: Async1[F]): F[Unit] = {
+      implicit val F: IO1[F] = effect
       val roleIndex = getRoleIndex(locator)
       for {
         _ <- runTasks(roleIndex)
@@ -32,7 +32,7 @@ object RoleAppEntrypoint {
       } yield ()
     }
 
-    protected def runRoles(index: Map[String, AbstractRole[F]])(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit] = {
+    protected def runRoles(index: Map[String, AbstractRole[F]])(implicit F: IO1[F], FA: Async1[F]): F[Unit] = {
       val rolesToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
@@ -79,7 +79,7 @@ object RoleAppEntrypoint {
       }
     }
 
-    protected def runTasks(index: Map[String, AbstractRole[F]])(implicit F: QuasiIO[F]): F[Unit] = {
+    protected def runTasks(index: Map[String, AbstractRole[F]])(implicit F: IO1[F]): F[Unit] = {
       val tasksToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {

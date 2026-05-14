@@ -9,8 +9,8 @@ import izumi.distage.docker.model.Docker.{ClientConfig, ContainerId, DockerRegis
 import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.provisioning.IntegrationCheck
-import izumi.functional.bio.QuasiIO
-import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.IO1
+import izumi.functional.bio.IO1.syntax.*
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.strings.IzString.*
@@ -29,7 +29,7 @@ class DockerClientWrapper[F[_]](
   val labelsUnique: Map[String, String],
   logger: IzLogger,
 )(implicit
-  F: QuasiIO[F]
+  F: IO1[F]
 ) {
   def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
 
@@ -97,7 +97,7 @@ object DockerClientWrapper {
   class DockerIntegrationCheck[F[_]](
     rawClient: DockerClient
   )(implicit
-    F: QuasiIO[F]
+    F: IO1[F]
   ) extends IntegrationCheck[F] {
     override def resourcesAvailable(): F[ResourceCheck] = F.maybeSuspend {
       try {
@@ -117,7 +117,7 @@ object DockerClientWrapper {
     rawClientConfig: DefaultDockerClientConfig,
     @unused check: DockerIntegrationCheck[F],
   )(implicit
-    F: QuasiIO[F]
+    F: IO1[F]
   ) extends Lifecycle.Basic[F, DockerClientWrapper[F]] {
     override def acquire: F[DockerClientWrapper[F]] = {
       for {

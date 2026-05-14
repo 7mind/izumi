@@ -6,14 +6,14 @@ import cats.effect.kernel.Async
 import cats.effect.unsafe.{IORuntimeConfig, Scheduler}
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
-import izumi.functional.bio.QuasiIORunner
+import izumi.functional.bio.IORunner1
 
 object CatsIOSupportModule extends CatsIOSupportModule
 
 /**
   * `cats.effect.IO` effect type support for `distage` resources, effects, roles & tests
   *
-  *  - Adds [[izumi.functional.bio.QuasiIO]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.bio.IO1]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds `cats-effect` typeclass instances for `cats.effect.IO`
   *
   * Added into scope by [[izumi.distage.modules.DefaultModule]].
@@ -21,10 +21,10 @@ object CatsIOSupportModule extends CatsIOSupportModule
   * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
   */
 trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportModule {
-  // QuasiIO & cats-effect instances
+  // IO1 & cats-effect instances
   include(AnyCatsEffectSupportModule.usingAsyncParallel[IO])
 
-  make[QuasiIORunner[IO]].from(QuasiIORunner.mkFromCatsIORuntime _)
+  make[IORunner1[IO]].from(IORunner1.mkFromCatsIORuntime _)
 
   make[Async[IO]].from(IO.asyncForIO)
   make[Parallel[IO]].from(IO.parallelForIO)

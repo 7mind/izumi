@@ -8,8 +8,8 @@ import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.*
 import izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec
 import izumi.functional.bio.{Exit, F, IO2}
-import izumi.functional.bio.QuasiIO
-import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.IO1
+import izumi.functional.bio.IO1.syntax.*
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException
@@ -105,7 +105,7 @@ object DistageTestExampleBase {
   }
 }
 
-abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
+abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: IO1[F]) extends Spec1[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
     pluginConfig = (
@@ -323,16 +323,16 @@ abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: Qua
 
 abstract class OverloadingTest[F[_]: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
   "test overloading of `in`" in {
-    implicit F: QuasiIO[F] =>
+    implicit F: IO1[F] =>
       F.discard()
       // `in` with Unit return type is ok
-      assertCompiles(""" "test" in { println(""); QuasiIO[F].pure(()) }  """)
+      assertCompiles(""" "test" in { println(""); IO1[F].pure(()) }  """)
       // `in` with Assertion return type is ok
-      assertCompiles(""" "test" in { QuasiIO[F].pure(assert(1 + 1 == 2)) }  """)
+      assertCompiles(""" "test" in { IO1[F].pure(assert(1 + 1 == 2)) }  """)
       // `in` with any other return type is not ok
       val res = intercept[TestFailedException](
         assertCompiles(
-          """ "test" in { println(""); QuasiIO[F].pure(1 + 1) }  """
+          """ "test" in { println(""); IO1[F].pure(1 + 1) }  """
         )
       )
       assert(res.getMessage() contains "overloaded")

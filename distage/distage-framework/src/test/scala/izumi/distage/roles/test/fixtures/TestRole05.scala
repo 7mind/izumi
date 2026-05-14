@@ -6,22 +6,22 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.distage.roles.test.fixtures.TestRole05.{TestRole05Dependency, TestRole05DependencyImpl1}
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.uuid.IzUUID
 import izumi.reflect.TagK
 
 import scala.annotation.unused
 
-class TestRole05[F[_]: QuasiIO](
+class TestRole05[F[_]: IO1](
   dependency: TestRole05Dependency,
   @unused uuid: IzUUID,
 ) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(IO1[F].maybeSuspend {
     assert(dependency.isInstanceOf[TestRole05DependencyImpl1])
   }) {
     _ =>
-      QuasiIO[F].unit
+      IO1[F].unit
   }
 }
 

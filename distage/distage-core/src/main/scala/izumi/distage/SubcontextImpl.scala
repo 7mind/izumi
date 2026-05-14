@@ -9,7 +9,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 
@@ -32,7 +32,7 @@ open class SubcontextImpl[F[_], +A](
     doAdd(value, pos, key)
   }
 
-  override def produce()(implicit F: QuasiIO[F], tagK: TagK[F]): Lifecycle[F, A] = {
+  override def produce()(implicit F: IO1[F], tagK: TagK[F]): Lifecycle[F, A] = {
     val lookup: PartialFunction[ImportDependency, Any] = {
       case i: ImportDependency if providedExternals.contains(i.target) =>
         providedExternals(i.target)
@@ -46,7 +46,7 @@ open class SubcontextImpl[F[_], +A](
       .map(_.run(functoid))
   }
 
-  override def produceRun[B](f: A => F[B])(implicit F: QuasiIO[F], tagK: TagK[F]): F[B] = {
+  override def produceRun[B](f: A => F[B])(implicit F: IO1[F], tagK: TagK[F]): F[B] = {
     produce().use(f)
   }
 

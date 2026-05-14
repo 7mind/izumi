@@ -8,7 +8,7 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.{AsyncGlobalSuitesControlHandle, AsyncResult}
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.bio.{Async1, IO1, IORunner1}
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
@@ -44,17 +44,17 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
     asyncRuntimeFor[MiniBIOAsync[Throwable, _]](runnerLifecycleForMiniBIOAsync(), Nil)
   }
 
-  /** Construct async test runtime using distage itself. DefaultModule[F] always contains a recipe for `QuasiIORunner[F]` */
-  def defaultAsyncRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync: DefaultModule]: TestRunnerRuntime = {
+  /** Construct async test runtime using distage itself. DefaultModule[F] always contains a recipe for `IORunner1[F]` */
+  def defaultAsyncRuntimeFor[F[_]: TagK: IO1: Async1: DefaultModule]: TestRunnerRuntime = {
     asyncRuntimeFor[F](defaultRunnerLifecycleFor[F], Nil)
   }
 
-  def defaultRunnerLifecycleFor[F[_]: TagK: DefaultModule]: Lifecycle[Identity, QuasiIORunner[F]] = {
-    distage.Injector[Identity]().produceGet[QuasiIORunner[F]](DefaultModule[F])
+  def defaultRunnerLifecycleFor[F[_]: TagK: DefaultModule]: Lifecycle[Identity, IORunner1[F]] = {
+    distage.Injector[Identity]().produceGet[IORunner1[F]](DefaultModule[F])
   }
 
-  def asyncRuntimeFor[F[_]: TagK: QuasiIO: QuasiAsync](
-    runtimeLifecycle: Lifecycle[Identity, QuasiIORunner[F]],
+  def asyncRuntimeFor[F[_]: TagK: IO1: Async1](
+    runtimeLifecycle: Lifecycle[Identity, IORunner1[F]],
     runnerOverrides: List[ModuleBase],
   ): TestRunnerRuntime = new TestRunnerRuntime {
     override def runTests[F0[_]](
@@ -101,12 +101,12 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
     }
   }
 
-  def runnerLifecycleForMiniBIOAsync(): Lifecycle[Identity, QuasiIORunner[MiniBIOAsync[Throwable, _]]] = {
+  def runnerLifecycleForMiniBIOAsync(): Lifecycle[Identity, IORunner1[MiniBIOAsync[Throwable, _]]] = {
     for {
       ec <- testECLifecycle()
     } yield {
       val unsafeRunner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using ec)
-      QuasiIORunner.fromBIO[MiniBIOAsync](using unsafeRunner)
+      IORunner1.fromBIO[MiniBIOAsync](using unsafeRunner)
     }
   }
 

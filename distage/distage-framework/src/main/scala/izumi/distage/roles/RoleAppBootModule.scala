@@ -36,7 +36,7 @@ import izumi.reflect.TagK
   * 6. Enumerate app plugins and bootstrap plugins
   * 7. Enumerate available roles, show role info and apply merge strategy/conflict resolution
   * 8. Validate loaded roles (for non-emptyness and conflicts between bootstrap and app plugins)
-  * 9. Build plan for [[izumi.functional.bio.QuasiIORunner]]
+  * 9. Build plan for [[izumi.functional.bio.IORunner1]]
   * 10. Build plan for integration checks
   * 11. Build plan for application
   * 12. Run role tasks

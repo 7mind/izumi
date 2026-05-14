@@ -12,7 +12,7 @@ import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, GenericTypedRef}
 import izumi.functional.Renderable
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.bio.QuasiPrimitives
+import izumi.functional.bio.Primitives1
 import izumi.reflect.{Tag, TagK}
 
 import scala.collection.immutable
@@ -132,7 +132,7 @@ trait Locator {
 
 object Locator {
   implicit final class SyntaxLocatorRun[F[_]](private val resource: Lifecycle[F, Locator]) extends AnyVal {
-    def run[B](function: Functoid[F[B]])(implicit F: QuasiPrimitives[F]): F[B] =
+    def run[B](function: Functoid[F[B]])(implicit F: Primitives1[F]): F[B] =
       resource.use(_.run(function))
   }
 

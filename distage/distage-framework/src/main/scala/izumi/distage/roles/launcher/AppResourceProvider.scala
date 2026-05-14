@@ -7,8 +7,8 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
-import izumi.functional.bio.QuasiIO.syntax.*
-import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.{Async1, IO1, IORunner1}
 import izumi.fundamentals.platform.functional.Identity
 
 trait AppResourceProvider[F[_]] {
@@ -40,14 +40,14 @@ object AppResourceProvider {
         .produceFX[Identity](appPlan.runtime, filters.filterId)
         .map {
           runtimeLocator =>
-            val runner = runtimeLocator.get[QuasiIORunner[F]]
-            val F = runtimeLocator.get[QuasiIO[F]]
-            val FA = runtimeLocator.get[QuasiAsync[F]]
+            val runner = runtimeLocator.get[IORunner1[F]]
+            val F = runtimeLocator.get[IO1[F]]
+            val FA = runtimeLocator.get[Async1[F]]
             PreparedApp(prepareMainResource(runtimeLocator)(F), entrypoint, runner, F, FA)
         }
     }
 
-    private def prepareMainResource(runtimeLocator: Locator)(implicit F: QuasiIO[F]): Lifecycle[F, Locator] = {
+    private def prepareMainResource(runtimeLocator: Locator)(implicit F: IO1[F]): Lifecycle[F, Locator] = {
       injectorFactory
         .inherit(runtimeLocator)
         .produceFX[F](appPlan.app, filters.filterF)

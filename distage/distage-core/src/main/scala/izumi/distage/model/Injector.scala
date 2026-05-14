@@ -13,7 +13,7 @@ import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.{InjectorDefaultImpl, InjectorFactory}
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{Tag, TagK}
@@ -235,12 +235,12 @@ trait Injector[F[_]] extends Planner with Producer {
   }
 
   /** Produce [[izumi.distage.model.Locator]] interpreting effect and resource bindings into the provided effect type */
-  final def produceCustomF[G[_]: TagK](input: PlannerInput)(implicit G: QuasiIO[G]): Lifecycle[G, Locator] = {
+  final def produceCustomF[G[_]: TagK](input: PlannerInput)(implicit G: IO1[G]): Lifecycle[G, Locator] = {
     Lifecycle
       .liftF(G.maybeSuspendEither(plan(input).aggregateErrors))
       .flatMap(produceCustomF[G])
   }
-  final def produceDetailedCustomF[G[_]: TagK](input: PlannerInput)(implicit G: QuasiIO[G]): Lifecycle[G, Either[FailedProvision, Locator]] = {
+  final def produceDetailedCustomF[G[_]: TagK](input: PlannerInput)(implicit G: IO1[G]): Lifecycle[G, Either[FailedProvision, Locator]] = {
     Lifecycle
       .liftF(G.maybeSuspendEither(plan(input).aggregateErrors))
       .flatMap(produceDetailedCustomF[G])
@@ -311,7 +311,7 @@ trait Injector[F[_]] extends Planner with Producer {
   def providedEnvironment: InjectorProvidedEnv
 
   protected implicit def tagK: TagK[F]
-  protected implicit def F: QuasiIO[F]
+  protected implicit def F: IO1[F]
 }
 
 object Injector extends InjectorFactory {
@@ -335,7 +335,7 @@ object Injector extends InjectorFactory {
     * @param bootstrapOverrides   Optional: Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                             They can be used to customize the Injector, e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
     */
-  override def apply[F[_]: QuasiIO: TagK: DefaultModule](
+  override def apply[F[_]: IO1: TagK: DefaultModule](
     parent: Option[Locator] = None,
     bootstrapBase: BootstrapContextModule = defaultBootstrap,
     bootstrapActivation: Activation = defaultBootstrapActivation,
@@ -352,7 +352,7 @@ object Injector extends InjectorFactory {
     * Use `apply[F]()` variant to specify a different effect type
     *
     * @note this method exists only because of Scala 2.12's sub-par implicit handling:
-    *       2.12 fails to default to `QuasiIO.quasiIOIdentity` when writing `Injector()` if cats-effect
+    *       2.12 fails to default to `IO1.io1Identity` when writing `Injector()` if cats-effect
     *       is on the classpath because of recursive (on 2.12: diverging) instances in `cats.effect.kernel.Sync` object
     */
   override def apply(): Injector[Identity] = apply[Identity]()
@@ -364,7 +364,7 @@ object Injector extends InjectorFactory {
     *
     * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
-  override def inherit[F[_]: QuasiIO: TagK](parent: Locator): Injector[F] = {
+  override def inherit[F[_]: IO1: TagK](parent: Locator): Injector[F] = {
     new InjectorDefaultImpl(this, parent, definition.Module.empty)
   }
 
@@ -378,7 +378,7 @@ object Injector extends InjectorFactory {
     *
     * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
-  override def inheritWithNewDefaultModule[F[_]: QuasiIO: TagK](parent: Locator, defaultModule: DefaultModule[F]): Injector[F] = {
+  override def inheritWithNewDefaultModule[F[_]: IO1: TagK](parent: Locator, defaultModule: DefaultModule[F]): Injector[F] = {
     inheritWithNewDefaultModuleImpl(this, parent, defaultModule)
   }
 
@@ -417,7 +417,7 @@ object Injector extends InjectorFactory {
     cycleChoice: Cycles.AxisChoiceDef
   ) extends InjectorFactory {
 
-    override final def apply[F[_]: QuasiIO: TagK: DefaultModule](
+    override final def apply[F[_]: IO1: TagK: DefaultModule](
       parent: Option[Locator],
       bootstrapBase: BootstrapContextModule,
       bootstrapActivation: Activation,
@@ -430,11 +430,11 @@ object Injector extends InjectorFactory {
 
     override final def apply(): Injector[Identity] = apply[Identity]()
 
-    override final def inherit[F[_]: QuasiIO: TagK](parent: Locator): Injector[F] = {
+    override final def inherit[F[_]: IO1: TagK](parent: Locator): Injector[F] = {
       new InjectorDefaultImpl(this, parent, definition.Module.empty)
     }
 
-    override final def inheritWithNewDefaultModule[F[_]: QuasiIO: TagK](parent: Locator, defaultModule: DefaultModule[F]): Injector[F] = {
+    override final def inheritWithNewDefaultModule[F[_]: IO1: TagK](parent: Locator, defaultModule: DefaultModule[F]): Injector[F] = {
       inheritWithNewDefaultModuleImpl(this, parent, defaultModule)
     }
 
@@ -452,7 +452,7 @@ object Injector extends InjectorFactory {
     @inline override protected def defaultBootstrapRootsMode: BootstrapRootsMode = BootstrapRootsMode.UseGC
   }
 
-  private def bootstrap[F[_]: QuasiIO: TagK: DefaultModule](
+  private def bootstrap[F[_]: IO1: TagK: DefaultModule](
     injectorFactory: InjectorFactory,
     bootstrapBase: BootstrapContextModule,
     activation: Activation,
@@ -465,7 +465,7 @@ object Injector extends InjectorFactory {
     inheritWithNewDefaultModuleImpl(injectorFactory, bootstrapLocator, implicitly)
   }
 
-  private def inheritWithNewDefaultModuleImpl[F[_]: QuasiIO: TagK](
+  private def inheritWithNewDefaultModuleImpl[F[_]: IO1: TagK](
     injectorFactory: InjectorFactory,
     parent: Locator,
     defaultModule: DefaultModule[F],

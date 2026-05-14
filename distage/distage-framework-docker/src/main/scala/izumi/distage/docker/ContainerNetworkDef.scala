@@ -6,8 +6,8 @@ import izumi.distage.docker.model.Docker.DockerReusePolicy
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.providers.Functoid
-import izumi.functional.bio.QuasiIO.syntax.QuasiIOSyntax
-import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.functional.bio.IO1.syntax.IO1Syntax
+import izumi.functional.bio.{Async1, IO1, Temporal1}
 import izumi.fundamentals.platform.files.FileLockMutex
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.*
@@ -44,7 +44,7 @@ object ContainerNetworkDef {
   def resource[F[_]](
     conf: ContainerNetworkDef,
     prefix: String,
-  ): (DockerClientWrapper[F], IzLogger, QuasiIO[F], QuasiAsync[F], QuasiTemporal[F]) => Lifecycle[F, conf.Network] = {
+  ): (DockerClientWrapper[F], IzLogger, IO1[F], Async1[F], Temporal1[F]) => Lifecycle[F, conf.Network] = {
     new NetworkResource(conf.config, _, prefix, _)(_, _, _)
   }
 
@@ -54,9 +54,9 @@ object ContainerNetworkDef {
     prefixName: String,
     logger: IzLogger,
   )(implicit
-    F: QuasiIO[F],
-    P: QuasiAsync[F],
-    T: QuasiTemporal[F],
+    F: IO1[F],
+    P: Async1[F],
+    T: Temporal1[F],
   ) extends Lifecycle.Basic[F, ContainerNetwork[T]] {
     import client.rawClient
 

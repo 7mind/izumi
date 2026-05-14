@@ -2,8 +2,8 @@ package izumi.distage.testkit.runner.impl.services
 
 import distage.*
 import izumi.functional.bio.Clock1
-import izumi.functional.bio.QuasiIO
-import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.IO1
+import izumi.functional.bio.IO1.syntax.*
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -48,7 +48,7 @@ trait TimedActionF[F[_]] {
 }
 
 object TimedActionF {
-  class TimedActionFImpl[F[_]]()(implicit F: QuasiIO[F]) extends TimedActionF[F] {
+  class TimedActionFImpl[F[_]]()(implicit F: IO1[F]) extends TimedActionF[F] {
     override def timedLifecycle[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]] = {
       for {
         before <- Lifecycle.liftF(F.maybeSuspend(Clock1.Standard.nowOffset()))

@@ -8,20 +8,20 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.services.*
 import izumi.distage.testkit.runner.impl.services.TimedActionF.TimedActionFImpl
 import izumi.distage.testkit.runner.impl.{DistageTestRunner, RunnerToF, TestPlanner, TestTreeBuilder}
-import izumi.functional.bio.{QuasiAsync, QuasiIO}
+import izumi.functional.bio.{Async1, IO1}
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.logger.LogQueue
 import logstage.ThreadingLogQueue
 
-class TestkitRunnerModule[F[_]: TagK: QuasiIO: QuasiAsync](
+class TestkitRunnerModule[F[_]: TagK: IO1: Async1](
   reporter: TestReporter,
   isTestCancellation: Throwable => Boolean,
 ) extends ModuleDef {
   addImplicit[TagK[F]]
-  addImplicit[QuasiIO[F]]
-  addImplicit[QuasiAsync[F]]
+  addImplicit[IO1[F]]
+  addImplicit[Async1[F]]
   make[TestReporter].fromValue(reporter)
 
   make[Throwable => Boolean].fromValue(isTestCancellation)
@@ -58,11 +58,11 @@ object TestkitRunnerModule {
     * @param isTestCancellation Predicate for determining whether a thrown exception signifies a canceled, not failed, test.
     *                           e.g. For ScalaTest it's `_.isInstanceOf[org.scalatest.exceptions.TestCanceledException]`
     *
-    * @note a `DistageTest[G]` will be run using `QuasiIORunner[G]` assembled from bindings in [[DistageTest.environment]]
+    * @note a `DistageTest[G]` will be run using `IORunner1[G]` assembled from bindings in [[DistageTest.environment]]
     *       (Most likely the QuasIORunner binding will be found in [[izumi.distage.testkit.model.TestEnvironment.defaultModule]],
-    *       as DefaultModule instances must provide a `QuasiIORunner`)
+    *       as DefaultModule instances must provide a `IORunner1`)
     */
-  def run[F[_]: TagK: QuasiIO: QuasiAsync](
+  def run[F[_]: TagK: IO1: Async1](
     reporter: TestReporter,
     isTestCancellation: Throwable => Boolean,
     tests: Seq[DistageTest[AnyF]],

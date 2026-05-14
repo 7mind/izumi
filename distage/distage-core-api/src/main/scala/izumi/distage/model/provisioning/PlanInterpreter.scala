@@ -12,7 +12,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finali
 import izumi.distage.model.provisioning.Provision.{ProvisionImmutable, ProvisionInstances}
 import izumi.distage.model.reflection.*
 import izumi.distage.model.reflection.Provider.UnsafeProviderCallArgsMismatched
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
@@ -20,7 +20,7 @@ import izumi.fundamentals.platform.strings.IzString.*
 import izumi.reflect.TagK
 
 trait PlanInterpreter {
-  def run[F[_]: TagK: QuasiIO](
+  def run[F[_]: TagK: IO1](
     plan: Plan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
@@ -82,7 +82,7 @@ object PlanInterpreter {
   object FailedProvision {
     implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision, Locator]) extends AnyVal {
       /** @throws ProvisioningException in `F` effect type */
-      def failOnFailure()(implicit F: QuasiIO[F]): F[Locator] = {
+      def failOnFailure()(implicit F: IO1[F]): F[Locator] = {
         p.fold(f => F.fail(f.toThrowable), F.pure)
       }
       def throwOnFailure(): Locator = p match {

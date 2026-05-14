@@ -1,7 +1,7 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.provisioning.strategies.ProviderStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
@@ -11,7 +11,7 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy {
   def callProvider[F[_]](
     context: ProvisioningKeyProvider,
     op: WiringOp.CallProvider,
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     import izumi.functional.IzEither.*
 

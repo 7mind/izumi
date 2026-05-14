@@ -7,7 +7,7 @@ import izumi.distage.config.model.ConfigDoc
 import izumi.distage.model.definition.Axis
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.roles.test.fixtures.roles.TestRole00.SetElementOnlyCfg
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.*
 
@@ -83,15 +83,15 @@ object Fixture {
 
   }
 
-  abstract class ProbeCheck[F[_]: QuasiIO] extends ProbeResource[F] with IntegrationCheck[F] {
-    override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].maybeSuspend {
+  abstract class ProbeCheck[F[_]: IO1] extends ProbeResource[F] with IntegrationCheck[F] {
+    override def resourcesAvailable(): F[ResourceCheck] = IO1[F].maybeSuspend {
       counter.onCheck(this)
       ResourceCheck.Success()
     }
   }
 
-  class IntegrationResource0[F[_]: QuasiIO](val closeable: IntegrationResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
-  class IntegrationResource1[F[_]: QuasiIO](val roleComponent: JustResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
+  class IntegrationResource0[F[_]: IO1](val closeable: IntegrationResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
+  class IntegrationResource1[F[_]: IO1](val roleComponent: JustResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
 
   case class ProbeResource0[F[_]](roleComponent: JustResource3[F], counter: XXX_ResourceEffectsRecorder[F]) extends ProbeResource[F]
 

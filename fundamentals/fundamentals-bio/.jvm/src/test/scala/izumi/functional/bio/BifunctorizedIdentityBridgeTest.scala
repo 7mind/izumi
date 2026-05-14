@@ -81,8 +81,8 @@ final class BifunctorizedIdentityBridgeTest extends AnyWordSpec {
       assert(Bifunctorized.debifunctorizeIdentity(widened) == 3)
     }
 
-    "F.pure suspends side effects (lawful behavior — repairs the QuasiIOIdentity unlawfulness)" in {
-      // QuasiIOIdentity.maybeSuspend used to evaluate eagerly; the MiniBIO-backed
+    "F.pure suspends side effects (lawful behavior — repairs the IO1Identity unlawfulness)" in {
+      // IO1Identity.maybeSuspend used to evaluate eagerly; the MiniBIO-backed
       // IdentityBifunctorized must suspend until `debifunctorizeIdentity` runs the MiniBIO.
       var counter = 0
       val program: FIdent[Nothing, Int] = F.sync { counter += 1; counter }

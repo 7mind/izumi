@@ -7,7 +7,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.scalatest.Spec1
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import zio.Task
@@ -25,7 +25,7 @@ sealed abstract class DistageSequentialTestOrderingTestBase[F[_]: TagK: DefaultM
 
   private var counter: Int = 0
 
-  private def testCounter(expected: Int): QuasiIO[F] => F[Unit] = {
+  private def testCounter(expected: Int): IO1[F] => F[Unit] = {
     implicit F =>
       F.maybeSuspend {
         counter += 1

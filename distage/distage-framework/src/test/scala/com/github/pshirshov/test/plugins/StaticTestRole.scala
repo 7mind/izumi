@@ -2,7 +2,7 @@ package com.github.pshirshov.test.plugins
 
 import izumi.distage.model.Planner
 import izumi.distage.model.definition.{Id, Module}
-import izumi.functional.bio.QuasiApplicative
+import izumi.functional.bio.Applicative1
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.bio.Clock1
@@ -18,7 +18,7 @@ class StaticTestRole[F[_]](
   val clock: Clock1[F],
   val clockId: Clock1[Identity],
   val log: LogIO[F],
-)(implicit F: QuasiApplicative[F]
+)(implicit F: Applicative1[F]
 ) extends RoleTask[F] {
   override def start(roleParameters: EntrypointArgs): F[Unit] = F.unit
 }

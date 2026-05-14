@@ -176,26 +176,28 @@ package object bio extends Syntax2 {
 
   type Bifunctorized[F[_], +E, +A] = izumi.functional.bio.Bifunctorized.Bifunctorized[F, E, A]
 
-  // Quasi* convenience aliases — used by distage's BIO support modules
-  type QuasiFunctor2[F[_, _]] = QuasiFunctor[F[Throwable, _]]
-  type QuasiFunctor3[F[_, _, _]] = QuasiFunctor[F[Any, Throwable, _]]
+  // Monofunctor adapter typeclass family — distage internals' compatibility shims over BIO.
+  // The naming follows the `*1` suffix convention already used elsewhere (Ref1, Clock1, …),
+  // distinguishing monofunctor F[_] adapters from the bifunctor `*2` family.
+  type Functor1Bi2[F[_, _]] = Functor1[F[Throwable, _]]
+  type Functor1Bi3[F[_, _, _]] = Functor1[F[Any, Throwable, _]]
 
-  type QuasiApplicative2[F[_, _]] = QuasiApplicative[F[Throwable, _]]
-  type QuasiApplicative3[F[_, _, _]] = QuasiApplicative[F[Any, Throwable, _]]
+  type Applicative1Bi2[F[_, _]] = Applicative1[F[Throwable, _]]
+  type Applicative1Bi3[F[_, _, _]] = Applicative1[F[Any, Throwable, _]]
 
-  type QuasiPrimitives2[F[_, _]] = QuasiPrimitives[F[Throwable, _]]
-  type QuasiPrimitives3[F[_, _, _]] = QuasiPrimitives[F[Any, Throwable, _]]
+  type Primitives1Bi2[F[_, _]] = Primitives1[F[Throwable, _]]
+  type Primitives1Bi3[F[_, _, _]] = Primitives1[F[Any, Throwable, _]]
 
-  type QuasiIO2[F[_, _]] = QuasiIO[F[Throwable, _]]
-  type QuasiIO3[F[_, _, _]] = QuasiIO[F[Any, Throwable, _]]
+  type IO1Bi2[F[_, _]] = IO1[F[Throwable, _]]
+  type IO1Bi3[F[_, _, _]] = IO1[F[Any, Throwable, _]]
 
-  type QuasiAsync2[F[_, _]] = QuasiAsync[F[Throwable, _]]
-  type QuasiAsync3[F[_, _, _]] = QuasiAsync[F[Any, Throwable, _]]
+  type Async1Bi2[F[_, _]] = Async1[F[Throwable, _]]
+  type Async1Bi3[F[_, _, _]] = Async1[F[Any, Throwable, _]]
 
-  type QuasiTemporal2[F[_, _]] = QuasiTemporal[F[Throwable, _]]
-  type QuasiTemporal3[F[_, _, _]] = QuasiTemporal[F[Any, Throwable, _]]
+  type Temporal1Bi2[F[_, _]] = Temporal1[F[Throwable, _]]
+  type Temporal1Bi3[F[_, _, _]] = Temporal1[F[Any, Throwable, _]]
 
-  type QuasiIORunner2[F[_, _]] = QuasiIORunner[F[Throwable, _]]
-  type QuasiIORunner3[F[_, _, _]] = QuasiIORunner[F[Any, Throwable, _]]
+  type IORunner1Bi2[F[_, _]] = IORunner1[F[Throwable, _]]
+  type IORunner1Bi3[F[_, _, _]] = IORunner1[F[Any, Throwable, _]]
 
 }

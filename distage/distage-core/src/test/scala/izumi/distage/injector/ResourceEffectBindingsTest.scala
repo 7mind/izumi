@@ -5,7 +5,7 @@ import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases.*
 import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.definition.Lifecycle
-import izumi.functional.bio.QuasiApplicative
+import izumi.functional.bio.Applicative1
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.data.{Free, FreeError, FreePanic}
 import izumi.fundamentals.platform.functional.Identity
@@ -463,10 +463,10 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       new XImpl().acquire.get
     }
 
-    "obtain QuasiApplicative for BIO Free/FreeError/FreePanic" in {
-      implicitly[QuasiApplicative[Free[Suspend2, Throwable, +_]]]
-      implicitly[QuasiApplicative[FreeError[Suspend2, Throwable, +_]]]
-      implicitly[QuasiApplicative[FreePanic[Suspend2, Throwable, +_]]]
+    "obtain Applicative1 for BIO Free/FreeError/FreePanic" in {
+      implicitly[Applicative1[Free[Suspend2, Throwable, +_]]]
+      implicitly[Applicative1[FreeError[Suspend2, Throwable, +_]]]
+      implicitly[Applicative1[FreePanic[Suspend2, Throwable, +_]]]
     }
 
   }

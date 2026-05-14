@@ -8,14 +8,14 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.strategies.SubcontextStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.distage.model.recursive.LocatorRef
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.reflect.TagK
 
 class SubcontextStrategyDefaultImpl extends SubcontextStrategy {
   override def prepareSubcontext[F[_]: TagK](
     context: ProvisioningKeyProvider,
     op: WiringOp.CreateSubcontext,
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val locatorKey = AddRecursiveLocatorRef.magicLocatorKey
     context.fetchKey(locatorKey, makeByName = false) match {

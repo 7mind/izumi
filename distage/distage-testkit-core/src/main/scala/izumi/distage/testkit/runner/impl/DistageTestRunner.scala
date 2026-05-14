@@ -5,8 +5,8 @@ import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.*
-import izumi.functional.bio.QuasiIO.syntax.*
-import izumi.functional.bio.{QuasiIO, QuasiIORunner}
+import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.{IO1, IORunner1}
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.fundamentals.platform.uuid.IzUUID
 import izumi.logstage.api.IzLogger
@@ -26,7 +26,7 @@ class DistageTestRunner[F[_]](
   parTraverseExt: ParTraverseExt[F],
 )(implicit
   tagK: TagK[F],
-  F: QuasiIO[F],
+  F: IO1[F],
 ) {
 
   def run(tests: Seq[DistageTest[AnyF]]): F[List[EnvResult]] = {
@@ -114,7 +114,7 @@ class DistageTestRunner[F[_]](
             },
           right = (runtimeLocator, runtimeInstantiationTiming) =>
             runtimeLocator.run {
-              (runner: QuasiIORunner[TestF], testTreeRunner: TestTreeRunner[TestF], logger: IzLogger @Id("distage-testkit")) =>
+              (runner: IORunner1[TestF], testTreeRunner: TestTreeRunner[TestF], logger: IzLogger @Id("distage-testkit")) =>
                 logger.info(s"Processing ${allEnvTests.size -> "tests"} using ${effectType.tag -> "monad"}")
 
                 runnerToF

@@ -1,6 +1,6 @@
 package izumi.logstage.api.logger
 
-import izumi.functional.bio.{QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{IO1, Primitives1}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.Level
 import izumi.logstage.api.Log
@@ -34,7 +34,7 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Single
     printTypes: Boolean = false,
     printImplicits: Boolean = false,
   )(inline function: => A
-  )(using G: QuasiIO[G]
+  )(using G: IO1[G]
   ): G[A] = {
     ${ LogMethodMacro.logMethodIO[A, F, G, EncMode]('{ level }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ G }) }
   }
@@ -44,7 +44,7 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Single
     printTypes: Boolean = false,
     printImplicits: Boolean = false,
   )(inline function: => G[A]
-  )(using G: QuasiPrimitives[G]
+  )(using G: Primitives1[G]
   ): G[A] = {
     ${ LogMethodMacro.logMethodIOF[A, F, G, EncMode]('{ level }, '{ function }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ G }) }
   }

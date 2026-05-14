@@ -5,7 +5,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2, BlockingIO2, Bracket2, Concurrent2, Error2, Exit, F, Fork2, Functor2, Guarantee2, IO2, Monad2, Panic2, Parallel2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2, TypedError, WeakAsync2, WeakTemporal2}
-import izumi.functional.bio.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives}
+import izumi.functional.bio.{Applicative1, Functor1, IO1, IORunner1, Primitives1}
 import izumi.fundamentals.platform.functional.{Identity, Identity2}
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import org.scalatest.GivenWhenThen
@@ -46,24 +46,24 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     implicitly[DefaultModule[MiniBIOAsync[Throwable, _]]]
 
     Injector[MiniBIOAsync[Throwable, _]]().produceRun(distage.Module.empty) {
-      (runner: QuasiIORunner[MiniBIOAsync[Throwable, _]]) =>
+      (runner: IORunner1[MiniBIOAsync[Throwable, _]]) =>
         MiniBIOAsync.WeakAsyncForMiniBIOAsync.syncBlocking {
           runner.runBlocking(MiniBIOAsync.WeakAsyncForMiniBIOAsync.pure(()))
         }
     }
   }
 
-  "Using Lifecycle & QuasiIO objects succeeds even if there's no cats/zio/monix on the classpath" in {
+  "Using Lifecycle & IO1 objects succeeds even if there's no cats/zio/monix on the classpath" in {
     When("There's no cats/zio/monix on classpath")
     assertCompiles("import scala._")
     assertDoesNotCompile("import cats.kernel.Eq")
     assertDoesNotCompile("import zio.ZIO")
     assertDoesNotCompile("import monix._")
 
-    Then("QuasiIO methods can be called")
-    def x[F[_]: QuasiIO] = QuasiIO[F].pure(1)
+    Then("IO1 methods can be called")
+    def x[F[_]: IO1] = IO1[F].pure(1)
 
-    And("QuasiIO in QuasiIO object resolve")
+    And("IO1 in IO1 object resolve")
     assert(x[Identity] == 1)
 
     trait SomeBIO[+E, +A]
@@ -71,18 +71,18 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     def optSearch[A](implicit a: A = null.asInstanceOf[A]) = a
     final class optSearch1[C[_[_]]] { def find[F[_]](implicit a: C[F] = null.asInstanceOf[C[F]]): C[F] = a }
 
-    assert(new optSearch1[QuasiFunctor].find == QuasiFunctor.quasiFunctorIdentity)
-    assert(new optSearch1[QuasiApplicative].find == QuasiApplicative.quasiApplicativeIdentity)
-    assert(new optSearch1[QuasiPrimitives].find == QuasiPrimitives.quasiPrimitivesIdentity)
-    assert(new optSearch1[QuasiIO].find == QuasiIO.quasiIOIdentity)
+    assert(new optSearch1[Functor1].find == Functor1.functor1Identity)
+    assert(new optSearch1[Applicative1].find == Applicative1.applicative1Identity)
+    assert(new optSearch1[Primitives1].find == Primitives1.primitives1Identity)
+    assert(new optSearch1[IO1].find == IO1.io1Identity)
 
-    try QuasiIO.fromBIO(using null)
+    try IO1.fromBIO(using null)
     catch { case _: NullPointerException => }
     try IO2[SomeBIO, Unit](())(using null)
     catch { case _: NullPointerException => }
 
     And("Methods that mention cats/ZIO types directly cannot be referred")
-//    assertDoesNotCompile("QuasiIO.fromBIO(BIO.BIOZio)")
+//    assertDoesNotCompile("IO1.fromBIO(BIO.BIOZio)")
 //    assertDoesNotCompile("Lifecycle.fromCats(null)")
 //    assertDoesNotCompile("Lifecycle.providerFromCats(null)(null)")
     Async2[SomeBIO](using null)
@@ -121,14 +121,14 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     izumi.fundamentals.orphans.`cats.effect.kernel.Sync`.hashCode()
     And("`No More Orphans` type provider implicit is not found when cats is not on the classpath")
     assertTypeError("""
-         def y[R[_[_]]: LowPriorityQuasiIOInstances._Sync]() = ()
+         def y[R[_[_]]: LowPriorityIO1Instances._Sync]() = ()
          y()
       """)
 
     type LC[F[_]] = distage.Lifecycle[F, Int]
     And("Methods that use `No More Orphans` trick can be called with nulls, but will error")
     intercept[Throwable] {
-      QuasiIO.fromCats[Option, LC](using null, null)
+      IO1.fromCats[Option, LC](using null, null)
     } match {
       case _: NoClassDefFoundError =>
       case _: NullPointerException =>
@@ -205,9 +205,9 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     izumi.functional.bio.data.Morphism3.discard()
     izumi.functional.lifecycle.Lifecycle.discard()
 
-    izumi.functional.bio.QuasiIO.discard()
-    izumi.functional.bio.QuasiIORunner.discard()
-    izumi.functional.bio.QuasiAsync.discard()
+    izumi.functional.bio.IO1.discard()
+    izumi.functional.bio.IORunner1.discard()
+    izumi.functional.bio.Async1.discard()
 
     // reference doesn't even compile on Scala 3, but it's cats-specific
 //    intercept[java.lang.NoClassDefFoundError] {

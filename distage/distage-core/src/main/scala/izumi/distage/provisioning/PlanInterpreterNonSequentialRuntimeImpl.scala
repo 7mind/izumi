@@ -15,8 +15,8 @@ import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.model.{Locator, Planner}
 import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
-import izumi.functional.bio.QuasiIO
-import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.IO1
+import izumi.functional.bio.IO1.syntax.*
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -39,7 +39,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     plan: Plan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): Lifecycle[F, Either[FailedProvision, Locator]] = {
     Lifecycle
       .make(
@@ -59,7 +59,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   private def instantiateImpl[F[_]: TagK](
     plan: Plan,
     parentContext: Locator,
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
     val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
 
@@ -169,7 +169,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     ctx: ProvisionMutable[F],
     initial: TraversalState,
     issues: Iterable[ProvisionerIssue],
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[FailedProvisionInternal[F], A]] = {
     val failures = issues.map {
       issue =>
@@ -186,7 +186,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   private def integrationPlan[F[_]](
     state: TraversalState,
     ctx: ProvisionMutable[F],
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[FailedProvisionInternal[F], Plan]] = {
     val allChecks = ctx.plan.stepsUnordered.iterator.collect {
       case op: InstantiationOp if op.instanceType <:< abstractCheckType => op
@@ -222,7 +222,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def processOp[F[_]: TagK](context: ProvisionMutable[F], op: ExecutableOp)(implicit F: QuasiIO[F]): F[TimedResult] = {
+  private def processOp[F[_]: TagK](context: ProvisionMutable[F], op: ExecutableOp)(implicit F: IO1[F]): F[TimedResult] = {
     for {
       before <- F.maybeSuspend(System.nanoTime())
       res <- op match {
@@ -249,7 +249,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     active: ProvisionMutable[F],
     integrationCheckFType: SafeType,
     result: TimedResult.Success,
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[TimedFinalResult] = {
     for {
       res <- F.traverse(result.ops) {
@@ -276,7 +276,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def runIfIntegrationCheck[F[_]](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
+  private def runIfIntegrationCheck[F[_]](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: IO1[F]): F[Option[IntegrationCheckFailure]] = {
     op match {
       case i: NewObjectOp.CurrentContextInstance =>
         if (i.implType <:< nullType) {
@@ -295,7 +295,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def checkOrFail[F[_]](key: DIKey, resource: Any)(implicit F: QuasiIO[F]): F[Option[IntegrationCheckFailure]] = {
+  private def checkOrFail[F[_]](key: DIKey, resource: Any)(implicit F: IO1[F]): F[Option[IntegrationCheckFailure]] = {
     F.suspendF {
       resource
         .asInstanceOf[IntegrationCheck[F]]
@@ -311,7 +311,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
   private def verifyEffectType[F[_]: TagK](
     ops: Iterable[ExecutableOp]
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[Iterable[IncompatibleEffectTypes], Unit]] = {
     val monadicOps = ops.collect { case m: MonadicOp => m }
     val badOps = monadicOps

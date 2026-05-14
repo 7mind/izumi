@@ -7,7 +7,7 @@ import distage.TagK
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.StandardAxis.Mode
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -36,8 +36,8 @@ trait ActiveComponent
 case object TestActiveComponent extends ActiveComponent
 case object ProdActiveComponent extends ActiveComponent
 
-class MockPostgresCheck[F[_]: QuasiIO]() extends IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.Success())
+class MockPostgresCheck[F[_]: IO1]() extends IntegrationCheck[F] {
+  override def resourcesAvailable(): F[ResourceCheck] = IO1[F].pure(ResourceCheck.Success())
 }
 
 class MockPostgresDriver[F[_]](val check: MockPostgresCheck[F])
@@ -46,22 +46,22 @@ class MockRedis[F[_]]()
 
 class MockUserRepository[F[_]](val pg: MockPostgresDriver[F])
 
-class MockCache[F[_]: QuasiIO](val redis: MockRedis[F]) extends IntegrationCheck[F] {
+class MockCache[F[_]: IO1](val redis: MockRedis[F]) extends IntegrationCheck[F] {
   locally {
     val integer = MockCache.instanceCounter.getOrElseUpdate(redis, new AtomicInteger(0))
     if (integer.incrementAndGet() > 2) { // one instance per each monad
       throw new RuntimeException(s"Something is wrong with memoization: $integer instances were created")
     }
   }
-  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.Success())
+  override def resourcesAvailable(): F[ResourceCheck] = IO1[F].pure(ResourceCheck.Success())
 }
 
 object MockCache {
   val instanceCounter = mutable.Map[AnyRef, AtomicInteger]()
 }
 
-class UnavailableIntegrationCheck[F[_]: QuasiIO] extends IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.ResourceUnavailable("Dummy unavailable resource for testing purposes", None))
+class UnavailableIntegrationCheck[F[_]: IO1] extends IntegrationCheck[F] {
+  override def resourcesAvailable(): F[ResourceCheck] = IO1[F].pure(ResourceCheck.ResourceUnavailable("Dummy unavailable resource for testing purposes", None))
 }
 
 class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: MockCache[F])
@@ -69,6 +69,6 @@ class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: M
 class ForcedRootProbe {
   var started = false
 }
-class ForcedRootResource[F[_]: QuasiIO](forcedRootProbe: ForcedRootProbe) extends Lifecycle.SelfNoClose[F, ForcedRootResource[F]] {
-  override def acquire: F[Unit] = QuasiIO[F].maybeSuspend(forcedRootProbe.started = true)
+class ForcedRootResource[F[_]: IO1](forcedRootProbe: ForcedRootProbe) extends Lifecycle.SelfNoClose[F, ForcedRootResource[F]] {
+  override def acquire: F[Unit] = IO1[F].maybeSuspend(forcedRootProbe.started = true)
 }

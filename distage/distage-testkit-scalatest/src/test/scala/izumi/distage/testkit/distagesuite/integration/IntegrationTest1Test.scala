@@ -9,7 +9,7 @@ import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.{Spec1, Spec2}
 import izumi.functional.bio.catz.*
 import izumi.functional.bio.{Applicative2, ApplicativeError2, F}
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.integration.ResourceCheck
 import zio.{Task, UIO, ZEnvironment, ZIO}
 
@@ -79,7 +79,7 @@ class DisabledTestF2[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F[Nothing,
   override def release(resource: TestEnableDisable): F[Nothing, Unit] = F.unit
 }
 
-abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit FA: ApplicativeError2[F], F: QuasiIO[F[Throwable, _]]) extends Spec2[F] {
+abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit FA: ApplicativeError2[F], F: IO1[F[Throwable, _]]) extends Spec2[F] {
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {

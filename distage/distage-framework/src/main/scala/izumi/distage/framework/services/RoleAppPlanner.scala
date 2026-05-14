@@ -7,7 +7,7 @@ import izumi.distage.model.definition.{Activation, BootstrapModule, Id, ModuleBa
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
 import izumi.distage.model.reflection.DIKey
-import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.bio.{Async1, IO1, IORunner1}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK
@@ -34,9 +34,9 @@ object RoleAppPlanner {
   ) extends RoleAppPlanner { self =>
 
     private val runtimeGcRoots: Set[DIKey] = Set(
-      DIKey.get[QuasiIORunner[F]],
-      DIKey.get[QuasiIO[F]],
-      DIKey.get[QuasiAsync[F]],
+      DIKey.get[IORunner1[F]],
+      DIKey.get[IO1[F]],
+      DIKey.get[Async1[F]],
     )
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {

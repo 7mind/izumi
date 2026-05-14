@@ -1,7 +1,7 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.framework.DebugProperties
-import izumi.functional.bio.{QuasiAsync, QuasiIO}
+import izumi.functional.bio.{Async1, IO1}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.logstage.api.IzLogger
 
@@ -36,7 +36,7 @@ object AppShutdownInitiator {
   * @see also [[izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy]]
   */
 trait AppShutdownStrategy[F[_]] extends AppShutdownInitiator {
-  def awaitShutdown(logger: IzLogger)(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit]
+  def awaitShutdown(logger: IzLogger)(implicit F: IO1[F], FA: Async1[F]): F[Unit]
   def releaseAwaitLatch(): Unit
   def finishShutdown(): Unit
 }
@@ -58,7 +58,7 @@ object AppShutdownStrategy {
     private val primaryLatch = new CountDownLatch(1)
     private val postShutdownLatch = new CountDownLatch(1)
 
-    override def awaitShutdown(logger: IzLogger)(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit] = {
+    override def awaitShutdown(logger: IzLogger)(implicit F: IO1[F], FA: Async1[F]): F[Unit] = {
       F.maybeSuspend {
         scala.concurrent.blocking {
           val shutdownHook = makeShutdownHook(logger, () => releaseAwaitLatch())
@@ -88,7 +88,7 @@ object AppShutdownStrategy {
   }
 
   class ImmediateExitShutdownStrategy[F[_]] extends AppShutdownStrategy[F] {
-    def awaitShutdown(logger: IzLogger)(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit] = F.maybeSuspend {
+    def awaitShutdown(logger: IzLogger)(implicit F: IO1[F], FA: Async1[F]): F[Unit] = F.maybeSuspend {
       logger.info("Exiting immediately...")
     }
 
@@ -105,8 +105,8 @@ object AppShutdownStrategy {
     private val primaryLatch: Promise[Unit] = Promise[Unit]()
     private val postShutdownLatch: CountDownLatch = new CountDownLatch(1)
 
-    override def awaitShutdown(logger: IzLogger)(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit] = {
-      import QuasiIO.syntax.*
+    override def awaitShutdown(logger: IzLogger)(implicit F: IO1[F], FA: Async1[F]): F[Unit] = {
+      import IO1.syntax.*
 
       for {
         shutdownHook <- F.maybeSuspend {

@@ -1,8 +1,8 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.bio.QuasiIO
-import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.IO1
+import izumi.functional.bio.IO1.syntax.*
 import ProvisionerIssue.{MissingProxyAdapter, UnexpectedProvisionResult, UnsupportedProxyOp}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
@@ -28,7 +28,7 @@ class ProxyStrategyDefaultImpl(
   override def makeProxy[F[_]: TagK](
     context: ProvisioningKeyProvider,
     makeProxy: ProxyOp.MakeProxy,
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val cogenNotRequired = makeProxy.byNameAllowed
 
@@ -63,7 +63,7 @@ class ProxyStrategyDefaultImpl(
     context: ProvisioningKeyProvider,
     executor: OperationExecutor,
     initProxy: ProxyOp.InitProxy,
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val target = initProxy.proxy.target
     val key = proxyControllerKey(target)

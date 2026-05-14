@@ -11,7 +11,7 @@ import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.cli.model.{RequiredRoles, RoleArgs}
@@ -112,11 +112,11 @@ abstract class RoleAppMain[F[_]](
     *
     * @note All resources will be leaked. Use [[replLocatorWithClose]] if you need resource cleanup within a REPL session.
     */
-  def replLocator(args: String*)(implicit F: QuasiIO[F]): F[Locator] = {
+  def replLocator(args: String*)(implicit F: IO1[F]): F[Locator] = {
     F.map(replLocatorWithClose(args*))(_._1)
   }
 
-  def replLocatorWithClose(args: String*)(implicit F: QuasiIO[F]): F[(Locator, () => F[Unit])] = {
+  def replLocatorWithClose(args: String*)(implicit F: IO1[F]): F[(Locator, () => F[Unit])] = {
     val combinedLifecycle: Lifecycle[F, Locator] = {
       Injector
         .NoProxies[Identity]()

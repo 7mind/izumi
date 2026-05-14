@@ -2,7 +2,7 @@ package izumi.distage.injector
 
 import distage.*
 import izumi.distage.model.exceptions.runtime.ProvisioningException
-import izumi.functional.bio.QuasiApplicative
+import izumi.functional.bio.Applicative1
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.reflect.Tag
 import org.scalatest.exceptions.TestFailedException
@@ -279,9 +279,9 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[Int].fromEffect {
           bindImplicits {
             val x = Functoid[F[Int]] {
-              (F: QuasiApplicative[F]) =>
+              (F: Applicative1[F]) =>
                 // ok case
-                Predef.require(implicitly[Tag[QuasiApplicative[F]]] ne null)
+                Predef.require(implicitly[Tag[Applicative1[F]]] ne null)
                 Predef.require(implicitly[Tag[F[Int]]] ne null)
 
                 F.pure[Int](1)
@@ -296,7 +296,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition[Identity])
       val context = injector.produce(plan).unsafeGet()
 
-      assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[QuasiApplicative[Identity]].tag))
+      assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[Applicative1[Identity]].tag))
       assert(functoid.get.ret == SafeType.get[Int])
       assert(context.get[Int] == 1)
     }
@@ -308,11 +308,11 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[Int].fromEffect {
           bindImplicits {
             // bad case
-            Predef.require(implicitly[Tag[QuasiApplicative[F]]] ne null)
+            Predef.require(implicitly[Tag[Applicative1[F]]] ne null)
             Predef.require(implicitly[Tag[F[Int]]] ne null)
 
             val x = Functoid.apply[F[Int]] {
-              (F: QuasiApplicative[F]) => F.pure[Int](1)
+              (F: Applicative1[F]) => F.pure[Int](1)
             }
             functoid = x
             x
@@ -324,14 +324,14 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition[Identity])
       val context = injector.produce(plan).unsafeGet()
 
-      assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[QuasiApplicative[Identity]].tag))
+      assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[Applicative1[Identity]].tag))
       assert(functoid.get.ret == SafeType.get[Int])
       assert(context.get[Int] == 1)
     }
 
     "support implicits in effects" in {
-      def makeX[F[_]: QuasiApplicative](value: Int)(implicit desc: Description): F[X] =
-        QuasiApplicative.apply[F].pure(X(desc.description + value.toString))
+      def makeX[F[_]: Applicative1](value: Int)(implicit desc: Description): F[X] =
+        Applicative1.apply[F].pure(X(desc.description + value.toString))
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
@@ -554,7 +554,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[StaticTestRole[F]].fromEffect {
           bindImplicits {
             ClassConstructor[StaticTestRole[F]]
-              .flatAp((G: QuasiApplicative[G]) => G.pure(_: StaticTestRole[F]))
+              .flatAp((G: Applicative1[G]) => G.pure(_: StaticTestRole[F]))
           }
         }
       })

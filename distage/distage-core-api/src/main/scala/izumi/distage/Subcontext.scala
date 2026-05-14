@@ -4,14 +4,14 @@ import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.providers.Functoid
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 
 /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]] */
 trait Subcontext[F[_], +A] {
-  def produce()(implicit F: QuasiIO[F], tagK: TagK[F]): Lifecycle[F, A]
+  def produce()(implicit F: IO1[F], tagK: TagK[F]): Lifecycle[F, A]
 
   /**
     * Same as `.produce[F]().use(f)`
@@ -19,7 +19,7 @@ trait Subcontext[F[_], +A] {
     * @note Resources allocated by the subcontext will be closed after `f` exits.
     *       Use `produce` if you need to extend the lifetime of the Subcontext's resources.
     */
-  def produceRun[B](f: A => F[B])(implicit F: QuasiIO[F], tagK: TagK[F]): F[B]
+  def produceRun[B](f: A => F[B])(implicit F: IO1[F], tagK: TagK[F]): F[B]
 
   def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): Subcontext[F, A]
   def provide[T: Tag](name: Identifier)(value: T)(implicit pos: CodePositionMaterializer): Subcontext[F, A]

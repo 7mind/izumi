@@ -6,8 +6,8 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.scalatest.Spec1
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.AsyncGlobalSuitesControlHandle
 import izumi.distage.testkit.services.scalatest.dstest.{ScalatestAbstractDistageSpec, TestRunnerRuntime}
-import izumi.functional.bio.QuasiIO.syntax.*
-import izumi.functional.bio.{QuasiIO, QuasiTemporal}
+import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.{IO1, Temporal1}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
@@ -102,8 +102,8 @@ abstract class InterruptionTest extends Spec1[Identity] {
         val stoppedLatch = Promise[Unit]().tap(stoppedTests `add` _.future)
 
         s"be interrupted before $n seconds pass" in {
-          (FT: QuasiTemporal[F], F0: QuasiIO[F], logger: IzLogger) =>
-            implicit val F: QuasiIO[F] = F0
+          (FT: Temporal1[F], F0: IO1[F], logger: IzLogger) =>
+            implicit val F: IO1[F] = F0
             F.guarantee(for {
               _ <- F.guaranteeOnInterrupt {
                 F.suspendF {

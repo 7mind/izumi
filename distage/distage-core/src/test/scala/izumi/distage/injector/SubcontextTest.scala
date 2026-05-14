@@ -6,7 +6,7 @@ import izumi.distage.fixtures.ResourceCases.Suspend2
 import izumi.distage.injector.SubcontextTest.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.Roots
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
@@ -199,7 +199,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         }
     }
 
-    def good[F[_]: QuasiIO: TagK](subcontext: Subcontext[F, F[Int]]): F[Int] = {
+    def good[F[_]: IO1: TagK](subcontext: Subcontext[F, F[Int]]): F[Int] = {
       subcontext.provide[Arg](Arg(1)).produce().use(effect => effect)
     }
 

@@ -1,7 +1,7 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.distage.model.plan.ExecutableOp.CreateSet
 import izumi.distage.model.provisioning.strategies.SetStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
@@ -12,7 +12,7 @@ import izumi.reflect.TagK
 class SetStrategyDefaultImpl extends SetStrategy {
   private val scalaCollectionSetType = SafeType.get[collection.Set[?]]
 
-  def makeSet[F[_]: TagK](context: ProvisioningKeyProvider, op: CreateSet)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+  def makeSet[F[_]: TagK](context: ProvisioningKeyProvider, op: CreateSet)(implicit F: IO1[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     import izumi.functional.IzEither.*
     // target is guaranteed to be a Set
 

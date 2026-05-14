@@ -16,7 +16,7 @@ object AnyBIOSupportModule {
     *
     * For all `F[+_, +_]` with available `make[Async2[F]]`, `make[Temporal2[F]]` and `make[UnsafeRun2[F]]` bindings.
     *
-    *  - Adds [[izumi.functional.bio.QuasiIO]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+    *  - Adds [[izumi.functional.bio.IO1]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
     *  - Adds [[izumi.functional.bio]] typeclass instances for `F[+_, +_]`
     *
     * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`, `make[Fork2[F]]`
@@ -29,22 +29,22 @@ object AnyBIOSupportModule {
     make[TagK[F[Throwable, _]]].fromValue(t)
     addImplicit[TagKK[F]]
 
-    make[QuasiIORunner2[F]]
-      .from[QuasiIORunner.BIOImpl[F]]
+    make[IORunner1Bi2[F]]
+      .from[IORunner1.BIOImpl[F]]
       .modifyBy(_.annotateParameterIfExists[ExecutionContext]("cpu")) // scala.js
 
-    make[QuasiIO2[F]]
-      .aliased[QuasiPrimitives2[F]]
-      .aliased[QuasiApplicative2[F]]
-      .aliased[QuasiFunctor2[F]]
+    make[IO1Bi2[F]]
+      .aliased[Primitives1Bi2[F]]
+      .aliased[Applicative1Bi2[F]]
+      .aliased[Functor1Bi2[F]]
       .from {
-        QuasiIO.fromBIO(using _: IO2[F])
+        IO1.fromBIO(using _: IO2[F])
       }
-    make[QuasiAsync2[F]].from {
-      QuasiAsync.fromBIO(using _: WeakAsync2[F])
+    make[Async1Bi2[F]].from {
+      Async1.fromBIO(using _: WeakAsync2[F])
     }
-    make[QuasiTemporal2[F]].from {
-      QuasiTemporal.fromBIO(using _: Temporal2[F])
+    make[Temporal1Bi2[F]].from {
+      Temporal1.fromBIO(using _: Temporal2[F])
     }
     make[SyncSafe2[F]].from {
       SyncSafe1.fromBIO(using _: IO2[F])

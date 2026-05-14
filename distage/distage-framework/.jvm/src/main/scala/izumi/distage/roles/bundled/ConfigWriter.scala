@@ -15,7 +15,7 @@ import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, MinimizedConfig, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.IO1
 import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
@@ -43,7 +43,7 @@ final class ConfigWriter[F[_]: TagK](
   roleAppPlanner: RoleAppPlanner,
   appConfig: AppConfig,
   configMerger: ConfigMerger,
-  F: QuasiIO[F],
+  F: IO1[F],
 ) extends RoleTask[F]
   with BundledTask {
 

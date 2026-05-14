@@ -1,8 +1,8 @@
 package izumi.distage.testkit.runner.impl.services
 
 import izumi.distage.testkit.model.TestConfig.Parallelism
-import izumi.functional.bio.QuasiIO.syntax.*
-import izumi.functional.bio.{QuasiAsync, QuasiIO}
+import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.{Async1, IO1}
 
 import scala.annotation.nowarn
 
@@ -16,8 +16,8 @@ object ParTraverseExt {
   @nowarn("msg=[Uu]nused import")
   final class ParTraverseExtImpl[F[_]](
   )(implicit
-    F: QuasiIO[F],
-    P: QuasiAsync[F],
+    F: IO1[F],
+    P: Async1[F],
   ) extends ParTraverseExt[F] {
     import scala.collection.compat.*
 

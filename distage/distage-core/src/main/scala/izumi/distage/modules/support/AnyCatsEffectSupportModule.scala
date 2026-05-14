@@ -16,7 +16,7 @@ object AnyCatsEffectSupportModule {
     *
     * For all `F[_]` with available `make[Async[F]]`, `make[Parallel[F]]` and `make[Dispatcher[F]]` bindings.
     *
-    *  - Adds [[izumi.functional.bio.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+    *  - Adds [[izumi.functional.bio.IO1]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
     *  - Adds `cats-effect` typeclass instances for `F[_]`
     *
     * Depends on `make[Async[F]]`, `make[Parallel[F]]`, `make[Dispatcher[F]]`.
@@ -24,9 +24,9 @@ object AnyCatsEffectSupportModule {
   def usingAsyncParallelDispatcher[F[_]: TagK]: ModuleDef = new ModuleDef {
     include(AnyCatsEffectSupportModule.usingAsyncParallel[F])
 
-    make[QuasiIORunner[F]].from {
+    make[IORunner1[F]].from {
       (dispatcher: Dispatcher[F]) =>
-        QuasiIORunner.mkFromCatsDispatcher(dispatcher)
+        IORunner1.mkFromCatsDispatcher(dispatcher)
     }
   }
 
@@ -35,18 +35,18 @@ object AnyCatsEffectSupportModule {
 
     addImplicit[TagK[F]]
 
-    make[QuasiIO[F]]
-      .aliased[QuasiPrimitives[F]]
-      .aliased[QuasiApplicative[F]]
-      .aliased[QuasiFunctor[F]]
+    make[IO1[F]]
+      .aliased[Primitives1[F]]
+      .aliased[Applicative1[F]]
+      .aliased[Functor1[F]]
       .from {
-        implicit F: Sync[F] => QuasiIO.fromCats[F, Sync]
+        implicit F: Sync[F] => IO1.fromCats[F, Sync]
       }
-    make[QuasiAsync[F]].from {
-      implicit F: Async[F] => QuasiAsync.fromCats[F, Async]
+    make[Async1[F]].from {
+      implicit F: Async[F] => Async1.fromCats[F, Async]
     }
-    make[QuasiTemporal[F]].from {
-      implicit F: GenTemporal[F, Throwable] => QuasiTemporal.fromCats[F, GenTemporal]
+    make[Temporal1[F]].from {
+      implicit F: GenTemporal[F, Throwable] => Temporal1.fromCats[F, GenTemporal]
     }
     make[SyncSafe1[F]].from {
       implicit F: Sync[F] => SyncSafe1.fromSync[F, Sync]

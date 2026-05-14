@@ -6,13 +6,13 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.distagesuite.fixtures.MockUserRepository
 import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.DistageMemoizeExample
 import izumi.distage.testkit.scalatest.Spec1
-import izumi.functional.bio.QuasiIO
-import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.IO1
+import izumi.functional.bio.IO1.syntax.*
 import izumi.fundamentals.platform.functional.Identity
 import zio.Task
 
 // JVM-only tests that use Thread.sleep
-abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
+abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: IO1[F]) extends Spec1[F] with DistageMemoizeExample[F] {
   "distage test" should {
     "sleep" in {
       (_: MockUserRepository[F]) =>

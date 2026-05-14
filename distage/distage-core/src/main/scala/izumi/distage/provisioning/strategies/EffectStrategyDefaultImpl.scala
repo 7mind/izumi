@@ -1,8 +1,8 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.bio.QuasiIO
-import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.IO1
+import izumi.functional.bio.IO1.syntax.*
 import ProvisionerIssue.MissingRef
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.EffectStrategy
@@ -14,7 +14,7 @@ class EffectStrategyDefaultImpl extends EffectStrategy {
   override def executeEffect[F[_]: TagK](
     context: ProvisioningKeyProvider,
     op: MonadicOp.ExecuteEffect,
-  )(implicit F: QuasiIO[F]
+  )(implicit F: IO1[F]
   ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     op.throwOnIncompatibleEffectType[F]() match {
       case Left(value) =>

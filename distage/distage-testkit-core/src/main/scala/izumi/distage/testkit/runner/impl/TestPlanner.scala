@@ -19,8 +19,8 @@ import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestConfigLoader, TestkitLogging}
 import izumi.distage.testkit.spec.DistageTestEnv
 import izumi.functional.IzEither.*
-import izumi.functional.bio.QuasiIO.syntax.*
-import izumi.functional.bio.{QuasiIO, QuasiIORunner}
+import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.{IO1, IORunner1}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
@@ -99,7 +99,7 @@ class TestPlanner(
     * - tree-represented memoization plan with tests.
     * [[PackedEnv]] represents memoization environment, with shared [[Injector]], and runtime plan.
     */
-  def planGroupTests[F[_]](distageTests: Seq[DistageTest[AnyF]], parTraverseExt: ParTraverseExt[F])(implicit F: QuasiIO[F]): F[PlannedTests[AnyF]] = {
+  def planGroupTests[F[_]](distageTests: Seq[DistageTest[AnyF]], parTraverseExt: ParTraverseExt[F])(implicit F: IO1[F]): F[PlannedTests[AnyF]] = {
 
     for {
       out <- F.traverse(
@@ -125,13 +125,13 @@ class TestPlanner(
     testsByEnv: Map[TestEnvironment, Seq[DistageTest[AnyF]]],
     parTraverseExt: ParTraverseExt[F],
   )(implicit
-    F: QuasiIO[F]
+    F: IO1[F]
   ): F[(PlannedTestEnvs[AnyF], List[(Seq[DistageTest[AnyF]], PlanningFailure)])] = {
     import envExec.{effectType, defaultModule}
 
     // first we need to plan runtime for our monad, which is retained by TestTreeRunner. Identity is also supported.
     val runtimeGcRoots: Set[DIKey] = Set(
-      DIKey.get[QuasiIORunner[TestF]],
+      DIKey.get[IORunner1[TestF]],
       DIKey.get[TestTreeRunner[TestF]],
     )
 
