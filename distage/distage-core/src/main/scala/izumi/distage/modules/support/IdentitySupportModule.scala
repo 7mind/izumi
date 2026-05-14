@@ -2,7 +2,7 @@ package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
 import izumi.functional.bio.{Clock1, Entropy1}
-import izumi.functional.quasi.*
+import izumi.functional.bio.*
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
@@ -11,7 +11,7 @@ object IdentitySupportModule extends IdentitySupportModule
 /**
   * `Identity` effect type (aka no effect type / imperative Scala) support for `distage` resources, effects, roles & tests
   *
-  * Adds [[izumi.functional.quasi.QuasiIO]] instances to support running without an effect type in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * Adds [[izumi.functional.bio.QuasiIO]] instances to support running without an effect type in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   */
 trait IdentitySupportModule extends ModuleDef {
   addImplicit[TagK[Identity]]

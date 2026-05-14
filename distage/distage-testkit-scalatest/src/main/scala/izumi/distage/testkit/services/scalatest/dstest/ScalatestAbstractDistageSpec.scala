@@ -5,7 +5,7 @@ import izumi.distage.constructors.ZEnvConstructor
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec.*
 import izumi.distage.testkit.spec.*
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer}
 import org.scalatest.Assertion
 import org.scalatest.distage.{NameUtil, TestCancellation}

@@ -1,7 +1,7 @@
 package izumi.functional.lifecycle
 
 import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
-import izumi.functional.quasi.{QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
+import izumi.functional.bio.{QuasiFunctor, QuasiIO, QuasiPrimitives, QuasiRef}
 
 private[lifecycle] object LifecycleMethodImpls {
   @inline final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: QuasiFunctor[F]): Lifecycle[F, B] = {

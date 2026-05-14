@@ -6,7 +6,7 @@ import izumi.distage.fixtures.ResourceCases.Suspend2
 import izumi.distage.injector.SubcontextTest.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.Roots
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec

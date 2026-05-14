@@ -5,7 +5,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.bio.{Applicative2, ApplicativeError2, Async2, Bifunctor2, BlockingIO2, Bracket2, Concurrent2, Error2, Exit, F, Fork2, Functor2, Guarantee2, IO2, Monad2, Panic2, Parallel2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2, TypedError, WeakAsync2, WeakTemporal2}
-import izumi.functional.quasi.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives}
+import izumi.functional.bio.{QuasiApplicative, QuasiFunctor, QuasiIO, QuasiIORunner, QuasiPrimitives}
 import izumi.fundamentals.platform.functional.{Identity, Identity2}
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import org.scalatest.GivenWhenThen
@@ -205,9 +205,9 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     izumi.functional.bio.data.Morphism3.discard()
     izumi.functional.lifecycle.Lifecycle.discard()
 
-    izumi.functional.quasi.QuasiIO.discard()
-    izumi.functional.quasi.QuasiIORunner.discard()
-    izumi.functional.quasi.QuasiAsync.discard()
+    izumi.functional.bio.QuasiIO.discard()
+    izumi.functional.bio.QuasiIORunner.discard()
+    izumi.functional.bio.QuasiAsync.discard()
 
     // reference doesn't even compile on Scala 3, but it's cats-specific
 //    intercept[java.lang.NoClassDefFoundError] {

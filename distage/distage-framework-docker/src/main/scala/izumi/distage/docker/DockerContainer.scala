@@ -5,7 +5,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerCo
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
 import izumi.distage.docker.model.Docker.*
 import izumi.distage.model.providers.Functoid
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.IzLogger
 

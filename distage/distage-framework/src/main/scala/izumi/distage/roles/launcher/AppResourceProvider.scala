@@ -7,8 +7,8 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
 
 trait AppResourceProvider[F[_]] {

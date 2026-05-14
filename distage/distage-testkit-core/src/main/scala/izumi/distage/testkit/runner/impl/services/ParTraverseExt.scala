@@ -1,8 +1,8 @@
 package izumi.distage.testkit.runner.impl.services
 
 import izumi.distage.testkit.model.TestConfig.Parallelism
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.{QuasiAsync, QuasiIO}
 
 import scala.annotation.nowarn
 

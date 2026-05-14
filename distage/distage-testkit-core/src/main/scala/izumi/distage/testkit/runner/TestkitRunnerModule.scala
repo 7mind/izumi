@@ -8,7 +8,7 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.services.*
 import izumi.distage.testkit.runner.impl.services.TimedActionF.TimedActionFImpl
 import izumi.distage.testkit.runner.impl.{DistageTestRunner, RunnerToF, TestPlanner, TestTreeBuilder}
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.functional.bio.{QuasiAsync, QuasiIO}
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF

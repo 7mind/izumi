@@ -15,8 +15,8 @@ import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.model.{Locator, Planner}
 import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.QuasiIO.syntax.*
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck

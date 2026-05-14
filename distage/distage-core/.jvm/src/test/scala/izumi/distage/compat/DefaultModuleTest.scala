@@ -7,7 +7,7 @@ import izumi.distage.injector.MkInjector
 import izumi.distage.modules.support.ZIOSupportModule
 import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.UnsafeRun2
-import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
+import izumi.functional.bio.{QuasiIO, QuasiIORunner}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{ZEnvironment, ZLayer}
 

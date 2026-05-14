@@ -9,8 +9,8 @@ import izumi.distage.docker.model.Docker.{ClientConfig, ContainerId, DockerRegis
 import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.provisioning.IntegrationCheck
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.QuasiIO.syntax.*
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.strings.IzString.*

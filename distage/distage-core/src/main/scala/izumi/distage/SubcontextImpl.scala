@@ -9,7 +9,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}
 

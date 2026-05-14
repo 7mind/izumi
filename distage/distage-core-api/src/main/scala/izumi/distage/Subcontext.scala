@@ -4,7 +4,7 @@ import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.providers.Functoid
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagK}

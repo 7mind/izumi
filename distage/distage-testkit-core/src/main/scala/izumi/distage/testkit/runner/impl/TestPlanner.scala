@@ -19,8 +19,8 @@ import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestConfigLoader, TestkitLogging}
 import izumi.distage.testkit.spec.DistageTestEnv
 import izumi.functional.IzEither.*
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
+import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.{QuasiIO, QuasiIORunner}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity

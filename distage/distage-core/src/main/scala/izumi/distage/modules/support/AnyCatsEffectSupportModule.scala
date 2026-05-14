@@ -6,7 +6,7 @@ import cats.effect.std.Dispatcher
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.bio.{Clock1, Entropy1, SyncSafe1}
-import izumi.functional.quasi.*
+import izumi.functional.bio.*
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
@@ -16,7 +16,7 @@ object AnyCatsEffectSupportModule {
     *
     * For all `F[_]` with available `make[Async[F]]`, `make[Parallel[F]]` and `make[Dispatcher[F]]` bindings.
     *
-    *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+    *  - Adds [[izumi.functional.bio.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
     *  - Adds `cats-effect` typeclass instances for `F[_]`
     *
     * Depends on `make[Async[F]]`, `make[Parallel[F]]`, `make[Dispatcher[F]]`.

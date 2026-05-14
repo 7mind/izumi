@@ -2,7 +2,7 @@ package izumi.distage.roles.bundled
 
 import distage.Id
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.*
 

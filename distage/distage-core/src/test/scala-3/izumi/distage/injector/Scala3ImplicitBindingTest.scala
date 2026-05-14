@@ -2,7 +2,7 @@ package izumi.distage.injector
 
 import distage.*
 import izumi.distage.model.exceptions.runtime.ProvisioningException
-import izumi.functional.quasi.QuasiApplicative
+import izumi.functional.bio.QuasiApplicative
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.reflect.Tag
 import org.scalatest.exceptions.TestFailedException

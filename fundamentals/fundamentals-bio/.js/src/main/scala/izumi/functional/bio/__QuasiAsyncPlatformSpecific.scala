@@ -1,11 +1,11 @@
-package izumi.functional.quasi
+package izumi.functional.bio
 
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.collection.compat.*
 import scala.concurrent.Future
 
-private[quasi] object __QuasiAsyncPlatformSpecific {
+private[bio] object __QuasiAsyncPlatformSpecific {
 
   def quasiAsyncIdentity: QuasiAsync[Identity] = {
     new QuasiAsync[Identity] {

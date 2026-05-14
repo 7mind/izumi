@@ -1,7 +1,7 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.framework.DebugProperties
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.functional.bio.{QuasiAsync, QuasiIO}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.logstage.api.IzLogger
 

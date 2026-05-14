@@ -6,14 +6,14 @@ import cats.effect.kernel.Async
 import cats.effect.unsafe.{IORuntimeConfig, Scheduler}
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
-import izumi.functional.quasi.QuasiIORunner
+import izumi.functional.bio.QuasiIORunner
 
 object CatsIOSupportModule extends CatsIOSupportModule
 
 /**
   * `cats.effect.IO` effect type support for `distage` resources, effects, roles & tests
   *
-  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.bio.QuasiIO]] instances to support using `cats.effect.IO` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
   *  - Adds `cats-effect` typeclass instances for `cats.effect.IO`
   *
   * Added into scope by [[izumi.distage.modules.DefaultModule]].

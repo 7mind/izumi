@@ -4,8 +4,8 @@ import java.util.concurrent.atomic.AtomicReference
 import izumi.distage.model.definition.Lifecycle
 import izumi.functional.bio.Exit
 import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.QuasiIO.syntax.*
 import izumi.fundamentals.platform.language.Quirks.*
 
 import scala.collection.immutable.Queue

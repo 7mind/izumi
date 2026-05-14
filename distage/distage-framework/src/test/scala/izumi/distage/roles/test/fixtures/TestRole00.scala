@@ -12,7 +12,7 @@ import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.ResourcesPlugin.Conflict
 import izumi.distage.roles.test.fixtures.TestPluginCatsIO.NotCloseable
 import izumi.distage.roles.test.fixtures.roles.TestRole00.TestRole00Resource
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.integration.ResourceCheck

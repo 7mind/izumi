@@ -8,8 +8,8 @@ import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstan
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.scalatest.Spec1
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
+import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.{QuasiIO, QuasiTemporal}
 import izumi.logstage.api.Log
 import zio.Task
 

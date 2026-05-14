@@ -8,7 +8,7 @@ import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.reflect.TagK
 

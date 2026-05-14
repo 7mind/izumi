@@ -7,7 +7,7 @@ import izumi.distage.model.definition.{Activation, BootstrapModule, Id, ModuleBa
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
 import izumi.distage.model.reflection.DIKey
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK

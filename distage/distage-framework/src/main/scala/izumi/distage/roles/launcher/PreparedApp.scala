@@ -2,7 +2,7 @@ package izumi.distage.roles.launcher
 
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiIORunner}
 
 final case class PreparedApp[F[_]](
   appResource: Lifecycle[F, Locator],

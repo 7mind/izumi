@@ -2,7 +2,7 @@ package com.github.pshirshov.test.plugins
 
 import izumi.distage.model.Planner
 import izumi.distage.model.definition.{Id, Module}
-import izumi.functional.quasi.QuasiApplicative
+import izumi.functional.bio.QuasiApplicative
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.functional.bio.Clock1

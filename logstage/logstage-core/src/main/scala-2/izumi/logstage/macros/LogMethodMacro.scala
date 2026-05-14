@@ -1,6 +1,6 @@
 package izumi.logstage.macros
 
-import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{QuasiIO, QuasiPrimitives}
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log.Level
 import izumi.logstage.api.logger.{AbstractLogIO, AbstractLogger}

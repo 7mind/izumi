@@ -5,8 +5,8 @@ import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestStatusConverter, TimedActionF}
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.QuasiIO.syntax.*
 
 trait TestTreeRunner[F[_]] {
   def traverse(

@@ -2,8 +2,8 @@ package izumi.distage.testkit.runner.impl.services
 
 import distage.*
 import izumi.functional.bio.Clock1
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.QuasiIO.syntax.*
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit

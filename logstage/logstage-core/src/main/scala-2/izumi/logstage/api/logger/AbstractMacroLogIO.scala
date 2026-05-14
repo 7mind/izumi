@@ -1,6 +1,6 @@
 package izumi.logstage.api.logger
 
-import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{QuasiIO, QuasiPrimitives}
 import izumi.logstage.api.Log.Level
 import izumi.logstage.api.logger.AbstractMacroLogIO.LogMethodF
 import izumi.logstage.macros.LogIOMacroMethods.*

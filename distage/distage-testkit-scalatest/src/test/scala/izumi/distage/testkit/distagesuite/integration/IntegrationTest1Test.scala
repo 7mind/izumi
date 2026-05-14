@@ -9,7 +9,7 @@ import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.{Spec1, Spec2}
 import izumi.functional.bio.catz.*
 import izumi.functional.bio.{Applicative2, ApplicativeError2, F}
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.integration.ResourceCheck
 import zio.{Task, UIO, ZEnvironment, ZIO}
 

@@ -8,7 +8,7 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.{AsyncGlobalSuitesControlHandle, AsyncResult}
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
+import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK

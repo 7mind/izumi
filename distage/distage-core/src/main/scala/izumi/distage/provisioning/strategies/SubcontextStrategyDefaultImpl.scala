@@ -8,7 +8,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.provisioning.strategies.SubcontextStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.distage.model.recursive.LocatorRef
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.reflect.TagK
 
 class SubcontextStrategyDefaultImpl extends SubcontextStrategy {

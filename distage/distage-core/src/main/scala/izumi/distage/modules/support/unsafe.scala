@@ -4,7 +4,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.functional.bio.Exit
 import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
-import izumi.functional.quasi.*
+import izumi.functional.bio.*
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.concurrent.Future

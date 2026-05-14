@@ -3,7 +3,7 @@ package izumi.distage.roles.test.fixtures
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.logstage.api.IzLogger
 

@@ -2,7 +2,7 @@ package izumi.distage.testkit.spec
 
 import distage.{Tag, TagK}
 import izumi.distage.model.providers.Functoid
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.language.SourceFilePosition
 
 trait DISyntaxBase[F[_]] {

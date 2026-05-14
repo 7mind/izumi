@@ -7,7 +7,7 @@ import izumi.distage.config.model.ConfigDoc
 import izumi.distage.model.definition.Axis
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.roles.test.fixtures.roles.TestRole00.SetElementOnlyCfg
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.*
 

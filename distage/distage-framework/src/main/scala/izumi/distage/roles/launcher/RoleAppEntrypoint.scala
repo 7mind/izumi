@@ -5,8 +5,8 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.{QuasiAsync, QuasiIO}
+import izumi.functional.bio.QuasiIO.syntax.*
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.reflect.TagK

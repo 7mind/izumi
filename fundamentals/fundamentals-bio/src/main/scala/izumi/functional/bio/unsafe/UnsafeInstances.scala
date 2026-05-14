@@ -2,7 +2,7 @@ package izumi.functional.bio.unsafe
 
 import izumi.functional.bio.impl.BioEither
 import izumi.functional.bio.{Error2, Parallel2, ParallelErrorAccumulatingOps2}
-import izumi.functional.quasi.QuasiAsync
+import izumi.functional.bio.QuasiAsync
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.collection.compat.{Factory, IterableOnce}

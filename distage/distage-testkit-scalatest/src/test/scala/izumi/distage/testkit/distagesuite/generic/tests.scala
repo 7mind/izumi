@@ -8,8 +8,8 @@ import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.*
 import izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec
 import izumi.functional.bio.{Exit, F, IO2}
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.QuasiIO
+import izumi.functional.bio.QuasiIO.syntax.*
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks.*
 import org.scalatest.exceptions.TestFailedException

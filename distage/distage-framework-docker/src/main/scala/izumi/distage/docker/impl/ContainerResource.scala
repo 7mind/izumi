@@ -13,8 +13,8 @@ import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.functional.Value
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.files.FileLockMutex

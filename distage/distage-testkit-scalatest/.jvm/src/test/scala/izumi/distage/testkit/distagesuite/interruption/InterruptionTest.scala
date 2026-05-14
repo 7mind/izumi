@@ -6,8 +6,8 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.scalatest.Spec1
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.AsyncGlobalSuitesControlHandle
 import izumi.distage.testkit.services.scalatest.dstest.{ScalatestAbstractDistageSpec, TestRunnerRuntime}
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
+import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.{QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger

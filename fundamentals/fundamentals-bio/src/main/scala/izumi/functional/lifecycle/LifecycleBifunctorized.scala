@@ -1,7 +1,7 @@
 package izumi.functional.lifecycle
 
 import izumi.functional.bio.{Bifunctorized, IO2}
-import izumi.functional.quasi.{QuasiApplicative, QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{QuasiApplicative, QuasiIO, QuasiPrimitives}
 
 /** Parallel BIO surface for [[Lifecycle]] factory methods.
   *
@@ -19,7 +19,7 @@ import izumi.functional.quasi.{QuasiApplicative, QuasiIO, QuasiPrimitives}
   * existing `Lifecycle` instance is the right one and no extra allocation occurs.
   *
   * Bridging strategy: the existing `QuasiIO.fromBIO` derivation
-  * ([[izumi.functional.quasi.LowPriorityQuasiIOInstances#fromBIO]]) already produces a
+  * ([[izumi.functional.bio.LowPriorityQuasiIOInstances#fromBIO]]) already produces a
   * `QuasiIO[Bifunctorized.NoOp[F, Throwable, _]]` from `IO2[Bifunctorized.NoOp[F, +_, +_]]`.
   * Because `Bifunctorized.NoOp[F, Throwable, A]` is erased to `F[Throwable, A]` at runtime,
   * that dictionary IS a `QuasiIO[F[Throwable, _]]` modulo type. The reinterpret cast in

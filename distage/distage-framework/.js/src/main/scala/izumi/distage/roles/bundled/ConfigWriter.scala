@@ -1,7 +1,7 @@
 package izumi.distage.roles.bundled
 
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.logstage.api.IzLogger
 

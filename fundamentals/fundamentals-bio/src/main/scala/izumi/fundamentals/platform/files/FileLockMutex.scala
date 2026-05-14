@@ -1,8 +1,8 @@
 package izumi.fundamentals.platform.files
 
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiTemporal}
 
 import java.io.File
 import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock, OverlappingFileLockException}

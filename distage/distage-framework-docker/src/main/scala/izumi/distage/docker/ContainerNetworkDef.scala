@@ -6,8 +6,8 @@ import izumi.distage.docker.model.Docker.DockerReusePolicy
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.distage.model.providers.Functoid
-import izumi.functional.quasi.QuasiIO.syntax.QuasiIOSyntax
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.functional.bio.QuasiIO.syntax.QuasiIOSyntax
+import izumi.functional.bio.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.files.FileLockMutex
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.*

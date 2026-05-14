@@ -2,7 +2,7 @@ package izumi
 
 import izumi.distage.model.definition.Lifecycle2
 import izumi.functional.bio.{Applicative2, Functor2, Monad2}
-import izumi.functional.quasi.QuasiPrimitives
+import izumi.functional.bio.QuasiPrimitives
 import org.scalatest.wordspec.AnyWordSpec
 
 class LifecycleIzumiInstancesTest extends AnyWordSpec {

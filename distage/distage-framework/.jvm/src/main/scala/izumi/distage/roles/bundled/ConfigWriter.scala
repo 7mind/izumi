@@ -15,7 +15,7 @@ import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, MinimizedConfig, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}

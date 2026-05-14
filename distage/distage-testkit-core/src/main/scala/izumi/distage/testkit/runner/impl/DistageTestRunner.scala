@@ -5,8 +5,8 @@ import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.*
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
+import izumi.functional.bio.QuasiIO.syntax.*
+import izumi.functional.bio.{QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.fundamentals.platform.uuid.IzUUID
 import izumi.logstage.api.IzLogger

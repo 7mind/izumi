@@ -12,7 +12,7 @@ import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, GenericTypedRef}
 import izumi.functional.Renderable
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.quasi.QuasiPrimitives
+import izumi.functional.bio.QuasiPrimitives
 import izumi.reflect.{Tag, TagK}
 
 import scala.collection.immutable

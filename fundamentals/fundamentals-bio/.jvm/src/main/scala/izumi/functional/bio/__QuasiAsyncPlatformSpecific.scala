@@ -1,6 +1,5 @@
-package izumi.functional.quasi
+package izumi.functional.bio
 
-import izumi.functional.bio.Exit
 import izumi.functional.bio.UnsafeRun2.NamedThreadFactory
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.fundamentals.platform.functional.Identity
@@ -11,7 +10,7 @@ import scala.collection.compat.*
 import scala.concurrent.*
 import scala.concurrent.duration.Duration
 
-private[quasi] object __QuasiAsyncPlatformSpecific {
+private[bio] object __QuasiAsyncPlatformSpecific {
 
   private final lazy val QuasiAsyncIdentityBlockingIOPool = {
     val factory = new NamedThreadFactory("QuasiIO-cached-pool", daemon = true, priority = None)

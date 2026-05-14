@@ -3,7 +3,7 @@ package izumi.distage.model
 import izumi.distage.model.definition.BootstrapModule
 import izumi.distage.modules.DefaultModule
 import izumi.functional.bio.{Bifunctorized, IO2}
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.reflect.TagKK
 
 /** Parallel BIO-friendly entry to distage's [[Injector]]. Construct an injector for a

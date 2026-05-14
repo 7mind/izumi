@@ -12,7 +12,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finali
 import izumi.distage.model.provisioning.Provision.{ProvisionImmutable, ProvisionInstances}
 import izumi.distage.model.reflection.*
 import izumi.distage.model.reflection.Provider.UnsafeProviderCallArgsMismatched
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.exceptions.IzThrowable.*

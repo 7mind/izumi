@@ -5,7 +5,7 @@ import cats.effect.kernel
 import cats.effect.kernel.{GenConcurrent, Resource, Sync}
 import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
 import izumi.functional.bio.{Fiber2, Fork2, Functor2, Monad2}
-import izumi.functional.quasi.*
+import izumi.functional.bio.*
 import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*

@@ -7,7 +7,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.scalatest.Spec1
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import zio.Task

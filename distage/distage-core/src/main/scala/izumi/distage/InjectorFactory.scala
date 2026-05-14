@@ -3,7 +3,7 @@ package izumi.distage
 import distage.LocatorPrivacy
 import izumi.distage.bootstrap.BootstrapRootsMode
 import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule}
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.QuasiIO
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, PlannerInput}

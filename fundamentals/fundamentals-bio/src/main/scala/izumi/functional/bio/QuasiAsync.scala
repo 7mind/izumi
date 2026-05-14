@@ -1,6 +1,5 @@
-package izumi.functional.quasi
+package izumi.functional.bio
 
-import izumi.functional.bio.{WeakAsync2, WeakTemporal2}
 import izumi.fundamentals.orphans.{`cats.effect.kernel.Async`, `cats.effect.kernel.GenTemporal`}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -56,7 +55,7 @@ object QuasiAsync extends LowPriorityQuasiAsyncInstances {
   }
 }
 
-private[quasi] sealed trait LowPriorityQuasiAsyncInstances {
+private[bio] sealed trait LowPriorityQuasiAsyncInstances {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
@@ -112,7 +111,7 @@ object QuasiTemporal extends LowPriorityQuasiTemporalInstances {
   }
 }
 
-private[quasi] sealed trait LowPriorityQuasiTemporalInstances {
+private[bio] sealed trait LowPriorityQuasiTemporalInstances {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
