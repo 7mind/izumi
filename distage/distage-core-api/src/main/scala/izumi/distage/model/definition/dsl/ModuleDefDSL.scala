@@ -495,7 +495,7 @@ object ModuleDefDSL {
           .map(r => effect.provideSomeEnvironment[Scope](_.unionAll[R](r)))
           .map(Lifecycle.fromZIO[Any](_))
 
-        dsl.fromResource(provider)
+        dsl.fromResource[ZIO[Any, +_, +_], E, Lifecycle.FromZIO[Any, E, I]](provider)
       }
 
       def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZIO[Scope & R, E, I]]): AfterBind = {
@@ -503,7 +503,7 @@ object ModuleDefDSL {
           .map2(ZEnvConstructor[R])((zio, r) => zio.provideSomeEnvironment[Scope](_.unionAll[R](r)))
           .map(Lifecycle.fromZIO[Any](_))
 
-        dsl.fromResource(provider)
+        dsl.fromResource[ZIO[Any, +_, +_], E, Lifecycle.FromZIO[Any, E, I]](provider)
       }
 
       def fromZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
@@ -550,7 +550,7 @@ object ModuleDefDSL {
       def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, +_, +_], Any, T]: ClassConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
         import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
         val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(using tagFull)
-        dsl.fromResource(provider)(resourceTag, DummyImplicit.dummyImplicit)
+        dsl.fromResource[ZIO[Any, +_, +_], E, Lifecycle[ZIO[Any, +_, +_], E, A]](provider)(resourceTag, DummyImplicit.dummyImplicit)
       }
 
       /**
@@ -619,7 +619,7 @@ object ModuleDefDSL {
       ): AfterAdd = {
         import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
         val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(using tagFull)
-        dsl.addResource(provider)(resourceTag, pos, DummyImplicit.dummyImplicit)
+        dsl.addResource[ZIO[Any, +_, +_], E, Lifecycle[ZIO[Any, +_, +_], E, A]](provider)(resourceTag, pos, DummyImplicit.dummyImplicit)
       }
 
       /**

@@ -181,7 +181,7 @@ object LifecycleAdapters {
       val ctorR: ZEnvConstructor[R0] = implicitly
       val tagFull: Tag[Lifecycle[ZIO[Any, +_, +_], E0, A0]] = implicitly
       val ev: R1 <:< Lifecycle[ZIO[R0, +_, +_], E0, A0] =
-        <:<.refl[Any].asInstanceOf[R1 <:< Lifecycle[ZIO[R0, +_, +_], E0, A0]]
+        implicitly[Any <:< Any].asInstanceOf[R1 <:< Lifecycle[ZIO[R0, +_, +_], E0, A0]]
       val resourceTag: LifecycleTag[Lifecycle[ZIO[Any, +_, +_], E0, A0]] = new LifecycleTag[Lifecycle[ZIO[Any, +_, +_], E0, A0]] {
         type F[+e, +a] = ZIO[Any, e, a]
         type E = E0
