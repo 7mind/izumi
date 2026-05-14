@@ -1,7 +1,7 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.Lifecycle
-import izumi.functional.bio.{Bifunctorized, IO2}
+import izumi.functional.bio.{Bifunctorized, IO2, Primitives2}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.reflect.TagKK
@@ -12,12 +12,12 @@ import izumi.reflect.TagKK
   */
 trait Producer {
   private[distage] def produceDetailedFX[F[+_, +_]: TagKK: IO2](plan: Plan, filter: FinalizerFilter[F]): Lifecycle[F, Throwable, Either[FailedProvision, Locator]]
-  private[distage] final def produceFX[F[+_, +_]: TagKK: IO2](plan: Plan, filter: FinalizerFilter[F]): Lifecycle[F, Throwable, Locator] = {
+  private[distage] final def produceFX[F[+_, +_]: TagKK: IO2: Primitives2](plan: Plan, filter: FinalizerFilter[F]): Lifecycle[F, Throwable, Locator] = {
     produceDetailedFX[F](plan, filter).evalMap(_.failOnFailure())
   }
 
   /** Produce [[izumi.distage.model.Locator]] interpreting effect- and resource-bindings into the provided `F` */
-  final def produceCustomF[F[+_, +_]: TagKK: IO2](plan: Plan): Lifecycle[F, Throwable, Locator] = {
+  final def produceCustomF[F[+_, +_]: TagKK: IO2: Primitives2](plan: Plan): Lifecycle[F, Throwable, Locator] = {
     produceFX[F](plan, FinalizerFilter.all[F])
   }
   final def produceDetailedCustomF[F[+_, +_]: TagKK: IO2](plan: Plan): Lifecycle[F, Throwable, Either[FailedProvision, Locator]] = {

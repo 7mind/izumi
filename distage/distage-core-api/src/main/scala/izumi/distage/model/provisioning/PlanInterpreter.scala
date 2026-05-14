@@ -38,7 +38,7 @@ object PlanInterpreter {
   final case class Finalizer[F[+_, +_]](key: DIKey, effect: () => F[Nothing, Unit], fType: SafeType)
   object Finalizer {
     def apply[F[+_, +_]: TagKK](key: DIKey, effect: () => F[Nothing, Unit]): Finalizer[F] = {
-      new Finalizer(key, effect, SafeType.getK[F])
+      new Finalizer(key, effect, SafeType.getKK[F])
     }
   }
 
