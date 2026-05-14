@@ -258,7 +258,7 @@ Actual: raises `SubmergedTypedError[IO]` wrapping `rt`. A user's downstream `IO.
 **Fix:** Plan §2 PR-04 scope paragraph updated to disambiguate `sync` (no submerging, defect path) from `syncThrowable`/`syncBlocking`/`syncInterruptibleBlocking`/`fromFuture`/`fromFutureJava` (submerge into `SubmergedTypedError[F]` because their typed channel is `Throwable`).
 
 ## [PR-04-D03] Missing test coverage for `syncThrowable`/`syncBlocking`/`fromFuture` round-trips
-**Status:** under fix
+**Status:** resolved
 **Severity:** minor
 **Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/.jvm/src/test/scala/izumi/functional/bio/CatsToBIOTest.scala
 **Description:** Coverage for `Bifunctorized[F, Throwable, A]` typed-error operations is missing. Tests cover `fail` (typed-error path) and `sync` (defect path) but not the synchronous-Throwable-typed surface (`syncThrowable`, `syncBlocking`, `syncInterruptibleBlocking`, `fromFuture`, `fromFutureJava`).
@@ -266,6 +266,7 @@ Actual: raises `SubmergedTypedError[IO]` wrapping `rt`. A user's downstream `IO.
 1. `F.syncThrowable { throw t } catchAll _ => F.pure(0)` returns 0 — confirms `syncThrowable` submerges and `catchAll[Throwable]` recovers via the submerged path.
 2. `F.syncBlocking { throw t }` unhandled, unwrapped, raises a `SubmergedTypedError[IO]` carrying `t`.
 3. `F.fromFuture(_ => Future.failed(t)) catchAll _ => F.pure(0)` returns 0 — future failures round-trip through the typed-error path.
+**Fix:** Three test cases added to `CatsToBIOTest.scala` covering the three behaviors. `syncBlocking` requires casting the `Async2[BIO]` implicit to `BlockingIO2[BIO]` because the implicit landing pad (`CatsToBIOConversions.AsyncToBIO`) only exposes the `Async2` slot, not the runtime-intersection's `BlockingIO2` member. The cast is sound because the underlying object IS the full intersection. Final `CatsToBIOTest` count: 10/10 pass on Scala 3.7.4, 2.13.18, 2.12.21.
 
 ## [PR-04-D04] `shiftBlocking` passthrough is a documented degradation
 **Status:** resolved (deferred — flagged for M6 microsite)

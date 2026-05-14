@@ -89,6 +89,37 @@ final class CatsToBIOTest extends AnyWordSpec {
       assert(program.unwrap.unsafeRunSync() == 2)
     }
 
+    "syncThrowable { throw t } caught by catchAll[Throwable] recovers via the submerged path" in {
+      val defect = new RuntimeException("sync-throw-typed")
+      val program: BIO[Nothing, Int] = F.catchAll(F.syncThrowable[Int](throw defect): BIO[Throwable, Int])(_ => F.pure(0))
+      val result = program.unwrap.unsafeRunSync()
+      assert(result == 0)
+    }
+
+    "syncBlocking { throw t } unhandled raises SubmergedTypedError[IO] carrying the throwable" in {
+      val cause = new IllegalStateException("blocking-typed")
+      // BlockingIO2[BIO] is not exposed as a separate implicit; cast the Async2 instance which
+      // implements the intersection at runtime (see CatsToBIO.asyncToBIO return type).
+      val blocking: BlockingIO2[BIO] = F.asInstanceOf[BlockingIO2[BIO]]
+      val program: BIO[Throwable, Int] = blocking.syncBlocking[Int](throw cause)
+      runUnwrapTry(program) match {
+        case Failure(t) =>
+          assert(SubmergedTypedError.unapply[IO](t).contains(cause))
+        case Success(v) =>
+          fail(s"expected failure carrying SubmergedTypedError[IO], got success($v)")
+      }
+    }
+
+    "fromFuture(failed) caught by catchAll[Throwable] recovers via the submerged path" in {
+      import scala.concurrent.{ExecutionContext, Future}
+      val cause = new RuntimeException("future-typed")
+      val program: BIO[Nothing, Int] = F.catchAll(
+        F.fromFuture[Int]((_: ExecutionContext) => Future.failed(cause)): BIO[Throwable, Int]
+      )(_ => F.pure(0))
+      val result = program.unwrap.unsafeRunSync()
+      assert(result == 0)
+    }
+
   }
 
 }

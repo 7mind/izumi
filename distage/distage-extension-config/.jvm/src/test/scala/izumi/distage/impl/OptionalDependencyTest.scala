@@ -229,6 +229,27 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
 //    }
   }
 
+  "Bifunctorized / SubmergedTypedError / BifunctorizedNoOpInstances are reachable on a no-cats classpath" in {
+    And("Bifunctorized companion object is reachable without cats")
+    izumi.functional.bio.Bifunctorized.discard()
+
+    And("SubmergedTypedError companion object is reachable without cats")
+    izumi.functional.bio.SubmergedTypedError.discard()
+
+    And("BifunctorizedNoOpInstances trait is reachable without cats")
+    classOf[izumi.functional.bio.BifunctorizedNoOpInstances].discard()
+
+    And("A type using Bifunctorized[Try, E, A] compiles without cats")
+    assertCompiles("type X[+E, +A] = izumi.functional.bio.Bifunctorized.Bifunctorized[scala.util.Try, E, A]")
+
+    And("bifunctorizeConversion auto-lifts Try[A] to Bifunctorized[Try, Throwable, A] without cats")
+    assertCompiles("""
+      import izumi.functional.bio.Bifunctorized._
+      val raw: scala.util.Try[Int] = scala.util.Success(42)
+      val wrapped: izumi.functional.bio.Bifunctorized.Bifunctorized[scala.util.Try, Throwable, Int] = raw
+    """)
+  }: @nowarn("msg=pure expression")
+
   "Using Exit.Trace succeeds even if there's no zio on the classpath" in {
     Exit.discard()
     Exit.Trace.discard()
