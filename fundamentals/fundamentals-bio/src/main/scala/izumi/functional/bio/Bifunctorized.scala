@@ -1,5 +1,8 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.impl.MiniBIO
+import izumi.fundamentals.platform.functional.Identity
+
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -29,6 +32,44 @@ object Bifunctorized extends BifunctorizedNoOpInstances {
     * still `F[E, A]` (cast via `asInstanceOf` inside [[BifunctorizedNoOpInstances]]).
     */
   type NoOp[F[+_, +_], +E, +A]
+
+  /** Bifunctorized form of [[izumi.fundamentals.platform.functional.Identity Identity]] (= `A` at runtime).
+    *
+    * UNLIKE the general [[Bifunctorized]]`[F, E, A]` which erases to `F[A]`, this type's runtime
+    * carrier is [[izumi.functional.bio.impl.MiniBIO MiniBIO]]`[Throwable, A]` (boxed). This is the
+    * only Bifunctorized subtype that is not zero-cost.
+    *
+    * `Identity` has no error channel, so `Bifunctorized[Identity, E, A] = Identity[A] = A` cannot
+    * carry typed errors. The MiniBIO carrier provides one. M3 / M4 entry points (Lifecycle,
+    * Injector, LogIO) automatically route `Identity` through this type so the user-visible
+    * `Identity` continues to work.
+    *
+    * Goal 3 (verbatim): "Identity is special-cased and goes through a bifunctorization/
+    * debifunctorization cycle to MiniBIO and back, transparently to the user."
+    *
+    * Construction is via [[bifunctorizeIdentity]]; extraction is via [[debifunctorizeIdentity]].
+    * The [[BifunctorizedNoOpInstances.identityBifunctorizedHasIO2]] factory provides an
+    * [[IO2]] instance that delegates to [[izumi.functional.bio.impl.MiniBIO.IOForMiniBIO]] via cast.
+    */
+  type IdentityBifunctorized[+E, +A]
+
+  /** Wrap an [[izumi.fundamentals.platform.functional.Identity Identity]]`[A]` (= bare `A`) into
+    * the MiniBIO-carrier [[IdentityBifunctorized]].
+    *
+    * The argument is taken by-name and wrapped in `MiniBIO.Sync(() => Success(a))`, so evaluation
+    * is suspended until the resulting MiniBIO is run. A thrown exception during evaluation is
+    * captured as a [[Exit.Termination]] (defect) — consistent with MiniBIO's `Sync` semantics.
+    */
+  def bifunctorizeIdentity[A](a: => Identity[A]): IdentityBifunctorized[Throwable, A] =
+    MiniBIO.IOForMiniBIO.sync(a).asInstanceOf[IdentityBifunctorized[Throwable, A]]
+
+  /** Run the underlying MiniBIO and project back to [[izumi.fundamentals.platform.functional.Identity Identity]].
+    *
+    * Successful values are returned as `A`; typed errors and defects are re-raised as the
+    * [[Throwable]] produced by `MiniBIO.run().toThrowable` (the standard MiniBIO autoRun semantics).
+    */
+  def debifunctorizeIdentity[A](b: IdentityBifunctorized[Throwable, A]): Identity[A] =
+    MiniBIO.autoRun.autoRunAlways(b.asInstanceOf[MiniBIO[Throwable, A]])
 
   /** Unchecked reinterpret cast. Internal escape hatch used by `bifunctorize`
     * and conversion-typeclass implementations that have already encoded their
@@ -86,6 +127,15 @@ object Bifunctorized extends BifunctorizedNoOpInstances {
     */
   implicit final class BifunctorizedNoOpOps[F[+_, +_], E, A](private val b: Bifunctorized.NoOp[F, E, A]) extends AnyVal {
     @inline def unwrap: F[E, A] = b.asInstanceOf[F[E, A]]
+  }
+
+  /** `.underlyingMiniBIO` syntax on an [[IdentityBifunctorized]] value, returning the MiniBIO
+    * carrier. UNLIKE the other `unwrap` variants this is not zero-cost: the carrier is a real
+    * MiniBIO instance (boxed) and exposing it is how callers reach the suspended-effect API
+    * directly when [[debifunctorizeIdentity]] would short-circuit them.
+    */
+  implicit final class IdentityBifunctorizedOps[E, A](private val b: Bifunctorized.IdentityBifunctorized[E, A]) extends AnyVal {
+    @inline def underlyingMiniBIO: MiniBIO[E, A] = b.asInstanceOf[MiniBIO[E, A]]
   }
 
 }

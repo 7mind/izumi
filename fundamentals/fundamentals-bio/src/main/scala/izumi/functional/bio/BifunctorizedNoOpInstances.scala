@@ -1,6 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.PredefinedHelper.Predefined
+import izumi.functional.bio.impl.MiniBIO
 
 /** High-priority no-op identity instances for `Bifunctorized.NoOp[F, +_, +_]` when `F` is
   * already a bifunctor with a BIO `IO2` instance. The "no-op" is a type-level reinterpretation:
@@ -12,6 +13,9 @@ import izumi.functional.bio.PredefinedHelper.Predefined
   * implicit scope of `Bifunctorized.NoOp[F, ?, ?]` typeclass searches — this ensures the no-op
   * is auto-available for `IO2[NoOp[F, ?, ?]]` lookups without polluting general
   * `Functor2[X]` / `IO2[X]` searches with an unbound `X`.
+  *
+  * Also provides the Identity special-case [[identityBifunctorizedHasIO2]] (Goal 3) — see its
+  * scaladoc for the load-bearing rationale.
   */
 trait BifunctorizedNoOpInstances {
 
@@ -27,5 +31,21 @@ trait BifunctorizedNoOpInstances {
     implicit F: IO2[F]
   ): Predefined.Of[IO2[Bifunctorized.NoOp[F, +_, +_]]] =
     Predefined(F.asInstanceOf[IO2[Bifunctorized.NoOp[F, +_, +_]]])
+
+  /** Identity special-case (Goal 3): an [[IO2]] instance for [[Bifunctorized.IdentityBifunctorized]]
+    * delegating to [[izumi.functional.bio.impl.MiniBIO.IOForMiniBIO]] via cast.
+    *
+    * UNLIKE [[bifunctorIsAlreadyBifunctor]], this factory does NOT erase to the type-level identity
+    * of `Identity` (which would be the runtime carrier `A`). Instead, the runtime carrier of every
+    * [[Bifunctorized.IdentityBifunctorized]] value is a [[izumi.functional.bio.impl.MiniBIO MiniBIO]]
+    * (boxed), so the `IO2[MiniBIO]` dictionary is directly applicable. The cast is sound because
+    * `Bifunctorized.IdentityBifunctorized` is an abstract type erased to `Object`, identical in
+    * representation to `MiniBIO[E, A]`.
+    *
+    * Returned as `Predefined.Of` so it outranks any cats-effect `Sync[Identity]`-mediated path
+    * that some user might bring into scope (none currently exists, but it costs nothing to be safe).
+    */
+  @inline implicit final def identityBifunctorizedHasIO2: Predefined.Of[IO2[Bifunctorized.IdentityBifunctorized]] =
+    Predefined(MiniBIO.IOForMiniBIO.asInstanceOf[IO2[Bifunctorized.IdentityBifunctorized]])
 
 }
