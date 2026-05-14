@@ -1,7 +1,6 @@
 package izumi.functional.lifecycle
 
-import izumi.functional.bio.{Bifunctorized, IO2}
-import izumi.functional.bio.{Applicative1, IO1, Primitives1}
+import izumi.functional.bio.{Applicative1, Bifunctorized, IO1, IO2, Primitives1}
 
 /** Parallel BIO surface for [[Lifecycle]] factory methods.
   *
