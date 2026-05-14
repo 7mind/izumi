@@ -1,56 +1,61 @@
 package izumi.functional.lifecycle
 
-import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
-import izumi.functional.bio.{Functor1, IO1, Primitives1, Ref0}
+import izumi.functional.bio.data.{Morphism2, RestoreInterruption2}
+import izumi.functional.bio.{Functor2, IO2, Primitives2, Ref2}
 
 private[lifecycle] object LifecycleMethodImpls {
-  @inline final def mapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => B)(implicit F: Functor1[F]): Lifecycle[F, B] = {
-    new Lifecycle[F, B] {
+  @inline final def mapImpl[F[+_, +_], E, A, B](self: Lifecycle[F, E, A])(f: A => B)(implicit F: Functor2[F]): Lifecycle[F, E, B] = {
+    new Lifecycle[F, E, B] {
       type InnerResource = self.InnerResource
 
-      override def acquire: F[InnerResource] = self.acquire
+      override def acquire: F[E, InnerResource] = self.acquire
 
-      override def release(resource: InnerResource): F[Unit] = self.release(resource)
+      override def release(resource: InnerResource): F[Nothing, Unit] = self.release(resource)
 
-      override def extract[C >: B](resource: InnerResource): Either[F[C], C] =
-        self.extract(resource) match {
+      override def extract[C >: B](resource: InnerResource): Either[F[E, C], C] =
+        self.extract[A](resource) match {
           case Left(effect) => Left(F.map(effect)(f))
           case Right(value) => Right(f(value))
         }
     }
   }
 
-  @inline final def flatMapImpl[F[_], A, B](self: Lifecycle[F, A])(f: A => Lifecycle[F, B])(implicit F: Primitives1[F]): Lifecycle[F, B] = {
-    import IO1.syntax.*
-    new Lifecycle[F, B] {
-      override type InnerResource = Ref0[F, List[() => F[Unit]]]
+  @inline final def flatMapImpl[F[+_, +_], E, A, B](
+    self: Lifecycle[F, E, A]
+  )(f: A => Lifecycle[F, E, B]
+  )(implicit F: IO2[F], P: Primitives2[F]
+  ): Lifecycle[F, E, B] = {
+    new Lifecycle[F, E, B] {
+      override type InnerResource = Ref2[F, List[() => F[Nothing, Unit]]]
 
-      private def useAppendFinalizer[T, U](finalizers: InnerResource)(lifecycle: Lifecycle[F, T])(use: lifecycle.InnerResource => F[U]): F[U] = {
-        F.uninterruptibleExcept(
+      private def useAppendFinalizer[T, U](finalizers: InnerResource)(lifecycle: Lifecycle[F, E, T])(use: lifecycle.InnerResource => F[E, U]): F[E, U] = {
+        F.uninterruptibleExcept[E, U] {
           restore =>
-            lifecycle.acquire.flatMap {
+            F.flatMap[E, lifecycle.InnerResource, U](lifecycle.acquire) {
               a =>
-                finalizers
-                  .update((() => lifecycle.release(a)) :: _)
-                  .flatMap(_ => restore(use(a)))
+                F.flatMap[E, Unit, U](
+                  finalizers.update_(((() => lifecycle.release(a)) :: _))
+                )(_ => restore(use(a)))
             }
-        )
+        }
       }
 
-      override def acquire: F[InnerResource] = {
-        F.mkRef(Nil)
+      override def acquire: F[E, InnerResource] = {
+        P.mkRef(List.empty[() => F[Nothing, Unit]])
       }
 
-      override def release(finalizers: InnerResource): F[Unit] = {
-        finalizers.get.flatMap(F.traverse_(_)(_.apply()))
+      override def release(finalizers: InnerResource): F[Nothing, Unit] = {
+        F.flatMap[Nothing, List[() => F[Nothing, Unit]], Unit](finalizers.get)(F.traverse_(_)(_.apply()))
       }
 
-      override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = Left {
+      override def extract[C >: B](finalizers: InnerResource): Either[F[E, C], C] = Left {
         useAppendFinalizer(finalizers)(self) {
           (inner1: self.InnerResource) =>
-            F.suspendF {
-              self.extract(inner1).fold(_.map(f), F `pure` f(_)).flatMap {
-                (that: Lifecycle[F, B]) =>
+            F.suspendSafe {
+              F.flatMap[E, Lifecycle[F, E, B], C](
+                self.extract[A](inner1).fold(F.map(_)(f), a => F.pure(f(a)))
+              ) {
+                (that: Lifecycle[F, E, B]) =>
                   useAppendFinalizer(finalizers)(that) {
                     (inner2: that.InnerResource) =>
                       that.extract[C](inner2).fold(identity, F.pure)
@@ -62,109 +67,115 @@ private[lifecycle] object LifecycleMethodImpls {
     }
   }
 
-  @inline final def wrapAcquireImpl[F[_], A](self: Lifecycle[F, A])(f: (=> F[self.InnerResource]) => F[self.InnerResource]): Lifecycle[F, A] = {
-    new Lifecycle[F, A] {
-      override final type InnerResource = self.InnerResource
+  @inline final def wrapAcquireImpl[F[+_, +_], E, A, R](
+    self: Lifecycle[F, E, A] { type InnerResource = R }
+  )(f: (=> F[E, R]) => F[E, R]
+  ): Lifecycle[F, E, A] = {
+    new Lifecycle[F, E, A] {
+      override final type InnerResource = R
 
-      override def acquire: F[InnerResource] = f(self.acquire)
+      override def acquire: F[E, R] = f(self.acquire)
 
-      override def release(resource: InnerResource): F[Unit] = self.release(resource)
+      override def release(resource: R): F[Nothing, Unit] = self.release(resource)
 
-      override def extract[B >: A](resource: InnerResource): Either[F[B], B] = self.extract(resource)
+      override def extract[B >: A](resource: R): Either[F[E, B], B] = self.extract[B](resource)
     }
   }
 
-  @inline final def wrapReleaseImpl[F[_], A](
-    self: Lifecycle[F, A]
-  )(f: (self.InnerResource => F[Unit], self.InnerResource) => F[Unit]
-  ): Lifecycle[F, A] = {
-    new Lifecycle[F, A] {
-      override final type InnerResource = self.InnerResource
+  @inline final def wrapReleaseImpl[F[+_, +_], E, A, R](
+    self: Lifecycle[F, E, A] { type InnerResource = R }
+  )(f: (R => F[Nothing, Unit], R) => F[Nothing, Unit]
+  ): Lifecycle[F, E, A] = {
+    new Lifecycle[F, E, A] {
+      override final type InnerResource = R
 
-      override def acquire: F[InnerResource] = self.acquire
+      override def acquire: F[E, R] = self.acquire
 
-      override def release(resource: InnerResource): F[Unit] = f(self.release, resource)
+      override def release(resource: R): F[Nothing, Unit] = f(self.release, resource)
 
-      override def extract[B >: A](resource: InnerResource): Either[F[B], B] = self.extract(resource)
+      override def extract[B >: A](resource: R): Either[F[E, B], B] = self.extract[B](resource)
     }
   }
 
-  @inline final def redeemImpl[F[_], A, B](
-    self: Lifecycle[F, A]
-  )(failure: Throwable => Lifecycle[F, B],
-    success: A => Lifecycle[F, B],
-  )(implicit F: IO1[F]
-  ): Lifecycle[F, B] = {
-    import IO1.syntax.*
-    new Lifecycle[F, B] {
-      override type InnerResource = Ref0[F, List[() => F[Unit]]]
+  @inline final def redeemImpl[F[+_, +_], E, E2, A, B](
+    self: Lifecycle[F, E, A]
+  )(failure: E => Lifecycle[F, E2, B],
+    success: A => Lifecycle[F, E2, B],
+  )(implicit F: IO2[F], P: Primitives2[F]
+  ): Lifecycle[F, E2, B] = {
+    new Lifecycle[F, E2, B] {
+      override type InnerResource = Ref2[F, List[() => F[Nothing, Unit]]]
 
-      private def extractAppendFinalizer[T](finalizers: InnerResource)(lifecycleCtor: () => Lifecycle[F, T]): F[T] = {
-        F.uninterruptibleExcept {
+      private def extractAppendFinalizer[T](finalizers: InnerResource)(lifecycleCtor: () => Lifecycle[F, E2, T]): F[E2, T] = {
+        F.uninterruptibleExcept[E2, T] {
           restore =>
             val lifecycle = lifecycleCtor()
-            lifecycle.acquire.flatMap {
+            F.flatMap[E2, lifecycle.InnerResource, T](lifecycle.acquire) {
               a =>
-                finalizers
-                  .update((() => lifecycle.release(a)) :: _)
-                  .flatMap(_ => restore(lifecycle.extract[T](a).fold(identity, F.pure)))
+                F.flatMap[E2, Unit, T](
+                  finalizers.update_(((() => lifecycle.release(a)) :: _))
+                )(_ => restore(lifecycle.extract[T](a).fold(identity, F.pure)))
             }
         }
       }
 
-      override def acquire: F[InnerResource] = {
-        F.mkRef(Nil)
+      override def acquire: F[E2, InnerResource] = {
+        P.mkRef(List.empty[() => F[Nothing, Unit]])
       }
 
-      override def release(finalizers: InnerResource): F[Unit] = {
-        finalizers.get.flatMap(F.traverse_(_)(_.apply()))
+      override def release(finalizers: InnerResource): F[Nothing, Unit] = {
+        F.flatMap[Nothing, List[() => F[Nothing, Unit]], Unit](finalizers.get)(F.traverse_(_)(_.apply()))
       }
 
-      override def extract[C >: B](finalizers: InnerResource): Either[F[C], C] = {
+      override def extract[C >: B](finalizers: InnerResource): Either[F[E2, C], C] = {
         Left(
-          F.redeem[A, C](extractAppendFinalizer(finalizers)(() => self))(
-            failure = e => extractAppendFinalizer(finalizers)(() => failure(e)),
-            success = a => extractAppendFinalizer(finalizers)(() => success(a)),
+          F.redeem[E, A, E2, C](
+            extractAppendFinalizer[A](finalizers)(() => self.asInstanceOf[Lifecycle[F, E2, A]]).asInstanceOf[F[E, A]]
+          )(
+            err = e => extractAppendFinalizer[C](finalizers)(() => (failure(e): Lifecycle[F, E2, B]).asInstanceOf[Lifecycle[F, E2, C]]),
+            succ = a => extractAppendFinalizer[C](finalizers)(() => (success(a): Lifecycle[F, E2, B]).asInstanceOf[Lifecycle[F, E2, C]]),
           )
         )
       }
     }
   }
 
-  @inline final def makeUninterruptibleExceptImpl[F[_], A](
-    acquire0: RestoreInterruption1[F] => F[A]
-  )(release0: A => F[Unit]
-  )(implicit F: Primitives1[F]
-  ): Lifecycle[F, A] = {
-    import IO1.syntax.*
-    new Lifecycle[F, A] {
-      override type InnerResource = Ref0[F, List[() => F[Unit]]]
+  @inline final def makeUninterruptibleExceptImpl[F[+_, +_], E, A](
+    acquire0: RestoreInterruption2[F] => F[E, A]
+  )(release0: A => F[Nothing, Unit]
+  )(implicit F: IO2[F], P: Primitives2[F]
+  ): Lifecycle[F, E, A] = {
+    new Lifecycle[F, E, A] {
+      override type InnerResource = Ref2[F, List[() => F[Nothing, Unit]]]
 
-      override def acquire: F[InnerResource] = {
-        F.mkRef(Nil)
+      override def acquire: F[E, InnerResource] = {
+        P.mkRef(List.empty[() => F[Nothing, Unit]])
       }
 
-      override def release(finalizers: InnerResource): F[Unit] = {
-        finalizers.get.flatMap(F.traverse_(_)(_.apply()))
+      override def release(finalizers: InnerResource): F[Nothing, Unit] = {
+        F.flatMap[Nothing, List[() => F[Nothing, Unit]], Unit](finalizers.get)(F.traverse_(_)(_.apply()))
       }
 
-      override def extract[B >: A](finalizers: InnerResource): Either[F[B], B] = Left {
-        F.uninterruptibleExcept {
+      override def extract[B >: A](finalizers: InnerResource): Either[F[E, B], B] = Left {
+        F.uninterruptibleExcept[E, B] {
           restore =>
-            acquire0(restore).flatMap {
-              a => finalizers.update((() => release0(a)) :: _).map(_ => a)
+            F.flatMap[E, A, B](acquire0(restore)) {
+              a =>
+                F.map[Nothing, Unit, B](
+                  finalizers.update_(((() => release0(a)) :: _))
+                )(_ => a: B)
             }
         }
       }
     }
   }
 
-  @inline final def mapKImpl[F[_], G[_], A](self: Lifecycle[F, A], f: Morphism1[F, G]): Lifecycle[G, A] = {
-    new Lifecycle[G, A] {
+  @inline final def mapKImpl[F[+_, +_], G[+_, +_], E, A](self: Lifecycle[F, E, A], f: Morphism2[F, G]): Lifecycle[G, E, A] = {
+    new Lifecycle[G, E, A] {
       override type InnerResource = self.InnerResource
-      override def acquire: G[InnerResource] = f(self.acquire)
-      override def release(res: InnerResource): G[Unit] = f(self.release(res))
-      override def extract[B >: A](res: InnerResource): Either[G[B], B] = self.extract(res).left.map(fa => f(fa.asInstanceOf[F[B]]))
+      override def acquire: G[E, InnerResource] = f(self.acquire)
+      override def release(res: InnerResource): G[Nothing, Unit] = f(self.release(res))
+      override def extract[B >: A](res: InnerResource): Either[G[E, B], B] = self.extract[B](res).left.map(fa => f(fa))
     }
   }
 

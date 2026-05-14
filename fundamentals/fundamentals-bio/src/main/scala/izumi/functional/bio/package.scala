@@ -144,8 +144,8 @@ package object bio extends Syntax2 {
   type Latch2[+F[+_, +_]] = Promise2[F, Nothing, Unit]
   lazy val Latch2: Promise2.type = Promise2
 
-  type Semaphore2[+F[_, _]] = Semaphore1[F[Nothing, _]]
-  lazy val Semaphore2: Semaphore1.type = Semaphore1
+  type Semaphore2[F[+_, +_]] = Semaphore1.Semaphore2[F]
+  lazy val Semaphore2: Semaphore1.Semaphore2.type = Semaphore1.Semaphore2
 
   type SyncSafe2[F[_, _]] = SyncSafe1[F[Nothing, _]]
   object SyncSafe2 {
@@ -175,29 +175,5 @@ package object bio extends Syntax2 {
   }
 
   type Bifunctorized[F[_], +E, +A] = izumi.functional.bio.Bifunctorized.Bifunctorized[F, E, A]
-
-  // Monofunctor adapter typeclass family — distage internals' compatibility shims over BIO.
-  // The naming follows the `*1` suffix convention already used elsewhere (Ref1, Clock1, …),
-  // distinguishing monofunctor F[_] adapters from the bifunctor `*2` family.
-  type Functor1Bi2[F[_, _]] = Functor1[F[Throwable, _]]
-  type Functor1Bi3[F[_, _, _]] = Functor1[F[Any, Throwable, _]]
-
-  type Applicative1Bi2[F[_, _]] = Applicative1[F[Throwable, _]]
-  type Applicative1Bi3[F[_, _, _]] = Applicative1[F[Any, Throwable, _]]
-
-  type Primitives1Bi2[F[_, _]] = Primitives1[F[Throwable, _]]
-  type Primitives1Bi3[F[_, _, _]] = Primitives1[F[Any, Throwable, _]]
-
-  type IO1Bi2[F[_, _]] = IO1[F[Throwable, _]]
-  type IO1Bi3[F[_, _, _]] = IO1[F[Any, Throwable, _]]
-
-  type Async1Bi2[F[_, _]] = Async1[F[Throwable, _]]
-  type Async1Bi3[F[_, _, _]] = Async1[F[Any, Throwable, _]]
-
-  type Temporal1Bi2[F[_, _]] = Temporal1[F[Throwable, _]]
-  type Temporal1Bi3[F[_, _, _]] = Temporal1[F[Any, Throwable, _]]
-
-  type IORunner1Bi2[F[_, _]] = IORunner1[F[Throwable, _]]
-  type IORunner1Bi3[F[_, _, _]] = IORunner1[F[Any, Throwable, _]]
 
 }

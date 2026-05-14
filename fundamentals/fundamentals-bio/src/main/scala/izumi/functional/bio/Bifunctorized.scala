@@ -75,7 +75,7 @@ object Bifunctorized extends BifunctorizedNoOpInstances {
     * and conversion-typeclass implementations that have already encoded their
     * own error channel.
     */
-  private[bio] def assert[F[_], E, A](fa: F[A]): Bifunctorized[F, E, A] =
+  private[izumi] def assert[F[_], E, A](fa: F[A]): Bifunctorized[F, E, A] =
     fa.asInstanceOf[Bifunctorized[F, E, A]]
 
   /** Lift a monofunctor `F[A]` into a bifunctor with the Throwable error channel exposed.

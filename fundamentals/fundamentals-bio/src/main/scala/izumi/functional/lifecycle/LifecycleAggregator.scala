@@ -1,16 +1,16 @@
 package izumi.functional.lifecycle
 
-import izumi.functional.bio.{Applicative2, F, IO2, Panic2, PrimitivesM2, RefM2, TypedError}
+import izumi.functional.bio.{Applicative2, F, IO2, Panic2, PrimitivesM2, RefM2}
 
 final class LifecycleAggregator[F[+_, +_], E](
-  finalizers: RefM2[F, List[(LifecycleAggregator[F, E]#Key, F[E, Unit])]]
+  finalizers: RefM2[F, List[(LifecycleAggregator[F, E]#Key, F[Nothing, Unit])]]
 ) {
 
-  def acquire[R](resource: Lifecycle[F[E, _], R])(implicit F: IO2[F]): F[E, R] = {
+  def acquire[R](resource: Lifecycle[F, E, R])(implicit F: IO2[F]): F[E, R] = {
     acquireKey(resource).map(_._1)
   }
 
-  def acquireKey[R](resource: Lifecycle[F[E, _], R])(implicit F: IO2[F]): F[E, (R, Key)] = {
+  def acquireKey[R](resource: Lifecycle[F, E, R])(implicit F: IO2[F]): F[E, (R, Key)] = {
     F.uninterruptibleExcept {
       restore =>
         for {
@@ -18,17 +18,17 @@ final class LifecycleAggregator[F[+_, +_], E](
           key <- F.sync(new Key)
           _ <- finalizers.update_ {
             fins =>
-              val finalizer = {
+              val finalizer: F[Nothing, Unit] = {
                 F.suspendSafe(resource.release(inner))
               }
               F.pure((key -> finalizer) :: fins)
           }
-          outer <- restore(resource.extract(inner).fold(identity, F.pure))
+          outer <- restore(resource.extract[R](inner).fold(identity, F.pure))
         } yield (outer, key)
     }
   }
 
-  def release(key: Key)(implicit F: Applicative2[F]): F[E, Unit] = {
+  def release(key: Key)(implicit F: Applicative2[F]): F[Nothing, Unit] = {
     finalizers.modify {
       map =>
         map.find(_._1 == key) match {
@@ -43,11 +43,9 @@ final class LifecycleAggregator[F[+_, +_], E](
       finalizers <- finalizers.modify(m => F.pure(m -> List.empty))
       _ <- finalizers.iterator
         .map(_._2)
-        .foldLeft(F.unit) {
+        .foldLeft(F.unit: F[Nothing, Unit]) {
           // use `guarantee` to make all finalizers execute even if previous finalizer failed
-          _ `guarantee` _.catchAll {
-            e => F.terminate(TypedError.wrapIfNotThrowable(e))
-          }
+          (acc, next) => F.guarantee(acc, next)
         }
     } yield ()
   }
@@ -57,17 +55,17 @@ final class LifecycleAggregator[F[+_, +_], E](
 }
 
 object LifecycleAggregator {
-  def make[F[+_, +_]: Panic2: PrimitivesM2]: Lifecycle[F[Throwable, _], LifecycleAggregator[F, Throwable]] = {
-    Lifecycle.make(makeImpl[F, Throwable])(_.releaseAll())
+  def make[F[+_, +_]: Panic2: PrimitivesM2]: Lifecycle[F, Throwable, LifecycleAggregator[F, Throwable]] = {
+    Lifecycle.make[F, Throwable, LifecycleAggregator[F, Throwable]](makeImpl[F, Throwable])(_.releaseAll())
   }
 
-  def makeGeneric[F[+_, +_]: Panic2: PrimitivesM2, E]: Lifecycle[F[E, _], LifecycleAggregator[F, E]] = {
-    Lifecycle.make(makeImpl[F, E])(_.releaseAll())
+  def makeGeneric[F[+_, +_]: Panic2: PrimitivesM2, E]: Lifecycle[F, E, LifecycleAggregator[F, E]] = {
+    Lifecycle.make[F, E, LifecycleAggregator[F, E]](makeImpl[F, E])(_.releaseAll())
   }
 
   private def makeImpl[F[+_, +_]: Panic2: PrimitivesM2, E]: F[Nothing, LifecycleAggregator[F, E]] = {
     for {
-      finalizers <- F.mkRefM(List.empty[(LifecycleAggregator[F, E]#Key, F[E, Unit])])
+      finalizers <- F.mkRefM(List.empty[(LifecycleAggregator[F, E]#Key, F[Nothing, Unit])])
     } yield new LifecycleAggregator[F, E](finalizers)
   }
 }

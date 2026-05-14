@@ -246,9 +246,9 @@ object CatsToBIO {
                 override def release: Bifunctorized[F, Nothing, Unit] = Bifunctorized.assert(sem.release)
                 override def acquireN(n: Long): Bifunctorized[F, Nothing, Unit] = Bifunctorized.assert(sem.acquireN(n))
                 override def releaseN(n: Long): Bifunctorized[F, Nothing, Unit] = Bifunctorized.assert(sem.releaseN(n))
-                override def lifecycle: izumi.functional.lifecycle.Lifecycle[Bifunctorized[F, Nothing, _], Unit] = {
+                override def lifecycle: izumi.functional.lifecycle.Lifecycle[Bifunctorized[F, +_, +_], Nothing, Unit] = {
                   // Construct from primitive acquire/release; constraint-free and equivalent to the cats `permit` resource.
-                  izumi.functional.lifecycle.Lifecycle.make[Bifunctorized[F, Nothing, _], Unit](acquire)(_ => release)
+                  izumi.functional.lifecycle.Lifecycle.make[Bifunctorized[F, +_, +_], Nothing, Unit](acquire)(_ => release)
                 }
               }
           }

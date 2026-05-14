@@ -1,13 +1,9 @@
 package izumi.functional.lifecycle
 
-import cats.Applicative
 import cats.effect.kernel
 import cats.effect.kernel.{GenConcurrent, Resource, Sync}
-import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
-import izumi.functional.bio.{Fiber2, Fork2, Functor2, Monad2}
+import izumi.functional.bio.data.{Morphism2, RestoreInterruption2}
 import izumi.functional.bio.*
-import izumi.fundamentals.orphans.{`cats.Functor`, `cats.Monad`, `cats.kernel.Monoid`}
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
 import zio.internal.stacktracer.Tracer
 import zio.managed.ZManaged.ReleaseMap
@@ -25,38 +21,15 @@ import scala.annotation.unused
   * Resources can be created using [[Lifecycle.make]]:
   *
   * {{{
-  *   def open(file: File): Lifecycle[IO, BufferedReader] =
+  *   def open(file: File): Lifecycle[IO, Throwable, BufferedReader] =
   *     Lifecycle.make(
   *       acquire = IO { new BufferedReader(new FileReader(file)) }
   *     )(release = reader => IO { reader.close() })
   * }}}
   *
-  * Using inheritance from [[Lifecycle.Basic]]:
-  *
-  * {{{
-  *   final class BufferedReaderResource(
-  *     file: File
-  *   ) extends Lifecycle.Basic[IO, BufferedReader] {
-  *     def acquire: IO[BufferedReader] = IO { new BufferedReader(new FileReader(file)) }
-  *     def release(reader: BufferedReader): IO[BufferedReader] = IO { reader.close() }
-  *   }
-  * }}}
-  *
-  * Using constructor-based inheritance from [[Lifecycle.Make]], [[Lifecycle.LiftF]], etc:
-  *
-  * {{{
-  *   final class BufferedReaderResource(
-  *     file: File
-  *   ) extends Lifecycle.Make[IO, BufferedReader](
-  *     acquire = IO { new BufferedReader(new FileReader(file)) },
-  *     release = reader => IO { reader.close() },
-  *   )
-  * }}}
-  *
-  * Or by converting from an existing [[cats.effect.Resource]], scoped [[zio.ZIO]] or a [[zio.managed.ZManaged]]:
-  *   - Use [[Lifecycle.fromCats]], [[Lifecycle.SyntaxLifecycleCats#toCats]] to convert from and to a [[cats.effect.Resource]]
-  *   - Use [[Lifecycle.fromZIO]], [[Lifecycle.SyntaxLifecycleZIO#toZIO]] to convert from and to a scoped [[zio.ZIO]]
-  *   - And [[Lifecycle.fromZManaged]], [[Lifecycle.SyntaxLifecycleZManaged#toZManaged]] to convert from and to a [[zio.managed.ZManaged]]
+  * `Lifecycle` is a bifunctor: the `F[+_, +_]` parameter is a bifunctor effect type
+  * (such as a [[izumi.functional.bio.IO2]] instance), the `+E` parameter is the typed
+  * error channel, and the `+A` parameter is the value carried by the lifecycle.
   *
   * Usage is done via [[Lifecycle.SyntaxUse#use use]]:
   *
@@ -70,126 +43,13 @@ import scala.annotation.unused
   *   }
   * }}}
   *
-  * Lifecycles can be combined into larger Lifecycles via [[Lifecycle#flatMap]] (and the associated for-comprehension syntax):
+  * Lifecycles can be combined into larger Lifecycles via [[Lifecycle#flatMap]] (and the
+  * associated for-comprehension syntax). Nested resources are released in reverse order of
+  * acquisition. Outer resources are released even if an inner use or release fails.
   *
-  * {{{
-  *  val res: Lifecycle[IO, (BufferedReader, BufferedReader)] = {
-  *    for {
-  *      reader1 <- open(file1)
-  *      reader2 <- open(file2)
-  *    } yield (reader1, reader2)
-  *  }
-  * }}}
-  *
-  * Nested resources are released in reverse order of acquisition. Outer resources are
-  * released even if an inner use or release fails.
-  *
-  * `Lifecycle` can be used without an effect-type with [[Lifecycle.Simple]]
-  * it can also mimic Java's initialization-after-construction with [[Lifecycle.Mutable]]
-  *
-  * Use Lifecycle's to specify lifecycles of objects injected into the object graph.
-  *
-  *  {{{
-  *   import distage.{Lifecycle, ModuleDef, Injector}
-  *   import cats.effect.IO
-  *
-  *   class DBConnection
-  *   class MessageQueueConnection
-  *
-  *   val dbResource = Lifecycle.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
-  *   val mqResource = Lifecycle.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
-  *
-  *   class MyApp(db: DBConnection, mq: MessageQueueConnection) {
-  *     val run = IO(println("Hello World!"))
-  *   }
-  *
-  *   val module = new ModuleDef {
-  *     make[DBConnection].fromResource(dbResource)
-  *     make[MessageQueueConnection].fromResource(mqResource)
-  *     make[MyApp]
-  *   }
-  *
-  *   Injector[IO]()
-  *     .produceGet[MyApp](module)
-  *     .use(_.run())
-  *     .unsafeRunSync()
-  * }}}
-  *
-  * Will produce the following output:
-  *
-  * {{{
-  *   Connecting to DB!
-  *   Connecting to Message Queue!
-  *   Hello World!
-  *   Disconnecting Message Queue
-  *   Disconnecting DB
-  * }}}
-  *
-  * The lifecycle of the entire object graph is itself expressed with `Lifecycle`,
-  * you can control it by controlling the scope of `.use` or by manually invoking
-  * [[Lifecycle#acquire]] and [[Lifecycle#release]].
-  *
-  * == Inheritance helpers ==
-  *
-  * The following helpers allow defining `Lifecycle` sub-classes using expression-like syntax:
-  *
-  *  - [[Lifecycle.Of]]
-  *  - [[Lifecycle.OfInner]]
-  *  - [[Lifecycle.OfCats]]
-  *  - [[Lifecycle.OfZIO]]
-  *  - [[Lifecycle.OfZManaged]]
-  *  - [[Lifecycle.OfZLayer]]
-  *  - [[Lifecycle.LiftF]]
-  *  - [[Lifecycle.Make]]
-  *  - [[Lifecycle.Make_]]
-  *  - [[Lifecycle.MakePair]]
-  *  - [[Lifecycle.FromAutoCloseable]]
-  *  - [[Lifecycle.SelfOf]]
-  *  - [[Lifecycle.MutableOf]]
-  *
-  * The main reason to employ them is to workaround a limitation in Scala 2's eta-expansion — when converting a method to a function value,
-  * Scala always tries to fulfill implicit parameters eagerly instead of making them parameters of the function value,
-  * this limitation makes it harder to inject implicits using `distage`.
-  *
-  * However, when using `distage`'s type-based syntax: `make[A].fromResource[A.Resource[F]]` —
-  * this limitation does not apply and implicits inject successfully.
-  *
-  * So to workaround the limitation you can convert an expression based resource-constructor such as:
-  *
-  * {{{
-  *   import distage.Lifecycle, cats.Monad
-  *
-  *   class A
-  *   object A {
-  *     def resource[F[_]](implicit F: Monad[F]): Lifecycle[F, A] = Lifecycle.pure(new A)
-  *   }
-  * }}}
-  *
-  * Into a class-based form:
-  *
-  * {{{
-  *   import distage.Lifecycle, cats.Monad
-  *
-  *   class A
-  *   object A {
-  *     final class Resource[F[_]](implicit F: Monad[F])
-  *       extends Lifecycle.Of(
-  *         Lifecycle.pure(new A)
-  *       )
-  *   }
-  * }}}
-  *
-  * And inject successfully using `make[A].fromResource[A.Resource[F]]` syntax of [[izumi.distage.model.definition.dsl.ModuleDefDSL]].
-  *
-  * The following helpers ease defining `Lifecycle` subclasses using traditional inheritance where `acquire`/`release` parts are defined as methods:
-  *
-  *  - [[Lifecycle.Basic]]
-  *  - [[Lifecycle.Simple]]
-  *  - [[Lifecycle.Mutable]]
-  *  - [[Lifecycle.MutableNoClose]]
-  *  - [[Lifecycle.Self]]
-  *  - [[Lifecycle.SelfNoClose]]
-  *  - [[Lifecycle.NoClose]]
+  *  - Use [[Lifecycle.fromCats]] / [[SyntaxLifecycleCats#toCats]] to convert from / to a [[cats.effect.Resource]]
+  *  - Use [[Lifecycle.fromZIO]] / [[SyntaxLifecycleZIO#toZIO]] to convert from / to a scoped [[zio.ZIO]]
+  *  - Use [[Lifecycle.fromZManaged]] / [[SyntaxLifecycleZManaged#toZManaged]] to convert from / to a [[zio.managed.ZManaged]]
   *
   * @see [[Lifecycle.SyntaxUse.use]] - main entrypoint
   * @see [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSLBase#fromResource ModuleDef.fromResource]]
@@ -198,7 +58,7 @@ import scala.annotation.unused
   * @see [[https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1 scoped zio.ZIO]]
   * @see [[https://zio.dev/reference/contextual/zlayer zio.ZLayer]]
   */
-trait Lifecycle[+F[_], +A] {
+trait Lifecycle[F[+_, +_], +E, +A] {
   type InnerResource
 
   /**
@@ -207,16 +67,20 @@ trait Lifecycle[+F[_], +A] {
     * @note the `acquire` action is performed *uninterruptibly* by [[Lifecycle.SyntaxUse#use]] and other interpreters,
     * when `F` is an effect type that supports interruption/cancellation.
     */
-  def acquire: F[InnerResource]
+  def acquire: F[E, InnerResource]
 
   /**
     * The action in `F` used to release, close or deallocate the resource
     * after it has been acquired and used through [[Lifecycle.SyntaxUse#use]].
     *
+    * The release action returns `F[Nothing, Unit]` — release is not allowed to surface typed
+    * errors. Any underlying failure of the release effect appears as a defect / termination
+    * (e.g. `Exit.Termination`).
+    *
     * @note the `release` action is performed *uninterruptibly* by [[Lifecycle.SyntaxUse#use]] and other interpreters,
     * when `F` is an effect type that supports interruption/cancellation.
     */
-  def release(resource: InnerResource): F[Unit]
+  def release(resource: InnerResource): F[Nothing, Unit]
 
   /**
     * Either an action in `F` or a pure function used to
@@ -226,103 +90,103 @@ trait Lifecycle[+F[_], +A] {
     * it is not afforded the same kind of safety as `acquire` and `release` actions
     * when `F` is an effect type that supports interruption/cancellation.
     *
-    * When `F` is `Identity`, it doesn't matter whether the output is a `Left` or `Right` branch.
-    *
-    * When consuming the output of `extract` you can use `_.fold(identity, F.pure)` to convert the `Either` to `F[B]`
+    * When consuming the output of `extract` you can use `_.fold(identity, F.pure)` to convert the `Either` to `F[E, B]`
     *
     * @see [[Lifecycle.Basic]] `extract` doesn't have to be defined when inheriting from `Lifecycle.Basic`
     *
     * @note the `extract` action is performed *interruptibly* by [[Lifecycle.SyntaxUse#use]] and other interpreters
     */
-  def extract[B >: A](resource: InnerResource): Either[F[B], B]
+  def extract[B >: A](resource: InnerResource): Either[F[E, B], B]
 
-  final def map[G[x] >: F[x]: Functor1, B](f: A => B): Lifecycle[G, B] =
-    LifecycleMethodImpls.mapImpl[G, A, B](this)(f)
-  final def flatMap[G[x] >: F[x]: Primitives1, B](f: A => Lifecycle[G, B]): Lifecycle[G, B] =
-    LifecycleMethodImpls.flatMapImpl[G, A, B](this)(f)
-  final def flatten[G[x] >: F[x]: Primitives1, B](implicit ev: A <:< Lifecycle[G, B]): Lifecycle[G, B] =
-    this.flatMap(ev)
+  final def map[B](f: A => B)(implicit FF: Functor2[F]): Lifecycle[F, E, B] =
+    LifecycleMethodImpls.mapImpl[F, E, A, B](this)(f)
+  final def flatMap[E1 >: E, B](f: A => Lifecycle[F, E1, B])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, B] =
+    LifecycleMethodImpls.flatMapImpl[F, E1, A, B](this.widenError[E1])(f)
+  final def flatten[E1 >: E, B](implicit ev: A <:< Lifecycle[F, E1, B], FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, B] =
+    this.flatMap[E1, B](ev)
 
-  final def catchAll[G[x] >: F[x]: IO1, B >: A](recover: Throwable => Lifecycle[G, B]): Lifecycle[G, B] =
-    LifecycleMethodImpls.redeemImpl[G, A, B](this)(recover, Lifecycle.pure[G](_))
-  final def catchSome[G[x] >: F[x]: IO1, B >: A](recover: PartialFunction[Throwable, Lifecycle[G, B]]): Lifecycle[G, B] =
-    catchAll(e => recover.applyOrElse(e, (_: Throwable) => Lifecycle.fail(e)))
+  final def catchAll[E1 >: E, E2, B >: A](recover: E1 => Lifecycle[F, E2, B])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E2, B] =
+    LifecycleMethodImpls.redeemImpl[F, E1, E2, A, B](this.widenError[E1])(recover, Lifecycle.pure[F](_))
+  final def catchSome[E1 >: E, B >: A](recover: PartialFunction[E1, Lifecycle[F, E1, B]])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, B] =
+    catchAll[E1, E1, B](e => recover.applyOrElse(e, (_: E1) => Lifecycle.fail[F, E1, B](e)))
 
-  final def redeem[G[x] >: F[x]: IO1, B](onFailure: Throwable => Lifecycle[G, B], onSuccess: A => Lifecycle[G, B]): Lifecycle[G, B] =
-    LifecycleMethodImpls.redeemImpl[G, A, B](this)(onFailure, onSuccess)
+  final def redeem[E1 >: E, E2, B](
+    onFailure: E1 => Lifecycle[F, E2, B],
+    onSuccess: A => Lifecycle[F, E2, B],
+  )(implicit FF: IO2[F], FP: Primitives2[F]
+  ): Lifecycle[F, E2, B] =
+    LifecycleMethodImpls.redeemImpl[F, E1, E2, A, B](this.widenError[E1])(onFailure, onSuccess)
 
-  final def evalMap[G[x] >: F[x]: Primitives1, B](f: A => G[B]): Lifecycle[G, B] =
-    flatMap[G, B](a => Lifecycle.liftF(f(a)))
-  final def evalTap[G[x] >: F[x]: Primitives1](f: A => G[Unit]): Lifecycle[G, A] =
-    evalMap[G, A](a => Functor1[G].map(f(a))(_ => a))
+  final def evalMap[E1 >: E, B](f: A => F[E1, B])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, B] =
+    flatMap[E1, B](a => Lifecycle.liftF[F, E1, B](f(a)))
+  final def evalTap[E1 >: E](f: A => F[E1, Unit])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, A] =
+    evalMap[E1, A](a => FF.map[E1, Unit, A](f(a))(_ => a))
 
   /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
-  final def wrapAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): Lifecycle[G, A] =
-    LifecycleMethodImpls.wrapAcquireImpl[G, A](this: this.type)(f)
+  final def wrapAcquire[E1 >: E](f: (=> F[E1, InnerResource]) => F[E1, InnerResource]): Lifecycle[F, E1, A] =
+    LifecycleMethodImpls.wrapAcquireImpl[F, E1, A, InnerResource](this.widenError[E1].asInstanceOf[Lifecycle[F, E1, A] { type InnerResource = Lifecycle.this.InnerResource }])(f)
 
   /** Wrap release action of this resource in another effect, e.g. for logging purposes */
-  final def wrapRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): Lifecycle[G, A] =
-    LifecycleMethodImpls.wrapReleaseImpl[G, A](this: this.type)(f)
+  final def wrapRelease[E1 >: E](
+    f: (InnerResource => F[Nothing, Unit], InnerResource) => F[Nothing, Unit]
+  ): Lifecycle[F, E1, A] =
+    LifecycleMethodImpls.wrapReleaseImpl[F, E1, A, InnerResource](this.widenError[E1].asInstanceOf[Lifecycle[F, E1, A] { type InnerResource = Lifecycle.this.InnerResource }])(f)
 
-  final def beforeAcquire[G[x] >: F[x]: Applicative1](f: => G[Unit]): Lifecycle[G, A] =
-    wrapAcquire[G](acquire => Applicative1[G].map2(f, acquire)((_, res) => res))
+  final def beforeAcquire[E1 >: E](f: => F[E1, Unit])(implicit FF: Applicative2[F]): Lifecycle[F, E1, A] =
+    wrapAcquire[E1](acquire => FF.map2[E1, Unit, InnerResource, InnerResource](f, acquire)((_, res) => res))
 
   /** Prepend release action to existing */
-  final def beforeRelease[G[x] >: F[x]: Applicative1](f: InnerResource => G[Unit]): Lifecycle[G, A] =
-    wrapRelease[G]((release, res) => Applicative1[G].map2(f(res), release(res))((_, _) => ()))
+  final def beforeRelease[E1 >: E](f: InnerResource => F[Nothing, Unit])(implicit FF: Applicative2[F]): Lifecycle[F, E1, A] =
+    wrapRelease[E1]((release, res) => FF.map2[Nothing, Unit, Unit, Unit](f(res), release(res))((_, _) => ()))
 
-  final def void[G[x] >: F[x]: Functor1]: Lifecycle[G, Unit] = map[G, Unit](_ => ())
+  final def void(implicit FF: Functor2[F]): Lifecycle[F, E, Unit] = map[Unit](_ => ())
 
-  final def mapK[G[x] >: F[x], H[_]](f: Morphism1[G, H]): Lifecycle[H, A] =
-    LifecycleMethodImpls.mapKImpl[G, H, A](this, f)
+  final def mapK[H[+_, +_]](f: Morphism2[F, H]): Lifecycle[H, E, A] =
+    LifecycleMethodImpls.mapKImpl[F, H, E, A](this, f)
 
-  @inline final def widen[B >: A]: Lifecycle[F, B] = this
-  @inline final def widen[B](implicit ev: A <:< B): Lifecycle[F, B] = this.asInstanceOf[Lifecycle[F, B]]
-  @inline final def widenF[G[x] >: F[x]]: Lifecycle[G, A] = this
-  @inline final def widenF[G[_]](implicit ev: F[Unit] <:< G[Unit]): Lifecycle[G, A] = this.asInstanceOf[Lifecycle[G, A]]
+  @inline final def widen[B >: A]: Lifecycle[F, E, B] = this
+  @inline final def widen[B](implicit ev: A <:< B): Lifecycle[F, E, B] = this.asInstanceOf[Lifecycle[F, E, B]]
+  @inline final def widenError[E1 >: E]: Lifecycle[F, E1, A] = this
 }
 
 object Lifecycle extends LifecycleInstances {
 
   /**
-    * A sub-trait of [[izumi.distage.model.definition.Lifecycle]] suitable for less-complex resource definitions via inheritance
-    * that do not require overriding [[izumi.distage.model.definition.Lifecycle#InnerResource]].
-    *
-    * {{{
-    *   final class BufferedReaderResource(
-    *     file: File
-    *   ) extends Lifecycle.Basic[IO, BufferedReader] {
-    *     def acquire: IO[BufferedReader] = IO { new BufferedReader(new FileReader(file)) }
-    *     def release(reader: BufferedReader): IO[BufferedReader] = IO { reader.close() }
-    *   }
-    * }}}
+    * A sub-trait of [[Lifecycle]] suitable for less-complex resource definitions via inheritance
+    * that do not require overriding [[Lifecycle#InnerResource]].
     */
-  trait Basic[+F[_], A] extends Lifecycle[F, A] {
-    def acquire: F[A]
-    def release(resource: A): F[Unit]
+  trait Basic[F[+_, +_], +E, A] extends Lifecycle[F, E, A] {
+    def acquire: F[E, A]
+    def release(resource: A): F[Nothing, Unit]
 
     override final def extract[B >: A](resource: A): Right[Nothing, A] = Right(resource)
     override final type InnerResource = A
   }
 
-  def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): Lifecycle[F, A] = {
-    @inline def a: F[A] = acquire; @inline def r: A => F[Unit] = release
-    new Lifecycle.Basic[F, A] {
-      override def acquire: F[A] = a
-      override def release(resource: A): F[Unit] = r(resource)
+  def make[F[+_, +_], E, A](acquire: => F[E, A])(release: A => F[Nothing, Unit]): Lifecycle[F, E, A] = {
+    @inline def a: F[E, A] = acquire; @inline def r: A => F[Nothing, Unit] = release
+    new Lifecycle.Basic[F, E, A] {
+      override def acquire: F[E, A] = a
+      override def release(resource: A): F[Nothing, Unit] = r(resource)
     }
   }
 
-  def make_[F[_], A](acquire: => F[A])(release: => F[Unit]): Lifecycle[F, A] = {
+  def make_[F[+_, +_], E, A](acquire: => F[E, A])(release: => F[Nothing, Unit]): Lifecycle[F, E, A] = {
     make(acquire)(_ => release)
   }
 
-  def makeSimple[A](acquire: => A)(release: A => Unit): Lifecycle[Identity, A] = {
-    make[Identity, A](acquire)(release)
+  def makeSimple[A](acquire: => A)(release: A => Unit): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, A] = {
+    Lifecycle.make[Bifunctorized.IdentityBifunctorized, Throwable, A] {
+      Bifunctorized.bifunctorizeIdentity(acquire)
+    } { a =>
+      Bifunctorized
+        .bifunctorizeIdentity(release(a))
+        .asInstanceOf[Bifunctorized.IdentityBifunctorized[Nothing, Unit]]
+    }
   }
 
   /** For stateful objects that have a separate post-creation init method. */
-  def makeSimpleInit[A](create: => A)(init: A => Unit)(release: A => Unit): Lifecycle[Identity, A] = {
+  def makeSimpleInit[A](create: => A)(init: A => Unit)(release: A => Unit): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, A] = {
     makeSimple {
       val a = create
       init(a)
@@ -330,27 +194,27 @@ object Lifecycle extends LifecycleInstances {
     }(release)
   }
 
-  def makeUninterruptibleExcept[F[_], A](
-    acquire: RestoreInterruption1[F] => F[A]
-  )(release: A => F[Unit]
-  )(implicit F: Primitives1[F]
-  ): Lifecycle[F, A] = {
-    LifecycleMethodImpls.makeUninterruptibleExceptImpl[F, A](acquire)(release)
+  def makeUninterruptibleExcept[F[+_, +_], E, A](
+    acquire: RestoreInterruption2[F] => F[E, A]
+  )(release: A => F[Nothing, Unit]
+  )(implicit F: IO2[F], P: Primitives2[F]
+  ): Lifecycle[F, E, A] = {
+    LifecycleMethodImpls.makeUninterruptibleExceptImpl[F, E, A](acquire)(release)
   }
 
-  def makePair[F[_], A](allocate: F[(A, F[Unit])]): Lifecycle[F, A] = {
-    new Lifecycle.FromPair[F, A] {
-      override def acquire: F[(A, F[Unit])] = allocate
+  def makePair[F[+_, +_], E, A](allocate: F[E, (A, F[Nothing, Unit])]): Lifecycle[F, E, A] = {
+    new Lifecycle.FromPair[F, E, A] {
+      override def acquire: F[E, (A, F[Nothing, Unit])] = allocate
     }
   }
 
   /** @param effect is performed interruptibly, unlike in [[make]] */
-  def liftF[F[_], A](effect: => F[A])(implicit F: Applicative1[F]): Lifecycle[F, A] = {
-    new Lifecycle.LiftF(effect)
+  def liftF[F[+_, +_], E, A](effect: => F[E, A])(implicit F: Applicative2[F]): Lifecycle[F, E, A] = {
+    new Lifecycle.LiftF[F, E, A](effect)
   }
 
   /** @param effect is performed interruptibly, unlike in [[make]] */
-  def suspend[F[_]: Primitives1, A](effect: => F[Lifecycle[F, A]]): Lifecycle[F, A] = {
+  def suspend[F[+_, +_]: IO2: Primitives2, E, A](effect: => F[E, Lifecycle[F, E, A]]): Lifecycle[F, E, A] = {
     liftF(effect).flatten
   }
 
@@ -360,12 +224,12 @@ object Lifecycle extends LifecycleInstances {
     *
     * @return The [[izumi.functional.bio.Fiber2 fiber]] running `f` action
     */
-  def fork[F[+_, +_]: Fork2, E, A](f: F[E, A]): Lifecycle[F[Nothing, _], Fiber2[F, E, A]] = {
-    Lifecycle.make(f.fork)(_.interrupt)
+  def fork[F[+_, +_]: Fork2, E, A](f: F[E, A]): Lifecycle[F, Nothing, Fiber2[F, E, A]] = {
+    Lifecycle.make[F, Nothing, Fiber2[F, E, A]](f.fork)(_.interrupt)
   }
 
   /** @see [[fork]] */
-  def fork_[F[+_, +_]: Fork2: Functor2, E, A](f: F[E, A]): Lifecycle[F[Nothing, _], Unit] = {
+  def fork_[F[+_, +_]: Fork2: Functor2, E, A](f: F[E, A]): Lifecycle[F, Nothing, Unit] = {
     Lifecycle.fork(f).void
   }
 
@@ -375,33 +239,41 @@ object Lifecycle extends LifecycleInstances {
     *
     * @return The fiber running `f` action
     */
-  def forkCats[F[_], E, A](f: F[A])(implicit F: GenConcurrent[F, E]): Lifecycle[F, cats.effect.Fiber[F, E, A]] = {
-    Lifecycle.make(F.start(f))(_.cancel)
-  }
-
-  def traverse[F[_]: Primitives1, A, B](l: Iterable[A])(f: A => Lifecycle[F, B]): Lifecycle[F, List[B]] = {
-    l.foldLeft(pure[F](List.empty[B])) {
-      (acc, a) => acc.flatMap(list => f(a).map(r => list ++ List(r)))
+  def forkCats[F[_], E, A](
+    f: F[A]
+  )(implicit F: GenConcurrent[F, E]
+  ): Lifecycle[Bifunctorized[F, +_, +_], Throwable, cats.effect.Fiber[F, E, A]] = {
+    new Lifecycle.Basic[Bifunctorized[F, +_, +_], Throwable, cats.effect.Fiber[F, E, A]] {
+      override def acquire: Bifunctorized[F, Throwable, cats.effect.Fiber[F, E, A]] =
+        Bifunctorized.assert(F.start(f))
+      override def release(resource: cats.effect.Fiber[F, E, A]): Bifunctorized[F, Nothing, Unit] =
+        Bifunctorized.assert(resource.cancel)
     }
   }
 
-  def traverse_[F[_]: Primitives1, A](l: Iterable[A])(f: A => Lifecycle[F, Unit]): Lifecycle[F, Unit] = {
-    l.foldLeft(unit) {
-      (acc, a) => acc.flatMap(_ => f(a))
+  def traverse[F[+_, +_]: IO2: Primitives2, E, A, B](l: Iterable[A])(f: A => Lifecycle[F, E, B]): Lifecycle[F, E, List[B]] = {
+    l.foldLeft[Lifecycle[F, E, List[B]]](pure[F](List.empty[B]).widenError[E]) {
+      (acc, a) => acc.flatMap[E, List[B]](list => f(a).map[List[B]](r => list ++ List(r)))
     }
   }
 
-  def fromAutoCloseable[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: IO1[F]): Lifecycle[F, A] = {
-    make(acquire)(a => F.maybeSuspend(a.close()))
-  }
-  def fromAutoCloseable[A <: AutoCloseable](acquire: => A): Lifecycle[Identity, A] = {
-    makeSimple(acquire)(_.close)
+  def traverse_[F[+_, +_]: IO2: Primitives2, E, A](l: Iterable[A])(f: A => Lifecycle[F, E, Unit]): Lifecycle[F, E, Unit] = {
+    l.foldLeft[Lifecycle[F, E, Unit]](unit[F].widenError[E]) {
+      (acc, a) => acc.flatMap[E, Unit](_ => f(a))
+    }
   }
 
-  def fromExecutorService[F[_], A <: ExecutorService](acquire: => F[A])(implicit F: IO1[F]): Lifecycle[F, A] = {
+  def fromAutoCloseable[F[+_, +_], E, A <: AutoCloseable](acquire: => F[E, A])(implicit F: IO2[F]): Lifecycle[F, E, A] = {
+    make(acquire)(a => F.sync(a.close()))
+  }
+  def fromAutoCloseable[A <: AutoCloseable](acquire: => A): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, A] = {
+    makeSimple(acquire)(_.close())
+  }
+
+  def fromExecutorService[F[+_, +_], E, A <: ExecutorService](acquire: => F[E, A])(implicit F: IO2[F]): Lifecycle[F, E, A] = {
     make(acquire) {
       es =>
-        F.maybeSuspend {
+        F.sync {
           if (!(es.isShutdown || es.isTerminated)) {
             es.shutdown()
             if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
@@ -412,26 +284,33 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  def fromExecutorService[A <: ExecutorService](acquire: => A): Lifecycle[Identity, A] = {
-    fromExecutorService[Identity, A](acquire)
-  }
-
-  @inline def pure[F[_]]: SyntaxPure[F] = new SyntaxPure[F]
-  implicit final class SyntaxPure[F[_]](private val dummy: Boolean = false) extends AnyVal {
-    @inline def apply[A](a: A)(implicit F: Applicative1[F]): Lifecycle[F, A] = {
-      Lifecycle.liftF(F.pure(a))
+  def fromExecutorService[A <: ExecutorService](acquire: => A): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, A] = {
+    makeSimple(acquire) { es =>
+      if (!(es.isShutdown || es.isTerminated)) {
+        es.shutdown()
+        if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
+          es.shutdownNow().discard()
+        }
+      }
     }
   }
 
-  def unit[F[_]](implicit F: Applicative1[F]): Lifecycle[F, Unit] = {
-    Lifecycle.liftF(F.unit)
+  @inline def pure[F[+_, +_]]: SyntaxPure[F] = new SyntaxPure[F]
+  implicit final class SyntaxPure[F[+_, +_]](private val dummy: Boolean = false) extends AnyVal {
+    @inline def apply[A](a: A)(implicit F: Applicative2[F]): Lifecycle[F, Nothing, A] = {
+      Lifecycle.liftF[F, Nothing, A](F.pure(a))
+    }
   }
 
-  def fail[F[_], A](error: => Throwable)(implicit F: IO1[F]): Lifecycle[F, A] = {
-    Lifecycle.liftF(F.fail(error))
+  def unit[F[+_, +_]](implicit F: Applicative2[F]): Lifecycle[F, Nothing, Unit] = {
+    Lifecycle.liftF[F, Nothing, Unit](F.unit)
   }
 
-  implicit final class SyntaxUse[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
+  def fail[F[+_, +_], E, A](error: => E)(implicit F: IO2[F]): Lifecycle[F, E, A] = {
+    Lifecycle.liftF[F, E, A](F.suspendSafe(F.fail(error)))
+  }
+
+  implicit final class SyntaxUse[F[+_, +_], +E, +A](private val resource: Lifecycle[F, E, A]) extends AnyVal {
     /**
       * The main entrypoint for using a Lifecycle
       *
@@ -446,41 +325,23 @@ object Lifecycle extends LifecycleInstances {
       * }
       * }}}
       */
-    def use[G[x] >: F[x], B](use: A => G[B])(implicit F: Primitives1[G]): G[B] = {
-      F.bracket(acquire = resource.acquire)(release = resource.release)(
+    def use[E1 >: E, B](use: A => F[E1, B])(implicit FF: IO2[F]): F[E1, B] = {
+      FF.bracket[E1, resource.InnerResource, B](acquire = resource.acquire)(release = resource.release(_))(
         use = a =>
-          F.suspendF(resource.extract(a) match {
-            case Left(effect) => F.flatMap(effect)(use)
+          FF.suspendSafe(resource.extract[A](a) match {
+            case Left(effect) => FF.flatMap[E1, A, B](effect)(use)
             case Right(value) => use(value)
           })
       )
     }
   }
 
-  implicit final class SyntaxUseIdentity[+A](private val resource: Lifecycle[Identity, A]) extends AnyVal {
-    /** workaround for inference issues on Scala 3 for [[Lifecycle.SyntaxUse#use]] when F = Identity */
-    def use[B](use: A => B)(implicit F: Primitives1[Identity]): B = {
-      SyntaxUse[Identity, A](resource).use[Identity, B](use)(using F)
-    }
+  implicit final class SyntaxUseEffect[F[+_, +_], E, A](private val resource: Lifecycle[F, E, F[E, A]]) extends AnyVal {
+    def useEffect(implicit F: IO2[F]): F[E, A] =
+      resource.use[E, A](identity)
   }
 
-  implicit final class SyntaxUseEffect[F[_], A](private val resource: Lifecycle[F, F[A]]) extends AnyVal {
-    def useEffect(implicit F: Primitives1[F]): F[A] =
-      resource.use(identity)
-  }
-
-  implicit final class SyntaxLifecycleIdentity[+A](private val resource: Lifecycle[Identity, A]) extends AnyVal {
-    def toEffect[F[_]](implicit F: IO1[F]): Lifecycle[F, A] = {
-      new Lifecycle[F, A] {
-        override type InnerResource = resource.InnerResource
-        override def acquire: F[InnerResource] = F.maybeSuspend(resource.acquire)
-        override def release(res: InnerResource): F[Unit] = F.maybeSuspend(resource.release(res))
-        override def extract[B >: A](res: InnerResource): Either[F[B], B] = Right(resource.extract(res).merge)
-      }
-    }
-  }
-
-  implicit final class SyntaxUnsafeGet[F[_], A](private val resource: Lifecycle[F, A]) extends AnyVal {
+  implicit final class SyntaxUnsafeGet[F[+_, +_], E, A](private val resource: Lifecycle[F, E, A]) extends AnyVal {
     /**
       * Unsafely acquire the resource and throw away the finalizer,
       * this will leak the resource and cause it to never be cleaned up.
@@ -490,8 +351,8 @@ object Lifecycle extends LifecycleInstances {
       *
       * @note will acquire the resource without an uninterruptible section
       */
-    def unsafeGet()(implicit F: Primitives1[F]): F[A] = {
-      F.flatMap(resource.acquire)(resource.extract(_).fold(identity, F.pure))
+    def unsafeGet()(implicit F: IO2[F]): F[E, A] = {
+      F.flatMap[E, resource.InnerResource, A](resource.acquire)(resource.extract[A](_).fold(identity, F.pure))
     }
 
     /**
@@ -503,33 +364,38 @@ object Lifecycle extends LifecycleInstances {
       *
       * @note will acquire the resource without an uninterruptible section
       */
-    def unsafeAllocate()(implicit F: Primitives1[F]): F[(A, () => F[Unit])] = {
-      F.flatMap(resource.acquire) {
+    def unsafeAllocate()(implicit F: IO2[F]): F[E, (A, () => F[Nothing, Unit])] = {
+      F.flatMap[E, resource.InnerResource, (A, () => F[Nothing, Unit])](resource.acquire) {
         inner =>
-          F.map(
-            resource.extract(inner).fold(identity, F.pure)
+          F.map[E, A, (A, () => F[Nothing, Unit])](
+            resource.extract[A](inner).fold(identity, F.pure)
           )(a => (a, () => resource.release(inner)))
       }
     }
   }
 
-  implicit final class SyntaxWidenError[F[+_, +_], +E, +A](private val resource: Lifecycle[F[E, _], A]) extends AnyVal {
-    def widenError[E1 >: E]: Lifecycle[F[E1, _], A] = resource
-  }
-
-  /** Convert [[cats.effect.Resource]] to [[Lifecycle]] */
-  def fromCats[F[_], A](resource: Resource[F, A])(implicit F: Sync[F]): Lifecycle.FromCats[F, A] = {
+  /** Convert [[cats.effect.Resource]] to [[Lifecycle]].
+    *
+    * Transparently bifunctorizes the monofunctor `F[_]`: the resulting Lifecycle's effect type
+    * is `Bifunctorized[F, +_, +_]`, the typed-error channel is `Throwable` (the only error
+    * channel a monofunctor with a `Sync` instance can express), and the underlying runtime
+    * representation remains `F[A]` for any `Bifunctorized[F, E, A]` value (zero-cost).
+    */
+  def fromCats[F[_], A](
+    resource: Resource[F, A]
+  )(implicit F: Sync[F]
+  ): Lifecycle.FromCats[F, A] = {
     new FromCats[F, A] {
-      override def acquire: F[kernel.Ref[F, List[F[Unit]]]] = {
-        kernel.Ref.of[F, List[F[Unit]]](Nil)(kernel.Ref.Make.syncInstance(F))
+      override def acquire: Bifunctorized[F, Throwable, kernel.Ref[F, List[F[Unit]]]] = {
+        Bifunctorized.assert(kernel.Ref.of[F, List[F[Unit]]](Nil)(kernel.Ref.Make.syncInstance(F)))
       }
 
-      override def release(finalizersRef: kernel.Ref[F, List[F[Unit]]]): F[Unit] = {
-        F.flatMap(finalizersRef.get)(cats.instances.list.catsStdInstancesForList.sequence_(_)(using F))
+      override def release(finalizersRef: kernel.Ref[F, List[F[Unit]]]): Bifunctorized[F, Nothing, Unit] = {
+        Bifunctorized.assert(F.flatMap(finalizersRef.get)(cats.instances.list.catsStdInstancesForList.sequence_(_)(using F)))
       }
 
-      override def extract[B >: A](finalizersRef: kernel.Ref[F, List[F[Unit]]]): Left[F[B], Nothing] = {
-        Left(F.widen(allocatedTo(finalizersRef)))
+      override def extract[B >: A](finalizersRef: kernel.Ref[F, List[F[Unit]]]): Left[Bifunctorized[F, Throwable, B], Nothing] = {
+        Left(Bifunctorized.assert(F.widen(allocatedTo(finalizersRef))))
       }
 
       private def allocatedTo(
@@ -597,16 +463,24 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  implicit final class SyntaxLifecycleCats[+F[_], +A](private val resource: Lifecycle[F, A]) extends AnyVal {
-    /** Convert [[Lifecycle]] to [[cats.effect.Resource]] */
-    def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
+  /** Convert [[Lifecycle]] to [[cats.effect.Resource]].
+    *
+    * Inverse of [[fromCats]]: takes a bifunctorized lifecycle over `Bifunctorized[F, +_, +_]`
+    * with the `Throwable` error channel and produces a `Resource[F, A]`.
+    */
+  implicit final class SyntaxLifecycleCats[F[_], +A](private val resource: Lifecycle[Bifunctorized[F, +_, +_], Throwable, A]) extends AnyVal {
+    def toCats(implicit F: Sync[F]): Resource[F, A] = {
       Resource
-        .make[G, resource.InnerResource](resource.acquire)(resource.release)
-        .evalMap(resource.extract(_).fold(identity, Applicative[G].pure))
+        .make[F, resource.InnerResource](resource.acquire.asInstanceOf[F[resource.InnerResource]])(
+          (r: resource.InnerResource) => resource.release(r).asInstanceOf[F[Unit]]
+        )
+        .evalMap((r: resource.InnerResource) =>
+          resource.extract[A](r).fold((eff: Bifunctorized[F, Throwable, A]) => eff.asInstanceOf[F[A]], (F.pure[A]))
+        )
     }
   }
 
-  implicit final class SyntaxLifecycleZIO[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
+  implicit final class SyntaxLifecycleZIO[R, +E, +A](private val resource: Lifecycle[ZIO[R, +_, +_], E, A]) extends AnyVal {
     /** Convert [[Lifecycle]] to scoped [[zio.ZIO]] */
     def toZIO: ZIO[Scope & R, E, A] = {
       implicit val trace: zio.Trace = Tracer.instance.empty
@@ -616,18 +490,15 @@ object Lifecycle extends LifecycleInstances {
           ZIO
             .acquireRelease(
               resource.acquire
-            )(resource.release(_).orDieWith {
-              case e: Throwable => e
-              case any => new RuntimeException(s"Lifecycle finalizer: $any")
-            }).flatMap {
+            )(resource.release(_)).flatMap {
               r =>
-                ZIO.suspendSucceed(restore(resource.extract(r).fold(identity, zioSucceedWorkaround)))
+                ZIO.suspendSucceed(restore(resource.extract[A](r).fold(identity, zioSucceedWorkaround)))
             }
       }
     }
   }
 
-  implicit final class SyntaxLifecycleZManaged[-R, +E, +A](private val resource: Lifecycle[ZIO[R, E, _], A]) extends AnyVal {
+  implicit final class SyntaxLifecycleZManaged[R, +E, +A](private val resource: Lifecycle[ZIO[R, +_, +_], E, A]) extends AnyVal {
     /** Convert [[Lifecycle]] to [[zio.managed.ZManaged]] */
     def toZManaged: ZManaged[R, E, A] = {
       implicit val trace: zio.Trace = Tracer.instance.empty
@@ -636,13 +507,8 @@ object Lifecycle extends LifecycleInstances {
         resource.acquire.map(
           r =>
             Reservation(
-              ZIO.suspendSucceed(resource.extract(r).fold(identity, zioSucceedWorkaround)),
-              _ =>
-                resource
-                  .release(r).orDieWith {
-                    case e: Throwable => e
-                    case any => new RuntimeException(s"Lifecycle finalizer: $any")
-                  },
+              ZIO.suspendSucceed(resource.extract[A](r).fold(identity, zioSucceedWorkaround)),
+              _ => resource.release(r),
             )
         )
       )
@@ -668,10 +534,10 @@ object Lifecycle extends LifecycleInstances {
     *       it can hit a Scalac bug https://github.com/scala/bug/issues/11969
     *       and fail to compile, in that case you may switch to [[Lifecycle.OfInner]]
     */
-  open class Of[+F[_], +A] private (inner0: () => Lifecycle[F, A], @unused dummy: Boolean = false) extends Lifecycle.OfInner[F, A] {
-    def this(inner: => Lifecycle[F, A]) = this(() => inner)
+  open class Of[F[+_, +_], +E, +A] private (inner0: () => Lifecycle[F, E, A], @unused dummy: Boolean = false) extends Lifecycle.OfInner[F, E, A] {
+    def this(inner: => Lifecycle[F, E, A]) = this(() => inner)
 
-    override val lifecycle: Lifecycle[F, A] = inner0()
+    override val lifecycle: Lifecycle[F, E, A] = inner0()
   }
 
   /**
@@ -689,7 +555,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class OfCats[F[_]: Sync, A](inner: => Resource[F, A]) extends Lifecycle.Of[F, A](fromCats(inner))
+  open class OfCats[F[_]: Sync, A](inner: => Resource[F, A]) extends Lifecycle.Of[Bifunctorized[F, +_, +_], Throwable, A](fromCats(inner))
 
   /**
     * Class-based proxy over a scoped [[zio.ZIO]] value
@@ -706,7 +572,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class OfZIO[-R, +E, +A](inner: => ZIO[Scope & R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZIO[R](inner))
+  open class OfZIO[R, +E, +A](inner: => ZIO[Scope & R, E, A]) extends Lifecycle.Of[ZIO[R, +_, +_], E, A](fromZIO[R](inner))
 
   /**
     * Class-based proxy over a [[zio.managed.ZManaged]] value
@@ -723,7 +589,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class OfZManaged[-R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZManaged(inner))
+  open class OfZManaged[R, +E, +A](inner: => ZManaged[R, E, A]) extends Lifecycle.Of[ZIO[R, +_, +_], E, A](fromZManaged(inner))
 
   /**
     * Class-based proxy over a [[zio.ZLayer]] value
@@ -740,7 +606,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class OfZLayer[-R, +E, +A: zio.Tag](inner: => ZLayer[R, E, A]) extends Lifecycle.Of[ZIO[R, E, _], A](fromZLayer(inner))
+  open class OfZLayer[R, +E, +A: zio.Tag](inner: => ZLayer[R, E, A]) extends Lifecycle.Of[ZIO[R, +_, +_], E, A](fromZLayer(inner))
 
   /**
     * Class-based variant of [[make]]:
@@ -759,11 +625,14 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class Make[+F[_], A] private (acquire0: () => F[A])(release0: A => F[Unit], @unused dummy: Boolean = false) extends Lifecycle.Basic[F, A] {
-    def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
+  open class Make[F[+_, +_], +E, A] private (acquire0: () => F[E, A])(
+    release0: A => F[Nothing, Unit],
+    @unused dummy: Boolean = false,
+  ) extends Lifecycle.Basic[F, E, A] {
+    def this(acquire: => F[E, A])(release: A => F[Nothing, Unit]) = this(() => acquire)(release)
 
-    override final def acquire: F[A] = acquire0()
-    override final def release(resource: A): F[Unit] = release0(resource)
+    override final def acquire: F[E, A] = acquire0()
+    override final def release(resource: A): F[Nothing, Unit] = release0(resource)
   }
 
   /**
@@ -781,7 +650,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
+  open class Make_[F[+_, +_], +E, A](acquire: => F[E, A])(release: => F[Nothing, Unit]) extends Make[F, E, A](acquire)(_ => release)
 
   /**
     * Class-based variant of [[makePair]]:
@@ -798,10 +667,13 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class MakePair[F[_], A] private (acquire0: () => F[(A, F[Unit])], @unused dummy: Boolean = false) extends FromPair[F, A] {
-    def this(acquire: => F[(A, F[Unit])]) = this(() => acquire)
+  open class MakePair[F[+_, +_], +E, A] private (
+    acquire0: () => F[E, (A, F[Nothing, Unit])],
+    @unused dummy: Boolean = false,
+  ) extends FromPair[F, E, A] {
+    def this(acquire: => F[E, (A, F[Nothing, Unit])]) = this(() => acquire)
 
-    override final def acquire: F[(A, F[Unit])] = acquire0()
+    override final def acquire: F[E, (A, F[Nothing, Unit])] = acquire0()
   }
 
   /**
@@ -821,12 +693,12 @@ object Lifecycle extends LifecycleInstances {
     *
     * @note `acquire` is performed interruptibly, unlike in [[Make]]
     */
-  open class LiftF[+F[_]: Applicative1, A] private (acquire0: () => F[A], @unused dummy: Boolean) extends NoCloseBase[F, A] {
-    def this(acquire: => F[A]) = this(() => acquire, false)
+  open class LiftF[F[+_, +_]: Applicative2, +E, A] private (acquire0: () => F[E, A], @unused dummy: Boolean) extends NoCloseBase[F, E, A] {
+    def this(acquire: => F[E, A]) = this(() => acquire, false)
 
     override final type InnerResource = Unit
-    override final def acquire: F[Unit] = Applicative1[F].unit
-    override final def extract[B >: A](resource: Unit): Left[F[B], Nothing] = Left(Applicative1[F].widen(acquire0()))
+    override final def acquire: F[Nothing, Unit] = Applicative2[F].unit
+    override final def extract[B >: A](resource: Unit): Left[F[E, B], Nothing] = Left(Applicative2[F].widen[E, A, B](acquire0()))
   }
 
   /**
@@ -846,7 +718,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class FromAutoCloseable[+F[_]: IO1, +A <: AutoCloseable](acquire: => F[A]) extends Lifecycle.Of(Lifecycle.fromAutoCloseable(acquire))
+  open class FromAutoCloseable[F[+_, +_]: IO2, +E, +A <: AutoCloseable](acquire: => F[E, A]) extends Lifecycle.Of[F, E, A](Lifecycle.fromAutoCloseable(acquire))
 
   /**
     * Trait-based proxy over a [[Lifecycle]] value
@@ -869,58 +741,50 @@ object Lifecycle extends LifecycleInstances {
     * workaround scalac bug https://github.com/scala/bug/issues/11969
     * when defining local methods
     */
-  trait OfInner[+F[_], +A] extends Lifecycle[F, A] {
-    val lifecycle: Lifecycle[F, A]
+  trait OfInner[F[+_, +_], +E, +A] extends Lifecycle[F, E, A] {
+    val lifecycle: Lifecycle[F, E, A]
 
     override final type InnerResource = lifecycle.InnerResource
-    override final def acquire: F[lifecycle.InnerResource] = lifecycle.acquire
-    override final def release(resource: lifecycle.InnerResource): F[Unit] = lifecycle.release(resource)
-    override final def extract[B >: A](resource: lifecycle.InnerResource): Either[F[B], B] = lifecycle.extract(resource)
+    override final def acquire: F[E, lifecycle.InnerResource] = lifecycle.acquire
+    override final def release(resource: lifecycle.InnerResource): F[Nothing, Unit] = lifecycle.release(resource)
+    override final def extract[B >: A](resource: lifecycle.InnerResource): Either[F[E, B], B] = lifecycle.extract[B](resource)
   }
 
-  trait Simple[A] extends Lifecycle.Basic[Identity, A]
-
-  trait Mutable[+A] extends Lifecycle.Self[Identity, A] { this: A => }
-
-  trait Self[+F[_], +A] extends Lifecycle[F, A] { this: A =>
-    def release: F[Unit]
+  trait Self[F[+_, +_], +E, +A] extends Lifecycle[F, E, A] { this: A =>
+    def release: F[Nothing, Unit]
 
     override final type InnerResource = Unit
-    override final def release(resource: Unit): F[Unit] = release
+    override final def release(resource: Unit): F[Nothing, Unit] = release
     override final def extract[B >: A](resource: InnerResource): Right[Nothing, A] = Right(this)
   }
 
-  trait MutableOf[+A] extends Lifecycle.SelfOf[Identity, A] { this: A => }
-
-  trait SelfOf[+F[_], +A] extends Lifecycle[F, A] { this: A =>
-    val inner: Lifecycle[F, Unit]
+  trait SelfOf[F[+_, +_], +E, +A] extends Lifecycle[F, E, A] { this: A =>
+    val inner: Lifecycle[F, E, Unit]
 
     override final type InnerResource = inner.InnerResource
-    override final def acquire: F[inner.InnerResource] = inner.acquire
-    override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
+    override final def acquire: F[E, inner.InnerResource] = inner.acquire
+    override final def release(resource: inner.InnerResource): F[Nothing, Unit] = inner.release(resource)
     override final def extract[B >: A](resource: InnerResource): Right[Nothing, A] = Right(this)
   }
 
-  trait MutableNoClose[+A] extends Lifecycle.SelfNoClose[Identity, A] { this: A => }
-
-  abstract class SelfNoClose[+F[_]: Applicative1, +A] extends Lifecycle.NoCloseBase[F, A] { this: A =>
+  abstract class SelfNoClose[F[+_, +_]: Applicative2, +E, +A] extends Lifecycle.NoCloseBase[F, E, A] { this: A =>
     override type InnerResource = Unit
     override final def extract[B >: A](resource: InnerResource): Right[Nothing, A] = Right(this)
   }
 
-  abstract class NoClose[+F[_]: Applicative1, A] extends Lifecycle.NoCloseBase[F, A] with Lifecycle.Basic[F, A]
+  abstract class NoClose[F[+_, +_]: Applicative2, +E, A] extends Lifecycle.NoCloseBase[F, E, A] with Lifecycle.Basic[F, E, A]
 
-  trait FromPair[F[_], A] extends Lifecycle[F, A] {
-    override final type InnerResource = (A, F[Unit])
-    override final def release(resource: (A, F[Unit])): F[Unit] = resource._2
-    override final def extract[B >: A](resource: (A, F[Unit])): Right[Nothing, A] = Right(resource._1)
+  trait FromPair[F[+_, +_], +E, A] extends Lifecycle[F, E, A] {
+    override final type InnerResource = (A, F[Nothing, Unit])
+    override final def release(resource: (A, F[Nothing, Unit])): F[Nothing, Unit] = resource._2
+    override final def extract[B >: A](resource: (A, F[Nothing, Unit])): Right[Nothing, A] = Right(resource._1)
   }
 
-  trait FromCats[F[_], A] extends Lifecycle[F, A] {
+  trait FromCats[F[_], A] extends Lifecycle[Bifunctorized[F, +_, +_], Throwable, A] {
     override final type InnerResource = kernel.Ref[F, List[F[Unit]]]
   }
 
-  trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, E, _], A]
+  trait FromZIO[R, E, A] extends Lifecycle[ZIO[R, +_, +_], E, A]
 
   object FromZIO {
     trait FromZIOManaged[R, E, A] extends FromZIO[R, E, A] {
@@ -954,8 +818,8 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
-  abstract class NoCloseBase[+F[_]: Applicative1, +A] extends Lifecycle[F, A] {
-    override final def release(resource: InnerResource): F[Unit] = Applicative1[F].unit
+  abstract class NoCloseBase[F[+_, +_]: Applicative2, +E, +A] extends Lifecycle[F, E, A] {
+    override final def release(resource: InnerResource): F[Nothing, Unit] = Applicative2[F].unit
   }
 
   // Workaround for the craziest, strangest bincompat failure on Scala 3:
@@ -974,53 +838,15 @@ object Lifecycle extends LifecycleInstances {
   // Another workaround for a Scala 3 bincompat failure:
   // java.lang.NoClassDefFoundError: zio/CanFail.
   // Appeared in an update from zio 2.1.14 to 2.1.16
+  @scala.annotation.nowarn("msg=never used")
   private implicit def zioCanFailWorkaround[F[x] >: zio.CanFail[x], E]: F[E] = null
 }
 
-private[izumi] sealed trait LifecycleInstances extends LifecycleCatsInstances {
-  implicit final def monad2ForLifecycle[F[+_, +_]: Functor2](implicit P: Primitives1[F[Any, +_]]): Monad2[Lifecycle2[F, +_, +_]] =
-    new Monad2[Lifecycle2[F, +_, +_]] {
-      override def map[E, A, B](r: Lifecycle[F[E, _], A])(f: A => B): Lifecycle[F[E, _], B] = r.map(f)
-      override def flatMap[E, A, B](r: Lifecycle2[F, E, A])(f: A => Lifecycle2[F, E, B]): Lifecycle2[F, E, B] =
-        r.flatMap(f)(using P.asInstanceOf[Primitives1[F[E, +_]]])
-      override def pure[A](a: A): Lifecycle2[F, Nothing, A] = Lifecycle.pure[F[Nothing, _]](a)(using P.asInstanceOf[Primitives1[F[Nothing, +_]]])
+private[izumi] sealed trait LifecycleInstances {
+  implicit final def monad2ForLifecycle[F[+_, +_]: IO2: Primitives2]: Monad2[Lifecycle[F, +_, +_]] =
+    new Monad2[Lifecycle[F, +_, +_]] {
+      override def map[E, A, B](r: Lifecycle[F, E, A])(f: A => B): Lifecycle[F, E, B] = r.map(f)
+      override def flatMap[E, A, B](r: Lifecycle[F, E, A])(f: A => Lifecycle[F, E, B]): Lifecycle[F, E, B] = r.flatMap(f)
+      override def pure[A](a: A): Lifecycle[F, Nothing, A] = Lifecycle.pure[F](a)
     }
-}
-
-private[izumi] sealed trait LifecycleCatsInstances extends LifecycleCatsInstancesLowPriority {
-  implicit final def catsMonadForLifecycle[Monad[_[_]]: `cats.Monad`, F[_]](
-    implicit P: Primitives1[F]
-  ): Monad[Lifecycle[F, _]] = {
-    new cats.StackSafeMonad[Lifecycle[F, _]] {
-      override def pure[A](x: A): Lifecycle[F, A] = Lifecycle.pure[F](x)
-      override def flatMap[A, B](fa: Lifecycle[F, A])(f: A => Lifecycle[F, B]): Lifecycle[F, B] = fa.flatMap(f)
-    }.asInstanceOf[Monad[Lifecycle[F, _]]]
-  }
-
-  implicit final def catsMonoidForLifecycle[Monoid[_]: `cats.kernel.Monoid`, F[_], A](
-    implicit
-    F: Primitives1[F],
-    A0: Monoid[A],
-  ): Monoid[Lifecycle[F, A]] = {
-    val A = A0.asInstanceOf[cats.Monoid[A]]
-    new cats.Monoid[Lifecycle[F, A]] {
-      override def empty: Lifecycle[F, A] = Lifecycle.pure[F](A.empty)
-      override def combine(x: Lifecycle[F, A], y: Lifecycle[F, A]): Lifecycle[F, A] = {
-        for {
-          rx <- x
-          ry <- y
-        } yield A.combine(rx, ry)
-      }
-    }.asInstanceOf[Monoid[Lifecycle[F, A]]]
-  }
-}
-
-private[izumi] sealed trait LifecycleCatsInstancesLowPriority {
-  implicit final def catsFunctorForLifecycle[F[_], Functor[_[_]]: `cats.Functor`](
-    implicit F: Functor1[F]
-  ): Functor[Lifecycle[F, _]] = {
-    new cats.Functor[Lifecycle[F, _]] {
-      override def map[A, B](fa: Lifecycle[F, A])(f: A => B): Lifecycle[F, B] = fa.map(f)
-    }.asInstanceOf[Functor[Lifecycle[F, _]]]
-  }
 }
