@@ -122,6 +122,9 @@ class TestPlanner(
     type TestF[+E, +A] = envExec.F[E, A]
 
     // first we need to plan runtime for our monad, which is retained by TestTreeRunner. Identity is also supported.
+    // Reify TestF's TagKK explicitly so that Tag[UnsafeRun2[TestF]] / Tag[TestTreeRunner[TestF]]
+    // resolves to the runtime-known `envExec.effectType` rather than to the path-dependent abstract type alias.
+    implicit val tagKKTestF: izumi.reflect.TagKK[TestF] = effectType.asInstanceOf[izumi.reflect.TagKK[TestF]]
     val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[UnsafeRun2[TestF]],
       DIKey.get[TestTreeRunner[TestF]],

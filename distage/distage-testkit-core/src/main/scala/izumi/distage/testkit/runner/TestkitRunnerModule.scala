@@ -8,7 +8,7 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.services.*
 import izumi.distage.testkit.runner.impl.services.TimedActionF.TimedActionFImpl
 import izumi.distage.testkit.runner.impl.{DistageTestRunner, RunnerToF, TestPlanner, TestTreeBuilder}
-import izumi.functional.bio.{Bifunctorized, IO2, Primitives2, WeakAsync2}
+import izumi.functional.bio.{Bifunctorized, IO2, Parallel2, Primitives2, WeakAsync2}
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.logger.LogQueue
@@ -22,6 +22,8 @@ class TestkitRunnerModule[F[+_, +_]: TagKK: IO2: WeakAsync2: Primitives2](
   addImplicit[IO2[F]]
   addImplicit[WeakAsync2[F]]
   addImplicit[Primitives2[F]]
+  // Parallel2 is a parent of WeakAsync2 — bind explicitly so child modules can summon it directly.
+  make[Parallel2[F]].fromValue(implicitly[WeakAsync2[F]]: Parallel2[F])
   make[TestReporter].fromValue(reporter)
 
   make[Throwable => Boolean].fromValue(isTestCancellation)
