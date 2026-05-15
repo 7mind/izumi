@@ -3,14 +3,14 @@ package izumi.distage.roles.model
 import izumi.distage.model.definition.Lifecycle
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 
-sealed trait AbstractRole[+F[_]]
+sealed trait AbstractRole[+F[+_, +_]]
 
 /**
   * A type of role representing a persistent service.
   *
   * Will be kept running forever up until the application is interrupted.
   */
-trait RoleService[+F[_]] extends AbstractRole[F] {
+trait RoleService[+F[+_, +_]] extends AbstractRole[F] {
 
   /**
     * Returns a [[izumi.distage.model.definition.Lifecycle]] with the start/shutdown of a service described
@@ -44,18 +44,18 @@ trait RoleService[+F[_]] extends AbstractRole[F] {
     * You may start a separate thread / fiber, etc during resource initialization.
     * All the shutdown logic has to be implemented in the resource finalizer.
     */
-  def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit]
+  def start(roleParameters: EntrypointArgs): Lifecycle[F, Throwable, Unit]
 
 }
 
 /**
   * A role representing a one-shot task. Shouldn't block forever.
   */
-trait RoleTask[+F[_]] extends AbstractRole[F] {
+trait RoleTask[+F[+_, +_]] extends AbstractRole[F] {
 
   /**
     * Application startup wouldn't progress until the effect finishes.
     */
-  def start(roleParameters: EntrypointArgs): F[Unit]
+  def start(roleParameters: EntrypointArgs): F[Throwable, Unit]
 
 }
