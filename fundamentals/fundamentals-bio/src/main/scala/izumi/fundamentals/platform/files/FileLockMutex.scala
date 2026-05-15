@@ -98,7 +98,7 @@ object FileLockMutex {
       )(release = {
         channel =>
           IO.catchAll[Throwable, Unit, Nothing](IO.syncThrowable(channel.close()))(_ => IO.unit)
-      }).flatMap[Throwable, A] {
+      }).flatMap[F, Throwable, A] {
         channel =>
           Lifecycle
             .make[F, Throwable, (A, Option[FileLock])](
@@ -106,7 +106,7 @@ object FileLockMutex {
             )(release = {
               case (_, Some(lock)) => IO.catchAll[Throwable, Unit, Nothing](IO.syncThrowable(lock.close()))(_ => IO.unit)
               case (_, None) => IO.unit
-            }).map[A](_._1)
+            }).map[F, A](_._1)
       }
   }
 

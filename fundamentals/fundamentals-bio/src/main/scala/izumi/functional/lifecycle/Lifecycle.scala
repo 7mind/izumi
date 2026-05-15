@@ -58,7 +58,7 @@ import scala.annotation.unused
   * @see [[https://zio.dev/guides/migrate/zio-2.x-migration-guide#scopes-1 scoped zio.ZIO]]
   * @see [[https://zio.dev/reference/contextual/zlayer zio.ZLayer]]
   */
-trait Lifecycle[F[+_, +_], +E, +A] {
+trait Lifecycle[+F[+_, +_], +E, +A] {
   type InnerResource
 
   /**
@@ -98,51 +98,51 @@ trait Lifecycle[F[+_, +_], +E, +A] {
     */
   def extract[B >: A](resource: InnerResource): Either[F[E, B], B]
 
-  final def map[B](f: A => B)(implicit FF: Functor2[F]): Lifecycle[F, E, B] =
-    LifecycleMethodImpls.mapImpl[F, E, A, B](this)(f)
-  final def flatMap[E1 >: E, B](f: A => Lifecycle[F, E1, B])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, B] =
-    LifecycleMethodImpls.flatMapImpl[F, E1, A, B](this.widenError[E1])(f)
-  final def flatten[E1 >: E, B](implicit ev: A <:< Lifecycle[F, E1, B], FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, B] =
-    this.flatMap[E1, B](ev)
+  final def map[G[+e, +a] >: F[e, a], B](f: A => B)(implicit FF: Functor2[G]): Lifecycle[G, E, B] =
+    LifecycleMethodImpls.mapImpl[G, E, A, B](this)(f)
+  final def flatMap[G[+e, +a] >: F[e, a], E1 >: E, B](f: A => Lifecycle[G, E1, B])(implicit FF: IO2[G], FP: Primitives2[G]): Lifecycle[G, E1, B] =
+    LifecycleMethodImpls.flatMapImpl[G, E1, A, B](this.widenError[E1])(f)
+  final def flatten[G[+e, +a] >: F[e, a], E1 >: E, B](implicit ev: A <:< Lifecycle[G, E1, B], FF: IO2[G], FP: Primitives2[G]): Lifecycle[G, E1, B] =
+    this.flatMap[G, E1, B](ev)
 
-  final def catchAll[E1 >: E, E2, B >: A](recover: E1 => Lifecycle[F, E2, B])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E2, B] =
-    LifecycleMethodImpls.redeemImpl[F, E1, E2, A, B](this.widenError[E1])(recover, Lifecycle.pure[F](_))
-  final def catchSome[E1 >: E, B >: A](recover: PartialFunction[E1, Lifecycle[F, E1, B]])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, B] =
-    catchAll[E1, E1, B](e => recover.applyOrElse(e, (_: E1) => Lifecycle.fail[F, E1, B](e)))
+  final def catchAll[G[+e, +a] >: F[e, a], E1 >: E, E2, B >: A](recover: E1 => Lifecycle[G, E2, B])(implicit FF: IO2[G], FP: Primitives2[G]): Lifecycle[G, E2, B] =
+    LifecycleMethodImpls.redeemImpl[G, E1, E2, A, B](this.widenError[E1])(recover, Lifecycle.pure[G](_))
+  final def catchSome[G[+e, +a] >: F[e, a], E1 >: E, B >: A](recover: PartialFunction[E1, Lifecycle[G, E1, B]])(implicit FF: IO2[G], FP: Primitives2[G]): Lifecycle[G, E1, B] =
+    catchAll[G, E1, E1, B](e => recover.applyOrElse(e, (_: E1) => Lifecycle.fail[G, E1, B](e)))
 
-  final def redeem[E1 >: E, E2, B](
-    onFailure: E1 => Lifecycle[F, E2, B],
-    onSuccess: A => Lifecycle[F, E2, B],
-  )(implicit FF: IO2[F], FP: Primitives2[F]
-  ): Lifecycle[F, E2, B] =
-    LifecycleMethodImpls.redeemImpl[F, E1, E2, A, B](this.widenError[E1])(onFailure, onSuccess)
+  final def redeem[G[+e, +a] >: F[e, a], E1 >: E, E2, B](
+    onFailure: E1 => Lifecycle[G, E2, B],
+    onSuccess: A => Lifecycle[G, E2, B],
+  )(implicit FF: IO2[G], FP: Primitives2[G]
+  ): Lifecycle[G, E2, B] =
+    LifecycleMethodImpls.redeemImpl[G, E1, E2, A, B](this.widenError[E1])(onFailure, onSuccess)
 
-  final def evalMap[E1 >: E, B](f: A => F[E1, B])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, B] =
-    flatMap[E1, B](a => Lifecycle.liftF[F, E1, B](f(a)))
-  final def evalTap[E1 >: E](f: A => F[E1, Unit])(implicit FF: IO2[F], FP: Primitives2[F]): Lifecycle[F, E1, A] =
-    evalMap[E1, A](a => FF.map[E1, Unit, A](f(a))(_ => a))
+  final def evalMap[G[+e, +a] >: F[e, a], E1 >: E, B](f: A => G[E1, B])(implicit FF: IO2[G], FP: Primitives2[G]): Lifecycle[G, E1, B] =
+    flatMap[G, E1, B](a => Lifecycle.liftF[G, E1, B](f(a)))
+  final def evalTap[G[+e, +a] >: F[e, a], E1 >: E](f: A => G[E1, Unit])(implicit FF: IO2[G], FP: Primitives2[G]): Lifecycle[G, E1, A] =
+    evalMap[G, E1, A](a => FF.map[E1, Unit, A](f(a))(_ => a))
 
   /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
-  final def wrapAcquire[E1 >: E](f: (=> F[E1, InnerResource]) => F[E1, InnerResource]): Lifecycle[F, E1, A] =
-    LifecycleMethodImpls.wrapAcquireImpl[F, E1, A, InnerResource](this.widenError[E1].asInstanceOf[Lifecycle[F, E1, A] { type InnerResource = Lifecycle.this.InnerResource }])(f)
+  final def wrapAcquire[G[+e, +a] >: F[e, a], E1 >: E](f: (=> G[E1, InnerResource]) => G[E1, InnerResource]): Lifecycle[G, E1, A] =
+    LifecycleMethodImpls.wrapAcquireImpl[G, E1, A, InnerResource](this.widenError[E1].asInstanceOf[Lifecycle[G, E1, A] { type InnerResource = Lifecycle.this.InnerResource }])(f)
 
   /** Wrap release action of this resource in another effect, e.g. for logging purposes */
-  final def wrapRelease[E1 >: E](
-    f: (InnerResource => F[Nothing, Unit], InnerResource) => F[Nothing, Unit]
-  ): Lifecycle[F, E1, A] =
-    LifecycleMethodImpls.wrapReleaseImpl[F, E1, A, InnerResource](this.widenError[E1].asInstanceOf[Lifecycle[F, E1, A] { type InnerResource = Lifecycle.this.InnerResource }])(f)
+  final def wrapRelease[G[+e, +a] >: F[e, a], E1 >: E](
+    f: (InnerResource => G[Nothing, Unit], InnerResource) => G[Nothing, Unit]
+  ): Lifecycle[G, E1, A] =
+    LifecycleMethodImpls.wrapReleaseImpl[G, E1, A, InnerResource](this.widenError[E1].asInstanceOf[Lifecycle[G, E1, A] { type InnerResource = Lifecycle.this.InnerResource }])(f)
 
-  final def beforeAcquire[E1 >: E](f: => F[E1, Unit])(implicit FF: Applicative2[F]): Lifecycle[F, E1, A] =
-    wrapAcquire[E1](acquire => FF.map2[E1, Unit, InnerResource, InnerResource](f, acquire)((_, res) => res))
+  final def beforeAcquire[G[+e, +a] >: F[e, a], E1 >: E](f: => G[E1, Unit])(implicit FF: Applicative2[G]): Lifecycle[G, E1, A] =
+    wrapAcquire[G, E1](acquire => FF.map2[E1, Unit, InnerResource, InnerResource](f, acquire)((_, res) => res))
 
   /** Prepend release action to existing */
-  final def beforeRelease[E1 >: E](f: InnerResource => F[Nothing, Unit])(implicit FF: Applicative2[F]): Lifecycle[F, E1, A] =
-    wrapRelease[E1]((release, res) => FF.map2[Nothing, Unit, Unit, Unit](f(res), release(res))((_, _) => ()))
+  final def beforeRelease[G[+e, +a] >: F[e, a], E1 >: E](f: InnerResource => G[Nothing, Unit])(implicit FF: Applicative2[G]): Lifecycle[G, E1, A] =
+    wrapRelease[G, E1]((release, res) => FF.map2[Nothing, Unit, Unit, Unit](f(res), release(res))((_, _) => ()))
 
-  final def void(implicit FF: Functor2[F]): Lifecycle[F, E, Unit] = map[Unit](_ => ())
+  final def void[G[+e, +a] >: F[e, a]](implicit FF: Functor2[G]): Lifecycle[G, E, Unit] = map[G, Unit](_ => ())
 
-  final def mapK[H[+_, +_]](f: Morphism2[F, H]): Lifecycle[H, E, A] =
-    LifecycleMethodImpls.mapKImpl[F, H, E, A](this, f)
+  final def mapK[G[+e, +a] >: F[e, a], H[+_, +_]](f: Morphism2[G, H]): Lifecycle[H, E, A] =
+    LifecycleMethodImpls.mapKImpl[G, H, E, A](this.asInstanceOf[Lifecycle[G, E, A]], f)
 
   @inline final def widen[B >: A]: Lifecycle[F, E, B] = this
   @inline final def widen[B](implicit ev: A <:< B): Lifecycle[F, E, B] = this.asInstanceOf[Lifecycle[F, E, B]]
@@ -253,13 +253,13 @@ object Lifecycle extends LifecycleInstances {
 
   def traverse[F[+_, +_]: IO2: Primitives2, E, A, B](l: Iterable[A])(f: A => Lifecycle[F, E, B]): Lifecycle[F, E, List[B]] = {
     l.foldLeft[Lifecycle[F, E, List[B]]](pure[F](List.empty[B]).widenError[E]) {
-      (acc, a) => acc.flatMap[E, List[B]](list => f(a).map[List[B]](r => list ++ List(r)))
+      (acc, a) => acc.flatMap[F, E, List[B]](list => f(a).map[F, List[B]](r => list ++ List(r)))
     }
   }
 
   def traverse_[F[+_, +_]: IO2: Primitives2, E, A](l: Iterable[A])(f: A => Lifecycle[F, E, Unit]): Lifecycle[F, E, Unit] = {
     l.foldLeft[Lifecycle[F, E, Unit]](unit[F].widenError[E]) {
-      (acc, a) => acc.flatMap[E, Unit](_ => f(a))
+      (acc, a) => acc.flatMap[F, E, Unit](_ => f(a))
     }
   }
 
