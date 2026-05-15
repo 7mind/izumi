@@ -6,7 +6,7 @@ import izumi.distage.testkit.model.DistageTest
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.RunningSuiteHandle
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.AsyncGlobalSuitesControlHandle
-import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeIntellijTestReporter, TestRunnerRuntime}
+import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, ScalatestLinearizedTestReporter, TestRunnerRuntime}
 import izumi.distage.testkit.spec.AbstractDistageSpec
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -82,7 +82,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
       testsToRun match {
         case Some(tests) =>
-          _doPrepareRunTests(tests, testName, args, status, globalMode, isSbt)
+          _doPrepareRunTests(tests, testName, args, status, globalMode)
         case None =>
         // In global memoization mode: Not the first runner - status will be completed by the actual runner
         // In per-instance mode: This shouldn't happen
@@ -104,7 +104,6 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     args: Args,
     status: StatefulStatus,
     globalMode: Boolean,
-    isSbt: Boolean,
   ): Unit = {
     val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`.name)
 
@@ -137,7 +136,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
       }
     }
 
-    val testReporter = _mkTestReporter(isSbt)
+    val testReporter = _mkTestReporter()
 
     _doRunTests(debugLogger, asyncGlobalSuitesControl, testReporter, testsToRun)
   }
@@ -172,10 +171,16 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     }
   }
 
-  protected def _mkTestReporter(isSbt: Boolean): TestReporter = {
+  protected def _mkTestReporter(): TestReporter = {
     val suiteHandler = DistageTestsRegistrySingleton.mkSuiteHandlerById()
     val scalatestReporter = new DistageScalatestReporter(suiteHandler)
-    if (isSbt) scalatestReporter else new SafeIntellijTestReporter(scalatestReporter)
+    // Wrap for BOTH the SBT and the Intellij paths. `ScalatestLinearizedTestReporter`
+    // is required for downstream ScalaTest reporters that pair-walk per-suite events
+    // (JUnitXmlReporter / XmlReporter / DashboardReporter — see the class scaladoc for
+    // exact line numbers) and benefits the Intellij reporter as well. Without this
+    // wrap, intra-suite parallelism (the testkit default,
+    // `parallelTests = Parallelism.Unlimited`) produces silent JUnit XML undercount.
+    new ScalatestLinearizedTestReporter(scalatestReporter)
   }
 
   override def tags: Map[String, Set[String]] = {
