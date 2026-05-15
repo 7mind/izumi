@@ -139,6 +139,39 @@ Status: `[ ]` planned · `[~]` in progress · `[x]` done · `[!]` blocked
       - Promote `TestRunnerRuntime.miniBIOAsyncPrimitives2` from busy-wait stub to a proper Primitives2 impl if MiniBIOAsync becomes a hot path.
       - The 8 `RoleAppTest` failures (Session 4) — `Bifunctorized[IO, +_, +_]` test-fixture `Async[IO]` wiring. Likely a `given _asyncIO: Async[IO] = IO.asyncForIO` shadowing the proper IORuntime-backed instance.
 
+    **M5-fix (2026-05-15): transparent bifunctorize/debifunctorize submerging via CatsToBIOConversions implicits.** The original PR-04 implementation made `bifunctorize`/`debifunctorize` pure type-level identity casts; submerging happened only inside BIO instance methods. The spec ("Conversion of effect values": *"the Throwable error must be Submerged, converted into a typed error during `bifunctorize`"* / *"In `debifunctorize`, a typed error must be de-Submerged"*) was originally amended in commit `6fecdd330` to match the implementation. That amendment has been reverted; the spec is now the authoritative invariant and deviations are catalogued in `./bifunctorization-deviations.md` (new convention introduced here).
+
+    Implementation: two new implicit conversions in `CatsToBIOConversions.scala` (gated on `cats.ApplicativeError[F, Throwable]` plus `izumi.reflect.TagK[F]`):
+    ```scala
+    @inline implicit final def bifunctorizeSubmerging[F[_], A](
+      fa: F[A]
+    )(implicit F: cats.ApplicativeError[F, Throwable],
+      tag: TagK[F],
+    ): Bifunctorized[F, Throwable, A] =
+      Bifunctorized.assert(F.adaptError(fa) { case t: Throwable => SubmergedTypedError[F](t) })
+
+    @inline implicit final def debifunctorizeUnSubmerging[F[_], A](
+      b: Bifunctorized[F, Throwable, A]
+    )(implicit F: cats.ApplicativeError[F, Throwable],
+      tag: TagK[F],
+    ): F[A] =
+      F.adaptError(b.asInstanceOf[F[A]]) {
+        case SubmergedTypedError(payload: Throwable) => payload
+      }
+    ```
+
+    Resolution priority: cats-mediated implicits live in the user's import scope when `import izumi.functional.bio.CatsToBIOConversions.*` is in effect. Import scope outranks the companion-of-RHS conversions `Bifunctorized.{bifunctorize,debifunctorize}Conversion` (cats-free identity). For real bifunctors (ZIO, MonixBIO, Either, MiniBIO), users typically do NOT import `CatsToBIOConversions._` — they consume `IO2[F]` etc. directly — so the Goal-4 zero-cost path through `Bifunctorized.bifunctorize` (method, not conversion) remains identity (`bifunctorize(zio) eq zio`). For `Identity`, `bifunctorizeIdentity` / `debifunctorizeIdentity` use the existing M2 MiniBIO carrier path (unchanged).
+
+    Verified on Scala 3.7.4: `fundamentals-bioJVM` 571/571 tests pass (was 564, +7 new in `BifunctorizeTransparencyTest.scala`); `distage-coreJVM` 396/396 + 3 ignored (M5-D01 izumi-reflect deficiency unchanged); `distage-extension-configJVM` 29/29 (Goal 5 `OptionalDependencyTest` reaches `Bifunctorized` on a no-cats classpath). Scala 2.13.18 `Test/compile` of `fundamentals-bioJVM` passes; new tests run 7/7 on 2.13 too.
+
+    **Deviation tracking:** `[D-02]` in `bifunctorization-deviations.md` records that `Bifunctorized.bifunctorize` (the method) remains cats-free identity; submerging is observable at the implicit-conversion seam. The spec's "during `bifunctorize`" reads operationally as "at the seam where the user's monofunctor `F[A]` becomes a `Bifunctorized[F, Throwable, A]`", which the implicit-conversion seam satisfies. Forcing the method itself to submerge would violate either Goal 4 (real-bifunctor zero-cost) or Goal 5 (no-cats build), so the split is structural — accepted as design.
+
+    Files touched:
+    - `bifunctorization.md` — spec text on lines 63-67 reverted to the authoritative original (committed alongside this change to make the revert atomic).
+    - `bifunctorization-deviations.md` — new file establishing the deviation-tracking convention.
+    - `fundamentals/fundamentals-bio/src/main/scala/izumi/functional/bio/CatsToBIOConversions.scala` — `bifunctorizeSubmerging` and `debifunctorizeUnSubmerging` implicits added.
+    - `fundamentals/fundamentals-bio/.jvm/src/test/scala/izumi/functional/bio/BifunctorizeTransparencyTest.scala` — new 7-case test pinning spec round-trip semantics (with Goal-4 + Identity-bridge regression checks).
+
     **Design decisions resolved (user, 2026-05-14):**
     - `Lifecycle.fromCats` performs transparent bifunctorization: takes `cats.effect.Resource[F[_], A]` for monofunctor `F[_]`, produces `Lifecycle[Bifunctorized[F, +_, +_], +_, A]`.
     - ZIO R parameter: no special handling needed. ZIO collapses to monofunctor at the typeclass-instance level; variance on R is provided by variance on `+F[+_, +_]`. 

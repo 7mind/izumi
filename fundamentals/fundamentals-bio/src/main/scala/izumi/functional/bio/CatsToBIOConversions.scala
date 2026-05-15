@@ -4,6 +4,8 @@ import izumi.functional.bio.PredefinedHelper.NotPredefined
 import izumi.functional.bio.impl.CatsToBIO
 import izumi.reflect.TagK
 
+import scala.language.implicitConversions
+
 /** CE → BIO implicit-conversion ladder. Users opt in via
   * `import izumi.functional.bio.CatsToBIOConversions.*`. Each instance returns
   * [[PredefinedHelper.NotPredefined.Of]] so the implicit-priority machinery in
@@ -17,6 +19,24 @@ import izumi.reflect.TagK
   *
   * Goal 5 ("No-More-Orphans"): this file is NOT mixed into the `bio` package
   * object — users must explicitly import it to bring cats onto their classpath.
+  *
+  * This object ALSO provides transparent (de-)submerging implicit conversions
+  * [[bifunctorizeSubmerging]] / [[debifunctorizeUnSubmerging]] that fire at
+  * expected-type sites for any monofunctor `F[_]` with a `cats.ApplicativeError[F, Throwable]`
+  * in scope. They are imported into the user's scope alongside the
+  * `AsyncToBIO`/`PrimitivesToBIO` summoners, so a user who reaches for the cats-mediated
+  * BIO surface gets transparent submerging on the conversion seams "for free"
+  * (matching the spec text in `bifunctorization.md` §"Conversion of effect values":
+  * "the Throwable error must be Submerged, converted into a typed error during `bifunctorize`"
+  * and "In `debifunctorize`, a typed error must be de-Submerged").
+  *
+  * Priority: these implicit conversions live in the user's import scope, which
+  * outranks the cats-free identity conversions
+  * [[Bifunctorized.bifunctorizeConversion]] / [[Bifunctorized.debifunctorizeConversion]]
+  * (companion-of-RHS-of-alias). Real-bifunctor users typically do NOT import
+  * `CatsToBIOConversions._` at all (they consume `IO2[F]` etc. directly), so
+  * the Goal-4 zero-cost path through `Bifunctorized.bifunctorize` (method, not
+  * conversion) remains identity.
   */
 object CatsToBIOConversions {
 
@@ -54,5 +74,59 @@ object CatsToBIOConversions {
   ): NotPredefined.Of[Primitives2[Bifunctorized[F, +_, +_]]] = {
     CatsToBIO.asyncToBIO[F].asInstanceOf[NotPredefined.Of[Primitives2[Bifunctorized[F, +_, +_]]]]
   }
+
+  /** Cats-mediated transparent submerging at conversion seams.
+    *
+    * Implicit lift of `F[A]` to `Bifunctorized[F, Throwable, A]` that, UNLIKE the
+    * cats-free [[Bifunctorized.bifunctorizeConversion]], submerges the raw monofunctor
+    * Throwable channel into a typed BIO error channel via [[SubmergedTypedError]].
+    *
+    * Required for the spec text in `bifunctorization.md` §"Conversion of effect values":
+    * "the Throwable error must be Submerged, converted into a typed error during `bifunctorize`."
+    *
+    * Idempotency: [[SubmergedTypedError.apply]] is idempotent on TagK match (no double
+    * wrapping for same-`F` re-bifunctorization). Defects (introduced via BIO `terminate`
+    * or `sync(throw …)`) reach this conversion only if they bypass the BIO instance
+    * methods — but practically users construct typed effects through BIO and only round-trip
+    * through this conversion at boundary sites.
+    *
+    * Resolution priority: this conversion is in the user's import scope when they
+    * `import izumi.functional.bio.CatsToBIOConversions.*`. Import scope outranks
+    * the cats-free [[Bifunctorized.bifunctorizeConversion]] (companion-of-RHS), so
+    * cats-mediated submerging wins for any `F[_]` that has both `ApplicativeError`
+    * AND a `TagK`. For real bifunctors that don't go through this import, the
+    * cats-free identity conversion remains active.
+    */
+  @inline implicit final def bifunctorizeSubmerging[F[_], A](
+    fa: F[A]
+  )(implicit F: cats.ApplicativeError[F, Throwable],
+    tag: TagK[F],
+  ): Bifunctorized[F, Throwable, A] =
+    Bifunctorized.assert(F.adaptError(fa) { case t: Throwable => SubmergedTypedError[F](t) })
+
+  /** Inverse of [[bifunctorizeSubmerging]]: implicit projection of
+    * `Bifunctorized[F, Throwable, A]` to `F[A]` that un-submerges the typed BIO
+    * error channel back into the raw monofunctor Throwable channel.
+    *
+    * Required for the spec text in `bifunctorization.md` §"Conversion of effect values":
+    * "In `debifunctorize`, a typed error must be de-Submerged, unwrapped, as its expected
+    * to be in order for monofunctor's native methods to work with it."
+    *
+    * Pattern: `F.adaptError(b.unwrap) { case SubmergedTypedError(payload: Throwable) => payload }`
+    * — only same-`TagK[F]` SubmergedTypedErrors are unwrapped (via
+    * [[SubmergedTypedError.unapply]]); other Throwables (defects, foreign-F submerged errors)
+    * pass through unchanged.
+    *
+    * Resolution priority: same as [[bifunctorizeSubmerging]] — import scope outranks
+    * [[Bifunctorized.debifunctorizeConversion]] companion-of-RHS.
+    */
+  @inline implicit final def debifunctorizeUnSubmerging[F[_], A](
+    b: Bifunctorized[F, Throwable, A]
+  )(implicit F: cats.ApplicativeError[F, Throwable],
+    tag: TagK[F],
+  ): F[A] =
+    F.adaptError(b.asInstanceOf[F[A]]) {
+      case SubmergedTypedError(payload: Throwable) => payload
+    }
 
 }
