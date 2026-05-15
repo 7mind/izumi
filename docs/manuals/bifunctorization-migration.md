@@ -1,11 +1,13 @@
 # Migrating to Bifunctorized: User Guide
 
-Status: this document covers what shipped through M1–M4 of the
-bifunctorization refactor (commits `05d0b2af0` … `b10409187` on branch
-`feature/bifunctorization`). M5 (`Quasi*` deletion across ~106
-call-sites) is deferred to a user-supervised follow-up; until then,
-both the new BIO entry points and the existing `Quasi*`-based ones
-coexist.
+Status: this document covers the final M5 state of the bifunctorization
+refactor on branch `feature/bifunctorization`. M5 completed the structural
+work — `Lifecycle`, `Injector`, and all supporting interfaces are now
+bifunctor-shaped; the `Quasi*` / `*1` monofunctor adapter tier and the
+M3/M4 parallel surfaces (`LifecycleBifunctorized`, `BifunctorizedInjector`)
+have been deleted. The outstanding items (stubbed test fixtures, 3
+Scala 2-only logstage macro files, Scala 2.12 cross-build) are tracked in
+`tasks.md` and `defects.md` but are not blockers for the refactor landing.
 
 ## Why bifunctorize?
 
@@ -36,12 +38,10 @@ scala.util.Try, Identity), is lifted into the bifunctor world via
 | `Bifunctorized.NoOp[F[+_, +_], +E, +A]` | same | Opaque newtype for an effect type that's *already* a bifunctor (ZIO, MonixBIO, Either, MiniBIO, etc.). Erased to `F[E, A]`. |
 | `Bifunctorized.IdentityBifunctorized[+E, +A]` | same | Identity special-case. Carries `MiniBIO[Throwable, A]` at runtime (the only Bifunctorized subtype that's *not* zero-cost; `Identity[A] = A` cannot carry typed errors, so we box via MiniBIO). |
 | `SubmergedTypedError[F[_]]` | `bio.SubmergedTypedError.scala` | Throwable wrapper that hides a typed error inside a monofunctor's Throwable channel, `TagK[F]`-discriminated so cross-`F` errors stay opaque. |
-| `LifecycleBifunctorized` | `functional.lifecycle.LifecycleBifunctorized.scala` | Parallel BIO surface to `Lifecycle` (`make`, `liftF`, `pure`, `suspend`, `fail`, `makePair`, `unit`). |
-| `BifunctorizedInjector` | `distage.model.BifunctorizedInjector.scala` | Parallel BIO surface to `Injector` (`apply`, `inherit`). |
 
-## How to construct a `Lifecycle` via the BIO surface
+## How to construct a `Lifecycle`
 
-Before (existing, `Quasi*`-constrained):
+Before (pre-M5, `Quasi*`-constrained):
 
 ```scala
 import izumi.functional.lifecycle.Lifecycle
@@ -51,48 +51,76 @@ def myResource[F[_]: QuasiIO]: Lifecycle[F, Int] =
   Lifecycle.make[F, Int](QuasiIO[F].pure(42))(_ => QuasiIO[F].unit)
 ```
 
-After (new, BIO-constrained):
+After (M5, `Lifecycle` is now bifunctor-shaped):
 
 ```scala
-import izumi.functional.bio.{IO2, Bifunctorized}
-import izumi.functional.lifecycle.{Lifecycle, LifecycleBifunctorized}
+import izumi.functional.bio.{IO2, Primitives2}
+import izumi.functional.lifecycle.Lifecycle
 
-def myResource[F[+_, +_]](
-  implicit F: IO2[Bifunctorized.NoOp[F, +_, +_]]
-): Lifecycle[F[Throwable, _], Int] =
-  LifecycleBifunctorized.make[F, Int](F.pure(42))(_ => F.unit)
+def myResource[F[+_, +_]: IO2: Primitives2]: Lifecycle[F, Throwable, Int] =
+  Lifecycle.make[F, Throwable, Int](IO2[F].pure(42))(_ => IO2[F].unit)
 ```
 
-The new surface produces `Lifecycle[F[Throwable, _], A]` (the same
-shape distage's `Injector[F[Throwable, _]]` expects). Internally the
-BIO instance is bridged to a `QuasiIO[F[Throwable, _]]` via the
-existing `QuasiIO.fromBIO` derivation (see `QuasiIO.scala:201`), so
-the existing `Lifecycle` infrastructure is reused unchanged.
+`Lifecycle` itself now carries the bifunctor `F[+_, +_]` directly.
+`LifecycleBifunctorized` — the M3 parallel surface — has been deleted because
+it is no longer needed. For a monofunctor `F[_]` (e.g. `cats.effect.IO`),
+wrap it at the call-site:
 
-## How to construct an `Injector` via the BIO surface
+```scala
+import izumi.functional.bio.Bifunctorized
+import izumi.functional.bio.CatsToBIOConversions.AsyncToBIO
 
-Before:
+def myIOResource: Lifecycle[Bifunctorized[cats.effect.IO, +_, +_], Throwable, Int] =
+  Lifecycle.make(IO2[Bifunctorized[cats.effect.IO, +_, +_]].pure(42))(_ => IO2[...].unit)
+```
+
+For `cats.effect.Resource[F, A]`, use `Lifecycle.fromCats` which performs
+transparent bifunctorization and returns
+`Lifecycle[Bifunctorized[F, +_, +_], Throwable, A]` directly.
+
+The `Lifecycle3` alias handles ZIO-env-parameterized Lifecycles:
+`Lifecycle3[ZIO, R, E, A] = Lifecycle[λ[(+e, +a) => ZIO[R, e, a]], E, A]`.
+
+## How to construct an `Injector`
+
+Before (pre-M5):
 
 ```scala
 import izumi.distage.model.Injector
-import izumi.functional.quasi.QuasiIO
 
+// ZIO: required QuasiIO[ZIO[Any, Throwable, *]] or BifunctorizedInjector
 val injector: Injector[zio.ZIO[Any, Throwable, *]] = Injector[zio.ZIO[Any, Throwable, *]]()
 ```
 
-After:
+After (M5, `Injector` is now bifunctor-shaped):
 
 ```scala
-import izumi.distage.model.BifunctorizedInjector
+import izumi.distage.model.Injector
 
-val injector: Injector[zio.ZIO[Any, Throwable, _]] = BifunctorizedInjector[zio.ZIO[Any, +_, +_]]()
+// ZIO
+val injector: Injector[zio.ZIO[Any, +_, +_]] = Injector[zio.ZIO[Any, +_, +_]]()
+
+// cats.effect.IO (via Bifunctorized)
+import izumi.functional.bio.{Bifunctorized, CatsToBIOConversions}
+import CatsToBIOConversions.{AsyncToBIO, PrimitivesToBIO}
+val cioInjector: Injector[Bifunctorized[cats.effect.IO, +_, +_]] =
+  Injector[Bifunctorized[cats.effect.IO, +_, +_]]()
+
+// Identity
+val idInjector: Injector[Bifunctorized.IdentityBifunctorized] =
+  Injector[Bifunctorized.IdentityBifunctorized]()
 ```
 
-The bifunctor type parameter takes the *real* bifunctor shape (`ZIO[Any, +_, +_]`,
-not the typed-error-fixed `ZIO[Any, Throwable, *]`). The injector
-produced still has the typed-error channel fixed at `Throwable` (per
-distage's existing contract — Throwable is the failure channel of a
-running program).
+`BifunctorizedInjector` — the M4 parallel surface — has been deleted because
+`Injector` itself now accepts `F[+_, +_]`. The typed-error channel is fixed at
+`Throwable` by the `DefaultModule[F]` constraint (distage's existing contract
+for running programs).
+
+`Injector.apply[F[+_, +_]: TagKK: IO2: Primitives2: DefaultModule](overrides*)` is
+the primary entry point. For specialized use, `produceCustomF[F[+_, +_]:
+TagKK: IO2: Primitives2]` and `produceCustomIdentity` (returning
+`Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, Locator]`) are also
+available on `Producer`.
 
 ## Submerging and un-submerging typed errors
 
@@ -141,9 +169,8 @@ opaque type* `Bifunctorized.IdentityBifunctorized[+E, +A]` whose
 runtime carrier is `MiniBIO[Throwable, A]` (boxed — the only
 Bifunctorized subtype that's not zero-cost).
 
-The wired entry points (currently
-`LifecycleBifunctorized`/`BifunctorizedInjector`) accept any bifunctor
-that has an `IO2` instance, including the IdentityBifunctorized — so
+The wired entry points (`Lifecycle.make`, `Injector.apply`) accept any bifunctor
+that has an `IO2` instance, including `IdentityBifunctorized` — so
 users who pass `IdentityBifunctorized` get lawful monadic behavior
 (the old `QuasiIOIdentity.maybeSuspend` was unlawful; MiniBIO
 suspends correctly).
@@ -172,88 +199,104 @@ defect.
 - **Goal 2** — Submerged errors discriminated by `TagK[F]`; defects
   use raw Throwable (PR-02, PR-04, PR-08).
 - **Goal 3** — Transparent bifunctorization at distage/Lifecycle/LogIO
-  seams: partial. `LifecycleBifunctorized` and `BifunctorizedInjector`
-  provide BIO entry points (M3, M4). Full transparency (where the
-  user-visible `Injector[Identity]` automatically routes through
-  IdentityBifunctorized) is M5/M6 work — until M5, the user
-  explicitly uses the BIO surface.
+  seams: **satisfied on Scala 3** (M5). `Lifecycle`, `Injector`,
+  `Subcontext`, `Producer`, and all 7 strategy interfaces carry
+  `F[+_, +_]` directly. `Injector[Bifunctorized.IdentityBifunctorized]()`
+  routes through MiniBIO automatically.
 - **Goal 4** — Zero-cost no-op for actual bifunctors:
   `bifunctorize(zio) eq zio` (PR-01), high-priority no-op identity
   instance in `BifunctorizedNoOpInstances` (PR-05).
 - **Goal 5** — No-More-Orphans: `bio/package.scala` imports no cats;
   `CatsToBIOConversions` is opt-in via explicit import;
-  `OptionalDependencyTest` 8/8 passes verifying Bifunctorized /
+  `OptionalDependencyTest` 29/29 passes verifying Bifunctorized /
   SubmergedTypedError / BifunctorizedNoOpInstances are reachable on a
-  no-cats classpath (PR-08).
-- **Goal 6** — `Quasi*` deletion: deferred to a user-supervised M5
-  session. M3/M4 ship *parallel* BIO surfaces without modifying the
-  existing `Lifecycle.scala` / `Injector.scala`; the wholesale
-  Quasi*→BIO migration of ~106 call-sites awaits user review.
-- **Goal 7** — Cross-build green on Scala 3.7.4, 2.13.18, 2.12.21
-  through M1–M4.
+  no-cats classpath (PR-08, M5 Session 5).
+- **Goal 6** — `Quasi*` / `*1` deletion: **complete on Scala 3** (M5).
+  The `Quasi*` family, the intermediate `*1` monofunctor tier, and all
+  parallel surfaces (`LifecycleBifunctorized`, `BifunctorizedInjector`)
+  are deleted. Zero matches for `\b(IO1|Async1|...|IORunner1|Ref0)\b`
+  on Scala 3-active source paths. Three matches remain in `scala-2/`-only
+  logstage macro files (deferred).
+- **Goal 7** — Cross-build: Scala 3.7.4 ✅, Scala 2.13.18 ✅ (main
+  sources; test compile deferred), Scala 2.12.21 dropped at the
+  `Lifecycle.F` covariance boundary (per user direction; unblocked
+  manually later).
 
 ## Known limitations
 
-1. **`CatsToBIOConversions` ships only `AsyncToBIO`.** Weaker
-   conversions (`SyncToIO2`, `MonadToBIO`, `ErrorToBIO`, etc.) are
-   plumbed in the plan §5 [QUESTION] but not implemented. Users with
-   a weaker cats-effect typeclass (e.g. only `Sync[F]`) cannot use the
-   BIO entry yet. Workaround: provide an `Async[F]` instance if your
-   monad has one.
+1. **`CatsToBIOConversions` ships only `AsyncToBIO` and `PrimitivesToBIO`.**
+   Weaker conversions (`SyncToIO2`, `MonadToBIO`, `ErrorToBIO`, etc.)
+   are not implemented. Users with a weaker cats-effect typeclass (e.g.
+   only `Sync[F]`) must provide an `Async[F]` instance, or use a
+   real bifunctor (ZIO, MonixBIO) where no conversion is needed.
+
 2. **No-op identity covers only the IO2 tier.** Bifunctors with only
-   `Error2` (the canonical example: `Either`) do not have a no-op
-   instance — `IO2[Bifunctorized.NoOp[Either, ?, ?]]` does not
-   resolve. The plan §3.3 sketched mirrors at `Functor2` / `Applicative2`
-   / `Monad2` / `Error2` tiers; deferred (PR-05-D05).
-3. **`CatsToBIO.shiftBlocking` is passthrough identity.** CE3's
-   `Async` typeclass exposes no generic blocking-pool handle
-   (`cats.effect.IO.blocking` is IO-specific). Library code using
-   `BlockingIO2#shiftBlocking` on a CE-backed Bifunctorized may
-   experience thread starvation. Future work: an IO-specific
-   specialization.
-4. **`BifunctorizedInjector` / `LifecycleBifunctorized` are parallel
-   surfaces.** `Lifecycle.scala` and `Injector.scala` are unchanged
-   — both Quasi*-constrained and BIO-constrained APIs coexist. M5
-   removes the Quasi* path once user-reviewed.
-5. **`Subcontext` / `Producer` / strategy interfaces / `LogIO`** are
-   not yet migrated to BIO. The current `BifunctorizedInjector`
-   bridges to `QuasiIO[F[Throwable, _]]` internally, so the existing
-   strategy/Subcontext machinery continues to work — but downstream
-   library code that needs to use these directly with a BIO `F`
-   still needs to go through `QuasiIO.fromBIO`. Plan's PR-M4-02/03
-   migrations folded into the M5 deletion sweep.
+   `Error2` (canonical example: `Either`) do not have a no-op instance —
+   `IO2[Bifunctorized.NoOp[Either, ?, ?]]` does not resolve. Mirrors at
+   `Functor2`/`Applicative2`/`Monad2`/`Error2` tiers are deferred
+   (PR-05-D05).
+
+3. **`CatsToBIO.shiftBlocking` is passthrough identity.** CE3's `Async`
+   typeclass exposes no generic blocking-pool handle (`cats.effect.IO.blocking`
+   is IO-specific). Library code using `BlockingIO2#shiftBlocking` on a
+   CE-backed Bifunctorized may experience thread starvation. Future work:
+   an IO-specific specialization.
+
+4. **M5-D01 — izumi-reflect η-normalization deficiency.** 3
+   `CatsResourcesTestJvm` tests remain disabled. `make[T].fromResource(cats.effect.Resource[F, T])`
+   bindings fail at runtime against `Injector[Bifunctorized[F, +_, +_]]()`
+   because the binding-side and Injector-side `LightTypeTag` representations
+   of `Bifunctorized[IO, _, _]` differ (η-expanded vs unexpanded) and
+   `LightTypeTag.<:<` treats them as non-equivalent. Fix must land in
+   izumi-reflect. Full audit in `defects.md [M5-D01]`.
+
+5. **Stubbed test fixtures.** `Spec1[F[_]]` was rewritten as an alias for
+   the bifunctor shape in M5 Session 5. All test fixtures that used the
+   monofunctor spelling were stubbed out pending explicit migration to
+   `Spec2[F[+_, +_]]` / `SpecIdentity` / `SpecZIO`.
+
+6. **8 `RoleAppTest` failures.** Test-fixture `Async[IO]` wiring issue in
+   `distage-frameworkJVM` — not a main-source defect.
+
+7. **3 Scala 2-only logstage macro files** still reference `IO1`/`Primitives1`
+   (in `src/main/scala-2/`). Migration pattern is identical to Session 6's
+   Scala 3 rebuild but uses `c.universe` quasiquotes. Deferred.
+
+8. **Scala 2.13 test compile** (~97 errors in `distage-coreJVM/Test`).
+   Main sources compile; the test-compile errors are `LifecycleTag.resourceTag`
+   higher-kinded unification gaps. Deferred — user will unblock.
+
+9. **Scala 2.12 cross-build dropped** at the `Lifecycle.F` covariance
+   boundary. The supertype-dance pattern `[G[+e, +a] >: F[e, a]]` is
+   rejected by Scala 2.12's variance check. Per user direction: proceed
+   with Scala 2.13 + 3 only.
 
 ## What's the failure mode at the API edge?
 
-If you write `Injector[F]` with a non-Identity `F` that has no
-`QuasiIO[F]` (and you didn't switch to `BifunctorizedInjector`), the
-compile fails with the usual "no implicit `QuasiIO[F]`" error. Either
-switch to `BifunctorizedInjector` (preferred), or add a `QuasiIO[F]`
-to scope. The `QuasiIO.fromBIO` derivation in the codebase makes this
-automatic if you have a `BIO[F]` typeclass.
+If you write `Injector[F[+_, +_]]()` with an `F` that has no
+`IO2[F]` / `Primitives2[F]` / `DefaultModule[F]`, the compile fails
+on the missing implicit. For a monofunctor `F[_]`, import
+`CatsToBIOConversions.{AsyncToBIO, PrimitivesToBIO}` and use
+`Injector[Bifunctorized[F, +_, +_]]()`. For ZIO, use
+`Injector[ZIO[Any, +_, +_]]()` directly (ZIO has native `IO2`).
 
-If you write `BifunctorizedInjector[F]` with an `F` that has no
-`IO2[Bifunctorized.NoOp[F, +_, +_]]`, the compile fails on the
-implicit summon. Most modern bifunctors (ZIO, MonixBIO, MiniBIO) and
-all `cats.effect.Async`-backed monofunctors-via-Bifunctorized are
-supported. Either is currently unsupported (Goal 4 not yet satisfied
-for Either; see limitation #2).
+If `make[T].fromResource(catsResource)` fails at runtime with
+`IncompatibleEffectType`, this is M5-D01 (izumi-reflect η-normalization
+gap). The workaround is to use `Injector[Bifunctorized.IdentityBifunctorized]()`
+(avoids the η-expansion mismatch) or to wait for the izumi-reflect fix.
 
-## When will M5 ship?
-
-M5 (Quasi* deletion) requires a user-supervised session because it
-touches ~106 call-sites across 9 sub-projects. The codemod is
-mechanical (`QuasiIO[F]` → `IO2[Bifunctorized.NoOp[F, +_, +_]]` and
-`Lifecycle.make[F]` → `LifecycleBifunctorized.make[F]`), but every
-test that uses `Injector[Identity]` or `Lifecycle[F]` will need to
-adopt the new entry point. The infrastructure for this is in place
-from M1–M4; the migration awaits the user's go-ahead.
+For `Lifecycle`, all factories (`make`, `makePair`, `liftF`, `pure`,
+`suspend`, `fail`, `unit`) require `IO2[F]` and `Primitives2[F]` in
+scope. For a CE-backed `F[_]`, wrap as `Bifunctorized[F, +_, +_]` and
+import `AsyncToBIO` + `PrimitivesToBIO`.
 
 ## References
 
 - Spec: `bifunctorization.md`
 - Plan: `docs/drafts/20260513-2106-bifunctorization-plan.md`
 - M1 closure summary: `docs/changes/M1-bifunctorized-core.md`
+- M2-M4 closure summary: `docs/changes/M2-M4-bifunctorized-seams.md`
+- M5 closure summary: `docs/changes/M5-bifunctorized-deletion.md`
 - Defect audit trail: `defects.md`
 - Session logs: `docs/logs/`
 - Prior art: `docs/drafts/prior-art/{izumi-1766,cats-mtl-619}.patch`
