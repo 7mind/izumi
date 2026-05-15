@@ -3,14 +3,14 @@ package izumi.distage.testkit.scalatest
 import izumi.distage.framework.{CheckableApp, PlanCheckConfig, PlanCheckMaterializer}
 import izumi.distage.modules.DefaultModule
 
-abstract class SpecWiring[F[_], AppMain <: CheckableApp { type AppEffectType[A] = F[A] }, Cfg <: PlanCheckConfig.Any](
+abstract class SpecWiring[F[+_, +_], AppMain <: CheckableApp { type AppEffectType[E, A] = F[E, A] }, Cfg <: PlanCheckConfig.Any](
   val app: AppMain,
   val cfg: Cfg = PlanCheckConfig.empty,
   val checkAgainAtRuntime: Boolean = true,
 )(implicit
   val planCheck: PlanCheckMaterializer[AppMain, Cfg],
   defaultModule: DefaultModule[F],
-) extends Spec1[F]()(using app.tagK, defaultModule)
+) extends Spec1[F]()(using defaultModule, app.tagK)
   with WiringAssertions {
 
   s"Wiring check for `${planCheck.app.getClass.getCanonicalName}`" should {

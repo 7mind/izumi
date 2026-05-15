@@ -4,7 +4,7 @@ import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, SuiteId}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.Quirks.Discarder
-import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
+import izumi.fundamentals.platform.language.types.HigherKindedAny.{AnyF, AnyF2}
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
 import org.scalatest.events.{Event, Ordinal}
 import org.scalatest.tools.Runner
@@ -16,7 +16,7 @@ import scala.collection.mutable
 import scala.util.chaining.scalaUtilChainingOps
 
 object DistageTestsRegistrySingleton {
-  final case class InstantiatedSuiteHandle[+F[_]](
+  final case class InstantiatedSuiteHandle[+F[+_, +_]](
     suite: DistageScalatestTestSuiteRunner[F @uncheckedVariance],
     status: StatefulStatus,
   )
@@ -25,12 +25,12 @@ object DistageTestsRegistrySingleton {
     reporter: Reporter,
   )
 
-  private val instantiatedSuiteHandles = new mutable.HashMap[String, InstantiatedSuiteHandle[AnyF]]()
+  private val instantiatedSuiteHandles = new mutable.HashMap[String, InstantiatedSuiteHandle[AnyF2]]()
   private val runningSuiteHandles = new mutable.HashMap[String, Either[mutable.ArrayBuffer[RunningSuiteHandle => Unit], RunningSuiteHandle]]()
   private val firstRunnerStarted = new AtomicBoolean(false)
   private val runnerFinished = new AtomicBoolean(false)
 
-  def collectAllTestkitTests[F[_]](instance: DistageScalatestTestSuiteRunner[F], isSbt: Boolean): Option[List[DistageTest[AnyF]]] = {
+  def collectAllTestkitTests[F[+_, +_]](instance: DistageScalatestTestSuiteRunner[F], isSbt: Boolean): Option[List[DistageTest[AnyF]]] = {
     if (DistageTestsRegistrySingleton.permittedToRun()) {
       val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestsRegistrySingleton.type](DebugProperties.`izumi.distage.testkit.debug`.name)
       debugLogger.log(s"Launching tests from $instance")
@@ -85,7 +85,7 @@ object DistageTestsRegistrySingleton {
     ()
   }
 
-  def registerInstantiatedSuite[F[_]](suiteId: String, instance: DistageScalatestTestSuiteRunner[F]): StatefulStatus = synchronized {
+  def registerInstantiatedSuite[F[+_, +_]](suiteId: String, instance: DistageScalatestTestSuiteRunner[F]): StatefulStatus = synchronized {
     if (runnerFinished.get()) {
       // return completed status if the runner has already finished all tests before this test was instantiated
       (new StatefulStatus).tap(_.setCompleted())
@@ -118,7 +118,7 @@ object DistageTestsRegistrySingleton {
     }
   }
 
-  def changeStatus(suiteId: String)(f: InstantiatedSuiteHandle[AnyF] => Unit): Unit = synchronized {
+  def changeStatus(suiteId: String)(f: InstantiatedSuiteHandle[AnyF2] => Unit): Unit = synchronized {
     val suiteHandle = instantiatedSuiteHandles.getOrElse(
       suiteId, {
         val t = new RuntimeException(s"Tried to change status of non-instantiated suite `$suiteId` - all suites must be instantiated before distage-testkit starts")
@@ -147,7 +147,7 @@ object DistageTestsRegistrySingleton {
     firstRunnerStarted.compareAndSet(false, true)
   }
 
-  private[dstest] def currentInstantiatedSuites(): List[InstantiatedSuiteHandle[AnyF]] = synchronized {
+  private[dstest] def currentInstantiatedSuites(): List[InstantiatedSuiteHandle[AnyF2]] = synchronized {
     instantiatedSuiteHandles.valuesIterator.toList
   }
 

@@ -1,11 +1,11 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import distage.{Functoid, TagK, TagKK}
+import distage.{Functoid, TagKK}
 import izumi.distage.constructors.ZEnvConstructor
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec.*
 import izumi.distage.testkit.spec.*
-import izumi.functional.bio.IO1
+import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.language.{SourceFilePosition, SourceFilePositionMaterializer}
 import org.scalatest.Assertion
 import org.scalatest.distage.{NameUtil, TestCancellation}
@@ -16,12 +16,12 @@ import scala.annotation.unused
 import scala.language.implicitConversions
 
 @org.scalatest.Finders(value = Array("org.scalatest.finders.WordSpecFinder"))
-trait ScalatestAbstractDistageSpec[F[_]] extends AbstractDistageSpec[F] with ShouldVerb with MustVerb with CanVerb with DistageTestEnv with WithTestRegistration[F] {
+trait ScalatestAbstractDistageSpec[F[+_, +_]] extends AbstractDistageSpec[F] with ShouldVerb with MustVerb with CanVerb with DistageTestEnv with WithTestRegistration[F[Throwable, _]] {
 
   override protected def config: TestConfig = TestConfig.forSuite(this.getClass)
 
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
-  protected def makeTestEnv(): TestEnvironment = loadEnvironment[F](config, tagMonoIO, defaultModulesIO)
+  protected def makeTestEnv(): TestEnvironment = loadEnvironment[F](config, tagBIO, defaultModulesBIO)
 
   protected def distageSuiteName: String = NameUtil.exportNameUtil.getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: SuiteId = SuiteId(this.getClass.getName)
@@ -39,21 +39,14 @@ trait ScalatestAbstractDistageSpec[F[_]] extends AbstractDistageSpec[F] with Sho
 
 object ScalatestAbstractDistageSpec {
 
-  trait For1[F[_]] extends ScalatestAbstractDistageSpec[F] {
-    protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
-      new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, Seq(s), this, testEnv)
-    }
-  }
-
-  trait For2[F[+_, +_]] extends ScalatestAbstractDistageSpec[F[Throwable, _]] {
-    implicit def tagBIO: TagKK[F]
+  trait For2[F[+_, +_]] extends ScalatestAbstractDistageSpec[F] {
 
     protected implicit def convertToWordSpecStringWrapperDS2(s: String): DSWordSpecStringWrapper2[F] = {
       new DSWordSpecStringWrapper2(context, distageSuiteName, distageSuiteId, Seq(s), this, testEnv)
     }
   }
 
-  trait ForZIO extends ScalatestAbstractDistageSpec[ZIO[Any, Throwable, _]] {
+  trait ForZIO extends ScalatestAbstractDistageSpec[ZIO[Any, +_, +_]] {
     protected implicit def convertToWordSpecStringWrapperDS3(s: String): DSWordSpecStringWrapperZIO = {
       new DSWordSpecStringWrapperZIO(context, distageSuiteName, distageSuiteId, Seq(s), this, testEnv)
     }
@@ -61,39 +54,6 @@ object ScalatestAbstractDistageSpec {
 
   final case class SuiteContext(prefix: Seq[String]) extends AnyVal {
     def toName(name: Seq[String]): Seq[String] = prefix ++ name
-  }
-
-  open class DSWordSpecStringWrapper[F[_]](
-    context: Option[SuiteContext],
-    suiteName: String,
-    suiteId: SuiteId,
-    testname: Seq[String],
-    reg: TestRegistration[F],
-    env: TestEnvironment,
-  )(implicit override val tagMonoIO: TagK[F]
-  ) extends DISyntaxBase[F]
-    with DSWordSpecStringWrapperLowPriorityIdentityOverloads[F] {
-
-    infix def in(function: Functoid[F[Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeIO(function, pos.get)
-    }
-
-    infix def in(function: Functoid[F[Assertion]])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeIO(function, pos.get)
-    }
-
-    infix def in(value: => F[Unit])(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeIO(() => value, pos.get)
-    }
-
-    infix def in(value: => F[Assertion])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit): Unit = {
-      takeIO(() => value, pos.get)
-    }
-
-    override protected def takeIO[A](function: Functoid[F[A]], pos: SourceFilePosition): Unit = {
-      val id = TestId(context.fold(testname)(_.toName(testname)), suiteId)
-      reg.registerTest(function, env, pos, id, SuiteMeta(id.suite, suiteName, suiteId.suiteId))
-    }
   }
 
   open class DSWordSpecStringWrapper2[F[+_, +_]](
@@ -104,9 +64,8 @@ object ScalatestAbstractDistageSpec {
     reg: TestRegistration[F[Throwable, _]],
     env: TestEnvironment,
   )(implicit override val tagBIO: TagKK[F],
-    override val tagMonoIO: TagK[F[Throwable, _]],
   ) extends DISyntaxBIOBase[F]
-    with DSWordSpecStringWrapperLowPriorityIdentityOverloads[F[Throwable, _]] {
+    with DSWordSpecStringWrapperLowPriorityIdentityOverloads[F] {
 
     infix def in(function: Functoid[F[Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(function.asInstanceOf[Functoid[F[Any, Any]]], pos.get)
@@ -137,10 +96,9 @@ object ScalatestAbstractDistageSpec {
     testname: Seq[String],
     reg: TestRegistration[ZIO[Any, Throwable, _]],
     env: TestEnvironment,
-  )(implicit override val tagBIO: TagKK[ZIO[Any, _, _]],
-    override val tagMonoIO: TagK[ZIO[Any, Throwable, _]],
+  )(implicit override val tagBIO: TagKK[ZIO[Any, +_, +_]],
   ) extends DISyntaxBIOBase[ZIO[Any, +_, +_]]
-    with DSWordSpecStringWrapperLowPriorityIdentityOverloads[ZIO[Any, Throwable, _]] {
+    with DSWordSpecStringWrapperLowPriorityIdentityOverloads[ZIO[Any, +_, +_]] {
 
     infix def in[R: ZEnvConstructor](function: Functoid[ZIO[R, Any, Unit]])(implicit pos: SourceFilePositionMaterializer): Unit = {
       takeBIO(
@@ -190,7 +148,7 @@ object ScalatestAbstractDistageSpec {
     }
   }
 
-  trait DSWordSpecStringWrapperLowPriorityIdentityOverloads[F[_]] extends DISyntaxBase[F] {
+  trait DSWordSpecStringWrapperLowPriorityIdentityOverloads[F[+_, +_]] extends DISyntaxBase[F] {
 
     infix def in(function: Functoid[Unit])(implicit pos: SourceFilePositionMaterializer, d1: DummyImplicit, d2: DummyImplicit): Unit = {
       takeAny(function, pos.get)
@@ -209,11 +167,11 @@ object ScalatestAbstractDistageSpec {
     }
 
     infix def skip(@unused value: => Any)(implicit pos: SourceFilePositionMaterializer): Unit = {
-      takeFunIO[Nothing, IO1[F]](cancel, pos.get)
+      takeFunIO[Nothing, IO2[F]](cancel, pos.get)
     }
 
-    private def cancel[A](F: IO1[F]): F[A] = {
-      F.maybeSuspend(cancelNow())
+    private def cancel[A](F: IO2[F]): F[Throwable, A] = {
+      F.syncThrowable(cancelNow())
     }
 
     private def cancelNow(): Nothing = {

@@ -1,7 +1,7 @@
 package izumi.distage.testkit.runner.impl.services
 
 import izumi.distage.testkit.model.TestConfig.Parallelism
-import izumi.functional.bio.{Async2, IO2}
+import izumi.functional.bio.{IO2, Parallel2}
 
 import scala.annotation.nowarn
 
@@ -16,7 +16,7 @@ object ParTraverseExt {
   final class ParTraverseExtImpl[F[+_, +_]](
   )(implicit
     F: IO2[F],
-    P: Async2[F],
+    P: Parallel2[F],
   ) extends ParTraverseExt[F] {
     import scala.collection.compat.*
 

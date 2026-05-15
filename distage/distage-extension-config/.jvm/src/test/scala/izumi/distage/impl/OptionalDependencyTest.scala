@@ -39,18 +39,11 @@ class OptionalDependencyTest extends AnyWordSpec with GivenWhenThen {
     assert(empty.module.bindings.isEmpty)
   }
 
-  "MiniBIOAsync has DefaultModule" in {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
-    implicitly[DefaultModule[MiniBIOAsync]]
-
-    Injector[MiniBIOAsync]().produceRun(distage.Module.empty) {
-      (runner: UnsafeRun2[MiniBIOAsync]) =>
-        MiniBIOAsync.WeakAsyncForMiniBIOAsync.syncBlocking {
-          runner.unsafeRun(MiniBIOAsync.WeakAsyncForMiniBIOAsync.pure(()))
-        }
-    }
-  }
+  // MiniBIOAsync no longer has a DefaultModule (it lacks `Async2`, `Temporal2`, `Primitives2`, `Fork2`,
+  // `PrimitivesM2`, `PrimitivesLocal2`, `Scheduler2` instances required by `DefaultModule.fromBIO`).
+  // Test removed as part of M5 — MiniBIOAsync remains usable directly via `MiniBIOAsync.UnsafeRunMiniBIOAsync`
+  // (see TestRunnerRuntime.runnerLifecycleForMiniBIOAsync for the canonical wiring).
+//  "MiniBIOAsync has DefaultModule" in { ... }
 
   "Using Lifecycle & BIO objects succeeds even if there's no cats/zio/monix on the classpath" in {
     When("There's no cats/zio/monix on classpath")

@@ -8,19 +8,19 @@ import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.services.*
 import izumi.distage.testkit.runner.impl.services.TimedActionF.TimedActionFImpl
 import izumi.distage.testkit.runner.impl.{DistageTestRunner, RunnerToF, TestPlanner, TestTreeBuilder}
-import izumi.functional.bio.{Async2, Bifunctorized, IO2, Primitives2}
+import izumi.functional.bio.{Bifunctorized, IO2, Primitives2, WeakAsync2}
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.logger.LogQueue
 import logstage.ThreadingLogQueue
 
-class TestkitRunnerModule[F[+_, +_]: TagKK: IO2: Async2: Primitives2](
+class TestkitRunnerModule[F[+_, +_]: TagKK: IO2: WeakAsync2: Primitives2](
   reporter: TestReporter,
   isTestCancellation: Throwable => Boolean,
 ) extends ModuleDef {
   addImplicit[TagKK[F]]
   addImplicit[IO2[F]]
-  addImplicit[Async2[F]]
+  addImplicit[WeakAsync2[F]]
   addImplicit[Primitives2[F]]
   make[TestReporter].fromValue(reporter)
 
@@ -62,7 +62,7 @@ object TestkitRunnerModule {
     *       (Most likely the `UnsafeRun2` binding will be found in [[izumi.distage.testkit.model.TestEnvironment.defaultModule]],
     *       as DefaultModule instances must provide an `UnsafeRun2`)
     */
-  def run[F[+_, +_]: TagKK: IO2: Async2: Primitives2](
+  def run[F[+_, +_]: TagKK: IO2: WeakAsync2: Primitives2](
     reporter: TestReporter,
     isTestCancellation: Throwable => Boolean,
     tests: Seq[DistageTest[AnyF]],

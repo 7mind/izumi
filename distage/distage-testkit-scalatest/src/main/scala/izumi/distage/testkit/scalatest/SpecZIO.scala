@@ -8,54 +8,14 @@ import org.scalatest.distage.DistageScalatestTestSuiteRunner
 import zio.ZIO
 
 /**
-  * Allows summoning objects from DI in tests via ZIO environment intersection types
-  *
-  * {{{
-  *   trait PetStore[F[_, _]] {
-  *     def purchasePet(name: String, cost: Int): F[Throwable, Boolean]
-  *   }
-  *
-  *   trait Pets[F[_, _]]
-  *     def myPets: F[Throwable, List[String]]
-  *   }
-  *
-  *   val store = new PetStore[ZIO[PetStore[IO], _, _]] {
-  *     def purchasePet(name: String, cost: Int): RIO[PetStore[IO], Boolean] = ZIO.accessM(_.get.purchasePet(name, cost))
-  *   }
-  *   val pets = new Pets[ZIO[Pets[IO], _, _]] {
-  *     def myPets: RIO[Pets[IO], List[String]] = ZIO.accessM(_.get.myPets)
-  *   }
-  *
-  *   "test purchase pets" in {
-  *     for {
-  *       _    <- store.purchasePet("Zab", 213)
-  *       pets <- pets.myPets
-  *       _    <- assertIO(pets.contains("Zab"))
-  *     } yield ()
-  *     // : ZIO[PetStore[IO] with Pets[IO], Throwable, Unit]
-  *   }
-  * }}}
-  *
-  * Lambda parameters and environment may both be used at the same time to define dependencies:
-  *
-  * {{{
-  *   "test purchase pets" in {
-  *     (store: PetStore[IO]) =>
-  *       for {
-  *         _    <- store.purchasePet("Zab", cost = 213)
-  *         pets <- pets.myPets
-  *         _    <- assertIO(pets.contains("Zab"))
-  *       } yield ()
-  *       // : ZIO[PetsEnv, Throwable, Unit]
-  *   }
-  * }}}
+  * Allows summoning objects from DI in tests via ZIO environment intersection types.
   */
-abstract class SpecZIO(implicit val defaultModule3: DefaultModule3[ZIO], val tagBIO3: TagK3[ZIO], val tagBIO: TagKK[ZIO[Any, _, _]])
-  extends DistageScalatestTestSuiteRunner[ZIO[Any, Throwable, _]]
+abstract class SpecZIO(implicit val defaultModule3: DefaultModule3[ZIO], val tagBIO3: TagK3[ZIO], val tagBIOZIO: TagKK[ZIO[Any, +_, +_]])
+  extends DistageScalatestTestSuiteRunner[ZIO[Any, +_, +_]]
   with ScalatestAbstractDistageSpec.ForZIO {
 
   override protected def config: TestConfig = super.config.copy(
-    moduleOverrides = LogIO2Module[ZIO[Any, _, _]]()(using tagBIO)
+    moduleOverrides = LogIO2Module[ZIO[Any, +_, +_]]()(using tagBIOZIO)
   )
 
 }

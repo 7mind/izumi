@@ -1,5 +1,5 @@
 package izumi.distage.testkit.scalatest
 
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.Bifunctorized
 
-abstract class SpecIdentity extends Spec1[Identity]
+abstract class SpecIdentity extends Spec1[Bifunctorized.IdentityBifunctorized]

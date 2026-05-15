@@ -34,7 +34,7 @@ class DistageTestRunner[F[+_, +_]](
     // We assume that under normal circumstances the code below should never throw.
     // All the exceptions should be converted to values by this time.
     // If it throws, there is a bug which needs to be fixed.
-    F.suspend {
+    F.suspendThrowable {
       val id = ScopeId(IzUUID.generateTimeUUID())
       reporter.beginScope(id)
 
@@ -43,7 +43,7 @@ class DistageTestRunner[F[+_, +_]](
           .timed[Throwable, PlannedTests[AnyF]](planner.planGroupTests[F](tests, parTraverseExt)(using F))
       ) {
         envs =>
-          F.suspend {
+          F.suspendThrowable {
             reportFailedPlanning(id, envs.out.bad, envs.timing)
             reportFailedInvividualPlans(id, envs)
 

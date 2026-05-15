@@ -1,6 +1,6 @@
 package izumi.distage.testkit.runner.impl
 
-import izumi.functional.bio.{Async2, Exit, IO2, UnsafeRun2}
+import izumi.functional.bio.{Exit, IO2, UnsafeRun2, WeakAsync2}
 
 import scala.concurrent.{Future, Promise}
 
@@ -12,10 +12,10 @@ object RunnerToF extends RunnerToFPlatformSpecific {
 
   final class AsyncImpl[F[+_, +_]](
     F: IO2[F],
-    FA: Async2[F],
+    FA: WeakAsync2[F],
   ) extends RunnerToF[F] {
     override def runToF[G[+_, +_], E, A](runner: UnsafeRun2[G], f: () => G[E, A]): F[Throwable, A] = {
-      F.suspend {
+      F.suspendThrowable {
         val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(f())
         // Re-throw failure exits in the F[Throwable, _] channel so that downstream `sandbox` machinery
         // can capture them as `Exit.FailureUninterrupted[Throwable]`.
