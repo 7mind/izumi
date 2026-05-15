@@ -4,9 +4,9 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.DistageTest
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.RunningSuiteHandle
+import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistry.RunningSuiteHandle
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.AsyncGlobalSuitesControlHandle
-import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, ScalatestLinearizedTestReporter, TestRunnerRuntime}
+import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistry, DistageTestsRegistrySingleton, ScalatestLinearizedTestReporter, TestRunnerRuntime}
 import izumi.distage.testkit.spec.AbstractDistageSpec
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -56,18 +56,18 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   // create status early, so that runner can set it to `true` even before this test's
   // `run` method is called by scalatest, because all the suite's tests could have
   // already been executed by another suite before this `run` was called
-  private val singletonStatus: StatefulStatus = DistageTestsRegistrySingleton.registerInstantiatedSuite[F](suiteId, this)
+  private val singletonStatus: StatefulStatus = __internal_distageTestRegistry.registerInstantiatedSuite[F](suiteId, this)
 
   override def run(testName: Option[String], args: Args): Status = {
     val status = singletonStatus
 
-    DistageTestsRegistrySingleton.registerSuiteHandle(suiteId)(RunningSuiteHandle(args.tracker, args.reporter))
+    __internal_distageTestRegistry.registerSuiteHandle(suiteId)(RunningSuiteHandle(args.tracker, args.reporter))
 
     // Note: because https://github.com/scalatest/scalatest/pull/2410 has not been merged,
-    // we're forced to keep a separate registration mechanism for non-sbt runners (e.g. Intellij)
+    // we're forced to keep a separate registration mechanism for non-sbt org.scalatest.tools.Runner (used by e.g. Intellij)
     //
     // NON-sbt ScalatestRunner first instantiates ALL tests, THEN calls `.run` method,
-    // so for non-sbt runs we KNOW that all tests have already been registered
+    // so for non-sbt runs we KNOW that all tests have already been registered already
     val isSbt = args.reporter.getClass.getName.contains("org.scalatest.tools.Framework")
 
     val isJVM = !IzPlatform.isScalaJS
@@ -75,7 +75,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
     try {
       val testsToRun = if (globalMode) {
-        DistageTestsRegistrySingleton.collectAllTestkitTests(this, isSbt)
+        __internal_distageTestRegistry.collectAllTestkitTests(this, isSbt)
       } else {
         Some(registeredTests())
       }
@@ -131,7 +131,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
       }
       override def completeAllSuitesIfGlobal(): Unit = {
         if (globalMode) {
-          DistageTestsRegistrySingleton.completeAllStatuses()
+          __internal_distageTestRegistry.completeAllStatuses()
         }
       }
     }
@@ -172,7 +172,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   }
 
   protected def _mkTestReporter(): TestReporter = {
-    val suiteHandler = DistageTestsRegistrySingleton.mkSuiteHandlerById()
+    val suiteHandler = __internal_distageTestRegistry.mkSuiteHandlerById()
     val scalatestReporter = new DistageScalatestReporter(suiteHandler)
     // Wrap for BOTH the SBT and the Intellij paths. `ScalatestLinearizedTestReporter`
     // is required for downstream ScalaTest reporters that pair-walk per-suite events
@@ -182,6 +182,9 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     // `parallelTests = Parallelism.Unlimited`) produces silent JUnit XML undercount.
     new ScalatestLinearizedTestReporter(scalatestReporter)
   }
+
+  /** Must return the same instance on every call. */
+  protected def __internal_distageTestRegistry: DistageTestsRegistry = DistageTestsRegistrySingleton
 
   override def tags: Map[String, Set[String]] = {
     org.scalatest.Suite.autoTagClassAnnotations(Map.empty, this)
