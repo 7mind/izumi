@@ -153,11 +153,11 @@ final class JUnitXmlRegressionTest extends AnyWordSpec {
         name =>
           val time = testcases.getOrElse(
             name,
-            fail(s"expected <testcase name=\"$name\"> in JUnit XML, found: ${testcases.keys.mkString(", ")}"),
+            fail(s"""expected <testcase name="$name"> in JUnit XML, found: ${testcases.keys.mkString(", ")}"""),
           )
           assert(
             time >= minExpectedPerTestSeconds,
-            s"<testcase name=\"$name\" time=\"$time\"/> is below the minimum $minExpectedPerTestSeconds s — testkit must populate Event timestamps " +
+            s"""<testcase name="$name" time="$time"/> is below the minimum $minExpectedPerTestSeconds s — testkit must populate Event timestamps """ +
             "explicitly from its own Timing measurements; relying on the case-class `(new Date).getTime` default collapses " +
             "per-test times to ~0 under the per-suite event linearizer.",
           )
