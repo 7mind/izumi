@@ -37,4 +37,22 @@ object CatsToBIOConversions {
     CatsToBIO.asyncToBIO[F].asInstanceOf[NotPredefined.Of[Async2[Bifunctorized[F, +_, +_]]]]
   }
 
+  /** Sibling landing pad: same backing instance as [[AsyncToBIO]] downcast to `Primitives2`.
+    *
+    * The underlying instance from [[impl.CatsToBIO.asyncToBIO]] is
+    * `Async2 & Temporal2 & Fork2 & BlockingIO2 & Primitives2 & Clock2`, but
+    * [[AsyncToBIO]]'s declared return type is only `Async2`. Because `Primitives2`
+    * is not a supertype of `Async2`, Scala's implicit search will not derive
+    * `Primitives2[Bifunctorized[F, +_, +_]]` from the `Async2` instance — this
+    * factory exposes the same backing value typed as `Primitives2` so it is
+    * summonable independently. Required by `Injector[Bifunctorized[F, +_, +_]]`'s
+    * `[F: IO2: Primitives2: TagKK: DefaultModule]` bound on the cats-effect side.
+    */
+  @inline implicit final def PrimitivesToBIO[F[_]](
+    implicit F: cats.effect.kernel.Async[F],
+    tag: TagK[F],
+  ): NotPredefined.Of[Primitives2[Bifunctorized[F, +_, +_]]] = {
+    CatsToBIO.asyncToBIO[F].asInstanceOf[NotPredefined.Of[Primitives2[Bifunctorized[F, +_, +_]]]]
+  }
+
 }

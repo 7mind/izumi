@@ -71,6 +71,34 @@ object Bifunctorized extends BifunctorizedNoOpInstances {
   def debifunctorizeIdentity[A](b: IdentityBifunctorized[Throwable, A]): Identity[A] =
     MiniBIO.autoRun.autoRunAlways(b.asInstanceOf[MiniBIO[Throwable, A]])
 
+  /** Implicit projection auto-runs an [[IdentityBifunctorized]]`[Throwable, A]` back to bare `A`.
+    *
+    * Mirrors the existing [[debifunctorizeConversion]] for general `Bifunctorized[F, Throwable, A] => F[A]`:
+    * the bifunctorization is reversible at the user-facing boundary, and for the Identity carrier
+    * the reverse direction is to actually execute the suspended MiniBIO. Without this conversion,
+    * `Lifecycle[IdentityBifunctorized, Throwable, A]#unsafeGet()` would return an opaque
+    * `IdentityBifunctorized[Throwable, A]` rather than the bare `A` that an `Identity`-flavoured
+    * test or top-level driver expects.
+    *
+    * Failure mode matches [[debifunctorizeIdentity]] — typed errors and defects are re-raised
+    * as [[Throwable]] via `MiniBIO.run().toThrowable`.
+    */
+  implicit def debifunctorizeIdentityConversion[A](b: IdentityBifunctorized[Throwable, A]): Identity[A] =
+    debifunctorizeIdentity(b)
+
+  /** Implicit lift of `Identity[A]` (= bare `A`) into the [[IdentityBifunctorized]] carrier.
+    *
+    * Mirrors [[bifunctorizeConversion]] for the Identity special case (where `F[A] = A` cannot
+    * be carried directly because Identity has no error channel). Used at every site that
+    * expects `IdentityBifunctorized[Throwable, A]` and a plain `A` was supplied — typically
+    * `Injector().produceRun(...)(...: A)` and `Functoid` constructions.
+    *
+    * Evaluation is suspended in a `MiniBIO.Sync` thunk; thrown exceptions during evaluation
+    * surface as [[Exit.Termination]] consistent with MiniBIO semantics.
+    */
+  implicit def liftIdentityToBifunctorizedConversion[A](a: => Identity[A]): IdentityBifunctorized[Throwable, A] =
+    bifunctorizeIdentity(a)
+
   /** Unchecked reinterpret cast. Internal escape hatch used by `bifunctorize`
     * and conversion-typeclass implementations that have already encoded their
     * own error channel.
