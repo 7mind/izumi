@@ -113,7 +113,7 @@ object PlanCheck {
     }
 
     /** @return a list of issues, if any. Does not throw. */
-    def checkAppParsed[F[_]](
+    def checkAppParsed[F[+_, +_]](
       app: CheckableApp.Aux[F],
       chosenRoles: RoleSelection,
       excludedActivations: Set[NESet[AxisPoint]],
@@ -248,7 +248,7 @@ object PlanCheck {
       }
     }
 
-    def checkAnyApp[F[_]](
+    def checkAnyApp[F[+_, +_]](
       planVerifier: PlanVerifier,
       excludedActivations: Set[NESet[AxisPoint]],
       checkConfig: Boolean,
@@ -257,12 +257,15 @@ object PlanCheck {
     ): PlanVerifierResult = {
       val PlanCheckInput(effectType, module, roots, _, providedKeys, configLoader, _, _) = planCheckInput
 
-      val planVerifierResult = planVerifier.verify[F](
+      // PlanVerifier.verify takes the monofunctor `F[_]` shape; the effective effect-type at the
+      // role level is `F[Throwable, _]` (the part of F that carries user-thrown errors), which is
+      // also what `Injector#assert` reaches for via izumi-reflect TagK derivation.
+      val planVerifierResult = planVerifier.verify[F[Throwable, _]](
         bindings = module,
         roots = roots,
         providedKeys = providedKeys,
         excludedActivations = excludedActivations,
-      )(using effectType)
+      )(using effectType.asInstanceOf[izumi.reflect.TagK[F[Throwable, _]]])
       val reachableKeys = providedKeys ++ planVerifierResult.visitedKeys
 
       val configIssues = if (checkConfig) {

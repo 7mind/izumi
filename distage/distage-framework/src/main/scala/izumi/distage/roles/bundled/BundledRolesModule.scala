@@ -1,12 +1,12 @@
 package izumi.distage.roles.bundled
 
-import distage.TagK
+import distage.TagKK
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.resources.*
 import izumi.fundamentals.platform.versions.Version
 
-class BundledRolesModule[F[_]: TagK](version: Version) extends ModuleDef with RoleModuleDef {
+class BundledRolesModule[F[+_, +_]: TagKK](version: Version) extends ModuleDef with RoleModuleDef {
   make[ArtifactVersion].named("launcher-version").fromValue(ArtifactVersion(version))
 
   makeRole[ConfigWriter[F]]
@@ -16,6 +16,6 @@ class BundledRolesModule[F[_]: TagK](version: Version) extends ModuleDef with Ro
 }
 
 object BundledRolesModule {
-  def apply[F[_]: TagK](implicit izArtifact: IzArtifactMaterializer): BundledRolesModule[F] = new BundledRolesModule(izArtifact.get.version.version)
-  def apply[F[_]: TagK](version: Version): BundledRolesModule[F] = new BundledRolesModule(version)
+  def apply[F[+_, +_]: TagKK](implicit izArtifact: IzArtifactMaterializer): BundledRolesModule[F] = new BundledRolesModule(izArtifact.get.version.version)
+  def apply[F[+_, +_]: TagKK](version: Version): BundledRolesModule[F] = new BundledRolesModule(version)
 }

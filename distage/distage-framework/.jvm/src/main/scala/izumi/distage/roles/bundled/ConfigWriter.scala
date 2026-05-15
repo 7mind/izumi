@@ -1,7 +1,7 @@
 package izumi.distage.roles.bundled
 
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
-import distage.TagK
+import distage.TagKK
 import distage.config.AppConfig
 import io.circe.Json
 import izumi.distage.config.codec.ConfigMetaType
@@ -15,7 +15,7 @@ import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.roles.bundled.ConfigWriter.{ConfigPath, MinimizedConfig, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.functional.bio.IO1
+import izumi.functional.bio.IO2
 import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
@@ -36,14 +36,14 @@ import scala.util.Try
   * @see [[izumi.distage.config.model.ConfigDoc]] annotation to attach comments to generated JSON Schema nodes
   * @see [[izumi.distage.roles.bundled.JsonSchemaGenerator]]
   */
-final class ConfigWriter[F[_]: TagK](
+final class ConfigWriter[F[+_, +_]: TagKK](
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
   roleAppPlanner: RoleAppPlanner,
   appConfig: AppConfig,
   configMerger: ConfigMerger,
-  F: IO1[F],
+  F: IO2[F],
 ) extends RoleTask[F]
   with BundledTask {
 
@@ -52,8 +52,8 @@ final class ConfigWriter[F[_]: TagK](
   //  but, the contents of the MainAppModule (including `"activation"` config read) are not accessible here from `RoleAppPlanner` yet...
   private val _HackyMandatorySection = ConfigPath("activation", wildcard = true)
 
-  override def start(roleParameters: EntrypointArgs): F[Unit] = {
-    F.maybeSuspend {
+  override def start(roleParameters: EntrypointArgs): F[Throwable, Unit] = {
+    F.syncThrowable {
       val config = ConfigWriter.parse(roleParameters)
       writeReferenceConfig(config)
     }
@@ -124,7 +124,7 @@ final class ConfigWriter[F[_]: TagK](
     val excludedActivations = Set.empty[NESet[AxisPoint]] // TODO: val chosenActivations = parseActivations(cfg.excludeActivations)
     val bindings = roleAppPlanner.bootloader.input.bindings
     val verifier = PlanVerifier()
-    val reachable = verifier.traceReachables[F](bindings, Roots(NESet(role.binding.key)), _ => true, excludedActivations)
+    val reachable = verifier.traceReachables[F[Throwable, _]](bindings, Roots(NESet(role.binding.key)), _ => true, excludedActivations)
 
     val filteredModule = bindings.filter(reachable.contains)
     val configTags = extractConfigTags(filteredModule.bindings)

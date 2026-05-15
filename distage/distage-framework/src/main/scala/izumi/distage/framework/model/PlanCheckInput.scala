@@ -7,10 +7,10 @@ import izumi.distage.model.plan.Roots
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.load.LoadedPlugins
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
-final case class PlanCheckInput[F[_]](
-  effectType: TagK[F],
+final case class PlanCheckInput[F[+_, +_]](
+  effectType: TagKK[F],
   module: ModuleBase,
   roots: Roots,
   roleNames: Set[String],
@@ -20,14 +20,14 @@ final case class PlanCheckInput[F[_]](
   bsPlugins: LoadedPlugins,
 )
 object PlanCheckInput {
-  def withConfigLoader[F[_]](
+  def withConfigLoader[F[+_, +_]](
     module: ModuleBase,
     roots: Roots,
     configLoader: ConfigLoader,
     roleNames: Set[String] = Set.empty,
     appPlugins: LoadedPlugins = LoadedPlugins.empty,
     bsPlugins: LoadedPlugins = LoadedPlugins.empty,
-  )(implicit effectType: TagK[F],
+  )(implicit effectType: TagKK[F],
     defaultModule: DefaultModule[F],
   ): PlanCheckInput[F] = PlanCheckInput(
     effectType = effectType,
@@ -46,13 +46,13 @@ object PlanCheckInput {
     * If the app uses config bindings but uses [[noConfig]], [[izumi.distage.framework.PlanCheckConfig#checkConfig]]
     * should be set to `false` for `PlanCheck` to pass
     */
-  def noConfig[F[_]](
+  def noConfig[F[+_, +_]](
     module: ModuleBase,
     roots: Roots,
     roleNames: Set[String] = Set.empty,
     appPlugins: LoadedPlugins = LoadedPlugins.empty,
     bsPlugins: LoadedPlugins = LoadedPlugins.empty,
-  )(implicit effectType: TagK[F],
+  )(implicit effectType: TagKK[F],
     defaultModule: DefaultModule[F],
   ): PlanCheckInput[F] = PlanCheckInput(
     effectType = effectType,

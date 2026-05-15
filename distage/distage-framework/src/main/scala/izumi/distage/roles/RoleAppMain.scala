@@ -5,20 +5,20 @@ import izumi.distage.framework.services.ModuleProvider
 import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleCheckableApp}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.{Axis, Module, ModuleDef}
-import izumi.distage.modules.{DefaultModule, DefaultModule2}
+import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.bio.IO1
+import izumi.functional.bio.{Bifunctorized, IO2, Primitives2}
+import izumi.functional.bio.data.Morphism2
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.cli.model.{RequiredRoles, RoleArgs}
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
 import izumi.logstage.distage.LogIO2Module
-import izumi.reflect.{TagK, TagKK}
+import izumi.reflect.TagKK
 
 import scala.annotation.unused
 
@@ -43,9 +43,9 @@ import scala.annotation.unused
   * @see [[https://izumi.7mind.io/distage/distage-framework#roles Roles]]
   * @see [[https://izumi.7mind.io/distage/distage-framework#plugins Plugins]]
   */
-abstract class RoleAppMain[F[_]](
+abstract class RoleAppMain[F[+_, +_]](
   implicit
-  override val tagK: TagK[F],
+  override val tagK: TagKK[F],
   val defaultModule: DefaultModule[F],
   val artifact: IzArtifactMaterializer,
 ) extends RoleCheckableApp[F] {
@@ -64,7 +64,7 @@ abstract class RoleAppMain[F[_]](
     *
     * @see [[izumi.distage.roles.RoleAppBootModule]] for initial values of [[roleAppBootModule]]
     *
-    * @note Role App Bootstrap always runs under Identity, other effects (cats.effect.IO, zio.IO) are not available at this stage.
+    * @note Role App Bootstrap always runs under [[Bifunctorized.IdentityBifunctorized]], other effects (cats.effect.IO, zio.IO) are not available at this stage.
     *
     * @note The components added here are visible during the creation of the app, but *not inside* the app,
     *       to override components *inside* the app, use `pluginConfig` & [[izumi.distage.plugins.PluginConfig#overriddenBy]]:
@@ -85,7 +85,7 @@ abstract class RoleAppMain[F[_]](
   def main(args: Array[String]): RoleAppMainPlatformSpecific.MainEffect[Unit] = {
     val argv = ArgV(args)
     try {
-      Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
+      Injector.NoProxies[Bifunctorized.IdentityBifunctorized]().produceRun(roleAppBootModule(argv)) {
         (appResource: AppResource[F]) =>
           appResource.resource.use(_.run())
       }
@@ -112,16 +112,26 @@ abstract class RoleAppMain[F[_]](
     *
     * @note All resources will be leaked. Use [[replLocatorWithClose]] if you need resource cleanup within a REPL session.
     */
-  def replLocator(args: String*)(implicit F: IO1[F]): F[Locator] = {
+  def replLocator(args: String*)(implicit F: IO2[F], P: Primitives2[F]): F[Throwable, Locator] = {
     F.map(replLocatorWithClose(args*))(_._1)
   }
 
-  def replLocatorWithClose(args: String*)(implicit F: IO1[F]): F[(Locator, () => F[Unit])] = {
-    val combinedLifecycle: Lifecycle[F, Locator] = {
+  def replLocatorWithClose(args: String*)(implicit F: IO2[F], P: Primitives2[F]): F[Throwable, (Locator, () => F[Nothing, Unit])] = {
+    // Identity bootstrap evaluates synchronously and re-suspends inside the target F via `sync` /
+    // `syncThrowable`. Each Identity-flavored Lifecycle is lifted via `mapK` over this Morphism2.
+    val identityToF: Morphism2[Bifunctorized.IdentityBifunctorized, F] = new Morphism2.Instance[Bifunctorized.IdentityBifunctorized, F] {
+      override def apply[E, A](ib: Bifunctorized.IdentityBifunctorized[E, A]): F[E, A] = {
+        F.syncThrowable(Bifunctorized.debifunctorizeIdentity(ib.asInstanceOf[Bifunctorized.IdentityBifunctorized[Throwable, A]]))
+          .asInstanceOf[F[E, A]]
+      }
+    }
+
+    val combinedLifecycle: Lifecycle[F, Throwable, Locator] = {
       Injector
-        .NoProxies[Identity]()
-        .produceGet[AppResource[F]](roleAppBootModule(ArgV(args.toArray))).toEffect[F]
-        .flatMap(_.resource.toEffect[F])
+        .NoProxies[Bifunctorized.IdentityBifunctorized]()
+        .produceGet[AppResource[F]](roleAppBootModule(ArgV(args.toArray)))
+        .mapK[Bifunctorized.IdentityBifunctorized, F](identityToF)
+        .flatMap(_.resource.mapK[Bifunctorized.IdentityBifunctorized, F](identityToF))
         .flatMap(_.appResource)
     }
     combinedLifecycle.unsafeAllocate()
@@ -182,20 +192,16 @@ abstract class RoleAppMain[F[_]](
 
 object RoleAppMain {
 
-  abstract class LauncherBIO[F[+_, +_]: TagKK: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, _]] {
-    // add LogIO2[F] for bifunctor convenience to match existing LogIO[F[Throwable, _]]
-    override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
-      modify[ModuleProvider](_.mapApp(LogIO2Module[F]() +: _))
-    }
+  abstract class LauncherBIO[F[+_, +_]: TagKK: DefaultModule](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F] {
+    // LogIO2[F] is already available via ModuleProvider.appModules.LogIO2Module[F]() in `RoleAppBootModule`
   }
 
-  @deprecated("Moved to Launcher1", "1.3.0")
-  type LauncherCats[F[_]] = RoleAppMain[F]
+  type LauncherCats[F[_]] = RoleAppMain[Bifunctorized[F, +_, +_]]
 
-  type Launcher1[F[_]] = RoleAppMain[F]
+  type Launcher1[F[_]] = RoleAppMain[Bifunctorized[F, +_, +_]]
 
-  abstract class LauncherIdentity(implicit artifact: IzArtifactMaterializer) extends RoleAppMain[Identity] {
-    override protected def shutdownStrategy: AppShutdownStrategy[Identity] = {
+  abstract class LauncherIdentity(implicit artifact: IzArtifactMaterializer) extends RoleAppMain[Bifunctorized.IdentityBifunctorized] {
+    override protected def shutdownStrategy: AppShutdownStrategy[Bifunctorized.IdentityBifunctorized] = {
       RoleAppMainPlatformSpecific.defaultIdentityShutdownStrategy
     }
   }

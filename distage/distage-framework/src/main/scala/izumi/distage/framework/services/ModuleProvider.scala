@@ -20,8 +20,8 @@ import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
-import izumi.logstage.distage.{LogIOModule, LogstageModule}
-import izumi.reflect.TagK
+import izumi.logstage.distage.{LogIO2Module, LogstageModule}
+import izumi.reflect.TagKK
 
 /**
   * This component is responsible for passing-through selected components from the outer [[izumi.distage.roles.RoleAppBootModule]]
@@ -61,7 +61,7 @@ object ModuleProvider {
     }
   }
 
-  class Impl[F[_]: TagK](
+  class Impl[F[+_, +_]: TagKK](
     logRouter: LogRouter,
     options: PlanningOptions,
     // pass-through
@@ -101,7 +101,7 @@ object ModuleProvider {
 
     def appModules(): Seq[Module] = {
       Seq(
-        LogIOModule[F](), // reuse IzLogger from BootstrapModule
+        LogIO2Module[F](), // reuse IzLogger from BootstrapModule (bifunctor F => LogIO[F[Nothing, _]])
         LogstageFailureHandlerModule,
         new DistagePlatformModule(),
       ) ++ roleAppLocator.map {
