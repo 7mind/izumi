@@ -2,7 +2,7 @@ package izumi.distage.modules.platform
 
 import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
 import izumi.distage.model.definition.{Id, Lifecycle, ModuleDef}
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.Bifunctorized
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
@@ -31,7 +31,7 @@ private[distage] trait CatsIOPlatformDependentSupportModule extends ModuleDef {
 }
 
 object CatsIOPlatformDependentSupportModule {
-  private[distage] def createCPUPool: Lifecycle[Identity, ExecutionContext] = {
+  private[distage] def createCPUPool: Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, ExecutionContext] = {
     val coresOr2 = java.lang.Runtime.getRuntime.availableProcessors() max 2
     Lifecycle
       .makeSimple(

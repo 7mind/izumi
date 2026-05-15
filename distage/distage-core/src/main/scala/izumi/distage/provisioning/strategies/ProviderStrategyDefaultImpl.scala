@@ -1,18 +1,18 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.bio.IO1
+import izumi.functional.bio.IO2
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.provisioning.strategies.ProviderStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.TypedRef
 
 class ProviderStrategyDefaultImpl extends ProviderStrategy {
-  def callProvider[F[_]](
+  def callProvider[F[+_, +_]](
     context: ProvisioningKeyProvider,
     op: WiringOp.CallProvider,
-  )(implicit F: IO1[F]
-  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     import izumi.functional.IzEither.*
 
     val args = op.wiring.associations.map {

@@ -19,8 +19,8 @@ import izumi.distage.planning.solver.SemigraphSolver.SemigraphSolverImpl
 import izumi.distage.planning.solver.{GraphQueries, PlanSolver, SemigraphSolver}
 import izumi.distage.provisioning.*
 import izumi.distage.provisioning.strategies.*
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.collections.nonempty.NESet
-import izumi.fundamentals.platform.functional.Identity
 
 object BootstrapLocator {
   /**
@@ -74,9 +74,9 @@ object BootstrapLocator {
 
     val resource =
       BootstrapLocator.bootstrapProducer
-        .run[Identity](plan, parent.getOrElse(Locator.empty), FinalizerFilter.all)
+        .run[Bifunctorized.IdentityBifunctorized](plan, parent.getOrElse(Locator.empty), FinalizerFilter.all[Bifunctorized.IdentityBifunctorized])
 
-    resource.unsafeGet().throwOnFailure()
+    Bifunctorized.debifunctorizeIdentity(resource.unsafeGet()).throwOnFailure()
   }
 
   private final val mirrorProvider = MirrorProvider.Impl

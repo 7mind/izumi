@@ -1,8 +1,7 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.bio.IO1
-import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.IO2
 import ProvisionerIssue.{MissingProxyAdapter, UnexpectedProvisionResult, UnsupportedProxyOp}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
@@ -12,7 +11,7 @@ import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.*
 import izumi.distage.provisioning.strategies.ProxyStrategyDefaultImpl.FakeSet
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 /**
   * Limitations:
@@ -25,14 +24,14 @@ class ProxyStrategyDefaultImpl(
 ) extends ProxyStrategyDefaultImplPlatformSpecific(proxyProvider, mirrorProvider)
   with ProxyStrategy {
 
-  override def makeProxy[F[_]: TagK](
+  override def makeProxy[F[+_, +_]: TagKK](
     context: ProvisioningKeyProvider,
     makeProxy: ProxyOp.MakeProxy,
-  )(implicit F: IO1[F]
-  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val cogenNotRequired = makeProxy.byNameAllowed
 
-    F.maybeSuspend {
+    F.syncThrowable {
       for {
         proxyInstance <-
           if (cogenNotRequired) {
@@ -59,62 +58,57 @@ class ProxyStrategyDefaultImpl(
     }
   }
 
-  override def initProxy[F[_]: TagK](
+  override def initProxy[F[+_, +_]: TagKK](
     context: ProvisioningKeyProvider,
     executor: OperationExecutor,
     initProxy: ProxyOp.InitProxy,
-  )(implicit F: IO1[F]
-  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     val target = initProxy.proxy.target
     val key = proxyControllerKey(target)
 
     context.fetchUnsafe(key) match {
       case Some(dispatcher: ProxyDispatcher) =>
-        executor
-          .execute(context, initProxy.proxy.op)
-          .flatMap {
-            case Left(value) =>
-              F.pure(Left(value))
-            case Right(value) =>
-              value.toList match {
-                case NewObjectOp.UseInstance(_, instance) :: Nil =>
-                  F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
-                    .map(
-                      _ =>
-                        Right(
-                          Seq(
-                            NewObjectOp.UseInstance(initProxy.target, instance)
-                          )
-                        )
+        F.flatMap(executor.execute[F](context, initProxy.proxy.op)) {
+          case Left(value) =>
+            F.pure(Left(value))
+          case Right(value) =>
+            value.toList match {
+              case NewObjectOp.UseInstance(_, instance) :: Nil =>
+                F.map(F.syncThrowable(dispatcher.init(instance.asInstanceOf[AnyRef])))(
+                  _ =>
+                    Right(
+                      Seq(
+                        NewObjectOp.UseInstance(initProxy.target, instance)
+                      )
                     )
-                case NewObjectOp.NewInstance(_, tpe, instance) :: Nil =>
-                  F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
-                    .map(
-                      _ =>
-                        Right(
-                          Seq(
-                            NewObjectOp.NewInstance(initProxy.target, tpe, instance)
-                          )
-                        )
+                )
+              case NewObjectOp.NewInstance(_, tpe, instance) :: Nil =>
+                F.map(F.syncThrowable(dispatcher.init(instance.asInstanceOf[AnyRef])))(
+                  _ =>
+                    Right(
+                      Seq(
+                        NewObjectOp.NewInstance(initProxy.target, tpe, instance)
+                      )
                     )
+                )
 
-                case (r @ NewObjectOp.NewResource(_, tpe, instance, _)) :: Nil =>
-                  val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-                  F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
-                    .map(
-                      _ =>
-                        Right(
-                          Seq(
-                            NewObjectOp.NewInstance(initProxy.target, tpe, instance),
-                            NewObjectOp.NewFinalizer(target, finalizer),
-                          )
-                        )
+              case (r @ NewObjectOp.NewResource(_, tpe, instance, _)) :: Nil =>
+                val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
+                F.map(F.syncThrowable(dispatcher.init(instance.asInstanceOf[AnyRef])))(
+                  _ =>
+                    Right(
+                      Seq(
+                        NewObjectOp.NewInstance(initProxy.target, tpe, instance),
+                        NewObjectOp.NewFinalizer(target, finalizer),
+                      )
                     )
+                )
 
-                case r =>
-                  F.pure(Left(UnexpectedProvisionResult(key, r)))
-              }
-          }
+              case r =>
+                F.pure(Left(UnexpectedProvisionResult(key, r)))
+            }
+        }
 
       case _ =>
         F.pure(Left(MissingProxyAdapter(key, initProxy)))

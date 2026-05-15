@@ -3,7 +3,7 @@ import izumi.distage.{constructors, model, modules, planning}
 
 package object distage extends Distage {
 
-  override type Injector[F[_]] = model.Injector[F]
+  override type Injector[F[+_, +_]] = model.Injector[F]
   override val Injector: model.Injector.type = model.Injector
 
   override type ModuleDef = model.definition.ModuleDef
@@ -25,18 +25,18 @@ package object distage extends Distage {
 
   override type LocatorRef = model.recursive.LocatorRef
 
-  override type Subcontext[F[_], A] = izumi.distage.Subcontext[F, A]
+  override type Subcontext[F[+_, +_], A] = izumi.distage.Subcontext[F, A]
 
   override type PlanVerifier = solver.PlanVerifier
   override val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
-  override type DefaultModule[F[_]] = modules.DefaultModule[F]
+  override type DefaultModule[F[+_, +_]] = modules.DefaultModule[F]
   override val DefaultModule: modules.DefaultModule.type = modules.DefaultModule
 
-  override type DefaultModule2[F[_, _]] = modules.DefaultModule2[F]
+  override type DefaultModule2[F[+_, +_]] = modules.DefaultModule2[F]
   override val DefaultModule2: modules.DefaultModule2.type = modules.DefaultModule2
 
-  override type DefaultModule3[F[_, _, _]] = modules.DefaultModule3[F]
+  override type DefaultModule3[F[-_, +_, +_]] = modules.DefaultModule3[F]
   override val DefaultModule3: modules.DefaultModule3.type = modules.DefaultModule3
 
   override type LocatorDef = model.definition.LocatorDef
@@ -54,12 +54,12 @@ package object distage extends Distage {
   override type TagK[T[_]] = izumi.reflect.TagK[T]
   override val TagK: izumi.reflect.TagK.type = izumi.reflect.TagK
 
-  override type Lifecycle[+F[_], +Resource] = model.definition.Lifecycle[F, Resource]
+  override type Lifecycle[F[+_, +_], +E, +A] = model.definition.Lifecycle[F, E, A]
   override val Lifecycle: model.definition.Lifecycle.type = model.definition.Lifecycle
 
-  override type Lifecycle2[+F[+_, +_], +E, +A] = model.definition.Lifecycle[F[E, _], A]
+  override type Lifecycle2[F[+_, +_], +E, +A] = model.definition.Lifecycle2[F, E, A]
 
-  override type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = model.definition.Lifecycle[F[R, E, _], A]
+  override type Lifecycle3[F[-_, +_, +_], R, +E, +A] = model.definition.Lifecycle3[F, R, E, A]
 
   override type Axis = model.definition.Axis
   override val Axis: model.definition.Axis.type = model.definition.Axis

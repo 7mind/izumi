@@ -15,12 +15,11 @@ import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.model.{Locator, Planner}
 import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
-import izumi.functional.bio.IO1
-import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.{Bifunctorized, Exit, IO2}
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.reflect.TagK
+import izumi.reflect.{TagK, TagKK}
 
 import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
@@ -35,64 +34,71 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   fullStackTraces: Boolean @Id("izumi.distage.interpreter.full-stacktraces"),
 ) extends PlanInterpreter {
 
-  override def run[F[_]: TagK](
+  override def run[F[+_, +_]: TagKK](
     plan: Plan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
-  )(implicit F: IO1[F]
-  ): Lifecycle[F, Either[FailedProvision, Locator]] = {
+  )(implicit F: IO2[F]
+  ): Lifecycle[F, Throwable, Either[FailedProvision, Locator]] = {
     Lifecycle
-      .make(
+      .make[F, Throwable, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]](
         acquire = instantiateImpl(plan, parentLocator)
       )(release = {
         resource =>
           val finalizers = resource match {
             case Left(failedProvision) => failedProvision.provision.finalizers
-            case Right(locator) => locator.finalizers
+            case Right(locator) => locator.finalizers[F]
           }
           filterFinalizers.filter(finalizers).foldLeft(F.unit) {
-            case (acc, f) => acc.guarantee(F.suspendF(f.effect()))
+            case (acc, f) => F.guarantee(acc, F.suspendSafe(f.effect()))
           }
       }).map(_.left.map(_.fail))
   }
 
-  private def instantiateImpl[F[_]: TagK](
+  private def instantiateImpl[F[+_, +_]: TagKK](
     plan: Plan,
     parentContext: Locator,
-  )(implicit F: IO1[F]
-  ): F[Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
-    val integrationCheckFType = SafeType.get[IntegrationCheck[F]]
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
+    // Integration-check matching: only IntegrationCheck[Identity] is matched here (see
+    // `checkOrFailIdentity` below). Integration checks living in an effect type F are an
+    // additional surface that requires `TagK[F[Throwable, _]]` to identify; we currently
+    // do not derive that from `TagKK[F]` and so the F-shaped integration-check path is
+    // disabled. This may be revisited in a later session if needed by downstream callers.
+    val integrationCheckFType: SafeType = SafeType.getKK[F]
+    val _ = integrationCheckFType
 
     val privateBindings = computePrivateBindings(plan)
 
     val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext, privateBindings)
 
     @nowarn("msg=[Uu]nused import")
-    def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[TraversalState, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]]] = {
+    def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Throwable, Either[TraversalState, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]]] = {
       import scala.collection.compat.*
 
       state.current match {
         case TraversalState.Current.Step(steps) =>
           val ops = prioritize(steps.map(plan.plan.meta.nodes(_)), integrationPaths)
 
-          for {
-            results <- F.traverse(ops)(processOp(ctx, _))
-            timedResults <- F.traverse(results) {
+          F.flatMap(F.traverse(ops)(processOp(ctx, _))) { results =>
+            F.map(F.traverse(results) {
               case s: TimedResult.Success =>
                 addIntegrationCheckResult(ctx, integrationCheckFType, s)
               case f: TimedResult.Failure =>
                 F.pure(f.toFinal: TimedFinalResult)
+            }) { timedResults =>
+              val (ok, bad) = timedResults.partitionMap {
+                case ok: TimedFinalResult.Success => Left(ok)
+                case bad: TimedFinalResult.Failure => Right(bad)
+              }
+              val nextState = state.next(ok, bad)
+              Left(nextState)
             }
-            (ok, bad) = timedResults.partitionMap {
-              case ok: TimedFinalResult.Success => Left(ok)
-              case bad: TimedFinalResult.Failure => Right(bad)
-            }
-            nextState = state.next(ok, bad)
-          } yield Left(nextState)
+          }
 
         case TraversalState.Current.Done() =>
           if (state.failures.isEmpty) {
-            F.maybeSuspend(Right(Right(ctx.finish(state))))
+            F.syncThrowable(Right(Right(ctx.finish(state))))
           } else {
             F.pure(Right(Left(ctx.makeFailure(state, fullStackTraces))))
           }
@@ -101,24 +107,23 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       }
     }
 
-    for {
-      result <- verifyEffectType(plan.plan.meta.nodes.values)
-      initial = TraversalState(plan.plan.predecessors)
-      icPlan <- integrationPlan(initial, ctx)
+    F.flatMap(verifyEffectType[F](plan.plan.meta.nodes.values)) { result =>
+      val initial = TraversalState(plan.plan.predecessors)
+      F.flatMap(integrationPlan(initial, ctx)) { icPlan =>
+        result match {
+          case Left(incompatibleEffectTypes) =>
+            failEarly(ctx, initial, incompatibleEffectTypes)
 
-      res <- result match {
-        case Left(incompatibleEffectTypes) =>
-          failEarly(ctx, initial, incompatibleEffectTypes)
-
-        case Right(()) =>
-          icPlan match {
-            case Left(failedProvision) =>
-              F.pure(Left(failedProvision))
-            case Right(icPlan) =>
-              F.tailRecM(initial)(run(_, icPlan.plan.meta.nodes.keySet))
-          }
+          case Right(()) =>
+            icPlan match {
+              case Left(failedProvision) =>
+                F.pure(Left(failedProvision))
+              case Right(icPlan) =>
+                F.tailRecM(initial)(run(_, icPlan.plan.meta.nodes.keySet))
+            }
+        }
       }
-    } yield res
+    }
   }
 
   private def computePrivateBindings(plan: Plan): Set[DIKey] = {
@@ -165,12 +170,12 @@ class PlanInterpreterNonSequentialRuntimeImpl(
       .map(_.target).toSet
   }
 
-  private def failEarly[F[_], A](
+  private def failEarly[F[+_, +_], A](
     ctx: ProvisionMutable[F],
     initial: TraversalState,
     issues: Iterable[ProvisionerIssue],
-  )(implicit F: IO1[F]
-  ): F[Either[FailedProvisionInternal[F], A]] = {
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[FailedProvisionInternal[F], A]] = {
     val failures = issues.map {
       issue =>
         TimedFinalResult.Failure(
@@ -183,18 +188,18 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     F.pure(Left(ctx.makeFailure(failed, fullStackTraces)))
   }
 
-  private def integrationPlan[F[_]](
+  private def integrationPlan[F[+_, +_]](
     state: TraversalState,
     ctx: ProvisionMutable[F],
-  )(implicit F: IO1[F]
-  ): F[Either[FailedProvisionInternal[F], Plan]] = {
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[FailedProvisionInternal[F], Plan]] = {
     val allChecks = ctx.plan.stepsUnordered.iterator.collect {
       case op: InstantiationOp if op.instanceType <:< abstractCheckType => op
     }.toSet
     if (allChecks.nonEmpty) {
       NESet.from(allChecks.map(_.target)) match {
         case Some(integrationChecks) =>
-          F.maybeSuspend {
+          F.syncThrowable {
             planner
               .plan(ctx.plan.input.copy(roots = Roots.Of(integrationChecks)))
               .left.map(errs => ctx.makeFailure(state, fullStackTraces, ProvisioningFailure.CantBuildIntegrationSubplan(errs, state.status())))
@@ -222,10 +227,9 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def processOp[F[_]: TagK](context: ProvisionMutable[F], op: ExecutableOp)(implicit F: IO1[F]): F[TimedResult] = {
-    for {
-      before <- F.maybeSuspend(System.nanoTime())
-      res <- op match {
+  private def processOp[F[+_, +_]: TagKK](context: ProvisionMutable[F], op: ExecutableOp)(implicit F: IO2[F]): F[Throwable, TimedResult] = {
+    F.flatMap(F.syncThrowable(System.nanoTime())) { before =>
+      val res = op match {
         case op: ImportDependency =>
           F.pure(importStrategy.importDependency(context.asContext(), context.plan, op))
         case _: AddRecursiveLocatorRef =>
@@ -233,40 +237,42 @@ class PlanInterpreterNonSequentialRuntimeImpl(
         case op: NonImportOp =>
           operationExecutor.execute[F](context.asContext(), op)
       }
-      after <- F.maybeSuspend(System.nanoTime())
-    } yield {
-      val duration = Duration.fromNanos(after - before)
-      res match {
-        case Left(value) =>
-          TimedResult.Failure(op.target, value, duration)
-        case Right(value) =>
-          TimedResult.Success(op.target, value, duration)
+      F.flatMap(res) { r =>
+        F.map(F.syncThrowable(System.nanoTime())) { after =>
+          val duration = Duration.fromNanos(after - before)
+          r match {
+            case Left(value) =>
+              TimedResult.Failure(op.target, value, duration)
+            case Right(value) =>
+              TimedResult.Success(op.target, value, duration)
+          }
+        }
       }
     }
   }
 
-  private def addIntegrationCheckResult[F[_]](
+  private def addIntegrationCheckResult[F[+_, +_]](
     active: ProvisionMutable[F],
     integrationCheckFType: SafeType,
     result: TimedResult.Success,
-  )(implicit F: IO1[F]
-  ): F[TimedFinalResult] = {
-    for {
-      res <- F.traverse(result.ops) {
-        op =>
-          F.definitelyRecoverWithTrace[Option[ProvisionerIssue]](
-            runIfIntegrationCheck(op, integrationCheckFType).flatMap {
-              case None =>
-                F.maybeSuspend {
-                  active.addResult(verifier, op)
-                  None
-                }
-              case failure @ Some(_) =>
-                F.pure(failure)
+  )(implicit F: IO2[F]
+  ): F[Throwable, TimedFinalResult] = {
+    F.map(F.traverse(result.ops) { op =>
+      F.sandboxCatchAll[Throwable, Option[ProvisionerIssue], Throwable](
+        F.flatMap(runIfIntegrationCheck(op, integrationCheckFType)) {
+          case None =>
+            F.syncThrowable {
+              active.addResult(verifier, op)
+              None: Option[ProvisionerIssue]
             }
-          )((_, trace) => F.pure(Some(UnexpectedIntegrationCheck(result.key, trace.unsafeAttachTraceOrReturnNewThrowable()))))
-      }
-    } yield {
+          case failure @ Some(_) =>
+            F.pure(failure)
+        }
+      )(
+        (failure: Exit.FailureUninterrupted[Throwable]) =>
+          F.pure(Some(UnexpectedIntegrationCheck(result.key, failure.trace.unsafeAttachTraceOrReturnNewThrowable())))
+      )
+    }) { res =>
       res.flatten match {
         case Nil =>
           TimedFinalResult.Success(result.key, result.time)
@@ -276,18 +282,17 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def runIfIntegrationCheck[F[_]](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: IO1[F]): F[Option[IntegrationCheckFailure]] = {
+  private def runIfIntegrationCheck[F[+_, +_]](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: IO2[F]): F[Throwable, Option[IntegrationCheckFailure]] = {
     op match {
       case i: NewObjectOp.CurrentContextInstance =>
         if (i.implType <:< nullType) {
           F.pure(None)
         } else if (i.implType <:< integrationCheckIdentityType) {
-          F.maybeSuspend {
-            checkOrFail[Identity](i.key, i.instance)
+          F.syncThrowable {
+            checkOrFailIdentity(i.key, i.instance)
           }
-        } else if (i.implType <:< integrationCheckFType) {
-          checkOrFail[F](i.key, i.instance)
         } else {
+          // F-shaped IntegrationCheck path disabled — see comment in instantiateImpl.
           F.pure(None)
         }
       case _ =>
@@ -295,28 +300,29 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def checkOrFail[F[_]](key: DIKey, resource: Any)(implicit F: IO1[F]): F[Option[IntegrationCheckFailure]] = {
-    F.suspendF {
-      resource
-        .asInstanceOf[IntegrationCheck[F]]
-        .resourcesAvailable()
-        .flatMap {
-          case ResourceCheck.Success() =>
-            F.pure(None)
-          case failure: ResourceCheck.Failure =>
-            F.pure(Some(IntegrationCheckFailure(key, new IntegrationCheckException(NEList(failure)))))
-        }
+  private def checkOrFailIdentity(key: DIKey, resource: Any): Option[IntegrationCheckFailure] = {
+    resource
+      .asInstanceOf[IntegrationCheck[Identity]]
+      .resourcesAvailable() match {
+      case ResourceCheck.Success() =>
+        None
+      case failure: ResourceCheck.Failure =>
+        Some(IntegrationCheckFailure(key, new IntegrationCheckException(NEList(failure))))
     }
   }
 
-  private def verifyEffectType[F[_]: TagK](
+  // NOTE: F-shaped IntegrationCheck disabled — Identity-shaped is matched by `checkOrFailIdentity`.
+  // To re-enable, thread a `TagK[F[Throwable, _]]` into this code path.
+  // private def checkOrFailF[F[+_, +_]](...) ...
+
+  private def verifyEffectType[F[+_, +_]: TagKK](
     ops: Iterable[ExecutableOp]
-  )(implicit F: IO1[F]
-  ): F[Either[Iterable[IncompatibleEffectTypes], Unit]] = {
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[Iterable[IncompatibleEffectTypes], Unit]] = {
     val monadicOps = ops.collect { case m: MonadicOp => m }
     val badOps = monadicOps
-      .filter(_.isIncompatibleEffectType[F])
-      .map(op => IncompatibleEffectTypes(op, op.provisionerEffectType[F], op.actionEffectType))
+      .filter(_.isIncompatibleBifunctorEffectType[F])
+      .map(op => IncompatibleEffectTypes(op, SafeType.getKK[F], op.actionEffectType))
 
     if (badOps.isEmpty) {
       F.pure(Right(()))

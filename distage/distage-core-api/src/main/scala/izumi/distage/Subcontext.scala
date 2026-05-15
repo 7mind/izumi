@@ -4,13 +4,13 @@ import izumi.distage.model.definition.Identifier
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.providers.Functoid
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.bio.IO2
+import izumi.functional.bio.{IO2, Primitives2}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.reflect.{Tag, TagKK}
 
 /** @see [[https://izumi.7mind.io/distage/basics.html#subcontexts Subcontexts feature]] */
 trait Subcontext[F[+_, +_], +A] {
-  def produce()(implicit F: IO2[F], tagK: TagKK[F]): Lifecycle[F, Throwable, A]
+  def produce()(implicit F: IO2[F], P: Primitives2[F], tagK: TagKK[F]): Lifecycle[F, Throwable, A]
 
   /**
     * Same as `.produce[F]().use(f)`
@@ -18,7 +18,7 @@ trait Subcontext[F[+_, +_], +A] {
     * @note Resources allocated by the subcontext will be closed after `f` exits.
     *       Use `produce` if you need to extend the lifetime of the Subcontext's resources.
     */
-  def produceRun[B](f: A => F[Throwable, B])(implicit F: IO2[F], tagK: TagKK[F]): F[Throwable, B]
+  def produceRun[B](f: A => F[Throwable, B])(implicit F: IO2[F], P: Primitives2[F], tagK: TagKK[F]): F[Throwable, B]
 
   def provide[T: Tag](value: T)(implicit pos: CodePositionMaterializer): Subcontext[F, A]
   def provide[T: Tag](name: Identifier)(value: T)(implicit pos: CodePositionMaterializer): Subcontext[F, A]

@@ -3,20 +3,19 @@ package izumi.distage
 import distage.LocatorPrivacy
 import izumi.distage.bootstrap.BootstrapRootsMode
 import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule}
-import izumi.functional.bio.IO1
+import izumi.functional.bio.{Bifunctorized, IO2, Primitives2}
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, PlannerInput}
 import izumi.distage.modules.DefaultModule
-import izumi.fundamentals.platform.functional.Identity
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 trait InjectorFactory {
 
   /**
     * Create a new Injector
     *
-    * @tparam F                   The effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
+    * @tparam F                   The bifunctor effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
     *
     * @param bootstrapBase        Initial bootstrap context module, such as [[izumi.distage.bootstrap.BootstrapLocator.defaultBootstrap]]
     *
@@ -32,7 +31,7 @@ trait InjectorFactory {
     * @param bootstrapOverrides   Overrides of Injector's own bootstrap environment - injector itself is constructed with DI.
     *                             They can be used to customize the Injector, e.g. by adding members to [[izumi.distage.model.planning.PlanningHook]] Set.
     */
-  def apply[F[_]: IO1: TagK: DefaultModule](
+  def apply[F[+_, +_]: IO2: Primitives2: TagKK: DefaultModule](
     parent: Option[Locator] = None,
     bootstrapBase: BootstrapContextModule = defaultBootstrap,
     bootstrapActivation: Activation = defaultBootstrapActivation,
@@ -42,15 +41,12 @@ trait InjectorFactory {
   ): Injector[F]
 
   /**
-    * Create a new default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
+    * Create a new default Injector with [[izumi.functional.bio.Bifunctorized.IdentityBifunctorized]] effect type
+    * (lawful MiniBIO-backed carrier for plain synchronous Scala).
     *
     * Use `apply[F]()` variant to specify a different effect type
-    *
-    * @note this method exists only because of Scala 2.12's sub-par implicit handling:
-    *       2.12 fails to default to `IO1.io1Identity` when writing `Injector()` if cats-effect
-    *       is on the classpath because of recursive (on 2.12: diverging) instances in `cats.effect.kernel.Sync` object
     */
-  def apply(): Injector[Identity]
+  def apply(): Injector[Bifunctorized.IdentityBifunctorized]
 
   /**
     * Alias for `apply[F]` that doesn't add a [[DefaultModule]] for F into bindings.
@@ -58,7 +54,7 @@ trait InjectorFactory {
     * `distage-core` doesn't require bindings provided by DefaultModule, but some extensions,
     * such as `distage-framework-docker` expect them to be defined
     */
-  final def withoutDefaultModule[F[_]: IO1: TagK](
+  final def withoutDefaultModule[F[+_, +_]: IO2: Primitives2: TagKK](
     parent: Option[Locator] = None,
     bootstrapBase: BootstrapContextModule = defaultBootstrap,
     bootstrapActivation: Activation = defaultBootstrapActivation,
@@ -73,17 +69,17 @@ trait InjectorFactory {
       bootstrapOverrides = overrides,
       locatorPrivacy = locatorPrivacy,
       bootstrapRootsMode = bootstrapRootsMode,
-    )(using IO1[F], TagK[F], DefaultModule.empty[F])
+    )(using IO2[F], Primitives2[F], TagKK[F], DefaultModule.empty[F])
   }
 
   /**
     * Create a new injector inheriting configuration, hooks and the object graph from a previous injection.
     *
-    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
+    * @tparam F the bifunctor effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
     *
     * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
-  def inherit[F[_]: IO1: TagK](parent: Locator): Injector[F]
+  def inherit[F[+_, +_]: IO2: Primitives2: TagKK](parent: Locator): Injector[F]
 
   /**
     * Create a new injector inheriting configuration, hooks and the object graph from a previous injection.
@@ -91,17 +87,17 @@ trait InjectorFactory {
     * Unlike [[inherit]] this will fully (re)create the `defaultModule` in subsequent injections,
     * without reusing the existing instances in `parent`.
     *
-    * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
+    * @tparam F the bifunctor effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
     *
     * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
-  def inheritWithNewDefaultModule[F[_]: IO1: TagK](parent: Locator, defaultModule: DefaultModule[F]): Injector[F]
+  def inheritWithNewDefaultModule[F[+_, +_]: IO2: Primitives2: TagKK](parent: Locator, defaultModule: DefaultModule[F]): Injector[F]
 
   /** Keys summonable by default in DI, *including* those added additionally by [[izumi.distage.modules.DefaultModule]] */
-  def providedKeys[F[_]: DefaultModule](bootstrapOverrides: BootstrapModule*): Set[DIKey]
-  def providedKeys[F[_]: DefaultModule](bootstrapBase: BootstrapContextModule, bootstrapOverrides: BootstrapModule*): Set[DIKey]
+  def providedKeys[F[+_, +_]: DefaultModule](bootstrapOverrides: BootstrapModule*): Set[DIKey]
+  def providedKeys[F[+_, +_]: DefaultModule](bootstrapBase: BootstrapContextModule, bootstrapOverrides: BootstrapModule*): Set[DIKey]
 
-  def bootloader[F[_]](
+  def bootloader[F[+_, +_]](
     bootstrapModule: BootstrapModule,
     bootstrapActivation: Activation,
     defaultModule: DefaultModule[F],
@@ -114,4 +110,8 @@ trait InjectorFactory {
   protected def defaultBootstrapActivation: Activation
   protected def defaultBootstrapLocatorPrivacy: LocatorPrivacy
   protected def defaultBootstrapRootsMode: BootstrapRootsMode
+}
+
+private[distage] object InjectorFactory {
+  // No companion-object methods; the trait is implemented in `Injector`.
 }

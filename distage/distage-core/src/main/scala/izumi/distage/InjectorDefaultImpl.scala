@@ -8,9 +8,9 @@ import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
-import izumi.functional.bio.IO1
+import izumi.functional.bio.{IO2, Primitives2}
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 /**
   * @param bootstrapLocator contains Planner & PlanInterpeter built using a `BootstrapModule`,
@@ -20,13 +20,14 @@ import izumi.reflect.TagK
   *
   * @param defaultModule is added to (but overridden by) user's [[izumi.distage.model.PlannerInput PlannerInput]]
   */
-final class InjectorDefaultImpl[F[_]](
+final class InjectorDefaultImpl[F[+_, +_]](
   val parentFactory: InjectorFactory,
   val bootstrapLocator: Locator,
   val defaultModule: Module,
 )(implicit
-  override val F: IO1[F],
-  override val tagK: TagK[F],
+  override val F: IO2[F],
+  override val P: Primitives2[F],
+  override val tagK: TagKK[F],
 ) extends Injector[F] {
 
   private val planner: Planner = bootstrapLocator.get[Planner]
@@ -46,10 +47,10 @@ final class InjectorDefaultImpl[F[_]](
     planner.rewrite(module)
   }
 
-  override private[distage] def produceDetailedFX[G[_]: TagK: IO1](
+  override private[distage] def produceDetailedFX[G[+_, +_]: TagKK: IO2](
     plan: Plan,
     filter: FinalizerFilter[G],
-  ): Lifecycle[G, Either[FailedProvision, Locator]] = {
+  ): Lifecycle[G, Throwable, Either[FailedProvision, Locator]] = {
     interpreter.run[G](plan, bootstrapLocator, filter)
   }
 

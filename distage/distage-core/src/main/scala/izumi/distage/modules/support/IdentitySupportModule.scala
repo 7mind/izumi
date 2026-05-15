@@ -1,28 +1,42 @@
 package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.functional.bio.{Clock1, Entropy1}
-import izumi.functional.bio.*
+import izumi.functional.bio.{Bifunctorized, Clock1, Clock2, Entropy1, Entropy2, IO2, Primitives2, SyncSafe1, SyncSafe2}
 import izumi.fundamentals.platform.functional.Identity
-import izumi.reflect.TagK
+import izumi.reflect.{TagK, TagKK}
 
 object IdentitySupportModule extends IdentitySupportModule
 
 /**
   * `Identity` effect type (aka no effect type / imperative Scala) support for `distage` resources, effects, roles & tests
   *
-  * Adds [[izumi.functional.bio.IO1]] instances to support running without an effect type in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * Adds [[izumi.functional.bio]] bifunctor BIO instances for [[Bifunctorized.IdentityBifunctorized]],
+  * the MiniBIO-backed lawful carrier for `Identity` (no effect type / imperative Scala).
+  *
+  * Note: `TagK[Identity]` is still registered because user-facing entry points may construct
+  * `Lifecycle[Identity, A]` / `Subcontext[Identity, A]` (legacy monofunctor surface). Internal
+  * runtime always routes through `Bifunctorized.IdentityBifunctorized`.
   */
 trait IdentitySupportModule extends ModuleDef {
   addImplicit[TagK[Identity]]
+  addImplicit[TagKK[Bifunctorized.IdentityBifunctorized]]
 
-  addImplicit[Functor1[Identity]]
-  addImplicit[Applicative1[Identity]]
-  addImplicit[Primitives1[Identity]]
-  addImplicit[IO1[Identity]]
-  addImplicit[Async1[Identity]]
-  addImplicit[Temporal1[Identity]]
-  addImplicit[IORunner1[Identity]]
+  // BIO bifunctor for IdentityBifunctorized (MiniBIO-backed)
+  addImplicit[IO2[Bifunctorized.IdentityBifunctorized]]
+  addImplicit[Primitives2[Bifunctorized.IdentityBifunctorized]]
+
+  // Wall-clock / entropy services for Identity (no effect)
   make[Clock1[Identity]].fromValue(Clock1.Standard)
   make[Entropy1[Identity]].fromValue(Entropy1.Standard)
+
+  // ... and lifted into the bifunctor carrier for code that runs through IdentityBifunctorized
+  make[SyncSafe2[Bifunctorized.IdentityBifunctorized]].from {
+    SyncSafe1.fromBIO(using _: IO2[Bifunctorized.IdentityBifunctorized])
+  }
+  make[Clock2[Bifunctorized.IdentityBifunctorized]].from {
+    (c: Clock1[Identity], s: SyncSafe2[Bifunctorized.IdentityBifunctorized]) => Clock1.fromImpure(c)(using s)
+  }
+  make[Entropy2[Bifunctorized.IdentityBifunctorized]].from {
+    (e: Entropy1[Identity], s: SyncSafe2[Bifunctorized.IdentityBifunctorized]) => Entropy1.fromImpure(e)(using s)
+  }
 }

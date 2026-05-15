@@ -1,12 +1,12 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.bio.IO1
+import izumi.functional.bio.{Exit, IO2}
 import ProvisionerIssue.ProvisionerExceptionIssue.UnexpectedStepProvisioning
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, NonImportOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 class OperationExecutorImpl(
   setStrategy: SetStrategy,
@@ -18,21 +18,24 @@ class OperationExecutorImpl(
   subcontextStrategy: SubcontextStrategy,
 ) extends OperationExecutor {
 
-  override def execute[F[_]: TagK](
+  override def execute[F[+_, +_]: TagKK](
     context: ProvisioningKeyProvider,
     step: NonImportOp,
-  )(implicit F: IO1[F]
-  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    F.definitelyRecoverWithTrace(
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+    F.sandboxCatchAll[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]], Throwable](
       executeUnsafe(context, step)
-    )((_, trace) => F.pure(Left(UnexpectedStepProvisioning(step, trace.unsafeAttachTraceOrReturnNewThrowable()))))
+    )(
+      (failure: Exit.FailureUninterrupted[Throwable]) =>
+        F.pure(Left(UnexpectedStepProvisioning(step, failure.trace.unsafeAttachTraceOrReturnNewThrowable())))
+    )
   }
 
-  private def executeUnsafe[F[_]: TagK](
+  private def executeUnsafe[F[+_, +_]: TagKK](
     context: ProvisioningKeyProvider,
     step: NonImportOp,
-  )(implicit F: IO1[F]
-  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = step match {
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]] = step match {
     case op: CreateSet =>
       setStrategy.makeSet(context, op)
 

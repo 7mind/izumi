@@ -10,12 +10,12 @@ import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.provisioning.{NewObjectOp, Provision, ProvisioningFailure}
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.mutable
 
-final class ProvisionMutable[F[_]: TagK](
+final class ProvisionMutable[F[+_, +_]: TagKK](
   val plan: Plan,
   parentContext: Locator,
   privateBindings: Set[DIKey],
@@ -72,7 +72,9 @@ final class ProvisionMutable[F[_]: TagK](
   }
 
   def asContext(): LocatorContext = {
-    LocatorContext(toImmutable, parentContext, plan)
+    // Cast: ProvisionImmutable[F] is structurally identical to ProvisionImmutable[AnyF2]
+    // because Provision[F]'s fields are not erased by F's bifunctor wrapper at the JVM.
+    LocatorContext(toImmutable.asInstanceOf[ProvisionImmutable[izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF2]], parentContext, plan)
   }
 
   override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {

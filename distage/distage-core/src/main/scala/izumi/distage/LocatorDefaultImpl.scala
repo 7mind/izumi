@@ -6,11 +6,11 @@ import izumi.distage.model.plan.Plan
 import izumi.distage.model.provisioning.{PlanInterpreter, Provision}
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 import scala.collection.immutable
 
-final class LocatorDefaultImpl[F[_]](
+final class LocatorDefaultImpl[F[+_, +_]](
   val plan: Plan,
   val parent: Option[Locator],
   val meta: LocatorMeta,
@@ -21,9 +21,9 @@ final class LocatorDefaultImpl[F[_]](
   override protected def lookupLocalUnsafe(key: DIKey): Option[Any] =
     dependencyMap.get(key)
 
-  override def finalizers[F1[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F1]] = {
+  override def finalizers[F1[+_, +_]: TagKK]: collection.Seq[PlanInterpreter.Finalizer[F1]] = {
     dependencyMap.finalizers
-      .filter(_.fType == SafeType.getK[F1])
+      .filter(_.fType == SafeType.getKK[F1])
       .map(_.asInstanceOf[PlanInterpreter.Finalizer[F1]])
   }
 

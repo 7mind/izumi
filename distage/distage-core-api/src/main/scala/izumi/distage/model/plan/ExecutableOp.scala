@@ -10,7 +10,7 @@ import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey.ProxyInitKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.cache.CachedProductHashcode
-import izumi.reflect.TagK
+import izumi.reflect.{TagK, TagKK}
 
 import scala.annotation.tailrec
 
@@ -117,6 +117,40 @@ object ExecutableOp {
       @inline def throwOnIncompatibleEffectType[F[_]: TagK](): Either[ProvisionerIssue, Unit] = {
         if (isIncompatibleEffectType[F]) {
           Left(IncompatibleEffectType(op.target, actionEffectType))
+        } else {
+          Right(())
+        }
+      }
+    }
+
+    /** Bifunctor-aware overloads for `F[+_, +_]`-shaped strategy interfaces.
+      *
+      * Compares the action's stored effect HK type ctor (set at binding time via the
+      * `.fromEffect`/`.fromResource` DSL family) against the binary `F` carried by
+      * the strategy. Accepts a unary `F[Throwable, _]` action ctor as well when the
+      * caller threads a `TagK[F[Throwable, _]]` through.
+      *
+      * Two-arg overloads: with and without `TagK[F[Throwable, _]]`. When the unary
+      * tag is not provided, only the binary `SafeType.getKK[F]` matching path is
+      * taken — accepts `.fromResource[F, E, R]` bindings but rejects `.fromEffect[F[Throwable, *], T]`
+      * bindings as incompatible. This is the conservative default; the unary path
+      * is only enabled when callers can derive `TagK[F[Throwable, _]]` cheaply.
+      */
+    implicit final class MonadicOpExtBifunctor(private val op: MonadicOp) {
+      @inline def provisionerEffectTypeBifunctor[F[+_, +_]: TagKK]: SafeType =
+        SafeType.getKK[F]
+
+      @inline def isIncompatibleBifunctorEffectType[F[+_, +_]: TagKK]: Boolean = {
+        op.isEffect && !(op.actionEffectType <:< SafeType.getKK[F])
+      }
+
+      @inline def isIncompatibleBifunctorEffectTypeWithUnary[F[+_, +_]: TagKK](implicit tkF: TagK[F[Throwable, _]]): Boolean = {
+        op.isEffect && !(op.actionEffectType <:< SafeType.getKK[F]) && !(op.actionEffectType <:< SafeType.getK[F[Throwable, _]])
+      }
+
+      @inline def throwOnIncompatibleBifunctorEffectType[F[+_, +_]: TagKK](): Either[ProvisionerIssue, Unit] = {
+        if (isIncompatibleBifunctorEffectType[F]) {
+          Left(IncompatibleEffectType(op.target, op.actionEffectType))
         } else {
           Right(())
         }
