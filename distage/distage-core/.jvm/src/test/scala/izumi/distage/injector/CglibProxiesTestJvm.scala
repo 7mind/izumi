@@ -298,7 +298,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         many[DynamoDDLGroup]
       })
 
-      val injector = Injector[Identity](bootstrapOverrides =
+      val injector = Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](bootstrapOverrides =
         Seq(
           AutoSetModule()
             .register[RoleComponent](weak = false)
@@ -366,21 +366,21 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       import izumi.distage.fixtures.CircularCases.CircularCase3.*
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Ref[Fn, Boolean]].fromEffect(Ref[Fn](false))
+        make[Ref[Suspend2, Boolean]].fromEffect(Ref[Suspend2](false))
         make[SelfReference].fromEffect {
-          (ref: Ref[Fn, Boolean], self: SelfReference) =>
+          (ref: Ref[Suspend2, Boolean], self: SelfReference) =>
             ref.update(!_).flatMap(_ => Suspend2(new SelfReference(self)))
         }
       })
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
-      val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
+      val context = injector.produceCustomF[Suspend2](plan).unsafeGet().unsafeRun()
 
       val instance = context.get[SelfReference]
 
       assert(instance eq instance.self)
-      assert(context.get[Ref[Fn, Boolean]].get.unsafeRun())
+      assert(context.get[Ref[Suspend2, Boolean]].get.unsafeRun())
     }
 
     "Support mutually-referent circular resources" in {
@@ -389,11 +389,11 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
 
       val definition = PlannerInput(
         new ModuleDef {
-          make[Ref[Fn, Queue[Ops]]].fromEffect(Ref[Fn](Queue.empty[Ops]))
+          make[Ref[Suspend2, Queue[Ops]]].fromEffect(Ref[Suspend2](Queue.empty[Ops]))
           many[IntegrationComponent]
             .ref[S3Component]
-          make[S3Component].fromResource(s3ComponentResource[Fn] _)
-          make[S3Client].fromResource(s3clientResource[Fn] _)
+          make[S3Component].fromResource(s3ComponentResource[Suspend2] _)
+          make[S3Client].fromResource(s3clientResource[Suspend2] _)
         },
         Roots(DIKey.get[S3Client]),
         Activation.empty,
@@ -403,7 +403,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       val plan = injector.planUnsafe(definition)
 
       val context = injector
-        .produceCustomF[Suspend2[Nothing, _]](plan).use {
+        .produceCustomF[Suspend2](plan).use {
           Suspend2(_)
         }.unsafeRun()
 
@@ -413,11 +413,11 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
       assert(s3Component eq s3Client.c)
       assert(s3Client eq s3Component.s)
 
-      val startOps = context.get[Ref[Fn, Queue[Ops]]].get.unsafeRun().take(2)
+      val startOps = context.get[Ref[Suspend2, Queue[Ops]]].get.unsafeRun().take(2)
       assert(startOps.toSet == Set(ComponentStart, ClientStart))
 
       val expectStopOps = startOps.reverse.map(_.invert)
-      assert(context.get[Ref[Fn, Queue[Ops]]].get.unsafeRun().slice(2, 4) == expectStopOps)
+      assert(context.get[Ref[Suspend2, Queue[Ops]]].get.unsafeRun().slice(2, 4) == expectStopOps)
     }
 
     "print dependencies of the cycle-breaking key in the error message when cycle support is disabled" in {

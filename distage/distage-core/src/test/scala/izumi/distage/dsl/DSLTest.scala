@@ -494,7 +494,8 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       import BasicCase6.*
 
       val implXYZ: Identity[ImplXYZ] = new ImplXYZ
-      val implXYZResource = Lifecycle.make(implXYZ)(_ => ())
+      val implXYZResource: Lifecycle[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, ImplXYZ] =
+        Lifecycle.makeSimple(implXYZ)(_ => ())
 
       val definition = new ModuleDef {
         make[ImplXYZ]
@@ -538,14 +539,16 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         )
       )
 
-      class X extends Lifecycle.Simple[ImplXYZ] {
-        override def acquire: ImplXYZ = new ImplXYZ
-        override def release(resource: ImplXYZ): Unit = ()
+      class X extends Lifecycle.Basic[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, ImplXYZ] {
+        override def acquire: izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Throwable, ImplXYZ] =
+          izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(new ImplXYZ)
+        override def release(resource: ImplXYZ): izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Nothing, Unit] =
+          izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()).asInstanceOf[izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Nothing, Unit]]
       }
 
       val definitionResource = new ModuleDef {
         make[ImplXYZ]
-          .fromResource[X]
+          .fromResource[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, X](distage.ClassConstructor[X])
           .aliased[TraitX]
           .aliased[TraitY]
           .aliased[TraitZ]
@@ -556,7 +559,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
             DIKey.get[ImplXYZ],
             ImplDef.ResourceImpl(
               SafeType.get[ImplXYZ],
-              SafeType.getK[Identity],
+              SafeType.getKK[izumi.functional.bio.Bifunctorized.IdentityBifunctorized],
               ImplDef.ProviderImpl(SafeType.get[X], ClassConstructor[X].get),
             ),
             Set.empty,
@@ -582,7 +585,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
           Set(
             SingletonBinding(
               DIKey.get[ImplXYZ],
-              ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[Lifecycle[Identity, ImplXYZ]], implXYZResource)),
+              ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getKK[izumi.functional.bio.Bifunctorized.IdentityBifunctorized], ImplDef.InstanceImpl(SafeType.get[Lifecycle[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, ImplXYZ]], implXYZResource)),
               Set.empty,
               BindingOrigin(SourceFilePosition.unknown),
             ),
@@ -788,8 +791,10 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       }
       Injector().produceRun(definition) {
         (s: Set[Int]) =>
-          intercept[TestFailedException] {
-            assert(s == Set(1, 2, 3))
+          izumi.functional.bio.Bifunctorized.bifunctorizeIdentity {
+            intercept[TestFailedException] {
+              assert(s == Set(1, 2, 3))
+            }
           }
       }
     }
@@ -819,8 +824,8 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
 
     "addDependency supports adding dependencies for .fromResource/.fromEffect bindings" in {
       val definition = new ModuleDef {
-        make[Int].fromResource(Lifecycle.pure(5)).addDependency[String]
-        make[Long].fromResource(() => Lifecycle.pure(5L)).addDependency[String]
+        make[Int].fromResource(Lifecycle.pure[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](5)).addDependency[String]
+        make[Long].fromResource(() => Lifecycle.pure[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](5L)).addDependency[String]
         make[Short].fromEffect[Identity, Short](() => 5: Identity[Short]).addDependency[String]
       }
 
@@ -831,7 +836,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
       assert(
         imports == Set(
           DIKey[Int] -> DIKey[String],
-          DIKey.ResourceKey(DIKey[Long], SafeType.get[Lifecycle[Identity, Long]]) -> DIKey[String],
+          DIKey.ResourceKey(DIKey[Long], SafeType.get[Lifecycle[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, Long]]) -> DIKey[String],
           DIKey.EffectKey(DIKey[Short], SafeType.get[Short]) -> DIKey[String],
         )
       )

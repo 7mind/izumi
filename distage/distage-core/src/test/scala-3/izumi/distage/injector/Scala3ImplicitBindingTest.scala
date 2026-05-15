@@ -2,7 +2,7 @@ package izumi.distage.injector
 
 import distage.*
 import izumi.distage.model.exceptions.runtime.ProvisioningException
-import izumi.functional.bio.Applicative1
+import izumi.functional.bio.SyncSafe1
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.reflect.Tag
 import org.scalatest.exceptions.TestFailedException
@@ -279,12 +279,12 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[Int].fromEffect {
           bindImplicits {
             val x = Functoid[F[Int]] {
-              (F: Applicative1[F]) =>
+              (F: SyncSafe1[F]) =>
                 // ok case
-                Predef.require(implicitly[Tag[Applicative1[F]]] ne null)
+                Predef.require(implicitly[Tag[SyncSafe1[F]]] ne null)
                 Predef.require(implicitly[Tag[F[Int]]] ne null)
 
-                F.pure[Int](1)
+                F.syncSafe[Int](1)
             }
             functoid = x
             x
@@ -296,7 +296,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition[Identity])
       val context = injector.produce(plan).unsafeGet()
 
-      assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[Applicative1[Identity]].tag))
+      assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[SyncSafe1[Identity]].tag))
       assert(functoid.get.ret == SafeType.get[Int])
       assert(context.get[Int] == 1)
     }
@@ -308,11 +308,11 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[Int].fromEffect {
           bindImplicits {
             // bad case
-            Predef.require(implicitly[Tag[Applicative1[F]]] ne null)
+            Predef.require(implicitly[Tag[SyncSafe1[F]]] ne null)
             Predef.require(implicitly[Tag[F[Int]]] ne null)
 
             val x = Functoid.apply[F[Int]] {
-              (F: Applicative1[F]) => F.pure[Int](1)
+              (F: SyncSafe1[F]) => F.syncSafe[Int](1)
             }
             functoid = x
             x
@@ -324,14 +324,14 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       val plan = injector.planUnsafe(definition[Identity])
       val context = injector.produce(plan).unsafeGet()
 
-      assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[Applicative1[Identity]].tag))
+      assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[SyncSafe1[Identity]].tag))
       assert(functoid.get.ret == SafeType.get[Int])
       assert(context.get[Int] == 1)
     }
 
     "support implicits in effects" in {
-      def makeX[F[_]: Applicative1](value: Int)(implicit desc: Description): F[X] =
-        Applicative1.apply[F].pure(X(desc.description + value.toString))
+      def makeX[F[_]: SyncSafe1](value: Int)(implicit desc: Description): F[X] =
+        SyncSafe1.apply[F].syncSafe(X(desc.description + value.toString))
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
@@ -348,14 +348,15 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "support implicits in resource class" in {
-      class XResource(implicit desc: Description) extends Lifecycle.Simple[X] {
-        override def acquire: X = X(desc.description)
-        override def release(resource: X): Unit = ()
+      class XResource(implicit desc: Description) extends Lifecycle.Basic[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, X] {
+        override def acquire: izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Throwable, X] = izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(X(desc.description))
+        override def release(resource: X): izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Nothing, Unit] =
+          izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()).asInstanceOf[izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Nothing, Unit]]
       }
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Description].fromValue(Description("desc"))
-        make[X].fromResource[XResource]
+        make[X].fromResource[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, XResource](distage.ClassConstructor[XResource])
       })
 
       val injector = mkInjector()
@@ -367,8 +368,8 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "support implicits in resource" in {
-      def makeX(x: Int)(implicit desc: Description): Lifecycle[Identity, X] =
-        Lifecycle.make(X(desc.description): Identity[X])(_ => ())
+      def makeX(x: Int)(implicit desc: Description): Lifecycle[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, X] =
+        Lifecycle.makeSimple(X(desc.description))(_ => ())
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
@@ -525,13 +526,13 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
 
       injector.produceRun(definition) {
         (x: X) =>
-          assert(x == X("pest2"))
+          izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(assert(x == X("pest2")))
       }
 
       intercept[ProvisioningException] {
         injector.produceRun(definition) {
           (x: X @Id("n")) =>
-            assert(x == X("pest2"))
+            izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(assert(x == X("pest2")))
         }
       }
     }
@@ -554,7 +555,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[StaticTestRole[F]].fromEffect {
           bindImplicits {
             ClassConstructor[StaticTestRole[F]]
-              .flatAp((G: Applicative1[G]) => G.pure(_: StaticTestRole[F]))
+              .flatAp((G: SyncSafe1[G]) => G.syncSafe(_: StaticTestRole[F]))
           }
         }
       })

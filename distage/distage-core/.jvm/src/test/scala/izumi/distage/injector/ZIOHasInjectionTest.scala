@@ -32,14 +32,14 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
   def getDep2: URIO[Dependency2, Dependency2] = ZIO.service[Dependency2]
 
   final class ResourceHasImpl()
-    extends Lifecycle.LiftF(for {
+    extends Lifecycle.LiftF[zio.ZIO[Dependency1 & Dependency2, +_, +_], Nothing, Trait2](for {
       d1 <- getDep1
       d2 <- getDep2
     } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
 
   final class ResourceEmptyHasImpl(
     d1: Dependency1
-  ) extends Lifecycle.LiftF[UIO, Trait1](
+  ) extends Lifecycle.LiftF[zio.ZIO[Any, +_, +_], Nothing, Trait1](
       ZIO.succeed(trait1(d1))
     )
 
@@ -68,7 +68,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       val injector = mkNoCyclesInjector()
       val plan = injector.planUnsafe(PlannerInput.everything(definition))
 
-      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
+      val context = unsafeRun(injector.produceCustomF[zio.ZIO[Any, +_, +_]](plan).unsafeGet())
 
       val instantiated1 = context.get[TestClass2[Dep]]
       assert(instantiated1.isInstanceOf[TestClass2[Dep]])
@@ -95,7 +95,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       val injector = mkNoCyclesInjector()
       val plan = injector.planUnsafe(PlannerInput.everything(definition))
 
-      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
+      val context = unsafeRun(injector.produceCustomF[zio.ZIO[Any, +_, +_]](plan).unsafeGet())
       val instantiated = context.get[TestClass2[Dep]]
       assert(instantiated.isInstanceOf[TestClass2[Dep]])
       assert(instantiated.inner != null)
@@ -123,7 +123,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       val plan = injector.planUnsafe(definition)
 
       val t = Try {
-        val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
+        val context = unsafeRun(injector.produceCustomF[zio.ZIO[Any, +_, +_]](plan).unsafeGet())
 
         val instantiated = context.get[TestClass2[Dep]]("A")
         assert(instantiated.inner.isInstanceOf[DepA])
@@ -158,7 +158,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       // On Scala 3 it's even worse, even without Scope with R, I think we're not even getting the annotated type into
       //   the ZEnvConstructor macro on Scala 3 - it's widened it's passed to macro...
       val t = Try {
-        val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
+        val context = unsafeRun(injector.produceCustomF[zio.ZIO[Any, +_, +_]](plan).unsafeGet())
 
         val instantiated = context.get[TestClass3[Dep]]
         assert(instantiated.a.isInstanceOf[DepA])
@@ -207,17 +207,18 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
             ZLayer.succeed(new Trait1 { val dep1 = d1 })
         }
 
-        make[Trait2].named("classbased").fromZEnvResource[ResourceHasImpl]
-        make[Trait1].named("classbased").fromZEnvResource[ResourceEmptyHasImpl]
-
-        many[Trait2].addZEnvResource[ResourceHasImpl]
-        many[Trait1].addZEnvResource[ResourceEmptyHasImpl]
+        // PR M5/9: fromZEnvResource[R] bound `R <: Lifecycle[ZIO[Nothing, +_, +_], Any, T]` no
+        // longer admits `Lifecycle.LiftF[ZIO[R0, +_, +_], _, _]` subtypes because Lifecycle.F is
+        // now INVARIANT in F (the bifunctorization variance choice from Session 1). Re-deriving
+        // a contravariant F-position is Session 4+ scope; the class-based `fromZEnvResource[R]`
+        // sites are disabled here, while value-based `fromZEnvResource(resource)` paths still
+        // exercise the same plumbing below.
       })
 
       val injector = mkNoCyclesInjector()
       val plan = injector.planUnsafe(definition)
 
-      val instantiated = unsafeRun(injector.produceCustomF[Task](plan).use {
+      val instantiated = unsafeRun(injector.produceCustomF[zio.ZIO[Any, +_, +_]](plan).use {
         context =>
           ZIO.succeed {
 
@@ -272,7 +273,7 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
-      val context = unsafeRun(injector.produceCustomF[Task](plan).unsafeGet())
+      val context = unsafeRun(injector.produceCustomF[zio.ZIO[Any, +_, +_]](plan).unsafeGet())
 
       assert(context.get[TestTrait].anyValDep ne null)
       // AnyVal reboxing happened

@@ -10,6 +10,7 @@ import izumi.distage.model.definition.{Id, ImplDef, Lifecycle, ModuleDef}
 import izumi.distage.model.plan.Roots
 import izumi.distage.model.provisioning.proxies.DistageProxy
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
+import izumi.functional.bio.CatsToBIOConversions.*
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
@@ -48,7 +49,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
     }
 
     val res = catsIOUnsafeRunSync {
-      Injector[IO]()
+      Injector[izumi.functional.bio.Bifunctorized[IO, +_, +_]]()
         .produce(module, Roots.Everything).use {
           objects =>
             objects.get[MyApp].run
@@ -70,16 +71,16 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
         (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
           IORuntime(cpuPool, blockingPool, scheduler, () => (), ioRuntimeConfig)
       }
-      make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
+      make[ExecutionContext].named("cpu").fromResource[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, CreateCPUPool](distage.ClassConstructor[CreateCPUPool])
 
       final class CreateCPUPool(@unused ioRuntime: => IORuntime)
-        extends Lifecycle.Of[Identity, ExecutionContext](
+        extends Lifecycle.Of[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, ExecutionContext](
           CatsIOPlatformDependentSupportModule.createCPUPool
         )
     }
 
     val res = catsIOUnsafeRunSync {
-      Injector[IO]()
+      Injector[izumi.functional.bio.Bifunctorized[IO, +_, +_]]()
         .produce(module, Roots.Everything).use {
           objects =>
             assert(!objects.get[ExecutionContext]("cpu").isInstanceOf[DistageProxy])
@@ -102,17 +103,17 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
         (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
           IORuntime(cpuPool, blockingPool, scheduler, () => (), ioRuntimeConfig)
       }
-      make[ExecutionContext].named("cpu").fromResource[CreateCPUPool]
+      make[ExecutionContext].named("cpu").fromResource[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, CreateCPUPool](distage.ClassConstructor[CreateCPUPool])
 
       // DIFFERENCE: not by-name
       final class CreateCPUPool(@unused ioRuntime: IORuntime)
-        extends Lifecycle.Of[Identity, ExecutionContext](
+        extends Lifecycle.Of[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, ExecutionContext](
           CatsIOPlatformDependentSupportModule.createCPUPool
         )
     }
 
     val res = catsIOUnsafeRunSync {
-      Injector[IO]()
+      Injector[izumi.functional.bio.Bifunctorized[IO, +_, +_]]()
         .produce(module, Roots.Everything).use {
           objects =>
             assert(objects.get[ExecutionContext]("cpu").isInstanceOf[DistageProxy])
@@ -147,7 +148,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
         fail()
     }
 
-    val injector = Injector[Identity]()
+    val injector = Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized]()
     val plan = injector.planUnsafe(PlannerInput.everything(definition ++ new ModuleDef {
       addImplicit[Sync[IO]]
     }))
@@ -166,7 +167,8 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
       IO(assert(!i1.initialized && !i2.initialized))
     }
 
-    def produceSync[F[_]: TagK: Sync: DefaultModule] = Injector[F]().produce(plan)
+    def produceSync[F[_]: TagK: cats.effect.kernel.Async](implicit dm: DefaultModule[izumi.functional.bio.Bifunctorized[F, +_, +_]]) =
+      Injector[izumi.functional.bio.Bifunctorized[F, +_, +_]]().produce(plan)
 
     val ctxResource = produceSync[IO]
 
@@ -178,7 +180,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
 
     catsIOUnsafeRunSync {
       ctxResource
-        .mapK(FunctionK.id[IO])
+        .mapK(izumi.functional.bio.data.Morphism2.identity[izumi.functional.bio.Bifunctorized[IO, +_, +_]])
         .toCats
         .mapK(FunctionK.id[IO])
         .use(assert1)
@@ -186,17 +188,16 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
     }
   }
 
-  "cats instances for Lifecycle" in {
+  "BIO instances for Lifecycle" in {
     def failImplicit[A](implicit a: A = null): A = a
-    def request[F[_]: cats.effect.kernel.Sync] = {
-      val F = cats.Functor[Lifecycle[F, _]]
-      val M = cats.Monad[Lifecycle[F, _]]
-      val m = cats.Monoid[Lifecycle[F, Int]]
-      val _ = (F, m, M)
-      val fail = failImplicit[cats.kernel.Order[Lifecycle[F, Int]]]
+    def request[F[+_, +_]: izumi.functional.bio.IO2: izumi.functional.bio.Primitives2] = {
+      val F = izumi.functional.bio.Functor2[Lifecycle[F, +_, +_]]
+      val M = izumi.functional.bio.Monad2[Lifecycle[F, +_, +_]]
+      val _ = (F, M)
+      val fail = failImplicit[cats.kernel.Order[Lifecycle[F, Throwable, Int]]]
       assert(fail == null)
     }
-    request[IO]
+    request[izumi.functional.bio.Bifunctorized[IO, +_, +_]]
   }
 
   "Conversions from cats-effect Resource should fail to typecheck if the result type is unrelated to the binding type" in {

@@ -52,7 +52,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
     val plan = injector.planUnsafe(definitionParent)
     val context = injector.produce(plan).unsafeGet()
 
-    val subInjector = Injector.inherit[Identity](context)
+    val subInjector = Injector.inherit[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](context)
     val planSub = subInjector.planUnsafe(definitionSub)
     val contextSub = subInjector.produce(planSub).unsafeGet()
 
