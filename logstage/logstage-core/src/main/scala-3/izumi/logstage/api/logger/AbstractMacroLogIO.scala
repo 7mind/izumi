@@ -1,10 +1,8 @@
 package izumi.logstage.api.logger
 
-import izumi.functional.bio.{IO1, Primitives1}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log.Level
 import izumi.logstage.api.Log
-import izumi.logstage.macros.{LogMessageMacro, LogMethodMacro, LogValuesMacro}
+import izumi.logstage.macros.{LogMessageMacro, LogValuesMacro}
 
 trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Singleton } =>
 
@@ -29,25 +27,10 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Single
     ${ LogValuesMacro.logValuesIO[F, EncMode]('{ this }, '{ level }, '{ values }) }
   }
 
-  transparent inline final def logMethod[G[x] >: F[x], A](
-    level: Level,
-    printTypes: Boolean = false,
-    printImplicits: Boolean = false,
-  )(inline function: => A
-  )(using G: IO1[G]
-  ): G[A] = {
-    ${ LogMethodMacro.logMethodIO[A, F, G, EncMode]('{ level }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ G }) }
-  }
-
-  transparent inline final def logMethodF[G[x] >: F[x], A](
-    level: Level,
-    printTypes: Boolean = false,
-    printImplicits: Boolean = false,
-  )(inline function: => G[A]
-  )(using G: Primitives1[G]
-  ): G[A] = {
-    ${ LogMethodMacro.logMethodIOF[A, F, G, EncMode]('{ level }, '{ function }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ G }) }
-  }
+  // NOTE: `logMethod` / `logMethodF` removed pending M5 Session 6 rework — they relied on the deleted
+  //       `IO1` / `Primitives1` typeclasses (specifically `IO1#maybeSuspend` + `Primitives1#tapBothUntyped`,
+  //       neither of which has a direct BIO2 analogue). Session 6 will reintroduce them on top of
+  //       a bifunctor effect (`IO2` + `Error2.tapBoth`) — for now any caller must invoke them inline.
 
   private[AbstractMacroLogIO] transparent inline final def logImpl(inline level: Log.Level, inline message: String): F[Unit] = {
     this.log(level)(LogMessageMacro.createMessageWithMode[EncMode](message))(CodePositionMaterializer.materialize)

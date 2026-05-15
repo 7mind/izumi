@@ -1,76 +1,18 @@
 package izumi.logstage.macros
 
-import izumi.functional.bio.{IO1, Primitives1}
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{Level, Message, StrictMessage}
-import izumi.logstage.api.logger.{AbstractLogIO, AbstractLogger}
+import izumi.logstage.api.logger.AbstractLogger
 
 import scala.annotation.tailrec
 import scala.quoted.*
 
 object LogMethodMacro {
 
-  def logMethodIO[A: Type, F[_]: Type, G[x] >: F[x]: Type, EncMode: Type](
-    level: Expr[Level],
-    function: Expr[A],
-    logger: Expr[AbstractLogIO[F]],
-    printTypes: Expr[Boolean],
-    printImplicits: Expr[Boolean],
-    qp: Expr[IO1[G]],
-  )(using Quotes
-  ): Expr[G[A]] = {
-    logMethodIOF[A, F, G, EncMode](level, '{ ${ qp }.maybeSuspend(${ function }) }, function, logger, printTypes, printImplicits, qp)
-  }
-
-  def logMethodIOF[A: Type, F[_]: Type, G[x] >: F[x]: Type, EncMode: Type](
-    level: Expr[Level],
-    function: Expr[G[A]],
-    functionTreeToInspect: Expr[Any],
-    logger: Expr[AbstractLogIO[F]],
-    printTypes: Expr[Boolean],
-    printImplicits: Expr[Boolean],
-    qp: Expr[Primitives1[G]],
-  )(using qctx: Quotes
-  ): Expr[G[A]] = {
-    import qctx.reflect.*
-    val mode = EncodingModeExtractors.getModeFromType[EncMode]
-    val (variables, fnMessage, argsMessage, typesMessage, implicitsMessage) = createVariablesAndLogMessage(mode, functionTreeToInspect.asTerm)
-
-    '{
-      val position = ${ CodePositionMaterializerMacro.getCodePositionMaterializer() }
-      ${ qp }.tapBothUntyped(${ function })(
-        err = error =>
-          ${ logger }.log(${ level }) {
-            ${
-              blockWithVariables(qctx)(variables) {
-                '{
-                  val typesMsg = ${ ifOrEmptyMsg(printTypes)(typesMessage) }
-                  val implicitsMsg = ${ ifOrEmptyMsg(printImplicits)(implicitsMessage) }
-                  val errorMsg = error match {
-                    case error: Throwable => ${ messageMacro(mode, '{ " => " + error }) }
-                    case error => ${ messageMacro(mode, '{ " => " + error }) }
-                  }
-                  ${ fnMessage } ++ typesMsg ++ ${ argsMessage } ++ implicitsMsg ++ errorMsg
-                }
-              }
-            }
-          }(using position),
-        succ = result =>
-          ${ logger }.log(${ level }) {
-            ${
-              blockWithVariables(qctx)(variables) {
-                '{
-                  val typesMsg = ${ ifOrEmptyMsg(printTypes)(typesMessage) }
-                  val implicitsMsg = ${ ifOrEmptyMsg(printImplicits)(implicitsMessage) }
-                  ${ fnMessage } ++ typesMsg ++ ${ argsMessage } ++ implicitsMsg ++ ${ messageMacro(mode, '{ " => " + result }) }
-                }
-              }
-            }
-          }(using position),
-      )
-    }
-  }
+  // NOTE: `logMethodIO` / `logMethodIOF` deleted as part of M5 Session 4 — they relied on the deleted
+  //       `IO1#maybeSuspend` and `Primitives1#tapBothUntyped`. Session 6 will rebuild them on top of
+  //       `IO2#sync` + `Error2#tapBoth` once `AbstractLogIO` is migrated to bifunctor F.
 
   def logMethod[A: Type, EncMode: Type](
     level: Expr[Level],

@@ -1,10 +1,10 @@
 package izumi.logstage.sink
 
+import izumi.functional.bio.Bifunctorized
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.console.TrivialLogger.Config
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.DebugProperties
 import izumi.logstage.api.Log
@@ -17,7 +17,7 @@ import scala.concurrent.duration.*
 object ThreadingLogQueue {
   case class LoggingAction(entry: Log.Entry, target: LogSink)
 
-  def resource(sleepTime: FiniteDuration = 50.millis, batchSize: Int = 100): Lifecycle[Identity, ThreadingLogQueue] = {
+  def resource(sleepTime: FiniteDuration = 50.millis, batchSize: Int = 100): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, ThreadingLogQueue] = {
     Lifecycle.fromAutoCloseable[ThreadingLogQueue] {
       val buffer = new ThreadingLogQueue(sleepTime, batchSize)
       buffer.start()
