@@ -15,11 +15,11 @@ import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.model.{Locator, Planner}
 import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
-import izumi.functional.bio.{Bifunctorized, Exit, IO2}
+import izumi.functional.bio.{Exit, IO2}
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.reflect.{TagK, TagKK}
+import izumi.reflect.TagKK
 
 import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
@@ -282,7 +282,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def runIfIntegrationCheck[F[+_, +_]](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: IO2[F]): F[Throwable, Option[IntegrationCheckFailure]] = {
+  private def runIfIntegrationCheck[F[+_, +_]](op: NewObjectOp, @scala.annotation.unused integrationCheckFType: SafeType)(implicit F: IO2[F]): F[Throwable, Option[IntegrationCheckFailure]] = {
     op match {
       case i: NewObjectOp.CurrentContextInstance =>
         if (i.implType <:< nullType) {

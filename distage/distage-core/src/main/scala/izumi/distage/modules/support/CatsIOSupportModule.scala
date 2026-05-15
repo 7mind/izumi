@@ -28,10 +28,10 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
 
   make[IORuntimeConfig].from(IORuntimeConfig())
 
-  make[Scheduler].fromResource {
+  make[Scheduler].fromResource[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, Lifecycle[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, Scheduler]](
     Lifecycle
       .makeSimple(
         acquire = Scheduler.createDefaultScheduler()
-      )(release = _._2.apply()).map(_._1)
-  }
+      )(release = _._2.apply()).map(_._1): Lifecycle[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, Scheduler]
+  )
 }

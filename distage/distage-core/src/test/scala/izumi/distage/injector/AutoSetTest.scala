@@ -90,11 +90,13 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
       register[PrintService](weak = true)
     }
 
-    val servicesDepsOfB: Set[PrintService] = Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](bootstrapOverrides = Seq(weakAutoSetModule))
-      .produceRun(appModule) {
-        (_: B, set: Set[PrintService]) =>
-          izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Set[PrintService]](set)
-      }
+    val servicesDepsOfB: Set[PrintService] = izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+      Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](bootstrapOverrides = Seq(weakAutoSetModule))
+        .produceRun(appModule) {
+          (_: B, set: Set[PrintService]) =>
+            izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Set[PrintService]](set)
+        }
+    )
 
     assert(servicesDepsOfB.size == 2)
 

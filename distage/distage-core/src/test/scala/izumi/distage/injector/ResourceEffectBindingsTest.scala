@@ -300,12 +300,12 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
 
-      val instance = injector.produce(plan).use {
+      val instance = izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(injector.produce(plan).use {
         context =>
           val instance = context.get[Res]
           assert(instance.initialized)
-          instance
-      }
+          izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(instance)
+      })
 
       assert(!instance.initialized)
     }

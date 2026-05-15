@@ -71,21 +71,6 @@ object Bifunctorized extends BifunctorizedNoOpInstances {
   def debifunctorizeIdentity[A](b: IdentityBifunctorized[Throwable, A]): Identity[A] =
     MiniBIO.autoRun.autoRunAlways(b.asInstanceOf[MiniBIO[Throwable, A]])
 
-  /** Implicit projection auto-runs an [[IdentityBifunctorized]]`[Throwable, A]` back to bare `A`.
-    *
-    * Mirrors the existing [[debifunctorizeConversion]] for general `Bifunctorized[F, Throwable, A] => F[A]`:
-    * the bifunctorization is reversible at the user-facing boundary, and for the Identity carrier
-    * the reverse direction is to actually execute the suspended MiniBIO. Without this conversion,
-    * `Lifecycle[IdentityBifunctorized, Throwable, A]#unsafeGet()` would return an opaque
-    * `IdentityBifunctorized[Throwable, A]` rather than the bare `A` that an `Identity`-flavoured
-    * test or top-level driver expects.
-    *
-    * Failure mode matches [[debifunctorizeIdentity]] — typed errors and defects are re-raised
-    * as [[Throwable]] via `MiniBIO.run().toThrowable`.
-    */
-  implicit def debifunctorizeIdentityConversion[A](b: IdentityBifunctorized[Throwable, A]): Identity[A] =
-    debifunctorizeIdentity(b)
-
   /** Implicit lift of `Identity[A]` (= bare `A`) into the [[IdentityBifunctorized]] carrier.
     *
     * Mirrors [[bifunctorizeConversion]] for the Identity special case (where `F[A] = A` cannot
@@ -98,6 +83,14 @@ object Bifunctorized extends BifunctorizedNoOpInstances {
     */
   implicit def liftIdentityToBifunctorizedConversion[A](a: => Identity[A]): IdentityBifunctorized[Throwable, A] =
     bifunctorizeIdentity(a)
+
+  // No symmetric `IdentityBifunctorized[Throwable, A] => Identity[A]` implicit conversion is
+  // provided — an implicit reverse would silently re-run the MiniBIO carrier on every
+  // method dispatch (`val x = ib; x.foo; x.bar` runs twice), which for
+  // `Injector().produce(plan).unsafeGet()` re-materialises the entire object graph per
+  // access. Use the explicit `Bifunctorized.debifunctorizeIdentity(...)` at extraction
+  // sites instead, or one of the dedicated `.unsafeGetIdentity()` /
+  // `.useIdentity(f)` Lifecycle extension methods, which run the MiniBIO exactly once.
 
   /** Unchecked reinterpret cast. Internal escape hatch used by `bifunctorize`
     * and conversion-typeclass implementations that have already encoded their

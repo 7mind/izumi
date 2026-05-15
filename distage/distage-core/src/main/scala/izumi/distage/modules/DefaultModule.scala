@@ -1,12 +1,11 @@
 package izumi.distage.modules
 
-import izumi.distage.model.definition.{Module, ModuleDef}
+import izumi.distage.model.definition.Module
 import izumi.distage.modules.support.*
 import izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule
 import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Async2, Bifunctorized, BlockingIO2, Fork2, IO2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2, UnsafeRun2}
+import izumi.functional.bio.{Async2, Bifunctorized, BlockingIO2, Fork2, Primitives2, PrimitivesLocal2, PrimitivesM2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.orphans.*
-import izumi.fundamentals.platform.functional.Identity
 
 import scala.annotation.{nowarn, unused}
 import izumi.reflect.{Tag, TagK, TagKK}
@@ -51,7 +50,12 @@ object DefaultModule extends LowPriorityDefaultModulesInstances1 {
     * variance widening by `DefaultModule[X[+_, +_]]`'s contravariance — which doesn't exist —
     * so user-facing call sites pass `forZIO[ZIO, R]` explicitly).
     */
-  private[modules] type ZIOBifunctor[ZIO[_, _, _], R] = DefaultModule.HKAny
+  /** Bifunctor-shaped placeholder kind constructed with the `ZIO[_, _, _]` and `R` phantom
+    * type parameters so callers can pick `DefaultModule[ZIOBifunctor[ZIO, R]]` via implicit
+    * search. The two extra parameters (`+E`, `+A`) are the bifunctor positions; only the
+    * outer `(ZIO, R)` discriminates the search.
+    */
+  private[modules] type ZIOBifunctor[ZIO[_, _, _], R, +E, +A] = Any
   /** Abstract bifunctor-shaped placeholder kind: `[+E, +A] =>> Any`. Declared as a named
     * type alias because Scala 3 type-lambda syntax `[+E, +A] =>> Any` does not allow
     * variance annotations inline.
@@ -87,8 +91,8 @@ sealed trait LowPriorityDefaultModulesInstances1 extends LowPriorityDefaultModul
     @unused ensureCatsEffectOnClasspath: `cats.effect.kernel.Async`[A],
     @unused isZIO: `zio.ZIO`[ZIO],
     tagR: Tag[R],
-  ): DefaultModule[DefaultModule.ZIOBifunctor[ZIO, R]] = {
-    new DefaultModule[DefaultModule.ZIOBifunctor[ZIO, R]](ZIOSupportModule[R] ++ ZIOCatsEffectInstancesModule[R])
+  ): DefaultModule[DefaultModule.ZIOBifunctor[ZIO, R, +_, +_]] = {
+    new DefaultModule[DefaultModule.ZIOBifunctor[ZIO, R, +_, +_]](ZIOSupportModule[R] ++ ZIOCatsEffectInstancesModule[R])
   }
 }
 

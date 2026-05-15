@@ -47,7 +47,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     assert(context.find[GlobalServiceDependency].nonEmpty)
     assert(context.find[GlobalService].nonEmpty)
     assert(context.find[LocalService].isEmpty)
-    val out = local.provide[Arg]("x")(Arg(1)).produceRun(identity)
+    val out = Bifunctorized.debifunctorizeIdentity(local.provide[Arg]("x")(Arg(1)).produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
     assert(out == 230)
 
     val result = PlanVerifier().verify[Identity](module, Roots.Everything, Injector.providedKeys(), Set.empty)
@@ -250,7 +250,9 @@ object SubcontextTest {
 
   class LocalRecursiveServiceGoodImpl(value: Arg, self: Subcontext[Bifunctorized.IdentityBifunctorized, Int]) extends LocalRecursiveService {
     def localSum: Int = if (value.value > 0) {
-      2 + self.provide[Arg](Arg(value.value - 1)).produceRun(identity)
+      2 + Bifunctorized.debifunctorizeIdentity(
+        self.provide[Arg](Arg(value.value - 1)).produceRun(i => Bifunctorized.bifunctorizeIdentity(i))
+      )
     } else {
       0
     }

@@ -1,7 +1,7 @@
 package izumi.distage.modules.support
 
 import cats.Parallel
-import cats.effect.kernel.{Async, GenTemporal, Sync}
+import cats.effect.kernel.Async
 import cats.effect.std.Dispatcher
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule

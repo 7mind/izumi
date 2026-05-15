@@ -374,6 +374,33 @@ object Lifecycle extends LifecycleInstances {
     }
   }
 
+  /**
+    * Specialised [[SyntaxUnsafeGet#unsafeGet]] for the
+    * [[Bifunctorized.IdentityBifunctorized]] carrier: runs the underlying MiniBIO
+    * and returns the bare `A` (a.k.a. `Identity[A]`) exactly once.
+    *
+    * Defined as a *separate, more-specific extension class* (`SyntaxUnsafeGetIdentity`)
+    * so that callers using `Injector()` (`Lifecycle[IdentityBifunctorized, Throwable, _]`)
+    * can rely on the ergonomic `.unsafeGet()` name returning bare `A` rather than
+    * `IdentityBifunctorized[Throwable, A]`. Scala 3 implicit-class resolution prefers
+    * this class because its parameter type
+    * `Lifecycle[IdentityBifunctorized, Throwable, A]` is strictly more specific than
+    * the generic `Lifecycle[F, E, A]` of [[SyntaxUnsafeGet]].
+    *
+    * Failure mode matches [[Bifunctorized.debifunctorizeIdentity]] — typed errors and
+    * defects are re-raised as [[Throwable]] via `MiniBIO.run().toThrowable`.
+    */
+  implicit final class SyntaxUnsafeGetIdentity[A](private val resource: Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, A]) extends AnyVal {
+    def unsafeGet(): A = {
+      val F: IO2[Bifunctorized.IdentityBifunctorized] = Bifunctorized.identityBifunctorizedHasIO2
+      Bifunctorized.debifunctorizeIdentity[A](
+        F.flatMap[Throwable, resource.InnerResource, A](resource.acquire)((r: resource.InnerResource) =>
+          resource.extract[A](r).fold(identity, (a: A) => F.pure(a))
+        )
+      )
+    }
+  }
+
   /** Convert [[cats.effect.Resource]] to [[Lifecycle]].
     *
     * Transparently bifunctorizes the monofunctor `F[_]`: the resulting Lifecycle's effect type
