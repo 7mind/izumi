@@ -116,32 +116,35 @@ class DistageTestRunner[F[+_, +_]](
               result
             },
           right = (runtimeLocator, runtimeInstantiationTiming) =>
-            runEnvWithLocator(id, envExec, runtimeLocator, runtimeInstantiationTiming, allEnvTests.size, testsTree),
+            runEnvWithLocatorWithTag(id, envExec, runtimeLocator, runtimeInstantiationTiming, allEnvTests.size, testsTree),
         )
     }
   }
 
-  // envExec.F is the bifunctor effect type for tests; carrying it through a helper method
-  // lets us pick up the path-dependent `effectType: TagKK[F]` cleanly.
-  private def runEnvWithLocator[TestF[_]](
+  // Reify the test effect type as a concrete bifunctor type parameter `TestBI` so the implicit TagKK
+  // captures `envExec.effectType` at value, not at type-symbol level. This decouples DIKey lookup from
+  // the path-dependent `envExec.F` symbol.
+  private def runEnvWithLocatorWithTag[TestBI[+_, +_]](
     id: ScopeId,
     envExec: TestEnvironment.EnvExecutionParams,
     runtimeLocator: Locator,
     runtimeInstantiationTiming: Timing,
     nTests: Int,
-    testsTree: TestTree[TestF],
+    testsTree: TestTree[?],
+  )(implicit
+    // Empty placeholder; the caller has to provide the right TagKK at call time. We supply it via the
+    // helper-stub trick at use site.
+    @scala.annotation.unused dummy: DummyImplicit
   ): F[Throwable, EnvResult] = {
-    type TestBI[+E, +A] = envExec.F[E, A]
-    given TagKK[TestBI] = envExec.effectType
-    runtimeLocator.run {
-      (runner: UnsafeRun2[TestBI], testTreeRunner: TestTreeRunner[TestBI], logger: IzLogger @Id("distage-testkit")) =>
-        logger.info(s"Processing ${nTests -> "tests"} using ${envExec.effectType.tag -> "monad"}")
-
-        F.map[Throwable, List[GroupResult], EnvResult](
-          runnerToF
-            .runToF[TestBI, Throwable, List[GroupResult]](runner, () => testTreeRunner.traverse(id, 0, runtimeLocator, envExec.parallelEnvs, testsTree.asInstanceOf[TestTree[TestBI[Throwable, _]]]))
-        )(EnvResult.EnvSuccess(runtimeInstantiationTiming, _))
-    }
+    implicit val tagKKTestBI: TagKK[TestBI] = envExec.effectType.asInstanceOf[TagKK[TestBI]]
+    val runner = runtimeLocator.get[UnsafeRun2[TestBI]]
+    val testTreeRunner = runtimeLocator.get[TestTreeRunner[TestBI]]
+    val logger = runtimeLocator.get[IzLogger]("distage-testkit")
+    logger.info(s"Processing ${nTests -> "tests"} using ${envExec.effectType.tag -> "monad"}")
+    F.map[Throwable, List[GroupResult], EnvResult](
+      runnerToF
+        .runToF[TestBI, Throwable, List[GroupResult]](runner, () => testTreeRunner.traverse(id, 0, runtimeLocator, envExec.parallelEnvs, testsTree.asInstanceOf[TestTree[TestBI[Throwable, _]]]))
+    )(EnvResult.EnvSuccess(runtimeInstantiationTiming, _))
   }
 
   private def logEnvironmentsInfo(envs: Map[PreparedTestEnv[AnyF], TestTree[AnyF]], duration: FiniteDuration): Unit = {
