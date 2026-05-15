@@ -6,22 +6,22 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.distage.roles.test.fixtures.TestRole05.{TestRole05Dependency, TestRole05DependencyImpl1}
-import izumi.functional.bio.IO1
+import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.uuid.IzUUID
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 import scala.annotation.unused
 
-class TestRole05[F[_]: IO1](
+class TestRole05[F[+_, +_]: IO2](
   dependency: TestRole05Dependency,
   @unused uuid: IzUUID,
 ) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(IO1[F].maybeSuspend {
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Throwable, Unit] = Lifecycle.make(IO2[F].syncThrowable {
     assert(dependency.isInstanceOf[TestRole05DependencyImpl1])
   }) {
     _ =>
-      IO1[F].unit
+      IO2[F].unit
   }
 }
 
@@ -43,7 +43,7 @@ object TestRole05 extends RoleDescriptor {
   case class Dummy(a: Int, b: String)
   final case class Rolelocal1SpecificConfig(str: String, dummy: Option[Dummy])
 
-  class Role05Module[F[_]: TagK] extends ModuleDef with ConfigModuleDef with RoleModuleDef {
+  class Role05Module[F[+_, +_]: TagKK] extends ModuleDef with ConfigModuleDef with RoleModuleDef {
     makeRole[TestRole05[F]]
     make[TestRole05Dependency].from[TestRole05DependencyImpl1].tagged(Role05LocalAxis.Rolelocal1)
     make[TestRole05Dependency].from[TestRole05DependencyImpl2].tagged(Role05LocalAxis.Rolelocal2)

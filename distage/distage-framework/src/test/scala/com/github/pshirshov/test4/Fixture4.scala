@@ -7,8 +7,8 @@ import izumi.distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
-import izumi.fundamentals.platform.functional.Identity
 
 object Fixture4 {
 
@@ -21,7 +21,7 @@ object Fixture4 {
   }
 
   object BadModule extends PluginDef with RoleModuleDef {
-    makeSubcontext[Identity, Dep](
+    makeSubcontext[Bifunctorized.IdentityBifunctorized, Dep](
       new ModuleDef {
         make[Dep].tagged(Mode.Prod).from[DepGood]
         make[Dep].tagged(Mode.Test).from[DepBad]
@@ -32,7 +32,7 @@ object Fixture4 {
   }
 
   object GoodModule extends PluginDef with RoleModuleDef {
-    makeSubcontext[Identity, Dep](
+    makeSubcontext[Bifunctorized.IdentityBifunctorized, Dep](
       new ModuleDef {
         make[Dep].tagged(Mode.Prod).from[DepGood]
         make[Dep].tagged(Mode.Test).from[DepBad]
@@ -43,15 +43,17 @@ object Fixture4 {
   }
 
   class TargetRole(
-    val depCtx: Subcontext[Identity, Dep]
-  ) extends RoleService[Identity] {
+    val depCtx: Subcontext[Bifunctorized.IdentityBifunctorized, Dep]
+  ) extends RoleService[Bifunctorized.IdentityBifunctorized] {
     def mkDep(): Dep = {
-      depCtx
-        .provide[MissingDep](new MissingDep {})
-        .produceRun(identity)
+      Bifunctorized.debifunctorizeIdentity(
+        depCtx
+          .provide[MissingDep](new MissingDep {})
+          .produceRun[Dep](dep => Bifunctorized.bifunctorizeIdentity(dep))
+      )
     }
 
-    override def start(roleParameters: EntrypointArgs): Lifecycle[Identity, Unit] = {
+    override def start(roleParameters: EntrypointArgs): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, Unit] = {
       Lifecycle.makeSimple(mkDep())(_ => ()).void
     }
   }

@@ -18,13 +18,33 @@ import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.platform.os.{IzOs, OsType}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.fundamentals.platform.versions.Version
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogSink
 import org.scalatest.wordspec.AnyWordSpec
+
+// Type alias used throughout this test suite to bifunctorize cats-effect IO. The original suite
+// referenced bare `IO` everywhere — Session 4 of M5 rewrote the role-framework F to require
+// `F[+_, +_]`, so cats.effect.IO must be wrapped via `Bifunctorized[IO, +_, +_]` at every
+// fixture / DIKey / module reference. `BIO` is shorthand to keep call sites readable.
+//
+// Similarly `IdentityB` aliases the bifunctor-shaped Identity carrier.
+private object RoleAppTestTypes {
+  type BIO[+E, +A] = Bifunctorized[IO, E, A]
+  type IdentityB[+E, +A] = Bifunctorized.IdentityBifunctorized[E, A]
+}
+import izumi.distage.roles.test.RoleAppTestTypes.{BIO, IdentityB}
+
+// Make CE→BIO conversion (AsyncToBIO) implicitly available throughout the file so the
+// `Bifunctorized[IO, +_, +_]` carrier picks up an `IO2[BIO]` instance via the cats-effect
+// `Async[IO]`. Pin a `TagK[IO]` to avoid the Scala 3 forward-reference error when the macro
+// derives it implicitly per call site under a class-level `implicit val`.
+import izumi.functional.bio.CatsToBIOConversions.{AsyncToBIO, PrimitivesToBIO}
+private given _tagKIO: izumi.reflect.TagK[IO] = izumi.reflect.TagK[IO]
+private given _asyncIO: cats.effect.kernel.Async[IO] = IO.asyncForIO
 
 import java.io.{File, OutputStream, PrintStream}
 import java.nio.charset.StandardCharsets
@@ -45,11 +65,11 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
   )
 
   class XXX_TestWhiteboxProbe extends izumi.distage.plugins.PluginDef {
-    val resources = new XXX_ResourceEffectsRecorder[IO]
+    val resources = new XXX_ResourceEffectsRecorder[BIO]
     private var locator0: LocatorRef = null
     lazy val locator: Locator = locator0.get
 
-    make[XXX_ResourceEffectsRecorder[IO]].fromValue(resources)
+    make[XXX_ResourceEffectsRecorder[BIO]].fromValue(resources)
     make[XXX_LocatorLeak].from {
       (locatorRef: LocatorRef) =>
         locator0 = locatorRef
@@ -79,7 +99,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
 
       assert(
-        probe.resources.getCheckedResources().toSet == Set[IntegrationCheck[IO]](probe.locator.get[IntegrationResource0[IO]], probe.locator.get[IntegrationResource1[IO]])
+        probe.resources.getCheckedResources().toSet == Set[IntegrationCheck[BIO[Throwable, _]]](probe.locator.get[IntegrationResource0[BIO]], probe.locator.get[IntegrationResource1[BIO]])
       )
     }
 
@@ -96,9 +116,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               new AdaptedAutocloseablesCasePlugin,
               probe,
               new izumi.distage.plugins.PluginDef {
-                make[TestResource[IO]].from[IntegrationResource0[IO]]
-                many[TestResource[IO]]
-                  .ref[TestResource[IO]]
+                make[TestResource[BIO]].from[IntegrationResource0[BIO]]
+                many[TestResource[BIO]]
+                  .ref[TestResource[BIO]]
               },
             )
           )
@@ -116,7 +136,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse.filter(!_.isInstanceOf[LogSink]))
       assert(probe.resources.getStartedCloseables() != probe.resources.getClosedCloseables())
       assert(probe.resources.getCheckedResources().toSet.size == 2)
-      assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](probe.locator.get[TestResource[IO]], probe.locator.get[IntegrationResource1[IO]]))
+      assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](probe.locator.get[TestResource[BIO]], probe.locator.get[IntegrationResource1[BIO]]))
     }
 
     "be able to read activations from config" in {
@@ -171,30 +191,30 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-        make[TestResource[IO]].from[IntegrationResource0[IO]]
-        many[TestResource[IO]]
-          .ref[TestResource[IO]]
+        make[TestResource[BIO]].from[IntegrationResource0[BIO]]
+        many[TestResource[BIO]]
+          .ref[TestResource[BIO]]
       } ++
         probe ++
-        DefaultModule[IO]
-      val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
-      val roleAppPlanner = new RoleAppPlanner.Impl[IO](
+        DefaultModule[BIO]
+      val roots = Set(DIKey.get[Set[TestResource[BIO]]]: DIKey)
+      val roleAppPlanner = new RoleAppPlanner.Impl[BIO](
         options = PlanningOptions.default,
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
+        bootloader = Injector.bootloader[IdentityB](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
         logger = logger,
       )
 
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
         Injector
-          .inherit[IO](_).produce(plans.app).use {
+          .inherit[BIO](_).produce(plans.app).use {
             locator =>
               IO {
                 assert(probe.resources.getStartedCloseables().size == 3)
                 assert(probe.resources.getCheckedResources().size == 2)
-                assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+                assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[BIO]], locator.get[IntegrationResource1[BIO]]))
               }
           }.unsafeRunSync()(IORuntime.global)
       }
@@ -205,33 +225,33 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-        make[TestResource[IO]].fromResource {
-          (r: IntegrationResource1[IO]) =>
+        make[TestResource[BIO]].fromResource {
+          (r: IntegrationResource1[BIO]) =>
             Lifecycle.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
         }
-        many[TestResource[IO]]
-          .ref[TestResource[IO]]
+        many[TestResource[BIO]]
+          .ref[TestResource[BIO]]
       } ++
         probe ++
-        DefaultModule[IO]
-      val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
-      val roleAppPlanner = new RoleAppPlanner.Impl[IO](
+        DefaultModule[BIO]
+      val roots = Set(DIKey.get[Set[TestResource[BIO]]]: DIKey)
+      val roleAppPlanner = new RoleAppPlanner.Impl[BIO](
         options = PlanningOptions.default,
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
+        bootloader = Injector.bootloader[IdentityB](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
         logger = logger,
       )
 
       val plans = roleAppPlanner.makePlan(roots)
       Injector().produce(plans.runtime).use {
         Injector
-          .inherit[IO](_).produce(plans.app).use {
+          .inherit[BIO](_).produce(plans.app).use {
             locator =>
               IO {
                 assert(probe.resources.getStartedCloseables().size == 3)
                 assert(probe.resources.getCheckedResources().size == 2)
-                assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
+                assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[BIO]], locator.get[IntegrationResource1[BIO]]))
               }
           }.unsafeRunSync()(IORuntime.global)
       }
@@ -239,28 +259,28 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "integration checks are discovered and ran, ignoring duplicating reference bindings" in {
       val logger = IzLogger()
-      val initCounter = new XXX_ResourceEffectsRecorder[IO]
-      val initCounterIdentity = new XXX_ResourceEffectsRecorder[Identity]
+      val initCounter = new XXX_ResourceEffectsRecorder[BIO]
+      val initCounterIdentity = new XXX_ResourceEffectsRecorder[IdentityB]
 
       val definition = new ResourcesPluginBase {
-        make[IntegrationResource0[Identity]]
-        make[TestResource[Identity]].using[IntegrationResource0[Identity]]
-        make[TestResource[Identity] & AutoCloseable].using[IntegrationResource0[Identity]]
-        many[TestResource[Identity]]
-          .ref[TestResource[Identity]]
-          .ref[TestResource[Identity] & AutoCloseable]
-        make[XXX_ResourceEffectsRecorder[IO]].fromValue(initCounter)
-        make[XXX_ResourceEffectsRecorder[Identity]].fromValue(initCounterIdentity)
+        make[IntegrationResource0[IdentityB]]
+        make[TestResource[IdentityB]].using[IntegrationResource0[IdentityB]]
+        make[TestResource[IdentityB] & AutoCloseable].using[IntegrationResource0[IdentityB]]
+        many[TestResource[IdentityB]]
+          .ref[TestResource[IdentityB]]
+          .ref[TestResource[IdentityB] & AutoCloseable]
+        make[XXX_ResourceEffectsRecorder[BIO]].fromValue(initCounter)
+        make[XXX_ResourceEffectsRecorder[IdentityB]].fromValue(initCounterIdentity)
       } ++
-        DefaultModule[Identity] ++
-        DefaultModule[IO]
-      val roots = Set(DIKey.get[Set[TestResource[Identity]]]: DIKey, DIKey.get[Set[TestResource[IO]]]: DIKey)
+        DefaultModule[IdentityB] ++
+        DefaultModule[BIO]
+      val roots = Set(DIKey.get[Set[TestResource[IdentityB]]]: DIKey, DIKey.get[Set[TestResource[BIO]]]: DIKey)
 
-      val roleAppPlanner = new RoleAppPlanner.Impl[IO](
+      val roleAppPlanner = new RoleAppPlanner.Impl[BIO](
         options = PlanningOptions.default,
         activation = Activation.empty,
         bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
+        bootloader = Injector.bootloader[IdentityB](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
         logger = logger,
       )
 
@@ -268,19 +288,19 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
       Injector().produce(plans.runtime).use {
         Injector
-          .inherit[IO](_).produce(plans.app).use {
+          .inherit[BIO](_).produce(plans.app).use {
             locator =>
               IO {
                 assert(initCounter.getStartedCloseables().size == 2)
                 assert(initCounter.getCheckedResources().size == 1)
-                assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
+                assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[BIO]]))
 
                 assert(initCounterIdentity.getStartedCloseables().size == 3)
                 assert(initCounterIdentity.getCheckedResources().size == 2)
                 assert(
-                  initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
-                    locator.get[IntegrationResource0[Identity]],
-                    locator.get[IntegrationResource1[Identity]],
+                  initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[IdentityB[Throwable, _]]](
+                    locator.get[IntegrationResource0[IdentityB]],
+                    locator.get[IntegrationResource1[IdentityB]],
                   )
                 )
               }

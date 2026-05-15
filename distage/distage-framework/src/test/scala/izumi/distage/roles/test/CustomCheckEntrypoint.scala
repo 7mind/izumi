@@ -6,6 +6,7 @@ import izumi.distage.framework.model.PlanCheckInput
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
@@ -14,7 +15,7 @@ object CustomCheckEntrypoint extends TestEntrypointPatchedLeakBase {
     planVerifier: PlanVerifier,
     excludedActivations: Set[NESet[AxisPoint]],
     checkConfig: Boolean,
-    planCheckInput: PlanCheckInput[IO],
+    planCheckInput: PlanCheckInput[Bifunctorized[IO, +_, +_]],
   ): PlanVerifierResult = {
     val reachable = planVerifier.traceReachables(planCheckInput.module, planCheckInput.roots, planCheckInput.providedKeys, excludedActivations)
     val conflictKeys = planCheckInput.module.keys.filter {

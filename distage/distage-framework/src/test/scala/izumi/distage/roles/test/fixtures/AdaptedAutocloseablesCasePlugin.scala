@@ -5,6 +5,7 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleService}
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
@@ -28,10 +29,12 @@ class BrokenSink(/*recorder: XXX_ResourceEffectsRecorder[IO]*/ ) extends LogSink
 
 class AdaptedAutocloseablesCase(
   val sinks: Set[LogSink]
-) extends RoleService[IO] {
+) extends RoleService[Bifunctorized[IO, +_, +_]] {
 
-  override def start(roleParameters: EntrypointArgs): Lifecycle[IO, Unit] = {
-    Lifecycle.liftF(IO.unit)
+  override def start(roleParameters: EntrypointArgs): Lifecycle[Bifunctorized[IO, +_, +_], Throwable, Unit] = {
+    Lifecycle.make_[Bifunctorized[IO, +_, +_], Throwable, Unit](
+      acquire = Bifunctorized.bifunctorize[IO, Unit](IO.unit)
+    )(release = Bifunctorized.bifunctorize[IO, Unit](IO.unit).asInstanceOf[Bifunctorized[IO, Nothing, Unit]])
   }
 }
 

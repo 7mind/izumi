@@ -12,11 +12,12 @@ import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.TestPluginCatsIO.{InheritedCloseable, NotCloseable}
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, IntegrationOnlyCfg2, SetElementOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.fundamentals.platform.versions.Version
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
-class TestPluginBase[F[_]: TagK] extends PluginDef with RoleModuleDef {
+class TestPluginBase[F[+_, +_]: TagKK] extends PluginDef with RoleModuleDef {
   tag(Mode.Prod)
 
   include(
@@ -89,7 +90,7 @@ class TestPluginBase[F[_]: TagK] extends PluginDef with RoleModuleDef {
   include(GenericServiceConf.module[GenericServiceConf.Impl]("genericservice"))
 }
 
-class TestPluginCatsIO extends TestPluginBase[IO]
+class TestPluginCatsIO extends TestPluginBase[Bifunctorized[IO, +_, +_]]
 
 object TestPluginCatsIO {
   trait NotCloseable

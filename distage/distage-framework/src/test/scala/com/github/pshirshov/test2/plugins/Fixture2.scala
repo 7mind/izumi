@@ -6,8 +6,8 @@ import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.fundamentals.platform.IzPlatform
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
-import izumi.fundamentals.platform.functional.Identity
 
 object Fixture2 {
 
@@ -34,8 +34,9 @@ object Fixture2 {
 
   class TargetRole(
     val dep: Dep
-  ) extends RoleTask[Identity] {
-    override def start(roleParameters: EntrypointArgs): Unit = ()
+  ) extends RoleTask[Bifunctorized.IdentityBifunctorized] {
+    override def start(roleParameters: EntrypointArgs): Bifunctorized.IdentityBifunctorized[Throwable, Unit] =
+      Bifunctorized.bifunctorizeIdentity(())
   }
 
   object TargetRole extends RoleDescriptor {

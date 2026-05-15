@@ -7,6 +7,7 @@ import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.launcher.AppFailureHandler
 import izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy
 import izumi.distage.roles.test.fixtures.Fixture.XXX_LocatorLeak
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.language.SourcePackageMaterializer
 
@@ -34,7 +35,7 @@ class TestEntrypointBase extends RoleAppMain.Launcher1[IO] {
     }
   }
 
-  override protected def shutdownStrategy: ImmediateExitShutdownStrategy[IO] = {
+  override protected def shutdownStrategy: ImmediateExitShutdownStrategy[Bifunctorized[IO, +_, +_]] = {
     new ImmediateExitShutdownStrategy()
   }
 
