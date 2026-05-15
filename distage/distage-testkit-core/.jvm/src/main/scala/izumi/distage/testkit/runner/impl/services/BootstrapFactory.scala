@@ -12,14 +12,14 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 /**
   * The purpose of this class is to allow testkit user to override
   * module loading and config loading logic by overriding [[izumi.distage.testkit.model.TestConfig.bootstrapFactory]]
   */
 trait BootstrapFactory {
-  def makeModuleProvider[F[_]: TagK](
+  def makeModuleProvider[F[+_, +_]: TagKK](
     options: PlanningOptions,
     config: AppConfig,
     logRouter: LogRouter,
@@ -54,7 +54,7 @@ object BootstrapFactory {
       new ConfigLoader.LocalFSImpl(logger, merger, locationProvider, configLoaderArgs)
     }
 
-    override def makeModuleProvider[F[_]: TagK](
+    override def makeModuleProvider[F[+_, +_]: TagKK](
       options: PlanningOptions,
       config: AppConfig,
       logRouter: LogRouter,

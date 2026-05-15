@@ -12,31 +12,31 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{TestConfig, TestEnvironment}
 import izumi.fundamentals.platform.cache.SyncCache
-import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
-import izumi.reflect.{AnyTag, TagK}
+import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF2
+import izumi.reflect.{AnyTag, TagKK}
 
 trait DistageTestEnv {
-  private[distage] def loadEnvironment[F[_]](testConfig: TestConfig, tagK: TagK[F], defaultModule: DefaultModule[F]): TestEnvironment = {
+  private[distage] def loadEnvironment[F[+_, +_]](testConfig: TestConfig, tagKK: TagKK[F], defaultModule: DefaultModule[F]): TestEnvironment = {
     val roles = loadRoles()
     val mergeStrategy = makeMergeStrategy()
     val pluginLoader = makePluginloader()
     def doMake(): TestEnvironment = {
-      makeEnv(testConfig, pluginLoader, roles, mergeStrategy, tagK, defaultModule)
+      makeEnv(testConfig, pluginLoader, roles, mergeStrategy, tagKK, defaultModule)
     }
 
     if (DistageTestEnv.cache ne null) {
-      DistageTestEnv.cache.getOrCompute(DistageTestEnv.EnvCacheKey(testConfig, roles, mergeStrategy, tagK), doMake())
+      DistageTestEnv.cache.getOrCompute(DistageTestEnv.EnvCacheKey(testConfig, roles, mergeStrategy, tagKK), doMake())
     } else {
       doMake()
     }
   }
 
-  private[distage] def makeEnv[F[_]](
+  private[distage] def makeEnv[F[+_, +_]](
     testConfig: TestConfig,
     pluginLoader: PluginLoader,
     roles: RolesInfo,
     mergeStrategy: PluginMergeStrategy,
-    tagK: TagK[F],
+    tagKK: TagKK[F],
     defaultModule0: DefaultModule[F],
   ): TestEnvironment = {
     val appPlugins = pluginLoader.load(testConfig.pluginConfig)
@@ -48,7 +48,7 @@ trait DistageTestEnv {
     val bsModule = bootstrapModule overriddenBy DistageTestEnv.testkitBootstrapReflectiveModule(availableActivations)
 
     val defaultModule = if (DistageTestEnv.defaultModuleCache ne null) {
-      DistageTestEnv.defaultModuleCache.getOrCompute(tagK, defaultModule0.module)
+      DistageTestEnv.defaultModuleCache.getOrCompute(tagKK, defaultModule0.module)
     } else {
       defaultModule0.module
     }
@@ -56,7 +56,7 @@ trait DistageTestEnv {
     TestEnvironment(
       bsModule = bsModule,
       appModule = appModule,
-      effectType = tagK.asInstanceOf[TagK[AnyF]],
+      effectType = tagKK.asInstanceOf[TagKK[AnyF2]],
       defaultModule = defaultModule,
       roles = roles,
       activationInfo = availableActivations,
