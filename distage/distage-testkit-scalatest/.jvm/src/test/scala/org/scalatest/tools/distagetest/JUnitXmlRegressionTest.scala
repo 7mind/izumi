@@ -89,18 +89,18 @@ final class JUnitXmlRegressionTest extends AnyWordSpec {
       val scopeName = parallelScope
       val perTestSleep = testSleepMillis
 
-      val suiteUnderTest: SpecIdentity = new SpecIdentity {
+      val suiteUnderTest: SpecIdentity = new SpecIdentity { spec =>
         override protected def __internal_distageTestRegistry: DistageTestsRegistry = privateRegistry
 
-        scopeName should {
+        scopeName.should {
           leafNames.foreach {
             name =>
-              name in {
+              spec.convertToWordSpecStringWrapperDS(name) in {
                 Thread.sleep(perTestSleep)
                 ()
               }
           }
-        }
+        }(using spec.subjectRegistrationFunction1)
       }
 
       val tracker = new Tracker(new Ordinal(0))
