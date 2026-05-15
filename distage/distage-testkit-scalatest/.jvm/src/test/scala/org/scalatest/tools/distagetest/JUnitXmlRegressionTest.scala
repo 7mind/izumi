@@ -5,13 +5,11 @@ package org.scalatest.tools.distagetest
 
 import izumi.distage.testkit.scalatest.SpecIdentity
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistry
-import org.scalatest.{Args, Tracker}
+import izumi.fundamentals.platform.files.IzFiles
 import org.scalatest.events.{Ordinal, SuiteCompleted, SuiteStarting}
-import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.tools.JUnitXmlReporter
 import org.scalatest.wordspec.AnyWordSpec
-
-import izumi.fundamentals.platform.files.IzFiles
+import org.scalatest.{Args, Tracker}
 
 import java.nio.file.{Files, Path}
 import scala.xml.XML
