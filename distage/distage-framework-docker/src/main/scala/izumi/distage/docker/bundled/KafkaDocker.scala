@@ -1,6 +1,6 @@
 package izumi.distage.docker.bundled
 
-import distage.{ModuleDef, TagK}
+import distage.{ModuleDef, TagKK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.{ContainerEnvironment, DockerPort}
 
@@ -86,7 +86,7 @@ object KafkaKRaftDocker extends ContainerDef {
   }
 }
 
-class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
+class KafkaDockerModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[KafkaDocker.Container].fromResource {
     KafkaDocker
       .make[F]
@@ -107,5 +107,5 @@ class KafkaDockerModule[F[_]: TagK] extends ModuleDef {
 }
 
 object KafkaDockerModule {
-  def apply[F[_]: TagK]: KafkaDockerModule[F] = new KafkaDockerModule[F]
+  def apply[F[+_, +_]: TagKK]: KafkaDockerModule[F] = new KafkaDockerModule[F]
 }

@@ -2,7 +2,7 @@ package izumi.distage.docker.modules
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.core.DefaultDockerClientConfig
-import distage.{ModuleBase, TagK}
+import distage.{ModuleBase, TagKK}
 import izumi.distage.config.ConfigModuleDef
 import izumi.distage.docker.impl.DockerClientWrapper.DockerIntegrationCheck
 import izumi.distage.docker.impl.{DockerClientFactory, DockerClientWrapper}
@@ -10,10 +10,10 @@ import izumi.distage.docker.model.Docker
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.functional.Value
 
-class DockerSupportModule[F[_]: TagK](configModule: ModuleBase) extends ModuleDef {
+class DockerSupportModule[F[+_, +_]: TagKK](configModule: ModuleBase) extends ModuleDef {
   include(configModule)
 
-  make[DockerClientWrapper[F]].fromResource[DockerClientWrapper.Resource[F]]
+  make[DockerClientWrapper[F]].fromResource[F, Throwable, DockerClientWrapper.Resource[F]]
   make[DockerClientFactory].from(DockerClientFactory.impl)
 
   make[DefaultDockerClientConfig].from {
@@ -42,9 +42,9 @@ class DockerSupportModule[F[_]: TagK](configModule: ModuleBase) extends ModuleDe
 }
 
 object DockerSupportModule {
-  def apply[F[_]: TagK]: ModuleBase = new DockerSupportModule[F](Configs.config)
+  def apply[F[+_, +_]: TagKK]: ModuleBase = new DockerSupportModule[F](Configs.config)
 
-  def default[F[_]: TagK]: ModuleBase = new DockerSupportModule[F](Configs.defaultConfig)
+  def default[F[+_, +_]: TagKK]: ModuleBase = new DockerSupportModule[F](Configs.defaultConfig)
 
   object Configs {
     final val config = new ConfigModuleDef {

@@ -13,8 +13,7 @@ import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.exceptions.runtime.IntegrationCheckException
 import izumi.functional.Value
-import izumi.functional.bio.IO1.syntax.*
-import izumi.functional.bio.{Async1, IO1, Temporal1}
+import izumi.functional.bio.{Async2, IO2, Primitives2, Temporal2}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.files.FileLockMutex
@@ -29,16 +28,17 @@ import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
-open class ContainerResource[F[_], Tag](
+open class ContainerResource[F[+_, +_], Tag](
   val config: Docker.ContainerConfig[Tag],
   val client: DockerClientWrapper[F],
   val logger: IzLogger,
   val deps: Set[DockerContainer[Any]],
 )(implicit
-  val F: IO1[F],
-  val P: Async1[F],
-  val T: Temporal1[F],
-) extends Lifecycle.Basic[F, DockerContainer[Tag]] {
+  val F: IO2[F],
+  val P: Async2[F],
+  val T: Temporal2[F],
+  val Prim: Primitives2[F],
+) extends Lifecycle.Basic[F, Throwable, DockerContainer[Tag]] {
 
   import client.rawClient
 
@@ -62,14 +62,15 @@ open class ContainerResource[F[_], Tag](
     client: DockerClientWrapper[F] = client,
     logger: IzLogger = logger,
     deps: Set[DockerContainer[Any]] = deps,
-    F: IO1[F] = F,
-    P: Async1[F] = P,
-    T: Temporal1[F] = T,
+    F: IO2[F] = F,
+    P: Async2[F] = P,
+    T: Temporal2[F] = T,
+    Prim: Primitives2[F] = Prim,
   ): ContainerResource[F, Tag] = {
-    new ContainerResource[F, Tag](config, client, logger, deps)(F, P, T)
+    new ContainerResource[F, Tag](config, client, logger, deps)(F, P, T, Prim)
   }
 
-  override def acquire: F[DockerContainer[Tag]] = F.suspendF {
+  override def acquire: F[Throwable, DockerContainer[Tag]] = F.suspendThrowable {
     val ports = config.ports.map {
       containerPort =>
         val local = IzSockets.temporaryLocalPort()
@@ -98,32 +99,32 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  override def release(container: DockerContainer[Tag]): F[Unit] = {
+  override def release(container: DockerContainer[Tag]): F[Nothing, Unit] = {
     if (Docker.shouldKillPromptly(container.containerConfig.reuse, container.clientConfig.globalReuse)) {
       client.removeContainer(container.id, ContainerDestroyMeta.ParameterizedContainer(container), RemovalReason.NotReused)
     } else {
-      F.maybeSuspend(
+      F.sync(
         logger.info(s"Will not destroy: $container (${container.containerConfig.reuse}, ${container.clientConfig.globalReuse})")
       )
     }
   }
 
-  protected def await(container0: DockerContainer[Tag]): F[DockerContainer[Tag]] = F.tailRecM((container0, 0)) {
+  protected def await(container0: DockerContainer[Tag]): F[Throwable, DockerContainer[Tag]] = F.tailRecM((container0, 0)) {
     case (container, attempt) =>
-      F.maybeSuspend {
+      F.syncThrowable {
         logger.debug(s"Awaiting until alive: $container...")
         inspectContainerAndGetState(container.id.name).map {
           config.healthCheck.check(logger, container, _)
         }
       }.flatMap {
           case Right(HealthCheckResult.Passed) =>
-            F.maybeSuspend {
+            F.syncThrowable {
               logger.info(s"Continuing without port checks: $container")
               Right(container)
             }
 
           case Right(status: HealthCheckResult.AvailableOnPorts) if status.allTCPPortsAccessible =>
-            F.maybeSuspend {
+            F.syncThrowable {
               val out = container.copy(availablePorts = VerifiedContainerConnectivity.HasAvailablePorts(status.availablePorts))
               logger.info(s"Looks good: ${out -> "container"}")
               Right(out)
@@ -210,7 +211,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected def runReused(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[Throwable, DockerContainer[Tag]] = {
     logger.info(s"About to start or find container $imageName, ${config.pullTimeout -> "timeout"}...")
     fileLockMutex(s"distage-container-resource-$imageName:${config.ports.mkString(";")}") {
       for {
@@ -244,10 +245,10 @@ open class ContainerResource[F[_], Tag](
   private def findAcceptableCandidate(
     ports: Seq[PortDecl],
     matchingImageContainers: List[Container],
-  ): F[Option[(Container, InspectContainerResponse, ReportedContainerConnectivity)]] = {
+  ): F[Throwable, Option[(Container, InspectContainerResponse, ReportedContainerConnectivity)]] = {
 
     for {
-      portSet <- F.maybeSuspend(ports.map(_.port).toSet)
+      portSet <- F.syncThrowable(ports.map(_.port).toSet)
       candidatesNested <- F.traverse {
         matchingImageContainers
           .flatMap {
@@ -278,7 +279,7 @@ open class ContainerResource[F[_], Tag](
             Seq.empty[(Container, InspectContainerResponse, ReportedContainerConnectivity)]
           }
         case c =>
-          F.maybeSuspend(Seq(c))
+          F.syncThrowable(Seq(c))
       }
       candidates = candidatesNested.flatten
     } yield {
@@ -301,7 +302,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  private def findMatchingImages(imageName: String, ports: Seq[PortDecl]): F[List[Container]] = {
+  private def findMatchingImages(imageName: String, ports: Seq[PortDecl]): F[Throwable, List[Container]] = {
 
     /*
      * We will filter out containers by "running" status if container exposes any ports to be mapped
@@ -314,7 +315,7 @@ open class ContainerResource[F[_], Tag](
      * So containers that exit will be reused only in the scope of the current test run.
      */
 
-    F.maybeSuspend {
+    F.syncThrowable {
       val exitedOpt = if (ports.isEmpty) List(DockerConst.State.exited) else Nil
       val statusFilter = DockerConst.State.running :: exitedOpt
       // FIXME: temporary hack to allow missing containers to skip tests (happens when both DockerWrapper & integration check that depends on Docker.Container are memoized)
@@ -333,7 +334,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected def runNew(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+  protected def runNew(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[Throwable, DockerContainer[Tag]] = {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
 
     val baseCmd = rawClient.createContainerCmd(imageName).withLabels(allPortLabels.asJava)
@@ -353,7 +354,7 @@ open class ContainerResource[F[_], Tag](
       _ <- F.when(config.autoPull) {
         doPull(imageName, imageRegistry, registryAuth)
       }
-      out <- F.maybeSuspend {
+      out <- F.syncThrowable {
         @nowarn("msg=method.*Bind.*deprecated")
         val createContainerCmd = Value(baseCmd)
           .mut(config.name)(_.withName(_))
@@ -416,14 +417,14 @@ open class ContainerResource[F[_], Tag](
     } yield result
   }
 
-  protected def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
-    def pullWithRetry(attempt: Int = 0): F[Unit] = {
+  protected def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Throwable, Unit] = {
+    def pullWithRetry(attempt: Int = 0): F[Throwable, Unit] = {
       def isIrrecoverableDockerException(t: Throwable) = t match {
         case _: NotFoundException | _: UnauthorizedException => true
         case _ => false
       }
 
-      F.maybeSuspend(
+      F.syncThrowable(
         Try {
           val pullCmd = Value(rawClient.pullImageCmd(imageName))
             .mut(registry)(_.withRegistry(_))
@@ -455,7 +456,7 @@ open class ContainerResource[F[_], Tag](
 
     fileLockMutex(s"distage-container-image-pull-$imageName") {
       for {
-        existingImages <- F.maybeSuspend {
+        existingImages <- F.syncThrowable {
           rawClient
             .listImagesCmd().exec()
             .asScala
@@ -466,10 +467,10 @@ open class ContainerResource[F[_], Tag](
           // test if image exists
           // docker official images may be pulled with or without `library` user prefix, but it being saved locally without prefix
           if (existingImages.contains(imageName) || existingImages.contains(imageName.replace("library/", ""))) {
-            F.maybeSuspend(logger.info(s"Skipping pull for `$imageName`. Image already exists."))
+            F.syncThrowable(logger.info(s"Skipping pull for `$imageName`. Image already exists."))
           } else {
             // try to pull image with timeout. If pulling was timed out - return [IntegrationCheckException] to skip tests.
-            F.maybeSuspend(logger.info(s"Going to pull `$imageName`...")).flatMap(_ => pullWithRetry())
+            F.syncThrowable(logger.info(s"Going to pull `$imageName`...")).flatMap(_ => pullWithRetry())
           }
         }
       } yield ()
@@ -534,22 +535,20 @@ open class ContainerResource[F[_], Tag](
 
   private def fileLockMutex[A](
     name: String
-  )(effect:
-    // MUST be by-name because of IO1[Identity]
-    => F[A]
-  ): F[A] = {
+  )(effect: => F[Throwable, A]
+  ): F[Throwable, A] = {
     val retryWait = 200.millis
     val maxAttempts = (config.pullTimeout / retryWait).toInt
     val filename = name.replaceAll("[:/]", "_")
-    FileLockMutex.withLocalMutex(
+    FileLockMutex.withLocalMutex[F, A](
       filename = filename,
       retryWait = retryWait,
       maxAttempts = maxAttempts,
-      attemptLog = (num, maxAttempts) => F.maybeSuspend(logger.debug(s"Attempt $num out of $maxAttempts to acquire file lock for image $filename.")),
-      lockAlreadyExistedLog = F.maybeSuspend(logger.debug(s"File lock already existed for image $filename")),
+      attemptLog = (num, maxAttempts) => F.syncThrowable(logger.debug(s"Attempt $num out of $maxAttempts to acquire file lock for image $filename.")),
+      lockAlreadyExistedLog = F.syncThrowable(logger.debug(s"File lock already existed for image $filename")),
     )(
       fail = attempts =>
-        F.maybeSuspend(logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container"))
+        F.syncThrowable(logger.warn(s"Cannot acquire file lock for image $filename after $attempts. This may lead to creation of a new duplicate container"))
           .flatMap(_ => effect),
       succ = _ => effect,
     )

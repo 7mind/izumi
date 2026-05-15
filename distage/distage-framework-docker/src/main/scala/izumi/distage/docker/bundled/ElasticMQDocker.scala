@@ -4,7 +4,7 @@ import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.model.definition.ModuleDef
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 /**
   * Example Elastic MQ docker.
@@ -22,12 +22,12 @@ object ElasticMQDocker extends ContainerDef {
   }
 }
 
-class ElasticMQDockerModule[F[_]: TagK] extends ModuleDef {
+class ElasticMQDockerModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[ElasticMQDocker.Container].fromResource {
     ElasticMQDocker.make[F]
   }
 }
 
 object ElasticMQDockerModule {
-  def apply[F[_]: TagK]: ElasticMQDockerModule[F] = new ElasticMQDockerModule[F]
+  def apply[F[+_, +_]: TagKK]: ElasticMQDockerModule[F] = new ElasticMQDockerModule[F]
 }

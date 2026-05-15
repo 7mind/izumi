@@ -1,6 +1,6 @@
 package izumi.distage.docker.bundled
 
-import distage.{ModuleDef, TagK}
+import distage.{ModuleDef, TagKK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.DockerPort
 
@@ -21,7 +21,7 @@ object ZookeeperDocker extends ContainerDef {
   }
 }
 
-class ZookeeperDockerModule[F[_]: TagK] extends ModuleDef {
+class ZookeeperDockerModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[KafkaZookeeperNetwork.Network].fromResource {
     KafkaZookeeperNetwork.make[F]
   }
@@ -33,5 +33,5 @@ class ZookeeperDockerModule[F[_]: TagK] extends ModuleDef {
 }
 
 object ZookeeperDockerModule {
-  def apply[F[_]: TagK]: ZookeeperDockerModule[F] = new ZookeeperDockerModule[F]
+  def apply[F[+_, +_]: TagKK]: ZookeeperDockerModule[F] = new ZookeeperDockerModule[F]
 }

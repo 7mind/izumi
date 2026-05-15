@@ -4,7 +4,7 @@ import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.model.definition.ModuleDef
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 /**
   * Example postgres docker. It's sufficient for most usages.
@@ -24,12 +24,12 @@ object PostgresDocker extends ContainerDef {
   }
 }
 
-class PostgresDockerModule[F[_]: TagK] extends ModuleDef {
+class PostgresDockerModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[PostgresDocker.Container].fromResource {
     PostgresDocker.make[F]
   }
 }
 
 object PostgresDockerModule {
-  def apply[F[_]: TagK]: PostgresDockerModule[F] = new PostgresDockerModule[F]
+  def apply[F[+_, +_]: TagKK]: PostgresDockerModule[F] = new PostgresDockerModule[F]
 }

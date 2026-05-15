@@ -9,8 +9,7 @@ import izumi.distage.docker.model.Docker.{ClientConfig, ContainerId, DockerRegis
 import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.provisioning.IntegrationCheck
-import izumi.functional.bio.IO1
-import izumi.functional.bio.IO1.syntax.*
+import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.strings.IzString.*
@@ -20,7 +19,7 @@ import java.util.UUID
 import scala.annotation.unused
 import scala.jdk.CollectionConverters.*
 
-class DockerClientWrapper[F[_]](
+class DockerClientWrapper[F[+_, +_]](
   val rawClient: DockerClient,
   val rawClientConfig: DockerClientConfig,
   val clientConfig: ClientConfig,
@@ -29,7 +28,7 @@ class DockerClientWrapper[F[_]](
   val labelsUnique: Map[String, String],
   logger: IzLogger,
 )(implicit
-  F: IO1[F]
+  F: IO2[F]
 ) {
   def labels: Map[String, String] = labelsBase ++ labelsJvm ++ labelsUnique
 
@@ -42,8 +41,8 @@ class DockerClientWrapper[F[_]](
     }
   }
 
-  def removeContainer(containerId: ContainerId, context: ContainerDestroyMeta, removalReason: RemovalReason): F[Unit] = {
-    F.maybeSuspend {
+  def removeContainer(containerId: ContainerId, context: ContainerDestroyMeta, removalReason: RemovalReason): F[Nothing, Unit] = {
+    F.sync {
       try {
         logger.info(s"Going to remove $containerId $removalReason ($context)...")
 
@@ -94,12 +93,12 @@ object DockerClientWrapper {
     case object AlreadyExited extends RemovalReason
   }
 
-  class DockerIntegrationCheck[F[_]](
+  class DockerIntegrationCheck[F[+_, +_]](
     rawClient: DockerClient
   )(implicit
-    F: IO1[F]
-  ) extends IntegrationCheck[F] {
-    override def resourcesAvailable(): F[ResourceCheck] = F.maybeSuspend {
+    F: IO2[F]
+  ) extends IntegrationCheck[F[Throwable, _]] {
+    override def resourcesAvailable(): F[Throwable, ResourceCheck] = F.sync {
       try {
         rawClient.infoCmd().exec()
         ResourceCheck.Success()
@@ -110,18 +109,18 @@ object DockerClientWrapper {
     }
   }
 
-  final class Resource[F[_]](
+  final class Resource[F[+_, +_]](
     logger: IzLogger,
     clientConfig: ClientConfig,
     rawClient: DockerClient,
     rawClientConfig: DefaultDockerClientConfig,
     @unused check: DockerIntegrationCheck[F],
   )(implicit
-    F: IO1[F]
-  ) extends Lifecycle.Basic[F, DockerClientWrapper[F]] {
-    override def acquire: F[DockerClientWrapper[F]] = {
+    F: IO2[F]
+  ) extends Lifecycle.Basic[F, Throwable, DockerClientWrapper[F]] {
+    override def acquire: F[Throwable, DockerClientWrapper[F]] = {
       for {
-        runId <- F.maybeSuspend(UUID.randomUUID().toString)
+        runId <- F.syncThrowable(UUID.randomUUID().toString)
       } yield {
         new DockerClientWrapper[F](
           rawClient = rawClient,
@@ -135,9 +134,9 @@ object DockerClientWrapper {
       }
     }
 
-    override def release(resource: DockerClientWrapper[F]): F[Unit] = {
+    override def release(resource: DockerClientWrapper[F]): F[Nothing, Unit] = {
       for {
-        containers <- F.maybeSuspend {
+        containers <- F.sync {
           resource.rawClient
             .listContainersCmd()
             .withStatusFilter(List(DockerConst.State.exited, DockerConst.State.running).asJava)
