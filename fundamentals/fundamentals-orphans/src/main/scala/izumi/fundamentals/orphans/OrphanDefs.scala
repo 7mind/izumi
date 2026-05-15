@@ -76,6 +76,17 @@ object `cats.Monad` {
 
 /**
   * This instance uses 'no more orphans' trick to provide an Optional instance
+  * only IFF you have cats-core as a dependency without REQUIRING a cats-core dependency.
+  *
+  * Optional instance via https://blog.7mind.io/no-more-orphans.html
+  */
+final abstract class `cats.ApplicativeError`[R[_[_], _]]
+object `cats.ApplicativeError` {
+  @inline implicit final def get: `cats.ApplicativeError`[cats.ApplicativeError] = null
+}
+
+/**
+  * This instance uses 'no more orphans' trick to provide an Optional instance
   * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
   *
   * Optional instance via https://blog.7mind.io/no-more-orphans.html

@@ -104,15 +104,26 @@ object Bifunctorized extends BifunctorizedNoOpInstances {
 
   /** Lift a monofunctor `F[A]` into a bifunctor with the Throwable error channel exposed.
     *
-    * PR-01 implementation: identity reinterpret-cast (no submerging). Submerging is added
-    * in PR-04 via instance-method paths, not here. Holds Goal 4 (`bifunctorize(fa) eq fa`).
+    * Delegates to the [[Bifunctorize]] typeclass. The identity instance (default) is a
+    * reinterpret cast (Goal 4 zero-cost for real bifunctors and any `F` without a
+    * higher-priority instance). When a [[Bifunctorize]] instance with submerging is in
+    * scope — notably the cats-mediated instance from
+    * [[CatsToBIOConversions.bifunctorizeForCatsApplicativeError]] when the user imports
+    * `izumi.functional.bio.CatsToBIOConversions.*` — it submerges the raw monofunctor
+    * Throwable channel into a typed BIO error channel per the spec
+    * (`bifunctorization.md` §"Conversion of effect values").
     */
-  def bifunctorize[F[_], A](fa: F[A]): Bifunctorized[F, Throwable, A] =
-    assert(fa)
+  def bifunctorize[F[_], A](fa: F[A])(implicit B: Bifunctorize[F]): Bifunctorized[F, Throwable, A] =
+    B.bifunctorize(fa)
 
-  /** Project a `Bifunctorized[F, Throwable, A]` back to the underlying `F[A]`. */
-  def debifunctorize[F[_], A](b: Bifunctorized[F, Throwable, A]): F[A] =
-    b.asInstanceOf[F[A]]
+  /** Project a `Bifunctorized[F, Throwable, A]` back to the underlying `F[A]`.
+    *
+    * Mirror of [[bifunctorize]]: delegates to the [[Bifunctorize]] typeclass, which performs
+    * un-submerging via `ApplicativeError.adaptError` when the cats-mediated instance is in
+    * scope (and identity otherwise).
+    */
+  def debifunctorize[F[_], A](b: Bifunctorized[F, Throwable, A])(implicit B: Bifunctorize[F]): F[A] =
+    B.debifunctorize(b)
 
   /** Implicit `ClassTag` shim. Reflects the runtime class of the underlying `F[A]`.
     *
@@ -125,17 +136,30 @@ object Bifunctorized extends BifunctorizedNoOpInstances {
   implicit def getClassTag[F[_], E, A](implicit underlying: ClassTag[F[A]]): ClassTag[Bifunctorized[F, E, A]] =
     underlying.asInstanceOf[ClassTag[Bifunctorized[F, E, A]]]
 
-  /** Implicit conversion auto-lifts `F[A]` to `Bifunctorized[F, Throwable, A]` at expected-type sites. */
-  implicit def bifunctorizeConversion[F[_], A](fa: F[A]): Bifunctorized[F, Throwable, A] =
-    bifunctorize(fa)
+  /** Implicit conversion auto-lifts `F[A]` to `Bifunctorized[F, Throwable, A]` at expected-type sites.
+    *
+    * Single-level conversion: delegates to the [[Bifunctorize]] typeclass. When a higher-priority
+    * cats-mediated instance is in the user's import scope (see [[CatsToBIOConversions]]) the
+    * conversion submerges the raw Throwable channel; otherwise the identity instance from the
+    * [[Bifunctorize]] companion is used.
+    */
+  implicit def bifunctorizeConversion[F[_], A](fa: F[A])(implicit B: Bifunctorize[F]): Bifunctorized[F, Throwable, A] =
+    B.bifunctorize(fa)
 
-  /** Implicit conversion auto-projects `Bifunctorized[F, Throwable, A]` to `F[A]` at expected-type sites. */
-  implicit def debifunctorizeConversion[F[_], A](b: Bifunctorized[F, Throwable, A]): F[A] =
-    debifunctorize(b)
+  /** Implicit conversion auto-projects `Bifunctorized[F, Throwable, A]` to `F[A]` at expected-type sites.
+    *
+    * Mirror of [[bifunctorizeConversion]] — single-level delegation to the [[Bifunctorize]] typeclass.
+    */
+  implicit def debifunctorizeConversion[F[_], A](b: Bifunctorized[F, Throwable, A])(implicit B: Bifunctorize[F]): F[A] =
+    B.debifunctorize(b)
 
-  /** `.toMonofunctor` syntax on `Bifunctorized[F, Throwable, A]`, available wherever the companion is imported. */
+  /** `.toMonofunctor` syntax on `Bifunctorized[F, Throwable, A]`, available wherever the companion is imported.
+    *
+    * Takes a [[Bifunctorize]] instance implicitly and delegates, matching the resolution behavior of
+    * [[debifunctorize]] / [[debifunctorizeConversion]].
+    */
   implicit final class BifunctorizedSyntax[F[_], A](private val b: Bifunctorized[F, Throwable, A]) extends AnyVal {
-    @inline def toMonofunctor: F[A] = debifunctorize(b)
+    @inline def toMonofunctor(implicit B: Bifunctorize[F]): F[A] = B.debifunctorize(b)
   }
 
   /** `.unwrap` syntax on any `Bifunctorized[F, E, A]` (matches prior-art `CatsConversionsOps.unwrap`).
