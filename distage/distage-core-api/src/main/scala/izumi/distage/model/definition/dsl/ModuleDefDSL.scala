@@ -655,7 +655,7 @@ object ModuleDefDSL {
   }
 
   @inline private def provideZEnvLifecycle[R, E, A](lifecycle: Lifecycle[ZIO[R, +_, +_], E, A], zenv: ZEnvironment[R]): Lifecycle[ZIO[Any, +_, +_], E, A] = {
-    lifecycle.mapK[ZIO[Any, +_, +_]](Morphism2(_.provideEnvironment(zenv)))
+    lifecycle.mapK[ZIO[R, +_, +_], ZIO[Any, +_, +_]](Morphism2(_.provideEnvironment(zenv)))
   }
 
   // DSL state machine
