@@ -524,16 +524,20 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
 
       val injector = mkInjector()
 
-      injector.produceRun(definition) {
-        (x: X) =>
-          izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(assert(x == X("pest2")))
-      }
-
-      intercept[ProvisioningException] {
+      izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
         injector.produceRun(definition) {
-          (x: X @Id("n")) =>
+          (x: X) =>
             izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(assert(x == X("pest2")))
         }
+      )
+
+      intercept[ProvisioningException] {
+        izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+          injector.produceRun(definition) {
+            (x: X @Id("n")) =>
+              izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(assert(x == X("pest2")))
+          }
+        )
       }
     }
 

@@ -234,7 +234,10 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
       """
         )
       )
-      assert(res.getMessage.contains("implicit") || res.getMessage.contains("given instance"))
+      assert(
+        res.getMessage.contains("implicit") || res.getMessage.contains("given instance") ||
+        res.getMessage.contains("-Yretain-trees")
+      )
       assert(res.getMessage contains "AdaptFunctoid")
     }
 

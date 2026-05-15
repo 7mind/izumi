@@ -79,7 +79,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
     val local = context.get[Subcontext[Bifunctorized.IdentityBifunctorized, Int]]("test")
 
-    assert(local.produceRun(identity) == 231)
+    assert(Bifunctorized.debifunctorizeIdentity(local.produceRun(i => Bifunctorized.bifunctorizeIdentity(i))) == 231)
   }
 
   "support self references" in {
@@ -98,7 +98,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
     val local = context.get[Subcontext[Bifunctorized.IdentityBifunctorized, Int]]
 
-    assert(local.provide[Arg](Arg(10)).produceRun(identity) == 20)
+    assert(Bifunctorized.debifunctorizeIdentity(local.provide[Arg](Arg(10)).produceRun(i => Bifunctorized.bifunctorizeIdentity(i))) == 20)
   }
 
   "support activations on subcontexts" in {
@@ -131,8 +131,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     val dummySubcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]]("test")(module, Activation(Repo.Dummy)).unsafeGet()
     val prodSubcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]]("test")(module, Activation(Repo.Prod)).unsafeGet()
 
-    val dummyRes = dummySubcontext.produceRun(identity)
-    val prodRes = prodSubcontext.produceRun(x => x)
+    val dummyRes = Bifunctorized.debifunctorizeIdentity(dummySubcontext.produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
+    val prodRes = Bifunctorized.debifunctorizeIdentity(prodSubcontext.produceRun(x => Bifunctorized.bifunctorizeIdentity(x)))
 
     assert(dummyRes == 230)
     assert(prodRes == 228)
@@ -157,8 +157,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     val subcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]](module, Activation(Repo.Dummy)).unsafeGet()
     val prodSubcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]](module, Activation(Repo.Prod)).unsafeGet()
 
-    val dummyRes = subcontext.produceRun(identity)
-    val prodRes = prodSubcontext.produceRun(identity)
+    val dummyRes = Bifunctorized.debifunctorizeIdentity(subcontext.produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
+    val prodRes = Bifunctorized.debifunctorizeIdentity(prodSubcontext.produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
 
     assert(dummyRes == 230)
     assert(prodRes == 228)
@@ -178,8 +178,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     val injector = mkNoCyclesInjector()
     val subcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]](module).unsafeGet()
 
-    val resPlus1 = subcontext.provide[Int]("arg")(1).produceRun(identity)
-    val resMinus1 = subcontext.provide[Int]("arg")(-1).produceRun(identity)
+    val resPlus1 = Bifunctorized.debifunctorizeIdentity(subcontext.provide[Int]("arg")(1).produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
+    val resMinus1 = Bifunctorized.debifunctorizeIdentity(subcontext.provide[Int]("arg")(-1).produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
 
     assert(resPlus1 == 230)
     assert(resMinus1 == 228)
@@ -216,7 +216,9 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     }
     """))
 
-    assert(err.getMessage.contains("implicit value") || err.getMessage.contains("implicit error"))
+    assert(
+      err.getMessage.contains("implicit value") || err.getMessage.contains("implicit error") || err.getMessage.contains("No given instance")
+    )
   }
 }
 

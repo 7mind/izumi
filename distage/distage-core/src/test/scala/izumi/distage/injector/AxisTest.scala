@@ -338,16 +338,22 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     assert(
-      Injector().produceRun(DefaultsModule, Activation(Style -> Style.AllCaps))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
-      == RED
+      izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+        Injector().produceRun(DefaultsModule, Activation(Style -> Style.AllCaps))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
+      ) == RED
     )
 
     assert(
-      Injector().produceRun(DefaultsModule, Activation(Style -> Style.Normal))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
-      == Green
+      izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+        Injector().produceRun(DefaultsModule, Activation(Style -> Style.Normal))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
+      ) == Green
     )
 
-    assertThrows[InjectorFailed](Injector().produceRun(DefaultsModule, Activation.empty)((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c)))
+    assertThrows[InjectorFailed](
+      izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+        Injector().produceRun(DefaultsModule, Activation.empty)((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
+      )
+    )
 
     def SpecificityModule = new ModuleDef {
       make[Color].tagged(Mode.Test).from(Blue)
@@ -356,26 +362,34 @@ class AxisTest extends AnyWordSpec with MkInjector {
     }
 
     assert(
-      Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.AllCaps))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
-      == RED
+      izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+        Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.AllCaps))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
+      ) == RED
     )
 
     assert(
-      Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test, Style -> Style.AllCaps))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
-      == Blue
+      izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+        Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test, Style -> Style.AllCaps))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
+      ) == Blue
     )
 
     assert(
-      Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.Normal))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
-      == Green
+      izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+        Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Prod, Style -> Style.Normal))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
+      ) == Green
     )
 
     assert(
-      Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
-      == Blue
+      izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+        Injector().produceRun(SpecificityModule, Activation(Mode -> Mode.Test))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
+      ) == Blue
     )
 
-    assertThrows[InjectorFailed](Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c)))
+    assertThrows[InjectorFailed](
+      izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+        Injector().produceRun(SpecificityModule, Activation(Style -> Style.Normal))((c: Color) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Color](c))
+      )
+    )
   }
 
 }

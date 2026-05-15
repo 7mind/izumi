@@ -147,13 +147,15 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       val ops1 = mutable.Queue.empty[Ops]
 
       Try {
-        Lifecycle
-          .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
-          .flatMap {
-            _ =>
-              throw new RuntimeException()
-          }
-          .use((_: Unit) => ())
+        izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+          Lifecycle
+            .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
+            .flatMap {
+              _ =>
+                throw new RuntimeException()
+            }
+            .use((_: Unit) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()))
+        )
       }
 
       assert(ops1 == Seq(XStart, XStop))
@@ -180,18 +182,20 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       val ops1 = mutable.Queue.empty[Ops]
 
       Try {
-        Lifecycle
-          .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
-          .flatMap {
-            _ =>
-              Lifecycle
-                .makeSimple(ops1 += YStart)(_ => ops1 += YStop)
-                .flatMap {
-                  _ =>
-                    Lifecycle.makeSimple[Unit](throw new RuntimeException())((_: Unit) => ops1 += ZStop)
-                }
-          }
-          .use(_ => ())
+        izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+          Lifecycle
+            .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
+            .flatMap {
+              _ =>
+                Lifecycle
+                  .makeSimple(ops1 += YStart)(_ => ops1 += YStop)
+                  .flatMap {
+                    _ =>
+                      Lifecycle.makeSimple[Unit](throw new RuntimeException())((_: Unit) => ops1 += ZStop)
+                  }
+            }
+            .use(_ => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()))
+        )
       }
 
       assert(ops1 == Seq(XStart, YStart, YStop, XStop))
@@ -222,9 +226,11 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
 
       val ops1 = mutable.Queue.empty[Ops]
       Try {
-        Lifecycle
-          .makeSimple[Unit](throw new Throwable())((_: Unit) => ops1 += XStop)
-          .catchAll(_ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop)).use(_ => ())
+        izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+          Lifecycle
+            .makeSimple[Unit](throw new Throwable())((_: Unit) => ops1 += XStop)
+            .catchAll(_ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop)).use(_ => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()))
+        )
       }
       assert(ops1 == Seq(YStart, YStop))
 
@@ -253,12 +259,14 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
         def action(q: mutable.Queue[Ops]): Unit = if (err) throw new Throwable() else q += RStart
 
         Try {
-          Lifecycle
-            .makeSimple[Unit](action(ops1))((_: Unit) => ops1 += XStop)
-            .redeem(
-              _ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop),
-              _ => Lifecycle.makeSimple(ops1 += ZStart)(_ => ops1 += ZStop),
-            ).use(_ => ())
+          izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+            Lifecycle
+              .makeSimple[Unit](action(ops1))((_: Unit) => ops1 += XStop)
+              .redeem(
+                _ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop),
+                _ => Lifecycle.makeSimple(ops1 += ZStart)(_ => ops1 += ZStop),
+              ).use(_ => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()))
+          )
         }
 
         Try {
@@ -438,8 +446,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       val t = intercept[TestFailedException] {
         assertCompiles {
           """
-          def x[F[_]]: ModuleDef = new ModuleDef {
-            make[Any].fromResource[Lifecycle[F, Any]](() => ???)
+          def x[F[+_, +_]]: ModuleDef = new ModuleDef {
+            make[Any].fromResource[Lifecycle[F, Throwable, Any]](() => ???)
           }; ""
           """
         }
@@ -450,8 +458,14 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
         assert(t.message.get contains "<trace>")
       }
       assert(
-        (t.message.get contains "could not find implicit value for TagK[F]") ||
-        (t.message.get contains "could not find implicit value for izumi.reflect.Tag[F]")
+        (t.message.get contains "could not find implicit value for TagKK[F]") ||
+        (t.message.get contains "could not find implicit value for izumi.reflect.Tag[F]") ||
+        (t.message.get contains "No given instance of type izumi.reflect.TagKK[F]") ||
+        (t.message.get contains "No given instance of type izumi.reflect.Tag[F]") ||
+        // Scala 3.7 surfaces the missing tag as an overload-resolution failure listing the four
+        // `fromResource` alternatives — the implicit-search failure is one level beneath the
+        // overload selection error. Either form means: no `TagKK[F]` is in implicit scope.
+        ((t.message.get contains "fromResource") && (t.message.get contains "LifecycleTag"))
       )
     }
 

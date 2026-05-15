@@ -178,13 +178,19 @@ object ResourceCases {
       override def sync[A](effect: => A): Suspend2[Nothing, A] = Suspend2(() => Right(effect))
 
       override def redeem[E, A, E2, B](r: Suspend2[E, A])(err: E => Suspend2[E2, B], succ: A => Suspend2[E2, B]): Suspend2[E2, B] = {
-        Suspend2(
-          () =>
-            r.run() match {
-              case Left(error) => err(error).run()
-              case Right(value) => succ(value).run()
-            }
-        )
+        // Catch defects (Throwables) raised during r.run() and route via `err` (treating
+        // Throwable as the typed error). This matches pre-bifunctorization
+        // QuasiIO[Identity].redeem(action)(failure, success) semantics where the failure
+        // path was invoked for both typed errors AND synchronously thrown exceptions.
+        new Suspend2[E2, B](() => {
+          val attempt: Either[E, A] =
+            try r.run()
+            catch { case t: Throwable => Left(t.asInstanceOf[E]) }
+          attempt match {
+            case Left(error) => err(error).run()
+            case Right(value) => succ(value).run()
+          }
+        })
       }
       override def catchAll[E, A, E2](r: Suspend2[E, A])(f: E => Suspend2[E2, A]): Suspend2[E2, A] = redeem(r)(f, pure)
 
@@ -195,14 +201,28 @@ object ResourceCases {
       ): Suspend2[E, B] = {
         acquire.flatMap {
           a =>
-            redeem(use(a))(
-              err =>
-                release(a, Exit.Error(err, Exit.Trace.forUnknownError))
-                  .asInstanceOf[Suspend2[E, Unit]].flatMap(_ => fail(err)),
-              v =>
-                release(a, Exit.Success(v))
-                  .asInstanceOf[Suspend2[E, Unit]].flatMap(_ => pure(v)),
-            )
+            new Suspend2[E, B](() => {
+              // Catch Throwable defects raised by `use(a).run()` (e.g. user lambda that throws
+              // synchronously, like `flatMap(_ => throw)`) and route them through release;
+              // otherwise defects skip cleanup entirely. Typed errors continue through redeem.
+              val outcome: Either[E, B] =
+                try use(a).run()
+                catch {
+                  case t: Throwable =>
+                    // Run release on defect path then re-raise (we lack a defect channel in
+                    // Suspend2, so the unrecoverable Throwable continues to escape `unsafeRun`).
+                    try release(a, Exit.Termination(t, Exit.Trace.forUnknownError)).run() catch { case _: Throwable => () }
+                    throw t
+                }
+              outcome match {
+                case Right(v) =>
+                  release(a, Exit.Success(v)).run()
+                  Right(v)
+                case Left(err) =>
+                  release(a, Exit.Error(err, Exit.Trace.forUnknownError)).run()
+                  Left(err)
+              }
+            })
         }
       }
 
