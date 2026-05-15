@@ -64,21 +64,6 @@ import scala.xml.XML
   */
 final class JUnitXmlRegressionTest extends AnyWordSpec {
 
-  /** Per-test sleep duration. `Thread.sleep` is a strict lower bound: it can
-    * overshoot but never returns earlier, so the wall-clock delta observed
-    * across the sleep is always `>= testSleepMillis`. The corresponding
-    * lower bound on the JUnit XML `<testcase time>` field is therefore
-    * exactly `testSleepMillis / 1000.0`.
-    *
-    * `Instant.toEpochMilli` floors toward `-∞`; for a real wall-clock delta
-    * `Δ ms`, the integer ms-difference of two floored timestamps satisfies
-    * `ms_diff > Δ − 1`. So for `Δ >= 2000` we get `ms_diff >= 2000`, and
-    * `JUnitXmlReporter.xmlify` emits exactly `2.0` for `ms_diff = 2000`.
-    *
-    * Sleep length is otherwise arbitrary; 2 s is large enough to make the
-    * single-millisecond clock-tick noise immaterial and small enough not to
-    * dominate the test suite runtime.
-    */
   private val testSleepMillis: Long = 2000L
   private val minExpectedPerTestSeconds: Double = testSleepMillis / 1000.0
 
