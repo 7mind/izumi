@@ -342,3 +342,76 @@ Note return type differs from `BifunctorizedOps.unwrap` — `F[E, A]` (binary) v
 **Location:** /home/kai/src/izumi/fundamentals/fundamentals-bio/.jvm/src/test/scala/izumi/functional/bio/BifunctorizedNoOpTest.scala
 **Description:** Tests cover single-stage Goal-4 (`F.fail("oops").unwrap` is a ZIO instance — load-bearing). A multi-stage chain (`F.flatMap(F.pure(1))(i => F.pure(i+1))` produces a ZIO at every step) is not exercised. A future maintainer who accidentally allocates a wrapper somewhere in the chain wouldn't be caught.
 **Fix:** Deferred. The single-stage test catches the most likely regressions (the typeclass dictionary casts).
+
+---
+
+## [M5-D01] `LightTypeTag` does not normalise η-conversion between `F` and `λ x => F[x]` (izumi-reflect)
+**Status:** open — known failure; 3 distage-coreJVM `CatsResourcesTestJvm` tests left disabled, root cause is in izumi-reflect (not in distage)
+**Severity:** major (3 user-facing tests fail; production impact: every `make[T].fromResource(cats.effect.Resource[F, T])` binding will fail at runtime against an `Injector[Bifunctorized[F, +_, +_]]()` because the binding-side `effectHKTypeCtor` and the Injector-side `SafeType.getKK[Bifunctorized[F, +_, +_]]` denote the same Scala type but compare as `<:<` false under izumi-reflect 3.0.8 and 3.0.9.)
+**Location:**
+- /home/kai/src/izumi/distage/distage-core/.jvm/src/test/scala/izumi/distage/compat/CatsResourcesTestJvm.scala (3 disabled tests)
+- /home/kai/src/izumi/distage/distage-core-api/src/main/scala/izumi/distage/model/plan/ExecutableOp.scala:170-173 (`isIncompatibleBifunctorEffectType` — call-site that fails)
+- (root cause) izumi-reflect 3.0.8/3.0.9 `LightTypeTag.<:<` semantics
+
+**Description:** Cross-checked empirically (Scala 3.7.4, izumi-reflect 3.0.8 and 3.0.9). When a `Lifecycle.FromCats[IO, A]` binding is stored by `.fromResource(catsResource)`, the binding's `effectHKTypeCtor` ends up tagged as
+
+```
+λ %0,%1 → Bifunctorized::Bifunctorized[=cats.effect.IO,=0,=1]
+```
+
+(IO is stored unexpanded — the macro saw IO via a captured `F[_]: TagK` parameter in `LifecycleAdapters.providerFromCatsProvider`).
+
+When the user writes `Injector[Bifunctorized[IO, +_, +_]]()`, the Injector's effect type is tagged as
+
+```
+λ %0,%1 → Bifunctorized::Bifunctorized[=λ %1:0 → cats.effect.IO[+1:0],=0,=1]
+```
+
+(IO is eta-expanded — the macro saw IO directly as a type-application against the unary-kind `F[_]` slot of `Bifunctorized`).
+
+These are the same type denotationally, but `LightTypeTag.<:<` rejects them in both directions. The check at `ExecutableOp.scala:170-173` (`actionEffectType <:< SafeType.getKK[F]` and the two unary fallbacks) all return false, so `EffectStrategyDefaultImpl` raises `IncompatibleEffectType` and the binding never executes. The user has confirmed (2026-05-15) that "`Bifunctorized[cats.effect.IO, _, _]` and `Bifunctorized[Lambda[x => IO[x]], _, _]` should be equivalent in izumi-reflect in all cases" — i.e., the deficiency lies in izumi-reflect, not in distage's check.
+
+**Reproduction** (from a deleted local test `EtaConversionRepro.scala`, re-runnable in a couple lines):
+```scala
+val res: cats.effect.Resource[IO, String] = cats.effect.Resource.pure("x")
+val module = new ModuleDef { make[String].fromResource(res) }
+val binding = module.bindings.head.asInstanceOf[SingletonBinding[DIKey]]
+val impl = binding.implementation.asInstanceOf[ImplDef.ResourceImpl]
+val bindingEffectType: SafeType = impl.effectHKTypeCtor
+val injectorEffectType: SafeType = SafeType.getKK[Bifunctorized[IO, +_, +_]]
+println(bindingEffectType.anyTag.tag.repr)   // ...Bifunctorized[=cats.effect.IO,=0,=1]
+println(injectorEffectType.anyTag.tag.repr)  // ...Bifunctorized[=λ %1:0 → cats.effect.IO[+1:0],=0,=1]
+println(bindingEffectType <:< injectorEffectType)  // false
+println(injectorEffectType <:< bindingEffectType)  // false
+println(bindingEffectType =:= injectorEffectType)  // false
+```
+
+After applying both sides to `[Throwable, Int]` (so they're no longer type-lambdas), the comparison still fails:
+```
+Bifunctorized::Bifunctorized[=IO,=Throwable,=Int]
+Bifunctorized::Bifunctorized[=λ %1:0 → IO[+1:0],=Throwable,=Int]
+```
+`<:<` and `=:=` both return false. This is independent of how many type arguments are saturated — the `IO` vs `λ x => IO[x]` discrepancy at the higher-kinded slot is the load-bearing difference.
+
+**Root cause analysis** (paths that diverge):
+- *Direct macro path*: `TagKK[Bifunctorized[IO, +_, +_]]` invoked at a site where `IO` is a concrete type with kind `[+_]` and `Bifunctorized`'s first slot expects `[_]`. Scala 3 + the izumi-reflect macro emit an η-expansion `λ x => IO[x]` to bridge the kind mismatch.
+- *Indirect macro path*: `TagK[F]` is in scope from `providerFromCatsProvider[F[_]: TagK, A]`. The macro substitutes the captured `TagK[F]` (where F = IO) into the `Bifunctorized[F, +_, +_]` slot **without** eta-expansion, because the captured TagK already has the correct unary kind. Result: `Bifunctorized[IO, +_, +_]` (no eta).
+
+`LightTypeTag.<:<` in izumi-reflect 3.0.8/3.0.9 compares the two representations structurally — the higher-kinded arg `IO` is not unified with `λ x => IO[x]`.
+
+**Workarounds tried (all empirically refuted):**
+1. *Bump izumi-reflect 3.0.8 → 3.0.9*: same failure.
+2. *Add unary-projection checks in `isIncompatibleBifunctorEffectType`* (lines 172-173): `<:< SafeType.getK[F[Throwable, _]]` also fails because the unary projections eta-expand IO too.
+3. *Compare via `closestClass`*: both resolve to `java.lang.Object` — not discriminative.
+4. *Compare via `LightTypeTag.combine(tagThrowable, tagInt)`*: structural comparison still fails after applying.
+
+**No workaround found in distage call-site code.** The fix has to land in izumi-reflect: `LightTypeTag.<:<` (and ideally `=:=`) needs to η-normalize unary-kinded type ctors so that `IO` and `λ x => IO[x]` compare as equivalent when both are saturated against the same target kind.
+
+**Disabled tests** (3, all in `CatsResourcesTestJvm`):
+1. "cats.Resource mdoc example works"
+2. "cats.Resource mdoc example works with cyclic IORuntime (by-name case)"
+3. "cats.Resource mdoc example doesn't work with cyclic IORuntime (dynamic proxy case)"
+
+These pass once the underlying izumi-reflect deficiency is addressed. The 4 other `CatsResourcesTestJvm` tests pass — they use `Injector[Bifunctorized.IdentityBifunctorized]()` (different effect type) where the eta-expansion mismatch does not arise.
+
+**Suggested fix** (out of scope here, but for the izumi-reflect maintainer): in `LightTypeTag.<:<`, when comparing a `λ %0 → F[%0]` reference against a bare `F` reference where both are kind-compatible, treat them as η-equivalent. Test fixture (against izumi-reflect): `TagK[IO].tag <:< TagK[λ x => IO[x]].tag` should be `true`.
