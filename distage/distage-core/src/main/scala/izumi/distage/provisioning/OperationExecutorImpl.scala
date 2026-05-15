@@ -24,7 +24,7 @@ class OperationExecutorImpl(
   )(implicit F: IO2[F]
   ): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     F.sandboxCatchAll[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]], Throwable](
-      executeUnsafe(context, step)
+      F.suspendThrowable(executeUnsafe(context, step))
     )(
       (failure: Exit.FailureUninterrupted[Throwable]) =>
         F.pure(Left(UnexpectedStepProvisioning(step, failure.trace.unsafeAttachTraceOrReturnNewThrowable())))

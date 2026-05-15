@@ -29,6 +29,11 @@ trait IdentitySupportModule extends ModuleDef {
   make[Clock1[Identity]].fromValue(Clock1.Standard)
   make[Entropy1[Identity]].fromValue(Entropy1.Standard)
 
+  // SyncSafe1[Identity] — no-op "suspension" (Identity has no effect channel; eff: => A is evaluated eagerly).
+  make[SyncSafe1[Identity]].fromValue(new SyncSafe1[Identity] {
+    override def syncSafe[A](eff: => A): Identity[A] = eff
+  })
+
   // ... and lifted into the bifunctor carrier for code that runs through IdentityBifunctorized
   make[SyncSafe2[Bifunctorized.IdentityBifunctorized]].from {
     SyncSafe1.fromBIO(using _: IO2[Bifunctorized.IdentityBifunctorized])

@@ -165,7 +165,7 @@ object Plan {
     def incompatibleEffectType[F[_]: TagK]: Option[NEList[MonadicOp]] = {
       val effectType = SafeType.getK[F]
       val badSteps = plan.stepsUnordered.iterator.collect {
-        case op: MonadicOp if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) => op
+        case op: MonadicOp if op.isEffectIgnoringIdentityBifunctorized && !(op.effectHKTypeCtor <:< effectType) => op
       }.toList
       NEList.from(badSteps)
     }

@@ -56,12 +56,15 @@ object Bifunctorized extends BifunctorizedNoOpInstances {
   /** Wrap an [[izumi.fundamentals.platform.functional.Identity Identity]]`[A]` (= bare `A`) into
     * the MiniBIO-carrier [[IdentityBifunctorized]].
     *
-    * The argument is taken by-name and wrapped in `MiniBIO.Sync(() => Success(a))`, so evaluation
-    * is suspended until the resulting MiniBIO is run. A thrown exception during evaluation is
-    * captured as a [[Exit.Termination]] (defect) — consistent with MiniBIO's `Sync` semantics.
+    * The argument is taken by-name and wrapped in `MiniBIO.syncThrowable(a)`, so a thrown
+    * exception during evaluation is routed into the typed Throwable error channel (not the
+    * defect/Termination channel). This preserves the pre-bifunctorization `QuasiIO[Identity]`
+    * semantic where `catchAll`/`redeem` could intercept synchronous throws from `acquire`/`release`
+    * lambdas — a thrown `Throwable` in `Identity` had nowhere to go other than the user's recovery
+    * path, since `Identity` has no error channel at all.
     */
   def bifunctorizeIdentity[A](a: => Identity[A]): IdentityBifunctorized[Throwable, A] =
-    MiniBIO.IOForMiniBIO.sync(a).asInstanceOf[IdentityBifunctorized[Throwable, A]]
+    MiniBIO.IOForMiniBIO.syncThrowable(a).asInstanceOf[IdentityBifunctorized[Throwable, A]]
 
   /** Run the underlying MiniBIO and project back to [[izumi.fundamentals.platform.functional.Identity Identity]].
     *

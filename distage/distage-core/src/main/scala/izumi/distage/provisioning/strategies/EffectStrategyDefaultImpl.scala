@@ -1,7 +1,7 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.bio.IO2
+import izumi.functional.bio.{Bifunctorized, IO2}
 import ProvisionerIssue.MissingRef
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.EffectStrategy
@@ -21,6 +21,13 @@ class EffectStrategyDefaultImpl extends EffectStrategy {
       case Right(_) =>
         val effectKey = op.effectKey
         context.fetchKey(effectKey, makeByName = false) match {
+          case Some(action0) if op.actionEffectType == MonadicOp.identityBifunctorizedEffectType && op.isEffect =>
+            // Action carrier is IdentityBifunctorized; F may be any bifunctor. Run the MiniBIO carrier synchronously and lift into F.
+            val action = action0.asInstanceOf[Bifunctorized.IdentityBifunctorized[Throwable, Any]]
+            F.sync {
+              val newInstance = Bifunctorized.debifunctorizeIdentity(action)
+              Right(Seq(NewObjectOp.NewInstance(op.target, op.instanceTpe, newInstance)))
+            }
           case Some(action0) if op.isEffect =>
             val action = action0.asInstanceOf[F[Throwable, Any]]
             F.map(action)(newInstance => Right(Seq(NewObjectOp.NewInstance(op.target, op.instanceTpe, newInstance))))

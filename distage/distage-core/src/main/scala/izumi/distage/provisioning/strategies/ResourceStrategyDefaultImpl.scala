@@ -22,6 +22,27 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
       case Right(_) =>
         val resourceKey = op.effectKey
         context.fetchKey(resourceKey, makeByName = false) match {
+          case Some(resourceIdentity0) if op.actionEffectType == MonadicOp.identityBifunctorizedEffectType && op.isEffect =>
+            // Resource carrier is IdentityBifunctorized; F may be any bifunctor compatible with Identity-shaped effects.
+            // The carrier IS a MiniBIO at runtime - run it synchronously and lift into F via F.sync.
+            val resourceIdentity: Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, Any] =
+              resourceIdentity0.asInstanceOf[Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, Any]]
+            F.sync {
+              val innerResource = Bifunctorized.debifunctorizeIdentity(resourceIdentity.acquire)
+              val instance: Any = Bifunctorized.debifunctorizeIdentity(
+                resourceIdentity.extract(innerResource).fold[Bifunctorized.IdentityBifunctorized[Throwable, Any]](identity, Bifunctorized.bifunctorizeIdentity(_))
+              )
+              Right(
+                Seq(
+                  NewObjectOp.NewResource[F](
+                    op.target,
+                    op.instanceTpe,
+                    instance,
+                    () => F.sync(Bifunctorized.debifunctorizeIdentity(resourceIdentity.release(innerResource))),
+                  )
+                )
+              )
+            }
           case Some(resource0) if op.isEffect =>
             val resource = resource0.asInstanceOf[Lifecycle[F, Throwable, Any]]
             // FIXME: make explicitly uninterruptible / save register finalizer sooner than now
