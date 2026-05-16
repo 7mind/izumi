@@ -111,23 +111,6 @@ trait InjectorFactory {
   def inherit[F[+_, +_]: IO2: Primitives2: TagKK](parent: Locator): Injector[F]
 
   /**
-    * Monofunctor convenience overload — accepts an effect type of kind `[_]` and lifts to the
-    * bifunctor carrier `Bifunctorized[F, +_, +_]` via the [[Bifunctorize]] typeclass.
-    *
-    * @tparam F monofunctor effect type
-    */
-  def inherit[F[_]](parent: Locator)(implicit
-    bifunctorize1: Bifunctorize[F],
-    tagF: TagK[F],
-    tagFBif: TagKK[Bifunctorized[F, +_, +_]],
-    IO2Bif: IO2[Bifunctorized[F, +_, +_]],
-    Primitives2Bif: Primitives2[Bifunctorized[F, +_, +_]],
-  ): Injector[Bifunctorized[F, +_, +_]] = {
-    val _ = (bifunctorize1, tagF)
-    inherit[Bifunctorized[F, +_, +_]](parent)(using IO2Bif, Primitives2Bif, tagFBif)
-  }
-
-  /**
     * Create a new injector inheriting configuration, hooks and the object graph from a previous injection.
     *
     * Unlike [[inherit]] this will fully (re)create the `defaultModule` in subsequent injections,
