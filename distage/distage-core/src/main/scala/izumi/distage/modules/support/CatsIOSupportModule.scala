@@ -3,9 +3,12 @@ package izumi.distage.modules.support
 import cats.Parallel
 import cats.effect.IO
 import cats.effect.kernel.Async
-import cats.effect.unsafe.{IORuntimeConfig, Scheduler}
+import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
+import izumi.functional.bio.{Bifunctorized, UnsafeRun2}
+import izumi.functional.bio.impl.CatsIORunnerPlatformSpecific
+import izumi.reflect.TagK
 
 object CatsIOSupportModule extends CatsIOSupportModule
 
@@ -34,4 +37,14 @@ trait CatsIOSupportModule extends ModuleDef with CatsIOPlatformDependentSupportM
         acquire = Scheduler.createDefaultScheduler()
       )(release = _._2.apply()).map(_._1): Lifecycle[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, Scheduler]
   )
+
+  // UnsafeRun2 for the bifunctorized cats-effect IO is built from the `IORuntime` that is
+  // bound by `CatsIOPlatformDependentSupportModule`. This replaces the missing entry that the
+  // role-app launcher and testkit runner summon as `UnsafeRun2[F]` for `F = Bifunctorized[IO, +_, +_]`.
+  // The JVM impl supports synchronous `unsafeRunSync`; the JS impl throws on it (mirroring the
+  // existing platform limitation on `IO.unsafeRunSync` in JS).
+  make[UnsafeRun2[Bifunctorized[IO, +_, +_]]].from {
+    (rt: IORuntime) =>
+      CatsIORunnerPlatformSpecific.fromIORuntime(using rt, TagK[IO])
+  }
 }

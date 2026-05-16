@@ -6,7 +6,7 @@ import cats.effect.std.Dispatcher
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
 import izumi.functional.bio.*
-import izumi.functional.bio.impl.CatsToBIO
+import izumi.functional.bio.impl.{CatsIORunnerPlatformSpecific, CatsToBIO}
 import izumi.reflect.{TagK, TagKK}
 
 object AnyCatsEffectSupportModule {
@@ -22,6 +22,16 @@ object AnyCatsEffectSupportModule {
     */
   def usingAsyncParallelDispatcher[F[_]: TagK]: ModuleDef = new ModuleDef {
     include(AnyCatsEffectSupportModule.usingAsyncParallel[F])
+
+    // UnsafeRun2 for the bifunctorized monofunctor is built from cats-effect's Dispatcher[F],
+    // which schedules effects through the user-provided runtime. The Dispatcher must be bound
+    // separately (`make[Dispatcher[F]]`) — typically by `Dispatcher.parallel[F]` in a Lifecycle.
+    // JVM impl supports synchronous `unsafeRunSync`; JS impl throws on it (Dispatcher has no
+    // sync entry on Scala.js).
+    make[UnsafeRun2[Bifunctorized[F, +_, +_]]].from {
+      (F: Async[F], D: Dispatcher[F]) =>
+        CatsIORunnerPlatformSpecific.dispatcherToUnsafeRun2[F](using F, D, TagK[F])
+    }
   }
 
   def usingAsyncParallel[F[_]: TagK]: ModuleDef = new ModuleDef {
@@ -48,6 +58,19 @@ object AnyCatsEffectSupportModule {
       (F: Async[F]) =>
         CatsToBIO.asyncToBIO[F](using F, TagK[F])
     }
+    // Parallel2 is a supertype of Async2 (Async2 <: Concurrent2 <: Parallel2), so the same
+    // backing dictionary covers it. The explicit binding is required because DI keys are
+    // by-type (no implicit subtype derivation) — testkit and role-app entry points summon
+    // `Parallel2[Bifunctorized[F, +_, +_]]` directly.
+    make[Parallel2[Bifunctorized[F, +_, +_]]].from {
+      (F: Async[F]) =>
+        CatsToBIO.parallel2FromAsync[F](using F, TagK[F])
+    }
+    // ApplicativeError2 supertype binding for the same backing Async2 dictionary —
+    // `Spec1[F]`'s `DISyntaxBIOBase.takeBIO` summons `ApplicativeError2[F]` to lift the
+    // `F[Any, _]` test body into `F[Throwable, _]` via `leftMap`. Mirrors the equivalent
+    // binding in [[IdentitySupportModule]].
+    make[ApplicativeError2[Bifunctorized[F, +_, +_]]].using[Async2[Bifunctorized[F, +_, +_]]]
   }
 
   /**

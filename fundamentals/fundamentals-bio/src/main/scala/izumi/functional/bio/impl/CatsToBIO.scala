@@ -14,6 +14,7 @@ import izumi.functional.bio.{
   Exit,
   Fiber2,
   Fork2,
+  Parallel2,
   Primitives2,
   Promise2,
   Ref2,
@@ -390,5 +391,15 @@ object CatsToBIO {
       }
     }
   }
+
+  /** Downcast the [[asyncToBIO]] backing instance to a [[Parallel2]] view. The underlying
+    * dictionary already extends `Parallel2` via the `Async2 <: Concurrent2 <: Parallel2`
+    * inheritance chain, but Scala implicit search and distage DI keys need the explicit
+    * `Parallel2[Bifunctorized[F, +_, +_]]` slot — see [[parallel2FromAsync]].
+    */
+  def parallel2FromAsync[F[_]](
+    implicit F: Async[F],
+    tag: TagK[F],
+  ): Parallel2[Bifunctorized[F, +_, +_]] = asyncToBIO[F]
 
 }

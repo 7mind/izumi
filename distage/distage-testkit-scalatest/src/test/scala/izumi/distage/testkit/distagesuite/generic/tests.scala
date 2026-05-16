@@ -128,15 +128,20 @@ class ShorthandAssertionsTestZIO extends SpecZIO with AssertZIO {
   }
 }
 
-// `Spec1[CIO]` requires `Parallel2[Bifunctorized[CIO, +_, +_]]` and `UnsafeRun2[...]` for the
-// testkit runner's `ParTraverseExt`. The cats-mediated typeclass ladder in
-// `CatsToBIOConversions` exposes `Async2`/`Primitives2` but not `Parallel2`/`UnsafeRun2` for
-// `Bifunctorized[F, +_, +_]`. Without those, runtime planning fails with
-//   "Instance is not available in the object graph: Parallel2[Bifunctorized[IO, +_, +_]]"
-// The CIO testkit path is therefore not exercisable end-to-end via `Spec1[CIO]` at this
-// stage — un-stubbing it would require extending CatsToBIOConversions with cats-mediated
-// `Parallel2`/`UnsafeRun2` instances (out of scope for M5-fix4b).
-// class ShorthandAssertionsTestCIO extends Spec1[CIO] with AssertCIO { ... }
+// `Spec1[CIO]` end-to-end smoke test. `Parallel2[Bifunctorized[CIO, +_, +_]]` is derived from
+// `Async[IO]` via `AnyCatsEffectSupportModule.usingAsyncParallel`; `UnsafeRun2[Bifunctorized[CIO,
+// +_, +_]]` is derived from `IORuntime` via `CatsIOSupportModule` (M5-fix6, plumbed through
+// `CatsIORunnerPlatformSpecific.fromIORuntime` on the JVM / JS platform-specific tree). The
+// testkit runner's `ParTraverseExt` summons `Parallel2[F]`; the role launcher / per-test
+// runtime injector summons `UnsafeRun2[F]`. Both now resolve for `F = Bifunctorized[CIO, +_, +_]`.
+class CIOSmokeSpec extends Spec1[CIO] with AssertCIO {
+  "Spec1[cats.effect.IO]" should {
+    "execute a trivial IO test body end-to-end" in {
+      val body: CIO[org.scalatest.Assertion] = CIO.pure(42).map(i => org.scalatest.Assertions.assert(i == 42))
+      body
+    }
+  }
+}
 
 abstract class ShorthandAssertionsIO2TestBase[F[+_, +_]: izumi.functional.bio.IO2: TagKK: DefaultModule2] extends Spec2[F] with AssertIO2[F] {
   "shorthand assertions IO2" should {

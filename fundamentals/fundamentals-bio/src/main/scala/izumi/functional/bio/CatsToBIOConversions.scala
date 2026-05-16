@@ -1,8 +1,8 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.PredefinedHelper.NotPredefined
-import izumi.functional.bio.impl.CatsToBIO
-import izumi.fundamentals.orphans.`cats.ApplicativeError`
+import izumi.functional.bio.impl.{CatsIORunnerPlatformSpecific, CatsToBIO}
+import izumi.fundamentals.orphans.{`cats.ApplicativeError`, `cats.effect.kernel.Async`, `cats.effect.std.Dispatcher`}
 import izumi.reflect.TagK
 
 /** CE → BIO implicit-conversion ladder. Users opt in via
@@ -123,6 +123,51 @@ object CatsToBIOConversions {
           case SubmergedTypedError(payload: Throwable) => payload
         }
     }
+  }
+
+  /** Sibling landing pad: same backing instance as [[AsyncToBIO]] downcast to `Parallel2`.
+    *
+    * `Async2 <: Concurrent2 <: Parallel2`, so the underlying dictionary already implements
+    * `Parallel2[Bifunctorized[F, +_, +_]]`, but Scala implicit search will not auto-derive
+    * `Parallel2[Bifunctorized[F, +_, +_]]` from the [[AsyncToBIO]] return type (declared as
+    * `Async2`) because `Parallel2` is not a supertype of `Async2` in Scala's variance
+    * subtyping check. This factory exposes the same backing value typed as `Parallel2` so it
+    * is summonable independently — required by the testkit runner module
+    * (`TestkitRunnerModule` derives `Parallel2[F]` from `WeakAsync2[F]`, which itself sits
+    * under the `Async2` umbrella that `AsyncToBIO` returns).
+    */
+  @inline implicit final def Parallel2ForBifunctorized[F[_]](
+    implicit F: cats.effect.kernel.Async[F],
+    tag: TagK[F],
+  ): NotPredefined.Of[Parallel2[Bifunctorized[F, +_, +_]]] = {
+    CatsToBIO.parallel2FromAsync[F].asInstanceOf[NotPredefined.Of[Parallel2[Bifunctorized[F, +_, +_]]]]
+  }
+
+  /** Build an [[UnsafeRun2]] for `Bifunctorized[F, +_, +_]` from `cats.effect.kernel.Async[F]`
+    * and a `cats.effect.std.Dispatcher[F]` provided in implicit scope. Required by the testkit
+    * runner and the role-app launcher, both of which summon `UnsafeRun2[F]` as a runtime root.
+    *
+    * The `Dispatcher` IS the runtime: closing it invalidates the resulting runner. Provide one
+    * via `Dispatcher.parallel[F].use { implicit d => … }` (or `sequential[F]`) at the call site
+    * before invoking distage entry points that need `UnsafeRun2`.
+    *
+    * The "No-More-Orphans" trick keeps users without cats-effect on their classpath
+    * unaffected: phantom type-parameters `Async0` / `Dispatcher0` only resolve when the
+    * corresponding cats-effect types are actually available. See [[bifunctorizeForCatsApplicativeError]]
+    * for the canonical pattern.
+    *
+    * For the specific case of `F = cats.effect.IO`, prefer using the JVM-only factory based on
+    * `cats.effect.unsafe.IORuntime` (see the corresponding platform-specific
+    * `UnsafeRun2ForBifunctorizedCatsIO` in the JVM tree of `fundamentals-bio`).
+    */
+  @inline implicit final def UnsafeRun2ForBifunctorized[F[_], Async0[_[_]]: `cats.effect.kernel.Async`, Dispatcher0[_[_]]: `cats.effect.std.Dispatcher`](
+    implicit F0: Async0[F],
+    D0: Dispatcher0[F],
+    tag: TagK[F],
+  ): UnsafeRun2[Bifunctorized[F, +_, +_]] = {
+    val F = F0.asInstanceOf[cats.effect.kernel.Async[F]]
+    val D = D0.asInstanceOf[cats.effect.std.Dispatcher[F]]
+    CatsIORunnerPlatformSpecific.dispatcherToUnsafeRun2[F](using F, D, tag)
   }
 
 }
