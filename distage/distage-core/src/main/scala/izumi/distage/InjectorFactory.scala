@@ -3,12 +3,12 @@ package izumi.distage
 import distage.LocatorPrivacy
 import izumi.distage.bootstrap.BootstrapRootsMode
 import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapModule}
-import izumi.functional.bio.{Bifunctorized, IO2, Primitives2}
+import izumi.functional.bio.{Bifunctorize, Bifunctorized, IO2, Primitives2}
 import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, PlannerInput}
 import izumi.distage.modules.DefaultModule
-import izumi.reflect.TagKK
+import izumi.reflect.{TagK, TagKK}
 
 trait InjectorFactory {
 
@@ -49,6 +49,35 @@ trait InjectorFactory {
   def apply(): Injector[Bifunctorized.IdentityBifunctorized]
 
   /**
+    * Monofunctor convenience overload — accepts an effect type of kind `[_]` (e.g. `cats.effect.IO`,
+    * `zio.Task`) and transparently lifts it to the bifunctor carrier `Bifunctorized[F, +_, +_]`
+    * via the [[Bifunctorize]] typeclass. Maps to the bifunctor `apply[Bifunctorized[F, +_, +_]]`.
+    *
+    * Goal 3 (bifunctorization.md): "distage's Injector ... entrypoints are transparently
+    * bifunctorized/de-bifunctorized for monofunctors."
+    *
+    * The varargs accept `BootstrapModule` overrides only; the named-args of the bifunctor
+    * overload (parent, bootstrapBase, etc.) are not exposed on this monofunctor convenience
+    * variant — users who need them can write `Injector[Bifunctorized[F, +_, +_]](...)` directly.
+    *
+    * @tparam F monofunctor effect type
+    */
+  def apply[F[_]](
+    overrides: BootstrapModule*
+  )(implicit bifunctorize1: Bifunctorize[F],
+    tagF: TagK[F],
+    tagFBif: TagKK[Bifunctorized[F, +_, +_]],
+    IO2Bif: IO2[Bifunctorized[F, +_, +_]],
+    Primitives2Bif: Primitives2[Bifunctorized[F, +_, +_]],
+    defaultModule: DefaultModule[Bifunctorized[F, +_, +_]],
+  ): Injector[Bifunctorized[F, +_, +_]] = {
+    val _ = (bifunctorize1, tagF)
+    apply[Bifunctorized[F, +_, +_]](
+      bootstrapOverrides = overrides
+    )(using IO2Bif, Primitives2Bif, tagFBif, defaultModule)
+  }
+
+  /**
     * Alias for `apply[F]` that doesn't add a [[DefaultModule]] for F into bindings.
     *
     * `distage-core` doesn't require bindings provided by DefaultModule, but some extensions,
@@ -80,6 +109,23 @@ trait InjectorFactory {
     * @param parent Instances from parent [[izumi.distage.model.Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
   def inherit[F[+_, +_]: IO2: Primitives2: TagKK](parent: Locator): Injector[F]
+
+  /**
+    * Monofunctor convenience overload — accepts an effect type of kind `[_]` and lifts to the
+    * bifunctor carrier `Bifunctorized[F, +_, +_]` via the [[Bifunctorize]] typeclass.
+    *
+    * @tparam F monofunctor effect type
+    */
+  def inherit[F[_]](parent: Locator)(implicit
+    bifunctorize1: Bifunctorize[F],
+    tagF: TagK[F],
+    tagFBif: TagKK[Bifunctorized[F, +_, +_]],
+    IO2Bif: IO2[Bifunctorized[F, +_, +_]],
+    Primitives2Bif: Primitives2[Bifunctorized[F, +_, +_]],
+  ): Injector[Bifunctorized[F, +_, +_]] = {
+    val _ = (bifunctorize1, tagF)
+    inherit[Bifunctorized[F, +_, +_]](parent)(using IO2Bif, Primitives2Bif, tagFBif)
+  }
 
   /**
     * Create a new injector inheriting configuration, hooks and the object graph from a previous injection.
