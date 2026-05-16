@@ -93,6 +93,19 @@ trait BifunctorizedNoOpInstances {
   @inline implicit final def identityBifunctorizedHasUnsafeRun2: UnsafeRun2[Bifunctorized.IdentityBifunctorized] =
     UnsafeRunForIdentityBifunctorized.asInstanceOf[UnsafeRun2[Bifunctorized.IdentityBifunctorized]]
 
+  /** [[Temporal2]] instance for [[Bifunctorized.IdentityBifunctorized]]. Delegates to
+    * [[izumi.functional.bio.impl.MiniBIO.IOForMiniBIO]]'s `Temporal2` capability — `sleep`
+    * blocks the calling thread via `Thread.sleep`, `timeout` runs the effect to completion
+    * (single-threaded synchronous carrier has no concurrency primitive to race a timer).
+    *
+    * This restores the pre-bifunctorization `QuasiTemporal[Identity]` capability, which the
+    * testkit Identity test variants (`DistageSequentialSuitesTestIdentity`,
+    * `DistageParallelLevelTestIdentity`, `IdentityDistageSleepTest*`) require for their
+    * Thread.sleep-based assertions of test-level parallelism bounds.
+    */
+  @inline implicit final def identityBifunctorizedHasTemporal2: Predefined.Of[Temporal2[Bifunctorized.IdentityBifunctorized]] =
+    Predefined(MiniBIO.IOForMiniBIO.asInstanceOf[Temporal2[Bifunctorized.IdentityBifunctorized]])
+
   /** Backing Parallel2 implementation for `IdentityBifunctorized` — sequential traversals over MiniBIO. */
   private object ParallelForIdentityBifunctorized extends Parallel2[MiniBIO] {
     override val InnerF: Monad2[MiniBIO] = MiniBIO.IOForMiniBIO

@@ -1,7 +1,7 @@
 package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.functional.bio.{ApplicativeError2, Bifunctorized, Clock1, Clock2, Entropy1, Entropy2, IO2, Parallel2, Primitives2, SyncSafe1, SyncSafe2, UnsafeRun2}
+import izumi.functional.bio.{ApplicativeError2, Bifunctorized, Clock1, Clock2, Entropy1, Entropy2, IO2, Parallel2, Primitives2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{TagK, TagKK}
 
@@ -35,6 +35,12 @@ trait IdentitySupportModule extends ModuleDef {
   // `UnsafeRun2[TestF]` as a root for every test, and for `SpecIdentity` tests the inner `TestF` is
   // `IdentityBifunctorized`.
   addImplicit[UnsafeRun2[Bifunctorized.IdentityBifunctorized]]
+
+  // Temporal2 for the MiniBIO-backed IdentityBifunctorized carrier — `sleep` blocks the calling
+  // thread via `Thread.sleep`, `timeout` runs the effect to completion. Restores the
+  // pre-bifunctorization `QuasiTemporal[Identity]` capability used by Identity test variants
+  // (`SpecIdentity` tests that exercise parallelism bounds via Thread.sleep).
+  addImplicit[Temporal2[Bifunctorized.IdentityBifunctorized]]
 
   // Wall-clock / entropy services for Identity (no effect)
   make[Clock1[Identity]].fromValue(Clock1.Standard)
