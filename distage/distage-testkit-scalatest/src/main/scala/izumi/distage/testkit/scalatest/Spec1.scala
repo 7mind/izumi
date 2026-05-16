@@ -1,16 +1,29 @@
 package izumi.distage.testkit.scalatest
 
-import distage.{DefaultModule2, TagKK}
+import distage.{TagK, TagKK}
+import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec
+import izumi.functional.bio.{Bifunctorize, Bifunctorized}
 import org.scalatest.distage.DistageScalatestTestSuiteRunner
 
 /**
-  * `Spec1` was renamed and now takes a bifunctor `F[+_, +_]`. This is identical to [[Spec2]].
+  * Monofunctor-flavoured test class. The user supplies a monofunctor effect type `F[_]`
+  * (e.g. `cats.effect.IO`) and writes test bodies as `F[A]` directly. The framework lifts
+  * each body to the bifunctorized runtime type `Bifunctorized[F, Throwable, A]` via the
+  * [[Bifunctorize]] typeclass and hands off to the bifunctor `Spec2` machinery.
   *
-  * Migration: tests that wrote `Spec1[CIO]` should write `Spec1[Bifunctorized[CIO, +_, +_]]`.
-  * Tests that wrote `Spec1[Identity]` should write `Spec1[Bifunctorized.IdentityBifunctorized]`.
-  * Tests that wrote `Spec1[zio.Task]` should write `Spec1[zio.IO]`.
+  * For Identity effect type, prefer [[SpecIdentity]] (which runs on the MiniBIO-carrier
+  * `IdentityBifunctorized` rather than the zero-cost `Bifunctorized[Identity, +_, +_]`).
+  *
+  * The `Bifunctorize[F]` typeclass drives the lift: the identity instance is used by default
+  * (zero-cost reinterpret cast for real bifunctors and any `F` without a higher-priority
+  * instance), and `import izumi.functional.bio.CatsToBIOConversions.*` brings the cats-mediated
+  * instance that submerges the raw Throwable channel into a typed BIO error channel.
   */
-abstract class Spec1[F[+_, +_]: DefaultModule2]()(implicit val tagBIOAlias: TagKK[F])
-  extends DistageScalatestTestSuiteRunner[F]
-  with ScalatestAbstractDistageSpec.For2[F]
+abstract class Spec1[F[_]]()(
+  implicit val tagMonoIO: TagK[F],
+  val tagBIOAlias: TagKK[Bifunctorized[F, +_, +_]],
+  val defaultModulesBIOAlias: DefaultModule[Bifunctorized[F, +_, +_]],
+  val bifunctorize1: Bifunctorize[F],
+) extends DistageScalatestTestSuiteRunner[Bifunctorized[F, +_, +_]]
+  with ScalatestAbstractDistageSpec.For1[F]
