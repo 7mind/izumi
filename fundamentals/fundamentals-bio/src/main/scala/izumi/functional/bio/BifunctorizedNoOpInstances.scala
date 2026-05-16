@@ -1,9 +1,11 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.PredefinedHelper.Predefined
+import izumi.functional.bio.data.InterruptAction
 import izumi.functional.bio.impl.MiniBIO
 
 import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.{Future, Promise}
 
 /** High-priority no-op identity instances for `Bifunctorized.NoOp[F, +_, +_]` when `F` is
   * already a bifunctor with a BIO `IO2` instance. The "no-op" is a type-level reinterpretation:
@@ -60,6 +62,89 @@ trait BifunctorizedNoOpInstances {
     */
   @inline implicit final def identityBifunctorizedHasPrimitives2: Primitives2[Bifunctorized.IdentityBifunctorized] =
     PrimitivesForIdentityBifunctorized.asInstanceOf[Primitives2[Bifunctorized.IdentityBifunctorized]]
+
+  /** [[Parallel2]] instance for [[Bifunctorized.IdentityBifunctorized]]. Backed by MiniBIO which is
+    * single-threaded synchronous; "parallel" traversals collapse to sequential `IO2.traverse`.
+    * This is semantically correct for a single-threaded carrier — `parTraverse` MUST run the elements
+    * but the order/concurrency contract is unobservable when there is no concurrency primitive.
+    *
+    * Sole consumer in the testkit: [[izumi.distage.testkit.runner.impl.services.ParTraverseExt]]
+    * forwards `Parallelism.Unlimited`/`Parallelism.Fixed` traversals to this instance when the
+    * inner test effect is `IdentityBifunctorized` (i.e. [[izumi.distage.testkit.scalatest.SpecIdentity]]
+    * tests).
+    *
+    * Returned as `Predefined.Of` to outrank the `ConvertFromParallel[F]` derivation in
+    * [[izumi.functional.bio.Root]] (which would otherwise derive `Monad2[IdentityBifunctorized] & S4`
+    * from this `Parallel2` instance and conflict with the higher-priority
+    * [[identityBifunctorizedHasIO2]] in `Functor2` implicit search on Scala 2).
+    */
+  @inline implicit final def identityBifunctorizedHasParallel2: Predefined.Of[Parallel2[Bifunctorized.IdentityBifunctorized]] =
+    Predefined(ParallelForIdentityBifunctorized.asInstanceOf[Parallel2[Bifunctorized.IdentityBifunctorized]])
+
+  /** [[izumi.functional.bio.unsafe.UnsafeRun2 UnsafeRun2]] instance for
+    * [[Bifunctorized.IdentityBifunctorized]]. Runs MiniBIO synchronously via
+    * [[izumi.functional.bio.impl.MiniBIO.run]] — no thread pool, no async, no interruption.
+    *
+    * Required by the testkit runner (`TestPlanner` registers `UnsafeRun2[TestF]` as a root in
+    * the per-test injector). For [[izumi.distage.testkit.scalatest.SpecIdentity]] tests the inner
+    * `TestF` is `IdentityBifunctorized`, and this instance provides the synchronous unsafe-run
+    * entry point that the runner invokes to execute the test body.
+    */
+  @inline implicit final def identityBifunctorizedHasUnsafeRun2: UnsafeRun2[Bifunctorized.IdentityBifunctorized] =
+    UnsafeRunForIdentityBifunctorized.asInstanceOf[UnsafeRun2[Bifunctorized.IdentityBifunctorized]]
+
+  /** Backing Parallel2 implementation for `IdentityBifunctorized` — sequential traversals over MiniBIO. */
+  private object ParallelForIdentityBifunctorized extends Parallel2[MiniBIO] {
+    override val InnerF: Monad2[MiniBIO] = MiniBIO.IOForMiniBIO
+
+    override def parTraverse[E, A, B](l: Iterable[A])(f: A => MiniBIO[E, B]): MiniBIO[E, List[B]] =
+      InnerF.traverse(l)(f)
+
+    override def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => MiniBIO[E, B]): MiniBIO[E, List[B]] =
+      InnerF.traverse(l)(f)
+
+    override def parTraverseNCore[E, A, B](l: Iterable[A])(f: A => MiniBIO[E, B]): MiniBIO[E, List[B]] =
+      InnerF.traverse(l)(f)
+
+    override def zipWithPar[E, A, B, C](fa: MiniBIO[E, A], fb: MiniBIO[E, B])(f: (A, B) => C): MiniBIO[E, C] =
+      InnerF.map2(fa, fb)(f)
+  }
+
+  /** Backing UnsafeRun2 implementation for `IdentityBifunctorized` — synchronous MiniBIO runner.
+    *
+    * Each `unsafeRun*` method calls `io.run()` on the calling thread. The Future-returning methods
+    * return an already-completed future; interruption is a no-op (`InterruptAction(unit)`) because
+    * MiniBIO does not support interruption.
+    */
+  private object UnsafeRunForIdentityBifunctorized extends UnsafeRun2[MiniBIO] {
+    override def unsafeRun[E, A](io: => MiniBIO[E, A]): A = io.run() match {
+      case Exit.Success(value) => value
+      // For typed errors that are not Throwables, materialize via `toThrowable(conv)` with a
+      // generic `RuntimeException` carrier — the typical SpecIdentity path errors with `E = Throwable`
+      // anyway (the typed error channel is materialized from `Bifunctorized.bifunctorizeIdentity`'s
+      // `MiniBIO.syncThrowable`), so this path is exercised only for non-standard E.
+      case failure: Exit.FailureUninterrupted[E] => throw failure.toThrowable((e: E) => new RuntimeException(s"Typed error from MiniBIO: $e"))
+    }
+
+    override def unsafeRunSync[E, A](io: => MiniBIO[E, A]): Exit[E, A] = io.run()
+
+    override def unsafeRunAsync[E, A](io: => MiniBIO[E, A])(callback: Exit[E, A] => Unit): Unit =
+      callback(io.run())
+
+    override def unsafeRunAsyncAsFuture[E, A](io: => MiniBIO[E, A]): Future[Exit[E, A]] =
+      Future.successful(io.run())
+
+    override def unsafeRunAsyncInterruptible[E, A](io: => MiniBIO[E, A])(callback: Exit[E, A] => Unit): InterruptAction[MiniBIO] = {
+      callback(io.run())
+      InterruptAction(MiniBIO.IOForMiniBIO.unit)
+    }
+
+    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => MiniBIO[E, A]): (Future[Exit[E, A]], InterruptAction[MiniBIO]) = {
+      val promise = Promise[Exit[E, A]]()
+      promise.success(io.run())
+      (promise.future, InterruptAction(MiniBIO.IOForMiniBIO.unit))
+    }
+  }
 
   /** Backing Primitives2 implementation for `IdentityBifunctorized`. Operates over MiniBIO. */
   private object PrimitivesForIdentityBifunctorized extends Primitives2[MiniBIO] {

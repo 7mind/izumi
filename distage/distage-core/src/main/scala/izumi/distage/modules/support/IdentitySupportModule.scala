@@ -1,7 +1,7 @@
 package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.functional.bio.{Bifunctorized, Clock1, Clock2, Entropy1, Entropy2, IO2, Primitives2, SyncSafe1, SyncSafe2}
+import izumi.functional.bio.{ApplicativeError2, Bifunctorized, Clock1, Clock2, Entropy1, Entropy2, IO2, Parallel2, Primitives2, SyncSafe1, SyncSafe2, UnsafeRun2}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{TagK, TagKK}
 
@@ -24,6 +24,17 @@ trait IdentitySupportModule extends ModuleDef {
   // BIO bifunctor for IdentityBifunctorized (MiniBIO-backed)
   addImplicit[IO2[Bifunctorized.IdentityBifunctorized]]
   addImplicit[Primitives2[Bifunctorized.IdentityBifunctorized]]
+  addImplicit[Parallel2[Bifunctorized.IdentityBifunctorized]]
+  // Expose IO2 also as ApplicativeError2 (IO2 <: ApplicativeError2). Required by
+  // `DISyntaxBIOBase.takeBIO`, which summons `ApplicativeError2[F]` to lift `F[Any, _]` test bodies
+  // into `F[Throwable, _]` via `leftMap`. The `using[IO2[...]]` clause forwards the existing
+  // typeclass instance under the supertype slot — distage does not auto-derive supertype bindings.
+  make[ApplicativeError2[Bifunctorized.IdentityBifunctorized]].using[IO2[Bifunctorized.IdentityBifunctorized]]
+  // UnsafeRun2 for the MiniBIO-backed IdentityBifunctorized carrier — runs synchronously on the
+  // calling thread. Required by the testkit per-test injector: `TestPlanner` registers
+  // `UnsafeRun2[TestF]` as a root for every test, and for `SpecIdentity` tests the inner `TestF` is
+  // `IdentityBifunctorized`.
+  addImplicit[UnsafeRun2[Bifunctorized.IdentityBifunctorized]]
 
   // Wall-clock / entropy services for Identity (no effect)
   make[Clock1[Identity]].fromValue(Clock1.Standard)
