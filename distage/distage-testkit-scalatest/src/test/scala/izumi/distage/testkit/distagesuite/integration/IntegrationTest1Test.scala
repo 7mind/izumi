@@ -38,12 +38,10 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit F: IO
   }
 }
 
-// Disabled pending investigation: the `IntegrationCheck[F[Throwable, _]]` `resourcesAvailable()`
-// hook is not invoked by the runner before the test body runs — the body fails with
-// "Test was not skipped!". This is a deeper integration-check matching issue in the M5 runner
-// (the binding extends `IntegrationCheck[F[Throwable, _]]` correctly but the runner's check
-// trigger does not detect it for ZIO Spec2). Suspected: the runner's
-// `runIfIntegrationCheck`/`integrationCheckIdentityType` paths in
-// `PlanInterpreterNonSequentialRuntimeImpl.scala` were ported during M5 and may use a
-// pre-bifunctor `IntegrationCheck[Identity]` SafeType that no longer matches.
-// final class MyDisabledTestF2ZioIO extends MyDisabledTestF2[zio.IO]
+// `IntegrationCheck[F[Throwable, _]]` is now matched by the runner — see M5-fix5b which mirrors
+// the EffectStrategy/ResourceStrategy Identity special-case into
+// `PlanInterpreterNonSequentialRuntimeImpl.runIfIntegrationCheck` (the binding extends
+// `IntegrationCheck[F[Throwable, _]]` and the runner's `checkOrFailF[F]` invokes
+// `resourcesAvailable()` and routes the resulting `F[Throwable, ResourceCheck]` through the
+// surrounding sandbox).
+final class MyDisabledTestF2ZioIO extends MyDisabledTestF2[zio.IO]

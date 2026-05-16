@@ -17,13 +17,14 @@ import izumi.fundamentals.platform.IzumiProject
 import izumi.fundamentals.platform.build.MacroParameters
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.strings.IzString.*
-import izumi.reflect.TagKK
+import izumi.reflect.{TagK, TagKK}
 
 trait PlanInterpreter {
   def run[F[+_, +_]: TagKK: IO2](
     plan: Plan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
+  )(implicit tkFThrowable: TagK[F[Throwable, _]]
   ): Lifecycle[F, Throwable, Either[FailedProvision, Locator]]
 }
 

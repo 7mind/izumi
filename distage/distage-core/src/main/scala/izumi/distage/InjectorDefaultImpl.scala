@@ -10,7 +10,7 @@ import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.functional.bio.{IO2, Primitives2}
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.reflect.TagKK
+import izumi.reflect.{TagK, TagKK}
 
 /**
   * @param bootstrapLocator contains Planner & PlanInterpeter built using a `BootstrapModule`,
@@ -50,6 +50,7 @@ final class InjectorDefaultImpl[F[+_, +_]](
   override private[distage] def produceDetailedFX[G[+_, +_]: TagKK: IO2](
     plan: Plan,
     filter: FinalizerFilter[G],
+  )(implicit tkGThrowable: TagK[G[Throwable, _]]
   ): Lifecycle[G, Throwable, Either[FailedProvision, Locator]] = {
     interpreter.run[G](plan, bootstrapLocator, filter)
   }

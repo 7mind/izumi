@@ -14,12 +14,11 @@ import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Failed
 import izumi.distage.model.provisioning.strategies.*
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.distage.model.{Locator, Planner}
-import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityType, nullType}
-import izumi.functional.bio.{Exit, IO2}
+import izumi.distage.provisioning.PlanInterpreterNonSequentialRuntimeImpl.{abstractCheckType, integrationCheckIdentityBifunctorizedType, nullType}
+import izumi.functional.bio.{Bifunctorized, Exit, IO2}
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.reflect.TagKK
+import izumi.reflect.{TagK, TagKK}
 
 import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
@@ -38,7 +37,8 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     plan: Plan,
     parentLocator: Locator,
     filterFinalizers: FinalizerFilter[F],
-  )(implicit F: IO2[F]
+  )(implicit F: IO2[F],
+    tkFThrowable: TagK[F[Throwable, _]],
   ): Lifecycle[F, Throwable, Either[FailedProvision, Locator]] = {
     Lifecycle
       .make[F, Throwable, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]](
@@ -58,15 +58,20 @@ class PlanInterpreterNonSequentialRuntimeImpl(
   private def instantiateImpl[F[+_, +_]: TagKK](
     plan: Plan,
     parentContext: Locator,
-  )(implicit F: IO2[F]
+  )(implicit F: IO2[F],
+    tkFThrowable: TagK[F[Throwable, _]],
   ): F[Throwable, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]] = {
-    // Integration-check matching: only IntegrationCheck[Identity] is matched here (see
-    // `checkOrFailIdentity` below). Integration checks living in an effect type F are an
-    // additional surface that requires `TagK[F[Throwable, _]]` to identify; we currently
-    // do not derive that from `TagKK[F]` and so the F-shaped integration-check path is
-    // disabled. This may be revisited in a later session if needed by downstream callers.
-    val integrationCheckFType: SafeType = SafeType.getKK[F]
-    val _ = integrationCheckFType
+    // Integration-check matching: two paths supported.
+    //   1. `IntegrationCheck[IdentityBifunctorized[Throwable, _]]` — synchronous Identity carrier
+    //      bindings (e.g. tests on `SpecIdentity`). The check method returns a synchronous
+    //      `MiniBIO` which is run via `Bifunctorized.debifunctorizeIdentity` on the calling
+    //      thread. This mirrors the Identity special-case in
+    //      `EffectStrategyDefaultImpl`/`ResourceStrategyDefaultImpl` (M5/9a-9b).
+    //   2. `IntegrationCheck[F[Throwable, _]]` — bifunctor-F carrier bindings (e.g. tests on
+    //      `Spec2[F]`). The check method returns `F[Throwable, ResourceCheck]` and is run via
+    //      `F.flatMap` in the surrounding pipeline. The SafeType for the binding's static type
+    //      is constructed at runtime from `TagK[F[Throwable, _]]` (added M5-fix5b).
+    val integrationCheckFType: SafeType = SafeType.get[IntegrationCheck[F[Throwable, _]]]
 
     val privateBindings = computePrivateBindings(plan)
 
@@ -282,17 +287,24 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def runIfIntegrationCheck[F[+_, +_]](op: NewObjectOp, @scala.annotation.unused integrationCheckFType: SafeType)(implicit F: IO2[F]): F[Throwable, Option[IntegrationCheckFailure]] = {
+  private def runIfIntegrationCheck[F[+_, +_]](op: NewObjectOp, integrationCheckFType: SafeType)(implicit F: IO2[F]): F[Throwable, Option[IntegrationCheckFailure]] = {
     op match {
       case i: NewObjectOp.CurrentContextInstance =>
         if (i.implType <:< nullType) {
           F.pure(None)
-        } else if (i.implType <:< integrationCheckIdentityType) {
+        } else if (i.implType <:< integrationCheckIdentityBifunctorizedType) {
+          // Identity-bifunctor carrier (`IntegrationCheck[IdentityBifunctorized[Throwable, _]]`):
+          // run the MiniBIO `resourcesAvailable()` synchronously on the calling thread.
+          // Mirrors the Identity special-case in `EffectStrategyDefaultImpl`.
           F.syncThrowable {
-            checkOrFailIdentity(i.key, i.instance)
+            checkOrFailIdentityBifunctorized(i.key, i.instance)
           }
+        } else if (i.implType <:< integrationCheckFType) {
+          // Bifunctor-F carrier (`IntegrationCheck[F[Throwable, _]]`): the check returns
+          // `F[Throwable, ResourceCheck]`. Run it through `F.flatMap` so failures and defects
+          // are routed through the surrounding `sandboxCatchAll`.
+          checkOrFailF[F](i.key, i.instance)
         } else {
-          // F-shaped IntegrationCheck path disabled — see comment in instantiateImpl.
           F.pure(None)
         }
       case _ =>
@@ -300,10 +312,12 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  private def checkOrFailIdentity(key: DIKey, resource: Any): Option[IntegrationCheckFailure] = {
-    resource
-      .asInstanceOf[IntegrationCheck[Identity]]
-      .resourcesAvailable() match {
+  private def checkOrFailIdentityBifunctorized(key: DIKey, resource: Any): Option[IntegrationCheckFailure] = {
+    val miniBIO = resource
+      .asInstanceOf[IntegrationCheck[Bifunctorized.IdentityBifunctorized[Throwable, _]]]
+      .resourcesAvailable()
+      .asInstanceOf[Bifunctorized.IdentityBifunctorized[Throwable, ResourceCheck]]
+    Bifunctorized.debifunctorizeIdentity[ResourceCheck](miniBIO) match {
       case ResourceCheck.Success() =>
         None
       case failure: ResourceCheck.Failure =>
@@ -311,9 +325,19 @@ class PlanInterpreterNonSequentialRuntimeImpl(
     }
   }
 
-  // NOTE: F-shaped IntegrationCheck disabled — Identity-shaped is matched by `checkOrFailIdentity`.
-  // To re-enable, thread a `TagK[F[Throwable, _]]` into this code path.
-  // private def checkOrFailF[F[+_, +_]](...) ...
+  private def checkOrFailF[F[+_, +_]](key: DIKey, resource: Any)(implicit F: IO2[F]): F[Throwable, Option[IntegrationCheckFailure]] = {
+    F.map(
+      resource
+        .asInstanceOf[IntegrationCheck[F[Throwable, _]]]
+        .resourcesAvailable()
+        .asInstanceOf[F[Throwable, ResourceCheck]]
+    ) {
+      case ResourceCheck.Success() =>
+        None
+      case failure: ResourceCheck.Failure =>
+        Some(IntegrationCheckFailure(key, new IntegrationCheckException(NEList(failure))))
+    }
+  }
 
   private def verifyEffectType[F[+_, +_]: TagKK](
     ops: Iterable[ExecutableOp]
@@ -335,6 +359,16 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
 private object PlanInterpreterNonSequentialRuntimeImpl {
   private val abstractCheckType: SafeType = SafeType.get[AbstractCheck]
-  private val integrationCheckIdentityType: SafeType = SafeType.get[IntegrationCheck[Identity]]
+  /** SafeType for `IntegrationCheck[IdentityBifunctorized[Throwable, _]]` — the post-M5
+    * shape of synchronous Identity-effect integration-check bindings. Pre-M5 this was
+    * `IntegrationCheck[Identity]` (where `Identity[A] = A`); the bifunctor migration
+    * routes Identity through the MiniBIO-backed `IdentityBifunctorized` carrier (see
+    * `Bifunctorized.scala`). The legacy `IntegrationCheck[Identity]` SafeType no longer
+    * matches any binding produced by the bifunctorized DSL family.
+    *
+    * Mirrored from the `MonadicOp.identityBifunctorizedEffectType`-based Identity
+    * special-case in `EffectStrategyDefaultImpl`/`ResourceStrategyDefaultImpl`. */
+  private val integrationCheckIdentityBifunctorizedType: SafeType =
+    SafeType.get[IntegrationCheck[Bifunctorized.IdentityBifunctorized[Throwable, _]]]
   private val nullType: SafeType = SafeType.get[Null]
 }

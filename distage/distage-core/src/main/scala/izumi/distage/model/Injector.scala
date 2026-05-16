@@ -119,12 +119,22 @@ trait Injector[F[+_, +_]] extends Planner with Producer {
   }
 
   /** Produce [[izumi.distage.model.Locator]] interpreting effect and resource bindings into the provided effect type */
-  final def produceCustomF[G[+_, +_]: TagKK](input: PlannerInput)(implicit G: IO2[G], P: Primitives2[G]): Lifecycle[G, Throwable, Locator] = {
+  final def produceCustomF[G[+_, +_]: TagKK](
+    input: PlannerInput
+  )(implicit G: IO2[G],
+    P: Primitives2[G],
+    tkGThrowable: izumi.reflect.TagK[G[Throwable, _]],
+  ): Lifecycle[G, Throwable, Locator] = {
     Lifecycle
       .liftF[G, Throwable, Plan](G.fromEither(plan(input).aggregateErrors))
       .flatMap((p: Plan) => produceCustomF[G](p))
   }
-  final def produceDetailedCustomF[G[+_, +_]: TagKK](input: PlannerInput)(implicit G: IO2[G], P: Primitives2[G]): Lifecycle[G, Throwable, Either[FailedProvision, Locator]] = {
+  final def produceDetailedCustomF[G[+_, +_]: TagKK](
+    input: PlannerInput
+  )(implicit G: IO2[G],
+    P: Primitives2[G],
+    tkGThrowable: izumi.reflect.TagK[G[Throwable, _]],
+  ): Lifecycle[G, Throwable, Either[FailedProvision, Locator]] = {
     Lifecycle
       .liftF[G, Throwable, Plan](G.fromEither(plan(input).aggregateErrors))
       .flatMap((p: Plan) => produceDetailedCustomF[G](p))
