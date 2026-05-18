@@ -163,26 +163,23 @@ class DistageScalatestReporter(
         reportStarting(s.timing)
         reportFailure(s.timing, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause))
       case s: TestStatus.FailedRuntimePlanning =>
-        val throwable = s.failure.failure.toThrowable
         reportStarting(s.failure.timing)
+        val throwable = s.failure.failure.toThrowable
         reportFailure(s.failure.timing, throwable, Exit.Trace.ThrowableTrace(throwable))
       case s: TestStatus.EarlyIgnoredByPrecondition =>
-        val t = s.cause.instantiationTiming
-        reportStarting(t)
+        reportStarting(s.cause.instantiationTiming)
         reportCancellation(
-          t,
+          s.cause.instantiationTiming,
           s"ignored early: ${s.checks.toList.niceList()}",
           // the Throwable is necessary for Intellij to include explanation other than just 'Test Canceled'
           Exit.Trace.ThrowableTrace(new IntegrationCheckException(s.checks, captureStackTrace = false)),
         )
       case s: TestStatus.EarlyCancelled =>
-        val t = s.cause.instantiationTiming
-        reportStarting(t)
-        reportCancellation(t, s"cancelled early: ${s.throwableCause.getMessage}", Exit.Trace.ThrowableTrace(s.throwableCause))
+        reportStarting(s.cause.instantiationTiming)
+        reportCancellation(s.cause.instantiationTiming, s"cancelled early: ${s.throwableCause.getMessage}", Exit.Trace.ThrowableTrace(s.throwableCause))
       case s: TestStatus.EarlyFailed =>
-        val t = s.cause.instantiationTiming
-        reportStarting(t)
-        reportFailure(t, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause))
+        reportStarting(s.cause.instantiationTiming)
+        reportFailure(s.cause.instantiationTiming, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause))
       case s: TestStatus.Instantiating =>
         if (s.logPlan) {
           reportInfo(s"Final test plan info: ${s.plan}", s.successfulPlanningTime)
