@@ -67,26 +67,6 @@ class DistageScalatestReporter(
 
     def epochMs(odt: OffsetDateTime): Long = odt.toInstant.toEpochMilli
 
-    def reportStarting(timing: Timing): Unit = {
-      suiteHandler.doReportEvent(suiteId1)(
-        ordinal =>
-          TestStarting(
-            ordinal = ordinal,
-            suiteName = suiteName1,
-            suiteId = suiteId1.suiteId,
-            suiteClassName = Some(suiteClassName1),
-            testName = testName,
-            testText = testName,
-            formatter = Some(MotionToSuppress),
-            location = location,
-            rerunner = rerunner,
-            payload = noPayload,
-            threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(timing.begin),
-          )
-      )
-    }
-
     def reportFailure(timing: Timing, throwable: Throwable, trace: Exit.Trace[Any]): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
@@ -140,6 +120,43 @@ class DistageScalatestReporter(
       )
     }
 
+    def reportInfo(message: String, timing: Timing): Unit = {
+      suiteHandler.doReportEvent(suiteId1)(
+        ordinal =>
+          InfoProvided(
+            ordinal = ordinal,
+            message = s"Test: ${test.test.id} \n$message",
+            nameInfo = Some(NameInfo(suiteName1, suiteId1.suiteId, Some(suiteClassName1), Some(testName))),
+            throwable = None,
+            formatter = infoFormatter,
+            location = location,
+            payload = noPayload,
+            threadName = Thread.currentThread.getName,
+            timeStamp = epochMs(timing.begin),
+          )
+      )
+    }
+
+    def reportStarting(timing: Timing): Unit = {
+      suiteHandler.doReportEvent(suiteId1)(
+        ordinal =>
+          TestStarting(
+            ordinal = ordinal,
+            suiteName = suiteName1,
+            suiteId = suiteId1.suiteId,
+            suiteClassName = Some(suiteClassName1),
+            testName = testName,
+            testText = testName,
+            formatter = Some(MotionToSuppress),
+            location = location,
+            rerunner = rerunner,
+            payload = noPayload,
+            threadName = Thread.currentThread.getName,
+            timeStamp = epochMs(timing.begin),
+          )
+      )
+    }
+
     def reportSucceeded(timing: Timing): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
@@ -158,23 +175,6 @@ class DistageScalatestReporter(
             payload = noPayload,
             threadName = Thread.currentThread.getName,
             timeStamp = epochMs(timing.end),
-          )
-      )
-    }
-
-    def reportInfo(message: String, timing: Timing): Unit = {
-      suiteHandler.doReportEvent(suiteId1)(
-        ordinal =>
-          InfoProvided(
-            ordinal = ordinal,
-            message = s"Test: ${test.test.id} \n$message",
-            nameInfo = Some(NameInfo(suiteName1, suiteId1.suiteId, Some(suiteClassName1), Some(testName))),
-            throwable = None,
-            formatter = infoFormatter,
-            location = location,
-            payload = noPayload,
-            threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(timing.begin),
           )
       )
     }
