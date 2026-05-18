@@ -1,9 +1,9 @@
 package izumi.logstage.api.logger
 
-import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{Error2, IO2}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.Log.Level
 import izumi.logstage.api.Log
+import izumi.logstage.api.Log.Level
 import izumi.logstage.macros.{LogMessageMacro, LogMethodMacro, LogValuesMacro}
 
 trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Singleton } =>
@@ -29,31 +29,64 @@ trait AbstractMacroLogIO[F[_]] { this: AbstractLogIO[F] { type EncMode <: Single
     ${ LogValuesMacro.logValuesIO[F, EncMode]('{ this }, '{ level }, '{ values }) }
   }
 
-  transparent inline final def logMethod[G[x] >: F[x], A](
-    level: Level,
-    printTypes: Boolean = false,
-    printImplicits: Boolean = false,
-  )(inline function: => A
-  )(using G: QuasiIO[G]
-  ): G[A] = {
-    ${ LogMethodMacro.logMethodIO[A, F, G, EncMode]('{ level }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ G }) }
-  }
-
-  transparent inline final def logMethodF[G[x] >: F[x], A](
-    level: Level,
-    printTypes: Boolean = false,
-    printImplicits: Boolean = false,
-  )(inline function: => G[A]
-  )(using G: QuasiPrimitives[G]
-  ): G[A] = {
-    ${ LogMethodMacro.logMethodIOF[A, F, G, EncMode]('{ level }, '{ function }, '{ function }, '{ this }, '{ printTypes }, '{ printImplicits }, '{ G }) }
-  }
-
   private[AbstractMacroLogIO] transparent inline final def logImpl(inline level: Log.Level, inline message: String): F[Unit] = {
     this.log(level)(LogMessageMacro.createMessageWithMode[EncMode](message))(CodePositionMaterializer.materialize)
   }
 
   private[AbstractMacroLogIO] transparent inline final def logToImpl(inline sinkKey: String, inline level: Log.Level, inline message: String): F[Unit] = {
     this.logTo(sinkKey)(level)(LogMessageMacro.createMessageWithMode[EncMode](message))(CodePositionMaterializer.materialize)
+  }
+}
+
+object AbstractMacroLogIO {
+
+  /**
+    * Bifunctor-shaped `logMethod` / `logMethodF` extension methods, provided for any `LogIO`-style
+    * receiver whose effect channel projects from a BIO2-shaped bifunctor `F[+_, +_]`. Matches both
+    * `LogIO[F[Nothing, _]]` (the default `LogIO2[F]` shape) and `LogIO[F[E, _]]` for any `E` (e.g.
+    * after `widenError[Throwable]`). The result of `logMethod` is always `F[Throwable, A]` because
+    * the by-name body may throw synchronously; `logMethodF` preserves the typed error channel.
+    */
+  implicit final class LogIO2LogMethodSyntax[F[+_, +_], E, Enc](
+    val self: AbstractLogIO[F[E, _]] { type EncMode = Enc }
+  ) extends AnyVal {
+    transparent inline def logMethod[A](
+      level: Level,
+      printTypes: Boolean = false,
+      printImplicits: Boolean = false,
+    )(inline function: => A
+    )(using F: IO2[F]
+    ): F[Throwable, A] = {
+      ${
+        LogMethodMacro.logMethodIO[F, A, Enc](
+          '{ level },
+          '{ function },
+          '{ self.asInstanceOf[AbstractLogIO[F[Nothing, _]]] },
+          '{ printTypes },
+          '{ printImplicits },
+          '{ F },
+        )
+      }
+    }
+
+    transparent inline def logMethodF[E1, A](
+      level: Level,
+      printTypes: Boolean = false,
+      printImplicits: Boolean = false,
+    )(inline function: => F[E1, A]
+    )(using F: Error2[F]
+    ): F[E1, A] = {
+      ${
+        LogMethodMacro.logMethodIOF[F, E1, A, Enc](
+          '{ level },
+          '{ function },
+          '{ function },
+          '{ self.asInstanceOf[AbstractLogIO[F[Nothing, _]]] },
+          '{ printTypes },
+          '{ printImplicits },
+          '{ F },
+        )
+      }
+    }
   }
 }

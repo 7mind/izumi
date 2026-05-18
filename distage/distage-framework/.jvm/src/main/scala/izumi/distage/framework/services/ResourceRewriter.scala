@@ -6,7 +6,7 @@ import izumi.distage.model.definition.ImplDef.DirectImplDef
 import izumi.distage.model.definition.*
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.{DIKey, SafeType}
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.IzLogger
 
@@ -42,9 +42,9 @@ class ResourceRewriter(
     if (rules.applyRewrites) {
       // this is a planning hotspot so, we microoptimize here
       val acTag = SafeType.get[AutoCloseable]
-      val acResTag = SafeType.get[Lifecycle[Identity, AutoCloseable]]
+      val acResTag = SafeType.get[Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, AutoCloseable]]
       val esTag = SafeType.get[ExecutorService]
-      val esResTag = SafeType.get[Lifecycle[Identity, ExecutorService]]
+      val esResTag = SafeType.get[Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, ExecutorService]]
 
       definition
         .flatMap(rewrite[AutoCloseable](acTag, acResTag)(fromAutoCloseable(logger, _)))
@@ -52,7 +52,7 @@ class ResourceRewriter(
     } else definition
   }
 
-  private def rewrite[TGT](tgt: SafeType, resourceType: SafeType)(convert: TGT => Lifecycle[Identity, TGT])(b: Binding): Seq[Binding] = {
+  private def rewrite[TGT](tgt: SafeType, resourceType: SafeType)(convert: TGT => Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, TGT])(b: Binding): Seq[Binding] = {
     b match {
       case b if b.isMutator => Seq(b) // do not rewrite mutators
       case implBinding: Binding.ImplBinding =>
@@ -90,7 +90,7 @@ class ResourceRewriter(
   }
 
   private def rewriteImpl[TGT](
-    convert: TGT => Lifecycle[Identity, TGT],
+    convert: TGT => Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, TGT],
     key: DIKey,
     origin: SourceFilePosition,
     implementation: ImplDef,
@@ -164,7 +164,7 @@ object ResourceRewriter {
   }
 
   /** Like [[Lifecycle.fromAutoCloseable]], but with added logging */
-  def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): Lifecycle[Identity, A] = {
+  def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, A] = {
     Lifecycle.makeSimple(acquire) {
       ac =>
         logger.info(s"Closing $ac...")
@@ -173,7 +173,7 @@ object ResourceRewriter {
   }
 
   /** Like [[Lifecycle.fromExecutorService]], but with added logging */
-  def fromExecutorService[A <: ExecutorService](logger: IzLogger, acquire: => A): Lifecycle[Identity, A] = {
+  def fromExecutorService[A <: ExecutorService](logger: IzLogger, acquire: => A): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, A] = {
     Lifecycle.makeSimple(acquire) {
       es =>
         if (!(es.isShutdown || es.isTerminated)) {

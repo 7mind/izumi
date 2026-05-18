@@ -12,7 +12,7 @@ import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.ResourcesPlugin.Conflict
 import izumi.distage.roles.test.fixtures.TestPluginCatsIO.NotCloseable
 import izumi.distage.roles.test.fixtures.roles.TestRole00.TestRole00Resource
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.{Bifunctorized, IO2}
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -22,9 +22,9 @@ import izumi.logstage.api.IzLogger
 import java.util.concurrent.ExecutorService
 import scala.annotation.unused
 
-class TestTask00[F[_]: QuasiIO](logger: IzLogger) extends RoleTask[F] {
-  override def start(roleParameters: EntrypointArgs): F[Unit] = {
-    QuasiIO[F].maybeSuspend {
+class TestTask00[F[+_, +_]: IO2](logger: IzLogger) extends RoleTask[F] {
+  override def start(roleParameters: EntrypointArgs): F[Throwable, Unit] = {
+    IO2[F].syncThrowable {
       logger.info(s"[TestTask00] Entrypoint invoked!: $roleParameters")
     }
   }
@@ -36,7 +36,7 @@ object TestTask00 extends RoleDescriptor {
 
 object roles {
 
-  class TestRole00[F[_]: QuasiIO](
+  class TestRole00[F[+_, +_]: IO2](
     logger: IzLogger,
     notCloseable: NotCloseable,
     val conf: TestServiceConf,
@@ -56,12 +56,12 @@ object roles {
   ) extends RoleService[F] {
     notCloseable.discard()
 
-    override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
+    override def start(roleParameters: EntrypointArgs): Lifecycle[F, Throwable, Unit] = Lifecycle.make(IO2[F].syncThrowable {
       logger.info(s"[TestRole00] started: $roleParameters, $dummies, $conflict")
       assert(conf.overridenInt == 555, s"Common value is 111, role-specific value is 555, found ${conf.overridenInt}")
     }) {
       _ =>
-        QuasiIO[F].maybeSuspend {
+        IO2[F].sync {
           logger.info(s"[TestRole00] exiting role...")
         }
     }
@@ -78,13 +78,13 @@ object roles {
 
     final case class SetElementOnlyCfg(abc: String)
 
-    final class TestRole00Resource[F[_]](@unused private val it: TestRole00ResourceIntegrationCheck[F])
+    final class TestRole00Resource[F[+_, +_]](@unused private val it: TestRole00ResourceIntegrationCheck[F])
 
-    final class TestRole00ResourceIntegrationCheck[F[_]: QuasiIO](
+    final class TestRole00ResourceIntegrationCheck[F[+_, +_]: IO2](
       @unused private val cfg: IntegrationOnlyCfg,
       private val cfg2: IntegrationOnlyCfg2,
-    ) extends IntegrationCheck[F] {
-      override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure {
+    ) extends IntegrationCheck[F[Throwable, _]] {
+      override def resourcesAvailable(): F[Throwable, ResourceCheck] = IO2[F].pure {
         assert(cfg2.value == "configvalue:updated")
         ResourceCheck.Success()
       }
@@ -93,12 +93,12 @@ object roles {
 
 }
 
-class TestRole01[F[_]: QuasiIO](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
+class TestRole01[F[+_, +_]: IO2](logger: IzLogger) extends RoleService[F] {
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Throwable, Unit] = Lifecycle.make(IO2[F].syncThrowable {
     logger.info(s"[TestRole01] started: $roleParameters")
   }) {
     _ =>
-      QuasiIO[F].maybeSuspend {
+      IO2[F].sync {
         logger.info(s"[TestRole01] exiting role...")
       }
   }
@@ -110,12 +110,12 @@ object TestRole01 extends RoleDescriptor {
   override def parserSchema: RoleParserSchema = RoleParserSchema(id, ParserDef.Empty, Some("Example role"), None, freeArgsAllowed = false)
 }
 
-class TestRole02[F[_]: QuasiIO](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
+class TestRole02[F[+_, +_]: IO2](logger: IzLogger) extends RoleService[F] {
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Throwable, Unit] = Lifecycle.make(IO2[F].syncThrowable {
     logger.info(s"[TestRole02] started: $roleParameters")
   }) {
     _ =>
-      QuasiIO[F].maybeSuspend {
+      IO2[F].sync {
         logger.info(s"[TestRole02] exiting role...")
       }
   }
@@ -125,16 +125,16 @@ object TestRole02 extends RoleDescriptor {
   override final val id = "testrole02"
 }
 
-class TestRole03[F[_]: QuasiIO](
+class TestRole03[F[+_, +_]: IO2](
   logger: IzLogger,
   axisComponent: AxisComponent,
 ) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Throwable, Unit] = Lifecycle.make(IO2[F].syncThrowable {
     logger.info(s"[TestRole03] started: $roleParameters")
     assert(axisComponent == AxisComponentCorrect, TestRole03.expectedError)
   }) {
     _ =>
-      QuasiIO[F].maybeSuspend {
+      IO2[F].sync {
         logger.info(s"[TestRole03] exiting role...")
       }
   }
@@ -145,16 +145,16 @@ object TestRole03 extends RoleDescriptor {
   override final val id = "testrole03"
 }
 
-class TestRole04[F[_]: QuasiIO](
+class TestRole04[F[+_, +_]: IO2](
   logger: IzLogger,
   listconf: ListConf,
 ) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.make(QuasiIO[F].maybeSuspend {
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Throwable, Unit] = Lifecycle.make(IO2[F].syncThrowable {
     logger.info(s"[TestRole04] started: $roleParameters")
     assert(listconf.ints == List(3, 2, 1), listconf.ints)
   }) {
     _ =>
-      QuasiIO[F].maybeSuspend {
+      IO2[F].sync {
         logger.info(s"[TestRole04] exiting role...")
       }
   }
@@ -164,31 +164,31 @@ object TestRole04 extends RoleDescriptor {
   override final val id = "testrole04"
 }
 
-class FailingRole01[F[_]: QuasiIO](
+class FailingRole01[F[+_, +_]: IO2](
   val bootComponentWhichMustNotBeResolved: FinalizerFilters[F]
 ) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.unit
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Throwable, Unit] = Lifecycle.unit
 }
 
 object FailingRole01 extends RoleDescriptor {
   final val expectedError =
-    s"Instance is not available in the object graph: ${DIKey[FinalizerFilters[cats.effect.IO]]}"
+    s"Instance is not available in the object graph: ${DIKey[FinalizerFilters[Bifunctorized[cats.effect.IO, +_, +_]]]}"
   override final val id = "failingrole01"
 }
 
-class FailingRole02[F[_]: QuasiIO](
+class FailingRole02[F[+_, +_]: IO2](
   val roleAppPlanner: RoleAppPlanner,
   val outerLocator: LocatorRef @Id("roleapp"),
 ) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = Lifecycle.unit
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Throwable, Unit] = Lifecycle.unit
 }
 
 object FailingRole02 extends RoleDescriptor {
   override final val id = "failingrole02"
 }
 
-final class ConfigTestRole[F[_]: QuasiIO](configTestConfig: ConfigTestConfig) extends RoleTask[F] {
-  override def start(roleParameters: EntrypointArgs): F[Unit] = QuasiIO[F].maybeSuspend {
+final class ConfigTestRole[F[+_, +_]: IO2](configTestConfig: ConfigTestConfig) extends RoleTask[F] {
+  override def start(roleParameters: EntrypointArgs): F[Throwable, Unit] = IO2[F].syncThrowable {
     ConfigTestRole.configTestConfig = configTestConfig
   }
 }

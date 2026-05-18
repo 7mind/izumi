@@ -20,7 +20,7 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
       make[ServiceD]
     }
 
-    val injector = Injector[Identity](bootstrapOverrides = Seq(new BootstrapModuleDef {
+    val injector = Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](bootstrapOverrides = Seq(new BootstrapModuleDef {
       many[PlanningHook]
         .add(AutoSetHook[Ordered]("order")(weak = true))
     }))
@@ -42,7 +42,7 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
         .addValue(5)
     }
 
-    val injector = Injector[Identity](bootstrapOverrides = Seq(new BootstrapModuleDef {
+    val injector = Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](bootstrapOverrides = Seq(new BootstrapModuleDef {
       many[PlanningHook]
         .add(AutoSetHook[Int](weak = true))
     }))
@@ -76,7 +76,7 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
       make[C]
     }
 
-    val services: Set[PrintService] = Injector[Identity](bootstrapOverrides = Seq(bootstrapModule))
+    val services: Set[PrintService] = Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](bootstrapOverrides = Seq(bootstrapModule))
       .produceGet[Set[PrintService]](appModule)
       .unsafeGet()
 
@@ -90,17 +90,19 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
       register[PrintService](weak = true)
     }
 
-    val servicesDepsOfB: Set[PrintService] = Injector[Identity](bootstrapOverrides = Seq(weakAutoSetModule))
-      .produceRun(appModule) {
-        (_: B, set: Set[PrintService]) =>
-          set
-      }
+    val servicesDepsOfB: Set[PrintService] = izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+      Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](bootstrapOverrides = Seq(weakAutoSetModule))
+        .produceRun(appModule) {
+          (_: B, set: Set[PrintService]) =>
+            izumi.functional.bio.Bifunctorized.bifunctorizeIdentity[Set[PrintService]](set)
+        }
+    )
 
     assert(servicesDepsOfB.size == 2)
 
     servicesDepsOfB.foreach(_.start())
 
-    val servicesDepsOfNothing: Set[PrintService] = Injector[Identity](bootstrapOverrides = Seq(weakAutoSetModule))
+    val servicesDepsOfNothing: Set[PrintService] = Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](bootstrapOverrides = Seq(weakAutoSetModule))
       .produceGet[Set[PrintService]](appModule)
       .unsafeGet()
 

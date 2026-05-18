@@ -1,14 +1,11 @@
 package izumi.distage.modules.support
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.functional.quasi.*
+import izumi.functional.bio.*
 import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.retry.Scheduler2
-import izumi.functional.bio.{Async2, BlockingIO2, Clock1, Clock2, Entropy1, Entropy2, Fork2, IO2, Primitives2, PrimitivesLocal2, PrimitivesM2, SyncSafe1, SyncSafe2, Temporal2, UnsafeRun2, WeakAsync2}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.{TagK, TagKK}
-
-import scala.concurrent.ExecutionContext
 
 object AnyBIOSupportModule {
   /**
@@ -16,7 +13,6 @@ object AnyBIOSupportModule {
     *
     * For all `F[+_, +_]` with available `make[Async2[F]]`, `make[Temporal2[F]]` and `make[UnsafeRun2[F]]` bindings.
     *
-    *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
     *  - Adds [[izumi.functional.bio]] typeclass instances for `F[+_, +_]`
     *
     * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`, `make[Fork2[F]]`
@@ -29,23 +25,6 @@ object AnyBIOSupportModule {
     make[TagK[F[Throwable, _]]].fromValue(t)
     addImplicit[TagKK[F]]
 
-    make[QuasiIORunner2[F]]
-      .from[QuasiIORunner.BIOImpl[F]]
-      .modifyBy(_.annotateParameterIfExists[ExecutionContext]("cpu")) // scala.js
-
-    make[QuasiIO2[F]]
-      .aliased[QuasiPrimitives2[F]]
-      .aliased[QuasiApplicative2[F]]
-      .aliased[QuasiFunctor2[F]]
-      .from {
-        QuasiIO.fromBIO(using _: IO2[F])
-      }
-    make[QuasiAsync2[F]].from {
-      QuasiAsync.fromBIO(using _: WeakAsync2[F])
-    }
-    make[QuasiTemporal2[F]].from {
-      QuasiTemporal.fromBIO(using _: Temporal2[F])
-    }
     make[SyncSafe2[F]].from {
       SyncSafe1.fromBIO(using _: IO2[F])
     }

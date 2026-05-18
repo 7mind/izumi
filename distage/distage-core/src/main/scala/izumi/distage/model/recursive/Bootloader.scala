@@ -3,16 +3,15 @@ package izumi.distage.model.recursive
 import izumi.distage.InjectorFactory
 import izumi.distage.model.definition.errors.DIError
 import izumi.distage.model.definition.{Activation, BootstrapModule, Id, LocatorPrivacy, Module, ModuleBase}
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.{Bifunctorized, IO2, Primitives2}
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.{Injector, PlannerInput}
 import izumi.distage.modules.DefaultModule
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.platform.functional.Identity
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 final case class BootstrappedApp(
-  injector: Injector[Identity],
+  injector: Injector[Bifunctorized.IdentityBifunctorized],
   module: ModuleBase,
   plan: Plan,
 )
@@ -38,11 +37,16 @@ class Bootloader(
     val bootstrap = config.bootstrap(bootstrapModule)
     val locatorPrivacy = config.locatorPrivacy(input.locatorPrivacy)
 
-    val injector = injectorFactory[Identity](
+    val injector = injectorFactory[Bifunctorized.IdentityBifunctorized](
       bootstrapActivation = config.bootstrapActivation(bootstrapActivation),
       bootstrapOverrides = Seq(bootstrap),
       locatorPrivacy = locatorPrivacy,
-    )(using QuasiIO[Identity], TagK[Identity], DefaultModule[Identity](defaultModule))
+    )(using
+      IO2[Bifunctorized.IdentityBifunctorized],
+      Primitives2[Bifunctorized.IdentityBifunctorized],
+      TagKK[Bifunctorized.IdentityBifunctorized],
+      DefaultModule[Bifunctorized.IdentityBifunctorized](defaultModule),
+    )
     val module = config.appModule(input.bindings)
     val roots = config.roots(input.roots)
 

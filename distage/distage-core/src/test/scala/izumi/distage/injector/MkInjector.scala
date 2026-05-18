@@ -1,10 +1,10 @@
 package izumi.distage.injector
 
 import distage.Injector
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.Bifunctorized
 
 trait MkInjector {
-  def mkInjector(): Injector[Identity] = Injector.Standard()
-  def mkNoProxiesInjector(): Injector[Identity] = Injector.NoProxies()
-  def mkNoCyclesInjector(): Injector[Identity] = Injector.NoCycles()
+  def mkInjector(): Injector[Bifunctorized.IdentityBifunctorized] = Injector.Standard()
+  def mkNoProxiesInjector(): Injector[Bifunctorized.IdentityBifunctorized] = Injector.NoProxies()
+  def mkNoCyclesInjector(): Injector[Bifunctorized.IdentityBifunctorized] = Injector.NoCycles()
 }

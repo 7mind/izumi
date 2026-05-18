@@ -2,11 +2,11 @@ package izumi.distage.testkit.runner.impl
 
 import distage.*
 import izumi.distage.testkit.model.*
+import izumi.distage.testkit.model.TestEnvironment
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.*
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
+import izumi.functional.bio.{IO2, Primitives2, UnsafeRun2}
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.fundamentals.platform.uuid.IzUUID
 import izumi.logstage.api.IzLogger
@@ -14,7 +14,7 @@ import logstage.Log
 
 import scala.concurrent.duration.FiniteDuration
 
-class DistageTestRunner[F[_]](
+class DistageTestRunner[F[+_, +_]](
   reporter: TestReporter,
   logging: TestkitLogging,
   planner: TestPlanner,
@@ -25,43 +25,46 @@ class DistageTestRunner[F[_]](
   // Parallel suites & tests use parallelism capabilities of their own effect type.
   parTraverseExt: ParTraverseExt[F],
 )(implicit
-  tagK: TagK[F],
-  F: QuasiIO[F],
+  tagKK: TagKK[F],
+  F: IO2[F],
+  FP: Primitives2[F],
 ) {
 
-  def run(tests: Seq[DistageTest[AnyF]]): F[List[EnvResult]] = {
+  def run(tests: Seq[DistageTest[AnyF]]): F[Throwable, List[EnvResult]] = {
     // We assume that under normal circumstances the code below should never throw.
     // All the exceptions should be converted to values by this time.
     // If it throws, there is a bug which needs to be fixed.
-    F.suspendF {
+    F.suspendThrowable {
       val id = ScopeId(IzUUID.generateTimeUUID())
       reporter.beginScope(id)
 
-      timed
-        .timed(planner.planGroupTests[F](tests, parTraverseExt)(using F))
-        .flatMap {
-          envs =>
-            F.suspendF {
-              reportFailedPlanning(id, envs.out.bad, envs.timing)
-              reportFailedInvividualPlans(id, envs)
+      F.flatMap(
+        timed
+          .timed[Throwable, PlannedTests[AnyF]](planner.planGroupTests[F](tests, parTraverseExt)(using F))
+      ) {
+        envs =>
+          F.suspendThrowable {
+            reportFailedPlanning(id, envs.out.bad, envs.timing)
+            reportFailedInvividualPlans(id, envs)
 
-              val toRun = envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
-              logEnvironmentsInfo(toRun, envs.timing.duration)
+            val toRun = envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
+            logEnvironmentsInfo(toRun, envs.timing.duration)
 
+            F.flatMap(
               parTraverseExt
-                .groupedParTraverse(toRun)(_._1.envExec.parallelEnvs) {
+                .groupedParTraverse[Throwable, (PreparedTestEnv[AnyF], TestTree[AnyF]), EnvResult](toRun)(_._1.envExec.parallelEnvs) {
                   case (env, testsTree) =>
                     proceedEnv(id, env, testsTree)
-                }.flatMap {
-                  result =>
-                    F.maybeSuspend {
-                      reporter.endScope(id)
-
-                      result
-                    }
+                }
+            ) {
+              result =>
+                F.syncThrowable {
+                  reporter.endScope(id)
+                  result
                 }
             }
-        }
+          }
+      }
     }
   }
 
@@ -90,18 +93,18 @@ class DistageTestRunner[F[_]](
     }
   }
 
-  protected def proceedEnv[TestF[_]](id: ScopeId, env: PreparedTestEnv[TestF], testsTree: TestTree[TestF]): F[EnvResult] = {
-    val PreparedTestEnv(envExec, runtimePlan, runtimeInjector, _) = env
-
-    import envExec.effectType
+  protected def proceedEnv[TestF[_]](id: ScopeId, env: PreparedTestEnv[TestF], testsTree: TestTree[TestF]): F[Throwable, EnvResult] = {
+    val envExec = env.envExec
+    val runtimePlan = env.runtimePlan
+    val runtimeInjector = env.runtimeInjector
 
     val allEnvTests = testsTree.allTests.map(_.test)
 
-    timed.timedLifecycle(runtimeInjector.produceDetailedCustomF[F](runtimePlan)).use {
+    timed.timedLifecycle[Throwable, Either[izumi.distage.model.provisioning.PlanInterpreter.FailedProvision, Locator]](runtimeInjector.produceDetailedCustomF[F](runtimePlan)).use {
       maybeRtLocator =>
         maybeRtLocator.foldEither(
           left = (runtimeInstantiationFailure, runtimeInstantiationTiming) =>
-            F.maybeSuspend {
+            F.syncThrowable {
               val result = EnvResult.RuntimePlanningFailure(runtimeInstantiationTiming, allEnvTests.map(_.meta), runtimeInstantiationFailure)
 
               val failure = statusConverter.failRuntimePlanning(result)
@@ -113,16 +116,35 @@ class DistageTestRunner[F[_]](
               result
             },
           right = (runtimeLocator, runtimeInstantiationTiming) =>
-            runtimeLocator.run {
-              (runner: QuasiIORunner[TestF], testTreeRunner: TestTreeRunner[TestF], logger: IzLogger @Id("distage-testkit")) =>
-                logger.info(s"Processing ${allEnvTests.size -> "tests"} using ${effectType.tag -> "monad"}")
-
-                runnerToF
-                  .runToF(runner, () => testTreeRunner.traverse(id, 0, runtimeLocator, envExec.parallelEnvs, testsTree))
-                  .map[EnvResult](EnvResult.EnvSuccess(runtimeInstantiationTiming, _))
-            },
+            runEnvWithLocatorWithTag(id, envExec, runtimeLocator, runtimeInstantiationTiming, allEnvTests.size, testsTree),
         )
     }
+  }
+
+  // Reify the test effect type as a concrete bifunctor type parameter `TestBI` so the implicit TagKK
+  // captures `envExec.effectType` at value, not at type-symbol level. This decouples DIKey lookup from
+  // the path-dependent `envExec.F` symbol.
+  private def runEnvWithLocatorWithTag[TestBI[+_, +_]](
+    id: ScopeId,
+    envExec: TestEnvironment.EnvExecutionParams,
+    runtimeLocator: Locator,
+    runtimeInstantiationTiming: Timing,
+    nTests: Int,
+    testsTree: TestTree[?],
+  )(implicit
+    // Empty placeholder; the caller has to provide the right TagKK at call time. We supply it via the
+    // helper-stub trick at use site.
+    @scala.annotation.unused dummy: DummyImplicit
+  ): F[Throwable, EnvResult] = {
+    implicit val tagKKTestBI: TagKK[TestBI] = envExec.effectType.asInstanceOf[TagKK[TestBI]]
+    val runner = runtimeLocator.get[UnsafeRun2[TestBI]]
+    val testTreeRunner = runtimeLocator.get[TestTreeRunner[TestBI]]
+    val logger = runtimeLocator.get[IzLogger]("distage-testkit")
+    logger.info(s"Processing ${nTests -> "tests"} using ${envExec.effectType.tag -> "monad"}")
+    F.map[Throwable, List[GroupResult], EnvResult](
+      runnerToF
+        .runToF[TestBI, Throwable, List[GroupResult]](runner, () => testTreeRunner.traverse(id, 0, runtimeLocator, envExec.parallelEnvs, testsTree.asInstanceOf[TestTree[TestBI[Throwable, _]]]))
+    )(EnvResult.EnvSuccess(runtimeInstantiationTiming, _))
   }
 
   private def logEnvironmentsInfo(envs: Map[PreparedTestEnv[AnyF], TestTree[AnyF]], duration: FiniteDuration): Unit = {

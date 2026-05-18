@@ -10,9 +10,8 @@ import izumi.distage.model.definition.dsl.LifecycleAdapters.{LifecycleTag, ZIOEn
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{MakeDSL, MakeDSLUnnamedAfterFrom, SetDSL}
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, IdContract, SafeType}
-import izumi.functional.bio.data.Morphism1
+import izumi.functional.bio.data.Morphism2
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.reflect.{Tag, TagK}
 import zio.*
 import zio.managed.ZManaged
@@ -279,27 +278,27 @@ object ModuleDefDSL {
       * @see - [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
       *      - [[Lifecycle]]
       */
-    final def fromResource[R <: Lifecycle[AnyF, T]: ClassConstructor](implicit tag: LifecycleTag[R]): AfterBind = {
-      fromResource(ClassConstructor[R])
+    final def fromResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]: ClassConstructor](implicit tag: LifecycleTag[R]): AfterBind = {
+      fromResource[F0, E0, R](ClassConstructor[R])
     }
 
-    final def fromResource[R](instance: R & Lifecycle[AnyF, T])(implicit tag: LifecycleTag[R]): AfterBind = {
+    final def fromResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]](instance: R)(implicit tag: LifecycleTag[R]): AfterBind = {
       import tag.*
-      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
     }
 
-    final def fromResource[R](function: Functoid[R & Lifecycle[AnyF, T]])(implicit tag: LifecycleTag[R], d: DummyImplicit): AfterBind = {
+    final def fromResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]](function: Functoid[R])(implicit tag: LifecycleTag[R], d: DummyImplicit): AfterBind = {
       import tag.*
-      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
     }
 
-    final def fromResource[R0, R <: Lifecycle[AnyF, T]](
+    final def fromResource[R0, R](
       function: Functoid[R0]
     )(implicit adapt: LifecycleAdapters.AdaptFunctoid.Aux[R0, R],
       tag: LifecycleTag[R],
     ): AfterBind = {
       import tag.*
-      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
     }
 
     /**
@@ -307,14 +306,14 @@ object ModuleDefDSL {
       *
       * This will acquire a NEW resource again for every `refResource` binding
       */
-    final def refResource[R <: Lifecycle[AnyF, T]](implicit tag: LifecycleTag[R]): AfterBind = {
+    final def refResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]](implicit tag: LifecycleTag[R]): AfterBind = {
       import tag.*
-      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)))
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)))
     }
 
-    final def refResource[R <: Lifecycle[AnyF, T]](name: Identifier)(implicit tag: LifecycleTag[R]): AfterBind = {
+    final def refResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]](name: Identifier)(implicit tag: LifecycleTag[R]): AfterBind = {
       import tag.*
-      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
     }
 
     /**
@@ -402,42 +401,42 @@ object ModuleDefDSL {
     final def refEffect[F[_]: TagK, I <: T: Tag](name: Identifier)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)), pos)
 
-    final def addResource[R <: Lifecycle[AnyF, T]: ClassConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
-      addResource[R](ClassConstructor[R])(tag, pos, DummyImplicit.dummyImplicit)
+    final def addResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]: ClassConstructor](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd =
+      addResource[F0, E0, R](ClassConstructor[R])(tag, pos, DummyImplicit.dummyImplicit)
 
-    final def addResource[R](instance: R & Lifecycle[AnyF, T])(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def addResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]](instance: R)(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag.*
-      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
+      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)), pos)
     }
 
-    final def addResource[R](
-      function: Functoid[R & Lifecycle[AnyF, T]]
+    final def addResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]](
+      function: Functoid[R]
     )(implicit tag: LifecycleTag[R],
       pos: CodePositionMaterializer,
       d: DummyImplicit,
     ): AfterAdd = {
       import tag.*
-      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
+      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)), pos)
     }
 
-    final def addResource[R0, R <: Lifecycle[AnyF, T]](
+    final def addResource[R0, R](
       function: Functoid[R0]
     )(implicit adapt: LifecycleAdapters.AdaptFunctoid.Aux[R0, R],
       tag: LifecycleTag[R],
       pos: CodePositionMaterializer,
     ): AfterAdd = {
       import tag.*
-      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)), pos)
+      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)), pos)
     }
 
-    final def refResource[R <: Lifecycle[AnyF, T]](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def refResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]](implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag.*
-      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)), pos)
+      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)), pos)
     }
 
-    final def refResource[R <: Lifecycle[AnyF, T]](name: Identifier)(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
+    final def refResource[F0[+_, +_], E0, R <: Lifecycle[F0, E0, T]](name: Identifier)(implicit tag: LifecycleTag[R], pos: CodePositionMaterializer): AfterAdd = {
       import tag.*
-      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
+      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getKK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)), pos)
     }
 
     /**
@@ -496,7 +495,7 @@ object ModuleDefDSL {
           .map(r => effect.provideSomeEnvironment[Scope](_.unionAll[R](r)))
           .map(Lifecycle.fromZIO[Any](_))
 
-        dsl.fromResource(provider)
+        dsl.fromResource[ZIO[Any, +_, +_], E, Lifecycle.FromZIO[Any, E, I]](provider)
       }
 
       def fromZIOEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[ZIO[Scope & R, E, I]]): AfterBind = {
@@ -504,7 +503,7 @@ object ModuleDefDSL {
           .map2(ZEnvConstructor[R])((zio, r) => zio.provideSomeEnvironment[Scope](_.unionAll[R](r)))
           .map(Lifecycle.fromZIO[Any](_))
 
-        dsl.fromResource(provider)
+        dsl.fromResource[ZIO[Any, +_, +_], E, Lifecycle.FromZIO[Any, E, I]](provider)
       }
 
       def fromZManagedEnv[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: ZManaged[R, E, I]): AfterBind = {
@@ -548,10 +547,10 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: ClassConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
+      def fromZEnvResource[R1 <: Lifecycle[ZIO[Nothing, +_, +_], Any, T]: ClassConstructor](implicit tag: ZIOEnvLifecycleTag[R1, T]): AfterBind = {
         import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
         val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(using tagFull)
-        dsl.fromResource(provider)(resourceTag, DummyImplicit.dummyImplicit)
+        dsl.fromResource[ZIO[Any, +_, +_], E, Lifecycle[ZIO[Any, +_, +_], E, A]](provider)(resourceTag, DummyImplicit.dummyImplicit)
       }
 
       /**
@@ -560,9 +559,9 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: Lifecycle[ZIO[R, E, _], I]): AfterBind = {
+      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](resource: Lifecycle[ZIO[R, +_, +_], E, I]): AfterBind = {
         val provider = ZEnvConstructor[R].map(provideZEnvLifecycle(resource, _))
-        dsl.fromResource[Lifecycle[ZIO[Any, E, _], I]](provider)
+        dsl.fromResource[ZIO[Any, +_, +_], E, Lifecycle[ZIO[Any, +_, +_], E, I]](provider)
       }
 
       /**
@@ -571,9 +570,9 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[Lifecycle[ZIO[R, E, _], I]]): AfterBind = {
+      def fromZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](function: Functoid[Lifecycle[ZIO[R, +_, +_], E, I]]): AfterBind = {
         val provider = function.map2(ZEnvConstructor[R])(provideZEnvLifecycle)
-        dsl.fromResource[Lifecycle[ZIO[Any, E, _], I]](provider)
+        dsl.fromResource[ZIO[Any, +_, +_], E, Lifecycle[ZIO[Any, +_, +_], E, I]](provider)
       }
 
     }
@@ -614,13 +613,13 @@ object ModuleDefDSL {
         * Warning: removes the precise subtype of Lifecycle because of `Lifecycle.map`:
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
-      def addZEnvResource[R1 <: Lifecycle[ZIO[Nothing, Any, +_], T]: ClassConstructor](
+      def addZEnvResource[R1 <: Lifecycle[ZIO[Nothing, +_, +_], Any, T]: ClassConstructor](
         implicit tag: ZIOEnvLifecycleTag[R1, T],
         pos: CodePositionMaterializer,
       ): AfterAdd = {
         import tag.{A, E, R, ctorR, ev, resourceTag, tagFull}
         val provider = ClassConstructor[R1].map2(ctorR.provider)((r1, zenv) => provideZEnvLifecycle[R, E, A](ev(r1), zenv))(using tagFull)
-        dsl.addResource(provider)(resourceTag, pos, DummyImplicit.dummyImplicit)
+        dsl.addResource[ZIO[Any, +_, +_], E, Lifecycle[ZIO[Any, +_, +_], E, A]](provider)(resourceTag, pos, DummyImplicit.dummyImplicit)
       }
 
       /**
@@ -630,11 +629,11 @@ object ModuleDefDSL {
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       def addZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](
-        resource: Lifecycle[ZIO[R, E, _], I]
+        resource: Lifecycle[ZIO[R, +_, +_], E, I]
       )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
         val provider = ZEnvConstructor[R].map(provideZEnvLifecycle(resource, _))
-        dsl.addResource[Lifecycle[ZIO[Any, E, _], I]](provider)
+        dsl.addResource[ZIO[Any, +_, +_], E, Lifecycle[ZIO[Any, +_, +_], E, I]](provider)
       }
 
       /**
@@ -644,19 +643,19 @@ object ModuleDefDSL {
         * Integration checks on mixed-in as a trait onto a Lifecycle value result here will be lost
         */
       def addZEnvResource[R: ZEnvConstructor, E >: DottyNothing: Tag, I <: T: Tag](
-        function: Functoid[Lifecycle[ZIO[R, E, _], I]]
+        function: Functoid[Lifecycle[ZIO[R, +_, +_], E, I]]
       )(implicit pos: CodePositionMaterializer
       ): AfterAdd = {
         val provider = function.map2(ZEnvConstructor[R])(provideZEnvLifecycle)
-        dsl.addResource[Lifecycle[ZIO[Any, E, _], I]](provider)
+        dsl.addResource[ZIO[Any, +_, +_], E, Lifecycle[ZIO[Any, +_, +_], E, I]](provider)
       }
 
     }
 
   }
 
-  @inline private def provideZEnvLifecycle[R, E, A](lifecycle: Lifecycle[ZIO[R, E, _], A], zenv: ZEnvironment[R]): Lifecycle[ZIO[Any, E, _], A] = {
-    lifecycle.mapK[ZIO[R, E, _], ZIO[Any, E, _]](Morphism1(_.provideEnvironment(zenv)))
+  @inline private def provideZEnvLifecycle[R, E, A](lifecycle: Lifecycle[ZIO[R, +_, +_], E, A], zenv: ZEnvironment[R]): Lifecycle[ZIO[Any, +_, +_], E, A] = {
+    lifecycle.mapK[ZIO[R, +_, +_], ZIO[Any, +_, +_]](Morphism2(_.provideEnvironment(zenv)))
   }
 
   // DSL state machine

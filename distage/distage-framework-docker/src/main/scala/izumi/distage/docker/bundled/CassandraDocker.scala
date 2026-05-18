@@ -3,7 +3,7 @@ package izumi.distage.docker.bundled
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.model.definition.ModuleDef
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 /**
   * Example Cassandra docker.
@@ -21,12 +21,12 @@ object CassandraDocker extends ContainerDef {
   }
 }
 
-class CassandraDockerModule[F[_]: TagK] extends ModuleDef {
+class CassandraDockerModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[CassandraDocker.Container].fromResource {
     CassandraDocker.make[F]
   }
 }
 
 object CassandraDockerModule {
-  def apply[F[_]: TagK]: CassandraDockerModule[F] = new CassandraDockerModule[F]
+  def apply[F[+_, +_]: TagKK]: CassandraDockerModule[F] = new CassandraDockerModule[F]
 }

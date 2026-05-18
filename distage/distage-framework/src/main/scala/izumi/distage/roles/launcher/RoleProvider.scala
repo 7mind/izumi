@@ -15,7 +15,7 @@ import izumi.logstage.api.IzLogger
 import scala.annotation.unused
 
 trait RoleProvider {
-  def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo
+  def loadRoles[F[+_, +_]: TagKK](appModule: ModuleBase): RolesInfo
 }
 
 object RoleProvider {
@@ -26,7 +26,7 @@ object RoleProvider {
     parameters: RoleAppArgs,
   ) extends RoleProvider {
 
-    def loadRoles[F[_]: TagK](appModule: ModuleBase): RolesInfo = {
+    def loadRoles[F[+_, +_]: TagKK](appModule: ModuleBase): RolesInfo = {
       val rolesInfo = getInfo(
         bindings = appModule.bindings,
         requiredRoles = parameters.roles.iterator.map(_.role).toSet,

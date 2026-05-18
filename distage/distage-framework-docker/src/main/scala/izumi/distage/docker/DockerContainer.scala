@@ -5,7 +5,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.VerifiedContainerCo
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
 import izumi.distage.docker.model.Docker.*
 import izumi.distage.model.providers.Functoid
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
+import izumi.functional.bio.{Async2, IO2, Primitives2, Temporal2}
 import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.IzLogger
 
@@ -34,13 +34,13 @@ final case class DockerContainer[+T](
 
 object DockerContainer {
 
-  def resource[F[_]](
+  def resource[F[+_, +_]](
     conf: ContainerDef
-  ): (DockerClientWrapper[F], IzLogger, QuasiIO[F], QuasiAsync[F], QuasiTemporal[F]) => ContainerResource[F, conf.Tag] = {
-    new ContainerResource[F, conf.Tag](conf.config, _, _, Set.empty)(using _, _, _)
+  ): (DockerClientWrapper[F], IzLogger, IO2[F], Async2[F], Temporal2[F], Primitives2[F]) => ContainerResource[F, conf.Tag] = {
+    new ContainerResource[F, conf.Tag](conf.config, _, _, Set.empty)(using _, _, _, _)
   }
 
-  implicit final class DockerProviderExtensions[F[_], T](private val self: Functoid[ContainerResource[F, T]]) extends AnyVal {
+  implicit final class DockerProviderExtensions[F[+_, +_], T](private val self: Functoid[ContainerResource[F, T]]) extends AnyVal {
     /**
       * Allows you to modify [[Docker.ContainerConfig]] while summoning additional dependencies from the object graph using [[izumi.distage.model.providers.Functoid]].
       *

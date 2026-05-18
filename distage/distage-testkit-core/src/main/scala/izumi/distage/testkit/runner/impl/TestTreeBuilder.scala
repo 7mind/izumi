@@ -1,11 +1,12 @@
 package izumi.distage.testkit.runner.impl
 
-import distage.{DIKey, Identity, Planner, PlannerInput}
+import distage.{DIKey, Planner, PlannerInput}
 import izumi.distage.model.plan.Plan
 import izumi.distage.model.reflection.DIKey.SetElementKey
 import izumi.distage.testkit.model.{FailedTest, PreparedTest, TestGroup, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.PackedEnv
 import izumi.distage.testkit.runner.impl.services.TimedActionF
+import izumi.functional.bio.Bifunctorized
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -20,7 +21,7 @@ trait TestTreeBuilder {
 
 object TestTreeBuilder {
   class TestTreeBuilderImpl(
-    timedId: TimedActionF[Identity]
+    timedId: TimedActionF[Bifunctorized.IdentityBifunctorized]
   ) extends TestTreeBuilder {
 
     override def build[F[_]](planner: Planner, runtimePlan: Plan, packedEnvs: Iterable[PackedEnv[F]]): TestTree[F] = {
@@ -62,17 +63,23 @@ object TestTreeBuilder {
                 val newRoots = newRoots0 ++ filteredStrengthenedKeys
 
                 val maybePreparedTest = {
-                  for {
-                    maybeNewTestPlan <- timedId.timed {
-                      if (newRoots.nonEmpty) {
-                        /** (1) It's important to remember that .plan() would always return the same result regardless of the parent locator!
-                          * (2) The planner here must preserve customizations (bootstrap modules) hence be the same as instantiated in TestPlanner
-                          */
-                        planner.plan(PlannerInput(newAppModule, newRoots, t.activation))
-                      } else {
-                        Right(Plan.empty)
+                  // Run the `IdentityBifunctorized`-flavored timed action synchronously to extract the inner `Timed[Either]`
+                  // value, then use `invert` to flip the `Timed[Either]` into `Either[Timed, Timed]` for the for-comprehension.
+                  val timedEither: izumi.distage.testkit.runner.impl.services.Timed[Either[izumi.fundamentals.collections.nonempty.NEList[izumi.distage.model.definition.errors.DIError], Plan]] =
+                    Bifunctorized.debifunctorizeIdentity(timedId.timed[Throwable, Either[izumi.fundamentals.collections.nonempty.NEList[izumi.distage.model.definition.errors.DIError], Plan]] {
+                      Bifunctorized.bifunctorizeIdentity {
+                        if (newRoots.nonEmpty) {
+                          /** (1) It's important to remember that .plan() would always return the same result regardless of the parent locator!
+                            * (2) The planner here must preserve customizations (bootstrap modules) hence be the same as instantiated in TestPlanner
+                            */
+                          planner.plan(PlannerInput(newAppModule, newRoots, t.activation))
+                        } else {
+                          Right(Plan.empty)
+                        }
                       }
-                    }.invert
+                    })
+                  for {
+                    maybeNewTestPlan <- timedEither.invert
                   } yield {
                     PreparedTest(
                       t.test,

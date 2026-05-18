@@ -18,13 +18,13 @@ import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.launcher.RoleProvider
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
+import izumi.functional.bio.Bifunctorized
 import izumi.fundamentals.collections.nonempty.NESet
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 import scala.annotation.unused
 
@@ -41,8 +41,8 @@ import scala.annotation.unused
   * @see [[izumi.distage.framework.PlanCheck]]
   */
 trait CheckableApp {
-  type AppEffectType[_]
-  def tagK: TagK[AppEffectType]
+  type AppEffectType[+_, +_]
+  def tagK: TagKK[AppEffectType]
 
   def preparePlanCheckInput(
     selectedRoles: RoleSelection,
@@ -65,14 +65,14 @@ trait CheckableApp {
   }
 }
 object CheckableApp {
-  type Aux[F[_]] = CheckableApp { type AppEffectType[A] = F[A] }
+  type Aux[F[+_, +_]] = CheckableApp { type AppEffectType[E, A] = F[E, A] }
 }
 
-abstract class CoreCheckableApp[F[_]](implicit val tagK: TagK[F]) extends CheckableApp {
-  override final type AppEffectType[A] = F[A]
+abstract class CoreCheckableApp[F[+_, +_]](implicit val tagK: TagKK[F]) extends CheckableApp {
+  override final type AppEffectType[E, A] = F[E, A]
 }
 
-abstract class CoreCheckableAppSimple[F[_]: TagK: DefaultModule] extends CoreCheckableApp[F] {
+abstract class CoreCheckableAppSimple[F[+_, +_]: TagKK: DefaultModule] extends CoreCheckableApp[F] {
   def module: ModuleBase
   def roots: Roots
 
@@ -81,10 +81,10 @@ abstract class CoreCheckableAppSimple[F[_]: TagK: DefaultModule] extends CoreChe
   }
 }
 
-abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) extends CheckableApp with RoleCheckableAppPlatformSpecific {
+abstract class RoleCheckableApp[F[+_, +_]](override implicit val tagK: TagKK[F]) extends CheckableApp with RoleCheckableAppPlatformSpecific {
   def roleAppBootModule: Module
 
-  override final type AppEffectType[A] = F[A]
+  override final type AppEffectType[E, A] = F[E, A]
 
   override def preparePlanCheckInput(
     selectedRoles: RoleSelection,
@@ -94,7 +94,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
     val baseModuleOverrides = roleAppBootModulePlanCheckOverrides(selectedRoles, chosenConfigFile.flatMap(configFile => maybeClassLoader.map(_ -> configFile)))
     val baseModuleWithOverrides = this.roleAppBootModule.overriddenBy(baseModuleOverrides)
 
-    Injector[Identity]().produceRun(baseModuleWithOverrides)(Functoid {
+    val planCheckInput: Bifunctorized.IdentityBifunctorized[Throwable, PlanCheckInput[F]] = Injector[Bifunctorized.IdentityBifunctorized]().produceRun(baseModuleWithOverrides)(Functoid {
       (
         // module
         bsModule: BootstrapModule @Id("roleapp"),
@@ -112,28 +112,31 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
       ) =>
         val defaultModuleBindings = defaultModule.module.bindings
 
-        PlanCheckInput(
-          effectType = tagK,
-          module = ModuleBase.make(
-            ModuleBase
-              .overrideImpl(
-                ModuleBase.overrideImpl(bsModule.iterator, defaultModuleBindings.iterator),
-                appModule.iterator,
-              )
-              .toSet
-          ),
-          roots = Roots(
-            // bootstrap is produced with Roots.Everything, so each bootstrap component is effectively a root
-            bsModule.keys ++
-            rolesInfo.requiredComponents
-          ),
-          roleNames = rolesInfo.requiredRoleNames,
-          providedKeys = injectorFactory.providedKeys[F](bsModule)(using DefaultModule[F](Module.make(defaultModuleBindings))),
-          configLoader = configLoader,
-          appPlugins = appPlugins,
-          bsPlugins = bsPlugins,
+        Bifunctorized.bifunctorizeIdentity(
+          PlanCheckInput(
+            effectType = tagK,
+            module = ModuleBase.make(
+              ModuleBase
+                .overrideImpl(
+                  ModuleBase.overrideImpl(bsModule.iterator, defaultModuleBindings.iterator),
+                  appModule.iterator,
+                )
+                .toSet
+            ),
+            roots = Roots(
+              // bootstrap is produced with Roots.Everything, so each bootstrap component is effectively a root
+              bsModule.keys ++
+              rolesInfo.requiredComponents
+            ),
+            roleNames = rolesInfo.requiredRoleNames,
+            providedKeys = injectorFactory.providedKeys[F](bsModule)(using DefaultModule[F](Module.make(defaultModuleBindings))),
+            configLoader = configLoader,
+            appPlugins = appPlugins,
+            bsPlugins = bsPlugins,
+          )
         )
     })
+    Bifunctorized.debifunctorizeIdentity(planCheckInput)
   }
 
   protected final def roleAppBootModulePlanCheckOverrides(

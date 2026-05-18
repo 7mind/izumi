@@ -95,7 +95,7 @@ final class JUnitXmlRegressionTest extends AnyWordSpec {
         scopeName.should {
           leafNames.foreach {
             name =>
-              spec.convertToWordSpecStringWrapperDS(name) in {
+              spec.convertToWordSpecStringWrapperDSIdentity(name) in {
                 Thread.sleep(perTestSleep)
                 ()
               }

@@ -2,47 +2,78 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.{Bifunctorized, IO2}
 import ProvisionerIssue.MissingRef
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.ResourceStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
-import izumi.fundamentals.platform.functional.Identity
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 class ResourceStrategyDefaultImpl extends ResourceStrategy {
 
-  override def allocateResource[F[_]: TagK](
+  override def allocateResource[F[+_, +_]: TagKK](
     context: ProvisioningKeyProvider,
     op: MonadicOp.AllocateResource,
-  )(implicit F: QuasiIO[F]
-  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    op.throwOnIncompatibleEffectType[F]() match {
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+    op.throwOnIncompatibleBifunctorEffectType[F]() match {
       case Left(value) =>
         F.pure(Left(value))
       case Right(_) =>
         val resourceKey = op.effectKey
         context.fetchKey(resourceKey, makeByName = false) match {
+          case Some(resourceIdentity0) if op.actionEffectType == MonadicOp.identityBifunctorizedEffectType && op.isEffect =>
+            // Resource carrier is IdentityBifunctorized; F may be any bifunctor compatible with Identity-shaped effects.
+            // The carrier IS a MiniBIO at runtime - run it synchronously and lift into F via F.sync.
+            val resourceIdentity: Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, Any] =
+              resourceIdentity0.asInstanceOf[Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, Any]]
+            F.sync {
+              val innerResource = Bifunctorized.debifunctorizeIdentity(resourceIdentity.acquire)
+              val instance: Any = Bifunctorized.debifunctorizeIdentity(
+                resourceIdentity.extract(innerResource).fold[Bifunctorized.IdentityBifunctorized[Throwable, Any]](identity, Bifunctorized.bifunctorizeIdentity(_))
+              )
+              Right(
+                Seq(
+                  NewObjectOp.NewResource[F](
+                    op.target,
+                    op.instanceTpe,
+                    instance,
+                    () => F.sync(Bifunctorized.debifunctorizeIdentity(resourceIdentity.release(innerResource))),
+                  )
+                )
+              )
+            }
           case Some(resource0) if op.isEffect =>
-            val resource = resource0.asInstanceOf[Lifecycle[F, Any]]
+            val resource = resource0.asInstanceOf[Lifecycle[F, Throwable, Any]]
             // FIXME: make explicitly uninterruptible / save register finalizer sooner than now
             resource.acquire.flatMap {
               innerResource =>
-                F.suspendF {
-                  resource.extract(innerResource).fold(identity, F.pure).map {
+                F.suspendThrowable {
+                  resource.extract(innerResource).fold(identity, F.pure[Any]).map {
                     instance =>
                       Right(Seq(NewObjectOp.NewResource[F](op.target, op.instanceTpe, instance, () => resource.release(innerResource))))
                   }
                 }
             }
           case Some(resourceIdentity0) =>
-            val resourceIdentity: Lifecycle[Identity, Any] = resourceIdentity0.asInstanceOf[Lifecycle[Identity, Any]]
+            val resourceIdentity: Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, Any] =
+              resourceIdentity0.asInstanceOf[Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, Any]]
             // FIXME: make explicitly uninterruptible / save register finalizer sooner than now
-            F.maybeSuspend {
-              val innerResource = resourceIdentity.acquire
-              val instance: Any = resourceIdentity.extract(innerResource).merge
-              Right(Seq(NewObjectOp.NewResource[F](op.target, op.instanceTpe, instance, () => F.maybeSuspend(resourceIdentity.release(innerResource)))))
+            F.sync {
+              val innerResource = Bifunctorized.debifunctorizeIdentity(resourceIdentity.acquire)
+              val instance: Any = Bifunctorized.debifunctorizeIdentity(
+                resourceIdentity.extract(innerResource).fold[Bifunctorized.IdentityBifunctorized[Throwable, Any]](identity, Bifunctorized.bifunctorizeIdentity(_))
+              )
+              Right(
+                Seq(
+                  NewObjectOp.NewResource[F](
+                    op.target,
+                    op.instanceTpe,
+                    instance,
+                    () => F.sync(Bifunctorized.debifunctorizeIdentity(resourceIdentity.release(innerResource))),
+                  )
+                )
+              )
             }
           case None =>
             F.pure(Left(MissingRef(op.target, "Failed to fetch Lifecycle instance element ", Set(resourceKey))))

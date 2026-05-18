@@ -172,7 +172,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val sub = Injector.inherit[Identity](context)
+    val sub = Injector.inherit[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](context)
     val subplan = sub.planUnsafe(definition)
     val subcontext = injector.produce(subplan).unsafeGet()
 

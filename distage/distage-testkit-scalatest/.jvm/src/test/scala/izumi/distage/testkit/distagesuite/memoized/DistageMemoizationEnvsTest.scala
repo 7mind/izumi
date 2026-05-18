@@ -13,7 +13,7 @@ import zio.IO
 import java.util.UUID
 
 /*
-╗ [Level 0; 0 current tests + 16 nested tests] roots: [ {type.QuasiIORunner[=λ %0 → ZIO[-Any,+Throwable,+0]]}, {type.TestTreeRunner[=λ %0 → ZIO[-Any,+Throwable,+0]]} ]
+╗ [Level 0; 0 current tests + 16 nested tests] roots: [ {type.UnsafeRun2[=ZIO[-Any,+0,+1]]}, {type.TestTreeRunner[=ZIO[-Any,+0,+1]]} ]
 ║
 ╠════╗ [Level 1; 0 current tests + 2 nested tests] roots: [ {type.MemoizationEnv::MemoizedInstance}, {type.MemoizationEnv::MemoizedLevel1} ] transitive: ø
 ║    ║

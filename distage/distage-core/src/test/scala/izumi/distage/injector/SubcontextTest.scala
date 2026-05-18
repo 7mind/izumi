@@ -1,12 +1,12 @@
 package izumi.distage.injector
 
-import distage.{Activation, DIKey, Id, Injector, ModuleDef, PlanVerifier, Repo, TagK}
+import distage.{Activation, DIKey, Id, Injector, ModuleDef, PlanVerifier, Repo, TagKK}
 import izumi.distage.Subcontext
 import izumi.distage.fixtures.ResourceCases.Suspend2
 import izumi.distage.injector.SubcontextTest.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.Roots
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.{Bifunctorized, IO2}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
@@ -21,7 +21,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       // this will not be used/instantiated
       make[LocalService].from[LocalServiceBadImpl]
 
-      makeSubcontext[Identity, Int]
+      makeSubcontext[Bifunctorized.IdentityBifunctorized, Int]
         .named("test")
         .withSubmodule {
           new ModuleDef {
@@ -37,17 +37,17 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         .localDependency[Arg]("x")
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test"))
+    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Bifunctorized.IdentityBifunctorized, Int]].named("test"))
 
     val injector = mkNoCyclesInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val local = context.get[Subcontext[Identity, Int]]("test")
+    val local = context.get[Subcontext[Bifunctorized.IdentityBifunctorized, Int]]("test")
     assert(context.find[GlobalServiceDependency].nonEmpty)
     assert(context.find[GlobalService].nonEmpty)
     assert(context.find[LocalService].isEmpty)
-    val out = local.provide[Arg]("x")(Arg(1)).produceRun(identity)
+    val out = Bifunctorized.debifunctorizeIdentity(local.provide[Arg]("x")(Arg(1)).produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
     assert(out == 230)
 
     val result = PlanVerifier().verify[Identity](module, Roots.Everything, Injector.providedKeys(), Set.empty)
@@ -59,7 +59,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[GlobalServiceDependency]
       make[GlobalService]
 
-      makeSubcontext[Identity, Int]
+      makeSubcontext[Bifunctorized.IdentityBifunctorized, Int]
         .named("test")
         .withSubmodule(new ModuleDef {
           make[Arg].fromValue(Arg(2))
@@ -71,34 +71,34 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         }
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test"))
+    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Bifunctorized.IdentityBifunctorized, Int]].named("test"))
 
     val injector = mkNoCyclesInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val local = context.get[Subcontext[Identity, Int]]("test")
+    val local = context.get[Subcontext[Bifunctorized.IdentityBifunctorized, Int]]("test")
 
-    assert(local.produceRun(identity) == 231)
+    assert(Bifunctorized.debifunctorizeIdentity(local.produceRun(i => Bifunctorized.bifunctorizeIdentity(i))) == 231)
   }
 
   "support self references" in {
     val module = new ModuleDef {
-      makeSubcontext[Identity, Int](new ModuleDef {
+      makeSubcontext[Bifunctorized.IdentityBifunctorized, Int](new ModuleDef {
         make[LocalRecursiveService].from[LocalRecursiveServiceGoodImpl]
         make[Int].from((summator: LocalRecursiveService) => summator.localSum)
       }).localDependency[Arg]
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]])
+    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Bifunctorized.IdentityBifunctorized, Int]])
 
     val injector = mkNoCyclesInjector()
     val plan = injector.planUnsafe(definition)
     val context = injector.produce(plan).unsafeGet()
 
-    val local = context.get[Subcontext[Identity, Int]]
+    val local = context.get[Subcontext[Bifunctorized.IdentityBifunctorized, Int]]
 
-    assert(local.provide[Arg](Arg(10)).produceRun(identity) == 20)
+    assert(Bifunctorized.debifunctorizeIdentity(local.provide[Arg](Arg(10)).produceRun(i => Bifunctorized.bifunctorizeIdentity(i))) == 20)
   }
 
   "support activations on subcontexts" in {
@@ -108,7 +108,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[LocalService].from[LocalServiceGoodImpl]
       make[Arg].fromValue(Arg(1))
 
-      makeSubcontext[Identity, Int]
+      makeSubcontext[Bifunctorized.IdentityBifunctorized, Int]
         .named("test")
         .tagged(Repo.Dummy)
         .extractWith {
@@ -117,7 +117,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         }
         .localDependency[Boolean] // extraneous dependency is ignored
 
-      makeSubcontext[Identity, Int]
+      makeSubcontext[Bifunctorized.IdentityBifunctorized, Int]
         .named("test")
         .tagged(Repo.Prod)
         .extractWith {
@@ -128,11 +128,11 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val dummySubcontext = injector.produceGet[Subcontext[Identity, Int]]("test")(module, Activation(Repo.Dummy)).unsafeGet()
-    val prodSubcontext = injector.produceGet[Subcontext[Identity, Int]]("test")(module, Activation(Repo.Prod)).unsafeGet()
+    val dummySubcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]]("test")(module, Activation(Repo.Dummy)).unsafeGet()
+    val prodSubcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]]("test")(module, Activation(Repo.Prod)).unsafeGet()
 
-    val dummyRes = dummySubcontext.produceRun(identity)
-    val prodRes = prodSubcontext.produceRun(x => x)
+    val dummyRes = Bifunctorized.debifunctorizeIdentity(dummySubcontext.produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
+    val prodRes = Bifunctorized.debifunctorizeIdentity(prodSubcontext.produceRun(x => Bifunctorized.bifunctorizeIdentity(x)))
 
     assert(dummyRes == 230)
     assert(prodRes == 228)
@@ -143,7 +143,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[GlobalServiceDependency]
       make[GlobalService]
 
-      makeSubcontext[Identity, Int](new ModuleDef {
+      makeSubcontext[Bifunctorized.IdentityBifunctorized, Int](new ModuleDef {
         make[LocalService].from[LocalServiceGoodImpl]
 
         make[Arg].tagged(Repo.Dummy).fromValue(Arg(1))
@@ -154,11 +154,11 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
     }
 
     val injector = mkNoCyclesInjector()
-    val subcontext = injector.produceGet[Subcontext[Identity, Int]](module, Activation(Repo.Dummy)).unsafeGet()
-    val prodSubcontext = injector.produceGet[Subcontext[Identity, Int]](module, Activation(Repo.Prod)).unsafeGet()
+    val subcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]](module, Activation(Repo.Dummy)).unsafeGet()
+    val prodSubcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]](module, Activation(Repo.Prod)).unsafeGet()
 
-    val dummyRes = subcontext.produceRun(identity)
-    val prodRes = prodSubcontext.produceRun(identity)
+    val dummyRes = Bifunctorized.debifunctorizeIdentity(subcontext.produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
+    val prodRes = Bifunctorized.debifunctorizeIdentity(prodSubcontext.produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
 
     assert(dummyRes == 230)
     assert(prodRes == 228)
@@ -169,17 +169,17 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[GlobalServiceDependency]
       make[GlobalService]
 
-      makeSubcontext[Identity, Int](new ModuleDef {
+      makeSubcontext[Bifunctorized.IdentityBifunctorized, Int](new ModuleDef {
         make[LocalService].from[LocalServiceAnyValImpl]
         make[Int].from((_: LocalService).localSum)
       }).localDependency[Int]("arg")
     }
 
     val injector = mkNoCyclesInjector()
-    val subcontext = injector.produceGet[Subcontext[Identity, Int]](module).unsafeGet()
+    val subcontext = injector.produceGet[Subcontext[Bifunctorized.IdentityBifunctorized, Int]](module).unsafeGet()
 
-    val resPlus1 = subcontext.provide[Int]("arg")(1).produceRun(identity)
-    val resMinus1 = subcontext.provide[Int]("arg")(-1).produceRun(identity)
+    val resPlus1 = Bifunctorized.debifunctorizeIdentity(subcontext.provide[Int]("arg")(1).produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
+    val resMinus1 = Bifunctorized.debifunctorizeIdentity(subcontext.provide[Int]("arg")(-1).produceRun(i => Bifunctorized.bifunctorizeIdentity(i)))
 
     assert(resPlus1 == 230)
     assert(resMinus1 == 228)
@@ -190,7 +190,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       make[GlobalServiceDependency]
       make[GlobalService]
 
-      makeSubcontext[Suspend2[Throwable, _], Suspend2[Throwable, Int]](new ModuleDef {
+      makeSubcontext[Suspend2, Suspend2[Throwable, Int]](new ModuleDef {
         make[LocalService].from[LocalServiceGoodImpl]
       }).localDependency[Arg]
         .extractWith {
@@ -199,24 +199,26 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         }
     }
 
-    def good[F[_]: QuasiIO: TagK](subcontext: Subcontext[F, F[Int]]): F[Int] = {
+    def good[F[+_, +_]: IO2: izumi.functional.bio.Primitives2: TagKK](subcontext: Subcontext[F, F[Throwable, Int]]): F[Throwable, Int] = {
       subcontext.provide[Arg](Arg(1)).produce().use(effect => effect)
     }
 
     val injector = mkNoCyclesInjector()
-    val subcontext = injector.produceGet[Subcontext[Suspend2[Throwable, _], Suspend2[Throwable, Int]]](module).unsafeGet()
+    val subcontext = injector.produceGet[Subcontext[Suspend2, Suspend2[Throwable, Int]]](module).unsafeGet()
 
     val res = good(subcontext)
 
     assert(res.run() == Right(230))
 
     val err = intercept[TestFailedException](assertCompiles("""
-    def bad[F[_]](subcontext: Subcontext[F, F[Int]]): F[Int] = {
+    def bad[F[+_, +_]](subcontext: Subcontext[F, F[Throwable, Int]]): F[Throwable, Int] = {
       subcontext.provide[Arg](Arg(1)).produce().use(effect => effect)
     }
     """))
 
-    assert(err.getMessage.contains("implicit value") || err.getMessage.contains("implicit error"))
+    assert(
+      err.getMessage.contains("implicit value") || err.getMessage.contains("implicit error") || err.getMessage.contains("No given instance")
+    )
   }
 }
 
@@ -248,9 +250,11 @@ object SubcontextTest {
     def localSum: Int
   }
 
-  class LocalRecursiveServiceGoodImpl(value: Arg, self: Subcontext[Identity, Int]) extends LocalRecursiveService {
+  class LocalRecursiveServiceGoodImpl(value: Arg, self: Subcontext[Bifunctorized.IdentityBifunctorized, Int]) extends LocalRecursiveService {
     def localSum: Int = if (value.value > 0) {
-      2 + self.provide[Arg](Arg(value.value - 1)).produceRun(identity)
+      2 + Bifunctorized.debifunctorizeIdentity(
+        self.provide[Arg](Arg(value.value - 1)).produceRun(i => Bifunctorized.bifunctorizeIdentity(i))
+      )
     } else {
       0
     }

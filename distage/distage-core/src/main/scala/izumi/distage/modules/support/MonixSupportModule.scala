@@ -14,7 +14,7 @@
 ///**
 //  * `monix.eval.Task` effect type support for `distage` resources, effects, roles & tests
 //  *
-//  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `monix` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+//  *  - Adds [[izumi.functional.bio]] bifunctor BIO instances on `Bifunctorized[monix.eval.Task, +_, +_]`
 //  *  - Adds `cats-effect` typeclass instances for `monix`
 //  *
 //  * Will also add the following components:
@@ -28,8 +28,8 @@
 //  * Bindings to the same keys in your own [[izumi.distage.model.definition.ModuleDef]] or plugins will override these defaults.
 //  */
 //trait MonixSupportModule extends ModuleDef with MonixPlatformDependentSupportModule {
-//  // QuasiIO & cats-effect instances
-//  include(AnyCatsEffectSupportModule[Task])
+//  // Bifunctor BIO + cats-effect instances
+//  include(AnyCatsEffectSupportModule.usingAsyncParallel[Task])
 //
 //  make[Scheduler].from(Scheduler.global)
 //  make[ExecutionContext].named("cpu").using[Scheduler]

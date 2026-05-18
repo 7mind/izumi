@@ -1,7 +1,7 @@
 package izumi.distage.roles.launcher
 
 import izumi.distage.framework.DebugProperties
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
+import izumi.functional.bio.{Async2, IO2}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.logstage.api.IzLogger
 
@@ -35,8 +35,8 @@ object AppShutdownInitiator {
   *
   * @see also [[izumi.distage.roles.launcher.AppShutdownStrategy.ImmediateExitShutdownStrategy]]
   */
-trait AppShutdownStrategy[F[_]] extends AppShutdownInitiator {
-  def awaitShutdown(logger: IzLogger)(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit]
+trait AppShutdownStrategy[F[+_, +_]] extends AppShutdownInitiator {
+  def awaitShutdown(logger: IzLogger)(implicit F: IO2[F], FA: Async2[F]): F[Throwable, Unit]
   def releaseAwaitLatch(): Unit
   def finishShutdown(): Unit
 }
@@ -54,12 +54,12 @@ object AppShutdownStrategy {
     )
   }
 
-  class JvmExitHookBlockingShutdownStrategy[F[_]] extends AppShutdownStrategy[F] {
+  class JvmExitHookBlockingShutdownStrategy[F[+_, +_]] extends AppShutdownStrategy[F] {
     private val primaryLatch = new CountDownLatch(1)
     private val postShutdownLatch = new CountDownLatch(1)
 
-    override def awaitShutdown(logger: IzLogger)(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit] = {
-      F.maybeSuspend {
+    override def awaitShutdown(logger: IzLogger)(implicit F: IO2[F], FA: Async2[F]): F[Throwable, Unit] = {
+      F.syncThrowable {
         scala.concurrent.blocking {
           val shutdownHook = makeShutdownHook(logger, () => releaseAwaitLatch())
           logger.info("Waiting on latch...")
@@ -87,8 +87,8 @@ object AppShutdownStrategy {
     }
   }
 
-  class ImmediateExitShutdownStrategy[F[_]] extends AppShutdownStrategy[F] {
-    def awaitShutdown(logger: IzLogger)(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit] = F.maybeSuspend {
+  class ImmediateExitShutdownStrategy[F[+_, +_]] extends AppShutdownStrategy[F] {
+    def awaitShutdown(logger: IzLogger)(implicit F: IO2[F], FA: Async2[F]): F[Throwable, Unit] = F.syncThrowable {
       logger.info("Exiting immediately...")
     }
 
@@ -101,22 +101,20 @@ object AppShutdownStrategy {
     }
   }
 
-  class AsyncShutdownStrategy[F[_]] extends AppShutdownStrategy[F] {
+  class AsyncShutdownStrategy[F[+_, +_]] extends AppShutdownStrategy[F] {
     private val primaryLatch: Promise[Unit] = Promise[Unit]()
     private val postShutdownLatch: CountDownLatch = new CountDownLatch(1)
 
-    override def awaitShutdown(logger: IzLogger)(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit] = {
-      import QuasiIO.syntax.*
-
+    override def awaitShutdown(logger: IzLogger)(implicit F: IO2[F], FA: Async2[F]): F[Throwable, Unit] = {
       for {
-        shutdownHook <- F.maybeSuspend {
+        shutdownHook <- F.syncThrowable {
           val shutdownHook = makeShutdownHook(logger, () => releaseAwaitLatch())
           logger.info("Waiting on latch...")
           Runtime.getRuntime.addShutdownHook(shutdownHook)
           shutdownHook
         }
         _ <- FA.fromFuture(primaryLatch.future)
-        _ <- F.maybeSuspend {
+        _ <- F.syncThrowable {
           try {
             Runtime.getRuntime.removeShutdownHook(shutdownHook)
           } catch {

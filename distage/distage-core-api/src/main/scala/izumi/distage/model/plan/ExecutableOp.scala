@@ -10,7 +10,7 @@ import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey.ProxyInitKey
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.cache.CachedProductHashcode
-import izumi.reflect.TagK
+import izumi.reflect.{TagK, TagKK}
 
 import scala.annotation.tailrec
 
@@ -90,6 +90,14 @@ object ExecutableOp {
     def effectHKTypeCtor: SafeType
   }
   object MonadicOp {
+    /** [[SafeType]] for the bifunctorized identity carrier
+      * [[izumi.functional.bio.Bifunctorized.IdentityBifunctorized]]. Recognised by
+      * [[MonadicOpExt.isEffect]] as a no-op (identity-like) effect — bindings created
+      * via `Lifecycle.makeSimple`/`Lifecycle.make[IdentityBifunctorized, ...]` should
+      * not be flagged as incompatible against an `Identity` verifier or runtime. */
+    lazy val identityBifunctorizedEffectType: SafeType =
+      SafeType.getKK[izumi.functional.bio.Bifunctorized.IdentityBifunctorized]
+
     final case class ExecuteEffect(target: DIKey, effectKey: DIKey, instanceTpe: SafeType, effectHKTypeCtor: SafeType, origin: EqualizedOperationOrigin)
       extends MonadicOp {
       override def replaceKeys(targets: DIKey => DIKey, parameters: DIKey => DIKey): ExecuteEffect = {
@@ -110,6 +118,14 @@ object ExecutableOp {
       @inline def isEffect: Boolean = {
         actionEffectType != SafeType.identityEffectType
       }
+      /** Like [[isEffect]] but also recognises the bifunctor identity carrier
+        * [[izumi.functional.bio.Bifunctorized.IdentityBifunctorized]] as a no-op identity-effect.
+        * Used by type-level checks (e.g. [[PlanVerifier]]) where the F under verification is a
+        * unary `F[Throwable, _]` projection that cannot syntactically match an action's binary
+        * `IdentityBifunctorized` HK ctor even though both denote the same `Identity[A]` carrier. */
+      @inline def isEffectIgnoringIdentityBifunctorized: Boolean = {
+        isEffect && actionEffectType != MonadicOp.identityBifunctorizedEffectType
+      }
       @inline def isIncompatibleEffectType[F[_]: TagK]: Boolean = {
         isEffect && !(actionEffectType <:< provisionerEffectType[F])
       }
@@ -117,6 +133,53 @@ object ExecutableOp {
       @inline def throwOnIncompatibleEffectType[F[_]: TagK](): Either[ProvisionerIssue, Unit] = {
         if (isIncompatibleEffectType[F]) {
           Left(IncompatibleEffectType(op.target, actionEffectType))
+        } else {
+          Right(())
+        }
+      }
+    }
+
+    /** Bifunctor-aware overloads for `F[+_, +_]`-shaped strategy interfaces.
+      *
+      * Compares the action's stored effect HK type ctor (set at binding time via the
+      * `.fromEffect`/`.fromResource` DSL family) against the binary `F` carried by
+      * the strategy. Accepts a unary `F[Throwable, _]` action ctor as well when the
+      * caller threads a `TagK[F[Throwable, _]]` through.
+      *
+      * Two-arg overloads: with and without `TagK[F[Throwable, _]]`. When the unary
+      * tag is not provided, only the binary `SafeType.getKK[F]` matching path is
+      * taken — accepts `.fromResource[F, E, R]` bindings but rejects `.fromEffect[F[Throwable, *], T]`
+      * bindings as incompatible. This is the conservative default; the unary path
+      * is only enabled when callers can derive `TagK[F[Throwable, _]]` cheaply.
+      */
+    implicit final class MonadicOpExtBifunctor(private val op: MonadicOp) {
+      @inline def provisionerEffectTypeBifunctor[F[+_, +_]: TagKK]: SafeType =
+        SafeType.getKK[F]
+
+      /** Check whether the action's effect HK type ctor is incompatible with the binary
+        * provisioner `F[+_, +_]`.
+        *
+        * Accepts both the bifunctor form (`F` directly) and unary-projection forms
+        * (`F[Throwable, _]` and `F[Nothing, _]`) — the unary forms are how the
+        * legacy monofunctor `fromEffect[F[_]]`/`refEffect[F[_]]` DSL serialises
+        * `Suspend2[Nothing, _]`-style partial applications of a binary effect type.
+        * Covariance of E in the underlying binary `F` makes a `F[Nothing, _]`-bound
+        * action compatible with a `F[Throwable, _]`-running interpreter and vice-versa.
+        */
+      @inline def isIncompatibleBifunctorEffectType[F[+_, +_]: TagKK](implicit tkFThrowable: TagK[F[Throwable, _]], tkFNothing: TagK[F[Nothing, _]]): Boolean = {
+        op.isEffectIgnoringIdentityBifunctorized &&
+        !(op.actionEffectType <:< SafeType.getKK[F]) &&
+        !(op.actionEffectType <:< SafeType.getK[F[Throwable, _]]) &&
+        !(op.actionEffectType <:< SafeType.getK[F[Nothing, _]])
+      }
+
+      @inline def isIncompatibleBifunctorEffectTypeWithUnary[F[+_, +_]: TagKK](implicit tkF: TagK[F[Throwable, _]]): Boolean = {
+        op.isEffectIgnoringIdentityBifunctorized && !(op.actionEffectType <:< SafeType.getKK[F]) && !(op.actionEffectType <:< SafeType.getK[F[Throwable, _]])
+      }
+
+      @inline def throwOnIncompatibleBifunctorEffectType[F[+_, +_]: TagKK]()(implicit tkFThrowable: TagK[F[Throwable, _]], tkFNothing: TagK[F[Nothing, _]]): Either[ProvisionerIssue, Unit] = {
+        if (isIncompatibleBifunctorEffectType[F]) {
+          Left(IncompatibleEffectType(op.target, op.actionEffectType))
         } else {
           Right(())
         }

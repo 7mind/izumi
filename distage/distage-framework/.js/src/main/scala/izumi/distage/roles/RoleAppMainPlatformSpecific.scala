@@ -1,7 +1,7 @@
 package izumi.distage.roles
 
 import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.Bifunctorized
 
 import scala.concurrent.Future
 
@@ -12,7 +12,7 @@ private[roles] object RoleAppMainPlatformSpecific {
 
   def defaultEarlyFailureHandler: AppFailureHandler = AppFailureHandler.NullHandler
 
-  def defaultShutdownStrategy[F[_]]: AppShutdownStrategy.ImmediateExitShutdownStrategy[F] = new AppShutdownStrategy.ImmediateExitShutdownStrategy[F]
+  def defaultShutdownStrategy[F[+_, +_]]: AppShutdownStrategy.ImmediateExitShutdownStrategy[F] = new AppShutdownStrategy.ImmediateExitShutdownStrategy[F]
 
-  def defaultIdentityShutdownStrategy: AppShutdownStrategy.ImmediateExitShutdownStrategy[Identity] = new AppShutdownStrategy.ImmediateExitShutdownStrategy[Identity]
+  def defaultIdentityShutdownStrategy: AppShutdownStrategy.ImmediateExitShutdownStrategy[Bifunctorized.IdentityBifunctorized] = new AppShutdownStrategy.ImmediateExitShutdownStrategy[Bifunctorized.IdentityBifunctorized]
 }

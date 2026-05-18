@@ -5,7 +5,7 @@ import izumi.distage.{constructors, model, modules, planning}
 
 trait Distage {
 
-  type Injector[F[_]] = model.Injector[F]
+  type Injector[F[+_, +_]] = model.Injector[F]
   val Injector: model.Injector.type = model.Injector
 
   type ModuleDef = model.definition.ModuleDef
@@ -27,18 +27,18 @@ trait Distage {
 
   type LocatorRef = model.recursive.LocatorRef
 
-  type Subcontext[F[_], A] = izumi.distage.Subcontext[F, A]
+  type Subcontext[F[+_, +_], A] = izumi.distage.Subcontext[F, A]
 
   type PlanVerifier = solver.PlanVerifier
   val PlanVerifier: solver.PlanVerifier.type = solver.PlanVerifier
 
-  type DefaultModule[F[_]] = modules.DefaultModule[F]
+  type DefaultModule[F[+_, +_]] = modules.DefaultModule[F]
   val DefaultModule: modules.DefaultModule.type = modules.DefaultModule
 
-  type DefaultModule2[F[_, _]] = modules.DefaultModule2[F]
+  type DefaultModule2[F[+_, +_]] = modules.DefaultModule2[F]
   val DefaultModule2: modules.DefaultModule2.type = modules.DefaultModule2
 
-  type DefaultModule3[F[_, _, _]] = modules.DefaultModule3[F]
+  type DefaultModule3[F[-_, +_, +_]] = modules.DefaultModule3[F]
   val DefaultModule3: modules.DefaultModule3.type = modules.DefaultModule3
 
   type LocatorDef = model.definition.LocatorDef
@@ -56,12 +56,12 @@ trait Distage {
   type TagK[T[_]] = izumi.reflect.TagK[T]
   val TagK: izumi.reflect.TagK.type = izumi.reflect.TagK
 
-  type Lifecycle[+F[_], +A] = model.definition.Lifecycle[F, A]
+  type Lifecycle[F[+_, +_], +E, +A] = model.definition.Lifecycle[F, E, A]
   val Lifecycle: model.definition.Lifecycle.type = model.definition.Lifecycle
 
-  type Lifecycle2[+F[+_, +_], +E, +A] = model.definition.Lifecycle[F[E, _], A]
+  type Lifecycle2[F[+_, +_], +E, +A] = model.definition.Lifecycle2[F, E, A]
 
-  type Lifecycle3[+F[-_, +_, +_], -R, +E, +A] = model.definition.Lifecycle[F[R, E, _], A]
+  type Lifecycle3[F[-_, +_, +_], R, +E, +A] = model.definition.Lifecycle3[F, R, E, A]
 
   type Axis = model.definition.Axis
   val Axis: model.definition.Axis.type = model.definition.Axis

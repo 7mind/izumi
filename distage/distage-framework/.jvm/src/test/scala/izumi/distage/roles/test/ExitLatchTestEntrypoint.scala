@@ -6,7 +6,7 @@ import izumi.distage.roles.launcher.AppFailureHandler
 import izumi.distage.roles.test.fixtures.{ExitAfterSleepRole, TestPluginBase}
 import izumi.fundamentals.platform.cli.model.RoleArgs
 
-class TestPluginZIO extends TestPluginBase[zio.IO[Throwable, _]]
+class TestPluginZIO extends TestPluginBase[zio.IO]
 
 class ExitLatchEntrypointBase extends RoleAppMain.LauncherBIO[zio.IO] {
 

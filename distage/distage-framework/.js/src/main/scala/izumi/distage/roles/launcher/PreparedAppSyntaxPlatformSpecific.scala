@@ -1,16 +1,17 @@
 package izumi.distage.roles.launcher
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait PreparedAppSyntaxPlatformSpecific {
-  implicit class PreparedAppSyntaxImpl[F[_]](app: PreparedApp[F]) {
+  implicit class PreparedAppSyntaxImpl[F[+_, +_]](app: PreparedApp[F]) {
     def run(): Future[Unit] = {
-      app.runner.runFuture {
+      val f = app.runner.unsafeRunAsyncAsFuture {
         app.appResource.use {
           appLocator =>
             app.roleAppEntrypoint.runTasksAndRoles(appLocator, app.effect, app.effectAsync)
         }(using app.effect)
       }
+      f.map(_ => ())(ExecutionContext.parasitic)
     }
   }
 }

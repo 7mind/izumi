@@ -2,22 +2,22 @@ package izumi.distage.modules.platform
 
 import cats.effect.unsafe.{IORuntime, IORuntimeConfig, Scheduler}
 import izumi.distage.model.definition.{Id, Lifecycle, ModuleDef}
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.Bifunctorized
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
 
 private[distage] trait CatsIOPlatformDependentSupportModule extends ModuleDef {
-  make[ExecutionContext].named("io").fromResource {
+  make[ExecutionContext].named("io").fromResource[Bifunctorized.IdentityBifunctorized, Throwable, Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, ExecutionContext]](
     Lifecycle
       .makeSimple(
         acquire = IORuntime.createDefaultBlockingExecutionContext()
-      )(release = _._2.apply()).map(_._1)
-  }
+      )(release = _._2.apply()).map(_._1): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, ExecutionContext]
+  )
   make[ExecutionContext].named("cpu").from((_: (IORuntime, ExecutionContext))._2)
 
   // by-name cycles don't work reliably at all, so unfortunately, manual cycle breaking:
-  make[(IORuntime, ExecutionContext)].fromResource {
+  make[(IORuntime, ExecutionContext)].fromResource[Bifunctorized.IdentityBifunctorized, Throwable, Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, (IORuntime, ExecutionContext)]] {
     (blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
       val cpuRef = new AtomicReference[ExecutionContext](null)
       lazy val ioRuntime: IORuntime = IORuntime(cpuRef.get(), blockingPool, scheduler, () => (), ioRuntimeConfig)
@@ -25,13 +25,13 @@ private[distage] trait CatsIOPlatformDependentSupportModule extends ModuleDef {
         ec =>
           cpuRef.set(ec)
           (ioRuntime, ec)
-      }
+      }: Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, (IORuntime, ExecutionContext)]
   }
   make[IORuntime].from((_: (IORuntime, ExecutionContext))._1)
 }
 
 object CatsIOPlatformDependentSupportModule {
-  private[distage] def createCPUPool: Lifecycle[Identity, ExecutionContext] = {
+  private[distage] def createCPUPool: Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, ExecutionContext] = {
     val coresOr2 = java.lang.Runtime.getRuntime.availableProcessors() max 2
     Lifecycle
       .makeSimple(

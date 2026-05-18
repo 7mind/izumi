@@ -1,0 +1,1914 @@
+From 5ddf62298176ddfc9e818aa6606f1d79cdd1f50b Mon Sep 17 00:00:00 2001
+From: Daniel Spiewak <djspiewak@gmail.com>
+Date: Sun, 30 Apr 2023 11:04:31 -0600
+Subject: [PATCH 01/24] Implemented submarine error propagation for `Handle`
+
+---
+ core/src/main/scala/cats/mtl/Handle.scala     | 36 ++++++++
+ .../cats/mtl/tests/AdHocHandleTests.scala     | 90 +++++++++++++++++++
+ 2 files changed, 126 insertions(+)
+ create mode 100644 tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala
+
+diff --git a/core/src/main/scala/cats/mtl/Handle.scala b/core/src/main/scala/cats/mtl/Handle.scala
+index c935a384..85d9ab15 100644
+--- a/core/src/main/scala/cats/mtl/Handle.scala
++++ b/core/src/main/scala/cats/mtl/Handle.scala
+@@ -20,6 +20,7 @@ package mtl
+ import cats.data._
+ 
+ import scala.annotation.implicitNotFound
++import scala.util.control.NoStackTrace
+ 
+ @implicitNotFound(
+   "Could not find an implicit instance of Handle[${F}, ${E}]. If you\nhave a good way of handling errors of type ${E} at this location, you may want\nto construct a value of type EitherT for this call-site, rather than ${F}.\nAn example type:\n\n  EitherT[${F}, ${E}, *]\n\nThis is analogous to writing try/catch around this call. The EitherT will\n\"catch\" the errors of type ${E}.\n\nIf you do not wish to handle errors of type ${E} at this location, you should\nadd an implicit parameter of this type to your function. For example:\n\n  (implicit fhandle: Handle[${F}, ${E}}])\n")
+@@ -218,5 +219,40 @@ private[mtl] trait HandleInstances extends HandleLowPriorityInstances {
+ }
+ 
+ object Handle extends HandleInstances {
++
+   def apply[F[_], E](implicit ev: Handle[F, E]): Handle[F, E] = ev
++
++  def ensure[F[_], E]: AdHocSyntax[F, E] =
++    new AdHocSyntax[F, E]
++
++  final class AdHocSyntax[F[_], E] {
++
++    def apply[A](body: Handle[F, E] => F[A])(implicit F: ApplicativeThrow[F]): Inner[A] =
++      new Inner(body)
++
++    final class Inner[A](body: Handle[F, E] => F[A])(implicit F: ApplicativeThrow[F]) {
++      def recover(h: E => F[A]): F[A] = {
++        val Marker = new AnyRef
++
++        def inner[B](fb: F[B])(f: E => F[B]): F[B] =
++          ApplicativeThrow[F].handleErrorWith(fb) {
++            case Submarine(e, Marker) => f(e.asInstanceOf[E])
++            case t => ApplicativeThrow[F].raiseError(t)
++          }
++
++        val fa = body(new Handle[F, E] {
++          def applicative = Applicative[F]
++          def raise[E2 <: E, B](e: E2): F[B] =
++            ApplicativeThrow[F].raiseError(Submarine(e, Marker))
++          def handleWith[B](fb: F[B])(f: E => F[B]): F[B] = inner(fb)(f)
++        })
++
++        inner(fa)(h)
++      }
++    }
++  }
++
++  private final case class Submarine[E](e: E, marker: AnyRef)
++      extends RuntimeException
++      with NoStackTrace
+ }
+diff --git a/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala b/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala
+new file mode 100644
+index 00000000..bc0968c6
+--- /dev/null
++++ b/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala
+@@ -0,0 +1,90 @@
++package cats
++package mtl
++package tests
++
++import cats.data.EitherT
++import cats.laws.discipline.arbitrary._
++import cats.mtl.laws.discipline.HandleTests
++import cats.mtl.syntax.all._
++import cats.syntax.all._
++
++import org.scalacheck.{Arbitrary, Cogen}, Arbitrary.arbitrary
++
++class AdHocHandleTests extends BaseSuite {
++
++  type F[A] = EitherT[Eval, Throwable, A]
++
++  test("submerge custom errors") {
++    sealed trait Error extends Product with Serializable
++
++    object Error {
++      case object First extends Error
++      case object Second extends Error
++      case object Third extends Error
++    }
++
++    val test =
++      Handle.ensure[F, Error](implicit h => Error.Second.raise.as("nope")) recover {
++        case Error.First => "0".pure[F]
++        case Error.Second => "1".pure[F]
++        case Error.Third => "2".pure[F]
++      }
++
++    assert(test.value.value.toOption == Some("1"))
++  }
++
++  test("submerge two independent errors") {
++    sealed trait Error1 extends Product with Serializable
++
++    object Error1 {
++      case object First extends Error1
++      case object Second extends Error1
++      case object Third extends Error1
++    }
++
++    sealed trait Error2 extends Product with Serializable
++
++    val test = Handle.ensure[F, Error1] { implicit h1 =>
++      Handle.ensure[F, Error2] { implicit h2 =>
++        val _ =
++          h2 // it's helpful to test the raise syntax infers even when multiple handles are present
++        Error1.Third.raise.as("nope")
++      } recover { e => e.toString.pure[F] }
++    } recover {
++      case Error1.First => "first1".pure[F]
++      case Error1.Second => "second1".pure[F]
++      case Error1.Third => "third1".pure[F]
++    }
++
++    assert(test.value.value.toOption == Some("third1"))
++  }
++
++  {
++    final case class Error(value: Int)
++
++    object Error {
++      implicit val arbError: Arbitrary[Error] =
++        Arbitrary(arbitrary[Int].flatMap(Error(_)))
++
++      implicit val cogenError: Cogen[Error] =
++        Cogen((_: Error).value.toLong)
++
++      implicit val eqError: Eq[Error] =
++        Eq.by((_: Error).value)
++    }
++
++    implicit val eqThrowable: Eq[Throwable] =
++      Eq.fromUniversalEquals[Throwable]
++
++    val test = Handle.ensure[F, Error] { implicit h =>
++      EitherT liftF {
++        Eval later {
++          checkAll("Handle.ensure[F, Error]", HandleTests[F, Error].handle[Int])
++        }
++      }
++    } recover { case Error(_) => ().pure[F] }
++
++    test.value.value
++    ()
++  }
++}
+
+From 5d3c47ee6d4d9a036453dacdc210fa98e0b9b107 Mon Sep 17 00:00:00 2001
+From: Daniel Spiewak <djspiewak@gmail.com>
+Date: Sun, 30 Apr 2023 11:17:31 -0600
+Subject: [PATCH 02/24] Added headers
+
+---
+ .../scala/cats/mtl/tests/AdHocHandleTests.scala  | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala b/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala
+index bc0968c6..f14b3595 100644
+--- a/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala
++++ b/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala
+@@ -1,3 +1,19 @@
++/*
++ * Copyright 2021 Typelevel
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
+ package cats
+ package mtl
+ package tests
+
+From 4936fef2eedc736b39040ce7c2aa3aab90a82300 Mon Sep 17 00:00:00 2001
+From: Daniel Spiewak <djspiewak@gmail.com>
+Date: Sun, 30 Apr 2023 11:53:46 -0600
+Subject: [PATCH 03/24] Collapsed `Handle` tests and fixed Scala 3 issues
+
+---
+ .../cats/mtl/tests/AdHocHandleTests.scala     | 106 ------------------
+ .../scala/cats/mtl/tests/HandleTests.scala    |  85 +++++++++++++-
+ 2 files changed, 84 insertions(+), 107 deletions(-)
+ delete mode 100644 tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala
+
+diff --git a/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala b/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala
+deleted file mode 100644
+index f14b3595..00000000
+--- a/tests/shared/src/test/scala/cats/mtl/tests/AdHocHandleTests.scala
++++ /dev/null
+@@ -1,106 +0,0 @@
+-/*
+- * Copyright 2021 Typelevel
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package cats
+-package mtl
+-package tests
+-
+-import cats.data.EitherT
+-import cats.laws.discipline.arbitrary._
+-import cats.mtl.laws.discipline.HandleTests
+-import cats.mtl.syntax.all._
+-import cats.syntax.all._
+-
+-import org.scalacheck.{Arbitrary, Cogen}, Arbitrary.arbitrary
+-
+-class AdHocHandleTests extends BaseSuite {
+-
+-  type F[A] = EitherT[Eval, Throwable, A]
+-
+-  test("submerge custom errors") {
+-    sealed trait Error extends Product with Serializable
+-
+-    object Error {
+-      case object First extends Error
+-      case object Second extends Error
+-      case object Third extends Error
+-    }
+-
+-    val test =
+-      Handle.ensure[F, Error](implicit h => Error.Second.raise.as("nope")) recover {
+-        case Error.First => "0".pure[F]
+-        case Error.Second => "1".pure[F]
+-        case Error.Third => "2".pure[F]
+-      }
+-
+-    assert(test.value.value.toOption == Some("1"))
+-  }
+-
+-  test("submerge two independent errors") {
+-    sealed trait Error1 extends Product with Serializable
+-
+-    object Error1 {
+-      case object First extends Error1
+-      case object Second extends Error1
+-      case object Third extends Error1
+-    }
+-
+-    sealed trait Error2 extends Product with Serializable
+-
+-    val test = Handle.ensure[F, Error1] { implicit h1 =>
+-      Handle.ensure[F, Error2] { implicit h2 =>
+-        val _ =
+-          h2 // it's helpful to test the raise syntax infers even when multiple handles are present
+-        Error1.Third.raise.as("nope")
+-      } recover { e => e.toString.pure[F] }
+-    } recover {
+-      case Error1.First => "first1".pure[F]
+-      case Error1.Second => "second1".pure[F]
+-      case Error1.Third => "third1".pure[F]
+-    }
+-
+-    assert(test.value.value.toOption == Some("third1"))
+-  }
+-
+-  {
+-    final case class Error(value: Int)
+-
+-    object Error {
+-      implicit val arbError: Arbitrary[Error] =
+-        Arbitrary(arbitrary[Int].flatMap(Error(_)))
+-
+-      implicit val cogenError: Cogen[Error] =
+-        Cogen((_: Error).value.toLong)
+-
+-      implicit val eqError: Eq[Error] =
+-        Eq.by((_: Error).value)
+-    }
+-
+-    implicit val eqThrowable: Eq[Throwable] =
+-      Eq.fromUniversalEquals[Throwable]
+-
+-    val test = Handle.ensure[F, Error] { implicit h =>
+-      EitherT liftF {
+-        Eval later {
+-          checkAll("Handle.ensure[F, Error]", HandleTests[F, Error].handle[Int])
+-        }
+-      }
+-    } recover { case Error(_) => ().pure[F] }
+-
+-    test.value.value
+-    ()
+-  }
+-}
+diff --git a/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala b/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
+index 2967f8f0..4ab00f3d 100644
+--- a/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
++++ b/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
+@@ -18,9 +18,16 @@ package cats
+ package mtl
+ package tests
+ 
+-import cats.data.{Kleisli, WriterT}
++import cats.data.{EitherT, Kleisli, WriterT}
++import cats.laws.discipline.arbitrary._
++import cats.mtl.syntax.all._
++import cats.syntax.all._
++
++import org.scalacheck.{Arbitrary, Cogen}, Arbitrary.arbitrary
+ 
+ class HandleTests extends BaseSuite {
++  type F[A] = EitherT[Eval, Throwable, A]
++
+   test("handleForApplicativeError") {
+     case class Foo[A](bar: A)
+ 
+@@ -39,4 +46,80 @@ class HandleTests extends BaseSuite {
+     Handle[Kleisli[Foo, Unit, *], String]
+     Handle[WriterT[Foo, String, *], String]
+   }
++
++  test("submerge custom errors") {
++    sealed trait Error extends Product with Serializable
++
++    object Error {
++      case object First extends Error
++      case object Second extends Error
++      case object Third extends Error
++    }
++
++    val test =
++      Handle.ensure[F, Error](implicit h => Error.Second.raise.as("nope")) recover {
++        case Error.First => "0".pure[F]
++        case Error.Second => "1".pure[F]
++        case Error.Third => "2".pure[F]
++      }
++
++    assert(test.value.value.toOption == Some("1"))
++  }
++
++  test("submerge two independent errors") {
++    sealed trait Error1 extends Product with Serializable
++
++    object Error1 {
++      case object First extends Error1
++      case object Second extends Error1
++      case object Third extends Error1
++    }
++
++    sealed trait Error2 extends Product with Serializable
++
++    val test = Handle.ensure[F, Error1] { implicit h1 =>
++      Handle.ensure[F, Error2] { implicit h2 =>
++        val _ =
++          h2 // it's helpful to test the raise syntax infers even when multiple handles are present
++        Error1.Third.raise.as("nope")
++      } recover { e => e.toString.pure[F] }
++    } recover {
++      case Error1.First => "first1".pure[F]
++      case Error1.Second => "second1".pure[F]
++      case Error1.Third => "third1".pure[F]
++    }
++
++    assert(test.value.value.toOption == Some("third1"))
++  }
++
++  {
++    final case class Error(value: Int)
++
++    object Error {
++      implicit val arbError: Arbitrary[Error] =
++        Arbitrary(arbitrary[Int].flatMap(Error(_)))
++
++      implicit val cogenError: Cogen[Error] =
++        Cogen((_: Error).value.toLong)
++
++      implicit val eqError: Eq[Error] =
++        Eq.by((_: Error).value)
++    }
++
++    implicit val eqThrowable: Eq[Throwable] =
++      Eq.fromUniversalEquals[Throwable]
++
++    val test = Handle.ensure[F, Error] { implicit h =>
++      EitherT liftF {
++        Eval later {
++          checkAll(
++            "Handle.ensure[F, Error]",
++            cats.mtl.laws.discipline.HandleTests[F, Error].handle[Int])
++        }
++      }
++    } recover { case Error(_) => ().pure[F] }
++
++    test.value.value
++    ()
++  }
+ }
+
+From c62bcdbc38e18e2797eebc786f7b9aff03f71c68 Mon Sep 17 00:00:00 2001
+From: Daniel Spiewak <djspiewak@gmail.com>
+Date: Fri, 3 Jan 2025 09:57:12 -0600
+Subject: [PATCH 04/24] Swapped `ensure` for `allow`
+
+---
+ core/src/main/scala/cats/mtl/Handle.scala              |  2 +-
+ .../src/test/scala/cats/mtl/tests/HandleTests.scala    | 10 +++++-----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/core/src/main/scala/cats/mtl/Handle.scala b/core/src/main/scala/cats/mtl/Handle.scala
+index 85d9ab15..8401b70e 100644
+--- a/core/src/main/scala/cats/mtl/Handle.scala
++++ b/core/src/main/scala/cats/mtl/Handle.scala
+@@ -222,7 +222,7 @@ object Handle extends HandleInstances {
+ 
+   def apply[F[_], E](implicit ev: Handle[F, E]): Handle[F, E] = ev
+ 
+-  def ensure[F[_], E]: AdHocSyntax[F, E] =
++  def allow[F[_], E]: AdHocSyntax[F, E] =
+     new AdHocSyntax[F, E]
+ 
+   final class AdHocSyntax[F[_], E] {
+diff --git a/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala b/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
+index 4ab00f3d..926bbfe5 100644
+--- a/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
++++ b/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
+@@ -57,7 +57,7 @@ class HandleTests extends BaseSuite {
+     }
+ 
+     val test =
+-      Handle.ensure[F, Error](implicit h => Error.Second.raise.as("nope")) recover {
++      Handle.allow[F, Error](implicit h => Error.Second.raise.as("nope")) recover {
+         case Error.First => "0".pure[F]
+         case Error.Second => "1".pure[F]
+         case Error.Third => "2".pure[F]
+@@ -77,8 +77,8 @@ class HandleTests extends BaseSuite {
+ 
+     sealed trait Error2 extends Product with Serializable
+ 
+-    val test = Handle.ensure[F, Error1] { implicit h1 =>
+-      Handle.ensure[F, Error2] { implicit h2 =>
++    val test = Handle.allow[F, Error1] { implicit h1 =>
++      Handle.allow[F, Error2] { implicit h2 =>
+         val _ =
+           h2 // it's helpful to test the raise syntax infers even when multiple handles are present
+         Error1.Third.raise.as("nope")
+@@ -109,11 +109,11 @@ class HandleTests extends BaseSuite {
+     implicit val eqThrowable: Eq[Throwable] =
+       Eq.fromUniversalEquals[Throwable]
+ 
+-    val test = Handle.ensure[F, Error] { implicit h =>
++    val test = Handle.allow[F, Error] { implicit h =>
+       EitherT liftF {
+         Eval later {
+           checkAll(
+-            "Handle.ensure[F, Error]",
++            "Handle.allow[F, Error]",
+             cats.mtl.laws.discipline.HandleTests[F, Error].handle[Int])
+         }
+       }
+
+From bc17ca39e40cbb7b28d34930f6e21f461f9d518b Mon Sep 17 00:00:00 2001
+From: Daniel Spiewak <djspiewak@gmail.com>
+Date: Fri, 3 Jan 2025 09:57:39 -0600
+Subject: [PATCH 05/24] Swapped `recover` for `rescue`
+
+---
+ core/src/main/scala/cats/mtl/Handle.scala                 | 2 +-
+ .../src/test/scala/cats/mtl/tests/HandleTests.scala       | 8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/core/src/main/scala/cats/mtl/Handle.scala b/core/src/main/scala/cats/mtl/Handle.scala
+index 8401b70e..e8bb1f74 100644
+--- a/core/src/main/scala/cats/mtl/Handle.scala
++++ b/core/src/main/scala/cats/mtl/Handle.scala
+@@ -231,7 +231,7 @@ object Handle extends HandleInstances {
+       new Inner(body)
+ 
+     final class Inner[A](body: Handle[F, E] => F[A])(implicit F: ApplicativeThrow[F]) {
+-      def recover(h: E => F[A]): F[A] = {
++      def rescue(h: E => F[A]): F[A] = {
+         val Marker = new AnyRef
+ 
+         def inner[B](fb: F[B])(f: E => F[B]): F[B] =
+diff --git a/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala b/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
+index 926bbfe5..f8a127b5 100644
+--- a/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
++++ b/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
+@@ -57,7 +57,7 @@ class HandleTests extends BaseSuite {
+     }
+ 
+     val test =
+-      Handle.allow[F, Error](implicit h => Error.Second.raise.as("nope")) recover {
++      Handle.allow[F, Error](implicit h => Error.Second.raise.as("nope")) rescue {
+         case Error.First => "0".pure[F]
+         case Error.Second => "1".pure[F]
+         case Error.Third => "2".pure[F]
+@@ -82,8 +82,8 @@ class HandleTests extends BaseSuite {
+         val _ =
+           h2 // it's helpful to test the raise syntax infers even when multiple handles are present
+         Error1.Third.raise.as("nope")
+-      } recover { e => e.toString.pure[F] }
+-    } recover {
++      } rescue { e => e.toString.pure[F] }
++    } rescue {
+       case Error1.First => "first1".pure[F]
+       case Error1.Second => "second1".pure[F]
+       case Error1.Third => "third1".pure[F]
+@@ -117,7 +117,7 @@ class HandleTests extends BaseSuite {
+             cats.mtl.laws.discipline.HandleTests[F, Error].handle[Int])
+         }
+       }
+-    } recover { case Error(_) => ().pure[F] }
++    } rescue { case Error(_) => ().pure[F] }
+ 
+     test.value.value
+     ()
+
+From b273d1f4da447b0dbbe692b80cb08a81ed44a427 Mon Sep 17 00:00:00 2001
+From: Daniel Spiewak <djspiewak@gmail.com>
+Date: Mon, 3 Mar 2025 13:21:14 -0600
+Subject: [PATCH 06/24] Happy now?
+
+---
+ .../scala-2.13+/cats/mtl/HandleVariant.scala  |  4 ++
+ .../main/scala-3/cats/mtl/HandleVariant.scala | 31 +++++++++++++
+ ...riorityApplicativeAskInstancesCompat.scala | 19 ++++++++
+ ...orityApplicativeLocalInstancesCompat.scala | 19 ++++++++
+ ...PriorityFunctorListenInstancesCompat.scala | 19 ++++++++
+ ...owPriorityFunctorTellInstancesCompat.scala | 19 ++++++++
+ core/src/main/scala/cats/mtl/Handle.scala     | 11 ++---
+ .../scala-3/cats/mtl/tests/Handle3Tests.scala | 45 +++++++++++++++++++
+ .../scala/cats/mtl/tests/HandleTests.scala    | 10 ++---
+ 9 files changed, 167 insertions(+), 10 deletions(-)
+ create mode 100644 core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala
+ create mode 100644 core/src/main/scala-3/cats/mtl/HandleVariant.scala
+ create mode 100644 core/src/main/scala-3/cats/mtl/LowPriorityApplicativeAskInstancesCompat.scala
+ create mode 100644 core/src/main/scala-3/cats/mtl/LowPriorityApplicativeLocalInstancesCompat.scala
+ create mode 100644 core/src/main/scala-3/cats/mtl/LowPriorityFunctorListenInstancesCompat.scala
+ create mode 100644 core/src/main/scala-3/cats/mtl/LowPriorityFunctorTellInstancesCompat.scala
+ create mode 100644 tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+
+diff --git a/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala b/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala
+new file mode 100644
+index 00000000..5aa3f1be
+--- /dev/null
++++ b/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala
+@@ -0,0 +1,4 @@
++package cats
++package mtl
++
++trait HandleVariant
+diff --git a/core/src/main/scala-3/cats/mtl/HandleVariant.scala b/core/src/main/scala-3/cats/mtl/HandleVariant.scala
+new file mode 100644
+index 00000000..cc4f079c
+--- /dev/null
++++ b/core/src/main/scala-3/cats/mtl/HandleVariant.scala
+@@ -0,0 +1,31 @@
++package cats
++package mtl
++
++trait HandleVariant { this: Handle.type =>
++  import Handle.Submarine
++
++  def allow[E]: AdHocSyntaxWired[E] =
++    new AdHocSyntaxWired[E]
++
++  final class AdHocSyntaxWired[E]:
++
++    def apply[F[_], A](body: Handle[F, E] ?=> F[A])(implicit F: ApplicativeThrow[F]): Inner[F, A] =
++      new Inner(body)
++
++    final class Inner[F[_], A](body: Handle[F, E] ?=> F[A])(implicit F: ApplicativeThrow[F]):
++      def rescue(h: E => F[A]): F[A] =
++        val Marker = new AnyRef
++
++        def inner[B](fb: F[B])(f: E => F[B]): F[B] =
++          ApplicativeThrow[F].handleErrorWith(fb):
++            case Submarine(e, Marker) => f(e.asInstanceOf[E])
++            case t => ApplicativeThrow[F].raiseError(t)
++
++        given Handle[F, E] with
++          def applicative = Applicative[F]
++          def raise[E2 <: E, B](e: E2): F[B] =
++            ApplicativeThrow[F].raiseError(Submarine(e, Marker))
++          def handleWith[B](fb: F[B])(f: E => F[B]): F[B] = inner(fb)(f)
++
++        inner(body)(h)
++}
+diff --git a/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeAskInstancesCompat.scala b/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeAskInstancesCompat.scala
+new file mode 100644
+index 00000000..858ef13e
+--- /dev/null
++++ b/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeAskInstancesCompat.scala
+@@ -0,0 +1,19 @@
++/*
++ * Copyright 2021 Typelevel
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package cats.mtl
++
++private[mtl] trait LowPriorityAskInstancesCompat
+diff --git a/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeLocalInstancesCompat.scala b/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeLocalInstancesCompat.scala
+new file mode 100644
+index 00000000..286b4f1b
+--- /dev/null
++++ b/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeLocalInstancesCompat.scala
+@@ -0,0 +1,19 @@
++/*
++ * Copyright 2021 Typelevel
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package cats.mtl
++
++private[mtl] trait LowPriorityLocalInstancesCompat
+diff --git a/core/src/main/scala-3/cats/mtl/LowPriorityFunctorListenInstancesCompat.scala b/core/src/main/scala-3/cats/mtl/LowPriorityFunctorListenInstancesCompat.scala
+new file mode 100644
+index 00000000..34637e7f
+--- /dev/null
++++ b/core/src/main/scala-3/cats/mtl/LowPriorityFunctorListenInstancesCompat.scala
+@@ -0,0 +1,19 @@
++/*
++ * Copyright 2021 Typelevel
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package cats.mtl
++
++private[mtl] trait LowPriorityListenInstancesCompat
+diff --git a/core/src/main/scala-3/cats/mtl/LowPriorityFunctorTellInstancesCompat.scala b/core/src/main/scala-3/cats/mtl/LowPriorityFunctorTellInstancesCompat.scala
+new file mode 100644
+index 00000000..1d89e7bd
+--- /dev/null
++++ b/core/src/main/scala-3/cats/mtl/LowPriorityFunctorTellInstancesCompat.scala
+@@ -0,0 +1,19 @@
++/*
++ * Copyright 2021 Typelevel
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package cats.mtl
++
++private[mtl] trait LowPriorityTellInstancesCompat
+diff --git a/core/src/main/scala/cats/mtl/Handle.scala b/core/src/main/scala/cats/mtl/Handle.scala
+index e8bb1f74..e304b585 100644
+--- a/core/src/main/scala/cats/mtl/Handle.scala
++++ b/core/src/main/scala/cats/mtl/Handle.scala
+@@ -218,14 +218,15 @@ private[mtl] trait HandleInstances extends HandleLowPriorityInstances {
+     }
+ }
+ 
+-object Handle extends HandleInstances {
++object Handle extends HandleInstances with HandleVariant {
+ 
+   def apply[F[_], E](implicit ev: Handle[F, E]): Handle[F, E] = ev
+ 
+-  def allow[F[_], E]: AdHocSyntax[F, E] =
+-    new AdHocSyntax[F, E]
+ 
+-  final class AdHocSyntax[F[_], E] {
++  def allowF[F[_], E]: AdHocSyntaxTired[F, E] =
++    new AdHocSyntaxTired[F, E]
++
++  final class AdHocSyntaxTired[F[_], E] {
+ 
+     def apply[A](body: Handle[F, E] => F[A])(implicit F: ApplicativeThrow[F]): Inner[A] =
+       new Inner(body)
+@@ -252,7 +253,7 @@ object Handle extends HandleInstances {
+     }
+   }
+ 
+-  private final case class Submarine[E](e: E, marker: AnyRef)
++  private[mtl] final case class Submarine[E](e: E, marker: AnyRef)
+       extends RuntimeException
+       with NoStackTrace
+ }
+diff --git a/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+new file mode 100644
+index 00000000..11b28db1
+--- /dev/null
++++ b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+@@ -0,0 +1,45 @@
++package cats
++package mtl
++package tests
++
++import cats.data.{EitherT, Kleisli, WriterT}
++import cats.laws.discipline.arbitrary._
++import cats.mtl.syntax.all._
++import cats.syntax.all._
++
++class Handle3Tests extends BaseSuite:
++  type F[A] = EitherT[Eval, Throwable, A]
++
++  test("submerge custom errors (scala 3)"):
++    enum Error:
++      case First, Second, Third
++
++    val test =
++      Handle.allow[Error]:
++        (Error.Second.raise.as("nope"): F[String])
++      .rescue:
++        case Error.First => "0".pure[F]
++        case Error.Second => "1".pure[F]
++        case Error.Third => "2".pure[F]
++
++    assert(test.value.value.toOption == Some("1"))
++
++// this doesn't work, sadly
++/*  test("submerge two independent errors (scala 3)"):
++    enum Error1:
++      case First, Second, Third
++
++    enum Error2:
++      case Fourth
++
++    val test =
++      Handle.allow[Error1]:
++        Handle.allow[Error2]:
++          Error1.Third.raise.as("nope")
++        .rescue: e => e.toString.pure[F]
++      .rescue:
++        case Error1.First => "first1".pure[F]
++        case Error1.Second => "second1".pure[F]
++        case Error1.Third => "third1".pure[F]
++
++    assert(test.value.value.toOption == Some("third1"))*/
+diff --git a/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala b/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
+index f8a127b5..1454914e 100644
+--- a/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
++++ b/tests/shared/src/test/scala/cats/mtl/tests/HandleTests.scala
+@@ -57,7 +57,7 @@ class HandleTests extends BaseSuite {
+     }
+ 
+     val test =
+-      Handle.allow[F, Error](implicit h => Error.Second.raise.as("nope")) rescue {
++      Handle.allowF[F, Error](implicit h => Error.Second.raise.as("nope")) rescue {
+         case Error.First => "0".pure[F]
+         case Error.Second => "1".pure[F]
+         case Error.Third => "2".pure[F]
+@@ -77,8 +77,8 @@ class HandleTests extends BaseSuite {
+ 
+     sealed trait Error2 extends Product with Serializable
+ 
+-    val test = Handle.allow[F, Error1] { implicit h1 =>
+-      Handle.allow[F, Error2] { implicit h2 =>
++    val test = Handle.allowF[F, Error1] { implicit h1 =>
++      Handle.allowF[F, Error2] { implicit h2 =>
+         val _ =
+           h2 // it's helpful to test the raise syntax infers even when multiple handles are present
+         Error1.Third.raise.as("nope")
+@@ -109,11 +109,11 @@ class HandleTests extends BaseSuite {
+     implicit val eqThrowable: Eq[Throwable] =
+       Eq.fromUniversalEquals[Throwable]
+ 
+-    val test = Handle.allow[F, Error] { implicit h =>
++    val test = Handle.allowF[F, Error] { implicit h =>
+       EitherT liftF {
+         Eval later {
+           checkAll(
+-            "Handle.allow[F, Error]",
++            "Handle.allowF[F, Error]",
+             cats.mtl.laws.discipline.HandleTests[F, Error].handle[Int])
+         }
+       }
+
+From b7861fb3d7a5a97ca9033ea13bc90955507ad8a0 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Thu, 6 Mar 2025 09:35:32 +0100
+Subject: [PATCH 07/24] Add extra typing for raise to fix the nested tests
+
+---
+ .../scala-3/cats/mtl/tests/Handle3Tests.scala | 20 ++++++++-----------
+ 1 file changed, 8 insertions(+), 12 deletions(-)
+
+diff --git a/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+index 11b28db1..f9b491d4 100644
+--- a/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
++++ b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+@@ -2,10 +2,9 @@ package cats
+ package mtl
+ package tests
+ 
+-import cats.data.{EitherT, Kleisli, WriterT}
+-import cats.laws.discipline.arbitrary._
+-import cats.mtl.syntax.all._
+-import cats.syntax.all._
++import cats.data.EitherT
++import cats.mtl.syntax.all.*
++import cats.syntax.all.*
+ 
+ class Handle3Tests extends BaseSuite:
+   type F[A] = EitherT[Eval, Throwable, A]
+@@ -24,22 +23,19 @@ class Handle3Tests extends BaseSuite:
+ 
+     assert(test.value.value.toOption == Some("1"))
+ 
+-// this doesn't work, sadly
+-/*  test("submerge two independent errors (scala 3)"):
++  test("submerge two independent errors (scala 3)"):
+     enum Error1:
+       case First, Second, Third
+-
+     enum Error2:
+       case Fourth
+-
+     val test =
+       Handle.allow[Error1]:
+         Handle.allow[Error2]:
+-          Error1.Third.raise.as("nope")
+-        .rescue: e => e.toString.pure[F]
++          Error1.Third.raise[F, String].as("nope")
++        .rescue:
++          case e => e.toString.pure[F]
+       .rescue:
+         case Error1.First => "first1".pure[F]
+         case Error1.Second => "second1".pure[F]
+         case Error1.Third => "third1".pure[F]
+-
+-    assert(test.value.value.toOption == Some("third1"))*/
++    assert(test.value.value.toOption == Some("third1"))
+
+From b255b4c95bf88b7f9fa1c4a7f23b7d8d48642fd8 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Thu, 6 Mar 2025 09:47:40 +0100
+Subject: [PATCH 08/24] Update scalafmt runner dialect for scala 3 code
+
+And also run prPR
+---
+ .scalafmt.conf                                |  6 +++++
+ .../scala-2.13+/cats/mtl/HandleVariant.scala  | 16 ++++++++++++
+ .../main/scala-3/cats/mtl/HandleVariant.scala | 19 +++++++++++++-
+ core/src/main/scala/cats/mtl/Handle.scala     |  1 -
+ .../scala-3/cats/mtl/tests/Handle3Tests.scala | 26 ++++++++++++++++---
+ 5 files changed, 62 insertions(+), 6 deletions(-)
+
+diff --git a/.scalafmt.conf b/.scalafmt.conf
+index b37302cc..4526fe1b 100644
+--- a/.scalafmt.conf
++++ b/.scalafmt.conf
+@@ -50,3 +50,9 @@ rewriteTokens {
+   "→": "->"
+   "←": "<-"
+ }
++
++fileOverride {
++  "glob:**/scala-3/cats/mtl/**" {
++    runner.dialect = scala3
++  }
++}
+diff --git a/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala b/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala
+index 5aa3f1be..9a42bf67 100644
+--- a/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala
++++ b/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala
+@@ -1,3 +1,19 @@
++/*
++ * Copyright 2021 Typelevel
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
+ package cats
+ package mtl
+ 
+diff --git a/core/src/main/scala-3/cats/mtl/HandleVariant.scala b/core/src/main/scala-3/cats/mtl/HandleVariant.scala
+index cc4f079c..9e5fbd4f 100644
+--- a/core/src/main/scala-3/cats/mtl/HandleVariant.scala
++++ b/core/src/main/scala-3/cats/mtl/HandleVariant.scala
+@@ -1,3 +1,19 @@
++/*
++ * Copyright 2021 Typelevel
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
+ package cats
+ package mtl
+ 
+@@ -9,7 +25,8 @@ trait HandleVariant { this: Handle.type =>
+ 
+   final class AdHocSyntaxWired[E]:
+ 
+-    def apply[F[_], A](body: Handle[F, E] ?=> F[A])(implicit F: ApplicativeThrow[F]): Inner[F, A] =
++    def apply[F[_], A](body: Handle[F, E] ?=> F[A])(
++        implicit F: ApplicativeThrow[F]): Inner[F, A] =
+       new Inner(body)
+ 
+     final class Inner[F[_], A](body: Handle[F, E] ?=> F[A])(implicit F: ApplicativeThrow[F]):
+diff --git a/core/src/main/scala/cats/mtl/Handle.scala b/core/src/main/scala/cats/mtl/Handle.scala
+index e304b585..67c158de 100644
+--- a/core/src/main/scala/cats/mtl/Handle.scala
++++ b/core/src/main/scala/cats/mtl/Handle.scala
+@@ -222,7 +222,6 @@ object Handle extends HandleInstances with HandleVariant {
+ 
+   def apply[F[_], E](implicit ev: Handle[F, E]): Handle[F, E] = ev
+ 
+-
+   def allowF[F[_], E]: AdHocSyntaxTired[F, E] =
+     new AdHocSyntaxTired[F, E]
+ 
+diff --git a/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+index f9b491d4..03b43ce3 100644
+--- a/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
++++ b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+@@ -1,3 +1,19 @@
++/*
++ * Copyright 2021 Typelevel
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
+ package cats
+ package mtl
+ package tests
+@@ -5,8 +21,10 @@ package tests
+ import cats.data.EitherT
+ import cats.mtl.syntax.all.*
+ import cats.syntax.all.*
++import cats.mtl.Handle.*
+ 
+ class Handle3Tests extends BaseSuite:
++
+   type F[A] = EitherT[Eval, Throwable, A]
+ 
+   test("submerge custom errors (scala 3)"):
+@@ -14,8 +32,8 @@ class Handle3Tests extends BaseSuite:
+       case First, Second, Third
+ 
+     val test =
+-      Handle.allow[Error]:
+-        (Error.Second.raise.as("nope"): F[String])
++      allow[Error]:
++        Error.Second.raise[F, String].as("nope")
+       .rescue:
+         case Error.First => "0".pure[F]
+         case Error.Second => "1".pure[F]
+@@ -29,8 +47,8 @@ class Handle3Tests extends BaseSuite:
+     enum Error2:
+       case Fourth
+     val test =
+-      Handle.allow[Error1]:
+-        Handle.allow[Error2]:
++      allow[Error1]:
++        allow[Error2]:
+           Error1.Third.raise[F, String].as("nope")
+         .rescue:
+           case e => e.toString.pure[F]
+
+From 25d703cca108d73f1434786556cf29d4bf88bba7 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Thu, 6 Mar 2025 10:15:51 +0100
+Subject: [PATCH 09/24] Fix scala 2.12 compilation
+
+---
+ .../scala-2.12/cats/mtl/HandleVariant.scala   | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+ create mode 100644 core/src/main/scala-2.12/cats/mtl/HandleVariant.scala
+
+diff --git a/core/src/main/scala-2.12/cats/mtl/HandleVariant.scala b/core/src/main/scala-2.12/cats/mtl/HandleVariant.scala
+new file mode 100644
+index 00000000..9a42bf67
+--- /dev/null
++++ b/core/src/main/scala-2.12/cats/mtl/HandleVariant.scala
+@@ -0,0 +1,20 @@
++/*
++ * Copyright 2021 Typelevel
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package cats
++package mtl
++
++trait HandleVariant
+
+From 4f194104e13224da096af38e54efd0f256a9850b Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Thu, 6 Mar 2025 20:38:04 +0100
+Subject: [PATCH 10/24] Use using instead of implicit for scala 3
+
+---
+ core/src/main/scala-3/cats/mtl/HandleVariant.scala | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/core/src/main/scala-3/cats/mtl/HandleVariant.scala b/core/src/main/scala-3/cats/mtl/HandleVariant.scala
+index 9e5fbd4f..c34b03de 100644
+--- a/core/src/main/scala-3/cats/mtl/HandleVariant.scala
++++ b/core/src/main/scala-3/cats/mtl/HandleVariant.scala
+@@ -25,11 +25,10 @@ trait HandleVariant { this: Handle.type =>
+ 
+   final class AdHocSyntaxWired[E]:
+ 
+-    def apply[F[_], A](body: Handle[F, E] ?=> F[A])(
+-        implicit F: ApplicativeThrow[F]): Inner[F, A] =
++    def apply[F[_], A](body: Handle[F, E] ?=> F[A])(using ApplicativeThrow[F]): Inner[F, A] =
+       new Inner(body)
+ 
+-    final class Inner[F[_], A](body: Handle[F, E] ?=> F[A])(implicit F: ApplicativeThrow[F]):
++    final class Inner[F[_], A](body: Handle[F, E] ?=> F[A])(using ApplicativeThrow[F]):
+       def rescue(h: E => F[A]): F[A] =
+         val Marker = new AnyRef
+ 
+
+From cb545b9c2e5c41b6d7561552a346ee9fe1f88d62 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Fri, 7 Mar 2025 17:40:15 +0100
+Subject: [PATCH 11/24] Remove duplicated files
+
+---
+ .../scala-2.13+/cats/mtl/HandleVariant.scala  | 20 -------------------
+ .../cats/mtl/HandleVariant.scala              |  0
+ ...riorityApplicativeAskInstancesCompat.scala | 19 ------------------
+ ...orityApplicativeLocalInstancesCompat.scala | 19 ------------------
+ ...PriorityFunctorListenInstancesCompat.scala | 19 ------------------
+ ...owPriorityFunctorTellInstancesCompat.scala | 19 ------------------
+ 6 files changed, 96 deletions(-)
+ delete mode 100644 core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala
+ rename core/src/main/{scala-2.12 => scala-2}/cats/mtl/HandleVariant.scala (100%)
+ delete mode 100644 core/src/main/scala-3/cats/mtl/LowPriorityApplicativeAskInstancesCompat.scala
+ delete mode 100644 core/src/main/scala-3/cats/mtl/LowPriorityApplicativeLocalInstancesCompat.scala
+ delete mode 100644 core/src/main/scala-3/cats/mtl/LowPriorityFunctorListenInstancesCompat.scala
+ delete mode 100644 core/src/main/scala-3/cats/mtl/LowPriorityFunctorTellInstancesCompat.scala
+
+diff --git a/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala b/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala
+deleted file mode 100644
+index 9a42bf67..00000000
+--- a/core/src/main/scala-2.13+/cats/mtl/HandleVariant.scala
++++ /dev/null
+@@ -1,20 +0,0 @@
+-/*
+- * Copyright 2021 Typelevel
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package cats
+-package mtl
+-
+-trait HandleVariant
+diff --git a/core/src/main/scala-2.12/cats/mtl/HandleVariant.scala b/core/src/main/scala-2/cats/mtl/HandleVariant.scala
+similarity index 100%
+rename from core/src/main/scala-2.12/cats/mtl/HandleVariant.scala
+rename to core/src/main/scala-2/cats/mtl/HandleVariant.scala
+diff --git a/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeAskInstancesCompat.scala b/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeAskInstancesCompat.scala
+deleted file mode 100644
+index 858ef13e..00000000
+--- a/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeAskInstancesCompat.scala
++++ /dev/null
+@@ -1,19 +0,0 @@
+-/*
+- * Copyright 2021 Typelevel
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package cats.mtl
+-
+-private[mtl] trait LowPriorityAskInstancesCompat
+diff --git a/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeLocalInstancesCompat.scala b/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeLocalInstancesCompat.scala
+deleted file mode 100644
+index 286b4f1b..00000000
+--- a/core/src/main/scala-3/cats/mtl/LowPriorityApplicativeLocalInstancesCompat.scala
++++ /dev/null
+@@ -1,19 +0,0 @@
+-/*
+- * Copyright 2021 Typelevel
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package cats.mtl
+-
+-private[mtl] trait LowPriorityLocalInstancesCompat
+diff --git a/core/src/main/scala-3/cats/mtl/LowPriorityFunctorListenInstancesCompat.scala b/core/src/main/scala-3/cats/mtl/LowPriorityFunctorListenInstancesCompat.scala
+deleted file mode 100644
+index 34637e7f..00000000
+--- a/core/src/main/scala-3/cats/mtl/LowPriorityFunctorListenInstancesCompat.scala
++++ /dev/null
+@@ -1,19 +0,0 @@
+-/*
+- * Copyright 2021 Typelevel
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package cats.mtl
+-
+-private[mtl] trait LowPriorityListenInstancesCompat
+diff --git a/core/src/main/scala-3/cats/mtl/LowPriorityFunctorTellInstancesCompat.scala b/core/src/main/scala-3/cats/mtl/LowPriorityFunctorTellInstancesCompat.scala
+deleted file mode 100644
+index 1d89e7bd..00000000
+--- a/core/src/main/scala-3/cats/mtl/LowPriorityFunctorTellInstancesCompat.scala
++++ /dev/null
+@@ -1,19 +0,0 @@
+-/*
+- * Copyright 2021 Typelevel
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *     http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package cats.mtl
+-
+-private[mtl] trait LowPriorityTellInstancesCompat
+
+From 0b20cfc451a8364ceadf5f46730c757f4e142de3 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Fri, 7 Mar 2025 21:53:50 +0100
+Subject: [PATCH 12/24] Use AnyVal to avoid allocations
+
+Co-authored-by: Arman Bilge <armanbilge@gmail.com>
+---
+ core/src/main/scala/cats/mtl/Handle.scala | 45 ++++++++++++-----------
+ 1 file changed, 23 insertions(+), 22 deletions(-)
+
+diff --git a/core/src/main/scala/cats/mtl/Handle.scala b/core/src/main/scala/cats/mtl/Handle.scala
+index 67c158de..5503e1e8 100644
+--- a/core/src/main/scala/cats/mtl/Handle.scala
++++ b/core/src/main/scala/cats/mtl/Handle.scala
+@@ -223,32 +223,33 @@ object Handle extends HandleInstances with HandleVariant {
+   def apply[F[_], E](implicit ev: Handle[F, E]): Handle[F, E] = ev
+ 
+   def allowF[F[_], E]: AdHocSyntaxTired[F, E] =
+-    new AdHocSyntaxTired[F, E]
++    new AdHocSyntaxTired[F, E](())
+ 
+-  final class AdHocSyntaxTired[F[_], E] {
+-
+-    def apply[A](body: Handle[F, E] => F[A])(implicit F: ApplicativeThrow[F]): Inner[A] =
++  @scala.annotation.nowarn("msg=dubious usage of method hashCode with unit value")
++  private[mtl] final class AdHocSyntaxTired[F[_], E](private val unit: Unit) extends AnyVal {
++    def apply[A](body: Handle[F, E] => F[A]): Inner[F, E, A] =
+       new Inner(body)
++  }
+ 
+-    final class Inner[A](body: Handle[F, E] => F[A])(implicit F: ApplicativeThrow[F]) {
+-      def rescue(h: E => F[A]): F[A] = {
+-        val Marker = new AnyRef
+-
+-        def inner[B](fb: F[B])(f: E => F[B]): F[B] =
+-          ApplicativeThrow[F].handleErrorWith(fb) {
+-            case Submarine(e, Marker) => f(e.asInstanceOf[E])
+-            case t => ApplicativeThrow[F].raiseError(t)
+-          }
+-
+-        val fa = body(new Handle[F, E] {
+-          def applicative = Applicative[F]
+-          def raise[E2 <: E, B](e: E2): F[B] =
+-            ApplicativeThrow[F].raiseError(Submarine(e, Marker))
+-          def handleWith[B](fb: F[B])(f: E => F[B]): F[B] = inner(fb)(f)
+-        })
++  private[mtl] final class Inner[F[_], E, A](private val body: Handle[F, E] => F[A])
++      extends AnyVal {
++    def rescue(h: E => F[A])(implicit F: ApplicativeThrow[F]): F[A] = {
++      val Marker = new AnyRef
++
++      def inner[B](fb: F[B])(f: E => F[B]): F[B] =
++        ApplicativeThrow[F].handleErrorWith(fb) {
++          case Submarine(e, Marker) => f(e.asInstanceOf[E])
++          case t => ApplicativeThrow[F].raiseError(t)
++        }
++
++      val fa = body(new Handle[F, E] {
++        def applicative = Applicative[F]
++        def raise[E2 <: E, B](e: E2): F[B] =
++          ApplicativeThrow[F].raiseError(Submarine(e, Marker))
++        def handleWith[B](fb: F[B])(f: E => F[B]): F[B] = inner(fb)(f)
++      })
+ 
+-        inner(fa)(h)
+-      }
++      inner(fa)(h)
+     }
+   }
+ 
+
+From 74dda73779b8d34c41f12fef1a5f7ee301edf788 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Fri, 7 Mar 2025 21:52:47 +0100
+Subject: [PATCH 13/24] Use HandleCrossCompat to follow code convention
+
+---
+ .../cats/mtl/{HandleVariant.scala => HandleCrossCompat.scala}   | 2 +-
+ .../cats/mtl/{HandleVariant.scala => HandleCrossCompat.scala}   | 2 +-
+ core/src/main/scala/cats/mtl/Handle.scala                       | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+ rename core/src/main/scala-2/cats/mtl/{HandleVariant.scala => HandleCrossCompat.scala} (94%)
+ rename core/src/main/scala-3/cats/mtl/{HandleVariant.scala => HandleCrossCompat.scala} (96%)
+
+diff --git a/core/src/main/scala-2/cats/mtl/HandleVariant.scala b/core/src/main/scala-2/cats/mtl/HandleCrossCompat.scala
+similarity index 94%
+rename from core/src/main/scala-2/cats/mtl/HandleVariant.scala
+rename to core/src/main/scala-2/cats/mtl/HandleCrossCompat.scala
+index 9a42bf67..f4763be4 100644
+--- a/core/src/main/scala-2/cats/mtl/HandleVariant.scala
++++ b/core/src/main/scala-2/cats/mtl/HandleCrossCompat.scala
+@@ -17,4 +17,4 @@
+ package cats
+ package mtl
+ 
+-trait HandleVariant
++private[mtl] trait HandleCrossCompat
+diff --git a/core/src/main/scala-3/cats/mtl/HandleVariant.scala b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+similarity index 96%
+rename from core/src/main/scala-3/cats/mtl/HandleVariant.scala
+rename to core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+index c34b03de..92fa4a3d 100644
+--- a/core/src/main/scala-3/cats/mtl/HandleVariant.scala
++++ b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+@@ -17,7 +17,7 @@
+ package cats
+ package mtl
+ 
+-trait HandleVariant { this: Handle.type =>
++private[mtl] trait HandleCrossCompat { this: Handle.type =>
+   import Handle.Submarine
+ 
+   def allow[E]: AdHocSyntaxWired[E] =
+diff --git a/core/src/main/scala/cats/mtl/Handle.scala b/core/src/main/scala/cats/mtl/Handle.scala
+index 5503e1e8..89ac555c 100644
+--- a/core/src/main/scala/cats/mtl/Handle.scala
++++ b/core/src/main/scala/cats/mtl/Handle.scala
+@@ -218,7 +218,7 @@ private[mtl] trait HandleInstances extends HandleLowPriorityInstances {
+     }
+ }
+ 
+-object Handle extends HandleInstances with HandleVariant {
++object Handle extends HandleInstances with HandleCrossCompat {
+ 
+   def apply[F[_], E](implicit ev: Handle[F, E]): Handle[F, E] = ev
+ 
+
+From 85e418b72c33f088cfd43ebd671e1734fc9e88a6 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Sat, 8 Mar 2025 11:07:22 +0100
+Subject: [PATCH 14/24] Add inline for AdhocSyntaxWired.apply
+
+Combine with moving Inner class out of AdhocSyntaxWired, we completely
+remove AdhocSyntaxWired footprint from generated bytecode (user's site)
+---
+ .../scala-3/cats/mtl/HandleCrossCompat.scala  | 37 +++++++++----------
+ 1 file changed, 18 insertions(+), 19 deletions(-)
+
+diff --git a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+index 92fa4a3d..d262ddde 100644
+--- a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
++++ b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+@@ -20,28 +20,27 @@ package mtl
+ private[mtl] trait HandleCrossCompat { this: Handle.type =>
+   import Handle.Submarine
+ 
+-  def allow[E]: AdHocSyntaxWired[E] =
+-    new AdHocSyntaxWired[E]
++  inline def allow[E]: AdHocSyntaxWired[E] =
++    new AdHocSyntaxWired[E]()
+ 
+-  final class AdHocSyntaxWired[E]:
++  private[mtl] final class AdHocSyntaxWired[E]:
++    inline def apply[F[_], A](inline body: Handle[F, E] ?=> F[A]): InnerWired[F, E, A] =
++      new InnerWired(body)
+ 
+-    def apply[F[_], A](body: Handle[F, E] ?=> F[A])(using ApplicativeThrow[F]): Inner[F, A] =
+-      new Inner(body)
++  private[mtl] final class InnerWired[F[_], E, A](body: Handle[F, E] ?=> F[A]):
++    def rescue(h: E => F[A]): ApplicativeThrow[F] ?=> F[A] =
++      val Marker = new AnyRef
+ 
+-    final class Inner[F[_], A](body: Handle[F, E] ?=> F[A])(using ApplicativeThrow[F]):
+-      def rescue(h: E => F[A]): F[A] =
+-        val Marker = new AnyRef
++      def inner[B](fb: F[B])(f: E => F[B]): F[B] =
++        ApplicativeThrow[F].handleErrorWith(fb):
++          case Submarine(e, Marker) => f(e.asInstanceOf[E])
++          case t => ApplicativeThrow[F].raiseError(t)
+ 
+-        def inner[B](fb: F[B])(f: E => F[B]): F[B] =
+-          ApplicativeThrow[F].handleErrorWith(fb):
+-            case Submarine(e, Marker) => f(e.asInstanceOf[E])
+-            case t => ApplicativeThrow[F].raiseError(t)
++      given Handle[F, E] with
++        def applicative = Applicative[F]
++        def raise[E2 <: E, B](e: E2): F[B] =
++          ApplicativeThrow[F].raiseError(Submarine(e, Marker))
++        def handleWith[B](fb: F[B])(f: E => F[B]): F[B] = inner(fb)(f)
+ 
+-        given Handle[F, E] with
+-          def applicative = Applicative[F]
+-          def raise[E2 <: E, B](e: E2): F[B] =
+-            ApplicativeThrow[F].raiseError(Submarine(e, Marker))
+-          def handleWith[B](fb: F[B])(f: E => F[B]): F[B] = inner(fb)(f)
+-
+-        inner(body)(h)
++      inner(body)(h)
+ }
+
+From d1167df980e5f3152d3a896942cb79b9e81828f8 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Sat, 8 Mar 2025 10:24:18 +0100
+Subject: [PATCH 15/24] Use FunSuite instead of BaseSuite
+
+And use assert.equals instead of ==
+---
+ .../src/test/scala-3/cats/mtl/tests/Handle3Tests.scala      | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+index 03b43ce3..863f054c 100644
+--- a/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
++++ b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+@@ -23,7 +23,7 @@ import cats.mtl.syntax.all.*
+ import cats.syntax.all.*
+ import cats.mtl.Handle.*
+ 
+-class Handle3Tests extends BaseSuite:
++class Handle3Tests extends munit.FunSuite:
+ 
+   type F[A] = EitherT[Eval, Throwable, A]
+ 
+@@ -39,7 +39,7 @@ class Handle3Tests extends BaseSuite:
+         case Error.Second => "1".pure[F]
+         case Error.Third => "2".pure[F]
+ 
+-    assert(test.value.value.toOption == Some("1"))
++    assert.equals(test.value.value.toOption, Some("1"))
+ 
+   test("submerge two independent errors (scala 3)"):
+     enum Error1:
+@@ -56,4 +56,4 @@ class Handle3Tests extends BaseSuite:
+         case Error1.First => "first1".pure[F]
+         case Error1.Second => "second1".pure[F]
+         case Error1.Third => "third1".pure[F]
+-    assert(test.value.value.toOption == Some("third1"))
++    assert.equals(test.value.value.toOption, Some("third1"))
+
+From a70b9f4e5d9f0ca9c50b4f932ca5387aaa7777e9 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Sun, 9 Mar 2025 09:39:03 +0100
+Subject: [PATCH 16/24] Use dummy Byte instead of Unit to avoid warning
+
+---
+ core/src/main/scala/cats/mtl/Handle.scala | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/core/src/main/scala/cats/mtl/Handle.scala b/core/src/main/scala/cats/mtl/Handle.scala
+index 89ac555c..16f6f7b4 100644
+--- a/core/src/main/scala/cats/mtl/Handle.scala
++++ b/core/src/main/scala/cats/mtl/Handle.scala
+@@ -223,10 +223,9 @@ object Handle extends HandleInstances with HandleCrossCompat {
+   def apply[F[_], E](implicit ev: Handle[F, E]): Handle[F, E] = ev
+ 
+   def allowF[F[_], E]: AdHocSyntaxTired[F, E] =
+-    new AdHocSyntaxTired[F, E](())
++    new AdHocSyntaxTired[F, E](0)
+ 
+-  @scala.annotation.nowarn("msg=dubious usage of method hashCode with unit value")
+-  private[mtl] final class AdHocSyntaxTired[F[_], E](private val unit: Unit) extends AnyVal {
++  private[mtl] final class AdHocSyntaxTired[F[_], E](private val dummy: Byte) extends AnyVal {
+     def apply[A](body: Handle[F, E] => F[A]): Inner[F, E, A] =
+       new Inner(body)
+   }
+
+From 4c26d009c36f76a86c2c46f649caf93f97e1fb56 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Mon, 10 Mar 2025 20:03:28 +0100
+Subject: [PATCH 17/24] Use method call with implicit to avoid one extra
+ allocation
+
+Co-authored-by: Arman Bilge <armanbilge@gmail.com>
+---
+ core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+index d262ddde..05297a12 100644
+--- a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
++++ b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+@@ -28,7 +28,7 @@ private[mtl] trait HandleCrossCompat { this: Handle.type =>
+       new InnerWired(body)
+ 
+   private[mtl] final class InnerWired[F[_], E, A](body: Handle[F, E] ?=> F[A]):
+-    def rescue(h: E => F[A]): ApplicativeThrow[F] ?=> F[A] =
++    def rescue(h: E => F[A])(using ApplicativeThrow[F]): F[A] =
+       val Marker = new AnyRef
+ 
+       def inner[B](fb: F[B])(f: E => F[B]): F[B] =
+
+From e9c0d376b03c7d49734840532412374f599ed5ee Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Wed, 12 Mar 2025 05:07:19 +0100
+Subject: [PATCH 18/24] Extract InnerHandler out of rescue
+
+This is to avoid too much code duplication on user site
+---
+ .../scala-3/cats/mtl/HandleCrossCompat.scala  | 39 +++++++++++--------
+ 1 file changed, 23 insertions(+), 16 deletions(-)
+
+diff --git a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+index 05297a12..19285db5 100644
+--- a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
++++ b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+@@ -18,29 +18,36 @@ package cats
+ package mtl
+ 
+ private[mtl] trait HandleCrossCompat { this: Handle.type =>
+-  import Handle.Submarine
+ 
+   inline def allow[E]: AdHocSyntaxWired[E] =
+     new AdHocSyntaxWired[E]()
+ 
+   private[mtl] final class AdHocSyntaxWired[E]:
+     inline def apply[F[_], A](inline body: Handle[F, E] ?=> F[A]): InnerWired[F, E, A] =
+-      new InnerWired(body)
++      new InnerWired(convert(body))
+ 
+-  private[mtl] final class InnerWired[F[_], E, A](body: Handle[F, E] ?=> F[A]):
+-    def rescue(h: E => F[A])(using ApplicativeThrow[F]): F[A] =
+-      val Marker = new AnyRef
++  inline def convert[A, B](inline f: A ?=> B): A => B =
++    implicit a: A => f
+ 
+-      def inner[B](fb: F[B])(f: E => F[B]): F[B] =
+-        ApplicativeThrow[F].handleErrorWith(fb):
+-          case Submarine(e, Marker) => f(e.asInstanceOf[E])
+-          case t => ApplicativeThrow[F].raiseError(t)
++}
+ 
+-      given Handle[F, E] with
+-        def applicative = Applicative[F]
+-        def raise[E2 <: E, B](e: E2): F[B] =
+-          ApplicativeThrow[F].raiseError(Submarine(e, Marker))
+-        def handleWith[B](fb: F[B])(f: E => F[B]): F[B] = inner(fb)(f)
++private[mtl] final class InnerWired[F[_], E, A](body: Handle[F, E] => F[A]) extends AnyVal:
++  import Handle.Submarine
++  inline def rescue(inline h: E => F[A])(using ApplicativeThrow[F]): F[A] =
++    val Marker = new AnyRef
+ 
+-      inner(body)(h)
+-}
++    def inner[B](fb: F[B], f: E => F[B]): F[B] =
++      ApplicativeThrow[F].handleErrorWith(fb):
++        case Submarine(e, Marker) => f(e.asInstanceOf[E])
++        case t => ApplicativeThrow[F].raiseError(t)
++
++    inner[A](body(InnerHandle(Marker)), h)
++
++class InnerHandle[F[_]: ApplicativeThrow, E](Marker: AnyRef) extends Handle[F, E]:
++  import Handle.Submarine
++  def applicative = Applicative[F]
++  def raise[E2 <: E, B](e: E2): F[B] = ApplicativeThrow[F].raiseError(Submarine(e, Marker))
++  def handleWith[B](fb: F[B])(f: E => F[B]): F[B] =
++    ApplicativeThrow[F].handleErrorWith(fb):
++      case Submarine(e, Marker) => f(e.asInstanceOf[E])
++      case t => ApplicativeThrow[F].raiseError(t)
+
+From d1382bdabc761ae8cf512dccaebcf17d6ad7bba0 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Wed, 23 Jul 2025 16:16:41 +0200
+Subject: [PATCH 19/24] Inlining inner function
+
+---
+ .../scala-3/cats/mtl/HandleCrossCompat.scala   | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+index 19285db5..10439f6a 100644
+--- a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
++++ b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+@@ -26,24 +26,24 @@ private[mtl] trait HandleCrossCompat { this: Handle.type =>
+     inline def apply[F[_], A](inline body: Handle[F, E] ?=> F[A]): InnerWired[F, E, A] =
+       new InnerWired(convert(body))
+ 
+-  inline def convert[A, B](inline f: A ?=> B): A => B =
++  private inline def convert[A, B](inline f: A ?=> B): A => B =
+     implicit a: A => f
+ 
+ }
+ 
+-private[mtl] final class InnerWired[F[_], E, A](body: Handle[F, E] => F[A]) extends AnyVal:
+-  import Handle.Submarine
++private final class InnerWired[F[_], E, A](body: Handle[F, E] => F[A]) extends AnyVal:
+   inline def rescue(inline h: E => F[A])(using ApplicativeThrow[F]): F[A] =
+     val Marker = new AnyRef
+ 
+-    def inner[B](fb: F[B], f: E => F[B]): F[B] =
+-      ApplicativeThrow[F].handleErrorWith(fb):
+-        case Submarine(e, Marker) => f(e.asInstanceOf[E])
+-        case t => ApplicativeThrow[F].raiseError(t)
++    inner(body(InnerHandle(Marker)), h, Marker)
+ 
+-    inner[A](body(InnerHandle(Marker)), h)
++private inline def inner[F[_], E, A](fb: F[A], f: E => F[A], Marker: AnyRef)(
++    using ApplicativeThrow[F]): F[A] =
++  ApplicativeThrow[F].handleErrorWith(fb):
++    case Handle.Submarine(e, Marker) => f(e.asInstanceOf[E])
++    case t => ApplicativeThrow[F].raiseError(t)
+ 
+-class InnerHandle[F[_]: ApplicativeThrow, E](Marker: AnyRef) extends Handle[F, E]:
++private final class InnerHandle[F[_]: ApplicativeThrow, E](Marker: AnyRef) extends Handle[F, E]:
+   import Handle.Submarine
+   def applicative = Applicative[F]
+   def raise[E2 <: E, B](e: E2): F[B] = ApplicativeThrow[F].raiseError(Submarine(e, Marker))
+
+From 3f7973f496a0eaa9c0f02420acf9ba6c9572cc73 Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Wed, 23 Jul 2025 21:03:15 +0200
+Subject: [PATCH 20/24] minor stylistic update
+
+---
+ .../scala-3/cats/mtl/HandleCrossCompat.scala   | 18 ++++++++----------
+ 1 file changed, 8 insertions(+), 10 deletions(-)
+
+diff --git a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+index 10439f6a..cdce8d92 100644
+--- a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
++++ b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+@@ -17,25 +17,23 @@
+ package cats
+ package mtl
+ 
+-private[mtl] trait HandleCrossCompat { this: Handle.type =>
++private[mtl] trait HandleCrossCompat:
+ 
+   inline def allow[E]: AdHocSyntaxWired[E] =
+     new AdHocSyntaxWired[E]()
+ 
+-  private[mtl] final class AdHocSyntaxWired[E]:
+-    inline def apply[F[_], A](inline body: Handle[F, E] ?=> F[A]): InnerWired[F, E, A] =
+-      new InnerWired(convert(body))
++private final class AdHocSyntaxWired[E]:
++  inline def apply[F[_], A](inline body: Handle[F, E] ?=> F[A]): InnerWired[F, E, A] =
++    new InnerWired(convert(body))
+ 
+-  private inline def convert[A, B](inline f: A ?=> B): A => B =
+-    implicit a: A => f
+-
+-}
++private inline def convert[A, B](inline f: A ?=> B): A => B =
++  implicit a: A => f
+ 
+ private final class InnerWired[F[_], E, A](body: Handle[F, E] => F[A]) extends AnyVal:
+-  inline def rescue(inline h: E => F[A])(using ApplicativeThrow[F]): F[A] =
++  inline def rescue(inline f: E => F[A])(using ApplicativeThrow[F]): F[A] =
+     val Marker = new AnyRef
+ 
+-    inner(body(InnerHandle(Marker)), h, Marker)
++    inner(body(InnerHandle(Marker)), f, Marker)
+ 
+ private inline def inner[F[_], E, A](fb: F[A], f: E => F[A], Marker: AnyRef)(
+     using ApplicativeThrow[F]): F[A] =
+
+From 5de654a9624d9ac320c97dddc432d055575d7d1f Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Wed, 23 Jul 2025 22:02:08 +0200
+Subject: [PATCH 21/24] Inline arguments of inner
+
+---
+ core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+index cdce8d92..c3fefbc4 100644
+--- a/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
++++ b/core/src/main/scala-3/cats/mtl/HandleCrossCompat.scala
+@@ -35,7 +35,7 @@ private final class InnerWired[F[_], E, A](body: Handle[F, E] => F[A]) extends A
+ 
+     inner(body(InnerHandle(Marker)), f, Marker)
+ 
+-private inline def inner[F[_], E, A](fb: F[A], f: E => F[A], Marker: AnyRef)(
++private inline def inner[F[_], E, A](inline fb: F[A], inline f: E => F[A], Marker: AnyRef)(
+     using ApplicativeThrow[F]): F[A] =
+   ApplicativeThrow[F].handleErrorWith(fb):
+     case Handle.Submarine(e, Marker) => f(e.asInstanceOf[E])
+
+From fb9f86f4753b748ba40e22aa08225fcd30e56afb Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Fri, 1 Aug 2025 11:32:53 +0200
+Subject: [PATCH 22/24] union tests for scala 3
+
+---
+ .../scala-3/cats/mtl/tests/Handle3Tests.scala     | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+index 863f054c..f3f20d99 100644
+--- a/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
++++ b/tests/shared/src/test/scala-3/cats/mtl/tests/Handle3Tests.scala
+@@ -57,3 +57,18 @@ class Handle3Tests extends munit.FunSuite:
+         case Error1.Second => "second1".pure[F]
+         case Error1.Third => "third1".pure[F]
+     assert.equals(test.value.value.toOption, Some("third1"))
++
++  test("submerge two independent errors with union(scala 3)"):
++    enum Error1:
++      case First, Second, Third
++    enum Error2:
++      case Fourth
++    val test =
++      allow[Error1 | Error2]:
++        Error1.Third.raise[F, String].as("nope")
++      .rescue:
++        case Error1.First => "first1".pure[F]
++        case Error1.Second => "second1".pure[F]
++        case Error1.Third => "third1".pure[F]
++        case Error2.Fourth => "fourth1".pure[F]
++    assert.equals(test.value.value.toOption, Some("third1"))
+
+From 369d659ff879452edfef4d9a5a51cc91a3da957e Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Sun, 3 Aug 2025 21:05:15 +0200
+Subject: [PATCH 23/24] Add some docs `allow` and `rescue`
+
+---
+ .github/workflows/ci.yml   |  2 +-
+ build.sbt                  | 15 ++++++++-
+ docs/mtl-classes/handle.md | 66 ++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 81 insertions(+), 2 deletions(-)
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 8c8ecc88..3b9d8eaa 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -274,7 +274,7 @@ jobs:
+       - name: Submit Dependencies
+         uses: scalacenter/sbt-dependency-submission@v2
+         with:
+-          modules-ignore: rootjs_3 rootjs_2.12 rootjs_2.13 docs_3 docs_2.12 docs_2.13 cats-mtl-tests_sjs1_3 cats-mtl-tests_sjs1_2.12 cats-mtl-tests_sjs1_2.13 rootjvm_3 rootjvm_2.12 rootjvm_2.13 rootnative_3 rootnative_2.12 rootnative_2.13 cats-mtl-tests_3 cats-mtl-tests_2.12 cats-mtl-tests_2.13 cats-mtl-tests_native0.5_3 cats-mtl-tests_native0.5_2.12 cats-mtl-tests_native0.5_2.13
++          modules-ignore: rootjs_3 rootjs_2.12 rootjs_2.13 docs_3 cats-mtl-tests_sjs1_3 cats-mtl-tests_sjs1_2.12 cats-mtl-tests_sjs1_2.13 rootjvm_3 rootjvm_2.12 rootjvm_2.13 rootnative_3 rootnative_2.12 rootnative_2.13 cats-mtl-tests_3 cats-mtl-tests_2.12 cats-mtl-tests_2.13 cats-mtl-tests_native0.5_3 cats-mtl-tests_native0.5_2.12 cats-mtl-tests_native0.5_2.13
+           configs-ignore: test scala-tool scala-doc-tool test-internal
+ 
+   site:
+diff --git a/build.sbt b/build.sbt
+index e4d8e669..90dd2899 100644
+--- a/build.sbt
++++ b/build.sbt
+@@ -1,3 +1,5 @@
++// import laika.helium.config._
++import laika.config.{ChoiceConfig, SelectionConfig, Selections}
+ ThisBuild / tlBaseVersion := "1.5"
+ ThisBuild / startYear := Some(2021)
+ ThisBuild / developers := List(
+@@ -79,7 +81,18 @@ lazy val docs = project
+   .in(file("site"))
+   .enablePlugins(TypelevelSitePlugin)
+   .settings(
++    scalaVersion := "3.3.4",
+     tlFatalWarnings := false,
+-    laikaConfig ~= (_.withRawContent)
++    laikaConfig ~= {
++      _.withConfigValue(
++        Selections(
++          SelectionConfig(
++            "scala-version",
++            ChoiceConfig("scala-3", "Scala 3"),
++            ChoiceConfig("scala-2", "Scala 2")
++          )
++        )
++      )
++    }
+   )
+   .dependsOn(core.jvm)
+diff --git a/docs/mtl-classes/handle.md b/docs/mtl-classes/handle.md
+index 4f3dd889..5e6db0cc 100644
+--- a/docs/mtl-classes/handle.md
++++ b/docs/mtl-classes/handle.md
+@@ -41,3 +41,69 @@ def recovered[F[_]: Applicative](implicit F: Handle[F, String]): F[Boolean] = {
+ val err = notRecovered[Either[String, *]]
+ val result = recovered[Either[String, *]]
+ ```
++
++### Error propagation with `allow` and `rescue`
++
++In addition to the traditional `raise` and `handleWith` mechanism, `Handle` supports `allow` and `rescue` functions which provides a concise, intuitive and performant way to raise and handle domain-specific errors, with syntax inspired by `try/catch` blocks.
++
++@:select(scala-version)
++
++@:choice(scala-3)
++
++```scala
++import cats.*
++import cats.syntax.all.*
++import cats.mtl.*
++import cats.mtl.Handle.*
++
++type F[A] = Either[Throwable, A]
++
++enum DomainError:
++  case Failed
++  case Derped
++
++def foo(using h: Raise[F, DomainError]): F[String] = Either.right("foo")
++def bar(using h: Handle[F, DomainError]): F[String] = h.raise(DomainError.Failed)
++
++val submarine: F[String] =
++  allow:
++    foo *> bar
++  .rescue:
++    case DomainError.Failed => Either.right("Handled Failed")
++    case DomainError.Derped => Either.right("Handled Derped")
++// submarine: Either[Throwable, String] = Right(value = "Handled Failed")
++```
++
++@:choice(scala-2)
++
++```scala mdoc
++import cats._
++import cats.syntax.all._
++import cats.mtl._
++import cats.mtl.Handle._
++
++type F[A] = Either[Throwable, A]
++
++sealed trait DomainError
++object DomainError {
++  case object Failed extends DomainError
++  case object Derped extends DomainError
++}
++
++def foo(implicit h: Raise[F, DomainError]): F[String] = Either.right("foo")
++def bar(implicit h: Handle[F, DomainError]): F[String] = h.raise(DomainError.Failed)
++
++val submarine: F[String] =
++  allowF[F, DomainError] { implicit h =>
++    foo *> bar
++  } rescue {
++    case DomainError.Failed => Either.right("Handled Failed")
++    case DomainError.Derped => Either.right("Handled Derped")
++  }
++```
++
++@:@
++
++Notice that `DomainError` is a regular ADT (algebraic data type) and does not extend `Exception`. With `allow` (`allowF` in Scala 2) and `rescue`, you can raise and handle errors of your own types—not just exceptions—using syntax that feels like familiar exception handling, but in a purely functional and type-safe way.
++
++This pattern makes error handling more readable and expressive, and often removes the need for transformers like `EitherT` or `IorT` in regular code.
+
+From bd93a51d68cd08c66e396969319fb5053202f94b Mon Sep 17 00:00:00 2001
+From: Thanh Le <lenguyenthanh@hotmail.com>
+Date: Mon, 4 Aug 2025 20:37:47 +0200
+Subject: [PATCH 24/24] Update tlBaseVersion to 1.6
+
+---
+ build.sbt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/build.sbt b/build.sbt
+index 90dd2899..382b33c0 100644
+--- a/build.sbt
++++ b/build.sbt
+@@ -1,6 +1,6 @@
+ // import laika.helium.config._
+ import laika.config.{ChoiceConfig, SelectionConfig, Selections}
+-ThisBuild / tlBaseVersion := "1.5"
++ThisBuild / tlBaseVersion := "1.6"
+ ThisBuild / startYear := Some(2021)
+ ThisBuild / developers := List(
+   tlGitHubDev("SystemFw", "Fabio Labella"),

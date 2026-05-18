@@ -6,10 +6,10 @@ import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.provisioning.ProvisioningKeyProvider
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.reflection.DIKey
-import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
+import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF2
 
 final case class LocatorContext(
-  provision: ProvisionImmutable[AnyF],
+  provision: ProvisionImmutable[AnyF2],
   locator: Locator,
   plan: Plan,
 ) extends ProvisioningKeyProvider {

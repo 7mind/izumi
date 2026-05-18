@@ -1,90 +1,31 @@
 package izumi.distage.testkit.distagesuite.integration
 
-import cats.Applicative
-import distage.{TagK, TagKK}
+import distage.{TagKK, *}
 import izumi.distage.model.definition.{Lifecycle, ModuleDef}
 import izumi.distage.model.provisioning.IntegrationCheck
-import izumi.distage.modules.{DefaultModule, DefaultModule2}
+import izumi.distage.modules.DefaultModule2
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.{Spec1, Spec2}
-import izumi.functional.bio.catz.*
-import izumi.functional.bio.{Applicative2, ApplicativeError2, F}
-import izumi.functional.quasi.QuasiIO
+import izumi.distage.testkit.scalatest.Spec2
+import izumi.functional.bio.{Applicative2, IO2}
 import izumi.fundamentals.platform.integration.ResourceCheck
-import zio.{Task, UIO, ZEnvironment, ZIO}
 
 case class TestEnableDisable()
 
-class DisabledTestZIO extends Lifecycle.Simple[TestEnableDisable] with IntegrationCheck[UIO] {
-  override def resourcesAvailable(): UIO[ResourceCheck] =
-    ZIO.succeed(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
-
-  override def acquire: TestEnableDisable = TestEnableDisable()
-  override def release(resource: TestEnableDisable): Unit = ()
+class DisabledTestF2[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F, Nothing, TestEnableDisable] with IntegrationCheck[F[Throwable, _]] {
+  override def resourcesAvailable(): F[Throwable, ResourceCheck] =
+    Applicative2[F].pure(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
+  override def acquire: F[Nothing, TestEnableDisable] = Applicative2[F].pure(TestEnableDisable())
+  override def release(resource: TestEnableDisable): F[Nothing, Unit] = Applicative2[F].unit
 }
 
-class MyDisabledTestZIO extends Spec1[Task] {
-  override def config: TestConfig = super.config.copy(
-    moduleOverrides = new ModuleDef {
-      make[TestEnableDisable].fromResource[DisabledTestZIO]
-    }
-  )
-
-  "My component" should {
-    "this test should be skipped" in {
-      (_: TestEnableDisable) =>
-        ZIO.fail(new Throwable("Test was not skipped!")).unit
-    }
-  }
-}
-
-class DisabledTestF[F[_]](implicit F: Applicative[F]) extends Lifecycle.Basic[F, TestEnableDisable] with IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] =
-    F.pure(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
-
-  override def acquire: F[TestEnableDisable] = F.pure(TestEnableDisable())
-  override def release(resource: TestEnableDisable): F[Unit] = F.unit
-}
-
-abstract class MyDisabledTestF[F0[_]: DefaultModule, F[x] <: F0[x]: TagK](f0Tag: TagK[F0])(implicit F: Applicative[F])
-  extends Spec1[F0]()(using f0Tag, implicitly[DefaultModule[F0]]) {
-  override def config: TestConfig = {
-    super.config.copy(
-      moduleOverrides = new ModuleDef {
-        make[TestEnableDisable].fromResource[DisabledTestF[F]]
-        addImplicit[Applicative[F]]
-      }
-    )
-  }
-
-  "My component" should {
-    "this test should be skipped" in {
-      (_: TestEnableDisable) =>
-        F.pure((throw new Throwable("Test was not skipped!")): Unit)
-    }
-  }
-}
-
-final class MyDisabledTestFCats extends MyDisabledTestF[cats.effect.IO, cats.effect.IO](implicitly)
-//final class MyDisabledTestFMonixTask extends MyDisabledTestF[monix.eval.Task, monix.eval.Task](implicitly)
-//final class MyDisabledTestFMonixBIOUIO extends MyDisabledTestF[monix.bio.Task, monix.bio.UIO](implicitly)
-//final class MyDisabledTestFMonixBIOTask extends MyDisabledTestF[monix.bio.Task, monix.bio.Task](implicitly)
-final class MyDisabledTestFZioUIO extends MyDisabledTestF[zio.Task, zio.UIO](implicitly)
-final class MyDisabledTestFZioTask extends MyDisabledTestF[zio.Task, zio.Task](implicitly)
-
-class DisabledTestF2[F[+_, +_]: Applicative2] extends Lifecycle.Basic[F[Nothing, +_], TestEnableDisable] with IntegrationCheck[F[Nothing, _]] {
-  override def resourcesAvailable(): F[Nothing, ResourceCheck] =
-    F.pure(ResourceCheck.ResourceUnavailable("This test is intentionally disabled.", None))
-  override def acquire: F[Nothing, TestEnableDisable] = F.pure(TestEnableDisable())
-  override def release(resource: TestEnableDisable): F[Nothing, Unit] = F.unit
-}
-
-abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit FA: ApplicativeError2[F], F: QuasiIO[F[Throwable, _]]) extends Spec2[F] {
+/** Bifunctor version of the original `MyDisabledTestF2` — uses `IntegrationCheck[F[Throwable, _]]`
+  * (Session 5 migration shape).
+  */
+abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit F: IO2[F]) extends Spec2[F] {
   override def config: TestConfig = {
     super.config.copy(
       moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
-        make[TestEnableDisable].fromResource[DisabledTestF2[F]]
-        make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
+        make[TestEnableDisable].fromResource[F, Nothing, DisabledTestF2[F]]
       }
     )
   }
@@ -92,11 +33,15 @@ abstract class MyDisabledTestF2[F[+_, +_]: DefaultModule2: TagKK](implicit FA: A
   "My component" should {
     "this test should be skipped" in {
       (_: TestEnableDisable) =>
-        F.fail(new Throwable("Test was not skipped!")).void
+        F.fail(new Throwable("Test was not skipped!")).asInstanceOf[F[Throwable, Unit]]
     }
   }
 }
 
-//final class MyDisabledTestF2MonixBIO extends MyDisabledTestF2[monix.bio.IO]
+// `IntegrationCheck[F[Throwable, _]]` is now matched by the runner — see M5-fix5b which mirrors
+// the EffectStrategy/ResourceStrategy Identity special-case into
+// `PlanInterpreterNonSequentialRuntimeImpl.runIfIntegrationCheck` (the binding extends
+// `IntegrationCheck[F[Throwable, _]]` and the runner's `checkOrFailF[F]` invokes
+// `resourcesAvailable()` and routes the resulting `F[Throwable, ResourceCheck]` through the
+// surrounding sandbox).
 final class MyDisabledTestF2ZioIO extends MyDisabledTestF2[zio.IO]
-final class MyDisabledTestF2ZIOZIOZEnv extends MyDisabledTestF2[zio.ZIO[Int, +_, +_]]

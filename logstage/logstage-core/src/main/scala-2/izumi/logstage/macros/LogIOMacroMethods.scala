@@ -1,6 +1,6 @@
 package izumi.logstage.macros
 
-import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{IO1, Primitives1}
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log.{Level, Message}
 import izumi.logstage.api.logger.{AbstractLogIO, AbstractMacroLogIO}
@@ -73,7 +73,7 @@ object LogIOMacroMethods {
   def scLogMethod[XF[_], F[x] >: XF[x], A, EncMode: c.WeakTypeTag](
     c: blackbox.Context { type PrefixType = AbstractMacroLogIO.LogMethod[XF, F, EncMode] }
   )(function: c.Expr[A]
-  )(F: c.Expr[QuasiIO[F]]
+  )(F: c.Expr[IO1[F]]
   ): c.Expr[F[A]] = {
     import c.universe.*
     val mode = getModeFromType[EncMode](c)
@@ -84,7 +84,7 @@ object LogIOMacroMethods {
     val printImplicits = c.Expr[Boolean](q"$prefixName.__printImplicits")
 
     val lmm = new LogMethodMacro[c.type](c)
-    lmm.logMethodIO[XF, F, QuasiIO[F], A](mode, prefixName, F, self, level, printTypes, printImplicits, function.tree)(
+    lmm.logMethodIO[XF, F, IO1[F], A](mode, prefixName, F, self, level, printTypes, printImplicits, function.tree)(
       functionToUse = lmm.exprMaybeSuspend[F, A](_, function)
     )
   }
@@ -92,7 +92,7 @@ object LogIOMacroMethods {
   def scLogMethodF[F[_], A, EncMode: c.WeakTypeTag](
     c: blackbox.Context { type PrefixType = AbstractMacroLogIO.LogMethodF[F, EncMode] }
   )(function: c.Expr[F[A]]
-  )(F: c.Expr[QuasiPrimitives[F]]
+  )(F: c.Expr[Primitives1[F]]
   ): c.Expr[F[A]] = {
     import c.universe.*
     val mode = getModeFromType[EncMode](c)
@@ -103,7 +103,7 @@ object LogIOMacroMethods {
     val printImplicits = c.Expr[Boolean](q"$prefixName.__printImplicits")
 
     val lmm = new LogMethodMacro[c.type](c)
-    lmm.logMethodIO[F, F, QuasiPrimitives[F], A](mode, prefixName, F, self, level, printTypes, printImplicits, function.tree)(
+    lmm.logMethodIO[F, F, Primitives1[F], A](mode, prefixName, F, self, level, printTypes, printImplicits, function.tree)(
       functionToUse = _ => function
     )
   }

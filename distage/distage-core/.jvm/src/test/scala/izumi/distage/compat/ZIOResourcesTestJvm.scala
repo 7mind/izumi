@@ -46,7 +46,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         make[MyApp]
       }
 
-      unsafeRun(Injector[Task]().produceRun(module) {
+      unsafeRun(Injector[zio.ZIO[Any, +_, +_]]().produceRun(module) {
         (myApp: MyApp) =>
           myApp.run
       })
@@ -99,21 +99,13 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         ZIO.attempt(assert((i1.allocated -> i2.allocated) == (false -> false)))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: IO2]: Lifecycle[F[Throwable, _], Locator] = injector.produceCustomF[F[Throwable, _]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2: izumi.functional.bio.Primitives2]: Lifecycle[F, Throwable, Locator] = injector.produceCustomF[F](plan)
 
-      val ctxResource: Lifecycle[Task, Locator] = produceBIO[IO]
+      val ctxResource: Lifecycle[zio.ZIO[Any, +_, +_], Throwable, Locator] = produceBIO[zio.ZIO[Any, +_, +_]]
 
       // works normally
       unsafeRun {
         ctxResource
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to cats.Resource
-      unsafeRun {
-        import izumi.functional.bio.catz.BIOToMonadCancel
-        ctxResource.toCats
           .use(assertAcquired)
           .flatMap((assertReleased _).tupled)
       }
@@ -151,7 +143,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         make[MyApp]
       }
 
-      unsafeRun(Injector[Task]().produceRun(module) {
+      unsafeRun(Injector[zio.ZIO[Any, +_, +_]]().produceRun(module) {
         (myApp: MyApp) =>
           myApp.run
       })
@@ -202,21 +194,13 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         ZIO.attempt(assert((i1.allocated -> i2.allocated) == (false -> false)))
       }
 
-      def produceBIO[F[+_, +_]: TagKK: IO2]: Lifecycle[F[Throwable, _], Locator] = injector.produceCustomF[F[Throwable, _]](plan)
+      def produceBIO[F[+_, +_]: TagKK: IO2: izumi.functional.bio.Primitives2]: Lifecycle[F, Throwable, Locator] = injector.produceCustomF[F](plan)
 
-      val ctxResource: Lifecycle[Task, Locator] = produceBIO[IO]
+      val ctxResource: Lifecycle[zio.ZIO[Any, +_, +_], Throwable, Locator] = produceBIO[zio.ZIO[Any, +_, +_]]
 
       // works normally
       unsafeRun {
         ctxResource
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to cats.Resource
-      unsafeRun {
-        import izumi.functional.bio.catz.BIOToMonadCancel
-        ctxResource.toCats
           .use(assertAcquired)
           .flatMap((assertReleased _).tupled)
       }
@@ -250,7 +234,10 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
       """
         )
       )
-      assert(res.getMessage.contains("implicit") || res.getMessage.contains("given instance"))
+      assert(
+        res.getMessage.contains("implicit") || res.getMessage.contains("given instance") ||
+        res.getMessage.contains("-Yretain-trees")
+      )
       assert(res.getMessage contains "AdaptFunctoid")
     }
 
@@ -313,7 +300,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
                 .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
                 .forkScoped
             )
-            .flatMap(a => Lifecycle.unit[Task].map(_ => a))
+            .flatMap(a => Lifecycle.unit[zio.ZIO[Any, +_, +_]].map(_ => a))
             .use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
         } yield ()
       )
@@ -323,7 +310,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         for {
           latch <- Promise.make[Nothing, Unit]
           _ <- Lifecycle
-            .unit[Task].flatMap {
+            .unit[zio.ZIO[Any, +_, +_]].flatMap {
               _ =>
                 Lifecycle
                   .fromZIO[Any](

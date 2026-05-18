@@ -3,24 +3,23 @@ package izumi.distage.testkit.distagesuite.fixtures
 import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.IO as CIO
-import distage.TagK
+import distage.TagKK
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.definition.StandardAxis.Mode
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.{Bifunctorized, IO2}
+import izumi.functional.bio.CatsToBIOConversions.*
 import izumi.distage.plugins.PluginDef
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
-import zio.Task
 
 import scala.collection.mutable
 
-object MockAppCatsIOPlugin extends MockAppPlugin[CIO]
-object MockAppZioPlugin extends MockAppPlugin[Task]
-object MockAppIdPlugin extends MockAppPlugin[Identity]
-object MockAppZioZEnvPlugin extends MockAppPlugin[zio.ZIO[Int, Throwable, +_]]
+object MockAppCatsIOPlugin extends MockAppPlugin[Bifunctorized[CIO, +_, +_]]
+object MockAppZioPlugin extends MockAppPlugin[zio.IO]
+object MockAppIdPlugin extends MockAppPlugin[Bifunctorized.IdentityBifunctorized]
+object MockAppZioZEnvPlugin extends MockAppPlugin[zio.ZIO[Int, +_, +_]]
 
-abstract class MockAppPlugin[F[_]: TagK] extends PluginDef {
+abstract class MockAppPlugin[F[+_, +_]: TagKK] extends PluginDef {
   make[MockPostgresDriver[F]]
   make[MockUserRepository[F]]
   make[MockPostgresCheck[F]]
@@ -36,39 +35,40 @@ trait ActiveComponent
 case object TestActiveComponent extends ActiveComponent
 case object ProdActiveComponent extends ActiveComponent
 
-class MockPostgresCheck[F[_]: QuasiIO]() extends IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.Success())
+class MockPostgresCheck[F[+_, +_]: IO2]() extends IntegrationCheck[F[Throwable, _]] {
+  override def resourcesAvailable(): F[Throwable, ResourceCheck] = IO2[F].pure(ResourceCheck.Success())
 }
 
-class MockPostgresDriver[F[_]](val check: MockPostgresCheck[F])
+class MockPostgresDriver[F[+_, +_]](val check: MockPostgresCheck[F])
 
-class MockRedis[F[_]]()
+class MockRedis[F[+_, +_]]()
 
-class MockUserRepository[F[_]](val pg: MockPostgresDriver[F])
+class MockUserRepository[F[+_, +_]](val pg: MockPostgresDriver[F])
 
-class MockCache[F[_]: QuasiIO](val redis: MockRedis[F]) extends IntegrationCheck[F] {
+class MockCache[F[+_, +_]: IO2](val redis: MockRedis[F]) extends IntegrationCheck[F[Throwable, _]] {
   locally {
     val integer = MockCache.instanceCounter.getOrElseUpdate(redis, new AtomicInteger(0))
     if (integer.incrementAndGet() > 2) { // one instance per each monad
       throw new RuntimeException(s"Something is wrong with memoization: $integer instances were created")
     }
   }
-  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.Success())
+  override def resourcesAvailable(): F[Throwable, ResourceCheck] = IO2[F].pure(ResourceCheck.Success())
 }
 
 object MockCache {
   val instanceCounter = mutable.Map[AnyRef, AtomicInteger]()
 }
 
-class UnavailableIntegrationCheck[F[_]: QuasiIO] extends IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].pure(ResourceCheck.ResourceUnavailable("Dummy unavailable resource for testing purposes", None))
+class UnavailableIntegrationCheck[F[+_, +_]: IO2] extends IntegrationCheck[F[Throwable, _]] {
+  override def resourcesAvailable(): F[Throwable, ResourceCheck] =
+    IO2[F].pure(ResourceCheck.ResourceUnavailable("Dummy unavailable resource for testing purposes", None))
 }
 
-class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: MockCache[F])
+class MockCachedUserService[F[+_, +_]](val users: MockUserRepository[F], val cache: MockCache[F])
 
 class ForcedRootProbe {
   var started = false
 }
-class ForcedRootResource[F[_]: QuasiIO](forcedRootProbe: ForcedRootProbe) extends Lifecycle.SelfNoClose[F, ForcedRootResource[F]] {
-  override def acquire: F[Unit] = QuasiIO[F].maybeSuspend(forcedRootProbe.started = true)
+class ForcedRootResource[F[+_, +_]: IO2](forcedRootProbe: ForcedRootProbe) extends Lifecycle.SelfNoClose[F, Nothing, ForcedRootResource[F]] {
+  override def acquire: F[Nothing, Unit] = IO2[F].sync(forcedRootProbe.started = true)
 }

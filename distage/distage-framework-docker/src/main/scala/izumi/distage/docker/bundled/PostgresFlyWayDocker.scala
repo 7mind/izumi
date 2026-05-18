@@ -1,6 +1,6 @@
 package izumi.distage.docker.bundled
 
-import distage.{Functoid, Id, ModuleDef, TagK}
+import distage.{Functoid, Id, ModuleDef, TagKK}
 import izumi.distage.docker.model.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
@@ -84,7 +84,7 @@ object PostgresFlyWayDocker extends ContainerDef {
   *
   * @param cfg Config with flyway migrations path
   */
-class PostgresFlyWayDockerModule[F[_]: TagK](
+class PostgresFlyWayDockerModule[F[+_, +_]: TagKK](
   cfg: => PostgresFlyWayDocker.Cfg = PostgresFlyWayDocker.Cfg()
 ) extends ModuleDef {
 
@@ -129,5 +129,5 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
 }
 
 object PostgresFlyWayDockerModule {
-  def apply[F[_]: TagK](cfg: => PostgresFlyWayDocker.Cfg = PostgresFlyWayDocker.Cfg()): PostgresFlyWayDockerModule[F] = new PostgresFlyWayDockerModule[F](cfg)
+  def apply[F[+_, +_]: TagKK](cfg: => PostgresFlyWayDocker.Cfg = PostgresFlyWayDocker.Cfg()): PostgresFlyWayDockerModule[F] = new PostgresFlyWayDockerModule[F](cfg)
 }

@@ -2,7 +2,7 @@ package izumi.distage.model.reflection
 
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.macrortti.LightTypeTag
-import izumi.reflect.{AnyTag, Tag, TagK, WeakTag}
+import izumi.reflect.{AnyTag, Tag, TagK, TagKK, WeakTag}
 
 final class SafeType(private[distage] val anyTag: AnyTag) {
   @inline def tag: LightTypeTag = anyTag.tag
@@ -38,6 +38,7 @@ final class SafeType(private[distage] val anyTag: AnyTag) {
 object SafeType {
   final def get[T: Tag]: SafeType = new SafeType(Tag[T])
   final def getK[K[_]: TagK]: SafeType = new SafeType(TagK[K])
+  final def getKK[K[_, _]: TagKK]: SafeType = new SafeType(TagKK[K])
   final def unsafeGetWeak[T](implicit weakTag: WeakTag[T]): SafeType = new SafeType(WeakTag[T])
 
   lazy val identityEffectType: SafeType = SafeType.getK[Identity]

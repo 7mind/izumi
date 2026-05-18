@@ -144,8 +144,8 @@ package object bio extends Syntax2 {
   type Latch2[+F[+_, +_]] = Promise2[F, Nothing, Unit]
   lazy val Latch2: Promise2.type = Promise2
 
-  type Semaphore2[+F[_, _]] = Semaphore1[F[Nothing, _]]
-  lazy val Semaphore2: Semaphore1.type = Semaphore1
+  type Semaphore2[F[+_, +_]] = Semaphore1.Semaphore2[F]
+  lazy val Semaphore2: Semaphore1.Semaphore2.type = Semaphore1.Semaphore2
 
   type SyncSafe2[F[_, _]] = SyncSafe1[F[Nothing, _]]
   object SyncSafe2 {
@@ -173,5 +173,7 @@ package object bio extends Syntax2 {
   object Entropy3 {
     @inline def apply[F[_, _, _]: Entropy3]: Entropy3[F] = implicitly
   }
+
+  type Bifunctorized[F[_], +E, +A] = izumi.functional.bio.Bifunctorized.Bifunctorized[F, E, A]
 
 }

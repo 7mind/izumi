@@ -22,7 +22,7 @@ import izumi.fundamentals.platform.cli.{CLIParser, CLIParserImpl, MultiModalArgs
 import izumi.fundamentals.platform.resources.IzArtifact
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 /**
   * This module is only used by the application launcher, but NOT by distage-testkit
@@ -36,7 +36,7 @@ import izumi.reflect.TagK
   * 6. Enumerate app plugins and bootstrap plugins
   * 7. Enumerate available roles, show role info and apply merge strategy/conflict resolution
   * 8. Validate loaded roles (for non-emptyness and conflicts between bootstrap and app plugins)
-  * 9. Build plan for [[izumi.functional.quasi.QuasiIORunner]]
+  * 9. Build plan for [[izumi.functional.bio.UnsafeRun2]]
   * 10. Build plan for integration checks
   * 11. Build plan for application
   * 12. Run role tasks
@@ -45,7 +45,7 @@ import izumi.reflect.TagK
   * 15. Run finalizers
   * 16. Shutdown executors
   */
-class RoleAppBootModule[F[_]: TagK: DefaultModule](
+class RoleAppBootModule[F[+_, +_]: TagKK: DefaultModule](
   shutdownStrategy: AppShutdownStrategy[F],
   pluginConfig: PluginConfig,
   bootstrapPluginConfig: PluginConfig,
@@ -54,7 +54,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
 ) extends ModuleDef {
   include(new RoleAppBootPlatformModule())
 
-  addImplicit[TagK[F]]
+  addImplicit[TagKK[F]]
   addImplicit[DefaultModule[F]]
   make[AppShutdownStrategy[F]].fromValue(shutdownStrategy)
   make[PluginConfig].named("main").fromValue(pluginConfig)
@@ -134,8 +134,8 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[ModuleBase].named("bootstrap").from((_: ValidatedModulePair).bootstrapAutoModule)
 
   make[RolesInfo].from {
-    (provider: RoleProvider, appModule: ModuleBase @Id("main"), tagK: TagK[F]) =>
-      provider.loadRoles[F](appModule)(using tagK)
+    (provider: RoleProvider, appModule: ModuleBase @Id("main"), tagKK: TagKK[F]) =>
+      provider.loadRoles[F](appModule)(using tagKK)
   }
   make[Set[DIKey]].named("distage.roles.roots").from {
     (rolesInfo: RolesInfo) =>

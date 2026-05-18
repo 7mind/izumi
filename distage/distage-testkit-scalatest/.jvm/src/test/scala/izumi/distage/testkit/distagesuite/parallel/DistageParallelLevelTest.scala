@@ -1,32 +1,24 @@
 package izumi.distage.testkit.distagesuite.parallel
 
-import cats.effect.IO as CIO
-import distage.{DIKey, TagK}
-import izumi.distage.modules.DefaultModule
+import distage.DIKey
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstance
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.model.TestConfig.Parallelism
-import izumi.distage.testkit.scalatest.Spec1
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
+import izumi.distage.testkit.scalatest.Spec2
 import izumi.logstage.api.Log
-import zio.Task
+import zio.ZIO
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationInt
 
 object DistageParallelLevelTest {
-  val idCounter = new AtomicInteger(0)
-  val cioCounter = new AtomicInteger(0)
   val zioCounter = new AtomicInteger(0)
-  val monixCounter = new AtomicInteger(0)
 }
 
-abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](
+abstract class DistageParallelLevelTestZIO(
   suitesCounter: AtomicInteger
-)(implicit F: QuasiIO[F]
-) extends Spec1[F] {
+) extends Spec2[zio.IO] {
   private final val maxSuites = 3
   private final val maxTests = 2
   private final val testsCounter = new AtomicInteger(0)
@@ -42,9 +34,9 @@ abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](
     )
   }
 
-  private def checkCounters: QuasiTemporal[F] => F[Unit] = {
-    FT =>
-      F.suspendF {
+  private def checkCounters: zio.IO[Throwable, Unit] = {
+    for {
+      _ <- ZIO.attempt {
         val testsCounterVal = testsCounter.addAndGet(1)
         val suitesCounterVal =
           if (testsCounterVal == 1) {
@@ -52,20 +44,17 @@ abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](
           } else {
             suitesCounter.get()
           }
-
         assert(suitesCounterVal <= maxSuites && testsCounterVal <= maxTests)
-
-        FT.sleep(500.millis).flatMap {
-          _ =>
-            F.maybeSuspend {
-              val newTestsCounter = testsCounter.decrementAndGet()
-              if (newTestsCounter == 0) {
-                suitesCounter.decrementAndGet()
-              }
-              ()
-            }
-        }
       }
+      _ <- ZIO.sleep(zio.Duration.fromScala(500.millis))
+      _ <- ZIO.succeed {
+        val newTestsCounter = testsCounter.decrementAndGet()
+        if (newTestsCounter == 0) {
+          suitesCounter.decrementAndGet()
+        }
+        ()
+      }
+    } yield ()
   }
 
   "parallel test level should be bounded by config 1" in checkCounters
@@ -74,29 +63,11 @@ abstract class DistageParallelLevelTest[F[_]: TagK: DefaultModule](
   "parallel test level should be bounded by config 4" in checkCounters
 }
 
-final class DistageParallelLevelTestCIO1 extends DistageParallelLevelTest[CIO](DistageParallelLevelTest.cioCounter)
-final class DistageParallelLevelTestCIO2 extends DistageParallelLevelTest[CIO](DistageParallelLevelTest.cioCounter)
-final class DistageParallelLevelTestCIO3 extends DistageParallelLevelTest[CIO](DistageParallelLevelTest.cioCounter)
-final class DistageParallelLevelTestCIO4 extends DistageParallelLevelTest[CIO](DistageParallelLevelTest.cioCounter)
-final class DistageParallelLevelTestCIO5 extends DistageParallelLevelTest[CIO](DistageParallelLevelTest.cioCounter)
-final class DistageParallelLevelTestCIO6 extends DistageParallelLevelTest[CIO](DistageParallelLevelTest.cioCounter) {
+final class DistageParallelLevelTestZIO1 extends DistageParallelLevelTestZIO(DistageParallelLevelTest.zioCounter)
+final class DistageParallelLevelTestZIO2 extends DistageParallelLevelTestZIO(DistageParallelLevelTest.zioCounter)
+final class DistageParallelLevelTestZIO3 extends DistageParallelLevelTestZIO(DistageParallelLevelTest.zioCounter)
+final class DistageParallelLevelTestZIO4 extends DistageParallelLevelTestZIO(DistageParallelLevelTest.zioCounter)
+final class DistageParallelLevelTestZIO5 extends DistageParallelLevelTestZIO(DistageParallelLevelTest.zioCounter)
+final class DistageParallelLevelTestZIO6 extends DistageParallelLevelTestZIO(DistageParallelLevelTest.zioCounter) {
   override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
 }
-
-final class DistageParallelLevelTestZIO1 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
-final class DistageParallelLevelTestZIO2 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
-final class DistageParallelLevelTestZIO3 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
-final class DistageParallelLevelTestZIO4 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
-final class DistageParallelLevelTestZIO5 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter)
-final class DistageParallelLevelTestZIO6 extends DistageParallelLevelTest[Task](DistageParallelLevelTest.zioCounter) {
-  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
-}
-
-//final class DistageParallelLevelTestMonixBIO1 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-//final class DistageParallelLevelTestMonixBIO2 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-//final class DistageParallelLevelTestMonixBIO3 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-//final class DistageParallelLevelTestMonixBIO4 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-//final class DistageParallelLevelTestMonixBIO5 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter)
-//final class DistageParallelLevelTestMonixBIO6 extends DistageParallelLevelTest[monix.bio.Task](DistageParallelLevelTest.monixCounter) {
-//  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
-//}

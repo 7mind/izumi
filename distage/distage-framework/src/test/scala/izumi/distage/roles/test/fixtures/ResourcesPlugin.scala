@@ -6,9 +6,15 @@ import izumi.distage.model.definition.StandardAxis.*
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.ResourcesPlugin.*
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.Bifunctorized
 
 import java.util.concurrent.{ExecutorService, Executors}
+
+private object ResourcesPluginTypes {
+  type BIO[+E, +A] = Bifunctorized[IO, E, A]
+  type IdentityB[+E, +A] = Bifunctorized.IdentityBifunctorized[E, A]
+}
+import izumi.distage.roles.test.fixtures.ResourcesPluginTypes.{BIO, IdentityB}
 
 class ConflictPlugin extends PluginDef {
   make[Conflict].tagged(Mode.Prod).from[Conflict1]
@@ -22,39 +28,39 @@ class ConflictPlugin extends PluginDef {
 trait ResourcesPluginBase extends ModuleDef {
   make[ExecutorService].from(Executors.newCachedThreadPool())
 
-  make[IntegrationResource1[Identity]]
-  make[JustResource1[Identity]]
-  make[JustResource2[Identity]]
-  make[ProbeResource0[Identity]]
-  make[JustResource3[Identity]]
+  make[IntegrationResource1[IdentityB]]
+  make[JustResource1[IdentityB]]
+  make[JustResource2[IdentityB]]
+  make[ProbeResource0[IdentityB]]
+  make[JustResource3[IdentityB]]
 
-  many[TestResource[Identity]]
-    .ref[IntegrationResource1[Identity]]
-    .ref[JustResource1[Identity]]
-    .ref[JustResource2[Identity]]
-    .ref[ProbeResource0[Identity]]
-    .ref[JustResource3[Identity]]
+  many[TestResource[IdentityB]]
+    .ref[IntegrationResource1[IdentityB]]
+    .ref[JustResource1[IdentityB]]
+    .ref[JustResource2[IdentityB]]
+    .ref[ProbeResource0[IdentityB]]
+    .ref[JustResource3[IdentityB]]
 
-  make[IntegrationResource1[IO]]
-  make[JustResource1[IO]]
-  make[JustResource2[IO]]
-  make[ProbeResource0[IO]]
-  make[JustResource3[IO]]
+  make[IntegrationResource1[BIO]]
+  make[JustResource1[BIO]]
+  make[JustResource2[BIO]]
+  make[ProbeResource0[BIO]]
+  make[JustResource3[BIO]]
 
-  many[TestResource[IO]]
-    .ref[IntegrationResource1[IO]]
-    .ref[JustResource1[IO]]
-    .ref[JustResource2[IO]]
-    .ref[ProbeResource0[IO]]
-    .ref[JustResource3[IO]]
+  many[TestResource[BIO]]
+    .ref[IntegrationResource1[BIO]]
+    .ref[JustResource1[BIO]]
+    .ref[JustResource2[BIO]]
+    .ref[ProbeResource0[BIO]]
+    .ref[JustResource3[BIO]]
 }
 
 class ResourcesPlugin extends PluginDef with ResourcesPluginBase {
-  make[XXX_ResourceEffectsRecorder[IO]]
+  make[XXX_ResourceEffectsRecorder[BIO]]
 
-  make[IntegrationResource0[IO]]
-  many[TestResource[IO]]
-    .ref[IntegrationResource0[IO]]
+  make[IntegrationResource0[BIO]]
+  many[TestResource[BIO]]
+    .ref[IntegrationResource0[BIO]]
 }
 
 object ResourcesPlugin {

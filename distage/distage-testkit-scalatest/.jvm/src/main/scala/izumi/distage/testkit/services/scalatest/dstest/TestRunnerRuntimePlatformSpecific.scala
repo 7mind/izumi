@@ -1,8 +1,7 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
-import izumi.functional.bio.UnsafeRun2.NamedThreadFactory
+import izumi.functional.bio.{Bifunctorized, UnsafeRun2}
 import izumi.functional.lifecycle.Lifecycle
-import izumi.fundamentals.platform.functional.Identity
 
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
@@ -13,8 +12,8 @@ private[dstest] trait TestRunnerRuntimePlatformSpecific {
     TestRunnerRuntime.defaultAsyncRuntime
   }
 
-  final def testECLifecycleImpl(): Lifecycle[Identity, ExecutionContext] = {
-    val testkitThreadFactory = new NamedThreadFactory("distage-testkit-thread", daemon = true, priority = None)
+  final def testECLifecycleImpl(): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, ExecutionContext] = {
+    val testkitThreadFactory = new UnsafeRun2.NamedThreadFactory("distage-testkit-thread", daemon = true, priority = None)
     Lifecycle
       .fromExecutorService {
         Executors.newCachedThreadPool(testkitThreadFactory)

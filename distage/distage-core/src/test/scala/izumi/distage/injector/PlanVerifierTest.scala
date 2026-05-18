@@ -35,11 +35,11 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val definition = new ModuleDef {
       make[Int].tagged(Axis1.A).fromResource(Lifecycle.makeSimple(1)(_ => ()))
       make[Int].tagged(Axis1.B).fromResource {
-        new Lifecycle.Basic[Identity, Int] {
-          override def acquire: Identity[Int] = 1
-
-          override def release(resource: Int): Identity[Unit] = ()
-
+        new Lifecycle.Basic[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, Int] {
+          override def acquire: izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Throwable, Int] =
+            izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(1)
+          override def release(resource: Int): izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Nothing, Unit] =
+            izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()).asInstanceOf[izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Nothing, Unit]]
         }
       }
     }
@@ -68,11 +68,11 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val definition = new ModuleDef {
       make[Int].tagged(Axis1.A).fromResource(Lifecycle.makeSimple(1)(_ => ()))
       make[Int]
-        .tagged(Axis1.B).fromResource(new Lifecycle.Basic[Identity, Int] {
-          override def acquire: Identity[Int] = 1
-
-          override def release(resource: Int): Identity[Unit] = ()
-
+        .tagged(Axis1.B).fromResource[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, Lifecycle[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, Int]](new Lifecycle.Basic[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, Int] {
+          override def acquire: izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Throwable, Int] =
+            izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(1)
+          override def release(resource: Int): izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Nothing, Unit] =
+            izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()).asInstanceOf[izumi.functional.bio.Bifunctorized.IdentityBifunctorized[Nothing, Unit]]
         })
     }
 

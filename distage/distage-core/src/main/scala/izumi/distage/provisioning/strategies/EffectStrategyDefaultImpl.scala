@@ -1,30 +1,36 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.{Bifunctorized, IO2}
 import ProvisionerIssue.MissingRef
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.strategies.EffectStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 class EffectStrategyDefaultImpl extends EffectStrategy {
 
-  override def executeEffect[F[_]: TagK](
+  override def executeEffect[F[+_, +_]: TagKK](
     context: ProvisioningKeyProvider,
     op: MonadicOp.ExecuteEffect,
-  )(implicit F: QuasiIO[F]
-  ): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
-    op.throwOnIncompatibleEffectType[F]() match {
+  )(implicit F: IO2[F]
+  ): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+    op.throwOnIncompatibleBifunctorEffectType[F]() match {
       case Left(value) =>
         F.pure(Left(value))
       case Right(_) =>
         val effectKey = op.effectKey
         context.fetchKey(effectKey, makeByName = false) match {
+          case Some(action0) if op.actionEffectType == MonadicOp.identityBifunctorizedEffectType && op.isEffect =>
+            // Action carrier is IdentityBifunctorized; F may be any bifunctor. Run the MiniBIO carrier synchronously and lift into F.
+            val action = action0.asInstanceOf[Bifunctorized.IdentityBifunctorized[Throwable, Any]]
+            F.sync {
+              val newInstance = Bifunctorized.debifunctorizeIdentity(action)
+              Right(Seq(NewObjectOp.NewInstance(op.target, op.instanceTpe, newInstance)))
+            }
           case Some(action0) if op.isEffect =>
-            val action = action0.asInstanceOf[F[Any]]
-            action.map(newInstance => Right(Seq(NewObjectOp.NewInstance(op.target, op.instanceTpe, newInstance))))
+            val action = action0.asInstanceOf[F[Throwable, Any]]
+            F.map(action)(newInstance => Right(Seq(NewObjectOp.NewInstance(op.target, op.instanceTpe, newInstance))))
           case Some(newInstance) =>
             F.pure(Right(Seq(NewObjectOp.NewInstance(op.target, op.instanceTpe, newInstance))))
           case None =>

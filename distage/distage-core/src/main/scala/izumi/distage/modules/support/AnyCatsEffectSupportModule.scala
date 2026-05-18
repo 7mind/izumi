@@ -1,14 +1,13 @@
 package izumi.distage.modules.support
 
 import cats.Parallel
-import cats.effect.kernel.{Async, GenTemporal, Sync}
+import cats.effect.kernel.Async
 import cats.effect.std.Dispatcher
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.typeclass.CatsEffectInstancesModule
-import izumi.functional.bio.{Clock1, Entropy1, SyncSafe1}
-import izumi.functional.quasi.*
-import izumi.fundamentals.platform.functional.Identity
-import izumi.reflect.TagK
+import izumi.functional.bio.*
+import izumi.functional.bio.impl.{CatsIORunnerPlatformSpecific, CatsToBIO}
+import izumi.reflect.{TagK, TagKK}
 
 object AnyCatsEffectSupportModule {
   /**
@@ -16,7 +15,7 @@ object AnyCatsEffectSupportModule {
     *
     * For all `F[_]` with available `make[Async[F]]`, `make[Parallel[F]]` and `make[Dispatcher[F]]` bindings.
     *
-    *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+    *  - Adds [[izumi.functional.bio]] bifunctor BIO instances on `Bifunctorized[F, +_, +_]`
     *  - Adds `cats-effect` typeclass instances for `F[_]`
     *
     * Depends on `make[Async[F]]`, `make[Parallel[F]]`, `make[Dispatcher[F]]`.
@@ -24,9 +23,14 @@ object AnyCatsEffectSupportModule {
   def usingAsyncParallelDispatcher[F[_]: TagK]: ModuleDef = new ModuleDef {
     include(AnyCatsEffectSupportModule.usingAsyncParallel[F])
 
-    make[QuasiIORunner[F]].from {
-      (dispatcher: Dispatcher[F]) =>
-        QuasiIORunner.mkFromCatsDispatcher(dispatcher)
+    // UnsafeRun2 for the bifunctorized monofunctor is built from cats-effect's Dispatcher[F],
+    // which schedules effects through the user-provided runtime. The Dispatcher must be bound
+    // separately (`make[Dispatcher[F]]`) — typically by `Dispatcher.parallel[F]` in a Lifecycle.
+    // JVM impl supports synchronous `unsafeRunSync`; JS impl throws on it (Dispatcher has no
+    // sync entry on Scala.js).
+    make[UnsafeRun2[Bifunctorized[F, +_, +_]]].from {
+      (F: Async[F], D: Dispatcher[F]) =>
+        CatsIORunnerPlatformSpecific.dispatcherToUnsafeRun2[F](using F, D, TagK[F])
     }
   }
 
@@ -34,29 +38,39 @@ object AnyCatsEffectSupportModule {
     include(CatsEffectInstancesModule.usingAsync[F])
 
     addImplicit[TagK[F]]
+    addImplicit[TagKK[Bifunctorized[F, +_, +_]]]
 
-    make[QuasiIO[F]]
-      .aliased[QuasiPrimitives[F]]
-      .aliased[QuasiApplicative[F]]
-      .aliased[QuasiFunctor[F]]
-      .from {
-        implicit F: Sync[F] => QuasiIO.fromCats[F, Sync]
-      }
-    make[QuasiAsync[F]].from {
-      implicit F: Async[F] => QuasiAsync.fromCats[F, Async]
+    // The bifunctor BIO dictionary on Bifunctorized[F, +_, +_] is synthesized from Async[F] + TagK[F]
+    // via CatsToBIO.asyncToBIO (M1 PR-04).
+    make[IO2[Bifunctorized[F, +_, +_]]].from {
+      (F: Async[F]) =>
+        CatsToBIO.asyncToBIO[F](using F, TagK[F])
     }
-    make[QuasiTemporal[F]].from {
-      implicit F: GenTemporal[F, Throwable] => QuasiTemporal.fromCats[F, GenTemporal]
+    make[Primitives2[Bifunctorized[F, +_, +_]]].from {
+      (F: Async[F]) =>
+        CatsToBIO.asyncToBIO[F](using F, TagK[F])
     }
-    make[SyncSafe1[F]].from {
-      implicit F: Sync[F] => SyncSafe1.fromSync[F, Sync]
+    make[Async2[Bifunctorized[F, +_, +_]]].from {
+      (F: Async[F]) =>
+        CatsToBIO.asyncToBIO[F](using F, TagK[F])
     }
-    make[Clock1[F]].from {
-      Clock1.fromImpure(_: Clock1[Identity])(using _: SyncSafe1[F])
+    make[Temporal2[Bifunctorized[F, +_, +_]]].from {
+      (F: Async[F]) =>
+        CatsToBIO.asyncToBIO[F](using F, TagK[F])
     }
-    make[Entropy1[F]].from {
-      Entropy1.fromImpure(_: Entropy1[Identity])(using _: SyncSafe1[F])
+    // Parallel2 is a supertype of Async2 (Async2 <: Concurrent2 <: Parallel2), so the same
+    // backing dictionary covers it. The explicit binding is required because DI keys are
+    // by-type (no implicit subtype derivation) — testkit and role-app entry points summon
+    // `Parallel2[Bifunctorized[F, +_, +_]]` directly.
+    make[Parallel2[Bifunctorized[F, +_, +_]]].from {
+      (F: Async[F]) =>
+        CatsToBIO.parallel2FromAsync[F](using F, TagK[F])
     }
+    // ApplicativeError2 supertype binding for the same backing Async2 dictionary —
+    // `Spec1[F]`'s `DISyntaxBIOBase.takeBIO` summons `ApplicativeError2[F]` to lift the
+    // `F[Any, _]` test body into `F[Throwable, _]` via `leftMap`. Mirrors the equivalent
+    // binding in [[IdentitySupportModule]].
+    make[ApplicativeError2[Bifunctorized[F, +_, +_]]].using[Async2[Bifunctorized[F, +_, +_]]]
   }
 
   /**

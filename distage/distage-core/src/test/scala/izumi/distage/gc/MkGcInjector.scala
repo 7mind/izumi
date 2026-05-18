@@ -2,10 +2,10 @@ package izumi.distage.gc
 
 import distage.Injector
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.Bifunctorized
 
 trait MkGcInjector {
-  def mkInjector(): Injector[Identity] = {
+  def mkInjector(): Injector[Bifunctorized.IdentityBifunctorized] = {
     val debug = false
     val more = if (debug) {
       Seq(GraphDumpBootstrapModule())
@@ -13,10 +13,10 @@ trait MkGcInjector {
       Seq.empty
     }
 
-    Injector(bootstrapOverrides = more)
+    Injector[Bifunctorized.IdentityBifunctorized](bootstrapOverrides = more)
   }
 
-  def mkNoProxiesInjector(): Injector[Identity] = {
+  def mkNoProxiesInjector(): Injector[Bifunctorized.IdentityBifunctorized] = {
     Injector.NoProxies()
   }
 }

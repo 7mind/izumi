@@ -5,26 +5,25 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
-import izumi.functional.quasi.{QuasiAsync, QuasiIO}
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.{Async2, IO2, Primitives2}
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.logstage.api.IzLogger
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
-trait RoleAppEntrypoint[F[_]] {
-  def runTasksAndRoles(locator: Locator, effect: QuasiIO[F], effectAsync: QuasiAsync[F]): F[Unit]
+trait RoleAppEntrypoint[F[+_, +_]] {
+  def runTasksAndRoles(locator: Locator, effect: IO2[F], effectAsync: Async2[F]): F[Throwable, Unit]
 }
 
 object RoleAppEntrypoint {
-  class Impl[F[_]: TagK](
+  class Impl[F[+_, +_]: TagKK: Primitives2](
     roles: RolesInfo,
     lateLogger: IzLogger,
     parameters: RoleAppArgs,
     hook: AppShutdownStrategy[F],
   ) extends RoleAppEntrypoint[F] {
 
-    override def runTasksAndRoles(locator: Locator, effect: QuasiIO[F], effectAsync: QuasiAsync[F]): F[Unit] = {
-      implicit val F: QuasiIO[F] = effect
+    override def runTasksAndRoles(locator: Locator, effect: IO2[F], effectAsync: Async2[F]): F[Throwable, Unit] = {
+      implicit val F: IO2[F] = effect
       val roleIndex = getRoleIndex(locator)
       for {
         _ <- runTasks(roleIndex)
@@ -32,7 +31,7 @@ object RoleAppEntrypoint {
       } yield ()
     }
 
-    protected def runRoles(index: Map[String, AbstractRole[F]])(implicit F: QuasiIO[F], FA: QuasiAsync[F]): F[Unit] = {
+    protected def runRoles(index: Map[String, AbstractRole[F]])(implicit F: IO2[F], FA: Async2[F]): F[Throwable, Unit] = {
       val rolesToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
@@ -59,14 +58,14 @@ object RoleAppEntrypoint {
               resource
                 .wrapAcquire {
                   acquire =>
-                    F.suspendF {
+                    F.suspendThrowable {
                       lateLogger.info(s"Role is about to initialize: $role")
-                      acquire.flatMap(a => F.maybeSuspend { lateLogger.info(s"Role initialized: $role"); a })
+                      acquire.flatMap(a => F.sync { lateLogger.info(s"Role initialized: $role"); a })
                     }
                 }.catchAll {
                   t =>
                     Lifecycle.liftF {
-                      F.suspendF {
+                      F.suspendThrowable {
                         lateLogger.error(s"Role $role failed: $t")
                         F.fail(t)
                       }
@@ -75,11 +74,11 @@ object RoleAppEntrypoint {
           }
           .use(_ => hook.awaitShutdown(lateLogger))
       } else {
-        F.maybeSuspend(lateLogger.info("No services to run, exiting..."))
+        F.sync(lateLogger.info("No services to run, exiting..."))
       }
     }
 
-    protected def runTasks(index: Map[String, AbstractRole[F]])(implicit F: QuasiIO[F]): F[Unit] = {
+    protected def runTasks(index: Map[String, AbstractRole[F]])(implicit F: IO2[F]): F[Throwable, Unit] = {
       val tasksToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
@@ -96,17 +95,20 @@ object RoleAppEntrypoint {
 
       F.traverse_(tasksToRun) {
         case (task, cfg) =>
-          val loggedTask = for {
-            _ <- F.maybeSuspend(lateLogger.info(s"Task is about to start: $task"))
+          val loggedTask: F[Throwable, Unit] = for {
+            _ <- F.sync(lateLogger.info(s"Task is about to start: $task"))
             _ <- task.start(cfg.roleParameters)
-            _ <- F.maybeSuspend(lateLogger.info(s"Task finished: $task"))
+            _ <- F.sync(lateLogger.info(s"Task finished: $task"))
           } yield ()
 
-          F.definitelyRecoverWithTrace(loggedTask) {
-            (error, trace) =>
+          // Sandbox captures both typed Throwable failures and defects (panics) as
+          // `Exit.FailureUninterrupted[Throwable]`; we log and re-raise via the typed channel.
+          F.sandboxCatchAll[Throwable, Unit, Throwable](loggedTask) {
+            exit =>
+              val error = exit.toThrowable
               for {
-                _ <- F.maybeSuspend(lateLogger.error(s"Task failed: $task, $error, $trace"))
-                _ <- F.fail[Unit](error)
+                _ <- F.sync(lateLogger.error(s"Task failed: $task, $error, $exit"))
+                _ <- F.fail(error): F[Throwable, Unit]
               } yield ()
           }
       }

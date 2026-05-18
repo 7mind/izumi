@@ -1,18 +1,18 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.IO2
 import izumi.distage.model.plan.ExecutableOp.CreateSet
 import izumi.distage.model.provisioning.strategies.SetStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.*
 import izumi.fundamentals.collections.OrderedSetShim
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 class SetStrategyDefaultImpl extends SetStrategy {
   private val scalaCollectionSetType = SafeType.get[collection.Set[?]]
 
-  def makeSet[F[_]: TagK](context: ProvisioningKeyProvider, op: CreateSet)(implicit F: QuasiIO[F]): F[Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
+  def makeSet[F[+_, +_]: TagKK](context: ProvisioningKeyProvider, op: CreateSet)(implicit F: IO2[F]): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]] = {
     import izumi.functional.IzEither.*
     // target is guaranteed to be a Set
 
@@ -42,12 +42,5 @@ class SetStrategyDefaultImpl extends SetStrategy {
       val asSet = new OrderedSetShim[Any](parentSet ++ newSet) // duplicates are FINE here, the shim will deduplicate!
       Seq(NewObjectOp.NewInstance(op.target, op.instanceType, asSet))
     })
-
-    // this assertion is correct though disabled because it's weird and, probably, unnecessary slow
-    /*assert(
-      Set("scala.collection.mutable.LinkedHashMap$DefaultKeySet", "scala.collection.mutable.LinkedHashMap$LinkedKeySet").contains(allOrderedInstances.getClass.getName),
-      s"got: ${allOrderedInstances.getClass.getName}",
-    )*/
-
   }
 }

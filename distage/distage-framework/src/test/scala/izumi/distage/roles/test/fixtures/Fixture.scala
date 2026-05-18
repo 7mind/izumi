@@ -7,7 +7,7 @@ import izumi.distage.config.model.ConfigDoc
 import izumi.distage.model.definition.Axis
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.roles.test.fixtures.roles.TestRole00.SetElementOnlyCfg
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks.*
 
@@ -57,25 +57,25 @@ object Fixture {
 
   case class TestValueConf(value: Int)
 
-  class XXX_ResourceEffectsRecorder[F[_]] {
+  class XXX_ResourceEffectsRecorder[F[+_, +_]] {
     private val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
     private val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
-    private val checkedResources: mutable.ArrayBuffer[IntegrationCheck[F]] = mutable.ArrayBuffer()
+    private val checkedResources: mutable.ArrayBuffer[IntegrationCheck[F[Throwable, _]]] = mutable.ArrayBuffer()
 
     def onStart(c: AutoCloseable): Unit = this.synchronized(startedCloseables += c).discard()
     def onClose(c: AutoCloseable): Unit = this.synchronized(closedCloseables += c).discard()
-    def onCheck(c: IntegrationCheck[F]): Unit = this.synchronized(checkedResources += c).discard()
+    def onCheck(c: IntegrationCheck[F[Throwable, _]]): Unit = this.synchronized(checkedResources += c).discard()
 
     def getStartedCloseables(): Seq[AutoCloseable] = this.synchronized(startedCloseables.toList)
     def getClosedCloseables(): Seq[AutoCloseable] = this.synchronized(closedCloseables.toList)
-    def getCheckedResources(): Seq[IntegrationCheck[F]] = this.synchronized(checkedResources.toList)
+    def getCheckedResources(): Seq[IntegrationCheck[F[Throwable, _]]] = this.synchronized(checkedResources.toList)
   }
 
   case class XXX_LocatorLeak(locatorRef: LocatorRef)
 
-  trait TestResource[F[_]]
+  trait TestResource[F[+_, +_]]
 
-  trait ProbeResource[F[_]] extends TestResource[F] with AutoCloseable {
+  trait ProbeResource[F[+_, +_]] extends TestResource[F] with AutoCloseable {
     def counter: XXX_ResourceEffectsRecorder[F]
     counter.onStart(this)
 
@@ -83,21 +83,21 @@ object Fixture {
 
   }
 
-  abstract class ProbeCheck[F[_]: QuasiIO] extends ProbeResource[F] with IntegrationCheck[F] {
-    override def resourcesAvailable(): F[ResourceCheck] = QuasiIO[F].maybeSuspend {
+  abstract class ProbeCheck[F[+_, +_]: IO2] extends ProbeResource[F] with IntegrationCheck[F[Throwable, _]] {
+    override def resourcesAvailable(): F[Throwable, ResourceCheck] = IO2[F].syncThrowable {
       counter.onCheck(this)
       ResourceCheck.Success()
     }
   }
 
-  class IntegrationResource0[F[_]: QuasiIO](val closeable: IntegrationResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
-  class IntegrationResource1[F[_]: QuasiIO](val roleComponent: JustResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
+  class IntegrationResource0[F[+_, +_]: IO2](val closeable: IntegrationResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
+  class IntegrationResource1[F[+_, +_]: IO2](val roleComponent: JustResource1[F], val counter: XXX_ResourceEffectsRecorder[F]) extends ProbeCheck[F]
 
-  case class ProbeResource0[F[_]](roleComponent: JustResource3[F], counter: XXX_ResourceEffectsRecorder[F]) extends ProbeResource[F]
+  case class ProbeResource0[F[+_, +_]](roleComponent: JustResource3[F], counter: XXX_ResourceEffectsRecorder[F]) extends ProbeResource[F]
 
-  case class JustResource1[F[_]](roleComponent: JustResource2[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
-  case class JustResource2[F[_]](closeable: ProbeResource0[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
-  case class JustResource3[F[_]](counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
+  case class JustResource1[F[+_, +_]](roleComponent: JustResource2[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
+  case class JustResource2[F[+_, +_]](closeable: ProbeResource0[F], counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
+  case class JustResource3[F[+_, +_]](counter: XXX_ResourceEffectsRecorder[F]) extends TestResource[F]
 
   trait AxisComponent
   object AxisComponentIncorrect extends AxisComponent

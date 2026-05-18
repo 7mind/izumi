@@ -31,7 +31,7 @@ class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
       val debug = false
 
       val injector = if (debug) {
-        Injector[Identity](bootstrapOverrides = Seq(GraphDumpBootstrapModule()))
+        Injector[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](bootstrapOverrides = Seq(GraphDumpBootstrapModule()))
       } else {
         Injector()
       }

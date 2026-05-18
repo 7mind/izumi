@@ -20,7 +20,7 @@ import izumi.distage.model.{Locator, PlannerInput}
 import izumi.fundamentals.graphs.struct.AdjacencySuccList
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
-import izumi.reflect.{Tag, TagK}
+import izumi.reflect.{Tag, TagKK}
 
 import scala.collection.{immutable, mutable}
 
@@ -29,7 +29,7 @@ trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.B
 
   override def meta: LocatorMeta = LocatorMeta.empty
 
-  override def finalizers[F[_]: TagK]: immutable.Seq[PlanInterpreter.Finalizer[F]] = Nil
+  override def finalizers[F[+_, +_]: TagKK]: immutable.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
   override private[definition] final def _bindDSL[T](ref: SingletonRef): LocatorDef.BindDSL[T] = new LocatorDef.BindDSL[T](ref)
   override private[definition] final def _bindDSLAfterFrom[T](ref: SingletonRef): LocatorDef.BindDSLUnnamedAfterFrom[T] = new LocatorDef.BindDSLUnnamedAfterFrom(ref)

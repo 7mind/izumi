@@ -3,9 +3,9 @@ package izumi.distage.injector
 import distage.Injector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
+import izumi.functional.bio.Bifunctorized
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.assertions.ScalatestGuards
-import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.wordspec.AnyWordSpec
 import zio.*
 import zio.managed.ZManaged
@@ -17,7 +17,7 @@ class ZIOZManagedHasInjectionTest extends AnyWordSpec with ScalatestGuards {
 
   protected def unsafeRun[E, A](eff: => ZIO[Any, E, A]): A = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(eff).getOrThrowFiberFailure())
 
-  def mkNoCyclesInjector(): Injector[Identity] = Injector.NoCycles()
+  def mkNoCyclesInjector(): Injector[Bifunctorized.IdentityBifunctorized] = Injector.NoCycles()
 
   object TraitCase2 {
 
@@ -59,14 +59,14 @@ class ZIOZManagedHasInjectionTest extends AnyWordSpec with ScalatestGuards {
   def getDep2: URIO[Dependency2, Dependency2] = ZIO.service[Dependency2]
 
   final class ResourceHasImpl()
-    extends Lifecycle.LiftF(for {
+    extends Lifecycle.LiftF[ZIO[Dependency1 & Dependency2, +_, +_], Nothing, Trait2](for {
       d1 <- getDep1
       d2 <- getDep2
     } yield new Trait2 { val dep1 = d1; val dep2 = d2 })
 
   final class ResourceEmptyHasImpl(
     d1: Dependency1
-  ) extends Lifecycle.LiftF[UIO, Trait1](
+  ) extends Lifecycle.LiftF[ZIO[Any, +_, +_], Nothing, Trait1](
       ZIO.succeed(trait1(d1))
     )
 
@@ -120,7 +120,7 @@ class ZIOZManagedHasInjectionTest extends AnyWordSpec with ScalatestGuards {
       val injector = mkNoCyclesInjector()
       val plan = injector.planUnsafe(definition)
 
-      val instantiated = unsafeRun(injector.produceCustomF[Task](plan).use {
+      val instantiated = unsafeRun(injector.produceCustomF[zio.ZIO[Any, +_, +_]](plan).use {
         context =>
           ZIO.succeed {
 

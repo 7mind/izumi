@@ -1,12 +1,11 @@
 package izumi.distage.testkit.spec
 
-import distage.{Tag, TagKK}
+import distage.Tag
 import izumi.distage.model.providers.Functoid
 import izumi.functional.bio.{ApplicativeError2, TypedError}
 import izumi.fundamentals.platform.language.SourceFilePosition
 
-trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F[Throwable, _]] {
-  implicit def tagBIO: TagKK[F]
+trait DISyntaxBIOBase[F[+_, +_]] extends DISyntaxBase[F] {
 
   protected final def takeBIO(function: Functoid[F[Any, Any]], pos: SourceFilePosition): Unit = {
     val fAsThrowable: Functoid[F[Throwable, Any]] = function

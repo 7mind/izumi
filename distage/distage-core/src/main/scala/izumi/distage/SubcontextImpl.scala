@@ -9,11 +9,11 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.recursive.LocatorRef
 import izumi.distage.model.reflection.DIKey
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.{IO2, Primitives2}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.reflect.{Tag, TagK}
+import izumi.reflect.{Tag, TagKK}
 
-open class SubcontextImpl[F[_], +A](
+open class SubcontextImpl[F[+_, +_], +A](
   val externalKeys: Set[DIKey],
   val parent: LocatorRef,
   val plan: Plan,
@@ -32,7 +32,7 @@ open class SubcontextImpl[F[_], +A](
     doAdd(value, pos, key)
   }
 
-  override def produce()(implicit F: QuasiIO[F], tagK: TagK[F]): Lifecycle[F, A] = {
+  override def produce()(implicit F: IO2[F], P: Primitives2[F], tagK: TagKK[F]): Lifecycle[F, Throwable, A] = {
     val lookup: PartialFunction[ImportDependency, Any] = {
       case i: ImportDependency if providedExternals.contains(i.target) =>
         providedExternals(i.target)
@@ -46,7 +46,7 @@ open class SubcontextImpl[F[_], +A](
       .map(_.run(functoid))
   }
 
-  override def produceRun[B](f: A => F[B])(implicit F: QuasiIO[F], tagK: TagK[F]): F[B] = {
+  override def produceRun[B](f: A => F[Throwable, B])(implicit F: IO2[F], P: Primitives2[F], tagK: TagKK[F]): F[Throwable, B] = {
     produce().use(f)
   }
 
@@ -72,12 +72,12 @@ open class SubcontextImpl[F[_], +A](
 }
 
 object SubcontextImpl {
-  def initial[F[_], A](externalKeys: Set[DIKey], parent: LocatorRef, subplan: Plan, functoid: Functoid[A], selfKey: DIKey): SubcontextImpl[F, A] = {
+  def initial[F[+_, +_], A](externalKeys: Set[DIKey], parent: LocatorRef, subplan: Plan, functoid: Functoid[A], selfKey: DIKey): SubcontextImpl[F, A] = {
     new SubcontextImpl[F, A](externalKeys, parent, subplan, functoid, Map.empty, selfKey)
   }
 
   @deprecated("Renamed to initial", "1.2.17")
-  def empty[F[_], A](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[A], selfKey: DIKey): SubcontextImpl[F, A] = {
+  def empty[F[+_, +_], A](externalKeys: Set[DIKey], locatorRef: LocatorRef, subplan: Plan, impl: Functoid[A], selfKey: DIKey): SubcontextImpl[F, A] = {
     initial(externalKeys, locatorRef, subplan, impl, selfKey)
   }
 }

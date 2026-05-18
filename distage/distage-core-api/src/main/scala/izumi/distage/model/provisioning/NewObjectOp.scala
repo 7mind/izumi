@@ -14,12 +14,12 @@ object NewObjectOp {
   /** Marks a new instance introduced in current locator context */
   final case class NewInstance(key: DIKey, implType: SafeType, instance: Any) extends NewObjectOp with CurrentContextInstance
   /** Marks a new instance introduced in current locator context */
-  final case class NewResource[F[_]](key: DIKey, implType: SafeType, instance: Any, finalizer: () => F[Unit]) extends NewObjectOp with CurrentContextInstance
+  final case class NewResource[F[+_, +_]](key: DIKey, implType: SafeType, instance: Any, finalizer: () => F[Nothing, Unit]) extends NewObjectOp with CurrentContextInstance
 
   /** Marks a reused instance from current locator context */
   final case class UseInstance(key: DIKey, instance: Any) extends NewObjectOp
   /** Marks a reused instance from parent locator context */
   final case class NewImport(key: DIKey, instance: Any) extends NewObjectOp
 
-  final case class NewFinalizer[F[_]](key: DIKey, finalizer: () => F[Unit]) extends NewObjectOp
+  final case class NewFinalizer[F[+_, +_]](key: DIKey, finalizer: () => F[Nothing, Unit]) extends NewObjectOp
 }

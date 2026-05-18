@@ -1,32 +1,24 @@
 package izumi.distage.testkit.distagesuite.sequential
 
-import cats.effect.IO as CIO
-import distage.{DIKey, TagK}
-import izumi.distage.modules.DefaultModule
+import distage.DIKey
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.distagesuite.memoized.MemoizationEnv.MemoizedInstance
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.model.TestConfig.Parallelism
-import izumi.distage.testkit.scalatest.Spec1
-import izumi.functional.quasi.QuasiIO.syntax.QuasiIOSyntax
-import izumi.functional.quasi.{QuasiIO, QuasiTemporal}
+import izumi.distage.testkit.scalatest.Spec2
 import izumi.logstage.api.Log
-import zio.Task
+import zio.ZIO
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationInt
 
 object DistageSequentialSuitesTest {
-  val idCounter = new AtomicInteger(0)
-  val cioCounter = new AtomicInteger(0)
   val zioCounter = new AtomicInteger(0)
-  val monixCounter = new AtomicInteger(0)
 }
 
-abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
+abstract class DistageSequentialSuitesTestZIO(
   suitesCounter: AtomicInteger
-)(implicit F: QuasiIO[F]
-) extends Spec1[F] {
+) extends Spec2[zio.IO] {
   private val maxSuites = 1
   private val maxTests = 2
   private val testsCounter = new AtomicInteger(0)
@@ -42,9 +34,9 @@ abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
     )
   }
 
-  private def checkCounters: QuasiTemporal[F] => F[Unit] = {
-    FT =>
-      F.suspendF {
+  private def checkCounters: zio.IO[Throwable, Unit] = {
+    for {
+      _ <- ZIO.attempt {
         val testsCounterVal = testsCounter.addAndGet(1)
         val suitesCounterVal =
           if (testsCounterVal == 1) {
@@ -52,20 +44,17 @@ abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
           } else {
             suitesCounter.get()
           }
-
         assert(suitesCounterVal <= maxSuites && testsCounterVal <= maxTests)
-
-        FT.sleep(500.millis).flatMap {
-          _ =>
-            F.maybeSuspend {
-              val newTestsCounter = testsCounter.decrementAndGet()
-              if (newTestsCounter == 0) {
-                suitesCounter.decrementAndGet()
-              }
-              ()
-            }
-        }
       }
+      _ <- ZIO.sleep(zio.Duration.fromScala(500.millis))
+      _ <- ZIO.succeed {
+        val newTestsCounter = testsCounter.decrementAndGet()
+        if (newTestsCounter == 0) {
+          suitesCounter.decrementAndGet()
+        }
+        ()
+      }
+    } yield ()
   }
 
   "parallel test level should be bounded by config 1" in checkCounters
@@ -74,29 +63,11 @@ abstract class DistageSequentialSuitesTest[F[_]: TagK: DefaultModule](
   "parallel test level should be bounded by config 4" in checkCounters
 }
 
-final class DistageSequentialSuitesTestCIO1 extends DistageSequentialSuitesTest[CIO](DistageSequentialSuitesTest.cioCounter)
-final class DistageSequentialSuitesTestCIO2 extends DistageSequentialSuitesTest[CIO](DistageSequentialSuitesTest.cioCounter)
-final class DistageSequentialSuitesTestCIO3 extends DistageSequentialSuitesTest[CIO](DistageSequentialSuitesTest.cioCounter)
-final class DistageSequentialSuitesTestCIO4 extends DistageSequentialSuitesTest[CIO](DistageSequentialSuitesTest.cioCounter)
-final class DistageSequentialSuitesTestCIO5 extends DistageSequentialSuitesTest[CIO](DistageSequentialSuitesTest.cioCounter)
-final class DistageSequentialSuitesTestCIO6 extends DistageSequentialSuitesTest[CIO](DistageSequentialSuitesTest.cioCounter) {
+final class DistageSequentialSuitesTestZIO1 extends DistageSequentialSuitesTestZIO(DistageSequentialSuitesTest.zioCounter)
+final class DistageSequentialSuitesTestZIO2 extends DistageSequentialSuitesTestZIO(DistageSequentialSuitesTest.zioCounter)
+final class DistageSequentialSuitesTestZIO3 extends DistageSequentialSuitesTestZIO(DistageSequentialSuitesTest.zioCounter)
+final class DistageSequentialSuitesTestZIO4 extends DistageSequentialSuitesTestZIO(DistageSequentialSuitesTest.zioCounter)
+final class DistageSequentialSuitesTestZIO5 extends DistageSequentialSuitesTestZIO(DistageSequentialSuitesTest.zioCounter)
+final class DistageSequentialSuitesTestZIO6 extends DistageSequentialSuitesTestZIO(DistageSequentialSuitesTest.zioCounter) {
   override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
 }
-
-final class DistageSequentialSuitesTestZIO1 extends DistageSequentialSuitesTest[Task](DistageSequentialSuitesTest.zioCounter)
-final class DistageSequentialSuitesTestZIO2 extends DistageSequentialSuitesTest[Task](DistageSequentialSuitesTest.zioCounter)
-final class DistageSequentialSuitesTestZIO3 extends DistageSequentialSuitesTest[Task](DistageSequentialSuitesTest.zioCounter)
-final class DistageSequentialSuitesTestZIO4 extends DistageSequentialSuitesTest[Task](DistageSequentialSuitesTest.zioCounter)
-final class DistageSequentialSuitesTestZIO5 extends DistageSequentialSuitesTest[Task](DistageSequentialSuitesTest.zioCounter)
-final class DistageSequentialSuitesTestZIO6 extends DistageSequentialSuitesTest[Task](DistageSequentialSuitesTest.zioCounter) {
-  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
-}
-
-//final class DistageSequentialSuitesTestMonixBIO1 extends DistageSequentialSuitesTest[monix.bio.Task](DistageSequentialSuitesTest.monixCounter)
-//final class DistageSequentialSuitesTestMonixBIO2 extends DistageSequentialSuitesTest[monix.bio.Task](DistageSequentialSuitesTest.monixCounter)
-//final class DistageSequentialSuitesTestMonixBIO3 extends DistageSequentialSuitesTest[monix.bio.Task](DistageSequentialSuitesTest.monixCounter)
-//final class DistageSequentialSuitesTestMonixBIO4 extends DistageSequentialSuitesTest[monix.bio.Task](DistageSequentialSuitesTest.monixCounter)
-//final class DistageSequentialSuitesTestMonixBIO5 extends DistageSequentialSuitesTest[monix.bio.Task](DistageSequentialSuitesTest.monixCounter)
-//final class DistageSequentialSuitesTestMonixBIO6 extends DistageSequentialSuitesTest[monix.bio.Task](DistageSequentialSuitesTest.monixCounter) {
-//  override protected def config: TestConfig = super.config.copy(logLevel = Log.Level.Info)
-//}

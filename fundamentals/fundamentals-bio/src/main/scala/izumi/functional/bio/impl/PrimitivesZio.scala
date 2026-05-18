@@ -26,7 +26,11 @@ open class PrimitivesZio[R] extends Primitives2[ZIO[R, +_, +_]] {
   override def mkSemaphore(permits: Long): ZIO[R, Nothing, Semaphore2[ZIO[R, +_, +_]]] = {
     implicit val trace: zio.Trace = Tracer.newTrace
 
-    TSemaphore.make(permits).map(Semaphore2.fromZIO).commit
+    // `Semaphore2.fromZIO` returns `Semaphore2[zio.IO] = Semaphore2[ZIO[Any, _, _]]`.
+    // Now that `Semaphore2[F[+_, +_]]` is invariant in F, we widen the environment parameter
+    // explicitly. The cast is sound: a semaphore over `ZIO[Any, _, _]` works for any R because
+    // ZIO[R, _, _] is contravariant in R (a value not needing R works in an environment that has R).
+    TSemaphore.make(permits).map(s => Semaphore2.fromZIO(s).asInstanceOf[Semaphore2[ZIO[R, +_, +_]]]).commit
   }
 
   disableAutoTrace.discard()

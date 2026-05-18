@@ -4,22 +4,22 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.cli.model.EntrypointArgs
 import izumi.fundamentals.platform.cli.model.schema.*
 import izumi.fundamentals.platform.strings.IzString.*
 
 import scala.annotation.unused
 
-class Help[F[_]](
+class Help[F[+_, +_]](
   roleInfo: RolesInfo,
   activationInfo: ActivationInfo,
-  F: QuasiIO[F],
+  F: IO2[F],
 ) extends RoleTask[F]
   with BundledTask {
 
-  override def start(@unused roleParameters: EntrypointArgs): F[Unit] = {
-    F.maybeSuspend(showHelp())
+  override def start(@unused roleParameters: EntrypointArgs): F[Throwable, Unit] = {
+    F.syncThrowable(showHelp())
   }
 
   private def showHelp(): Unit = {

@@ -2,8 +2,7 @@ package izumi.distage.testkit.runner.impl.services
 
 import distage.*
 import izumi.functional.bio.Clock1
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.functional.bio.{IO2, Primitives2}
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -49,47 +48,48 @@ object Timing {
   }
 }
 
-trait TimedActionF[F[_]] {
-  def timed[A](action: => F[A]): F[Timed[A]]
-  def timedLifecycle[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]]
-  def timedWith[A](action: (() => F[Timing]) => F[A]): F[Timed[A]]
+trait TimedActionF[F[+_, +_]] {
+  def timed[E, A](action: => F[E, A]): F[E, Timed[A]]
+  def timedLifecycle[E, A](action: => Lifecycle[F, E, A]): Lifecycle[F, E, Timed[A]]
+  def timedWith[E, A](action: (() => F[Nothing, Timing]) => F[E, A]): F[E, Timed[A]]
 }
 
 object TimedActionF {
-  class TimedActionFImpl[F[_]]()(implicit F: QuasiIO[F]) extends TimedActionF[F] {
-    override def timedLifecycle[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]] = {
+  class TimedActionFImpl[F[+_, +_]]()(implicit F: IO2[F], FP: Primitives2[F]) extends TimedActionF[F] {
+    override def timedLifecycle[E, A](action: => Lifecycle[F, E, A]): Lifecycle[F, E, Timed[A]] = {
       for {
-        before <- Lifecycle.liftF(F.maybeSuspend(Clock1.Standard.nowOffset()))
+        before <- Lifecycle.liftF[F, E, OffsetDateTime](F.sync(Clock1.Standard.nowOffset()))
         value <- action
-        after <- Lifecycle.liftF(F.maybeSuspend(Clock1.Standard.nowOffset()))
+        after <- Lifecycle.liftF[F, E, OffsetDateTime](F.sync(Clock1.Standard.nowOffset()))
       } yield {
         Timed.fromDiff(value, before, after)
       }
     }
 
-    override def timed[A](action: => F[A]): F[Timed[A]] = {
-      for {
-        before <- F.maybeSuspend(Clock1.Standard.nowOffset())
-        value <- action
-        after <- F.maybeSuspend(Clock1.Standard.nowOffset())
-      } yield {
-        Timed.fromDiff(value, before, after)
+    override def timed[E, A](action: => F[E, A]): F[E, Timed[A]] = {
+      F.flatMap(F.sync(Clock1.Standard.nowOffset())) { before =>
+        F.flatMap(action) { value =>
+          F.map(F.sync(Clock1.Standard.nowOffset())) { after =>
+            Timed.fromDiff(value, before, after)
+          }
+        }
       }
     }
 
-    override def timedWith[A](action: (() => F[Timing]) => F[A]): F[Timed[A]] = {
-      for {
-        before <- F.maybeSuspend(Clock1.Standard.nowOffset())
-        value <- action(
-          () =>
-            F.maybeSuspend {
+    override def timedWith[E, A](action: (() => F[Nothing, Timing]) => F[E, A]): F[E, Timed[A]] = {
+      F.flatMap(F.sync(Clock1.Standard.nowOffset())) { before =>
+        F.flatMap(
+          action(() =>
+            F.sync {
               val current = Clock1.Standard.nowOffset()
               Timing.fromDiff(before, current)
             }
-        )
-        after <- F.maybeSuspend(Clock1.Standard.nowOffset())
-      } yield {
-        Timed.fromDiff(value, before, after)
+          )
+        ) { value =>
+          F.map(F.sync(Clock1.Standard.nowOffset())) { after =>
+            Timed.fromDiff(value, before, after)
+          }
+        }
       }
     }
   }

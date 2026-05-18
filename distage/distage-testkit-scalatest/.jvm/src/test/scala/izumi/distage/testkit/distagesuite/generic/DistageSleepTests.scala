@@ -1,52 +1,57 @@
 package izumi.distage.testkit.distagesuite.generic
 
-import cats.effect.IO as CIO
-import distage.TagK
-import izumi.distage.modules.DefaultModule
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.distagesuite.fixtures.MockUserRepository
-import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.DistageMemoizeExample
-import izumi.distage.testkit.scalatest.Spec1
-import izumi.functional.quasi.QuasiIO
-import izumi.functional.quasi.QuasiIO.syntax.*
-import izumi.fundamentals.platform.functional.Identity
-import zio.Task
+import izumi.distage.testkit.model.TestConfig
+import izumi.distage.testkit.scalatest.{Spec2, SpecIdentity}
+import izumi.functional.bio.Bifunctorized
+import zio.ZIO
 
-// JVM-only tests that use Thread.sleep
-abstract class DistageSleepTest[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
+// JVM-only tests that exercise `Thread.sleep` semantics through the testkit.
+//
+// ZIO variant uses `ZIO.attempt(Thread.sleep(...))` directly.
+// Identity variant uses plain `Thread.sleep` — the SpecIdentity DSL lifts the body
+// through `Bifunctorized.bifunctorizeIdentity` (=> `MiniBIO.syncThrowable`), so Thread.sleep
+// blocks the calling thread synchronously. This restores the pre-bifunctorization
+// `Identity` sleep coverage that was dropped during M5/11c when the typeclass mediating
+// this path (`QuasiTemporal[Identity]`) was removed; the equivalent capability is now
+// `Temporal2[IdentityBifunctorized]` (M5-fix5a). The bifunctor `CIO` variant is dropped
+// because it would only duplicate the `Spec2[Bifunctorized[CIO, +_, +_]]` `syncThrowable`
+// path without adding distinct coverage.
+abstract class DistageSleepTestZIO extends Spec2[zio.IO] {
+  override protected def config: TestConfig = {
+    super.config.copy(
+      pluginConfig = PluginConfig.cached(packagesEnabled = Seq("izumi.distage.testkit.distagesuite.fixtures"))
+    )
+  }
+
   "distage test" should {
     "sleep" in {
-      (_: MockUserRepository[F]) =>
-        for {
-          _ <- F.maybeSuspend(Thread.sleep(100))
-        } yield ()
+      (_: MockUserRepository[zio.IO]) =>
+        ZIO.attempt(Thread.sleep(100)).unit
     }
   }
 }
 
-final class DistageSleepTest01 extends DistageSleepTest[CIO]
-final class DistageSleepTest02 extends DistageSleepTest[CIO]
-final class DistageSleepTest03 extends DistageSleepTest[CIO]
-final class DistageSleepTest04 extends DistageSleepTest[CIO]
-final class DistageSleepTest05 extends DistageSleepTest[CIO]
-final class DistageSleepTest06 extends DistageSleepTest[CIO]
-final class DistageSleepTest07 extends DistageSleepTest[CIO]
-final class DistageSleepTest08 extends DistageSleepTest[CIO]
-final class DistageSleepTest09 extends DistageSleepTest[CIO]
-final class IdentityDistageSleepTest01 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest02 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest03 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest04 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest05 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest06 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest07 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest08 extends DistageSleepTest[Identity]
-final class IdentityDistageSleepTest09 extends DistageSleepTest[Identity]
-final class TaskDistageSleepTest01 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest02 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest03 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest04 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest05 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest06 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest07 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest08 extends DistageSleepTest[Task]
-final class TaskDistageSleepTest09 extends DistageSleepTest[Task]
+final class TaskDistageSleepTest01 extends DistageSleepTestZIO
+final class TaskDistageSleepTest02 extends DistageSleepTestZIO
+final class TaskDistageSleepTest03 extends DistageSleepTestZIO
+
+abstract class DistageSleepTestIdentity extends SpecIdentity {
+  override protected def config: TestConfig = {
+    super.config.copy(
+      pluginConfig = PluginConfig.cached(packagesEnabled = Seq("izumi.distage.testkit.distagesuite.fixtures"))
+    )
+  }
+
+  "distage test" should {
+    "sleep" in {
+      (_: MockUserRepository[Bifunctorized.IdentityBifunctorized]) =>
+        Thread.sleep(100)
+    }
+  }
+}
+
+final class IdentityDistageSleepTest01 extends DistageSleepTestIdentity
+final class IdentityDistageSleepTest02 extends DistageSleepTestIdentity
+final class IdentityDistageSleepTest03 extends DistageSleepTestIdentity

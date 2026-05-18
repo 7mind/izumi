@@ -7,7 +7,7 @@ import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.SetKeyMeta
 import izumi.distage.model.reflection.{DIKey, SafeType}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.reflect.{Tag, TagK}
+import izumi.reflect.{Tag, TagKK}
 
 object Bindings {
   def binding[T: Tag: ClassConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
@@ -34,7 +34,7 @@ object Bindings {
   def provider[T: Tag](function: Functoid[T])(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(function.get.ret, function.get), Set.empty, BindingOrigin(pos.get.position))
 
-  def subcontext[F[_]: TagK, T: Tag](
+  def subcontext[F[+_, +_]: TagKK, T: Tag](
     submodule: ModuleBase,
     functoid: Functoid[T],
     externalKeys: Set[DIKey],

@@ -1,16 +1,14 @@
 package com.github.pshirshov.test.plugins
 
-import distage.{ClassConstructor, ModuleDef, TagK}
+import distage.{ClassConstructor, ModuleDef, TagKK}
 import izumi.distage.model.definition.{Module, ModuleBase}
-import izumi.distage.modules.DefaultModule2
+import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.model.definition.RoleModuleDef
-import izumi.functional.quasi.QuasiApplicative
+import izumi.functional.bio.{Applicative2, Bifunctorized}
 import izumi.fundamentals.platform.IzPlatform
-import izumi.fundamentals.platform.functional.Identity
-import izumi.reflect.TagKK
 import logstage.LogIO2
 
 object StaticTestMain extends RoleAppMain.Launcher1[cats.effect.IO] {
@@ -19,13 +17,13 @@ object StaticTestMain extends RoleAppMain.Launcher1[cats.effect.IO] {
        PluginConfig.compileTime("com.github.pshirshov.test.plugins")
      } else {
        PluginConfig.cached("com.github.pshirshov.test.plugins")
-     }) ++ StaticTestMain.staticTestMainPlugin[cats.effect.IO, Identity]
+     }) ++ StaticTestMain.staticTestMainPlugin[Bifunctorized[cats.effect.IO, +_, +_], Bifunctorized.IdentityBifunctorized]
   }
 
-  private[plugins] def staticTestMainPlugin[F[_]: TagK, G[_]: TagK]: ModuleBase = new PluginDef with RoleModuleDef {
+  private[plugins] def staticTestMainPlugin[F[+_, +_]: TagKK, G[+_, +_]: TagKK]: ModuleBase = new PluginDef with RoleModuleDef {
     makeRole[StaticTestRole[F]].fromEffect {
       ClassConstructor[StaticTestRole[F]]
-        .flatAp((G: QuasiApplicative[G]) => G.pure(_: StaticTestRole[F]))
+        .flatAp((G: Applicative2[G]) => G.pure(_: StaticTestRole[F]))
     }
     makeRole[DependingRole[F]]
   }
@@ -37,11 +35,11 @@ object StaticTestMainBadEffect extends RoleAppMain.LauncherIdentity {
        PluginConfig.compileTime("com.github.pshirshov.test.plugins")
      } else {
        PluginConfig.cached("com.github.pshirshov.test.plugins")
-     }) ++ StaticTestMain.staticTestMainPlugin[Identity, cats.effect.IO]
+     }) ++ StaticTestMain.staticTestMainPlugin[Bifunctorized.IdentityBifunctorized, Bifunctorized[cats.effect.IO, +_, +_]]
   }
 }
 
-class StaticTestMainLogIO2[F[+_, +_]: TagKK: DefaultModule2] extends RoleAppMain.LauncherBIO[F] {
+class StaticTestMainLogIO2[F[+_, +_]: TagKK: DefaultModule] extends RoleAppMain.LauncherBIO[F] {
 
   override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
     make[Boolean].named("distage.roles.always-include-reference-role-configs").fromValue(true)
@@ -52,8 +50,8 @@ class StaticTestMainLogIO2[F[+_, +_]: TagKK: DefaultModule2] extends RoleAppMain
        PluginConfig.compileTime("com.github.pshirshov.test.plugins")
      } else {
        PluginConfig.cached("com.github.pshirshov.test.plugins")
-     }) ++ StaticTestMain.staticTestMainPlugin[F[Throwable, _], F[Throwable, _]] ++ new PluginDef {
-      modify[StaticTestRole[F[Throwable, _]]]
+     }) ++ StaticTestMain.staticTestMainPlugin[F, F] ++ new PluginDef {
+      modify[StaticTestRole[F]]
         .addDependency[LogIO2[F]]
     }
   }

@@ -11,15 +11,15 @@ import izumi.distage.testkit.spec.AbstractDistageSpec
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 import org.scalatest.distage.__AnnotationPlatformSpecific.EnableReflectiveInstantiation
 import org.scalatest.exceptions.{DuplicateTestNameException, TestCanceledException}
 import org.scalatest.{Args, ConfigMap, Outcome, StatefulStatus, Status, TagAnnotation, TestData, TestSuite}
 
 @EnableReflectiveInstantiation
-abstract class DistageScalatestTestSuiteRunner[F[_]](
-  implicit override val tagMonoIO: TagK[F],
-  override val defaultModulesIO: DefaultModule[F],
+abstract class DistageScalatestTestSuiteRunner[F[+_, +_]](
+  implicit override val tagBIO: TagKK[F],
+  override val defaultModulesBIO: DefaultModule[F],
 ) extends TestSuite
   with AbstractDistageSpec[F] {
 
@@ -30,26 +30,11 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
   /**
     * Override to force enable global memoization on Scala.js.
-    * It will only work correctly if parallel execution is disabled, e.g. via `Test / parallelExecution := false` key in SBT.
-    * Because of that and because there are limited use cases for global memoization on JS, it is disabled by default.
     */
   protected def scalaJsForceGlobalMemoization: Boolean = DebugProperties.`izumi.distage.testkit.js.force.global.memoization`.boolValue(false)
 
   /**
     * Override to customize the effect type that the outermost test launcher runs on.
-    * Testkit can run on any async effect type, such as ZIO and cats-effect IO,
-    * although by default it runs [[izumi.functional.bio.impl.MiniBIOAsync MiniBIOAsync]]
-    *
-    * @note Overriding default top level test runtime is NOT recommended and will NOT speed up tests.
-    *       This extension point is provided mostly just because we can.
-    *
-    * @example
-    * {{{
-    *   override def testRunnerRuntime() = TestRunnerRuntime.defaultAsyncRuntimeFor[zio.Task]
-    * }}}
-    *
-    * @see [[TestRunnerRuntime]]
-    * @see [[TestRunnerRuntime.defaultAsyncRuntimeFor]]
     */
   protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultPlatformRuntime
 
@@ -63,11 +48,6 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
     _distageTestsRegistry.registerSuiteHandle(suiteId)(RunningSuiteHandle(args.tracker, args.reporter))
 
-    // Note: because https://github.com/scalatest/scalatest/pull/2410 has not been merged,
-    // we're forced to keep a separate registration mechanism for non-sbt org.scalatest.tools.Runner (used by e.g. Intellij)
-    //
-    // NON-sbt ScalatestRunner first instantiates ALL tests, THEN calls `.run` method,
-    // so for non-sbt runs we KNOW that all tests have already been registered already
     val isSbt = args.reporter.getClass.getName.contains("org.scalatest.tools.Framework")
 
     val isJVM = !IzPlatform.isScalaJS
@@ -84,8 +64,6 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
         case Some(tests) =>
           _doPrepareRunTests(tests, testName, args, status, globalMode)
         case None =>
-        // In global memoization mode: Not the first runner - status will be completed by the actual runner
-        // In per-instance mode: This shouldn't happen
       }
     } catch {
       case t: Throwable =>
@@ -118,7 +96,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
     val testsToRun = _applyScalatestDefaultFiltering(args, testsInThisRun, testName)
 
-    debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag.repr} (from class ${getClass.getName}):${testsToRun.map(_.meta.test.id.toString).niceList()}")
+    debugLogger.log(s"GOING TO RUN TESTS in ${tagBIO.tag.repr} (from class ${getClass.getName}):${testsToRun.map(_.meta.test.id.toString).niceList()}")
 
     val asyncGlobalSuitesControl = new AsyncGlobalSuitesControlHandle {
       override def completeOuterSuite(mbFailure: Option[Throwable]): Unit = {
@@ -163,11 +141,11 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
       case Left(testResults) =>
         asyncGlobalSuitesControl.completeOuterSuite(None)
         asyncGlobalSuitesControl.completeAllSuitesIfGlobal()
-        debugLogger.log(s"Got for ${tagMonoIO.tag}: testResults=${testResults.niceList()}")
+        debugLogger.log(s"Got for ${tagBIO.tag}: testResults=${testResults.niceList()}")
 
       case Right(asyncResult) =>
         __DistageScalatestTestSuiteRunnerPlatformSpecific
-          .handleAsyncTestRunnerPlatformSpecific(debugLogger, asyncGlobalSuitesControl, asyncResult, tagMonoIO)
+          .handleAsyncTestRunnerPlatformSpecific(debugLogger, asyncGlobalSuitesControl, asyncResult, tagBIO)
     }
   }
 

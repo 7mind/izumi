@@ -1,6 +1,6 @@
 package izumi.logstage.macros
 
-import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{Error2, IO2}
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.{Level, Message, StrictMessage}
@@ -11,43 +11,61 @@ import scala.quoted.*
 
 object LogMethodMacro {
 
-  def logMethodIO[A: Type, F[_]: Type, G[x] >: F[x]: Type, EncMode: Type](
+  /**
+    * Bifunctor counterpart of the pre-M5 Session 1 `logMethodIO` (which relied on the deleted
+    * monofunctor maybeSuspend). Lifts the by-name `=> A` via `IO2#syncThrowable` and uses
+    * `Error2#tapBoth` to tap-log success and synchronously-thrown failures. Returns `F[Throwable, A]`.
+    */
+  def logMethodIO[F[+_, +_]: Type, A: Type, EncMode: Type](
     level: Expr[Level],
     function: Expr[A],
-    logger: Expr[AbstractLogIO[F]],
+    logger: Expr[AbstractLogIO[F[Nothing, _]]],
     printTypes: Expr[Boolean],
     printImplicits: Expr[Boolean],
-    qp: Expr[QuasiIO[G]],
+    qp: Expr[IO2[F]],
   )(using Quotes
-  ): Expr[G[A]] = {
-    logMethodIOF[A, F, G, EncMode](level, '{ ${ qp }.maybeSuspend(${ function }) }, function, logger, printTypes, printImplicits, qp)
+  ): Expr[F[Throwable, A]] = {
+    logMethodIOF[F, Throwable, A, EncMode](
+      level,
+      '{ ${ qp }.syncThrowable(${ function }) },
+      function,
+      logger,
+      printTypes,
+      printImplicits,
+      '{ ${ qp }: Error2[F] },
+    )
   }
 
-  def logMethodIOF[A: Type, F[_]: Type, G[x] >: F[x]: Type, EncMode: Type](
+  /**
+    * Bifunctor counterpart of the pre-M5 Session 1 `logMethodIOF` (which relied on the deleted
+    * monofunctor untyped tapBoth). Uses `Error2#tapBoth` to tap-log success and typed failures
+    * of the provided `=> F[E, A]`.
+    */
+  def logMethodIOF[F[+_, +_]: Type, E: Type, A: Type, EncMode: Type](
     level: Expr[Level],
-    function: Expr[G[A]],
+    function: Expr[F[E, A]],
     functionTreeToInspect: Expr[Any],
-    logger: Expr[AbstractLogIO[F]],
+    logger: Expr[AbstractLogIO[F[Nothing, _]]],
     printTypes: Expr[Boolean],
     printImplicits: Expr[Boolean],
-    qp: Expr[QuasiPrimitives[G]],
+    qp: Expr[Error2[F]],
   )(using qctx: Quotes
-  ): Expr[G[A]] = {
+  ): Expr[F[E, A]] = {
     import qctx.reflect.*
     val mode = EncodingModeExtractors.getModeFromType[EncMode]
     val (variables, fnMessage, argsMessage, typesMessage, implicitsMessage) = createVariablesAndLogMessage(mode, functionTreeToInspect.asTerm)
 
     '{
       val position = ${ CodePositionMaterializerMacro.getCodePositionMaterializer() }
-      ${ qp }.tapBothUntyped(${ function })(
-        err = error =>
+      ${ qp }.tapBoth[E, A, E](${ function })(
+        err = (error: E) =>
           ${ logger }.log(${ level }) {
             ${
               blockWithVariables(qctx)(variables) {
                 '{
                   val typesMsg = ${ ifOrEmptyMsg(printTypes)(typesMessage) }
                   val implicitsMsg = ${ ifOrEmptyMsg(printImplicits)(implicitsMessage) }
-                  val errorMsg = error match {
+                  val errorMsg = (error: Any) match {
                     case error: Throwable => ${ messageMacro(mode, '{ " => " + error }) }
                     case error => ${ messageMacro(mode, '{ " => " + error }) }
                   }
@@ -56,7 +74,7 @@ object LogMethodMacro {
               }
             }
           }(using position),
-        succ = result =>
+        succ = (result: A) =>
           ${ logger }.log(${ level }) {
             ${
               blockWithVariables(qctx)(variables) {

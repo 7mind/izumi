@@ -17,7 +17,7 @@ object ZIOSupportModule {
 /**
   * `zio.ZIO` effect type support for `distage` resources, effects, roles & tests
   *
-  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using ZIO in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.bio]] bifunctor BIO instances on `ZIO[..., +_, +_]`
   *  - Adds [[izumi.functional.bio]] typeclass instances for ZIO
   *
   * Will also add the following components:

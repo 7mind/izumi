@@ -3,9 +3,8 @@ package izumi.distage.injector
 import distage.*
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases.*
-import izumi.distage.injector.ResourceEffectBindingsTest.Fn
 import izumi.distage.model.definition.Lifecycle
-import izumi.functional.quasi.QuasiApplicative
+import izumi.functional.bio.Applicative2
 import izumi.distage.model.plan.Roots
 import izumi.functional.bio.data.{Free, FreeError, FreePanic}
 import izumi.fundamentals.platform.functional.Identity
@@ -17,11 +16,14 @@ import scala.collection.mutable
 import scala.util.Try
 
 object ResourceEffectBindingsTest {
+  /** Monofunctor `Suspend2[Nothing, A]` view, used at user-facing key-type sites
+    * (`refEffect[F[_], A]`, `make[Fn[Int]]`) where the DSL still expects a `F[_]`.
+    */
   final type Fn[+A] = Suspend2[Nothing, A]
-  final type Ft[+A] = Suspend2[Throwable, A]
 }
 
 class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
+  import ResourceEffectBindingsTest.Fn
 
   "Effect bindings" should {
 
@@ -59,16 +61,16 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
 
-      val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
+      val context = injector.produceCustomF[Suspend2](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Int] == 12)
     }
 
     "execute effects again in reference bindings" in {
-      val execIncrement = (_: Ref[Fn, Int]).update(_ + 1)
+      val execIncrement = (_: Ref[Suspend2, Int]).update(_ + 1)
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Ref[Fn, Int]].fromEffect(Ref[Fn](0))
+        make[Ref[Suspend2, Int]].fromEffect(Ref[Suspend2](0))
 
         make[Fn[Int]].from(execIncrement)
 
@@ -79,11 +81,11 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
 
-      val context = injector.produceCustomF[Suspend2[Nothing, _]](plan).unsafeGet().unsafeRun()
+      val context = injector.produceCustomF[Suspend2](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Int]("1") != context.get[Int]("2"))
       assert(Set(context.get[Int]("1"), context.get[Int]("2")) == Set(1, 2))
-      assert(context.get[Ref[Fn, Int]].get.unsafeRun() == 2)
+      assert(context.get[Ref[Suspend2, Int]].get.unsafeRun() == 2)
     }
 
     "support Identity effects in Suspend monad" in {
@@ -100,39 +102,39 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
-      val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
+      val context = injector.produceCustomF[Suspend2](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Int] == 12)
     }
 
     "work with set bindings" in {
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Ref[Fn, Set[Char]]].fromEffect(Ref[Fn](Set.empty[Char]))
+        make[Ref[Suspend2, Set[Char]]].fromEffect(Ref[Suspend2](Set.empty[Char]))
 
         many[Char]
           .addEffect(Suspend2('a'))
           .addEffect(Suspend2('b'))
 
         make[Unit].fromEffect {
-          (ref: Ref[Fn, Set[Char]], set: Set[Char]) =>
+          (ref: Ref[Suspend2, Set[Char]], set: Set[Char]) =>
             ref.update(_ ++ set).void
         }
         make[Unit].named("1").fromEffect {
-          (ref: Ref[Fn, Set[Char]]) =>
+          (ref: Ref[Suspend2, Set[Char]]) =>
             ref.update(_ + 'z').void
         }
         make[Unit].named("2").fromEffect {
-          (_: Unit, _: Unit @Id("1"), ref: Ref[Fn, Set[Char]]) =>
+          (_: Unit, _: Unit @Id("1"), ref: Ref[Suspend2, Set[Char]]) =>
             ref.update(_.map(_.toUpper)).void
         }
       })
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
-      val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
+      val context = injector.produceCustomF[Suspend2](plan).unsafeGet().unsafeRun()
 
       assert(context.get[Set[Char]] == "ab".toSet)
-      assert(context.get[Ref[Fn, Set[Char]]].get.unsafeRun() == "ABZ".toSet)
+      assert(context.get[Ref[Suspend2, Set[Char]]].get.unsafeRun() == "ABZ".toSet)
     }
 
   }
@@ -145,13 +147,15 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       val ops1 = mutable.Queue.empty[Ops]
 
       Try {
-        Lifecycle
-          .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
-          .flatMap {
-            _ =>
-              throw new RuntimeException()
-          }
-          .use((_: Unit) => ())
+        izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+          Lifecycle
+            .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
+            .flatMap {
+              _ =>
+                throw new RuntimeException()
+            }
+            .use((_: Unit) => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()))
+        )
       }
 
       assert(ops1 == Seq(XStart, XStop))
@@ -178,18 +182,20 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       val ops1 = mutable.Queue.empty[Ops]
 
       Try {
-        Lifecycle
-          .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
-          .flatMap {
-            _ =>
-              Lifecycle
-                .makeSimple(ops1 += YStart)(_ => ops1 += YStop)
-                .flatMap {
-                  _ =>
-                    Lifecycle.makeSimple[Unit](throw new RuntimeException())((_: Unit) => ops1 += ZStop)
-                }
-          }
-          .use(_ => ())
+        izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+          Lifecycle
+            .makeSimple(ops1 += XStart)(_ => ops1 += XStop)
+            .flatMap {
+              _ =>
+                Lifecycle
+                  .makeSimple(ops1 += YStart)(_ => ops1 += YStop)
+                  .flatMap {
+                    _ =>
+                      Lifecycle.makeSimple[Unit](throw new RuntimeException())((_: Unit) => ops1 += ZStop)
+                  }
+            }
+            .use(_ => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()))
+        )
       }
 
       assert(ops1 == Seq(XStart, YStart, YStop, XStop))
@@ -220,9 +226,11 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
 
       val ops1 = mutable.Queue.empty[Ops]
       Try {
-        Lifecycle
-          .makeSimple[Unit](throw new Throwable())((_: Unit) => ops1 += XStop)
-          .catchAll(_ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop)).use(_ => ())
+        izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+          Lifecycle
+            .makeSimple[Unit](throw new Throwable())((_: Unit) => ops1 += XStop)
+            .catchAll(_ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop)).use(_ => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()))
+        )
       }
       assert(ops1 == Seq(YStart, YStop))
 
@@ -251,12 +259,14 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
         def action(q: mutable.Queue[Ops]): Unit = if (err) throw new Throwable() else q += RStart
 
         Try {
-          Lifecycle
-            .makeSimple[Unit](action(ops1))((_: Unit) => ops1 += XStop)
-            .redeem(
-              _ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop),
-              _ => Lifecycle.makeSimple(ops1 += ZStart)(_ => ops1 += ZStop),
-            ).use(_ => ())
+          izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(
+            Lifecycle
+              .makeSimple[Unit](action(ops1))((_: Unit) => ops1 += XStop)
+              .redeem(
+                _ => Lifecycle.makeSimple(ops1 += YStart)(_ => ops1 += YStop),
+                _ => Lifecycle.makeSimple(ops1 += ZStart)(_ => ops1 += ZStop),
+              ).use(_ => izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(()))
+          )
         }
 
         Try {
@@ -292,18 +302,18 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       import ClassResourceCase._
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Res].fromResource[SimpleResource]
+        make[Res].fromResource[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, SimpleResource](distage.ClassConstructor[SimpleResource])
       })
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
 
-      val instance = injector.produce(plan).use {
+      val instance = izumi.functional.bio.Bifunctorized.debifunctorizeIdentity(injector.produce(plan).use {
         context =>
           val instance = context.get[Res]
           assert(instance.initialized)
-          instance
-      }
+          izumi.functional.bio.Bifunctorized.bifunctorizeIdentity(instance)
+      })
 
       assert(!instance.initialized)
     }
@@ -312,14 +322,14 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       import ClassResourceCase._
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Res].fromResource[SuspendResource]
+        make[Res].fromResource[Suspend2, Nothing, SuspendResource](distage.ClassConstructor[SuspendResource])
       })
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
 
       val instance = injector
-        .produceCustomF[Suspend2[Throwable, _]](plan).use {
+        .produceCustomF[Suspend2](plan).use {
           context =>
             val instance = context.get[Res]
             assert(instance.initialized)
@@ -334,14 +344,14 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
 
       val definition = PlannerInput.everything(new ModuleDef {
         many[Res]
-          .addResource[SimpleResource]
-          .addResource[SuspendResource]
+          .addResource[izumi.functional.bio.Bifunctorized.IdentityBifunctorized, Throwable, SimpleResource](distage.ClassConstructor[SimpleResource])
+          .addResource[Suspend2, Nothing, SuspendResource](distage.ClassConstructor[SuspendResource])
       })
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
 
-      val resource = injector.produceCustomF[Suspend2[Throwable, _]](plan)
+      val resource = injector.produceCustomF[Suspend2](plan)
 
       val set = resource
         .use {
@@ -369,16 +379,18 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
         makeTrait[TestDependency1]
         make[TestCaseClass]
         make[LocatorDependent]
-        make[TestInstanceBinding].fromResource(new Lifecycle.Basic[Option, TestInstanceBinding] {
-          override def acquire: Option[TestInstanceBinding] = None
-          override def release(resource: TestInstanceBinding): Option[Unit] = None
+        make[TestInstanceBinding].fromResource(new Lifecycle.Basic[izumi.functional.bio.Bifunctorized[Option, +_, +_], Throwable, TestInstanceBinding] {
+          override def acquire: izumi.functional.bio.Bifunctorized[Option, Throwable, TestInstanceBinding] =
+            izumi.functional.bio.Bifunctorized.bifunctorize[Option, TestInstanceBinding](None)
+          override def release(resource: TestInstanceBinding): izumi.functional.bio.Bifunctorized[Option, Nothing, Unit] =
+            izumi.functional.bio.Bifunctorized.bifunctorize[Option, Unit](None).asInstanceOf[izumi.functional.bio.Bifunctorized[Option, Nothing, Unit]]
         })
       })
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
 
-      val resource = injector.produceDetailedCustomF[Suspend2[Throwable, _]](plan)
+      val resource = injector.produceDetailedCustomF[Suspend2](plan)
 
       val failure = resource
         .use {
@@ -403,16 +415,16 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[mutable.Queue[Ops]].fromEffect(queueEffect)
-        make[X].fromResource[XResource]
-        make[Y].fromResource[YResource]
-        make[Z].fromResource[ZFaultyResource]
+        make[X].fromResource[Suspend2, Nothing, XResource](distage.ClassConstructor[XResource])
+        make[Y].fromResource[Suspend2, Nothing, YResource](distage.ClassConstructor[YResource])
+        make[Z].fromResource[Suspend2, Throwable, ZFaultyResource](distage.ClassConstructor[ZFaultyResource])
       })
 
       val injector = mkInjector()
       val plan = injector.planUnsafe(definition)
 
       val resource = injector
-        .produceDetailedCustomF[Suspend2[Throwable, _]](plan)
+        .produceDetailedCustomF[Suspend2](plan)
         .evalMap {
           case Left(failure) =>
             Suspend2 {
@@ -434,8 +446,8 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
       val t = intercept[TestFailedException] {
         assertCompiles {
           """
-          def x[F[_]]: ModuleDef = new ModuleDef {
-            make[Any].fromResource[Lifecycle[F, Any]](() => ???)
+          def x[F[+_, +_]]: ModuleDef = new ModuleDef {
+            make[Any].fromResource[Lifecycle[F, Throwable, Any]](() => ???)
           }; ""
           """
         }
@@ -446,27 +458,36 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
         assert(t.message.get contains "<trace>")
       }
       assert(
-        (t.message.get contains "could not find implicit value for TagK[F]") ||
-        (t.message.get contains "could not find implicit value for izumi.reflect.Tag[F]")
+        (t.message.get contains "could not find implicit value for TagKK[F]") ||
+        (t.message.get contains "could not find implicit value for izumi.reflect.Tag[F]") ||
+        (t.message.get contains "No given instance of type izumi.reflect.TagKK[F]") ||
+        (t.message.get contains "No given instance of type izumi.reflect.Tag[F]") ||
+        // Scala 3.7 surfaces the missing tag as an overload-resolution failure listing the four
+        // `fromResource` alternatives — the implicit-search failure is one level beneath the
+        // overload selection error. Either form means: no `TagKK[F]` is in implicit scope.
+        ((t.message.get contains "fromResource") && (t.message.get contains "LifecycleTag"))
       )
     }
 
     "can pass a block with inner method calls into Lifecycle.Of constructor (https://github.com/scala/bug/issues/11969)" in {
       final class XImpl
         extends Lifecycle.Of({
-          def res = Lifecycle.make(Try(helper()))(_ => Try(()))
+          def res: Lifecycle[izumi.functional.bio.Bifunctorized[Try, +_, +_], Throwable, Unit] =
+            Lifecycle.make[izumi.functional.bio.Bifunctorized[Try, +_, +_], Throwable, Unit](
+              izumi.functional.bio.Bifunctorized.bifunctorize[Try, Unit](Try(helper()))
+            )(_ => izumi.functional.bio.Bifunctorized.bifunctorize[Try, Unit](Try(())).asInstanceOf[izumi.functional.bio.Bifunctorized[Try, Nothing, Unit]])
 
           def helper() = ()
 
           res
         })
-      new XImpl().acquire.get
+      new XImpl().acquire
     }
 
-    "obtain QuasiApplicative for BIO Free/FreeError/FreePanic" in {
-      implicitly[QuasiApplicative[Free[Suspend2, Throwable, +_]]]
-      implicitly[QuasiApplicative[FreeError[Suspend2, Throwable, +_]]]
-      implicitly[QuasiApplicative[FreePanic[Suspend2, Throwable, +_]]]
+    "obtain Applicative2 for BIO Free/FreeError/FreePanic" in {
+      implicitly[Applicative2[Free[Suspend2, +_, +_]]]
+      implicitly[Applicative2[FreeError[Suspend2, +_, +_]]]
+      implicitly[Applicative2[FreePanic[Suspend2, +_, +_]]]
     }
 
   }

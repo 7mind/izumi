@@ -1,6 +1,6 @@
 package izumi.logstage.api.logger
 
-import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{IO1, Primitives1}
 import izumi.logstage.api.Log.Level
 import izumi.logstage.api.logger.AbstractMacroLogIO.LogMethodF
 import izumi.logstage.macros.LogIOMacroMethods.*
@@ -45,11 +45,11 @@ object AbstractMacroLogIO {
   }
 
   final class LogMethod[XF[_], F[x] >: XF[x], En](val __getSelf: AbstractLogIO[XF], val __getSelfLevel: Level, val __printTypes: Boolean, val __printImplicits: Boolean) {
-    def apply[A](function: => A)(implicit F: QuasiIO[F]): F[A] = macro scLogMethod[XF, F, A, En]
+    def apply[A](function: => A)(implicit F: IO1[F]): F[A] = macro scLogMethod[XF, F, A, En]
   }
 
   final class LogMethodF[XF[_], EncMode](val __getSelf: AbstractLogIO[XF], val __getSelfLevel: Level, val __printTypes: Boolean, val __printImplicits: Boolean) {
-    def apply[F[x] >: XF[x], A](function: => F[A])(implicit F: QuasiPrimitives[F]): F[A] = macro scLogMethodF[F, A, EncMode]
+    def apply[F[x] >: XF[x], A](function: => F[A])(implicit F: Primitives1[F]): F[A] = macro scLogMethodF[F, A, EncMode]
   }
 
 }

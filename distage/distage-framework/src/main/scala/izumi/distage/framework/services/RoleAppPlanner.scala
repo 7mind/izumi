@@ -7,10 +7,9 @@ import izumi.distage.model.definition.{Activation, BootstrapModule, Id, ModuleBa
 import izumi.distage.model.plan.{Plan, Roots}
 import izumi.distage.model.recursive.{BootConfig, Bootloader}
 import izumi.distage.model.reflection.DIKey
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
-import izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.{Async2, Bifunctorized, IO2, UnsafeRun2}
 import izumi.logstage.api.IzLogger
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 trait RoleAppPlanner {
   def bootloader: Bootloader
@@ -22,10 +21,10 @@ object RoleAppPlanner {
   final case class AppStartupPlans(
     runtime: Plan,
     app: Plan,
-    injector: Injector[Identity],
+    injector: Injector[Bifunctorized.IdentityBifunctorized],
   )
 
-  class Impl[F[_]: TagK](
+  class Impl[F[+_, +_]: TagKK](
     options: PlanningOptions,
     activation: Activation @Id("roleapp"),
     bsModule: BootstrapModule @Id("roleapp"),
@@ -34,9 +33,9 @@ object RoleAppPlanner {
   ) extends RoleAppPlanner { self =>
 
     private val runtimeGcRoots: Set[DIKey] = Set(
-      DIKey.get[QuasiIORunner[F]],
-      DIKey.get[QuasiIO[F]],
-      DIKey.get[QuasiAsync[F]],
+      DIKey.get[UnsafeRun2[F]],
+      DIKey.get[IO2[F]],
+      DIKey.get[Async2[F]],
     )
 
     override def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {

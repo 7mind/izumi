@@ -7,7 +7,7 @@ trait Mutex2[F[+_, +_]] {
   def bracket[E, A](f: F[E, A]): F[E, A]
   def bracket_[E, A](f: F[E, A]): F[E, Unit]
 
-  def lifecycle[E]: Lifecycle[F[E, _], Unit]
+  def lifecycle: Lifecycle[F, Nothing, Unit]
 }
 
 object Mutex2 {
@@ -21,8 +21,8 @@ object Mutex2 {
           override def bracket_[E, A](f: F[E, A]): F[E, Unit] = {
             F.bracket(semaphore.acquire)(_ => semaphore.release)(_ => f.void)
           }
-          override def lifecycle[E]: Lifecycle[F[E, _], Unit] = {
-            Lifecycle.make(semaphore.acquire)(_ => semaphore.release)
+          override def lifecycle: Lifecycle[F, Nothing, Unit] = {
+            Lifecycle.make[F, Nothing, Unit](semaphore.acquire)(_ => semaphore.release)
           }
         }
     }
@@ -38,8 +38,8 @@ object Mutex2 {
           override def bracket_[E, A](f: F[E, A]): F[E, Unit] = {
             F.bracketExcept[E, Unit, Unit](restore => restore(semaphore.acquire))((_, _) => semaphore.release)(_ => f.void)
           }
-          override def lifecycle[E]: Lifecycle[F[E, _], Unit] = {
-            Lifecycle.makeUninterruptibleExcept[F[E, _], Unit] {
+          override def lifecycle: Lifecycle[F, Nothing, Unit] = {
+            Lifecycle.makeUninterruptibleExcept[F, Nothing, Unit] {
               restore => restore(semaphore.acquire)
             }(_ => semaphore.release)
           }
@@ -51,7 +51,7 @@ object Mutex2 {
     def imapK[G[+_, +_]](fg: F `Isomorphism2` G): Mutex2[G] = new Mutex2[G] {
       override def bracket[E, A](f: G[E, A]): G[E, A] = fg.to(self.bracket(fg.from(f)))
       override def bracket_[E, A](f: G[E, A]): G[E, Unit] = fg.to(self.bracket_(fg.from(f)))
-      override def lifecycle[E]: Lifecycle[G[E, _], Unit] = self.lifecycle[E].mapK(fg.to)
+      override def lifecycle: Lifecycle[G, Nothing, Unit] = self.lifecycle.mapK(fg.to)
     }
   }
 }

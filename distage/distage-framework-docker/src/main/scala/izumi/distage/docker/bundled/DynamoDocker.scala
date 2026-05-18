@@ -1,6 +1,6 @@
 package izumi.distage.docker.bundled
 
-import distage.{ModuleDef, TagK}
+import distage.{ModuleDef, TagKK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.model.Docker.DockerPort
 
@@ -20,12 +20,12 @@ object DynamoDocker extends ContainerDef {
   }
 }
 
-class DynamoDockerModule[F[_]: TagK] extends ModuleDef {
+class DynamoDockerModule[F[+_, +_]: TagKK] extends ModuleDef {
   make[DynamoDocker.Container].fromResource {
     DynamoDocker.make[F]
   }
 }
 
 object DynamoDockerModule {
-  def apply[F[_]: TagK]: DynamoDockerModule[F] = new DynamoDockerModule[F]
+  def apply[F[+_, +_]: TagKK]: DynamoDockerModule[F] = new DynamoDockerModule[F]
 }

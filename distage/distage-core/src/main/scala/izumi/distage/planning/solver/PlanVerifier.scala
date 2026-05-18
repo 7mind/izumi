@@ -261,7 +261,7 @@ class PlanVerifier(
     ops: Set[(InstantiationOp, Set[AxisPoint], Set[AxisPoint])],
   ): List[IncompatibleEffectType] = {
     ops.iterator.collect {
-      case (op: MonadicOp, _, _) if op.effectHKTypeCtor != SafeType.identityEffectType && !(op.effectHKTypeCtor <:< effectType) =>
+      case (op: MonadicOp, _, _) if op.isEffectIgnoringIdentityBifunctorized && !(op.effectHKTypeCtor <:< effectType) =>
         IncompatibleEffectType(op.target, op, effectType, op.effectHKTypeCtor)
     }.toList
   }

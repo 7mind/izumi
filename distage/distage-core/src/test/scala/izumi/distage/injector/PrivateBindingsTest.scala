@@ -94,7 +94,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
     val plan1 = injector.planUnsafe(def1)
     val loc = injector.produce(plan1).unsafeGet()
 
-    val injector2 = Injector.inherit(loc)
+    val injector2 = Injector.inherit[izumi.functional.bio.Bifunctorized.IdentityBifunctorized](loc)
 
     val def2 = PlannerInput
       .everything(new ModuleDef {

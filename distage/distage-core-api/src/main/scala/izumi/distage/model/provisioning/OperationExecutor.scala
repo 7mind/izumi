@@ -1,10 +1,10 @@
 package izumi.distage.model.provisioning
 
 import izumi.distage.model.definition.errors.ProvisionerIssue
-import izumi.functional.quasi.QuasiIO
+import izumi.functional.bio.IO2
 import izumi.distage.model.plan.ExecutableOp.NonImportOp
-import izumi.reflect.TagK
+import izumi.reflect.TagKK
 
 trait OperationExecutor {
-  def execute[F[_]: TagK: QuasiIO](context: ProvisioningKeyProvider, step: NonImportOp): F[Either[ProvisionerIssue, Seq[NewObjectOp]]]
+  def execute[F[+_, +_]: TagKK: IO2](context: ProvisioningKeyProvider, step: NonImportOp): F[Throwable, Either[ProvisionerIssue, Seq[NewObjectOp]]]
 }

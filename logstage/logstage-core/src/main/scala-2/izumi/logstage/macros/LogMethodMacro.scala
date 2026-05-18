@@ -1,6 +1,6 @@
 package izumi.logstage.macros
 
-import izumi.functional.quasi.{QuasiIO, QuasiPrimitives}
+import izumi.functional.bio.{IO1, Primitives1}
 import izumi.fundamentals.platform.language.CodePositionMaterializer.CodePositionMaterializerMacro
 import izumi.logstage.api.Log.Level
 import izumi.logstage.api.logger.{AbstractLogIO, AbstractLogger}
@@ -32,7 +32,7 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
     }
   }
 
-  def exprMaybeSuspend[F[_], A](qp: c.Expr[QuasiIO[F]], expr: c.Expr[A]): c.Expr[F[A]] = {
+  def exprMaybeSuspend[F[_], A](qp: c.Expr[IO1[F]], expr: c.Expr[A]): c.Expr[F[A]] = {
     c.Expr[F[A]](q"$qp.maybeSuspend($expr)")
   }
 
@@ -81,7 +81,7 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
       """)
   }
 
-  def logMethodIO[XF[_], F[x] >: XF[x], QP <: QuasiPrimitives[F], A](
+  def logMethodIO[XF[_], F[x] >: XF[x], QP <: Primitives1[F], A](
     mode: EncodingMode,
     prefixName: TermName,
     qpExpr: c.Expr[QP],
@@ -92,7 +92,7 @@ final class LogMethodMacro[C <: blackbox.Context](val c: C) {
     functionTreeToInspect: Tree,
   )(functionToUse: c.Expr[QP] => c.Expr[F[A]]
   ): c.Expr[F[A]] = {
-    // evaluate QuasiPrimitives just once. Avoid re-evaluating its derivation multiple times in runtime
+    // evaluate Primitives1 just once. Avoid re-evaluating its derivation multiple times in runtime
     val qpName = c.freshName(TermName("F"))
     val (variables, fnMessageTree, argsMsgTree, typesMsgTree, implicitsMsgTree) = createVariablesAndLogStringTrees(mode, functionTreeToInspect)
 

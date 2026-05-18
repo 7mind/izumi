@@ -1,8 +1,8 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
+import izumi.functional.bio.Bifunctorized
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.IzPlatform
-import izumi.fundamentals.platform.functional.Identity
 
 import scala.concurrent.ExecutionContext
 
@@ -12,8 +12,8 @@ private[dstest] trait TestRunnerRuntimePlatformSpecific {
     TestRunnerRuntime.defaultAsyncRuntime
   }
 
-  final def testECLifecycleImpl(): Lifecycle[Identity, ExecutionContext] = {
-    Lifecycle.pure(IzPlatform.platformGlobalExecutionContext)
+  final def testECLifecycleImpl(): Lifecycle[Bifunctorized.IdentityBifunctorized, Throwable, ExecutionContext] = {
+    Lifecycle.pure[Bifunctorized.IdentityBifunctorized, Throwable, ExecutionContext](IzPlatform.platformGlobalExecutionContext)
   }
 
 }
