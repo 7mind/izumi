@@ -2,16 +2,40 @@ package izumi.distage.testkit.services.scalatest.dstest
 
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.services.scalatest.dstest.SafeIntellijTestReporter.{Delayed, DelayedEarly, DelayedLate}
+import izumi.distage.testkit.services.scalatest.dstest.ScalatestLinearizedTestReporter.{Delayed, DelayedEarly, DelayedLate}
 
 import scala.collection.mutable
 
-/**
-  * This TestReporter orders test events in a way that's digestible by Intellij.
+/** Serialises ScalaTest test events on a per-suite, per-test basis so that downstream
+  * reporters see a strict `TestStarting → terminator → TestStarting → terminator …`
+  * sequence within each suite.
   *
-  * It exists ONLY for Intellij compat
+  * This is required by several downstream ScalaTest reporters that pair-walk events
+  * within a suite and either throw `RuntimeException("unexpected …")` or otherwise
+  * corrupt their output when concurrent intra-suite test events interleave (distage
+  * testkit runs tests with `parallelTests = Parallelism.Unlimited` by default —
+  * see `TestConfig.scala:79-82`). The exception is silently swallowed by
+  * `org.scalatest.CatchReporter:34-44`, so the failure mode is "per-suite output
+  * file silently absent" rather than a crash — observed as JUnit XML test undercount.
+  *
+  * Reporters that REQUIRE this serialisation (pair-walkers):
+  *   - `org.scalatest.tools.JUnitXmlReporter.processTest:284-345` (throws on stray test events)
+  *   - `org.scalatest.tools.XmlReporter:129-172, 467-469` (same pattern)
+  *   - `org.scalatest.tools.DashboardReporter.SuiteRecord.toXml:720-738`
+  *     and `TestRecord.addEvent:764-779` (throws on terminator without preceding start)
+  *
+  * Reporters that BENEFIT (better-grouped output) but do not strictly require it:
+  *   - `org.scalatest.tools.HtmlReporter:1027-1083` — counter-style aggregation, tolerates
+  *     interleaving but renders nicer with linearised events
+  *   - Intellij's reporter (the original motivation for this class)
+  *
+  * Reporters that are unaffected (per-event sinks):
+  *   - All `StringReporter`-family sinks (`PrintReporter`, `FileReporter`,
+  *     `StandardOutReporter`, `StandardErrReporter`)
+  *   - `MemoryReporter`, `FilterReporter`, `SbtDispatchReporter`,
+  *     `SocketReporter`, `XmlSocketReporter`
   */
-class SafeIntellijTestReporter(
+class ScalatestLinearizedTestReporter(
   underlying: TestReporter
 ) extends TestReporter {
   private val delayedReports = new mutable.LinkedHashMap[FullMeta, mutable.Queue[Delayed]]()
@@ -122,7 +146,7 @@ class SafeIntellijTestReporter(
 
 }
 
-object SafeIntellijTestReporter {
+object ScalatestLinearizedTestReporter {
   sealed trait Delayed {
     def id: ScopeId
     def status: TestStatus
