@@ -15,7 +15,7 @@ import izumi.distage.planning.solver.PlanVerifier.PlanVerifierResult
 import izumi.distage.{InjectorDefaultImpl, InjectorFactory}
 import izumi.functional.bio.{Bifunctorized, IO2, Primitives2}
 import izumi.fundamentals.collections.nonempty.NESet
-import izumi.reflect.{Tag, TagKK}
+import izumi.reflect.{Tag, TagK, TagKK}
 
 /**
   * Injector creates object graphs ([[izumi.distage.model.Locator]]s) from a [[izumi.distage.model.definition.ModuleDef]] or from an [[izumi.distage.model.plan.Plan]]
@@ -123,7 +123,7 @@ trait Injector[F[+_, +_]] extends Planner with Producer {
     input: PlannerInput
   )(implicit G: IO2[G],
     P: Primitives2[G],
-    tkGThrowable: izumi.reflect.TagK[G[Throwable, _]],
+    tkGThrowable: TagK[G[Throwable, _]],
   ): Lifecycle[G, Throwable, Locator] = {
     Lifecycle
       .liftF[G, Throwable, Plan](G.fromEither(plan(input).aggregateErrors))
@@ -133,7 +133,7 @@ trait Injector[F[+_, +_]] extends Planner with Producer {
     input: PlannerInput
   )(implicit G: IO2[G],
     P: Primitives2[G],
-    tkGThrowable: izumi.reflect.TagK[G[Throwable, _]],
+    tkGThrowable: TagK[G[Throwable, _]],
   ): Lifecycle[G, Throwable, Either[FailedProvision, Locator]] = {
     Lifecycle
       .liftF[G, Throwable, Plan](G.fromEither(plan(input).aggregateErrors))
@@ -158,10 +158,10 @@ trait Injector[F[+_, +_]] extends Planner with Producer {
     bindings: ModuleBase,
     roots: Roots,
     excludedActivations: Set[NESet[AxisChoice]] = Set.empty,
-  )(implicit tagThrowableF: izumi.reflect.TagK[F[Throwable, _]]
+  )(implicit tagThrowableF: TagK[F[Throwable, _]]
   ): Unit = {
     Injector
-      .verifyImpl[F](this, bindings, roots, excludedActivations)(using tagK, tagThrowableF)
+      .verifyImpl[F](this, bindings, roots, excludedActivations)(using tagThrowableF)
       .throwOnError()
   }
 
@@ -175,10 +175,10 @@ trait Injector[F[+_, +_]] extends Planner with Producer {
     bindings: ModuleBase,
     roots: Roots,
     excludedActivations: Set[NESet[AxisChoice]] = Set.empty,
-  )(implicit tagThrowableF: izumi.reflect.TagK[F[Throwable, _]]
+  )(implicit tagThrowableF: TagK[F[Throwable, _]]
   ): PlanVerifierResult = {
     Injector
-      .verifyImpl[F](this, bindings, roots, excludedActivations)(using tagK, tagThrowableF)
+      .verifyImpl[F](this, bindings, roots, excludedActivations)(using tagThrowableF)
   }
 }
 
@@ -318,15 +318,14 @@ object Injector extends InjectorFactory {
   @inline override protected def defaultBootstrapRootsMode: BootstrapRootsMode = BootstrapRootsMode.UseGC
 
   /** Helper that bridges `Injector.assert`/`verify` (bifunctor F) to `PlanVerifier.verify[F[Throwable, _]]`
-    * (monofunctor unary form). Relies on izumi-reflect's macro to auto-derive `TagK[F[Throwable, _]]`
-    * from the available `TagKK[F]` in implicit scope at the call site.
+    * (monofunctor unary form).
     */
-  private[Injector] def verifyImpl[F[+_, +_]: TagKK](
+  private[Injector] def verifyImpl[F[+_, +_]](
     injector: Injector[F],
     bindings: ModuleBase,
     roots: Roots,
     excludedActivations: Set[NESet[AxisChoice]],
-  )(implicit tkF: izumi.reflect.TagK[F[Throwable, _]]
+  )(implicit tkF: TagK[F[Throwable, _]]
   ): PlanVerifierResult = {
     PlanVerifier()
       .verify[F[Throwable, _]](

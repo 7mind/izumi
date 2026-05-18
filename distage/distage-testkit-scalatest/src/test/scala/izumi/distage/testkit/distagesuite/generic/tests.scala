@@ -6,7 +6,7 @@ import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.*
 import izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec
-import izumi.functional.bio.{Async2, Exit, IO2, Monad2}
+import izumi.functional.bio.{Async2, Exit, IO2}
 import izumi.functional.bio.CatsToBIOConversions.*
 import izumi.fundamentals.platform.language.Quirks.*
 import cats.effect.IO as CIO

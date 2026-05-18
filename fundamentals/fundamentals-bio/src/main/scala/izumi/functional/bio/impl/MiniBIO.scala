@@ -3,7 +3,7 @@ package izumi.functional.bio.impl
 import izumi.functional.bio.Exit.Trace
 import izumi.functional.bio.data.{InterruptAction, Morphism2, RestoreInterruption2}
 import izumi.functional.bio.impl.MiniBIO.Fail
-import izumi.functional.bio.{BlockingIO2, Error2, Exit, IO2, Temporal2, UnsafeRun2}
+import izumi.functional.bio.{BlockingIO2, Error2, Exit, IO2, UnsafeRun2, WeakTemporal2}
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -106,7 +106,7 @@ object MiniBIO extends MiniBIOPlatformSpecific {
         throw failure.toThrowable
     }
 
-    implicit def IOForMiniBIOHighPriority: IO2[MiniBIO] & BlockingIO2[MiniBIO] & Temporal2[MiniBIO] = IOForMiniBIO
+    implicit def IOForMiniBIOHighPriority: IO2[MiniBIO] & BlockingIO2[MiniBIO] & WeakTemporal2[MiniBIO] = IOForMiniBIO
   }
 
   final case class Fail[+E](e: () => Exit.FailureUninterrupted[E]) extends MiniBIO[E, Nothing]
@@ -118,7 +118,7 @@ object MiniBIO extends MiniBIOPlatformSpecific {
   final case class FlatMap[E, A, +E1 >: E, +B](io: MiniBIO[E, A], f: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
   final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: Exit.FailureUninterrupted[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
 
-  implicit val IOForMiniBIO: IO2[MiniBIO] & BlockingIO2[MiniBIO] & Temporal2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] with Temporal2[MiniBIO] {
+  implicit val IOForMiniBIO: IO2[MiniBIO] & BlockingIO2[MiniBIO] & WeakTemporal2[MiniBIO] = new IO2[MiniBIO] with BlockingIO2[MiniBIO] with WeakTemporal2[MiniBIO] {
     override def InnerF: Error2[MiniBIO] = this
 
     override def pure[A](a: A): MiniBIO[Nothing, A] = Sync(() => Exit.Success(a))
@@ -199,13 +199,6 @@ object MiniBIO extends MiniBIOPlatformSpecific {
       case _ =>
         // For infinite durations, block forever (matches ZIO/CE semantics).
         sync(scala.concurrent.blocking(Thread.sleep(Long.MaxValue)))
-    }
-    override def timeout[E, A](duration: Duration)(r: MiniBIO[E, A]): MiniBIO[E, Option[A]] = {
-      // Synchronous single-threaded carrier: there is no concurrency primitive to race the timer
-      // against the computation. Run the effect to completion and report Some(_) regardless of
-      // the requested duration. The InfinityDuration case still runs (no early termination).
-      val _ = duration
-      map(r)(Some(_))
     }
   }
 

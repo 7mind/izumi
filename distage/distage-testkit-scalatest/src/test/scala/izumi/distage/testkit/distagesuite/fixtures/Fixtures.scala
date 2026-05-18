@@ -19,7 +19,7 @@ object MockAppZioPlugin extends MockAppPlugin[zio.IO]
 object MockAppIdPlugin extends MockAppPlugin[Bifunctorized.IdentityBifunctorized]
 object MockAppZioZEnvPlugin extends MockAppPlugin[zio.ZIO[Int, +_, +_]]
 
-abstract class MockAppPlugin[F[+_, +_]: TagKK: IO2] extends PluginDef {
+abstract class MockAppPlugin[F[+_, +_]: TagKK] extends PluginDef {
   make[MockPostgresDriver[F]]
   make[MockUserRepository[F]]
   make[MockPostgresCheck[F]]
