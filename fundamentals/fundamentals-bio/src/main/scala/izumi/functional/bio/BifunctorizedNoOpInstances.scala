@@ -93,8 +93,8 @@ trait BifunctorizedNoOpInstances {
   @inline implicit final def identityBifunctorizedHasUnsafeRun2: UnsafeRun2[Bifunctorized.IdentityBifunctorized] =
     UnsafeRunForIdentityBifunctorized.asInstanceOf[UnsafeRun2[Bifunctorized.IdentityBifunctorized]]
 
-  /** [[Temporal2]] instance for [[Bifunctorized.IdentityBifunctorized]]. Delegates to
-    * [[izumi.functional.bio.impl.MiniBIO.IOForMiniBIO]]'s `Temporal2` capability — `sleep`
+  /** [[WeakTemporal2]] instance for [[Bifunctorized.IdentityBifunctorized]]. Delegates to
+    * [[izumi.functional.bio.impl.MiniBIO.IOForMiniBIO]]'s `WeakTemporal2` capability — `sleep`
     * blocks the calling thread via `Thread.sleep`, `timeout` runs the effect to completion
     * (single-threaded synchronous carrier has no concurrency primitive to race a timer).
     *
@@ -103,8 +103,8 @@ trait BifunctorizedNoOpInstances {
     * `DistageParallelLevelTestIdentity`, `IdentityDistageSleepTest*`) require for their
     * Thread.sleep-based assertions of test-level parallelism bounds.
     */
-  @inline implicit final def identityBifunctorizedHasTemporal2: Predefined.Of[Temporal2[Bifunctorized.IdentityBifunctorized]] =
-    Predefined(MiniBIO.IOForMiniBIO.asInstanceOf[Temporal2[Bifunctorized.IdentityBifunctorized]])
+  @inline implicit final def identityBifunctorizedHasWeakTemporal2: Predefined.Of[WeakTemporal2[Bifunctorized.IdentityBifunctorized]] =
+    Predefined(MiniBIO.IOForMiniBIO.asInstanceOf[WeakTemporal2[Bifunctorized.IdentityBifunctorized]])
 
   /** Backing Parallel2 implementation for `IdentityBifunctorized` — sequential traversals over MiniBIO. */
   private object ParallelForIdentityBifunctorized extends Parallel2[MiniBIO] {
@@ -168,10 +168,11 @@ trait BifunctorizedNoOpInstances {
         override def set(a: A): MiniBIO[Nothing, Unit] = MiniBIO.IOForMiniBIO.sync(state.set(a))
         override def modify[B](f: A => (B, A)): MiniBIO[Nothing, B] = MiniBIO.IOForMiniBIO.sync {
           var out: B = null.asInstanceOf[B]
-          state.updateAndGet { current =>
-            val (b, next) = f(current)
-            out = b
-            next
+          state.updateAndGet {
+            current =>
+              val (b, next) = f(current)
+              out = b
+              next
           }
           out
         }
@@ -196,7 +197,8 @@ trait BifunctorizedNoOpInstances {
         override def await: MiniBIO[E, A] = MiniBIO.IOForMiniBIO.flatMap(MiniBIO.IOForMiniBIO.sync(cell.get())) {
           case Some(Right(a)) => MiniBIO.IOForMiniBIO.pure(a)
           case Some(Left(e)) => MiniBIO.IOForMiniBIO.fail(e)
-          case None => MiniBIO.IOForMiniBIO.terminate(new IllegalStateException("Promise2.await on unset promise (single-threaded MiniBIO carrier — there is no fiber to wait on)"))
+          case None =>
+            MiniBIO.IOForMiniBIO.terminate(new IllegalStateException("Promise2.await on unset promise (single-threaded MiniBIO carrier — there is no fiber to wait on)"))
         }
         override def poll: MiniBIO[Nothing, Option[MiniBIO[E, A]]] = MiniBIO.IOForMiniBIO.sync {
           cell.get().map {
