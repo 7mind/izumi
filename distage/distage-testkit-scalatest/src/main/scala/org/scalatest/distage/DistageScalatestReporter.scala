@@ -10,7 +10,6 @@ import izumi.fundamentals.platform.strings.IzString.*
 import org.scalatest.Suite.{getIndentedTextForInfo, getIndentedTextForTest}
 import org.scalatest.events.*
 
-import java.time.OffsetDateTime
 import scala.annotation.unused
 
 class DistageScalatestReporter(
@@ -49,133 +48,113 @@ class DistageScalatestReporter(
     val suiteClassName1 = test.suite.suiteClassName
     val testName = test.test.id.name
 
-    // `timeStamp` is populated from testkit's own Timing measurements rather than left to ScalaTest's
-    // `(new Date).getTime` case-class default. ScalaTest's XML pair-walking reporters (JUnitXmlReporter,
-    // XmlReporter, DashboardReporter) derive per-testcase duration from `terminator.timeStamp -
-    // testStarting.timeStamp`, so without an explicit measured stamp those durations collapse to the
-    // event-emission delta — which under the per-suite event linearizer is effectively zero. `threadName`
-    // is captured at the actual event-emission site below; that's "the thread that flushed this event",
-    // matching the ScalaTest default semantics, since the testkit cannot meaningfully attribute async
-    // test work to a single JVM thread.
-    val location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None))
-    val rerunner = Some(suiteClassName1)
-    val terminatorFormatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
-    val infoFormatter = Some(getIndentedTextForInfo(s"- $testName", 1, includeIcon = false, infoIsInsideATest = true))
-    val emptyRecordedEvents: Vector[RecordableEvent] = Vector.empty
-    val emptyAnalysis: Vector[String] = Vector.empty
-    val noPayload: Option[Any] = None
-
-    def epochMs(odt: OffsetDateTime): Long = odt.toInstant.toEpochMilli
+    val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
 
     def reportFailure(timing: Timing, throwable: Throwable, trace: Exit.Trace[Any]): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
-        ordinal =>
-          TestFailed(
-            ordinal = ordinal,
-            message = Option(throwable.getMessage).getOrElse("null"),
-            suiteName = suiteName1,
-            suiteId = suiteId1.suiteId,
-            suiteClassName = Some(suiteClassName1),
-            testName = testName,
-            testText = testName,
-            recordedEvents = emptyRecordedEvents,
-            analysis = emptyAnalysis,
-            // use .toThrowable to obtain a zio.FiberFailure instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
-            // does not display suppressed exceptions (which is how zio attaches trace)
-            throwable = Some(trace.toThrowable),
-            duration = Some(timing.duration.toMillis),
-            formatter = terminatorFormatter,
-            location = location,
-            rerunner = rerunner,
-            payload = noPayload,
-            threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(timing.end),
-          )
+        TestFailed(
+          _,
+          Option(throwable.getMessage).getOrElse("null"),
+          suiteName1,
+          suiteId1.suiteId,
+          Some(suiteClassName1),
+          testName,
+          testName,
+          recordedEvents = Vector.empty,
+          analysis = Vector.empty,
+          // use .toThrowable to obtain a zio.FiberFailure instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
+          // does not display suppressed exceptions (which is how zio attaches trace)
+          throwable = Some(trace.toThrowable),
+          duration = Some(timing.duration.toMillis),
+          location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
+          formatter = formatter,
+          rerunner = Some(suiteClassName1),
+          payload = None,
+          threadName = Thread.currentThread.getName,
+          timeStamp = timing.end.toInstant.toEpochMilli,
+        )
       )
     }
 
     def reportCancellation(timing: Timing, clue: String, trace: Exit.Trace[Any]): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
-        ordinal =>
-          TestCanceled(
-            ordinal = ordinal,
-            message = clue,
-            suiteName = suiteName1,
-            suiteId = suiteId1.suiteId,
-            suiteClassName = Some(suiteClassName1),
-            testName = testName,
-            testText = testName,
-            recordedEvents = emptyRecordedEvents,
-            // use .toThrowable instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
-            // does not display suppressed exceptions (which is how zio attaches trace)
-            throwable = Some(trace.toThrowable),
-            duration = Some(timing.duration.toMillis),
-            formatter = terminatorFormatter,
-            location = location,
-            rerunner = rerunner,
-            payload = noPayload,
-            threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(timing.end),
-          )
+        TestCanceled(
+          _,
+          clue,
+          suiteName1,
+          suiteId1.suiteId,
+          Some(suiteClassName1),
+          testName,
+          testName,
+          recordedEvents = Vector.empty,
+          duration = Some(timing.duration.toMillis),
+          location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
+          formatter = formatter,
+          // use .toThrowable instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
+          // does not display suppressed exceptions (which is how zio attaches trace)
+          throwable = Some(trace.toThrowable),
+          rerunner = Some(suiteClassName1),
+          payload = None,
+          threadName = Thread.currentThread.getName,
+          timeStamp = timing.end.toInstant.toEpochMilli,
+        )
       )
     }
 
     def reportInfo(message: String, timing: Timing): Unit = {
+      val formatter = Some(getIndentedTextForInfo(s"- $testName", 1, includeIcon = false, infoIsInsideATest = true))
       suiteHandler.doReportEvent(suiteId1)(
-        ordinal =>
-          InfoProvided(
-            ordinal = ordinal,
-            message = s"Test: ${test.test.id} \n$message",
-            nameInfo = Some(NameInfo(suiteName1, suiteId1.suiteId, Some(suiteClassName1), Some(testName))),
-            throwable = None,
-            formatter = infoFormatter,
-            location = location,
-            payload = noPayload,
-            threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(timing.begin),
-          )
+        InfoProvided(
+          _,
+          s"Test: ${test.test.id} \n$message",
+          Some(NameInfo(suiteName1, suiteId1.suiteId, Some(suiteClassName1), Some(testName))),
+          location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
+          formatter = formatter,
+          throwable = None,
+          payload = None,
+          threadName = Thread.currentThread.getName,
+          timeStamp = timing.begin.toInstant.toEpochMilli,
+        )
       )
     }
 
     def reportStarting(timing: Timing): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
-        ordinal =>
-          TestStarting(
-            ordinal = ordinal,
-            suiteName = suiteName1,
-            suiteId = suiteId1.suiteId,
-            suiteClassName = Some(suiteClassName1),
-            testName = testName,
-            testText = testName,
-            formatter = Some(MotionToSuppress),
-            location = location,
-            rerunner = rerunner,
-            payload = noPayload,
-            threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(timing.begin),
-          )
+        TestStarting(
+          _,
+          suiteName1,
+          suiteId1.suiteId,
+          Some(suiteClassName1),
+          testName,
+          testName,
+          location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
+          formatter = Some(MotionToSuppress),
+          rerunner = Some(suiteClassName1),
+          payload = None,
+          threadName = Thread.currentThread.getName,
+          timeStamp = timing.begin.toInstant.toEpochMilli,
+        )
       )
     }
 
     def reportSucceeded(timing: Timing): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
-        ordinal =>
-          TestSucceeded(
-            ordinal = ordinal,
-            suiteName = suiteName1,
-            suiteId = suiteId1.suiteId,
-            suiteClassName = Some(suiteClassName1),
-            testName = testName,
-            testText = testName,
-            recordedEvents = emptyRecordedEvents,
-            duration = Some(timing.duration.toMillis),
-            formatter = terminatorFormatter,
-            location = location,
-            rerunner = rerunner,
-            payload = noPayload,
-            threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(timing.end),
-          )
+        TestSucceeded(
+          _,
+          suiteName1,
+          suiteId1.suiteId,
+          Some(suiteClassName1),
+          testName,
+          testName,
+          recordedEvents = Vector.empty,
+          duration = Some(timing.duration.toMillis),
+          location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None)),
+          formatter = formatter,
+          rerunner = Some(suiteClassName1),
+          payload = None,
+          threadName = Thread.currentThread.getName,
+          timeStamp = timing.end.toInstant.toEpochMilli,
+        )
       )
     }
 
