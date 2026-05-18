@@ -113,7 +113,7 @@ class DistageScalatestReporter(
           throwable = None,
           payload = None,
           threadName = Thread.currentThread.getName,
-          timeStamp = timing.begin.toInstant.toEpochMilli,
+          timeStamp = timing.end.toInstant.toEpochMilli,
         )
       )
     }
@@ -132,7 +132,7 @@ class DistageScalatestReporter(
           rerunner = Some(suiteClassName1),
           payload = None,
           threadName = Thread.currentThread.getName,
-          timeStamp = timing.begin.toInstant.toEpochMilli,
+          timeStamp = timing.end.toInstant.toEpochMilli,
         )
       )
     }
