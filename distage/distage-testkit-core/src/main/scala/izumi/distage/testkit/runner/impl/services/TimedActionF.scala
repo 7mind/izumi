@@ -12,7 +12,7 @@ import scala.concurrent.duration.FiniteDuration
 
 final case class Timed[A](out: A, timing: Timing)
 object Timed {
-  def fromDiff[A](out: A, before: TimingStart, after: OffsetDateTime): Timed[A] = {
+  def fromDiff[A](out: A, before: OffsetDateTime, after: OffsetDateTime): Timed[A] = {
     Timed(out, Timing.fromDiff(before, after))
   }
 
@@ -34,33 +34,13 @@ object Timed {
   }
 }
 
-/** Captures a wall-clock moment together with the thread that observed it.
-  *
-  * The thread name is recorded for downstream reporters (notably the ScalaTest event
-  * stream) that need to attribute work to a specific JVM thread. Both fields are sampled
-  * within the same `F.maybeSuspend` so they describe the same observation.
-  */
-final case class TimingStart(at: OffsetDateTime, threadName: String)
-
-/** A measured time interval: begin moment, total duration, and the thread that
-  * began the measurement.
-  *
-  * `threadName` is captured at `begin`. For phases that may shift threads (e.g. async
-  * test execution under cats-effect/ZIO), this records the thread that the phase
-  * started on — which is the right attribution for the ScalaTest event corresponding
-  * to that phase's start. Phase-end timing on a different thread can be recovered via
-  * a follow-up [[TimingStart]] capture if needed.
-  */
-final case class Timing(begin: OffsetDateTime, duration: FiniteDuration, threadName: String) {
+/** A measured time interval: wall-clock `begin` moment and total `duration`. */
+final case class Timing(begin: OffsetDateTime, duration: FiniteDuration) {
   def end: OffsetDateTime = begin.plusNanos(duration.toNanos)
 }
 object Timing {
-  def fromDiff(before: TimingStart, after: OffsetDateTime): Timing = {
-    Timing(
-      begin = before.at,
-      duration = FiniteDuration(ChronoUnit.NANOS.between(before.at, after), TimeUnit.NANOSECONDS),
-      threadName = before.threadName,
-    )
+  def fromDiff(before: OffsetDateTime, after: OffsetDateTime): Timing = {
+    Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS))
   }
 }
 
@@ -72,11 +52,9 @@ trait TimedActionF[F[_]] {
 
 object TimedActionF {
   class TimedActionFImpl[F[_]]()(implicit F: QuasiIO[F]) extends TimedActionF[F] {
-    private def sampleStart: TimingStart = TimingStart(Clock1.Standard.nowOffset(), Thread.currentThread.getName)
-
     override def timedLifecycle[A](action: => Lifecycle[F, A]): Lifecycle[F, Timed[A]] = {
       for {
-        before <- Lifecycle.liftF(F.maybeSuspend(sampleStart))
+        before <- Lifecycle.liftF(F.maybeSuspend(Clock1.Standard.nowOffset()))
         value <- action
         after <- Lifecycle.liftF(F.maybeSuspend(Clock1.Standard.nowOffset()))
       } yield {
@@ -86,7 +64,7 @@ object TimedActionF {
 
     override def timed[A](action: => F[A]): F[Timed[A]] = {
       for {
-        before <- F.maybeSuspend(sampleStart)
+        before <- F.maybeSuspend(Clock1.Standard.nowOffset())
         value <- action
         after <- F.maybeSuspend(Clock1.Standard.nowOffset())
       } yield {
@@ -96,7 +74,7 @@ object TimedActionF {
 
     override def timedWith[A](action: (() => F[Timing]) => F[A]): F[Timed[A]] = {
       for {
-        before <- F.maybeSuspend(sampleStart)
+        before <- F.maybeSuspend(Clock1.Standard.nowOffset())
         value <- action(
           () =>
             F.maybeSuspend {

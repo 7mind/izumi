@@ -24,12 +24,6 @@ sealed trait IndividualTestResult {
     * test-completion side of the event stream (e.g. `TestSucceeded`, `TestFailed`).
     */
   def endInstant: OffsetDateTime
-
-  /** Name of the thread that started the first phase of this result. */
-  def beginThreadName: String
-
-  /** Name of the thread that started the last phase of this result. */
-  def endThreadName: String
 }
 
 object IndividualTestResult {
@@ -39,8 +33,6 @@ object IndividualTestResult {
     override def totalTime: FiniteDuration = planningTiming.duration + failedInstantiationTiming.duration
     override def beginInstant: OffsetDateTime = planningTiming.begin
     override def endInstant: OffsetDateTime = failedInstantiationTiming.end
-    override def beginThreadName: String = planningTiming.threadName
-    override def endThreadName: String = failedInstantiationTiming.threadName
   }
 
   case class ExecutionFailure(test: FullMeta, planningTiming: Timing, instantiationTiming: Timing, failedExecTiming: Timing, failure: Throwable, trace: Exit.Trace[Throwable])
@@ -48,8 +40,6 @@ object IndividualTestResult {
     override def totalTime: FiniteDuration = planningTiming.duration + instantiationTiming.duration + failedExecTiming.duration
     override def beginInstant: OffsetDateTime = planningTiming.begin
     override def endInstant: OffsetDateTime = failedExecTiming.end
-    override def beginThreadName: String = planningTiming.threadName
-    override def endThreadName: String = failedExecTiming.threadName
   }
 
   sealed trait IndividualTestSuccess extends IndividualTestResult
@@ -58,7 +48,5 @@ object IndividualTestResult {
     override def totalTime: FiniteDuration = planningTiming.duration + instantiationTiming.duration + executionTiming.duration
     override def beginInstant: OffsetDateTime = planningTiming.begin
     override def endInstant: OffsetDateTime = executionTiming.end
-    override def beginThreadName: String = planningTiming.threadName
-    override def endThreadName: String = executionTiming.threadName
   }
 }

@@ -50,10 +50,14 @@ class DistageScalatestReporter(
     val suiteClassName1 = test.suite.suiteClassName
     val testName = test.test.id.name
 
-    // Every Event field below is populated from testkit data. Nothing is left to ScalaTest's
-    // case-class defaults (current-thread, current-time): ScalaTest's XML pair-walking reporters
-    // (JUnitXmlReporter, XmlReporter, DashboardReporter) use `event.timeStamp` arithmetic for test
-    // durations and would otherwise see linearised-emission timestamps, not real measured times.
+    // `timeStamp` is populated from testkit's own Timing measurements rather than left to ScalaTest's
+    // `(new Date).getTime` case-class default. ScalaTest's XML pair-walking reporters (JUnitXmlReporter,
+    // XmlReporter, DashboardReporter) derive per-testcase duration from `terminator.timeStamp -
+    // testStarting.timeStamp`, so without an explicit measured stamp those durations collapse to the
+    // event-emission delta — which under the per-suite event linearizer is effectively zero. `threadName`
+    // is captured at the actual event-emission site below; that's "the thread that flushed this event",
+    // matching the ScalaTest default semantics, since the testkit cannot meaningfully attribute async
+    // test work to a single JVM thread.
     val location = Some(LineInFile(test.test.pos.line, test.test.pos.file, None))
     val rerunner = Some(suiteClassName1)
     val terminatorFormatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
@@ -64,7 +68,7 @@ class DistageScalatestReporter(
 
     def epochMs(odt: OffsetDateTime): Long = odt.toInstant.toEpochMilli
 
-    def reportStarting(stamp: OffsetDateTime, thread: String): Unit = {
+    def reportStarting(stamp: OffsetDateTime): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           TestStarting(
@@ -78,13 +82,13 @@ class DistageScalatestReporter(
             location = location,
             rerunner = rerunner,
             payload = noPayload,
-            threadName = thread,
+            threadName = Thread.currentThread.getName,
             timeStamp = epochMs(stamp),
           )
       )
     }
 
-    def reportFailure(duration: FiniteDuration, throwable: Throwable, trace: Exit.Trace[Any], stamp: OffsetDateTime, thread: String): Unit = {
+    def reportFailure(duration: FiniteDuration, throwable: Throwable, trace: Exit.Trace[Any], stamp: OffsetDateTime): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           TestFailed(
@@ -105,13 +109,13 @@ class DistageScalatestReporter(
             location = location,
             rerunner = rerunner,
             payload = noPayload,
-            threadName = thread,
+            threadName = Thread.currentThread.getName,
             timeStamp = epochMs(stamp),
           )
       )
     }
 
-    def reportCancellation(duration: FiniteDuration, clue: String, trace: Exit.Trace[Any], stamp: OffsetDateTime, thread: String): Unit = {
+    def reportCancellation(duration: FiniteDuration, clue: String, trace: Exit.Trace[Any], stamp: OffsetDateTime): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           TestCanceled(
@@ -131,13 +135,13 @@ class DistageScalatestReporter(
             location = location,
             rerunner = rerunner,
             payload = noPayload,
-            threadName = thread,
+            threadName = Thread.currentThread.getName,
             timeStamp = epochMs(stamp),
           )
       )
     }
 
-    def reportSucceeded(duration: FiniteDuration, stamp: OffsetDateTime, thread: String): Unit = {
+    def reportSucceeded(duration: FiniteDuration, stamp: OffsetDateTime): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           TestSucceeded(
@@ -153,13 +157,13 @@ class DistageScalatestReporter(
             location = location,
             rerunner = rerunner,
             payload = noPayload,
-            threadName = thread,
+            threadName = Thread.currentThread.getName,
             timeStamp = epochMs(stamp),
           )
       )
     }
 
-    def reportInfo(message: String, stamp: OffsetDateTime, thread: String): Unit = {
+    def reportInfo(message: String, stamp: OffsetDateTime): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           InfoProvided(
@@ -170,7 +174,7 @@ class DistageScalatestReporter(
             formatter = infoFormatter,
             location = location,
             payload = noPayload,
-            threadName = thread,
+            threadName = Thread.currentThread.getName,
             timeStamp = epochMs(stamp),
           )
       )
@@ -181,37 +185,36 @@ class DistageScalatestReporter(
     testStatus match {
       case s: TestStatus.FailedInitialPlanning =>
         // Single-phase status: the planning attempt is the whole timeline.
-        reportStarting(s.timing.begin, s.timing.threadName)
-        reportFailure(s.timing.duration, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause), timingEnd(s.timing), s.timing.threadName)
+        reportStarting(s.timing.begin)
+        reportFailure(s.timing.duration, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause), timingEnd(s.timing))
       case s: TestStatus.FailedRuntimePlanning =>
         val throwable = s.failure.failure.toThrowable
-        reportStarting(s.failure.timing.begin, s.failure.timing.threadName)
-        reportFailure(s.failure.timing.duration, throwable, Exit.Trace.ThrowableTrace(throwable), timingEnd(s.failure.timing), s.failure.timing.threadName)
+        reportStarting(s.failure.timing.begin)
+        reportFailure(s.failure.timing.duration, throwable, Exit.Trace.ThrowableTrace(throwable), timingEnd(s.failure.timing))
       case s: TestStatus.EarlyIgnoredByPrecondition =>
         val t = s.cause.instantiationTiming
-        reportStarting(t.begin, t.threadName)
+        reportStarting(t.begin)
         reportCancellation(
           t.duration,
           s"ignored early: ${s.checks.toList.niceList()}",
           // the Throwable is necessary for Intellij to include explanation other than just 'Test Canceled'
           Exit.Trace.ThrowableTrace(new IntegrationCheckException(s.checks, captureStackTrace = false)),
           timingEnd(t),
-          t.threadName,
         )
       case s: TestStatus.EarlyCancelled =>
         val t = s.cause.instantiationTiming
-        reportStarting(t.begin, t.threadName)
-        reportCancellation(t.duration, s"cancelled early: ${s.throwableCause.getMessage}", Exit.Trace.ThrowableTrace(s.throwableCause), timingEnd(t), t.threadName)
+        reportStarting(t.begin)
+        reportCancellation(t.duration, s"cancelled early: ${s.throwableCause.getMessage}", Exit.Trace.ThrowableTrace(s.throwableCause), timingEnd(t))
       case s: TestStatus.EarlyFailed =>
         val t = s.cause.instantiationTiming
-        reportStarting(t.begin, t.threadName)
-        reportFailure(t.duration, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause), timingEnd(t), t.threadName)
+        reportStarting(t.begin)
+        reportFailure(t.duration, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause), timingEnd(t))
       case s: TestStatus.Instantiating =>
         if (s.logPlan) {
-          reportInfo(s"Final test plan info: ${s.plan}", s.successfulPlanningTime.begin, s.successfulPlanningTime.threadName)
+          reportInfo(s"Final test plan info: ${s.plan}", s.successfulPlanningTime.begin)
         }
         // TestStarting marks the point the test logically begins — earliest known phase moment.
-        reportStarting(s.successfulPlanningTime.begin, s.successfulPlanningTime.threadName)
+        reportStarting(s.successfulPlanningTime.begin)
       case _: TestStatus.Running =>
         ()
 
@@ -221,18 +224,17 @@ class DistageScalatestReporter(
           s"ignored: ${s.checks.toList.niceList()}",
           Exit.Trace.ThrowableTrace(new IntegrationCheckException(s.checks, captureStackTrace = false)),
           s.cause.endInstant,
-          s.cause.endThreadName,
         )
 
       case s: TestStatus.FailedPlanning =>
-        reportFailure(s.timing.duration, s.failure, Exit.Trace.ThrowableTrace(s.failure), timingEnd(s.timing), s.timing.threadName)
+        reportFailure(s.timing.duration, s.failure, Exit.Trace.ThrowableTrace(s.failure), timingEnd(s.timing))
 
       case s: TestStatus.Cancelled =>
-        reportCancellation(s.cause.totalTime, s"cancelled: ${s.throwableCause.getMessage}", s.trace, s.cause.endInstant, s.cause.endThreadName)
+        reportCancellation(s.cause.totalTime, s"cancelled: ${s.throwableCause.getMessage}", s.trace, s.cause.endInstant)
       case s: TestStatus.Failed =>
-        reportFailure(s.cause.totalTime, s.throwableCause, s.trace, s.cause.endInstant, s.cause.endThreadName)
+        reportFailure(s.cause.totalTime, s.throwableCause, s.trace, s.cause.endInstant)
       case s: TestStatus.Succeed =>
-        reportSucceeded(s.result.totalTime, s.result.endInstant, s.result.endThreadName)
+        reportSucceeded(s.result.totalTime, s.result.endInstant)
     }
   }
 
