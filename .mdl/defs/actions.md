@@ -79,7 +79,14 @@ JAVA_OPTIONS+=" -XX:MaxMetaspaceSize=1024M"
 
 JAVA_OPTIONS=$(echo "$JAVA_OPTIONS" | tr '\n' ' ' | tr -s ' ')
 
+# Override .jvmopts on the sbt launcher JVM. The launcher unconditionally appends
+# .jvmopts to JAVA_OPTS (which becomes CLI args), so _JAVA_OPTIONS — which the JVM
+# prepends — loses the last-wins race for -Xmx. -J flags pass through sbt as CLI
+# args appended *after* .jvmopts, so they win.
+SBT_J_OPTS="-J-Xmx6G -J-XX:ReservedCodeCacheSize=384M -J-XX:NonProfiledCodeHeapSize=256M -J-XX:MaxMetaspaceSize=1024M"
+
 ret java-options:String="$JAVA_OPTIONS"
+ret sbt-j-opts:String="$SBT_J_OPTS"
 ```
 
 # action: setup-scala
@@ -204,19 +211,30 @@ JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
 _JAVA_OPTIONS="$JAVA_OPTIONS"
 VERSION_COMMAND="${action.setup-scala.version-command}"
 PLATFORM="${sys.axis.platform}"
+read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
 
 if [[ "$PLATFORM" == "js-nojvm" ]]; then
-  BEFORE_TEST_ARGS=("set ThisBuild / Test / parallelExecution := false")
-else
-  BEFORE_TEST_ARGS=()
-fi
+  # Run compile and test in separate sbt JVMs so the incremental compiler and
+  # Scala.js linker heap is freed between phases.
+  sbt -batch -no-colors -v \
+    --java-home "$JAVA_HOME" \
+    "${SBT_J_OPTS[@]}" \
+    "$VERSION_COMMAND clean" \
+    "$VERSION_COMMAND Test/compile"
 
-sbt -batch -no-colors -v \
-  --java-home "$JAVA_HOME" \
-  "$VERSION_COMMAND clean" \
-  "$VERSION_COMMAND Test/compile" \
-  "${BEFORE_TEST_ARGS[@]}" \
-  "$VERSION_COMMAND test"
+  sbt -batch -no-colors -v \
+    --java-home "$JAVA_HOME" \
+    "${SBT_J_OPTS[@]}" \
+    "set ThisBuild / Test / parallelExecution := false" \
+    "$VERSION_COMMAND test"
+else
+  sbt -batch -no-colors -v \
+    --java-home "$JAVA_HOME" \
+    "${SBT_J_OPTS[@]}" \
+    "$VERSION_COMMAND clean" \
+    "$VERSION_COMMAND Test/compile" \
+    "$VERSION_COMMAND test"
+fi
 
 docker rm "$(docker ps -aq)" || true
 ```
@@ -234,21 +252,33 @@ JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
 _JAVA_OPTIONS="$JAVA_OPTIONS"
 VERSION_COMMAND="${action.setup-scala.version-command}"
 PLATFORM="${sys.axis.platform}"
+read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
 
 if [[ "$PLATFORM" == "js-nojvm" ]]; then
-  BEFORE_TEST_ARGS=("set ThisBuild / Test / parallelExecution := false")
-else
-  BEFORE_TEST_ARGS=()
-fi
+  sbt -batch -no-colors -v \
+    --java-home "$JAVA_HOME" \
+    "${SBT_J_OPTS[@]}" \
+    "$VERSION_COMMAND clean" \
+    coverage \
+    "$VERSION_COMMAND Test/compile"
 
-sbt -batch -no-colors -v \
-  --java-home "$JAVA_HOME" \
-  "$VERSION_COMMAND clean" \
-  coverage \
-  "$VERSION_COMMAND Test/compile" \
-  "${BEFORE_TEST_ARGS[@]}" \
-  "$VERSION_COMMAND test" \
-  "$VERSION_COMMAND coverageReport"
+  sbt -batch -no-colors -v \
+    --java-home "$JAVA_HOME" \
+    "${SBT_J_OPTS[@]}" \
+    coverage \
+    "set ThisBuild / Test / parallelExecution := false" \
+    "$VERSION_COMMAND test" \
+    "$VERSION_COMMAND coverageReport"
+else
+  sbt -batch -no-colors -v \
+    --java-home "$JAVA_HOME" \
+    "${SBT_J_OPTS[@]}" \
+    "$VERSION_COMMAND clean" \
+    coverage \
+    "$VERSION_COMMAND Test/compile" \
+    "$VERSION_COMMAND test" \
+    "$VERSION_COMMAND coverageReport"
+fi
 
 docker rm "$(docker ps -aq)" || true
 ```
@@ -265,9 +295,11 @@ PATH="${action.setup-jdk.path}"
 JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
 _JAVA_OPTIONS="$JAVA_OPTIONS"
 VERSION_COMMAND="${action.setup-scala.version-command}"
+read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
 
 sbt -batch -no-colors -v \
   --java-home "$JAVA_HOME" \
+  "${SBT_J_OPTS[@]}" \
   "project docs" \
   "$VERSION_COMMAND clean" \
   "$VERSION_COMMAND makeSite"
@@ -285,6 +317,7 @@ PATH="${action.setup-jdk.path}"
 JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
 _JAVA_OPTIONS="$JAVA_OPTIONS"
 VERSION_COMMAND="${action.setup-scala.version-command}"
+read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
 
 CI_PULL_REQUEST_VAL="${env.CI_PULL_REQUEST}"
 CI_BRANCH_VAL="${env.CI_BRANCH}"
@@ -302,6 +335,7 @@ fi
 
 sbt -batch -no-colors -v \
   --java-home "$JAVA_HOME" \
+  "${SBT_J_OPTS[@]}" \
   "project docs" \
   "$VERSION_COMMAND clean" \
   "$VERSION_COMMAND makeSite" \
@@ -321,6 +355,7 @@ PATH="${action.setup-jdk.path}"
 JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
 _JAVA_OPTIONS="$JAVA_OPTIONS"
 VERSION_COMMAND="${action.setup-scala.version-command}"
+read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
 
 CI_PULL_REQUEST_VAL="${env.CI_PULL_REQUEST}"
 CI_BRANCH_VAL="${env.CI_BRANCH}"
@@ -344,6 +379,7 @@ fi
 if [[ "$CI_BRANCH_TAG_VAL" =~ ^v.*$ ]]; then
   sbt -batch -no-colors -v \
       --java-home "$JAVA_HOME" \
+      "${SBT_J_OPTS[@]}" \
       "show credentials" \
       "$VERSION_COMMAND clean" \
       "$VERSION_COMMAND package" \
@@ -353,6 +389,7 @@ if [[ "$CI_BRANCH_TAG_VAL" =~ ^v.*$ ]]; then
 else
   sbt -batch -no-colors -v \
       --java-home "$JAVA_HOME" \
+      "${SBT_J_OPTS[@]}" \
       "show credentials" \
       "$VERSION_COMMAND clean" \
       "$VERSION_COMMAND package" \

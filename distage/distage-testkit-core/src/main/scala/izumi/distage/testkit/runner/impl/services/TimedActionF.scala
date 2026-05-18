@@ -34,7 +34,15 @@ object Timed {
   }
 }
 
-final case class Timing(begin: OffsetDateTime, duration: FiniteDuration)
+final case class Timing(begin: OffsetDateTime, duration: FiniteDuration) {
+  lazy val end: OffsetDateTime = begin.plusNanos(duration.toNanos)
+
+  def ++(other: Timing): Timing = {
+    val combinedBegin = if (begin.isBefore(other.begin)) begin else other.begin
+    val combinedEnd = if (end.isAfter(other.end)) end else other.end
+    Timing.fromDiff(combinedBegin, combinedEnd)
+  }
+}
 object Timing {
   def fromDiff(before: OffsetDateTime, after: OffsetDateTime): Timing = {
     Timing(begin = before, duration = FiniteDuration(ChronoUnit.NANOS.between(before, after), TimeUnit.NANOSECONDS))

@@ -4,9 +4,9 @@ import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.DistageTest
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton.RunningSuiteHandle
+import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistry.RunningSuiteHandle
 import izumi.distage.testkit.services.scalatest.dstest.TestRunnerRuntime.AsyncGlobalSuitesControlHandle
-import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistrySingleton, SafeIntellijTestReporter, TestRunnerRuntime}
+import izumi.distage.testkit.services.scalatest.dstest.{DistageTestsRegistry, DistageTestsRegistrySingleton, ScalatestLinearizedTestReporter, TestRunnerRuntime}
 import izumi.distage.testkit.spec.AbstractDistageSpec
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -56,18 +56,18 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   // create status early, so that runner can set it to `true` even before this test's
   // `run` method is called by scalatest, because all the suite's tests could have
   // already been executed by another suite before this `run` was called
-  private val singletonStatus: StatefulStatus = DistageTestsRegistrySingleton.registerInstantiatedSuite[F](suiteId, this)
+  private val singletonStatus: StatefulStatus = _distageTestsRegistry.registerInstantiatedSuite[F](suiteId, this)
 
   override def run(testName: Option[String], args: Args): Status = {
     val status = singletonStatus
 
-    DistageTestsRegistrySingleton.registerSuiteHandle(suiteId)(RunningSuiteHandle(args.tracker, args.reporter))
+    _distageTestsRegistry.registerSuiteHandle(suiteId)(RunningSuiteHandle(args.tracker, args.reporter))
 
     // Note: because https://github.com/scalatest/scalatest/pull/2410 has not been merged,
-    // we're forced to keep a separate registration mechanism for non-sbt runners (e.g. Intellij)
+    // we're forced to keep a separate registration mechanism for non-sbt org.scalatest.tools.Runner (used by e.g. Intellij)
     //
     // NON-sbt ScalatestRunner first instantiates ALL tests, THEN calls `.run` method,
-    // so for non-sbt runs we KNOW that all tests have already been registered
+    // so for non-sbt runs we KNOW that all tests have already been registered already
     val isSbt = args.reporter.getClass.getName.contains("org.scalatest.tools.Framework")
 
     val isJVM = !IzPlatform.isScalaJS
@@ -75,14 +75,14 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
     try {
       val testsToRun = if (globalMode) {
-        DistageTestsRegistrySingleton.collectAllTestkitTests(this, isSbt)
+        _distageTestsRegistry.collectAllTestkitTests(this, isSbt)
       } else {
         Some(registeredTests())
       }
 
       testsToRun match {
         case Some(tests) =>
-          _doPrepareRunTests(tests, testName, args, status, globalMode, isSbt)
+          _doPrepareRunTests(tests, testName, args, status, globalMode)
         case None =>
         // In global memoization mode: Not the first runner - status will be completed by the actual runner
         // In per-instance mode: This shouldn't happen
@@ -104,7 +104,6 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     args: Args,
     status: StatefulStatus,
     globalMode: Boolean,
-    isSbt: Boolean,
   ): Unit = {
     val debugLogger: TrivialLogger = TrivialLogger.make[DistageScalatestTestSuiteRunner[F]](DebugProperties.`izumi.distage.testkit.debug`.name)
 
@@ -119,7 +118,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
     val testsToRun = _applyScalatestDefaultFiltering(args, testsInThisRun, testName)
 
-    debugLogger.err(s"GOING TO RUN TESTS in ${tagMonoIO.tag.repr} (from class ${getClass.getName}):${testsToRun.map(_.meta.test.id.toString).niceList()}")
+    debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag.repr} (from class ${getClass.getName}):${testsToRun.map(_.meta.test.id.toString).niceList()}")
 
     val asyncGlobalSuitesControl = new AsyncGlobalSuitesControlHandle {
       override def completeOuterSuite(mbFailure: Option[Throwable]): Unit = {
@@ -132,12 +131,12 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
       }
       override def completeAllSuitesIfGlobal(): Unit = {
         if (globalMode) {
-          DistageTestsRegistrySingleton.completeAllStatuses()
+          _distageTestsRegistry.completeAllStatuses()
         }
       }
     }
 
-    val testReporter = _mkTestReporter(isSbt)
+    val testReporter = _mkTestReporter()
 
     _doRunTests(debugLogger, asyncGlobalSuitesControl, testReporter, testsToRun)
   }
@@ -172,11 +171,20 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
     }
   }
 
-  protected def _mkTestReporter(isSbt: Boolean): TestReporter = {
-    val suiteHandler = DistageTestsRegistrySingleton.mkSuiteHandlerById()
+  protected def _mkTestReporter(): TestReporter = {
+    val suiteHandler = _distageTestsRegistry.mkSuiteHandlerById()
     val scalatestReporter = new DistageScalatestReporter(suiteHandler)
-    if (isSbt) scalatestReporter else new SafeIntellijTestReporter(scalatestReporter)
+    // Wrap for BOTH the SBT and the Intellij paths. `ScalatestLinearizedTestReporter`
+    // is required for downstream ScalaTest reporters that pair-walk per-suite events
+    // (JUnitXmlReporter / XmlReporter / DashboardReporter — see the class scaladoc for
+    // exact line numbers) and benefits the Intellij reporter as well. Without this
+    // wrap, intra-suite parallelism (the testkit default,
+    // `parallelTests = Parallelism.Unlimited`) produces silent JUnit XML undercount.
+    new ScalatestLinearizedTestReporter(scalatestReporter)
   }
+
+  /** Must return the same instance on every call. */
+  protected def _distageTestsRegistry: DistageTestsRegistry = DistageTestsRegistrySingleton
 
   override def tags: Map[String, Set[String]] = {
     org.scalatest.Suite.autoTagClassAnnotations(Map.empty, this)

@@ -5,7 +5,7 @@ out: index.html
 BIO Hierarchy
 =============
 
-**BIO** is a set of typeclasses and algebras for programming in tagless final style using bifunctor effect types with variance.
+**BIO** is a set of typeclasses and datatypes for programming in tagless final style using bifunctor effect types with variance.
 
 Key syntactic features:
 
@@ -68,7 +68,7 @@ The following graphic shows the current `BIO` hierarchy.
 
 [(image)](media/bio-relationship-hierarchy.svg)
 
-Auxiliary algebras:
+Auxiliary components:
 
 ![algebras](media/algebras.svg)
 

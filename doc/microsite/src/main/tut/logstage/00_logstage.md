@@ -175,9 +175,9 @@ logger.info("Hey")
 contextLogger.info("Hey")
 ```
 
-## Log algebras
+## LogIO
 
-`LogIO`, `LogIO2` & `LogIO3` algebras provide a purely-functional API for one-, two-, and three-parameter effect types respectively:
+`LogIO`, `LogIO2` and `LogIO3` provide a purely-functional API for one-, two-, and three-parameter effect types respectively:
 
 ```scala mdoc:to-string:reset
 import logstage.{IzLogger, LogIO}
@@ -209,7 +209,7 @@ def logfun[F[_]: LogIO]: F[Unit] = {
 
 ### Adding Custom Context to Loggers
 
-`LogIO*` algebras can be extended with custom context using their `.withCustomContext` method, same as `IzLogger`:
+`LogIO*` values can be extended with custom context using their `.withCustomContext` method, same as `IzLogger`:
 
 ```scala mdoc:reset:invisible
 import com.example.Entity

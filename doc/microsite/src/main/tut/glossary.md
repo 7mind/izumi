@@ -36,7 +36,7 @@ We have overloaded the following terms for the domain of dependency injection:
 * **garbage-collection**, *also* **garbage-collecting DI** – a process of hard exclusion of dependency declarations which are not required for current application configuration to run. A *garbage-collecting DI* requires a set of *garbage collection roots* (application entrypoints) in order to be able to *trace* required dependencies. It's important to note that, while *lazy* dependency instantiation does provide similar capabilities, it's less observable and cannot guarantee soundness of the wiring process. Thus *lazy* instantiation frequently leads to problems in run-time.
 
 Terms used by Izumi
--------------------d
+-------------------
 
 Also we use the following terms which have stable semantic but aren't widely used in the domain of software design and engineering:
 
@@ -55,5 +55,3 @@ Also we use the following terms which are used widely but often improperly and h
 
 * **product** – all the logical components of some software, solving particular business problem. Typically a *product* includes multiple *back-end* services (or microservices), various *client* applications (mobile, web, desktop), third-party supplied components managed by the company and external third-party service APIs.
 * **continuous integration** – automatic testing of all integrations between *product* components, after each commit. That's lot more than just running builds and tests of individual microservices after each commit. We want to make sure that the whole *product* works properly after each change. *Integration* should start as early as possible. IDL/RPC languages are *integration* tools. Static typers are *integration* tools. Formal proof assistants are *integration* tools. Deployment and orchestration systems are *integration* tools. Usually *monitoring* tools might be considered *integration tools* too. A *monitoring* tool which is not a part in the feedback loops with application developers shouldn't be considered an *integration* tool.
-
-

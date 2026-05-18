@@ -854,9 +854,34 @@ object Izumi {
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
           ),
+          // Overlay src/main/paradox-overlay/ on the resolved paradox-material-theme
+          // directory. We hook on `paradoxTemplate` (the task that constructs the
+          // StringTemplate PageTemplate) rather than `paradoxThemeDirectory` (whose
+          // self-modification would create a task cycle). When this fires, the theme
+          // dir is already populated from the webjar; we copy our overrides on top
+          // before instantiating the template, so e.g. our customized page.st replaces
+          // the upstream one. Used to inject an inline <head> script that flips the
+          // dark stylesheet's media= attribute synchronously before paint, eliminating
+          // FOUC for repeat-visit light-mode users and providing a noscript
+          // prefers-color-scheme fallback declaratively on the <link>.
+          SettingDef.RawSettingDef("""Compile / paradoxTemplate := {
+            val themeDir = (Compile / paradoxThemeDirectory).value
+            val overlay = baseDirectory.value / "src/main/paradox-overlay"
+            if (overlay.isDirectory) IO.copyDirectory(overlay, themeDir, overwrite = true)
+            new com.lightbend.paradox.template.PageTemplate(themeDir, (Compile / paradoxDefaultTemplateName).value)
+          }"""),
           SettingDef.RawSettingDef("""Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
             _.withCopyright("7mind.io")
               .withRepository(uri("https://github.com/7mind/izumi"))
+              // Default dark theme: a static dump of Dark Reader (Dynamic mode) applied to the
+              // white Material theme. Loaded after the Material stylesheets so its !important rules win.
+              // Asset is staged via mdoc passthrough from src/main/tut/assets/stylesheets/darkreader.css.
+              .withCustomStylesheet("assets/stylesheets/darkreader.css")
+              // Visitor-facing toggle that disables the dark stylesheet at runtime via
+              // link.disabled and persists the choice to localStorage. Provides a
+              // fixed-position floating button; primarily intended as a visual-accessibility
+              // override for users who need the lighter Material theme.
+              .withCustomJavaScript("assets/javascripts/scheme-switch.js")
             //        .withColor("222", "434343")
           }"""),
           "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """DocKeys.prefix.value("api")""".raw,

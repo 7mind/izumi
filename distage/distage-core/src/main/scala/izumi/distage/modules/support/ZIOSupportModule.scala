@@ -38,7 +38,7 @@ class ZIOSupportModule[R: Tag] extends ZIOPlatformDependentSupportModule[R] {
   addImplicit[Async2[zio.IO]]
   addImplicit[Temporal2[zio.IO]]
 
-  // aux algebras
+  // aux components
   make[UnsafeRun2[ZIO[R, _, _]]].using[ZIORunner[R]]
   addImplicit[BlockingIO2[zio.IO]]
   addImplicit[Fork2[zio.IO]]

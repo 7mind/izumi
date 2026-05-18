@@ -2,6 +2,7 @@ package izumi.distage.testkit.services.scalatest.dstest
 
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, SuiteId}
+import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistry.{InstantiatedSuiteHandle, RunningSuiteHandle}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
@@ -15,27 +16,20 @@ import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.mutable
 import scala.util.chaining.scalaUtilChainingOps
 
-object DistageTestsRegistrySingleton {
-  final case class InstantiatedSuiteHandle[+F[_]](
-    suite: DistageScalatestTestSuiteRunner[F @uncheckedVariance],
-    status: StatefulStatus,
-  )
-  final case class RunningSuiteHandle(
-    tracker: Tracker,
-    reporter: Reporter,
-  )
+object DistageTestsRegistrySingleton extends DistageTestsRegistry
 
+class DistageTestsRegistry {
   private val instantiatedSuiteHandles = new mutable.HashMap[String, InstantiatedSuiteHandle[AnyF]]()
   private val runningSuiteHandles = new mutable.HashMap[String, Either[mutable.ArrayBuffer[RunningSuiteHandle => Unit], RunningSuiteHandle]]()
   private val firstRunnerStarted = new AtomicBoolean(false)
   private val runnerFinished = new AtomicBoolean(false)
 
   def collectAllTestkitTests[F[_]](instance: DistageScalatestTestSuiteRunner[F], isSbt: Boolean): Option[List[DistageTest[AnyF]]] = {
-    if (DistageTestsRegistrySingleton.permittedToRun()) {
-      val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestsRegistrySingleton.type](DebugProperties.`izumi.distage.testkit.debug`.name)
+    if (permittedToRun()) {
+      val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestsRegistry](DebugProperties.`izumi.distage.testkit.debug`.name)
       debugLogger.log(s"Launching tests from $instance")
 
-      val instantiatedClassNames = DistageTestsRegistrySingleton.currentInstantiatedSuites().map(_.suite.getClass.getName)
+      val instantiatedClassNames = currentInstantiatedSuites().map(_.suite.getClass.getName)
       val discoveredClassNames: Set[String] = Runner.discoveredSuites.getOrElse {
         if (isSbt) {
           throw new RuntimeException(
@@ -58,7 +52,7 @@ object DistageTestsRegistrySingleton {
           }
       }
 
-      val allSuites = DistageTestsRegistrySingleton.currentInstantiatedSuites().map(_.suite)
+      val allSuites = currentInstantiatedSuites().map(_.suite)
 
       debugLogger.log(s"Instantiated new suites ${allSuites.map(_.getClass.getName).toSet -- instantiatedClassNames}")
 
@@ -160,4 +154,15 @@ object DistageTestsRegistrySingleton {
     }
   }
 
+}
+
+object DistageTestsRegistry {
+  final case class InstantiatedSuiteHandle[+F[_]](
+    suite: DistageScalatestTestSuiteRunner[F @uncheckedVariance],
+    status: StatefulStatus,
+  )
+  final case class RunningSuiteHandle(
+    tracker: Tracker,
+    reporter: Reporter,
+  )
 }

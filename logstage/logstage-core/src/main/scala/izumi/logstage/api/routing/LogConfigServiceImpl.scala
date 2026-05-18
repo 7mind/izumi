@@ -84,7 +84,7 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
 
   override def validate(fallback: TrivialLogger): Unit = {
     if (configTree.maxValues > 1) {
-      fallback.err(s"Logger config contains contradictive entries in $this")
+      fallback.err(s"Logger config contains contradictive entries in ${this.toString}")
     }
   }
 

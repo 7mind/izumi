@@ -37,41 +37,48 @@ object MakeMacro {
     val tagT = '{ compiletime.summonInline[Tag[T]] }
     val codep = '{ compiletime.summonInline[CodePositionMaterializer] }
 
-    Apply(Apply(TypeApply(Select.unique(This(outerClass), "_make"), List(TypeTree.of[T])), List(functoid.asTerm)), List(tagT.asTerm, codep.asTerm)).asExpr.asInstanceOf[Expr[BT]]
+    Apply(Apply(TypeApply(Select.unique(This(outerClass), "_make"), List(TypeTree.of[T])), List(functoid.asTerm)), List(tagT.asTerm, codep.asTerm)).asExpr
+      .asInstanceOf[Expr[BT]]
   }
 
   private def makeMethodImpl[T: Type, BT: Type](using qctx: Quotes)(outerClass: qctx.reflect.Symbol): Expr[BT] = {
     import qctx.reflect.*
 
-    def findPos(p: Position, t: Tree): Tree = {
+    def findPos(macroPos: Position, macroSourceFile: SourceFile, t: Tree): Tree = {
       new TreeAccumulator[Option[Tree]] {
-        override def foldTree(x: Option[Tree], tree: Tree)(owner: Symbol): Option[Tree] = {
-          if (x.isDefined) {
-            x
+        override def foldTree(accum: Option[Tree], tree: Tree)(owner: Symbol): Option[Tree] = {
+          if (accum.isDefined) {
+            accum
           } else {
+            val treeFile =
+              try {
+                tree.pos.sourceFile
+              } catch { case _: Throwable => null }
             val treeStart =
               try {
                 tree.pos.start
               } catch { case _: Throwable => 0 }
 
-            if (treeStart != 0 && treeStart == p.start) {
+            if (treeStart != 0 && treeStart == macroPos.start && macroSourceFile == treeFile) {
               Some(tree)
             } else {
-              foldOverTree(x, tree)(owner)
+              foldOverTree(accum, tree)(owner)
             }
           }
         }
       }.foldOverTree(None, t)(Symbol.noSymbol)
         .getOrElse {
-          report.errorAndAbort("You MUST enable -Yretain-trees compiler option for distage to work!\n" +
-            s"Couldn't find Position=$p\n in Tree=${t.show}\n All positions=${allPos(t)}")
+          report.errorAndAbort(
+            "You MUST enable -Yretain-trees compiler option for distage to work!\n" +
+            s"Couldn't find Position=$macroPos\n in Tree=${t.show}\n All positions=${allPos(t)}"
+          )
         }
     }
 
     def allPos(t: Tree): List[Position] = {
       new TreeAccumulator[List[Position]] {
-        override def foldTree(x: List[Position], tree: Tree)(owner: Symbol): List[Position] = {
-          foldOverTree(x, tree)(owner) :+ tree.pos
+        override def foldTree(accum: List[Position], tree: Tree)(owner: Symbol): List[Position] = {
+          foldOverTree(accum, tree)(owner) :+ tree.pos
         }
       }.foldOverTree(Nil, t)(Symbol.noSymbol)
     }
@@ -79,26 +86,28 @@ object MakeMacro {
 //    var stopPos = List.empty[(Position, String)]
 
     extension (biggerPos: Position) {
-      def contains(smallerPos: Position): Boolean = {
+      // `.contains` method exists in Position itself, but isn't exported: https://github.com/scala/scala3/discussions/25916
+      def _contains(smallerPos: Position): Boolean = {
         biggerPos.start <= smallerPos.start
         && biggerPos.end >= smallerPos.end
+        && biggerPos.sourceFile == smallerPos.sourceFile
       }
     }
 
     def allMethodsCalledOnPosition(macroPos: Position, t0: Tree): List[String] = {
       new TreeAccumulator[List[String]] {
-        override def foldTree(oldX: List[String], tree: Tree)(owner: Symbol): List[String] = {
-          val (t, newX) = tree match {
+        override def foldTree(oldAccum: List[String], tree: Tree)(owner: Symbol): List[String] = {
+          val (t, newAccum) = tree match {
             case Select(t, name) =>
-              (t, name :: oldX)
+              (t, name :: oldAccum)
             case t =>
-              (t, oldX)
+              (t, oldAccum)
           }
-          if (t.pos.contains(macroPos)) {
-            foldOverTree(newX, tree)(owner)
+          if (t.pos._contains(macroPos)) {
+            foldOverTree(newAccum, tree)(owner)
           } else {
 //            stopPos = stopPos :+ (t.pos, t.show)
-            oldX // ignore the last method - presumably the `make`/`makeRole` call itself.
+            oldAccum // ignore the last method - presumably the `make`/`makeRole` call itself.
           }
         }
       }.foldOverTree(Nil, t0)(Symbol.noSymbol)
@@ -109,9 +118,11 @@ object MakeMacro {
       if (outerExpr.isLocalDummy) outerExpr.owner else outerExpr
     }
 
-    val foundPos = findPos(Position.ofMacroExpansion, outerowner.tree)
-
-    val foundMethods = allMethodsCalledOnPosition(Position.ofMacroExpansion, foundPos)
+    val foundMethods = {
+      val macroPos = Position.ofMacroExpansion
+      val foundPos = findPos(macroPos, macroPos.sourceFile, outerowner.tree)
+      allMethodsCalledOnPosition(macroPos, foundPos)
+    }
 
     val fromLikeMethods = foundMethods.filter(!ModuleDefDSL.MakeDSLNoOpMethodsWhitelist.contains(_))
 
