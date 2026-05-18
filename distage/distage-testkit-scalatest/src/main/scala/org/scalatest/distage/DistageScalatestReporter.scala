@@ -12,7 +12,6 @@ import org.scalatest.events.*
 
 import java.time.OffsetDateTime
 import scala.annotation.unused
-import scala.concurrent.duration.FiniteDuration
 
 class DistageScalatestReporter(
   suiteHandler: SuiteHandlerById
@@ -68,7 +67,7 @@ class DistageScalatestReporter(
 
     def epochMs(odt: OffsetDateTime): Long = odt.toInstant.toEpochMilli
 
-    def reportStarting(stamp: OffsetDateTime): Unit = {
+    def reportStarting(timing: Timing): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           TestStarting(
@@ -83,12 +82,12 @@ class DistageScalatestReporter(
             rerunner = rerunner,
             payload = noPayload,
             threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(stamp),
+            timeStamp = epochMs(timing.begin),
           )
       )
     }
 
-    def reportFailure(duration: FiniteDuration, throwable: Throwable, trace: Exit.Trace[Any], stamp: OffsetDateTime): Unit = {
+    def reportFailure(timing: Timing, throwable: Throwable, trace: Exit.Trace[Any]): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           TestFailed(
@@ -104,18 +103,18 @@ class DistageScalatestReporter(
             // use .toThrowable to obtain a zio.FiberFailure instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
             // does not display suppressed exceptions (which is how zio attaches trace)
             throwable = Some(trace.toThrowable),
-            duration = Some(duration.toMillis),
+            duration = Some(timing.duration.toMillis),
             formatter = terminatorFormatter,
             location = location,
             rerunner = rerunner,
             payload = noPayload,
             threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(stamp),
+            timeStamp = epochMs(timing.end),
           )
       )
     }
 
-    def reportCancellation(duration: FiniteDuration, clue: String, trace: Exit.Trace[Any], stamp: OffsetDateTime): Unit = {
+    def reportCancellation(timing: Timing, clue: String, trace: Exit.Trace[Any]): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           TestCanceled(
@@ -130,18 +129,18 @@ class DistageScalatestReporter(
             // use .toThrowable instead of .unsafeAttachTraceOrReturnNewThrowable because scalatest
             // does not display suppressed exceptions (which is how zio attaches trace)
             throwable = Some(trace.toThrowable),
-            duration = Some(duration.toMillis),
+            duration = Some(timing.duration.toMillis),
             formatter = terminatorFormatter,
             location = location,
             rerunner = rerunner,
             payload = noPayload,
             threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(stamp),
+            timeStamp = epochMs(timing.end),
           )
       )
     }
 
-    def reportSucceeded(duration: FiniteDuration, stamp: OffsetDateTime): Unit = {
+    def reportSucceeded(timing: Timing): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           TestSucceeded(
@@ -152,18 +151,18 @@ class DistageScalatestReporter(
             testName = testName,
             testText = testName,
             recordedEvents = emptyRecordedEvents,
-            duration = Some(duration.toMillis),
+            duration = Some(timing.duration.toMillis),
             formatter = terminatorFormatter,
             location = location,
             rerunner = rerunner,
             payload = noPayload,
             threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(stamp),
+            timeStamp = epochMs(timing.end),
           )
       )
     }
 
-    def reportInfo(message: String, stamp: OffsetDateTime): Unit = {
+    def reportInfo(message: String, timing: Timing): Unit = {
       suiteHandler.doReportEvent(suiteId1)(
         ordinal =>
           InfoProvided(
@@ -175,66 +174,60 @@ class DistageScalatestReporter(
             location = location,
             payload = noPayload,
             threadName = Thread.currentThread.getName,
-            timeStamp = epochMs(stamp),
+            timeStamp = epochMs(timing.begin),
           )
       )
     }
 
-    def timingEnd(t: Timing): OffsetDateTime = t.end
-
     testStatus match {
       case s: TestStatus.FailedInitialPlanning =>
-        // Single-phase status: the planning attempt is the whole timeline.
-        reportStarting(s.timing.begin)
-        reportFailure(s.timing.duration, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause), timingEnd(s.timing))
+        reportStarting(s.timing)
+        reportFailure(s.timing, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause))
       case s: TestStatus.FailedRuntimePlanning =>
         val throwable = s.failure.failure.toThrowable
-        reportStarting(s.failure.timing.begin)
-        reportFailure(s.failure.timing.duration, throwable, Exit.Trace.ThrowableTrace(throwable), timingEnd(s.failure.timing))
+        reportStarting(s.failure.timing)
+        reportFailure(s.failure.timing, throwable, Exit.Trace.ThrowableTrace(throwable))
       case s: TestStatus.EarlyIgnoredByPrecondition =>
         val t = s.cause.instantiationTiming
-        reportStarting(t.begin)
+        reportStarting(t)
         reportCancellation(
-          t.duration,
+          t,
           s"ignored early: ${s.checks.toList.niceList()}",
           // the Throwable is necessary for Intellij to include explanation other than just 'Test Canceled'
           Exit.Trace.ThrowableTrace(new IntegrationCheckException(s.checks, captureStackTrace = false)),
-          timingEnd(t),
         )
       case s: TestStatus.EarlyCancelled =>
         val t = s.cause.instantiationTiming
-        reportStarting(t.begin)
-        reportCancellation(t.duration, s"cancelled early: ${s.throwableCause.getMessage}", Exit.Trace.ThrowableTrace(s.throwableCause), timingEnd(t))
+        reportStarting(t)
+        reportCancellation(t, s"cancelled early: ${s.throwableCause.getMessage}", Exit.Trace.ThrowableTrace(s.throwableCause))
       case s: TestStatus.EarlyFailed =>
         val t = s.cause.instantiationTiming
-        reportStarting(t.begin)
-        reportFailure(t.duration, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause), timingEnd(t))
+        reportStarting(t)
+        reportFailure(t, s.throwableCause, Exit.Trace.ThrowableTrace(s.throwableCause))
       case s: TestStatus.Instantiating =>
         if (s.logPlan) {
-          reportInfo(s"Final test plan info: ${s.plan}", s.successfulPlanningTime.begin)
+          reportInfo(s"Final test plan info: ${s.plan}", s.successfulPlanningTime)
         }
-        // TestStarting marks the point the test logically begins — earliest known phase moment.
-        reportStarting(s.successfulPlanningTime.begin)
+        reportStarting(s.successfulPlanningTime)
       case _: TestStatus.Running =>
         ()
 
       case s: TestStatus.IgnoredByPrecondition =>
         reportCancellation(
-          s.cause.totalTime,
+          s.cause.testTiming,
           s"ignored: ${s.checks.toList.niceList()}",
           Exit.Trace.ThrowableTrace(new IntegrationCheckException(s.checks, captureStackTrace = false)),
-          s.cause.endInstant,
         )
 
       case s: TestStatus.FailedPlanning =>
-        reportFailure(s.timing.duration, s.failure, Exit.Trace.ThrowableTrace(s.failure), timingEnd(s.timing))
+        reportFailure(s.timing, s.failure, Exit.Trace.ThrowableTrace(s.failure))
 
       case s: TestStatus.Cancelled =>
-        reportCancellation(s.cause.totalTime, s"cancelled: ${s.throwableCause.getMessage}", s.trace, s.cause.endInstant)
+        reportCancellation(s.cause.testTiming, s"cancelled: ${s.throwableCause.getMessage}", s.trace)
       case s: TestStatus.Failed =>
-        reportFailure(s.cause.totalTime, s.throwableCause, s.trace, s.cause.endInstant)
+        reportFailure(s.cause.testTiming, s.throwableCause, s.trace)
       case s: TestStatus.Succeed =>
-        reportSucceeded(s.result.totalTime, s.result.endInstant)
+        reportSucceeded(s.result.testTiming)
     }
   }
 
