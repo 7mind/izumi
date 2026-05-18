@@ -54,7 +54,7 @@ import scala.xml.XML
   *
   * The anonymous inner suite uses a private
   * [[DistageTestsRegistry]] (via the
-  * [[org.scalatest.distage.DistageScalatestTestSuiteRunner#__internal_distageTestRegistry]]
+  * [[org.scalatest.distage.DistageScalatestTestSuiteRunner#_distageTestsRegistry]]
   * injection point) so it is fully isolated from the process-wide
   * [[izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton]]. SBT/ScalaTest only auto-discovers
   * top-level public suites, so the anonymous inner suite is invisible
@@ -90,7 +90,7 @@ final class JUnitXmlRegressionTest extends AnyWordSpec {
       val perTestSleep = testSleepMillis
 
       val suiteUnderTest: SpecIdentity = new SpecIdentity { spec =>
-        override protected def __internal_distageTestRegistry: DistageTestsRegistry = privateRegistry
+        override protected def _distageTestsRegistry: DistageTestsRegistry = privateRegistry
 
         scopeName.should {
           leafNames.foreach {

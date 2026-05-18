@@ -56,12 +56,12 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   // create status early, so that runner can set it to `true` even before this test's
   // `run` method is called by scalatest, because all the suite's tests could have
   // already been executed by another suite before this `run` was called
-  private val singletonStatus: StatefulStatus = __internal_distageTestRegistry.registerInstantiatedSuite[F](suiteId, this)
+  private val singletonStatus: StatefulStatus = _distageTestsRegistry.registerInstantiatedSuite[F](suiteId, this)
 
   override def run(testName: Option[String], args: Args): Status = {
     val status = singletonStatus
 
-    __internal_distageTestRegistry.registerSuiteHandle(suiteId)(RunningSuiteHandle(args.tracker, args.reporter))
+    _distageTestsRegistry.registerSuiteHandle(suiteId)(RunningSuiteHandle(args.tracker, args.reporter))
 
     // Note: because https://github.com/scalatest/scalatest/pull/2410 has not been merged,
     // we're forced to keep a separate registration mechanism for non-sbt org.scalatest.tools.Runner (used by e.g. Intellij)
@@ -75,7 +75,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
 
     try {
       val testsToRun = if (globalMode) {
-        __internal_distageTestRegistry.collectAllTestkitTests(this, isSbt)
+        _distageTestsRegistry.collectAllTestkitTests(this, isSbt)
       } else {
         Some(registeredTests())
       }
@@ -131,7 +131,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
       }
       override def completeAllSuitesIfGlobal(): Unit = {
         if (globalMode) {
-          __internal_distageTestRegistry.completeAllStatuses()
+          _distageTestsRegistry.completeAllStatuses()
         }
       }
     }
@@ -172,7 +172,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   }
 
   protected def _mkTestReporter(): TestReporter = {
-    val suiteHandler = __internal_distageTestRegistry.mkSuiteHandlerById()
+    val suiteHandler = _distageTestsRegistry.mkSuiteHandlerById()
     val scalatestReporter = new DistageScalatestReporter(suiteHandler)
     // Wrap for BOTH the SBT and the Intellij paths. `ScalatestLinearizedTestReporter`
     // is required for downstream ScalaTest reporters that pair-walk per-suite events
@@ -184,7 +184,7 @@ abstract class DistageScalatestTestSuiteRunner[F[_]](
   }
 
   /** Must return the same instance on every call. */
-  protected def __internal_distageTestRegistry: DistageTestsRegistry = DistageTestsRegistrySingleton
+  protected def _distageTestsRegistry: DistageTestsRegistry = DistageTestsRegistrySingleton
 
   override def tags: Map[String, Set[String]] = {
     org.scalatest.Suite.autoTagClassAnnotations(Map.empty, this)
