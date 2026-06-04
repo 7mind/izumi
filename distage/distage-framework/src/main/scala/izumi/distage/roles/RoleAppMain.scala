@@ -9,7 +9,7 @@ import izumi.distage.modules.{DefaultModule, DefaultModule2}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.launcher.AppResourceProvider.AppResource
-import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy}
+import izumi.distage.roles.launcher.{AppFailureHandler, AppShutdownStrategy, CrashLogRouterRef}
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.IzPlatform
@@ -17,9 +17,12 @@ import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.cli.model.{RequiredRoles, RoleArgs}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzArtifactMaterializer
+import izumi.logstage.api.IzLogger
+import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.LogIO2Module
 import izumi.reflect.{TagK, TagKK}
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.unused
 
 /**
@@ -84,13 +87,18 @@ abstract class RoleAppMain[F[_]](
 
   def main(args: Array[String]): RoleAppMainPlatformSpecific.MainEffect[Unit] = {
     val argv = ArgV(args)
+    val crashLogRouterRef = new CrashLogRouterRef(new AtomicReference(Option.empty[LogRouter]))
     try {
-      Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv)) {
+      Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv, RequiredRoles(requiredRoles(argv)), Some(crashLogRouterRef))) {
         (appResource: AppResource[F]) =>
           appResource.resource.use(_.run())
       }
     } catch {
       case t: Throwable =>
+        crashLogRouterRef.get.foreach {
+          router =>
+            IzLogger(router).error(s"Application failed to boot, exiting: ${t -> "error"}")
+        }
         earlyFailureHandler(argv).onError(t)
         RoleAppMainPlatformSpecific.failedMain(t)
     }
@@ -155,24 +163,24 @@ abstract class RoleAppMain[F[_]](
     roleAppBootModule(ArgV.empty)
   }
 
-  def roleAppBootModule(argv: ArgV): Module = {
-    val mainModule = roleAppBootModule(argv, RequiredRoles(requiredRoles(argv)))
-    val overrideModule = roleAppBootOverrides(argv)
-    mainModule overriddenBy overrideModule
+  final def roleAppBootModule(argv: ArgV): Module = {
+    roleAppBootModule(argv, RequiredRoles(requiredRoles(argv)), None)
   }
 
   /** @see [[izumi.distage.roles.RoleAppBootModule]] for initial values */
-  def roleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles): Module = {
-    new RoleAppBootModule[F](
+  def roleAppBootModule(argv: ArgV, additionalRoles: RequiredRoles, crashLogRouterRef: Option[CrashLogRouterRef]): Module = {
+    val mainModule = new RoleAppBootModule[F](
       shutdownStrategy = shutdownStrategy,
       pluginConfig = pluginConfig,
       bootstrapPluginConfig = bootstrapPluginConfig,
       appArtifact = artifact.get,
-      unusedValidAxisChoices,
+      unusedValidAxisChoices = unusedValidAxisChoices,
+      crashLogRouterRef = crashLogRouterRef,
     ) ++ new RoleAppBootArgsModule(
       args = argv,
       requiredRoles = additionalRoles,
     )
+    mainModule overriddenBy roleAppBootOverrides(argv)
   }
 
   protected def earlyFailureHandler(@unused args: ArgV): AppFailureHandler = {

@@ -22,8 +22,9 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.os.{IzOs, OsType}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.fundamentals.platform.versions.Version
-import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogSink
+import izumi.logstage.api.routing.StaticLogRouter
+import izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.io.{File, OutputStream, PrintStream}
@@ -624,32 +625,49 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
 
     "TerminatingHandler reports error when exiting if an exception interrupts provisioning" in {
-      val oldErr = System.err
-      val errBuf = ByteBuffer.allocate(10 * 1024 * 1024)
-      val interceptErr = new PrintStream(
-        new OutputStream {
-          override def write(b: Int): Unit = {
-            oldErr.write(b)
-            try errBuf.put(b.toByte)
-            catch { case _: BufferOverflowException => () }
-            ()
-          }
-        },
-        true,
-      )
-      try {
-        System.setErr(interceptErr)
+      val errString = captureStderr {
         intercept[ProvisioningException] {
           Fixture3.TestRoleAppMain.main(Array("--ignore-all-reference-configs", ":fixture3"))
         }
-      } finally {
-        System.setErr(oldErr)
       }
-      errBuf.flip()
-      val errString = new String(errBuf.array(), errBuf.arrayOffset(), errBuf.limit(), StandardCharsets.UTF_8)
       assert(errString.contains("""Couldn't read configuration at path="basicConfig""""))
       // error appears only once
       assert(errString.indexOf("""Couldn't read configuration at path="basicConfig"""") == errString.lastIndexOf("""Couldn't read configuration at path="basicConfig""""))
+    }
+
+    "report a fatal provisioning failure through the application's late log router as a structured error entry" in {
+      // basicConfig is decoded during planning, after the late logger is built, so the crash is reported via the late router
+      val sink = new CapturingFixture3Sink
+      intercept[ProvisioningException] {
+        new CapturingFixture3Main(sink).main(Array("--ignore-all-reference-configs", ":fixture3"))
+      }
+      assertCrashLogged(sink.fetch(), "basicConfig")
+    }
+
+    "report a fatal failure occurring before the late logger through the early log router as a structured error entry" in {
+      // a missing explicit config fails config loading before the late logger exists, so the crash is reported via the early router
+      val sink = new CapturingFixture3Sink
+      intercept[ProvisioningException] {
+        new CapturingFixture3Main(sink).main(Array("-c", "/nonexistent-config-for-test-xyz.conf", ":fixture3"))
+      }
+      assertCrashLogged(sink.fetch(), "Cannot load configuration")
+    }
+
+    "gate global StaticLogRouter registration behind the static-log-router flag" in {
+      // default (flag on): a successful app run (re)registers its router in the process-global StaticLogRouter
+      val beforeDefault = StaticLogRouter.instance.get()
+      TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
+      assert(StaticLogRouter.instance.get() ne beforeDefault)
+
+      // flag off: the app must leave the global router untouched (isolated from process-global state)
+      withProperties(
+        DebugProperties.`izumi.distage.roles.logs.static-log-router`.name -> "false"
+      ) {
+        val before = StaticLogRouter.instance.get()
+        TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
+        assert(StaticLogRouter.instance.get() eq before)
+        ()
+      }
     }
 
     "LogIO2 binding is available in LauncherBIO for ZIO & MonixBIO" in {
@@ -663,6 +681,50 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 //        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id))
       }
     }
+  }
+
+  // Asserts the fatal failure was recorded as a structured error entry carrying the failure cause, rather than only
+  // reaching stderr as an unstructured stacktrace.
+  private def assertCrashLogged(entries: Seq[Log.Entry], causeSubstring: String): Unit = {
+    val crash = entries.find {
+      e =>
+        e.context.dynamic.level == Log.Level.Error &&
+        e.message.template.parts.mkString("").contains("Application failed to boot")
+    }
+    assert(crash.isDefined, s"expected a fatal-failure error entry; recorded levels=${entries.map(_.context.dynamic.level).toList}")
+    val cause = crash.flatMap(_.firstThrowable)
+    assert(
+      cause.exists(t => Option(t.getMessage).exists(_.contains(causeSubstring))),
+      s"crash entry must carry the failure cause containing '$causeSubstring'; got=${cause.map(_.getMessage)}",
+    )
+    ()
+  }
+
+  // Captures stderr for the duration of `body`, teeing to the real stderr. `System.setErr` is process-global, so this
+  // synchronizes on a JVM-wide lock: concurrently-running suites that capture stderr serialize instead of corrupting
+  // each other's redirection (ScalaTest runs suites in parallel by default).
+  private def captureStderr(body: => Any): String = RoleAppTest.stderrCaptureLock.synchronized {
+    val oldErr = System.err
+    val errBuf = ByteBuffer.allocate(10 * 1024 * 1024)
+    val interceptErr = new PrintStream(
+      new OutputStream {
+        override def write(b: Int): Unit = {
+          oldErr.write(b)
+          try errBuf.put(b.toByte)
+          catch { case _: BufferOverflowException => () }
+          ()
+        }
+      },
+      true,
+    )
+    try {
+      System.setErr(interceptErr)
+      val _ = body
+    } finally {
+      System.setErr(oldErr)
+    }
+    errBuf.flip()
+    new String(errBuf.array(), errBuf.arrayOffset(), errBuf.limit(), StandardCharsets.UTF_8)
   }
 
   private def cfg(role: String, version: ArtifactVersion): File = {
@@ -705,4 +767,9 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       }
     }
   }
+}
+
+object RoleAppTest {
+  // process-global lock guarding `System.setErr` redirection across concurrently-running suites
+  private val stderrCaptureLock = new AnyRef
 }
