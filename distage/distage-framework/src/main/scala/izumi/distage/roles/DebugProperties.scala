@@ -35,6 +35,14 @@ object DebugProperties extends properties.DebugProperties {
   final val `izumi.distage.roles.logs.json` = BoolProperty("izumi.distage.roles.logs.json")
 
   /**
+    * Register the application's `LogRouter` in the process-global [[izumi.logstage.api.routing.StaticLogRouter]]
+    * (required for slf4j support).
+    *
+    * Default: `true`
+    */
+  final val `izumi.distage.roles.logs.static-log-router` = BoolProperty("izumi.distage.roles.logs.static-log-router")
+
+  /**
     * Include reference role configs as fallback configs if an explicit role config is passed on the command-line.
     *
     * If `false`, explicit role config fully replaces reference role configs instead of overriding them.

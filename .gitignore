@@ -16,12 +16,12 @@ worktrees
 #project/plugins.sbt
 #project/build.properties
 
-
 secrets.tar
 build/project
 .DS_Store
 .metals
 **/metals.sbt
+.codegraph
 .bloop
 .bsp
 .scala-build

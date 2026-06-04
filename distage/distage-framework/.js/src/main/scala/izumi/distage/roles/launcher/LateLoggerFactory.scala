@@ -1,6 +1,6 @@
 package izumi.distage.roles.launcher
 
-import distage.Lifecycle
+import distage.{Id, Lifecycle}
 import izumi.distage.roles.launcher.LoggerConfigLoader.DeclarativeLoggerConfig
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.logger.{LogQueue, LogRouter}
@@ -14,11 +14,14 @@ object LateLoggerFactory {
   class LateLoggerFactoryImpl(
     routerFactory: RouterFactory,
     buffer: LogQueue,
+    setupStaticLogRouter: Boolean @Id("distage.roles.logs.static-log-router"),
   ) extends LateLoggerFactory {
     def makeLateLogRouter(config: DeclarativeLoggerConfig): Lifecycle[Identity, LogRouter] = {
       Lifecycle.liftF[Identity, LogRouter] {
         val router = routerFactory.createRouter(config, buffer)
-        StaticLogRouter.instance.setup(router)
+        if (setupStaticLogRouter) {
+          StaticLogRouter.instance.setup(router)
+        }
         router
       }
     }

@@ -72,6 +72,7 @@ object ModuleProvider {
     shutdownInitiator: AppShutdownInitiator,
     appArtifact: Option[IzArtifact] @Id("app.artifact"),
     roleAppLocator: Option[LocatorRef] @Id("roleapp"),
+    setupStaticLogRouter: Boolean @Id("distage.roles.logs.static-log-router"),
   ) extends ModuleProvider {
 
     def bootstrapModules(): Seq[BootstrapModule] = {
@@ -83,7 +84,7 @@ object ModuleProvider {
         make[Option[IzArtifact]].named("app.artifact").fromValue(appArtifact).exposed
       }
 
-      val loggerModule = new LogstageModule(logRouter, true)
+      val loggerModule = new LogstageModule(logRouter, setupStaticLogRouter)
 
       val platformModule = new BootstrapPlatformModule(options)
 

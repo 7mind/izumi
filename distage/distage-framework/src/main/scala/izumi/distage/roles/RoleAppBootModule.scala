@@ -51,8 +51,9 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   bootstrapPluginConfig: PluginConfig,
   appArtifact: IzArtifact,
   unusedValidAxisChoices: Set[Axis.AxisChoice],
+  crashLogRouterRef: Option[CrashLogRouterRef],
 ) extends ModuleDef {
-  include(new RoleAppBootPlatformModule())
+  include(new RoleAppBootPlatformModule(crashLogRouterRef))
 
   addImplicit[TagK[F]]
   addImplicit[DefaultModule[F]]
@@ -103,6 +104,7 @@ class RoleAppBootModule[F[_]: TagK: DefaultModule](
   make[Activation].named("additional").fromValue(Activation.empty)
 
   make[Boolean].named("distage.roles.logs.json").from(DebugProperties.`izumi.distage.roles.logs.json`.boolValue(default = false))
+  make[Boolean].named("distage.roles.logs.static-log-router").from(DebugProperties.`izumi.distage.roles.logs.static-log-router`.boolValue(default = true))
   make[Boolean].named("distage.roles.ignore-mismatched-effect").from(DebugProperties.`izumi.distage.roles.ignore-mismatched-effect`.boolValue(default = false))
   make[Boolean].named("distage.roles.activation.ignore-unknown").from(DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.boolValue(default = false))
   make[Boolean].named("distage.roles.activation.warn-unset").from(DebugProperties.`izumi.distage.roles.activation.warn-unset`.boolValue(default = true))
