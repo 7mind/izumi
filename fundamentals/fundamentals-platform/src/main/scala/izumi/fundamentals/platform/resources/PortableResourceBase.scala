@@ -64,6 +64,25 @@ trait PortableResourceBase {
     }
   }
 
+  /**
+    * Split `content` into pieces small enough to be emitted as individual JVM constant-pool string
+    * literals. A `CONSTANT_Utf8` entry stores its length in an unsigned 16-bit field, so it cannot
+    * exceed 65535 bytes of modified UTF-8. A single `char` encodes to at most 3 modified-UTF-8 bytes
+    * (lone surrogates included), so chunking at [[maxChunkChars]] characters keeps every chunk under
+    * the limit regardless of content. Splitting mid-surrogate-pair is safe: re-concatenating the
+    * chunks at runtime reproduces the original string exactly.
+    */
+  protected def chunkString(content: String): Seq[String] = {
+    if (content.length <= maxChunkChars) {
+      Seq(content)
+    } else {
+      content.grouped(maxChunkChars).toSeq
+    }
+  }
+
+  /** 65535 / 3 == 21845 is the theoretical max; round down for headroom. */
+  private final val maxChunkChars: Int = 20000
+
   protected def walkTree(file: File): Iterable[File] = {
     val children = if (file.isDirectory) {
       Option(file.listFiles).toSeq.flatMap(_.toSeq)
