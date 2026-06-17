@@ -2,19 +2,19 @@
 out: index.html
 ---
 
-# DIStage
+# distage
 
 ```scala mdoc:reset:invisible:to-string
 System.setProperty(izumi.fundamentals.platform.PlatformProperties.`izumi.app.disable-terminal-colors`.name, "true")
 ```
 
-`distage` is a pragmatic module system for Scala and Scala.js. It combines the simplicity and expressiveness of pure FP with the flexibility and extreme late-binding, traditionally associated with Java dependency injection frameworks, such as Guice.
+`distage` is a pragmatic dependency injection library for Scala and Scala.js. It combines the simplicity and expressiveness of pure FP with the flexibility and extreme late-binding, traditionally associated with Java dependency injection frameworks, such as Guice.
 
 `distage` supports any Scala style, whether it's @ref[Tagless Final Style](basics.md#tagless-final-style), @ref[ZIO Layer](basics.md#zio-environment-bindings), ordinary FP, actor-based or imperative Scala.
 
 ## Getting started
 
-The best way get started is to clone [`distage-example`](https://github.com/7mind/distage-example) sample project and play around with it.
+The best way to get started is to clone [`distage-example`](https://github.com/7mind/distage-example) project and play around with it.
 
 It shows how to write an idiomatic `distage` application from scratch and how to:
 
@@ -27,48 +27,56 @@ It shows how to write an idiomatic `distage` application from scratch and how to
 /**
 add to distage-example
 
-- how to setup graalvm native image with distage
+- [done] how to setup graalvm native image with distage
 - how to debug dump graphs and render to graphviz [Actually, we have a GUI component now, can we show em there???]
 */
 ```
 
 ## Why distage?
 
-1. **Faster applications and tests**:
-    `distage` guarantees that no unnecessary instantiations will happen during your tests or application startup. `distage` itself is very fast, in part due to not using Java reflection.
+1. **Fast startup and tests**:
 
-2. **Faster integration tests**:
-    @ref[distage-testkit](distage-testkit.md) allows you to reuse expensive resources (such as database connections and docker containers)
-    across multiple test suites, gaining performance without sacrificing correctness.
+    `distage` guarantees that no unnecessary instantiations will happen during your tests or application startup. `distage` itself is very fast, in part due to not using any runtime reflection.
 
-3. **Managed test environments**:
-    @ref[distage-testkit](distage-testkit.md) eliminates all the hard work of setting up test environments, especially configurable ones. Easily describe tests environments, share heavy resources across all the test suites in the environment, use the power of DI to override components and run your tests under different scenarios.
+2. **Cross-platform**:
 
-4. **Compile-time error detection**:
+    `distage` is available for JVM, Scala.js and GraalVM Native Image.
+
+3. **Compile-time error detection**:
+
     `distage` can detect wiring errors @ref[at compile-time](distage-framework.md#compile-time-checks) for fast feedback during development.
-    Despite that, `distage` extensions are simple to write and do not require type-level programming.
 
-5. **Early failure detection**:
-    `distage` performs all the integration checks for your application and tests even before any instantiations happen.
+4. **Effect-type support**:
 
-6. **Simplify development workflow**:
-    @ref[distage-framework](distage-framework.md) allows you to develop Role-based applications, letting you run all your services in one process for development purposes (and even switch to mock implementations with a single commandline argument).
+    `distage` is polymorphic in effect type. Whether you use cats-effect `IO`, `ZIO`, a custom `F[_]` type or direct style with no effect type, all of distage's lifecycle management and test utilities work seamlessly. No effect type is privileged; distage adapts to your stack, not the other way around.
 
-7. **Easy deployment**:
-    Role-based applications allow you to deploy and orchestrate fewer containers and achieve a higher computation density.
+5. **Lifecycle management**:
 
-8. **Simple debugging**:
-    `distage` provides you insights about your application structure and allows you to introspect and modify it on the fly, before any instantiations happen.
+    `distage` supports component lifecycle via native `Lifecycle`, cats-effect `Resource`, or ZIO `Scope`/`ZLayer`/`ZManaged`. Startup and cleanup follow dependency order, with cleanup guaranteed even on failure.
 
-9. **Lifecycle management**:
-    `distage` supports resources and lifecycle natively and guarantees proper cleanups even when something went wrong.
+6. **Fast integration tests**:
 
-10. **Non-invasive**:
-    `distage` is designed to not impact the way your Scala code is written, it just removes all the initialization boilerplate.
-      You don't need to learn magic tricks to write components in a distage application.
+    @ref[distage-testkit](distage-testkit.md) allows you to reuse expensive resources (such as database connections and docker containers) across multiple test suites, gaining performance without sacrificing correctness. Easily describe test environments, share heavy resources across all the test suites in the environment, use the power of DI to override components and run your tests under different scenarios.
 
-11. **Cross-platform**:
-    `distage` is available for JVM, Graal Native Image and Scala.js.
+7. **Fail-fast integration checks**:
+
+    The @ref[Integration checks](distage-testkit.md#using-integrationcheck) feature dynamically skips tests when external dependencies are unavailable (e.g. no Docker daemon), and in production ensures applications fail fast with clear diagnostics.
+
+8. **Portable Docker test environments**:
+
+    @ref[distage-framework-docker](distage-framework-docker.md) turns Docker containers into managed resources with automatic health checks, port discovery, and cross-test reuse. Define containers once, inject them anywhere, and get reproducible integration tests on any machine with Docker. Or use them without DI, via monadic `Lifecycle` type.
+
+9. **Simplify development workflow**:
+
+    @ref[distage-framework](distage-framework.md) allows you to develop Role-based applications, letting you run all your services in one process for development or test purposes (and even switch to mock implementations with a single commandline argument). In production, Role-based applications allow you to deploy and orchestrate fewer containers and achieve a higher computation density.
+
+10. **Simple debugging**:
+
+    Your wiring is just data. `Plan` is an immutable value you can inspect, print, render @ref[to GraphViz](debugging.md#graphviz-rendering), or rewrite it entirely - all before any instantiations happen.
+
+11. **Non-invasive**:
+
+    `distage` is designed to not impact the way your Scala code is written, it just removes all the initialization boilerplate. You don't need to learn magic tricks to write components in a distage application.
 
 > Given its native support for type classes and higher-kinded types -- both features indispensable to functional programming -- distage is one of the leading dependency injection libraries out there. Bonus points for being built by a wicked-smart team that contributes to ZIO!
 >

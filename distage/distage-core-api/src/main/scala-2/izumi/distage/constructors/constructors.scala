@@ -48,7 +48,7 @@ object ClassConstructor {
 }
 
 /**
-  * An implicitly summonable constructor for a traits or abstract class `T`
+  * An implicitly summonable constructor for a trait or abstract class `T`
   *
   * @see [[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]]
   * @see [[izumi.distage.model.definition.impl]] recommended documenting annotation for use with [[TraitConstructor]]
