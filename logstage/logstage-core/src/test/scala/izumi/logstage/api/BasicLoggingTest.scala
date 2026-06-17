@@ -58,7 +58,7 @@ class BasicLoggingTest extends AnyWordSpec {
            |is a
            |multiline ${m -> "message"}""".stripMargin
       )
-      assert(message1.template.parts.toList == List("This\nis a\nmultiline ", ""))
+      assert(message1.template.parts.map(_.replace("\r\n", "\n")).toList == List("This\nis a\nmultiline ", ""))
       assert(message1.args == List(LogArg(Seq("message"), m, hiddenName = false, Some(LogstageCodec.LogstageCodecString))))
 
       val message2 = Message("single line with stripMargin".stripMargin)
