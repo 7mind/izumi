@@ -22,11 +22,11 @@ class ConflictPlugin extends PluginDef {
 trait ResourcesPluginBase extends ModuleDef {
   make[ExecutorService].from(Executors.newCachedThreadPool())
 
-  make[IntegrationResource1[Identity]]
-  make[JustResource1[Identity]]
-  make[JustResource2[Identity]]
-  make[ProbeResource0[Identity]]
-  make[JustResource3[Identity]]
+  make[IntegrationResource1[Identity]].fromSelf
+  make[JustResource1[Identity]].fromSelf
+  make[JustResource2[Identity]].fromSelf
+  make[ProbeResource0[Identity]].fromSelf
+  make[JustResource3[Identity]].fromSelf
 
   many[TestResource[Identity]]
     .ref[IntegrationResource1[Identity]]
@@ -35,11 +35,11 @@ trait ResourcesPluginBase extends ModuleDef {
     .ref[ProbeResource0[Identity]]
     .ref[JustResource3[Identity]]
 
-  make[IntegrationResource1[IO]]
-  make[JustResource1[IO]]
-  make[JustResource2[IO]]
-  make[ProbeResource0[IO]]
-  make[JustResource3[IO]]
+  make[IntegrationResource1[IO]].fromSelf
+  make[JustResource1[IO]].fromSelf
+  make[JustResource2[IO]].fromSelf
+  make[ProbeResource0[IO]].fromSelf
+  make[JustResource3[IO]].fromSelf
 
   many[TestResource[IO]]
     .ref[IntegrationResource1[IO]]
@@ -50,9 +50,9 @@ trait ResourcesPluginBase extends ModuleDef {
 }
 
 class ResourcesPlugin extends PluginDef with ResourcesPluginBase {
-  make[XXX_ResourceEffectsRecorder[IO]]
+  make[XXX_ResourceEffectsRecorder[IO]].fromSelf
 
-  make[IntegrationResource0[IO]]
+  make[IntegrationResource0[IO]].fromSelf
   many[TestResource[IO]]
     .ref[IntegrationResource0[IO]]
 }

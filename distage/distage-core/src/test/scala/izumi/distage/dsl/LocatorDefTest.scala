@@ -48,7 +48,7 @@ class LocatorDefTest extends AnyWordSpec {
       import BasicCase1._
 
       val ctx = new LocatorDef {
-        make[TestCaseClass]
+        make[TestCaseClass].fromSelf
       }
       assertThrows[LocatorDefUninstantiatedBindingException](ctx.instances)
     }

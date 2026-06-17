@@ -20,11 +20,11 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
-            make[Circular1]
-            make[Circular2]
-            make[Circular3]
-            make[Circular4]
-            make[Trash]
+            make[Circular1].fromSelf
+            make[Circular2].fromSelf
+            make[Circular3].fromSelf
+            make[Circular4].fromSelf
+            make[Trash].fromSelf
           },
           Roots(DIKey.get[Circular2]),
           Activation.empty,
@@ -57,8 +57,8 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         PlannerInput(
           new ModuleDef {
             make[MkS3Client].from[Impl]
-            make[S3Component]
-            make[App]
+            make[S3Component].fromSelf
+            make[App].fromSelf
           },
           Roots(DIKey.get[App]),
           Activation.empty,
@@ -79,9 +79,9 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
             many[IntegrationComponent].add[S3Component]
 
             make[MkS3Client].from[Impl]
-            make[S3Upload]
-            make[Ctx]
-            make[S3Component]
+            make[S3Upload].fromSelf
+            make[Ctx].fromSelf
+            make[S3Component].fromSelf
           },
           Roots(DIKey.get[Ctx]),
           Activation.empty,
@@ -102,12 +102,12 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
-            make[MkS3Client]
-            make[S3Upload]
-            make[Ctx]
-            make[S3Component]
+            make[MkS3Client].fromSelf
+            make[S3Upload].fromSelf
+            make[Ctx].fromSelf
+            make[S3Component].fromSelf
             many[IntegrationComponent].add[S3Component]
-            make[Initiator]
+            make[Initiator].fromSelf
           },
           Roots(DIKey.get[Ctx], DIKey.get[Initiator]),
           Activation.empty,
@@ -125,8 +125,8 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
-            make[Circular1]
-            make[Circular2]
+            make[Circular1].fromSelf
+            make[Circular2].fromSelf
             make[T1].using[Circular1]
             make[T2].using[Circular2]
           },
@@ -209,8 +209,8 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
-            make[Circular1]
-            make[Circular2]
+            make[Circular1].fromSelf
+            make[Circular2].fromSelf
           },
           Roots(DIKey.get[Circular2]),
           Activation.empty,
@@ -231,8 +231,8 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
-            make[Circular1]
-            make[Circular2]
+            make[Circular1].fromSelf
+            make[Circular2].fromSelf
           },
           Roots(DIKey.get[Circular2]),
           Activation.empty,
@@ -252,8 +252,8 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
-            make[Circular1]
-            make[Circular2]
+            make[Circular1].fromSelf
+            make[Circular2].fromSelf
           },
           Roots(DIKey.get[Circular2], DIKey.get[Set[AutoCloseable]]),
           Activation.empty,
@@ -273,10 +273,10 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
       val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
-            make[Circular1]
-            make[Circular2]
-            make[Circular3]
-            make[Circular4]
+            make[Circular1].fromSelf
+            make[Circular2].fromSelf
+            make[Circular3].fromSelf
+            make[Circular4].fromSelf
             many[T1]
               .ref[Circular1]
               .ref[Circular2]

@@ -47,7 +47,7 @@ final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen w
       val module = new ModuleDef {
         make[DBConnection].fromResource(dbResource)
         make[MessageQueueConnection].fromResource(mqResource)
-        make[MyApp]
+        make[MyApp].fromSelf
       }
 
       unsafeRun(Injector[Task]().produceRun(module) {

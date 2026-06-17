@@ -177,9 +177,9 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       def getDep2: URIO[Dependency2, Dependency2] = ZIO.environmentWith[Dependency2](_.get)
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Dependency1]
-        make[Dependency2]
-        make[Dependency3]
+        make[Dependency1].fromSelf
+        make[Dependency2].fromSelf
+        make[Dependency3].fromSelf
         make[Trait3 { def acquired: Boolean }].fromZIOEnv(
           (d3: Dependency3) =>
             for {
@@ -258,8 +258,8 @@ class ZIOHasInjectionTest extends AnyWordSpec with MkInjector with ZIOTest with 
       import TraitCase6.*
 
       val definition = PlannerInput.everything(new ModuleDef {
-        make[Dep]
-        make[AnyValDep]
+        make[Dep].fromSelf
+        make[AnyValDep].fromSelf
         make[TestTrait].fromZIOEnv(
           ZIO.environmentWith[AnyValDep](
             h =>

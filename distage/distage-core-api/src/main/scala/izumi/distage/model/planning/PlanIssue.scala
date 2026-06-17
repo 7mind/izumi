@@ -59,6 +59,13 @@ object PlanIssue {
     override def key: DIKey = value.binding.key
   }
 
+  /**
+    * The user wrote `make[T]` without a following `.from`-like call. The macro records this with a
+    * `Functoid._errorMakeWithoutFrom` provider that survives into the bindings (because no `.from`-like
+    * method replaced it). PlanVerifier reports this as a verification failure with the deprecation message.
+    */
+  final case class BareMakeDeprecation(key: DIKey, op: OperationOrigin, tpeStr: String, methods: List[String], message: String) extends PlanIssue
+
   implicit class PlanIssueOps(private val issue: PlanIssue) extends AnyVal {
     def render: String = {
       issue match {
@@ -94,6 +101,8 @@ object PlanIssue {
         case l: CantVerifyLocalContext =>
           val explanation = l.value.errors.map(_.render).niceList()
           s"${l.key}: verification failed for subcontext ${l.value.impl.implType}: $explanation"
+        case d: BareMakeDeprecation =>
+          s"${d.key}: ${d.message.trim} ${d.op.toSourceFilePosition}"
       }
     }
   }

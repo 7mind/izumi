@@ -34,7 +34,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     import TraitCase1.*
 
     val definition = new ModuleDef {
-      make[Dependency1]
+      make[Dependency1].fromSelf
       makeTrait[TestTrait]
     }
 
@@ -51,7 +51,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     import TraitCase1.*
 
     val definition = new ModuleDef {
-      make[Dependency1]
+      make[Dependency1].fromSelf
       make[TestTrait].named("named-trait").fromTrait[TestTrait]
     }
 
@@ -71,9 +71,9 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
       makeTrait[Trait3]
       makeTrait[Trait2]
       makeTrait[Trait1]
-      make[Dependency3]
-      make[Dependency2]
-      make[Dependency1]
+      make[Dependency3].fromSelf
+      make[Dependency2].fromSelf
+      make[Dependency1].fromSelf
     }
 
     val injector = mkNoCyclesInjector()
@@ -97,9 +97,9 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
 
     val definition = new ModuleDef {
       make[Trait2].fromTrait[Trait3]
-      make[Dependency3]
-      make[Dependency2]
-      make[Dependency1]
+      make[Dependency3].fromSelf
+      make[Dependency2].fromSelf
+      make[Dependency1].fromSelf
     }
 
     val injector = mkNoCyclesInjector()
@@ -175,7 +175,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeTrait[TestTrait]
-      make[Dep]
+      make[Dep].fromSelf
     })
 
     val injector = mkInjector()
@@ -192,7 +192,7 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeTrait[TestTraitAny { def dep: Dep }]
-      make[Dep]
+      make[Dep].fromSelf
     })
 
     val injector = mkInjector()
@@ -220,8 +220,8 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     import TypesCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dep]
-      make[Dep2]
+      make[Dep].fromSelf
+      make[Dep2].fromSelf
       makeTrait[Trait2 & (Trait2 & (Trait2 & Trait1))]
     })
 
@@ -239,8 +239,8 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     import TypesCase6.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dep]
-      make[Dep2]
+      make[Dep].fromSelf
+      make[Dep2].fromSelf
       makeTrait[Trait1 & Trait2]
     })
 
@@ -258,8 +258,8 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     import TraitCase6.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dep]
-      make[AnyValDep]
+      make[Dep].fromSelf
+      make[AnyValDep].fromSelf
       makeTrait[TestTrait]
     })
 
@@ -277,8 +277,8 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     import TraitCase7.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency1]
-      make[Dependency2]
+      make[Dependency1].fromSelf
+      make[Dependency2].fromSelf
       make[X].fromTrait[XImpl]
     })
 

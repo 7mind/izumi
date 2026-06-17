@@ -64,7 +64,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
     import SetCase2.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Service1]
+      make[Service1].fromSelf
 
       many[Service]
         .ref[Service1]

@@ -25,7 +25,7 @@ import scala.collection.immutable.HashSet
   * Example:
   * {{{
   * class Program[F[_]: TagK] extends ModuleDef {
-  *   make[TaglessProgram[F]]
+  *   make[TaglessProgram[F]].fromSelf
   * }
   *
   * object TryInterpreters extends ModuleDef {
@@ -38,7 +38,7 @@ import scala.collection.immutable.HashSet
   * }}}
   *
   * Singleton bindings:
-  *   - `make[X]` = create X using its constructor
+  *   - `make[X].fromSelf` = create X using its constructor (preferred over a bare `make[X]`, which is deprecated)
   *   - `makeTrait[X]` = create an abstract class or a trait `X` using [[izumi.distage.constructors.TraitConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]])
   *   - `makeFactory[X]` = create a "factory-like" abstract class or a trait `X` using [[izumi.distage.constructors.FactoryConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]])
   *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
@@ -107,6 +107,14 @@ trait ModuleDefDSL extends AbstractBindingDefDSL[MakeDSL, MakeDSLUnnamedAfterFro
 object ModuleDefDSL {
 
   trait MakeDSLBase[T, AfterBind] {
+    /**
+      * Bind `T` to its own auto-derived constructor. Equivalent to `make[T].from[T]`.
+      *
+      * Use this instead of a bare `make[T]` (which is deprecated and will fail at runtime in a future version).
+      */
+    final def fromSelf(implicit ctor: ClassConstructor[T]): AfterBind =
+      from(ctor.provider)
+
     final def from[I <: T: ClassConstructor]: AfterBind =
       from(ClassConstructor[I])
 
@@ -192,7 +200,7 @@ object ModuleDefDSL {
       *   trait T
       *   class T1 extends T
       *
-      *   make[T1]
+      *   make[T1].fromSelf
       *   make[T].using[T1]
       * }}}
       *
@@ -361,7 +369,7 @@ object ModuleDefDSL {
       *   trait T
       *   trait T1 extends T
       *
-      *   make[T1]
+      *   make[T1].fromSelf
       *   many[T].ref[T1]
       * }}}
       *

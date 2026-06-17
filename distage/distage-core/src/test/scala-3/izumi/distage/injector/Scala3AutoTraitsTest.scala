@@ -96,7 +96,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
             def makeConcreteDep1(d: Int): T @With[C2]
           }
         ]
-        make[C1]
+        make[C1].fromSelf
         make[Int].fromValue(1)
         make[Number].fromValue(5)
         make[String].fromValue("abc")

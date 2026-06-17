@@ -11,8 +11,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     import InnerClassStablePathsCase.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[StableObjectInheritingTrait.TestDependency]
-      make[StableObjectInheritingTrait1.TestDependency]
+      make[StableObjectInheritingTrait.TestDependency].fromSelf
+      make[StableObjectInheritingTrait1.TestDependency].fromSelf
     })
 
     val context = mkNoCyclesInjector().produce(definition).unsafeGet()
@@ -27,8 +27,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     import StableObjectInheritingTrait.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TestDependency]
-      make[TestClass]
+      make[TestDependency].fromSelf
+      make[TestClass].fromSelf
     })
 
     val context = mkNoCyclesInjector().produce(definition).unsafeGet()
@@ -43,8 +43,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-      make[testProviderModule.TestDependency]
-      make[testProviderModule.TestClass[testProviderModule.type]]
+      make[testProviderModule.TestDependency].fromSelf
+      make[testProviderModule.TestClass[testProviderModule.type]].fromSelf
     })
 
     val injector = mkInjector()
@@ -62,8 +62,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
       val definition = PlannerInput.everything(new ModuleDef {
         make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-        make[testProviderModule.TestClass[testProviderModule.type]]
-        make[testProviderModule.TestDependency]
+        make[testProviderModule.TestClass[testProviderModule.type]].fromSelf
+        make[testProviderModule.TestDependency].fromSelf
       })
 
       val injector = mkNoCyclesInjector()
@@ -104,8 +104,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-      make[testProviderModule.TestDependency]
-      make[testProviderModule.TestClass[testProviderModule.type]]
+      make[testProviderModule.TestDependency].fromSelf
+      make[testProviderModule.TestClass[testProviderModule.type]].fromSelf
     })
 
     val injector = mkInjector()
@@ -123,8 +123,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
   "can handle class local path-dependent injections" in {
     val definition = PlannerInput.everything(new ModuleDef {
       make[TopLevelPathDepTest.type].from[TopLevelPathDepTest.type](TopLevelPathDepTest: TopLevelPathDepTest.type)
-      make[TopLevelPathDepTest.TestClass[TopLevelPathDepTest.type]]
-      make[TopLevelPathDepTest.TestDependency]
+      make[TopLevelPathDepTest.TestClass[TopLevelPathDepTest.type]].fromSelf
+      make[TopLevelPathDepTest.TestDependency].fromSelf
     })
 
     val injector = mkNoCyclesInjector()
@@ -153,8 +153,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     import StableObjectInheritingTrait.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[ByNameCircular1]
-      make[ByNameCircular2]
+      make[ByNameCircular1].fromSelf
+      make[ByNameCircular2].fromSelf
     })
 
     val context = mkNoProxiesInjector().produce(definition).unsafeGet()
@@ -189,8 +189,8 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     private val definition = PlannerInput.everything(new ModuleDef {
       make[InnerPathDepTest.this.type].from[InnerPathDepTest.this.type](InnerPathDepTest.this: InnerPathDepTest.this.type)
       make[InnerPathDepTest.type].from[InnerPathDepTest.type]
-      make[TestClass[InnerPathDepTest.this.type]]
-      make[TestDependency]
+      make[TestClass[InnerPathDepTest.this.type]].fromSelf
+      make[TestDependency].fromSelf
     })
 
     def testCase = {

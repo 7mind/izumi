@@ -16,7 +16,7 @@ class TestRuntimeModule[F[_]: TagK](params: EnvExecutionParams) extends ModuleDe
     (exec: EnvExecutionParams) =>
       exec.planningOptions
   }
-  make[PlanCircularDependencyCheck]
+  make[PlanCircularDependencyCheck].fromSelf
 
   make[IzLogger].named("distage-testkit").from {
     (logger: IzLogger) => logger

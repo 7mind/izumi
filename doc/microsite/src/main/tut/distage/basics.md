@@ -146,7 +146,7 @@ import distage.ModuleDef
 def HelloByeModule = new ModuleDef {
   make[Greeter].from[PrintGreeter]
   make[Byer].from[PrintByer]
-  make[HelloByeApp] // `.from` is not required for concrete classes
+  make[HelloByeApp].fromSelf // `.from` is not required for concrete classes
 }
 ```
 
@@ -218,7 +218,7 @@ new ModuleDef {
 ```
 
 
-You can use `make[_].annotateParameter` method instead of an annotation, to attach a name component to an existing constructor:
+You can use `make[_].annotateParameter.fromSelf` method instead of an annotation, to attach a name component to an existing constructor:
 
 ```scala mdoc:silent
 def negateAnyByer(otherByer: Byer): Byer = {
@@ -498,7 +498,7 @@ class MyApp(
 def module = new ModuleDef {
   make[DBConnection].fromResource(dbResource)
   make[MessageQueueConnection].fromResource(mqResource)
-  make[MyApp]
+  make[MyApp].fromSelf
 }
 ```
 
@@ -991,7 +991,7 @@ def makeXManaged: ZManaged[Dependency, Throwable, X] = makeX.toManaged
 def makeXLayer: ZLayer[Dependency, Throwable, X] = ZLayer.fromZIO(makeX)
 
 def module1 = new ModuleDef {
-  make[Dependency]
+  make[Dependency].fromSelf
 
   make[X].fromZIOEnv(makeX)
   // or
@@ -1013,7 +1013,7 @@ def zioArgEnvCtor(
 }
 
 def module2 = new ModuleDef {
-  make[Dependency]
+  make[Dependency].fromSelf
 
   make[X].fromZLayerEnv(zioArgEnvCtor _)
 }
@@ -1370,10 +1370,10 @@ class PetStoreBusinessLogic[F[+_, +_]: Error2](
 }
 
 def module1[F[+_, +_]: TagKK] = new ModuleDef {
-  make[PetStoreAPIHandler[F]]
+  make[PetStoreAPIHandler[F]].fromSelf
 
-  make[PetStoreRepository[F]]
-  make[PetStoreBusinessLogic[F]]
+  make[PetStoreRepository[F]].fromSelf
+  make[PetStoreBusinessLogic[F]].fromSelf
 }
 
 class PetStoreAPIHandler[F[+_, +_]: IO2](
@@ -1412,12 +1412,12 @@ class HACK_OVERRIDE_PetStoreBusinessLogic[F[+_, +_]: Error2](
 }
 
 def module2[F[+_, +_]: TagKK] = new ModuleDef {
-  make[HACK_OVERRIDE_PetStoreAPIHandler[F]]
+  make[HACK_OVERRIDE_PetStoreAPIHandler[F]].fromSelf
 
   makeSubcontext[F[Throwable, _], PetStoreBusinessLogic[F]]
     .withSubmodule(new ModuleDef {
-      make[PetStoreRepository[F]]
-      make[HACK_OVERRIDE_PetStoreBusinessLogic[F]]
+      make[PetStoreRepository[F]].fromSelf
+      make[HACK_OVERRIDE_PetStoreBusinessLogic[F]].fromSelf
     })
     .localDependency[RequestId]
 }
@@ -1566,7 +1566,7 @@ object Pets {
 }
 
 def module[F[+_, +_]: TagKK] = new ModuleDef {
-  make[PetStoreAPIHandler[F]]
+  make[PetStoreAPIHandler[F]].fromSelf
 
   make[IzLogger].from(HACK_OVERRIDE_IzLogger())
   include(LogIO2Module[F]())
@@ -1574,7 +1574,7 @@ def module[F[+_, +_]: TagKK] = new ModuleDef {
   makeSubcontext[F[Throwable, _], PetStoreBusinessLogic[F]]
     .withSubmodule(new ModuleDef {
       make[PetStoreRepository[F]].fromResource[PetStoreRepository.Impl[F]]
-      make[PetStoreBusinessLogic[F]]
+      make[PetStoreBusinessLogic[F]].fromSelf
     })
     .localDependency[RequestId]
 }
@@ -1651,7 +1651,7 @@ class TaglessProgram[F[_]: Monad: Validation: Interaction] {
 }
 
 def ProgramModule[F[_]: TagK]: Module = new ModuleDef {
-  make[TaglessProgram[F]]
+  make[TaglessProgram[F]].fromSelf
 }
 ```
 

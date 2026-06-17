@@ -13,7 +13,7 @@ class A(b: B)
 class B
 
 def badModule = new ModuleDef {
-  make[A]
+  make[A].fromSelf
   make[B].fromEffect(zio.ZIO.attempt { ??? })
 }
 ```
@@ -26,7 +26,7 @@ Injector[cats.effect.IO]().assert(badModule, Roots.target[A])
 
 ```scala mdoc:to-string
 def goodModule = new ModuleDef {
-  make[A]
+  make[A].fromSelf
   make[B].fromEffect(cats.effect.IO(new B))
 }
 ```

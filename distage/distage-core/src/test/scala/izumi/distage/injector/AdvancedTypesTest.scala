@@ -22,7 +22,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
       make[List[Dep]].named("As").from(List(DepA()))
       make[List[Dep]].named("Bs").from(List(DepB()))
       make[List[DepA]].from(List(DepA(), DepA(), DepA()))
-      make[TestClass[DepA]]
+      make[TestClass[DepA]].fromSelf
     })
 
     val injector = mkInjector()
@@ -39,8 +39,8 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[DepA]
-      make[TestClass2[TypeAliasDepA]]
+      make[DepA].fromSelf
+      make[TestClass2[TypeAliasDepA]].fromSelf
     })
 
     val injector = mkInjector()
@@ -54,7 +54,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[DepA]
+      make[DepA].fromSelf
       makeTrait[TestTrait]
     })
 
@@ -69,7 +69,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TraitCase2.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dependency1 @Id("special")]
+      make[Dependency1 @Id("special")].fromSelf
       makeTrait[Trait1]
     })
 
@@ -87,8 +87,8 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dep]
-      make[Dep2]
+      make[Dep].fromSelf
+      make[Dep2].fromSelf
       make[Trait2 & Trait1].fromTrait[Trait6]
     })
 
@@ -105,8 +105,8 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase3.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dep]
-      make[Dep2]
+      make[Dep].fromSelf
+      make[Dep2].fromSelf
       make[Trait1 { def dep: Dep2 }].fromTrait[Trait31[Dep2]]
       make[Trait1 { def dep: Dep }].fromTrait[Trait31[Dep]]
       make[{ def dep: Dep }].fromTrait[Trait6]
@@ -129,8 +129,8 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase4.*
 
     class Definition[T: Tag] extends ModuleDef {
-      make[Dep]
-      make[Dep2]
+      make[Dep].fromSelf
+      make[Dep2].fromSelf
       locally {
         type X[A] = Trait1[Dep, A]
         makeTrait[X[T]]
@@ -151,7 +151,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase3.*
 
     class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag: TraitConstructor] extends ModuleDef {
-      make[Dep]
+      make[Dep].fromSelf
       make[T { def dep2: Dep }].from(() => null.asInstanceOf[T { def dep2: Dep }])
       make[T { def dep: Dep }].fromTrait[G]
     }
@@ -172,7 +172,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase3.*
 
     class Definition[T: Tag, G <: T & Trait1: Tag: TraitConstructor, C <: T & Trait4: Tag: TraitConstructor] extends ModuleDef {
-      make[Dep]
+      make[Dep].fromSelf
       make[T & Trait4].fromTrait[C]
       make[T & Trait1].fromTrait[G]
     }
@@ -199,7 +199,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase3.*
 
     class Definition[T <: Dep: Tag: ClassConstructor, K >: Trait5[T]: Tag] extends ModuleDef {
-      make[T]
+      make[T].fromSelf
       make[Trait3[T] & K].fromTrait[Trait5[T]]
     }
 
@@ -218,7 +218,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
 
     val definition = PlannerInput.everything(new ModuleDef {
       make[WidgetId].from(WidgetId(1))
-      make[Dep]
+      make[Dep].fromSelf
     })
 
     val injector = mkInjector()
@@ -233,7 +233,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     import TypesCase4.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Dep {}]
+      make[Dep {}].fromSelf
     })
 
     val injector = mkInjector()
@@ -246,7 +246,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
     val constantHolder = LiteralCompat.`5`
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[constantHolder.T]
+      make[constantHolder.T].fromSelf
     })
 
     val injector = mkInjector()

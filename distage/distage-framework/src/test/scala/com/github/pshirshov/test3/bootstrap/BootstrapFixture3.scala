@@ -12,7 +12,7 @@ object BootstrapFixture3 {
 
   object BootstrapPlugin extends BootstrapPluginDef() with ConfigModuleDef {
     makeConfig[BasicConfig]("basicConfig").exposed
-    make[BootstrapComponent].exposed
+    make[BootstrapComponent].exposed.fromSelf
   }
 
   final class UnsatisfiedDep

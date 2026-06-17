@@ -129,9 +129,30 @@ object MakeMacro {
     // FIXME remove redundant wrapping and .provider call
     val functoid: Expr[Functoid[T]] =
       if (fromLikeMethods.isEmpty) {
+        // `makeRole[T]` (and similar wrappers) splice in `MakeMacro.makeMethod[T, MakeDSL[T]]` and add
+        // synthetic methods like `.tagged(RoleTag(...))`. The user did not write a bare `make[T]`, so
+        // skip the deprecation in those cases. We detect them by inspecting the source text at the
+        // macro expansion position: a direct `make[...]` call starts with `make[`; `makeRole[T]` etc.
+        // start with a different identifier.
+        val callSource =
+          try Position.ofMacroExpansion.sourceCode.getOrElse("")
+          catch { case _: Throwable => "" }
+        val isDirectMakeCall = callSource.trim.startsWith("make[")
+
+        if (isDirectMakeCall) {
+          val tpeStr = Type.show[T]
+          val message =
+            s"""`make[$tpeStr]` without a following `.from`-like call is deprecated and will fail at runtime in a future version.
+               |Use `make[$tpeStr].fromSelf` (equivalent to `make[$tpeStr].from[$tpeStr]`) to keep auto-deriving the constructor for $tpeStr.""".stripMargin
+          if (java.lang.Boolean.parseBoolean(System.getProperty("izumi.distage.fatal-deprecations"))) {
+            report.errorAndAbort(message)
+          } else {
+            report.warning(message)
+          }
+        }
         '{ ${ ClassConstructorMacro.make[T] }.provider }
       } else {
-        '{ ClassConstructorOptionalMakeDSL.errorConstructor[T](${ Expr(Type.show[T]) }, ${ Expr(fromLikeMethods) }).provider }
+        '{ ClassConstructorOptionalMakeDSL.errorConstructor[T](${ Expr(Type.show[T]) }, ${ Expr(fromLikeMethods) })(using compiletime.summonInline[Tag[T]]).provider }
       }
 
     val res = applyMake[T, BT](outerClass)(functoid)

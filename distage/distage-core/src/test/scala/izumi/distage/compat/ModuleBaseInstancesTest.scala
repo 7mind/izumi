@@ -12,11 +12,11 @@ final class ModuleBaseInstancesTest extends AnyWordSpec {
       import BasicCase1._
 
       val mod1 = new ModuleDef {
-        make[TestClass]
+        make[TestClass].fromSelf
       }
 
       val mod2 = new ModuleDef {
-        make[TestCaseClass2]
+        make[TestCaseClass2].fromSelf
       }
 
       val mod3_1: Module = new ModuleDef {

@@ -29,14 +29,14 @@ class TestkitRunnerModule[F[_]: TagK: QuasiIO: QuasiAsync](
     DebugProperties.`izumi.distage.testkit.skip.docker.failures`.boolValue(default = false) ||
     IzPlatform.getenvOption("IZUMI_SKIP_DOCKER_FAILURES").contains("true")
   }
-  make[TestStatusConverter]
+  make[TestStatusConverter].fromSelf
 
-  make[TestkitLogging]
+  make[TestkitLogging].fromSelf
 
   make[TimedActionF[Identity]].from[TimedActionFImpl[Identity]]
   make[TestConfigLoader].from[TestConfigLoader.TestConfigLoaderImpl]
 
-  make[TestPlanner]
+  make[TestPlanner].fromSelf
   make[TestTreeBuilder].from[TestTreeBuilder.TestTreeBuilderImpl]
 
   make[TimedActionF[F]].from[TimedActionFImpl[F]]

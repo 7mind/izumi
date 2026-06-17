@@ -13,10 +13,10 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
     import ImplicitCase2._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TestDependency2]
-      make[TestDependency1]
-      make[TestDependency3]
-      make[TestClass]
+      make[TestDependency2].fromSelf
+      make[TestDependency1].fromSelf
+      make[TestDependency3].fromSelf
+      make[TestClass].fromSelf
     })
 
     val injector = mkInjector()
@@ -33,8 +33,8 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
     import ImplicitCase1._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TestClass]
-      make[Dep]
+      make[TestClass].fromSelf
+      make[Dep].fromSelf
       make[DummyImplicit].from[MyDummyImplicit]
     })
 
@@ -54,10 +54,10 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
     val definition = PlannerInput.everything(new ModuleDef {
       @nowarn implicit val testDependency3: TestDependency3 = new TestDependency3
 
-      make[TestDependency1]
-      make[TestDependency2]
-      make[TestDependency3]
-      make[TestClass]
+      make[TestDependency1].fromSelf
+      make[TestDependency2].fromSelf
+      make[TestDependency3].fromSelf
+      make[TestClass].fromSelf
     })
 
     val injector = mkInjector()

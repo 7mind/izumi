@@ -309,7 +309,7 @@ class AxisTest extends AnyWordSpec with MkInjector {
     val definition = new ModuleDef {
       make[Unit].named("x").tagged(Repo.Dummy).fromValue(())
       make[Unit].named("x").tagged(Repo.Prod).fromValue(())
-      make[X]
+      make[X].fromSelf
     }
 
     val instance = mkInjector()

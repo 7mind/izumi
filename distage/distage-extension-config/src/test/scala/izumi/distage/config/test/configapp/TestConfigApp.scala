@@ -47,20 +47,20 @@ class HttpServer2(val listenOn: HostPort @Id("HttpServer2.HostPort.listenOn")) e
 
 object TestConfigApp {
   final val definition = PlannerInput.everything(new ConfigModuleDef {
-    make[HttpServer1]
-    make[HttpServer2]
+    make[HttpServer1].fromSelf
+    make[HttpServer2].fromSelf
     makeConfigNamed[HostPort]("HttpServer1.HostPort")
     makeConfigNamed[HostPort]("HttpServer2.HostPort.listenOn")
 
-    make[DataPuller1]
+    make[DataPuller1].fromSelf
     makeConfigNamed[HostPort]("DataPuller1.target")
     makeConfigNamed[HostPort]("DataPuller1.source")
 
-    make[DataPuller2]
+    make[DataPuller2].fromSelf
     makeConfigNamed[HostPort]("DataPuller2.target")
     makeConfigNamed[HostPort]("DataPuller2.source")
 
-    make[DataPuller3]
+    make[DataPuller3].fromSelf
     makeConfigNamed[HostPort]("cassandra")
     makeConfigNamed[HostPort]("datasource.google")
     makeConfigNamed[String]("scalars.s")
@@ -76,7 +76,7 @@ object TestConfigApp {
       .ref[TestAppService]("puller2")
       .ref[TestAppService]("puller3")
 
-    make[TestConfigApp]
+    make[TestConfigApp].fromSelf
   })
 
 }

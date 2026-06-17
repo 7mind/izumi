@@ -156,6 +156,14 @@ object LocatorDef {
     final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
+    /**
+      * `LocatorDef` only supports value bindings, so this method exists purely to keep the
+      * deprecated bare-`make[T]` migration path uniform: it produces a non-`InstanceImpl` binding
+      * that `LocatorDef` will reject at construction time with `LocatorDefUninstantiatedBindingException`.
+      */
+    final def fromSelf(implicit ctor: izumi.distage.constructors.ClassConstructor[T]): AfterBind =
+      bind(ImplDef.ProviderImpl(ctor.provider.get.ret, ctor.provider.get))
+
     protected def bind(impl: ImplDef): AfterBind
   }
 

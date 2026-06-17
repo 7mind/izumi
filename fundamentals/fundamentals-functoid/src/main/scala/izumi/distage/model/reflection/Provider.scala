@@ -29,6 +29,7 @@ trait Provider {
       case ProviderType.Constructor => (ret, diKeys)
       case ProviderType.Function => (underlying, diKeys)
       case ProviderType.Singleton => (underlying, diKeys)
+      case ProviderType.ErrorMakeWithoutFrom => (underlying, diKeys)
     }
   }
 
@@ -43,6 +44,7 @@ trait Provider {
     case ProviderType.Singleton => s"κ:$underlying"
     case ProviderType.Constructor => s"π:$providerType"
     case ProviderType.Function => s"ƒ:$underlying"
+    case ProviderType.ErrorMakeWithoutFrom => s"err:$underlying"
   }
 
   protected def verifyArgs(refs: Seq[GenericTypedRef[?]]): Seq[Any] = {
@@ -86,7 +88,23 @@ object Provider {
 
     /** Function captured by the Functoid macro, or any provider transformed by the `unsafeMap` and `unsafeZip` helper methods */
     case object Function extends ProviderType
+
+    /**
+      * Marker for a provider produced by a bare `make[T]` (without a follow-up `.from`-like call).
+      *
+      * Such a binding is deprecated: the user should write `make[T].fromSelf` (or `make[T].from[T]`) instead.
+      * `PlanVerifier` reports any binding carrying this provider type as a verification failure.
+      */
+    case object ErrorMakeWithoutFrom extends ProviderType
   }
+
+  /**
+    * Marker payload stored as the `underlying` of a `ProviderType.ErrorMakeWithoutFrom` provider.
+    *
+    * Carries enough information to render a useful deprecation message when `PlanVerifier` (or a runtime
+    * provisioner step) encounters such a binding.
+    */
+  final case class ErrorMakeWithoutFromMarker(tpeStr: String, nonWhitelistedMethods: List[String], message: String)
 
   final case class ProviderImpl[+A](
     parameters: Seq[LinkedParameter],

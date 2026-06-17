@@ -265,7 +265,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       val initCounterIdentity = new XXX_ResourceEffectsRecorder[Identity]
 
       val definition = new ResourcesPluginBase {
-        make[IntegrationResource0[Identity]]
+        make[IntegrationResource0[Identity]].fromSelf
         make[TestResource[Identity]].using[IntegrationResource0[Identity]]
         make[TestResource[Identity] & AutoCloseable].using[IntegrationResource0[Identity]]
         many[TestResource[Identity]]

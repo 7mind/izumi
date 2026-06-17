@@ -14,7 +14,7 @@ class LogstageModule(router: LogRouter, setupStaticLogRouter: Boolean) extends B
   make[IzLogger]
     .aliased[RoutingLogger]
     .aliased[AbstractLogger]
-    .exposed
+    .exposed.fromSelf
 
   make[LogRouter].fromValue(router)
   make[CustomContext].fromValue(CustomContext.empty)

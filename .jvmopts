@@ -17,6 +17,10 @@
 #   https://scalacenter.github.io/bloop/docs/performance-guide#tweak-the-java-jit
 #   https://twitter.com/leifwickland/status/1179419045055086595
 -XX:MaxInlineLevel=18
+
+# Promote distage deprecation warnings (e.g. bare `make[T]`) to fatal compile-time errors.
+# See: distage-core `izumi.distage.DebugProperties`
+-Dizumi.distage.fatal-deprecations=true
 # These seem to cause sbt import slowdown :\
 #-XX:MaxInlineSize=270
 #-XX:MaxTrivialSize=12

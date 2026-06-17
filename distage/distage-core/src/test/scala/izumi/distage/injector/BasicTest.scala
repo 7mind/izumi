@@ -24,12 +24,12 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase1.*
     val definition = PlannerInput(
       new ModuleDef {
-        make[TestClass]
+        make[TestClass].fromSelf
         makeTrait[TestDependency3]
         make[TestDependency0].from[TestImpl0]
         makeTrait[TestDependency1]
-        make[TestCaseClass]
-        make[LocatorDependent]
+        make[TestCaseClass].fromSelf
+        make[LocatorDependent].fromSelf
         make[TestInstanceBinding].from(TestInstanceBinding())
       },
       Activation.empty,
@@ -76,7 +76,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TestClass0]
+      make[TestClass0].fromSelf
       make[TestClass2].from {
         (ref: LocatorRef, test: TestClass0) =>
           assert(ref.unsafeUnstableMutableLocator().instances.nonEmpty)
@@ -184,7 +184,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase2.*
     val definition = PlannerInput.everything(new ModuleDef {
       make[TestClass]
-        .named("named.test.class")
+        .named("named.test.class").fromSelf
       make[TestDependency0].from[TestImpl0Bad]
       make[TestDependency0]
         .named("named.test.dependency.0")
@@ -235,7 +235,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "instantiate simple class" in {
     import BasicCase1.*
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TestCaseClass2]
+      make[TestCaseClass2].fromSelf
       make[TestInstanceBinding].from(new TestInstanceBinding)
     })
 
@@ -251,10 +251,10 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import SetCase1.*
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Service2]
-      make[Service0]
-      make[Service1]
-      make[Service3]
+      make[Service2].fromSelf
+      make[Service0].fromSelf
+      make[Service1].fromSelf
+      make[Service3].fromSelf
 
       many[SetTrait]
         .add[SetImpl1]
@@ -320,7 +320,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(new ModuleDef {
       makeTrait[Dependency].named("special")
-      make[TestClass]
+      make[TestClass].fromSelf
     })
 
     val injector = mkInjector()
@@ -375,7 +375,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase5.*
     val definition = PlannerInput.everything(new ModuleDef {
       many[TestDependency]
-      make[TestImpl1]
+      make[TestImpl1].fromSelf
     })
 
     val context = mkInjector().produce(definition).unsafeGet()
@@ -537,7 +537,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       new mutateModule.dsl {
         make[T]
           .named("xyz")
-          .aliased[T]("abc")
+          .aliased[T]("abc").fromSelf
 
         many[RegisteredComponent]
           .weak[T]("xyz")
@@ -658,8 +658,8 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase9.*
     val definition = PlannerInput(
       new ModuleDef {
-        make[Out]
-        make[Dep1]
+        make[Out].fromSelf
+        make[Dep1].fromSelf
         make[T2].named("wrong").from[Dep2]
       },
       Activation.empty,
@@ -682,9 +682,9 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     import BasicCase10.*
     import SetCase4.*
     val definition = PlannerInput.everything(new ModuleDef {
-      make[TestClass]
-      make[TestGreeter].named(Some("named.greeter"))
-      make[TestGreeter].named(None) // should bind without id
+      make[TestClass].fromSelf
+      make[TestGreeter].named(Some("named.greeter")).fromSelf
+      make[TestGreeter].named(None).fromSelf // should bind without id
       make[TestDependency].named(Some("named.test.before.from")).from[TestImpl1]
       make[TestDependency].named(None).from[TestImpl1]
       make[TestDependency].from[TestImpl2].named(Some("named.test.after.from"))

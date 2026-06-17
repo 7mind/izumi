@@ -324,7 +324,7 @@ final class ConfigPrinter(
 }
 
 val module = new ConfigModuleDef {
-  make[ConfigPrinter]
+  make[ConfigPrinter].fromSelf
 
   // declare paths to parse
   makeConfig[Conf]("conf")
@@ -423,9 +423,9 @@ import distage.plugins.{PluginConfig, PluginLoader}
 import izumi.distage.plugins.PluginDef
 
 object PetStorePlugin extends PluginDef {
-  make[PetRepository]
-  make[PetStoreService]
-  make[PetStoreController]
+  make[PetRepository].fromSelf
+  make[PetStoreService].fromSelf
+  make[PetStoreController].fromSelf
 }
 ```
 

@@ -19,8 +19,8 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
         injector.planUnsafe(
           PlannerInput(
             new ModuleDef {
-              make[Circular1]
-              make[Circular2]
+              make[Circular1].fromSelf
+              make[Circular2].fromSelf
             },
             Roots(DIKey.get[Circular2]),
             Activation.empty,
@@ -38,9 +38,9 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
       val plan = injector.planUnsafe(
         PlannerInput(
           new ModuleDef {
-            make[Circular1]
-            make[Circular2]
-            make[T1]
+            make[Circular1].fromSelf
+            make[Circular2].fromSelf
+            make[T1].fromSelf
             make[Box[T1]].from(new Box(new T1))
           },
           Roots(DIKey.get[Circular1], DIKey.get[Circular2]),

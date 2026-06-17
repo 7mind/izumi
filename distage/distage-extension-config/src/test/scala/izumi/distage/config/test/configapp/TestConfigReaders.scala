@@ -80,47 +80,47 @@ final class AnyValInt(val int: Int) extends AnyVal
 
 object TestConfigReaders {
   final val mapDefinition = PlannerInput.everything(new ConfigModuleDef {
-    make[Service[MapCaseClass]]
+    make[Service[MapCaseClass]].fromSelf
     makeConfig[MapCaseClass]("MapCaseClass")
   })
 
   final val listDefinition = PlannerInput.everything(new ConfigModuleDef {
-    make[Service[ListCaseClass]]
+    make[Service[ListCaseClass]].fromSelf
     makeConfig[ListCaseClass]("ListCaseClass")
   })
 
   final val optDefinition = PlannerInput.everything(new ConfigModuleDef {
-    make[Service[OptionCaseClass]]
+    make[Service[OptionCaseClass]].fromSelf
     makeConfig[OptionCaseClass]("OptionCaseClass")
   })
 
   final val backticksDefinition = PlannerInput.everything(new ConfigModuleDef {
-    make[Service[BackticksCaseClass]]
+    make[Service[BackticksCaseClass]].fromSelf
     makeConfig[BackticksCaseClass]("BackticksCaseClass")
   })
 
   final val sealedDefinition = PlannerInput.everything(new ConfigModuleDef {
-    make[Service[SealedCaseClass]]
+    make[Service[SealedCaseClass]].fromSelf
     makeConfig[SealedCaseClass]("SealedCaseClass")
   })
 
   final val tupleDefinition = PlannerInput.everything(new ConfigModuleDef {
-    make[Service[TupleCaseClass]]
+    make[Service[TupleCaseClass]].fromSelf
     makeConfig[TupleCaseClass]("TupleCaseClass")
   })
 
   final val customCodecDefinition = PlannerInput.everything(new ConfigModuleDef {
-    make[Service[CustomCaseClass]]
+    make[Service[CustomCaseClass]].fromSelf
     makeConfig[CustomCaseClass]("CustomCaseClass")
   })
 
   final val privateFieldsCodecDefinition = PlannerInput.everything(new ConfigModuleDef {
-    make[Service[PrivateCaseClass]]
+    make[Service[PrivateCaseClass]].fromSelf
     makeConfig[PrivateCaseClass]("PrivateCaseClass")
   })
 
   final val partiallyPrivateFieldsCodecDefinition = PlannerInput.everything(new ConfigModuleDef {
-    make[Service[PartiallyPrivateCaseClass]]
+    make[Service[PartiallyPrivateCaseClass]].fromSelf
     makeConfig[PartiallyPrivateCaseClass]("PartiallyPrivateCaseClass")
   })
 

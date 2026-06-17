@@ -4,7 +4,7 @@
 
 ```
 Singleton bindings:
-  - `make[X]` = create X using its constructor
+  - `make[X].fromSelf` = create X using its constructor
   - `makeTrait[X]` = create an abstract class or a trait `X` using [[izumi.distage.constructors.TraitConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-traits Auto-Traits feature]])
   - `makeFactory[X]` = create a "factory-like" abstract class or a trait `X` using [[izumi.distage.constructors.FactoryConstructor]] ([[https://izumi.7mind.io/distage/basics.html#auto-factories Auto-Factories feature]])
   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
@@ -14,7 +14,7 @@ Singleton bindings:
   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]] requesting an Y parameter
   - `make[X].from { y: Y @Id("special") => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]], requesting a named "special" Y parameter
   - `make[X].from { y: Y => new X(y) }`.annotateParameter[Y]("special") = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.Functoid Functoid]], requesting a named "special" Y parameter
-  - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
+  - `make[X].named("special").fromSelf` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
   - `make[X].using[X]("special")` = bind X to refer to another already bound named instance at key `[X].named("special")`
   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
   - `make[X].fromResource(X.resource[F]: Lifecycle[F, X])` = create X using a `Lifecycle` value specifying its creation and destruction lifecycle
@@ -35,7 +35,7 @@ Mutators:
   - `modify[X].by(_.flatAp { (c: C, d: D) => (x: X) => c.method(x, d) })` = add a modifier, applying the provided lambda to a `Functoid` retrieving `X` - in this case by summoning additional `C` & `D` dependencies and applying `C.method` to `X`
 
 Tags:
-  - `make[X].tagged("t1", "t2)` = attach tags to X's binding.
+  - `make[X].fromSelf.tagged("t1", "t2)` = attach tags to X's binding.
   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
 

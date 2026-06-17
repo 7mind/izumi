@@ -15,8 +15,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
   "support local contexts" in {
     val module = new ModuleDef {
-      make[GlobalServiceDependency]
-      make[GlobalService]
+      make[GlobalServiceDependency].fromSelf
+      make[GlobalService].fromSelf
 
       // this will not be used/instantiated
       make[LocalService].from[LocalServiceBadImpl]
@@ -56,8 +56,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
   "support incomplete dsl chains (good case, no externals)" in {
     val module = new ModuleDef {
-      make[GlobalServiceDependency]
-      make[GlobalService]
+      make[GlobalServiceDependency].fromSelf
+      make[GlobalService].fromSelf
 
       makeSubcontext[Identity, Int]
         .named("test")
@@ -103,8 +103,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
   "support activations on subcontexts" in {
     val module = new ModuleDef {
-      make[GlobalServiceDependency]
-      make[GlobalService]
+      make[GlobalServiceDependency].fromSelf
+      make[GlobalService].fromSelf
       make[LocalService].from[LocalServiceGoodImpl]
       make[Arg].fromValue(Arg(1))
 
@@ -140,8 +140,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
   "support activations in subcontexts" in {
     val module = new ModuleDef {
-      make[GlobalServiceDependency]
-      make[GlobalService]
+      make[GlobalServiceDependency].fromSelf
+      make[GlobalService].fromSelf
 
       makeSubcontext[Identity, Int](new ModuleDef {
         make[LocalService].from[LocalServiceGoodImpl]
@@ -166,8 +166,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
   "support value types in subcontexts" in {
     val module = new ModuleDef {
-      make[GlobalServiceDependency]
-      make[GlobalService]
+      make[GlobalServiceDependency].fromSelf
+      make[GlobalService].fromSelf
 
       makeSubcontext[Identity, Int](new ModuleDef {
         make[LocalService].from[LocalServiceAnyValImpl]
@@ -187,8 +187,8 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
   "usability: subcontext is pinned to its effect type, preventing confusion when Identity is used in `.use`" in {
     val module = new ModuleDef {
-      make[GlobalServiceDependency]
-      make[GlobalService]
+      make[GlobalServiceDependency].fromSelf
+      make[GlobalService].fromSelf
 
       makeSubcontext[Suspend2[Throwable, _], Suspend2[Throwable, Int]](new ModuleDef {
         make[LocalService].from[LocalServiceGoodImpl]

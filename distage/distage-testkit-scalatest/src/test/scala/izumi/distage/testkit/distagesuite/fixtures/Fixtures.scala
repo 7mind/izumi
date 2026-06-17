@@ -21,13 +21,13 @@ object MockAppIdPlugin extends MockAppPlugin[Identity]
 object MockAppZioZEnvPlugin extends MockAppPlugin[zio.ZIO[Int, Throwable, +_]]
 
 abstract class MockAppPlugin[F[_]: TagK] extends PluginDef {
-  make[MockPostgresDriver[F]]
-  make[MockUserRepository[F]]
-  make[MockPostgresCheck[F]]
-  make[MockRedis[F]]
-  make[MockCache[F]]
-  make[MockCachedUserService[F]]
-  make[UnavailableIntegrationCheck[F]]
+  make[MockPostgresDriver[F]].fromSelf
+  make[MockUserRepository[F]].fromSelf
+  make[MockPostgresCheck[F]].fromSelf
+  make[MockRedis[F]].fromSelf
+  make[MockCache[F]].fromSelf
+  make[MockCachedUserService[F]].fromSelf
+  make[UnavailableIntegrationCheck[F]].fromSelf
   make[ActiveComponent].fromValue(TestActiveComponent).tagged(Mode.Test)
   make[ActiveComponent].fromValue(ProdActiveComponent).tagged(Mode.Prod)
 }

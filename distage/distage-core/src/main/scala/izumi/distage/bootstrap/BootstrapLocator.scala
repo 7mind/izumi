@@ -132,7 +132,7 @@ object BootstrapLocator {
     make[MirrorProvider].fromValue(mirrorProvider)
 
     make[PlanSolver].from[PlanSolver.Impl]
-    make[GraphQueries]
+    make[GraphQueries].fromSelf
 
     make[SemigraphSolver[DIKey, Int, InstantiationOp]].from[SemigraphSolverImpl[DIKey, Int, InstantiationOp]]
 

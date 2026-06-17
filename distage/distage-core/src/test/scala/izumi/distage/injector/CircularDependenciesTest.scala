@@ -69,7 +69,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     import CircularCase3._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[ByNameSelfReference]
+      make[ByNameSelfReference].fromSelf
     })
 
     val injector = mkNoProxiesInjector()
@@ -103,7 +103,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     FactoryConstructor[FactorySelfReference]
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[ByNameSelfReference]
+      make[ByNameSelfReference].fromSelf
       makeFactory[FactorySelfReference]
     })
 
@@ -169,8 +169,8 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     import ByNameCycle._
 
     val definition = PlannerInput.everything(new ModuleDef {
-      make[Circular2]
-      make[Circular1]
+      make[Circular2].fromSelf
+      make[Circular1].fromSelf
       make[Int].from(1)
     })
 

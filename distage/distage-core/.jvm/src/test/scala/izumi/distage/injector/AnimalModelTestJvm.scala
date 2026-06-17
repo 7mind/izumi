@@ -14,15 +14,15 @@ class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
 
       val definition = PlannerInput(
         new ModuleDef {
-          make[Cluster]
+          make[Cluster].fromSelf
           make[UserRepo].from[UserRepoImpl]
           make[AccountsRepo].from[AccountsRepoImpl]
           make[UsersService].from[UserServiceImpl]
           make[AccountingService].from[AccountingServiceImpl]
-          make[UsersApiImpl]
-          make[AccountsApiImpl]
-          make[UnrequiredDep]
-          make[App]
+          make[UsersApiImpl].fromSelf
+          make[AccountsApiImpl].fromSelf
+          make[UnrequiredDep].fromSelf
+          make[App].fromSelf
         },
         Roots(DIKey.get[App]),
         Activation.empty,

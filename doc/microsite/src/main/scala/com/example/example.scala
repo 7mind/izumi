@@ -15,6 +15,6 @@ final class OtherService
 final class AppPlugin extends PluginDef with ConfigModuleDef {
   tag(Mode.Prod)
 
-  make[Service]
+  make[Service].fromSelf
   makeConfig[Config]("config")
 }

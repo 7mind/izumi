@@ -16,9 +16,9 @@ abstract class DistageTestTaggedAxesExampleBase extends SpecZIO with AssertZIO {
       Set(Repo.Dummy) -> Set(DIKey[DummyDep]),
     ),
     pluginConfig = PluginConfig.const(new izumi.distage.plugins.PluginDef {
-      make[PrdDep]
-      make[DummyDep]
-      make[DepsCounters]
+      make[PrdDep].fromSelf
+      make[DummyDep].fromSelf
+      make[DepsCounters].fromSelf
     }),
   )
 }

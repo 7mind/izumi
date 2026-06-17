@@ -14,10 +14,10 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
     import SetCase3.*
 
     val definition = new ModuleDef {
-      make[ServiceA]
-      make[ServiceB]
-      make[ServiceC]
-      make[ServiceD]
+      make[ServiceA].fromSelf
+      make[ServiceB].fromSelf
+      make[ServiceC].fromSelf
+      make[ServiceD].fromSelf
     }
 
     val injector = Injector[Identity](bootstrapOverrides = Seq(new BootstrapModuleDef {
@@ -72,8 +72,8 @@ class AutoSetTest extends AnyWordSpec with MkInjector {
 
     def appModule = new ModuleDef {
       make[A].from[AImpl]
-      make[B]
-      make[C]
+      make[B].fromSelf
+      make[C].fromSelf
     }
 
     val services: Set[PrintService] = Injector[Identity](bootstrapOverrides = Seq(bootstrapModule))

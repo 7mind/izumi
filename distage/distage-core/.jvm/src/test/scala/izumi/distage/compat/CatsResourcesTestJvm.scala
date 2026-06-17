@@ -44,7 +44,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
       make[MessageQueueConnection].fromResource(mqResource)
-      make[MyApp]
+      make[MyApp].fromSelf
     }
 
     val res = catsIOUnsafeRunSync {
@@ -64,7 +64,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
       make[MessageQueueConnection].fromResource(mqResource)
-      make[MyApp]
+      make[MyApp].fromSelf
 
       make[IORuntime].from {
         (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
@@ -96,7 +96,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
       make[MessageQueueConnection].fromResource(mqResource)
-      make[MyApp]
+      make[MyApp].fromSelf
 
       make[IORuntime].from {
         (cpuPool: ExecutionContext @Id("cpu"), blockingPool: ExecutionContext @Id("io"), scheduler: Scheduler, ioRuntimeConfig: IORuntimeConfig) =>
