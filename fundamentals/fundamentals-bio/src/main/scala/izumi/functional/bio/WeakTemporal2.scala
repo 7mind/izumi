@@ -2,11 +2,12 @@ package izumi.functional.bio
 
 import izumi.functional.bio.PredefinedHelper.Predefined
 import izumi.functional.bio.impl.TemporalZio
+import izumi.functional.bio.syntax.{InnerFExtensionMethodsFromWeakTemporal2, WeakTemporal2ExtensionMethods}
 import izumi.fundamentals.orphans.`zio.ZIO`
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-trait WeakTemporal2[F[+_, +_]] extends RootBifunctor[F] with TemporalInstances {
+trait WeakTemporal2[F[+_, +_]] extends RootBifunctor[F] with TemporalInstances with WeakTemporal2ExtensionMethods with InnerFExtensionMethodsFromWeakTemporal2 {
   def InnerF: Error2[F]
 
   def sleep(duration: Duration): F[Nothing, Unit]

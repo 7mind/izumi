@@ -1,11 +1,12 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.PredefinedHelper.Predefined
+import izumi.functional.bio.syntax.Fork2ExtensionMethods
 import izumi.fundamentals.orphans.`zio.ZIO`
 
 import scala.concurrent.ExecutionContext
 
-trait Fork2[F[+_, +_]] extends RootBifunctor[F] with ForkInstances {
+trait Fork2[F[+_, +_]] extends RootBifunctor[F] with ForkInstances with Fork2ExtensionMethods {
   def fork[E, A](f: F[E, A]): F[Nothing, Fiber2[F, E, A]]
   def forkOn[E, A](ec: ExecutionContext)(f: F[E, A]): F[Nothing, Fiber2[F, E, A]]
 }

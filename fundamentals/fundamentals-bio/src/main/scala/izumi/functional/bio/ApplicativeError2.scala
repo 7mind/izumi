@@ -1,8 +1,10 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.syntax.ApplicativeError2ExtensionMethods
+
 import scala.util.Try
 
-trait ApplicativeError2[F[+_, +_]] extends Guarantee2[F] with Bifunctor2[F] {
+trait ApplicativeError2[F[+_, +_]] extends Guarantee2[F] with Bifunctor2[F] with ApplicativeError2ExtensionMethods {
   override def InnerF: Functor2[F] = this
 
   def fail[E](v: => E): F[E, Nothing]

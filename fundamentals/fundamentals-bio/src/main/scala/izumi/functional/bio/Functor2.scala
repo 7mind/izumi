@@ -1,8 +1,10 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.syntax.Functor2ExtensionMethods
+
 import scala.annotation.unused
 
-trait Functor2[F[+_, +_]] extends RootBifunctor[F] {
+trait Functor2[F[+_, +_]] extends RootBifunctor[F] with Functor2ExtensionMethods {
   def map[E, A, B](r: F[E, A])(f: A => B): F[E, B]
 
   def as[E, A, B](r: F[E, A])(v: => B): F[E, B] = map(r)(_ => v)

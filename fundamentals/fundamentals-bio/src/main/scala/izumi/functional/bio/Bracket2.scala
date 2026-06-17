@@ -1,6 +1,8 @@
 package izumi.functional.bio
 
-trait Bracket2[F[+_, +_]] extends Error2[F] {
+import izumi.functional.bio.syntax.Bracket2ExtensionMethods
+
+trait Bracket2[F[+_, +_]] extends Error2[F] with Bracket2ExtensionMethods {
   def bracketCase[E, A, B](acquire: F[E, A])(release: (A, Exit[E, B]) => F[Nothing, Unit])(use: A => F[E, B]): F[E, B]
 
   def bracket[E, A, B](acquire: F[E, A])(release: A => F[Nothing, Unit])(use: A => F[E, B]): F[E, B] = {

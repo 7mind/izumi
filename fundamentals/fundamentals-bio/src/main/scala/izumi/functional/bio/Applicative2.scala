@@ -1,8 +1,10 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.syntax.Applicative2ExtensionMethods
+
 import scala.collection.immutable.Queue
 
-trait Applicative2[F[+_, +_]] extends Functor2[F] {
+trait Applicative2[F[+_, +_]] extends Functor2[F] with Applicative2ExtensionMethods {
   def pure[A](a: A): F[Nothing, A]
 
   /** execute two operations in order, map their results */

@@ -1,8 +1,10 @@
 package izumi.functional.bio
 
+import izumi.functional.bio.syntax.Monad2ExtensionMethods
+
 import scala.annotation.unused
 
-trait Monad2[F[+_, +_]] extends Applicative2[F] {
+trait Monad2[F[+_, +_]] extends Applicative2[F] with Monad2ExtensionMethods {
   def flatMap[E, A, B](r: F[E, A])(f: A => F[E, B]): F[E, B]
   def flatten[E, A](r: F[E, F[E, A]]): F[E, A] = flatMap(r)(identity)
 
