@@ -8,6 +8,6 @@ object PV {
   val sbt_site = "1.7.0"
   val sbt_unidoc = "0.6.1"
   val sbt_scoverage = "2.4.4"
-  val sbt_pgp = "2.3.1"
+  val sbt_pgp = "2.3.2"
   val sbt_assembly = "0.14.9"
 }
