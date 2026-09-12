@@ -15,7 +15,7 @@ addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.2")
 
 ////////////////////////////////////////////////////////////////////////////////
 
-addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.115")
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.121")
 
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % PV.sbt_pgp)
 
