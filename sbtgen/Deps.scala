@@ -174,7 +174,7 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.21")
-  final val scala213 = ScalaVersion("2.13.18")
+  final val scala213 = ScalaVersion("3.9.0")
   final val scala300 = ScalaVersion("3.7.4")
 
   object Groups {
@@ -222,13 +222,13 @@ object Izumi {
   object Projects {
 
     final val plugins = Plugins(
-      Seq(Plugin("SitePreviewPlugin")),
+      Seq(Plugin("SitePreviewPlugin"))
     )
 
     object root {
       final val id = ArtifactId("izumi")
       final val plugins = Plugins(
-        enabled = Seq(Plugin("SbtgenVerificationPlugin")),
+        enabled = Seq(Plugin("SbtgenVerificationPlugin"))
       )
 
       final val outOfSource = Seq(
@@ -333,7 +333,7 @@ object Izumi {
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) :=
             (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ scala2Wconf)
-              .filterNot(_ ==  ("-Ywarn-unused:_": Const)),
+              .filterNot(_ == ("-Ywarn-unused:_": Const)),
           SettingKey(Some(scala213), None) :=
             (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)) ++ scala2Wconf,
           SettingKey(Some(scala300), None) :=
@@ -516,7 +516,7 @@ object Izumi {
           izumi_reflect in Scope.Compile.all,
           scala_reflect,
           fast_classpath_scanner in Scope.Provided.all,
-          scalajs_macrotask_executor in Scope.Compile.js
+          scalajs_macrotask_executor in Scope.Compile.js,
         ),
         depends = Seq(
           Projects.fundamentals.functional,
@@ -673,7 +673,7 @@ object Izumi {
         name = Projects.distage.extensionLogstage,
         libs = Seq(
           cats_effect in Scope.Test.all,
-          zio_core in Scope.Test.all
+          zio_core in Scope.Test.all,
         ),
         depends = Seq(Projects.distage.config, Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
