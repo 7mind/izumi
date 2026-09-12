@@ -38,7 +38,7 @@ object V {
   val scalajs_macrotask_executor = "1.1.1"
 
   // java-only dependencies below
-  val classgraph = "4.8.181"
+  val classgraph = "4.8.195"
   val slf4j = "2.0.17"
   val typesafe_config = "1.4.0"
 
