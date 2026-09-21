@@ -45,7 +45,6 @@ object Izumi {
   object PV {
     val sbt_mdoc = Version.VExpr("PV.sbt_mdoc")
     val sbt_paradox = Version.VExpr("PV.sbt_paradox")
-    val sbt_paradox_material_theme = Version.VExpr("PV.sbt_paradox_material_theme")
     val sbt_ghpages = Version.VExpr("PV.sbt_ghpages")
     val sbt_site = Version.VExpr("PV.sbt_site")
     val sbt_unidoc = Version.VExpr("PV.sbt_unidoc")
@@ -840,7 +839,10 @@ object Izumi {
               .value
           }""".raw,
           "version" in SettingScope.Raw("(Compile / paradox)") := "version.value".raw,
-          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings"),
+          // `sbt-paradox-material-theme` inlined, see `project/ParadoxMaterialTheme.scala`
+          SettingDef.RawSettingDef("paradoxTheme := Some(ParadoxMaterialTheme.artifact)"),
+          SettingDef.RawSettingDef("Compile / paradoxProperties ++= ParadoxMaterialTheme.properties"),
+          SettingDef.RawSettingDef("Compile / paradox / mappings += ParadoxMaterialTheme.searchIndexMapping.value"),
           SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
@@ -860,20 +862,6 @@ object Izumi {
             val overlay = baseDirectory.value / "src/main/paradox-overlay"
             if (overlay.isDirectory) IO.copyDirectory(overlay, themeDir, overwrite = true)
             new com.lightbend.paradox.template.PageTemplate(themeDir, (Compile / paradoxDefaultTemplateName).value)
-          }"""),
-          SettingDef.RawSettingDef("""Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
-            _.withCopyright("7mind.io")
-              .withRepository(uri("https://github.com/7mind/izumi"))
-              // Default dark theme: a static dump of Dark Reader (Dynamic mode) applied to the
-              // white Material theme. Loaded after the Material stylesheets so its !important rules win.
-              // Asset is staged via mdoc passthrough from src/main/tut/assets/stylesheets/darkreader.css.
-              .withCustomStylesheet("assets/stylesheets/darkreader.css")
-              // Visitor-facing toggle that disables the dark stylesheet at runtime via
-              // link.disabled and persists the choice to localStorage. Provides a
-              // fixed-position floating button; primarily intended as a visual-accessibility
-              // override for users who need the lighter Material theme.
-              .withCustomJavaScript("assets/javascripts/scheme-switch.js")
-            //        .withColor("222", "434343")
           }"""),
           "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """DocKeys.prefix.value("api")""".raw,
           "siteSubdirName" in SettingScope.Raw("Paradox") := """DocKeys.prefix.value("")""".raw,
@@ -917,7 +905,6 @@ object Izumi {
             Plugin("ParadoxSitePlugin"),
             Plugin("SitePlugin"),
             Plugin("GhpagesPlugin"),
-            Plugin("ParadoxMaterialThemePlugin"),
             Plugin("PreprocessPlugin"),
             Plugin("MdocPlugin"),
           ),
@@ -984,7 +971,6 @@ object Izumi {
       SbtPlugin("com.github.sbt", "sbt-ghpages", PV.sbt_ghpages),
       SbtPlugin("com.lightbend.paradox", "sbt-paradox", PV.sbt_paradox),
       SbtPlugin("com.lightbend.paradox", "sbt-paradox-theme", PV.sbt_paradox),
-      SbtPlugin("com.github.sbt", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
       SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
     ),
   )

@@ -48,6 +48,7 @@ object V {
 
   // microsite-only
   val doobie = "1.0.0-RC2"
+  val paradox_material_theme = "0.7.0"
 
   // test-only
   val scalamock = "7.5.2"
