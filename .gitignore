@@ -7,7 +7,7 @@
 /config
 .agg
 .vscode
-package-lock.json
+node_modules/
 .fleet
 worktrees
 

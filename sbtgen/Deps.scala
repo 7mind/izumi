@@ -59,6 +59,10 @@ object Izumi {
     groupId = "io.7mind.izumi",
     sbtVersion = None,
     scalaJsVersion = Version.VExpr("PV.scala_js_version"),
+    // npm dependencies are installed from the root `package.json` instead; node resolves them
+    // by walking up from the linker output directory
+    bundlerVersion = None,
+    sbtJsDependenciesVersion = None,
   )
 
   object Deps {
@@ -508,7 +512,6 @@ object Izumi {
           Projects.fundamentals.basics,
         ),
         settings = Seq.empty,
-        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
         name = Projects.fundamentals.platform,
@@ -525,10 +528,6 @@ object Izumi {
           Projects.fundamentals.collections in Scope.Compile.all,
 //          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
-        settings = Seq(
-          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
-        ),
-        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
         name = Projects.fundamentals.functoid,
@@ -542,10 +541,6 @@ object Izumi {
           Projects.fundamentals.collections in Scope.Compile.all,
           //          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
-//        settings = Seq(
-//          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
-//        ),
-//        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
         name = Projects.fundamentals.jsonCirce,
@@ -643,10 +638,6 @@ object Izumi {
           Projects.distage.proxyBytebuddy in Scope.Compile.jvm,
           Projects.fundamentals.platform tin Scope.Compile.all,
         ),
-        settings = Seq(
-          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
-        ),
-        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
         platforms = Targets.cross,
       ),
       Artifact(

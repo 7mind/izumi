@@ -1444,7 +1444,6 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-languageJVM` = `fundamentals-language`.jvm
 lazy val `fundamentals-languageJS` = `fundamentals-language`.js
-  .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-platform"))
   .dependsOn(
@@ -1683,10 +1682,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / npmDependencies ++= Seq(
-      (  "hash.js",  "1.1.7")
-    )
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-platformJVM` = `fundamentals-platform`.jvm
@@ -1696,7 +1692,6 @@ lazy val `fundamentals-platformJS` = `fundamentals-platform`.js
       "org.scala-js" %%% "scala-js-macrotask-executor" % V.scalajs_macrotask_executor
     )
   )
-  .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functoid"))
   .dependsOn(
@@ -3395,10 +3390,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / npmDependencies ++= Seq(
-      (  "hash.js",  "1.1.7")
-    )
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-coreJVM` = `distage-core`.jvm
@@ -3411,7 +3403,6 @@ lazy val `distage-coreJS` = `distage-core`.js
       "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time % Test
     )
   )
-  .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-config"))
   .dependsOn(

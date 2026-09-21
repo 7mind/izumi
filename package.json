@@ -1,0 +1,8 @@
+{
+  "name": "izumi",
+  "private": true,
+  "description": "npm dependencies of the Scala.js test suites; resolved by node from the linker output directory",
+  "devDependencies": {
+    "hash.js": "1.1.7"
+  }
+}
