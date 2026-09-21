@@ -56,8 +56,10 @@ object Izumi {
 
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
-    sbtVersion = None,
+    sbtTarget = SbtTarget.Sbt2,
+    sbtVersion = Some("2.0.9"),
     scalaJsVersion = Version.VExpr("PV.scala_js_version"),
+    crossProjectVersion = Version.VConst("1.4.0"),
     // npm dependencies are installed from the root `package.json` instead; node resolves them
     // by walking up from the linker output directory
     bundlerVersion = None,
@@ -574,8 +576,8 @@ object Izumi {
           //        workaround for:
           //        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
           //          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
-          "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
-          "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
+          "libraryDependencySchemes" += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
+          "libraryDependencySchemes" += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
         ),
       ),
 //      Artifact(
@@ -859,7 +861,11 @@ object Izumi {
           // `sbt-paradox-material-theme` inlined, see `project/ParadoxMaterialTheme.scala`
           SettingDef.RawSettingDef("paradoxTheme := Some(ParadoxMaterialTheme.artifact)"),
           SettingDef.RawSettingDef("Compile / paradoxProperties ++= ParadoxMaterialTheme.properties"),
-          SettingDef.RawSettingDef("Compile / paradox / mappings += ParadoxMaterialTheme.searchIndexMapping.value"),
+          SettingDef.RawSettingDef("""Compile / paradox / mappings += {
+            val conv = fileConverter.value
+            val (file, path) = ParadoxMaterialTheme.searchIndexMapping.value
+            conv.toVirtualFile(file.toPath) -> path
+          }"""),
           SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
@@ -874,7 +880,7 @@ object Izumi {
           // dark stylesheet's media= attribute synchronously before paint, eliminating
           // FOUC for repeat-visit light-mode users and providing a noscript
           // prefers-color-scheme fallback declaratively on the <link>.
-          SettingDef.RawSettingDef("""Compile / paradoxTemplate := {
+          SettingDef.RawSettingDef("""Compile / paradoxTemplate := Def.uncached {
             val themeDir = (Compile / paradoxThemeDirectory).value
             val overlay = baseDirectory.value / "src/main/paradox-overlay"
             if (overlay.isDirectory) IO.copyDirectory(overlay, themeDir, overwrite = true)
@@ -882,12 +888,12 @@ object Izumi {
           }"""),
           "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """DocKeys.prefix.value("api")""".raw,
           "siteSubdirName" in SettingScope.Raw("Paradox") := """DocKeys.prefix.value("")""".raw,
-          SettingDef.RawSettingDef("""paradoxProperties ++= Map(
+          SettingDef.RawSettingDef("""paradoxProperties ++= Def.uncached(Map(
             "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
             "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
             "izumi.version" -> version.value,
             "kindprojector.version" -> V.kind_projector,
-          )"""),
+          ))"""),
           SettingDef.RawSettingDef(
             """ghpagesCleanSite / excludeFilter :=
             new FileFilter {

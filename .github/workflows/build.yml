@@ -72,7 +72,7 @@ jobs:
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         with:
           name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }}, JVM)
-          path: '**/target/test-reports/TEST-*.xml'
+          path: 'target/out/**/test-reports/TEST-*.xml'
           reporter: java-junit
       - uses: bitwarden/sm-action@v2
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
@@ -116,7 +116,7 @@ jobs:
         if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
         with:
           name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }}, JS)
-          path: '**/target/test-reports/TEST-*.xml'
+          path: 'target/out/**/test-reports/TEST-*.xml'
           reporter: java-junit
 
   test-site:
