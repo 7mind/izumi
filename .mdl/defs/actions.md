@@ -18,7 +18,7 @@
 
 # Axis
 - `platform`=`{jvm*|js|js-nojvm}`
-- `java_version`=`{11|17|21*|25}`
+- `java_version`=`{17|21*|25}`
 - `scala_version`=`{2.12|2.13*|3}`
 
 # action: setup-jdk
@@ -29,9 +29,6 @@ Setup JDK path based on JAVA_VERSION
 JAVA_VERSION_VAL="${sys.axis.java_version}"
 
 case "$JAVA_VERSION_VAL" in
-  11)
-    JAVA_HOME_VAL="${JDK11:-}"
-    ;;
   17)
     JAVA_HOME_VAL="${JDK17:-}"
     ;;
