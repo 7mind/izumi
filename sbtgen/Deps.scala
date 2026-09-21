@@ -45,7 +45,6 @@ object Izumi {
   object PV {
     val sbt_mdoc = Version.VExpr("PV.sbt_mdoc")
     val sbt_paradox = Version.VExpr("PV.sbt_paradox")
-    val sbt_paradox_material_theme = Version.VExpr("PV.sbt_paradox_material_theme")
     val sbt_ghpages = Version.VExpr("PV.sbt_ghpages")
     val sbt_site = Version.VExpr("PV.sbt_site")
     val sbt_unidoc = Version.VExpr("PV.sbt_unidoc")
@@ -57,8 +56,14 @@ object Izumi {
 
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
-    sbtVersion = None,
+    sbtTarget = SbtTarget.Sbt2,
+    sbtVersion = Some("2.0.9"),
     scalaJsVersion = Version.VExpr("PV.scala_js_version"),
+    crossProjectVersion = Version.VConst("1.4.0"),
+    // npm dependencies are installed from the root `package.json` instead; node resolves them
+    // by walking up from the linker output directory
+    bundlerVersion = None,
+    sbtJsDependenciesVersion = None,
   )
 
   object Deps {
@@ -184,6 +189,22 @@ object Izumi {
     final val docs = Set(Group("docs"))
     final val sbt = Set(Group("sbt"))
   }
+
+  /**
+    * Compile-time macros in this repo (`PortableResource.embedResources`, distage's `planCheck`)
+    * enumerate the compile-time classpath, where a project's own test resources only appear once
+    * `copyResources` has copied them into the class directory. Nothing orders that before
+    * compilation, so without this the macros observe an incomplete classpath: `embedResources`
+    * fails outright, `planCheck` silently resolves a same-named config from another project.
+    *
+    * `compileIncremental` and not `compile`: the compilation itself happens in the body of the
+    * former, so only a dependency of the former is ordered before it.
+    */
+  private val testResourcesOnCompileClasspath: Seq[SettingDef] = Seq(
+    SettingDef.RawSettingDef(
+      """Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value"""
+    )
+  )
 
   object Targets {
     // switch order to use 2.12 in IDEA
@@ -330,6 +351,13 @@ object Izumi {
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
+        // sbt 2.0.5+ closes the adhoc test ClassLoader when the test task completes. Our effect
+        // runtimes still have live threads at that point, which then die with LinkageError.
+        "closeClassLoaders" := false,
+        // sbt 2.x defaults exportJars to true, which hands dependent projects their resources
+        // inside content-addressed jars. ConfigLoader resolves config sources to filesystem
+        // paths and cannot read a jar entry, so keep exposing class directories.
+        "exportJars" := false,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) :=
             (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ scala2Wconf)
@@ -508,7 +536,6 @@ object Izumi {
           Projects.fundamentals.basics,
         ),
         settings = Seq.empty,
-        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
         name = Projects.fundamentals.platform,
@@ -525,10 +552,7 @@ object Izumi {
           Projects.fundamentals.collections in Scope.Compile.all,
 //          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
-        settings = Seq(
-          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
-        ),
-        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
+        settings = testResourcesOnCompileClasspath,
       ),
       Artifact(
         name = Projects.fundamentals.functoid,
@@ -542,10 +566,6 @@ object Izumi {
           Projects.fundamentals.collections in Scope.Compile.all,
           //          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
-//        settings = Seq(
-//          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
-//        ),
-//        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
         name = Projects.fundamentals.jsonCirce,
@@ -563,8 +583,8 @@ object Izumi {
           //        workaround for:
           //        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
           //          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
-          "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
-          "libraryDependencySchemes" in SettingScope.Compile += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
+          "libraryDependencySchemes" += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
+          "libraryDependencySchemes" += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
         ),
       ),
 //      Artifact(
@@ -643,10 +663,6 @@ object Izumi {
           Projects.distage.proxyBytebuddy in Scope.Compile.jvm,
           Projects.fundamentals.platform tin Scope.Compile.all,
         ),
-        settings = Seq(
-          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7")
-        ),
-        plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
         platforms = Targets.cross,
       ),
       Artifact(
@@ -699,7 +715,7 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
         platforms = Targets.cross,
-        settings = Seq.empty,
+        settings = testResourcesOnCompileClasspath,
       ),
       Artifact(
         name = Projects.distage.docker,
@@ -729,7 +745,7 @@ object Izumi {
           // and scoverage requires scala-xml v1 on Scala 2.12,
           // introduced when updating scoverage to 2.0.0 https://github.com/7mind/izumi/pull/1754
           "libraryDependencySchemes" += """"org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always""".raw
-        ),
+        ) ++ testResourcesOnCompileClasspath,
       ),
       Artifact(
         name = Projects.distage.testkitScalatestSbtModuleFilteringTest,
@@ -849,7 +865,14 @@ object Izumi {
               .value
           }""".raw,
           "version" in SettingScope.Raw("(Compile / paradox)") := "version.value".raw,
-          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings"),
+          // `sbt-paradox-material-theme` inlined, see `project/ParadoxMaterialTheme.scala`
+          SettingDef.RawSettingDef("paradoxTheme := Some(ParadoxMaterialTheme.artifact)"),
+          SettingDef.RawSettingDef("Compile / paradoxProperties ++= ParadoxMaterialTheme.properties"),
+          SettingDef.RawSettingDef("""Compile / paradox / mappings += {
+            val conv = fileConverter.value
+            val (file, path) = ParadoxMaterialTheme.searchIndexMapping.value
+            conv.toVirtualFile(file.toPath) -> path
+          }"""),
           SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
@@ -864,34 +887,20 @@ object Izumi {
           // dark stylesheet's media= attribute synchronously before paint, eliminating
           // FOUC for repeat-visit light-mode users and providing a noscript
           // prefers-color-scheme fallback declaratively on the <link>.
-          SettingDef.RawSettingDef("""Compile / paradoxTemplate := {
+          SettingDef.RawSettingDef("""Compile / paradoxTemplate := Def.uncached {
             val themeDir = (Compile / paradoxThemeDirectory).value
             val overlay = baseDirectory.value / "src/main/paradox-overlay"
             if (overlay.isDirectory) IO.copyDirectory(overlay, themeDir, overwrite = true)
             new com.lightbend.paradox.template.PageTemplate(themeDir, (Compile / paradoxDefaultTemplateName).value)
           }"""),
-          SettingDef.RawSettingDef("""Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
-            _.withCopyright("7mind.io")
-              .withRepository(uri("https://github.com/7mind/izumi"))
-              // Default dark theme: a static dump of Dark Reader (Dynamic mode) applied to the
-              // white Material theme. Loaded after the Material stylesheets so its !important rules win.
-              // Asset is staged via mdoc passthrough from src/main/tut/assets/stylesheets/darkreader.css.
-              .withCustomStylesheet("assets/stylesheets/darkreader.css")
-              // Visitor-facing toggle that disables the dark stylesheet at runtime via
-              // link.disabled and persists the choice to localStorage. Provides a
-              // fixed-position floating button; primarily intended as a visual-accessibility
-              // override for users who need the lighter Material theme.
-              .withCustomJavaScript("assets/javascripts/scheme-switch.js")
-            //        .withColor("222", "434343")
-          }"""),
           "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """DocKeys.prefix.value("api")""".raw,
           "siteSubdirName" in SettingScope.Raw("Paradox") := """DocKeys.prefix.value("")""".raw,
-          SettingDef.RawSettingDef("""paradoxProperties ++= Map(
+          SettingDef.RawSettingDef("""paradoxProperties ++= Def.uncached(Map(
             "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
             "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
             "izumi.version" -> version.value,
             "kindprojector.version" -> V.kind_projector,
-          )"""),
+          ))"""),
           SettingDef.RawSettingDef(
             """ghpagesCleanSite / excludeFilter :=
             new FileFilter {
@@ -926,7 +935,6 @@ object Izumi {
             Plugin("ParadoxSitePlugin"),
             Plugin("SitePlugin"),
             Plugin("GhpagesPlugin"),
-            Plugin("ParadoxMaterialThemePlugin"),
             Plugin("PreprocessPlugin"),
             Plugin("MdocPlugin"),
           ),
@@ -993,7 +1001,6 @@ object Izumi {
       SbtPlugin("com.github.sbt", "sbt-ghpages", PV.sbt_ghpages),
       SbtPlugin("com.lightbend.paradox", "sbt-paradox", PV.sbt_paradox),
       SbtPlugin("com.lightbend.paradox", "sbt-paradox-theme", PV.sbt_paradox),
-      SbtPlugin("com.github.sbt", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
       SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
     ),
   )

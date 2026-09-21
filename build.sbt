@@ -7,25 +7,23 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 import com.github.sbt.git.SbtGit.GitKeys._
 
-enablePlugins(SbtgenVerificationPlugin)
-
 lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-basics"))
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -81,11 +79,14 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -163,13 +164,20 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -249,20 +257,20 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -318,11 +326,14 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -400,13 +411,20 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -487,20 +505,20 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -556,11 +574,14 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -638,13 +659,20 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -724,20 +752,20 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -794,11 +822,14 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -876,13 +907,20 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -962,25 +1000,25 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "org.typelevel" %%% "cats-core" % V.cats % Optional,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
-      "dev.zio" %%% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -1036,11 +1074,14 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1118,13 +1159,20 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -1205,20 +1253,20 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -1228,7 +1276,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
       val version = scalaVersion.value
       if (version.startsWith("0.") || version.startsWith("3.")) {
         Seq(
-          "org.scala-lang" %% "scala3-compiler" % scalaVersion.value % Provided
+          ("org.scala-lang" %% "scala3-compiler" % scalaVersion.value).platform(Platform.jvm) % Provided
         )
       } else Seq.empty
     }
@@ -1283,11 +1331,14 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1365,13 +1416,20 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -1444,7 +1502,6 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-languageJVM` = `fundamentals-language`.jvm
 lazy val `fundamentals-languageJS` = `fundamentals-language`.js
-  .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-platform"))
   .dependsOn(
@@ -1455,21 +1512,21 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect,
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
       "io.github.classgraph" % "classgraph" % V.classgraph % Provided
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -1527,11 +1584,14 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1609,13 +1669,20 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -1665,7 +1732,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
       )
       case (_, _) => Seq.empty
     } },
-    Test / packageDoc / publishArtifact := false
+    Test / packageDoc / publishArtifact := false,
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -1683,20 +1751,16 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / npmDependencies ++= Seq(
-      (  "hash.js",  "1.1.7")
-    )
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-platformJVM` = `fundamentals-platform`.jvm
 lazy val `fundamentals-platformJS` = `fundamentals-platform`.js
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scala-js-macrotask-executor" % V.scalajs_macrotask_executor
+      "org.scala-js" %% "scala-js-macrotask-executor" % V.scalajs_macrotask_executor
     )
   )
-  .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functoid"))
   .dependsOn(
@@ -1706,21 +1770,21 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -1777,11 +1841,14 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -1859,13 +1926,20 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -1945,34 +2019,34 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "io.circe" %%% "circe-core" % V.circe,
-      "io.circe" %%% "circe-literal" % V.circe % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-literal" % V.circe % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "io.circe" %%% "circe-derivation" % V.circe_derivation % Test,
-      "io.circe" %%% "circe-generic" % V.circe % Test
+      "io.circe" %% "circe-derivation" % V.circe_derivation % Test,
+      "io.circe" %% "circe-generic" % V.circe % Test
     ) else Seq.empty },
     libraryDependencies ++= {
       val version = scalaVersion.value
       if (version.startsWith("0.") || version.startsWith("3.")) {
         Seq(
-          "io.circe" %%% "circe-generic" % V.circe
+          "io.circe" %% "circe-generic" % V.circe
         )
       } else Seq.empty
     }
@@ -2027,11 +2101,14 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2109,13 +2186,20 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -2166,8 +2250,8 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
-    Compile / libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
-    Compile / libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always
+    libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
+    libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -2200,30 +2284,30 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "org.typelevel" %%% "cats-core" % V.cats % Optional,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
-      "dev.zio" %%% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "zio-interop-tracer" % V.zio_interop_cats,
-      "org.typelevel" %%% "cats-effect-laws" % V.cats_effect % Test,
-      "org.typelevel" %%% "cats-effect-testkit" % V.cats_effect % Test,
-      "org.typelevel" %%% "discipline-core" % V.discipline % Test,
-      "dev.zio" %%% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect")
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "dev.zio" %% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "zio-interop-tracer" % V.zio_interop_cats,
+      "org.typelevel" %% "cats-effect-laws" % V.cats_effect % Test,
+      "org.typelevel" %% "cats-effect-testkit" % V.cats_effect % Test,
+      "org.typelevel" %% "discipline-core" % V.discipline % Test,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -2279,11 +2363,14 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2361,13 +2448,20 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -2442,7 +2536,7 @@ lazy val `fundamentals-bioJVM` = `fundamentals-bio`.jvm
 lazy val `fundamentals-bioJS` = `fundamentals-bio`.js
   .settings(
     libraryDependencies ++= Seq(
-      "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time % Test
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
     )
   )
 
@@ -2454,29 +2548,29 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "org.typelevel" %%% "cats-core" % V.cats % Optional,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
-      "org.typelevel" %%% "cats-core" % V.cats % Test,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Test,
-      "dev.zio" %%% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect")
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "org.typelevel" %% "cats-core" % V.cats % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
+      "dev.zio" %% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -2533,11 +2627,14 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2615,13 +2712,20 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -2777,11 +2881,14 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -2859,13 +2966,20 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -2925,20 +3039,20 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -2995,11 +3109,14 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -3077,13 +3194,20 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -3164,25 +3288,25 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "org.typelevel" %%% "cats-core" % V.cats % Optional,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
-      "dev.zio" %%% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "javax.inject" % "javax.inject" % "1" % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -3239,11 +3363,14 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -3321,13 +3448,20 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -3395,10 +3529,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / npmDependencies ++= Seq(
-      (  "hash.js",  "1.1.7")
-    )
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-coreJVM` = `distage-core`.jvm
@@ -3408,10 +3539,9 @@ lazy val `distage-coreJVM` = `distage-core`.jvm
 lazy val `distage-coreJS` = `distage-core`.js
   .settings(
     libraryDependencies ++= Seq(
-      "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time % Test
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
     )
   )
-  .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-config"))
   .dependsOn(
@@ -3420,20 +3550,20 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -3490,11 +3620,14 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -3572,13 +3705,20 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -3675,10 +3815,10 @@ lazy val `distage-extension-configJVM` = `distage-extension-config`.jvm
 lazy val `distage-extension-configJS` = `distage-extension-config`.js
   .settings(
     libraryDependencies ++= Seq(
-      "io.circe" %%% "circe-core" % V.circe,
-      "io.circe" %%% "circe-generic" % V.circe,
-      "io.circe" %%% "circe-parser" % V.circe % Test,
-      "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time % Test
+      "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-generic" % V.circe,
+      "io.circe" %% "circe-parser" % V.circe % Test,
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
     )
   )
 
@@ -3691,22 +3831,22 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -3762,11 +3902,14 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -3844,13 +3987,20 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -3933,20 +4083,20 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
       "io.github.classgraph" % "classgraph" % V.classgraph
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -4004,11 +4154,14 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -4086,13 +4239,20 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -4189,27 +4349,27 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "org.typelevel" %%% "cats-core" % V.cats % Optional,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
-      "org.typelevel" %%% "cats-core" % V.cats % Test,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Test,
-      "io.circe" %%% "circe-parser" % V.circe % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "org.typelevel" %% "cats-core" % V.cats % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
+      "io.circe" %% "circe-parser" % V.circe % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -4219,7 +4379,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       val version = scalaVersion.value
       if (version.startsWith("0.") || version.startsWith("3.")) {
         Seq(
-          "org.scala-lang" %% "scala3-compiler" % scalaVersion.value % Provided
+          ("org.scala-lang" %% "scala3-compiler" % scalaVersion.value).platform(Platform.jvm) % Provided
         )
       } else Seq.empty
     }
@@ -4274,11 +4434,14 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -4356,13 +4519,20 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -4412,7 +4582,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       )
       case (_, _) => Seq.empty
     } },
-    Test / packageDoc / publishArtifact := false
+    Test / packageDoc / publishArtifact := false,
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -4437,7 +4608,7 @@ lazy val `distage-frameworkJVM` = `distage-framework`.jvm
 lazy val `distage-frameworkJS` = `distage-framework`.js
   .settings(
     libraryDependencies ++= Seq(
-      "io.circe" %%% "circe-parser" % V.circe
+      "io.circe" %% "circe-parser" % V.circe
     )
   )
 
@@ -4532,11 +4703,14 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -4614,13 +4788,20 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -4680,20 +4861,20 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -4749,11 +4930,14 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -4831,13 +5015,20 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -4920,38 +5111,38 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "org.typelevel" %%% "cats-core" % V.cats % Optional,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional,
-      "org.scalamock" %%% "scalamock" % V.scalamock % Test,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+      "org.scalamock" %% "scalamock" % V.scalamock % Test,
+      "org.scalatest" %% "scalatest-core" % V.scalatest,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -5007,11 +5198,14 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -5089,13 +5283,20 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -5146,7 +5347,8 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
-    libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
     crossScalaVersions := Seq(
@@ -5171,7 +5373,7 @@ lazy val `distage-testkit-scalatestJVM` = `distage-testkit-scalatest`.jvm
 lazy val `distage-testkit-scalatestJS` = `distage-testkit-scalatest`.js
   .settings(
     libraryDependencies ++= Seq(
-      "org.portable-scala" %%% "portable-scala-reflect" % V.portable_scala_reflect cross CrossVersion.for3Use2_13
+      "org.portable-scala" %% "portable-scala-reflect" % V.portable_scala_reflect cross CrossVersion.for3Use2_13
     )
   )
 
@@ -5256,11 +5458,14 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -5338,13 +5543,20 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -5406,24 +5618,24 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "org.typelevel" %%% "cats-core" % V.cats % Optional,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %%% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %%% "izumi-reflect" % V.izumi_reflect % Optional
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -5480,11 +5692,14 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -5562,13 +5777,20 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -5643,7 +5865,7 @@ lazy val `logstage-coreJVM` = `logstage-core`.jvm
 lazy val `logstage-coreJS` = `logstage-core`.js
   .settings(
     libraryDependencies ++= Seq(
-      "io.github.cquiroz" %%% "scala-java-time" % V.scala_java_time
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
     )
   )
 
@@ -5653,26 +5875,26 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %%% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %%% "scalatest-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-diagrams" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-featurespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-flatspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-freespec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-funsuite" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-matchers-core" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-mustmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-propspec" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-shouldmatchers" % V.scalatest % Test,
-      "org.scalatest" %%% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %%% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "io.circe" %%% "circe-core" % V.circe,
-      "io.circe" %%% "circe-parser" % V.circe % Test,
-      "io.circe" %%% "circe-literal" % V.circe % Test,
-      "io.circe" %%% "circe-generic" % V.circe % Test,
-      "org.typelevel" %%% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %%% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-parser" % V.circe % Test,
+      "io.circe" %% "circe-literal" % V.circe % Test,
+      "io.circe" %% "circe-generic" % V.circe % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -5728,11 +5950,14 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -5810,13 +6035,20 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -5972,11 +6204,14 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -6054,13 +6289,20 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -6200,11 +6442,14 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -6282,13 +6527,20 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -6457,11 +6709,14 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -6539,13 +6794,20 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -6620,37 +6882,29 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                   .value
               },
     (Compile / paradox) / version := version.value,
-    ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings,
+    paradoxTheme := Some(ParadoxMaterialTheme.artifact),
+    Compile / paradoxProperties ++= ParadoxMaterialTheme.properties,
+    Compile / paradox / mappings += {
+                val conv = fileConverter.value
+                val (file, path) = ParadoxMaterialTheme.searchIndexMapping.value
+                conv.toVirtualFile(file.toPath) -> path
+              },
     addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
     ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true),
-    Compile / paradoxTemplate := {
+    Compile / paradoxTemplate := Def.uncached {
                 val themeDir = (Compile / paradoxThemeDirectory).value
                 val overlay = baseDirectory.value / "src/main/paradox-overlay"
                 if (overlay.isDirectory) IO.copyDirectory(overlay, themeDir, overwrite = true)
                 new com.lightbend.paradox.template.PageTemplate(themeDir, (Compile / paradoxDefaultTemplateName).value)
               },
-    Compile / ParadoxMaterialThemePlugin.autoImport.paradoxMaterialTheme ~= {
-                _.withCopyright("7mind.io")
-                  .withRepository(uri("https://github.com/7mind/izumi"))
-                  // Default dark theme: a static dump of Dark Reader (Dynamic mode) applied to the
-                  // white Material theme. Loaded after the Material stylesheets so its !important rules win.
-                  // Asset is staged via mdoc passthrough from src/main/tut/assets/stylesheets/darkreader.css.
-                  .withCustomStylesheet("assets/stylesheets/darkreader.css")
-                  // Visitor-facing toggle that disables the dark stylesheet at runtime via
-                  // link.disabled and persists the choice to localStorage. Provides a
-                  // fixed-position floating button; primarily intended as a visual-accessibility
-                  // override for users who need the lighter Material theme.
-                  .withCustomJavaScript("assets/javascripts/scheme-switch.js")
-                //        .withColor("222", "434343")
-              },
     ScalaUnidoc / siteSubdirName := DocKeys.prefix.value("api"),
     Paradox / siteSubdirName := DocKeys.prefix.value(""),
-    paradoxProperties ++= Map(
+    paradoxProperties ++= Def.uncached(Map(
                 "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
                 "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
                 "izumi.version" -> version.value,
                 "kindprojector.version" -> V.kind_projector,
-              ),
+              )),
     ghpagesCleanSite / excludeFilter :=
                 new FileFilter {
                   def accept(f: File): Boolean = {
@@ -6677,7 +6931,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                   }
                 }
   )
-  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin, SitePreviewPlugin)
+  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, PreprocessPlugin, MdocPlugin, SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin)
 
 lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
@@ -6703,10 +6957,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     ) else Seq.empty }
   )
   .settings(
-    crossScalaVersions := Seq(
-      "2.12.21"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
     organization := "io.7mind.izumi",
     scalacOptions ++= Seq(
@@ -6757,11 +7007,14 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       }
     },
     Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
         "-release:8",
         "-explaintypes",
+        "-language:higherKinds",
         "-Xsource:3",
         "-P:kind-projector:underscore-placeholders",
         "-Ypartial-unification",
@@ -6839,13 +7092,20 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       case (_, "3.7.4") => Seq(
         "-source:3.7",
         "-Xkind-projector:underscores",
-        "-release:8",
+        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
         "-explain-types",
         "-explain-cyclic",
         "-Xmax-inlines:64",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
         "-Wenum-comment-discard",
         "-Wimplausible-patterns",
         "-Wnonunit-statement",
@@ -7170,14 +7430,16 @@ lazy val `izumi` = (project in file("."))
     libraryDependencies := Nil,
     publish / skip := true,
     Global / onChangedBuildSource := ReloadOnSourceChanges,
+    Global / excludeLintKeys += SettingKey[Boolean]("ide-skip-project"),
+    Global / excludeLintKeys += SettingKey[Boolean]("coverage-enabled"),
+    Global / excludeLintKeys += publishMavenStyle,
     ThisBuild / publishMavenStyle := true,
     ThisBuild / scalacOptions ++= Seq(
       "-encoding",
       "UTF-8",
       "-feature",
       "-unchecked",
-      "-deprecation",
-      "-language:higherKinds"
+      "-deprecation"
     ),
     ThisBuild / javacOptions ++= Seq(
       "-encoding",
@@ -7241,7 +7503,7 @@ lazy val `izumi` = (project in file("."))
             ),
     ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(SitePreviewPlugin, SbtgenVerificationPlugin)
   .aggregate(
     `fundamentals`,
     `distage`,
