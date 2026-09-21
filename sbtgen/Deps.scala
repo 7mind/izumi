@@ -188,6 +188,22 @@ object Izumi {
     final val sbt = Set(Group("sbt"))
   }
 
+  /**
+    * Compile-time macros in this repo (`PortableResource.embedResources`, distage's `planCheck`)
+    * enumerate the compile-time classpath, where a project's own test resources only appear once
+    * `copyResources` has copied them into the class directory. Nothing orders that before
+    * compilation, so without this the macros observe an incomplete classpath: `embedResources`
+    * fails outright, `planCheck` silently resolves a same-named config from another project.
+    *
+    * `compileIncremental` and not `compile`: the compilation itself happens in the body of the
+    * former, so only a dependency of the former is ordered before it.
+    */
+  private val testResourcesOnCompileClasspath: Seq[SettingDef] = Seq(
+    SettingDef.RawSettingDef(
+      """Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value"""
+    )
+  )
+
   object Targets {
     // switch order to use 2.12 in IDEA
 //    val targetScala3 = Seq(scala212, scala213, scala300)
@@ -527,6 +543,7 @@ object Izumi {
           Projects.fundamentals.collections in Scope.Compile.all,
 //          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
+        settings = testResourcesOnCompileClasspath,
       ),
       Artifact(
         name = Projects.fundamentals.functoid,
@@ -689,7 +706,7 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
         platforms = Targets.cross,
-        settings = Seq.empty,
+        settings = testResourcesOnCompileClasspath,
       ),
       Artifact(
         name = Projects.distage.docker,
@@ -719,7 +736,7 @@ object Izumi {
           // and scoverage requires scala-xml v1 on Scala 2.12,
           // introduced when updating scoverage to 2.0.0 https://github.com/7mind/izumi/pull/1754
           "libraryDependencySchemes" += """"org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always""".raw
-        ),
+        ) ++ testResourcesOnCompileClasspath,
       ),
       Artifact(
         name = Projects.distage.testkitScalatestSbtModuleFilteringTest,
