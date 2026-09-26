@@ -22,7 +22,7 @@ object V {
   val monix = "3.4.0"
   val monix_bio = "1.2.0"
 
-  val circe = "0.14.14"
+  val circe = "0.14.16"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.17.10"
   val pureconfig_212 = "0.17.8" // last version with Scala 2.12 support // FIXME: remove after dropping Scala 2.12
