@@ -32,7 +32,7 @@ object V {
   val portable_scala_reflect = "1.1.3"
 
   // good to drop - scala
-  val scala_java_time = "2.6.0"
+  val scala_java_time = "2.7.0"
 
   // js-only dependencies
   val scalajs_macrotask_executor = "1.1.1"
