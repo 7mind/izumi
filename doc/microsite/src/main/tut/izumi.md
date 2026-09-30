@@ -66,7 +66,7 @@ Documentation
 
 * [Documentation](https://izumi.7mind.io/)
 * SNAPSHOT [Documentation](https://izumi.7mind.io/latest/snapshot/)
-* @scaladoc[Scaladoc](izumi.index)
+* @scaladoc[Scaladoc](izumi)
 
 
 Further reading

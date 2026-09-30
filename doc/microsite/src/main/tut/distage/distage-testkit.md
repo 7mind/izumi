@@ -19,7 +19,7 @@ Usage of `distage-testkit` generally follows these steps:
       , `monix`)
     - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2), for bifunctors (`ZIO`, `monix-bio`)
     - `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO) for `ZIO` with environment support in tests
-2. Override `def config: TestConfig` to customize the @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig)
+2. Override `def config: TestConfig` to customize the @scaladoc[`TestConfig`](izumi.distage.testkit.model.TestConfig)
 3. Establish test case contexts
    using [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html),
    [`must`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/MustVerb.html),
@@ -29,10 +29,10 @@ Usage of `distage-testkit` generally follows these steps:
    [assertion](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html), to effectful functions with
    dependencies:
     - No effect type / `Identity` -
-      @scaladoc[`in`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$LowPriorityIdentityOverloads)
-    - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper)
-    - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper2)
-    - @scaladoc[`in` for `ZIO[-R, +E, +A]`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapperZIO)
+      @scaladoc[`in`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapperLowPriorityIdentityOverloads)
+    - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapper)
+    - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapper2)
+    - @scaladoc[`in` for `ZIO[-R, +E, +A]`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapperZIO)
     - Test cases dependent on injectables: @scaladoc[`Functoid`](izumi.distage.model.providers.Functoid)
 
 ### API Overview
@@ -191,7 +191,7 @@ In `WordSpec`, a test case is a sentence (a `String`) followed by `in` then the 
 @scaladoc[Functions that take arguments](izumi.distage.model.providers.Functoid)
 and functions using effect types are also supported. Function arguments and effect environments will be provided
 according to the `distage` object graph created from the modules defined
-in [`def config: TestConfig`](izumi.distage.testkit.TestConfig).
+in @scaladoc[`def config: TestConfig`](izumi.distage.testkit.model.TestConfig).
 
 #### Assertions
 
@@ -202,7 +202,7 @@ All of the base classes support test cases that are:
 - Functions returning unit that fail on exception.
 
 These are introduced using `in` from
-@scaladoc[DistageAbstractScalatestSpec.LowPriorityIdentityOverloads](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$LowPriorityIdentityOverloads)
+@scaladoc[ScalatestAbstractDistageSpec.DSWordSpecStringWrapperLowPriorityIdentityOverloads](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapperLowPriorityIdentityOverloads)
 
 The assertion methods are the same as ScalaTest as the base classes extend
 [ScalaTest Assertions](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html).
@@ -252,7 +252,7 @@ __runTest__(new ScoreSimpleTest with MdocTest { def name = "ScoreSimpleTest" })
 
 All of the base classes support test cases that are effects with assertions. Functions returning effects will have
 arguments provided from the object graph. These test cases are supported by
-@scaladoc[`in` from DSWordSpecStringWrapper](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapper).
+@scaladoc[`in` from DSWordSpecStringWrapper](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapper).
 
 The different effect types fix the `F[_]` argument for this syntax:
 
@@ -296,7 +296,7 @@ __runTest__(new ScoreEffectsTest with MdocTest { def name = "ScoreEffectsTest" }
 
 #### Assertions with Effects with Environments
 
-@scaladoc[The `in` method for `ZIO`](izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec$$DSWordSpecStringWrapperZIO)
+@scaladoc[The `in` method for `ZIO`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapperZIO)
 supports injection of environments from the object graph in addition to simple assertions and assertions with effects.
 
 A test that verifies the `BonusService` in our demonstration would be:
@@ -509,7 +509,7 @@ The test suite class for your application should override the `def config: TestC
 
 See also:
 
-- @scaladoc[`TestConfig` API docs](izumi.distage.testkit.TestConfig).
+- @scaladoc[`TestConfig` API docs](izumi.distage.testkit.model.TestConfig).
 - [Memoization](#resource-reuse-memoization)
 - [Execution Order](#execution-order)
 
@@ -542,10 +542,6 @@ Provided by trait @scaladoc[AssertZIO](izumi.distage.testkit.scalatest.AssertZIO
 
 - `assertIO(_: Boolean): zio.ZIO[Any, Nothing, Assertion]`
 
-Provided by trait @scaladoc[AssertMonix](izumi.distage.testkit.scalatest.AssertMonix):
-
-- `assertIO(_: Boolean): monix.eval.Task[Assertion]`
-
 Provided by trait @scaladoc[AssertCIO](izumi.distage.testkit.scalatest.AssertCIO):
 
 - `assertIO(_: Boolean): cats.effect.IO[Assertion]`
@@ -565,8 +561,8 @@ This includes tests using `ZIO`, `monix`, `cats.effect.IO`, or any effect type w
 `Identity` is treated as an effect type for imperative code.
 
 Interoperability with all existing Scala effect types is provided by implicit instances of
-@scaladoc[`QuasiIO`](izumi.distage.model.effect.QuasiIO), @scaladoc[`QuasiAsync`](izumi.distage.model.effect.QuasiAsync)
-, and @scaladoc[`QuasiIORunner`](izumi.distage.model.effect.QuasiIORunner). These components will be provided to the
+@scaladoc[`QuasiIO`](izumi.functional.quasi.QuasiIO), @scaladoc[`QuasiAsync`](izumi.functional.quasi.QuasiAsync)
+, and @scaladoc[`QuasiIORunner`](izumi.functional.quasi.QuasiIORunner). These components will be provided to the
 application automatically via @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule), but may be overridden by
 user bindings if different behavior or support for custom effect types is required.
 
@@ -578,8 +574,8 @@ The execution of tests is grouped into:
 
 The default is to run all of these in parallel.
 
-The @scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) has options to change the behavior for each of these groups.
-The default is @scaladoc[`Parallelism.Unlimited`](izumi.distage.testkit.TestConfig$$Parallelism$$Unlimited$) which does not constrain the number of parallel tests.
+The @scaladoc[`TestConfig`](izumi.distage.testkit.model.TestConfig) has options to change the behavior for each of these groups.
+The default is @scaladoc[`Parallelism.Unlimited`](izumi.distage.testkit.model.TestConfig$$Parallelism$$Unlimited$) which does not constrain the number of parallel tests.
 `Parallelism.Fixed(n: Int)` limits the execution to at most `n` test cases.
 While `Parallelism.Sequential` executes the test cases one at a time.
 
@@ -613,7 +609,7 @@ See [the execution order section for further information.](#execution-order)
 Memoization strategy applied when a component is summoned is defined by the *memoization environment*. Each distinct
 memoization environment uses a distinct memoization store. When a component instance is memoized that instance is shared
 across all tests that use the same memoization environment.
-@scaladoc[`TestConfig`](izumi.distage.testkit.TestConfig) contains the options that define the memoization environment:
+@scaladoc[`TestConfig`](izumi.distage.testkit.model.TestConfig) contains the options that define the memoization environment:
 
 1. `memoizationRoots` - These components will be acquired once and shared across all tests that used the same
    memoization environment.
@@ -630,8 +626,8 @@ The module environment depends on instantiation of the `memoizationRoots` compon
 config that alter implementations of these components *or* their dependencies will change the memoization environment
 used. This includes, but is not limited to, changes to `activation`, `pluginConfig` and `moduleOverrides`.
 
-When the `TestConfig` option @scaladoc[`debugOutput`](izumi.distage.testkit.TestConfig) is true the debug output will include memoization environment diagnostics.
-This can also be controlled using the [`izumi.distage.testkit.debug`](izumi.distage.testkit.DebugProperties$) system property.
+When the `TestConfig` option @scaladoc[`debugOutput`](izumi.distage.testkit.model.TestConfig) is true the debug output will include memoization environment diagnostics.
+This can also be controlled using the @scaladoc[`izumi.distage.testkit.debug`](izumi.distage.testkit.DebugProperties$) system property.
 
 #### Memoization Levels
 

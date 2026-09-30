@@ -877,7 +877,7 @@ object Izumi {
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=
             """{if (isSnapshot.value) {
-            (s => s"latest/snapshot/$s")
+            (s => s"${DocKeys.snapshotSitePrefix}/$s")
           } else {
             identity
           }}""".raw,
@@ -930,31 +930,14 @@ object Izumi {
             "kindprojector.version" -> V.kind_projector,
           ))"""),
           SettingDef.RawSettingDef(
-            """ghpagesCleanSite / excludeFilter :=
+            """ghpagesCleanSite / excludeFilter := {
+            val publishesSnapshot = isSnapshot.value
             new FileFilter {
               def accept(f: File): Boolean = {
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("distage")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("logstage")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("idealingua")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("bio")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("sbt")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("manifesto")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("pper")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("api")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("assets")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("lib")) ||
-                  f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("search")) ||
-                  f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
-                  (ghpagesRepository.value / "paradox.json").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
-                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath || (
-                      f.toPath.getParent.toAbsolutePath == (ghpagesRepository.value / "index.html").toPath.getParent.toAbsolutePath &&
-                        f.getCanonicalPath.endsWith(".html")
-                  )
+                DocKeys.preservedSiteFiles.contains(f.getName) || ((f.getName == DocKeys.snapshotSiteRoot) != publishesSnapshot)
               }
-            }"""
+            }
+          }"""
           ),
         ),
         plugins = Plugins(

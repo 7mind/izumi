@@ -343,7 +343,7 @@ In `distage-framework`'s @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain)
 ./launcher -u repo:dummy -u env:prod app1
 ```
 
-In `distage-testkit`, choose axes using @scaladoc[TestConfig](izumi.distage.testkit.TestConfig):
+In `distage-testkit`, choose axes using @scaladoc[TestConfig](izumi.distage.testkit.model.TestConfig):
 
 ```scala mdoc:to-string
 import distage.StandardAxis.Repo
@@ -679,8 +679,6 @@ See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) implicit for
 what exact components are available for each effect type, see
 @scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule),
 @scaladoc[CatsIOSupportModule](izumi.distage.modules.support.CatsIOSupportModule),
-@scaladoc[MonixSupportModule](izumi.distage.modules.support.MonixSupportModule),
-@scaladoc[MonixBIOSupportModule](izumi.distage.modules.support.MonixBIOSupportModule),
 @scaladoc[ZIOCatsEffectInstancesModule](izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule), respectively.
 
 DefaultModule occurs as an implicit parameter in `distage` entrypoints that require an effect type parameter, namely: `Injector[F]()` in `distage-core`, @ref[`extends RoleAppMain[F]`](distage-framework.md#roles) and @ref[`extends PlanCheck.Main[F]`](distage-framework.md#compile-time-checks) in `distage-framework` and @ref[`extends Spec1[F]`](distage-testkit.md) in `distage-testkit`.

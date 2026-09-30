@@ -373,7 +373,7 @@ type _ref = izumi.distage.testkit.TestConfig
 def _ref = (_: izumi.distage.testkit.TestConfig).configBaseName
 ```
 
-Where `distage-testkit` uses @scaladoc[`TestConfig#configBaseName`](izumi.distage.testkit.TestConfig#configBaseName)
+Where `distage-testkit` uses @scaladoc[`TestConfig#configBaseName`](izumi.distage.testkit.model.TestConfig)
 instead of `roleName`.
 
 Explicit config files passed to the role launcher `-c file.conf` the command-line flag have a higher priority than
@@ -458,7 +458,7 @@ Injector()
 
 Plugin scan can be performed at compile-time, this is mainly useful for deployment on platforms with reduced runtime
 reflection capabilities compared to the JVM, such as Graal Native Image, Scala.js and Scala Native.
-Use @scaladoc[PluginConfig.compileTime](izumi.distage.plugins.PluginConfig$#compileTime) to perform a compile-time scan.
+Use @scaladoc[PluginConfig.compileTime](izumi.distage.plugins.PluginConfig$#compileTime-b8b) to perform a compile-time scan.
 
 Be warned though, for compile-time scanning to find plugins, they must be placed in a separate module from the one in
 which scan is performed. When placed in the same module, scanning will fail.
