@@ -84,7 +84,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -134,7 +134,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -331,7 +331,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -381,7 +381,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -579,7 +579,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -629,7 +629,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -827,7 +827,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -877,7 +877,7 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1079,7 +1079,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -1129,7 +1129,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1336,7 +1336,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -1386,7 +1386,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1589,7 +1589,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -1639,7 +1639,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1846,7 +1846,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -1896,7 +1896,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2106,7 +2106,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -2156,7 +2156,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2368,7 +2368,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -2418,7 +2418,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2632,7 +2632,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -2682,7 +2682,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2886,7 +2886,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -2936,7 +2936,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3114,7 +3114,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -3164,7 +3164,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3368,7 +3368,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -3418,7 +3418,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3625,7 +3625,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -3675,7 +3675,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3907,7 +3907,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -3957,7 +3957,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -4159,7 +4159,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -4209,7 +4209,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -4439,7 +4439,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -4489,7 +4489,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -4708,7 +4708,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -4758,7 +4758,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -4935,7 +4935,7 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -4985,7 +4985,7 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -5203,7 +5203,7 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -5253,7 +5253,7 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -5463,7 +5463,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -5513,7 +5513,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -5697,7 +5697,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -5747,7 +5747,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -5955,7 +5955,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -6005,7 +6005,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -6209,7 +6209,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -6259,7 +6259,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -6447,7 +6447,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -6497,7 +6497,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -6714,7 +6714,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -6764,7 +6764,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -7012,7 +7012,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -7062,7 +7062,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:8",
+        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -7444,10 +7444,8 @@ lazy val `izumi` = (project in file("."))
     ThisBuild / javacOptions ++= Seq(
       "-encoding",
       "UTF-8",
-      "-source",
-      "1.8",
-      "-target",
-      "1.8",
+      "--release",
+      "17",
       "-deprecation",
       "-parameters",
       "-Xlint:all",

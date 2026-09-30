@@ -206,6 +206,15 @@ object Izumi {
     )
   )
 
+  private final val JvmRelease = "17"
+
+  private def withJvmRelease(options: Seq[Const]): Seq[Const] = {
+    options.map {
+      case Const.CString(option) if option.startsWith("-release:") => Const.CString(s"-release:$JvmRelease")
+      case option => option
+    }
+  }
+
   object Targets {
     // switch order to use 2.12 in IDEA
 //    val targetScala3 = Seq(scala212, scala213, scala300)
@@ -263,7 +272,20 @@ object Izumi {
 
       final val sharedAggSettings = outOfSource
 
-      final val rootSettings = Defaults.RootOptions ++ Defaults.SbtMetaRootOptions ++ Seq(
+      private final val javacOptions = Seq(
+        "javacOptions" in SettingScope.Build ++= Seq(
+          "-encoding",
+          "UTF-8",
+          "--release",
+          JvmRelease,
+          "-deprecation",
+          "-parameters",
+          "-Xlint:all",
+          "-XDignore.symbol.file",
+        )
+      )
+
+      final val rootSettings = Defaults.RootOptions.filterNot(_.name == "javacOptions") ++ javacOptions ++ Defaults.SbtMetaRootOptions ++ Seq(
 //        "target" := s"""baseDirectory.in(LocalProject("${Projects.root.id.value}")).value.toPath().resolve("target").resolve("${Projects
 //          .root.id.value}").toFile""".raw,
         "organization" in SettingScope.Build := "io.7mind.izumi",
@@ -360,18 +382,24 @@ object Izumi {
         "exportJars" := false,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) :=
-            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ scala2Wconf)
-              .filterNot(_ ==  ("-Ywarn-unused:_": Const)),
+            withJvmRelease(
+              (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ scala2Wconf)
+                .filterNot(_ ==  ("-Ywarn-unused:_": Const))
+            ),
           SettingKey(Some(scala213), None) :=
-            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)) ++ scala2Wconf,
+            withJvmRelease(
+              (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)) ++ scala2Wconf
+            ),
           SettingKey(Some(scala300), None) :=
-            Seq[Const](
-              "-source:3.7",
-              "-Xkind-projector:underscores",
-            ) ++ Defaults.Scala3Options
-              .filterNot(x => x == ("-Ykind-projector:underscores": Const) || x == ("-Xkind-projector:underscores": Const))
-              .filterNot(scala3Wconf.contains(_))
-            ++ scala3Wconf,
+            withJvmRelease(
+              Seq[Const](
+                "-source:3.7",
+                "-Xkind-projector:underscores",
+              ) ++ Defaults.Scala3Options
+                .filterNot(x => x == ("-Ykind-projector:underscores": Const) || x == ("-Xkind-projector:underscores": Const))
+                .filterNot(scala3Wconf.contains(_))
+              ++ scala3Wconf
+            ),
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
