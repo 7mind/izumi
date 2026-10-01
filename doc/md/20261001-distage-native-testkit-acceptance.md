@@ -9,9 +9,13 @@ must hold.
 The owner controls this file. The implementing agent may add items or strengthen
 them, but may not remove, narrow, or reinterpret one. If the agent cannot meet an
 item, or finds it contradicted by evidence, the item is *waiting on owner*, never
-done. Edits to the plan do not change this file. When an item and the plan
-differ, the stricter requirement applies; the plan defers work only through its
-open decisions.
+done. Edits to the plan do not change this file.
+
+Where an item and the plan differ on what must be achieved, the stricter of the
+two applies; the plan defers work only through its open decisions. This file
+alone defines when and where an item is evaluated. Its evaluation points,
+supersessions, scope rule, 1a.2 carve-outs, and lanes L1–L6 override the plan's
+unqualified wording.
 
 ## Rules
 
@@ -35,10 +39,17 @@ open decisions.
   other 2d item holds on both SBT 1.13.0 and SBT 2.0.9. On JS and Native,
   forked variants do not apply, because the platform plugins reject
   `fork := true`.
-- **Other requirements.** The plan's other normative statements also apply,
-  each at the step its section belongs to. These are statements phrased with
-  "must" or "never", and statements of acceptance. The status ledger cites the
-  plan text it verifies.
+- **Other requirements.** The plan's other requirements on the implementation
+  also apply.
+  - **What counts.** Statements made with must, must not, never, needs, should,
+    remain, or in the imperative, outside the gate table and not restated here.
+  - **What does not.** Descriptions of observed or external behaviour, such as
+    spike results and SBT or platform facts; alternatives the plan does not
+    choose; and proposed follow-ups.
+  - **Enumeration.** Before the first commit of step 1a, the status ledger lists
+    these requirements, each with its plan line, its assigned step, and how it
+    will be verified. The reviewer subagent checks that list against the plan at
+    every step boundary. The owner may amend it.
 - **Completion.** The goal is complete only when every item is done at each of
   its evaluation points.
 
@@ -141,6 +152,23 @@ release once they exist.
   failures with an independent oracle. They cover short-circuiting, overloaded
   operators, thrown operands, by-name calls, generic expressions, multiline
   source, missing and moved sources, and lazy messages.
+- **1c.5** (final): The plain assertion contract holds.
+  - `assert(condition)` returns `Unit`. On failure it throws a portable
+    `AssertionError` subtype that carries structured diagnostics and gives a
+    useful message even under an unrelated runner.
+  - The plain assertion module is independent of both effect runtimes.
+  - Evaluation count, order, short-circuiting, by-name behavior, and thrown
+    exceptions are preserved. Array equality does not silently become deep
+    equality, and unrelated exceptions do not become false predicates.
+  - Expressions outside the recognized set remain valid assertions, with an
+    opaque observation and their source location.
+  - Diagnostics carry the source identity, the expression span, the expression
+    text stored at compile time, and subexpression observations. When the
+    available source differs from the recorded content, the failure shows the
+    compiled excerpt and identifies the mismatch. Missing source or range
+    information is represented explicitly.
+  - Failure rendering is bounded and lazy. A failed value renderer preserves
+    the original failure and exposes the rendering error.
 
 ## 1d: `assert1`, `assert2`, effect adapters, temporary ScalaTest bridge
 
@@ -151,6 +179,13 @@ release once they exist.
 - **1d.3** (final): On the same lanes, BIO failures are defects.
 - **1d.4** (step, superseded by 5.5): The old runner correctly displays new
   failures on its existing JVM/JS targets.
+- **1d.5** (final): The effect forms' contract holds.
+  - `assert1[F]` raises its failure inside the effect's suspended computation.
+  - `assert2[F]` fails as an effect defect and leaves the typed error channel
+    unchanged.
+  - The BIO adapter preserves the existing `IO2.sync` defect behavior, and the
+    Cats Effect adapter suspends with `Sync.delay`.
+  - `QuasiIO` is not exposed as a suspension guarantee.
 
 ## 2a: repository-wide Scala 3.9 move
 
@@ -179,7 +214,8 @@ release once they exist.
 - **2b.5** (final): Plain suites with synchronous and `Future` bodies register
   and execute on the base runner.
 - **2b.6** (final): `distage-testkit-runner` extends it as an execution provider.
-- **2b.7** (final): Discovery acquires no test resources.
+- **2b.7** (final): Discovery acquires no test resources and executes no test
+  bodies.
 - **2b.8** (final): Repeated and concurrent sessions do not share registration or
   run resources.
 - **2b.9** (final): Duplicate IDs fail explicitly.
@@ -189,6 +225,9 @@ release once they exist.
   migrated form, and they compile and pass. The status ledger records a diff of
   each against its pre-migration source, and that diff touches only import
   lines.
+- **2b.11** (final): Each run session instantiates suites through its own
+  factories, and the run is declared complete only after its resources are
+  released.
 
 ## 2c: application discovery, selection, planning, and execution
 
@@ -201,8 +240,34 @@ release once they exist.
   acquired and released once per test, while sharing inside each test graph is
   unchanged. Otherwise it is acquired and released once per intended sharing
   scope.
-- **2c.5** (final): A stale catalogue reference is an error, and an empty
-  explicit selection fails with an explanation instead of succeeding.
+- **2c.5** (final): A stale catalogue reference is an error. An explicit request
+  to the application that selects nothing never produces an unexplained
+  successful run; such requests are test IDs after `--`, CLI, IDE, and saved
+  selections. SBT's own suite-name selection follows 2d.3.
+- **2c.6** (final): Logical test IDs derive from the build target, the suite
+  identity, the structured test path, and an explicit variant identity where
+  needed. Path segments stay separate rather than being flattened into a string.
+  Registration order, object identity, and source lines are never the persistent
+  identity. Names serve display and positions serve navigation.
+- **2c.7** (final): The precedence between suite configuration and explicit run
+  overrides is defined. Axis overrides are resolved and validated before a
+  filter on effective axes applies. The plan output shows the final activation
+  and sharing boundaries.
+- **2c.8** (final): Planning failures, including failures of configuration
+  loading and of user planning extensions, are reported separately from test
+  failures.
+- **2c.9** (final): The JSON protocol carries:
+  - a schema version;
+  - the build and catalogue identity;
+  - logical IDs and locations;
+  - effective settings;
+  - structured failures;
+  - correlated events.
+
+  A saved selection refers to a build and is revalidated. No live closures, DI
+  locators, or effect values are serialized. An explicit transport channel with
+  framing keeps test output from corrupting protocol messages. CLI, SBT, and IDE
+  clients share selection semantics through the protocol.
 
 ## 2d: JVM SBT integration and structured/JUnit reporting
 
@@ -284,6 +349,19 @@ The scope rule above applies to every 2d item.
   `distagePlan` exist. Framework arguments after `--` supply test IDs,
   activation overrides, axis filtering, and memoization settings. A standalone
   launcher accepts the same normalized request without SBT.
+- **2d.22** (final): Results stay distinguishable and reconciled.
+  - Assertion failures, unexpected exceptions, planning failures, explicit
+    skips, cancellation, and run-level teardown failures remain
+    distinguishable.
+  - Concurrent test events are matched without relying on adjacency.
+  - A selected test that never starts because setup failed has a visible
+    outcome.
+  - Selected IDs, executed IDs, terminal events, and report counts reconcile.
+  - A process that exits without a completed run is an incomplete failure, even
+    if every event it sent was a success.
+- **2d.23** (final): The portable engine has no SBT implementation dependency.
+  Forked JVM tests execute in the test JVM, and JS and Native run their actual
+  target programs, not JVM evaluation of the specifications.
 
 ## 2e: JS and Native target integrations
 
@@ -296,12 +374,17 @@ The scope rule above applies to every 2d item.
   assertion failures, and finalizer failures. Linking effect libraries alone is
   insufficient.
 - **2e.4** (final): The linker retains selected suites.
-- **2e.5** (final): Items 2d.1–2d.21 hold on JS and on Native, with real Node and
+- **2e.5** (final): Items 2d.1–2d.23 hold on JS and on Native, with real Node and
   Native process fixtures, under the scope rule above.
 - **2e.6** (final): With a target-side framework, serialized tasks reconstruct
   correctly.
 - **2e.7** (final): Async JS completion and target shutdown preserve events and
   finalization.
+- **2e.8** (final): JS and Native use serializable test and application
+  identities and reconstruct executable state in the target runtime. Nothing
+  blocks the JS event loop waiting for effects. Each sharing group runs within
+  one execution process, unless an explicit shard accepts the loss of resource
+  sharing.
 
 Browser JS follows the plan's "Browser JS" open decision.
 

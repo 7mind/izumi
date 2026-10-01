@@ -128,6 +128,10 @@ by the checklist's item IDs. For each item, record:
 - the observed results, such as counts and exit codes;
 - the commit and the date, for each evaluation point.
 
+Before the first commit of step 1a, list in the status ledger the plan's other
+requirements, as the checklist's "Other requirements" rule defines them. Each
+entry gives the plan line, the assigned step, and the planned verification.
+
 Keep captured logs in an ignored directory and refer to them by path. Update the
 status ledger in the commit whose work it records, and read it first after a
 context reset.
