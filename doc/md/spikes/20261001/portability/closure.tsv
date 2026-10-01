@@ -1,0 +1,20 @@
+module	repository path	project dependencies
+basics	fundamentals/fundamentals-basics	
+functional	fundamentals/fundamentals-functional	basics
+collections	fundamentals/fundamentals-collections	basics,functional
+literals	fundamentals/fundamentals-literals	basics
+orphans	fundamentals/fundamentals-orphans	basics
+language	fundamentals/fundamentals-language	basics,literals
+platform	fundamentals/fundamentals-platform	functional,basics,language,collections
+functoid	fundamentals/fundamentals-functoid	platform,language,collections
+bio	fundamentals/fundamentals-bio	language,orphans,collections,basics
+coreApi	distage/distage-core-api	platform,functoid,bio
+core	distage/distage-core	coreApi
+frameworkApi	distage/distage-framework-api	coreApi
+config	distage/distage-extension-config	coreApi
+plugins	distage/distage-extension-plugins	coreApi
+logCore	logstage/logstage-core	bio,platform
+logCirce	logstage/logstage-rendering-circe	logCore
+extensionLog	distage/distage-extension-logstage	config,coreApi,logCore
+framework	distage/distage-framework	extensionLog,logCirce,core,frameworkApi,plugins,config
+testkit	distage/distage-testkit-core	framework

@@ -1,0 +1,5 @@
+fixture/build.sbt
+**/target/
+**/.bsp/
+**/.metals/
+**/__pycache__/
