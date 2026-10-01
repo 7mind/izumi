@@ -10,7 +10,7 @@ Generated builds, binaries, and compiler caches are also ignored.
 | Project | Methodology and results | Rerun |
 | --- | --- | --- |
 | JVM SBT | [Report](sbt/REPORT.md) | Run `python3 verify.py` from `sbt/` with Java and SBT on PATH |
-| Portability | [Report](portability/REPORT.md) | Generate the Native fixture with `generate-fixture.py`, then build and run it with `-Dspike.native05=true` for the second-round Native run; follow the report for separate producer/consumer and repository compiler experiments |
+| Portability | [Report](portability/REPORT.md) | Generate the Native fixture with `generate-fixture.py`, then build and run it with `-Dspike.native05=true` for the second-round Native run (add `-Dspike.interopVersion=<version>` for real ZIO interop Native artifacts, cleaning the fixture outputs first); follow the report for separate producer/consumer and repository compiler experiments |
 | JS/Native transport | [Report](transport/REPORT.md) | Run `python3 verify.py` from `transport/` with Java, SBT, Node, and the Native toolchain (`TRANSPORT_LLVM_PATH`) on PATH |
 
 The JVM driver creates its output directory, checks actual body identities and

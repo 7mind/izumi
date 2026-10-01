@@ -170,6 +170,25 @@ Observed sequence:
    resource and prints
    `PARALLEL_MEMOIZED_PASS success=4, failure=0, ended=true, acquired=1, released=1, threads=2`.
 
+Real ZIO interop artifacts: the owner's
+[zio/interop-cats#763](https://github.com/zio/interop-cats/pull/763) (head
+`de5d670`, open at the time) cross-builds that project for Native 0.5 on Cats
+Effect 3.7.1. Its Native `InteropTracer` is the same no-op as the JS one. Its two
+Native artifacts were published locally as `23.1.0.13-native-pr763`. With
+`-Dspike.interopVersion=23.1.0.13-native-pr763`, the fixture uses them instead of
+all three stand-ins, and the repository's real `ZIOCatsEffectInstancesModule`
+compiles. From a clean build, both programs pass again: `parallel` prints
+`acquired=1, released=1` with 4 successes. Logs are
+`logs/native05-390-pr763-*.txt`.
+
+Clean the fixture when switching modes. Incremental compilation keeps the `.nir`
+files of removed sources, and the linker then uses them instead of a
+dependency's class: the stand-in `InteropTracer.nir` survived the switch to the
+real artifact. A generic reproduction is reported as
+[scala-native/scala-native#5084](https://github.com/scala-native/scala-native/issues/5084).
+The stand-in results above were re-verified from a clean build
+(`logs/native05-390-standins-clean-*.txt`).
+
 Production port items. Each becomes a `.native` source set in its module,
 replacing the fixture-local file:
 
@@ -213,6 +232,11 @@ cd fixture
 direnv exec /home/pavel/work/safe/7mind/izumi sh -c 'export PATH="$LLVM_PATH:$PATH"; exec sbt -java-home "$JDK" -batch -Dspike.native05=true "++3.9.0!" app/nativeLink'
 ./app/target/scala-3.9.0/app
 ./app/target/scala-3.9.0/app parallel
+
+# Real interop artifacts instead of the stand-ins (zio/interop-cats PR 763, checked out at de5d670):
+#   sbt 'set ThisBuild / version := "23.1.0.13-native-pr763"' zioInteropTracerNative/publishLocal zioInteropCatsNative/publishLocal
+rm -rf modules/*/target app/target target  # stale .nir files survive mode switches
+# then the nativeLink command above with -Dspike.interopVersion=23.1.0.13-native-pr763 added
 ```
 
 ## Reproductions and evidence

@@ -30,6 +30,10 @@ lazy val repo = file("../../../../../..").getCanonicalFile
 // native05: Native 0.5 artifacts for Cats Effect 3.7.1, stand-ins for the unpublished ZIO interop artifacts,
 // mixed JVM/JS platform sources, the CompletionStage adapter, and the repository's semantic Scala 3 flags.
 val native05 = sys.props.contains("spike.native05")
+// spike.interopVersion: real zio-interop-cats/tracer Native artifacts (for example a local publish of
+// zio/interop-cats PR 763) replace the interop stand-ins in native05 mode.
+val interopVersion = sys.props.get("spike.interopVersion")
+val interopStandins = native05 && interopVersion.isEmpty
 val nativeDeps = Def.setting { Seq(
   "dev.zio" %%% "izumi-reflect" % "3.0.8",
   "dev.zio" %%% "zio" % "2.1.24",
@@ -37,7 +41,7 @@ val nativeDeps = Def.setting { Seq(
   "org.typelevel" %%% "cats-core" % "2.13.0",
 ) ++ (if (native05) Seq(
   "org.typelevel" %%% "cats-effect" % "3.7.1"
-) else Seq(
+) ++ interopVersion.toSeq.flatMap(v => Seq("dev.zio" %%% "zio-interop-cats" % v, "dev.zio" %%% "zio-interop-tracer" % v)) else Seq(
   (if (sys.props.contains("spike.compileOnly")) "dev.zio" %% "zio-interop-cats" % "23.1.0.5" % Provided else "dev.zio" %%% "zio-interop-cats" % "23.1.0.5"),
   (if (sys.props.contains("spike.compileOnly")) "dev.zio" %% "zio-interop-tracer" % "23.1.0.5" % Provided else "dev.zio" %%% "zio-interop-tracer" % "23.1.0.5"),
   (if (sys.props.contains("spike.compileOnly")) "org.typelevel" %% "cats-effect" % "3.6.3" % Provided else "org.typelevel" %%% "cats-effect" % "3.6.3"),
@@ -57,10 +61,10 @@ def module(id: String, path: String) = Project(id, file("modules/" + id)).enable
     val platformDir = if ((native05 || sys.props.contains("spike.mixedPlatform")) && jvmFiles(path)) ".jvm" else ".js"
     val roots = Seq(repo / path, repo / path / platformDir)
     (if ((native05 || sys.props.contains("spike.nativeAdapter")) && id == "bio") Seq(file("native-adapter/bio").getCanonicalFile) else Nil) ++
-    (if (native05 && Set("bio", "core")(id)) Seq(file("native-standins/" + id).getCanonicalFile) else Nil) ++
+    (if (interopStandins && Set("bio", "core")(id)) Seq(file("native-standins/" + id).getCanonicalFile) else Nil) ++
     (if (native05 && Set("platform", "bio")(id)) Seq(file("native-platform/" + id).getCanonicalFile) else Nil) ++ roots.flatMap(r => Seq(r / "src/main/scala", r / ("src/main/scala-" + (if (sv == "3") "3" else "2")), r / "src/main/scala-2.12+", r / "src/main/scala-2.13+")) ++ (if ((native05 || sys.props.contains("spike.catsJvmAdapter")) && id == "core") Seq(repo / path / ".jvm/src/main/scala/izumi/distage/modules/platform") else Nil)
   },
-  Compile / unmanagedSources / excludeFilter := (if (native05 && id == "platform") new SimpleFileFilter(f => f.getPath.contains("/.jvm/") && f.getName == "__AbstractIzPlatformPlatformSpecific.scala") else if (native05 && id == "bio") new SimpleFileFilter(f => f.getPath.contains("/.jvm/") && Set("__PlatformSpecific.scala", "IzUUIDPlatformSpecific.scala", "__SecureRandomPlatformSpecific.scala", "UnsafeRun2.scala", "QuasiIORunner.scala")(f.getName)) else if (native05 && id == "core") new SimpleFileFilter(f => (f.getPath.contains("/src/main/scala/izumi/distage/modules/typeclass/ZIOCatsEffectInstancesModule.scala") && !f.getPath.contains("native-standins")) || (f.getPath.contains("/.js/") && f.getName == "CatsIOPlatformDependentSupportModule.scala") || (f.getPath.contains("/.jvm/") && f.getName != "CatsIOPlatformDependentSupportModule.scala")) else if (sys.props.contains("spike.nativeAdapter") && id == "bio") new SimpleFileFilter(f => f.getPath.contains("/.jvm/") && f.getName == "__PlatformSpecific.scala") else if (sys.props.contains("spike.catsJvmAdapter") && id == "core") new SimpleFileFilter(f => (f.getPath.contains("/.js/") && f.getName == "CatsIOPlatformDependentSupportModule.scala") || (f.getPath.contains("/.jvm/") && f.getName != "CatsIOPlatformDependentSupportModule.scala")) else HiddenFileFilter),
+  Compile / unmanagedSources / excludeFilter := (if (native05 && id == "platform") new SimpleFileFilter(f => f.getPath.contains("/.jvm/") && f.getName == "__AbstractIzPlatformPlatformSpecific.scala") else if (native05 && id == "bio") new SimpleFileFilter(f => f.getPath.contains("/.jvm/") && Set("__PlatformSpecific.scala", "IzUUIDPlatformSpecific.scala", "__SecureRandomPlatformSpecific.scala", "UnsafeRun2.scala", "QuasiIORunner.scala")(f.getName)) else if (native05 && id == "core") new SimpleFileFilter(f => (interopStandins && f.getPath.contains("/src/main/scala/izumi/distage/modules/typeclass/ZIOCatsEffectInstancesModule.scala") && !f.getPath.contains("native-standins")) || (f.getPath.contains("/.js/") && f.getName == "CatsIOPlatformDependentSupportModule.scala") || (f.getPath.contains("/.jvm/") && f.getName != "CatsIOPlatformDependentSupportModule.scala")) else if (sys.props.contains("spike.nativeAdapter") && id == "bio") new SimpleFileFilter(f => f.getPath.contains("/.jvm/") && f.getName == "__PlatformSpecific.scala") else if (sys.props.contains("spike.catsJvmAdapter") && id == "core") new SimpleFileFilter(f => (f.getPath.contains("/.js/") && f.getName == "CatsIOPlatformDependentSupportModule.scala") || (f.getPath.contains("/.jvm/") && f.getName != "CatsIOPlatformDependentSupportModule.scala")) else HiddenFileFilter),
   scalacOptions ++= (if (scalaVersion.value.startsWith("2.")) Seq("-Xsource:3", "-P:kind-projector:underscore-placeholders") else Seq("-Xkind-projector:underscores", "-Yretain-trees", "-no-indent") ++ (if (native05) Seq("-Xmax-inlines:64") else Nil)),
   publishMavenStyle := true,
   Compile / unmanagedSources ++= (if (native05 && id == "bio") Seq(repo / path / ".js/src/main/scala/izumi/fundamentals/platform/uuid/IzUUIDPlatformSpecific.scala") else Nil),
@@ -88,7 +92,7 @@ body = ['lazy val interopStandin = Project("interopStandin", file("modules/inter
 for name,(path,deps) in modules.items():
     line = f'lazy val {name} = module("{name}", "{path}")'
     if deps: line += '.dependsOn(' + ', '.join(deps) + ')'
-    if name == 'orphans': line += '.dependsOn((if (native05) Seq[ClasspathDep[ProjectReference]](interopStandin % Provided) else Nil): _*)'
+    if name == 'orphans': line += '.dependsOn((if (interopStandins) Seq[ClasspathDep[ProjectReference]](interopStandin % Provided) else Nil): _*)'
     body.append(line)
 body.append('lazy val app = Project("app", file("app")).enablePlugins(ScalaNativePlugin).dependsOn(testkit).settings(libraryDependencies ++= nativeDeps.value, Compile / mainClass := Some("izumi.distage.PortabilityMain"))')
 body.append('lazy val root = Project("root", file(".")).aggregate(' + ', '.join(modules) + ', app).settings(publish / skip := true)')
