@@ -319,7 +319,8 @@ POM declares the `strict` version scheme, so `update` rejects the 0.5.12 the
 plugin requires. The target-side test interface has to match the plugin's host
 adapter, so the patch accepts that eviction through `libraryDependencySchemes`.
 The rule names `test-interface_native0.5`, like the build's existing `_sjs1`
-circe entries; with the unsuffixed name, `update` still failed.
+circe entries. With the unsuffixed name, `update` still failed, but that run
+reported a full task-cache hit, so a replayed failure is not excluded.
 
 With the patch, the existing ScalaTest suites of the two modules without
 platform-specific sources run as Native test binaries from the generated build.

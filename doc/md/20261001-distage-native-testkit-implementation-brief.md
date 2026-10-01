@@ -61,7 +61,8 @@ and the matching `zio-interop-tracer` metadata. Until a release appears, part 2
 may be verified against a `publishLocal` of that project's `main` branch, but
 never commit a build that resolves a local or snapshot version. The pending
 release counts as the goal's blocker only once all independent work in the table
-is done.
+is done. The fallback, if no release appears, is the owner's choice (the plan's
+"Interop release" open decision).
 
 ## Working rules
 
@@ -136,6 +137,13 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
   build-time patches, which the portability report's port-item table lists.
   Audit any reused JVM or JS platform code. Replace the three stale `.native`
   files in `fundamentals-platform`.
+- Native variants need counterparts of the eight `Scope.*.js` dependency
+  declarations in `sbtgen/Deps.scala`: circe for config and framework, and
+  scala-java-time. The JS-only macrotask executor and the legacy adapter's
+  portable-scala-reflect need none.
+- Shared sources reference the Java-only classgraph in compile-time macro code
+  and in `PluginLoaderClassgraphImpl`. Give Native its own default plugin loader,
+  as `.js` has, so that linking never reaches classgraph.
 - On Scala 2, Cats Effect 3.7.0 and 3.7.1 need `scalac-compat-annotation` (the
   JVM artifact, provided scope) wherever a module subclasses `Async`
   ([typelevel/cats-effect#4693](https://github.com/typelevel/cats-effect/issues/4693));
@@ -155,6 +163,9 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
     `--nojvm` for a Native-only lane;
   - `.github/workflows/build.yml` gains Native jobs for each Scala version;
   - the publish job generates with `--js --native`;
+  - the `gen` action's `else` branch exits 0 for an unknown platform
+    (`.mdl/defs/actions.md`), so make it fail, and check that each Native lane
+    actually ran Native test projects;
   - CI caches no `target/` directories, so its builds are clean.
 
 ### 1b–1d
@@ -177,6 +188,11 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
 
 - Runner layers and the portable protocol module: the plan's "Runner layers" and
   "Scala 3 publishing baseline" sections.
+- 2b keeps the JS and Native lanes of the `fundamentals-*-test` suites running
+  until 2e takes them over. There are two ways to do this: leave those suites on
+  ScalaTest until the base runner supports their platforms, or select each
+  suite's base class per platform. The owner decision makes the plain front end
+  source-compatible with `AnyWordSpec`. Record the choice in the ledger.
 - 2d: the JVM SBT report's measured seams.
   - Substitute in `loadedTestFrameworks`, with `Def.uncached` on SBT 2.
   - Use a target-side bootstrap for forks. First run the in-process matrix with

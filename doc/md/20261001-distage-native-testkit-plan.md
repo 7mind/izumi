@@ -85,7 +85,7 @@ missing.
 | Spike | Observed result | Remaining acceptance |
 | --- | --- | --- |
 | [0a: JVM SBT](spikes/20261001/sbt/REPORT.md) | Public host substitution and fork bootstrap work on SBT 1.13.0/2.0.9; selection/body/XML counts agree; DI omission and partial-cache failures reproduced; safe public policies exercised | Real engine integration, streaming/concurrent events, failing bodies and launch-failure memoization, cancellation, default parallel task execution, an in-process run of the target bootstrap without host substitution, classloader lifetime, multi-project/configuration behavior |
-| [0b: portability](spikes/20261001/portability/REPORT.md) | Native acceptance passed in a second round: the real `TestPlanner` and `DistageTestRunner` link and run on Native 0.5.12 with Scala 3.9.0, for a DI and configuration test and for a parallel run with one memoized resource acquisition. It runs with stand-ins for the unpublished ZIO interop artifacts, or with a local publish of [zio/interop-cats#763](https://github.com/zio/interop-cats/pull/763), and with fixture-local Native platform files. A third round passes the same programs on 3.7.4, 2.13.18, and 2.12.21, and the existing ScalaTest suites of two modules pass on Native in the repository build generated with a Native platform. On the JVM, 3.9.0 still hits exact-version gating and the intermittent backend race | For step 1a: a released zio-interop-cats with Native artifacts, `.native` source sets replacing the fixture-local files, and every module's existing tests on Native. Also ZIO and Cats Effect test effects under the engine, logging sinks, and HOCON on Native |
+| [0b: portability](spikes/20261001/portability/REPORT.md) | Native acceptance passed in a second round: the real `TestPlanner` and `DistageTestRunner` link and run on Native 0.5.12 with Scala 3.9.0, for a DI and configuration test and for a parallel run with one memoized resource acquisition. It runs with stand-ins for the unpublished ZIO interop artifacts, or with a local publish of [zio/interop-cats#763](https://github.com/zio/interop-cats/pull/763), and with fixture-local Native platform files. A third round passes the same programs on 3.7.4, 2.13.18, and 2.12.21, and the existing ScalaTest suites of two modules pass on Native in the repository build generated with a Native platform. On the JVM, 3.9.0 still hits exact-version gating and the intermittent backend race | For step 1a: a released zio-interop-cats with Native artifacts, `.native` source sets replacing the fixture-local files, and every module's existing tests on Native. Also ZIO and Cats Effect test effects under the engine and logging sinks on Native, and HOCON if that configuration format is added there (see Open decisions) |
 | [0c: target transport](spikes/20261001/transport/REPORT.md) | Passed in a second round: a host-side projection over the platform test adapters gives every selected suite its own task, result, JUnit file, and history on SBT 1.13.0 and 2.0.9 for JS and Native at Scala 3.3.7 (SBT 2 smoke at 3.9.0). SBT 1 history needs the 0a conservative policy. Each group acquires once, and a failing or dying target task is launched once and reported for every suite | Streaming instead of buffering; per-suite completion records; cancellation; thread limits below group size; runtime reuse after a target dies; Scala 2, browser JS, the real engine |
 
 All three reports distinguish executed outcomes from source observations and
@@ -739,9 +739,14 @@ suites of `fundamentals-collections` (33 tests) and `fundamentals-language`
 3.3.0-alpha.2, scalatestplus-scalacheck, discipline, the Cats Effect laws and
 testkit, and scala-java-time publish Native 0.5 artifacts for all three Scala
 versions, so the remaining existing suites can check the port before the new
-runner exists. Two Scala dependencies of shared sources have no Native artifact;
-Java-only artifacts such as classgraph are referenced only from JVM sources, as
-on JS:
+runner exists. The Native variants also need counterparts of the build's eight
+JS-scoped dependency declarations (circe for configuration and the framework,
+scala-java-time), all of which publish Native 0.5 artifacts. Java-only artifacts
+such as classgraph and javax.inject appear in shared sources only in macro
+implementations, as annotations, or in classes that a non-JVM target never
+reaches. As on JS, Native therefore needs its own default plugin loader instead
+of the shared `PluginLoaderClassgraphImpl`. Two Scala dependencies of shared
+sources have no Native artifact:
 
 - ScalaMock 7.5.2 has none, and 7.6.0 has one for Scala 3 only. Its one user is a
   `distage-testkit-scalatest` test.
@@ -1078,6 +1083,14 @@ assumptions; a different answer changes the listed steps.
   failure class. A correction to the released ScalaTest-based runner is separate
   maintenance tracked by the issue, not a step of this plan; scheduling it adds a
   step independent of 0a–5.
+- **Interop release.** Assumed: zio-interop-cats publishes a release with Native
+  artifacts; [zio/interop-cats#763](https://github.com/zio/interop-cats/pull/763),
+  which adds them, was merged on 2026-10-01. Until then, every step that does not
+  need it proceeds. If no release appears, the alternative is Native variants of
+  `fundamentals-orphans` and `fundamentals-bio` that avoid the interop artifacts.
+  That means moving bio's shared tracer references into platform sources and
+  dropping the interop orphan on Native, which gives up ZIO–Cats Effect interop
+  there.
 - **Native release timing.** Assumed: step 1a's Native artifacts ship with the
   next regular release, even before step 2a. They add a platform to modules that
   already publish Scala 3 artifacts at the current baseline, and step 2a moves
