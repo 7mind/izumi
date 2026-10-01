@@ -376,10 +376,6 @@ object Izumi {
         // sbt 2.0.5+ closes the adhoc test ClassLoader when the test task completes. Our effect
         // runtimes still have live threads at that point, which then die with LinkageError.
         "closeClassLoaders" := false,
-        // sbt 2.x defaults exportJars to true, which hands dependent projects their resources
-        // inside content-addressed jars. ConfigLoader resolves config sources to filesystem
-        // paths and cannot read a jar entry, so keep exposing class directories.
-        "exportJars" := false,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) :=
             withJvmRelease(

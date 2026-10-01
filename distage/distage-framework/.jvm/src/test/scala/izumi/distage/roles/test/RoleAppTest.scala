@@ -30,7 +30,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import java.io.{File, OutputStream, PrintStream}
 import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Paths, StandardCopyOption}
 import java.nio.{BufferOverflowException, ByteBuffer}
 import java.util.UUID
 import scala.annotation.nowarn
@@ -312,7 +312,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "produce config dumps and support minimization" in {
       val version = ArtifactVersion(Version.Unknown(s"0.0.0-${UUID.randomUUID().toString}"))
-      val role00OverrideConf = getClass.getResource("/testrole00-override.conf").getPath
+      val role00OverrideConf = resourceAsFile("/testrole00-override.conf")
       withProperties(
         overrides ++
         Map(TestPluginCatsIO.versionProperty -> version.version.toString)
@@ -472,7 +472,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(configTestConfig.roleReference == 6, "role-reference")
       assert(configTestConfig.role == 7, "role")
 
-      val roleOverrideConf = getClass.getResource("/configtest-role-override.conf").getPath
+      val roleOverrideConf = resourceAsFile("/configtest-role-override.conf")
 
       TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
@@ -499,7 +499,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         ()
       }
 
-      val commonOverrideConf = getClass.getResource("/configtest-common-override.conf").getPath
+      val commonOverrideConf = resourceAsFile("/configtest-common-override.conf")
 
       TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
 
@@ -696,11 +696,29 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name -> "true",
         DebugProperties.`izumi.distage.roles.activation.warn-unset`.name -> "false",
       ) {
-        val checkTestGoodRes = getClass.getResource("/check-test-good.conf").getPath
-        val customRoleConfigRes = getClass.getResource("/custom-role.conf").getPath
+        val checkTestGoodRes = resourceAsFile("/check-test-good.conf")
+        val customRoleConfigRes = resourceAsFile("/custom-role.conf")
         new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id, "-c", customRoleConfigRes))
 //        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id))
       }
+    }
+  }
+
+  private def resourceAsFile(name: String): String = {
+    val url = getClass.getResource(name)
+    assert(url != null, s"Missing test resource: $name")
+    url.getProtocol match {
+      case "file" =>
+        Paths.get(url.toURI).toString
+      case "jar" =>
+        val target = Files.createTempFile("RoleAppTest-", "-" + Paths.get(name).getFileName.toString)
+        target.toFile.deleteOnExit()
+        val stream = url.openStream()
+        try Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING)
+        finally stream.close()
+        target.toString
+      case other =>
+        fail(s"Unsupported test resource location (protocol=$other): $url")
     }
   }
 

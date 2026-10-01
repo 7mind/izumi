@@ -80,7 +80,6 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -327,7 +326,6 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -575,7 +573,6 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -823,7 +820,6 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -1075,7 +1071,6 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -1332,7 +1327,6 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -1585,7 +1579,6 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -1842,7 +1835,6 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -2102,7 +2094,6 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -2364,7 +2355,6 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -2628,7 +2618,6 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -2882,7 +2871,6 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -3110,7 +3098,6 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -3364,7 +3351,6 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -3621,7 +3607,6 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -3903,7 +3888,6 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -4155,7 +4139,6 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -4435,7 +4418,6 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -4704,7 +4686,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -4931,7 +4912,6 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -5199,7 +5179,6 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -5459,7 +5438,6 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -5693,7 +5671,6 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -5951,7 +5928,6 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -6205,7 +6181,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -6443,7 +6418,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -6710,7 +6684,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
@@ -6991,7 +6964,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",

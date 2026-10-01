@@ -165,6 +165,16 @@ This allows you to ensure correctness of default configs during development with
 
 If you need to disable this check, set `checkConfig` option of `PlanCheckConfig` to `false`.
 
+Note that the check runs at compile time, when sbt has not yet copied the *same* configuration's resources into
+its class directory: a `PlanCheck` in `src/test` reading configs from `src/test/resources` will not see them on a clean
+build unless the build orders the copy before compilation:
+
+```scala
+Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+```
+
+Configs in `src/main/resources`, or in the test resources of a `test->test` dependency, need no such setting.
+
 ### Using with `distage-teskit`
 
 Use @scaladoc[SpecWiring](izumi.distage.testkit.scalatest.SpecWiring) to spawn a test-suite that also triggers compile-time checks.

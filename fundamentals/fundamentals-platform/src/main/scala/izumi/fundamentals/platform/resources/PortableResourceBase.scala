@@ -43,7 +43,6 @@ trait PortableResourceBase {
   ): Seq[(String, String)] = {
     val scanResult = new ClassGraph()
       .acceptPaths(sourcePath)
-      .disableJarScanning()
       .disableModuleScanning()
       .disableNestedJarScanning()
       .scan
